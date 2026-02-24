@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,7 +129,6 @@
 #ifdef LINUX
 #include "cgroupSubsystem_linux.hpp"
 #include "os_linux.hpp"
-#include "osContainer_linux.hpp"
 #endif
 
 #define CHECK_JNI_EXCEPTION_(env, value)                               \
@@ -579,7 +578,7 @@ WB_END
 WB_ENTRY(jboolean, WB_G1InConcurrentMark(JNIEnv* env, jobject o))
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    return g1h->concurrent_mark()->cm_thread()->in_progress();
+    return g1h->concurrent_mark()->in_progress();
   }
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1InConcurrentMark: G1 GC is not enabled");
 WB_END
@@ -2582,14 +2581,12 @@ WB_ENTRY(jboolean, WB_CheckLibSpecifiesNoexecstack(JNIEnv* env, jobject o, jstri
 WB_END
 
 WB_ENTRY(jboolean, WB_IsContainerized(JNIEnv* env, jobject o))
-  LINUX_ONLY(return OSContainer::is_containerized();)
-  return false;
+  return os::is_containerized();
 WB_END
 
 // Physical memory of the host machine (including containers)
 WB_ENTRY(jlong, WB_HostPhysicalMemory(JNIEnv* env, jobject o))
-  LINUX_ONLY(return static_cast<jlong>(os::Linux::physical_memory());)
-  return static_cast<jlong>(os::physical_memory());
+  return static_cast<jlong>(os::Machine::physical_memory());
 WB_END
 
 // Available memory of the host machine (container-aware)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * This class prepares, creates, and runs the "flag" VM with verification of proper termination. The flag VM determines
- * the flags required for the "test" VM. The flag VM writes these flags to a dedicated file which is then parsed by this
- * class after the termination of the flag VM.
+ * This class prepares, creates, and runs the Flag VM with verification of proper termination. The Flag VM determines
+ * the flags required for the Test VM. The Flag VM writes these flags to a dedicated file which is then parsed by this
+ * class after the termination of the Flag VM.
  *
  * @see FlagVM
  */
@@ -73,7 +73,7 @@ public class FlagVMProcess {
         String patternString = "(.*DShouldDoIRVerification=(true|false).*)";
         Pattern pattern = Pattern.compile(patternString);
         Matcher matcher = pattern.matcher(flags);
-        TestFramework.check(matcher.find(), "Invalid flag encoding emitted by flag VM");
+        TestFramework.check(matcher.find(), "Invalid flag encoding emitted by Flag VM");
         // Maybe we run with flags that make IR verification impossible
         shouldVerifyIR = Boolean.parseBoolean(matcher.group(2));
         testVMFlags.addAll(Arrays.asList(matcher.group(1).split(FlagVM.TEST_VM_FLAGS_DELIMITER)));
@@ -91,8 +91,8 @@ public class FlagVMProcess {
     }
 
     /**
-     * The flag VM needs White Box access to prepare all test VM flags. The flag VM will write the test VM flags to
-     * a dedicated file which is afterwards parsed by the driver VM and added as flags to the test VM.
+     * The Flag VM needs White Box access to prepare all Test VM flags. The Flag VM will write the Test VM flags to
+     * a dedicated file which is afterwards parsed by the Driver VM and added as flags to the Test VM.
      */
     private void prepareVMFlags(Class<?> testClass, List<String> additionalFlags) {
         cmds.add("-Dtest.jdk=" + Utils.TEST_JDK);
@@ -103,7 +103,7 @@ public class FlagVMProcess {
         cmds.add("-Xbootclasspath/a:.");
         cmds.add("-XX:+UnlockDiagnosticVMOptions");
         cmds.add("-XX:+WhiteBoxAPI");
-        // TestFramework and scenario flags might have an influence on the later used test VM flags. Add them as well.
+        // TestFramework and scenario flags might have an influence on the later used Test VM flags. Add them as well.
         cmds.addAll(additionalFlags);
         cmds.add(FlagVM.class.getCanonicalName());
         cmds.add(testClass.getCanonicalName());
@@ -111,10 +111,10 @@ public class FlagVMProcess {
 
     private void start() {
         try {
-            // Run "flag" VM with White Box access to determine the test VM flags and if IR verification should be done.
+            // Run Flag VM with White Box access to determine the Test VM flags and if IR verification should be done.
             oa = ProcessTools.executeTestJava(cmds);
         } catch (Exception e) {
-            throw new TestRunException("Failed to execute TestFramework flag VM", e);
+            throw new TestRunException("Failed to execute TestFramework Flag VM", e);
         }
         testVMFlagsFile = FlagVM.TEST_VM_FLAGS_FILE_PREFIX + oa.pid()
                           + FlagVM.FILE_POSTFIX;
@@ -125,14 +125,14 @@ public class FlagVMProcess {
         String flagVMOutput = oa.getOutput();
         int exitCode = oa.getExitValue();
         if (VERBOSE && exitCode == 0) {
-            System.out.println("--- OUTPUT TestFramework flag VM ---");
+            System.out.println("--- OUTPUT TestFramework Flag VM ---");
             System.out.println(flagVMOutput);
         }
 
         if (exitCode != 0) {
-            System.err.println("--- OUTPUT TestFramework flag VM ---");
+            System.err.println("--- OUTPUT TestFramework Flag VM ---");
             System.err.println(flagVMOutput);
-            throw new RuntimeException("TestFramework flag VM exited with " + exitCode);
+            throw new RuntimeException("TestFramework Flag VM exited with " + exitCode);
         }
     }
 

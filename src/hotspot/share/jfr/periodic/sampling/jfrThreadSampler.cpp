@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,41 +232,50 @@ void JfrSamplerThread::task_stacktrace(JfrSampleRequestType type, JavaThread** l
   JavaThread* start = nullptr;
   elapsedTimer sample_time;
   sample_time.start();
-  ThreadsListHandle tlh;
-  // Resolve a sample session relative start position index into the thread list array.
-  // In cases where the last sampled thread is null or not-null but stale, find_index() returns -1.
-  _cur_index = tlh.list()->find_index_of_JavaThread(*last_thread);
-  JavaThread* current = _cur_index != -1 ? *last_thread : nullptr;
+  {
+    /*
+     * Take the Threads_lock for three purposes:
+     *
+     * 1) Avoid sampling right through a safepoint,
+     *    which could result in touching oops in case of virtual threads.
+     * 2) Prevent JFR from issuing an epoch rotation while the sampler thread
+     *    is actively processing a thread in state native, as both threads are outside the safepoint protocol.
+     * 3) Some operating systems (BSD / Mac) require a process lock when sending a signal with pthread_kill.
+     *    Holding the Threads_lock prevents a JavaThread from calling os::create_thread(), which also takes the process lock.
+     *    In a sense, we provide a coarse signal mask, so we can always send the resume signal.
+     */
+    MutexLocker tlock(Threads_lock);
+    ThreadsListHandle tlh;
+    // Resolve a sample session relative start position index into the thread list array.
+    // In cases where the last sampled thread is null or not-null but stale, find_index() returns -1.
+    _cur_index = tlh.list()->find_index_of_JavaThread(*last_thread);
+    JavaThread* current = _cur_index != -1 ? *last_thread : nullptr;
 
-  while (num_samples < sample_limit) {
-    current = next_thread(tlh.list(), start, current);
-    if (current == nullptr) {
-      break;
+    while (num_samples < sample_limit) {
+      current = next_thread(tlh.list(), start, current);
+      if (current == nullptr) {
+        break;
+      }
+      if (is_excluded(current)) {
+        continue;
+      }
+      if (start == nullptr) {
+        start = current; // remember the thread where we started to attempt sampling
+      }
+      bool success;
+      if (JAVA_SAMPLE == type) {
+        success = sample_java_thread(current);
+      } else {
+        assert(type == NATIVE_SAMPLE, "invariant");
+        success = sample_native_thread(current);
+      }
+      if (success) {
+        num_samples++;
+      }
     }
-    if (is_excluded(current)) {
-      continue;
-    }
-    if (start == nullptr) {
-      start = current; // remember the thread where we started to attempt sampling
-    }
-    bool success;
-    if (JAVA_SAMPLE == type) {
-      success = sample_java_thread(current);
-    } else {
-      assert(type == NATIVE_SAMPLE, "invariant");
-      success = sample_native_thread(current);
-    }
-    if (success) {
-      num_samples++;
-    }
-    if (SafepointSynchronize::is_at_safepoint()) {
-      // For _thread_in_native, we cannot get the Threads_lock.
-      // For _thread_in_Java, well, there are none.
-      break;
-    }
+
+    *last_thread = current; // remember the thread we last attempted to sample
   }
-
-  *last_thread = current; // remember the thread we last attempted to sample
   sample_time.stop();
   log_trace(jfr)("JFR thread sampling done in %3.7f secs with %d java %d native samples",
     sample_time.seconds(), type == JAVA_SAMPLE ? num_samples : 0, type == NATIVE_SAMPLE ? num_samples : 0);
@@ -297,6 +306,7 @@ class OSThreadSampler : public SuspendedThreadTask {
 // Sampling a thread in state _thread_in_Java
 // involves a platform-specific thread suspend and CPU context retrieval.
 bool JfrSamplerThread::sample_java_thread(JavaThread* jt) {
+  assert_lock_strong(Threads_lock);
   if (jt->thread_state() != _thread_in_Java) {
     return false;
   }
@@ -328,6 +338,7 @@ static JfrSamplerThread* _sampler_thread = nullptr;
 // without thread suspension and CPU context retrieval,
 // if we carefully order the loads of the thread state.
 bool JfrSamplerThread::sample_native_thread(JavaThread* jt) {
+  assert_lock_strong(Threads_lock);
   if (jt->thread_state() != _thread_in_native) {
     return false;
   }
@@ -343,24 +354,14 @@ bool JfrSamplerThread::sample_native_thread(JavaThread* jt) {
 
   SafepointMechanism::arm_local_poll_release(jt);
 
-  // Take the Threads_lock for two purposes:
-  // 1) Avoid sampling through a safepoint which could result
-  //    in touching oops in case of virtual threads.
-  // 2) Prevent JFR from issuing an epoch rotation while the sampler thread
-  //    is actively processing a thread in native, as both threads are now
-  //    outside the safepoint protocol.
-
-  // OrderAccess::fence() as part of acquiring the lock prevents loads from floating up.
-  JfrMutexTryLock threads_lock(Threads_lock);
-
-  if (!threads_lock.acquired() || !jt->has_last_Java_frame()) {
-    // Remove the native sample request and release the potentially waiting thread.
-    JfrSampleMonitor jsm(tl);
-    return false;
+  // Separate the arming of the poll (above) from the reading of JavaThread state (below).
+  if (UseSystemMemoryBarrier) {
+    SystemMemoryBarrier::emit();
+  } else {
+    OrderAccess::fence();
   }
 
-  if (jt->thread_state() != _thread_in_native) {
-    assert_lock_strong(Threads_lock);
+  if (jt->thread_state() != _thread_in_native || !jt->has_last_Java_frame()) {
     JfrSampleMonitor jsm(tl);
     if (jsm.is_waiting()) {
       // The thread has already returned from native,

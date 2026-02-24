@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 package jdk.jpackage.internal.cli;
 
+import static jdk.jpackage.internal.model.ExecutableAttributesWithCapturedOutput.augmentResultWithOutput;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -37,25 +38,40 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
+import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.Globals;
+import jdk.jpackage.internal.MockUtils;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.ExecutableAttributesWithCapturedOutput;
 import jdk.jpackage.internal.model.JPackageException;
+import jdk.jpackage.internal.model.SelfContainedException;
+import jdk.jpackage.internal.util.CommandOutputControl;
+import jdk.jpackage.internal.util.CommandOutputControl.UnexpectedExitCodeException;
+import jdk.jpackage.internal.util.CommandOutputControl.UnexpectedResultException;
+import jdk.jpackage.internal.util.IdentityWrapper;
 import jdk.jpackage.internal.util.function.ExceptionBox;
+import jdk.jpackage.test.Annotations;
+import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JUnitAdapter;
 import jdk.jpackage.test.TKit;
+import jdk.jpackage.test.mock.CommandActionSpecs;
+import jdk.jpackage.test.mock.Script;
+import jdk.jpackage.test.mock.VerbatimCommandMock;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-public class MainTest extends JUnitAdapter.TestSrcInitializer {
+public class MainTest extends JUnitAdapter {
 
     @ParameterizedTest
     @MethodSource
@@ -76,6 +92,71 @@ public class MainTest extends JUnitAdapter.TestSrcInitializer {
         var msg = I18N.format(key, str);
         assertTrue(msg.contains(str));
         assertNotEquals(str, msg);
+    }
+
+    /**
+     * Run app image packaging and simulate jlink failure.
+     * <p>
+     * The test verifies that jpackage prints an error message with jlink exit code,
+     * command line, and output.
+     */
+    @Annotations.Test
+    public void testFailedCommandOutput() {
+
+        var jlinkMockExitCode = 17;
+
+        var jlinkArgs = new ArrayList<String>();
+
+        var jlinkMock = CommandActionSpecs.build()
+                .stdout("It").stderr("fell").stdout("apart")
+                .argsListener(jlinkArgs::addAll)
+                .exit(jlinkMockExitCode).create().toCommandMockBuilder().name("jlink-mock").create();
+
+        var script = Script.build()
+                // Replace jlink with the mock.
+                .map(Script.cmdlineStartsWith("jlink"), jlinkMock)
+                // Don't mock other external commands.
+                .map(_ -> true, VerbatimCommandMock.INSTANCE)
+                .createLoop();
+
+        var jpackageExitCode = 1;
+
+        var jpackageToolProviderMock = new ToolProvider() {
+            @Override
+            public int run(PrintWriter out, PrintWriter err, String... args) {
+                var globalsMutator = MockUtils.buildJPackage().script(script).createGlobalsMutator();
+                return Globals.main(() -> {
+                    globalsMutator.accept(Globals.instance());
+
+                    var result = ExecutionResult.create(args);
+
+                    var jlinkMockAttrs = new CommandOutputControl.ToolProviderAttributes(jlinkMock.name(), jlinkArgs);
+
+                    result.stdout().forEach(out::println);
+                    result.stderr().forEach(err::println);
+
+                    assertEquals(jpackageExitCode, result.exitCode());
+                    assertEquals(List.of(), result.stdout());
+                    assertEquals(List.of(
+                            I18N.format("message.error-header", I18N.format("error.command-failed-unexpected-exit-code",
+                                    jlinkMockExitCode, jlinkMockAttrs.printableCommandLine())),
+                            I18N.format("message.failed-command-output-header"),
+                            "It", "fell", "apart"), result.stderr());
+
+                    return jpackageExitCode;
+                });
+            }
+
+            @Override
+            public String name() {
+                return "jpackage-mock";
+            }
+        };
+
+        JPackageCommand.helloAppImage()
+                .ignoreDefaultVerbose(true)
+                .useToolProvider(jpackageToolProviderMock)
+                .execute(jpackageExitCode);
     }
 
     private static Collection<TestSpec> testOutput() {
@@ -103,71 +184,157 @@ public class MainTest extends JUnitAdapter.TestSrcInitializer {
         ).map(TestSpec.Builder::create).toList();
     }
 
-
     private static List<ErrorReporterTestSpec> test_ErrorReporter() {
-        var data = new ArrayList<ErrorReporterTestSpec>();
-
+        var testCases = new ArrayList<ErrorReporterTestSpec>();
         for (var verbose : List.of(true, false)) {
-            for (var makeCause : List.<UnaryOperator<Exception>>of(
-                    ex -> ex,
-                    // UncheckedIOException
-                    ex -> {
-                        if (ex instanceof IOException ioex) {
-                            return new UncheckedIOException(ioex);
-                        } else {
-                            return null;
-                        }
-                    },
-                    // ExceptionBox
-                    ex -> {
-                        var rex = ExceptionBox.toUnchecked(ex);
-                        if (rex != ex) {
-                            return rex;
-                        } else {
-                            return null;
-                        }
-                    }
-            )) {
-                for (var expect : List.of(
-                        Map.entry(new IOException("I/O error"), true),
-                        Map.entry(new NullPointerException(), true),
-                        Map.entry(new JPackageException("Kaput!"), false),
-                        Map.entry(new ConfigException("It is broken", "Fix it!"), false),
-                        Map.entry(new ConfigException("It is broken. No advice how to fix it", (String)null), false),
-                        Map.entry(new Utils.ParseException("Malformed command line"), false),
-                        Map.entry(new StandardOption.AddLauncherIllegalArgumentException("Malformed value of --add-launcher option"), false)
-                )) {
-                    var cause = makeCause.apply(expect.getKey());
-                    if (cause == null) {
-                        continue;
-                    }
-
-                    var expectedOutput = new ArrayList<ExceptionFormatter>();
-                    if (expect.getValue()) {
-                        // An alien exception.
-                        expectedOutput.add(ExceptionFormatter.STACK_TRACE);
-                        expectedOutput.add(ExceptionFormatter.TO_STRING);
-                    } else {
-                        if (verbose) {
-                            expectedOutput.add(ExceptionFormatter.STACK_TRACE);
-                        }
-                        if (expect.getKey() instanceof ConfigException cex) {
-                            if (cex.getAdvice() != null) {
-                                expectedOutput.add(ExceptionFormatter.MESSAGE_WITH_ADVICE);
-                            } else {
-                                expectedOutput.add(ExceptionFormatter.GET_MESSAGE);
-                            }
-                        } else {
-                            expectedOutput.add(ExceptionFormatter.GET_MESSAGE);
-                        }
-                    }
-
-                    data.add(new ErrorReporterTestSpec(cause, expect.getKey(), verbose, expectedOutput));
-                }
-            }
+            test_ErrorReporter_Exception(verbose, testCases::add);
+            test_ErrorReporter_UnexpectedResultException(verbose, testCases::add);
+            test_ErrorReporter_suppressedExceptions(verbose, testCases::add);
         }
 
-        return data;
+        return testCases;
+    }
+
+    private static void test_ErrorReporter_Exception(boolean verbose, Consumer<ErrorReporterTestSpec> sink) {
+
+        for (var makeCause : List.<UnaryOperator<Exception>>of(
+                ex -> ex,
+                // UncheckedIOException
+                ex -> {
+                    if (ex instanceof IOException ioex) {
+                        return new UncheckedIOException(ioex);
+                    } else {
+                        return null;
+                    }
+                },
+                // ExceptionBox
+                ex -> {
+                    var rex = ExceptionBox.toUnchecked(ex);
+                    if (rex != ex) {
+                        return rex;
+                    } else {
+                        return null;
+                    }
+                }
+        )) {
+            for (var expect : List.of(
+                    new IOException("I/O error"),
+                    new NullPointerException(),
+                    new JPackageException("Kaput!"),
+                    new ConfigException("It is broken", "Fix it!"),
+                    new ConfigException("It is broken. No advice how to fix it", (String)null),
+                    new Utils.ParseException("Malformed command line"),
+                    new StandardOption.AddLauncherIllegalArgumentException("Malformed value of --add-launcher option")
+            )) {
+                var cause = makeCause.apply(expect);
+                if (cause == null) {
+                    continue;
+                }
+
+                var expectedOutput = new ArrayList<ExceptionFormatter>();
+                ErrorReporterTestSpec.expectExceptionFormatters(expect, verbose, expectedOutput::add);
+                sink.accept(ErrorReporterTestSpec.create(cause, expect, verbose, expectedOutput));
+            }
+        }
+    }
+
+    private static void test_ErrorReporter_UnexpectedResultException(boolean verbose, Consumer<ErrorReporterTestSpec> sink) {
+
+        var execAttrs = new CommandOutputControl.ProcessAttributes(Optional.of(12345L), List.of("foo", "--bar"));
+
+        for (var makeCause : List.<UnaryOperator<Exception>>of(
+                ex -> ex,
+                ExceptionBox::toUnchecked
+        )) {
+
+            for (var expect : List.of(
+                    augmentResultWithOutput(
+                            CommandOutputControl.Result.build().exitCode(135).execAttrs(execAttrs).create(),
+                            "The quick brown fox\njumps over the lazy dog"
+                    ).unexpected("Kaput!"),
+                    new UnexpectedExitCodeException(augmentResultWithOutput(
+                            CommandOutputControl.Result.build().exitCode(135).create(),
+                            "The quick brown fox\njumps"
+                    )),
+                    augmentResultWithOutput(
+                            CommandOutputControl.Result.build().create(),
+                            "The quick brown fox\njumps"
+                    ).unexpected("Timed out!")
+            )) {
+                var cause = makeCause.apply(expect);
+                var expectedOutput = new ArrayList<ExceptionFormatter>();
+                ErrorReporterTestSpec.expectExceptionFormatters(expect, verbose, expectedOutput::add);
+                sink.accept(ErrorReporterTestSpec.create(cause, expect, verbose, expectedOutput));
+            }
+        }
+    }
+
+    private static Exception suppressException(Exception main, Exception suppressed) {
+        Objects.requireNonNull(main);
+        Objects.requireNonNull(suppressed);
+
+        try (var autoCloseable = new AutoCloseable() {
+
+            @Override
+            public void close() throws Exception {
+                throw suppressed;
+            }}) {
+
+            throw main;
+        } catch (Exception ex) {
+            return ex;
+        }
+    }
+
+    private static void test_ErrorReporter_suppressedExceptions(boolean verbose, Consumer<ErrorReporterTestSpec> sink) {
+
+        var execAttrs = new CommandOutputControl.ProcessAttributes(Optional.of(567L), List.of("foo", "--bar"));
+
+        Supplier<Exception> createUnexpectedResultException = () -> {
+            return augmentResultWithOutput(
+                    CommandOutputControl.Result.build().exitCode(7).execAttrs(execAttrs).create(),
+                    "The quick brown fox\njumps over the lazy dog"
+            ).unexpected("Alas");
+        };
+
+        for (var makeCause : List.<UnaryOperator<Exception>>of(
+                ex -> ex,
+                ex -> {
+                    var rex = ExceptionBox.toUnchecked(ex);
+                    if (rex != ex) {
+                        return rex;
+                    } else {
+                        return null;
+                    }
+                }
+        )) {
+
+            for (var exceptions : List.of(
+                    List.<Exception>of(new JPackageException("Kaput!"), new JPackageException("Suppressed kaput")),
+                    List.<Exception>of(new Exception("Kaput!"), new JPackageException("Suppressed kaput")),
+                    List.<Exception>of(new Exception("Kaput!"), new Exception("Suppressed kaput")),
+                    List.<Exception>of(new Exception("Kaput!"), ExceptionBox.toUnchecked(new Exception("Suppressed kaput"))),
+                    List.<Exception>of(createUnexpectedResultException.get(), new Exception("Suppressed kaput")),
+                    List.<Exception>of(new Exception("Alas!"), createUnexpectedResultException.get()),
+                    List.<Exception>of(new JPackageException("Alas!"), createUnexpectedResultException.get())
+            )) {
+                var main = exceptions.getFirst();
+                var suppressed = exceptions.getLast();
+
+                var cause = makeCause.apply(suppressException(main, suppressed));
+
+                if (cause == null) {
+                    continue;
+                }
+
+                var expectedOutput = new ArrayList<FormattedException>();
+
+                ErrorReporterTestSpec.expectOutputFragments(ExceptionBox.unbox(suppressed), verbose, expectedOutput::add);
+                ErrorReporterTestSpec.expectOutputFragments(main, verbose, expectedOutput::add);
+
+                sink.accept(new ErrorReporterTestSpec(cause, verbose, expectedOutput));
+            }
+        }
     }
 
 
@@ -333,6 +500,19 @@ public class MainTest extends JUnitAdapter.TestSrcInitializer {
     }
 
 
+    private record FormattedException(ExceptionFormatter formatter, Exception exception) {
+
+        FormattedException {
+            Objects.requireNonNull(formatter);
+            Objects.requireNonNull(exception);
+        }
+
+        String format() {
+            return formatter.format(exception);
+        }
+    }
+
+
     private enum ExceptionFormatter {
         GET_MESSAGE(errorMessage(Exception::getMessage)),
         MESSAGE_WITH_ADVICE(ex -> {
@@ -350,7 +530,24 @@ public class MainTest extends JUnitAdapter.TestSrcInitializer {
                 ex.printStackTrace(pw);
             }
             return sink.toString();
-        })
+        }),
+        FAILED_COMMAND_OUTPUT(ex -> {
+            var result = failedCommandResult(ex);
+            var commandOutput = ((ExecutableAttributesWithCapturedOutput)result.execAttrs()).printableOutput();
+
+            var sink = new StringWriter();
+            var pw = new PrintWriter(sink);
+
+            pw.println(I18N.format("message.failed-command-output-header"));
+            try (var lines = new BufferedReader(new StringReader(commandOutput)).lines()) {
+                lines.forEach(pw::println);
+            }
+
+            return sink.toString();
+        }),
+        FAILED_COMMAND_UNEXPECTED_OUTPUT_MESSAGE(errorMessage(CommandFailureType.UNEXPECTED_OUTPUT::getMessage)),
+        FAILED_COMMAND_UNEXPECTED_EXIT_CODE_MESSAGE(errorMessage(CommandFailureType.UNEXPECTED_EXIT_CODE::getMessage)),
+        FAILED_COMMAND_TIMEDOUT_MESSAGE(errorMessage(CommandFailureType.TIMEDOUT::getMessage)),
         ;
 
         ExceptionFormatter(Function<Exception, String> formatter) {
@@ -361,6 +558,10 @@ public class MainTest extends JUnitAdapter.TestSrcInitializer {
             return formatter.apply(v);
         }
 
+        FormattedException bind(Exception v) {
+            return new FormattedException(this, v);
+        }
+
         private static Function<Exception, String> errorMessage(Function<Exception, String> formatter) {
             Objects.requireNonNull(formatter);
             return ex -> {
@@ -369,33 +570,139 @@ public class MainTest extends JUnitAdapter.TestSrcInitializer {
             };
         }
 
+        private static CommandOutputControl.Result failedCommandResult(Exception ex) {
+            Objects.requireNonNull(ex);
+            if (ex instanceof UnexpectedResultException urex) {
+                return urex.getResult();
+            } else {
+                throw new IllegalArgumentException();
+            }
+        }
+
+        private enum CommandFailureType {
+            UNEXPECTED_OUTPUT,
+            UNEXPECTED_EXIT_CODE,
+            TIMEDOUT,
+            ;
+
+            String getMessage(Exception ex) {
+                var result = failedCommandResult(ex);
+                var printableCommandLine = result.execAttrs().printableCommandLine();
+                switch (this) {
+                    case TIMEDOUT -> {
+                        return I18N.format("error.command-failed-timed-out", printableCommandLine);
+                    }
+                    case UNEXPECTED_EXIT_CODE -> {
+                        return I18N.format("error.command-failed-unexpected-exit-code", result.getExitCode(), printableCommandLine);
+                    }
+                    case UNEXPECTED_OUTPUT -> {
+                        return I18N.format("error.command-failed-unexpected-output", printableCommandLine);
+                    }
+                    default -> {
+                        // Unreachable
+                        throw ExceptionBox.reachedUnreachable();
+                    }
+                }
+            }
+        }
+
         private final Function<Exception, String> formatter;
     }
 
 
-    record ErrorReporterTestSpec(Exception cause, Exception expect, boolean verbose, List<ExceptionFormatter> expectOutput) {
+    record ErrorReporterTestSpec(Exception cause, boolean verbose, List<FormattedException> expectOutput) {
 
         ErrorReporterTestSpec {
             Objects.requireNonNull(cause);
-            Objects.requireNonNull(expect);
             Objects.requireNonNull(expectOutput);
+            if (expectOutput.isEmpty()) {
+                throw new IllegalArgumentException();
+            }
         }
 
-        ErrorReporterTestSpec(Exception cause, boolean verbose, List<ExceptionFormatter> expectOutput) {
-            this(cause, cause, verbose, expectOutput);
+        static ErrorReporterTestSpec create(
+                Exception cause, boolean verbose, List<ExceptionFormatter> expectOutput) {
+            return create(cause, cause, verbose, expectOutput);
+        }
+
+        static ErrorReporterTestSpec create(
+                Exception cause, Exception expect, boolean verbose, List<ExceptionFormatter> expectOutput) {
+            Objects.requireNonNull(cause);
+            Objects.requireNonNull(expect);
+            return new ErrorReporterTestSpec(cause, verbose, expectOutput.stream().map(formatter -> {
+                return new FormattedException(formatter, expect);
+            }).toList());
+        }
+
+        static void expectExceptionFormatters(Exception ex, boolean verbose, Consumer<ExceptionFormatter> sink) {
+            Objects.requireNonNull(ex);
+            Objects.requireNonNull(sink);
+
+            final var isSelfContained = (ex.getClass().getAnnotation(SelfContainedException.class) != null);
+
+            if (verbose || !(isSelfContained || ex instanceof UnexpectedResultException)) {
+                sink.accept(ExceptionFormatter.STACK_TRACE);
+            }
+
+            switch (ex) {
+                case ConfigException cex -> {
+                    if (cex.getAdvice() != null) {
+                        sink.accept(ExceptionFormatter.MESSAGE_WITH_ADVICE);
+                    } else {
+                        sink.accept(ExceptionFormatter.GET_MESSAGE);
+                    }
+                }
+                case UnexpectedResultException urex -> {
+                    if (urex instanceof UnexpectedExitCodeException) {
+                        sink.accept(ExceptionFormatter.FAILED_COMMAND_UNEXPECTED_EXIT_CODE_MESSAGE);
+                    } else if (urex.getResult().exitCode().isPresent()) {
+                        sink.accept(ExceptionFormatter.FAILED_COMMAND_UNEXPECTED_OUTPUT_MESSAGE);
+                    } else {
+                        sink.accept(ExceptionFormatter.FAILED_COMMAND_TIMEDOUT_MESSAGE);
+                    }
+                    sink.accept(ExceptionFormatter.FAILED_COMMAND_OUTPUT);
+                }
+                default -> {
+                    if (isSelfContained) {
+                        sink.accept(ExceptionFormatter.GET_MESSAGE);
+                    } else {
+                        sink.accept(ExceptionFormatter.TO_STRING);
+                    }
+                }
+            }
+        }
+
+        static void expectOutputFragments(Exception ex, boolean verbose, Consumer<FormattedException> sink) {
+            Objects.requireNonNull(sink);
+            expectExceptionFormatters(ex, verbose, formatter -> {
+                sink.accept(formatter.bind(ex));
+            });
         }
 
         @Override
         public String toString() {
             var tokens = new ArrayList<String>();
 
-            if (cause == expect) {
+            var expect = expectOutput.stream()
+                    .map(FormattedException::exception)
+                    .map(IdentityWrapper::new)
+                    .distinct()
+                    .toList();
+
+            if (expect.size() == 1 && expect.getFirst().value() == cause) {
                 tokens.add(cause.toString());
             } else {
-                tokens.add(String.format("[%s] => [%s]", cause, expect));
+                tokens.add(String.format("[%s] => %s", cause, expect.stream().map(IdentityWrapper::value).toList()));
             }
 
-            tokens.add(expectOutput.stream().map(Enum::name).collect(Collectors.joining("+")));
+            if (expect.size() == 1) {
+                tokens.add(expectOutput.stream().map(FormattedException::formatter).map(Enum::name).collect(Collectors.joining("+")));
+            } else {
+                tokens.add(expectOutput.stream().map(fragment -> {
+                    var idx = expect.indexOf(IdentityWrapper.wrapIdentity(fragment.exception()));
+                    return String.format("%s@%d", fragment.formatter(), idx);
+                }).collect(Collectors.joining("+")));
+            }
 
             if (verbose) {
                 tokens.add("verbose");
@@ -415,9 +722,7 @@ public class MainTest extends JUnitAdapter.TestSrcInitializer {
                 }, verbose).reportError(cause);
             }
 
-            var expected = expectOutput.stream().map(formatter -> {
-                return formatter.format(expect);
-            }).collect(Collectors.joining(""));
+            var expected = expectOutput.stream().map(FormattedException::format).collect(Collectors.joining(""));
 
             assertEquals(expected, sink.toString());
         }
