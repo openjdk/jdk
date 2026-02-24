@@ -1038,7 +1038,7 @@ final class CAccessibility implements PropertyChangeListener {
                     final AccessibleRole role = context.getAccessibleRole();
                     String roleStr = role == null ? null :
                             AWTAccessor.getAccessibleBundleAccessor().getKey(role);
-                    if (role != null && ignoredRoles != null &&
+                    if (roleStr != null && ignoredRoles != null &&
                             ignoredRoles.contains(roleStr)) {
                         // Get the child's unignored children.
                         _addChildren(child, whichChildren, false,
