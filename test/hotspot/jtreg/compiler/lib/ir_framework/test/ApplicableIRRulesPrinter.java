@@ -47,7 +47,7 @@ import java.util.function.Function;
  * termination of the Test VM. IR rule indices start at 1.
  */
 public class ApplicableIRRulesPrinter {
-    public static final int NO_RULES = -1;
+    public static final String NO_RULES = "<no IR rules>";
 
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
     private static final List<Function<String, Object>> LONG_GETTERS = Arrays.asList(
@@ -152,17 +152,15 @@ public class ApplicableIRRulesPrinter {
                 i++;
             }
         }
-        if (irAnnos.length != 0) {
-            output.append(m.getName());
-            if (validRules.isEmpty()) {
-                output.append("," + NO_RULES);
-            } else {
-                for (i = 0; i < validRules.size(); i++) {
-                    output.append(",").append(validRules.get(i));
-                }
-            }
-            output.append(System.lineSeparator());
+
+        if (irAnnos.length == 0 || validRules.isEmpty()) {
+            return;
         }
+        output.append(m.getName());
+        for (i = 0; i < validRules.size(); i++) {
+            output.append(",").append(validRules.get(i));
+        }
+        output.append(System.lineSeparator());
     }
 
     private void printDisableReason(String method, String reason, String[] apply, int ruleIndex, int ruleMax) {
@@ -517,9 +515,10 @@ public class ApplicableIRRulesPrinter {
     }
 
     public void emit() {
+        if (output.isEmpty()) {
+            output.append(NO_RULES).append(System.lineSeparator());
+        }
         output.append(MessageTag.END_MARKER);
         TestVmSocket.sendMultiLine(MessageTag.APPLICABLE_IR_RULES, output.toString());
     }
 }
-
-
