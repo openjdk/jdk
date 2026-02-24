@@ -673,7 +673,7 @@ public:
   }
   typedef void (*addptr_32_insn_t)(MacroAssembler *masm, Address dst, int32_t src);
   void profile_receiver_type(Register recv, Register mdp, int mdp_offset,
-                             addptr_32_insn_t xx = &addptr_32);
+                             addptr_32_insn_t increment = &addptr_32);
 
   // Debugging
 
