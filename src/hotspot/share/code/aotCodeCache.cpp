@@ -1455,9 +1455,7 @@ void AOTCodeAddressTable::init_extrs() {
   // addresses of fields in AOT runtime constants area
   address* p = AOTRuntimeConstants::field_addresses_list();
   while (*p != nullptr) {
-    // n.b. use local as macro consumes arg multiple times
-    address to_add = *p++;
-    SET_ADDRESS(_extrs, to_add);
+    SET_ADDRESS(_extrs, p++);
   }
 
   _extrs_complete = true;
@@ -1815,26 +1813,39 @@ AOTRuntimeConstants AOTRuntimeConstants::_aot_runtime_constants;
 
 void AOTRuntimeConstants::initialize_from_runtime() {
   BarrierSet* bs = BarrierSet::barrier_set();
-  if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
-    CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
+  address card_table_base = nullptr;
+  uint grain_shift = 0;
 #if INCLUDE_G1GC
-    // G1 uses a thread local to access the cardtable bytemap base and
-    // any attempt to look it up using ci_card_table_address_as will
-    // assert. So will an attempt to read this field.
-    if (UseG1GC) {
-      _aot_runtime_constants._card_table_address = nullptr;
-    } else
+  if (bs->is_a(BarrierSet::G1BarrierSet)) {
+    grain_shift = G1HeapRegion::LogOfHRGrainBytes;
+  } else
 #endif
-    _aot_runtime_constants._card_table_address = ci_card_table_address_as<address>();
-    _aot_runtime_constants._grain_shift = ctbs->grain_shift();
+#if INCLUDE_SHENANDOAHGC
+  if (bs->is_a(BarrierSet::ShenandoahBarrierSet)) {
+    grain_shift = 0;
+  } else
+#endif
+  if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
+    CardTable::CardValue* base = ci_card_table_address_const();
+    assert(base != nullptr, "unexpected byte_map_base");
+    card_table_base = base;
+    CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
+    grain_shift = ctbs->grain_shift();
   }
+  _aot_runtime_constants._card_table_address = card_table_base;
+  _aot_runtime_constants._grain_shift = grain_shift;
 }
 
 address AOTRuntimeConstants::_field_addresses_list[] = {
-  card_table_address(),
-  grain_shift_address(),
+  ((address)&_aot_runtime_constants._card_table_address),
+  ((address)&_aot_runtime_constants._grain_shift),
   nullptr
 };
+
+address AOTRuntimeConstants::card_table_address() {
+  assert(UseSerialGC || UseParallelGC, "Only these GCs have constant card table base");
+  return (address)&_aot_runtime_constants._card_table_address;
+}
 
 // This is called after initialize() but before init2()
 // and _cache is not set yet.
