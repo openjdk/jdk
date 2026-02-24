@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -529,6 +529,7 @@ CFLAGS_WARNINGS_ARE_ERRORS := @CFLAGS_WARNINGS_ARE_ERRORS@
 DISABLED_WARNINGS := @DISABLED_WARNINGS@
 DISABLED_WARNINGS_C := @DISABLED_WARNINGS_C@
 DISABLED_WARNINGS_CXX := @DISABLED_WARNINGS_CXX@
+CFLAGS_CONVERSION_WARNINGS := @CFLAGS_CONVERSION_WARNINGS@
 
 # A global flag (true or false) determining if native warnings are considered errors.
 WARNINGS_AS_ERRORS := @WARNINGS_AS_ERRORS@
