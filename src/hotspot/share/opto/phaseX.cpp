@@ -1215,11 +1215,10 @@ void PhaseIterGVN::optimize(bool deep) {
 void PhaseIterGVN::verify_optimize() {
   assert(_worklist.size() == 0, "igvn worklist must be empty before verify");
 
-  // Verify deep revisit convergence: push deep-inspection nodes one more time and drain
-  // the worklist. If live_nodes changes, deep revisit did not reach a fixed point.
-  // This uses the worklist mechanism (correct processing order) rather than the BFS Ideal-calling
-  // loop below, which cannot safely verify deep-inspection nodes because Ideal(can_reshape=true)
-  // is destructive, e.g. optimizing one If can enable another If's optimization.
+  // Verify deep revisit convergence: push deep-inspection nodes one more time and drain.
+  // If live_nodes changes, deep revisit did not reach a fixed point. Load and CmpP need
+  // this because their Ideal is destructive (calls set_req). If-family nodes are also
+  // verified in verify_Ideal_for.
   if (_deep_revisit_done && is_verify_Ideal()) {
     push_deep_revisit_candidates();
     if (_worklist.size() != 0) {
@@ -1377,6 +1376,11 @@ void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
   // First, we check a list of exceptions, where we skip verification,
   // because there are known cases where Ideal can optimize after IGVN.
   // Some may be expected and cannot be fixed, and others should be fixed.
+  //
+  // split_if (called from Ideal_common) speculatively clones a compare node then
+  // destroys it, bumping C->unique() without making progress. Skip the old_unique
+  // check for these nodes but still verify hash, worklist, and missed optimizations.
+  bool may_create_spurious_nodes = false;
   switch (n->Opcode()) {
     // RangeCheckNode::Ideal looks up the chain for about 999 nodes
     // (see "Range-Check scan limit"). So, it is possible that something
@@ -1390,14 +1394,8 @@ void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     case Op_If:
     case Op_CountedLoopEnd:
     case Op_LongCountedLoopEnd:
-      // Ideal(can_reshape=true) for these nodes is not a pure query: split_if
-      // (called from Ideal_common) speculatively clones a compare node to test
-      // constant foldability, then destroys it. When the test fails, Ideal returns
-      // nullptr (the node IS at its fixed point), but clone() has already bumped
-      // C->unique(). This triggers a false assertion in the old_unique check below.
-      // Deep revisit convergence for these nodes is instead verified via the
-      // drain-based check in verify_optimize().
-      return;
+      may_create_spurious_nodes = true;
+      break;
 
     // RegionNode::Ideal does "Skip around the useless IF diamond".
     //   245  IfTrue  === 244
@@ -1974,7 +1972,7 @@ void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
   Node* i = n->Ideal(this, can_reshape);
   // If there was no new Idealization, we are probably happy.
   if (i == nullptr) {
-    if (old_unique < C->unique()) {
+    if (!may_create_spurious_nodes && old_unique < C->unique()) {
       stringStream ss; // Print as a block without tty lock.
       ss.cr();
       ss.print_cr("Ideal optimization did not make progress but created new unused nodes.");
