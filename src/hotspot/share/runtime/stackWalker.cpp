@@ -384,7 +384,7 @@ public:
     // Prevent native stack walker from running through an ongoing safepoint.
     MutexLocker tlock(Threads_lock);
     ThreadsListHandle tlh;
-    for (size_t i = 0; i < tlh.list()->length(); i++) {
+    for (uint i = 0; i < tlh.list()->length(); i++) {
       JavaThread* jt = tlh.list()->thread_at(i);
       StackWalkerThreadLocal& tl = jt->stackwalker_thread_local();
       // First check if the thread has requested native stack walking.
