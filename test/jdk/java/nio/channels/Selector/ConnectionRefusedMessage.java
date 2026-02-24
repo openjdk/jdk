@@ -108,7 +108,9 @@ class ConnectionRefusedMessage {
     }
 
     private static void assertExceptionMessage(final ConnectException ce) {
-        if (!"Connection refused".equals(ce.getMessage())) {
+        // check that message starts with "Connection refused". It might contain more information
+        // when, e.g. jdk.includeInExceptions=hostInfo is set through java security properties.
+        if (ce.getMessage() == null || !ce.getMessage().startsWith("Connection refused")) {
             // propagate the original exception
             fail("unexpected exception message: " + ce.getMessage(), ce);
         }
