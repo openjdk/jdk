@@ -21,13 +21,34 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.test.network;
+package compiler.lib.ir_framework.driver.network.testvm.java;
 
-public class MessageTag {
-    public static final String STDOUT = "[STDOUT]";
-    public static final String TEST_LIST = "[TEST_LIST]";
-    public static final String PRINT_TIMES = "[PRINT_TIMES]";
-    public static final String VM_INFO = "[VM_INFO]";
-    public static final String APPLICABLE_IR_RULES = "[APPLICABLE_IR_RULES]";
-    public static final String END_MARKER = "#END#";
+import compiler.lib.ir_framework.test.network.MessageTag;
+
+import java.util.List;
+
+
+/**
+ * Class to collect all Java Messages sent with tag {@link MessageTag#STDOUT}. These messages are generated at various
+ * places in the Test VM and are unconditionally shown in the Driver VM output.
+ */
+class StdoutMessages implements JavaMessage {
+    private final List<String> messages;
+
+    public StdoutMessages(List<String> messages) {
+        this.messages = messages;
+    }
+
+    @Override
+    public void print() {
+        if (messages.isEmpty()) {
+            return;
+        }
+        System.out.println();
+        System.out.println("Test VM Messages");
+        System.out.println("----------------");
+        for (String message : messages) {
+            System.out.println("- " + message);
+        }
+    }
 }

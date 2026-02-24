@@ -75,6 +75,7 @@ public class TestVMProcess {
         checkTestVMExitCode();
         String hotspotPidFileName = String.format("hotspot_pid%d.log", oa.pid());
         testVmData = socket.testVmData(hotspotPidFileName, allowNotCompilable);
+        testVmData.printJavaMessages();
     }
 
     public String getCommandLine() {

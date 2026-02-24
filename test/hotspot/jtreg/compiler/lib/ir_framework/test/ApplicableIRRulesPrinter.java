@@ -47,9 +47,7 @@ import java.util.function.Function;
  * termination of the Test VM. IR rule indices start at 1.
  */
 public class ApplicableIRRulesPrinter {
-    public static final String START = "##### ApplicableIRRules - used by TestFramework #####";
-    public static final String END = "----- END -----";
-    public static final int NO_RULE_APPLIED = -1;
+    public static final int NO_RULES = -1;
 
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
     private static final List<Function<String, Object>> LONG_GETTERS = Arrays.asList(
@@ -131,11 +129,6 @@ public class ApplicableIRRulesPrinter {
         "zvkn"
     ));
 
-    public ApplicableIRRulesPrinter() {
-        output.append(START).append(System.lineSeparator());
-        output.append("<method>,{comma separated applied @IR rule ids}").append(System.lineSeparator());
-    }
-
     /**
      * Emits "<method>,{ids}" where {ids} is either:
      * - indices of all @IR rules that should be applied, separated by a comma
@@ -162,7 +155,7 @@ public class ApplicableIRRulesPrinter {
         if (irAnnos.length != 0) {
             output.append(m.getName());
             if (validRules.isEmpty()) {
-                output.append("," + NO_RULE_APPLIED);
+                output.append("," + NO_RULES);
             } else {
                 for (i = 0; i < validRules.size(); i++) {
                     output.append(",").append(validRules.get(i));
@@ -524,8 +517,8 @@ public class ApplicableIRRulesPrinter {
     }
 
     public void emit() {
-        output.append(END);
-        TestVmSocket.sendWithTag(MessageTag.APPLICABLE_IR_RULES, output.toString());
+        output.append(MessageTag.END_MARKER);
+        TestVmSocket.sendMultiLine(MessageTag.APPLICABLE_IR_RULES, output.toString());
     }
 }
 

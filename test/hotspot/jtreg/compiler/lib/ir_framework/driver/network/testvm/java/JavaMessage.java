@@ -21,13 +21,15 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.test.network;
+package compiler.lib.ir_framework.driver.network.testvm.java;
 
-public class MessageTag {
-    public static final String STDOUT = "[STDOUT]";
-    public static final String TEST_LIST = "[TEST_LIST]";
-    public static final String PRINT_TIMES = "[PRINT_TIMES]";
-    public static final String VM_INFO = "[VM_INFO]";
-    public static final String APPLICABLE_IR_RULES = "[APPLICABLE_IR_RULES]";
-    public static final String END_MARKER = "#END#";
+import compiler.lib.ir_framework.shared.TestFrameworkSocket;
+import compiler.lib.ir_framework.test.network.MessageTag;
+
+/**
+ * Interface for a message sent from Java code to the Driver VM via the {@link TestFrameworkSocket}. We differentiate
+ * between different messages depending on the leading {@link MessageTag} of a received message.
+ */
+public interface JavaMessage {
+    void print();
 }
