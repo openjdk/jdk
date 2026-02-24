@@ -163,7 +163,7 @@ public class HttpVersionsTest {
             assertEquals(200, response.statusCode());
             assertEquals(HTTP_1_1, response.version());
             assertEquals("", response.body());
-            assertEquals(                         "HTTP/1.1 request received by HTTP/2 server", response.headers().firstValue("X-Magic").get());
+            assertEquals("HTTP/1.1 request received by HTTP/2 server", response.headers().firstValue("X-Magic").get());
             assertEquals("", response.headers().firstValue("X-Received-Body").get());
             if (uri.startsWith("https"))
                 assertTrue(response.sslSession().isPresent());
