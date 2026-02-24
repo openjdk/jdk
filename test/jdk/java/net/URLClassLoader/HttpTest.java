@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4636331
+ * @modules jdk.httpserver
  * @library /test/lib
  * @summary Check that URLClassLoader with HTTP paths lookups produce the expected http requests
  * @run junit HttpTest
