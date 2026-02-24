@@ -600,19 +600,21 @@ void C2_MacroAssembler::count_positives(Register src, Register cnt, Register res
   orr(tmp0, tmp2, tmp0);
 
   and_(tmp0, tmp0, tmp1);
-  bne(CR0, Lslow);               // Found negative byte.
+  bne(CR0, Lslow);                // Found negative byte.
   addi(result, result, 16);
   bdnz(Lfastloop);
 
   bind(Lslow);                    // Fallback to slow version.
   subf(tmp0, src, result);        // Bytes known positive.
-  subf_(tmp0, tmp0, cnt);         // Remaining Bytes.
+  clrldi(tmp1, cnt, 32);          // Clear garbage from upper 32 bits.
+  subf_(tmp0, tmp0, tmp1);        // Remaining Bytes.
   beq(CR0, Ldone);
   mtctr(tmp0);
+
   bind(Lloop);
   lbz(tmp0, 0, result);
   andi_(tmp0, tmp0, 0x80);
-  bne(CR0, Ldone);               // Found negative byte.
+  bne(CR0, Ldone);                // Found negative byte.
   addi(result, result, 1);
   bdnz(Lloop);
 
@@ -664,3 +666,37 @@ void C2_MacroAssembler::reduceI(int opcode, Register dst, Register iSrc, VectorR
   fn_scalar_op(opcode, dst, iSrc, R0);    // dst   <- op(iSrc, R0)
 }
 
+// Works for single and double precision floats.
+// dst = (op1 cmp(cc) op2) ? src1 : src2;
+// Unordered semantics are the same as for CmpF3Node/CmpD3Node which implement the fcmpl/dcmpl bytecodes.
+// Comparing unordered values has the same result as when src1 is less than src2.
+// So dst = src1 for <, <=, != and dst = src2 for >, >=, ==.
+void C2_MacroAssembler::cmovF(int cc, VectorSRegister dst, VectorSRegister op1, VectorSRegister op2,
+                              VectorSRegister src1, VectorSRegister src2, VectorSRegister tmp) {
+  // See operand cmpOp() for details.
+  bool invert_cond = (cc & 8) == 0; // invert reflects bcondCRbiIs0
+  auto cmp = (Assembler::Condition)(cc & 3);
+
+  switch(cmp) {
+  case Assembler::Condition::equal:
+    // Use false_result if "unordered".
+    xscmpeqdp(tmp, op1, op2);
+    break;
+  case Assembler::Condition::greater:
+    // Use false_result if "unordered".
+    xscmpgtdp(tmp, op1, op2);
+    break;
+  case Assembler::Condition::less:
+    // Use true_result if "unordered".
+    xscmpgedp(tmp, op1, op2);
+    invert_cond = !invert_cond;
+    break;
+  default:
+    assert(false, "unsupported compare condition: %d", cc);
+    ShouldNotReachHere();
+  }
+
+  VectorSRegister true_result  = invert_cond ? src2 : src1;
+  VectorSRegister false_result = invert_cond ? src1 : src2;
+  xxsel(dst, false_result, true_result, tmp);
+}

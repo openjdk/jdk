@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
 #include "gc/g1/g1EvacFailureRegions.inline.hpp"
 #include "gc/g1/g1EvacInfo.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionPrinter.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
@@ -58,6 +59,7 @@
 #include "gc/shared/workerThread.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/threads.hpp"
 #include "utilities/ticks.hpp"
 
@@ -459,8 +461,8 @@ class G1PrepareEvacuationTask : public WorkerTask {
 
   G1CollectedHeap* _g1h;
   G1HeapRegionClaimer _claimer;
-  volatile uint _humongous_total;
-  volatile uint _humongous_candidates;
+  Atomic<uint> _humongous_total;
+  Atomic<uint> _humongous_candidates;
 
   G1MonotonicArenaMemoryStats _all_card_set_stats;
 
@@ -481,19 +483,19 @@ public:
   }
 
   void add_humongous_candidates(uint candidates) {
-    AtomicAccess::add(&_humongous_candidates, candidates);
+    _humongous_candidates.add_then_fetch(candidates);
   }
 
   void add_humongous_total(uint total) {
-    AtomicAccess::add(&_humongous_total, total);
+    _humongous_total.add_then_fetch(total);
   }
 
   uint humongous_candidates() {
-    return _humongous_candidates;
+    return _humongous_candidates.load_relaxed();
   }
 
   uint humongous_total() {
-    return _humongous_total;
+    return _humongous_total.load_relaxed();
   }
 
   const G1MonotonicArenaMemoryStats all_card_set_stats() const {
@@ -698,7 +700,7 @@ protected:
   virtual void evacuate_live_objects(G1ParScanThreadState* pss, uint worker_id) = 0;
 
 private:
-  volatile bool _pinned_regions_recorded;
+  Atomic<bool> _pinned_regions_recorded;
 
 public:
   G1EvacuateRegionsBaseTask(const char* name,
@@ -722,7 +724,7 @@ public:
       G1ParScanThreadState* pss = _per_thread_states->state_for_worker(worker_id);
       pss->set_ref_discoverer(_g1h->ref_processor_stw());
 
-      if (!AtomicAccess::cmpxchg(&_pinned_regions_recorded, false, true)) {
+      if (_pinned_regions_recorded.compare_set(false, true)) {
         record_pinned_regions(pss, worker_id);
       }
       scan_roots(pss, worker_id);
