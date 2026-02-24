@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.http2.Http2TestServer
- * @run testng/othervm
+ * @run junit/othervm
  *      -Djdk.internal.httpclient.debug=true
  *      -Djdk.httpclient.HttpClient.log=errors,requests,responses,trace
  *      -Djdk.httpclient.http3.maxConcurrentPushStreams=45
@@ -73,17 +73,18 @@ import java.util.function.Supplier;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.internal.net.http.common.Utils;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
 
 import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
 import static java.net.http.HttpOption.Http3DiscoveryMode.ANY;
 import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.assertTrue;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class H3ConcurrentPush implements HttpServerAdapters {
 
@@ -92,7 +93,7 @@ public class H3ConcurrentPush implements HttpServerAdapters {
     static final PrintStream err = System.err;
     static final PrintStream out = System.out;
 
-    static Map<String,String> PUSH_PROMISES = Map.of(
+    static final Map<String,String> PUSH_PROMISES = Map.of(
             "/x/y/z/1", "the first push promise body",
             "/x/y/z/2", "the second push promise body",
             "/x/y/z/3", "the third push promise body",
@@ -105,13 +106,13 @@ public class H3ConcurrentPush implements HttpServerAdapters {
     );
     static final String MAIN_RESPONSE_BODY = "the main response body";
 
-    HttpTestServer  server;
-    URI uri;
-    URI headURI;
-    ServerPushHandler pushHandler;
+    private static HttpTestServer  server;
+    private static URI uri;
+    private static URI headURI;
+    private static ServerPushHandler pushHandler;
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         server = HttpTestServer.create(ANY, SimpleSSLContext.findSSLContext());
         pushHandler = new ServerPushHandler(MAIN_RESPONSE_BODY, PUSH_PROMISES);
         server.addHandler(pushHandler, "/push/");
@@ -122,14 +123,14 @@ public class H3ConcurrentPush implements HttpServerAdapters {
         headURI = new URI("https://" + server.serverAuthority() + "/head/x");
     }
 
-    @AfterTest
-    public void teardown() {
+    @AfterAll
+    public static void teardown() {
         server.stop();
     }
 
     static <T> HttpResponse<T> assert200ResponseCode(HttpResponse<T> response) {
-        assertEquals(response.statusCode(), 200);
-        assertEquals(response.version(), Version.HTTP_3);
+        assertEquals(200, response.statusCode());
+        assertEquals(Version.HTTP_3, response.version());
         return response;
     }
 
@@ -137,8 +138,8 @@ public class H3ConcurrentPush implements HttpServerAdapters {
         HttpRequest headRequest = HttpRequest.newBuilder(headURI)
                 .HEAD().version(Version.HTTP_2).build();
         var headResponse = client.send(headRequest, BodyHandlers.ofString());
-        assertEquals(headResponse.statusCode(), 200);
-        assertEquals(headResponse.version(), Version.HTTP_2);
+        assertEquals(200, headResponse.statusCode());
+        assertEquals(Version.HTTP_2, headResponse.version());
     }
 
     static final class TestPushPromiseHandler<T> implements PushPromiseHandler<T> {
@@ -233,16 +234,16 @@ public class H3ConcurrentPush implements HttpServerAdapters {
 
                 promises.forEach((request, value) -> {
                     HttpResponse<String> response = value.join();
-                    assertEquals(response.statusCode(), 200);
+                    assertEquals(200, response.statusCode());
                     if (PUSH_PROMISES.containsKey(request.uri().getPath())) {
-                        assertEquals(response.body(), PUSH_PROMISES.get(request.uri().getPath()));
+                        assertEquals(PUSH_PROMISES.get(request.uri().getPath()), response.body());
                     } else {
-                        assertEquals(response.body(), MAIN_RESPONSE_BODY);
+                        assertEquals(MAIN_RESPONSE_BODY, response.body());
                     }
                 });
 
                 int expectedPushes = Math.min(PUSH_PROMISES.size(), maxPushes) + 5;
-                assertEquals(promises.size(), expectedPushes);
+                assertEquals(expectedPushes, promises.size());
 
                 promises.clear();
 
@@ -251,12 +252,12 @@ public class H3ConcurrentPush implements HttpServerAdapters {
                     client.sendAsync(HttpRequest.newBuilder(uri).build(), BodyHandlers.ofString())
                             .thenApply(H3ConcurrentPush::assert200ResponseCode)
                             .thenApply(HttpResponse::body)
-                            .thenAccept(body -> assertEquals(body, MAIN_RESPONSE_BODY))
+                            .thenAccept(body -> assertEquals(MAIN_RESPONSE_BODY, body))
                             .join();
                 } catch (CompletionException c) {
                     throw new AssertionError(c.getCause());
                 }
-                assertEquals(promises.size(), 0);
+                assertEquals(0, promises.size());
 
                 // Send with no promise handler, but use pushId bigger than allowed.
                 // This should cause the connection to get closed
@@ -268,7 +269,7 @@ public class H3ConcurrentPush implements HttpServerAdapters {
                     client.sendAsync(bigger, BodyHandlers.ofString())
                             .thenApply(H3ConcurrentPush::assert200ResponseCode)
                             .thenApply(HttpResponse::body)
-                            .thenAccept(body -> assertEquals(body, MAIN_RESPONSE_BODY))
+                            .thenAccept(body -> assertEquals(MAIN_RESPONSE_BODY, body))
                             .join();
                     throw new AssertionError("Expected IOException not thrown");
                 } catch (CompletionException c) {
@@ -287,7 +288,7 @@ public class H3ConcurrentPush implements HttpServerAdapters {
                         throw new AssertionError("Unexpected exception: " + c.getCause(), c.getCause());
                     }
                 }
-                assertEquals(promises.size(), 0);
+                assertEquals(0, promises.size());
 
                 // the next time around we should have a new connection,
                 // so we can restart from scratch
@@ -298,7 +299,7 @@ public class H3ConcurrentPush implements HttpServerAdapters {
             var error = errors.stream().findFirst().orElse(null);
             if (error != null) throw error;
             var notified = custom.notified;
-            assertEquals(notified.size(), 9*4*2, "Unexpected notification: " + notified);
+            assertEquals(9*4*2, notified.size(), "Unexpected notification: " + notified);
         }
     }
 
