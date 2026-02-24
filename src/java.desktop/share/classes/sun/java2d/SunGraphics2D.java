@@ -829,7 +829,6 @@ public final class SunGraphics2D
             this.font = font;
             this.fontMetrics = null;
             this.validFontInfo = false;
-            //this.cachedFRC = null;
         }
     }
 
