@@ -594,7 +594,9 @@ void ObjectMonitor::enter_with_contention_mark(JavaThread* current, ObjectMonito
       ExitOnSuspend eos(this);
       {
         ThreadBlockInVMPreprocess<ExitOnSuspend> tbivs(current, eos, true /* allow_suspend */);
-        enter_internal(current, &node);
+        if (!enter_fast_track(current, &node)) {
+          enter_internal(current, &node, false /* reenter_path */);
+        }
         current->set_current_pending_monitor(nullptr);
         // We can go to a safepoint at the end of this block. If we
         // do a thread dump during that safepoint, then this thread will show
@@ -938,18 +940,66 @@ const char* ObjectMonitor::is_busy_to_string(stringStream* ss) {
   return ss->base();
 }
 
-void ObjectMonitor::do_self_park(JavaThread* current, bool do_timed_parked, jlong recheck_interval) {
-  if (do_timed_parked) {
-    current->_ParkEvent->park(recheck_interval);
-    // Increase the recheck_interval, but clamp the value.
-    recheck_interval *= 8;
-    if (recheck_interval > MAX_RECHECK_INTERVAL) {
-      recheck_interval = MAX_RECHECK_INTERVAL;
-    }
+bool ObjectMonitor::enter_fast_track(JavaThread* current, ObjectWaiter* current_node) {
+  assert(current != nullptr, "invariant");
+  assert(current->thread_state() == _thread_blocked, "invariant");
+  assert(current_node != nullptr, "invariant");
+  assert(current_node->_thread == current, "invariant");
+
+  // Try the lock - TATAS
+  if (try_lock(current) == TryLockResult::Success) {
+    assert(!has_successor(current), "invariant");
+    assert(has_owner(current), "invariant");
+    return true;
   }
-  else {
-    current->_ParkEvent->park();
+
+  assert(InitDone, "Unexpectedly not initialized");
+
+  // We try one round of spinning *before* enqueueing current.
+  //
+  // If the _owner is ready but OFFPROC we could use a YieldTo()
+  // operation to donate the remainder of this thread's quantum
+  // to the owner.  This has subtle but beneficial affinity
+  // effects.
+
+  if (try_spin(current)) {
+    assert(has_owner(current), "invariant");
+    assert(!has_successor(current), "invariant");
+    return true;
   }
+
+  // The Spin failed -- Enqueue and park the thread ...
+  assert(!has_successor(current), "invariant");
+  assert(!has_owner(current), "invariant");
+
+  // Enqueue "current" on ObjectMonitor's _entry_list.
+  //
+  // current_node acts as a proxy for current.
+  // As an aside, if were to ever rewrite the synchronization code mostly
+  // in Java, WaitNodes, ObjectMonitors, and Events would become 1st-class
+  // Java objects.  This would avoid awkward lifecycle and liveness issues,
+  // as well as eliminate a subset of ABA issues.
+  // TODO: eliminate ObjectWaiter and enqueue either Threads or Events.
+
+  current->_ParkEvent->reset();
+
+  if (try_lock_or_add_to_entry_list(current, current_node)) {
+    return true; // We got the lock.
+  }
+
+  // This thread is now added to the _entry_list.
+
+  // The lock might have been released while this thread was occupied queueing
+  // itself onto _entry_list.  To close the race and avoid "stranding" and
+  // progress-liveness failure we must resample-retry _owner before parking.
+  // Note the Dekker/Lamport duality: ST _entry_list; MEMBAR; LD Owner.
+  // In this case the ST-MEMBAR is accomplished with CAS().
+  //
+  // TODO: Defer all thread state transitions until park-time.
+  // Since state transitions are heavy and inefficient we'd like
+  // to defer the state transitions until absolutely necessary,
+  // and in doing so avoid some transitions ...
+  return false;
 }
 
 void ObjectMonitor::enter_internal(JavaThread* current, ObjectWaiter* current_node, bool reenter_path) {
@@ -957,65 +1007,6 @@ void ObjectMonitor::enter_internal(JavaThread* current, ObjectWaiter* current_no
   assert(current->thread_state() == _thread_blocked, "invariant");
   assert(current_node != nullptr, "invariant");
   assert(current_node->_thread == current, "invariant");
-
-  if (reenter_path) {
-    assert(_waiters > 0, "invariant");
-  } else {
-
-    // Try the lock - TATAS
-    if (try_lock(current) == TryLockResult::Success) {
-      assert(!has_successor(current), "invariant");
-      assert(has_owner(current), "invariant");
-      return;
-    }
-
-    assert(InitDone, "Unexpectedly not initialized");
-
-    // We try one round of spinning *before* enqueueing current.
-    //
-    // If the _owner is ready but OFFPROC we could use a YieldTo()
-    // operation to donate the remainder of this thread's quantum
-    // to the owner.  This has subtle but beneficial affinity
-    // effects.
-
-    if (try_spin(current)) {
-      assert(has_owner(current), "invariant");
-      assert(!has_successor(current), "invariant");
-      return;
-    }
-
-    // The Spin failed -- Enqueue and park the thread ...
-    assert(!has_successor(current), "invariant");
-    assert(!has_owner(current), "invariant");
-
-    // Enqueue "current" on ObjectMonitor's _entry_list.
-    //
-    // current_node acts as a proxy for current.
-    // As an aside, if were to ever rewrite the synchronization code mostly
-    // in Java, WaitNodes, ObjectMonitors, and Events would become 1st-class
-    // Java objects.  This would avoid awkward lifecycle and liveness issues,
-    // as well as eliminate a subset of ABA issues.
-    // TODO: eliminate ObjectWaiter and enqueue either Threads or Events.
-
-    current->_ParkEvent->reset();
-
-    if (try_lock_or_add_to_entry_list(current, current_node)) {
-      return; // We got the lock.
-    }
-
-    // This thread is now added to the _entry_list.
-
-    // The lock might have been released while this thread was occupied queueing
-    // itself onto _entry_list.  To close the race and avoid "stranding" and
-    // progress-liveness failure we must resample-retry _owner before parking.
-    // Note the Dekker/Lamport duality: ST _entry_list; MEMBAR; LD Owner.
-    // In this case the ST-MEMBAR is accomplished with CAS().
-    //
-    // TODO: Defer all thread state transitions until park-time.
-    // Since state transitions are heavy and inefficient we'd like
-    // to defer the state transitions until absolutely necessary,
-    // and in doing so avoid some transitions ...
-  }
 
   // If there are unmounted virtual threads ahead in the _entry_list we want
   // to do a timed-park instead to alleviate some deadlock cases where one
@@ -1042,16 +1033,20 @@ void ObjectMonitor::enter_internal(JavaThread* current, ObjectWaiter* current_no
 
     // If that fails, spin again.  Note that spin count may be zero so the above TryLock
     // is necessary.
-    if (reenter_path && try_spin(current)) {
+    if (try_spin(current)) {
       break;
     }
 
     // park self
-    if (reenter_path) {
-      OSThreadContendState osts(current->osthread());
-      do_self_park(current, do_timed_parked, recheck_interval);
+    if (do_timed_parked) {
+      current->_ParkEvent->park(recheck_interval);
+      // Increase the recheck_interval, but clamp the value.
+      recheck_interval *= 8;
+      if (recheck_interval > MAX_RECHECK_INTERVAL) {
+        recheck_interval = MAX_RECHECK_INTERVAL;
+      }
     } else {
-      do_self_park(current, do_timed_parked, recheck_interval);
+      current->_ParkEvent->park();
     }
 
     if (try_lock(current) == TryLockResult::Success) {
@@ -1064,7 +1059,7 @@ void ObjectMonitor::enter_internal(JavaThread* current, ObjectWaiter* current_no
     // We can defer clearing _succ until after the spin completes
     // try_spin() must tolerate being called with _succ == current.
     // Try yet another round of adaptive spinning.
-    if (!reenter_path && try_spin(current)) {
+    if (try_spin(current)) {
       break;
     }
 
@@ -1079,10 +1074,8 @@ void ObjectMonitor::enter_internal(JavaThread* current, ObjectWaiter* current_no
     // Invariant: after clearing _succ a thread *must* retry _owner before parking.
     OrderAccess::fence();
 
-    if (reenter_path) {
-      // See comment in notify_internal.
-      do_timed_parked |= current_node->_do_timed_park;
-    }
+    // See comment in notify_internal.
+    do_timed_parked |= current_node->_do_timed_park;
   }
 
   assert(has_owner(current), "invariant");
@@ -1913,9 +1906,11 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
       // This means the thread has been un-parked and added to the entry_list
       // in notify_internal, i.e. notified while waiting.
       guarantee(v == ObjectWaiter::TS_ENTER, "invariant");
+      OSThreadContendState osts(current->osthread());
       ExitOnSuspend eos(this);
       {
         ThreadBlockInVMPreprocess<ExitOnSuspend> tbivs(current, eos, true /* allow_suspend */);
+        assert( _waiters > 0, "invariant");
         enter_internal(current, &node, true /* reenter_path */);
         // We can go to a safepoint at the end of this block. If we
         // do a thread dump during that safepoint, then this thread will show
