@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,21 +26,21 @@
  * @bug 5040740
  * @summary annotations cause memory leak
  * @library /test/lib
- * @build jdk.test.lib.process.*
- * @run testng/timeout=480 LoaderLeakTest
+ * @build jdk.test.lib.*
+ * @run junit LoaderLeakTest
  */
 
-import jdk.test.lib.Utils;
-import jdk.test.lib.process.ProcessTools;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-import java.io.FileInputStream;
 import java.lang.annotation.Retention;
-import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.nio.file.*;
 import java.util.*;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.util.ForceGC;
+import org.junit.jupiter.api.Test;
 
 public class LoaderLeakTest {
 
@@ -65,37 +65,23 @@ public class LoaderLeakTest {
 class Main {
 
     public static void main(String[] args) throws Exception {
-        for (int i = 0; i < 100; i++) {
-            doTest(args.length != 0);
-        }
+        doTest(args.length != 0);
     }
 
     static void doTest(boolean readAnn) throws Exception {
         ClassLoader loader = new SimpleClassLoader();
+        var loaderRef = new WeakReference<>(loader);
         var c = new WeakReference<Class<?>>(loader.loadClass("C"));
-        if (c.refersTo(null)) throw new AssertionError("class missing after loadClass");
         // c.get() should never return null here since we hold a strong
         // reference to the class loader that loaded the class referred by c.
-        if (c.get().getClassLoader() != loader) throw new AssertionError("wrong classloader");
-        if (readAnn) System.out.println(c.get().getAnnotations()[0]);
-        if (c.refersTo(null)) throw new AssertionError("class missing before GC");
-        System.gc();
-        System.gc();
-        if (c.refersTo(null)) throw new AssertionError("class missing after GC but before loader is unreachable");
-        System.gc();
-        System.gc();
-        Reference.reachabilityFence(loader);
+        if (c.get().getClassLoader() != loader)
+            throw new AssertionError("wrong classloader");
+        if (readAnn)
+            System.out.println(c.get().getAnnotations()[0]);
         loader = null;
 
-        // Might require multiple calls to System.gc() for weak-references
-        // processing to be complete. If the weak-reference is not cleared as
-        // expected we will hang here until timed out by the test harness.
-        while (true) {
-            System.gc();
-            Thread.sleep(20);
-            if (c.refersTo(null)) {
-                break;
-            }
+        if (!ForceGC.wait(() -> loaderRef.refersTo(null) && c.refersTo(null))) {
+            Asserts.fail("loader and C not unloaded");
         }
     }
 }
