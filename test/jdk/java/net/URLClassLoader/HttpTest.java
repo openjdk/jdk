@@ -78,7 +78,6 @@ public class HttpTest {
 
     // Handlers specific to tests
     static Map<URI, HttpHandler> handlers = new ConcurrentHashMap<>();
-    static HttpHandler NOT_FOUND = e -> e.sendResponseHeaders(404, 0);
 
     // URLClassLoader with HTTP URL class path
     private static URLClassLoader loader;
@@ -126,6 +125,20 @@ public class HttpTest {
                 .path(path).toURL();
     }
 
+    // Add redirect handler for a given path
+    private static void redirect(String path, String target) {
+        handlers.put(URI.create(path), e -> {
+            e.getResponseHeaders().set("Location", target);
+            e.sendResponseHeaders(301, 0);
+        });
+    }
+
+    // Return 404 not found for a given path
+    private static void notFound(String path) {
+        handlers.put(URI.create(path),  e ->
+                e.sendResponseHeaders(404, 0));
+    }
+
     @AfterAll
     static void shutdown() {
         server.stop(2000);
@@ -149,6 +162,42 @@ public class HttpTest {
         );
     }
 
+    // Check that getResource follows redirects
+    @Test
+    void getResourceShouldFollowRedirect() {
+        redirect("/dir1/foo.gif", "/dir1/target.gif");
+        URL url = loader.getResource("foo.gif");
+        // Expect extra HEAD for redirect target
+        assertRequests(e -> e
+                .request("HEAD", "/dir1/foo.gif")
+                .request("HEAD", "/dir1/target.gif")
+        );
+
+        /*
+         * Note: Long-standing behavior is that URLClassLoader:getResource
+         * returns a URL for the requested resource, not the location redirected to
+         */
+        assertEquals("/dir1/foo.gif", url.getPath());
+
+    }
+
+    // Check that getResource treats a redirect to a not-found resource as a not-found resource
+    @Test
+    void getResourceRedirectTargetNotFound() {
+        redirect("/dir1/foo.gif", "/dir1/target.gif");
+        notFound("/dir1/target.gif");
+        URL url = loader.getResource("foo.gif");
+        // Expect extra HEAD for redirect target and next URL in search path
+        assertRequests(e -> e
+                .request("HEAD", "/dir1/foo.gif")
+                .request("HEAD", "/dir1/target.gif")
+                .request("HEAD", "/dir2/foo.gif")
+
+        );
+        // Should find URL for /dir2
+        assertEquals("/dir2/foo.gif", url.getPath());
+    }
+
     // Check that getResourceAsStream does one HEAD and one GET request
     @Test
     void getResourceAsStreamSingleGet() throws IOException {
@@ -167,11 +216,7 @@ public class HttpTest {
     // Check that getResourceAsStream follows redirects
     @Test
     void getResourceAsStreamFollowRedirect() throws IOException {
-        // Redirect /dir1/foo.gif => /dir1/target.gif
-        handlers.put(URI.create("/dir1/foo.gif"), e -> {
-            e.getResponseHeaders().set("Location", "/dir1/target.gif");
-            e.sendResponseHeaders(301, 0);
-        });
+        redirect("/dir1/foo.gif", "/dir1/target.gif");
         // Expect content from the redirected location
         try (var in = loader.getResourceAsStream("foo.gif")) {
             assertEquals("/dir1/target.gif",
@@ -196,7 +241,7 @@ public class HttpTest {
     @Test
     void getResourceTryNextPath() throws IOException {
         // Make the first path return 404
-        handlers.put(URI.create("/dir1/foo.gif"), NOT_FOUND);
+        notFound("/dir1/foo.gif");
         // Expect content from the second path
         try (var in = loader.getResourceAsStream("foo.gif")) {
             assertEquals("/dir2/foo.gif",
@@ -225,7 +270,7 @@ public class HttpTest {
     @Test
     void getResourcesShouldSkipFailedHead() throws IOException {
         // Make first path fail with 404
-        handlers.put(URI.create("/dir1/foos.gif"), NOT_FOUND);
+        notFound("/dir1/foos.gif");
         List<URL> resources = Collections.list(loader.getResources("foos.gif"));
         // Expect one HEAD for each path
         assertRequests(e ->  e
