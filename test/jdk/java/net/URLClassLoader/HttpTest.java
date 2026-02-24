@@ -177,7 +177,13 @@ public class HttpTest {
             assertEquals("/dir1/target.gif",
                     new String(in.readAllBytes(), StandardCharsets.UTF_8));
         }
-        // Expect two HEAD, two GET
+
+        /*
+         * Note: Long standing behavior of URLClassLoader::getResourceAsStream
+         * is to use HEAD during the findResource resource discovery and to not
+         * "remember" the HEAD redirect location when performing the GET. This
+         * explains why we observe two redirects here, one for HEAD, one for GET.
+         */
         assertRequests( e -> e
                 .request("HEAD", "/dir1/foo.gif")
                 .request("HEAD", "/dir1/target.gif")
