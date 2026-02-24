@@ -55,11 +55,8 @@ protected:
   static int _max_supported_sve_vector_length;
   static bool _rop_protection;
   static uintptr_t _pac_mask;
-  // This field controls whether the merging mode should be preferred for SVE
-  // cpy instructions. When it is true, `cpy (imm, zeroing)` is implemented
-  // using `movi + cpy(imm, merging)`. Currently, it is enabled on all AArch64
-  // CPUs. This field is intended for future SVE microarchitectures that may
-  // have different performance characteristics for this optimization.
+  // When _prefer_sve_merging_mode_cpy is true, `cpy (imm, zeroing)` is
+  // implemented as `movi; cpy(imm, merging)`.
   static constexpr bool _prefer_sve_merging_mode_cpy = true;
 
   static SpinWait _spin_wait;

@@ -2859,8 +2859,14 @@ void C2_MacroAssembler::vector_expand_sve(FloatRegister dst, FloatRegister src, 
   sve_tbl(dst, size, src, dst);
 }
 
-void C2_MacroAssembler::sve_cpy_optimized(FloatRegister dst, SIMD_RegVariant T,
-                                          PRegister pg, int imm8, bool isMerge) {
+// Optimized SVE cpy (imm, zeroing) instruction.
+//
+// `movi; cpy(imm, merging)` and `cpy(imm, zeroing)` have the same
+// functionality, but test results show that `movi; cpy(imm, merging)` has
+// higher throughput on some microarchitectures. This would depend on
+// microarchitecture and so may vary between implementations.
+void C2_MacroAssembler::sve_cpy(FloatRegister dst, SIMD_RegVariant T,
+                                PRegister pg, int imm8, bool isMerge) {
   if (VM_Version::prefer_sve_merging_mode_cpy() && !isMerge) {
     // Generates a NEON instruction `movi V<dst>.2d, #0`.
     // On AArch64, Z and V registers alias in the low 128 bits, so V<dst> is
@@ -2871,5 +2877,5 @@ void C2_MacroAssembler::sve_cpy_optimized(FloatRegister dst, SIMD_RegVariant T,
     movi(dst, T2D, 0);
     isMerge = true;
   }
-  sve_cpy(dst, T, pg, imm8, isMerge);
+  Assembler::sve_cpy(dst, T, pg, imm8, isMerge);
 }
