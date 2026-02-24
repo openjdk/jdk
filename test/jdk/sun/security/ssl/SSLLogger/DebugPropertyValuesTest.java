@@ -112,17 +112,16 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
                 Arguments.of(List.of("-Djavax.net.debug=all"),
                         List.of("handshake", "keymanager", "packet",
                                 "plaintext", "record", "session", "ssl",
-                                "sslctx", "trustmanager", "verbose")),
+                                "sslctx", "trustmanager")),
                 // ssl should print most details except verbose details
                 Arguments.of(List.of("-Djavax.net.debug=ssl"),
                         List.of("handshake", "keymanager",
                                 "record", "session", "ssl",
-                                "sslctx", "trustmanager", "verbose")),
+                                "sslctx", "trustmanager")),
                 // allow expand option for more verbose output
                 Arguments.of(
                         List.of("-Djavax.net.debug=ssl,handshake,expand"),
-                        List.of("handshake", "handshake-expand",
-                                "ssl", "verbose")),
+                        List.of("handshake", "handshake-expand", "ssl")),
                 // filtering on record option, with expand
                 Arguments.of(List.of("-Djavax.net.debug=ssl:record,expand"),
                         List.of("record", "record-expand", "ssl")),
@@ -144,12 +143,12 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
                 Arguments.of(List.of("-Djavax.net.debug=ssl,typo"),
                         List.of("handshake", "keymanager",
                                 "record", "session", "ssl",
-                                "sslctx", "trustmanager", "verbose")),
+                                "sslctx", "trustmanager")),
                 // ssltypo contains "ssl". Treat like "ssl"
                 Arguments.of(List.of("-Djavax.net.debug=ssltypo"),
                         List.of("handshake", "keymanager",
                                 "record", "session", "ssl",
-                                "sslctx", "trustmanager", "verbose")),
+                                "sslctx", "trustmanager")),
                 // plaintext is valid for record option
                 Arguments.of(List.of("-Djavax.net.debug=ssl:record:plaintext"),
                         List.of("plaintext", "record", "ssl")),
@@ -170,7 +169,7 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
                         List.of("handshake", "javax.net.debug.logger",
                                 "keymanager", "packet", "plaintext",
                                 "record", "session", "ssl",
-                                "sslctx", "trustmanager", "verbose"))
+                                "sslctx", "trustmanager"))
         );
     }
 
