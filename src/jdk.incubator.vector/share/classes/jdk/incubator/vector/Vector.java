@@ -868,7 +868,7 @@ import java.util.Arrays;
  *
  * </li><li>The <em>logical result</em> {@code f(X)} of a vector
  * operation is the mathematical result of applying the operation
- * {@code f) to the input vector {@code X} without regard to output shape.
+ * {@code f} to the input vector {@code X} without regard to output shape.
  * For a lane-wise
  * operation, the logical output is simply the logical concatenation
  * of the lane-wise results, using the result type.  In general this
