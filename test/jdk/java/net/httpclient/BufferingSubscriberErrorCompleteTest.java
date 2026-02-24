@@ -121,7 +121,7 @@ public class BufferingSubscriberErrorCompleteTest {
         assertEquals(1, exposingSubscriber.onErrorInvocations);
         assertEquals(0, exposingSubscriber.onCompleteInvocations);
         assertEquals(t, exposingSubscriber.throwable);
-        assertEquals(                     "a message from me to me", exposingSubscriber.throwable.getMessage());
+        assertEquals("a message from me to me", exposingSubscriber.throwable.getMessage());
 
         furtherCancelsRequestsShouldBeNoOp(s);
         assertEquals(1, exposingSubscriber.onErrorInvocations);
