@@ -68,10 +68,14 @@ public class ApplicableIRRules implements JavaMessage {
         System.out.println();
         System.out.println("Applicable IR Rules");
         System.out.println("-------------------");
+        if (methods.isEmpty()) {
+            System.out.println("<none>");
+            return;
+        }
         for (var entry : methods.entrySet()) {
             String method = entry.getKey();
             String ruleIds = entry.getValue().stream().map(String::valueOf).collect(Collectors.joining(", "));
-            System.out.println("- " + method + ": " + ruleIds);
+            System.out.println("- " + method + "(): " + ruleIds);
         }
     }
 }
