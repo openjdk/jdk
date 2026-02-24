@@ -623,3 +623,51 @@ TEST(opto, range_inference) {
   test_binary<OpOr, InferOr>();
   test_binary<OpXor, InferXor>();
 }
+
+// Left shift tests
+template <class U>
+static U lshift_op(U v, int shift) {
+  return v << shift;
+}
+
+// Test correctness: for all values v in input, (v << shift) must be in the result
+template <class InputType>
+static void test_lshift_correctness(const InputType& input, int shift) {
+  using U = std::remove_const_t<decltype(input->_ulo)>;
+  auto result = RangeInference::infer_lshift(input, shift);
+  for (juint v = 0; v <= juint(std::numeric_limits<U>::max()); v++) {
+    if (input.contains(U(v))) {
+      ASSERT_TRUE(result.contains(lshift_op(U(v), shift)));
+    }
+  }
+}
+
+// Test monotonicity: if input is a subset of super, then result is a subset of
+// infer_lshift(super, shift)
+template <class InputType>
+static void test_lshift_monotonicity(const InputType& input, int shift) {
+  auto result = RangeInference::infer_lshift(input, shift);
+  for (const InputType& super : all_instances<InputType>()) {
+    if (super.contains(input)) {
+      ASSERT_TRUE(RangeInference::infer_lshift(super, shift).contains(result));
+    }
+  }
+}
+
+template <class InputType>
+static void test_lshift_for_type() {
+  using U = std::remove_const_t<decltype(InputType::_ulo)>;
+  constexpr int type_bits = sizeof(U) * 8;
+  for (const InputType& input : all_instances<InputType>()) {
+    for (int shift = 0; shift < type_bits; shift++) {
+      test_lshift_correctness(input, shift);
+      test_lshift_monotonicity(input, shift);
+    }
+  }
+}
+
+TEST(opto, range_inference_lshift) {
+  test_lshift_for_type<TypeIntMirror<intn_t<1>, uintn_t<1>>>();
+  test_lshift_for_type<TypeIntMirror<intn_t<2>, uintn_t<2>>>();
+  test_lshift_for_type<TypeIntMirror<intn_t<3>, uintn_t<3>>>();
+}

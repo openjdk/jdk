@@ -1143,9 +1143,9 @@ const Type* LShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
     return t1;
   }
 
-  // Either input is BOTTOM ==> the result is BOTTOM
-  if ((t1 == TypeInteger::bottom(bt)) || (t2 == TypeInt::INT) ||
-      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM)) {
+  // If the left input is BOTTOM or if nothing is known about the shift amount,
+  // then the result is BOTTOM
+  if (t2 == TypeInt::INT || t1 == Type::BOTTOM || t2 == Type::BOTTOM) {
     return TypeInteger::bottom(bt);
   }
 
@@ -1174,14 +1174,12 @@ const Type* LShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
       assert((java_shift_right(java_shift_left(hi, shift, bt),  shift, bt) == hi) == (((hi_int << shift) >> shift) == hi_int), "inconsistent");
     }
 #endif
-    if (java_shift_right(java_shift_left(lo, shift, bt),  shift, bt) == lo &&
-        java_shift_right(java_shift_left(hi, shift, bt), shift, bt) == hi) {
-      // No overflow.  The range shifts up cleanly.
-      return TypeInteger::make(java_shift_left(lo, shift, bt),
-                               java_shift_left(hi,  shift, bt),
-                               MAX2(r1->_widen, r2->_widen), bt);
+
+    if (bt == T_INT) {
+        return RangeInference::infer_lshift(r1->is_int(), shift);
     }
-    return TypeInteger::bottom(bt);
+
+    return RangeInference::infer_lshift(r1->is_long(), shift);
   }
 
   return TypeInteger::make(java_shift_left(r1->get_con_as_long(bt), shift, bt), bt);

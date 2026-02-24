@@ -84,6 +84,7 @@ public:
   constexpr bool operator>(intn_t o) const { return int(*this) > int(o); }
   constexpr bool operator<=(intn_t o) const { return int(*this) <= int(o); }
   constexpr bool operator>=(intn_t o) const { return int(*this) >= int(o); }
+  constexpr intn_t operator>>(unsigned int s) const { return intn_t(int(*this) >> s); }
 };
 
 template <unsigned int nbits>
