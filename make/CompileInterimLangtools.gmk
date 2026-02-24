@@ -74,10 +74,13 @@ TARGETS += $(BUILDTOOLS_OUTPUTDIR)/gensrc/java.compiler.interim/javax/tools/Tool
 
 $(BUILDTOOLS_OUTPUTDIR)/gensrc/java.base.interim/jdk/internal/javac/PreviewFeature.java: \
     $(TOPDIR)/src/java.base/share/classes/jdk/internal/javac/PreviewFeature.java
-	$(call LogInfo, Generating $(BUILDTOOLS_OUTPUTDIR)/gensrc/java.base.interim/jdk/internal/javac/PreviewFeature.java)
+	$(call LogInfo, Generating $@)
 	$(JAVA) $(TOPDIR)/make/langtools/tools/previewfeature/SetupPreviewFeature.java \
             $(TOPDIR)/src/java.base/share/classes/jdk/internal/javac/PreviewFeature.java \
             $@
+	$(call LogInfo, Generated $@)
+	$(CAT) <$@
+
 
 TARGETS += $(BUILDTOOLS_OUTPUTDIR)/gensrc/java.base.interim/jdk/internal/javac/PreviewFeature.java
 
