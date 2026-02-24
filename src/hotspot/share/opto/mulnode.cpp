@@ -1532,15 +1532,20 @@ Node* URShiftINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node *add = in(1);
   if (in1_op == Op_AddI) {
     Node *lshl = add->in(1);
+    Node *y    = add->in(2);
+    if (lshl->Opcode() != Op_LShiftI) {
+      lshl = add->in(2);
+      y    = add->in(1);
+    }
     // Compare shift counts by value, not by node pointer, to also match a not-yet-normalized
     // negative constant (e.g. -1 vs 31)
     int lshl_con = 0;
     if (lshl->Opcode() == Op_LShiftI &&
         const_shift_count(phase, lshl, &lshl_con) &&
         (lshl_con & (BitsPerJavaInteger - 1)) == con) {
-      Node *y_z = phase->transform( new URShiftINode(add->in(2),in(2)) );
-      Node *sum = phase->transform( new AddINode( lshl->in(1), y_z ) );
-      return new AndINode( sum, phase->intcon(mask) );
+      Node *y_z = phase->transform(new URShiftINode(y, in(2)));
+      Node *sum = phase->transform(new AddINode(lshl->in(1), y_z));
+      return new AndINode(sum, phase->intcon(mask));
     }
   }
 
@@ -1691,13 +1696,18 @@ Node* URShiftLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   const TypeInt *t2 = phase->type(in(2))->isa_int();
   if (add->Opcode() == Op_AddL) {
     Node *lshl = add->in(1);
+    Node *y    = add->in(2);
+    if (lshl->Opcode() != Op_LShiftL) {
+      lshl = add->in(2);
+      y    = add->in(1);
+    }
     // Compare shift counts by value, not by node pointer, to also match a not-yet-normalized
     // negative constant (e.g. -1 vs 63)
     int lshl_con = 0;
     if (lshl->Opcode() == Op_LShiftL &&
         const_shift_count(phase, lshl, &lshl_con) &&
         (lshl_con & (BitsPerJavaLong - 1)) == con) {
-      Node* y_z = phase->transform(new URShiftLNode(add->in(2), in(2)));
+      Node* y_z = phase->transform(new URShiftLNode(y, in(2)));
       Node* sum = phase->transform(new AddLNode(lshl->in(1), y_z));
       return new AndLNode(sum, phase->longcon(mask));
     }

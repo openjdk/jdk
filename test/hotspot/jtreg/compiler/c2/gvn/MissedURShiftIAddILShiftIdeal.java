@@ -22,31 +22,111 @@
  */
 package compiler.c2.gvn;
 
+import compiler.lib.ir_framework.*;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
+import java.util.Random;
+
 /*
  * @test
  * @bug 8378413
- * @summary ((x << C) + y) >>> C Ideal optimization missed after remix_address_expressions
- *          swaps AddI edges without notifying IGVN.
- *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation
- *                   -XX:+UnlockDiagnosticVMOptions -XX:VerifyIterativeGVN=1110
- *                   -Xbatch ${test.main.class}
+ * @key randomness
+ * @summary Verify that URShift{I,L}Node::Ideal optimizes ((x << C) + y) >>> C
+ *          regardless of Add input order, i.e. it is commutative w.r.t. the addition.
+ * @library /test/lib /
+ * @run driver compiler.c2.gvn.MissedURShiftIAddILShiftIdeal
  */
-
 public class MissedURShiftIAddILShiftIdeal {
 
-    static int test(int y, int[] arr) {
-        int sum = 0;
-        for (int i = 0; i < arr.length; i++) {
-            sum += ((arr[i] << 3) + y) >>> 3;
-        }
-        return sum;
-    }
+    private static final Random RANDOM = Utils.getRandomInstance();
 
     public static void main(String[] args) {
-        int[] arr = new int[1];
-        for (int i = 0; i < 20_000; i++) {
-            test(42, arr);
-        }
+        TestFramework.run();
+    }
+
+    @Run(test = {"testI", "testICommuted", "testIComputedY",
+                  "testL", "testLCommuted", "testLComputedY"})
+    public void runMethod() {
+        int xi = RANDOM.nextInt();
+        int yi = RANDOM.nextInt();
+        int ai = RANDOM.nextInt();
+        int bi = RANDOM.nextInt();
+        long xl = RANDOM.nextLong();
+        long yl = RANDOM.nextLong();
+        long al = RANDOM.nextLong();
+        long bl = RANDOM.nextLong();
+
+        assertResultI(xi, yi, ai, bi);
+        assertResultL(xl, yl, al, bl);
+    }
+
+    @DontCompile
+    public void assertResultI(int x, int y, int a, int b) {
+        Asserts.assertEQ(((x << 3) + y) >>> 3, testI(x, y));
+        Asserts.assertEQ((y + (x << 5)) >>> 5, testICommuted(x, y));
+        Asserts.assertEQ(((x << 7) + (a ^ b)) >>> 7, testIComputedY(x, a, b));
+    }
+
+    @DontCompile
+    public void assertResultL(long x, long y, long a, long b) {
+        Asserts.assertEQ(((x << 9) + y) >>> 9, testL(x, y));
+        Asserts.assertEQ((y + (x << 11)) >>> 11, testLCommuted(x, y));
+        Asserts.assertEQ(((x << 13) + (a ^ b)) >>> 13, testLComputedY(x, a, b));
+    }
+
+    @Test
+    // ((x << 3) + y) >>> 3  =>  (x + (y >>> 3)) & mask
+    @IR(counts = {IRNode.LSHIFT_I,  "0",
+                  IRNode.URSHIFT_I, "1",
+                  IRNode.AND_I,     "1"})
+    static int testI(int x, int y) {
+        return ((x << 3) + y) >>> 3;
+    }
+
+    @Test
+    // (y + (x << 5)) >>> 5  =>  (x + (y >>> 5)) & mask  (commuted Add)
+    @IR(counts = {IRNode.LSHIFT_I,  "0",
+                  IRNode.URSHIFT_I, "1",
+                  IRNode.AND_I,     "1"})
+    static int testICommuted(int x, int y) {
+        return (y + (x << 5)) >>> 5;
+    }
+
+    @Test
+    // ((x << 7) + (a ^ b)) >>> 7  =>  (x + ((a ^ b) >>> 7)) & mask
+    // Computed y (a ^ b) has higher _idx than LShift, so LShift stays in Add's in(1).
+    @IR(counts = {IRNode.LSHIFT_I,  "0",
+                  IRNode.URSHIFT_I, "1",
+                  IRNode.AND_I,     "1"})
+    static int testIComputedY(int x, int a, int b) {
+        return ((x << 7) + (a ^ b)) >>> 7;
+    }
+
+    @Test
+    // ((x << 9) + y) >>> 9  =>  (x + (y >>> 9)) & mask
+    @IR(counts = {IRNode.LSHIFT_L,  "0",
+                  IRNode.URSHIFT_L, "1",
+                  IRNode.AND_L,     "1"})
+    static long testL(long x, long y) {
+        return ((x << 9) + y) >>> 9;
+    }
+
+    @Test
+    // (y + (x << 11)) >>> 11  =>  (x + (y >>> 11)) & mask  (commuted Add)
+    @IR(counts = {IRNode.LSHIFT_L,  "0",
+                  IRNode.URSHIFT_L, "1",
+                  IRNode.AND_L,     "1"})
+    static long testLCommuted(long x, long y) {
+        return (y + (x << 11)) >>> 11;
+    }
+
+    @Test
+    // ((x << 13) + (a ^ b)) >>> 13  =>  (x + ((a ^ b) >>> 13)) & mask
+    // Computed y (a ^ b) has higher _idx than LShift, so LShift stays in Add's in(1).
+    @IR(counts = {IRNode.LSHIFT_L,  "0",
+                  IRNode.URSHIFT_L, "1",
+                  IRNode.AND_L,     "1"})
+    static long testLComputedY(long x, long a, long b) {
+        return ((x << 13) + (a ^ b)) >>> 13;
     }
 }

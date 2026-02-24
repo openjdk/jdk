@@ -606,7 +606,6 @@ Node* PhaseIdealLoop::remix_address_expressions(Node* n) {
     if (n2_loop == n_loop) {
       assert(n1_loop != n_loop, "");
       n->swap_edges(1, 2);
-      _igvn._worklist.push(n);
     }
   }
 
