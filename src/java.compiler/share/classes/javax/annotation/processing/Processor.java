@@ -101,13 +101,14 @@ import javax.lang.model.SourceVersion;
  * supports, possibly an empty set.
  *
  * For a given round, the tool computes the set of annotation
- * interfaces that are present on the elements {@linkplain RoundEnvironment#getElementsAnnotatedWith(TypeElement) included} within the
- * root elements.  If there is at least one annotation interface
- * present, then as processors claim annotation interfaces, they are
- * removed from the set of unmatched annotation interfaces.  When the
- * set is empty or no more processors are available, the round has run
- * to completion.  If there are no annotation interfaces present,
- * annotation processing still occurs but only <i>universal
+ * interfaces that are present on the elements {@linkplain
+ * RoundEnvironment#getElementsAnnotatedWith(TypeElement) included}
+ * within the root elements.  If there is at least one annotation
+ * interface present, then as processors claim annotation interfaces,
+ * they are removed from the set of unmatched annotation interfaces.
+ * When the set is empty or no more processors are available, the
+ * round has run to completion.  If there are no annotation interfaces
+ * present, annotation processing still occurs but only <i>universal
  * processors</i> which support processing all annotation interfaces,
  * {@code "*"}, can claim the (empty) set of annotation interfaces.
  *
