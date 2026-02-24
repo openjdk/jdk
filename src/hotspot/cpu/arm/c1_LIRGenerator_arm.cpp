@@ -737,8 +737,31 @@ void LIRGenerator::do_CompareOp(CompareOp* x) {
 #endif // __SOFTFP__
 }
 
+
+void LIRGenerator::arm_cas_long(LIR_Opr addr, LIRItem& cmp_value, LIRItem& new_value, LIR_Opr &result) {
+  address func = StubRoutines::Arm::atomic_compareAndSet_long_entry();
+
+  BasicTypeList signature;
+  signature.append(T_LONG);
+  signature.append(T_LONG);
+  signature.append(T_ADDRESS);
+
+  CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+  cmp_value.load_item_force(cc->at(0));
+  new_value.load_item_force(cc->at(1));
+  __ move(addr->as_address_ptr()->base(), cc->at(2));
+  assert(addr->as_address_ptr()->disp() == 0, "must be");
+
+  LIR_OprList *args = new LIR_OprList(3);
+  args->append(cmp_value.result());
+  args->append(new_value.result());
+  args->append(cc->at(2));
+
+  __ call_runtime_leaf(func, LIR_OprFact::illegalOpr, FrameMap::Int_result_opr, args);
+  __ move(FrameMap::Int_result_opr, result);
+}
+
 LIR_Opr LIRGenerator::atomic_cmpxchg(BasicType type, LIR_Opr addr, LIRItem& cmp_value, LIRItem& new_value) {
-  LIR_Opr ill = LIR_OprFact::illegalOpr;  // for convenience
   LIR_Opr tmp1 = LIR_OprFact::illegalOpr;
   LIR_Opr tmp2 = LIR_OprFact::illegalOpr;
   new_value.load_item();
@@ -749,8 +772,14 @@ LIR_Opr LIRGenerator::atomic_cmpxchg(BasicType type, LIR_Opr addr, LIRItem& cmp_
   } else if (type == T_INT) {
     __ cas_int(addr->as_address_ptr()->base(), cmp_value.result(), new_value.result(), tmp1, tmp1, result);
   } else if (type == T_LONG) {
-    tmp1 = new_register(T_LONG);
-    __ cas_long(addr->as_address_ptr()->base(), cmp_value.result(), new_value.result(), tmp1, tmp2, result);
+    if (ProfileCaptureRatio > 1) {
+      // Call out to runtime because we don't have enough registers to
+      // expand compareAndSet(long) inline.
+      arm_cas_long(addr, cmp_value, new_value, result);
+    } else {
+      tmp1 = new_register(T_LONG);
+      __ cas_long(addr->as_address_ptr()->base(), cmp_value.result(), new_value.result(), tmp1, tmp2, result);
+    }
   } else {
     ShouldNotReachHere();
   }
@@ -1275,6 +1304,11 @@ void LIRGenerator::do_If(If* x) {
 
   __ cmp(lir_cond(cond), left, right);
   profile_branch(x, cond);
+  // If we're subsampling counter updates, then profiling code kills flags
+  // if (ProfileCaptureRatio != 1)
+    {
+    __ cmp(lir_cond(cond), left, right);
+  }
   move_to_phi(x->state());
   if (x->x()->type()->is_float_kind()) {
     __ branch(lir_cond(cond), x->tsux(), x->usux());

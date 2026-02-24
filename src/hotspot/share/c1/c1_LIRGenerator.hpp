@@ -279,6 +279,8 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   // convenience functions
   LIR_Opr call_runtime(Value arg1, address entry, ValueType* result_type, CodeEmitInfo* info);
   LIR_Opr call_runtime(Value arg1, Value arg2, address entry, ValueType* result_type, CodeEmitInfo* info);
+  LIR_Opr call_runtime(LIR_Opr arg1, LIR_Opr arg2, LIR_Opr arg3, LIR_Opr result,
+                       address entry, ValueType* result_type, CodeEmitInfo* info);
 
   // Access API
 

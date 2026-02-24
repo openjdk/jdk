@@ -54,6 +54,8 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
   raw_push(FP, LR);
   sub_slow(SP, SP, frame_size_in_bytes);
 
+  restore_profile_rng();
+
   // Insert nmethod entry barrier into frame.
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->nmethod_entry_barrier(this);
@@ -62,6 +64,7 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
 void C1_MacroAssembler::remove_frame(int frame_size_in_bytes) {
   add_slow(SP, SP, frame_size_in_bytes);
   raw_pop(FP, LR);
+  save_profile_rng();
 }
 
 void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
@@ -221,6 +224,63 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register basic
   fast_unlock(obj, t1, t2, t3, 1 /* savemask - save t1 */, slow_case);
   // Success: fall through
 }
+
+// Increments mdp data. Sets bumped_count register to adjusted counter.
+void C1_MacroAssembler::increment_mdp_data_at(Address data,
+                                              Register bumped_count,
+                                              int increment) {
+  assert(ProfileInterpreter, "must be profiling interpreter");
+  assert_different_registers(data.base(), Rtemp);
+  assert(data.mode() == basic_offset, "must be");
+
+  int offset = data.disp();
+  bool is_memoryI =  offset < 4096 && offset > -4096;
+
+  if (!is_memoryI) {
+    block_comment("Move slow");
+    mov_slow(Rtemp, offset);
+    data = Address(data.base(), Rtemp);
+  }
+  ldr(bumped_count, data);
+  if (increment < 0) {
+    sub(bumped_count, bumped_count, -increment);
+  } else {
+    add(bumped_count, bumped_count, increment);
+  }
+  str(bumped_count, data);
+}
+
+// Randomized profile capture.
+
+void C1_MacroAssembler::step_random(Register state, Register temp, Register data) {
+  // if (VM_Version::supports_crc32()) {
+  //   /* CRC used as a psuedo-random-number generator */
+  //   // In effect, the CRC instruction is being used here for its
+  //   // linear feedback shift register. It's unbeatably fast, and
+  //   // plenty good enough for what we need.
+  //   crc32h(state, state, data);
+  // } else
+    {
+    /* LCG from glibc. */
+    mov_slow(temp, 1103515245);
+    mul(state, state, temp);
+    // add(state, state, 12345);
+    add(state, state, 251);
+  }
+}
+
+void C1_MacroAssembler::save_profile_rng() {
+  if (ProfileCaptureRatio != 1) {
+    str(r_profile_rng, Address(Rthread, JavaThread::profile_rng_offset()));
+  }
+}
+
+void C1_MacroAssembler::restore_profile_rng() {
+  if (ProfileCaptureRatio != 1) {
+    ldr(r_profile_rng, Address(Rthread, JavaThread::profile_rng_offset()));
+  }
+}
+
 
 #ifndef PRODUCT
 

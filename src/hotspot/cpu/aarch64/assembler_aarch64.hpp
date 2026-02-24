@@ -459,7 +459,7 @@ class Address {
 
   Address(address target, relocInfo::relocType rtype = relocInfo::external_word_type);
 
-  Address(Register base, RegisterOrConstant index, extend ext = lsl()) {
+  Address(Register base, RegisterOrConstant index, extend ext = lsl(0)) {
     if (index.is_register()) {
       _mode = base_plus_offset_reg;
       new (&_nonliteral) Nonliteral(base, index.as_register(), 0, ext);

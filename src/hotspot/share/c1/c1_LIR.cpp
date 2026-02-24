@@ -900,12 +900,16 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       assert(opr != nullptr, "must be");
 
       if (opr->_info)                      do_info(opr->_info);
-      do_input(opr->_counter_addr);        do_temp(opr->_counter_addr);
       do_input(opr->_step);                do_temp(opr->_step);
-      if (opr->_dest->is_valid())          { do_output(opr->_dest); }
-      if (opr->_temp_op->is_valid())       do_temp(opr->_temp_op);
+      if (opr->_result->is_valid()) {
+        do_temp(opr->_result);             do_output(opr->_result);
+      }
       if (opr->overflow_stub() != nullptr) do_stub(opr->overflow_stub());
-
+      if (opr->_md_reg->is_valid())        do_temp(opr->_md_reg);
+      if (opr->_md_op->is_valid())         { do_input(opr->_md_op); }
+      if (opr->_md_offset_op->is_valid()) {
+        do_input(opr->_md_offset_op);      do_temp(opr->_md_offset_op);
+      }
       break;
     }
 
@@ -1073,7 +1077,8 @@ void LIR_OpAssert::emit_code(LIR_Assembler* masm) {
 
 void LIR_OpIncrementCounter::emit_code(LIR_Assembler* masm) {
   masm->increment_profile_ctr
-    (_step, _counter_addr, _dest, _temp_op, _freq_op, _overflow_stub);
+    (_step, _result, _freq_op,
+     _md_reg, _md_op, _md_offset_op, _overflow_stub);
   if (overflow_stub()) {
     masm->append_code_stub(overflow_stub());
   }
@@ -1284,14 +1289,17 @@ void LIR_List::volatile_store_unsafe_reg(LIR_Opr src, LIR_Opr base, LIR_Opr offs
 }
 
 
-void LIR_List::increment_counter(LIR_Opr step, LIR_Address* addr, LIR_Opr dest, LIR_Opr tmp,
-                                 LIR_Opr freq, CodeStub* overflow, CodeEmitInfo* info) {
+void LIR_List::increment_counter(LIR_Opr step, LIR_Opr dest,
+                                 LIR_Opr freq,
+                                 LIR_Opr md_reg, LIR_Opr md_op, LIR_Opr md_offset_op,
+                                 CodeStub* overflow, CodeEmitInfo* info) {
     append(new LIR_OpIncrementCounter (
             step,
-            LIR_OprFact::address(addr),
             dest,
-            tmp,
             freq,
+            md_reg,
+            md_op,
+            md_offset_op,
             overflow,
             info));
 }
@@ -1840,7 +1848,7 @@ void LIR_OpCompareAndSwap::print_instr(outputStream* out) const {
   new_value()->print(out); out->print(" ");
   tmp1()->print(out);      out->print(" ");
   tmp2()->print(out);      out->print(" ");
-
+  result_opr()->print(out); out->print(" ");
 }
 
 // LIR_Op0
@@ -1881,6 +1889,15 @@ void LIR_OpRTCall::print_instr(outputStream* out) const {
   out->print("%s", Runtime1::name_for_address(addr()));
   out->print(" ");
   tmp()->print(out);
+  int n = _arguments->length();
+  for (int i = 0; i < n; i++) {
+    _arguments->at(i)->print(out);
+    out->print(" ");
+  }
+  if (_result->is_valid()) {
+    _result->print(out);
+    out->print(" ");
+  }
 }
 
 void LIR_Op1::print_patch_code(outputStream* out, LIR_PatchCode code) {
@@ -2086,11 +2103,14 @@ void LIR_OpProfileType::print_instr(outputStream* out) const {
 
 void LIR_OpIncrementCounter::print_instr(outputStream* out) const {
   step()->print(out);          out->print(" ");
-  counter_addr()->print(out);  out->print(" ");
   dest()->print(out);          out->print(" ");
-  temp_op()->print(out);       out->print(" ");
+  // temp_op()->print(out);       out->print(" ");
   freq_op()->print(out);       out->print(" ");
+  md_reg()->print(out);        out->print(" ");
+  md_op()->print(out);         out->print(" ");
+  md_offset_op()->print(out);  out->print(" ");
 }
+
 #endif // PRODUCT
 
 // Implementation of LIR_InsertionBuffer
