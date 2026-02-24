@@ -29,7 +29,7 @@
  * @summary VectorMaskToLong constant folding through VectorStoreMask must work under StressIncrementalInlining
  * @modules jdk.incubator.vector
  *
- * @run driver compiler.vectorapi.TestVectorMaskToLongStress
+ * @run driver ${test.main.class}
  */
 
 package compiler.vectorapi;
@@ -172,9 +172,8 @@ public class TestVectorMaskToLongStress {
         TestFramework testFramework = new TestFramework();
         testFramework.addFlags("--add-modules=jdk.incubator.vector",
                                "-XX:+IgnoreUnrecognizedVMOptions",
-                               "-XX:+UnlockDiagnosticVMOptions",
-                               "-XX:-TieredCompilation",
                                "-XX:+StressIncrementalInlining",
+                               "-XX:CompileCommand=compileonly,compiler.vectorapi.TestVectorMaskToLongStress::*",
                                "-XX:VerifyIterativeGVN=1110")
                      .start();
     }
