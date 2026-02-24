@@ -302,10 +302,9 @@ static void generate_post_barrier(MacroAssembler* masm,
     __ xorptr(save, new_val);
     __ push(rcx);
     __ lea(rcx, ExternalAddress(grain_shift_addr));
-    __ movptr(rcx, Address(rcx, 0));
+    __ movl(rcx, Address(rcx, 0));
     __ shrptr(save);
     __ pop(rcx);
-    __ mov(tmp1, save);
     __ pop(save);
     __ jcc(Assembler::equal, L_done);
   } else
