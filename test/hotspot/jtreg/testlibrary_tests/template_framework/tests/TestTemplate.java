@@ -193,8 +193,10 @@ public class TestTemplate {
         expectRendererException(() -> testFailingHashtagName7(), "Is not a valid '#' replacement pattern: '#1' in 'asdf#1'.");
         expectRendererException(() -> testFailingDollarHashtagName1(), "Is not a valid '#' replacement pattern: '#' in '#$'.");
         expectRendererException(() -> testFailingDollarHashtagName2(), "Is not a valid '$' replacement pattern: '$' in '$#'.");
-        expectRendererException(() -> testFailingDollarHashtagName3(), "Is not a valid '#' replacement pattern: '#' in '#$name'.");
-        expectRendererException(() -> testFailingDollarHashtagName4(), "Is not a valid '$' replacement pattern: '$' in '$#name'.");
+        expectRendererException(() -> testFailingDollarHashtagName3(), "Found zero sized replacement pattern '#$'.");
+        expectRendererException(() -> testFailingDollarHashtagName4(), "Found zero sized replacement pattern '$#'.");
+        expectRendererException(() -> testFailingDollarHashtagName5(), "Found zero sized replacement pattern '#$'.");
+        expectRendererException(() -> testFailingDollarHashtagName6(), "Found zero sized replacement pattern '$#'.");
         expectRendererException(() -> testFailingHook(), "Hook 'Hook1' was referenced but not found!");
         expectRendererException(() -> testFailingSample1a(),  "No Name found for DataName.FilterdSet(MUTABLE, subtypeOf(int), supertypeOf(int))");
         expectRendererException(() -> testFailingSample1b(),  "No Name found for StructuralName.FilteredSet( subtypeOf(StructuralA) supertypeOf(StructuralA))");
@@ -3509,14 +3511,28 @@ public class TestTemplate {
 
     public static void testFailingDollarHashtagName3() {
         var template1 = Template.make(() -> scope(
-            "#$name" // empty hashtag name
+            "#$name" // Zero sized replacement
         ));
         String code = template1.render();
     }
 
     public static void testFailingDollarHashtagName4() {
         var template1 = Template.make(() -> scope(
-            "$#name" // empty dollar name
+            "$#name" // Zero sized replacement
+        ));
+        String code = template1.render();
+    }
+
+    public static void testFailingDollarHashtagName5() {
+        var template1 = Template.make(() -> scope(
+            "asdf#$abc" // Zero sized replacement
+        ));
+        String code = template1.render();
+    }
+
+    public static void testFailingDollarHashtagName6() {
+        var template1 = Template.make(() -> scope(
+            "asdf$#abc" // Zero sized replacement
         ));
         String code = template1.render();
     }

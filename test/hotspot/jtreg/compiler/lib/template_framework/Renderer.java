@@ -461,6 +461,12 @@ final class Renderer {
                 potentialStart = next + 1;
             }
 
+            if (next < s.length() - 2 && ((s.charAt(next) == '$' && s.charAt(potentialStart) == '#') ||
+                (s.charAt(next) == '#' && s.charAt(potentialStart) == '$'))) {
+                String pattern = s.substring(next, next + 2);
+                throw new RendererException("Found zero sized replacement pattern '" + pattern + "'.");
+            }
+
             String part = s.substring(start, next);
             if (escapeHash) {
                 part = part.replace("##", "#");
