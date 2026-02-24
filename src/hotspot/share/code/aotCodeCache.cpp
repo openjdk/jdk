@@ -1456,7 +1456,7 @@ void AOTCodeAddressTable::init_extrs() {
   // addresses of fields in AOT runtime constants area
   address* p = AOTRuntimeConstants::field_addresses_list();
   while (*p != nullptr) {
-    SET_ADDRESS(_extrs, p++);
+    SET_ADDRESS(_extrs, *p++);
   }
 
   _extrs_complete = true;
