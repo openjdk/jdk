@@ -181,9 +181,11 @@ public class UserCookieTest implements HttpServerAdapters {
 
             assertEquals(200, response.statusCode());
             assertEquals(MESSAGE, response.body());
-            assertEquals(                    expectedCookies.stream()
-                            .filter(s -> !s.startsWith("LOC"))
-                            .toList(), response.headers().allValues("X-Request-Cookie"));
+            List<String> expectedCookieList = expectedCookies.stream()
+                    .filter(s -> !s.startsWith("LOC")).toList();
+            List<String> actualCookieList = response.headers()
+                    .allValues("X-Request-Cookie");
+            assertEquals(expectedCookieList, actualCookieList);
             requestBuilder = HttpRequest.newBuilder(uri)
                     .header("X-uuid", "uuid-" + requestCounter.incrementAndGet())
                     .header("Cookie", userCookie);

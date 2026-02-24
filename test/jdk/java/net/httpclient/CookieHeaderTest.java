@@ -172,9 +172,11 @@ public class CookieHeaderTest implements HttpServerAdapters {
 
             assertEquals(200, response.statusCode());
             assertEquals(MESSAGE, response.body());
-            assertEquals(                    cookies.stream()
-                            .filter(s -> !s.startsWith("LOC"))
-                            .collect(Collectors.toList()), response.headers().allValues("X-Request-Cookie"));
+            List<String> expectedCookieList = cookies.stream()
+                    .filter(s -> !s.startsWith("LOC")).toList();
+            List<String> actualCookieList = response.headers()
+                    .allValues("X-Request-Cookie");
+            assertEquals(expectedCookieList, actualCookieList);
             if (version == HTTP_3 && i > 0) {
                 assertEquals(HTTP_3, response.version());
             }
