@@ -90,7 +90,8 @@ final class TempDirectory implements Closeable {
                                 throw ex;
                             } else {
                                 // Collect the list of leftover files. Collect at most the first 100 files.
-                                var remainingFiles = DirectoryListing.listFilesAndEmptyDirectories(path, 100).paths();
+                                var remainingFiles = DirectoryListing.listFilesAndEmptyDirectories(
+                                        path, MAX_REPORTED_UNDELETED_FILE_COUNT).paths();
 
                                 if (remainingFiles.equals(List.of(path))) {
                                     Log.info(I18N.format("warning.tempdir.cleanup-failed", path));
@@ -179,4 +180,6 @@ final class TempDirectory implements Closeable {
     private final Path path;
     private final boolean deleteOnClose;
     private final RetryExecutorFactory retryExecutorFactory;
+
+    private final static int MAX_REPORTED_UNDELETED_FILE_COUNT = 100;
 }

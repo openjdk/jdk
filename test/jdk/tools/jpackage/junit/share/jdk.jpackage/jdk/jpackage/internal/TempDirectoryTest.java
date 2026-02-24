@@ -120,7 +120,7 @@ public class TempDirectoryTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"100", "0"})
+    @CsvSource({"100", "101", "1", "0"})
     void test_DirectoryListing_listFilesAndEmptyDirectories_nonexistent(int limit, @TempDir Path root) throws IOException {
 
         var path = root.resolve("foo");
@@ -289,7 +289,7 @@ public class TempDirectoryTest {
         ;
 
         boolean isSuccess() {
-            return this ==  SUCCEED;
+            return this == SUCCEED;
         }
 
         boolean isVerbose() {
