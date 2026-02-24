@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,6 +107,15 @@ typeArrayOop oopFactory::new_typeArray_nozero(BasicType type, int length, TRAPS)
 objArrayOop oopFactory::new_objArray(Klass* klass, int length, TRAPS) {
   ArrayKlass* ak = klass->array_klass(CHECK_NULL);
   return ObjArrayKlass::cast(ak)->allocate_instance(length, THREAD);
+}
+
+refArrayOop oopFactory::new_refArray(Klass* klass, int length, TRAPS) {
+  ArrayKlass* array_type = klass->array_klass(CHECK_NULL);
+  ObjArrayKlass* oak = ObjArrayKlass::cast(array_type)->klass_with_properties(CHECK_NULL);
+  // Cast below must pass because the array description required a RefArrayKlass
+  RefArrayKlass* rak = RefArrayKlass::cast(oak);
+  oop array = rak->RefArrayKlass::allocate_instance(length, CHECK_NULL);
+  return refArrayOopDesc::cast(array);
 }
 
 objArrayHandle oopFactory::new_objArray_handle(Klass* klass, int length, TRAPS) {

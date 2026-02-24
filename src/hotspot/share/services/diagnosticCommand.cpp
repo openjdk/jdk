@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -434,7 +434,7 @@ void FinalizerInfoDCmd::execute(DCmdSource source, TRAPS) {
                          vmSymbols::get_finalizer_histogram_name(),
                          vmSymbols::void_finalizer_histogram_entry_array_signature(), CHECK);
 
-  objArrayOop result_oop = (objArrayOop) result.get_oop();
+  refArrayOop result_oop = refArrayOopDesc::cast(result.get_oop());
   if (result_oop->length() == 0) {
     output()->print_cr("No instances waiting for finalization found");
     return;

@@ -154,9 +154,9 @@ private:
     return (_loaded_heap_bottom <= o && o < _loaded_heap_top);
   }
 
-  static objArrayOop root_segment(int segment_idx);
+  static refArrayOop root_segment(int segment_idx);
   static void get_segment_indexes(int idx, int& seg_idx, int& int_idx);
-  static void add_root_segment(objArrayOop segment_oop);
+  static void add_root_segment(refArrayOop segment_oop);
   static void init_root_segment_sizes(int max_size_elems);
 
   template<bool IS_MAPPED>

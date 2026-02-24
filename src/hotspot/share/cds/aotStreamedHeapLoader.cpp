@@ -1051,7 +1051,7 @@ oop AOTStreamedHeapLoader::materialize_root(int root_index) {
   {
     MutexLocker ml(AOTHeapLoading_lock, Mutex::_safepoint_check_flag);
 
-    oop root = objArrayOop(_roots.resolve())->obj_at(root_index);
+    oop root = refArrayOopDesc::cast(_roots.resolve())->obj_at(root_index);
 
     if (root != nullptr) {
       // The root has already been materialized
@@ -1070,7 +1070,7 @@ oop AOTStreamedHeapLoader::materialize_root(int root_index) {
 }
 
 oop AOTStreamedHeapLoader::get_root(int index) {
-  oop result = objArrayOop(_roots.resolve())->obj_at(index);
+  oop result = refArrayOopDesc::cast(_roots.resolve())->obj_at(index);
   if (result == nullptr) {
     // Materialize root
     result = materialize_root(index);

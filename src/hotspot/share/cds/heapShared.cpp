@@ -596,8 +596,9 @@ void HeapShared::add_scratch_resolved_references(ConstantPool* src, objArrayOop 
   }
 }
 
-objArrayOop HeapShared::scratch_resolved_references(ConstantPool* src) {
-  return (objArrayOop)_scratch_objects_table->get_oop(src);
+refArrayOop HeapShared::scratch_resolved_references(ConstantPool* src) {
+  oop rr = _scratch_objects_table->get_oop(src);
+  return rr == nullptr ? nullptr : refArrayOopDesc::cast(rr);
 }
 
  void HeapShared::init_dumping() {

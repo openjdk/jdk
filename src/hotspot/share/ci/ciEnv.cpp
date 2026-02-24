@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1358,7 +1358,9 @@ void ciEnv::record_lambdaform(Thread* thread, oop form) {
   }
 
   // Check LambdaForm.names array
-  objArrayOop names = (objArrayOop)obj_field(form, "names");
+  // The type of the array is Name[] and Name is an identity class,
+  // so the array is always an array of references
+  refArrayOop names = refArrayOopDesc::cast(obj_field(form, "names"));
   if (names != nullptr) {
     RecordLocation lp0(this, "names");
     int len = names->length();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -245,8 +245,8 @@ class ConstantPool : public Metadata {
                                       TRAPS);
 
   // resolved strings, methodHandles and callsite objects from the constant pool
-  objArrayOop resolved_references()  const;
-  objArrayOop resolved_references_or_null()  const;
+  refArrayOop resolved_references()  const;
+  refArrayOop resolved_references_or_null()  const;
   oop resolved_reference_at(int obj_index) const;
   oop set_resolved_reference_at(int index, oop new_value);
 
@@ -604,7 +604,7 @@ class ConstantPool : public Metadata {
 
 #if INCLUDE_CDS
   // CDS support
-  objArrayOop prepare_resolved_references_for_archiving() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+  refArrayOop prepare_resolved_references_for_archiving() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   void remove_unshareable_info();
   void restore_unshareable_info(TRAPS);
 private:
@@ -645,7 +645,7 @@ private:
 
   void copy_bootstrap_arguments_at(int cp_index,
                                    int start_arg, int end_arg,
-                                   objArrayHandle info, int pos,
+                                   refArrayHandle info, int pos,
                                    bool must_resolve, Handle if_not_available, TRAPS) {
     constantPoolHandle h_this(THREAD, this);
     copy_bootstrap_arguments_at_impl(h_this, cp_index, start_arg, end_arg,
@@ -744,7 +744,7 @@ private:
                                       bool* status_return, TRAPS);
   static void copy_bootstrap_arguments_at_impl(const constantPoolHandle& this_cp, int cp_index,
                                                int start_arg, int end_arg,
-                                               objArrayHandle info, int pos,
+                                               refArrayHandle info, int pos,
                                                bool must_resolve, Handle if_not_available, TRAPS);
 
   // Exception handling

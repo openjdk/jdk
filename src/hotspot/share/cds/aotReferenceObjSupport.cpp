@@ -163,9 +163,9 @@ void AOTReferenceObjSupport::init_keep_alive_objs_table() {
   assert_at_safepoint(); // _keep_alive_objs_table uses raw oops
   oop a = _keep_alive_objs_array.resolve();
   if (a != nullptr) {
-    precond(a->is_objArray());
+    precond(a->is_refArray());
     precond(AOTReferenceObjSupport::is_enabled());
-    objArrayOop array = objArrayOop(a);
+    refArrayOop array = refArrayOopDesc::cast(a);
 
     _keep_alive_objs_table = new (mtClass)KeepAliveObjectsTable();
     for (int i = 0; i < array->length(); i++) {

@@ -4427,12 +4427,12 @@ void jdk_internal_foreign_abi_CallConv::serialize_offsets(SerializeClosure* f) {
 }
 #endif
 
-objArrayOop jdk_internal_foreign_abi_CallConv::argRegs(oop entry) {
-  return oop_cast<objArrayOop>(entry->obj_field(_argRegs_offset));
+refArrayOop jdk_internal_foreign_abi_CallConv::argRegs(oop entry) {
+  return oop_cast<refArrayOop>(entry->obj_field(_argRegs_offset));
 }
 
-objArrayOop jdk_internal_foreign_abi_CallConv::retRegs(oop entry) {
-  return oop_cast<objArrayOop>(entry->obj_field(_retRegs_offset));
+refArrayOop jdk_internal_foreign_abi_CallConv::retRegs(oop entry) {
+  return oop_cast<refArrayOop>(entry->obj_field(_retRegs_offset));
 }
 
 oop java_lang_invoke_MethodHandle::type(oop mh) {
