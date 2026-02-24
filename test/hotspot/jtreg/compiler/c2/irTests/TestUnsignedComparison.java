@@ -30,7 +30,7 @@ import static compiler.lib.ir_framework.IRNode.*;
 
 /*
  * @test
- * @bug 8276162
+ * @bug 8276162 8317521
  * @summary Test that unsigned comparison transformation works as intended.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestUnsignedComparison
@@ -75,6 +75,8 @@ public class TestUnsignedComparison {
     private static final int CONST_INDEX = 6;
     private static final int INT_CONST = INT_DATA[CONST_INDEX] + INT_MIN;
     private static final long LONG_CONST = LONG_DATA[CONST_INDEX] + LONG_MIN;
+    private static final int INT_XOR_CONST = INT_DATA[CONST_INDEX] ^ INT_MIN;
+    private static final long LONG_XOR_CONST = LONG_DATA[CONST_INDEX] ^ LONG_MIN;
 
     public static void main(String[] args) {
         TestFramework framework = new TestFramework();
@@ -342,58 +344,262 @@ public class TestUnsignedComparison {
     }
 
     @Test
-    @IR(failOn = {XOR_I})
-    @IR(counts = {ADD_I, "1"})
-    @IR(applyIfPlatform = {"aarch64", "true"}, counts = {AARCH64_ADD_I_REG_MIN, "1"})
-    public int testXorIntMin(int x) {
-        return x ^ INT_MIN;
+    @IR(failOn = {CMP_I, XOR_I})
+    @IR(counts = {CMP_U, "1"})
+    public boolean testIntXorVarEQ(int x, int y) {
+        return (x ^ INT_MIN) == (y ^ INT_MIN);
     }
 
     @Test
-    @IR(failOn = {XOR_L})
-    @IR(counts = {ADD_L, "1"})
-    @IR(applyIfPlatform = {"aarch64", "true"}, counts = {AARCH64_ADD_L_REG_MIN, "1"})
-    public long testXorLongMin(long x) {
-        return x ^ LONG_MIN;
+    @IR(failOn = {CMP_I, XOR_I})
+    @IR(counts = {CMP_U, "1"})
+    public boolean testIntXorVarNE(int x, int y) {
+        return (x ^ INT_MIN) != (y ^ INT_MIN);
     }
 
-    @Run(test = {"testXorIntMin", "testXorLongMin"})
-    public void checkTestXorMin() {
-        // x ^ MIN_VALUE flips the sign bit, same as x + MIN_VALUE
+    @Test
+    @IR(failOn = {CMP_I, XOR_I})
+    @IR(counts = {CMP_U, "1"})
+    public boolean testIntXorVarLT(int x, int y) {
+        return (x ^ INT_MIN) < (y ^ INT_MIN);
+    }
+
+    @Test
+    @IR(failOn = {CMP_I, XOR_I})
+    @IR(counts = {CMP_U, "1"})
+    public boolean testIntXorVarLE(int x, int y) {
+        return (x ^ INT_MIN) <= (y ^ INT_MIN);
+    }
+
+    @Test
+    @IR(failOn = {CMP_I, XOR_I})
+    @IR(counts = {CMP_U, "1"})
+    public boolean testIntXorVarGT(int x, int y) {
+        return (x ^ INT_MIN) > (y ^ INT_MIN);
+    }
+
+    @Test
+    @IR(failOn = {CMP_I, XOR_I})
+    @IR(counts = {CMP_U, "1"})
+    public boolean testIntXorVarGE(int x, int y) {
+        return (x ^ INT_MIN) >= (y ^ INT_MIN);
+    }
+
+    @Run(test = {"testIntXorVarEQ", "testIntXorVarNE",
+                 "testIntXorVarLT", "testIntXorVarLE",
+                 "testIntXorVarGT", "testIntXorVarGE"})
+    public void checkTestIntXorVar() {
+        // Verify the transformation "cmp (xor X min_jint) (xor Y min_jint)"
+        // to "cmpu X Y" (via xor -> add transformation)
         for (int i = 0; i < INT_DATA.length; i++) {
-            Asserts.assertEquals(testXorIntMin(INT_DATA[i]),
-                                 INT_DATA[i] + INT_MIN);
-        }
-        for (int i = 0; i < LONG_DATA.length; i++) {
-            Asserts.assertEquals(testXorLongMin(LONG_DATA[i]),
-                                 LONG_DATA[i] + LONG_MIN);
+            for (int j = 0; j < INT_DATA.length; j++) {
+                Asserts.assertEquals(testIntXorVarEQ(INT_DATA[i], INT_DATA[j]),
+                                     i == j);
+                Asserts.assertEquals(testIntXorVarNE(INT_DATA[i], INT_DATA[j]),
+                                     i != j);
+                Asserts.assertEquals(testIntXorVarLT(INT_DATA[i], INT_DATA[j]),
+                                     i <  j);
+                Asserts.assertEquals(testIntXorVarLE(INT_DATA[i], INT_DATA[j]),
+                                     i <= j);
+                Asserts.assertEquals(testIntXorVarGT(INT_DATA[i], INT_DATA[j]),
+                                     i >  j);
+                Asserts.assertEquals(testIntXorVarGE(INT_DATA[i], INT_DATA[j]),
+                                     i >= j);
+            }
         }
     }
 
     @Test
-    @IR(counts = {ADD_I, "1"})
-    @IR(applyIfPlatform = {"aarch64", "true"}, counts = {AARCH64_ADD_I_REG_MIN, "1"})
-    public int testAddIntMin(int x) {
-        return x + INT_MIN;
+    @IR(failOn = {CMP_I, XOR_I})
+    @IR(counts = {CMP_U, "1"})
+    public boolean testIntXorConEQ(int x) {
+        return (x ^ INT_MIN) == INT_XOR_CONST;
     }
 
     @Test
-    @IR(counts = {ADD_L, "1"})
-    @IR(applyIfPlatform = {"aarch64", "true"}, counts = {AARCH64_ADD_L_REG_MIN, "1"})
-    public long testAddLongMin(long x) {
-        return x + LONG_MIN;
+    @IR(failOn = {CMP_I, XOR_I})
+    @IR(counts = {CMP_U, "1"})
+    public boolean testIntXorConNE(int x) {
+        return (x ^ INT_MIN) != INT_XOR_CONST;
     }
 
-    @Run(test = {"testAddIntMin", "testAddLongMin"})
-    public void checkTestAddMin() {
-        // x + MIN_VALUE should be matched by addI_reg_min / addL_reg_min on AArch64
+    @Test
+    @IR(failOn = {CMP_I, XOR_I})
+    @IR(counts = {CMP_U, "1"})
+    public boolean testIntXorConLT(int x) {
+        return (x ^ INT_MIN) < INT_XOR_CONST;
+    }
+
+    @Test
+    @IR(failOn = {CMP_I, XOR_I})
+    @IR(counts = {CMP_U, "1"})
+    public boolean testIntXorConLE(int x) {
+        return (x ^ INT_MIN) <= INT_XOR_CONST;
+    }
+
+    @Test
+    @IR(failOn = {CMP_I, XOR_I})
+    @IR(counts = {CMP_U, "1"})
+    public boolean testIntXorConGT(int x) {
+        return (x ^ INT_MIN) > INT_XOR_CONST;
+    }
+
+    @Test
+    @IR(failOn = {CMP_I, XOR_I})
+    @IR(counts = {CMP_U, "1"})
+    public boolean testIntXorConGE(int x) {
+        return (x ^ INT_MIN) >= INT_XOR_CONST;
+    }
+
+    @Run(test = {"testIntXorConEQ", "testIntXorConNE",
+                 "testIntXorConLT", "testIntXorConLE",
+                 "testIntXorConGT", "testIntXorConGE"})
+    public void checkTestIntXorCon() {
+        // Verify the transformation "cmp (xor X min_jint) c"
+        // to "cmpu X (c ^ min_jint)" (via xor -> add transformation)
         for (int i = 0; i < INT_DATA.length; i++) {
-            Asserts.assertEquals(testAddIntMin(INT_DATA[i]),
-                                 INT_DATA[i] + INT_MIN);
+            Asserts.assertEquals(testIntXorConEQ(INT_DATA[i]),
+                                 i == CONST_INDEX);
+            Asserts.assertEquals(testIntXorConNE(INT_DATA[i]),
+                                 i != CONST_INDEX);
+            Asserts.assertEquals(testIntXorConLT(INT_DATA[i]),
+                                 i <  CONST_INDEX);
+            Asserts.assertEquals(testIntXorConLE(INT_DATA[i]),
+                                 i <= CONST_INDEX);
+            Asserts.assertEquals(testIntXorConGT(INT_DATA[i]),
+                                 i >  CONST_INDEX);
+            Asserts.assertEquals(testIntXorConGE(INT_DATA[i]),
+                                 i >= CONST_INDEX);
         }
+    }
+
+    @Test
+    @IR(failOn = {CMP_L, XOR_L})
+    @IR(counts = {CMP_UL, "1"})
+    public boolean testLongXorVarEQ(long x, long y) {
+        return (x ^ LONG_MIN) == (y ^ LONG_MIN);
+    }
+
+    @Test
+    @IR(failOn = {CMP_L, XOR_L})
+    @IR(counts = {CMP_UL, "1"})
+    public boolean testLongXorVarNE(long x, long y) {
+        return (x ^ LONG_MIN) != (y ^ LONG_MIN);
+    }
+
+    @Test
+    @IR(failOn = {CMP_L, XOR_L})
+    @IR(counts = {CMP_UL, "1"})
+    public boolean testLongXorVarLT(long x, long y) {
+        return (x ^ LONG_MIN) < (y ^ LONG_MIN);
+    }
+
+    @Test
+    @IR(failOn = {CMP_L, XOR_L})
+    @IR(counts = {CMP_UL, "1"})
+    public boolean testLongXorVarLE(long x, long y) {
+        return (x ^ LONG_MIN) <= (y ^ LONG_MIN);
+    }
+
+    @Test
+    @IR(failOn = {CMP_L, XOR_L})
+    @IR(counts = {CMP_UL, "1"})
+    public boolean testLongXorVarGT(long x, long y) {
+        return (x ^ LONG_MIN) > (y ^ LONG_MIN);
+    }
+
+    @Test
+    @IR(failOn = {CMP_L, XOR_L})
+    @IR(counts = {CMP_UL, "1"})
+    public boolean testLongXorVarGE(long x, long y) {
+        return (x ^ LONG_MIN) >= (y ^ LONG_MIN);
+    }
+
+    @Run(test = {"testLongXorVarEQ", "testLongXorVarNE",
+                 "testLongXorVarLT", "testLongXorVarLE",
+                 "testLongXorVarGT", "testLongXorVarGE"})
+    public void checkTestLongXorVar() {
+        // Verify the transformation "cmp (xor X min_jlong) (xor Y min_jlong)"
+        // to "cmpu X Y" (via xor -> add transformation)
         for (int i = 0; i < LONG_DATA.length; i++) {
-            Asserts.assertEquals(testAddLongMin(LONG_DATA[i]),
-                                 LONG_DATA[i] + LONG_MIN);
+            for (int j = 0; j < LONG_DATA.length; j++) {
+                Asserts.assertEquals(testLongXorVarEQ(LONG_DATA[i], LONG_DATA[j]),
+                                     i == j);
+                Asserts.assertEquals(testLongXorVarNE(LONG_DATA[i], LONG_DATA[j]),
+                                     i != j);
+                Asserts.assertEquals(testLongXorVarLT(LONG_DATA[i], LONG_DATA[j]),
+                                     i <  j);
+                Asserts.assertEquals(testLongXorVarLE(LONG_DATA[i], LONG_DATA[j]),
+                                     i <= j);
+                Asserts.assertEquals(testLongXorVarGT(LONG_DATA[i], LONG_DATA[j]),
+                                     i >  j);
+                Asserts.assertEquals(testLongXorVarGE(LONG_DATA[i], LONG_DATA[j]),
+                                     i >= j);
+            }
+        }
+    }
+
+    @Test
+    @IR(failOn = {CMP_L, XOR_L})
+    @IR(counts = {CMP_UL, "1"})
+    public boolean testLongXorConEQ(long x) {
+        return (x ^ LONG_MIN) == LONG_XOR_CONST;
+    }
+
+    @Test
+    @IR(failOn = {CMP_L, XOR_L})
+    @IR(counts = {CMP_UL, "1"})
+    public boolean testLongXorConNE(long x) {
+        return (x ^ LONG_MIN) != LONG_XOR_CONST;
+    }
+
+    @Test
+    @IR(failOn = {CMP_L, XOR_L})
+    @IR(counts = {CMP_UL, "1"})
+    public boolean testLongXorConLT(long x) {
+        return (x ^ LONG_MIN) < LONG_XOR_CONST;
+    }
+
+    @Test
+    @IR(failOn = {CMP_L, XOR_L})
+    @IR(counts = {CMP_UL, "1"})
+    public boolean testLongXorConLE(long x) {
+        return (x ^ LONG_MIN) <= LONG_XOR_CONST;
+    }
+
+    @Test
+    @IR(failOn = {CMP_L, XOR_L})
+    @IR(counts = {CMP_UL, "1"})
+    public boolean testLongXorConGT(long x) {
+        return (x ^ LONG_MIN) > LONG_XOR_CONST;
+    }
+
+    @Test
+    @IR(failOn = {CMP_L, XOR_L})
+    @IR(counts = {CMP_UL, "1"})
+    public boolean testLongXorConGE(long x) {
+        return (x ^ LONG_MIN) >= LONG_XOR_CONST;
+    }
+
+    @Run(test = {"testLongXorConEQ", "testLongXorConNE",
+                 "testLongXorConLT", "testLongXorConLE",
+                 "testLongXorConGT", "testLongXorConGE"})
+    public void checkTestLongXorCon() {
+        // Verify the transformation "cmp (xor X min_jlong) c"
+        // to "cmpu X (c ^ min_jlong)" (via xor -> add transformation)
+        for (int i = 0; i < LONG_DATA.length; i++) {
+            Asserts.assertEquals(testLongXorConEQ(LONG_DATA[i]),
+                                 i == CONST_INDEX);
+            Asserts.assertEquals(testLongXorConNE(LONG_DATA[i]),
+                                 i != CONST_INDEX);
+            Asserts.assertEquals(testLongXorConLT(LONG_DATA[i]),
+                                 i <  CONST_INDEX);
+            Asserts.assertEquals(testLongXorConLE(LONG_DATA[i]),
+                                 i <= CONST_INDEX);
+            Asserts.assertEquals(testLongXorConGT(LONG_DATA[i]),
+                                 i >  CONST_INDEX);
+            Asserts.assertEquals(testLongXorConGE(LONG_DATA[i]),
+                                 i >= CONST_INDEX);
         }
     }
 }
