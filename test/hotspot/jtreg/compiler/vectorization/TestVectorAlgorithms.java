@@ -557,7 +557,7 @@ public class TestVectorAlgorithms {
                   IRNode.VECTOR_MASK_CMP,                     "> 0",
                   IRNode.VECTOR_TEST,                         "> 0",
                   IRNode.STORE_VECTOR,                        "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
     public Object filterI_VectorAPI_v2_l4(int[] a, int[] r, int threshold) {
         return VectorAlgorithmsImpl.filterI_VectorAPI_v2_l4(a, r, threshold);
     }
@@ -567,7 +567,8 @@ public class TestVectorAlgorithms {
                   IRNode.VECTOR_MASK_CMP,                     "> 0",
                   IRNode.VECTOR_TEST,                         "> 0",
                   IRNode.STORE_VECTOR,                        "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true"})
+    // Note: need 8int = 256bit vector. NEON only has 128bit.
     public Object filterI_VectorAPI_v2_l8(int[] a, int[] r, int threshold) {
         return VectorAlgorithmsImpl.filterI_VectorAPI_v2_l8(a, r, threshold);
     }
@@ -625,7 +626,8 @@ public class TestVectorAlgorithms {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE + "min(max_int, max_byte)", "> 0",
                   IRNode.ADD_VI,        IRNode.VECTOR_SIZE + "min(max_int, max_byte)", "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeature = {"avx2", "true"})
+    // Note: we need at least a 256bit int vector. NEON only has 128bit.
     public Object conditionalSumB_VectorAPI_v1(byte[] a) {
         return VectorAlgorithmsImpl.conditionalSumB_VectorAPI_v1(a);
     }
@@ -649,7 +651,7 @@ public class TestVectorAlgorithms {
     @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0",
                   IRNode.MUL_VF,        "> 0",
                   IRNode.SQRT_VF,       "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     public Object pieceWise2FunctionF_VectorAPI_v1(float[] a, float[] r) {
         return VectorAlgorithmsImpl.pieceWise2FunctionF_VectorAPI_v1(a, r);
     }
@@ -658,7 +660,7 @@ public class TestVectorAlgorithms {
     @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0",
                   IRNode.MUL_VF,        "> 0",
                   IRNode.SQRT_VF,       "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     public Object pieceWise2FunctionF_VectorAPI_v2(float[] a, float[] r) {
         return VectorAlgorithmsImpl.pieceWise2FunctionF_VectorAPI_v2(a, r);
     }

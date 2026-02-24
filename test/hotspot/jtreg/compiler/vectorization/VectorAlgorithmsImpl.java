@@ -938,9 +938,15 @@ public class VectorAlgorithmsImpl {
 
     private static class ConditionalSumB_VectorAPI_V1 {
         // Pick I species to be a full vector, and the B vector a quarter its bit length.
-        private static final VectorSpecies<Integer> SPECIES_I = IntVector.SPECIES_PREFERRED;
-        private static final VectorShape SHAPE = VectorShape.forBitSize(8 * SPECIES_I.length());
-        private static final VectorSpecies<Byte>    SPECIES_B = SHAPE.withLanes(byte.class);
+        // However, we have to get at least 64bits for the B vector, so at least 256bits
+        // for the int vector - a sad restriction by the currently very narrow range of
+        // supported shapes.
+        private static final int BITS_I = Math.max(256, IntVector.SPECIES_PREFERRED.vectorBitSize());
+        private static final int BITS_B = BITS_I / 4;
+        private static final VectorShape SHAPE_I = VectorShape.forBitSize(BITS_I);
+        private static final VectorShape SHAPE_B = VectorShape.forBitSize(BITS_B);
+        private static final VectorSpecies<Integer> SPECIES_I = SHAPE_I.withLanes(int.class);
+        private static final VectorSpecies<Byte>    SPECIES_B = SHAPE_B.withLanes(byte.class);
 
         public static int compute(byte[] a) {
             var zeroB = ByteVector.zero(SPECIES_B);
