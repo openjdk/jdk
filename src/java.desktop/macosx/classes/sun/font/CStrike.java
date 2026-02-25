@@ -174,15 +174,17 @@ public final class CStrike extends PhysicalStrike {
 
     @Override
     Point2D.Float getGlyphMetrics(final int glyphCode) {
-        long glyphPtr = getGlyphImagePtr(glyphCode);
         Point2D.Float metrics = new Point2D.Float();
-        metrics.x = StrikeCache.getGlyphXAdvance(glyphPtr);
-        metrics.y = StrikeCache.getGlyphYAdvance(glyphPtr);
-        /* advance is currently in device space, need to convert back
-         * into user space.
-         * This must not include the translation component. */
-        if (invDevTx != null) {
-            invDevTx.deltaTransform(metrics, metrics);
+        long glyphPtr = getGlyphImagePtr(glyphCode);
+        if (glyphPtr != 0L) {
+            metrics.x = StrikeCache.getGlyphXAdvance(glyphPtr);
+            metrics.y = StrikeCache.getGlyphYAdvance(glyphPtr);
+            /* advance is currently in device space, need to convert back
+             * into user space.
+             * This must not include the translation component. */
+            if (invDevTx != null) {
+                invDevTx.deltaTransform(metrics, metrics);
+            }
         }
         return metrics;
     }
