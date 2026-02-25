@@ -826,16 +826,8 @@ void Parse::try_optimize_string_format(ciMethod*& callee, bool& call_does_dispat
   if (spec_count == 1 && spec_flags[0] == 0 && spec_widths[0] == 0 &&
       (spec_convs[0] == 's' || spec_convs[0] == 'd')) {
     // Single specifier without width or flags: format_s/d or formatted_s/d
-    if (is_static) {
-      method_name_buf[0] = 'f'; method_name_buf[1] = 'o'; method_name_buf[2] = 'r';
-      method_name_buf[3] = 'm'; method_name_buf[4] = 'a'; method_name_buf[5] = 't';
-      method_name_buf[6] = '_'; method_name_buf[7] = spec_convs[0]; method_name_buf[8] = '\0';
-    } else {
-      method_name_buf[0] = 'f'; method_name_buf[1] = 'o'; method_name_buf[2] = 'r';
-      method_name_buf[3] = 'm'; method_name_buf[4] = 'a'; method_name_buf[5] = 't';
-      method_name_buf[6] = 't'; method_name_buf[7] = 'e'; method_name_buf[8] = 'd';
-      method_name_buf[9] = '_'; method_name_buf[10] = spec_convs[0]; method_name_buf[11] = '\0';
-    }
+    os::snprintf_checked(method_name_buf, sizeof(method_name_buf),
+                         "%s_%c", is_static ? "format" : "formatted", spec_convs[0]);
     target_name = method_name_buf;
 
     // For %d, check if we can use primitive overload to avoid boxing
@@ -880,18 +872,9 @@ void Parse::try_optimize_string_format(ciMethod*& callee, bool& call_does_dispat
              (spec_convs[0] == 's' || spec_convs[0] == 'd') &&
              (spec_convs[1] == 's' || spec_convs[1] == 'd')) {
     // Two specifiers with s/d only: format_ss/sd/ds/dd or formatted_ss/sd/ds/dd
-    if (is_static) {
-      method_name_buf[0] = 'f'; method_name_buf[1] = 'o'; method_name_buf[2] = 'r';
-      method_name_buf[3] = 'm'; method_name_buf[4] = 'a'; method_name_buf[5] = 't';
-      method_name_buf[6] = '_'; method_name_buf[7] = spec_convs[0];
-      method_name_buf[8] = spec_convs[1]; method_name_buf[9] = '\0';
-    } else {
-      method_name_buf[0] = 'f'; method_name_buf[1] = 'o'; method_name_buf[2] = 'r';
-      method_name_buf[3] = 'm'; method_name_buf[4] = 'a'; method_name_buf[5] = 't';
-      method_name_buf[6] = 't'; method_name_buf[7] = 'e'; method_name_buf[8] = 'd';
-      method_name_buf[9] = '_'; method_name_buf[10] = spec_convs[0];
-      method_name_buf[11] = spec_convs[1]; method_name_buf[12] = '\0';
-    }
+    os::snprintf_checked(method_name_buf, sizeof(method_name_buf),
+                         "%s_%c%c", is_static ? "format" : "formatted",
+                         spec_convs[0], spec_convs[1]);
     target_name = method_name_buf;
     if (use_individual_args) {
       // Two args use int instead of long to reduce stack pressure
