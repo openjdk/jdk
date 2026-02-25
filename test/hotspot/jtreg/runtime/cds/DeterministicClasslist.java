@@ -103,8 +103,8 @@ public class DeterministicClasslist {
         JarBuilder.build("classlist", classlist);
         appJar = TestCommon.getTestJar("classlist.jar");
 
-        CDSTestUtils.dumpClassList(baseClasslist, "-cp", appJar, appClass, "-Xint");
-        CDSTestUtils.dumpClassList(testClasslist, "-cp", appJar, appClass, "-Xint");
+        CDSTestUtils.dumpClassList(baseClasslist, "-cp", appJar, "-Xint", appClass);
+        CDSTestUtils.dumpClassList(testClasslist, "-cp", appJar, "-Xint", appClass);
 
         compareClasslists(baseClasslist, testClasslist);
     }
