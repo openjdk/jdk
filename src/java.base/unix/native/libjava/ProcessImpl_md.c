@@ -747,19 +747,20 @@ startChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
     }
 }
 
-static int pipeOrPipe2(int fd[2], bool cloexec) {
-    /* We must ensure the pipe fd's are set to CLOEXEC as early as possible, since at any moment a
-     * concurrent fork() (uncontrolled by us, e.g. third-party JNI coding) could create copies of
-     * these descriptors and accidentally keep the pipes open. That would cause the parent process
-     * to hang (see JDK-8377907).
-     * We use pipe2, if we have it; if not, we use pipe, but tag file descriptors as CLOEXEC
-     * immediately. Still racy, but dangerous time window is as short as we can make it. */
+static int pipeSafely(int fd[2]) {
+    /* Pipe filedescriptors must be CLOEXEC as early as possible - ideally from the point of
+     * creation on - since at any moment a concurrent (third-party) fork() could inherit copies
+     * of these descriptors and accidentally keep the pipes open. That could cause the parent
+     * process to hang (see e.g. JDK-8377907).
+     * We use pipe2(2), if we have it. If we don't, we use pipe(2) + fcntl(2) immediately.
+     * The latter is still racy and can therefore still cause hangs as described in JDK-8377907,
+     * but at least the dangerous time window is as short as we can make it. */
     int rc = -1;
 #ifdef HAVE_PIPE2
-    rc = pipe2(fd, cloexec ? O_CLOEXEC : 0);
+    rc = pipe2(fd, O_CLOEXEC);
 #else
     rc = pipe(fd);
-    if (rc == 0 && cloexec) {
+    if (rc == 0) {
         fcntl(fd[0], F_SETFD, FD_CLOEXEC);
         fcntl(fd[1], F_SETFD, FD_CLOEXEC);
     }
@@ -830,12 +831,11 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
     fds = (*env)->GetIntArrayElements(env, std_fds, NULL);
     if (fds == NULL) goto Catch;
 
-    const bool cloExec = true;//((mode == MODE_FORK) || (mode == MODE_VFORK));
-    if ((fds[0] == -1 && pipeOrPipe2(in, cloExec)  < 0) ||
-        (fds[1] == -1 && pipeOrPipe2(out, cloExec) < 0) ||
-        (fds[2] == -1 && !redirectErrorStream && pipeOrPipe2(err, cloExec) < 0) ||
-        (pipeOrPipe2(childenv, cloExec) < 0) ||
-        (pipeOrPipe2(fail, cloExec) < 0)) {
+    if ((fds[0] == -1 && pipeSafely(in)  < 0) ||
+        (fds[1] == -1 && pipeSafely(out) < 0) ||
+        (fds[2] == -1 && !redirectErrorStream && pipeSafely(err) < 0) ||
+        (pipeSafely(childenv) < 0) ||
+        (pipeSafely(fail) < 0)) {
         throwInternalIOException(env, errno, "Bad file descriptor", mode);
         goto Catch;
     }

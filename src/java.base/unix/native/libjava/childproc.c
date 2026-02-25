@@ -524,7 +524,7 @@ void jtregSimulateCrash(pid_t child, int stage) {
     if (env != NULL && atoi(env) == stage) {
         printf("posix_spawn:%d\n", child);
         fflush(stdout);
-        exit(stage);
+        _exit(stage);
     }
 }
 #endif
