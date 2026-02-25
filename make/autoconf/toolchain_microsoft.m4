@@ -338,7 +338,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_VISUAL_STUDIO_ENV],
   OLDPATH="$PATH"
   # Make sure we only capture additions to PATH needed by VS.
   # Clear out path, but need system dir present for vsvars cmd file to be able to run
-  export PATH=$WINENV_PREFIX/c/windows/system32
+  export PATH=$(${PATHTOOL} -u "${SYSTEMROOT}")/system32
   # The "| cat" is to stop SetEnv.Cmd to mess with system colors on some systems
   # We can't pass -vcvars_ver=$VCVARS_VER here because cmd.exe eats all '='
   # in bat file arguments. :-(

@@ -44,13 +44,20 @@ if [ -z "$TESTCLASSES" ] ; then
 fi
 
 case `uname -s` in
+    *MINGW*|*MSYS*|*CYGWIN*|*NT*)
+      IS_WINDOWS=true
+      ;;
     Linux)
+      IS_WINDOWS=false
+
       # Need this to convert to the /.automount/... form which
       # is what jdb will report when it reads an init file.
       echo TESTCLASSES=$TESTCLASSES
       TESTCLASSES=`(cd $TESTCLASSES; /bin/pwd)`
       echo TESTCLASSES=$TESTCLASSES
       ;;
+    *)
+      IS_WINDOWS=false
 esac
 
 # All output will go under this dir.  We define HOME to
@@ -84,7 +91,7 @@ failIfNot()
     # $1 is the expected number of occurances of $2 in the jdb output.
     count=$1
     shift
-    if [ -r c:/ ] ; then
+    if [ "${IS_WINDOWS}" = "true" ] ; then
        sed -e 's@\\@/@g' $tmpResult > $tmpResult.1
        mv $tmpResult.1 $tmpResult
     fi
@@ -177,7 +184,7 @@ mkFiles $HOME/.jdbrc $here/jdb.ini
     clean
 
 
-if [ ! -r c:/ ] ; then
+if [ "${IS_WINDOWS}" != "true" ] ; then
     # No symlinks on windows.
     echo
     echo "+++++++++++++++++++++++++++++++++++"
@@ -191,7 +198,7 @@ if [ ! -r c:/ ] ; then
 fi
 
 
-if [ ! -r c:/ ] ; then
+if [ "${IS_WINDOWS}" != "true" ] ; then
     # No symlinks on windows.
     echo
     echo "+++++++++++++++++++++++++++++++++++"
