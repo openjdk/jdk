@@ -116,7 +116,7 @@ public class StringLoopJmhBenchmark {
   }
 
   @Benchmark
-  public int getByteLength() throws Exception {
-    return stringData.getByteLength(StandardCharsets.UTF_8);
+  public int getEncodedLength() throws Exception {
+    return stringData.getEncodedLength(StandardCharsets.UTF_8);
   }
 }

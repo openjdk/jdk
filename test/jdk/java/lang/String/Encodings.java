@@ -106,9 +106,9 @@ public class Encodings {
         if (!equals(bs, bytes))
             throw new Exception(charset + ": String.getBytes failed");
 
-        /* String.getByteLength(Charset charset) */
-        if (bs.length != str.getByteLength(charset))
-            throw new Exception(charset + ": String.getByteLength failed");
+        /* String.getEncodedLength(Charset charset) */
+        if (bs.length != str.getEncodedLength(charset))
+            throw new Exception(charset + ": String.getEncodedLength failed");
 
         // Calls to String.getBytes(Charset) shouldn't automatically
         // use the cached thread-local encoder.

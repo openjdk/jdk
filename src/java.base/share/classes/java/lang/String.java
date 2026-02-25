@@ -2116,7 +2116,7 @@ public final class String
      * @param cs The {@link Charset} used to the compute the length
      * @since 27
      */
-    public int getByteLength(Charset cs) {
+    public int getEncodedLength(Charset cs) {
         Objects.requireNonNull(cs);
         if (cs == UTF_8.INSTANCE) {
             return encodedLengthUTF8(coder, value);
