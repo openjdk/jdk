@@ -24,6 +24,8 @@
 
 /*
  * @test id=POSIX_SPAWN
+ * @bug 8377907
+ * @summary Test that demonstrates the hanging-parent-on-native-concurrent-forks problem
  * @requires os.family != "windows"
  * @requires vm.flagless
  * @library /test/lib
@@ -32,6 +34,8 @@
 
 /*
  * @test id=FORK
+ * @bug 8377907
+ * @summary Test that demonstrates the hanging-parent-on-native-concurrent-forks problem
  * @requires os.family != "windows"
  * @requires vm.flagless
  * @library /test/lib
@@ -40,6 +44,8 @@
 
 /*
  * @test id=VFORK
+ * @bug 8377907
+ * @summary Test that demonstrates the hanging-parent-on-native-concurrent-forks problem
  * @requires os.family == "linux"
  * @requires vm.flagless
  * @library /test/lib

@@ -49,7 +49,7 @@ extern int errno;
 #define ERR_MALLOC 1
 #define ERR_PIPE 2
 #define ERR_ARGS 3
-/* Note: reserve range between ERR_FD_SETUP and 255 for
+/* We reserve range between ERR_FD_SETUP and 255 for
  * file-descriptor errors. We may have no other way of
  * communicating those errors to the parent. */
 #define ERR_FD_SETUP 245
@@ -191,6 +191,7 @@ int main(int argc, char *argv[]) {
     initChildStuff (CHILDENV_FILENO, FAIL_FILENO, &c);
 
 #ifdef DEBUG
+    /* Not needed in spawn mode */
     assert(c.in[0] == -1 && c.in[1] == -1 &&
            c.out[0] == -1 && c.out[1] == -1 &&
            c.err[0] == -1 && c.err[1] == -1 &&
