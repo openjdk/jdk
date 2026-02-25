@@ -600,19 +600,21 @@ void C2_MacroAssembler::count_positives(Register src, Register cnt, Register res
   orr(tmp0, tmp2, tmp0);
 
   and_(tmp0, tmp0, tmp1);
-  bne(CR0, Lslow);               // Found negative byte.
+  bne(CR0, Lslow);                // Found negative byte.
   addi(result, result, 16);
   bdnz(Lfastloop);
 
   bind(Lslow);                    // Fallback to slow version.
   subf(tmp0, src, result);        // Bytes known positive.
-  subf_(tmp0, tmp0, cnt);         // Remaining Bytes.
+  clrldi(tmp1, cnt, 32);          // Clear garbage from upper 32 bits.
+  subf_(tmp0, tmp0, tmp1);        // Remaining Bytes.
   beq(CR0, Ldone);
   mtctr(tmp0);
+
   bind(Lloop);
   lbz(tmp0, 0, result);
   andi_(tmp0, tmp0, 0x80);
-  bne(CR0, Ldone);               // Found negative byte.
+  bne(CR0, Ldone);                // Found negative byte.
   addi(result, result, 1);
   bdnz(Lloop);
 

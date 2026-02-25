@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,6 +119,13 @@ final class $vectortype$ extends $abstractvectortype$ {
         return ($type$[])getPayload();
     }
 
+    /*package-private*/
+    @ForceInline
+    final @Override
+    int laneTypeOrdinal() {
+        return LANE_TYPE_ORDINAL;
+    }
+
     // Virtualized constructors
 
     @Override
@@ -176,8 +183,8 @@ final class $vectortype$ extends $abstractvectortype$ {
 
     @ForceInline
     final @Override
-    Byte$bits$Vector asByteVectorRaw() {
-        return (Byte$bits$Vector) super.asByteVectorRawTemplate();  // specialize
+    ByteVector$bits$ asByteVectorRaw() {
+        return (ByteVector$bits$) super.asByteVectorRawTemplate();  // specialize
     }
 
     @ForceInline
@@ -577,7 +584,7 @@ final class $vectortype$ extends $abstractvectortype$ {
     @ForceInline
     public $bitstype$ laneHelper(int i) {
         return ($bitstype$) VectorSupport.extract(
-                     VCLASS, ETYPE, VLENGTH,
+                     VCLASS, LANE_TYPE_ORDINAL, VLENGTH,
                      this, i,
                      (vec, ix) -> {
                      $type$[] vecarr = vec.vec();
@@ -627,7 +634,7 @@ final class $vectortype$ extends $abstractvectortype$ {
     @ForceInline
     public $vectortype$ withLaneHelper(int i, $type$ e) {
         return VectorSupport.insert(
-                                VCLASS, ETYPE, VLENGTH,
+                                VCLASS, LANE_TYPE_ORDINAL, VLENGTH,
                                 this, i, (long)$Type$.$type$ToRaw$Bitstype$Bits(e),
                                 (v, ix, bits) -> {
                                     $type$[] res = v.vec().clone();
@@ -730,7 +737,7 @@ final class $vectortype$ extends $abstractvectortype$ {
     @ForceInline
     public $type$ laneHelper(int i) {
         return ($type$) VectorSupport.extract(
-                                VCLASS, ETYPE, VLENGTH,
+                                VCLASS, LANE_TYPE_ORDINAL, VLENGTH,
                                 this, i,
                                 (vec, ix) -> {
                                     $type$[] vecarr = vec.vec();
@@ -832,7 +839,7 @@ final class $vectortype$ extends $abstractvectortype$ {
     @ForceInline
     public $vectortype$ withLaneHelper(int i, $type$ e) {
         return VectorSupport.insert(
-                                VCLASS, ETYPE, VLENGTH,
+                                VCLASS, LANE_TYPE_ORDINAL, VLENGTH,
                                 this, i, (long)e,
                                 (v, ix, bits) -> {
                                     $type$[] res = v.vec().clone();
@@ -937,8 +944,8 @@ final class $vectortype$ extends $abstractvectortype$ {
                 throw new IllegalArgumentException("VectorMask length and species length differ");
 
             return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                this.getClass(), ETYPE, VLENGTH,
-                species.maskType(), species.elementType(), VLENGTH,
+                this.getClass(), LANE_TYPE_ORDINAL, VLENGTH,
+                species.maskType(), species.laneTypeOrdinal(), VLENGTH,
                 this, species,
                 (m, s) -> s.maskFactory(m.toArray()).check(s));
         }
@@ -948,7 +955,7 @@ final class $vectortype$ extends $abstractvectortype$ {
         /*package-private*/
         $masktype$ indexPartiallyInUpperRange(long offset, long limit) {
             return ($masktype$) VectorSupport.indexPartiallyInUpperRange(
-                $masktype$.class, $type$.class, VLENGTH, offset, limit,
+                $masktype$.class, LANE_TYPE_ORDINAL, VLENGTH, offset, limit,
                 (o, l) -> ($masktype$) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
@@ -964,7 +971,7 @@ final class $vectortype$ extends $abstractvectortype$ {
         @ForceInline
         public $masktype$ compress() {
             return ($masktype$)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
-                $vectortype$.class, $masktype$.class, ETYPE, VLENGTH, null, this,
+                $vectortype$.class, $masktype$.class, LANE_TYPE_ORDINAL, VLENGTH, null, this,
                 (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
         }
 
@@ -976,7 +983,7 @@ final class $vectortype$ extends $abstractvectortype$ {
         public $masktype$ and(VectorMask<$Boxtype$> mask) {
             Objects.requireNonNull(mask);
             $masktype$ m = ($masktype$)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_AND, $masktype$.class, null, $bitstype$.class, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_AND, $masktype$.class, null, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a & b));
         }
@@ -986,7 +993,7 @@ final class $vectortype$ extends $abstractvectortype$ {
         public $masktype$ or(VectorMask<$Boxtype$> mask) {
             Objects.requireNonNull(mask);
             $masktype$ m = ($masktype$)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_OR, $masktype$.class, null, $bitstype$.class, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_OR, $masktype$.class, null, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
@@ -996,7 +1003,7 @@ final class $vectortype$ extends $abstractvectortype$ {
         public $masktype$ xor(VectorMask<$Boxtype$> mask) {
             Objects.requireNonNull(mask);
             $masktype$ m = ($masktype$)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_XOR, $masktype$.class, null, $bitstype$.class, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_XOR, $masktype$.class, null, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a ^ b));
         }
@@ -1006,21 +1013,21 @@ final class $vectortype$ extends $abstractvectortype$ {
         @Override
         @ForceInline
         public int trueCount() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, $masktype$.class, $bitstype$.class, VLENGTH, this,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, $masktype$.class, LANEBITS_TYPE_ORDINAL, VLENGTH, this,
                                                       (m) -> trueCountHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int firstTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, $masktype$.class, $bitstype$.class, VLENGTH, this,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, $masktype$.class, LANEBITS_TYPE_ORDINAL, VLENGTH, this,
                                                       (m) -> firstTrueHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int lastTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, $masktype$.class, $bitstype$.class, VLENGTH, this,
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, $masktype$.class, LANEBITS_TYPE_ORDINAL, VLENGTH, this,
                                                       (m) -> lastTrueHelper(m.getBits()));
         }
 
@@ -1030,7 +1037,7 @@ final class $vectortype$ extends $abstractvectortype$ {
             if (length() > Long.SIZE) {
                 throw new UnsupportedOperationException("too many lanes for one long");
             }
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, $masktype$.class, $bitstype$.class, VLENGTH, this,
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, $masktype$.class, LANEBITS_TYPE_ORDINAL, VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
         }
 
@@ -1040,7 +1047,7 @@ final class $vectortype$ extends $abstractvectortype$ {
         @ForceInline
         public boolean laneIsSet(int i) {
             Objects.checkIndex(i, length());
-            return VectorSupport.extract($masktype$.class, $type$.class, VLENGTH,
+            return VectorSupport.extract($masktype$.class, LANE_TYPE_ORDINAL, VLENGTH,
                                          this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 
@@ -1049,7 +1056,7 @@ final class $vectortype$ extends $abstractvectortype$ {
         @Override
         @ForceInline
         public boolean anyTrue() {
-            return VectorSupport.test(BT_ne, $masktype$.class, $bitstype$.class, VLENGTH,
+            return VectorSupport.test(BT_ne, $masktype$.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                          this, vspecies().maskAll(true),
                                          (m, __) -> anyTrueHelper((($masktype$)m).getBits()));
         }
@@ -1057,7 +1064,7 @@ final class $vectortype$ extends $abstractvectortype$ {
         @Override
         @ForceInline
         public boolean allTrue() {
-            return VectorSupport.test(BT_overflow, $masktype$.class, $bitstype$.class, VLENGTH,
+            return VectorSupport.test(BT_overflow, $masktype$.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                          this, vspecies().maskAll(true),
                                          (m, __) -> allTrueHelper((($masktype$)m).getBits()));
         }
@@ -1065,7 +1072,7 @@ final class $vectortype$ extends $abstractvectortype$ {
         @ForceInline
         /*package-private*/
         static $masktype$ maskAll(boolean bit) {
-            return VectorSupport.fromBitsCoerced($masktype$.class, $bitstype$.class, VLENGTH,
+            return VectorSupport.fromBitsCoerced($masktype$.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
@@ -1085,7 +1092,7 @@ final class $vectortype$ extends $abstractvectortype$ {
 
 #end[intAndMax]
 #if[intAndMax]
-        static final IntMaxMask LOWER_HALF_TRUE_MASK = new IntMaxMask(maskLowerHalf());
+        static final IntMaskMax LOWER_HALF_TRUE_MASK = new IntMaskMax(maskLowerHalf());
 #end[intAndMax]
     }
 

@@ -29,21 +29,22 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
+#include "runtime/atomic.hpp"
 
-#define VM_STRUCTS_SHENANDOAH(nonstatic_field, volatile_nonstatic_field, static_field)                \
-  nonstatic_field(ShenandoahHeap, _num_regions,                    size_t)                            \
-  nonstatic_field(ShenandoahHeap, _regions,                        ShenandoahHeapRegion**)            \
-  nonstatic_field(ShenandoahHeap, _log_min_obj_alignment_in_bytes, int)                               \
-  nonstatic_field(ShenandoahHeap, _free_set,                       ShenandoahFreeSet*)                \
-  volatile_nonstatic_field(ShenandoahHeap, _committed,             size_t)                            \
-  static_field(ShenandoahHeapRegion, RegionSizeBytes,              size_t)                            \
-  static_field(ShenandoahHeapRegion, RegionSizeBytesShift,         size_t)                            \
-  volatile_nonstatic_field(ShenandoahHeapRegion, _state,           ShenandoahHeapRegion::RegionState) \
-  nonstatic_field(ShenandoahHeapRegion, _index,                    size_t const)                      \
-  nonstatic_field(ShenandoahHeapRegion, _bottom,                   HeapWord* const)                   \
-  nonstatic_field(ShenandoahHeapRegion, _top,                      HeapWord*)                         \
-  nonstatic_field(ShenandoahHeapRegion, _end,                      HeapWord* const)                   \
-  nonstatic_field(ShenandoahFreeSet, _total_global_used,           size_t)                            \
+#define VM_STRUCTS_SHENANDOAH(nonstatic_field, volatile_nonstatic_field, static_field)                        \
+  nonstatic_field(ShenandoahHeap, _num_regions,                    size_t)                                    \
+  nonstatic_field(ShenandoahHeap, _regions,                        ShenandoahHeapRegion**)                    \
+  nonstatic_field(ShenandoahHeap, _log_min_obj_alignment_in_bytes, int)                                       \
+  nonstatic_field(ShenandoahHeap, _free_set,                       ShenandoahFreeSet*)                        \
+  volatile_nonstatic_field(ShenandoahHeap, _committed,             Atomic<size_t>)                            \
+  static_field(ShenandoahHeapRegion, RegionSizeBytes,              size_t)                                    \
+  static_field(ShenandoahHeapRegion, RegionSizeBytesShift,         size_t)                                    \
+  nonstatic_field(ShenandoahHeapRegion, _state,                    Atomic<ShenandoahHeapRegion::RegionState>) \
+  nonstatic_field(ShenandoahHeapRegion, _index,                    size_t const)                              \
+  nonstatic_field(ShenandoahHeapRegion, _bottom,                   HeapWord* const)                           \
+  nonstatic_field(ShenandoahHeapRegion, _top,                      HeapWord*)                                 \
+  nonstatic_field(ShenandoahHeapRegion, _end,                      HeapWord* const)                           \
+  nonstatic_field(ShenandoahFreeSet, _total_global_used,           size_t)                                    \
 
 #define VM_INT_CONSTANTS_SHENANDOAH(declare_constant, declare_constant_with_value) \
   declare_constant(ShenandoahHeapRegion::_empty_uncommitted)                       \
@@ -65,7 +66,7 @@
   declare_toplevel_type(ShenandoahHeapRegion)                                 \
   declare_toplevel_type(ShenandoahHeap*)                                      \
   declare_toplevel_type(ShenandoahHeapRegion*)                                \
-  declare_toplevel_type(ShenandoahHeapRegion::RegionState)                    \
+  declare_toplevel_type(Atomic<ShenandoahHeapRegion::RegionState>)            \
   declare_toplevel_type(ShenandoahFreeSet)                                    \
   declare_toplevel_type(ShenandoahFreeSet*)                                   \
 

@@ -102,7 +102,7 @@ public class AppContentTest {
         JPackageCommand.helloAppImage()
             .addArguments("--app-content", appContentValue)
             .setFakeRuntime()
-            .validateOutput(expectedWarning)
+            .validateOut(expectedWarning)
             .executeIgnoreExitCode();
     }
 
