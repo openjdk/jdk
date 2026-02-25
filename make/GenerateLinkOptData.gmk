@@ -76,6 +76,7 @@ $(CLASSLIST_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXECUTABLE_SUFFIX) $(CLASSLIST
 	$(call LogInfo, Generating $(patsubst $(OUTPUTDIR)/%, %, $(JLI_TRACE_FILE)))
 	$(FIXPATH) $(INTERIM_IMAGE_DIR)/bin/java -XX:DumpLoadedClassList=$@.raw \
 	    $(CLASSLIST_FILE_VM_OPTS) \
+		-Xint \
 	    -Xlog:aot=off \
 	    -Xlog:cds=off \
 	    -cp $(SUPPORT_OUTPUTDIR)/classlist.jar \
@@ -90,6 +91,7 @@ $(CLASSLIST_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXECUTABLE_SUFFIX) $(CLASSLIST
 	    -XX:SharedClassListFile=$@.interim -XX:SharedArchiveFile=$@.jsa \
 	    -Djava.lang.invoke.MethodHandle.TRACE_RESOLVE=true \
 	    $(CLASSLIST_FILE_VM_OPTS) \
+		-Xint \
 	    --module-path $(SUPPORT_OUTPUTDIR)/classlist.jar \
 	    -Xlog:aot=off \
 	    -Xlog:cds=off \
