@@ -45,14 +45,9 @@ void DwarfParser::init_state(struct DwarfState& st) {
   st.cfa_offset = 0;
 
   st.offset_from_cfa.clear();
-
-#define DWARF_REG(reg, no) \
-  st.offset_from_cfa[reg] = INT_MAX;
-
-  DWARF_REGLIST
-  DWARF_PSEUDO_REGLIST
-
-#undef DWARF_REG
+  for (int reg = 0; reg < MAX_VALUE; reg++) {
+    st.offset_from_cfa[static_cast<enum DWARF_Register>(reg)] = INT_MAX;
+  }
 }
 
 /* from read_leb128() in dwarf.c in binutils */
@@ -208,11 +203,10 @@ void DwarfParser::parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const 
         break;
       case 0x0a: // DW_CFA_remember_state
         remember_state.push(_state);
-        init_state(_state);
         break;
       case 0x0b: // DW_CFA_restore_state
         if (remember_state.empty()) {
-          print_debug("DWARF: Remember State is empty even though DW_CFA_restore_state is saw.\n");
+          print_debug("DWARF Error: DW_CFA_restore_state with empty stack.\n");
           return;
         }
         _state = remember_state.top();

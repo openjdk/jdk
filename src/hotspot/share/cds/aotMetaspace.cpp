@@ -1148,7 +1148,7 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
     if (CDSConfig::is_dumping_full_module_graph()) {
       ClassLoaderDataShared::ensure_module_entry_tables_exist();
       ClassLoaderDataShared::build_tables(CHECK);
-      HeapShared::reset_archived_object_states(CHECK);
+      HeapShared::prepare_for_archiving(CHECK);
     }
 
     AOTReferenceObjSupport::initialize(CHECK);
@@ -2106,7 +2106,7 @@ MapArchiveResult AOTMetaspace::map_archive(FileMapInfo* mapinfo, char* mapped_ba
     // Currently, only static archive uses early serialized data.
     char* buffer = mapinfo->early_serialized_data();
     intptr_t* array = (intptr_t*)buffer;
-    ReadClosure rc(&array, (intptr_t)mapped_base_address);
+    ReadClosure rc(&array, (address)mapped_base_address);
     early_serialize(&rc);
   }
 
@@ -2152,7 +2152,7 @@ void AOTMetaspace::initialize_shared_spaces() {
   // shared string/symbol tables.
   char* buffer = static_mapinfo->serialized_data();
   intptr_t* array = (intptr_t*)buffer;
-  ReadClosure rc(&array, (intptr_t)SharedBaseAddress);
+  ReadClosure rc(&array, (address)SharedBaseAddress);
   serialize(&rc);
 
   // Finish initializing the heap dump mode used in the archive
@@ -2164,7 +2164,7 @@ void AOTMetaspace::initialize_shared_spaces() {
 
   if (dynamic_mapinfo != nullptr) {
     intptr_t* buffer = (intptr_t*)dynamic_mapinfo->serialized_data();
-    ReadClosure rc(&buffer, (intptr_t)SharedBaseAddress);
+    ReadClosure rc(&buffer, (address)SharedBaseAddress);
     DynamicArchive::serialize(&rc);
   }
 
