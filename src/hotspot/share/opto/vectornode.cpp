@@ -37,7 +37,6 @@
 //------------------------------VectorNode--------------------------------------
 
 // Return the vector operator for the specified scalar operation
-// and basic type.
 int VectorNode::opcode(int sopc, BasicType bt) {
   switch (sopc) {
   case Op_AddI:
@@ -292,13 +291,13 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     assert(!VectorNode::is_convert_opcode(sopc),
            "Convert node %s should be processed by VectorCastNode::opcode()",
            NodeClassNames[sopc]);
-    return 0; // Unimplemented
+    return 0;  // not handled
   }
 }
 
-// Return the scalar opcode for the specified vector opcode
-// and basic type.
-int VectorNode::scalar_opcode(int vopc, BasicType bt, bool enable_assertions) {
+// Return the scalar opcode for the specified vector opcode and basic type.
+// Returns 0 if not handled.
+int VectorNode::scalar_opcode(int vopc, BasicType bt) {
   switch (vopc) {
     case Op_AddVB:
     case Op_AddVS:
@@ -349,7 +348,6 @@ int VectorNode::scalar_opcode(int vopc, BasicType bt, bool enable_assertions) {
         case T_LONG:
           return Op_AndL;
         default:
-          assert(!enable_assertions, "basic type not handled");
           return 0;
       }
 
@@ -364,7 +362,6 @@ int VectorNode::scalar_opcode(int vopc, BasicType bt, bool enable_assertions) {
         case T_LONG:
           return Op_OrL;
         default:
-          assert(!enable_assertions, "basic type not handled");
           return 0;
       }
 
@@ -379,7 +376,6 @@ int VectorNode::scalar_opcode(int vopc, BasicType bt, bool enable_assertions) {
         case T_LONG:
           return Op_XorL;
         default:
-          assert(!enable_assertions, "basic type not handled");
           return 0;
       }
 
@@ -387,7 +383,7 @@ int VectorNode::scalar_opcode(int vopc, BasicType bt, bool enable_assertions) {
       switch (bt) {
         case T_BOOLEAN:
         case T_CHAR:
-          assert(!enable_assertions, "boolean and char are unsigned, not implemented for Min");
+          // unsigned, not supported for Min
           return 0;
         case T_BYTE:
         case T_SHORT:
@@ -400,7 +396,6 @@ int VectorNode::scalar_opcode(int vopc, BasicType bt, bool enable_assertions) {
         case T_DOUBLE:
           return Op_MinD;
         default:
-          assert(!enable_assertions, "basic type not handled");
           return 0;
       }
 
@@ -408,7 +403,7 @@ int VectorNode::scalar_opcode(int vopc, BasicType bt, bool enable_assertions) {
       switch (bt) {
         case T_BOOLEAN:
         case T_CHAR:
-          assert(!enable_assertions, "boolean and char are unsigned, not implemented for Max");
+          // unsigned, not supported for Max
           return 0;
         case T_BYTE:
         case T_SHORT:
@@ -421,7 +416,6 @@ int VectorNode::scalar_opcode(int vopc, BasicType bt, bool enable_assertions) {
         case T_DOUBLE:
           return Op_MaxD;
         default:
-          assert(!enable_assertions, "basic type not handled");
           return 0;
       }
 
@@ -436,10 +430,7 @@ int VectorNode::scalar_opcode(int vopc, BasicType bt, bool enable_assertions) {
       return Op_FmaD;
 
     default:
-      assert(!enable_assertions,
-             "Vector node %s is not handled in VectorNode::scalar_opcode",
-             NodeClassNames[vopc]);
-      return 0; // Unimplemented
+      return 0;  // not handled
   }
 }
 
@@ -1190,9 +1181,9 @@ bool VectorNode::should_swap_inputs_to_help_global_value_numbering() {
   return false;
 }
 
-// Helper function to select a vector operation with all broadcasted inputs
-bool VectorNode::can_push_broadcasts_across_vector_operation(BasicType bt) {
-  if (!scalar_opcode(Opcode(), bt, false)) {
+// Check whether we can push this vector op through a broadcast (all inputs are Replicate).
+bool VectorNode::can_push_through_broadcast(BasicType bt) {
+  if (!scalar_opcode(Opcode(), bt)) {
     return false;
   }
 
@@ -1210,7 +1201,7 @@ bool VectorNode::can_push_broadcasts_across_vector_operation(BasicType bt) {
   return true;
 }
 
-Node* VectorNode::scalar_node_factory(Compile* c, int sopc, Node* control, Node* in1, Node* in2, Node* in3) {
+Node* VectorNode::make_scalar(Compile* c, int sopc, Node* control, Node* in1, Node* in2, Node* in3) {
   switch (sopc) {
     case Op_AddI:
       return new AddINode(in1, in2);
@@ -1277,12 +1268,14 @@ Node* VectorNode::scalar_node_factory(Compile* c, int sopc, Node* control, Node*
     case Op_FmaD:
       return new FmaDNode(in1, in2, in3);
     default:
+      assert(false, "unexpected scalar opcode");
       return nullptr;
   }
 }
 
 Node* VectorNode::create_reassociated_node(Node* parent, Node* child, Node* cinput1, Node* cinput2,
                                            Node* pinput2, PhaseGVN* phase) {
+  // Transformation: parent(child(cinput1, cinput2), pinput2) with child's inputs set to cinput1, cinput2.
   Node* cloned_child = child->clone();
   cloned_child->set_req(1, cinput1);
   cloned_child->set_req(2, cinput2);
@@ -1336,9 +1329,9 @@ Node* VectorNode::reassociate_vector_operation(PhaseGVN* phase) {
 // VectorOperation (VectorBroadcast INP1,  VectorBroadcast INP2) =>
 //   VectorBroadcast (ScalarOperation INP1, INP2)
 //
-Node* VectorNode::push_broadcast_across_vector_operation(PhaseGVN* phase) {
+Node* VectorNode::push_through_broadcast(PhaseGVN* phase) {
   BasicType bt = vect_type()->element_basic_type();
-  if (can_push_broadcasts_across_vector_operation(bt)) {
+  if (can_push_through_broadcast(bt)) {
 
     Node* sinp1 = nullptr;
     Node* sinp2 = nullptr;
@@ -1357,8 +1350,8 @@ Node* VectorNode::push_broadcast_across_vector_operation(PhaseGVN* phase) {
       sinp3 = in(3)->in(1);
     }
 
-    Node* sop = scalar_node_factory(phase->C, scalar_opcode(Opcode(), bt, false), in(0), sinp1, sinp2, sinp3);
-    if (sop) {
+    Node* sop = make_scalar(phase->C, scalar_opcode(Opcode(), bt), in(0), sinp1, sinp2, sinp3);
+    if (sop != nullptr) {
       sop = phase->transform(sop);
       return new ReplicateNode(sop, vect_type());
     }
@@ -1377,7 +1370,7 @@ Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     swap_edges(1, 2);
   }
 
-  n = push_broadcast_across_vector_operation(phase);
+  n = push_through_broadcast(phase);
   if (n != nullptr) {
     return n;
   }
@@ -2101,7 +2094,7 @@ Node* RotateLeftVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
        !Matcher::match_rule_supported_vector(Op_RotateLeftV, vlen, bt)) {
     return VectorNode::degenerate_vector_rotate(in(1), in(2), true, vlen, bt, phase);
   }
-  return VectorNode::Ideal(phase, can_reshape);
+  return nullptr;
 }
 
 Node* RotateRightVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
@@ -2111,7 +2104,7 @@ Node* RotateRightVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
        !Matcher::match_rule_supported_vector(Op_RotateRightV, vlen, bt)) {
     return VectorNode::degenerate_vector_rotate(in(1), in(2), false, vlen, bt, phase);
   }
-  return VectorNode::Ideal(phase, can_reshape);
+  return nullptr;
 }
 
 #ifndef PRODUCT
@@ -2408,7 +2401,7 @@ Node* NegVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return degenerate_integral_negate(phase, false);
     }
   }
-  return VectorNode::Ideal(phase, can_reshape);
+  return nullptr;
 }
 
 static Node* reverse_operations_identity(Node* n, Node* in1) {

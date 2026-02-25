@@ -517,8 +517,8 @@ public:
   SqrtDNode(Compile* C, Node *c, Node *in1) : Node(c, in1) {
     init_flags(Flag_is_expensive);
     // Treat node only as expensive if a control input is set because it might
-    // be created from a SqrtVDNode in VectorNode::Ideal while pushing broadcasts
-    // across SqrtVD vectornode which has no control input.
+    // be created from SqrtVDNode in VectorNode::push_through_broadcast which
+    // does not have control input.
     if (c != nullptr) {
       C->add_expensive_node(this);
     }
