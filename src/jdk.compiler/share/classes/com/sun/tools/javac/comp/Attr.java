@@ -4224,7 +4224,8 @@ public class Attr extends JCTree.Visitor {
             type = resultInfo.pt;
         }
         tree.type = tree.var.type = type;
-        BindingSymbol v = new BindingSymbol(tree.var.mods.flags, tree.var.name, type, env.info.scope.owner);
+        BindingSymbol v = new BindingSymbol(tree.var.mods.flags | tree.var.declKind.additionalSymbolFlags,
+                                            tree.var.name, type, env.info.scope.owner);
         v.pos = tree.pos;
         tree.var.sym = v;
         if (chk.checkUnique(tree.var.pos(), v, env.info.scope)) {
