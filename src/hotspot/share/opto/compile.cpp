@@ -2295,13 +2295,6 @@ bool Compile::optimize_loops(PhaseIterGVN& igvn, LoopOptsMode mode) {
       if (major_progress()) {
         print_method(PHASE_PHASEIDEALLOOP_ITERATIONS, 2);
       }
-      #ifndef PRODUCT
-      if (StressCountedLoop && (!major_progress() || _loop_opts_cnt == 1)) {
-          igvn._skip_stress_counted_loop = true;
-          PhaseIdealLoop::optimize(igvn, mode);
-          _loop_opts_cnt--;
-      }
-      #endif
     }
   }
   return true;
@@ -3842,7 +3835,9 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     }
     break;
   case Op_Loop:
-    assert(!n->as_Loop()->is_loop_nest_inner_loop() || _loop_opts_cnt == 0, "should have been turned into a counted loop");
+    if (!StressCountedLoop) {
+      assert(!n->as_Loop()->is_loop_nest_inner_loop() || _loop_opts_cnt == 0, "should have been turned into a counted loop");
+    }
   case Op_CountedLoop:
   case Op_LongCountedLoop:
   case Op_OuterStripMinedLoop:

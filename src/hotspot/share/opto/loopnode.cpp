@@ -4546,7 +4546,7 @@ void IdealLoopTree::remove_safepoints(PhaseIdealLoop* phase, bool keep_one) {
 // Convert to counted loops where possible
 void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
   #ifndef PRODUCT
-  if ( StressCountedLoop && !(phase->_igvn._skip_stress_counted_loop) ) {
+  if ( StressCountedLoop ) {
       if((phase->C->random() % 2) == 0) {
           return;
     }
