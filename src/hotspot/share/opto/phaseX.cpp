@@ -31,6 +31,7 @@
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
+#include "opto/convertnode.hpp"
 #include "opto/idealGraphPrinter.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
@@ -2006,27 +2007,6 @@ void PhaseIterGVN::verify_Identity_for(Node* n) {
     case Op_ConvI2L:
       return;
 
-    // MaxNode::find_identity_operation
-    //  Finds patterns like Max(A, Max(A, B)) -> Max(A, B)
-    //  This can be a 2-hop search, so maybe notification is not
-    //  good enough.
-    //
-    // Found with:
-    //   compiler/codegen/TestBooleanVect.java
-    //   -XX:VerifyIterativeGVN=1110
-    case Op_MaxL:
-    case Op_MinL:
-    case Op_MaxI:
-    case Op_MinI:
-    case Op_MaxF:
-    case Op_MinF:
-    case Op_MaxHF:
-    case Op_MinHF:
-    case Op_MaxD:
-    case Op_MinD:
-      return;
-
-
     // AddINode::Identity
     // Converts (x-y)+y to x
     // Could be issue with notification
@@ -2649,6 +2629,26 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       }
     }
   }
+  // ConvD2F::Ideal matches ConvD2F(SqrtD(ConvF2D(x))) => SqrtF(x).
+  // Notify ConvD2F users of SqrtD when any input of the SqrtD changes.
+  if (use_op == Op_SqrtD) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (u->Opcode() == Op_ConvD2F) {
+        worklist.push(u);
+      }
+    }
+  }
+  // ConvF2HF::Ideal matches ConvF2HF(binopF(ConvHF2F(...))) => FP16BinOp(...).
+  // Notify ConvF2HF users of float binary ops when any input changes.
+  if (Float16NodeFactory::is_float32_binary_oper(use_op)) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (u->Opcode() == Op_ConvF2HF) {
+        worklist.push(u);
+      }
+    }
+  }
   // If changed AddP inputs:
   // - check Stores for loop invariant, and
   // - if the changed input is the offset, check constant-offset AddP users for
@@ -2792,37 +2792,6 @@ void PhaseIterGVN::remove_speculative_types()  {
     }
   }
   _table.check_no_speculative_types();
-}
-
-// Check if the type of a divisor of a Div or Mod node includes zero.
-bool PhaseIterGVN::no_dependent_zero_check(Node* n) const {
-  switch (n->Opcode()) {
-    case Op_DivI:
-    case Op_ModI:
-    case Op_UDivI:
-    case Op_UModI: {
-      // Type of divisor includes 0?
-      if (type(n->in(2)) == Type::TOP) {
-        // 'n' is dead. Treat as if zero check is still there to avoid any further optimizations.
-        return false;
-      }
-      const TypeInt* type_divisor = type(n->in(2))->is_int();
-      return (type_divisor->_hi < 0 || type_divisor->_lo > 0);
-    }
-    case Op_DivL:
-    case Op_ModL:
-    case Op_UDivL:
-    case Op_UModL: {
-      // Type of divisor includes 0?
-      if (type(n->in(2)) == Type::TOP) {
-        // 'n' is dead. Treat as if zero check is still there to avoid any further optimizations.
-        return false;
-      }
-      const TypeLong* type_divisor = type(n->in(2))->is_long();
-      return (type_divisor->_hi < 0 || type_divisor->_lo > 0);
-    }
-  }
-  return true;
 }
 
 //=============================================================================
