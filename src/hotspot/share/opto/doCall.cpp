@@ -542,14 +542,14 @@ static jchar fmt_char_at(ciTypeArray* val_arr, jbyte coder, int idx) {
 // Sets *is_int to true for Integer.valueOf, false for Long.valueOf.
 static Node* detect_boxing_call(Node* node, bool* is_int) {
   if (node == nullptr) return nullptr;
-  
+
   // Unwrap common node types
   // - EncodeP/DecodeN for compressed oops
   // - CheckCastPP/CastPP for type casts
   // - Phi for merged paths (like cache hit/miss)
   while (node != nullptr) {
     int opc = node->Opcode();
-    if (opc == Op_EncodeP || opc == Op_DecodeN || 
+    if (opc == Op_EncodeP || opc == Op_DecodeN ||
         opc == Op_CheckCastPP || opc == Op_CastPP) {
       node = node->in(1);
       continue;
@@ -561,21 +561,21 @@ static Node* detect_boxing_call(Node* node, bool* is_int) {
     }
     break;
   }
-  
+
   // If this is a Proj node, get the input (the call)
   if (node != nullptr && node->is_Proj()) {
     node = node->in(0);
   }
-  
+
   // Check for CallJavaNode (which has method())
   if (node == nullptr || !node->is_Call()) return nullptr;
-  
+
   CallJavaNode* call = node->isa_CallJava();
   if (call == nullptr) return nullptr;
-  
+
   ciMethod* m = call->method();
   if (m == nullptr || !m->is_boxing_method()) return nullptr;
-  
+
   // Check which boxing method it is
   vmIntrinsics::ID id = m->intrinsic_id();
   if (id == vmIntrinsics::_Integer_valueOf) {
@@ -862,7 +862,7 @@ void Parse::try_optimize_string_format(ciMethod*& callee, bool& call_does_dispat
                                : "([Ljava/lang/Object;J)Ljava/lang/String;";
       }
     }
-  } else if (spec_count == 1 && (spec_flags[0] != 0 || spec_widths[0] != 0 || 
+  } else if (spec_count == 1 && (spec_flags[0] != 0 || spec_widths[0] != 0 ||
              spec_convs[0] == 'x' || spec_convs[0] == 'X')) {
     // Single specifier with width/flags OR %x/%X: format_1 or formatted_1
     // Meta: byte0=specIndex, byte1=conv, byte2=width, byte3=flag

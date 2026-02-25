@@ -5027,11 +5027,30 @@ public final class String
     @ForceInline
     private static String format_s(String format, Object arg, int specIndex) {
         int ci = specIndex & 0xFF;
+
         // For Formattable, call formatTo with width=0
         if (arg instanceof java.util.Formattable) {
-            return format_splice1(format, format_toStringArg(arg, 0), ci);
+            String argStr = format_toStringArg(arg, 0);
+            // Optimization for "%s" at the end: use substring+concat for better C1 performance
+            // C1 has intrinsics for substring/concat, while format_splice1 is just a Java method.
+            // For C2, the performance difference is minimal due to inlining and escape analysis.
+            if (ci == format.length() - 2) {
+                return format.substring(0, ci).concat(argStr);
+            }
+            return format_splice1(format, argStr, ci);
         }
-        return format_splice1(format, String.valueOf(arg), ci);
+
+        String argStr = String.valueOf(arg);
+
+        // Optimization for "%s" at the end: use substring+concat for better C1 performance
+        // Pattern: "prefix %s" → format.substring(0, ci).concat(argStr)
+        // This allows C1 to use intrinsics for substring and concat, improving performance
+        // in tiered compilation before methods are recompiled by C2.
+        if (ci == format.length() - 2) {
+            return format.substring(0, ci).concat(argStr);
+        }
+
+        return format_splice1(format, argStr, ci);
     }
 
     // --- Argument conversion helpers ---
