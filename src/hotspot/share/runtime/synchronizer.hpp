@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,7 +213,7 @@ public:
   static ObjectMonitor* get_or_insert_monitor(oop object, JavaThread* current, ObjectSynchronizer::InflateCause cause);
 
   static ObjectMonitor* add_monitor(JavaThread* current, ObjectMonitor* monitor, oop obj);
-  static bool remove_monitor(Thread* current, ObjectMonitor* monitor, oop obj);
+  static void remove_monitor(Thread* current, ObjectMonitor* monitor, oop obj);
 
   static void deflate_mark_word(oop object);
 
