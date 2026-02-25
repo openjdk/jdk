@@ -198,7 +198,7 @@ void *run_native_overflow(void *is_other_thread) {
     exit(7);
   }
 
-  if (*(int *)is_other_thread) {
+  if (*(int *)is_other_thread == 1) {
     // For non-initial thread we don't unmap the region but call os::uncommit_memory and keep PROT_NONE
     // so if host has enough swap space we will get the same SEGV with code SEGV_ACCERR(2) trying
     // to access it as if the guard page is present.
