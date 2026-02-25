@@ -21,15 +21,16 @@
  * questions.
  */
 
-/* @test
-   @bug 8262731
-   @key headful printer
-   @summary Verify that "PrinterJob.print" throws the expected exception,
-            if "Printable.print" throws an exception.
-   @run main ExceptionFromPrintableIsIgnoredTest MAIN PE
-   @run main ExceptionFromPrintableIsIgnoredTest MAIN RE
-   @run main ExceptionFromPrintableIsIgnoredTest EDT PE
-   @run main ExceptionFromPrintableIsIgnoredTest EDT RE
+/*
+ * @test
+ * @bug 8262731 8268675
+ * @key headful printer
+ * @summary Verify that "PrinterJob.print" throws the expected exception,
+ *          if "Printable.print" throws an exception.
+ * @run main ExceptionFromPrintableIsIgnoredTest MAIN PE
+ * @run main ExceptionFromPrintableIsIgnoredTest MAIN RE
+ * @run main ExceptionFromPrintableIsIgnoredTest EDT PE
+ * @run main ExceptionFromPrintableIsIgnoredTest EDT RE
  */
 
 import java.awt.Graphics;
