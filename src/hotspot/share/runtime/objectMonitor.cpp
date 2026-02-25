@@ -594,7 +594,7 @@ void ObjectMonitor::enter_with_contention_mark(JavaThread* current, ObjectMonito
       ExitOnSuspend eos(this);
       {
         ThreadBlockInVMPreprocess<ExitOnSuspend> tbivs(current, eos, true /* allow_suspend */);
-        if (!enter_fast_track(current, &node)) {
+        if (!try_enter_fast(current, &node)) {
           enter_internal(current, &node, false /* reenter_path */);
         }
         current->set_current_pending_monitor(nullptr);
@@ -940,7 +940,7 @@ const char* ObjectMonitor::is_busy_to_string(stringStream* ss) {
   return ss->base();
 }
 
-bool ObjectMonitor::enter_fast_track(JavaThread* current, ObjectWaiter* current_node) {
+bool ObjectMonitor::try_enter_fast(JavaThread* current, ObjectWaiter* current_node) {
   assert(current != nullptr, "invariant");
   assert(current->thread_state() == _thread_blocked, "invariant");
   assert(current_node != nullptr, "invariant");
@@ -991,14 +991,9 @@ bool ObjectMonitor::enter_fast_track(JavaThread* current, ObjectWaiter* current_
 
   // The lock might have been released while this thread was occupied queueing
   // itself onto _entry_list.  To close the race and avoid "stranding" and
-  // progress-liveness failure we must resample-retry _owner before parking.
+  // progress-liveness failure the caller must resample-retry _owner before parking.
   // Note the Dekker/Lamport duality: ST _entry_list; MEMBAR; LD Owner.
-  // In this case the ST-MEMBAR is accomplished with CAS().
-  //
-  // TODO: Defer all thread state transitions until park-time.
-  // Since state transitions are heavy and inefficient we'd like
-  // to defer the state transitions until absolutely necessary,
-  // and in doing so avoid some transitions ...
+  // In this case the ST-MEMBAR is accomplished with CAS() in try_lock_or_add_to_entry_list.
   return false;
 }
 
@@ -1018,7 +1013,7 @@ void ObjectMonitor::enter_internal(JavaThread* current, ObjectWaiter* current_no
   // _entry_list uses Atomic::cmpxchg() which already provides a fence that
   // prevents this load from floating up previous store.
   // Note that we can have false positives where timed-park is not necessary.
-  bool do_timed_parked = has_unmounted_vthreads();
+  bool do_timed_park = has_unmounted_vthreads();
   jlong recheck_interval = 1;
 
   for (;;) {
@@ -1033,12 +1028,12 @@ void ObjectMonitor::enter_internal(JavaThread* current, ObjectWaiter* current_no
 
     // If that fails, spin again.  Note that spin count may be zero so the above TryLock
     // is necessary.
-    if (try_spin(current)) {
+    if (reenter_path && try_spin(current)) {
       break;
     }
 
     // park self
-    if (do_timed_parked) {
+    if (do_timed_park) {
       current->_ParkEvent->park(recheck_interval);
       // Increase the recheck_interval, but clamp the value.
       recheck_interval *= 8;
@@ -1075,7 +1070,7 @@ void ObjectMonitor::enter_internal(JavaThread* current, ObjectWaiter* current_no
     OrderAccess::fence();
 
     // See comment in notify_internal.
-    do_timed_parked |= current_node->_do_timed_park;
+    do_timed_park |= current_node->_do_timed_park;
   }
 
   assert(has_owner(current), "invariant");
@@ -1905,12 +1900,12 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     } else {
       // This means the thread has been un-parked and added to the entry_list
       // in notify_internal, i.e. notified while waiting.
-      guarantee(v == ObjectWaiter::TS_ENTER, "invariant");
-      OSThreadContendState osts(current->osthread());
+      guarantee(v == ObjectWaiter::TS_ENTER, "invariant");     
       ExitOnSuspend eos(this);
       {
         ThreadBlockInVMPreprocess<ExitOnSuspend> tbivs(current, eos, true /* allow_suspend */);
         assert( _waiters > 0, "invariant");
+        OSThreadContendState osts(current->osthread());
         enter_internal(current, &node, true /* reenter_path */);
         // We can go to a safepoint at the end of this block. If we
         // do a thread dump during that safepoint, then this thread will show
@@ -2022,7 +2017,7 @@ bool ObjectMonitor::notify_internal(JavaThread* current) {
           // Wake up the thread to alleviate some deadlock cases where the successor
           // that will be picked up when this thread releases the monitor is an unmounted
           // virtual thread that cannot run due to having run out of carriers. Upon waking
-          // up, the thread will call enter_internal() with reenter_path = true which will use timed-park in case
+          // up, the thread will call enter_internal(..., true) which will use timed-park in case
           // there is contention and there are still vthreads in the _entry_list.
           // If the target was interrupted or the wait timed-out at the same time, it could
           // have reached enter_internal and read a false value of has_unmounted_vthreads()
