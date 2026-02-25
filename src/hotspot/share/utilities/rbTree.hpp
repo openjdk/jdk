@@ -374,10 +374,10 @@ public:
   typedef typename BaseType::Cursor Cursor;
   using BaseType::cursor;
   using BaseType::insert_at_cursor;
-  using BaseType::remove_at_cursor;
   using BaseType::next;
   using BaseType::prev;
 
+  void remove_at_cursor(const Cursor& node_cursor);
   void replace_at_cursor(RBNode<K, V>* new_node, const Cursor& node_cursor);
 
   RBNode<K, V>* allocate_node(const K& key);
