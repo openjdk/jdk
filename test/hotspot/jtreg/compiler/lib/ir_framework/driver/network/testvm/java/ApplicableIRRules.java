@@ -75,7 +75,7 @@ public class ApplicableIRRules implements JavaMessage {
         for (var entry : methods.entrySet()) {
             String method = entry.getKey();
             String ruleIds = entry.getValue().stream().map(String::valueOf).collect(Collectors.joining(", "));
-            System.out.println("- " + method + "(): " + ruleIds);
+            System.out.println("- " + method + ": " + ruleIds);
         }
     }
 }

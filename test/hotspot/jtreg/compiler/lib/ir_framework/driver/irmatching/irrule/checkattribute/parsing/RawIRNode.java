@@ -25,10 +25,10 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsin
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.driver.SuccessOnlyConstraintException;
 import compiler.lib.ir_framework.driver.network.testvm.java.VMInfo;
 import compiler.lib.ir_framework.shared.Comparison;
 import compiler.lib.ir_framework.shared.TestFormat;
-import compiler.lib.ir_framework.driver.SuccessOnlyConstraintException;
 
 import java.util.regex.Matcher;
 
