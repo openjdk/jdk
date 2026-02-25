@@ -21,7 +21,7 @@
  * questions.
  */
 
-package compiler.c2.irTests;
+package compiler.c2;
 
 import compiler.lib.ir_framework.*;
 import java.util.Random;
@@ -37,13 +37,13 @@ import jdk.test.lib.Utils;
  * @run driver ${test.main.class}
  */
 
-public class TestIGVNAddSubElimination {
+public class TestMissingAddSubElimination {
     private static final Random R = Utils.getRandomInstance();
 
     public static void main(String[] args) {
         TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions",
                                    "-XX:VerifyIterativeGVN=1000",
-                                   "-XX:CompileCommand=compileonly,compiler.c2.irTests.TestIGVNAddSubElimination::*");
+                                   "-XX:CompileCommand=compileonly,compiler.c2.TestMissingAddSubElimination::*");
     }
 
     @Run(test = {"testAddI1", "testAddI2", "testAddL1", "testAddL2"})
