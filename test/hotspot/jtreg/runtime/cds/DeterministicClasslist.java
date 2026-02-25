@@ -68,13 +68,13 @@ public class DeterministicClasslist {
     }
 
     static Path findFile(String path) {
-        Path testSrc = Paths.get(System.getProperty("test.src", "."));
+        Path root = Paths.get(System.getProperty("test.root", "."));
+        // Move back to java root directory
+        root = root.getParent().getParent().getParent();
 
-        for (Path d = testSrc; d != null; d = d.getParent()) {
-            Path file = d.resolve(path);
-            if (Files.exists(file)) {
-                return file;
-            }
+        Path file = root.resolve(path);
+        if (Files.exists(file)) {
+            return file;
         }
 
         return null;
