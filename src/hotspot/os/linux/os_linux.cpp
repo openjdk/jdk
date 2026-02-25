@@ -5383,12 +5383,16 @@ int os::Linux::malloc_info(FILE* stream) {
 }
 
 int os::get_dcache_line_size() {
+  // Uses getconf to retrieve LEVEL1_DCACHE_LINESIZE.
   int size = sysconf(_SC_LEVEL1_DCACHE_LINESIZE);
+  // On some Linuxes this is not available, then return DEFAULT_CACHE_LINE_SIZE.
   return (size == 0) ? DEFAULT_CACHE_LINE_SIZE : size;
 }
 
 int os::get_icache_line_size() {
+  // Uses getconf to retrieve LEVEL1_ICACHE_LINESIZE.
   int size = sysconf(_SC_LEVEL1_ICACHE_LINESIZE);
+  // On some Linuxes this is not available, then return DEFAULT_CACHE_LINE_SIZE.
   return (size == 0) ? DEFAULT_CACHE_LINE_SIZE : size;
 }
 #endif // __GLIBC__
