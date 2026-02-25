@@ -26,8 +26,8 @@ package com.sun.crypto.provider;
 
 import java.util.Arrays;
 import java.util.Objects;
-import java.security.*;
-import javax.crypto.SecretKey;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.ProviderException;
 import javax.crypto.spec.Argon2ParameterSpec;
 import static javax.crypto.spec.Argon2ParameterSpec.Type;
 import static javax.crypto.spec.Argon2ParameterSpec.Version;
