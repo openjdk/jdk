@@ -1859,9 +1859,9 @@ public class KeyStore {
             throws KeyStoreException, IOException, NoSuchAlgorithmException,
                 CertificateException {
 
-        if (file == null) {
-            throw new NullPointerException();
-        }
+        // Use requireNonNull instead of a bare NullPointerException so that the
+        // message is included in stack traces, matching the rest of the JDK style.
+        Objects.requireNonNull(file, "file is null");
 
         if (!file.isFile()) {
             throw new IllegalArgumentException(
@@ -1912,6 +1912,13 @@ public class KeyStore {
                         }
                         dataStream.reset(); // prepare the stream for the next probe
                     }
+                }
+                // A matching keystore type was identified (permitted or disabled).
+                // Stop iterating over providers — the first match wins.
+                // Without this break, a subsequent provider could overwrite
+                // 'keystore' or 'matched' with a different result.
+                if (keystore != null || matched != null) {
+                    break;
                 }
             }
 

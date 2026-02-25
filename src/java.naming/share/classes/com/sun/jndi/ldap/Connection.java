@@ -577,8 +577,13 @@ public final class Connection implements Runnable {
             LdapRequest ldr = pendingRequests;
 
             while (ldr != null) {
+                // Save next before abandonRequest(), because removeRequest() (called inside
+                // abandonRequest) sets ldr.next = null to unlink the node from the list.
+                // Without this, ldr.next would be null after the first iteration and the
+                // loop would stop, leaving remaining pending requests unabandoned.
+                LdapRequest next = ldr.next;
                 abandonRequest(ldr, reqCtls);
-                pendingRequests = ldr = ldr.next;
+                ldr = next;
             }
         } finally {
             lock.unlock();

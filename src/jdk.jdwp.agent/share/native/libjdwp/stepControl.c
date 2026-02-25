@@ -594,6 +594,10 @@ stepControl_handleStep(JNIEnv *env, jthread thread,
             /* Stepped into a method with lines, so we're done */
             completed = JNI_TRUE;
             LOG_STEP(("stepControl_handleStep: completed, fromDepth<currentDepth(%d<%d) and into method with lines", fromDepth, currentDepth));
+            /* classname was allocated by getClassname() in the condition above; free it here
+             * because the else-branch (which has its own jvmtiDeallocate) is not taken. */
+            jvmtiDeallocate(classname);
+            classname = NULL;
         } else {
             /*
              * We need to continue, but don't want the overhead of step

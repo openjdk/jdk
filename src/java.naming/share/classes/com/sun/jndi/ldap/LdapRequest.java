@@ -53,9 +53,10 @@ final class LdapRequest {
         if (replyQueueCapacity == -1) {
             this.replies = new LinkedBlockingQueue<>();
         } else {
-            // Use 80% of the capacity to avoid blocking on near-full queue.
-            // Math.max ensures capacity is at least 1 (integer division can yield 0 for small inputs).
-            this.replies = new LinkedBlockingQueue<>(Math.max(1, 8 * replyQueueCapacity / 10));
+            // Use 80% of the capacity to avoid blocking on a near-full queue.
+            // The cast to long prevents integer overflow when replyQueueCapacity > MAX_INT/8.
+            // Math.max ensures the result is at least 1: integer division yields 0 for inputs < 2.
+            this.replies = new LinkedBlockingQueue<>(Math.max(1, (int)(replyQueueCapacity * 8L / 10)));
         }
     }
 
@@ -113,7 +114,11 @@ final class LdapRequest {
         try {
             replies.put(ber);
         } catch (InterruptedException e) {
-            // ignore
+            // Restore the interrupted status so callers higher up the stack
+            // can detect and handle the interruption (e.g. to stop the reader
+            // thread cleanly). Swallowing InterruptedException without resetting
+            // the flag breaks the standard Java interruption protocol.
+            Thread.currentThread().interrupt();
         }
         return pauseAfterReceipt;
     }
