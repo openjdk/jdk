@@ -81,6 +81,7 @@ bool AOTConstantPoolResolver::is_resolution_deterministic(ConstantPool* cp, int 
 bool AOTConstantPoolResolver::is_class_resolution_deterministic(InstanceKlass* cp_holder, Klass* resolved_class) {
   assert(!is_in_archivebuilder_buffer(cp_holder), "sanity");
   assert(!is_in_archivebuilder_buffer(resolved_class), "sanity");
+  assert_at_safepoint(); // try_add_candidate() is called below and requires to be at safepoint.
 
   if (resolved_class->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(resolved_class);
@@ -509,10 +510,10 @@ bool AOTConstantPoolResolver::check_lambda_metafactory_methodhandle_arg(Constant
       }
       return false;
     }
-    if (!is_class_resolution_deterministic(cp->pool_holder(), k)) {
+    if (SystemDictionaryShared::should_be_excluded(k)) {
       if (log_is_enabled(Warning, aot, resolve)) {
         ResourceMark rm;
-        log_warning(aot, resolve)("Cannot aot-resolve Lambda proxy because %s is excluded or not deterministic", k->external_name());
+        log_warning(aot, resolve)("Cannot aot-resolve Lambda proxy because %s is excluded", k->external_name());
       }
       return false;
     }
