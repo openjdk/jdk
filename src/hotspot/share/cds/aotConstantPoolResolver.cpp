@@ -485,9 +485,8 @@ bool AOTConstantPoolResolver::check_lambda_metafactory_methodhandle_arg(Constant
     return false;
   }
 
-  // klass, name, and sigature of the method
+  // klass and sigature of the method (no need to check the method name)
   Symbol* sig = cp->method_handle_signature_ref_at(mh_index);
-  Symbol* method_name = cp->method_handle_name_ref_at(mh_index);
   Symbol* klass_name = cp->klass_name_at(cp->method_handle_klass_index_at(mh_index));
 
   if (log_is_enabled(Debug, aot, resolve)) {
