@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -431,6 +431,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
      */
     public int pos;
 
+    /* The (encoded) end position in the source file. @see util.Position.
+     */
+    public int endpos = Position.NOPOS;
+
     /* The type of this node.
      */
     public Type type;
@@ -514,8 +518,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     }
 
     // for default DiagnosticPosition
-    public int getEndPosition(EndPosTable endPosTable) {
-        return noNoPos(TreeInfo.getEndPos(this, endPosTable));
+    public int getEndPosition() {
+        return noNoPos(TreeInfo.getEndPos(this));
     }
 
     private int noNoPos(int position) {
@@ -552,9 +556,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         /** A table that stores all documentation comments indexed by the tree
          * nodes they refer to. defined only if option -s is set. */
         public DocCommentTable docComments = null;
-        /* An object encapsulating ending positions of source ranges indexed by
-         * the tree nodes they belong to. Defined only if option -Xjcov is set. */
-        public EndPosTable endPositions = null;
         protected JCCompilationUnit(List<JCTree> defs) {
             this.defs = defs;
         }
@@ -1011,9 +1012,16 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     public static class JCVariableDecl extends JCStatement implements VariableTree {
 
         public enum DeclKind {
-            EXPLICIT,       // "SomeType name"
-            IMPLICIT,       // "name"
-            VAR,            // "var name"
+            EXPLICIT(0),                        // "SomeType name"
+            IMPLICIT(Flags.VAR_VARIABLE),       // "name"
+            VAR(Flags.VAR_VARIABLE),            // "var name"
+            ;
+
+            public final long additionalSymbolFlags;
+
+            private DeclKind(long additionalSymbolFlags) {
+                this.additionalSymbolFlags = additionalSymbolFlags;
+            }
         }
 
         /** variable modifiers */

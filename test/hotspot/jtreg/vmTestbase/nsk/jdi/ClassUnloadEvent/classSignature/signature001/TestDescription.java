@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@
  *    debugger and debugee communicates with special commands.
  *    The debugger forces debugge to load checked classes, creates and
  *    enables ClassUnloadRequest. Next, debugger forces debuggee to
- *    unload classes, using memory stressing techique, and waits for
+ *    unload classes, using whitebox full GC techique, and waits for
  *    ClassUnloadEvent.
  *    If each expected ClassUnloadEvent occurs, debugger tests method
  *    ClassUnloadEvent.classSignature() and verifies that this event
@@ -87,6 +87,8 @@
  *        nsk.jdi.ClassUnloadEvent.classSignature.signature001a
  *
  * @comment compile loadclassXX to bin/loadclassXX
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver nsk.share.ExtraClassesBuilder
  *      loadclass
  *
@@ -98,6 +100,6 @@
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts} -Xbootclasspath/a:.
+ *                      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI"
  */
-

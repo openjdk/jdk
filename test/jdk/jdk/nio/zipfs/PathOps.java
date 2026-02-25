@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.ProviderMismatchException;
 
-/**
+/*
  *
  * @test
- * @bug 8038500 8040059 8139956 8146754 8172921 8186142
+ * @bug 8038500 8040059 8139956 8146754 8172921 8186142 8326487
  * @summary Tests path operations for zip provider.
  *
  * @modules jdk.zipfs
@@ -92,6 +92,10 @@ public class PathOps {
         check(result, Boolean.toString(expected));
     }
 
+    void check(Object result, int expected) {
+        check(result, Integer.toString(expected));
+    }
+
     PathOps root(String expected) {
         out.println("check root");
         checkPath();
@@ -110,6 +114,13 @@ public class PathOps {
         out.println("check name");
         checkPath();
         check(path.getFileName(), expected);
+        return this;
+    }
+
+    PathOps nameCount(int expected) {
+        out.println("check nameCount");
+        checkPath();
+        check(path.getNameCount(), expected);
         return this;
     }
 
@@ -284,7 +295,15 @@ public class PathOps {
         test("/")
             .root("/")
             .parent(null)
-            .name(null);
+            .name(null)
+            .nameCount(0);
+
+        // empty name
+        test("")
+            .root(null)
+            .parent(null)
+            .name("")
+            .nameCount(1);
 
         // no root component
         test("a/b")

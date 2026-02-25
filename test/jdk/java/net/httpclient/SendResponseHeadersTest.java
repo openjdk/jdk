@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,16 +27,13 @@
  * @library /test/lib
  * @summary Check that sendResponseHeaders throws an IOException when headers
  *  have already been sent
- * @run testng/othervm SendResponseHeadersTest
+ * @run junit/othervm SendResponseHeadersTest
  */
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import jdk.test.lib.net.URIBuilder;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -54,16 +51,21 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static java.net.http.HttpClient.Builder.NO_PROXY;
-import static org.testng.Assert.expectThrows;
-import static org.testng.Assert.fail;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class SendResponseHeadersTest {
-    URI uri;
-    HttpServer server;
-    ExecutorService executor;
+    private static URI uri;
+    private static HttpServer server;
+    private static ExecutorService executor;
 
-    @BeforeTest
-    public void setUp() throws IOException, URISyntaxException {
+    @BeforeAll
+    public static void setUp() throws IOException, URISyntaxException {
         var loopback = InetAddress.getLoopbackAddress();
         var addr = new InetSocketAddress(loopback, 0);
         server = HttpServer.create(addr, 0);
@@ -94,8 +96,8 @@ public class SendResponseHeadersTest {
             fail(response.body());
     }
 
-    @AfterTest
-    public void tearDown() {
+    @AfterAll
+    public static void tearDown() {
         server.stop(0);
         executor.shutdown();
     }
@@ -108,7 +110,7 @@ public class SendResponseHeadersTest {
                 is.readAllBytes();
                 exchange.sendResponseHeaders(200, 0);
                 try {
-                    IOException io = expectThrows(IOException.class,
+                    IOException io = Assertions.assertThrows(IOException.class,
                             () -> exchange.sendResponseHeaders(200, 0));
                     System.out.println("Got expected exception: " + io);
                 } catch (Throwable t) {

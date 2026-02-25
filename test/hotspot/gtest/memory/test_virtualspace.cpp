@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ namespace {
    public:
     MemoryReleaser(ReservedSpace* rs) : _rs(rs) { }
     ~MemoryReleaser() {
-      EXPECT_TRUE(MemoryReserver::release(*_rs));
+      MemoryReserver::release(*_rs);
     }
   };
 
@@ -354,11 +354,7 @@ class TestReservedSpace : AllStatic {
   }
 
   static void release_memory_for_test(ReservedSpace rs) {
-    if (rs.special()) {
-      EXPECT_TRUE(os::release_memory_special(rs.base(), rs.size()));
-    } else {
-      EXPECT_TRUE(os::release_memory(rs.base(), rs.size()));
-    }
+    os::release_memory(rs.base(), rs.size());
   }
 
   static void test_reserved_space1(size_t size, size_t alignment) {

@@ -41,7 +41,7 @@ import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.cli.StandardBundlingOperation;
-import jdk.jpackage.internal.model.AppImagePackageType;
+import jdk.jpackage.internal.model.AppImageBundleType;
 import jdk.jpackage.internal.model.BundlingOperationDescriptor;
 import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.StandardPackageType;
@@ -54,6 +54,7 @@ import jdk.jpackage.test.mock.CommandActionSpecs;
 import jdk.jpackage.test.mock.CommandMock;
 import jdk.jpackage.test.mock.CommandMockExit;
 import jdk.jpackage.test.mock.Script;
+import jdk.jpackage.test.stdmock.JPackageMockUtils;
 import org.junit.jupiter.api.Test;
 
 
@@ -96,7 +97,7 @@ public class DefaultBundlingEnvironmentTest extends JUnitAdapter {
 
         var script = createMockScript(op);
 
-        ToolProvider jpackage = MockUtils.buildJPackage()
+        ToolProvider jpackage = JPackageMockUtils.buildJPackage()
                 .os(op.os())
                 .script(script)
                 .listener(executedCommands::add).create();
@@ -119,9 +120,9 @@ public class DefaultBundlingEnvironmentTest extends JUnitAdapter {
         // #2 - jpackage should bail out earlier).
         //
 
-        final var type = op.packageTypeValue();
+        final var type = op.bundleTypeValue();
         final int iterationCount;
-        if (op.packageType() instanceof AppImagePackageType) {
+        if (op.bundleType() instanceof AppImageBundleType) {
             iterationCount = 1;
         } else {
             iterationCount = 2;
@@ -165,7 +166,7 @@ public class DefaultBundlingEnvironmentTest extends JUnitAdapter {
 
     private static Script createMockScript(StandardBundlingOperation op) {
 
-        if (op.packageType() instanceof AppImagePackageType) {
+        if (op.bundleType() instanceof AppImageBundleType) {
             return Script.build().createSequence();
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1111,7 +1111,7 @@ public final class String
         int sp = 0;
         int sl = len;
         while (sp < sl) {
-            int ret = StringCoding.implEncodeISOArray(val, sp, dst, dp, len);
+            int ret = StringCoding.encodeISOArray(val, sp, dst, dp, len);
             sp = sp + ret;
             dp = dp + ret;
             if (ret != len) {

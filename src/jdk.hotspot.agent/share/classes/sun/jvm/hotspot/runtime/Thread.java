@@ -39,7 +39,7 @@ public class Thread extends VMObject {
   private static AddressField currentWaitingMonitorField;
   private static AddressField osThreadField;
 
-  private static JLongField allocatedBytesField;
+  private static CIntegerField allocatedBytesField;
 
   static {
     VM.registerVMInitializedObserver(new Observer() {
@@ -60,7 +60,7 @@ public class Thread extends VMObject {
     tlabFieldOffset    = typeThread.getField("_tlab").getOffset();
     currentPendingMonitorField = typeJavaThread.getAddressField("_current_pending_monitor");
     currentWaitingMonitorField = typeJavaThread.getAddressField("_current_waiting_monitor");
-    allocatedBytesField = typeThread.getJLongField("_allocated_bytes");
+    allocatedBytesField = typeThread.getCIntegerField("_allocated_bytes");
   }
 
   public Thread(Address addr) {

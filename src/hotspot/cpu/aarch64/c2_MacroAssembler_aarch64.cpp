@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,9 @@
 #include "opto/matcher.hpp"
 #include "opto/output.hpp"
 #include "opto/subnode.hpp"
+#include "runtime/objectMonitorTable.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/synchronizer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -221,37 +223,52 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
     if (!UseObjectMonitorTable) {
       assert(t1_monitor == t1_mark, "should be the same here");
     } else {
+      const Register t1_hash = t1;
       Label monitor_found;
 
-      // Load cache address
-      lea(t3_t, Address(rthread, JavaThread::om_cache_oops_offset()));
+      // Save the mark, we might need it to extract the hash.
+      mov(t3, t1_mark);
 
-      const int num_unrolled = 2;
+      // Look for the monitor in the om_cache.
+
+      ByteSize cache_offset   = JavaThread::om_cache_oops_offset();
+      ByteSize monitor_offset = OMCache::oop_to_monitor_difference();
+      const int num_unrolled  = OMCache::CAPACITY;
       for (int i = 0; i < num_unrolled; i++) {
-        ldr(t1, Address(t3_t));
-        cmp(obj, t1);
+        ldr(t1_monitor, Address(rthread, cache_offset + monitor_offset));
+        ldr(t2, Address(rthread, cache_offset));
+        cmp(obj, t2);
         br(Assembler::EQ, monitor_found);
-        increment(t3_t, in_bytes(OMCache::oop_to_oop_difference()));
+        cache_offset = cache_offset + OMCache::oop_to_oop_difference();
       }
 
-      Label loop;
+      // Look for the monitor in the table.
 
-      // Search for obj in cache.
-      bind(loop);
+      // Get the hash code.
+      ubfx(t1_hash, t3, markWord::hash_shift, markWord::hash_bits);
 
-      // Check for match.
-      ldr(t1, Address(t3_t));
-      cmp(obj, t1);
-      br(Assembler::EQ, monitor_found);
+      // Get the table and calculate the bucket's address
+      lea(t3, ExternalAddress(ObjectMonitorTable::current_table_address()));
+      ldr(t3, Address(t3));
+      ldr(t2, Address(t3, ObjectMonitorTable::table_capacity_mask_offset()));
+      ands(t1_hash, t1_hash, t2);
+      ldr(t3, Address(t3, ObjectMonitorTable::table_buckets_offset()));
 
-      // Search until null encountered, guaranteed _null_sentinel at end.
-      increment(t3_t, in_bytes(OMCache::oop_to_oop_difference()));
-      cbnz(t1, loop);
-      // Cache Miss, NE set from cmp above, cbnz does not set flags
-      b(slow_path);
+      // Read the monitor from the bucket.
+      ldr(t1_monitor, Address(t3, t1_hash, Address::lsl(LogBytesPerWord)));
+
+      // Check if the monitor in the bucket is special (empty, tombstone or removed).
+      cmp(t1_monitor, (unsigned char)ObjectMonitorTable::SpecialPointerValues::below_is_special);
+      br(Assembler::LO, slow_path);
+
+      // Check if object matches.
+      ldr(t3, Address(t1_monitor, ObjectMonitor::object_offset()));
+      BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+      bs_asm->try_resolve_weak_handle_in_c2(this, t3, t2, slow_path);
+      cmp(t3, obj);
+      br(Assembler::NE, slow_path);
 
       bind(monitor_found);
-      ldr(t1_monitor, Address(t3_t, OMCache::oop_to_monitor_difference()));
     }
 
     const Register t2_owner_addr = t2;
@@ -1960,50 +1977,76 @@ void C2_MacroAssembler::neon_reduce_logical(int opc, Register dst, BasicType bt,
   BLOCK_COMMENT("} neon_reduce_logical");
 }
 
-// Vector reduction min/max for integral type with ASIMD instructions.
+// Helper function to decode min/max reduction operation properties
+void C2_MacroAssembler::decode_minmax_reduction_opc(int opc, bool* is_min,
+                                                    bool* is_unsigned,
+                                                    Condition* cond) {
+  switch(opc) {
+    case Op_MinReductionV:
+      *is_min = true;  *is_unsigned = false; *cond = LT; break;
+    case Op_MaxReductionV:
+      *is_min = false; *is_unsigned = false; *cond = GT; break;
+    case Op_UMinReductionV:
+      *is_min = true;  *is_unsigned = true;  *cond = LO; break;
+    case Op_UMaxReductionV:
+      *is_min = false; *is_unsigned = true;  *cond = HI; break;
+    default:
+      ShouldNotReachHere();
+  }
+}
+
+// Vector reduction min/max/umin/umax for integral type with ASIMD instructions.
 // Note: vtmp is not used and expected to be fnoreg for T_LONG case.
 // Clobbers: rscratch1, rflags
 void C2_MacroAssembler::neon_reduce_minmax_integral(int opc, Register dst, BasicType bt,
                                                     Register isrc, FloatRegister vsrc,
                                                     unsigned vector_length_in_bytes,
                                                     FloatRegister vtmp) {
-  assert(opc == Op_MinReductionV || opc == Op_MaxReductionV, "unsupported");
+  assert(opc == Op_MinReductionV || opc == Op_MaxReductionV ||
+         opc == Op_UMinReductionV || opc == Op_UMaxReductionV, "unsupported");
   assert(vector_length_in_bytes == 8 || vector_length_in_bytes == 16, "unsupported");
   assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported");
   assert_different_registers(dst, isrc);
   bool isQ = vector_length_in_bytes == 16;
-  bool is_min = opc == Op_MinReductionV;
-
+  bool is_min;
+  bool is_unsigned;
+  Condition cond;
+  decode_minmax_reduction_opc(opc, &is_min, &is_unsigned, &cond);
   BLOCK_COMMENT("neon_reduce_minmax_integral {");
     if (bt == T_LONG) {
       assert(vtmp == fnoreg, "should be");
       assert(isQ, "should be");
       umov(rscratch1, vsrc, D, 0);
       cmp(isrc, rscratch1);
-      csel(dst, isrc, rscratch1, is_min ? LT : GT);
+      csel(dst, isrc, rscratch1, cond);
       umov(rscratch1, vsrc, D, 1);
       cmp(dst, rscratch1);
-      csel(dst, dst, rscratch1, is_min ? LT : GT);
+      csel(dst, dst, rscratch1, cond);
     } else {
       SIMD_Arrangement size = esize2arrangement((unsigned)type2aelembytes(bt), isQ);
       if (size == T2S) {
-        is_min ? sminp(vtmp, size, vsrc, vsrc) : smaxp(vtmp, size, vsrc, vsrc);
+        // For T2S (2x32-bit elements), use pairwise instructions because
+        // uminv/umaxv/sminv/smaxv don't support arrangement 2S.
+        neon_minmaxp(is_unsigned, is_min, vtmp, size, vsrc, vsrc);
       } else {
-        is_min ? sminv(vtmp, size, vsrc) : smaxv(vtmp, size, vsrc);
+        // For other sizes, use reduction to scalar instructions.
+        neon_minmaxv(is_unsigned, is_min, vtmp, size, vsrc);
       }
       if (bt == T_INT) {
         umov(dst, vtmp, S, 0);
+      } else if (is_unsigned) {
+        umov(dst, vtmp, elemType_to_regVariant(bt), 0);
       } else {
         smov(dst, vtmp, elemType_to_regVariant(bt), 0);
       }
       cmpw(dst, isrc);
-      cselw(dst, dst, isrc, is_min ? LT : GT);
+      cselw(dst, dst, isrc, cond);
     }
   BLOCK_COMMENT("} neon_reduce_minmax_integral");
 }
 
 // Vector reduction for integral type with SVE instruction.
-// Supported operations are Add, And, Or, Xor, Max, Min.
+// Supported operations are Add, And, Or, Xor, Max, Min, UMax, UMin.
 // rflags would be clobbered if opc is Op_MaxReductionV or Op_MinReductionV.
 void C2_MacroAssembler::sve_reduce_integral(int opc, Register dst, BasicType bt, Register src1,
                                             FloatRegister src2, PRegister pg, FloatRegister tmp) {
@@ -2075,35 +2118,27 @@ void C2_MacroAssembler::sve_reduce_integral(int opc, Register dst, BasicType bt,
       }
       break;
     }
-    case Op_MaxReductionV: {
-      sve_smaxv(tmp, size, pg, src2);
-      if (bt == T_INT || bt == T_LONG) {
+    case Op_MaxReductionV:
+    case Op_MinReductionV:
+    case Op_UMaxReductionV:
+    case Op_UMinReductionV: {
+      bool is_min;
+      bool is_unsigned;
+      Condition cond;
+      decode_minmax_reduction_opc(opc, &is_min, &is_unsigned, &cond);
+      sve_minmaxv(is_unsigned, is_min, tmp, size, pg, src2);
+      // Move result from vector to general register
+      if (is_unsigned || bt == T_INT || bt == T_LONG) {
         umov(dst, tmp, size, 0);
       } else {
         smov(dst, tmp, size, 0);
       }
       if (bt == T_LONG) {
         cmp(dst, src1);
-        csel(dst, dst, src1, Assembler::GT);
+        csel(dst, dst, src1, cond);
       } else {
         cmpw(dst, src1);
-        cselw(dst, dst, src1, Assembler::GT);
-      }
-      break;
-    }
-    case Op_MinReductionV: {
-      sve_sminv(tmp, size, pg, src2);
-      if (bt == T_INT || bt == T_LONG) {
-        umov(dst, tmp, size, 0);
-      } else {
-        smov(dst, tmp, size, 0);
-      }
-      if (bt == T_LONG) {
-        cmp(dst, src1);
-        csel(dst, dst, src1, Assembler::LT);
-      } else {
-        cmpw(dst, src1);
-        cselw(dst, dst, src1, Assembler::LT);
+        cselw(dst, dst, src1, cond);
       }
       break;
     }

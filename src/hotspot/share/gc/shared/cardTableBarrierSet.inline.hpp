@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 
 template <DecoratorSet decorators, typename T>
 inline void CardTableBarrierSet::write_ref_field_post(T* field) {
-  volatile CardValue* byte = _card_table->byte_for(field);
+  volatile CardValue* byte = card_table()->byte_for(field);
   *byte = CardTable::dirty_card_val();
 }
 
