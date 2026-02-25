@@ -35,7 +35,6 @@ import java.net.http.HttpResponse.BodyHandlers;
 import static java.nio.file.StandardOpenOption.*;
 
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 
 public class FileProcessorPermissionTest {
 

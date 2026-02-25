@@ -113,7 +113,6 @@ public class BodyHandlerOfFileDownloadTest implements HttpServerAdapters {
         return new Object[][]{
                 {  http3URI,   defaultFsPath,  MSG,  true   },
                 {  http3URI,   defaultFsPath,  MSG,  false  },
-
                 {  httpURI,    defaultFsPath,  MSG,  true   },
                 {  httpsURI,   defaultFsPath,  MSG,  true   },
                 {  http2URI,   defaultFsPath,  MSG,  true   },
