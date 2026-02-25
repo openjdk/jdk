@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,55 +21,41 @@
  * questions.
  */
 
-package jdk.internal.constant;
-
 import java.lang.constant.*;
 import java.util.*;
 
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-import static org.testng.Assert.*;
+import jdk.internal.constant.ConstantAccess;
+import jdk.internal.constant.ConstantUtils;
+import org.junit.jupiter.api.Test;
 
-/**
+/*
  * @test
  * @bug 8303930
+ * @build java.base/jdk.internal.constant.*
  * @compile ConstantUtilsTest.java
  * @modules java.base/jdk.internal.constant
- * @run testng ConstantUtilsTest
+ * @run junit ConstantUtilsTest
  * @summary unit tests for methods of java.lang.constant.ConstantUtils that are not covered by other unit tests
  */
-@Test
 public class ConstantUtilsTest {
     private static ClassDesc thisClass = ClassDesc.of("MethodHandleDescTest");
 
+    @Test
     public void testValidateMemberName() {
-        try {
-            ConstantUtils.validateMemberName(null, false);
-            fail("");
-        } catch (NullPointerException e) {
-            // good
-        }
-
-        try {
-            ConstantUtils.validateMemberName("", false);
-            fail("");
-        } catch (IllegalArgumentException e) {
-            // good
-        }
+        assertThrows(NullPointerException.class, () -> ConstantUtils.validateMemberName(null, false));
+        assertThrows(IllegalArgumentException.class, () -> ConstantUtils.validateMemberName("", false));
 
         List<String> badNames = List.of(".", ";", "[", "/", "<", ">");
         for (String n : badNames) {
-            try {
-                ConstantUtils.validateMemberName(n, true);
-                fail(n);
-            } catch (IllegalArgumentException e) {
-                // good
-            }
+            assertThrows(IllegalArgumentException.class, () -> ConstantUtils.validateMemberName(n, true), n);
         }
     }
 
+    @Test
     public void testSkipOverFieldSignatureVoid() {
-       int ret = ConstantUtils.skipOverFieldSignature("(V)V", 1, 4);
-       assertEquals(ret, 0, "Descriptor of (V)V starting at index 1, void disallowed");
+       int ret = ConstantAccess.skipOverFieldSignature("(V)V", 1, 4);
+       assertEquals(0, ret, "Descriptor of (V)V starting at index 1, void disallowed");
     }
 }
