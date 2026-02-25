@@ -112,6 +112,28 @@ public:
     return dom_result == DomResult::Dominate;
   }
 
+  // The result of deciding whether a memory node 'other' writes into the memory which a MemNode
+  // 'this' observes.
+  class AccessIndependence {
+  public:
+    // Whether 'other' writes into the memory which 'this' observes. This value is conservative,
+    // that is it is only true when it is provable that the memory accessed by the nodes is
+    // non-overlapping.
+    bool independent;
+
+    // If 'independent' is true, this is the memory input of 'other' that corresponds to the memory
+    // location that 'this' observes. For example, if 'other' is a StoreNode, then 'mem' is its
+    // memory input, if 'other' is a MergeMemNode, then 'mem' is the memory input corresponds to
+    // the alias class of 'this'.
+    // If 'independent' is false,
+    // - 'mem' is non-nullptr if it seems that 'other' writes to the exact memory location 'this'
+    // observes.
+    // - 'mem' is nullptr otherwise.
+    Node* mem;
+  };
+
+  AccessIndependence detect_access_independence(PhaseValues* phase, Node* other);
+
   virtual const class TypePtr *adr_type() const;  // returns bottom_type of address
 
   // Shared code for Ideal methods:

@@ -582,6 +582,165 @@ bool MemNode::detect_ptr_independence(Node* p1, AllocateNode* a1,
   return false;
 }
 
+// Decide whether the memory accessed by 'this' and 'other' may overlap. This function may be used
+// when we want to walk the memory graph to fold a load, or when we want to hoist a load above a
+// loop when there is no stores that may overlap with the load inside the loop.
+MemNode::AccessIndependence MemNode::detect_access_independence(PhaseValues* phase, Node* other) {
+  assert(phase->type(other) == Type::MEMORY, "must be a memory node %s", other->Name());
+  assert(!other->is_Phi(), "caller must handle Phi");
+
+  Node*         adr    = in(MemNode::Address);
+  intptr_t      offset = 0;
+  Node*         base   = AddPNode::Ideal_base_and_offset(adr, phase, offset);
+  AllocateNode* alloc  = AllocateNode::Ideal_allocation(base);
+
+  const TypePtr* adr_type = this->adr_type();
+  if (adr_type == nullptr) {
+    // This means the access is dead
+    return {false, phase->C->top()};
+  } else if (adr_type->base() == TypePtr::AnyPtr) {
+    assert(adr_type->ptr() == TypePtr::Null, "MemNode should never access a wide memory");
+    // Give up, this will upset Compile::get_alias_index
+    return {false, nullptr};
+  }
+
+  if (offset == Type::OffsetBot) {
+    // cannot unalias unless there are precise offsets
+    return {false, nullptr};
+  }
+
+  const bool adr_maybe_raw = check_if_adr_maybe_raw(adr);
+  const TypeOopPtr* adr_oop_type = adr_type->isa_oopptr();
+  Node* prev = other;
+  if (other->is_Store()) {
+    Node* st_adr = other->in(MemNode::Address);
+    intptr_t st_offset = 0;
+    Node* st_base = AddPNode::Ideal_base_and_offset(st_adr, phase, st_offset);
+    if (st_base == nullptr) {
+      // inscrutable pointer
+      return {false, nullptr};
+    }
+
+    // If the bases are the same and the offsets are the same, it seems that this is the exact
+    // store we are looking for, the caller will check if the type of the store matches using
+    // MemNode::can_see_stored_value
+    if (st_base == base && st_offset == offset) {
+      return {false, other};
+    }
+
+    // If it is provable that the memory accessed by mem does not overlap the memory accessed by
+    // this, we may walk past mem.
+    // For raw accesses, 2 accesses are independent if they have the same base and the offsets
+    // say that they do not overlap.
+    // For heap accesses, 2 accesses are independent if either the bases are provably different
+    // at runtime or the offsets say that the accesses do not overlap.
+    if ((adr_maybe_raw || check_if_adr_maybe_raw(st_adr)) && st_base != base) {
+      // Raw accesses can only be provably independent if they have the same base
+      return {false, nullptr};
+    }
+
+    // If the offsets say that the accesses do not overlap, then it is provable that mem and this
+    // do not overlap. For example, a LoadI from Object+8 is independent from a StoreL into
+    // Object+12, no matter what the bases are.
+    if (st_offset != offset && st_offset != Type::OffsetBot) {
+      const int MAX_STORE = MAX2(BytesPerLong, (int)MaxVectorSize);
+      assert(other->as_Store()->memory_size() <= MAX_STORE, "");
+      if (st_offset >= offset + memory_size() ||
+          st_offset <= offset - MAX_STORE ||
+          st_offset <= offset - other->as_Store()->memory_size()) {
+        // Success:  The offsets are provably independent.
+        // (You may ask, why not just test st_offset != offset and be done?
+        // The answer is that stores of different sizes can co-exist
+        // in the same sequence of RawMem effects.  We sometimes initialize
+        // a whole 'tile' of array elements with a single jint or jlong.)
+        return {true, other->in(MemNode::Memory)};
+      }
+    }
+
+    // Same base and overlapping offsets, it seems provable that the accesses overlap, give up
+    if (st_base == base) {
+      return {false, nullptr};
+    }
+
+    // Try to prove that 2 different base nodes at compile time are different values at runtime
+    bool known_independent = false;
+    if (detect_ptr_independence(base, alloc, st_base, AllocateNode::Ideal_allocation(st_base), phase)) {
+      known_independent = true;
+    }
+
+    if (known_independent) {
+      return {true, other->in(MemNode::Memory)};
+    }
+  } else if (other->is_Proj() && other->in(0)->is_Initialize()) {
+    InitializeNode* st_init = other->in(0)->as_Initialize();
+    AllocateNode* st_alloc = st_init->allocation();
+    if (st_alloc == nullptr) {
+      // Something degenerated
+      return {false, nullptr};
+    }
+    bool known_identical = false;
+    bool known_independent = false;
+    if (alloc == st_alloc) {
+      known_identical = true;
+    } else if (alloc != nullptr) {
+      known_independent = true;
+    } else if (all_controls_dominate(this, st_alloc)) {
+      known_independent = true;
+    }
+
+    if (known_independent) {
+      // The bases are provably independent: Either they are
+      // manifestly distinct allocations, or else the control
+      // of this load dominates the store's allocation.
+      int alias_idx = phase->C->get_alias_index(adr_type);
+      if (alias_idx == Compile::AliasIdxRaw) {
+        other = st_alloc->in(TypeFunc::Memory);
+      } else {
+        other = st_init->memory(alias_idx);
+      }
+      return {true, other};
+    }
+
+    // If we are not looking at a store initializing the same
+    // allocation we are loading from, we lose.
+    if (known_identical) {
+      // From caller, can_see_stored_value will consult find_captured_store.
+      return {false, other};
+    }
+
+  } else if (find_previous_arraycopy(phase, alloc, other, false) != nullptr) {
+    // Find an arraycopy that may or may not affect the MemNode
+    return {prev != other, other};
+  } else if (other->is_MergeMem()) {
+    int alias_idx = phase->C->get_alias_index(adr_type);
+    return {true, other->as_MergeMem()->memory_at(alias_idx)};
+  } else if (adr_oop_type != nullptr && adr_oop_type->is_known_instance_field()) {
+    // Can't use optimize_simple_memory_chain() since it needs PhaseGVN.
+    if (other->is_Proj() && other->in(0)->is_Call()) {
+      // ArrayCopyNodes processed here as well.
+      CallNode* call = other->in(0)->as_Call();
+      if (!call->may_modify(adr_oop_type, phase)) {
+        return {true, call->in(TypeFunc::Memory)};
+      }
+    } else if (other->is_Proj() && other->in(0)->is_MemBar()) {
+      ArrayCopyNode* ac = nullptr;
+      if (!ArrayCopyNode::may_modify(adr_oop_type, other->in(0)->as_MemBar(), phase, ac)) {
+        return {true, other->in(0)->in(TypeFunc::Memory)};
+      }
+    } else if (other->is_ClearArray()) {
+      if (ClearArrayNode::step_through(&other, (uint)adr_oop_type->instance_id(), phase)) {
+        // (the call updated 'mem' value)
+        return {true, other};
+      } else {
+        // Can not bypass initialization of the instance
+        // we are looking for.
+        return {false, other};
+      }
+    }
+  }
+
+  return {false, nullptr};
+}
 
 // Find an arraycopy ac that produces the memory state represented by parameter mem.
 // Return ac if
@@ -697,178 +856,30 @@ ArrayCopyNode* MemNode::find_array_copy_clone(Node* ld_alloc, Node* mem) const {
 // (Currently, only LoadNode::Ideal has steps (c), (d).  More later.)
 //
 Node* MemNode::find_previous_store(PhaseValues* phase) {
-  Node*         ctrl   = in(MemNode::Control);
-  Node*         adr    = in(MemNode::Address);
-  intptr_t      offset = 0;
-  Node*         base   = AddPNode::Ideal_base_and_offset(adr, phase, offset);
-  AllocateNode* alloc  = AllocateNode::Ideal_allocation(base);
-
-  const TypePtr* adr_type = this->adr_type();
-  if (adr_type == nullptr) {
-    // This means the access is dead
-    return phase->C->top();
-  } else if (adr_type->base() == TypePtr::AnyPtr) {
-    assert(adr_type->ptr() == TypePtr::Null, "MemNode should never access a wide memory");
-    // Give up, this will upset Compile::get_alias_index
-    return nullptr;
-  }
-
-  int alias_idx = phase->C->get_alias_index(adr_type);
-  assert(alias_idx != Compile::AliasIdxTop, "must not be a dead node");
-  assert(alias_idx != Compile::AliasIdxBot || !phase->C->do_aliasing(), "must not be a very wide access");
-
-  if (offset == Type::OffsetBot)
-    return nullptr;            // cannot unalias unless there are precise offsets
-
-  const bool adr_maybe_raw = check_if_adr_maybe_raw(adr);
-  const TypeOopPtr *addr_t = adr->bottom_type()->isa_oopptr();
-
-  intptr_t size_in_bytes = memory_size();
-
-  Node* mem = in(MemNode::Memory);   // start searching here...
-
-  int cnt = 50;             // Cycle limiter
-  for (;;) {                // While we can dance past unrelated stores...
-    if (--cnt < 0)  break;  // Caught in cycle or a complicated dance?
-
-    Node* prev = mem;
-    if (mem->is_Store()) {
-      Node* st_adr = mem->in(MemNode::Address);
-      intptr_t st_offset = 0;
-      Node* st_base = AddPNode::Ideal_base_and_offset(st_adr, phase, st_offset);
-      if (st_base == nullptr) {
-        // inscrutable pointer
-        break;
-      }
-
-      // If the bases are the same and the offsets are the same, it seems that this is the exact
-      // store we are looking for, the caller will check if the type of the store matches using
-      // MemNode::can_see_stored_value
-      if (st_base == base && st_offset == offset) {
-        return mem; // (b) found the store that this access observes
-      }
-
-      // If it is provable that the memory accessed by mem does not overlap the memory accessed by
-      // this, we may walk past mem.
-      // For raw accesses, 2 accesses are independent if they have the same base and the offsets
-      // say that they do not overlap.
-      // For heap accesses, 2 accesses are independent if either the bases are provably different
-      // at runtime or the offsets say that the accesses do not overlap.
-      if ((adr_maybe_raw || check_if_adr_maybe_raw(st_adr)) && st_base != base) {
-        // Raw accesses can only be provably independent if they have the same base
-        break;
-      }
-
-      // If the offsets say that the accesses do not overlap, then it is provable that mem and this
-      // do not overlap. For example, a LoadI from Object+8 is independent from a StoreL into
-      // Object+12, no matter what the bases are.
-      if (st_offset != offset && st_offset != Type::OffsetBot) {
-        const int MAX_STORE = MAX2(BytesPerLong, (int)MaxVectorSize);
-        assert(mem->as_Store()->memory_size() <= MAX_STORE, "");
-        if (st_offset >= offset + size_in_bytes ||
-            st_offset <= offset - MAX_STORE ||
-            st_offset <= offset - mem->as_Store()->memory_size()) {
-          // Success:  The offsets are provably independent.
-          // (You may ask, why not just test st_offset != offset and be done?
-          // The answer is that stores of different sizes can co-exist
-          // in the same sequence of RawMem effects.  We sometimes initialize
-          // a whole 'tile' of array elements with a single jint or jlong.)
-          mem = mem->in(MemNode::Memory);
-          continue; // (a) advance through the independent store
-        }
-      }
-
-      // Same base and overlapping offsets, it seems provable that the accesses overlap, give up
-      if (st_base == base) {
-        break;
-      }
-
-      // Try to prove that 2 different base nodes at compile time are different values at runtime
-      bool known_independent = false;
-      if (detect_ptr_independence(base, alloc, st_base, AllocateNode::Ideal_allocation(st_base), phase)) {
-        known_independent = true;
-      }
-
-      if (known_independent) {
-        mem = mem->in(MemNode::Memory);
-        continue; // (a) advance through the independent store
-      }
-    } else if (mem->is_Proj() && mem->in(0)->is_Initialize()) {
-      InitializeNode* st_init = mem->in(0)->as_Initialize();
-      AllocateNode*  st_alloc = st_init->allocation();
-      if (st_alloc == nullptr) {
-        break;              // something degenerated
-      }
-      bool known_identical = false;
-      bool known_independent = false;
-      if (alloc == st_alloc) {
-        known_identical = true;
-      } else if (alloc != nullptr) {
-        known_independent = true;
-      } else if (all_controls_dominate(this, st_alloc)) {
-        known_independent = true;
-      }
-
-      if (known_independent) {
-        // The bases are provably independent: Either they are
-        // manifestly distinct allocations, or else the control
-        // of this load dominates the store's allocation.
-        if (alias_idx == Compile::AliasIdxRaw) {
-          mem = st_alloc->in(TypeFunc::Memory);
-        } else {
-          mem = st_init->memory(alias_idx);
-        }
-        continue;           // (a) advance through independent store memory
-      }
-
-      // (b) at this point, if we are not looking at a store initializing
-      // the same allocation we are loading from, we lose.
-      if (known_identical) {
-        // From caller, can_see_stored_value will consult find_captured_store.
-        return mem;         // let caller handle steps (c), (d)
-      }
-
-    } else if (find_previous_arraycopy(phase, alloc, mem, false) != nullptr) {
-      if (prev != mem) {
-        // Found an arraycopy but it doesn't affect that load
-        continue;
-      }
-      // Found an arraycopy that may affect that load
-      return mem;
-    } else if (mem->is_MergeMem()) {
-      mem = mem->as_MergeMem()->memory_at(alias_idx);
-      continue;
-    } else if (addr_t != nullptr && addr_t->is_known_instance_field()) {
-      // Can't use optimize_simple_memory_chain() since it needs PhaseGVN.
-      if (mem->is_Proj() && mem->in(0)->is_Call()) {
-        // ArrayCopyNodes processed here as well.
-        CallNode *call = mem->in(0)->as_Call();
-        if (!call->may_modify(addr_t, phase)) {
-          mem = call->in(TypeFunc::Memory);
-          continue;         // (a) advance through independent call memory
-        }
-      } else if (mem->is_Proj() && mem->in(0)->is_MemBar()) {
-        ArrayCopyNode* ac = nullptr;
-        if (ArrayCopyNode::may_modify(addr_t, mem->in(0)->as_MemBar(), phase, ac)) {
-          break;
-        }
-        mem = mem->in(0)->in(TypeFunc::Memory);
-        continue;           // (a) advance through independent MemBar memory
-      } else if (mem->is_ClearArray()) {
-        if (ClearArrayNode::step_through(&mem, (uint)addr_t->instance_id(), phase)) {
-          // (the call updated 'mem' value)
-          continue;         // (a) advance through independent allocation memory
-        } else {
-          // Can not bypass initialization of the instance
-          // we are looking for.
-          return mem;
-        }
-      }
+  Node* mem = in(MemNode::Memory); // start searching here...
+  int cnt = 50;                    // Cycle limiter
+  for (;;) {
+    // While we can dance past unrelated stores...
+    if (phase->type(mem) == Type::TOP) {
+      // Encounter a dead node
+      return phase->C->top();
+    } else if (--cnt < 0) {
+      // Caught in cycle or a complicated dance?
+      return nullptr;
+    } else if (mem->is_Phi()) {
+      return nullptr;
     }
 
-    // Unless there is an explicit 'continue', we must bail out here,
-    // because 'mem' is an inscrutable memory state (e.g., a call).
-    break;
+    AccessIndependence independence = detect_access_independence(phase, mem);
+    if (independence.independent) {
+      // (a) advance through the independent store
+      mem = independence.mem;
+      assert(mem != nullptr, "must not be nullptr");
+    } else {
+      // (b) found the store that this access observes if this is not null
+      // Otherwise, give up if it is null
+      return independence.mem;
+    }
   }
 
   return nullptr;              // bail out
