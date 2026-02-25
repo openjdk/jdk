@@ -31,11 +31,11 @@
 
 
 void ShenandoahController::update_gc_id() {
-  AtomicAccess::inc(&_gc_id);
+  _gc_id.add_then_fetch((size_t)1);
 }
 
 size_t ShenandoahController::get_gc_id() {
-  return AtomicAccess::load(&_gc_id);
+  return _gc_id.load_relaxed();
 }
 
 void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest& req, bool block) {
