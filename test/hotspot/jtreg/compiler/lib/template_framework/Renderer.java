@@ -415,11 +415,11 @@ final class Renderer {
 
     /**
      * Finds the index where the next replacement pattern after {@code start} begins while skipping
-     * over "$$" and "##", which will be escaped.
+     * over "$$" and "##".
      *
      * @param s     string to search for replacements
      * @param start index from which to start searching
-     * @return the index of the beginning of the next replacement pattern or the lenght of {@code s}
+     * @return the index of the beginning of the next replacement pattern or the length of {@code s}
      */
     private int findNextReplacement(final String s, final int start) {
         int next = start;
