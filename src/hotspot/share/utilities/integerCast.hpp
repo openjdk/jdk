@@ -33,6 +33,16 @@
 
 #include <stdint.h>
 
+// Options for the behavior of integer_cast when the requested conversion is
+// tautological because the To type's range fully encloses the From type's
+// range.
+enum class IntegerCast {
+  forbid_tautology,
+  permit_tautology
+};
+constexpr IntegerCast forbid_tautology = IntegerCast::forbid_tautology;
+constexpr IntegerCast permit_tautology = IntegerCast::permit_tautology;
+
 // Tests whether all values for the From type are within the range of values
 // for the To Type.  From and To must be integral types.  This is used by
 // integer_cast to test for tautological conversions.
@@ -83,12 +93,13 @@ constexpr bool is_integer_convertible(From from) {
 // value of from is within the range of values for the To type.  To and From
 // must be integral types.
 //
-// permit_tautology determines the behavior when a conversion will always
+// tautology_behavior determines the behavior when a conversion will always
 // succeed because the range of values for the From type is enclosed by the
 // range of values for the To type (is_always_integer_convertible<From, To>()
-// is true).  If true, the conversion will be performed as requested. If
-// false, a compile-time error is produced.  The default is false for 64bit
-// platforms, true for 32bit platforms.
+// is true).  If the value is permit_tautology, the conversion will be
+// performed as requested. Otherwise, a compile-time error is produced.  The
+// default is forbid_tautology for 64bit platforms, permit_tautology for 32bit
+// platforms.
 //
 // Unnecessary integer_casts make code harder to understand.  Hence the
 // compile-time failure for tautological conversions, to alert that a code
@@ -105,13 +116,16 @@ constexpr bool is_integer_convertible(From from) {
 // are likely to require conversions in some places.  However, some of those
 // conversions will be tautological on 32bit platforms, such as size_t => uint.
 template<typename To,
-         bool permit_tautology = LP64_ONLY(false) NOT_LP64(true),
+         IntegerCast tautology_behavior =
+           LP64_ONLY(forbid_tautology)
+           NOT_LP64(permit_tautology),
          typename From,
          ENABLE_IF(std::is_integral_v<To>),
          ENABLE_IF(std::is_integral_v<From>)>
 constexpr To integer_cast(From from) {
   if constexpr (is_always_integer_convertible<From, To>()) {
-    static_assert(permit_tautology, "tautological integer_cast");
+      static_assert(tautology_behavior == permit_tautology,
+                    "tautological integer_cast");
   } else {
 #ifdef ASSERT
     if (!is_integer_convertible<To>(from)) {
@@ -139,7 +153,7 @@ template<typename To, typename From,
          ENABLE_IF(std::is_enum_v<From>)>
 constexpr To integer_cast(From from) {
   using U = std::underlying_type_t<From>;
-  return integer_cast<To, true /* permit_tautology */>(static_cast<U>(from));
+  return integer_cast<To, permit_tautology>(static_cast<U>(from));
 }
 
 #endif // SHARE_UTILITIES_INTEGERCAST_HPP
