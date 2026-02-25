@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary Test request and response body handlers/subscribers when there is no body
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.http2.Http2TestServer
- * @run testng/othervm
+ * @run junit/othervm
  *      -Djdk.httpclient.HttpClient.log=quic,errors
  *      -Djdk.httpclient.HttpClient.log=all
  *      NoBodyPartThree
@@ -46,19 +46,24 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 
 import jdk.internal.net.http.common.Utils;
-import org.testng.annotations.Test;
 
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+// @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+// is inherited from the super class
 public class NoBodyPartThree extends AbstractNoBody {
 
     static final AtomicInteger REQID = new AtomicInteger();
 
     volatile boolean consumerHasBeenCalled;
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void testAsByteArrayPublisher(String uri, boolean sameClient) throws Exception {
         printStamp(START, "testAsByteArrayPublisher(\"%s\", %s)", uri, sameClient);
         HttpClient client = null;
@@ -83,7 +88,7 @@ public class NoBodyPartThree extends AbstractNoBody {
                 consumerHasBeenCalled = false;
                 var response = client.send(req, BodyHandlers.ofByteArrayConsumer(consumer));
                 assertTrue(consumerHasBeenCalled);
-                assertEquals(response.statusCode(), 200);
+                assertEquals(200, response.statusCode());
 
                 u = uri + "/testAsByteArrayPublisher/second/" + REQID.getAndIncrement();
                 req = newRequestBuilder(u + "?echo")
@@ -93,12 +98,13 @@ public class NoBodyPartThree extends AbstractNoBody {
                 consumerHasBeenCalled = false;
                 response = client.send(req, BodyHandlers.ofByteArrayConsumer(consumer));
                 assertTrue(consumerHasBeenCalled);
-                assertEquals(response.statusCode(), 200);
+                assertEquals(200, response.statusCode());
             }
         }
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void testStringPublisher(String uri, boolean sameClient) throws Exception {
         printStamp(START, "testStringPublisher(\"%s\", %s)", uri, sameClient);
         HttpClient client = null;
@@ -116,14 +122,15 @@ public class NoBodyPartThree extends AbstractNoBody {
                         .build();
                 System.out.println("sending " + req);
                 HttpResponse<InputStream> response = client.send(req, BodyHandlers.ofInputStream());
-                assertEquals(response.statusCode(), 200);
+                assertEquals(200, response.statusCode());
                 byte[] body = response.body().readAllBytes();
-                assertEquals(body.length, 0);
+                assertEquals(0, body.length);
             }
         }
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void testInputStreamPublisherBuffering(String uri, boolean sameClient) throws Exception {
         printStamp(START, "testInputStreamPublisherBuffering(\"%s\", %s)", uri, sameClient);
         HttpClient client = null;
@@ -142,14 +149,15 @@ public class NoBodyPartThree extends AbstractNoBody {
                 System.out.println("sending " + req);
                 HttpResponse<byte[]> response = client.send(req,
                         BodyHandlers.buffering(BodyHandlers.ofByteArray(), 1024));
-                assertEquals(response.statusCode(), 200);
+                assertEquals(200, response.statusCode());
                 byte[] body = response.body();
-                assertEquals(body.length, 0);
+                assertEquals(0, body.length);
             }
         }
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void testEmptyArrayPublisher(String uri, boolean sameClient) throws Exception {
         printStamp(START, "testEmptyArrayPublisher(\"%s\", %s)", uri, sameClient);
         HttpClient client = null;
@@ -167,8 +175,8 @@ public class NoBodyPartThree extends AbstractNoBody {
                         .build();
                 System.out.println("sending " + req);
                 var response = client.send(req, BodyHandlers.ofLines());
-                assertEquals(response.statusCode(), 200);
-                assertEquals(response.body().toList(), List.of());
+                assertEquals(200, response.statusCode());
+                assertEquals(List.of(), response.body().toList());
             }
         }
     }

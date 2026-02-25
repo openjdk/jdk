@@ -24,10 +24,9 @@
 package gc.arguments;
 
 /*
- * @test TestMaxRAMFlags
+ * @test TestMaxRAMPercentage
  * @bug 8222252
- * @summary Verify correct MaxHeapSize and UseCompressedOops when MaxRAM and MaxRAMPercentage
- * are specified.
+ * @summary Verify correct MaxHeapSize and UseCompressedOops when MaxRAMPercentage is specified
  * @library /test/lib
  * @library /
  * @requires vm.bits == "64"
@@ -35,8 +34,11 @@ package gc.arguments;
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run driver gc.arguments.TestMaxRAMFlags
- * @author bob.vandette@oracle.com
+ * @run main/othervm
+ *      -Xbootclasspath/a:.
+ *      -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+WhiteBoxAPI
+ *      gc.arguments.TestMaxRAMPercentage
  */
 
 import java.util.regex.Matcher;
@@ -45,14 +47,17 @@ import java.util.regex.Pattern;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.process.OutputAnalyzer;
+import jtreg.SkippedException;
 
-public class TestMaxRAMFlags {
+public class TestMaxRAMPercentage {
 
-  private static void checkMaxRAMSize(long maxram, int maxrampercent, boolean forcecoop, long expectheap, boolean expectcoop) throws Exception {
+  private static final WhiteBox wb = WhiteBox.getWhiteBox();
+
+  private static void checkMaxRAMSize(double maxrampercent, boolean forcecoop, long expectheap, boolean expectcoop) throws Exception {
 
     ArrayList<String> args = new ArrayList<String>();
-    args.add("-XX:MaxRAM=" + maxram);
     args.add("-XX:MaxRAMPercentage=" + maxrampercent);
     if (forcecoop) {
       args.add("-XX:+UseCompressedOops");
@@ -107,21 +112,32 @@ public class TestMaxRAMFlags {
   }
 
   public static void main(String args[]) throws Exception {
-    // Tests
-    // 1. Verify that MaxRAMPercentage overrides UseCompressedOops Ergo
-    // 2. Verify that UseCompressedOops forces compressed oops limit even
-    //    when other flags are specified.
-
-    long oneG = 1L * 1024L * 1024L * 1024L;
-
     // Hotspot startup logic reduces MaxHeapForCompressedOops by HeapBaseMinAddress
     // in order to get zero based compressed oops offsets.
     long heapbaseminaddr = getHeapBaseMinAddress();
     long maxcoopheap = TestUseCompressedOopsErgoTools.getMaxHeapForCompressedOops(new String [0]) - heapbaseminaddr;
 
-    // Args: MaxRAM , MaxRAMPercentage, forcecoop, expect heap, expect coop
-    checkMaxRAMSize(maxcoopheap - oneG, 100, false, maxcoopheap - oneG, true);
-    checkMaxRAMSize(maxcoopheap + oneG, 100, false, maxcoopheap + oneG, false);
-    checkMaxRAMSize(maxcoopheap + oneG, 100, true, maxcoopheap, true);
+    // The headroom is used to get/not get compressed oops from the maxcoopheap size
+    long M = 1L * 1024L * 1024L;
+    long headroom = 64 * M;
+
+    long requiredHostMemory = maxcoopheap + headroom;
+
+    // Get host memory
+    long hostMemory = wb.hostPhysicalMemory();
+
+    System.out.println("hostMemory: " + hostMemory + ", requiredHostMemory: " + requiredHostMemory);
+
+    if (hostMemory < requiredHostMemory) {
+      throw new SkippedException("Not enough RAM on machine to run. Test skipped!");
+    }
+
+    double MaxRAMPercentage = ((double)maxcoopheap / hostMemory) * 100.0;
+    double headroomPercentage = ((double)headroom / hostMemory) * 100.0;
+
+    // Args: MaxRAMPercentage, forcecoop, expectheap, expectcoop
+    checkMaxRAMSize(MaxRAMPercentage - headroomPercentage, false, maxcoopheap - (long)headroom, true);
+    checkMaxRAMSize(MaxRAMPercentage + headroomPercentage, false, maxcoopheap + (long)headroom, false);
+    checkMaxRAMSize(MaxRAMPercentage, true, maxcoopheap, true);
   }
 }
