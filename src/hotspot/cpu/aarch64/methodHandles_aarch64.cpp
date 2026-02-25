@@ -299,7 +299,7 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     Register rmember = rmethod;  // MemberName ptr; incoming method ptr is dead now
     __ pop(rmember);             // extract last argument
     __ mov(r19_sender_sp, esp);  // esp has been moved by 8 bytes, reflect it. The value in r19 will become frame's unextened_sp later on.
-    __ andr(r19_sender_sp, r19_sender_sp, -16); // Force 16-bytes alignment. It wipes out the 8-byte change made above, but doesn't hurt.
+    __ andr(r19_sender_sp, esp, -16); // Force 16-bytes alignment. It wipes out the 8-byte change made above, but doesn't hurt.
     generate_method_handle_dispatch(_masm, iid, recv, rmember, not_for_compiler_entry);
   }
 
