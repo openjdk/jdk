@@ -2007,19 +2007,6 @@ void PhaseIterGVN::verify_Identity_for(Node* n) {
     case Op_ConvI2L:
       return;
 
-    // AddINode::Identity
-    // Converts (x-y)+y to x
-    // Could be issue with notification
-    //
-    // Turns out AddL does the same.
-    //
-    // Found with:
-    //  compiler/c2/Test6792161.java
-    //  -ea -esa -XX:CompileThreshold=100 -XX:+UnlockExperimentalVMOptions -server -XX:-TieredCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
-    case Op_AddI:
-    case Op_AddL:
-      return;
-
     // AbsINode::Identity
     // Not investigated yet.
     case Op_AbsI:
@@ -2777,6 +2764,18 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       }
     };
     use->visit_uses(push_and_to_worklist, is_boundary);
+  }
+
+  // If changed Sub inputs, check Add for identity.
+  // e.g., (x - y) + y -> x; x + (y - x) -> y.
+  if (use_op == Op_SubI || use_op == Op_SubL) {
+    const int add_op = (use_op == Op_SubI) ? Op_AddI : Op_AddL;
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (u->Opcode() == add_op) {
+        worklist.push(u);
+      }
+    }
   }
 }
 
