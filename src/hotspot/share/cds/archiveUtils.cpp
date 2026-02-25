@@ -315,7 +315,7 @@ public:
     AllocGap target(num_bytes, nullptr);
     AllocGapNode* node = closest_ge(target);
     if (node == nullptr) {
-      return nullptr; // Didn't find any useable gap.
+      return nullptr; // Didn't find any usable gap.
     }
 
     size_t gap_bytes = node->key().gap_bytes();
@@ -370,7 +370,7 @@ char* DumpRegion::allocate_metaspace_obj(size_t num_bytes, address src, Metaspac
 
   if (alignment == SharedSpaceObjectAlignment && type != MetaspaceClosureType::SymbolType) {
     // The addresses of Symbols must be in the same order as they are in ArchiveBuilder::SourceObjList.
-    // If we put them in gaps, their orders will change.
+    // If we put them in gaps, their order will change.
     //
     // We have enough small objects that all gaps are usually filled.
     char* p = _gap_tree.allocate_from_gap(num_bytes);
@@ -389,7 +389,7 @@ char* DumpRegion::allocate_metaspace_obj(size_t num_bytes, address src, Metaspac
 
   if (is_class && !is_aligned(top() + RuntimeClassInfoPtrSize, alignment)) {
     // We need to add a gap to align the buffered Klass. Save the gap for future small allocations.
-    assert(read_only == false, "only gaps in RW region are reuseable");
+    assert(read_only == false, "only gaps in RW region are reusable");
     char* gap_bottom = top();
     char* gap_top = align_up(gap_bottom + RuntimeClassInfoPtrSize, alignment) - RuntimeClassInfoPtrSize;
     size_t gap_bytes = _gap_tree.add_gap(gap_bottom, gap_top);
