@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6402717 8330606
+ * @bug 6402717 8330606 8376295
  * @summary Redefine VerifyError to get a VerifyError should not throw SOE
  * @requires vm.jvmti
  * @library /test/lib
@@ -33,9 +33,17 @@
  *          java.instrument
  *          jdk.jartool/sun.tools.jar
  * @run main RedefineClassHelper
+ *
  * @run main/othervm/timeout=180
  *         -javaagent:redefineagent.jar
  *         -Xlog:class+init,exceptions
+ *         RedefineVerifyError
+ *
+ * @run main/othervm/timeout=180
+ *         -javaagent:redefineagent.jar
+ *         -Xlog:class+init,exceptions
+ *         -XX:+UnlockDiagnosticVMOptions
+ *         -XX:-BytecodeVerificationRemote
  *         RedefineVerifyError
  */
 

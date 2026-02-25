@@ -1077,11 +1077,19 @@ JvmtiEnv::SuspendAllVirtualThreads(jint except_count, const jthread* except_list
         JvmtiVTSuspender::register_vthread_resume(thread_oop);
       }
     }
+    // Restore resumed state for current thread if it is virtual.
+    // It must be suspended in the suspend_thread call out of disabler context.
+    oop cur_oop = self_tobj();
+    if (cur_oop != nullptr) {
+      assert(JvmtiVTSuspender::is_vthread_suspended(cur_oop), "sanity check");
+      JvmtiVTSuspender::register_vthread_resume(cur_oop);
+    }
   }
   // Self suspend after all other suspends if necessary.
   // Do not use MountUnmountDisabler in context of self suspend to avoid deadlocks.
   if (self_tobj() != nullptr) {
-    suspend_thread(self_tobj(), current, /* single_suspend */ false);
+    // Register current vthread as suspended with the suspend_thread call.
+    suspend_thread(self_tobj(), current, /* single_suspend */ true);
   }
   return JVMTI_ERROR_NONE;
 } /* end SuspendAllVirtualThreads */

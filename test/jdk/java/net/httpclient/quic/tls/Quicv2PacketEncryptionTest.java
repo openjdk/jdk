@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@ import jdk.internal.net.quic.QuicKeyUnavailableException;
 import jdk.internal.net.quic.QuicTLSContext;
 import jdk.internal.net.quic.QuicTLSEngine;
 import jdk.internal.net.quic.QuicTransportException;
-import org.testng.annotations.Test;
 import sun.security.ssl.QuicTLSEngineImpl;
 import sun.security.ssl.QuicTLSEngineImplAccessor;
 
@@ -40,8 +39,11 @@ import java.util.HexFormat;
 import java.util.function.IntFunction;
 
 import static jdk.internal.net.quic.QuicVersion.QUIC_V2;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.Test;
 
 /**
  * @test
@@ -50,7 +52,7 @@ import static org.testng.Assert.fail;
  *          java.base/jdk.internal.net.quic
  * @build java.base/sun.security.ssl.QuicTLSEngineImplAccessor
  * @summary known-answer test for packet encryption and decryption with Quic v2
- * @run testng/othervm Quicv2PacketEncryptionTest
+ * @run junit/othervm Quicv2PacketEncryptionTest
  */
 public class Quicv2PacketEncryptionTest {
 
@@ -182,7 +184,7 @@ public class Quicv2PacketEncryptionTest {
         clientEngine.encryptPacket(QuicTLSEngine.KeySpace.INITIAL, INITIAL_C_PN, new FixedHeaderContent(header), payload, packet);
         protect(QuicTLSEngine.KeySpace.INITIAL, packet, INITIAL_C_PN_OFFSET, INITIAL_C_PAYLOAD_OFFSET - INITIAL_C_PN_OFFSET, clientEngine, 0x0f);
 
-        assertEquals(HexFormat.of().formatHex(packet.array()), ENCRYPTED_C_PAYLOAD);
+        assertEquals(ENCRYPTED_C_PAYLOAD, HexFormat.of().formatHex(packet.array()));
     }
 
     @Test
@@ -200,25 +202,24 @@ public class Quicv2PacketEncryptionTest {
 
         String expectedContents = INITIAL_C_HEADER + INITIAL_C_PAYLOAD;
 
-        assertEquals(HexFormat.of().formatHex(packet.array()).substring(0, expectedContents.length()), expectedContents);
+        assertEquals(expectedContents, HexFormat.of().formatHex(packet.array()).substring(0, expectedContents.length()));
     }
 
-    @Test(expectedExceptions = AEADBadTagException.class)
+    @Test
     public void testDecryptClientInitialPacketBadTag() throws Exception {
-        QuicTLSEngine serverEngine = getQuicV2Engine(SSLContext.getDefault(), false);
-        ByteBuffer dcid = ByteBuffer.wrap(HexFormat.of().parseHex(INITIAL_DCID));
-        serverEngine.deriveInitialKeys(QUIC_V2, dcid);
-
-        ByteBuffer packet = ByteBuffer.wrap(HexFormat.of().parseHex(ENCRYPTED_C_PAYLOAD));
-        unprotect(QuicTLSEngine.KeySpace.INITIAL, packet, INITIAL_C_PN_OFFSET, INITIAL_C_PAYLOAD_OFFSET - INITIAL_C_PN_OFFSET, serverEngine, 0x0f);
-        ByteBuffer src = packet.asReadOnlyBuffer();
-        packet.position(INITIAL_C_PAYLOAD_OFFSET);
-
-        // change one byte of AEAD tag
-        packet.put(packet.limit() - 1, (byte)0);
-
-        serverEngine.decryptPacket(QuicTLSEngine.KeySpace.INITIAL, INITIAL_C_PN, -1, src, INITIAL_C_PAYLOAD_OFFSET, packet);
-        fail("Decryption should have failed");
+        Assertions.assertThrows(AEADBadTagException.class, () -> {
+            QuicTLSEngine serverEngine = getQuicV2Engine(SSLContext.getDefault(), false);
+            ByteBuffer dcid = ByteBuffer.wrap(HexFormat.of().parseHex(INITIAL_DCID));
+            serverEngine.deriveInitialKeys(QUIC_V2, dcid);
+            ByteBuffer packet = ByteBuffer.wrap(HexFormat.of().parseHex(ENCRYPTED_C_PAYLOAD));
+            unprotect(QuicTLSEngine.KeySpace.INITIAL, packet, INITIAL_C_PN_OFFSET, INITIAL_C_PAYLOAD_OFFSET - INITIAL_C_PN_OFFSET, serverEngine, 0x0f);
+            ByteBuffer src = packet.asReadOnlyBuffer();
+            packet.position(INITIAL_C_PAYLOAD_OFFSET);
+            // change one byte of AEAD tag
+            packet.put(packet.limit() - 1, (byte)0);
+            serverEngine.decryptPacket(QuicTLSEngine.KeySpace.INITIAL, INITIAL_C_PN, -1, src, INITIAL_C_PAYLOAD_OFFSET, packet);
+            fail("Decryption should have failed");
+        });
     }
 
     @Test
@@ -239,7 +240,7 @@ public class Quicv2PacketEncryptionTest {
         serverEngine.encryptPacket(QuicTLSEngine.KeySpace.INITIAL, INITIAL_S_PN, new FixedHeaderContent(header), payload, packet);
         protect(QuicTLSEngine.KeySpace.INITIAL, packet, INITIAL_S_PN_OFFSET, INITIAL_S_PAYLOAD_OFFSET - INITIAL_S_PN_OFFSET, serverEngine, 0x0f);
 
-        assertEquals(HexFormat.of().formatHex(packet.array()), ENCRYPTED_S_PAYLOAD);
+        assertEquals(ENCRYPTED_S_PAYLOAD, HexFormat.of().formatHex(packet.array()));
     }
 
     @Test
@@ -257,7 +258,7 @@ public class Quicv2PacketEncryptionTest {
 
         String expectedContents = INITIAL_S_HEADER + INITIAL_S_PAYLOAD;
 
-        assertEquals(HexFormat.of().formatHex(packet.array()).substring(0, expectedContents.length()), expectedContents);
+        assertEquals(expectedContents, HexFormat.of().formatHex(packet.array()).substring(0, expectedContents.length()));
     }
 
     @Test
@@ -298,7 +299,7 @@ public class Quicv2PacketEncryptionTest {
 
         clientEngine.signRetryPacket(QUIC_V2, dcid, src, packet);
 
-        assertEquals(HexFormat.of().formatHex(packet.array()), SIGNED_RETRY);
+        assertEquals(SIGNED_RETRY, HexFormat.of().formatHex(packet.array()));
     }
 
     @Test
@@ -311,17 +312,17 @@ public class Quicv2PacketEncryptionTest {
         clientEngine.verifyRetryPacket(QUIC_V2, dcid, packet);
     }
 
-    @Test(expectedExceptions = AEADBadTagException.class)
+    @Test
     public void testVerifyBadRetry() throws NoSuchAlgorithmException, AEADBadTagException, QuicTransportException {
-        QuicTLSEngine clientEngine = getQuicV2Engine(SSLContext.getDefault(), true);
-        ByteBuffer dcid = ByteBuffer.wrap(HexFormat.of().parseHex(INITIAL_DCID));
-
-        ByteBuffer packet = ByteBuffer.wrap(HexFormat.of().parseHex(SIGNED_RETRY));
-
-        // change one byte of AEAD tag
-        packet.put(packet.limit() - 1, (byte)0);
-        clientEngine.verifyRetryPacket(QUIC_V2, dcid, packet);
-        fail("Verification should have failed");
+        Assertions.assertThrows(AEADBadTagException.class, () -> {
+            QuicTLSEngine clientEngine = getQuicV2Engine(SSLContext.getDefault(), true);
+            ByteBuffer dcid = ByteBuffer.wrap(HexFormat.of().parseHex(INITIAL_DCID));
+            ByteBuffer packet = ByteBuffer.wrap(HexFormat.of().parseHex(SIGNED_RETRY));
+            // change one byte of AEAD tag
+            packet.put(packet.limit() - 1, (byte)0);
+            clientEngine.verifyRetryPacket(QUIC_V2, dcid, packet);
+            fail("Verification should have failed");
+        });
     }
 
     @Test
@@ -342,7 +343,7 @@ public class Quicv2PacketEncryptionTest {
         clientEngine.encryptPacket(QuicTLSEngine.KeySpace.ONE_RTT, ONERTT_PN , new FixedHeaderContent(header), payload, packet);
         protect(QuicTLSEngine.KeySpace.ONE_RTT, packet, ONERTT_PN_OFFSET, ONERTT_PAYLOAD_OFFSET - ONERTT_PN_OFFSET, clientEngine, 0x1f);
 
-        assertEquals(HexFormat.of().formatHex(packet.array()), ENCRYPTED_ONERTT_PAYLOAD);
+        assertEquals(ENCRYPTED_ONERTT_PAYLOAD, HexFormat.of().formatHex(packet.array()));
     }
 
     @Test
@@ -362,7 +363,7 @@ public class Quicv2PacketEncryptionTest {
 
         String expectedContents = ONERTT_HEADER + ONERTT_PAYLOAD;
 
-        assertEquals(HexFormat.of().formatHex(packet.array()).substring(0, expectedContents.length()), expectedContents);
+        assertEquals(expectedContents, HexFormat.of().formatHex(packet.array()).substring(0, expectedContents.length()));
     }
 
     @Test
@@ -392,24 +393,23 @@ public class Quicv2PacketEncryptionTest {
         serverEngine.decryptPacket(QuicTLSEngine.KeySpace.ONE_RTT, ONERTT_PN, keyphase, src, ONERTT_PAYLOAD_OFFSET, packet);
     }
 
-    @Test(expectedExceptions = AEADBadTagException.class)
+    @Test
     public void testDecryptChaChaBadTag() throws Exception {
-        QuicTLSEngineImpl serverEngine = (QuicTLSEngineImpl) getQuicV2Engine(SSLContext.getDefault(), false);
-        // mark the TLS handshake as FINISHED
-        QuicTLSEngineImplAccessor.completeHandshake(serverEngine);
-        SecretKey key = new SecretKeySpec(HexFormat.of().parseHex(ONERTT_SECRET), 0, 32, "ChaCha20-Poly1305");
-        QuicTLSEngineImplAccessor.testDeriveOneRTTKeys(QUIC_V2, serverEngine, key, key, "TLS_CHACHA20_POLY1305_SHA256", false);
-
-        ByteBuffer packet = ByteBuffer.wrap(HexFormat.of().parseHex(ENCRYPTED_ONERTT_PAYLOAD));
-        unprotect(QuicTLSEngine.KeySpace.ONE_RTT, packet, ONERTT_PN_OFFSET, ONERTT_PAYLOAD_OFFSET - ONERTT_PN_OFFSET, serverEngine, 0x1f);
-        ByteBuffer src = packet.asReadOnlyBuffer();
-        packet.position(ONERTT_PAYLOAD_OFFSET);
-
-        // change one byte of AEAD tag
-        packet.put(packet.limit() - 1, (byte)0);
-
-        serverEngine.decryptPacket(QuicTLSEngine.KeySpace.ONE_RTT, ONERTT_PN, 0, src, ONERTT_PAYLOAD_OFFSET, packet);
-        fail("Decryption should have failed");
+        Assertions.assertThrows(AEADBadTagException.class, () -> {
+            QuicTLSEngineImpl serverEngine = (QuicTLSEngineImpl) getQuicV2Engine(SSLContext.getDefault(), false);
+            // mark the TLS handshake as FINISHED
+            QuicTLSEngineImplAccessor.completeHandshake(serverEngine);
+            SecretKey key = new SecretKeySpec(HexFormat.of().parseHex(ONERTT_SECRET), 0, 32, "ChaCha20-Poly1305");
+            QuicTLSEngineImplAccessor.testDeriveOneRTTKeys(QUIC_V2, serverEngine, key, key, "TLS_CHACHA20_POLY1305_SHA256", false);
+            ByteBuffer packet = ByteBuffer.wrap(HexFormat.of().parseHex(ENCRYPTED_ONERTT_PAYLOAD));
+            unprotect(QuicTLSEngine.KeySpace.ONE_RTT, packet, ONERTT_PN_OFFSET, ONERTT_PAYLOAD_OFFSET - ONERTT_PN_OFFSET, serverEngine, 0x1f);
+            ByteBuffer src = packet.asReadOnlyBuffer();
+            packet.position(ONERTT_PAYLOAD_OFFSET);
+            // change one byte of AEAD tag
+            packet.put(packet.limit() - 1, (byte)0);
+            serverEngine.decryptPacket(QuicTLSEngine.KeySpace.ONE_RTT, ONERTT_PN, 0, src, ONERTT_PAYLOAD_OFFSET, packet);
+            fail("Decryption should have failed");
+        });
     }
 
 

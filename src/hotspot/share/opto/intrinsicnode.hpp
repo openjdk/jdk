@@ -221,6 +221,9 @@ public:
   virtual int Opcode() const;
   const Type* bottom_type() const { return TypeInt::BOOL; }
   virtual uint ideal_reg() const { return Op_RegI; }
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 //------------------------------LowerCaseNode------------------------------------
@@ -230,6 +233,9 @@ public:
   virtual int Opcode() const;
   const Type* bottom_type() const { return TypeInt::BOOL; }
   virtual uint ideal_reg() const { return Op_RegI; }
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 //------------------------------UpperCaseNode------------------------------------
@@ -239,6 +245,9 @@ public:
   virtual int Opcode() const;
   const Type* bottom_type() const { return TypeInt::BOOL; }
   virtual uint ideal_reg() const { return Op_RegI; }
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 //------------------------------WhitespaceCode-----------------------------------
@@ -248,6 +257,9 @@ public:
   virtual int Opcode() const;
   const Type* bottom_type() const { return TypeInt::BOOL; }
   virtual uint ideal_reg() const { return Op_RegI; }
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 //------------------------------CopySign-----------------------------------------

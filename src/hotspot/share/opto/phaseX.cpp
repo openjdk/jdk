@@ -31,6 +31,7 @@
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
+#include "opto/convertnode.hpp"
 #include "opto/idealGraphPrinter.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
@@ -2006,40 +2007,6 @@ void PhaseIterGVN::verify_Identity_for(Node* n) {
     case Op_ConvI2L:
       return;
 
-    // MaxNode::find_identity_operation
-    //  Finds patterns like Max(A, Max(A, B)) -> Max(A, B)
-    //  This can be a 2-hop search, so maybe notification is not
-    //  good enough.
-    //
-    // Found with:
-    //   compiler/codegen/TestBooleanVect.java
-    //   -XX:VerifyIterativeGVN=1110
-    case Op_MaxL:
-    case Op_MinL:
-    case Op_MaxI:
-    case Op_MinI:
-    case Op_MaxF:
-    case Op_MinF:
-    case Op_MaxHF:
-    case Op_MinHF:
-    case Op_MaxD:
-    case Op_MinD:
-      return;
-
-
-    // AddINode::Identity
-    // Converts (x-y)+y to x
-    // Could be issue with notification
-    //
-    // Turns out AddL does the same.
-    //
-    // Found with:
-    //  compiler/c2/Test6792161.java
-    //  -ea -esa -XX:CompileThreshold=100 -XX:+UnlockExperimentalVMOptions -server -XX:-TieredCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
-    case Op_AddI:
-    case Op_AddL:
-      return;
-
     // AbsINode::Identity
     // Not investigated yet.
     case Op_AbsI:
@@ -2649,6 +2616,26 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       }
     }
   }
+  // ConvD2F::Ideal matches ConvD2F(SqrtD(ConvF2D(x))) => SqrtF(x).
+  // Notify ConvD2F users of SqrtD when any input of the SqrtD changes.
+  if (use_op == Op_SqrtD) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (u->Opcode() == Op_ConvD2F) {
+        worklist.push(u);
+      }
+    }
+  }
+  // ConvF2HF::Ideal matches ConvF2HF(binopF(ConvHF2F(...))) => FP16BinOp(...).
+  // Notify ConvF2HF users of float binary ops when any input changes.
+  if (Float16NodeFactory::is_float32_binary_oper(use_op)) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (u->Opcode() == Op_ConvF2HF) {
+        worklist.push(u);
+      }
+    }
+  }
   // If changed AddP inputs:
   // - check Stores for loop invariant, and
   // - if the changed input is the offset, check constant-offset AddP users for
@@ -2777,6 +2764,18 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       }
     };
     use->visit_uses(push_and_to_worklist, is_boundary);
+  }
+
+  // If changed Sub inputs, check Add for identity.
+  // e.g., (x - y) + y -> x; x + (y - x) -> y.
+  if (use_op == Op_SubI || use_op == Op_SubL) {
+    const int add_op = (use_op == Op_SubI) ? Op_AddI : Op_AddL;
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (u->Opcode() == add_op) {
+        worklist.push(u);
+      }
+    }
   }
 }
 
