@@ -54,6 +54,7 @@
 
 import jdk.test.lib.process.OutputAnalyzer;
 
+import java.io.IOException;
 import java.time.LocalTime;
 
 public class PipesCloseOnExecTest {
@@ -78,6 +79,16 @@ public class PipesCloseOnExecTest {
 
     static final int num_tries = 100;
 
+    static void printOpenFileDescriptors() {
+        long mypid =  ProcessHandle.current().pid();
+        try(Process p = new ProcessBuilder("lsof", "-p", Long.toString(mypid))
+                .inheritIO().start()) {
+            p.waitFor();
+        } catch (InterruptedException | IOException ignored) {
+            // Quietly swallow; it was just an attempt.
+        }
+    }
+
     public static void main(String[] args) throws Exception {
 
         System.out.println("jdk.lang.Process.launchMechanism=" +
@@ -91,17 +102,13 @@ public class PipesCloseOnExecTest {
 
         System.out.println(LocalTime.now() + ": Call ProcessBuilder.start...");
 
-        // Start /bin/true, repeatedly, over and over; the hope is that one of the starts will caused FDs without
-        // CLOEXEC long enough for the concurrent testers to pick them up
         for (int i = 0; i < num_tries; i ++) {
             ProcessBuilder pb = new ProcessBuilder("true").inheritIO();
             new OutputAnalyzer(pb.start()).shouldHaveExitValue(0);
         }
 
         if (!stopTester()) {
-              // uncomment to get lsof
-              // ProcessBuilder pb = new ProcessBuilder("lsof").inheritIO();
-              // try (Process p = pb.start()) { p.waitFor(); }
+            printOpenFileDescriptors();
             throw new RuntimeException("Catched FDs without CLOEXEC? Check output.");
         }
     }

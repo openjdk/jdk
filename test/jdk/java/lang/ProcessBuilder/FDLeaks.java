@@ -67,8 +67,8 @@ public class FDLeaks {
         try(Process p = new ProcessBuilder("lsof", "-p", Long.toString(mypid))
                 .inheritIO().start()) {
             p.waitFor();
-        } catch (InterruptedException | IOException e) {
-            throw new RuntimeException(e);
+        } catch (InterruptedException | IOException ignored) {
+            // Quietly swallow; it was just an attempt.
         }
     }
 
@@ -174,35 +174,3 @@ public class FDLeaks {
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -61,10 +61,15 @@ public class ConcNativeForkTest {
     //   the "/bin/true" child process, and forcing the parent process (this test) to wait in ProcessBuilder.start()
     //   (inside forkAndExec()) until the natively forked child releases the pipe file descriptors it inherited.
 
-    // Note: obviously, this is racy and depends on scheduler timings of the underlying OS. The test succeeding is
+    // Notes:
+    //
+    // Obviously, this is racy and depends on scheduler timings of the underlying OS. The test succeeding is
     // no proof the bug does not exist (see PipesCloseOnExecTest as a complimentary test that is more reliable, but
     // only works on Linux).
-    // It seems to reliably reproduce the bug on Linux x64, though.
+    // That said, in tests it reliably reproduces the bug on Linux x64 and MacOS Arm.
+    //
+    // This test is not well suited for automatic test execution, since the test essentially
+    // fork-bombs itself, and that may run into issues in containerized CI/CD environments.
 
     native static boolean prepareNativeForkerThread(int numForks);
     native static void releaseNativeForkerThread();

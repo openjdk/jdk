@@ -25,7 +25,7 @@
 #ifndef TESTLIB_THREAD_BARRIERS_H
 #define TESTLIB_THREAD_BARRIERS_H
 
-/* Fallback implementation of pthread_barrier_t for platforms that don't have them. */
+/* MacOS does not have pthread barriers; implement a fallback using condvars. */
 
 #ifndef _WIN32
 #if !defined _POSIX_BARRIERS || _POSIX_BARRIERS < 0
