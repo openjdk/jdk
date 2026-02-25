@@ -28,7 +28,7 @@
 * @summary VectorStoreMaskNode Identity optimization tests
 * @modules jdk.incubator.vector
 *
-* @run driver compiler.vectorapi.VectorStoreMaskIdentityTest
+* @run driver ${test.main.class}
 */
 
 package compiler.vectorapi;

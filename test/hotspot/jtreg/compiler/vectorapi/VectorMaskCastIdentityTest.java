@@ -118,8 +118,9 @@ public class VectorMaskCastIdentityTest {
         applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true" },
         applyIf = { "MaxVectorSize", ">= 16" })
     public static int testTwoCastToDifferentType() {
-        // The types before and after the cast sequence are different,
-        // so the casts will not be eliminated.
+        // The types before and after the cast sequence are different, so the
+        // casts are not eliminated. We should probably be able to eliminate
+        // the intermediate cast, so that we only need a cast from short to int.
         VectorMask<Short> mShort64 = VectorMask.fromArray(ShortVector.SPECIES_64, mr, 0);
         VectorMask<Float> mFloat128 = mShort64.cast(FloatVector.SPECIES_128);
         VectorMask<Integer> mInt128 = mFloat128.cast(IntVector.SPECIES_128);
