@@ -3402,6 +3402,8 @@ encode %{
         __ movoop(dst_reg, (jobject)con);
       } else if (rtype == relocInfo::metadata_type) {
         __ mov_metadata(dst_reg, (Metadata*)con);
+      } else if (rtype == relocInfo::external_word_type) {
+        __ lea(dst_reg, ExternalAddress(con));
       } else {
         assert(rtype == relocInfo::none, "unexpected reloc type");
         if (! __ is_valid_AArch64_address(con) ||
