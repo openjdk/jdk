@@ -35,6 +35,7 @@
 #include "utilities/align.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/integerCast.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include CPU_HEADER_INLINE(gc/z/zAddress)
@@ -47,12 +48,13 @@
   /* Arithmetic operators for offset_type */                                              \
                                                                                           \
 inline offset_type operator+(offset_type offset, size_t size) {                           \
-  const auto size_value = checked_cast<std::underlying_type_t<offset_type>>(size);        \
+  using U = std::underlying_type_t<offset_type>;                                          \
+  const auto size_value = integer_cast<U, permit_tautology>(size);                        \
   return to_##offset_type(untype(offset) + size_value);                                   \
 }                                                                                         \
                                                                                           \
 inline offset_type& operator+=(offset_type& offset, size_t size) {                        \
-  const auto size_value = checked_cast<std::underlying_type_t<offset_type>>(size);        \
+  const auto size_value = integer_cast<std::underlying_type_t<offset_type>, permit_tautology>(size); \
   offset = to_##offset_type(untype(offset) + size_value);                                 \
   return offset;                                                                          \
 }                                                                                         \
