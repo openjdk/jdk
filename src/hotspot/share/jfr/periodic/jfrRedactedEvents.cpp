@@ -580,31 +580,37 @@ bool JfrRedactedEvents::match_key(StringArray* filters, const char* text) {
   return false;
 }
 
+
 bool JfrRedactedEvents::read_file(StringArray* target, const char* filename) {
   FILE* file = os::fopen(filename, "r");
   if (file == nullptr) {
     log_error(jfr, redact)("Failed to open redaction file: %s", filename);
     return false;
   }
-  char buffer[512];
-  size_t position = 0;
+
+  stringStream ss;
   while (true) {
-    int c = fgetc(file);
+    const int c = fgetc(file);
+    if (c == EOF && ferror(file) != 0) {
+      log_error(jfr, redact)("Error reading redaction file: %s", filename);
+      fclose(file);
+      return false;
+    }
     if (c == EOF || c == '\n') {
-      size_t end = position;
-      while (end > 0 && is_separator(buffer[end - 1])) {
+      const char* line = ss.base();
+      size_t end = ss.size();
+      while (end > 0 && is_separator(line[end - 1])) {
         end--;
       }
-      buffer[end] = '\0';
       if (end > 0) {
-        target->add(buffer);
+        target->add(line, end);
       }
-      position = 0;
+      ss.reset();
       if (c == EOF) {
         break;
       }
-    } else if (position < 511) {
-      buffer[position++] = (char)c;
+    } else {
+      ss.put((char)c);
     }
   }
   fclose(file);
