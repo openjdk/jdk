@@ -53,7 +53,9 @@ final class LdapRequest {
         if (replyQueueCapacity == -1) {
             this.replies = new LinkedBlockingQueue<>();
         } else {
-            this.replies = new LinkedBlockingQueue<>(8 * replyQueueCapacity / 10);
+            // Use 80% of the capacity to avoid blocking on near-full queue.
+            // Math.max ensures capacity is at least 1 (integer division can yield 0 for small inputs).
+            this.replies = new LinkedBlockingQueue<>(Math.max(1, 8 * replyQueueCapacity / 10));
         }
     }
 
