@@ -397,11 +397,11 @@ public class Exceptions {
                 }});
     }
 
-    private static void getEncodedLength() {
-        System.out.println("getEncodedLength(Charset charset)");
+    private static void encodedLength() {
+        System.out.println("encodedLength(Charset charset)");
         tryCatch("  null", NullPointerException.class, new Runnable() {
                 public void run() {
-                    "foo".getEncodedLength((Charset)null);
+                    "foo".encodedLength((Charset)null);
                 }});
     }
 
@@ -648,7 +648,7 @@ public class Exceptions {
                               //   getBytes(Locale)
                               //   getBytes(String)
                               //   getBytes(Charset)
-        getEncodedLength();   // getEncodedLength(Charset)
+        encodedLength();      // encodedLength(Charset)
         contentEquals();      // contentEquals(StringBuffer)
         compareTo();          // compareTo(String), compareTo(Object)
         compareToIgnoreCase();// compareToIgnoreCase(String)

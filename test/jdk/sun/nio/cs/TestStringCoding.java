@@ -169,11 +169,11 @@ public class TestStringCoding {
         if (!Arrays.equals(baSC, baNIO)) {
             throw new RuntimeException("getBytes(cs) failed  -> " + cs.name());
         }
-        //getEncodedLength(cs);
-        int getEncodedLength = str.getEncodedLength(cs);
-        if (baSC.length != getEncodedLength) {
-            throw new RuntimeException(String.format("getEncodedLength failed (%d != %d) -> %s",
-                    baSC.length, getEncodedLength, cs.name()));
+        //encodedLength(cs);
+        int encodedLength = str.encodedLength(cs);
+        if (baSC.length != encodedLength) {
+            throw new RuntimeException(String.format("encodedLength failed (%d != %d) -> %s",
+                    baSC.length, encodedLength, cs.name()));
         }
         return baSC;
     }
