@@ -157,13 +157,13 @@ void do_overflow(){
   volatile int *p = NULL;
   if (_previous_rec_count == 0) {
     // We need to find the appropriate depth to probe into
-    for(;;) {
+    for (;;) {
       _rec_count++;
       p = (int*)alloca(128);
       _peek_value = p[0]; // Peek
     }
   } else {
-    while(_rec_count < _previous_rec_count) {
+    while (_rec_count < _previous_rec_count) {
       // This is our second round, we can do exactly 1 less allocation
       _rec_count++;
       p = (int*)alloca(128);
@@ -212,7 +212,7 @@ void *run_native_overflow(void *is_other_thread) {
   _rec_count = 0;
 
   set_signal_handler();
-  if (! sigsetjmp(context, 1)) {
+  if (!sigsetjmp(context, 1)) {
     do_overflow();
   }
 
