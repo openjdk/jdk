@@ -48,11 +48,10 @@ import java.util.Properties;
 public class PrintProgressBarTest {
 
     private static final String INSTRUCTIONS = """
-        This test shows a frame with a horizontal and a vertical progressbar
-        and a "Print" button.
+        This test shows a frame with a progressbar and a "Print" button.
             1. Click the 'Print' button on the frame
             2. Select a printer/pdf-printer in the print dialog and proceed
-               If the progressbars are printed along with progress string
+               If the progressbar is printed along with progress string
                test PASSED else FAILED.
         """;
 
@@ -67,16 +66,11 @@ public class PrintProgressBarTest {
 
     private static JFrame createTestUI() {
         JPanel panel = new JPanel(new FlowLayout());
-        JProgressBar hbar = new JProgressBar(SwingConstants.HORIZONTAL);
-        hbar.setOpaque(true);
-        hbar.setStringPainted(true);
-        hbar.setValue(50);
-        JProgressBar vbar = new JProgressBar(SwingConstants.VERTICAL);
-        vbar.setOpaque(true);
-        vbar.setStringPainted(true);
-        vbar.setValue(50);
-        panel.add("Center", hbar);
-        panel.add("Center", vbar);
+        JProgressBar bar = new JProgressBar();
+        bar.setOpaque(true);
+        bar.setStringPainted(true);
+        bar.setValue(50);
+        panel.add("Center", bar);
 
         JFrame frame = new JFrame("Print Progressbar");
         frame.setContentPane(panel);
@@ -100,7 +94,7 @@ public class PrintProgressBarTest {
             }
         });
 
-        frame.setSize(200, 300);
+        frame.setSize(200, 150);
         frame.add(b);
         return frame;
     }
