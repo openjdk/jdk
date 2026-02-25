@@ -421,7 +421,8 @@ void DumpRegion::report_gaps(DumpAllocStats* stats) {
                      _gap_tree.size(), _total_gap_bytes);
   }
   if (_total_gap_allocs > 0) {
-    log_info(aot)("Allocated %zu objects of %zu bytes in gaps", _total_gap_allocs, _total_gap_bytes_used);
+    log_info(aot)("Allocated %zu objects of %zu bytes in gaps (remain = %zu bytes)",
+                  _total_gap_allocs, _total_gap_bytes_used, _total_gap_bytes);
   }
 }
 
