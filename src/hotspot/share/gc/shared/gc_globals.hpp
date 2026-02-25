@@ -480,11 +480,6 @@
           "Ratio of old/new generation sizes")                              \
           range(0, max_uintx-1)                                             \
                                                                             \
-  product_pd(size_t, NewSizeThreadIncrease,                                 \
-          "Additional size added to desired new generation size per "       \
-          "non-daemon thread (in bytes)")                                   \
-          range(0, max_uintx)                                               \
-                                                                            \
   product(uintx, QueuedAllocationWarningCount, 0,                           \
           "Number of times an allocation that queues behind a GC "          \
           "will retry before printing a warning")                           \
