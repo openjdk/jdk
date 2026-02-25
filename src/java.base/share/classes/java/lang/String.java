@@ -54,6 +54,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.util.DecimalDigits;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
@@ -4810,6 +4811,782 @@ public final class String
     public String formatted(Object... args) {
         return new Formatter().format(this, args).toString();
     }
+
+    // ========== BEGIN: C2 String.format/formatted optimization ==========
+    //
+    // This section contains fast-path implementation for String.format() and String.formatted()
+    // when the format string is a compile-time constant with simple specifiers.
+    //
+    // Supported conversions: %s, %d, %x, %X with optional single-digit width (1-9) and flags (' ' or '0').
+    //
+    // Optimization paths:
+    // - Single %s/%d (no width/flags): format_s/d(formatted, arg, int specIndex)
+    // - Single with width/flags or %x/%X: format_1(formatted, arg, int meta)
+    // - Two s/d specifiers: format_ss/sd/ds/dd(formatted, arg1, arg2, int meta)
+    // - Two with x/X: format_2(formatted, arg1, arg2, int meta)
+    // - 3-8 specifiers: format_multi(formatted, Object[] args, long meta)
+    //
+    // C2 redirects format/formatted calls to these methods via doCall.cpp::try_optimize_string_format().
+    //
+    // Key optimizations:
+    // - Individual Object parameters for 1-2 specifiers enables escape analysis to eliminate Object[] allocation
+    // - Primitive overloads for %d (int/long) avoid boxing allocation
+    // - Direct string building without Formatter overhead
+    //
+    // Limitations (fallback to Formatter):
+    // - %% not supported
+    // - Specifier position must be < 256
+    // - Only single-digit width, no precision
+    // - Only flags ' ' and '0' for numeric types
+    //
+    // --------------------------------------------------------------------------
+
+    // --- Virtual helper methods for formatted() optimization ---
+    // These are called by C2 when redirecting a virtual formatted() call.
+
+    /** Virtual fast-path for single {@code %s} specifier. */
+    @ForceInline
+    private String formatted_s(Object arg, int specIndex) {
+        return format_s(this, arg, specIndex);
+    }
+
+    /** Virtual fast-path for single {@code %d} specifier. */
+    @ForceInline
+    private String formatted_d(Object arg, int specIndex) {
+        return format_d(this, arg, specIndex);
+    }
+
+    /** Virtual fast-path for single {@code %d} specifier with int - avoids boxing allocation. */
+    @ForceInline
+    private String formatted_d(int arg, int specIndex) {
+        return format_d(this, arg, specIndex);
+    }
+
+    /** Virtual fast-path for single {@code %d} specifier with long - avoids boxing allocation. */
+    @ForceInline
+    private String formatted_d(long arg, int specIndex) {
+        return format_d(this, arg, specIndex);
+    }
+
+    /** Virtual fast-path for two {@code %s} specifiers. */
+    @ForceInline
+    private String formatted_ss(Object arg1, Object arg2, int specIndexes) {
+        return format_ss(this, arg1, arg2, specIndexes);
+    }
+
+    /** Virtual fast-path for {@code %s} followed by {@code %d}. */
+    @ForceInline
+    private String formatted_sd(Object arg1, Object arg2, int specIndexes) {
+        return format_sd(this, arg1, arg2, specIndexes);
+    }
+
+    /** Virtual fast-path for {@code %d} followed by {@code %s}. */
+    @ForceInline
+    private String formatted_ds(Object arg1, Object arg2, int specIndexes) {
+        return format_ds(this, arg1, arg2, specIndexes);
+    }
+
+    /** Virtual fast-path for two {@code %d} specifiers. */
+    @ForceInline
+    private String formatted_dd(Object arg1, Object arg2, int specIndexes) {
+        return format_dd(this, arg1, arg2, specIndexes);
+    }
+
+    /** Virtual fast-path for 3-8 specifiers. */
+    @ForceInline
+    private String formatted_multi(Object[] args, long specIndexes) {
+        return format_multi(this, args, specIndexes);
+    }
+
+    // --- Core formatting helpers ---
+
+    /**
+     * Core single-specifier formatting: splice argStr into format at specIndex.
+     * Simple version without width/flag support - just replaces %s/%d/%x/%X with argStr.
+     * Called by format_d/s/x/X when no width or flag is present.
+     */
+    @ForceInline
+    private static String format_splice1(String format, String argStr, int specIndex) {
+        byte coder = (byte) (argStr.coder() | format.coder());
+        int newLen = format.length() - 2 + argStr.length();
+        byte[] bytes = new byte[newLen << coder];
+        format.getBytes(bytes, 0, 0, coder, specIndex);
+        argStr.getBytes(bytes, 0, specIndex, coder, argStr.length());
+        format.getBytes(bytes, specIndex + 2, specIndex + argStr.length(), coder, format.length() - specIndex - 2);
+        return new String(bytes, coder);
+    }
+
+    /**
+     * Localize digits and minus sign in a byte array.
+     * Converts ASCII digits '0'-'9' to locale-specific digits and '-' to locale-specific minus sign.
+     */
+    private static void format_localizeDigitsInPlace(byte[] bytes, int start, int end, byte coder,
+                                               char zeroDigit, char minusSign) {
+        for (int i = start; i < end; i++) {
+            char c = coder == LATIN1 ? (char) (bytes[i] & 0xFF) : StringUTF16.charAt(bytes, i);
+            if (c == '-') {
+                c = minusSign;
+            } else if (c >= '0' && c <= '9') {
+                c = (char) (c - '0' + zeroDigit);
+            }
+            if (coder == LATIN1) {
+                bytes[i] = (byte) c;
+            } else {
+                StringUTF16.putChar(bytes, i, c);
+            }
+        }
+    }
+
+    /**
+     * Primitive overload for int - avoids boxing and intermediate String.
+     * Handles localization of digits and minus sign.
+     */
+    @ForceInline
+    private static String format_splice1(String format, int arg, int specIndex) {
+        var dfs = DecimalFormat.FORMATTER_ACCESS.getDecimalFormatSymbols(Locale.getDefault(Locale.Category.FORMAT));
+        char zeroDigit = dfs.getZeroDigit();
+        char minusSign = dfs.getMinusSign();
+
+        int argLen = DecimalDigits.stringSize(arg);
+        // Coder must account for both zeroDigit and minusSign (for negative numbers)
+        byte coder = (byte) (StringLatin1.coderFromChar(zeroDigit)
+                           | StringLatin1.coderFromChar(minusSign)
+                           | format.coder());
+        int newLen = format.length() - 2 + argLen;
+        byte[] bytes = new byte[newLen << coder];
+        format.getBytes(bytes, 0, 0, coder, specIndex);
+        int fillEnd = specIndex + argLen;
+        if (coder == LATIN1) {
+            DecimalDigits.uncheckedGetCharsLatin1(arg, fillEnd, bytes);
+        } else {
+            DecimalDigits.uncheckedGetCharsUTF16(arg, fillEnd, bytes);
+        }
+        format.getBytes(bytes, specIndex + 2, fillEnd, coder, format.length() - specIndex - 2);
+
+        // Localize digits and minus sign if needed
+        if (zeroDigit != '0' || minusSign != '-') {
+            format_localizeDigitsInPlace(bytes, specIndex, fillEnd, coder, zeroDigit, minusSign);
+        }
+
+        return new String(bytes, coder);
+    }
+
+    /** Primitive overload for long - avoids boxing and intermediate String. */
+    @ForceInline
+    private static String format_splice1(String format, long arg, int specIndex) {
+        var dfs = DecimalFormat.FORMATTER_ACCESS.getDecimalFormatSymbols(Locale.getDefault(Locale.Category.FORMAT));
+        char zeroDigit = dfs.getZeroDigit();
+        char minusSign = dfs.getMinusSign();
+
+        int argLen = DecimalDigits.stringSize(arg);
+        // Coder must account for both zeroDigit and minusSign (for negative numbers)
+        byte coder = (byte) (StringLatin1.coderFromChar(zeroDigit)
+                           | StringLatin1.coderFromChar(minusSign)
+                           | format.coder());
+        int newLen = format.length() - 2 + argLen;
+        byte[] bytes = new byte[newLen << coder];
+        format.getBytes(bytes, 0, 0, coder, specIndex);
+        int fillEnd = specIndex + argLen;
+        if (coder == LATIN1) {
+            DecimalDigits.uncheckedGetCharsLatin1(arg, fillEnd, bytes);
+        } else {
+            DecimalDigits.uncheckedGetCharsUTF16(arg, fillEnd, bytes);
+        }
+        format.getBytes(bytes, specIndex + 2, fillEnd, coder, format.length() - specIndex - 2);
+
+        // Localize digits and minus sign if needed
+        if (zeroDigit != '0' || minusSign != '-') {
+            format_localizeDigitsInPlace(bytes, specIndex, fillEnd, coder, zeroDigit, minusSign);
+        }
+
+        return new String(bytes, coder);
+    }
+
+    /**
+     * Write padding spaces directly into dst byte array.
+     * Caller must ensure padding > 0.
+     */
+    private static void format_writePadding(byte[] dst, int dstPos, int padding, byte coder) {
+        if (coder == LATIN1) {
+            Arrays.fill(dst, dstPos, dstPos + padding, (byte) ' ');
+        } else {
+            for (int i = 0; i < padding; i++) {
+                StringUTF16.putChar(dst, dstPos + i, ' ');
+            }
+        }
+    }
+
+    // --- Static format methods (called by C2 for String.format) ---
+
+    /**
+     * Fast-path formatter for format strings containing exactly one {@code %s}
+     * specifier without width or flags.
+     * Called from C2-compiled code when the specifier is plain %s.
+     * @param specIndex the position of '%' in the format string
+     */
+    @ForceInline
+    private static String format_s(String format, Object arg, int specIndex) {
+        int ci = specIndex & 0xFF;
+        // For Formattable, call formatTo with width=0
+        if (arg instanceof java.util.Formattable) {
+            return format_splice1(format, format_toStringArg(arg, 0), ci);
+        }
+        return format_splice1(format, String.valueOf(arg), ci);
+    }
+
+    // --- Argument conversion helpers ---
+
+    /**
+     * Convert an Object argument to String for %s conversion.
+     * If the argument implements {@link java.util.Formattable}, uses its formatTo method
+     * with the specified width (flags=0, precision=-1) to match Formatter behavior.
+     * The returned string is already width-padded by formatTo, so no additional
+     * padding should be applied.
+     * Otherwise, returns String.valueOf(arg) which needs width padding.
+     */
+    private static String format_toStringArg(Object arg, int width) {
+        if (arg instanceof java.util.Formattable formattable) {
+            var sb = new StringBuilder();
+            // formatTo handles width internally, no additional padding needed
+            formattable.formatTo(new Formatter(sb), 0, width, -1);
+            return sb.toString();
+        }
+        return String.valueOf(arg);
+    }
+
+    /**
+     * Convert an {@code Object} argument to its decimal string representation,
+     * respecting the default format locale's zero digit.
+     * Supports {@code Integer}, {@code Long}, {@code Short}, and {@code Byte}.
+     * @throws java.util.IllegalFormatConversionException if arg is not a supported numeric type
+     */
+    private static String format_toDecimalString(Object arg) {
+        return format_toDecimalString(arg, DecimalFormat.FORMATTER_ACCESS
+                .getDecimalFormatSymbols(Locale.getDefault(Locale.Category.FORMAT)));
+    }
+
+    /**
+     * Convert an {@code Object} argument to its decimal string representation
+     * with externally provided DecimalFormatSymbols for locale-aware formatting.
+     * @throws java.util.IllegalFormatConversionException if arg is not a supported numeric type
+     */
+    private static String format_toDecimalString(Object arg, java.text.DecimalFormatSymbols dfs) {
+        String s;
+        if (arg instanceof Integer v) {
+            s = Integer.toString(v);
+        } else if (arg instanceof Long v) {
+            s = Long.toString(v);
+        } else if (arg instanceof Short v) {
+            s = Integer.toString(v);
+        } else if (arg instanceof Byte v) {
+            s = Integer.toString(v);
+        } else {
+            throw new java.util.IllegalFormatConversionException('d', arg != null ? arg.getClass() : Object.class);
+        }
+        return format_localizeDigits(s, dfs);
+    }
+
+    /**
+     * Holder for locale-aware decimal formatting via SharedSecrets.
+     * The static final field ensures the access is resolved once on first use.
+     */
+    private static final class DecimalFormat {
+        static final jdk.internal.access.JavaUtilFormatterAccess FORMATTER_ACCESS =
+                jdk.internal.access.SharedSecrets.getJavaUtilFormatterAccess();
+    }
+
+    /**
+     * Replace ASCII digits '0'-'9' and minus sign '-' with locale-specific
+     * characters using the provided DecimalFormatSymbols.
+     * Note: decimal separator '.' handling is included for future %f support,
+     * though current callers (Integer/Long.toString) never produce '.'.
+     */
+    private static String format_localizeDigits(String s, java.text.DecimalFormatSymbols dfs) {
+        char zero = dfs.getZeroDigit();
+        char decSep = dfs.getDecimalSeparator();
+        if (zero == '0' && decSep == '.') {
+            return s;
+        }
+        char minus = dfs.getMinusSign();
+        char[] chars = new char[s.length()];
+        int i = 0;
+        if (s.length() != 0 && s.charAt(0) == '-') {
+            chars[i++] = minus;
+        }
+        for (; i < chars.length; i++) {
+            char c = s.charAt(i);
+            if (c >= '0' && c <= '9') {
+                chars[i] = (char) (c - '0' + zero);
+            } else if (c == '.') {
+                chars[i] = decSep;
+            } else {
+                chars[i] = c;
+            }
+        }
+        return new String(chars);
+    }
+
+    /**
+     * Convert an {@code Object} argument to its lowercase hexadecimal string
+     * representation. Supports {@code Integer}, {@code Long}, {@code Short},
+     * and {@code Byte}.
+     * @throws java.util.IllegalFormatConversionException if arg is not a supported numeric type
+     */
+    private static String format_toHexString(Object arg) {
+        if (arg instanceof Integer v) {
+            return Integer.toHexString(v);
+        } else if (arg instanceof Long v) {
+            return Long.toHexString(v);
+        } else if (arg instanceof Short v) {
+            return Integer.toHexString(v & 0xFFFF);
+        } else if (arg instanceof Byte v) {
+            return Integer.toHexString(v & 0xFF);
+        }
+        throw new java.util.IllegalFormatConversionException('x', arg != null ? arg.getClass() : Object.class);
+    }
+
+    /**
+     * Convert an {@code Object} argument to its uppercase hexadecimal string
+     * representation. Supports {@code Integer}, {@code Long}, {@code Short},
+     * and {@code Byte}.
+     * @throws java.util.IllegalFormatConversionException if arg is not a supported numeric type
+     */
+    private static String format_toUpperHexString(Object arg) {
+        if (arg instanceof Integer v) {
+            return Integer.toHexString(v).toUpperCase(java.util.Locale.ROOT);
+        } else if (arg instanceof Long v) {
+            return Long.toHexString(v).toUpperCase(java.util.Locale.ROOT);
+        } else if (arg instanceof Short v) {
+            return Integer.toHexString(v & 0xFFFF).toUpperCase(java.util.Locale.ROOT);
+        } else if (arg instanceof Byte v) {
+            return Integer.toHexString(v & 0xFF).toUpperCase(java.util.Locale.ROOT);
+        }
+        throw new java.util.IllegalFormatConversionException('X', arg != null ? arg.getClass() : Object.class);
+    }
+
+    // --- Format methods continued ---
+
+    /**
+     * Fast-path formatter for {@code %d} without width or flags.
+     * @param specIndex the position of '%' in the format string
+     */
+    @ForceInline
+    private static String format_d(String format, Object arg, int specIndex) {
+        int ci = specIndex & 0xFF;
+        return format_splice1(format, format_toDecimalString(arg), ci);
+    }
+
+    /** Primitive overload for int arg - avoids boxing allocation. */
+    @ForceInline
+    private static String format_d(String format, int arg, int specIndex) {
+        return format_splice1(format, arg, specIndex & 0xFF);
+    }
+
+    /** Primitive overload for long arg - avoids boxing allocation. */
+    @ForceInline
+    private static String format_d(String format, long arg, int specIndex) {
+        return format_splice1(format, arg, specIndex & 0xFF);
+    }
+
+    /**
+     * Fast-path formatter for single specifier with width and/or flags.
+     * Handles %s/%d/%x/%X with optional width (1-9) and flags (' ' or '0').
+     * @param meta packed: byte0=specIndex, byte1=conv, byte2=width, byte3=flag
+     */
+    @ForceInline
+    private static String format_1(String format, Object arg, int meta) {
+        int ci = meta & 0xFF;
+        int conv = (meta >>> 8) & 0xFF;
+        int width = (meta >>> 16) & 0xFF;
+        int flag = (meta >>> 24) & 0xFF;
+
+        // For %s with Formattable, let formatTo handle width
+        if (conv == 's' && arg instanceof java.util.Formattable) {
+            return format_splice1(format, format_toStringArg(arg, width), ci);
+        }
+
+        var dfs = DecimalFormat.FORMATTER_ACCESS.getDecimalFormatSymbols(Locale.getDefault(Locale.Category.FORMAT));
+        String argStr;
+        switch (conv) {
+            case 'd' -> argStr = format_toDecimalString(arg, dfs);
+            case 'x' -> argStr = format_toHexString(arg);
+            case 'X' -> argStr = format_toUpperHexString(arg);
+            default  -> argStr = String.valueOf(arg); // 's'
+        }
+
+        // No width/flag - use simple splice
+        if (width == 0 && flag == 0) {
+            return format_splice1(format, argStr, ci);
+        }
+
+        char minusSign = dfs.getMinusSign();
+
+        // Handle flags and padding
+        int argLen = argStr.length();
+        boolean isNegative = !argStr.isEmpty() && argStr.charAt(0) == minusSign;
+        boolean hasLeadingSpace = (flag == ' ' && !isNegative);
+        boolean isZeroPad = (flag == '0');
+
+        // Calculate specifier length: % + [flag] + [width] + conv
+        int convLen = 2 + (flag != 0 ? 1 : 0) + (width > 0 ? 1 : 0);
+
+        // Leading space occupies one position in width
+        int effectiveWidth = width;
+        if (hasLeadingSpace && effectiveWidth > 0) {
+            effectiveWidth--;
+        }
+
+        int padding = Math.max(effectiveWidth - argLen, 0);
+        byte coder = (byte) (argStr.coder() | format.coder());
+        int newLen = format.length() - convLen + (hasLeadingSpace ? 1 : 0) + padding + argLen;
+        byte[] bytes = new byte[newLen << coder];
+        format.getBytes(bytes, 0, 0, coder, ci);
+        int dstPos = ci;
+
+        // Handle LEADING_SPACE flag
+        if (hasLeadingSpace) {
+            if (coder == LATIN1) {
+                bytes[dstPos++] = (byte) ' ';
+            } else {
+                StringUTF16.putChar(bytes, dstPos++, ' ');
+            }
+        }
+
+        // Handle padding
+        if (padding > 0) {
+            char zero = dfs.getZeroDigit();
+            if (isZeroPad && isNegative) {
+                // Zero pad with negative: sign first, then zeros, then digits
+                if (coder == LATIN1) {
+                    bytes[dstPos++] = (byte) minusSign;
+                } else {
+                    StringUTF16.putChar(bytes, dstPos++, minusSign);
+                }
+                for (int i = 0; i < padding; i++) {
+                    if (coder == LATIN1) {
+                        bytes[dstPos++] = (byte) zero;
+                    } else {
+                        StringUTF16.putChar(bytes, dstPos++, zero);
+                    }
+                }
+                argStr.getBytes(bytes, 1, dstPos, coder, argLen - 1);
+                dstPos += argLen - 1;
+            } else {
+                // Space pad or zero pad without negative sign
+                byte padChar = (isZeroPad && !isNegative) ? (byte) zero : (byte) ' ';
+                if (coder == LATIN1) {
+                    Arrays.fill(bytes, dstPos, dstPos + padding, padChar);
+                } else {
+                    char padChar16 = (isZeroPad && !isNegative) ? zero : ' ';
+                    for (int i = 0; i < padding; i++) {
+                        StringUTF16.putChar(bytes, dstPos + i, padChar16);
+                    }
+                }
+                dstPos += padding;
+                argStr.getBytes(bytes, 0, dstPos, coder, argLen);
+                dstPos += argLen;
+            }
+        } else {
+            argStr.getBytes(bytes, 0, dstPos, coder, argLen);
+            dstPos += argLen;
+        }
+
+        format.getBytes(bytes, ci + convLen, dstPos, coder, format.length() - ci - convLen);
+        return new String(bytes, coder);
+    }
+
+    /** Virtual fast-path for single specifier with width/flags. */
+    @ForceInline
+    private String formatted_1(Object arg, int meta) {
+        return format_1(this, arg, meta);
+    }
+
+    /**
+     * Core two-specifier formatting: splice argStr1 and argStr2 into format,
+     * with optional left-padding for each.
+     * @param meta packed: byte0=ci1, byte1=w1, byte2=ci2, byte3=w2
+     *
+     * Note: This method assumes specifiers have no flags (only optional width).
+     * Specifiers with flags (' ', '0') are handled by format_multi instead.
+     * The convLen calculation (2 or 3) is correct only for %[width]s or %[width]d.
+     */
+    @ForceInline
+    private static String format_splice2(String format, String argStr1, String argStr2, int meta) {
+        int ci1 = meta & 0xFF;
+        int w1  = (meta >> 8) & 0xFF;
+        int ci2 = (meta >> 16) & 0xFF;
+        int w2  = (meta >> 24) & 0xFF;
+        int convLen1 = (w1 > 0) ? 3 : 2;
+        int convLen2 = (w2 > 0) ? 3 : 2;
+        int pad1 = Math.max(w1 - argStr1.length(), 0);
+        int pad2 = Math.max(w2 - argStr2.length(), 0);
+        byte coder = (byte) (argStr1.coder() | argStr2.coder() | format.coder());
+        int newLen = format.length() - convLen1 - convLen2 + pad1 + argStr1.length() + pad2 + argStr2.length();
+        byte[] bytes = new byte[newLen << coder];
+        // segment 1: format[0 .. ci1)
+        format.getBytes(bytes, 0, 0, coder, ci1);
+        int dstPos = ci1;
+        // segment 2: pad1 + arg1
+        if (pad1 > 0) {
+            format_writePadding(bytes, dstPos, pad1, coder);
+            dstPos += pad1;
+        }
+        argStr1.getBytes(bytes, 0, dstPos, coder, argStr1.length());
+        dstPos += argStr1.length();
+        // segment 3: format[ci1+convLen1 .. ci2)
+        int midLen = ci2 - ci1 - convLen1;
+        format.getBytes(bytes, ci1 + convLen1, dstPos, coder, midLen);
+        dstPos += midLen;
+        // segment 4: pad2 + arg2
+        if (pad2 > 0) {
+            format_writePadding(bytes, dstPos, pad2, coder);
+            dstPos += pad2;
+        }
+        argStr2.getBytes(bytes, 0, dstPos, coder, argStr2.length());
+        dstPos += argStr2.length();
+        // segment 5: format[ci2+convLen2 .. end)
+        format.getBytes(bytes, ci2 + convLen2, dstPos, coder, format.length() - ci2 - convLen2);
+        return new String(bytes, coder);
+    }
+
+    /** Fast-path for two {@code %s} specifiers.
+     * @param specIndexes packed: byte0=ci1, byte1=w1, byte2=ci2, byte3=w2
+     */
+    @ForceInline
+    private static String format_ss(String format, Object arg1, Object arg2, int specIndexes) {
+        int ci1 = specIndexes & 0xFF, w1 = (specIndexes >> 8) & 0xFF;
+        int ci2 = (specIndexes >> 16) & 0xFF, w2 = (specIndexes >> 24) & 0xFF;
+        // For Formattable, formatTo handles width; adjust meta to skip extra padding
+        String s1 = (arg1 instanceof java.util.Formattable) ? format_toStringArg(arg1, w1) : String.valueOf(arg1);
+        String s2 = (arg2 instanceof java.util.Formattable) ? format_toStringArg(arg2, w2) : String.valueOf(arg2);
+        int adjW1 = (arg1 instanceof java.util.Formattable) ? 0 : w1;
+        int adjW2 = (arg2 instanceof java.util.Formattable) ? 0 : w2;
+        int adjMeta = ci1 | (adjW1 << 8) | (ci2 << 16) | (adjW2 << 24);
+        return format_splice2(format, s1, s2, adjMeta);
+    }
+
+    /** Fast-path for {@code %s} followed by {@code %d}.
+     * @param specIndexes packed: byte0=ci1, byte1=w1, byte2=ci2, byte3=w2
+     */
+    @ForceInline
+    private static String format_sd(String format, Object arg1, Object arg2, int specIndexes) {
+        int ci1 = specIndexes & 0xFF, w1 = (specIndexes >> 8) & 0xFF;
+        int ci2 = (specIndexes >> 16) & 0xFF, w2 = (specIndexes >> 24) & 0xFF;
+        // For Formattable, formatTo handles width; adjust meta to skip extra padding
+        String s1 = (arg1 instanceof java.util.Formattable) ? format_toStringArg(arg1, w1) : String.valueOf(arg1);
+        int adjW1 = (arg1 instanceof java.util.Formattable) ? 0 : w1;
+        int adjMeta = ci1 | (adjW1 << 8) | (ci2 << 16) | (w2 << 24);
+        return format_splice2(format, s1, format_toDecimalString(arg2), adjMeta);
+    }
+
+    /** Fast-path for {@code %d} followed by {@code %s}.
+     * @param specIndexes packed: byte0=ci1, byte1=w1, byte2=ci2, byte3=w2
+     */
+    @ForceInline
+    private static String format_ds(String format, Object arg1, Object arg2, int specIndexes) {
+        int ci1 = specIndexes & 0xFF, w1 = (specIndexes >> 8) & 0xFF;
+        int ci2 = (specIndexes >> 16) & 0xFF, w2 = (specIndexes >> 24) & 0xFF;
+        // For Formattable, formatTo handles width; adjust meta to skip extra padding
+        String s2 = (arg2 instanceof java.util.Formattable) ? format_toStringArg(arg2, w2) : String.valueOf(arg2);
+        int adjW2 = (arg2 instanceof java.util.Formattable) ? 0 : w2;
+        int adjMeta = ci1 | (w1 << 8) | (ci2 << 16) | (adjW2 << 24);
+        return format_splice2(format, format_toDecimalString(arg1), s2, adjMeta);
+    }
+
+    /** Fast-path for two {@code %d} specifiers.
+     * @param specIndexes packed: byte0=ci1, byte1=w1, byte2=ci2, byte3=w2
+     */
+    @ForceInline
+    private static String format_dd(String format, Object arg1, Object arg2, int specIndexes) {
+        return format_splice2(format, format_toDecimalString(arg1), format_toDecimalString(arg2), specIndexes);
+    }
+
+    /**
+     * Fast-path for two specifiers where at least one is %x or %X (no width/flags).
+     * @param meta packed: byte0=ci1, byte1=conv1, byte2=ci2, byte3=conv2
+     */
+    @ForceInline
+    private static String format_2(String format, Object arg1, Object arg2, int meta) {
+        int ci1 = meta & 0xFF;
+        int conv1 = (meta >> 8) & 0xFF;
+        int ci2 = (meta >> 16) & 0xFF;
+        int conv2 = (meta >> 24) & 0xFF;
+
+        String s1 = format_argFor2(arg1, conv1);
+        String s2 = format_argFor2(arg2, conv2);
+
+        // Both specifiers have no width/flags, so convLen is always 2
+        int convLen = 2;
+        byte coder = (byte) (s1.coder() | s2.coder() | format.coder());
+        int newLen = format.length() - 2 * convLen + s1.length() + s2.length();
+        byte[] bytes = new byte[newLen << coder];
+        // segment 1: format[0 .. ci1)
+        format.getBytes(bytes, 0, 0, coder, ci1);
+        int dstPos = ci1;
+        // segment 2: arg1
+        s1.getBytes(bytes, 0, dstPos, coder, s1.length());
+        dstPos += s1.length();
+        // segment 3: format[ci1+convLen .. ci2)
+        int midLen = ci2 - ci1 - convLen;
+        format.getBytes(bytes, ci1 + convLen, dstPos, coder, midLen);
+        dstPos += midLen;
+        // segment 4: arg2
+        s2.getBytes(bytes, 0, dstPos, coder, s2.length());
+        dstPos += s2.length();
+        // segment 5: format[ci2+convLen .. end)
+        format.getBytes(bytes, ci2 + convLen, dstPos, coder, format.length() - ci2 - convLen);
+        return new String(bytes, coder);
+    }
+
+    /** Format a single argument for format_2 based on conversion character. */
+    private static String format_argFor2(Object arg, int conv) {
+        return switch (conv) {
+            case 'd' -> format_toDecimalString(arg);
+            case 'x' -> format_toHexString(arg);
+            case 'X' -> format_toUpperHexString(arg);
+            default  -> String.valueOf(arg); // 's'
+        };
+    }
+
+    /** Virtual fast-path for two specifiers with %x/%X. */
+    @ForceInline
+    private String formatted_2(Object arg1, Object arg2, int meta) {
+        return format_2(this, arg1, arg2, meta);
+    }
+
+    /**
+     * Format an argument according to the specifier character and append to StringBuilder,
+     * handling padding and width flags, using the provided DecimalFormatSymbols
+     * for locale-aware formatting.
+     *
+     * @param sb    StringBuilder to append the formatted result to
+     * @param arg   the argument to format
+     * @param conv  the conversion character ('s', 'd', 'x', 'X')
+     * @param flag  the flag character (0 if none, ' ' for leading space, '0' for zero pad)
+     * @param width the minimum width (0 if none)
+     * @param dfs   DecimalFormatSymbols for locale-aware formatting (only used for 'd')
+     */
+    private static void format_arg(StringBuilder sb, Object arg, int conv, char flag, int width,
+                                   java.text.DecimalFormatSymbols dfs) {
+        // For %s with Formattable, let formatTo handle width directly
+        if (conv == 's' && arg instanceof java.util.Formattable) {
+            sb.append(format_toStringArg(arg, width));
+            return;
+        }
+
+        String argStr = switch (conv) {
+            case 'd' -> format_toDecimalString(arg, dfs);
+            case 'x' -> format_toHexString(arg);
+            case 'X' -> format_toUpperHexString(arg);
+            default  -> String.valueOf(arg); // 's' (non-Formattable) and fallback
+        };
+
+        int argLen = argStr.length();
+        int padding = width - argLen;
+
+        // Only 'd' needs locale-aware negative handling
+        if (conv == 'd') {
+            char minusSign = dfs.getMinusSign();
+            boolean isNegative = !argStr.isEmpty() && argStr.charAt(0) == minusSign;
+            boolean hasLeadingSpace = (flag == ' ' && !isNegative);
+
+            // Leading space occupies one position in the width, adjust padding
+            if (hasLeadingSpace && padding > 0) {
+                padding--;
+            }
+
+            // Handle LEADING_SPACE flag: insert space before positive values
+            if (hasLeadingSpace) {
+                sb.append(' ');
+            }
+
+            if (padding > 0 && flag == '0') {
+                if (isNegative) {
+                    // ZERO_PAD with negative: sign first, then zeros, then digits
+                    sb.append(minusSign)
+                      .repeat('0', padding)
+                      .append(argStr, 1, argLen);
+                } else {
+                    sb.repeat('0', padding)
+                      .append(argStr);
+                }
+            } else {
+                if (padding > 0) {
+                    sb.repeat(' ', padding);
+                }
+                sb.append(argStr);
+            }
+        } else {
+            // 's', 'x', 'X' - simple padding only
+            if (padding > 0) {
+                sb.repeat(flag == '0' ? '0' : ' ', padding);
+            }
+            sb.append(argStr);
+        }
+    }
+
+    /**
+     * Fast-path formatter for format strings with 1-8 specifiers (%s/%d/%x/%X
+     * with optional single-char flag and single-digit width).
+     * Called from C2-compiled code when the format string is a compile-time constant.
+     *
+     * @param specIndexes packed specifier positions: byte0=ci1, byte1=ci2, ..., byte7=ci8
+     */
+    private static String format_multi(String format, Object[] args, long specIndexes) {
+        // C2 ensures args.length equals the specifier count packed in specIndexes.
+        // We use args.length here as a proxy for spec count since the array length
+        // is guaranteed to match by the C2 optimization guard.
+        // Note: Java assert is not used here because String is bootstrapped before
+        // AssertionError is linked.
+        int count = args.length;
+        StringBuilder sb = new StringBuilder(format.length() + count * 8);
+        int fmtPos = 0;
+        // Get DecimalFormatSymbols once for the entire loop
+        var dfs = DecimalFormat.FORMATTER_ACCESS.getDecimalFormatSymbols(Locale.getDefault(Locale.Category.FORMAT));
+
+        for (int i = 0; i < count; i++) {
+            int ci = (int) ((specIndexes >>> (i * 8)) & 0xFF);
+            // Parse specifier at format[ci] to get conv, width, flag
+            int pos = ci + 1;
+            char nc = format.charAt(pos);
+
+            // Check for optional flag (only ' ' and '0' are supported)
+            char flag = 0;
+            if (nc == ' ' || nc == '0') {
+                flag = nc;
+                pos++;
+                nc = format.charAt(pos);
+            }
+
+            // Check for optional width digit
+            int width = 0;
+            if (nc >= '1' && nc <= '9') {
+                width = nc - '0';
+                pos++;
+                nc = format.charAt(pos);
+            }
+
+            char conv = nc;
+            int convLen = pos - ci + 1;
+
+            // Append literal segment before this specifier
+            if (ci > fmtPos) {
+                sb.append(format, fmtPos, ci);
+            }
+
+            // Format argument with padding and flags
+            format_arg(sb, args[i], conv, flag, width, dfs);
+
+            fmtPos = ci + convLen;
+        }
+        // Append trailing literal segment
+        if (fmtPos < format.length()) {
+            sb.append(format, fmtPos, format.length());
+        }
+        return sb.toString();
+    }
+
+    // ========== END: C2 String.format/formatted optimization ==========
 
     /**
      * Returns the string representation of the {@code Object} argument.

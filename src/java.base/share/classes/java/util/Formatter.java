@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2023, Alibaba Group Holding Limited. All Rights Reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,8 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalQueries;
 import java.time.temporal.UnsupportedTemporalTypeException;
 
+import jdk.internal.access.JavaUtilFormatterAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.math.DoubleConsts;
 import jdk.internal.math.FormattedFPDecimal;
 import sun.util.locale.provider.LocaleProviderAdapter;
@@ -5030,6 +5032,21 @@ public final class Formatter implements Closeable, Flushable {
                 case TIME_12_HOUR, TIME_24_HOUR, DATE_TIME, DATE, ISO_STANDARD_DATE -> true;
                 default -> false;
             };
+        }
+    }
+
+    /**
+     * Registers SharedSecrets accessor for Formatter internals.
+     */
+    static final class FormatterAccess {
+        static {
+            SharedSecrets.setJavaUtilFormatterAccess(new JavaUtilFormatterAccess() {
+                @Override
+                public DecimalFormatSymbols getDecimalFormatSymbols(Locale locale) {
+                    return locale == null ? null : Formatter.getDecimalFormatSymbols(locale);
+                }
+
+            });
         }
     }
 

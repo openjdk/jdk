@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,9 +103,25 @@ public class SharedSecrets {
     @Stable private static JavaSecurityPropertiesAccess javaSecurityPropertiesAccess;
     @Stable private static JavaSecuritySignatureAccess javaSecuritySignatureAccess;
     @Stable private static JavaSecuritySpecAccess javaSecuritySpecAccess;
+    @Stable private static JavaUtilFormatterAccess javaUtilFormatterAccess;
     @Stable private static JavaxCryptoSealedObjectAccess javaxCryptoSealedObjectAccess;
     @Stable private static JavaxCryptoSpecAccess javaxCryptoSpecAccess;
     @Stable private static JavaxSecurityAccess javaxSecurityAccess;
+
+    public static void setJavaUtilFormatterAccess(JavaUtilFormatterAccess jufa) {
+        javaUtilFormatterAccess = jufa;
+    }
+
+    public static JavaUtilFormatterAccess getJavaUtilFormatterAccess() {
+        var access = javaUtilFormatterAccess;
+        if (access == null) {
+            try {
+                Class.forName("java.util.Formatter$FormatterAccess", true, null);
+                access = javaUtilFormatterAccess;
+            } catch (ClassNotFoundException e) {}
+        }
+        return access;
+    }
 
     public static void setJavaUtilCollectionAccess(JavaUtilCollectionAccess juca) {
         javaUtilCollectionAccess = juca;
