@@ -194,7 +194,7 @@ private:
   static void print_stats();
 public:
   static void debug_trace();
-  static unsigned oop_hash(oop const& p);
+  static unsigned oop_address_hash(oop const& p);
   static bool oop_handle_equals(const OopHandle& a, const OopHandle& b);
 
   class CopyKlassSubGraphInfoToArchive;
@@ -301,7 +301,7 @@ private:
   typedef ResizeableHashTable<oop, bool,
       AnyObj::C_HEAP,
       mtClassShared,
-      HeapShared::oop_hash> SeenObjectsTable;
+      HeapShared::oop_address_hash> SeenObjectsTable;
 
   static SeenObjectsTable *_seen_objects_table;
 

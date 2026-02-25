@@ -175,11 +175,13 @@ oop HeapShared::CachedOopInfo::orig_referrer() const {
   return _orig_referrer.resolve();
 }
 
-unsigned HeapShared::oop_hash(oop const& p) {
+// This is a simple hashing of the oop's address. This function is used
+// while copying the oops into the AOT heap region. We don't want to
+// have any side effects during the copying, so we avoid calling
+// p->identity_hash() which can update the object header.
+unsigned HeapShared::oop_address_hash(oop const& p) {
   assert(SafepointSynchronize::is_at_safepoint() ||
          JavaThread::current()->is_in_no_safepoint_scope(), "sanity");
-  // Do not call p->identity_hash() as that will update the
-  // object header.
   return primitive_hash(cast_from_oop<intptr_t>(p));
 }
 
@@ -192,22 +194,21 @@ unsigned HeapShared::oop_hash(oop const& p) {
 //   desirable to make the hashcodes more random between runs.
 unsigned HeapShared::archived_object_cache_hash(OopHandle const& oh) {
   oop o = oh.resolve();
-  if (_use_identity_hash_for_archived_object_cache) {
+  if (o == nullptr) {
+    return 0;
+  }
+  if (!_use_identity_hash_for_archived_object_cache) {
+    // This is called while we are copying the objects. Don't call o->identity_hash()
+    // as that will update the object header.
+    return oop_address_hash(o);
+  } else {
     // This is called after all objects are copied. It's OK to update
     // the object's hashcode.
     //
     // This may be called after we have left the AOT dumping safepoint.
     // Objects in archived_object_cache() may be moved by the GC, so we
     // can't use the address of o for computing the hash.
-    if (o == nullptr) {
-      return 0;
-    } else {
-      return o->identity_hash();
-    }
-  } else {
-    // This is called while we are copying the objects. Don't call o->identity_hash()
-    // as that will update the object header.
-    return oop_hash(o);
+    return o->identity_hash();
   }
 }
 
@@ -263,6 +264,11 @@ void HeapShared::reset_archived_object_states(TRAPS) {
 }
 
 HeapShared::ArchivedObjectCache* HeapShared::_archived_object_cache = nullptr;
+
+// Controls the hashing method for the _archived_object_cache.
+// Changes from false to true once, after all objects are copied,
+// inside make_archived_object_cache_gc_safe().
+// See archived_object_cache_hash() for more details.
 bool HeapShared::_use_identity_hash_for_archived_object_cache = false;
 
 bool HeapShared::is_archived_heap_in_use() {
@@ -402,6 +408,8 @@ void HeapShared::make_archived_object_cache_gc_safe() {
 
   // It's safe to change the behavior of the hash function now, because iterate_all()
   // doesn't call the hash function.
+  //  See archived_object_cache_hash() for more details.
+  assert(_use_identity_hash_for_archived_object_cache == false, "happens only once");
   _use_identity_hash_for_archived_object_cache = true;
 
   // Copy all CachedOopInfo into a new table using a different hashing algorithm
@@ -431,7 +439,7 @@ int HeapShared::append_root(oop obj) {
   assert(_pending_roots != nullptr, "sanity");
 
   if (obj == nullptr) {
-    assert(_pending_roots->at(0) == nullptr, "root index 1 is always null");
+    assert(_pending_roots->at(0) == nullptr, "root index 0 always maps to null");
     return 0;
   } else if (CDSConfig::is_dumping_aot_linked_classes()) {
     // The AOT compiler may refer the same obj many times, so we
@@ -443,6 +451,7 @@ int HeapShared::append_root(oop obj) {
     if (obj_info->root_index() > 0) {
       return obj_info->root_index();
     } else {
+      assert(obj_info->root_index() < 0, "must not be zero");
       int i = _pending_roots->append(obj);
       obj_info->set_root_index(i);
       return i;
@@ -1015,11 +1024,7 @@ void KlassSubGraphInfo::add_subgraph_entry_field(int static_field_offset, oop v)
       new (mtClass) GrowableArray<int>(10, mtClass);
   }
   _subgraph_entry_fields->append(static_field_offset);
-  if (v == nullptr) {
-    _subgraph_entry_fields->append(-1);
-  } else {
-    _subgraph_entry_fields->append(HeapShared::append_root(v));
-  }
+  _subgraph_entry_fields->append(HeapShared::append_root(v));
 }
 
 // Add the Klass* for an object in the current KlassSubGraphInfo's subgraphs.
@@ -1567,12 +1572,7 @@ void HeapShared::init_archived_fields_for(Klass* k, const ArchivedKlassSubGraphI
       int root_index = entry_field_records->at(i+1);
       // Load the subgraph entry fields from the record and store them back to
       // the corresponding fields within the mirror.
-      oop v;
-      if (root_index < 0) {
-        v = nullptr;
-      } else {
-        v = get_root(root_index, /*clear=*/true);
-      }
+      oop v = get_root(root_index, /*clear=*/true);
       oop m = k->java_mirror();
       if (k->has_aot_initialized_mirror()) {
         assert(v == m->obj_field(field_offset), "must be aot-initialized");
