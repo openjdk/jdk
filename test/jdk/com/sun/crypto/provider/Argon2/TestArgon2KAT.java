@@ -21,6 +21,7 @@
  * questions.
  */
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HexFormat;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
@@ -77,6 +78,7 @@ public class TestArgon2KAT {
 
     private static void run(Argon2ParameterSpec spec, String expected)
             throws Exception {
+        System.out.println("test against: " + spec);
         Type t = spec.type();
         switch (t) {
             case ARGON2I:
@@ -100,6 +102,7 @@ public class TestArgon2KAT {
     // Argon2id only
     private static void runPHC(Argon2ParameterSpec spec, String expected)
             throws Exception {
+        System.out.println("test against: " + spec);
         Type t = spec.type();
         switch (t) {
             case ARGON2ID:
@@ -172,6 +175,21 @@ public class TestArgon2KAT {
         expected =
             "f55535bfe948710051424c7424b11ba9a13a50239b0459f56ca695ea14bc195e";
         run(kdfParams, expected);
+
+        Base64.Decoder dec = Base64.getDecoder();
+
+        iterations = 2;
+        memory = 1 << 16;
+        parallelism = 1;
+        tagLen = 32;
+        testpwd = "hunter2".getBytes();
+        testsalt = dec.decode("gZiV/M1gPc22ElAH/Jh1Hw");
+        byte[] secret = "pepper".getBytes();
+        kdfParams = genParams(Type.ARGON2ID, testpwd,
+            testsalt, parallelism, memory, iterations, secret, null, tagLen);
+        expected =
+            "0963ab928a3ba09050fe2ca1eee2742ced9a2c47eb1f04d6965480c53d33467a";
+        run(kdfParams, expected);
     }
 
     private static void selfTest2() throws Exception {
@@ -179,7 +197,10 @@ public class TestArgon2KAT {
         String[] expectedPHCs = {
             "$argon2id$v=19$m=65536,t=1,p=4$MDkwOTA5MDkwOTA5$4UOEHDZiPmXffE2xQjfvCugdzPNOfHhw/Lz8sDj8uY0",
             "$argon2id$v=19$m=65536,t=1,p=4$MDUwNTA1MDUwNTA1MDUwNQ$QGNATFLKRkNRzDx2x48tZ3ImZHPhqMJIOItXzHmzHvA",
-            "$argon2id$v=19$m=65536,t=2,p=4$MDUwNTA1MDUwNTA1MDUwNTA2$ewqaCfiXjuogIl3E6ZMxmFVn4ovDISEbIYxYgpMMmdM"
+            "$argon2id$v=19$m=65536,t=2,p=4$MDUwNTA1MDUwNTA1MDUwNTA2$ewqaCfiXjuogIl3E6ZMxmFVn4ovDISEbIYxYgpMMmdM",
+            "$argon2id$v=19$m=32,t=3,p=3$MDUwNTA1MDUwNTA1MDUwNTAxMDEwMTAxMDEwMTAxMDE$4FLFMPU5r7ITZ6KIusKkWJUUXoU80c5+bszfl+Md4KQ",
+            "$argon2id$v=19$m=130072,t=3,p=3$MDUwNTA1MDUwNTA1MDUwNTAxMDEwMTAxMDEwMTAxMDE$zqKZdwMOgPTL2lglwnXeJiYwnduI3g8pRYuh55A4ikY",
+            "$argon2id$v=19$m=66560,t=3,p=3$MDUwNTA1MDUwNTA1MDUwNTAxMDEwMTAxMDEwMTAxMDE$lABKLpy9mARU8P5gKIh0eWwBjCB7yq1NRPufJEiow/g"
         };
         for (String e : expectedPHCs) {
             Argon2ParameterSpec params =
