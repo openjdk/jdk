@@ -1141,6 +1141,13 @@ public:
 
   Address argument_address(RegisterOrConstant arg_slot, int extra_slot_offset = 0);
 
+  static void addptr_32(MacroAssembler *masm, Address dst, int32_t src) {
+    masm->increment(dst, src);
+  }
+  typedef void (*addptr_32_insn_t)(MacroAssembler *masm, Address dst, int32_t src);
+  void profile_receiver_type(Register recv, Register mdp, int mdp_offset,
+                             addptr_32_insn_t inc = &addptr_32);
+
   void verify_sve_vector_length(Register tmp = rscratch1);
   void reinitialize_ptrue() {
     if (UseSVE > 0) {

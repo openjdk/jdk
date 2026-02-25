@@ -1278,7 +1278,7 @@ void LIR_Assembler::type_profile_helper(Register mdo,
          Label nope;
          __ cmpl(r_profile_rng, threshold);
          __ jcc(Assembler::aboveEqual, nope);
-         __ addptr(dst, src);
+         __ addptr(dst, src << ratio_shift);
          __ bind(nope);
        });
 #undef __
@@ -2988,6 +2988,12 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   ciMethod* callee = op->profiled_callee();
   Register tmp_load_klass = rscratch1;
 
+#ifndef PRODUCT
+  if (CommentedAssembly) {
+    __ block_comment("profile_call {");
+  }
+#endif
+
   // Update counter for all call types
   ciMethodData* md = method->method_data_or_null();
   assert(md != nullptr, "Sanity");
@@ -3029,6 +3035,12 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
     // Static call
     __ addptr(counter_addr, DataLayout::counter_increment);
   }
+
+#ifndef PRODUCT
+  if (CommentedAssembly) {
+    __ block_comment("} profile_call");
+  }
+#endif
 }
 
 void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {

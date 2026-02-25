@@ -52,9 +52,9 @@ friend class ArrayCopyStub;
   // Record the type of the receiver in ReceiverTypeData
   void type_profile_helper(Register mdo,
                            ciMethodData *md, ciProfileData *data,
-                           Register recv, Label* update_done);
+                           Register recv);
   void add_debug_info_for_branch(address adr, CodeEmitInfo* info);
-
+  static void increment_mdo(MacroAssembler *masm, Address dst, int32_t src);
   void casw(Register addr, Register newval, Register cmpval);
   void casl(Register addr, Register newval, Register cmpval);
 
