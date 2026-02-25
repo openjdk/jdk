@@ -413,16 +413,34 @@ final class Renderer {
         }
     }
 
-    private int findNextReplacement(String s, int start) {
-        // Find the next "$" or "#", after start.
-        int dollar  = s.indexOf("$", start);
-        int hashtag = s.indexOf("#", start);
-        // If the character was not found, we want to have the rest of the
-        // String s, so instead of "-1" take the end/length of the String.
-        dollar  = (dollar == -1)  ? s.length() : dollar;
-        hashtag = (hashtag == -1) ? s.length() : hashtag;
-        // Take the first one.
-        return Math.min(dollar, hashtag);
+    /**
+     * Finds the index where the next replacement pattern after {@code start} begins while skipping
+     * over "$$" and "##", which will be escaped.
+     *
+     * @param s     string to search for replacements
+     * @param start index from which to start searching
+     * @return the index of the beginning of the next replacement pattern or the lenght of {@code s}
+     */
+    private int findNextReplacement(final String s, final int start) {
+        int next = start;
+        for (int potentialStart = start; potentialStart < s.length() && s.charAt(next) == s.charAt(potentialStart); potentialStart = next + 1) {
+            // If this is not the first iteration, we have found a doubled up "$" or "#" and need to skip
+            // over the second instance.
+            if (potentialStart != start) {
+                potentialStart += 1;
+            }
+            // Find the next "$" or "#", after the potential start.
+            int dollar  = s.indexOf("$", potentialStart);
+            int hashtag = s.indexOf("#", potentialStart);
+            // If the character was not found, we want to have the rest of the
+            // String s, so instead of "-1" take the end/length of the String.
+            dollar  = (dollar == -1)  ? s.length() : dollar;
+            hashtag = (hashtag == -1) ? s.length() : hashtag;
+            // Take the first one.
+            next = Math.min(dollar, hashtag);
+        }
+
+        return next;
     }
 
     /**
@@ -441,39 +459,19 @@ final class Renderer {
         int start = 0;
         boolean startIsAfterDollar = false;
         do {
-            boolean escapeHash = false;
-            boolean escapeDollar = false;
             int next = findNextReplacement(s, start);
-            // To see if we need to escape a doubled up "#" or "$" we look ahead of next.
-            int potentialStart = next + 1;
-            // Search for a non-paired replacement character and remember what
-            // we need to escape later.
-            while (potentialStart < s.length() && s.charAt(potentialStart) == s.charAt(next)) {
-                // We have a matching pair of escape characters, so we escape them later
-                // and continue searching.
-                switch (s.charAt(next)) {
-                    case '#' -> escapeHash = true;
-                    case '$' -> escapeDollar = true;
-                    default -> throw new RuntimeException("Unexpected replacement character. Expected '#' or '$'.");
-                }
 
-                next = findNextReplacement(s, potentialStart + 1);
-                potentialStart = next + 1;
-            }
-
-            if (next < s.length() - 2 && ((s.charAt(next) == '$' && s.charAt(potentialStart) == '#') ||
-                (s.charAt(next) == '#' && s.charAt(potentialStart) == '$'))) {
+            // Detect most zero sized replacement patterns, i.e. "$#" or "#$", for better error reporting.
+            if (next < s.length() - 2 && ((s.charAt(next) == '$' && s.charAt(next + 1) == '#') ||
+                (s.charAt(next) == '#' && s.charAt(next + 1) == '$'))) {
                 String pattern = s.substring(next, next + 2);
                 throw new RendererException("Found zero sized replacement pattern '" + pattern + "'.");
             }
 
             String part = s.substring(start, next);
-            if (escapeHash) {
-                part = part.replace("##", "#");
-            }
-            if (escapeDollar) {
-                part = part.replace("$$", "$");
-            }
+            // Escape doubled up replacement characters.
+            part = part.replace("##", "#");
+            part = part.replace("$$", "$");
 
             if (count == 0) {
                 // First part has no "#" or "$" before it.
@@ -488,7 +486,7 @@ final class Renderer {
                 // terminate now.
                 return;
             }
-            start = potentialStart;
+            start = next + 1;
             startIsAfterDollar = s.charAt(next) == '$'; // remember which character we just split with
             count++;
         } while (true);
