@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8208377 6562489 8270265 8356803 8356812 4517298 8378623
+ * @bug 8208377 6562489 8270265 8356803 8356812 4517298
  * @summary Confirm that default-ignorable and ignorable-whitespace
  *          glyphs are not rendered or measured.
  */
