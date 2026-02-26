@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -362,10 +362,8 @@ public final class MethodHandleProxies {
 
             // <init>(Lookup, MethodHandle target, MethodHandle callerBoundTarget)
             clb.withMethodBody(INIT_NAME, MTD_void_Lookup_MethodHandle_MethodHandle, 0, cob -> {
-                cob.aload(0)
-                   .invokespecial(CD_Object, INIT_NAME, MTD_void)
-                   // call ensureOriginalLookup to verify the given Lookup has access
-                   .aload(1)
+                // call ensureOriginalLookup to verify the given Lookup has access
+                cob.aload(1)
                    .invokestatic(proxyDesc, ENSURE_ORIGINAL_LOOKUP, MTD_void_Lookup)
                    // this.target = target;
                    .aload(0)
@@ -383,7 +381,9 @@ public final class MethodHandleProxies {
                 }
 
                 // complete
-                cob.return_();
+                cob.aload(0)
+                   .invokespecial(CD_Object, INIT_NAME, MTD_void)
+                   .return_();
             });
 
             // private static void ensureOriginalLookup(Lookup) checks if the given Lookup
