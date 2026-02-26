@@ -180,8 +180,6 @@ public class TestArgon2KAT {
 
         iterations = 2;
         memory = 1 << 16;
-        parallelism = 1;
-        tagLen = 32;
         testpwd = "hunter2".getBytes();
         testsalt = dec.decode("gZiV/M1gPc22ElAH/Jh1Hw");
         byte[] secret = "pepper".getBytes();

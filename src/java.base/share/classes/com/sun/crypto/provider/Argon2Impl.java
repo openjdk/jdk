@@ -26,6 +26,10 @@ package com.sun.crypto.provider;
 
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.ProviderException;
 import javax.crypto.spec.Argon2ParameterSpec;
@@ -246,10 +250,10 @@ public final class Argon2Impl {
 
         private void fillSegment(Argon2Position pos) {
             Block inBlock = null;
-            boolean dataIndependentAddressing =
+            boolean independentAddr =
                 (type == Type.ARGON2ID && (pos.pass == 0) && (pos.slice < 2)
                 || type == Type.ARGON2I);
-            if (dataIndependentAddressing) {
+            if (independentAddr) {
                 inBlock = new Block();
                 inBlock.value[0] = pos.pass;
                 inBlock.value[1] = pos.lane;
@@ -265,7 +269,7 @@ public final class Argon2Impl {
                 // adjust startingIdx as the first two blocks are generated
                 // in fillFirstTwoBlocks() already
                 startingIdx = 2;
-                if (dataIndependentAddressing) {
+                if (independentAddr) {
                     addressBlock = nextAddresses(inBlock);
                 }
             }
@@ -284,7 +288,7 @@ public final class Argon2Impl {
 
                 // computing the index of the reference block
                 // Taking pseudo-random value from the previous block
-                if (dataIndependentAddressing) {
+                if (independentAddr) {
                     if (i % ARGON2_ADDRESSES_IN_BLOCK == 0) {
                         addressBlock = nextAddresses(inBlock);
                     }
@@ -322,14 +326,29 @@ public final class Argon2Impl {
         }
 
         void fillMemoryBlocks() {
-            // 5), 6) Compute B[i][j] for number of passes
-            for (int r = 0; r < passes; r++) {
-                for (int s = 0; s < ARGON2_SYNC_POINTS; s++) {
-                    for (int k = 0; k < lanes; k++) {
-                        Argon2Position pos =  new Argon2Position(r, k, s);
-                        fillSegment(pos);
+            try {
+                ExecutorService workers = Executors.newFixedThreadPool(lanes);
+
+                // 5), 6) Compute B[i][j] for number of passes
+                for (int r = 0; r < passes; r++) {
+                    for (int s = 0; s < ARGON2_SYNC_POINTS; s++) {
+                        CountDownLatch latch = new CountDownLatch(lanes);
+                        for (int k = 0; k < lanes; k++) {
+                            Argon2Position pos =  new Argon2Position(r, k, s);
+                            workers.submit(() -> {
+                                this.fillSegment(pos);
+                                latch.countDown();
+                            });
+                        }
+                        latch.await();
                     }
                 }
+                workers.shutdown();
+                if (!workers.awaitTermination(2, TimeUnit.SECONDS)) {
+                    workers.shutdownNow();
+                }
+            } catch (InterruptedException ie) {
+                throw new ProviderException("Argon2 operation interrupted", ie);
             }
         }
 
