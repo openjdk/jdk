@@ -1846,6 +1846,7 @@ class VectorCastNode : public VectorNode {
   static VectorNode* make(int vopc, Node* n1, BasicType bt, uint vlen);
   static int  opcode(int opc, BasicType bt, bool is_signed = true);
   static bool implemented(int opc, uint vlen, BasicType src_type, BasicType dst_type);
+  static bool is_supported_subword_cast(BasicType def_bt, BasicType use_bt, const uint pack_size);
 
   virtual Node* Identity(PhaseGVN* phase);
 };
