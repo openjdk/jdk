@@ -4421,12 +4421,13 @@ public class JavacParser implements Parser {
                 JCMethodDecl methDef = (JCMethodDecl) def;
                 if (methDef.name == names.init && methDef.params.isEmpty() && (methDef.mods.flags & Flags.COMPACT_RECORD_CONSTRUCTOR) != 0) {
                     ListBuffer<JCVariableDecl> tmpParams = new ListBuffer<>();
+                    TreeCopier<Void> copier = new TreeCopier<>(F);
                     for (JCVariableDecl param : headerFields) {
                         tmpParams.add(F.at(param)
                                 // we will get flags plus annotations from the record component
                                 .VarDef(F.Modifiers(Flags.PARAMETER | Flags.GENERATED_MEMBER | Flags.MANDATED | param.mods.flags & Flags.VARARGS,
-                                        param.mods.annotations),
-                                param.name, param.vartype, null));
+                                        copier.copy(param.mods.annotations)),
+                                param.name, copier.copy(param.vartype), null));
                     }
                     methDef.params = tmpParams.toList();
                 }
