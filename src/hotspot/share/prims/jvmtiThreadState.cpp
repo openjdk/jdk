@@ -241,9 +241,11 @@ void
 JvmtiThreadState::process_pending_interp_only(JavaThread* current) {
   JvmtiThreadState* state = current->jvmti_thread_state();
 
-  if (state != nullptr && (state->is_pending_interp_only_mode())) {
+  if (state != nullptr && seen_interp_only_mode()) { // avoid MutexLocker if possible
     MutexLocker mu(JvmtiThreadState_lock);
     if (state->is_pending_interp_only_mode()) {
+      assert(state->get_thread() == current, "sanity check");
+      assert(!state->is_interp_only_mode(), "sanity check");
       JvmtiEventController::enter_interp_only_mode(state);
     }
   }
