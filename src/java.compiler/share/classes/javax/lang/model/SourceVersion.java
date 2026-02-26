@@ -25,26 +25,15 @@
 
 package javax.lang.model;
 
-import jdk.internal.javac.PreviewFeature;
-
 /**
  * Source versions of the Java programming language.
  *
  * See the appropriate edition of
  * <cite>The Java Language Specification</cite>
  * for information about a particular source version.
- * <p>
- * Additional source version constants will be added to model future releases
- * of the language.
- * <p>
- * A special constant, {@link #CURRENT_PREVIEW}, representing the
- * preview language features of the current Java SE release, is not a source
- * version, but can be viewed as a future source version.  Each of the preview
- * language features is described by a separate document on the site that hosts
- * the corresponding edition of JLS.  Unlike the features in source versions,
- * the preview language features are only supported when preview features are
- * enabled, and are not {@linkplain #isSupported() supported by future
- * releases}.
+ *
+ * <p>Note that additional source version constants will be added to
+ * model future releases of the language.
  *
  * @since 1.6
  * @see java.lang.reflect.ClassFileFormatVersion
@@ -187,13 +176,13 @@ public enum SourceVersion {
      * Additions in this release include diamond syntax for
      * constructors, {@code try}-with-resources, strings in switch,
      * binary literals, and multi-catch.
+     * @since 1.7
      *
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jls/se7/html/index.html">
      * <cite>The Java Language Specification, Java SE 7 Edition</cite></a>
      * @see <a href="https://jcp.org/en/jsr/detail?id=334">
      * JSR 334: Small Enhancements to the Java&trade; Programming Language</a>
-     * @since 1.7
      */
     RELEASE_7,
 
@@ -202,13 +191,13 @@ public enum SourceVersion {
      * 8.
      *
      * Additions in this release include lambda expressions and default methods.
+     * @since 1.8
      *
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jls/se8/html/index.html">
      * <cite>The Java Language Specification, Java SE 8 Edition</cite></a>
      * @see <a href="https://jcp.org/en/jsr/detail?id=335">
      * JSR 335: Lambda Expressions for the Java&trade; Programming Language</a>
-     * @since 1.8
      */
     RELEASE_8,
 
@@ -219,6 +208,8 @@ public enum SourceVersion {
      * Additions in this release include modules and removal of a
      * single underscore from the set of legal identifier names.
      *
+     * @since 9
+     *
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jls/se9/html/index.html">
      * <cite>The Java Language Specification, Java SE 9 Edition</cite></a>
@@ -226,7 +217,6 @@ public enum SourceVersion {
      * JSR 376: Java&trade; Platform Module System</a>
      * @see <a href="https://openjdk.org/jeps/213">
      * JEP 213: Milling Project Coin</a>
-     * @since 9
      */
     RELEASE_9,
 
@@ -237,12 +227,13 @@ public enum SourceVersion {
      * Additions in this release include local-variable type inference
      * ({@code var}).
      *
+     * @since 10
+     *
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jls/se10/html/index.html">
      * <cite>The Java Language Specification, Java SE 10 Edition</cite></a>
      * @see <a href="https://openjdk.org/jeps/286">
      * JEP 286: Local-Variable Type Inference</a>
-     * @since 10
      */
     RELEASE_10,
 
@@ -253,12 +244,13 @@ public enum SourceVersion {
      * Additions in this release include local-variable syntax for
      * lambda parameters.
      *
+     * @since 11
+     *
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jls/se11/html/index.html">
      * <cite>The Java Language Specification, Java SE 11 Edition</cite></a>
      * @see <a href="https://openjdk.org/jeps/323">
      * JEP 323: Local-Variable Syntax for Lambda Parameters</a>
-     * @since 11
      */
     RELEASE_11,
 
@@ -267,10 +259,11 @@ public enum SourceVersion {
      * 12.
      * No major changes from the prior release.
      *
+     * @since 12
+     *
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jls/se12/html/index.html">
      * <cite>The Java Language Specification, Java SE 12 Edition</cite></a>
-     * @since 12
      */
     RELEASE_12,
 
@@ -279,10 +272,11 @@ public enum SourceVersion {
      * 13.
      * No major changes from the prior release.
      *
+     * @since 13
+     *
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jls/se13/html/index.html">
      * <cite>The Java Language Specification, Java SE 13 Edition</cite></a>
-     * @since 13
      */
     RELEASE_13,
 
@@ -292,12 +286,13 @@ public enum SourceVersion {
      *
      * Additions in this release include switch expressions.
      *
+     * @since 14
+     *
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jls/se14/html/index.html">
      * <cite>The Java Language Specification, Java SE 14 Edition</cite></a>
      * @see <a href="https://openjdk.org/jeps/361">
      * JEP 361: Switch Expressions</a>
-     * @since 14
      */
     RELEASE_14,
 
@@ -307,12 +302,13 @@ public enum SourceVersion {
      *
      * Additions in this release include text blocks.
      *
+     * @since 15
+     *
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jls/se15/html/index.html">
      * <cite>The Java Language Specification, Java SE 15 Edition</cite></a>
      * @see <a href="https://openjdk.org/jeps/378">
      * JEP 378: Text Blocks</a>
-     * @since 15
      */
     RELEASE_15,
 
@@ -323,6 +319,8 @@ public enum SourceVersion {
      * Additions in this release include records and pattern matching
      * for {@code instanceof}.
      *
+     * @since 16
+     *
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jls/se16/html/index.html">
      * <cite>The Java Language Specification, Java SE 16 Edition</cite></a>
@@ -330,7 +328,6 @@ public enum SourceVersion {
      * JEP 394: Pattern Matching for instanceof</a>
      * @see <a href="https://openjdk.org/jeps/395">
      * JEP 395: Records</a>
-     * @since 16
      */
     RELEASE_16,
 
@@ -341,6 +338,8 @@ public enum SourceVersion {
      * Additions in this release include sealed classes and
      * restoration of always-strict floating-point semantics.
      *
+     * @since 17
+     *
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jls/se17/html/index.html">
      * <cite>The Java Language Specification, Java SE 17 Edition</cite></a>
@@ -348,7 +347,6 @@ public enum SourceVersion {
      * JEP 306: Restore Always-Strict Floating-Point Semantics</a>
      * @see <a href="https://openjdk.org/jeps/409">
      * JEP 409: Sealed Classes</a>
-     * @since 17
      */
     RELEASE_17,
 
@@ -358,10 +356,11 @@ public enum SourceVersion {
      *
      * No major changes from the prior release.
      *
+     * @since 18
+     *
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jls/se18/html/index.html">
      * <cite>The Java Language Specification, Java SE 18 Edition</cite></a>
-     * @since 18
      */
     RELEASE_18,
 
@@ -371,10 +370,11 @@ public enum SourceVersion {
      *
      * No major changes from the prior release.
      *
+     * @since 19
+     *
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jls/se19/html/index.html">
      * <cite>The Java Language Specification, Java SE 19 Edition</cite></a>
-     * @since 19
      */
     RELEASE_19,
 
@@ -384,10 +384,11 @@ public enum SourceVersion {
      *
      * No major changes from the prior release.
      *
+     * @since 20
+     *
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jls/se20/html/index.html">
      * <cite>The Java Language Specification, Java SE 20 Edition</cite></a>
-     * @since 20
      */
     RELEASE_20,
 
@@ -398,6 +399,8 @@ public enum SourceVersion {
      * Additions in this release include record patterns and pattern
      * matching for {@code switch}.
      *
+     * @since 21
+     *
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jls/se21/html/index.html">
      * <cite>The Java Language Specification, Java SE 21 Edition</cite></a>
@@ -405,7 +408,6 @@ public enum SourceVersion {
      * JEP 440: Record Patterns</a>
      * @see <a href="https://openjdk.org/jeps/441">
      * JEP 441: Pattern Matching for switch</a>
-     * @since 21
      */
     RELEASE_21,
 
@@ -416,12 +418,13 @@ public enum SourceVersion {
      * Additions in this release include unnamed variables and unnamed
      * patterns.
      *
+     * @since 22
+     *
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jls/se22/html/index.html">
      * <cite>The Java Language Specification, Java SE 22 Edition</cite></a>
      * @see <a href="https://openjdk.org/jeps/456">
      * JEP 456: Unnamed Variables &amp; Patterns</a>
-     * @since 22
      */
     RELEASE_22,
 
@@ -429,10 +432,11 @@ public enum SourceVersion {
      * The version introduced by the Java Platform, Standard Edition
      * 23.
      *
+     * @since 23
+     *
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jls/se23/html/index.html">
      * <cite>The Java Language Specification, Java SE 23 Edition</cite></a>
-     * @since 23
      */
     RELEASE_23,
 
@@ -440,10 +444,11 @@ public enum SourceVersion {
      * The version introduced by the Java Platform, Standard Edition
      * 24.
      *
+     * @since 24
+     *
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jls/se24/html/index.html">
      * <cite>The Java Language Specification, Java SE 24 Edition</cite></a>
-     * @since 24
      */
     RELEASE_24,
 
@@ -455,6 +460,8 @@ public enum SourceVersion {
      * compact source files and instance main methods, and flexible
      * constructor bodies.
      *
+     * @since 25
+     *
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jls/se25/html/index.html">
      * <cite>The Java Language Specification, Java SE 25 Edition</cite></a>
@@ -464,7 +471,6 @@ public enum SourceVersion {
      * JEP 512: Compact Source Files and Instance Main Methods</a>
      * @see <a href="https://openjdk.org/jeps/513">
      * JEP 513: Flexible Constructor Bodies</a>
-     * @since 25
      */
     RELEASE_25,
 
@@ -472,10 +478,11 @@ public enum SourceVersion {
      * The version introduced by the Java Platform, Standard Edition
      * 26.
      *
+     * @since 26
+     *
      * @see <a
      * href="https://docs.oracle.com/en/java/javase/26/docs/specs/jls/index.html">
      * <cite>The Java Language Specification, Java SE 26 Edition</cite></a>
-     * @since 26
      */
     RELEASE_26,
 
@@ -490,42 +497,10 @@ public enum SourceVersion {
      * <cite>The Java Language Specification, Java SE 27 Edition</cite></a>
      */
     RELEASE_27,
+    ; // Reduce code churn when appending new constants
 
-    // Note to maintainers: Add new constants right above.
-    // The implementation of latest() must be updated too.
-    // Also update the dummy SourceVersion for processing/model/TestSourceVersion.
-    /**
-     * An enum constant representing all preview language features of the
-     * {@linkplain #latest() current Java SE release} in addition to those of
-     * the latest source version.  Unlike language features associated to enum
-     * constants representing a source version, language features associated to
-     * this enum constant are not {@linkplain #isSupported() supported} by later
-     * Java SE releases.
-     *
-     * @apiNote
-     * While this is not a source version, it can be considered as the source
-     * version of an arbitrary future Java SE release.  Programmers should test
-     * compiling their programs with preview features enabled to ensure the
-     * program is compatible with future Java SE releases.
-     * <p>
-     * This is a reflective preview API to allows tools running in Java runtime
-     * environments with no preview feature enabled to access information
-     * related to preview features.
-     * <p>
-     * As each Java SE release does not support preview features from any other
-     * release, this constant does not represent those features, and there is
-     * no constant representing such features this Java Runtime Environment is
-     * unaware of.  <b>Programmers must check the current Java SE version when
-     * accessing the preview language features with this constant.</b>
-     *
-     * @see <a href="https://openjdk.org/jeps/12">
-     * JEP 12: Preview Features</a>
-     * @see <a href="https://docs.oracle.com/javase/specs">
-     * <cite>Java SE Specifications</cite></a>
-     * @since 26
-     */
-    @PreviewFeature(feature = PreviewFeature.Feature.LANGUAGE_MODEL, reflective = true)
-    CURRENT_PREVIEW;
+    // Note that when adding constants for newer releases, the
+    // behavior of latest() and latestSupported() must be updated too.
 
     /**
      * {@return the latest source version that can be modeled}
@@ -546,7 +521,7 @@ public enum SourceVersion {
     private static SourceVersion getLatestSupported() {
         int intVersion = Runtime.version().feature();
         return (intVersion >= 11) ?
-            valueOf("RELEASE_" + Math.min(latest().ordinal(), intVersion)):
+            valueOf("RELEASE_" + Math.min(27, intVersion)):
             RELEASE_10;
     }
 
@@ -555,7 +530,7 @@ public enum SourceVersion {
      * current execution environment}  {@code RELEASE_9} or later must
      * be returned.
      *
-     * @apiNote This method is included alongside {@link #latest} to
+     * @apiNote This method is included alongside {@link latest} to
      * allow identification of situations where the language model API
      * is running on a platform version different from the latest
      * version modeled by the API. One way that sort of situation can
@@ -804,33 +779,17 @@ public enum SourceVersion {
     }
 
     /**
-     * {@return whether language features associated with this enum constant
-     * will be supported by future Java SE releases}  Returns {@code false} only
-     * for {@link #CURRENT_PREVIEW}.
-     *
-     * @since 26
-     */
-    public boolean isSupported() {
-        return this != CURRENT_PREVIEW;
-    }
-
-    /**
      * {@return the least runtime version that supports this source
      * version; otherwise {@code null}} The returned runtime version
      * has a {@linkplain Runtime.Version#feature() feature} large
      * enough to support this source version and has no other elements
      * set.
-     * <p>
-     * Source versions greater than or equal to {@link RELEASE_6}
-     * have non-{@code null} results.  {@link #isSupported() isSupported()}
-     * determines if runtime versions with greater feature support this source
-     * version.
      *
+     * Source versions greater than or equal to {@link RELEASE_6}
+     * have non-{@code null} results.
      * @since 18
      */
     public Runtime.Version runtimeVersion() {
-        if (this == CURRENT_PREVIEW)
-            return latest().runtimeVersion();
         // The javax.lang.model API was added in JDK 6; for now,
         // limiting supported range to 6 and up.
         if (this.compareTo(RELEASE_6) >= 0) {

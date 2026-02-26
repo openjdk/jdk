@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,38 +30,21 @@ import java.lang.classfile.ClassFile;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Class file format versions of the Java virtual machine.  Each class file
- * format has a particular set of VM features.  See <cite>The Java Virtual
- * Machine Specification, Section {@jvms 4.1}</cite> for the list of class
- * file format versions supported by the current release. The JVMS also
- * describes, for each VM feature, the versions that support that feature, if
- * it is not supported by all class file format versions.
- * <p>
- * Future editions of the JVMS may retroactively loosen restrictions imposed on
- * a class file format version; for example, the {@linkplain #RELEASE_1 version
- * for 1.1} is later extended to allow invocations of static methods in
- * interfaces, introduced by Java SE 8; such a class file might not run on the
- * release that introduced its format version.  For each Java SE release, see
- * the corresponding edition of the JVMS for requirements on class files to run
- * on that Java SE release.
+ * A {@code class} file format version represents a set of VM features.
+ * The JVMS lists the class file format versions supported by each Java SE
+ * release in {@jvms 4.1}.
  * <p>
  * Additional class file format version constants will be added to model future
  * class file formats defined by future releases of the JVMS.
  * <p>
- * A special constant, {@link #CURRENT_PREVIEW}, representing the
- * preview VM features of the current Java SE release, is not a class file
- * format version, but can be viewed as a future class file format version.
- * Each of the preview VM features is described by a separate document on the
- * site that hosts the corresponding edition of JVMS.  Unlike the features in
- * class file format versions, the preview VM features are only supported when
- * preview features are enabled, and are not {@linkplain #isSupported()
- * supported by future releases}.
+ * A special constant, {@link #CURRENT_PREVIEW_FEATURES}, represents the VM
+ * features of the current Java SE release when preview features are enabled.
  *
  * @apiNote
- * Each class file format version corresponds to exactly one major version and
- * one or more minor versions.  Each major version corresponds to one class file
- * format version, except for {@value ClassFile#JAVA_1_VERSION}, which {@link
- * #RELEASE_0} and {@link #RELEASE_1} both correspond to.
+ * A class file format version is derived from a supported class major and minor
+ * version combination.  Given a supported combination, the major version alone
+ * is sufficient to identify most class file format versions; see {@link
+ * #fromMajor(int)} and JVMS {@jvms 4.1}.
  *
  * @since 20
  * @see System#getProperties System property {@code java.class.version}
@@ -337,10 +320,11 @@ public enum ClassFileFormatVersion {
      * The version introduced by the Java Platform, Standard Edition
      * 21.
      *
+     * @since 21
+     *
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jvms/se21/html/index.html">
      * <cite>The Java Virtual Machine Specification, Java SE 21 Edition</cite></a>
-     * @since 21
      */
     RELEASE_21(65),
 
@@ -348,10 +332,11 @@ public enum ClassFileFormatVersion {
      * The version introduced by the Java Platform, Standard Edition
      * 22.
      *
+     * @since 22
+     *
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jvms/se22/html/index.html">
      * <cite>The Java Virtual Machine Specification, Java SE 22 Edition</cite></a>
-     * @since 22
      */
     RELEASE_22(66),
 
@@ -359,10 +344,11 @@ public enum ClassFileFormatVersion {
      * The version introduced by the Java Platform, Standard Edition
      * 23.
      *
+     * @since 23
+     *
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jvms/se23/html/index.html">
      * <cite>The Java Virtual Machine Specification, Java SE 23 Edition</cite></a>
-     * @since 23
      */
     RELEASE_23(67),
 
@@ -370,10 +356,11 @@ public enum ClassFileFormatVersion {
      * The version introduced by the Java Platform, Standard Edition
      * 24.
      *
+     * @since 24
+     *
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jvms/se24/html/index.html">
      * <cite>The Java Virtual Machine Specification, Java SE 24 Edition</cite></a>
-     * @since 24
      */
     RELEASE_24(68),
 
@@ -381,10 +368,11 @@ public enum ClassFileFormatVersion {
      * The version introduced by the Java Platform, Standard Edition
      * 25.
      *
+     * @since 25
+     *
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jvms/se25/html/index.html">
      * <cite>The Java Virtual Machine Specification, Java SE 25 Edition</cite></a>
-     * @since 25
      */
     RELEASE_25(69),
 
@@ -392,10 +380,11 @@ public enum ClassFileFormatVersion {
      * The version introduced by the Java Platform, Standard Edition
      * 26.
      *
+     * @since 26
+     *
      * @see <a
      * href="https://docs.oracle.com/en/java/javase/26/docs/specs/jvms/index.html">
      * <cite>The Java Virtual Machine Specification, Java SE 26 Edition</cite></a>
-     * @since 26
      */
     RELEASE_26(70),
 
@@ -414,43 +403,28 @@ public enum ClassFileFormatVersion {
     // Note to maintainers: Add new constants right above.
     // The implementation of latest() must be updated too.
     /**
-     * An enum constant representing all preview VM features of the {@linkplain
-     * #latest() current Java SE release} in addition to those of the latest
-     * class file format version.  Unlike VM features associated to enum
-     * constants representing a class file format version, VM features
-     * associated to this enum constant are not {@linkplain #isSupported()
-     * supported} by later Java SE releases.
-     * <p>
-     * {@code class} files using any preview feature from the current Java SE
-     * release uses the same major version from that release, but uses the minor
-     * version {@value %04x ClassFile#PREVIEW_MINOR_VERSION} with all bits set
-     * to {@code 1}.  This Java Runtime Environment does not load any {@code
-     * class} file using preview features from other Java SE releases.
+     * All VM features of the {@linkplain #latest() current Java SE release}
+     * when preview features are enabled.  This includes all preview VM features
+     * of the current Java SE release, which may not be supported by later Java
+     * SE releases.
      *
      * @apiNote
-     * While this is not a class file format version, it can be considered as
-     * the class file format version of an arbitrary future Java SE release.
-     * Programmers should test their programs with preview features enabled to
-     * ensure the program is compatible with future Java SE releases.
-     * <p>
      * This is a reflective preview API to allow tools running in Java runtime
-     * environments with no preview feature enabled to access information
-     * related to preview features.
+     * environments with no preview feature enabled to examine preview VM
+     * features.
      * <p>
-     * As each Java SE release does not support preview features from any other
-     * release, this constant does not represent those features, and there is
-     * no constant representing such features this Java Runtime Environment is
-     * unaware of.  <b>Programmers must check the current Java SE version when
-     * accessing the preview VM features with this constant.</b>
+     * This constant represents different sets of features on runtimes of
+     * different Java SE releases.  Programmers should check the current Java
+     * SE version to ensure they are accessing the desired set of feature.
      *
+     * @since 27
+     * @jls 1.5 Preview Features
+     * @jvms 1.5 Preview Features
      * @see <a href="https://openjdk.org/jeps/12">
      * JEP 12: Preview Features</a>
-     * @see <a href="https://docs.oracle.com/javase/specs">
-     * <cite>Java SE Specifications</cite></a>
-     * @since 26
      */
     @PreviewFeature(feature = PreviewFeature.Feature.LANGUAGE_MODEL, reflective = true)
-    CURRENT_PREVIEW(ClassFile.latestMajorVersion());
+    CURRENT_PREVIEW_FEATURES(ClassFile.latestMajorVersion());
 
     private final int major;
 
@@ -463,17 +437,6 @@ public enum ClassFileFormatVersion {
      */
     public static ClassFileFormatVersion latest() {
         return RELEASE_27;
-    }
-
-    /**
-     * {@return whether VM features associated with this enum constant will be
-     * supported by future Java SE releases}  Returns {@code false} only for
-     * {@link #CURRENT_PREVIEW}.
-     *
-     * @since 26
-     */
-    public boolean isSupported() {
-        return this != CURRENT_PREVIEW;
     }
 
     /**
@@ -526,13 +489,12 @@ public enum ClassFileFormatVersion {
      * and has no other elements set.
      * <p>
      * Class file format versions greater than or equal to {@link
-     * #RELEASE_6} have non-{@code null} results.  {@link #isSupported()
-     * isSupported()} determines if runtime versions with greater
-     * feature support this class file format version.
+     * #RELEASE_6}, except {@link #CURRENT_PREVIEW_FEATURES}, have
+     * non-{@code null} results.
      */
     public Runtime.Version runtimeVersion() {
-        if (this == CURRENT_PREVIEW)
-            return latest().runtimeVersion();
+        if (this == CURRENT_PREVIEW_FEATURES)
+            return null;
         // Starting with Java SE 6, the leading digit was the primary
         // way of identifying the platform version.
         if (this.compareTo(RELEASE_6) >= 0) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import static java.lang.reflect.ClassFileFormatVersion.CURRENT_PREVIEW;
+import static java.lang.reflect.ClassFileFormatVersion.CURRENT_PREVIEW_FEATURES;
 import static java.lang.reflect.ClassFileFormatVersion.latest;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -40,10 +40,6 @@ import static org.junit.jupiter.api.Assertions.*;
  * @summary General tests for ClassFileFormatVersion.
  * @run junit ClassFileFormatVersionTest
  */
-
-import java.lang.reflect.ClassFileFormatVersion;
-
-import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -60,23 +56,21 @@ class ClassFileFormatVersionTest {
     @Test
     void testLatest() {
         var latest = ClassFileFormatVersion.latest();
-        assertNotSame(CURRENT_PREVIEW, latest);
+        assertNotSame(CURRENT_PREVIEW_FEATURES, latest);
         assertEquals(ClassFile.latestMajorVersion(), latest.major());
-        assertTrue(latest.isSupported());
         assertEquals(ClassFileFormatVersion.values().length - 2, latest.ordinal());
     }
 
     @Test
     void testCurrentPreview() {
-        assertTrue(ClassFileFormatVersion.latest().compareTo(CURRENT_PREVIEW) < 0);
-        assertEquals(ClassFile.latestMajorVersion(), CURRENT_PREVIEW.major());
-        assertFalse(CURRENT_PREVIEW.isSupported());
-        assertEquals(ClassFileFormatVersion.values().length - 1, CURRENT_PREVIEW.ordinal());
-        assertEquals(latest().runtimeVersion(), CURRENT_PREVIEW.runtimeVersion());
+        assertTrue(ClassFileFormatVersion.latest().compareTo(CURRENT_PREVIEW_FEATURES) < 0);
+        assertEquals(ClassFile.latestMajorVersion(), CURRENT_PREVIEW_FEATURES.major());
+        assertEquals(ClassFileFormatVersion.values().length - 1, CURRENT_PREVIEW_FEATURES.ordinal());
+        assertEquals(latest().runtimeVersion(), CURRENT_PREVIEW_FEATURES.runtimeVersion());
     }
 
     static Stream<ClassFileFormatVersion> actualCffvs() {
-        return Arrays.stream(ClassFileFormatVersion.values()).filter(ClassFileFormatVersion::isSupported);
+        return Arrays.stream(ClassFileFormatVersion.values()).filter(e -> e.compareTo(latest()) <= 0);
     }
 
     @ParameterizedTest
@@ -99,9 +93,8 @@ class ClassFileFormatVersionTest {
         }
         for (int i = ClassFile.JAVA_1_VERSION; i <= ClassFile.latestMajorVersion(); i++) {
             var cffv = ClassFileFormatVersion.fromMajor(i);
-            assertTrue(cffv.isSupported());
             assertEquals(i, cffv.major());
-            assertNotSame(CURRENT_PREVIEW, cffv);
+            assertNotSame(CURRENT_PREVIEW_FEATURES, cffv);
         }
         assertThrows(IllegalArgumentException.class, () -> ClassFileFormatVersion.fromMajor(ClassFile.latestMajorVersion() + 1));
     }
