@@ -39,7 +39,7 @@ public final class TestClassLoader extends ClassLoader {
     }
 
     static byte[] classByteCode = readTestClassBytes();
-    private static int classIdCounter;
+    private  int classIdCounter;
 
     TestClassLoader() {
         super(TestClassLoader.class.getClassLoader());
