@@ -36,16 +36,17 @@
 class AOTCompressedPointers: public AllStatic {
 public:
   // For space saving, we can encode the location of metadata objects in the "rw" and "ro"
-  // regions using a 32-bit offset from the bottom of the mapped AOT metaspace.
-  // Currently we allow only up to 2GB total size in the rw and ro regions (which are
-  // contiguous to each other).
+  // regions using a 32-bit offset from the bottom of the mapped AOT metaspace. Since metadata
+  // objects are 8-byte aligned, we store scaled offset units (offset_bytes >> 3) to address
+  // up to ~32GB on 64-bit platforms.  We currently limit the MaxMetadataOffsetBytes to about
+  // 3.5 GB to be compatible with +CompactObjectHeaders.
   enum class narrowPtr : u4;
-  static constexpr size_t MaxMetadataOffsetBytes = 0x7FFFFFFF;
+  static constexpr size_t MetadataOffsetShift = LP64_ONLY(3) NOT_LP64(0);
+  static constexpr size_t MaxMetadataOffsetBytes = LP64_ONLY(3584ULL * M) NOT_LP64(0x7FFFFFFF);
 
-  // In the future, this could return a different numerical value than
-  // narrowp if the encoding contains shifts.
+  // Convert the encoded narrowPtr to a byte offset by applying the shift.
   inline static size_t get_byte_offset(narrowPtr narrowp) {
-    return checked_cast<size_t>(narrowp);
+    return ((size_t)checked_cast<u4>(narrowp)) << MetadataOffsetShift;
   }
 
   inline static narrowPtr null() {
@@ -122,7 +123,8 @@ private:
   static narrowPtr encode_byte_offset(size_t offset) {
     assert(offset != 0, "offset 0 is in protection zone");
     precond(offset <= MaxMetadataOffsetBytes);
-    return checked_cast<narrowPtr>(offset);
+    assert(is_aligned(offset, (size_t)1 << MetadataOffsetShift), "offset not aligned");
+    return checked_cast<narrowPtr>(offset >> MetadataOffsetShift);
   }
 };
 

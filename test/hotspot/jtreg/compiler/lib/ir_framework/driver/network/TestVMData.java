@@ -26,23 +26,28 @@ package compiler.lib.ir_framework.driver.network;
 import compiler.lib.ir_framework.driver.irmatching.IRMatcher;
 import compiler.lib.ir_framework.driver.network.testvm.java.JavaMessages;
 import compiler.lib.ir_framework.shared.TestFrameworkSocket;
-import compiler.lib.ir_framework.test.network.MessageTag;
-
-import java.util.Scanner;
 
 /**
  * This class collects all the parsed data received over the {@link TestFrameworkSocket}. This data is required later
  * in the {@link IRMatcher}.
  */
 public class TestVMData {
+    private final JavaMessages javaMessages;
     private final boolean allowNotCompilable;
     private final String hotspotPidFileName;
-    private final String applicableIRRules;
 
     public TestVMData(JavaMessages javaMessages, String hotspotPidFileName, boolean allowNotCompilable) {
-        this.applicableIRRules = processOutput(javaMessages);
+        this.javaMessages = javaMessages;
         this.hotspotPidFileName = hotspotPidFileName;
         this.allowNotCompilable = allowNotCompilable;
+    }
+
+    public String applicableIRRules() {
+        return javaMessages.applicableIRRules();
+    }
+
+    public String vmInfo() {
+        return javaMessages.vmInfo();
     }
 
     public String hotspotPidFileName() {
@@ -53,52 +58,7 @@ public class TestVMData {
         return allowNotCompilable;
     }
 
-    public String applicableIRRules() {
-        return applicableIRRules;
-    }
-
-    /**
-     * Process the socket output: All prefixed lines are dumped to the standard output while the remaining lines
-     * represent the Applicable IR Rules used for IR matching later.
-     */
-    private String processOutput(JavaMessages javaMessages) {
-        String output = javaMessages.output();
-        if (javaMessages.hasStdOut()) {
-            StringBuilder testListBuilder = new StringBuilder();
-            StringBuilder messagesBuilder = new StringBuilder();
-            StringBuilder nonStdOutBuilder = new StringBuilder();
-            Scanner scanner = new Scanner(output);
-            while (scanner.hasNextLine()) {
-                String line = scanner.nextLine();
-                if (line.startsWith(MessageTag.STDOUT)) {
-                    // Exclude [STDOUT] from message.
-                    line = line.substring(MessageTag.STDOUT.length());
-                    if (line.startsWith(MessageTag.TEST_LIST)) {
-                        // Exclude [TEST_LIST] from message for better formatting.
-                        line = "> " + line.substring(MessageTag.TEST_LIST.length() + 1);
-                        testListBuilder.append(line).append(System.lineSeparator());
-                    } else {
-                        messagesBuilder.append(line).append(System.lineSeparator());
-                    }
-                } else {
-                    nonStdOutBuilder.append(line).append(System.lineSeparator());
-                }
-            }
-            System.out.println();
-            if (!testListBuilder.isEmpty()) {
-                System.out.println("Run flag defined test list");
-                System.out.println("--------------------------");
-                System.out.println(testListBuilder);
-                System.out.println();
-            }
-            if (!messagesBuilder.isEmpty()) {
-                System.out.println("Messages from Test VM");
-                System.out.println("---------------------");
-                System.out.println(messagesBuilder);
-            }
-            return nonStdOutBuilder.toString();
-        } else {
-            return output;
-        }
+    public void printJavaMessages() {
+        javaMessages.print();
     }
 }

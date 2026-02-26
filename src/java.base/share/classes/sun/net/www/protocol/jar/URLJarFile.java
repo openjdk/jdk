@@ -30,10 +30,12 @@ import java.net.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.security.cert.Certificate;
 import java.util.*;
 import java.util.jar.*;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipEntry;
+import java.security.CodeSigner;
 import sun.net.www.ParseUtil;
 
 /* URL jar file is a common JarFile subtype used for JarURLConnection */
@@ -163,9 +165,11 @@ public class URLJarFile extends JarFile {
     }
 
     private class URLJarFileEntry extends JarEntry {
+        private final JarEntry je;
 
         URLJarFileEntry(JarEntry je) {
             super(je);
+            this.je = je;
         }
 
         @Override
@@ -179,6 +183,30 @@ public class URLJarFile extends JarFile {
                 }
             }
             return null;
+        }
+
+        @Override
+        public Certificate[] getCertificates() {
+            // super.getCertificates() returns Certificates that were
+            // captured by reading the "JarEntry.certs" field when
+            // the super instance was created. Some JarEntry
+            // implementations (like java.util.jar.JarFile$JarFileEntry)
+            // compute certificates lazily, so we explicitly
+            // call getCertificates() on the underlying JarEntry instead of
+            // super.getCertificates()
+            return je.getCertificates();
+        }
+
+        @Override
+        public CodeSigner[] getCodeSigners() {
+            // super.getCodeSigners() returns CodeSigners that were
+            // captured by reading the "JarEntry.signers" field when
+            // the super instance was created. Some JarEntry
+            // implementations (like java.util.jar.JarFile$JarFileEntry)
+            // compute codesigners lazily, so we explicitly
+            // call getCodeSigners() on the underlying JarEntry instead of
+            // super.getCodeSigners()
+            return je.getCodeSigners();
         }
     }
 
