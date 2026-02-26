@@ -22,12 +22,11 @@
  *
  */
 
+#include "cppstdlib/type_traits.hpp"
 #include "memory/allStatic.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/debug.hpp"
 #include "unittest.hpp"
-
-#include <type_traits>
 
 class EnableIfTest: AllStatic {
   class A: AllStatic {

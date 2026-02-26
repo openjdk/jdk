@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -91,25 +91,6 @@ extern "C" JNIEXPORT void
 JIMAGE_Close(JImageFile* jimage);
 
 typedef void (*JImageClose_t)(JImageFile* jimage);
-
-
-/*
- * JImagePackageToModule - Given an open image file (see JImageOpen) and the name
- * of a package, return the name of module where the package resides. If the
- * package does not exist in the image file, the function returns NULL.
- * The resulting string does/should not have to be released. All strings are
- * utf-8, zero byte terminated.
- *
- * Ex.
- *  const char* package = (*JImagePackageToModule)(image, "java/lang");
- *  tty->print_cr(package);
- *  -> java.base
- */
-
-extern "C" JNIEXPORT const char *
-JIMAGE_PackageToModule(JImageFile* jimage, const char* package_name);
-
-typedef const char* (*JImagePackageToModule_t)(JImageFile* jimage, const char* package_name);
 
 
 /*

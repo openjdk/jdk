@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @summary Verify PipeInputStream works.
  * @modules jdk.compiler/com.sun.tools.javac.util
  *          jdk.jshell/jdk.jshell.execution.impl:open
- * @run testng PipeInputStreamTest
+ * @run junit PipeInputStreamTest
  */
 
 import java.io.InputStream;
@@ -34,28 +34,28 @@ import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
-import org.testng.annotations.Test;
 
 import com.sun.tools.javac.util.Pair;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class PipeInputStreamTest {
 
+    @Test
     public void testReadArrayNotBlocking() throws Exception {
         Pair<InputStream, OutputStream> streams = createPipeStream();
         InputStream in = streams.fst;
         OutputStream out = streams.snd;
         out.write('a');
         byte[] data = new byte[12];
-        assertEquals(in.read(data), 1);
-        assertEquals(data[0], 'a');
+        assertEquals(1, in.read(data));
+        assertEquals('a', data[0]);
         out.write('a'); out.write('b'); out.write('c');
-        assertEquals(in.read(data), 3);
-        assertEquals(data[0], 'a');
-        assertEquals(data[1], 'b');
-        assertEquals(data[2], 'c');
+        assertEquals(3, in.read(data));
+        assertEquals('a', data[0]);
+        assertEquals('b', data[1]);
+        assertEquals('c', data[2]);
     }
 
     private Pair<InputStream, OutputStream> createPipeStream() throws Exception {

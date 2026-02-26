@@ -23,6 +23,7 @@
  */
 
 #include "cds/aotClassInitializer.hpp"
+#include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
@@ -39,7 +40,7 @@ DEBUG_ONLY(InstanceKlass* _aot_init_class = nullptr;)
 
 bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
   assert(!ArchiveBuilder::is_active() || !ArchiveBuilder::current()->is_in_buffer_space(ik), "must be source klass");
-  if (!CDSConfig::is_initing_classes_at_dump_time()) {
+  if (!CDSConfig::is_dumping_aot_linked_classes()) {
     return false;
   }
 
@@ -47,7 +48,14 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
     ik = RegeneratedClasses::get_original_object(ik);
   }
 
+  check_aot_annotations(ik);
+
   if (!ik->is_initialized() && !ik->is_being_initialized()) {
+    if (ik->has_aot_safe_initializer()) {
+      ResourceMark rm;
+      log_info(aot, init)("Class %s is annotated with @AOTSafeClassInitializer but has not been initialized",
+                          ik->external_name());
+    }
     return false;
   }
 
@@ -56,7 +64,7 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
   // Automatic selection for aot-inited classes
   // ==========================================
   //
-  // When CDSConfig::is_initing_classes_at_dump_time is enabled,
+  // When CDSConfig::is_dumping_aot_linked_classes is enabled,
   // AOTArtifactFinder::find_artifacts() finds the classes of all
   // heap objects that are reachable from HeapShared::_run_time_special_subgraph,
   // and mark these classes as aot-inited. This preserves the initialized
@@ -244,6 +252,56 @@ void AOTClassInitializer::call_runtime_setup(JavaThread* current, InstanceKlass*
   }
 }
 
+template <typename FUNCTION>
+void require_annotation_for_super_types(InstanceKlass* ik, const char* annotation, FUNCTION func) {
+  if (log_is_enabled(Info, aot, init)) {
+    ResourceMark rm;
+    log_info(aot, init)("Found %s class %s", annotation, ik->external_name());
+  }
+
+  // Since ik has this annotation, we require that
+  //   - all super classes must have this annotation
+  //   - all super interfaces that are interface_needs_clinit_execution_as_super()
+  //     must have this annotation
+  // This avoid the situation where in the production run, we run the <clinit>
+  // of a supertype but not the <clinit> of ik
+
+  InstanceKlass* super = ik->java_super();
+  if (super != nullptr && !func(super)) {
+    ResourceMark rm;
+    log_error(aot, init)("Missing %s in superclass %s for class %s",
+                         annotation, super->external_name(), ik->external_name());
+    AOTMetaspace::unrecoverable_writing_error();
+  }
+
+  int len = ik->local_interfaces()->length();
+  for (int i = 0; i < len; i++) {
+    InstanceKlass* intf = ik->local_interfaces()->at(i);
+    if (intf->interface_needs_clinit_execution_as_super() && !func(intf)) {
+      ResourceMark rm;
+      log_error(aot, init)("Missing %s in superinterface %s for class %s",
+                           annotation, intf->external_name(), ik->external_name());
+      AOTMetaspace::unrecoverable_writing_error();
+    }
+  }
+}
+
+void AOTClassInitializer::check_aot_annotations(InstanceKlass* ik) {
+  if (ik->has_aot_safe_initializer()) {
+    require_annotation_for_super_types(ik, "@AOTSafeClassInitializer", [&] (const InstanceKlass* supertype) {
+      return supertype->has_aot_safe_initializer();
+    });
+  } else {
+    // @AOTRuntimeSetup only meaningful in @AOTSafeClassInitializer
+    if (ik->is_runtime_setup_required()) {
+      ResourceMark rm;
+      log_error(aot, init)("@AOTRuntimeSetup meaningless in non-@AOTSafeClassInitializer class %s",
+                           ik->external_name());
+    }
+  }
+}
+
+
 #ifdef ASSERT
 void AOTClassInitializer::init_test_class(TRAPS) {
   // -XX:AOTInitTestClass is used in regression tests for adding additional AOT-initialized classes
@@ -252,7 +310,7 @@ void AOTClassInitializer::init_test_class(TRAPS) {
   //
   // -XX:AOTInitTestClass is NOT a general mechanism for including user-defined objects into
   // the AOT cache. Therefore, this option is NOT available in product JVM.
-  if (AOTInitTestClass != nullptr && CDSConfig::is_initing_classes_at_dump_time()) {
+  if (AOTInitTestClass != nullptr && CDSConfig::is_dumping_aot_linked_classes()) {
     log_info(aot)("Debug build only: force initialization of AOTInitTestClass %s", AOTInitTestClass);
     TempNewSymbol class_name = SymbolTable::new_symbol(AOTInitTestClass);
     Handle app_loader(THREAD, SystemDictionary::java_system_loader());

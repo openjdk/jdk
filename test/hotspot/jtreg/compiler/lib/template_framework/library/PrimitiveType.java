@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,9 @@ import compiler.lib.generators.Generator;
 import compiler.lib.generators.RestrictableGenerator;
 
 import compiler.lib.template_framework.DataName;
+import compiler.lib.template_framework.Template;
+import compiler.lib.template_framework.TemplateToken;
+import static compiler.lib.template_framework.Template.scope;
 
 /**
  * The {@link PrimitiveType} models Java's primitive types, and provides a set
@@ -90,6 +93,7 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
         return name();
     }
 
+    @Override
     public Object con() {
         return switch (kind) {
             case BYTE    -> "(byte)" + GEN_BYTE.next();
@@ -138,6 +142,35 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
     }
 
     /**
+     * Provides the field descriptor for primitive types as per JVMS§4.3.2.
+     *
+     * @return the field descriptor of the type.
+     */
+    public String fieldDesc() {
+        return switch (kind) {
+            case LONG    -> "J";
+            case BOOLEAN -> "Z";
+            default      -> boxedTypeName().substring(0, 1);
+        };
+    }
+
+    /**
+     * Provides the abbreviation of the type as it would be used for node classes in the
+     * IR-Framework. Note the the abbreviations for boolean and char are used inconsistently.
+     * This method maps boolean to "UB", even though it might sometimes be mapped under "B" since
+     * it is loaded as a byte, and char to "C", even though it might sometimes be mapped to "US"
+     * for "unsigned short".
+     *
+     * @return the abbreviation of the type.
+     */
+    public String abbrev() {
+        return switch (kind) {
+            case BOOLEAN -> "UB";
+            default      -> boxedTypeName().substring(0, 1);
+        };
+    }
+
+    /**
      * Indicates if the type is a floating point type.
      *
      * @return true iff the type is a floating point type.
@@ -148,4 +181,91 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
             case FLOAT, DOUBLE -> true;
         };
     }
+
+    /**
+     * Calls the corresponding pseudo random number generator from
+     * {@link #generateLibraryRNG}, for the given type. Accordingly,
+     * one must generate {@link #generateLibraryRNG} into the same
+     * test if one wants to use this method.
+     *
+     * Note: if you simply need a compile time constant, then please
+     * use {@link #con} instead.
+     *
+     * @return the token representing the method call to obtain a
+     *         random value for the given type at runtime.
+     */
+    public Object callLibraryRNG() {
+        return switch (kind) {
+            case BYTE    -> "LibraryRNG.nextByte()";
+            case SHORT   -> "LibraryRNG.nextShort()";
+            case CHAR    -> "LibraryRNG.nextChar()";
+            case INT     -> "LibraryRNG.nextInt()";
+            case LONG    -> "LibraryRNG.nextLong()";
+            case FLOAT   -> "LibraryRNG.nextFloat()";
+            case DOUBLE  -> "LibraryRNG.nextDouble()";
+            case BOOLEAN -> "LibraryRNG.nextBoolean()";
+        };
+    }
+
+    /**
+     * Generates the {@code LibraryRNG} class, which makes a set of pseudo
+     * random number generators available, wrapping {@link Generators}. This
+     * is supposed to be used in tandem with {@link #callLibraryRNG}.
+     *
+     * Note: you must ensure that all required imports are performed:
+     *       {@code java.util.Random}
+     *       {@code jdk.test.lib.Utils}
+     *       {@code compiler.lib.generators.*}
+     *
+     * @return a TemplateToken that holds all the {@code LibraryRNG} class.
+     */
+    public static TemplateToken generateLibraryRNG() {
+        var template = Template.make(() -> scope(
+            """
+            public static class LibraryRNG {
+                private static final Random RANDOM = Utils.getRandomInstance();
+                private static final RestrictableGenerator<Integer> GEN_BYTE = Generators.G.safeRestrict(Generators.G.ints(), Byte.MIN_VALUE, Byte.MAX_VALUE);
+                private static final RestrictableGenerator<Integer> GEN_CHAR = Generators.G.safeRestrict(Generators.G.ints(), Character.MIN_VALUE, Character.MAX_VALUE);
+                private static final RestrictableGenerator<Integer> GEN_SHORT = Generators.G.safeRestrict(Generators.G.ints(), Short.MIN_VALUE, Short.MAX_VALUE);
+                private static final RestrictableGenerator<Integer> GEN_INT = Generators.G.ints();
+                private static final RestrictableGenerator<Long> GEN_LONG = Generators.G.longs();
+                private static final Generator<Double> GEN_DOUBLE = Generators.G.doubles();
+                private static final Generator<Float> GEN_FLOAT = Generators.G.floats();
+
+                public static byte nextByte() {
+                    return GEN_BYTE.next().byteValue();
+                }
+
+                public static short nextShort() {
+                    return GEN_SHORT.next().shortValue();
+                }
+
+                public static char nextChar() {
+                    return (char)GEN_CHAR.next().intValue();
+                }
+
+                public static int nextInt() {
+                    return GEN_INT.next();
+                }
+
+                public static long nextLong() {
+                    return GEN_LONG.next();
+                }
+
+                public static float nextFloat() {
+                    return GEN_FLOAT.next();
+                }
+
+                public static double nextDouble() {
+                    return GEN_DOUBLE.next();
+                }
+
+                public static boolean nextBoolean() {
+                    return RANDOM.nextBoolean();
+                }
+            }
+            """
+        ));
+        return template.asToken();
+    };
 }

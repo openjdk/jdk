@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8182397
  * @summary race in setting array_klass field for component mirror with mirror update for klass
  * @modules java.base/jdk.internal.misc
- * @run main/othervm -Xcomp ArraysNewInstanceBug
+ * @run main/othervm/timeout=480 -Xcomp ArraysNewInstanceBug
  */
 
 // This test crashes in compiled code with race, because the compiler generates code that assumes this ordering.

@@ -70,7 +70,7 @@ public:
 
 
   enum RegisterLayout {
-    fpu_save_size = FloatRegisterImpl::number_of_registers,
+    fpu_save_size = FloatRegister::number_of_registers,
 #ifndef __SOFTFP__
     D0_offset = 0,
 #endif
@@ -139,8 +139,8 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm,
     if (VM_Version::has_vfp3_32()) {
       __ fpush(FloatRegisterSet(D16, 16));
     } else {
-      if (FloatRegisterImpl::number_of_registers > 32) {
-        assert(FloatRegisterImpl::number_of_registers == 64, "nb fp registers should be 64");
+      if (FloatRegister::number_of_registers > 32) {
+        assert(FloatRegister::number_of_registers == 64, "nb fp registers should be 64");
         __ sub(SP, SP, 32 * wordSize);
       }
     }
@@ -182,8 +182,8 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_lr
     if (VM_Version::has_vfp3_32()) {
       __ fpop(FloatRegisterSet(D16, 16));
     } else {
-      if (FloatRegisterImpl::number_of_registers > 32) {
-        assert(FloatRegisterImpl::number_of_registers == 64, "nb fp registers should be 64");
+      if (FloatRegister::number_of_registers > 32) {
+        assert(FloatRegister::number_of_registers == 64, "nb fp registers should be 64");
         __ add(SP, SP, 32 * wordSize);
       }
     }
@@ -617,11 +617,11 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
                                             int comp_args_on_stack,
                                             const BasicType *sig_bt,
                                             const VMRegPair *regs,
-                                            AdapterHandlerEntry* handler) {
-  address i2c_entry = __ pc();
+                                            address entry_address[AdapterBlob::ENTRY_COUNT]) {
+  entry_address[AdapterBlob::I2C] = __ pc();
   gen_i2c_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs);
 
-  address c2i_unverified_entry = __ pc();
+  entry_address[AdapterBlob::C2I_Unverified] = __ pc();
   Label skip_fixup;
   const Register receiver       = R0;
   const Register holder_klass   = Rtemp; // XXX should be OK for C2 but not 100% sure
@@ -634,10 +634,9 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
   __ b(skip_fixup, eq);
   __ jump(SharedRuntime::get_ic_miss_stub(), relocInfo::runtime_call_type, noreg, ne);
 
-  address c2i_entry = __ pc();
+  entry_address[AdapterBlob::C2I] = __ pc();
+  entry_address[AdapterBlob::C2I_No_Clinit_Check] = nullptr;
   gen_c2i_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs, skip_fixup);
-
-  handler->set_entry_points(i2c_entry, c2i_entry, c2i_unverified_entry, nullptr);
   return;
 }
 
@@ -1129,7 +1128,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   const Register sync_handle = R5;
   const Register sync_obj    = R6;
-  const Register disp_hdr    = altFP_7_11;
+  const Register basic_lock  = altFP_7_11;
   const Register tmp         = R8;
 
   Label slow_lock, lock_done, fast_lock;
@@ -1139,41 +1138,10 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Remember the handle for the unlocking code
     __ mov(sync_handle, R1);
 
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      log_trace(fastlock)("SharedRuntime lock fast");
-      __ lightweight_lock(sync_obj /* object */, disp_hdr /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
-                          0x7 /* savemask */, slow_lock);
+    log_trace(fastlock)("SharedRuntime lock fast");
+    __ fast_lock(sync_obj /* object */, basic_lock /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
+                 0x7 /* savemask */, slow_lock);
       // Fall through to lock_done
-    } else if (LockingMode == LM_LEGACY) {
-      const Register mark = tmp;
-      // On MP platforms the next load could return a 'stale' value if the memory location has been modified by another thread.
-      // That would be acceptable as either CAS or slow case path is taken in that case
-
-      __ ldr(mark, Address(sync_obj, oopDesc::mark_offset_in_bytes()));
-      __ sub(disp_hdr, FP, lock_slot_fp_offset);
-      __ tst(mark, markWord::unlocked_value);
-      __ b(fast_lock, ne);
-
-      // Check for recursive lock
-      // See comments in InterpreterMacroAssembler::lock_object for
-      // explanations on the fast recursive locking check.
-      // Check independently the low bits and the distance to SP
-      // -1- test low 2 bits
-      __ movs(Rtemp, AsmOperand(mark, lsl, 30));
-      // -2- test (hdr - SP) if the low two bits are 0
-      __ sub(Rtemp, mark, SP, eq);
-      __ movs(Rtemp, AsmOperand(Rtemp, lsr, exact_log2(os::vm_page_size())), eq);
-      // If still 'eq' then recursive locking OK
-      // set to zero if recursive lock, set to non zero otherwise (see discussion in JDK-8267042)
-      __ str(Rtemp, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
-      __ b(lock_done, eq);
-      __ b(slow_lock);
-
-      __ bind(fast_lock);
-      __ str(mark, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
-
-      __ cas_for_lock_acquire(mark, disp_hdr, sync_obj, Rtemp, slow_lock);
-    }
     __ bind(lock_done);
   }
 
@@ -1226,21 +1194,11 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   Label slow_unlock, unlock_done;
   if (method->is_synchronized()) {
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      log_trace(fastlock)("SharedRuntime unlock fast");
-      __ lightweight_unlock(sync_obj, R2 /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
-                            7 /* savemask */, slow_unlock);
-      // Fall through
-    } else if (LockingMode == LM_LEGACY) {
-      // See C1_MacroAssembler::unlock_object() for more comments
-      __ ldr(sync_obj, Address(sync_handle));
+    log_trace(fastlock)("SharedRuntime unlock fast");
+    __ fast_unlock(sync_obj, R2 /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
+                   7 /* savemask */, slow_unlock);
+    // Fall through
 
-      // See C1_MacroAssembler::unlock_object() for more comments
-      __ ldr(R2, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
-      __ cbz(R2, unlock_done);
-
-      __ cas_for_lock_release(disp_hdr, R2, sync_obj, Rtemp, slow_unlock);
-    }
     __ bind(unlock_done);
   }
 
@@ -1296,7 +1254,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     // last_Java_frame is already set, so do call_VM manually; no exception can occur
     __ mov(R0, sync_obj);
-    __ mov(R1, disp_hdr);
+    __ mov(R1, basic_lock);
     __ mov(R2, Rthread);
     __ call(CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_locking_C));
 
@@ -1311,12 +1269,12 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     // Clear pending exception before reentering VM.
     // Can store the oop in register since it is a leaf call.
-    assert_different_registers(Rtmp_save1, sync_obj, disp_hdr);
+    assert_different_registers(Rtmp_save1, sync_obj, basic_lock);
     __ ldr(Rtmp_save1, Address(Rthread, Thread::pending_exception_offset()));
     Register zero = __ zero_register(Rtemp);
     __ str(zero, Address(Rthread, Thread::pending_exception_offset()));
     __ mov(R0, sync_obj);
-    __ mov(R1, disp_hdr);
+    __ mov(R1, basic_lock);
     __ mov(R2, Rthread);
     __ call(CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_unlocking_C));
     __ str(Rtmp_save1, Address(Rthread, Thread::pending_exception_offset()));

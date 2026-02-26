@@ -33,7 +33,7 @@
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "logging/log.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 static ReferenceType reference_type(oop reference) {
   return InstanceKlass::cast(reference->klass())->reference_type();
@@ -121,7 +121,7 @@ inline oop reference_coop_decode_raw(oop v) {
 // CompressedOops::decode method that bypasses normal oop-ness checks.
 template <typename T>
 static HeapWord* reference_referent_raw(oop reference) {
-  T raw_oop = Atomic::load(reference_referent_addr<T>(reference));
+  T raw_oop = AtomicAccess::load(reference_referent_addr<T>(reference));
   return cast_from_oop<HeapWord*>(reference_coop_decode_raw(raw_oop));
 }
 
@@ -221,13 +221,15 @@ void ShenandoahRefProcThreadLocal::set_discovered_list_head<oop>(oop head) {
   *discovered_list_addr<oop>() = head;
 }
 
-ShenandoahReferenceProcessor::ShenandoahReferenceProcessor(uint max_workers) :
-  _soft_reference_policy(nullptr),
+AlwaysClearPolicy ShenandoahReferenceProcessor::_always_clear_policy;
+
+ShenandoahReferenceProcessor::ShenandoahReferenceProcessor(ShenandoahGeneration* generation, uint max_workers) :
+  _soft_reference_policy(&_always_clear_policy),
   _ref_proc_thread_locals(NEW_C_HEAP_ARRAY(ShenandoahRefProcThreadLocal, max_workers, mtGC)),
   _pending_list(nullptr),
   _pending_list_tail(&_pending_list),
   _iterate_discovered_list_id(0U),
-  _stats() {
+  _generation(generation) {
   for (size_t i = 0; i < max_workers; i++) {
     _ref_proc_thread_locals[i].reset();
   }
@@ -245,12 +247,11 @@ void ShenandoahReferenceProcessor::set_mark_closure(uint worker_id, ShenandoahMa
 }
 
 void ShenandoahReferenceProcessor::set_soft_reference_policy(bool clear) {
-  static AlwaysClearPolicy always_clear_policy;
   static LRUMaxHeapPolicy lru_max_heap_policy;
 
   if (clear) {
     log_info(gc, ref)("Clearing All SoftReferences");
-    _soft_reference_policy = &always_clear_policy;
+    _soft_reference_policy = &_always_clear_policy;
   } else {
     _soft_reference_policy = &lru_max_heap_policy;
   }
@@ -284,7 +285,7 @@ bool ShenandoahReferenceProcessor::is_softly_live(oop reference, ReferenceType t
   // Ask SoftReference policy
   const jlong clock = java_lang_ref_SoftReference::clock();
   assert(clock != 0, "Clock not initialized");
-  assert(_soft_reference_policy != nullptr, "Policy not initialized");
+  assert(_soft_reference_policy != nullptr, "Should never be null");
   return !_soft_reference_policy->should_clear_reference(reference, clock);
 }
 
@@ -310,7 +311,7 @@ bool ShenandoahReferenceProcessor::should_discover(oop reference, ReferenceType 
     return false;
   }
 
-  if (!heap->is_in_active_generation(referent)) {
+  if (!_generation->contains(referent)) {
     log_trace(gc,ref)("Referent outside of active generation: " PTR_FORMAT, p2i(referent));
     return false;
   }
@@ -328,13 +329,11 @@ bool ShenandoahReferenceProcessor::should_drop(oop reference, ReferenceType type
     return true;
   }
 
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  // Check if the referent is still alive, in which case we should
-  // drop the reference.
+  // Check if the referent is still alive, in which case we should drop the reference.
   if (type == REF_PHANTOM) {
-    return heap->active_generation()->complete_marking_context()->is_marked(raw_referent);
+    return _generation->complete_marking_context()->is_marked(raw_referent);
   } else {
-    return heap->active_generation()->complete_marking_context()->is_marked_strong(raw_referent);
+    return _generation->complete_marking_context()->is_marked_strong(raw_referent);
   }
 }
 
@@ -346,7 +345,7 @@ void ShenandoahReferenceProcessor::make_inactive(oop reference, ReferenceType ty
     // next field. An application can't call FinalReference.enqueue(), so there is
     // no race to worry about when setting the next field.
     assert(reference_next<T>(reference) == nullptr, "Already inactive");
-    assert(ShenandoahHeap::heap()->active_generation()->complete_marking_context()->is_marked(reference_referent_raw<T>(reference)), "only make inactive final refs with alive referents");
+    assert(_generation->complete_marking_context()->is_marked(reference_referent_raw<T>(reference)), "only make inactive final refs with alive referents");
     reference_set_next(reference, reference);
   } else {
     // Clear referent
@@ -436,7 +435,7 @@ oop ShenandoahReferenceProcessor::drop(oop reference, ReferenceType type) {
   HeapWord* raw_referent = reference_referent_raw<T>(reference);
 
 #ifdef ASSERT
-  assert(raw_referent == nullptr || ShenandoahHeap::heap()->active_generation()->complete_marking_context()->is_marked(raw_referent),
+  assert(raw_referent == nullptr || _generation->complete_marking_context()->is_marked(raw_referent),
          "only drop references with alive referents");
 #endif
 
@@ -505,7 +504,7 @@ void ShenandoahReferenceProcessor::process_references(ShenandoahRefProcThreadLoc
   if (!CompressedOops::is_null(*list)) {
     oop head = lrb(CompressedOops::decode_not_null(*list));
     shenandoah_assert_not_in_cset_except(&head, head, ShenandoahHeap::heap()->cancelled_gc() || !ShenandoahLoadRefBarrier);
-    oop prev = Atomic::xchg(&_pending_list, head);
+    oop prev = AtomicAccess::xchg(&_pending_list, head);
     set_oop_field(p, prev);
     if (prev == nullptr) {
       // First to prepend to list, record tail
@@ -520,14 +519,14 @@ void ShenandoahReferenceProcessor::process_references(ShenandoahRefProcThreadLoc
 void ShenandoahReferenceProcessor::work() {
   // Process discovered references
   uint max_workers = ShenandoahHeap::heap()->max_workers();
-  uint worker_id = Atomic::add(&_iterate_discovered_list_id, 1U, memory_order_relaxed) - 1;
+  uint worker_id = AtomicAccess::add(&_iterate_discovered_list_id, 1U, memory_order_relaxed) - 1;
   while (worker_id < max_workers) {
     if (UseCompressedOops) {
       process_references<narrowOop>(_ref_proc_thread_locals[worker_id], worker_id);
     } else {
       process_references<oop>(_ref_proc_thread_locals[worker_id], worker_id);
     }
-    worker_id = Atomic::add(&_iterate_discovered_list_id, 1U, memory_order_relaxed) - 1;
+    worker_id = AtomicAccess::add(&_iterate_discovered_list_id, 1U, memory_order_relaxed) - 1;
   }
 }
 
@@ -560,7 +559,7 @@ public:
 
 void ShenandoahReferenceProcessor::process_references(ShenandoahPhaseTimings::Phase phase, WorkerThreads* workers, bool concurrent) {
 
-  Atomic::release_store_fence(&_iterate_discovered_list_id, 0U);
+  AtomicAccess::release_store_fence(&_iterate_discovered_list_id, 0U);
 
   // Process discovered lists
   ShenandoahReferenceProcessorTask task(phase, concurrent, this);

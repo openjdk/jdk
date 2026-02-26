@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8220309 8230284
  * @library /java/text/testlib
@@ -29,17 +29,26 @@
  *          This test assumes CLDR has numbering systems for "arab" and
  *          "arabext", and their minus/percent representations include
  *          BiDi formatting control characters.
- * @run testng/othervm DFSMinusPerCentMill
+ * @run junit/othervm DFSMinusPerCentMill
  */
 
-import java.io.*;
-import java.util.*;
-import java.text.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import static org.testng.Assert.*;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
+import java.util.Locale;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class DFSMinusPerCentMill {
     private enum Type {
         NUMBER, PERCENT, CURRENCY, INTEGER, COMPACT, PERMILL
@@ -49,7 +58,6 @@ public class DFSMinusPerCentMill {
     private static final Locale US_ARABEXT = Locale.forLanguageTag("en-US-u-nu-arabext");
     private static final double SRC_NUM = -1234.56;
 
-    @DataProvider
     Object[][] formatData() {
         return new Object[][] {
             // Locale, FormatStyle, expected format, expected single char symbol
@@ -69,7 +77,6 @@ public class DFSMinusPerCentMill {
         };
     }
 
-    @DataProvider
     Object[][] charSymbols() {
         return new Object[][]{
             // Locale, percent, per mille, minus sign
@@ -78,8 +85,9 @@ public class DFSMinusPerCentMill {
         };
     }
 
-    @Test(dataProvider="formatData")
-    public void testFormatData(Locale l, Type style, String expected) {
+    @ParameterizedTest
+    @MethodSource("formatData")
+    void testFormatData(Locale l, Type style, String expected) {
         NumberFormat nf = null;
         switch (style) {
             case NUMBER:
@@ -102,19 +110,20 @@ public class DFSMinusPerCentMill {
                 break;
         }
 
-        assertEquals(nf.format(SRC_NUM), expected);
+        assertEquals(expected, nf.format(SRC_NUM));
     }
 
-    @Test(dataProvider="charSymbols")
-    public void testCharSymbols(Locale l, char percent, char permill, char minus) {
+    @ParameterizedTest
+    @MethodSource("charSymbols")
+    void testCharSymbols(Locale l, char percent, char permill, char minus) {
         DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance(l);
-        assertEquals(dfs.getPercent(), percent);
-        assertEquals(dfs.getPerMill(), permill);
-        assertEquals(dfs.getMinusSign(), minus);
+        assertEquals(percent, dfs.getPercent());
+        assertEquals(permill, dfs.getPerMill());
+        assertEquals(minus, dfs.getMinusSign());
     }
 
     @Test
-    public void testSerialization() throws Exception {
+    void testSerialization() throws Exception {
         DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance();
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         new ObjectOutputStream(bos).writeObject(dfs);
@@ -122,7 +131,7 @@ public class DFSMinusPerCentMill {
                 new ByteArrayInputStream(bos.toByteArray())
         ).readObject();
 
-        assertEquals(dfs, dfsSerialized);
+        assertEquals(dfsSerialized, dfs);
 
         // set minus/percent/permille
         dfs.setMinusSign('a');
@@ -134,6 +143,6 @@ public class DFSMinusPerCentMill {
                 new ByteArrayInputStream(bos.toByteArray())
         ).readObject();
 
-        assertEquals(dfs, dfsSerialized);
+        assertEquals(dfsSerialized, dfs);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,6 +163,16 @@ public enum HtmlStyles implements HtmlStyle {
      * The class used for list elements in the table of contents.
      */
     tocList,
+
+    /**
+     * The class used for lexical order toggle in the table of contents.
+     */
+    tocSortToggle,
+
+     /**
+     * The class used to indicate the state of the lexical sort toggle.
+     */
+    tocSortIsActive,
 
     //</editor-fold>
 

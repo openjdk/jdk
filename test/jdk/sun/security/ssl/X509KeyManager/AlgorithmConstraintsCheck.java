@@ -57,31 +57,31 @@ import sun.security.x509.X500Name;
  * @modules java.base/sun.security.x509
  *          java.base/sun.security.util
  * @library /test/lib
- * @run main/othervm AlgorithmConstraintsCheck false SunX509 SHA256withRSA
- * @run main/othervm AlgorithmConstraintsCheck true SunX509 SHA256withRSA
- * @run main/othervm AlgorithmConstraintsCheck false PKIX SHA256withRSA
- * @run main/othervm AlgorithmConstraintsCheck true PKIX SHA256withRSA
+ * @run main/othervm AlgorithmConstraintsCheck false SunX509
+ * @run main/othervm AlgorithmConstraintsCheck true SunX509
+ * @run main/othervm AlgorithmConstraintsCheck false PKIX
+ * @run main/othervm AlgorithmConstraintsCheck true PKIX
  */
 
 public class AlgorithmConstraintsCheck {
 
-    private static final String CERT_ALIAS = "testalias";
-    private static final String KEY_TYPE = "RSA";
+    protected static final String CERT_ALIAS = "testalias";
+    protected static final String KEY_TYPE = "EC";
+    protected static final String CERT_SIG_ALG = "SHA256withECDSA";
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 3) {
+        if (args.length != 2) {
             throw new RuntimeException("Wrong number of arguments");
         }
 
         String enabled = args[0];
         String kmAlg = args[1];
-        String certSignatureAlg = args[2];
 
         System.setProperty("jdk.tls.SunX509KeyManager.certChecking", enabled);
-        SecurityUtils.addToDisabledTlsAlgs(certSignatureAlg);
+        SecurityUtils.addToDisabledTlsAlgs(CERT_SIG_ALG);
 
         X509ExtendedKeyManager km = (X509ExtendedKeyManager) getKeyManager(
-                kmAlg, certSignatureAlg);
+                kmAlg, KEY_TYPE, CERT_SIG_ALG);
         String serverAlias = km.chooseServerAlias(KEY_TYPE, null, null);
         String engineServerAlias = km.chooseEngineServerAlias(
                 KEY_TYPE, null, null);
@@ -108,13 +108,13 @@ public class AlgorithmConstraintsCheck {
     }
 
     // PKIX KeyManager adds a cache prefix to an alias.
-    private static String normalizeAlias(String alias) {
+    protected static String normalizeAlias(String alias) {
         return alias.substring(alias.lastIndexOf(".") + 1);
     }
 
-    private static X509KeyManager getKeyManager(String kmAlg,
-            String certSignatureAlg) throws Exception {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance(KEY_TYPE);
+    protected static X509KeyManager getKeyManager(String kmAlg,
+            String keyAlg, String certSignatureAlg) throws Exception {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(keyAlg);
         KeyPair caKeys = kpg.generateKeyPair();
         KeyPair endpointKeys = kpg.generateKeyPair();
 

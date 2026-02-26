@@ -30,6 +30,7 @@
  * @test
  * @bug 6916074 8170131
  * @summary Add support for TLS 1.2
+ * @enablePreview
  * @run main/othervm PKIXExtendedTM 0
  * @run main/othervm PKIXExtendedTM 1
  * @run main/othervm PKIXExtendedTM 2
@@ -38,12 +39,14 @@
 
 import java.io.*;
 import javax.net.ssl.*;
+import java.security.PEMDecoder;
 import java.security.Security;
 import java.security.KeyStore;
 import java.security.KeyFactory;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertPathValidatorException;
+import java.security.cert.X509Certificate;
 import java.security.spec.*;
 import java.security.interfaces.*;
 import java.math.BigInteger;
@@ -904,7 +907,7 @@ public class PKIXExtendedTM {
         (byte)0x4f
     };
 
-    static char passphrase[] = "passphrase".toCharArray();
+    static char[] passphrase = "passphrase".toCharArray();
 
     /*
      * Is the server ready to serve?
@@ -999,13 +1002,9 @@ public class PKIXExtendedTM {
             String keyCertStr, byte[] modulus,
             byte[] privateExponent, char[] passphrase) throws Exception {
 
+        PEMDecoder pemDecoder = PEMDecoder.of();
         // generate certificate from cert string
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-
-        ByteArrayInputStream is =
-                    new ByteArrayInputStream(trusedCertStr.getBytes());
-        Certificate trusedCert = cf.generateCertificate(is);
-        is.close();
+        Certificate trusedCert = pemDecoder.decode(trusedCertStr, X509Certificate.class);
 
         // create a key store
         KeyStore ks = KeyStore.getInstance("JKS");
@@ -1024,9 +1023,7 @@ public class PKIXExtendedTM {
                     (RSAPrivateKey)kf.generatePrivate(priKeySpec);
 
             // generate certificate chain
-            is = new ByteArrayInputStream(keyCertStr.getBytes());
-            Certificate keyCert = cf.generateCertificate(is);
-            is.close();
+            Certificate keyCert = pemDecoder.decode(keyCertStr, X509Certificate.class);
 
             Certificate[] chain = new Certificate[2];
             chain[0] = keyCert;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary Test response body handlers/subscribers when there is no body
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.http2.Http2TestServer
- * @run testng/othervm
+ * @run junit/othervm
  *      -Djdk.internal.httpclient.debug=true
  *      -Djdk.httpclient.HttpClient.log=all
  *      NoBodyPartTwo
@@ -43,22 +43,32 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 
-import org.testng.annotations.Test;
+import jdk.internal.net.http.common.Utils;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static java.net.http.HttpClient.Version.HTTP_3;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+// @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+// is inherited from the super class
 public class NoBodyPartTwo extends AbstractNoBody {
 
     volatile boolean consumerHasBeenCalled;
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void testAsByteArrayConsumer(String uri, boolean sameClient) throws Exception {
         printStamp(START, "testAsByteArrayConsumer(\"%s\", %s)", uri, sameClient);
         HttpClient client = null;
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null) {
                 client = newHttpClient(sameClient);
+                if (!sameClient && version(uri) == HTTP_3) {
+                    headRequest(client);
+                }
             }
             try (var cl = new CloseableClient(client, sameClient)) {
                 HttpRequest req = newRequestBuilder(uri)
@@ -67,7 +77,7 @@ public class NoBodyPartTwo extends AbstractNoBody {
                 Consumer<Optional<byte[]>> consumer = oba -> {
                     consumerHasBeenCalled = true;
                     oba.ifPresent(ba -> fail("Unexpected non-empty optional: "
-                            + asString(ByteBuffer.wrap(ba))));
+                            + Utils.asString(ByteBuffer.wrap(ba))));
                 };
                 consumerHasBeenCalled = false;
                 client.send(req, BodyHandlers.ofByteArrayConsumer(consumer));
@@ -76,13 +86,17 @@ public class NoBodyPartTwo extends AbstractNoBody {
         }
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void testAsInputStream(String uri, boolean sameClient) throws Exception {
         printStamp(START, "testAsInputStream(\"%s\", %s)", uri, sameClient);
         HttpClient client = null;
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null) {
                 client = newHttpClient(sameClient);
+                if (!sameClient && version(uri) == HTTP_3) {
+                    headRequest(client);
+                }
             }
             try (var cl = new CloseableClient(client, sameClient)) {
                 HttpRequest req = newRequestBuilder(uri)
@@ -90,18 +104,22 @@ public class NoBodyPartTwo extends AbstractNoBody {
                         .build();
                 HttpResponse<InputStream> response = client.send(req, BodyHandlers.ofInputStream());
                 byte[] body = response.body().readAllBytes();
-                assertEquals(body.length, 0);
+                assertEquals(0, body.length);
             }
         }
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void testBuffering(String uri, boolean sameClient) throws Exception {
         printStamp(START, "testBuffering(\"%s\", %s)", uri, sameClient);
         HttpClient client = null;
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null) {
                 client = newHttpClient(sameClient);
+                if (!sameClient && version(uri) == HTTP_3) {
+                    headRequest(client);
+                }
             }
             try (var cl = new CloseableClient(client, sameClient)) {
                 HttpRequest req = newRequestBuilder(uri)
@@ -110,18 +128,22 @@ public class NoBodyPartTwo extends AbstractNoBody {
                 HttpResponse<byte[]> response = client.send(req,
                         BodyHandlers.buffering(BodyHandlers.ofByteArray(), 1024));
                 byte[] body = response.body();
-                assertEquals(body.length, 0);
+                assertEquals(0, body.length);
             }
         }
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void testDiscard(String uri, boolean sameClient) throws Exception {
         printStamp(START, "testDiscard(\"%s\", %s)", uri, sameClient);
         HttpClient client = null;
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null) {
                 client = newHttpClient(sameClient);
+                if (!sameClient && version(uri) == HTTP_3) {
+                    headRequest(client);
+                }
             }
             try (var cl = new CloseableClient(client, sameClient)) {
                 HttpRequest req = newRequestBuilder(uri)
@@ -129,7 +151,7 @@ public class NoBodyPartTwo extends AbstractNoBody {
                         .build();
                 Object obj = new Object();
                 HttpResponse<Object> response = client.send(req, BodyHandlers.replacing(obj));
-                assertEquals(response.body(), obj);
+                assertEquals(obj, response.body());
             }
         }
     }

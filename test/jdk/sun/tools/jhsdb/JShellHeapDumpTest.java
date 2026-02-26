@@ -162,12 +162,7 @@ public class JShellHeapDumpTest {
         long startTime = System.currentTimeMillis();
         try {
             JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jshell");
-            if (doSleep) {
-                launcher.addVMArgs(Utils.getTestJavaOpts());
-            } else {
-                // Don't allow use of SerialGC. See JDK-8313655.
-                launcher.addVMArgs(Utils.getFilteredTestJavaOpts("-XX:\\+UseSerialGC"));
-            }
+            launcher.addVMArgs(Utils.getTestJavaOpts());
             ProcessBuilder pb = new ProcessBuilder(launcher.getCommand());
             // Needed so we can properly parse the "Welcome to JShell" output.
             pb.command().add("-J-Duser.language=en");

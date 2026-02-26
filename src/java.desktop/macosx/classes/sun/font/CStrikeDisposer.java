@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ package sun.font;
  */
 class CStrikeDisposer extends FontStrikeDisposer {
 
-    long pNativeScalerContext;
+    private final long pNativeScalerContext;
 
     public CStrikeDisposer(Font2D font2D, FontStrikeDesc desc,
                                long pContext, int[] images)
@@ -73,19 +73,18 @@ class CStrikeDisposer extends FontStrikeDisposer {
 
     public CStrikeDisposer(Font2D font2D, FontStrikeDesc desc) {
         super(font2D, desc);
+        pNativeScalerContext = 0L;
     }
 
     @Override
     public synchronized void dispose() {
         if (!disposed) {
             if (pNativeScalerContext != 0L) {
-                freeNativeScalerContext(pNativeScalerContext);
+                CStrike.disposeNativeStrikePtr(pNativeScalerContext);
             }
             super.dispose();
         }
     }
-
-    private native void freeNativeScalerContext(long pContext);
 
     protected static native void removeGlyphInfoFromCache(long glyphInfo);
 }

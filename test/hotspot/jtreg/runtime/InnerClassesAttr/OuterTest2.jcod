@@ -1,0 +1,169 @@
+/*
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+/*
+class OuterTest2 {
+    interface Greeting {
+        void sayHello();
+    }
+
+    public static void test2() throws ClassFormatError {
+        Greeting greeting = new Greeting() {
+            @Override
+            public void sayHello() {
+                System.out.println("Hello from an anonymous inner class!");
+            }
+        };
+
+        greeting.sayHello(); // Calls the method in the anonymous inner class
+    }
+}
+
+Nested class acccess flags are made invalid in this jcod file, the inner class is unnamed.
+*/
+
+class OuterTest2 {
+  0xCAFEBABE;
+  0; // minor version
+  70; // version
+  [] { // Constant Pool
+    ; // first element is empty
+    Method #2 #3; // #1
+    class #4; // #2
+    NameAndType #5 #6; // #3
+    Utf8 "java/lang/Object"; // #4
+    Utf8 "<init>"; // #5
+    Utf8 "()V"; // #6
+    class #8; // #7
+    Utf8 "OuterTest2$1"; // #8
+    Method #7 #3; // #9
+    InterfaceMethod #11 #12; // #10
+    class #13; // #11
+    NameAndType #14 #6; // #12
+    Utf8 "OuterTest2$Greeting"; // #13
+    Utf8 "sayHello"; // #14
+    class #16; // #15
+    Utf8 "OuterTest2"; // #16
+    Utf8 "Code"; // #17
+    Utf8 "LineNumberTable"; // #18
+    Utf8 "test2"; // #19
+    Utf8 "Exceptions"; // #20
+    class #22; // #21
+    Utf8 "java/lang/ClassFormatError"; // #22
+    Utf8 "SourceFile"; // #23
+    Utf8 "OuterTest2.java"; // #24
+    Utf8 "NestMembers"; // #25
+    Utf8 "InnerClasses"; // #26
+    Utf8 "Greeting"; // #27
+  } // Constant Pool
+
+  0x0020; // access
+  #15;// this_cpx
+  #2;// super_cpx
+
+  [] { // Interfaces
+  } // Interfaces
+
+  [] { // Fields
+  } // Fields
+
+  [] { // Methods
+    {  // method
+      0x0000; // access
+      #5; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+        Attr(#17) { // Code
+          1; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x2AB70001B1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#18) { // LineNumberTable
+              [] { // line_number_table
+                0  3;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+    ;
+    {  // method
+      0x0009; // access
+      #19; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+        Attr(#17) { // Code
+          2; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0xBB000759B700094B;
+            0x2AB9000A0100B1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#18) { // LineNumberTable
+              [] { // line_number_table
+                0  9;
+                8  16;
+                14  17;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+        ;
+        Attr(#20) { // Exceptions
+          [] { // Exceptions
+            #21;
+          }
+        } // end Exceptions
+      } // Attributes
+    }
+  } // Methods
+
+  [] { // Attributes
+    Attr(#23) { // SourceFile
+      #24;
+    } // end SourceFile
+    ;
+    Attr(#25) { // NestMembers
+      [] { // classes
+        #11;
+        #7;
+      }
+    } // end NestMembers
+    ;
+    Attr(#26) { // InnerClasses
+      [] { // classes
+        #7 #0 #0 0x0fff; // This access flag sets is_interface & is_final, so invalid.
+        #11 #15 #27 1544;
+      }
+    } // end InnerClasses
+  } // Attributes
+} // end class OuterTest2

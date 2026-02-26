@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @bug 4160406 4705734 4707389 4826774 4895911 4421494 6358355 7021568 7039369 4396272
+ * @bug 4160406 4705734 4707389 4826774 4895911 4421494 6358355 7021568
+ *      7039369 4396272 8366017
  * @summary Test for Double.parseDouble method and acceptance regex
  */
 
@@ -759,6 +760,39 @@ public class ParseDouble {
             throw new RuntimeException("Inconsistent conversion");
     }
 
+    private static void testFastPaths() {
+        /* Exercises the fast paths in jdk.internal.math.FloatingDecimal. */
+        check("1", 0x1.0p0);  // 1.0
+        check("2.34000e2", 0x1.d4p7);  // 234.0
+        check("9.223e18", 0x1.fffab689adb6p62);  // 9.223e18
+        check("9.876e18", 0x1.121d33597384p63);  // 9.876e18
+        check("9223372036854776833", 0x1.0000000000001p63);  // 9.223372036854778E18
+        check("9223372036854776832", 0x1.0p63);  // 9.223372036854776E18
+
+        check("1.23", 0x1.3ae147ae147aep0);  // 1.23
+        check("0.000234", 0x1.eabbcb1cc9646p-13);  // 2.34E-4
+        check("3.45e23", 0x1.2439f32cbea41p78);  // 3.45E23
+        check("576460752303423616e20", 0x1.5af1d78b58c41p125);  // 5.764607523034236E37
+
+        check("1e37", 0x1.e17b84357691bp122);  // 1.0E37
+        check("8999e34", 0x1.0ecdc63717fbdp126);  // 8.999E37
+        check("0.9999e36", 0x1.8125c09cb78b7p119);  // 9.999E35
+        check("0.9876e37", 0x1.db831933296cep122);  // 9.876E36
+
+        check("1.2e-200", 0x1.d64af4cc52935p-665);  // 1.2E-200
+        check("2.3e100", 0x1.507ed84d17a69p333);  // 2.3E100
+        check("1.2000000000000000003e-200", 0x1.d64af4cc52935p-665);  // 1.2E-200
+        check("2.3000000000000000004e100", 0x1.507ed84d17a69p333);  // 2.3E100
+        check("5.249320425370670463e308", Double.POSITIVE_INFINITY);
+        check("5.2493204253706704633e308", Double.POSITIVE_INFINITY);
+
+        check("1.2e-320", 0x0.000000000097dp-1022);  // 1.2E-320
+        check("1.2000000000000000003e-320", 0x0.000000000097dp-1022);  // 1.2E-320
+
+        check("2.225073858507201383e-308", Double.MIN_NORMAL);
+        check("2.2250738585072013831e-308", Double.MIN_NORMAL);
+    }
+
     public static void main(String[] args) throws Exception {
         rudimentaryTest();
 
@@ -775,5 +809,8 @@ public class ParseDouble {
         testSubnormalPowers();
         testPowers();
         testStrictness();
+
+        testFastPaths();
     }
+
 }

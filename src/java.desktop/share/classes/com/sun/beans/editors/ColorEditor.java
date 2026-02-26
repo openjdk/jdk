@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,16 +79,19 @@ public class ColorEditor extends Panel implements PropertyEditor {
         resize(ourWidth,40);
     }
 
+    @Override
     public void setValue(Object o) {
         Color c = (Color)o;
         changeColor(c);
     }
 
+    @Override
     @SuppressWarnings("deprecation")
     public Dimension preferredSize() {
         return new Dimension(ourWidth, 40);
     }
 
+    @Override
     @SuppressWarnings("deprecation")
     public boolean keyUp(Event e, int key) {
         if (e.target == text) {
@@ -101,6 +104,7 @@ public class ColorEditor extends Panel implements PropertyEditor {
         return (false);
     }
 
+    @Override
     public void setAsText(String s) throws java.lang.IllegalArgumentException {
         if (s == null) {
             changeColor(null);
@@ -124,6 +128,7 @@ public class ColorEditor extends Panel implements PropertyEditor {
 
     }
 
+    @Override
     @SuppressWarnings("deprecation")
     public boolean action(Event e, Object arg) {
         if (e.target == chooser) {
@@ -132,6 +137,7 @@ public class ColorEditor extends Panel implements PropertyEditor {
         return false;
     }
 
+    @Override
     public String getJavaInitializationString() {
         return (this.color != null)
                 ? "new java.awt.Color(" + this.color.getRGB() + ",true)"
@@ -165,14 +171,17 @@ public class ColorEditor extends Panel implements PropertyEditor {
         support.firePropertyChange("", null, null);
     }
 
+    @Override
     public Object getValue() {
         return color;
     }
 
+    @Override
     public boolean isPaintable() {
         return true;
     }
 
+    @Override
     public void paintValue(java.awt.Graphics gfx, java.awt.Rectangle box) {
         Color oldColor = gfx.getColor();
         gfx.setColor(Color.black);
@@ -182,28 +191,34 @@ public class ColorEditor extends Panel implements PropertyEditor {
         gfx.setColor(oldColor);
     }
 
+    @Override
     public String getAsText() {
         return (this.color != null)
                 ? this.color.getRed() + "," + this.color.getGreen() + "," + this.color.getBlue()
                 : null;
     }
 
+    @Override
     public String[] getTags() {
         return null;
     }
 
+    @Override
     public java.awt.Component getCustomEditor() {
         return this;
     }
 
+    @Override
     public boolean supportsCustomEditor() {
         return true;
     }
 
+    @Override
     public void addPropertyChangeListener(PropertyChangeListener l) {
         support.addPropertyChangeListener(l);
     }
 
+    @Override
     public void removePropertyChangeListener(PropertyChangeListener l) {
         support.removePropertyChangeListener(l);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,11 @@
 
 /*
  * @test
- * @bug 8159337
+ * @bug 8159337 8368981
  * @summary Test Locale.caseFoldLanguageTag(String languageTag)
  * @run junit CaseFoldLanguageTagTest
  */
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -54,24 +53,67 @@ public class CaseFoldLanguageTagTest {
 
     @ParameterizedTest
     @MethodSource("wellFormedTags")
-    public void wellFormedTags(String tag, String foldedTag) {
+    void wellFormedTagsTest(String tag, String foldedTag) {
         assertEquals(foldedTag, Locale.caseFoldLanguageTag(tag), String.format("Folded %s", tag));
     }
 
     @ParameterizedTest
+    @MethodSource("legacyTags")
+    void legacyTagsTest(String tag) {
+        var lowerTag = tag.toLowerCase(Locale.ROOT);
+        var upperTag = tag.toUpperCase(Locale.ROOT);
+        assertEquals(tag, Locale.caseFoldLanguageTag(lowerTag),
+                String.format("Folded %s", lowerTag));
+        assertEquals(tag, Locale.caseFoldLanguageTag(upperTag),
+                String.format("Folded %s", upperTag));
+    }
+
+    @ParameterizedTest
     @MethodSource("illFormedTags")
-    public void illFormedTags(String tag) {
+    void illFormedTagsTest(String tag) {
         assertThrows(IllformedLocaleException.class, () ->
                 Locale.caseFoldLanguageTag(tag));
     }
 
     @Test
-    public void throwNPE() {
+    void throwNPETest() {
         assertThrows(NullPointerException.class, () ->
                 Locale.caseFoldLanguageTag(null));
     }
 
-    private static Stream<Arguments> wellFormedTags() {
+    // Well-formed legacy tags in expected case
+    static Stream<String> legacyTags() {
+        return Stream.of(
+                "art-lojban",
+                "cel-gaulish",
+                "en-GB-oed",
+                "i-ami",
+                "i-bnn",
+                "i-default",
+                "i-enochian",
+                "i-hak",
+                "i-klingon",
+                "i-lux",
+                "i-mingo",
+                "i-navajo",
+                "i-pwn",
+                "i-tao",
+                "i-tay",
+                "i-tsu",
+                "no-bok",
+                "no-nyn",
+                "sgn-BE-FR",
+                "sgn-BE-NL",
+                "sgn-CH-DE",
+                "zh-guoyu",
+                "zh-hakka",
+                "zh-min",
+                "zh-min-nan",
+                "zh-xiang"
+        );
+    }
+
+    static Stream<Arguments> wellFormedTags() {
         return Stream.of(
                 // langtag tests
                 // language
@@ -124,16 +166,6 @@ public class CaseFoldLanguageTagTest {
                 Arguments.of("X-A-ABC", "x-a-abc"), // private w/ extended (incl. 1)
                 Arguments.of("X-A-AB-Abcd", "x-a-ab-abcd"), // private w/ extended (incl. 1, 2, 4)
 
-                // Legacy tests
-                // irregular
-                Arguments.of("I-AMI", "i-ami"),
-                Arguments.of("EN-gb-OED", "en-GB-oed"),
-                Arguments.of("SGN-be-fr", "sgn-BE-FR"),
-                // regular
-                Arguments.of("NO-BOK", "no-bok"),
-                Arguments.of("CEL-GAULISH", "cel-gaulish"),
-                Arguments.of("ZH-MIN-NAN", "zh-min-nan"),
-
                 // Special JDK Cases (Variant and x-lvariant)
                 Arguments.of("de-POSIX-x-URP-lvariant-Abc-Def", "de-POSIX-x-urp-lvariant-Abc-Def"),
                 Arguments.of("JA-JPAN-JP-U-CA-JAPANESE-x-RANDOM-lvariant-JP",
@@ -150,7 +182,7 @@ public class CaseFoldLanguageTagTest {
         );
     }
 
-    private static Stream<Arguments> illFormedTags() {
+    static Stream<Arguments> illFormedTags() {
         return Stream.of(
                 // Starts with non-language
                 Arguments.of("xabadadoo-me"),

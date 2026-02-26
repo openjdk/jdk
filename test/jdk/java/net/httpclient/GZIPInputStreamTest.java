@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,17 +27,11 @@
  * @summary Tests that you can map an InputStream to a GZIPInputStream
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.HttpServerAdapters ReferenceTracker
- * @run testng/othervm GZIPInputStreamTest
+ * @run junit/othervm GZIPInputStreamTest
  */
 
 import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsServer;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -45,7 +39,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -62,25 +55,34 @@ import java.util.function.Supplier;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.assertEquals;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class GZIPInputStreamTest implements HttpServerAdapters {
 
-    SSLContext sslContext;
-    HttpTestServer httpTestServer;    // HTTP/1.1    [ 4 servers ]
-    HttpTestServer httpsTestServer;   // HTTPS/1.1
-    HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
-    HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
-    String httpURI;
-    String httpsURI;
-    String http2URI;
-    String https2URI;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+    private static HttpTestServer httpTestServer;    // HTTP/1.1    [ 4 servers ]
+    private static HttpTestServer httpsTestServer;   // HTTPS/1.1
+    private static HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
+    private static HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
+    private static HttpTestServer https3TestServer;  // HTTP/3
+    private static String httpURI;
+    private static String httpsURI;
+    private static String http2URI;
+    private static String https2URI;
+    private static String https3URI;
 
     static final int ITERATION_COUNT = 3;
     // a shared executor helps reduce the amount of threads created by the test
@@ -152,8 +154,7 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
 
 
 
-    @DataProvider(name = "variants")
-    public Object[][] variants() {
+    public static Object[][] variants() {
         return new Object[][]{
                 { httpURI,   false },
                 { httpURI,   true },
@@ -163,32 +164,35 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
                 { http2URI,  true },
                 { https2URI, false },
                 { https2URI, true },
+                { https3URI, false },
+                { https3URI, true }
         };
     }
 
-    final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
+    private static final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
     HttpClient newHttpClient() {
-        return TRACKER.track(HttpClient.newBuilder()
+        return TRACKER.track(newClientBuilderForH3()
                          .executor(executor)
                          .sslContext(sslContext)
                          .build());
     }
 
     HttpClient newSingleThreadClient() {
-        return TRACKER.track(HttpClient.newBuilder()
+        return TRACKER.track(newClientBuilderForH3()
                 .executor(singleThreadExecutor)
                 .sslContext(sslContext)
                 .build());
     }
 
     HttpClient newInLineClient() {
-        return TRACKER.track(HttpClient.newBuilder()
+        return TRACKER.track(newClientBuilderForH3()
                 .executor((r) -> r.run() )
                 .sslContext(sslContext)
                 .build());
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void testPlainSyncAsString(String uri, boolean sameClient) throws Exception {
         out.println("\nSmoke test: verify that the result we get from the server is correct.");
         out.println("Uses plain send() and `asString` to get the plain string.");
@@ -198,22 +202,15 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
             if (!sameClient || client == null)
                 client = newSingleThreadClient(); // should work with 1 single thread
 
-            HttpRequest req = HttpRequest.newBuilder(URI.create(uri +"/txt/LoremIpsum.txt"))
-                    .build();
+            HttpRequest req = buildRequest(URI.create(uri +"/txt/LoremIpsum.txt"));
             BodyHandler<String> handler = BodyHandlers.ofString(UTF_8);
             HttpResponse<String> response = client.send(req, handler);
-            String lorem = response.body();
-            if (!LOREM_IPSUM.equals(lorem)) {
-                out.println("Response doesn't match");
-                out.println("[" + LOREM_IPSUM + "] != [" + lorem + "]");
-                assertEquals(LOREM_IPSUM, lorem);
-            } else {
-                out.println("Received expected response.");
-            }
+            verifyResponse(response.body());
         }
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void testPlainSyncAsInputStream(String uri, boolean sameClient) throws Exception {
         out.println("Uses plain send() and `asInputStream` - calls readAllBytes() from main thread");
         out.println("Uses single threaded executor");
@@ -222,22 +219,15 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
             if (!sameClient || client == null)
                 client = newSingleThreadClient(); // should work with 1 single thread
 
-            HttpRequest req = HttpRequest.newBuilder(URI.create(uri + "/txt/LoremIpsum.txt"))
-                    .build();
+            HttpRequest req = buildRequest(URI.create(uri + "/txt/LoremIpsum.txt"));
             BodyHandler<InputStream> handler = BodyHandlers.ofInputStream();
             HttpResponse<InputStream> response = client.send(req, handler);
-            String lorem = new String(response.body().readAllBytes(), UTF_8);
-            if (!LOREM_IPSUM.equals(lorem)) {
-                out.println("Response doesn't match");
-                out.println("[" + LOREM_IPSUM + "] != [" + lorem + "]");
-                assertEquals(LOREM_IPSUM, lorem);
-            } else {
-                out.println("Received expected response.");
-            }
+            verifyResponse(new String(response.body().readAllBytes(), UTF_8));
         }
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void testGZIPSyncAsInputStream(String uri, boolean sameClient) throws Exception {
         out.println("Uses plain send() and `asInputStream` - " +
                 "creates GZIPInputStream and calls readAllBytes() from main thread");
@@ -247,23 +237,16 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
             if (!sameClient || client == null)
                 client = newSingleThreadClient(); // should work with 1 single thread
 
-            HttpRequest req = HttpRequest.newBuilder(URI.create(uri + "/gz/LoremIpsum.txt.gz"))
-                    .build();
+            HttpRequest req = buildRequest(URI.create(uri + "/gz/LoremIpsum.txt.gz"));
             BodyHandler<InputStream> handler = BodyHandlers.ofInputStream();
             HttpResponse<InputStream> response = client.send(req, handler);
             GZIPInputStream gz = new GZIPInputStream(response.body());
-            String lorem = new String(gz.readAllBytes(), UTF_8);
-            if (!LOREM_IPSUM.equals(lorem)) {
-                out.println("Response doesn't match");
-                out.println("[" + LOREM_IPSUM + "] != [" + lorem + "]");
-                assertEquals(LOREM_IPSUM, lorem);
-            } else {
-                out.println("Received expected response.");
-            }
+            verifyResponse(new String(gz.readAllBytes(), UTF_8));
         }
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void testGZIPSyncAsGZIPInputStream(String uri, boolean sameClient) throws Exception {
         out.println("Uses plain send() and a mapping subscriber to "+
                 "create the GZIPInputStream. Calls readAllBytes() from main thread");
@@ -273,24 +256,17 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
             if (!sameClient || client == null)
                 client = newHttpClient(); // needs at least 2 threads
 
-            HttpRequest req = HttpRequest.newBuilder(URI.create(uri + "/gz/LoremIpsum.txt.gz"))
-                    .build();
+            HttpRequest req = buildRequest(URI.create(uri + "/gz/LoremIpsum.txt.gz"));
             // This is dangerous, because the finisher will block.
             // We support this, but the executor must have enough threads.
             BodyHandler<InputStream> handler = new GZIPBodyHandler();
             HttpResponse<InputStream> response = client.send(req, handler);
-            String lorem = new String(response.body().readAllBytes(), UTF_8);
-            if (!LOREM_IPSUM.equals(lorem)) {
-                out.println("Response doesn't match");
-                out.println("[" + LOREM_IPSUM + "] != [" + lorem + "]");
-                assertEquals(LOREM_IPSUM, lorem);
-            } else {
-                out.println("Received expected response.");
-            }
+            verifyResponse(new String(response.body().readAllBytes(), UTF_8));
         }
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void testGZIPSyncAsGZIPInputStreamSupplier(String uri, boolean sameClient) throws Exception {
         out.println("Uses plain send() and a mapping subscriber to "+
                 "create a Supplier<GZIPInputStream>. Calls Supplier.get() " +
@@ -301,11 +277,10 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
             if (!sameClient || client == null)
                 client = newSingleThreadClient(); // should work with 1 single thread
 
-            HttpRequest req = HttpRequest.newBuilder(URI.create(uri + "/gz/LoremIpsum.txt.gz"))
-                    .build();
+            HttpRequest req = buildRequest(URI.create(uri + "/gz/LoremIpsum.txt.gz"));
             // This is dangerous, because the finisher will block.
             // We support this, but the executor must have enough threads.
-            BodyHandler<Supplier<InputStream>> handler = new BodyHandler<Supplier<InputStream>>() {
+            BodyHandler<Supplier<InputStream>> handler = new BodyHandler<>() {
                  public HttpResponse.BodySubscriber<Supplier<InputStream>> apply(
                          HttpResponse.ResponseInfo responseInfo)
                  {
@@ -329,18 +304,12 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
                 }
             };
             HttpResponse<Supplier<InputStream>> response = client.send(req, handler);
-            String lorem = new String(response.body().get().readAllBytes(), UTF_8);
-            if (!LOREM_IPSUM.equals(lorem)) {
-                out.println("Response doesn't match");
-                out.println("[" + LOREM_IPSUM + "] != [" + lorem + "]");
-                assertEquals(LOREM_IPSUM, lorem);
-            } else {
-                out.println("Received expected response.");
-            }
+            verifyResponse(new String(response.body().get().readAllBytes(), UTF_8));
         }
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void testPlainAsyncAsInputStreamBlocks(String uri, boolean sameClient) throws Exception {
         out.println("Uses sendAsync() and `asInputStream`. Registers a dependent action "+
                 "that calls readAllBytes()");
@@ -350,31 +319,25 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
             if (!sameClient || client == null)
                 client = newHttpClient(); // needs at least 2 threads
 
-            HttpRequest req = HttpRequest.newBuilder(URI.create(uri + "/txt/LoremIpsum.txt"))
-                    .build();
+            HttpRequest req = buildRequest(URI.create(uri + "/txt/LoremIpsum.txt"));
             BodyHandler<InputStream> handler = BodyHandlers.ofInputStream();
             CompletableFuture<HttpResponse<InputStream>> responseCF = client.sendAsync(req, handler);
             // This is dangerous. Blocking in the mapping function can wedge the
             // response. We do support it provided that there enough threads in
             // the executor.
-            String lorem = responseCF.thenApply((r) -> {
+            String responseBody = responseCF.thenApply((r) -> {
                 try {
                     return new String(r.body().readAllBytes(), UTF_8);
                 } catch (IOException io) {
                     throw new UncheckedIOException(io);
                 }
             }).join();
-            if (!LOREM_IPSUM.equals(lorem)) {
-                out.println("Response doesn't match");
-                out.println("[" + LOREM_IPSUM + "] != [" + lorem + "]");
-                assertEquals(LOREM_IPSUM, lorem);
-            } else {
-                out.println("Received expected response.");
-            }
+            verifyResponse(responseBody);
         }
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void testGZIPAsyncAsGZIPInputStreamBlocks(String uri, boolean sameClient) throws Exception {
         out.println("Uses sendAsync() and a mapping subscriber to create a GZIPInputStream. " +
                  "Registers a dependent action that calls readAllBytes()");
@@ -384,31 +347,25 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
             if (!sameClient || client == null)
                 client = newHttpClient(); // needs at least 2 threads
 
-            HttpRequest req = HttpRequest.newBuilder(URI.create(uri + "/gz/LoremIpsum.txt.gz"))
-                    .build();
+            HttpRequest req = buildRequest(URI.create(uri + "/gz/LoremIpsum.txt.gz"));
             BodyHandler<InputStream> handler = new GZIPBodyHandler();
             CompletableFuture<HttpResponse<InputStream>> responseCF = client.sendAsync(req, handler);
             // This is dangerous - we support this, but it can block
             // if there are not enough threads available.
             // Correct custom code should use thenApplyAsync instead.
-            String lorem = responseCF.thenApply((r) -> {
+            String responseBody = responseCF.thenApply((r) -> {
                 try {
                     return new String(r.body().readAllBytes(), UTF_8);
                 } catch (IOException io) {
                     throw new UncheckedIOException(io);
                 }
             }).join();
-            if (!LOREM_IPSUM.equals(lorem)) {
-                out.println("Response doesn't match");
-                out.println("[" + LOREM_IPSUM + "] != [" + lorem + "]");
-                assertEquals(LOREM_IPSUM, lorem);
-            } else {
-                out.println("Received expected response.");
-            }
+            verifyResponse(responseBody);
         }
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void testGZIPSyncAsGZIPInputStreamBlocks(String uri, boolean sameClient) throws Exception {
         out.println("Uses sendAsync() and a mapping subscriber to create a GZIPInputStream," +
                 "which is mapped again using a mapping subscriber " +
@@ -419,8 +376,7 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
             if (!sameClient || client == null)
                 client = newHttpClient(); // needs at least 2 threads
 
-            HttpRequest req = HttpRequest.newBuilder(URI.create(uri + "/gz/LoremIpsum.txt.gz"))
-                    .build();
+            HttpRequest req = buildRequest(URI.create(uri + "/gz/LoremIpsum.txt.gz"));
             // This is dangerous. Blocking in the mapping function can wedge the
             // response. We do support it provided that there enough thread in
             // the executor.
@@ -433,18 +389,12 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
                         }
                     });
             HttpResponse<String> response = client.send(req, handler);
-            String lorem = response.body();
-            if (!LOREM_IPSUM.equals(lorem)) {
-                out.println("Response doesn't match");
-                out.println("[" + LOREM_IPSUM + "] != [" + lorem + "]");
-                assertEquals(LOREM_IPSUM, lorem);
-            } else {
-                out.println("Received expected response.");
-            }
+            verifyResponse(response.body());
         }
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void testGZIPSyncAsGZIPInputStreamSupplierInline(String uri, boolean sameClient) throws Exception {
         out.println("Uses plain send() and a mapping subscriber to "+
                 "create a Supplier<GZIPInputStream>. Calls Supplier.get() " +
@@ -455,8 +405,7 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
             if (!sameClient || client == null)
                 client = newInLineClient(); // should even work with no threads
 
-            HttpRequest req = HttpRequest.newBuilder(URI.create(uri + "/gz/LoremIpsum.txt.gz"))
-                    .build();
+            HttpRequest req = buildRequest(URI.create(uri + "/gz/LoremIpsum.txt.gz"));
             // This is dangerous, because the finisher will block.
             // We support this, but the executor must have enough threads.
             BodyHandler<Supplier<InputStream>> handler = new BodyHandler<Supplier<InputStream>>() {
@@ -483,15 +432,27 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
                 }
             };
             HttpResponse<Supplier<InputStream>> response = client.send(req, handler);
-            String lorem = new String(response.body().get().readAllBytes(), UTF_8);
-            if (!LOREM_IPSUM.equals(lorem)) {
-                out.println("Response doesn't match");
-                out.println("[" + LOREM_IPSUM + "] != [" + lorem + "]");
-                assertEquals(LOREM_IPSUM, lorem);
-            } else {
-                out.println("Received expected response.");
-            }
+            verifyResponse(new String(response.body().get().readAllBytes(), UTF_8));
         }
+    }
+
+    private void verifyResponse(String responseBody) {
+        if (!LOREM_IPSUM.equals(responseBody)) {
+            out.println("Response doesn't match");
+            out.println("[" + LOREM_IPSUM + "] != [" + responseBody + "]");
+            assertEquals(responseBody, LOREM_IPSUM);
+        } else {
+            out.println("Received expected response.");
+        }
+    }
+
+    private HttpRequest buildRequest(URI uri) {
+        var builder = HttpRequest.newBuilder(uri);
+        if (uri.getPath().contains("/https3/")) {
+            builder.version(HTTP_3);
+            builder.setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
+        }
+        return builder.build();
     }
 
     static final class GZIPBodyHandler implements BodyHandler<InputStream> {
@@ -534,12 +495,8 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
                 + server.getAddress().getPort();
     }
 
-    @BeforeTest
-    public void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
+    @BeforeAll
+    public static void setup() throws Exception {
         HttpTestHandler plainHandler = new LoremIpsumPlainHandler();
         HttpTestHandler gzipHandler  = new LoremIpsumGZIPHandler();
 
@@ -565,14 +522,20 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
         https2TestServer.addHandler(gzipHandler, "/https2/chunk/gz");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/chunk";
 
+        https3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
+        https3TestServer.addHandler(plainHandler, "/https3/chunk/txt");
+        https3TestServer.addHandler(gzipHandler, "/https3/chunk/gz");
+        https3URI = "https://" + https3TestServer.serverAuthority() + "/https3/chunk";
+
         httpTestServer.start();
         httpsTestServer.start();
         http2TestServer.start();
         https2TestServer.start();
+        https3TestServer.start();
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         Thread.sleep(100);
         AssertionError fail = TRACKER.check(500);
         try {
@@ -580,6 +543,7 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
             httpsTestServer.stop();
             http2TestServer.stop();
             https2TestServer.stop();
+            https3TestServer.stop();
         } finally {
             if (fail != null) {
                 throw fail;

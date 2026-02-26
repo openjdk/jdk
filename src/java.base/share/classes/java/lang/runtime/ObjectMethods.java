@@ -25,18 +25,26 @@
 
 package java.lang.runtime;
 
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassHierarchyResolver;
+import java.lang.classfile.Opcode;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.StringConcatFactory;
 import java.lang.invoke.TypeDescriptor;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
+import static java.lang.classfile.ClassFile.ACC_STATIC;
+import static java.lang.constant.ConstantDescs.*;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -58,15 +66,18 @@ public final class ObjectMethods {
     private static final MethodHandle TRUE = MethodHandles.constant(boolean.class, true);
     private static final MethodHandle ZERO = MethodHandles.zero(int.class);
     private static final MethodHandle CLASS_IS_INSTANCE;
-    private static final MethodHandle OBJECTS_EQUALS;
-    private static final MethodHandle OBJECTS_HASHCODE;
-    private static final MethodHandle OBJECTS_TOSTRING;
+    private static final MethodHandle IS_NULL;
+    private static final MethodHandle IS_ARG0_NULL;
+    private static final MethodHandle IS_ARG1_NULL;
     private static final MethodHandle OBJECT_EQ;
     private static final MethodHandle HASH_COMBINER;
+    private static final MethodType MT_OBJECT_BOOLEAN = MethodType.methodType(boolean.class, Object.class);
+    private static final MethodType MT_INT = MethodType.methodType(int.class);
+    private static final MethodTypeDesc MTD_OBJECT_BOOLEAN = MethodTypeDesc.of(CD_boolean, CD_Object);
+    private static final MethodTypeDesc MTD_INT = MethodTypeDesc.of(CD_int);
 
     private static final HashMap<Class<?>, MethodHandle> primitiveEquals = new HashMap<>();
     private static final HashMap<Class<?>, MethodHandle> primitiveHashers = new HashMap<>();
-    private static final HashMap<Class<?>, MethodHandle> primitiveToString = new HashMap<>();
 
     static {
         try {
@@ -76,12 +87,12 @@ public final class ObjectMethods {
 
             CLASS_IS_INSTANCE = publicLookup.findVirtual(Class.class, "isInstance",
                                                          MethodType.methodType(boolean.class, Object.class));
-            OBJECTS_EQUALS = publicLookup.findStatic(Objects.class, "equals",
-                                                     MethodType.methodType(boolean.class, Object.class, Object.class));
-            OBJECTS_HASHCODE = publicLookup.findStatic(Objects.class, "hashCode",
-                                                       MethodType.methodType(int.class, Object.class));
-            OBJECTS_TOSTRING = publicLookup.findStatic(Objects.class, "toString",
-                                                       MethodType.methodType(String.class, Object.class));
+
+            var objectsIsNull = publicLookup.findStatic(Objects.class, "isNull",
+                                                        MethodType.methodType(boolean.class, Object.class));
+            IS_NULL = objectsIsNull;
+            IS_ARG0_NULL = MethodHandles.dropArguments(objectsIsNull, 1, Object.class);
+            IS_ARG1_NULL = MethodHandles.dropArguments(objectsIsNull, 0, Object.class);
 
             OBJECT_EQ = lookup.findStatic(OBJECT_METHODS_CLASS, "eq",
                                           MethodType.methodType(boolean.class, Object.class, Object.class));
@@ -121,23 +132,6 @@ public final class ObjectMethods {
                                                                  MethodType.methodType(int.class, double.class)));
             primitiveHashers.put(boolean.class, lookup.findStatic(Boolean.class, "hashCode",
                                                                   MethodType.methodType(int.class, boolean.class)));
-
-            primitiveToString.put(byte.class, lookup.findStatic(Byte.class, "toString",
-                                                                MethodType.methodType(String.class, byte.class)));
-            primitiveToString.put(short.class, lookup.findStatic(Short.class, "toString",
-                                                                 MethodType.methodType(String.class, short.class)));
-            primitiveToString.put(char.class, lookup.findStatic(Character.class, "toString",
-                                                                MethodType.methodType(String.class, char.class)));
-            primitiveToString.put(int.class, lookup.findStatic(Integer.class, "toString",
-                                                               MethodType.methodType(String.class, int.class)));
-            primitiveToString.put(long.class, lookup.findStatic(Long.class, "toString",
-                                                                MethodType.methodType(String.class, long.class)));
-            primitiveToString.put(float.class, lookup.findStatic(Float.class, "toString",
-                                                                 MethodType.methodType(String.class, float.class)));
-            primitiveToString.put(double.class, lookup.findStatic(Double.class, "toString",
-                                                                  MethodType.methodType(String.class, double.class)));
-            primitiveToString.put(boolean.class, lookup.findStatic(Boolean.class, "toString",
-                                                                   MethodType.methodType(String.class, boolean.class)));
         }
         catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
@@ -159,24 +153,41 @@ public final class ObjectMethods {
     private static boolean eq(boolean a, boolean b) { return a == b; }
 
     /** Get the method handle for combining two values of a given type */
-    private static MethodHandle equalator(Class<?> clazz) {
-        return (clazz.isPrimitive()
-                ? primitiveEquals.get(clazz)
-                : OBJECTS_EQUALS.asType(MethodType.methodType(boolean.class, clazz, clazz)));
+    private static MethodHandle equalator(MethodHandles.Lookup lookup, Class<?> clazz) throws Throwable {
+        if (clazz.isPrimitive())
+            return primitiveEquals.get(clazz);
+        MethodType mt = MethodType.methodType(boolean.class, clazz, clazz);
+        return MethodHandles.guardWithTest(IS_ARG0_NULL.asType(mt),
+                                           IS_ARG1_NULL.asType(mt),
+                                           lookup.findVirtual(clazz, "equals", MT_OBJECT_BOOLEAN).asType(mt));
     }
 
     /** Get the hasher for a value of a given type */
-    private static MethodHandle hasher(Class<?> clazz) {
-        return (clazz.isPrimitive()
-                ? primitiveHashers.get(clazz)
-                : OBJECTS_HASHCODE.asType(MethodType.methodType(int.class, clazz)));
+    private static MethodHandle hasher(MethodHandles.Lookup lookup, Class<?> clazz) throws Throwable {
+        if (clazz.isPrimitive())
+            return primitiveHashers.get(clazz);
+        MethodType mt = MethodType.methodType(int.class, clazz);
+        return MethodHandles.guardWithTest(IS_NULL.asType(MethodType.methodType(boolean.class, clazz)),
+                                           MethodHandles.dropArguments(MethodHandles.zero(int.class), 0, clazz),
+                                           lookup.findVirtual(clazz, "hashCode", MT_INT).asType(mt));
     }
 
-    /** Get the stringifier for a value of a given type */
-    private static MethodHandle stringifier(Class<?> clazz) {
-        return (clazz.isPrimitive()
-                ? primitiveToString.get(clazz)
-                : OBJECTS_TOSTRING.asType(MethodType.methodType(String.class, clazz)));
+    // If this type must be a monomorphic receiver, that is, one that has no
+    // subtypes in the JVM.  For example, Object-typed fields may have a more
+    // specific one type at runtime and thus need optimizations.
+    private static boolean isMonomorphic(Class<?> type) {
+        // Includes primitives and final classes, but not arrays.
+        // All array classes are reported to be final, but Object[] can have subtypes like String[]
+        return Modifier.isFinal(type.getModifiers()) && !type.isArray();
+    }
+
+    private static String specializerClassName(Class<?> targetClass, String kind) {
+        String name = targetClass.getName();
+        if (targetClass.isHidden()) {
+            // use the original class name
+            name = name.replace('/', '_');
+        }
+        return name + "$$" + kind + "Specializer";
     }
 
     /**
@@ -185,8 +196,8 @@ public final class ObjectMethods {
      * @param getters         the list of getters
      * @return the method handle
      */
-    private static MethodHandle makeEquals(Class<?> receiverClass,
-                                          List<MethodHandle> getters) {
+    private static MethodHandle makeEquals(MethodHandles.Lookup lookup, Class<?> receiverClass,
+                                           List<MethodHandle> getters) throws Throwable {
         MethodType rr = MethodType.methodType(boolean.class, receiverClass, receiverClass);
         MethodType ro = MethodType.methodType(boolean.class, receiverClass, Object.class);
         MethodHandle instanceFalse = MethodHandles.dropArguments(FALSE, 0, receiverClass, Object.class); // (RO)Z
@@ -195,8 +206,70 @@ public final class ObjectMethods {
         MethodHandle isInstance = MethodHandles.dropArguments(CLASS_IS_INSTANCE.bindTo(receiverClass), 0, receiverClass); // (RO)Z
         MethodHandle accumulator = MethodHandles.dropArguments(TRUE, 0, receiverClass, receiverClass); // (RR)Z
 
-        for (MethodHandle getter : getters) {
-            MethodHandle equalator = equalator(getter.type().returnType()); // (TT)Z
+        int size = getters.size();
+        MethodHandle[] equalators = new MethodHandle[size];
+        boolean hasPolymorphism = false;
+        for (int i = 0; i < size; i++) {
+            var getter = getters.get(i);
+            var type = getter.type().returnType();
+            if (isMonomorphic(type)) {
+                equalators[i] = equalator(lookup, type);
+            } else {
+                hasPolymorphism = true;
+            }
+        }
+
+        // Currently, hotspot does not support polymorphic inlining.
+        // As a result, if we have a MethodHandle to Object.equals,
+        // it does not enjoy separate profiles like individual invokevirtuals,
+        // and we must spin bytecode to accomplish separate profiling.
+        if (hasPolymorphism) {
+            String[] names = new String[size];
+
+            var classFileContext = ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(ClassHierarchyResolver.ofClassLoading(lookup)));
+            var bytes = classFileContext.build(ClassDesc.of(specializerClassName(lookup.lookupClass(), "Equalator")), clb -> {
+                for (int i = 0; i < size; i++) {
+                    if (equalators[i] == null) {
+                        var name = "equalator".concat(Integer.toString(i));
+                        names[i] = name;
+                        var type = getters.get(i).type().returnType();
+                        boolean isInterface = type.isInterface();
+                        var typeDesc = type.describeConstable().orElseThrow();
+                        clb.withMethodBody(name, MethodTypeDesc.of(CD_boolean, typeDesc, typeDesc), ACC_STATIC, cob -> {
+                            var nonNullPath = cob.newLabel();
+                            var fail = cob.newLabel();
+                            cob.aload(0)
+                               .ifnonnull(nonNullPath)
+                               .aload(1)
+                               .ifnonnull(fail)
+                               .iconst_1() // arg0 null, arg1 null
+                               .ireturn()
+                               .labelBinding(fail)
+                               .iconst_0() // arg0 null, arg1 non-null
+                               .ireturn()
+                               .labelBinding(nonNullPath)
+                               .aload(0) // arg0.equals(arg1) - bytecode subject to customized profiling
+                               .aload(1)
+                               .invoke(isInterface ? Opcode.INVOKEINTERFACE : Opcode.INVOKEVIRTUAL, typeDesc, "equals", MTD_OBJECT_BOOLEAN, isInterface)
+                               .ireturn();
+                        });
+                    }
+                }
+            });
+
+            var specializerLookup = lookup.defineHiddenClass(bytes, true, MethodHandles.Lookup.ClassOption.STRONG);
+
+            for (int i = 0; i < size; i++) {
+                if (equalators[i] == null) {
+                    var type = getters.get(i).type().returnType();
+                    equalators[i] = specializerLookup.findStatic(specializerLookup.lookupClass(), names[i], MethodType.methodType(boolean.class, type, type));
+                }
+            }
+        }
+
+        for (int i = 0; i < size; i++) {
+            var getter = getters.get(i);
+            MethodHandle equalator = equalators[i]; // (TT)Z
             MethodHandle thisFieldEqual = MethodHandles.filterArguments(equalator, 0, getter, getter); // (RR)Z
             accumulator = MethodHandles.guardWithTest(thisFieldEqual, accumulator, instanceFalse.asType(rr));
         }
@@ -212,13 +285,68 @@ public final class ObjectMethods {
      * @param getters         the list of getters
      * @return the method handle
      */
-    private static MethodHandle makeHashCode(Class<?> receiverClass,
-                                            List<MethodHandle> getters) {
+    private static MethodHandle makeHashCode(MethodHandles.Lookup lookup, Class<?> receiverClass,
+                                             List<MethodHandle> getters) throws Throwable {
         MethodHandle accumulator = MethodHandles.dropArguments(ZERO, 0, receiverClass); // (R)I
 
+        int size = getters.size();
+        MethodHandle[] hashers = new MethodHandle[size];
+        boolean hasPolymorphism = false;
+        for (int i = 0; i < size; i++) {
+            var getter = getters.get(i);
+            var type = getter.type().returnType();
+            if (isMonomorphic(type)) {
+                hashers[i] = hasher(lookup, type);
+            } else {
+                hasPolymorphism = true;
+            }
+        }
+
+        // Currently, hotspot does not support polymorphic inlining.
+        // As a result, if we have a MethodHandle to Object.hashCode,
+        // it does not enjoy separate profiles like individual invokevirtuals,
+        // and we must spin bytecode to accomplish separate profiling.
+        if (hasPolymorphism) {
+            String[] names = new String[size];
+
+            var classFileContext = ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(ClassHierarchyResolver.ofClassLoading(lookup)));
+            var bytes = classFileContext.build(ClassDesc.of(specializerClassName(lookup.lookupClass(), "Hasher")), clb -> {
+                for (int i = 0; i < size; i++) {
+                    if (hashers[i] == null) {
+                        var name = "hasher".concat(Integer.toString(i));
+                        names[i] = name;
+                        var type = getters.get(i).type().returnType();
+                        boolean isInterface = type.isInterface();
+                        var typeDesc = type.describeConstable().orElseThrow();
+                        clb.withMethodBody(name, MethodTypeDesc.of(CD_int, typeDesc), ACC_STATIC, cob -> {
+                            var nonNullPath = cob.newLabel();
+                            cob.aload(0)
+                               .ifnonnull(nonNullPath)
+                               .iconst_0() // null hash is 0
+                               .ireturn()
+                               .labelBinding(nonNullPath)
+                               .aload(0) // arg0.hashCode() - bytecode subject to customized profiling
+                               .invoke(isInterface ? Opcode.INVOKEINTERFACE : Opcode.INVOKEVIRTUAL, typeDesc, "hashCode", MTD_INT, isInterface)
+                               .ireturn();
+                        });
+                    }
+                }
+            });
+
+            var specializerLookup = lookup.defineHiddenClass(bytes, true, MethodHandles.Lookup.ClassOption.STRONG);
+
+            for (int i = 0; i < size; i++) {
+                if (hashers[i] == null) {
+                    var type = getters.get(i).type().returnType();
+                    hashers[i] = specializerLookup.findStatic(specializerLookup.lookupClass(), names[i], MethodType.methodType(int.class, type));
+                }
+            }
+        }
+
         // @@@ Use loop combinator instead?
-        for (MethodHandle getter : getters) {
-            MethodHandle hasher = hasher(getter.type().returnType()); // (T)I
+        for (int i = 0; i < size; i++) {
+            var getter = getters.get(i);
+            MethodHandle hasher = hashers[i]; // (T)I
             MethodHandle hashThisField = MethodHandles.filterArguments(hasher, 0, getter);    // (R)I
             MethodHandle combineHashes = MethodHandles.filterArguments(HASH_COMBINER, 0, accumulator, hashThisField); // (RR)I
             accumulator = MethodHandles.permuteArguments(combineHashes, accumulator.type(), 0, 0); // adapt (R)I to (RR)I
@@ -403,12 +531,12 @@ public final class ObjectMethods {
             case "equals"   -> {
                 if (methodType != null && !methodType.equals(MethodType.methodType(boolean.class, recordClass, Object.class)))
                     throw new IllegalArgumentException("Bad method type: " + methodType);
-                yield makeEquals(recordClass, getterList);
+                yield makeEquals(lookup, recordClass, getterList);
             }
             case "hashCode" -> {
                 if (methodType != null && !methodType.equals(MethodType.methodType(int.class, recordClass)))
                     throw new IllegalArgumentException("Bad method type: " + methodType);
-                yield makeHashCode(recordClass, getterList);
+                yield makeHashCode(lookup, recordClass, getterList);
             }
             case "toString" -> {
                 if (methodType != null && !methodType.equals(MethodType.methodType(String.class, recordClass)))

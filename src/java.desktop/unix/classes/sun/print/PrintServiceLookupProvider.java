@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -876,12 +876,16 @@ public final class PrintServiceLookupProvider extends PrintServiceLookup
                     FileReader reader = new FileReader(f);
                     bufferedReader = new BufferedReader(reader);
                     String line;
+                    results = new ArrayList<>();
                     while ((line = bufferedReader.readLine())
                            != null) {
                         results.add(line);
                     }
                 }
-            } finally {
+            } catch (Exception e) {
+                // Print exception for tracking printer command errors
+                IPPPrintService.debug_println("Printer command error: " + e);
+           } finally {
                 f.delete();
                 // promptly close all streams.
                 if (bufferedReader != null) {

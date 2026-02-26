@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ bool AOTConstantPoolResolver::is_class_resolution_deterministic(InstanceKlass* c
   if (resolved_class->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(resolved_class);
 
-    if (!ik->is_shared() && SystemDictionaryShared::is_excluded_class(ik)) {
+    if (!ik->in_aot_cache() && SystemDictionaryShared::is_excluded_class(ik)) {
       return false;
     }
 
@@ -116,6 +116,10 @@ bool AOTConstantPoolResolver::is_class_resolution_deterministic(InstanceKlass* c
       return false;
     }
   } else if (resolved_class->is_objArray_klass()) {
+    if (CDSConfig::is_dumping_dynamic_archive()) {
+      // This is difficult to handle. See JDK-8374639
+      return false;
+    }
     Klass* elem = ObjArrayKlass::cast(resolved_class)->bottom_klass();
     if (elem->is_instance_klass()) {
       return is_class_resolution_deterministic(cp_holder, InstanceKlass::cast(elem));
@@ -224,8 +228,46 @@ void AOTConstantPoolResolver::preresolve_field_and_method_cp_entries(JavaThread*
       bcs.next();
       Bytecodes::Code raw_bc = bcs.raw_code();
       switch (raw_bc) {
+      case Bytecodes::_getstatic:
+      case Bytecodes::_putstatic:
+        maybe_resolve_fmi_ref(ik, m, raw_bc, bcs.get_index_u2(), preresolve_list, THREAD);
+        if (HAS_PENDING_EXCEPTION) {
+          CLEAR_PENDING_EXCEPTION; // just ignore
+        }
+        break;
       case Bytecodes::_getfield:
+      // no-fast bytecode
+      case Bytecodes::_nofast_getfield:
+      // fast bytecodes
+      case Bytecodes::_fast_agetfield:
+      case Bytecodes::_fast_bgetfield:
+      case Bytecodes::_fast_cgetfield:
+      case Bytecodes::_fast_dgetfield:
+      case Bytecodes::_fast_fgetfield:
+      case Bytecodes::_fast_igetfield:
+      case Bytecodes::_fast_lgetfield:
+      case Bytecodes::_fast_sgetfield:
+        raw_bc = Bytecodes::_getfield;
+        maybe_resolve_fmi_ref(ik, m, raw_bc, bcs.get_index_u2(), preresolve_list, THREAD);
+        if (HAS_PENDING_EXCEPTION) {
+          CLEAR_PENDING_EXCEPTION; // just ignore
+        }
+        break;
+
       case Bytecodes::_putfield:
+      // no-fast bytecode
+      case Bytecodes::_nofast_putfield:
+      // fast bytecodes
+      case Bytecodes::_fast_aputfield:
+      case Bytecodes::_fast_bputfield:
+      case Bytecodes::_fast_zputfield:
+      case Bytecodes::_fast_cputfield:
+      case Bytecodes::_fast_dputfield:
+      case Bytecodes::_fast_fputfield:
+      case Bytecodes::_fast_iputfield:
+      case Bytecodes::_fast_lputfield:
+      case Bytecodes::_fast_sputfield:
+        raw_bc = Bytecodes::_putfield;
         maybe_resolve_fmi_ref(ik, m, raw_bc, bcs.get_index_u2(), preresolve_list, THREAD);
         if (HAS_PENDING_EXCEPTION) {
           CLEAR_PENDING_EXCEPTION; // just ignore
@@ -235,6 +277,7 @@ void AOTConstantPoolResolver::preresolve_field_and_method_cp_entries(JavaThread*
       case Bytecodes::_invokespecial:
       case Bytecodes::_invokevirtual:
       case Bytecodes::_invokeinterface:
+      case Bytecodes::_invokestatic:
         maybe_resolve_fmi_ref(ik, m, raw_bc, bcs.get_index_u2(), preresolve_list, THREAD);
         if (HAS_PENDING_EXCEPTION) {
           CLEAR_PENDING_EXCEPTION; // just ignore
@@ -271,11 +314,29 @@ void AOTConstantPoolResolver::maybe_resolve_fmi_ref(InstanceKlass* ik, Method* m
   }
 
   Klass* resolved_klass = cp->klass_ref_at(raw_index, bc, CHECK);
+  const char* is_static = "";
 
   switch (bc) {
+  case Bytecodes::_getstatic:
+  case Bytecodes::_putstatic:
+    if (!VM_Version::supports_fast_class_init_checks()) {
+      return; // Do not resolve since interpreter lacks fast clinit barriers support
+    }
+    InterpreterRuntime::resolve_get_put(bc, raw_index, mh, cp, ClassInitMode::dont_init, CHECK);
+    is_static = " *** static";
+    break;
+
   case Bytecodes::_getfield:
   case Bytecodes::_putfield:
-    InterpreterRuntime::resolve_get_put(bc, raw_index, mh, cp, false /*initialize_holder*/, CHECK);
+    InterpreterRuntime::resolve_get_put(bc, raw_index, mh, cp, ClassInitMode::dont_init, CHECK);
+    break;
+
+  case Bytecodes::_invokestatic:
+    if (!VM_Version::supports_fast_class_init_checks()) {
+      return; // Do not resolve since interpreter lacks fast clinit barriers support
+    }
+    InterpreterRuntime::cds_resolve_invoke(bc, raw_index, cp, CHECK);
+    is_static = " *** static";
     break;
 
   case Bytecodes::_invokevirtual:
@@ -297,11 +358,11 @@ void AOTConstantPoolResolver::maybe_resolve_fmi_ref(InstanceKlass* ik, Method* m
     bool resolved = cp->is_resolved(raw_index, bc);
     Symbol* name = cp->name_ref_at(raw_index, bc);
     Symbol* signature = cp->signature_ref_at(raw_index, bc);
-    log_trace(aot, resolve)("%s %s [%3d] %s -> %s.%s:%s",
+    log_trace(aot, resolve)("%s %s [%3d] %s -> %s.%s:%s%s",
                             (resolved ? "Resolved" : "Failed to resolve"),
                             Bytecodes::name(bc), cp_index, ik->external_name(),
                             resolved_klass->external_name(),
-                            name->as_C_string(), signature->as_C_string());
+                            name->as_C_string(), signature->as_C_string(), is_static);
   }
 }
 
@@ -392,7 +453,7 @@ bool AOTConstantPoolResolver::check_lambda_metafactory_signature(ConstantPool* c
 }
 
 bool AOTConstantPoolResolver::check_lambda_metafactory_methodtype_arg(ConstantPool* cp, int bsms_attribute_index, int arg_i) {
-  int mt_index = cp->bsm_attribute_entry(bsms_attribute_index)->argument_index(arg_i);
+  int mt_index = cp->bsm_attribute_entry(bsms_attribute_index)->argument(arg_i);
   if (!cp->tag_at(mt_index).is_method_type()) {
     // malformed class?
     return false;
@@ -408,7 +469,7 @@ bool AOTConstantPoolResolver::check_lambda_metafactory_methodtype_arg(ConstantPo
 }
 
 bool AOTConstantPoolResolver::check_lambda_metafactory_methodhandle_arg(ConstantPool* cp, int bsms_attribute_index, int arg_i) {
-  int mh_index = cp->bsm_attribute_entry(bsms_attribute_index)->argument_index(arg_i);
+  int mh_index = cp->bsm_attribute_entry(bsms_attribute_index)->argument(arg_i);
   if (!cp->tag_at(mh_index).is_method_handle()) {
     // malformed class?
     return false;

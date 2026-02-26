@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,6 @@
 #include "memory/iterator.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/javaThread.hpp"
@@ -152,13 +151,14 @@ void ZMark::prepare_work() {
   _terminate.reset(_nworkers);
 
   // Reset flush counters
-  _work_nproactiveflush = _work_nterminateflush = 0;
+  _work_nproactiveflush.store_relaxed(0u);
+  _work_nterminateflush.store_relaxed(0u);
 }
 
 void ZMark::finish_work() {
   // Accumulate proactive/terminate flush counters
-  _nproactiveflush += _work_nproactiveflush;
-  _nterminateflush += _work_nterminateflush;
+  _nproactiveflush += _work_nproactiveflush.load_relaxed();
+  _nterminateflush += _work_nterminateflush.load_relaxed();
 }
 
 void ZMark::follow_work_complete() {
@@ -388,7 +388,6 @@ void ZMark::follow_object(oop obj, bool finalizable) {
   }
 }
 
-
 void ZMark::mark_and_follow(ZMarkContext* context, ZMarkStackEntry entry) {
   // Decode flags
   const bool finalizable = entry.finalizable();
@@ -595,7 +594,7 @@ bool ZMark::flush() {
 }
 
 bool ZMark::try_terminate_flush() {
-  Atomic::inc(&_work_nterminateflush);
+  _work_nterminateflush.add_then_fetch(1u);
   _terminate.set_resurrected(false);
 
   if (ZVerifyMarking) {
@@ -611,12 +610,12 @@ bool ZMark::try_proactive_flush() {
     return false;
   }
 
-  if (Atomic::load(&_work_nproactiveflush) == ZMarkProactiveFlushMax) {
+  if (_work_nproactiveflush.load_relaxed() == ZMarkProactiveFlushMax) {
     // Limit reached or we're trying to terminate
     return false;
   }
 
-  Atomic::inc(&_work_nproactiveflush);
+  _work_nproactiveflush.add_then_fetch(1u);
 
   SuspendibleThreadSetLeaver sts_leaver;
   return flush();
@@ -790,7 +789,6 @@ typedef ClaimingCLDToOopClosure<ClassLoaderData::_claim_strong> ZMarkOldCLDClosu
 
 class ZMarkOldRootsTask : public ZTask {
 private:
-  ZMark* const                  _mark;
   ZRootsIteratorStrongColored   _roots_colored;
   ZRootsIteratorStrongUncolored _roots_uncolored;
 
@@ -801,9 +799,8 @@ private:
   ZMarkNMethodClosure           _nm_cl;
 
 public:
-  ZMarkOldRootsTask(ZMark* mark)
+  ZMarkOldRootsTask()
     : ZTask("ZMarkOldRootsTask"),
-      _mark(mark),
       _roots_colored(ZGenerationIdOptional::old),
       _roots_uncolored(ZGenerationIdOptional::old),
       _cl_colored(),
@@ -848,7 +845,6 @@ public:
 
 class ZMarkYoungRootsTask : public ZTask {
 private:
-  ZMark* const               _mark;
   ZRootsIteratorAllColored   _roots_colored;
   ZRootsIteratorAllUncolored _roots_uncolored;
 
@@ -859,9 +855,8 @@ private:
   ZMarkYoungNMethodClosure   _nm_cl;
 
 public:
-  ZMarkYoungRootsTask(ZMark* mark)
+  ZMarkYoungRootsTask()
     : ZTask("ZMarkYoungRootsTask"),
-      _mark(mark),
       _roots_colored(ZGenerationIdOptional::young),
       _roots_uncolored(ZGenerationIdOptional::young),
       _cl_colored(),
@@ -929,13 +924,13 @@ void ZMark::resize_workers(uint nworkers) {
 
 void ZMark::mark_young_roots() {
   SuspendibleThreadSetJoiner sts_joiner;
-  ZMarkYoungRootsTask task(this);
+  ZMarkYoungRootsTask task;
   workers()->run(&task);
 }
 
 void ZMark::mark_old_roots() {
   SuspendibleThreadSetJoiner sts_joiner;
-  ZMarkOldRootsTask task(this);
+  ZMarkOldRootsTask task;
   workers()->run(&task);
 }
 

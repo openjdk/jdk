@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Predicate;
 
 import javax.swing.AbstractButton;
 import javax.swing.JFileChooser;
@@ -52,6 +51,8 @@ import javax.swing.WindowConstants;
  * @requires (os.family == "linux")
  * @summary Verifies if the size of an empty file is shown as 0.0 KB
  *          as well as checks the displayed file sizes are rounded up
+ * @library /javax/swing/regtesthelpers
+ * @build Util
  * @run main FileSizeCheck
  */
 public class FileSizeCheck {
@@ -228,31 +229,15 @@ public class FileSizeCheck {
     }
 
     private static AbstractButton findDetailsButton(final Container container) {
-        Component result = findComponent(container,
+        Component result = Util.findComponent(container,
                 c -> c instanceof JToggleButton button
                      && "Details".equals(button.getToolTipText()));
         return (AbstractButton) result;
     }
 
     private static JTable findTable(final Container container) {
-        Component result = findComponent(container,
-                                         c -> c instanceof JTable);
+        Component result = Util.findComponent(container,
+                                              c -> c instanceof JTable);
         return (JTable) result;
-    }
-
-    private static Component findComponent(final Container container,
-                                           final Predicate<Component> predicate) {
-        for (Component child : container.getComponents()) {
-            if (predicate.test(child)) {
-                return child;
-            }
-            if (child instanceof Container cont && cont.getComponentCount() > 0) {
-                Component result = findComponent(cont, predicate);
-                if (result != null) {
-                    return result;
-                }
-            }
-        }
-        return null;
     }
 }

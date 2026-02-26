@@ -3,7 +3,6 @@
  * @bug 6943289
  *
  * @summary Project Coin: Improved Exception Handling for Java (aka 'multicatch')
- * @author darcy
  * @compile/fail/ref=Neg01.out -XDrawDiagnostics Neg01.java
  */
 

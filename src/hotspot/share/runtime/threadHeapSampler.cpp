@@ -26,7 +26,7 @@
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/threadHeapSampler.hpp"
@@ -440,9 +440,9 @@ void ThreadHeapSampler::sample(oop obj, HeapWord* tlab_top) {
 }
 
 int ThreadHeapSampler::get_sampling_interval() {
-  return Atomic::load_acquire(&_sampling_interval);
+  return AtomicAccess::load_acquire(&_sampling_interval);
 }
 
 void ThreadHeapSampler::set_sampling_interval(int sampling_interval) {
-  Atomic::release_store(&_sampling_interval, sampling_interval);
+  AtomicAccess::release_store(&_sampling_interval, sampling_interval);
 }

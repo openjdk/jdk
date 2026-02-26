@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
  * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
  *        jdk.test.lib.RandomFactory jdk.test.lib.Utils
  *        ReferenceTracker
- * @run testng/othervm
+ * @run junit/othervm
  *       -Djdk.internal.httpclient.debug=true
  *       -Djdk.httpclient.HttpClient.log=trace,headers,requests
  *       ShutdownNow
@@ -45,7 +45,9 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Redirect;
+import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
+import java.net.http.HttpOption.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.channels.ClosedChannelException;
@@ -64,19 +66,24 @@ import javax.net.ssl.SSLContext;
 import jdk.test.lib.RandomFactory;
 import jdk.test.lib.Utils;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class ShutdownNow implements HttpServerAdapters {
 
@@ -85,37 +92,52 @@ public class ShutdownNow implements HttpServerAdapters {
     }
     static final Random RANDOM = RandomFactory.getRandom();
 
-    SSLContext sslContext;
-    HttpTestServer httpTestServer;        // HTTP/1.1    [ 4 servers ]
-    HttpTestServer httpsTestServer;       // HTTPS/1.1
-    HttpTestServer http2TestServer;       // HTTP/2 ( h2c )
-    HttpTestServer https2TestServer;      // HTTP/2 ( h2  )
-    String httpURI;
-    String httpsURI;
-    String http2URI;
-    String https2URI;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+    private static HttpTestServer httpTestServer;        // HTTP/1.1    [ 4 servers ]
+    private static HttpTestServer httpsTestServer;       // HTTPS/1.1
+    private static HttpTestServer http2TestServer;       // HTTP/2 ( h2c )
+    private static HttpTestServer https2TestServer;      // HTTP/2 ( h2  )
+    private static HttpTestServer h2h3TestServer;        // HTTP/3 ( h2 + h3 )
+    private static HttpTestServer h3TestServer;          // HTTP/3 ( h3 )
+    private static String httpURI;
+    private static String httpsURI;
+    private static String http2URI;
+    private static String https2URI;
+    private static String h2h3URI;
+    private static String h2h3Head;
+    private static String h3URI;
 
     static final String MESSAGE = "ShutdownNow message body";
     static final int ITERATIONS = 3;
 
-    @DataProvider(name = "positive")
-    public Object[][] positive() {
+    public static Object[][] positive() {
         return new Object[][] {
-                { httpURI,    },
-                { httpsURI,   },
-                { http2URI,   },
-                { https2URI,  },
+                { h2h3URI,    HTTP_3,   h2h3TestServer.h3DiscoveryConfig()},
+                { h3URI,      HTTP_3,   h3TestServer.h3DiscoveryConfig()},
+                { httpURI,    HTTP_1_1, ALT_SVC}, // do not attempt HTTP/3
+                { httpsURI,   HTTP_1_1, ALT_SVC}, // do not attempt HTTP/3
+                { http2URI,   HTTP_2, ALT_SVC}, // do not attempt HTTP/3
+                { https2URI,  HTTP_2, ALT_SVC}, // do not attempt HTTP/3
         };
     }
 
     static final AtomicLong requestCounter = new AtomicLong();
-    final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
+    private static final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
 
     static Throwable getCause(Throwable t) {
         while (t instanceof CompletionException || t instanceof ExecutionException) {
             t = t.getCause();
         }
         return t;
+    }
+
+    void headRequest(HttpClient client) throws Exception {
+        HttpRequest request = HttpRequest.newBuilder(URI.create(h2h3Head))
+                .version(HTTP_2)
+                .HEAD()
+                .build();
+        var resp = client.send(request, BodyHandlers.discarding());
+        assertEquals(200, resp.statusCode());
     }
 
     static boolean hasExpectedMessage(IOException io) {
@@ -154,23 +176,30 @@ public class ShutdownNow implements HttpServerAdapters {
         throw new AssertionError(what + ": Unexpected exception: " + cause, cause);
     }
 
-    @Test(dataProvider = "positive")
-    void testConcurrent(String uriString) throws Exception {
-        out.printf("%n---- starting (%s) ----%n", uriString);
-        HttpClient client = HttpClient.newBuilder()
+    @ParameterizedTest
+    @MethodSource("positive")
+    void testConcurrent(String uriString, Version version, Http3DiscoveryMode config) throws Exception {
+        out.printf("%n---- starting concurrent (%s, %s, %s) ----%n%n", uriString, version, config);
+        HttpClient client = newClientBuilderForH3()
                 .proxy(NO_PROXY)
                 .followRedirects(Redirect.ALWAYS)
+                .version(version == HTTP_1_1 ? HTTP_2 : version)
                 .sslContext(sslContext)
                 .build();
         TRACKER.track(client);
 
         int step = RANDOM.nextInt(ITERATIONS);
         try {
+            if (version == HTTP_3 && config != HTTP_3_URI_ONLY) {
+                headRequest(client);
+            }
+
             List<CompletableFuture<HttpResponse<String>>> responses = new ArrayList<>();
             for (int i = 0; i < ITERATIONS; i++) {
                 URI uri = URI.create(uriString + "/concurrent/iteration-" + i);
                 HttpRequest request = HttpRequest.newBuilder(uri)
                         .header("X-uuid", "uuid-" + requestCounter.incrementAndGet())
+                        .setOption(H3_DISCOVERY, config)
                         .build();
                 out.printf("Iteration %d request: %s%n", i, request.uri());
                 CompletableFuture<HttpResponse<String>> responseCF;
@@ -189,8 +218,8 @@ public class ShutdownNow implements HttpServerAdapters {
                 var cf = responseCF.thenApply((response) -> {
                     out.println(si + ":  Got response: " + response);
                     out.println(si + ":  Got body Path: " + response.body());
-                    assertEquals(response.statusCode(), 200);
-                    assertEquals(response.body(), MESSAGE);
+                    assertEquals(200, response.statusCode());
+                    assertEquals(MESSAGE, response.body());
                     return response;
                 }).exceptionally((t) -> {
                     Throwable cause = getCause(t);
@@ -215,12 +244,15 @@ public class ShutdownNow implements HttpServerAdapters {
         }
     }
 
-    @Test(dataProvider = "positive")
-    void testSequential(String uriString) throws Exception {
-        out.printf("%n---- starting (%s) ----%n", uriString);
-        HttpClient client = HttpClient.newBuilder()
+    @ParameterizedTest
+    @MethodSource("positive")
+    void testSequential(String uriString, Version version, Http3DiscoveryMode config) throws Exception {
+        out.printf("%n---- starting sequential (%s, %s, %s) ----%n%n",
+                uriString, version, config);
+        HttpClient client = newClientBuilderForH3()
                 .proxy(NO_PROXY)
                 .followRedirects(Redirect.ALWAYS)
+                .version(version == HTTP_1_1 ? HTTP_2 : version)
                 .sslContext(sslContext)
                 .build();
         TRACKER.track(client);
@@ -228,10 +260,15 @@ public class ShutdownNow implements HttpServerAdapters {
         int step = RANDOM.nextInt(ITERATIONS);
         out.printf("will shutdown client in step %d%n", step);
         try {
+            if (version == HTTP_3 && config != HTTP_3_URI_ONLY) {
+                headRequest(client);
+            }
+
             for (int i = 0; i < ITERATIONS; i++) {
                 URI uri = URI.create(uriString + "/sequential/iteration-" + i);
                 HttpRequest request = HttpRequest.newBuilder(uri)
                             .header("X-uuid", "uuid-" + requestCounter.incrementAndGet())
+                            .setOption(H3_DISCOVERY, config)
                             .build();
                 out.printf("Iteration %d request: %s%n", i, request.uri());
                 CompletableFuture<HttpResponse<String>> responseCF;
@@ -249,8 +286,8 @@ public class ShutdownNow implements HttpServerAdapters {
                 responseCF.thenApply((response) -> {
                     out.println(si + ":  Got response: " + response);
                     out.println(si + ":  Got body Path: " + response.body());
-                    assertEquals(response.statusCode(), 200);
-                    assertEquals(response.body(), MESSAGE);
+                    assertEquals(200, response.statusCode());
+                    assertEquals(MESSAGE, response.body());
                     return response;
                 }).handle((r,t) -> {
                     if (t != null) {
@@ -283,13 +320,9 @@ public class ShutdownNow implements HttpServerAdapters {
 
     // -- Infrastructure
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         out.println("\n**** Setup ****\n");
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
         httpTestServer = HttpTestServer.create(HTTP_1_1);
         httpTestServer.addHandler(new ServerRequestHandler(), "/http1/exec/");
         httpURI = "http://" + httpTestServer.serverAuthority() + "/http1/exec/retry";
@@ -304,14 +337,25 @@ public class ShutdownNow implements HttpServerAdapters {
         https2TestServer.addHandler(new ServerRequestHandler(), "/https2/exec/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/exec/retry";
 
+        h2h3TestServer = HttpTestServer.create(HTTP_3, sslContext);
+        h2h3TestServer.addHandler(new ServerRequestHandler(), "/h2h3/exec/");
+        h2h3URI = "https://" + h2h3TestServer.serverAuthority() + "/h2h3/exec/retry";
+        h2h3TestServer.addHandler(new HttpHeadOrGetHandler(), "/h2h3/head/");
+        h2h3Head = "https://" + h2h3TestServer.serverAuthority() + "/h2h3/head/";
+        h3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
+        h3TestServer.addHandler(new ServerRequestHandler(), "/h3-only/exec/");
+        h3URI = "https://" + h3TestServer.serverAuthority() + "/h3-only/exec/retry";
+
         httpTestServer.start();
         httpsTestServer.start();
         http2TestServer.start();
         https2TestServer.start();
+        h2h3TestServer.start();
+        h3TestServer.start();
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         Thread.sleep(100);
         AssertionError fail = TRACKER.check(5000);
         try {
@@ -319,6 +363,8 @@ public class ShutdownNow implements HttpServerAdapters {
             httpsTestServer.stop();
             http2TestServer.stop();
             https2TestServer.stop();
+            h2h3TestServer.stop();
+            h3TestServer.stop();
         } finally {
             if (fail != null) throw fail;
         }

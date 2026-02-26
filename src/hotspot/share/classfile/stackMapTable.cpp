@@ -132,8 +132,16 @@ bool StackMapTable::match_stackmap(
 }
 
 void StackMapTable::check_jump_target(
-    StackMapFrame* frame, int32_t target, TRAPS) const {
+    StackMapFrame* frame, int bci, int offset, TRAPS) const {
   ErrorContext ctx;
+  // Jump targets must be within the method and the method size is limited. See JVMS 4.11
+  int min_offset = -1 * max_method_code_size;
+  if (offset < min_offset || offset > max_method_code_size) {
+    frame->verifier()->verify_error(ErrorContext::bad_stackmap(bci, frame),
+        "Illegal target of jump or branch (bci %d + offset %d)", bci, offset);
+    return;
+  }
+  int target = bci + offset;
   bool match = match_stackmap(
     frame, target, true, false, &ctx, CHECK_VERIFY(frame->verifier()));
   if (!match || (target < 0 || target >= _code_length)) {

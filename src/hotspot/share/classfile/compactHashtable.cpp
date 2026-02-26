@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,10 +72,10 @@ CompactHashtableWriter::~CompactHashtableWriter() {
   FREE_C_HEAP_ARRAY(GrowableArray<Entry>*, _buckets);
 }
 
-// Add a symbol entry to the temporary hash table
-void CompactHashtableWriter::add(unsigned int hash, u4 value) {
+// Add an entry to the temporary hash table
+void CompactHashtableWriter::add(unsigned int hash, u4 encoded_value) {
   int index = hash % _num_buckets;
-  _buckets[index]->append_if_missing(Entry(hash, value));
+  _buckets[index]->append_if_missing(Entry(hash, encoded_value));
   _num_entries_written++;
 }
 
@@ -96,38 +96,41 @@ void CompactHashtableWriter::allocate_table() {
                                   "Too many entries.");
   }
 
-  _compact_buckets = ArchiveBuilder::new_ro_array<u4>(_num_buckets + 1);
-  _compact_entries = ArchiveBuilder::new_ro_array<u4>(entries_space);
+  _num_compact_buckets = checked_cast<size_t>(_num_buckets + 1); // extra slot for TABLEEND_BUCKET_TYPE
+  _num_compact_entries = checked_cast<size_t>(entries_space);
+  _compact_buckets = (u4*)ArchiveBuilder::ro_region_alloc(_num_compact_buckets * sizeof(u4));
+  _compact_entries = (u4*)ArchiveBuilder::ro_region_alloc(_num_compact_entries * sizeof(u4));
 
   _stats->bucket_count    = _num_buckets;
-  _stats->bucket_bytes    = align_up(_compact_buckets->size() * BytesPerWord,
+  _stats->bucket_bytes    = align_up(checked_cast<int>(_num_compact_buckets * sizeof(u4)),
                                      SharedSpaceObjectAlignment);
   _stats->hashentry_count = _num_entries_written;
-  _stats->hashentry_bytes = align_up(_compact_entries->size() * BytesPerWord,
+  _stats->hashentry_bytes = align_up(checked_cast<int>(_num_compact_entries * sizeof(u4)),
                                      SharedSpaceObjectAlignment);
 }
 
-// Write the compact table's buckets
+// Write the compact table's buckets and entries
 void CompactHashtableWriter::dump_table(NumberSeq* summary) {
   u4 offset = 0;
   for (int index = 0; index < _num_buckets; index++) {
     GrowableArray<Entry>* bucket = _buckets[index];
     int bucket_size = bucket->length();
     if (bucket_size == 1) {
-      // bucket with one entry is compacted and only has the symbol offset
-      _compact_buckets->at_put(index, BUCKET_INFO(offset, VALUE_ONLY_BUCKET_TYPE));
+      compact_buckets_set(index, BUCKET_INFO(offset, VALUE_ONLY_BUCKET_TYPE));
 
       Entry ent = bucket->at(0);
-      _compact_entries->at_put(offset++, ent.value());
+      // bucket with one entry is value_only and only has the encoded_value
+      compact_entries_set(offset++, ent.encoded_value());
       _num_value_only_buckets++;
     } else {
-      // regular bucket, each entry is a symbol (hash, offset) pair
-      _compact_buckets->at_put(index, BUCKET_INFO(offset, REGULAR_BUCKET_TYPE));
+      // regular bucket, it could contain zero or more than one entry,
+      // each entry is a <hash, encoded_value> pair
+      compact_buckets_set(index, BUCKET_INFO(offset, REGULAR_BUCKET_TYPE));
 
       for (int i=0; i<bucket_size; i++) {
         Entry ent = bucket->at(i);
-        _compact_entries->at_put(offset++, u4(ent.hash())); // write entry hash
-        _compact_entries->at_put(offset++, ent.value());
+        compact_entries_set(offset++, u4(ent.hash()));      // write entry hash
+        compact_entries_set(offset++, ent.encoded_value()); // write entry encoded_value
       }
       if (bucket_size == 0) {
         _num_empty_buckets++;
@@ -139,10 +142,19 @@ void CompactHashtableWriter::dump_table(NumberSeq* summary) {
   }
 
   // Mark the end of the buckets
-  _compact_buckets->at_put(_num_buckets, BUCKET_INFO(offset, TABLEEND_BUCKET_TYPE));
-  assert(offset == (u4)_compact_entries->length(), "sanity");
+  compact_buckets_set(_num_buckets, BUCKET_INFO(offset, TABLEEND_BUCKET_TYPE));
+  assert(offset == checked_cast<u4>(_num_compact_entries), "sanity");
 }
 
+void CompactHashtableWriter::compact_buckets_set(u4 index, u4 value) {
+  precond(index < _num_compact_buckets);
+  _compact_buckets[index] = value;
+}
+
+void CompactHashtableWriter::compact_entries_set(u4 index, u4 value) {
+  precond(index < _num_compact_entries);
+  _compact_entries[index] = value;
+}
 
 // Write the compact table
 void CompactHashtableWriter::dump(SimpleCompactHashtable *cht, const char* table_name) {
@@ -153,7 +165,7 @@ void CompactHashtableWriter::dump(SimpleCompactHashtable *cht, const char* table
   int table_bytes = _stats->bucket_bytes + _stats->hashentry_bytes;
   address base_address = address(SharedBaseAddress);
   cht->init(base_address,  _num_entries_written, _num_buckets,
-            _compact_buckets->data(), _compact_entries->data());
+            _compact_buckets, _compact_entries);
 
   LogMessage(aot, hashtables) msg;
   if (msg.is_info()) {
@@ -189,15 +201,7 @@ void SimpleCompactHashtable::init(address base_address, u4 entry_count, u4 bucke
   _entries = entries;
 }
 
-size_t SimpleCompactHashtable::calculate_header_size() {
-  // We have 5 fields. Each takes up sizeof(intptr_t). See WriteClosure::do_u4
-  size_t bytes = sizeof(intptr_t) * 5;
-  return bytes;
-}
-
 void SimpleCompactHashtable::serialize_header(SerializeClosure* soc) {
-  // NOTE: if you change this function, you MUST change the number 5 in
-  // calculate_header_size() accordingly.
   soc->do_u4(&_entry_count);
   soc->do_u4(&_bucket_count);
   soc->do_ptr(&_buckets);

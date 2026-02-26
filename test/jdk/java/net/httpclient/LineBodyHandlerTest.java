@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@ import java.io.PrintStream;
 import java.io.StringReader;
 import java.io.UncheckedIOException;
 import java.math.BigInteger;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Builder;
@@ -55,25 +53,25 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsServer;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_16;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.net.http.HttpRequest.BodyPublishers.ofString;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertThrows;
-import static org.testng.Assert.assertTrue;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /*
  * @test
@@ -84,28 +82,30 @@ import static org.testng.Assert.assertTrue;
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build ReferenceTracker jdk.httpclient.test.lib.http2.Http2TestServer
  *        jdk.test.lib.net.SimpleSSLContext
- * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:DiagnoseSyncOnValueBasedClasses=1 LineBodyHandlerTest
+ * @run junit/othervm -XX:+UnlockDiagnosticVMOptions -XX:DiagnoseSyncOnValueBasedClasses=1 LineBodyHandlerTest
  */
 
 public class LineBodyHandlerTest implements HttpServerAdapters {
 
-    SSLContext sslContext;
-    HttpTestServer httpTestServer;    // HTTP/1.1    [ 4 servers ]
-    HttpTestServer httpsTestServer;   // HTTPS/1.1
-    HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
-    HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
-    String httpURI;
-    String httpsURI;
-    String http2URI;
-    String https2URI;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+    private static HttpTestServer httpTestServer;    // HTTP/1.1    [ 5 servers ]
+    private static HttpTestServer httpsTestServer;   // HTTPS/1.1
+    private static HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
+    private static HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
+    private static HttpTestServer http3TestServer;   // HTTP/3 ( h3  )
+    private static String httpURI;
+    private static String httpsURI;
+    private static String http2URI;
+    private static String https2URI;
+    private static String http3URI;
 
-    final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
-    final AtomicInteger clientCount = new AtomicInteger();
-    HttpClient sharedClient;
+    private static final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
+    private static final AtomicInteger clientCount = new AtomicInteger();
+    private static HttpClient sharedClient;
 
-    @DataProvider(name = "uris")
-    public Object[][] variants() {
+    public static Object[][] variants() {
         return new Object[][]{
+                { http3URI   },
                 { httpURI   },
                 { httpsURI  },
                 { http2URI  },
@@ -171,7 +171,7 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
                     StandardCharsets.US_ASCII, ""));
     }
 
-    private static final List<String> lines(String text, String eol) {
+    private static List<String> lines(String text, String eol) {
         if (eol == null) {
             return new BufferedReader(new StringReader(text)).lines().collect(Collectors.toList());
         } else {
@@ -195,17 +195,27 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
             return sharedClient;
         }
         clientCount.incrementAndGet();
-        return sharedClient = TRACKER.track(HttpClient.newBuilder()
+        return sharedClient = TRACKER.track(newClientBuilderForH3()
                 .sslContext(sslContext)
                 .proxy(Builder.NO_PROXY)
                 .build());
     }
 
-    @Test(dataProvider = "uris")
+    HttpRequest.Builder newRequestBuilder(URI uri) {
+        var builder = HttpRequest.newBuilder(uri);
+        if (uri.getRawPath().contains("/http3/")) {
+            builder = builder.version(HTTP_3)
+                    .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
+        }
+        return builder;
+    }
+
+    @ParameterizedTest
+    @MethodSource("variants")
     void testStringWithFinisher(String url) {
         String body = "May the luck of the Irish be with you!";
         HttpClient client = newClient();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = newRequestBuilder(URI.create(url))
                 .POST(BodyPublishers.ofString(body))
                 .build();
 
@@ -217,16 +227,17 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
         HttpResponse<String> response = cf.join();
         String text = response.body();
         System.out.println(text);
-        assertEquals(response.statusCode(), 200);
-        assertEquals(text, body);
-        assertEquals(subscriber.list, lines(body, "\n"));
+        assertEquals(200, response.statusCode());
+        assertEquals(body, text);
+        assertEquals(lines(body, "\n"), subscriber.list);
     }
 
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testAsStream(String url) {
         String body = "May the luck of the Irish be with you!";
         HttpClient client = newClient();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = newRequestBuilder(URI.create(url))
                 .POST(BodyPublishers.ofString(body))
                 .build();
 
@@ -238,18 +249,19 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
         List<String> list = stream.collect(Collectors.toList());
         String text = list.stream().collect(Collectors.joining("|"));
         System.out.println(text);
-        assertEquals(response.statusCode(), 200);
-        assertEquals(text, body);
-        assertEquals(list, List.of(body));
-        assertEquals(list, lines(body, null));
+        assertEquals(200, response.statusCode());
+        assertEquals(body, text);
+        assertEquals(List.of(body), list);
+        assertEquals(lines(body, null), list);
     }
 
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testStringWithFinisher2(String url) {
         String body = "May the luck\r\n\r\n of the Irish be with you!";
         HttpClient client = newClient();
 
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = newRequestBuilder(URI.create(url))
                 .POST(BodyPublishers.ofString(body))
                 .build();
 
@@ -261,16 +273,17 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
         HttpResponse<Void> response = cf.join();
         String text = subscriber.get();
         System.out.println(text);
-        assertEquals(response.statusCode(), 200);
-        assertEquals(text, body.replace("\r\n", "\n"));
-        assertEquals(subscriber.list, lines(body, null));
+        assertEquals(200, response.statusCode());
+        assertEquals(body.replace("\r\n", "\n"), text);
+        assertEquals(lines(body, null), subscriber.list);
     }
 
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testAsStreamWithCRLF(String url) {
         String body = "May the luck\r\n\r\n of the Irish be with you!";
         HttpClient client = newClient();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = newRequestBuilder(URI.create(url))
                 .POST(BodyPublishers.ofString(body))
                 .build();
 
@@ -282,19 +295,20 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
         List<String> list = stream.collect(Collectors.toList());
         String text = list.stream().collect(Collectors.joining("|"));
         System.out.println(text);
-        assertEquals(response.statusCode(), 200);
-        assertEquals(text, "May the luck|| of the Irish be with you!");
-        assertEquals(list, List.of("May the luck",
+        assertEquals(200, response.statusCode());
+        assertEquals("May the luck|| of the Irish be with you!", text);
+        assertEquals(List.of("May the luck",
                                    "",
-                                   " of the Irish be with you!"));
-        assertEquals(list, lines(body, null));
+                                   " of the Irish be with you!"), list);
+        assertEquals(lines(body, null), list);
     }
 
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testStringWithFinisherBlocking(String url) throws Exception {
         String body = "May the luck of the Irish be with you!";
         HttpClient client = newClient();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = newRequestBuilder(URI.create(url))
                 .POST(BodyPublishers.ofString(body)).build();
 
         StringSubscriber subscriber = new StringSubscriber();
@@ -302,16 +316,17 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
                 BodyHandlers.fromLineSubscriber(subscriber, Supplier::get, "\n"));
         String text = response.body();
         System.out.println(text);
-        assertEquals(response.statusCode(), 200);
-        assertEquals(text, "May the luck of the Irish be with you!");
-        assertEquals(subscriber.list, lines(body, "\n"));
+        assertEquals(200, response.statusCode());
+        assertEquals("May the luck of the Irish be with you!", text);
+        assertEquals(lines(body, "\n"), subscriber.list);
     }
 
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testStringWithoutFinisherBlocking(String url) throws Exception {
         String body = "May the luck of the Irish be with you!";
         HttpClient client = newClient();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = newRequestBuilder(URI.create(url))
                 .POST(BodyPublishers.ofString(body)).build();
 
         StringSubscriber subscriber = new StringSubscriber();
@@ -319,18 +334,19 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
                 BodyHandlers.fromLineSubscriber(subscriber));
         String text = subscriber.get();
         System.out.println(text);
-        assertEquals(response.statusCode(), 200);
-        assertEquals(text, "May the luck of the Irish be with you!");
-        assertEquals(subscriber.list, lines(body, null));
+        assertEquals(200, response.statusCode());
+        assertEquals("May the luck of the Irish be with you!", text);
+        assertEquals(lines(body, null), subscriber.list);
     }
 
     // Subscriber<Object>
 
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testAsStreamWithMixedCRLF(String url) {
         String body = "May\r\n the wind\r\n always be\rat your back.\r\r";
         HttpClient client = newClient();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = newRequestBuilder(URI.create(url))
                 .POST(BodyPublishers.ofString(body))
                 .build();
 
@@ -342,22 +358,23 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
         List<String> list = stream.collect(Collectors.toList());
         String text = list.stream().collect(Collectors.joining("|"));
         System.out.println(text);
-        assertEquals(response.statusCode(), 200);
+        assertEquals(200, response.statusCode());
         assertTrue(text.length() != 0);  // what else can be asserted!
-        assertEquals(text, "May| the wind| always be|at your back.|");
-        assertEquals(list, List.of("May",
+        assertEquals("May| the wind| always be|at your back.|", text);
+        assertEquals(List.of("May",
                                    " the wind",
                                    " always be",
                                    "at your back.",
-                                   ""));
-        assertEquals(list, lines(body, null));
+                                   ""), list);
+        assertEquals(lines(body, null), list);
     }
 
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testAsStreamWithMixedCRLF_UTF8(String url) {
         String body = "May\r\n the wind\r\n always be\rat your back.\r\r";
         HttpClient client = newClient();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = newRequestBuilder(URI.create(url))
                 .header("Content-type", "text/text; charset=UTF-8")
                 .POST(BodyPublishers.ofString(body, UTF_8)).build();
 
@@ -369,21 +386,22 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
         List<String> list = stream.collect(Collectors.toList());
         String text = list.stream().collect(Collectors.joining("|"));
         System.out.println(text);
-        assertEquals(response.statusCode(), 200);
+        assertEquals(200, response.statusCode());
         assertTrue(text.length() != 0);  // what else can be asserted!
-        assertEquals(text, "May| the wind| always be|at your back.|");
-        assertEquals(list, List.of("May",
+        assertEquals("May| the wind| always be|at your back.|", text);
+        assertEquals(List.of("May",
                                    " the wind",
                                    " always be",
-                                   "at your back.", ""));
-        assertEquals(list, lines(body, null));
+                                   "at your back.", ""), list);
+        assertEquals(lines(body, null), list);
     }
 
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testAsStreamWithMixedCRLF_UTF16(String url) {
         String body = "May\r\n the wind\r\n always be\rat your back.\r\r";
         HttpClient client = newClient();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = newRequestBuilder(URI.create(url))
                 .header("Content-type", "text/text; charset=UTF-16")
                 .POST(BodyPublishers.ofString(body, UTF_16)).build();
 
@@ -395,22 +413,23 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
         List<String> list = stream.collect(Collectors.toList());
         String text = list.stream().collect(Collectors.joining("|"));
         System.out.println(text);
-        assertEquals(response.statusCode(), 200);
+        assertEquals(200, response.statusCode());
         assertTrue(text.length() != 0);  // what else can be asserted!
-        assertEquals(text, "May| the wind| always be|at your back.|");
-        assertEquals(list, List.of("May",
+        assertEquals("May| the wind| always be|at your back.|", text);
+        assertEquals(List.of("May",
                                    " the wind",
                                    " always be",
                                    "at your back.",
-                                   ""));
-        assertEquals(list, lines(body, null));
+                                   ""), list);
+        assertEquals(lines(body, null), list);
     }
 
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testObjectWithFinisher(String url) {
         String body = "May\r\n the wind\r\n always be\rat your back.";
         HttpClient client = newClient();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = newRequestBuilder(URI.create(url))
                 .POST(BodyPublishers.ofString(body))
                 .build();
 
@@ -422,20 +441,21 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
         HttpResponse<String> response = cf.join();
         String text = response.body();
         System.out.println(text);
-        assertEquals(response.statusCode(), 200);
+        assertEquals(200, response.statusCode());
         assertTrue(text.length() != 0);  // what else can be asserted!
-        assertEquals(text, "May\n the wind\n always be\rat your back.");
-        assertEquals(subscriber.list, List.of("May",
+        assertEquals("May\n the wind\n always be\rat your back.", text);
+        assertEquals(List.of("May",
                                               " the wind",
-                                              " always be\rat your back."));
-        assertEquals(subscriber.list, lines(body, "\r\n"));
+                                              " always be\rat your back."), subscriber.list);
+        assertEquals(lines(body, "\r\n"), subscriber.list);
     }
 
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testObjectWithFinisher_UTF16(String url) {
         String body = "May\r\n the wind\r\n always be\rat your back.\r\r";
         HttpClient client = newClient();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = newRequestBuilder(URI.create(url))
                 .header("Content-type", "text/text; charset=UTF-16")
                 .POST(BodyPublishers.ofString(body, UTF_16)).build();
         ObjectSubscriber subscriber = new ObjectSubscriber();
@@ -446,22 +466,23 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
         HttpResponse<String> response = cf.join();
         String text = response.body();
         System.out.println(text);
-        assertEquals(response.statusCode(), 200);
+        assertEquals(200, response.statusCode());
         assertTrue(text.length() != 0);  // what else can be asserted!
-        assertEquals(text, "May\n the wind\n always be\nat your back.\n");
-        assertEquals(subscriber.list, List.of("May",
+        assertEquals("May\n the wind\n always be\nat your back.\n", text);
+        assertEquals(List.of("May",
                                               " the wind",
                                               " always be",
                                               "at your back.",
-                                              ""));
-        assertEquals(subscriber.list, lines(body, null));
+                                              ""), subscriber.list);
+        assertEquals(lines(body, null), subscriber.list);
     }
 
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testObjectWithoutFinisher(String url) {
         String body = "May\r\n the wind\r\n always be\rat your back.";
         HttpClient client = newClient();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = newRequestBuilder(URI.create(url))
                 .POST(BodyPublishers.ofString(body))
                 .build();
 
@@ -473,21 +494,22 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
         HttpResponse<Void> response = cf.join();
         String text = subscriber.get();
         System.out.println(text);
-        assertEquals(response.statusCode(), 200);
+        assertEquals(200, response.statusCode());
         assertTrue(text.length() != 0);  // what else can be asserted!
-        assertEquals(text, "May\n the wind\n always be\nat your back.");
-        assertEquals(subscriber.list, List.of("May",
+        assertEquals("May\n the wind\n always be\nat your back.", text);
+        assertEquals(List.of("May",
                                               " the wind",
                                               " always be",
-                                              "at your back."));
-        assertEquals(subscriber.list, lines(body, null));
+                                              "at your back."), subscriber.list);
+        assertEquals(lines(body, null), subscriber.list);
     }
 
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testObjectWithFinisherBlocking(String url) throws Exception {
         String body = "May\r\n the wind\r\n always be\nat your back.";
         HttpClient client = newClient();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = newRequestBuilder(URI.create(url))
                 .POST(BodyPublishers.ofString(body))
                 .build();
 
@@ -498,20 +520,21 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
                                    "\r\n"));
         String text = response.body();
         System.out.println(text);
-        assertEquals(response.statusCode(), 200);
+        assertEquals(200, response.statusCode());
         assertTrue(text.length() != 0);  // what else can be asserted!
-        assertEquals(text, "May\n the wind\n always be\nat your back.");
-        assertEquals(subscriber.list, List.of("May",
+        assertEquals("May\n the wind\n always be\nat your back.", text);
+        assertEquals(List.of("May",
                                               " the wind",
-                                              " always be\nat your back."));
-        assertEquals(subscriber.list, lines(body, "\r\n"));
+                                              " always be\nat your back."), subscriber.list);
+        assertEquals(lines(body, "\r\n"), subscriber.list);
     }
 
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testObjectWithoutFinisherBlocking(String url) throws Exception {
         String body = "May\r\n the wind\r\n always be\nat your back.";
         HttpClient client = newClient();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = newRequestBuilder(URI.create(url))
                 .POST(BodyPublishers.ofString(body))
                 .build();
 
@@ -520,14 +543,14 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
                 BodyHandlers.fromLineSubscriber(subscriber));
         String text = subscriber.get();
         System.out.println(text);
-        assertEquals(response.statusCode(), 200);
+        assertEquals(200, response.statusCode());
         assertTrue(text.length() != 0);  // what else can be asserted!
-        assertEquals(text, "May\n the wind\n always be\nat your back.");
-        assertEquals(subscriber.list, List.of("May",
+        assertEquals("May\n the wind\n always be\nat your back.", text);
+        assertEquals(List.of("May",
                                               " the wind",
                                               " always be",
-                                              "at your back."));
-        assertEquals(subscriber.list, lines(body, null));
+                                              "at your back."), subscriber.list);
+        assertEquals(lines(body, null), subscriber.list);
     }
 
     static private final String LINE = "Bient\u00f4t nous plongerons dans les" +
@@ -542,11 +565,12 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
         return res.toString();
     }
 
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testBigTextFromLineSubscriber(String url) {
         HttpClient client = newClient();
         String bigtext = bigtext();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = newRequestBuilder(URI.create(url))
                 .POST(BodyPublishers.ofString(bigtext))
                 .build();
 
@@ -558,16 +582,17 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
         HttpResponse<String> response = cf.join();
         String text = response.body();
         System.out.println(text);
-        assertEquals(response.statusCode(), 200);
-        assertEquals(text, bigtext.replace("\r\n", "\n"));
-        assertEquals(subscriber.list, lines(bigtext, "\r\n"));
+        assertEquals(200, response.statusCode());
+        assertEquals(bigtext.replace("\r\n", "\n"), text);
+        assertEquals(lines(bigtext, "\r\n"), subscriber.list);
     }
 
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testBigTextAsStream(String url) {
         HttpClient client = newClient();
         String bigtext = bigtext();
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        HttpRequest request = newRequestBuilder(URI.create(url))
                 .POST(BodyPublishers.ofString(bigtext))
                 .build();
 
@@ -579,10 +604,10 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
         List<String> list = stream.collect(Collectors.toList());
         String text = list.stream().collect(Collectors.joining("|"));
         System.out.println(text);
-        assertEquals(response.statusCode(), 200);
-        assertEquals(text, bigtext.replace("\r\n", "|"));
-        assertEquals(list, List.of(bigtext.split("\r\n")));
-        assertEquals(list, lines(bigtext, null));
+        assertEquals(200, response.statusCode());
+        assertEquals(bigtext.replace("\r\n", "|"), text);
+        assertEquals(List.of(bigtext.split("\r\n")), list);
+        assertEquals(lines(bigtext, null), list);
     }
 
     /** An abstract Subscriber that converts all received data into a String. */
@@ -666,12 +691,8 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
         return Executors.newCachedThreadPool(factory);
     }
 
-    @BeforeTest
-    public void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
+    @BeforeAll
+    public static void setup() throws Exception {
         httpTestServer = HttpTestServer.create(HTTP_1_1, null,
                 executorFor("HTTP/1.1 Server Thread"));
         httpTestServer.addHandler(new HttpTestEchoHandler(), "/http1/echo");
@@ -690,14 +711,19 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
         https2TestServer.addHandler(new HttpTestEchoHandler(), "/https2/echo");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/echo";
 
+        http3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
+        http3TestServer.addHandler(new HttpTestEchoHandler(), "/http3/echo");
+        http3URI = "https://" + http3TestServer.serverAuthority() + "/http3/echo";
+
         httpTestServer.start();
         httpsTestServer.start();
         http2TestServer.start();
         https2TestServer.start();
+        http3TestServer.start();
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         sharedClient = null;
         try {
             System.gc();
@@ -712,6 +738,7 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
         httpsTestServer.stop();
         http2TestServer.stop();
         https2TestServer.stop();
+        http3TestServer.stop();
         if (fail != null) throw fail;
     }
 

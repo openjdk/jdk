@@ -166,7 +166,8 @@ public final class StackMapGenerator {
     private static final int T_BOOLEAN = 4, T_LONG = 11;
     private static final Frame[] EMPTY_FRAME_ARRAY = {};
 
-    private static final int ITEM_TOP = 0,
+    public static final int
+            ITEM_TOP = 0,
             ITEM_INTEGER = 1,
             ITEM_FLOAT = 2,
             ITEM_DOUBLE = 3,
@@ -180,7 +181,22 @@ public final class StackMapGenerator {
             ITEM_SHORT = 11,
             ITEM_CHAR = 12,
             ITEM_LONG_2ND = 13,
-            ITEM_DOUBLE_2ND = 14;
+            ITEM_DOUBLE_2ND = 14,
+            ITEM_BOGUS = -1;
+
+    // Ranges represented by these constants are inclusive on both ends
+    public static final int
+            SAME_FRAME_END = 63,
+            SAME_LOCALS_1_STACK_ITEM_FRAME_START = 64,
+            SAME_LOCALS_1_STACK_ITEM_FRAME_END = 127,
+            RESERVED_END = 246,
+            SAME_LOCALS_1_STACK_ITEM_EXTENDED = 247,
+            CHOP_FRAME_START = 248,
+            CHOP_FRAME_END = 250,
+            SAME_FRAME_EXTENDED = 251,
+            APPEND_FRAME_START = 252,
+            APPEND_FRAME_END = 254,
+            FULL_FRAME = 255;
 
     private static final Type[] ARRAY_FROM_BASIC_TYPE = {null, null, null, null,
         Type.BOOLEAN_ARRAY_TYPE, Type.CHAR_ARRAY_TYPE, Type.FLOAT_ARRAY_TYPE, Type.DOUBLE_ARRAY_TYPE,
@@ -1229,25 +1245,25 @@ public final class StackMapGenerator {
                 int commonLocalsSize = localsSize > prevFrame.localsSize ? prevFrame.localsSize : localsSize;
                 int diffLocalsSize = localsSize - prevFrame.localsSize;
                 if (-3 <= diffLocalsSize && diffLocalsSize <= 3 && equals(locals, prevFrame.locals, commonLocalsSize)) {
-                    if (diffLocalsSize == 0 && offsetDelta < 64) { //same frame
+                    if (diffLocalsSize == 0 && offsetDelta <= SAME_FRAME_END) { //same frame
                         out.writeU1(offsetDelta);
                     } else {   //chop, same extended or append frame
-                        out.writeU1U2(251 + diffLocalsSize, offsetDelta);
+                        out.writeU1U2(SAME_FRAME_EXTENDED + diffLocalsSize, offsetDelta);
                         for (int i=commonLocalsSize; i<localsSize; i++) locals[i].writeTo(out, cp);
                     }
                     return;
                 }
             } else if (stackSize == 1 && localsSize == prevFrame.localsSize && equals(locals, prevFrame.locals, localsSize)) {
-                if (offsetDelta < 64) {  //same locals 1 stack item frame
-                    out.writeU1(64 + offsetDelta);
+                if (offsetDelta <= SAME_LOCALS_1_STACK_ITEM_FRAME_END  - SAME_LOCALS_1_STACK_ITEM_FRAME_START) {  //same locals 1 stack item frame
+                    out.writeU1(SAME_LOCALS_1_STACK_ITEM_FRAME_START + offsetDelta);
                 } else {  //same locals 1 stack item extended frame
-                    out.writeU1U2(247, offsetDelta);
+                    out.writeU1U2(SAME_LOCALS_1_STACK_ITEM_EXTENDED, offsetDelta);
                 }
                 stack[0].writeTo(out, cp);
                 return;
             }
             //full frame
-            out.writeU1U2U2(255, offsetDelta, localsSize);
+            out.writeU1U2U2(FULL_FRAME, offsetDelta, localsSize);
             for (int i=0; i<localsSize; i++) locals[i].writeTo(out, cp);
             out.writeU2(stackSize);
             for (int i=0; i<stackSize; i++) stack[i].writeTo(out, cp);

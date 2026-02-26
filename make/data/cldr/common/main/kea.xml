@@ -151,7 +151,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="lo">lausianu</language>
 			<language type="lt">lituanu</language>
 			<language type="lu">luba-katanga</language>
-			<language type="luo">luo</language>
 			<language type="luy">luyia</language>
 			<language type="lv">letãu</language>
 			<language type="mg">malgaxi</language>
@@ -432,7 +431,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">Israel</territory>
 			<territory type="IM">Ilha di Man</territory>
 			<territory type="IN">Índia</territory>
-			<territory type="IO" draft="provisional">Ilhas Británikas di Índiku</territory>
+			<territory type="IO">Ilhas Británikas di Índiku</territory>
 			<territory type="IQ">Iraki</territory>
 			<territory type="IR">Irãu</territory>
 			<territory type="IS">Islándia</territory>
@@ -609,10 +608,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian">Kalendáriu Gregorianu</type>
 			<type key="calendar" type="hebrew">Kalendáriu ebraiku</type>
 			<type key="calendar" type="indian">Kalendáriu nasional indianu</type>
-			<type key="calendar" type="islamic" draft="provisional">Kalendáriu islámiku</type>
-			<type key="calendar" type="islamic-civil" draft="provisional">Kalendáriu islámiku (sivil)</type>
-			<type key="calendar" type="islamic-tbla" draft="provisional">Kalendáriu islámiku (astronómiku)</type>
-			<type key="calendar" type="islamic-umalqura" draft="provisional">Kalendáriu islámiku (Umm al-Qura)</type>
+			<type key="calendar" type="islamic">Kalendáriu islámiku</type>
+			<type key="calendar" type="islamic-civil">Kalendáriu islámiku (sivil)</type>
+			<type key="calendar" type="islamic-tbla">Kalendáriu islámiku (astronómiku)</type>
+			<type key="calendar" type="islamic-umalqura">Kalendáriu islámiku (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">Kalendáriu ISO-8601</type>
 			<type key="calendar" type="japanese">Kalendáriu japones</type>
 			<type key="calendar" type="persian">Kalendáriu persa</type>
@@ -709,7 +708,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="GyMMM">LLL y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Md">dd/MM</dateFormatItem>
@@ -1069,7 +1067,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="GyMMM">LLL y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="hmsv">h:mm:ss a (v)</dateFormatItem>
@@ -1147,7 +1144,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="y">E, d MMM y – E, d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
 							<greatestDifference id="h">h – h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
@@ -1172,7 +1168,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="m">HH:mm – HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a – h a v</greatestDifference>
 							<greatestDifference id="h">h – h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
@@ -1736,9 +1731,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>Ora di Áfrika Osidental</generic>
-					<standard>Ora Padron di Áfrika Osidental</standard>
-					<daylight>Ora di Veron di Áfrika Osidental</daylight>
+					<standard>Ora di Áfrika Osidental</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -1865,6 +1858,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Ora di Veron di Gronelándia Osidental</daylight>
 				</long>
 			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>Ora Padron di Avaí i Aleutas</standard>
+				</long>
+			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
 					<generic>Ora di Avaí i Aleutas</generic>
@@ -1943,9 +1941,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00 ¤;(#,##0.00 ¤)</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤;(#,##0.00 ¤)</pattern>
 					<pattern alt="noCurrency" draft="provisional">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
@@ -1965,7 +1965,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern type="100000000000000" count="other" draft="provisional">000 Bi ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">
@@ -2356,7 +2355,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>milimol pur litru</displayName>
 				<unitPattern count="other">{0} milimol pur litru</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>parti pur milhãu</displayName>
 				<unitPattern count="other">{0} parti pur milhãu</unitPattern>
 			</unit>
@@ -2503,8 +2502,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} kaloria</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName draft="provisional">Kaloria</displayName>
-				<unitPattern count="other" draft="provisional">{0} Kaloria</unitPattern>
+				<displayName>Kaloria</displayName>
+				<unitPattern count="other">{0} Kaloria</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kilojoule</displayName>
@@ -2574,16 +2573,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} piksel pur pulegada</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName draft="provisional">pontu pur sentímeru</displayName>
-				<unitPattern count="other" draft="provisional">{0} pontu pur sentímetru</unitPattern>
+				<displayName>pontu pur sentímeru</displayName>
+				<unitPattern count="other">{0} pontu pur sentímetru</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName draft="provisional">pontu pur pulegada</displayName>
-				<unitPattern count="other" draft="provisional">{0} pontu pur pulegada</unitPattern>
+				<displayName>pontu pur pulegada</displayName>
+				<unitPattern count="other">{0} pontu pur pulegada</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName draft="provisional">pontu</displayName>
-				<unitPattern count="other" draft="provisional">{0} pontu</unitPattern>
+				<displayName>pontu</displayName>
+				<unitPattern count="other">{0} pontu</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>raiu di Tera</displayName>
@@ -3000,7 +2999,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>milimol/litru</displayName>
 				<unitPattern count="other">{0} mmol/l</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>parti/milhãu</displayName>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
@@ -3068,8 +3067,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} sig.</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName draft="provisional">Cal</displayName>
-				<unitPattern count="other" draft="provisional">{0} Cal</unitPattern>
+				<displayName>Cal</displayName>
+				<unitPattern count="other">{0} Cal</unitPattern>
 			</unit>
 			<unit type="energy-joule">
 				<displayName>J</displayName>

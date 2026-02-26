@@ -36,11 +36,27 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /*
  * @test
- * @bug 8355536
- * @summary Sanity test for ClassFileFormatVersion
+ * @bug 8355536 8371953
+ * @summary General tests for ClassFileFormatVersion.
  * @run junit ClassFileFormatVersionTest
  */
+
+import java.lang.reflect.ClassFileFormatVersion;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 class ClassFileFormatVersionTest {
+    @Test
+    void argumentChecks() {
+        assertThrows(NullPointerException.class, () -> ClassFileFormatVersion.valueOf((String) null));
+        assertThrows(NullPointerException.class, () -> ClassFileFormatVersion.valueOf((Runtime.Version) null));
+        assertThrows(IllegalArgumentException.class, () -> ClassFileFormatVersion.valueOf("Absent"));
+        var runtimeVersion = Runtime.Version.parse("99999999");
+        assertThrows(IllegalArgumentException.class, () -> ClassFileFormatVersion.valueOf(runtimeVersion));
+    }
+
     @Test
     void testLatest() {
         var latest = ClassFileFormatVersion.latest();

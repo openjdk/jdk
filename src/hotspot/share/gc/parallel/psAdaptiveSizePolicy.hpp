@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,8 +61,7 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
 
   // NEEDS_CLEANUP this is a singleton object
   PSAdaptiveSizePolicy(size_t space_alignment,
-                       double gc_pause_goal_sec,
-                       uint gc_time_ratio);
+                       double gc_pause_goal_sec);
 
   // Methods indicating events of interest to the adaptive size policy,
   // called by GC algorithms. It is the responsibility of users of this

@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2025 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="bqi"/>
+	</identity>
+	<localeDisplayNames>
+		<localeDisplayPattern>
+			<localeSeparator draft="unconfirmed">{0}، {1}</localeSeparator>
+		</localeDisplayPattern>
+		<languages>
+			<language type="ar" draft="unconfirmed">عروی</language>
+			<language type="ar_001" draft="unconfirmed">عروی استاندارد مودرن</language>
+			<language type="bn" draft="unconfirmed">بنگلا</language>
+			<language type="bqi" draft="unconfirmed">لوری بختیاری</language>
+			<language type="de" draft="unconfirmed">آلمانی</language>
+			<language type="de_AT" draft="unconfirmed">آلمانی اوتریشی</language>
+			<language type="de_CH" draft="unconfirmed">آلمانی روء سوییس</language>
+			<language type="en" draft="unconfirmed">اینگیلیسی</language>
+			<language type="en_AU" draft="unconfirmed">اینگیلیسی اوستورولیایی</language>
+			<language type="en_CA" draft="unconfirmed">اینگیلیسی کانادایی</language>
+			<language type="en_GB" draft="unconfirmed">اینگیلیسی بیریتانیایی</language>
+			<language type="en_US" draft="unconfirmed">اینگیلیسی آمریکایی</language>
+			<language type="es" draft="unconfirmed">اسپانیایی</language>
+			<language type="es_419" draft="unconfirmed">اسپانیایی آمریکای لاتین</language>
+			<language type="es_ES" draft="unconfirmed">اسپانیایی اوروپایی</language>
+			<language type="es_MX" draft="unconfirmed">اسپانیایی مکزیکی</language>
+			<language type="fr" draft="unconfirmed">فرانسوی</language>
+			<language type="fr_CA" draft="unconfirmed">فرانسوی کانادایی</language>
+			<language type="fr_CH" draft="unconfirmed">فرانسوی سوییسی</language>
+			<language type="hi_Latn" draft="unconfirmed">هیندی لاتین</language>
+			<language type="id" draft="unconfirmed">اندونزیایی</language>
+			<language type="it" draft="unconfirmed">ایتالیایی</language>
+			<language type="ja" draft="unconfirmed">ژاپونی</language>
+			<language type="ko" draft="unconfirmed">کوره ای</language>
+			<language type="nl" draft="unconfirmed">هولندی</language>
+			<language type="nl_BE" draft="unconfirmed">فلاندری</language>
+			<language type="pl" draft="unconfirmed">لهستووی</language>
+			<language type="pt" draft="unconfirmed">پورتقالی</language>
+			<language type="pt_BR" draft="unconfirmed">پورتقالی بریزیلی</language>
+			<language type="pt_PT" draft="unconfirmed">پورتقالی اوروپایی</language>
+			<language type="ru" draft="unconfirmed">روسی</language>
+			<language type="th" draft="unconfirmed">تایلندی</language>
+			<language type="tr" draft="unconfirmed">تورکی</language>
+			<language type="und" draft="unconfirmed">زوون نشناخته</language>
+			<language type="zh" draft="unconfirmed">چینی</language>
+			<language type="zh" alt="menu" draft="unconfirmed">چینی، ماندارین</language>
+			<language type="zh_Hans" draft="unconfirmed">چینی ساده وابیده</language>
+			<language type="zh_Hans" alt="long" draft="unconfirmed">چینی ماندارین ساده وابیده</language>
+			<language type="zh_Hant" draft="unconfirmed">چینی سونتی</language>
+			<language type="zh_Hant" alt="long" draft="unconfirmed">چینی سونتی ماندارین</language>
+		</languages>
+		<scripts>
+			<script type="Arab" draft="unconfirmed">عروی</script>
+			<script type="Cyrl" draft="unconfirmed">سیریلیک</script>
+			<script type="Hans" draft="unconfirmed">ساده وابیده</script>
+			<script type="Hans" alt="stand-alone" draft="unconfirmed">هان ساده وابیده</script>
+			<script type="Hant" draft="unconfirmed">سونتی</script>
+			<script type="Hant" alt="stand-alone" draft="unconfirmed">هان سونتی</script>
+			<script type="Jpan" draft="unconfirmed">ژاپونی</script>
+			<script type="Kore" draft="unconfirmed">کوره ای</script>
+			<script type="Latn" draft="unconfirmed">لاتین</script>
+			<script type="Zxxx" draft="unconfirmed">ننوشته</script>
+			<script type="Zzzz" draft="unconfirmed">اسکریپت نشناخته</script>
+		</scripts>
+		<territories>
+			<territory type="IR" draft="unconfirmed">ایران</territory>
+		</territories>
+		<measurementSystemNames>
+			<measurementSystemName type="metric" draft="unconfirmed">متریک</measurementSystemName>
+			<measurementSystemName type="UK" draft="unconfirmed">بریتانیایی</measurementSystemName>
+			<measurementSystemName type="US" draft="unconfirmed">امریکایی</measurementSystemName>
+		</measurementSystemNames>
+		<codePatterns>
+			<codePattern type="language" draft="unconfirmed">زوون: {0}</codePattern>
+			<codePattern type="script" draft="unconfirmed">تور: {0}</codePattern>
+			<codePattern type="territory" draft="unconfirmed">ناحیه: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<layout>
+		<orientation>
+			<characterOrder>right-to-left</characterOrder>
+		</orientation>
+	</layout>
+	<characters>
+		<!-- Using the Persian orthography -->
+		<exemplarCharacters>[ً ٌ ٍ ّ ٔ ء آ أ ؤ ئ ا ب پ ة ت ث ج چ ح خ د ذ ر ز ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن ه و ی]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ـ\u200C\u200D\u200E\u200F َ ُ ِ ْ ٖ ٰ إ ك ى ي]</exemplarCharacters>
+		<exemplarCharacters type="index">[آ ا ب پ ت ث ج چ ح خ د ذ ر ز ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن ه و ی]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\u200E , ٫ ٬ . % ٪ ‰ ؉ + − 0۰ 1۱ 2۲ 3۳ 4۴ 5۵ 6۶ 7۷ 8۸ 9۹]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ ، ٫ ٬ ؛ \: ! ؟ . … ‹ › « » ( ) \[ \] * / \\]</exemplarCharacters>
+	</characters>
+	<delimiters>
+		<quotationStart draft="unconfirmed">«</quotationStart>
+		<quotationEnd draft="unconfirmed">»</quotationEnd>
+		<alternateQuotationStart draft="unconfirmed">‹</alternateQuotationStart>
+		<alternateQuotationEnd draft="unconfirmed">›</alternateQuotationEnd>
+	</delimiters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">ژانویه</month>
+							<month type="2" draft="unconfirmed">فوریه</month>
+							<month type="3" draft="unconfirmed">مارس</month>
+							<month type="4" draft="unconfirmed">آوریل</month>
+							<month type="5" draft="unconfirmed">مهٔ</month>
+							<month type="6" draft="unconfirmed">ژوئن</month>
+							<month type="7" draft="unconfirmed">ژوئیه</month>
+							<month type="8" draft="unconfirmed">اوت</month>
+							<month type="9" draft="unconfirmed">سپتامبر</month>
+							<month type="10" draft="unconfirmed">اکتبر</month>
+							<month type="11" draft="unconfirmed">نوامبر</month>
+							<month type="12" draft="unconfirmed">دسامبر</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">یه شمبه</day>
+							<day type="mon" draft="unconfirmed">دوشمبه</day>
+							<day type="tue" draft="unconfirmed">سه شمبه</day>
+							<day type="wed" draft="unconfirmed">چار شمبه</day>
+							<day type="thu" draft="unconfirmed">پنجشمبه</day>
+							<day type="fri" draft="unconfirmed">جومه</day>
+							<day type="sat" draft="unconfirmed">شمبه</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="unconfirmed">پیش ز ظهر</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">بعد ز ظهر</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="yMd" draft="unconfirmed">y/M/d</dateFormatItem>
+						<dateFormatItem id="yMMMd" draft="unconfirmed">d MMM y</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatFallback draft="unconfirmed">{0} تا {1}</intervalFormatFallback>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<fields>
+			<field type="era">
+				<displayName draft="unconfirmed">دوران</displayName>
+			</field>
+			<field type="year">
+				<displayName draft="unconfirmed">سال</displayName>
+				<relative type="-1" draft="unconfirmed">سال گوذشته</relative>
+				<relative type="0" draft="unconfirmed">امسال</relative>
+				<relative type="1" draft="unconfirmed">سال نیایی</relative>
+			</field>
+			<field type="year-short">
+				<displayName draft="unconfirmed">سال</displayName>
+				<relative type="-1" draft="unconfirmed">سال گوذشته</relative>
+				<relative type="0" draft="unconfirmed">امسال</relative>
+				<relative type="1" draft="unconfirmed">سال نیایی</relative>
+			</field>
+			<field type="year-narrow">
+				<displayName draft="unconfirmed">سال</displayName>
+				<relative type="-1" draft="unconfirmed">سال گوذشته</relative>
+				<relative type="0" draft="unconfirmed">امسال</relative>
+				<relative type="1" draft="unconfirmed">سال نیایی</relative>
+			</field>
+			<field type="quarter">
+				<displayName draft="unconfirmed">سه ماهه</displayName>
+			</field>
+			<field type="quarter-short">
+				<displayName draft="unconfirmed">سه ماهه</displayName>
+			</field>
+			<field type="quarter-narrow">
+				<displayName draft="unconfirmed">سه ماهه</displayName>
+			</field>
+			<field type="month">
+				<displayName draft="unconfirmed">ما</displayName>
+				<relative type="-1" draft="unconfirmed">ما گوذشته</relative>
+				<relative type="0" draft="unconfirmed">ای ما</relative>
+				<relative type="1" draft="unconfirmed">ما نیایی</relative>
+			</field>
+			<field type="month-short">
+				<displayName draft="unconfirmed">ما</displayName>
+				<relative type="-1" draft="unconfirmed">ما گوذشته</relative>
+				<relative type="0" draft="unconfirmed">ای ما</relative>
+				<relative type="1" draft="unconfirmed">ما نیایی</relative>
+			</field>
+			<field type="month-narrow">
+				<displayName draft="unconfirmed">ما</displayName>
+				<relative type="-1" draft="unconfirmed">ما گوذشته</relative>
+				<relative type="0" draft="unconfirmed">ای ما</relative>
+				<relative type="1" draft="unconfirmed">ما نیایی</relative>
+			</field>
+			<field type="week">
+				<displayName draft="unconfirmed">هفته</displayName>
+				<relative type="-1" draft="unconfirmed">هفته گوذشته</relative>
+				<relative type="0" draft="unconfirmed">ای هفته</relative>
+				<relative type="1" draft="unconfirmed">هفته نیایی</relative>
+				<relativePeriod draft="unconfirmed">هفته {0}</relativePeriod>
+			</field>
+			<field type="week-short">
+				<displayName draft="unconfirmed">هفته</displayName>
+				<relative type="-1" draft="unconfirmed">هفته گوذشته</relative>
+				<relative type="0" draft="unconfirmed">ای هفته</relative>
+				<relative type="1" draft="unconfirmed">هفته نیایی</relative>
+				<relativePeriod draft="unconfirmed">هفته {0}</relativePeriod>
+			</field>
+			<field type="week-narrow">
+				<displayName draft="unconfirmed">هفته</displayName>
+				<relative type="-1" draft="unconfirmed">هفته گوذشته</relative>
+				<relative type="0" draft="unconfirmed">ای هفته</relative>
+				<relative type="1" draft="unconfirmed">هفته نیایی</relative>
+				<relativePeriod draft="unconfirmed">هفته {0}</relativePeriod>
+			</field>
+			<field type="day">
+				<displayName draft="unconfirmed">روز</displayName>
+				<relative type="-1" draft="unconfirmed">دوش</relative>
+				<relative type="0" draft="unconfirmed">امروز</relative>
+				<relative type="1" draft="unconfirmed">صوه</relative>
+			</field>
+			<field type="day-short">
+				<displayName draft="unconfirmed">روز</displayName>
+				<relative type="-1" draft="unconfirmed">دوش</relative>
+				<relative type="0" draft="unconfirmed">امروز</relative>
+				<relative type="1" draft="unconfirmed">صوه</relative>
+			</field>
+			<field type="day-narrow">
+				<displayName draft="unconfirmed">روز</displayName>
+				<relative type="-1" draft="unconfirmed">دوش</relative>
+				<relative type="0" draft="unconfirmed">امروز</relative>
+				<relative type="1" draft="unconfirmed">صوه</relative>
+			</field>
+			<field type="weekday">
+				<displayName draft="unconfirmed">روز هفته</displayName>
+			</field>
+			<field type="dayperiod">
+				<displayName draft="unconfirmed">پ.ظ/ب.ظ</displayName>
+			</field>
+			<field type="hour">
+				<displayName draft="unconfirmed">ساعت</displayName>
+			</field>
+			<field type="hour-short">
+				<displayName draft="unconfirmed">ساعت</displayName>
+			</field>
+			<field type="hour-narrow">
+				<displayName draft="unconfirmed">ساعت</displayName>
+			</field>
+			<field type="minute">
+				<displayName draft="unconfirmed">دیقه</displayName>
+			</field>
+			<field type="minute-short">
+				<displayName draft="unconfirmed">دیقه</displayName>
+			</field>
+			<field type="minute-narrow">
+				<displayName draft="unconfirmed">دیقه</displayName>
+			</field>
+			<field type="second">
+				<displayName draft="unconfirmed">ثانیه</displayName>
+			</field>
+			<field type="second-short">
+				<displayName draft="unconfirmed">ثانیه</displayName>
+			</field>
+			<field type="second-narrow">
+				<displayName draft="unconfirmed">ثانیه</displayName>
+			</field>
+			<field type="zone">
+				<displayName draft="unconfirmed">جاگه زمووی</displayName>
+			</field>
+		</fields>
+		<timeZoneNames>
+			<hourFormat draft="unconfirmed">‎+HH:mm;‎−HH:mm</hourFormat>
+			<gmtFormat draft="unconfirmed">{0} گرینویچ</gmtFormat>
+			<gmtZeroFormat draft="unconfirmed">گرینویچ</gmtZeroFormat>
+			<regionFormat draft="unconfirmed">مجال {0}</regionFormat>
+			<regionFormat type="daylight" draft="unconfirmed">مجال توستووی {0}</regionFormat>
+			<regionFormat type="standard" draft="unconfirmed">مجال عادی {0}</regionFormat>
+			<metazone type="GMT">
+				<long>
+					<standard draft="unconfirmed">مجال گرینویچ</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<symbols numberSystem="arab">
+			<percentSign draft="unconfirmed">٪</percentSign>
+		</symbols>
+		<symbols numberSystem="arabext">
+			<plusSign draft="unconfirmed">+‎</plusSign>
+			<minusSign draft="unconfirmed">‎−</minusSign>
+		</symbols>
+		<symbols numberSystem="latn">
+			<plusSign draft="unconfirmed">‎+</plusSign>
+			<minusSign draft="unconfirmed">‎−</minusSign>
+		</symbols>
+		<currencyFormats numberSystem="arabext">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">‎¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">‎#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">‎¤ #,##0.00;‎(¤ #,##0.00)</pattern>
+					<pattern alt="noCurrency">‎#,##0.00;‎(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">‎¤ #,##0.00</pattern>
+					<pattern alt="alphaNextToNumber">‎¤ #,##0.00</pattern>
+					<pattern alt="noCurrency">‎#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">‎¤ #,##0.00;‎(¤ #,##0.00)</pattern>
+					<pattern alt="alphaNextToNumber">‎¤ #,##0.00;‎(¤ #,##0.00)</pattern>
+					<pattern alt="noCurrency">‎#,##0.00;‎(#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyFormatLength type="short">
+				<currencyFormat type="standard">
+					<pattern type="1000" count="other" draft="unconfirmed">0 هزار ¤</pattern>
+					<pattern type="10000" count="other" draft="unconfirmed">00 هزار ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+	</numbers>
+</ldml>

@@ -22,12 +22,11 @@
  *
  */
 
+#include "cppstdlib/limits.hpp"
 #include "jni.h"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "sanitizers/ub.hpp"
-
-#include <limits>
 
 // This file contains copies of the fdlibm routines used by
 // StrictMath. It turns out that it is almost always required to use

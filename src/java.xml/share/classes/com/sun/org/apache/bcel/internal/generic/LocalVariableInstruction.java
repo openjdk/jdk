@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -28,7 +28,7 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
 /**
  * Abstract super class for instructions dealing with local variables.
  *
- * @LastModified: May 2021
+ * @LastModified: Sept 2025
  */
 public abstract class LocalVariableInstruction extends Instruction implements TypedInstruction, IndexedInstruction {
 
@@ -162,7 +162,7 @@ public abstract class LocalVariableInstruction extends Instruction implements Ty
     }
 
     /**
-     * Set the local variable index. also updates opcode and length TODO Why?
+     * Sets the local variable index. also updates opcode and length TODO Why?
      *
      * @see #setIndexOnly(int)
      */

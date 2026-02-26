@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,9 @@
 package sun.jvm.hotspot.debugger.bsd;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import sun.jvm.hotspot.debugger.Address;
 import sun.jvm.hotspot.debugger.DebuggerBase;
@@ -75,9 +77,10 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
     // CDebugger support
     private BsdCDebugger cdbg;
 
-    // threadList and loadObjectList are filled by attach0 method
-    private List<ThreadProxy> threadList;
+    // loadObjectList is filled by attach0 method
     private List<LoadObject> loadObjectList;
+
+    private List<JavaThread> javaThreadList;
 
     // called by native method lookupByAddress0
     private ClosestSymbol createClosestSymbol(String name, long offset) {
@@ -241,10 +244,21 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
         }
     }
 
+    private void fillJavaThreadList() {
+      // TODO: thread list on macOS is now supported for corefile only.
+      if (!isCore && isDarwin) {
+          javaThreadList = Collections.emptyList();
+      } else {
+          Threads threads = VM.getVM().getThreads();
+          javaThreadList = IntStream.range(0, threads.getNumberOfThreads())
+                                    .mapToObj(threads::getJavaThreadAt)
+                                    .toList();
+      }
+    }
+
     /** From the Debugger interface via JVMDebugger */
     public synchronized void attach(int processID) throws DebuggerException {
         checkAttached();
-        threadList = new ArrayList<>();
         loadObjectList = new ArrayList<>();
         class AttachTask implements WorkerThreadTask {
            int pid;
@@ -264,7 +278,6 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
     /** From the Debugger interface via JVMDebugger */
     public synchronized void attach(String execName, String coreName) {
         checkAttached();
-        threadList = new ArrayList<>();
         loadObjectList = new ArrayList<>();
         attach0(execName, coreName);
         attached = true;
@@ -278,7 +291,7 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
             return false;
         }
 
-        threadList = null;
+        javaThreadList = null;
         loadObjectList = null;
 
         if (isCore) {
@@ -492,7 +505,12 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
     /** From the BsdCDebugger interface */
     public List<ThreadProxy> getThreadList() {
       requireAttach();
-      return threadList;
+      if (javaThreadList == null) {
+        fillJavaThreadList();
+      }
+      return javaThreadList.stream()
+                           .map(JavaThread::getThreadProxy)
+                           .toList();
     }
 
     /** From the BsdCDebugger interface */
@@ -561,21 +579,19 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
     /** this functions used for core file reading and called from native attach0,
         it returns an array of long integers as
         [thread_id, stack_start, stack_end, thread_id, stack_start, stack_end, ....] for
-        all java threads recorded in Threads. Also adds the ThreadProxy to threadList */
+        all java threads recorded in Threads. */
     public long[] getJavaThreadsInfo() {
         requireAttach();
-        Threads threads = VM.getVM().getThreads();
-        int len = threads.getNumberOfThreads();
-        long[] result = new long[len * 3];    // triple
+        if (javaThreadList == null) {
+            fillJavaThreadList();
+        }
+        long[] result = new long[javaThreadList.size() * 3];    // triple
         long beg, end;
         int i = 0;
-        for (int k = 0; k < threads.getNumberOfThreads(); k++) {
-            JavaThread t = threads.getJavaThreadAt(k);
+        for (var t : javaThreadList) {
             end = t.getStackBaseValue();
             beg = end - t.getStackSize();
-            BsdThread bsdt = (BsdThread)t.getThreadProxy();
-            long uid = bsdt.getUniqueThreadId();
-            if (threadList != null) threadList.add(bsdt);
+            long uid = ((BsdThread)t.getThreadProxy()).getUniqueThreadId();
             result[i] = uid;
             result[i + 1] = beg;
             result[i + 2] = end;

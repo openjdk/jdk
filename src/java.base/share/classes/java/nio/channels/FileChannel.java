@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -662,7 +662,7 @@ public abstract class FileChannel
      * @throws  ClosedByInterruptException
      *          If another thread interrupts the current thread while the
      *          transfer is in progress, thereby closing both channels and
-     *          setting the current thread's interrupt status
+     *          setting the current thread's interrupted status
      *
      * @throws  IOException
      *          If some other I/O error occurs
@@ -732,7 +732,7 @@ public abstract class FileChannel
      * @throws  ClosedByInterruptException
      *          If another thread interrupts the current thread while the
      *          transfer is in progress, thereby closing both channels and
-     *          setting the current thread's interrupt status
+     *          setting the current thread's interrupted status
      *
      * @throws  IOException
      *          If some other I/O error occurs
@@ -780,7 +780,7 @@ public abstract class FileChannel
      *          If another thread interrupts the current thread
      *          while the read operation is in progress, thereby
      *          closing the channel and setting the current thread's
-     *          interrupt status
+     *          interrupted status
      *
      * @throws  IOException
      *          If some other I/O error occurs
@@ -829,7 +829,7 @@ public abstract class FileChannel
      *          If another thread interrupts the current thread
      *          while the write operation is in progress, thereby
      *          closing the channel and setting the current thread's
-     *          interrupt status
+     *          interrupted status
      *
      * @throws  IOException
      *          If some other I/O error occurs
@@ -1093,10 +1093,10 @@ public abstract class FileChannel
      * this method then an {@link AsynchronousCloseException} will be thrown.
      *
      * <p> If the invoking thread is interrupted while waiting to acquire the
-     * lock then its interrupt status will be set and a {@link
+     * lock then its interrupted status will be set and a {@link
      * FileLockInterruptionException} will be thrown.  If the invoker's
-     * interrupt status is set when this method is invoked then that exception
-     * will be thrown immediately; the thread's interrupt status will not be
+     * interrupted status is set when this method is invoked then that exception
+     * will be thrown immediately; the thread's interrupted status will not be
      * changed.
      *
      * <p> The region specified by the {@code position} and {@code size}

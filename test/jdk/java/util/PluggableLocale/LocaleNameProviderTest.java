@@ -31,7 +31,7 @@
  *          java.base/sun.util.resources
  * @build com.foobar.Utils
  *        com.bar.*
- * @run junit/othervm -Djava.locale.providers=CLDR,SPI LocaleNameProviderTest
+ * @run junit/othervm/timeout=960 -Djava.locale.providers=CLDR,SPI LocaleNameProviderTest
  */
 
 import java.util.ArrayList;

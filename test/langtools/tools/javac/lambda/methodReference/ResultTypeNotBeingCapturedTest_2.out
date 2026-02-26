@@ -1,0 +1,4 @@
+- compiler.warn.source.no.system.modules.path: 25, (compiler.misc.source.no.system.modules.path: 25)
+ResultTypeNotBeingCapturedTest.java:48:42: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: ResultTypeNotBeingCapturedTest.X<ResultTypeNotBeingCapturedTest.X<compiler.misc.type.captureof: 1, ?>>, ResultTypeNotBeingCapturedTest.X<ResultTypeNotBeingCapturedTest.X<?>>)
+1 error
+1 warning

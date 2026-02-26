@@ -36,6 +36,7 @@ import java.io.*;
 import java.nio.*;
 import java.nio.channels.*;
 import java.net.*;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 
 /**
  * The test simply opens 1,000 separate connections
@@ -59,7 +60,7 @@ public class B6361557 {
             Headers rmap = t.getResponseHeaders();
             while (is.read () != -1) ;
             is.close();
-            t.sendResponseHeaders (200, -1);
+            t.sendResponseHeaders (200, RSPBODY_EMPTY);
             t.close();
         }
     }

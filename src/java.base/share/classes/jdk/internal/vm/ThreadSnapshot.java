@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,14 @@ package jdk.internal.vm;
 
 import java.util.Arrays;
 import java.util.stream.Stream;
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 
 /**
  * Represents a snapshot of information about a Thread.
  */
 class ThreadSnapshot {
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     private static final StackTraceElement[] EMPTY_STACK = new StackTraceElement[0];
     private static final ThreadLock[] EMPTY_LOCKS = new ThreadLock[0];
 
@@ -44,6 +47,8 @@ class ThreadSnapshot {
     // an object the thread is blocked/waiting on, converted to ThreadBlocker by ThreadSnapshot.of()
     private int blockerTypeOrdinal;
     private Object blockerObject;
+    // the owner of the blockerObject when the object is park blocker and is AbstractOwnableSynchronizer
+    private Thread parkBlockerOwner;
 
     // set by ThreadSnapshot.of()
     private ThreadBlocker blocker;
@@ -52,16 +57,16 @@ class ThreadSnapshot {
 
     /**
      * Take a snapshot of a Thread to get all information about the thread.
-     * Return null if a ThreadSnapshot is not created, for example if the
-     * thread has terminated.
-     * @throws UnsupportedOperationException if not supported by VM
+     * @return the snapshot or {@code null} if the thread is not alive
      */
     static ThreadSnapshot of(Thread thread) {
-        ThreadSnapshot snapshot = create(thread);
+        ThreadSnapshot snapshot = thread.isAlive() ? create(thread) : null;
         if (snapshot == null) {
-            return null; // thread terminated
+            return null; // thread not alive
         }
-        if (snapshot.stackTrace == null) {
+        if (snapshot.stackTrace != null) {
+            JLA.finishInit(snapshot.stackTrace);
+        } else {
             snapshot.stackTrace = EMPTY_STACK;
         }
         if (snapshot.locks != null) {
@@ -70,8 +75,11 @@ class ThreadSnapshot {
             snapshot.locks = EMPTY_LOCKS;
         }
         if (snapshot.blockerObject != null) {
-            snapshot.blocker = new ThreadBlocker(snapshot.blockerTypeOrdinal, snapshot.blockerObject);
+            snapshot.blocker = new ThreadBlocker(snapshot.blockerTypeOrdinal,
+                                                 snapshot.blockerObject,
+                                                 snapshot.parkBlockerOwner);
             snapshot.blockerObject = null; // release
+            snapshot.parkBlockerOwner = null;
         }
         return snapshot;
     }
@@ -102,6 +110,13 @@ class ThreadSnapshot {
      */
     Object parkBlocker() {
         return getBlocker(BlockerLockType.PARK_BLOCKER);
+    }
+
+    /**
+     * Returns the owner of the parkBlocker if the parkBlocker is an AbstractOwnableSynchronizer.
+     */
+    Thread parkBlockerOwner() {
+        return (blocker != null && blocker.type == BlockerLockType.PARK_BLOCKER) ? blocker.owner : null;
     }
 
     /**
@@ -211,11 +226,11 @@ class ThreadSnapshot {
         }
     }
 
-    private record ThreadBlocker(BlockerLockType type, Object obj) {
+    private record ThreadBlocker(BlockerLockType type, Object obj, Thread owner) {
         private static final BlockerLockType[] lockTypeValues = BlockerLockType.values(); // cache
 
-        ThreadBlocker(int typeOrdinal, Object obj) {
-            this(lockTypeValues[typeOrdinal], obj);
+        ThreadBlocker(int typeOrdinal, Object obj, Thread owner) {
+            this(lockTypeValues[typeOrdinal], obj, owner);
         }
     }
 

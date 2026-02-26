@@ -126,19 +126,8 @@ public class TestSpecTag extends JavadocTester {
                     <li><a href="index-all.html">Index</a></li>
                     <li><a href="search.html">Search</a></li>
                     <li><a href="help-doc.html#external-specs">Help</a></li>
-                    </ul>
-                    </div>
-                    </div>
-                    <div class="sub-nav">
-                    <div class="nav-content">
-                    <ol class="sub-nav-list"></ol>
-                    <div class="nav-list-search"><input type="text" id="search-input" disabled place\
-                    holder="Search documentation (type /)" aria-label="Search in documentation" auto\
-                    complete="off" spellcheck="false"><input type="reset" id="reset-search" disabled\
-                     value="Reset"></div>
-                    </div>
-                    </div>
-                    <!-- ========= END OF TOP NAVBAR ========= -->
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></b\
+                    utton></li>
                     """);
     }
 

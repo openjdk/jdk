@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@
  * @run main/othervm TestSymmCiphersNoPad
  */
 
+import jtreg.SkippedException;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -39,6 +41,8 @@ import java.nio.ByteBuffer;
 import java.security.AlgorithmParameters;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
@@ -47,48 +51,37 @@ import javax.crypto.SecretKey;
 
 public class TestSymmCiphersNoPad extends PKCS11Test {
 
-    private static class CI { // class for holding Cipher Information
-        String transformation;
-        String keyAlgo;
-        int dataSize;
-
-        CI(String transformation, String keyAlgo, int dataSize) {
-            this.transformation = transformation;
-            this.keyAlgo = keyAlgo;
-            this.dataSize = dataSize;
-        }
-    }
-
-    private static final CI TEST_LIST[] = {
-        new CI("ARCFOUR", "ARCFOUR", 400),
-        new CI("RC4", "RC4", 401),
-        new CI("DES/CBC/NoPadding", "DES", 400),
-        new CI("DESede/CBC/NoPadding", "DESede", 160),
-        new CI("AES/CBC/NoPadding", "AES", 4800),
-        new CI("Blowfish/CBC/NoPadding", "Blowfish", 24),
-        new CI("AES/CTR/NoPadding", "AES", 1600),
-        new CI("AES/CTR/NoPadding", "AES", 65),
-        new CI("AES/CTS/NoPadding", "AES", 1600),
-        new CI("AES/CTS/NoPadding", "AES", 65),
-    };
+    private record CI (String transformation, String keyAlgo, int dataSize){}  // record for holding Cipher Information
 
     private static final StringBuffer debugBuf = new StringBuffer();
 
+    private static final CI[] TEST_LIST = {
+            new CI("ARCFOUR", "ARCFOUR", 400),
+            new CI("RC4", "RC4", 401),
+            new CI("DES/CBC/NoPadding", "DES", 400),
+            new CI("DESede/CBC/NoPadding", "DESede", 160),
+            new CI("AES/CBC/NoPadding", "AES", 4800),
+            new CI("Blowfish/CBC/NoPadding", "Blowfish", 24),
+            new CI("AES/CTR/NoPadding", "AES", 1600),
+            new CI("AES/CTR/NoPadding", "AES", 65),
+            new CI("AES/CTS/NoPadding", "AES", 1600),
+            new CI("AES/CTS/NoPadding", "AES", 65),
+    };
+
     @Override
     public void main(Provider p) throws Exception {
-        boolean status = true;
+        List<CI> skippedList = new ArrayList<>();
         Random random = new Random();
         try {
-            for (int i = 0; i < TEST_LIST.length; i++) {
-                CI currTest = TEST_LIST[i];
+            for (CI currTest : TEST_LIST) {
                 System.out.println("===" + currTest.transformation + "===");
                 try {
                     KeyGenerator kg =
-                        KeyGenerator.getInstance(currTest.keyAlgo, p);
+                            KeyGenerator.getInstance(currTest.keyAlgo, p);
                     SecretKey key = kg.generateKey();
                     Cipher c1 = Cipher.getInstance(currTest.transformation, p);
                     Cipher c2 = Cipher.getInstance(currTest.transformation,
-                               System.getProperty("test.provider.name", "SunJCE"));
+                            System.getProperty("test.provider.name", "SunJCE"));
 
                     byte[] plainTxt = new byte[currTest.dataSize];
                     random.nextBytes(plainTxt);
@@ -98,22 +91,27 @@ public class TestSymmCiphersNoPad extends PKCS11Test {
                     AlgorithmParameters params = c2.getParameters();
                     byte[] answer = c2.doFinal(plainTxt);
                     test(c1, Cipher.ENCRYPT_MODE, key, params,
-                         plainTxt, answer);
+                            plainTxt, answer);
                     System.out.println("Encryption tests: DONE");
                     c2.init(Cipher.DECRYPT_MODE, key, params);
                     byte[] answer2 = c2.doFinal(answer);
                     test(c1, Cipher.DECRYPT_MODE, key, params,
-                         answer, answer2);
+                            answer, answer2);
                     System.out.println("Decryption tests: DONE");
                 } catch (NoSuchAlgorithmException nsae) {
                     System.out.println("Skipping unsupported algorithm: " +
                                        nsae);
+                    skippedList.add(currTest);
                 }
             }
         } catch (Exception ex) {
             // print out debug info when exception is encountered
             System.out.println(debugBuf);
             throw ex;
+        }
+
+        if (!skippedList.isEmpty()){
+            throw new SkippedException("Some tests skipped: " + skippedList);
         }
     }
 

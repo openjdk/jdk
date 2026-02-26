@@ -64,6 +64,8 @@ public class TestFonts extends JavadocTester {
         javadoc("-d", base.resolve("out").toString(),
                 src.resolve("Dummy.java").toString());
         checkExit(Exit.OK);
+        checkOutput("resource-files/stylesheet.css", true,
+                "@import url('fonts/dejavu.css');");
         checkOutput("resource-files/fonts/dejavu.css", true,
                 """
                     /* DejaVu fonts v2.37 */""",
@@ -115,6 +117,8 @@ public class TestFonts extends JavadocTester {
                 "resource-files/link.svg",
                 "resource-files/stylesheet.css",
                 "resource-files/x.svg");
+        checkOutput("resource-files/stylesheet.css", false,
+                "@import url('fonts/dejavu.css');");
         checkFiles(false, "resource-files/fonts");
     }
 }

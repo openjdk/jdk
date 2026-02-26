@@ -36,7 +36,6 @@ import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.jvm.PoolConstant.LoadableConstant;
 import com.sun.tools.javac.main.Option.PkgInfo;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
-import com.sun.tools.javac.resources.CompilerProperties.Notes;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
@@ -49,7 +48,6 @@ import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.code.Type.*;
 
 import com.sun.tools.javac.jvm.Target;
-import com.sun.tools.javac.tree.EndPosTable;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.BLOCK;
@@ -156,10 +154,6 @@ public class Lower extends TreeTranslator {
     /** Environment for symbol lookup, set by translateTopLevelClass.
      */
     Env<AttrContext> attrEnv;
-
-    /** A hash table mapping syntax trees to their ending source positions.
-     */
-    EndPosTable endPosTable;
 
 /* ************************************************************************
  * Global mappings
@@ -2060,8 +2054,8 @@ public class Lower extends TreeTranslator {
         } else {
             make_at(tree.pos());
             T result = super.translate(tree);
-            if (endPosTable != null && result != tree) {
-                endPosTable.replaceTree(tree, result);
+            if (result != null && result != tree) {
+                result.endpos = tree.endpos;
             }
             return result;
         }
@@ -2835,7 +2829,7 @@ public class Lower extends TreeTranslator {
             JCExpression exactnessCheck;
             JCExpression instanceOfExpr = translate(tree.expr);
 
-            if (types.isUnconditionallyExact(tree.expr.type, tree.pattern.type)) {
+            if (types.isUnconditionallyExactTypeBased(tree.expr.type, tree.pattern.type)) {
                 // instanceOfExpr; true
                 prefixStatement = make.Exec(instanceOfExpr);
                 exactnessCheck = make.Literal(BOOLEAN, 1).setType(syms.booleanType.constType(1));
@@ -2844,7 +2838,7 @@ public class Lower extends TreeTranslator {
                 prefixStatement = null;
                 exactnessCheck = getExactnessCheck(tree, instanceOfExpr);
             } else if (tree.expr.type.isReference()) {
-                if (types.isUnconditionallyExact(types.unboxedType(tree.expr.type), tree.pattern.type)) {
+                if (types.isUnconditionallyExactTypeBased(types.unboxedType(tree.expr.type), tree.pattern.type)) {
                     // instanceOfExpr != null
                     prefixStatement = null;
                     exactnessCheck = makeBinary(NE, instanceOfExpr, makeNull());
@@ -4353,7 +4347,6 @@ public class Lower extends TreeTranslator {
         try {
             attrEnv = env;
             this.make = make;
-            endPosTable = env.toplevel.endPositions;
             currentClass = null;
             currentRestype = null;
             currentMethodDef = null;
@@ -4383,7 +4376,6 @@ public class Lower extends TreeTranslator {
             // note that recursive invocations of this method fail hard
             attrEnv = null;
             this.make = null;
-            endPosTable = null;
             currentClass = null;
             currentRestype = null;
             currentMethodDef = null;

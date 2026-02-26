@@ -26,7 +26,6 @@
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #include "gc/parallel/psCardTable.hpp"
 #include "gc/parallel/psPromotionManager.inline.hpp"
-#include "gc/parallel/psScavenge.inline.hpp"
 #include "gc/parallel/psYoungGen.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/access.inline.hpp"
@@ -109,7 +108,7 @@ void PSCardTable::scan_obj_with_limit(PSPromotionManager* pm,
 }
 
 void PSCardTable::pre_scavenge(uint active_workers) {
-  _preprocessing_active_workers = active_workers;
+  _preprocessing_active_workers.store_relaxed(active_workers);
 }
 
 // The "shadow" table is a copy of the card table entries of the current stripe.
@@ -383,9 +382,9 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
   preprocess_card_table_parallel(object_start, old_gen_bottom, old_gen_top, stripe_index, n_stripes);
 
   // Sync with other workers.
-  Atomic::dec(&_preprocessing_active_workers);
+  _preprocessing_active_workers.sub_then_fetch(1);
   SpinYield spin_yield;
-  while (Atomic::load_acquire(&_preprocessing_active_workers) > 0) {
+  while (_preprocessing_active_workers.load_acquire() > 0) {
     spin_yield.wait();
   }
 

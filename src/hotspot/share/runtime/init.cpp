@@ -36,7 +36,7 @@
 #include "prims/downcallLinker.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/globals.hpp"
@@ -195,10 +195,7 @@ jint init_globals2() {
   }
 #endif
 
-  // Initialize TrainingData only we're recording/replaying
-  if (TrainingData::have_data() || TrainingData::need_data()) {
-   TrainingData::initialize();
-  }
+  TrainingData::initialize();
 
   if (!universe_post_init()) {
     return JNI_ERR;
@@ -241,7 +238,7 @@ void exit_globals() {
 static volatile bool _init_completed = false;
 
 bool is_init_completed() {
-  return Atomic::load_acquire(&_init_completed);
+  return AtomicAccess::load_acquire(&_init_completed);
 }
 
 void wait_init_completed() {
@@ -254,6 +251,6 @@ void wait_init_completed() {
 void set_init_completed() {
   assert(Universe::is_fully_initialized(), "Should have completed initialization");
   MonitorLocker ml(InitCompleted_lock, Monitor::_no_safepoint_check_flag);
-  Atomic::release_store(&_init_completed, true);
+  AtomicAccess::release_store(&_init_completed, true);
   ml.notify_all();
 }

@@ -143,6 +143,7 @@ class CompressedKlassPointers : public AllStatic {
   static char* reserve_address_space_for_unscaled_encoding(size_t size, bool aslr);
   static char* reserve_address_space_for_zerobased_encoding(size_t size, bool aslr);
   static char* reserve_address_space_for_16bit_move(size_t size, bool aslr);
+
   static void calc_lowest_highest_narrow_klass_id();
 
 #ifdef ASSERT
@@ -187,11 +188,15 @@ public:
   // The maximum possible shift; the actual shift employed later can be smaller (see initialize())
   static int max_shift()                 { check_init(_max_shift); return _max_shift; }
 
-  // Returns the maximum encoding range, given the current geometry (narrow klass bit size and shift)
-  static size_t max_encoding_range_size() { return nth_bit(narrow_klass_pointer_bits() + max_shift()); }
-
-  // Returns the maximum allowed klass range size.
+  // Returns the maximum allowed klass range size. It is calculated from the length of the encoding range
+  // resulting from the current encoding settings (base, shift), capped to a certain max. value.
   static size_t max_klass_range_size();
+
+  // On 64-bit, we need the class space to confine Klass structures to the encoding range, which is determined
+  // by bit size of narrowKlass IDs and the shift. On 32-bit, we support compressed class pointer only
+  // "pro-forma": narrowKlass have the same size as addresses (32 bits), and therefore the encoding range is
+  // equal to the address space size. Here, we don't need a class space.
+  static constexpr bool needs_class_space() { return LP64_ONLY(true) NOT_LP64(false); }
 
   // Reserve a range of memory that is to contain Klass strucutures which are referenced by narrow Klass IDs.
   // If optimize_for_zero_base is true, the implementation will attempt to reserve optimized for zero-based encoding.
@@ -201,6 +206,7 @@ public:
   // set this encoding scheme. Used by CDS at runtime to re-instate the scheme used to pre-compute klass ids for
   // archived heap objects. In this case, we don't have the freedom to choose base and shift; they are handed to
   // us from CDS.
+  // Note: CDS with +UCCP for 32-bit currently unsupported.
   static void initialize_for_given_encoding(address addr, size_t len, address requested_base, int requested_shift);
 
   // Given an address range [addr, addr+len) which the encoding is supposed to

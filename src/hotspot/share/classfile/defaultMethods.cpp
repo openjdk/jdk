@@ -35,13 +35,13 @@
 #include "memory/metadataFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/klass.hpp"
+#include "oops/method.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/signature.hpp"
-#include "oops/instanceKlass.hpp"
-#include "oops/klass.hpp"
-#include "oops/method.hpp"
 #include "utilities/accessFlags.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/ostream.hpp"
@@ -123,7 +123,7 @@ class HierarchyVisitor : StackObj {
     InstanceKlass* interface_at(int index) {
       return _class->local_interfaces()->at(index);
     }
-    InstanceKlass* next_super() { return _class->java_super(); }
+    InstanceKlass* next_super() { return _class->super(); }
     InstanceKlass* next_interface() {
       return interface_at(interface_index());
     }
@@ -439,7 +439,7 @@ class MethodFamily : public ResourceObj {
     StreamIndentor si(str, indent * 2);
     str->print("Selected method: ");
     print_method(str, _selected_target);
-    Klass* method_holder = _selected_target->method_holder();
+    InstanceKlass* method_holder = _selected_target->method_holder();
     if (!method_holder->is_interface()) {
       str->print(" : in superclass");
     }
@@ -636,7 +636,7 @@ static void find_empty_vtable_slots(GrowableArray<EmptyVtableSlot*>* slots,
 
   // Also any overpasses in our superclasses, that we haven't implemented.
   // (can't use the vtable because it is not guaranteed to be initialized yet)
-  InstanceKlass* super = klass->java_super();
+  InstanceKlass* super = klass->super();
   while (super != nullptr) {
     for (int i = 0; i < super->methods()->length(); ++i) {
       Method* m = super->methods()->at(i);
@@ -668,7 +668,7 @@ static void find_empty_vtable_slots(GrowableArray<EmptyVtableSlot*>* slots,
         }
       }
     }
-    super = super->java_super();
+    super = super->super();
   }
 
   LogTarget(Debug, defaultmethods) lt;

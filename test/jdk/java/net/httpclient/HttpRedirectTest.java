@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,13 @@
 import com.sun.net.httpserver.HttpsServer;
 import jdk.httpclient.test.lib.common.TestServerConfigurator;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
-import static org.testng.Assert.*;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -60,7 +60,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 
-/**
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+/*
  * @test
  * @bug 8232625
  * @summary This test verifies that the HttpClient works correctly when redirecting a post request.
@@ -68,7 +73,7 @@ import jdk.httpclient.test.lib.common.HttpServerAdapters;
  * @build jdk.test.lib.net.SimpleSSLContext DigestEchoServer HttpRedirectTest
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.httpclient.test.lib.common.TestServerConfigurator
- * @run testng/othervm -Dtest.requiresHost=true
+ * @run junit/othervm -Dtest.requiresHost=true
  *                   -Djdk.httpclient.HttpClient.log=headers
  *                   -Djdk.internal.httpclient.debug=false
  *                   HttpRedirectTest
@@ -77,42 +82,35 @@ import jdk.httpclient.test.lib.common.HttpServerAdapters;
 public class HttpRedirectTest implements HttpServerAdapters {
     static final String GET_RESPONSE_BODY = "Lorem ipsum dolor sit amet";
     static final String REQUEST_BODY = "Here it goes";
-    static final SSLContext context;
+    private static final SSLContext context = SimpleSSLContext.findSSLContext();
     static {
-        try {
-            context = new SimpleSSLContext().get();
-            SSLContext.setDefault(context);
-        } catch (Exception x) {
-            throw new ExceptionInInitializerError(x);
-        }
+        SSLContext.setDefault(context);
     }
 
-    final AtomicLong requestCounter = new AtomicLong();
-    final AtomicLong responseCounter = new AtomicLong();
-    HttpTestServer http1Server;
-    HttpTestServer http2Server;
-    HttpTestServer https1Server;
-    HttpTestServer https2Server;
-    DigestEchoServer.TunnelingProxy proxy;
+    static final AtomicLong requestCounter = new AtomicLong();
+    private static HttpTestServer http1Server;
+    private static HttpTestServer http2Server;
+    private static HttpTestServer https1Server;
+    private static HttpTestServer https2Server;
+    private static HttpTestServer http3Server;
+    private static DigestEchoServer.TunnelingProxy proxy;
 
-    URI http1URI;
-    URI https1URI;
-    URI http2URI;
-    URI https2URI;
-    InetSocketAddress proxyAddress;
-    ProxySelector proxySelector;
-    HttpClient client;
-    List<CompletableFuture<?>>  futures = new CopyOnWriteArrayList<>();
-    Set<URI> pending = new CopyOnWriteArraySet<>();
+    private static URI http1URI;
+    private static URI https1URI;
+    private static URI http2URI;
+    private static URI https2URI;
+    private static URI http3URI;
+    private static InetSocketAddress proxyAddress;
+    private static ProxySelector proxySelector;
+    private static HttpClient client;
 
-    final ExecutorService executor = new ThreadPoolExecutor(12, 60, 10,
+    static final ExecutorService executor = new ThreadPoolExecutor(12, 60, 10,
             TimeUnit.SECONDS, new LinkedBlockingQueue<>()); // Shared by HTTP/1.1 servers
-    final ExecutorService clientexec = new ThreadPoolExecutor(6, 12, 1,
+    static final ExecutorService clientexec = new ThreadPoolExecutor(6, 12, 1,
             TimeUnit.SECONDS, new LinkedBlockingQueue<>()); // Used by the client
 
-    public HttpClient newHttpClient(ProxySelector ps) {
-        HttpClient.Builder builder = HttpClient
-                .newBuilder()
+    public static HttpClient newHttpClient(ProxySelector ps) {
+        HttpClient.Builder builder = HttpServerAdapters.createClientBuilderForH3()
                 .sslContext(context)
                 .executor(clientexec)
                 .followRedirects(HttpClient.Redirect.ALWAYS)
@@ -120,9 +118,9 @@ public class HttpRedirectTest implements HttpServerAdapters {
         return builder.build();
     }
 
-    @DataProvider(name="uris")
-    Object[][] testURIs() throws URISyntaxException {
+    static Object[][] testURIs() {
         List<URI> uris = List.of(
+                http3URI.resolve("direct/orig/"),
                 http1URI.resolve("direct/orig/"),
                 https1URI.resolve("direct/orig/"),
                 https1URI.resolve("proxy/orig/"),
@@ -144,12 +142,11 @@ public class HttpRedirectTest implements HttpServerAdapters {
         );
         Object[][] tests = new Object[redirects.size() * uris.size()][3];
         int count = 0;
-        for (int i=0; i < uris.size(); i++) {
-            URI u = uris.get(i);
-            for (int j=0; j < redirects.size() ; j++) {
-                int code = redirects.get(j).getKey();
-                String m = redirects.get(j).getValue();
-                tests[count][0] = u.resolve(code +"/");
+        for (URI u : uris) {
+            for (Map.Entry<Integer, String> redirect : redirects) {
+                int code = redirect.getKey();
+                String m = redirect.getValue();
+                tests[count][0] = u.resolve(code + "/");
                 tests[count][1] = code;
                 tests[count][2] = m;
                 count++;
@@ -158,8 +155,8 @@ public class HttpRedirectTest implements HttpServerAdapters {
         return tests;
     }
 
-    @BeforeClass
-    public void setUp() throws Exception {
+    @BeforeAll
+    public static void setUp() throws Exception {
         try {
             InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
 
@@ -195,16 +192,21 @@ public class HttpRedirectTest implements HttpServerAdapters {
             https2Server.start();
             https2URI = new URI("https://" + https2Server.serverAuthority() + "/HttpRedirectTest/https2/");
 
+            // HTTPS/3
+            http3Server = HttpTestServer.create(HTTP_3_URI_ONLY, SSLContext.getDefault());
+            http3Server.addHandler(new HttpTestRedirectHandler("https", http3Server),
+                    "/HttpRedirectTest/http3/");
+            http3Server.start();
+            http3URI = new URI("https://" + http3Server.serverAuthority() + "/HttpRedirectTest/http3/");
+
             proxy = DigestEchoServer.createHttpsProxyTunnel(
                     DigestEchoServer.HttpAuthSchemeType.NONE);
             proxyAddress = proxy.getProxyAddress();
             proxySelector = new HttpProxySelector(proxyAddress);
             client = newHttpClient(proxySelector);
             System.out.println("Setup: done");
-        } catch (Exception x) {
+        } catch (Exception | Error x) {
             tearDown(); throw x;
-        } catch (Error e) {
-            tearDown(); throw e;
         }
     }
 
@@ -215,19 +217,19 @@ public class HttpRedirectTest implements HttpServerAdapters {
                 client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
         HttpResponse<String> resp = respCf.join();
         if (method.equals("DO_NOT_FOLLOW")) {
-            assertEquals(resp.statusCode(), code, u + ": status code");
+            assertEquals(code, resp.statusCode(), u + ": status code");
         } else {
-            assertEquals(resp.statusCode(), 200, u + ": status code");
+            assertEquals(200, resp.statusCode(), u + ": status code");
         }
         if (method.equals("POST")) {
-            assertEquals(resp.body(), REQUEST_BODY, u + ": body");
+            assertEquals(REQUEST_BODY, resp.body(), u + ": body");
         } else if (code == 304) {
-            assertEquals(resp.body(), "", u + ": body");
+            assertEquals("", resp.body(), u + ": body");
         } else if (method.equals("DO_NOT_FOLLOW")) {
-            assertNotEquals(resp.body(), GET_RESPONSE_BODY, u + ": body");
-            assertNotEquals(resp.body(), REQUEST_BODY, u + ": body");
+            assertNotEquals(GET_RESPONSE_BODY, resp.body(), u + ": body");
+            assertNotEquals(REQUEST_BODY, resp.body(), u + ": body");
         } else {
-            assertEquals(resp.body(), GET_RESPONSE_BODY, u + ": body");
+            assertEquals(GET_RESPONSE_BODY, resp.body(), u + ": body");
         }
     }
 
@@ -237,59 +239,71 @@ public class HttpRedirectTest implements HttpServerAdapters {
                 client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
         HttpResponse<String> resp = respCf.join();
         if (method.equals("DO_NOT_FOLLOW")) {
-            assertEquals(resp.statusCode(), code, u + ": status code");
+            assertEquals(code, resp.statusCode(), u + ": status code");
         } else {
-            assertEquals(resp.statusCode(), 200, u + ": status code");
+            assertEquals(200, resp.statusCode(), u + ": status code");
         }
         if (method.equals("POST")) {
-            assertEquals(resp.body(), REQUEST_BODY, u + ": body");
+            assertEquals(REQUEST_BODY, resp.body(), u + ": body");
         } else if (code == 304) {
-            assertEquals(resp.body(), "", u + ": body");
+            assertEquals("", resp.body(), u + ": body");
         } else if (method.equals("DO_NOT_FOLLOW")) {
-            assertNotEquals(resp.body(), GET_RESPONSE_BODY, u + ": body");
-            assertNotEquals(resp.body(), REQUEST_BODY, u + ": body");
+            assertNotEquals(GET_RESPONSE_BODY, resp.body(), u + ": body");
+            assertNotEquals(REQUEST_BODY, resp.body(), u + ": body");
         } else if (code == 303) {
-            assertEquals(resp.body(), GET_RESPONSE_BODY, u + ": body");
+            assertEquals(GET_RESPONSE_BODY, resp.body(), u + ": body");
         } else {
-            assertEquals(resp.body(), REQUEST_BODY, u + ": body");
+            assertEquals(REQUEST_BODY, resp.body(), u + ": body");
         }
     }
 
-    @Test(dataProvider = "uris")
+    private HttpRequest.Builder newRequestBuilder(URI u) {
+        var builder = HttpRequest.newBuilder(u);
+        if (u.getRawPath().contains("/http3/")) {
+            builder.version(HTTP_3).setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
+        }
+        return builder;
+    }
+
+    @ParameterizedTest
+    @MethodSource("testURIs")
     public void testPOST(URI uri, int code, String method) throws Exception {
         URI u = uri.resolve("foo?n=" + requestCounter.incrementAndGet());
-        HttpRequest request = HttpRequest.newBuilder(u)
+        HttpRequest request = newRequestBuilder(u)
                 .POST(HttpRequest.BodyPublishers.ofString(REQUEST_BODY)).build();
         // POST is not considered idempotent.
         testNonIdempotent(u, request, code, method);
     }
 
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("testURIs")
     public void testPUT(URI uri, int code, String method) throws Exception {
         URI u = uri.resolve("foo?n=" + requestCounter.incrementAndGet());
         System.out.println("Testing with " + u);
-        HttpRequest request = HttpRequest.newBuilder(u)
+        HttpRequest request = newRequestBuilder(u)
                 .PUT(HttpRequest.BodyPublishers.ofString(REQUEST_BODY)).build();
         // PUT is considered idempotent.
         testIdempotent(u, request, code, method);
     }
 
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("testURIs")
     public void testFoo(URI uri, int code, String method) throws Exception {
         URI u = uri.resolve("foo?n=" + requestCounter.incrementAndGet());
         System.out.println("Testing with " + u);
-        HttpRequest request = HttpRequest.newBuilder(u)
+        HttpRequest request = newRequestBuilder(u)
                 .method("FOO",
                         HttpRequest.BodyPublishers.ofString(REQUEST_BODY)).build();
         // FOO is considered idempotent.
         testIdempotent(u, request, code, method);
     }
 
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("testURIs")
     public void testGet(URI uri, int code, String method) throws Exception {
         URI u = uri.resolve("foo?n=" + requestCounter.incrementAndGet());
         System.out.println("Testing with " + u);
-        HttpRequest request = HttpRequest.newBuilder(u)
+        HttpRequest request = newRequestBuilder(u)
                 .method("GET",
                         HttpRequest.BodyPublishers.ofString(REQUEST_BODY)).build();
         CompletableFuture<HttpResponse<String>> respCf =
@@ -297,29 +311,30 @@ public class HttpRedirectTest implements HttpServerAdapters {
         HttpResponse<String> resp = respCf.join();
         // body will be preserved except for 304 and 303: this is a GET.
         if (method.equals("DO_NOT_FOLLOW")) {
-            assertEquals(resp.statusCode(), code, u + ": status code");
+            assertEquals(code, resp.statusCode(), u + ": status code");
         } else {
-            assertEquals(resp.statusCode(), 200, u + ": status code");
+            assertEquals(200, resp.statusCode(), u + ": status code");
         }
         if (code == 304) {
-            assertEquals(resp.body(), "", u + ": body");
+            assertEquals("", resp.body(), u + ": body");
         } else if (method.equals("DO_NOT_FOLLOW")) {
-            assertNotEquals(resp.body(), GET_RESPONSE_BODY, u + ": body");
-            assertNotEquals(resp.body(), REQUEST_BODY, u + ": body");
+            assertNotEquals(GET_RESPONSE_BODY, resp.body(), u + ": body");
+            assertNotEquals(REQUEST_BODY, resp.body(), u + ": body");
         } else if (code == 303) {
-            assertEquals(resp.body(), GET_RESPONSE_BODY, u + ": body");
+            assertEquals(GET_RESPONSE_BODY, resp.body(), u + ": body");
         } else {
-            assertEquals(resp.body(), REQUEST_BODY, u + ": body");
+            assertEquals(REQUEST_BODY, resp.body(), u + ": body");
         }
     }
 
-    @AfterClass
-    public void tearDown() {
+    @AfterAll
+    public static void tearDown() {
         proxy = stop(proxy, DigestEchoServer.TunnelingProxy::stop);
         http1Server = stop(http1Server, HttpTestServer::stop);
         https1Server = stop(https1Server, HttpTestServer::stop);
         http2Server = stop(http2Server, HttpTestServer::stop);
         https2Server = stop(https2Server, HttpTestServer::stop);
+        http3Server = stop(http3Server, HttpTestServer::stop);
         client = null;
         try {
             executor.awaitTermination(2000, TimeUnit.MILLISECONDS);
@@ -339,7 +354,7 @@ public class HttpRedirectTest implements HttpServerAdapters {
     private interface Stoppable<T> { public void stop(T service) throws Exception; }
 
     static <T>  T stop(T service, Stoppable<T> stop) {
-        try { if (service != null) stop.stop(service); } catch (Throwable x) { };
+        try { if (service != null) stop.stop(service); } catch (Throwable x) { }
         return null;
     }
 

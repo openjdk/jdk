@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package jdk.internal.net.http;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Base64;
@@ -76,7 +75,7 @@ class Http2ClientImpl {
 
     /**
      * When HTTP/2 requested only. The following describes the aggregate behavior including the
-     * calling code. In all cases, the HTTP2 connection cache
+     * calling code. In all cases, the HTTP/2 connection cache
      * is checked first for a suitable connection and that is returned if available.
      * If not, a new connection is opened, except in https case when a previous negotiate failed.
      * In that case, we want to continue using http/1.1. When a connection is to be opened and
@@ -144,6 +143,7 @@ class Http2ClientImpl {
                         if (conn != null) {
                             try {
                                 conn.reserveStream(true, exchange.pushEnabled());
+                                exchange.connectionAborter.clear(conn.connection);
                             } catch (IOException e) {
                                 throw new UncheckedIOException(e); // shouldn't happen
                             }
@@ -233,11 +233,8 @@ class Http2ClientImpl {
         }
     }
 
-    private EOFException STOPPED;
     void stop() {
         if (debug.on()) debug.log("stopping");
-        STOPPED = new EOFException("HTTP/2 client stopped");
-        STOPPED.setStackTrace(new StackTraceElement[0]);
         connectionPoolLock.lock();
         try {
             stopping = true;
@@ -252,10 +249,7 @@ class Http2ClientImpl {
     private boolean close(Http2Connection h2c) {
         // close all streams
         try { h2c.closeAllStreams(); } catch (Throwable t) {}
-        // send GOAWAY
         try { h2c.close(); } catch (Throwable t) {}
-        // attempt graceful shutdown
-        try { h2c.shutdown(STOPPED); } catch (Throwable t) {}
         // double check and close any new streams
         try { h2c.closeAllStreams(); } catch (Throwable t) {}
         // Allows for use of removeIf in stop()

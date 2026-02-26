@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -395,6 +395,11 @@ OptoReg::Name BarrierSetAssembler::refine_register(const Node* node, OptoReg::Na
 extern void vec_spill_helper(C2_MacroAssembler *masm, bool is_load,
                             int stack_offset, int reg, uint ireg, outputStream* st);
 
+void BarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj, Label& slowpath) {
+  // Load the oop from the weak handle.
+  __ movptr(obj, Address(obj));
+}
+
 #undef __
 #define __ _masm->
 
@@ -471,33 +476,33 @@ void SaveLiveRegisters::initialize(BarrierStubC2* stub) {
   // Create mask of caller saved registers that need to
   // be saved/restored if live
   RegMask caller_saved;
-  caller_saved.Insert(OptoReg::as_OptoReg(rax->as_VMReg()));
-  caller_saved.Insert(OptoReg::as_OptoReg(rcx->as_VMReg()));
-  caller_saved.Insert(OptoReg::as_OptoReg(rdx->as_VMReg()));
-  caller_saved.Insert(OptoReg::as_OptoReg(rsi->as_VMReg()));
-  caller_saved.Insert(OptoReg::as_OptoReg(rdi->as_VMReg()));
-  caller_saved.Insert(OptoReg::as_OptoReg(r8->as_VMReg()));
-  caller_saved.Insert(OptoReg::as_OptoReg(r9->as_VMReg()));
-  caller_saved.Insert(OptoReg::as_OptoReg(r10->as_VMReg()));
-  caller_saved.Insert(OptoReg::as_OptoReg(r11->as_VMReg()));
+  caller_saved.insert(OptoReg::as_OptoReg(rax->as_VMReg()));
+  caller_saved.insert(OptoReg::as_OptoReg(rcx->as_VMReg()));
+  caller_saved.insert(OptoReg::as_OptoReg(rdx->as_VMReg()));
+  caller_saved.insert(OptoReg::as_OptoReg(rsi->as_VMReg()));
+  caller_saved.insert(OptoReg::as_OptoReg(rdi->as_VMReg()));
+  caller_saved.insert(OptoReg::as_OptoReg(r8->as_VMReg()));
+  caller_saved.insert(OptoReg::as_OptoReg(r9->as_VMReg()));
+  caller_saved.insert(OptoReg::as_OptoReg(r10->as_VMReg()));
+  caller_saved.insert(OptoReg::as_OptoReg(r11->as_VMReg()));
 
   if (UseAPX) {
-    caller_saved.Insert(OptoReg::as_OptoReg(r16->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r17->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r18->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r19->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r20->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r21->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r22->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r23->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r24->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r25->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r26->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r27->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r28->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r29->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r30->as_VMReg()));
-    caller_saved.Insert(OptoReg::as_OptoReg(r31->as_VMReg()));
+    caller_saved.insert(OptoReg::as_OptoReg(r16->as_VMReg()));
+    caller_saved.insert(OptoReg::as_OptoReg(r17->as_VMReg()));
+    caller_saved.insert(OptoReg::as_OptoReg(r18->as_VMReg()));
+    caller_saved.insert(OptoReg::as_OptoReg(r19->as_VMReg()));
+    caller_saved.insert(OptoReg::as_OptoReg(r20->as_VMReg()));
+    caller_saved.insert(OptoReg::as_OptoReg(r21->as_VMReg()));
+    caller_saved.insert(OptoReg::as_OptoReg(r22->as_VMReg()));
+    caller_saved.insert(OptoReg::as_OptoReg(r23->as_VMReg()));
+    caller_saved.insert(OptoReg::as_OptoReg(r24->as_VMReg()));
+    caller_saved.insert(OptoReg::as_OptoReg(r25->as_VMReg()));
+    caller_saved.insert(OptoReg::as_OptoReg(r26->as_VMReg()));
+    caller_saved.insert(OptoReg::as_OptoReg(r27->as_VMReg()));
+    caller_saved.insert(OptoReg::as_OptoReg(r28->as_VMReg()));
+    caller_saved.insert(OptoReg::as_OptoReg(r29->as_VMReg()));
+    caller_saved.insert(OptoReg::as_OptoReg(r30->as_VMReg()));
+    caller_saved.insert(OptoReg::as_OptoReg(r31->as_VMReg()));
   }
 
   int gp_spill_size = 0;
@@ -511,7 +516,7 @@ void SaveLiveRegisters::initialize(BarrierStubC2* stub) {
     const VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
 
     if (vm_reg->is_Register()) {
-      if (caller_saved.Member(opto_reg)) {
+      if (caller_saved.member(opto_reg)) {
         _gp_registers.append(vm_reg->as_Register());
         gp_spill_size += 8;
       }

@@ -22,11 +22,11 @@
  *
  */
 
+#include "jfr/leakprofiler/checkpoint/eventEmitter.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
+#include "jfr/leakprofiler/sampling/objectSampler.hpp"
 #include "jfr/leakprofiler/startOperation.hpp"
 #include "jfr/leakprofiler/stopOperation.hpp"
-#include "jfr/leakprofiler/checkpoint/eventEmitter.hpp"
-#include "jfr/leakprofiler/sampling/objectSampler.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"

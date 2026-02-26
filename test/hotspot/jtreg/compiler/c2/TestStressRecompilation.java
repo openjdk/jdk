@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8245801
  * @requires vm.debug
  * @summary Test running with StressRecompilation enabled.
- * @run main/othervm -Xcomp -XX:+IgnoreUnrecognizedVMOptions -XX:+StressRecompilation
+ * @run main/othervm/timeout=480 -Xcomp -XX:+IgnoreUnrecognizedVMOptions -XX:+StressRecompilation
  *                   compiler.c2.TestStressRecompilation
  */
 

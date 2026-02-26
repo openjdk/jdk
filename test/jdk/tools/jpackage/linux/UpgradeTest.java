@@ -60,16 +60,16 @@ public class UpgradeTest {
         var alA = createAdditionalLauncher("launcherA");
 
         alA.applyTo(pkg);
-        createAdditionalLauncher("launcherB").addRawProperties(Map.entry(
-                "description", "Foo")).applyTo(pkg);
+        createAdditionalLauncher("launcherB").setProperty(
+                "description", "Foo").applyTo(pkg);
 
         var pkg2 = createPackageTest().addInitializer(cmd -> {
             cmd.addArguments("--app-version", "2.0");
         });
 
         alA.verifyRemovedInUpgrade(pkg2);
-        createAdditionalLauncher("launcherB").addRawProperties(Map.entry(
-                "description", "Bar")).applyTo(pkg2);
+        createAdditionalLauncher("launcherB").setProperty(
+                "description", "Bar").applyTo(pkg2);
         createAdditionalLauncher("launcherC").applyTo(pkg2);
 
         new PackageTest.Group(pkg, pkg2).run();
@@ -88,6 +88,6 @@ public class UpgradeTest {
         return new AdditionalLauncher(name).setIcon(GOLDEN_ICON);
     }
 
-    private final static Path GOLDEN_ICON = TKit.TEST_SRC_ROOT.resolve(Path.of(
+    private static final Path GOLDEN_ICON = TKit.TEST_SRC_ROOT.resolve(Path.of(
             "resources", "icon" + TKit.ICON_SUFFIX));
 }

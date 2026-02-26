@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,7 @@
 #include "nmt/vmatree.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 
 // Semantics
@@ -192,8 +193,8 @@ void VMATree::compute_summary_diff(const SingleDiff::delta region_size,
                                         {0,a,  0,a, -a,a },    // op == Commit
                                         {0,0,  0,0, -a,0 }     // op == Uncommit
                                      };
-  SingleDiff& from_rescom = diff.tag[NMTUtil::tag_to_index(current_tag)];
-  SingleDiff&   to_rescom = diff.tag[NMTUtil::tag_to_index(operation_tag)];
+  SingleDiff& from_rescom = diff.tag(current_tag);
+  SingleDiff&   to_rescom = diff.tag(operation_tag);
   int st = state_to_index(ex);
   from_rescom.reserve += reserve[op][st * 2    ];
     to_rescom.reserve += reserve[op][st * 2 + 1];
@@ -204,7 +205,7 @@ void VMATree::compute_summary_diff(const SingleDiff::delta region_size,
 // update the region state between n1 and n2. Since n1 and n2 are pointers, any update of them will be visible from tree.
 // If n1 is noop, it can be removed because its left region (n1->val().in) is already decided and its right state (n1->val().out) is decided here.
 // The state of right of n2 (n2->val().out) cannot be decided here yet.
-void VMATree::update_region(TreapNode* n1, TreapNode* n2, const RequestInfo& req, SummaryDiff& diff) {
+void VMATree::update_region(TNode* n1, TNode* n2, const RequestInfo& req, SummaryDiff& diff) {
   assert(n1 != nullptr,"sanity");
   assert(n2 != nullptr,"sanity");
   //.........n1......n2......
@@ -242,14 +243,14 @@ void VMATree::update_region(TreapNode* n1, TreapNode* n2, const RequestInfo& req
 }
 
 
-VMATree::SummaryDiff VMATree::register_mapping(position _A, position _B, StateType state,
-                                               const RegionData& metadata, bool use_tag_inplace) {
+void VMATree::register_mapping(position _A, position _B, StateType state,
+                                               const RegionData& metadata, VMATree::SummaryDiff& diff, bool use_tag_inplace) {
 
+  diff.clear();
   if (_A == _B) {
-    return SummaryDiff();
+    return;
   }
   assert(_A < _B, "should be");
-  SummaryDiff diff;
   RequestInfo req{_A, _B, state, metadata.mem_tag, metadata.stack_idx, use_tag_inplace};
   IntervalChange stA{
       IntervalState{StateType::Released, empty_regiondata},
@@ -261,8 +262,8 @@ VMATree::SummaryDiff VMATree::register_mapping(position _A, position _B, StateTy
   };
   stA.out.set_commit_stack(NativeCallStackStorage::invalid);
   stB.in.set_commit_stack(NativeCallStackStorage::invalid);
-  VMATreap::Range rA = _tree.find_enclosing_range(_A);
-  VMATreap::Range rB = _tree.find_enclosing_range(_B);
+  VMARBTree::Range rA = _tree.find_enclosing_range(_A);
+  VMARBTree::Range rB = _tree.find_enclosing_range(_B);
 
   // nodes:          .....X.......Y...Z......W........U
   // request:                 A------------------B
@@ -320,24 +321,24 @@ VMATree::SummaryDiff VMATree::register_mapping(position _A, position _B, StateTy
   // Meaning that whenever any of one item in this sequence is changed, the rest of the consequent items to
   // be checked/changed.
 
-  TreapNode* X = rA.start;
-  TreapNode* Y = rA.end;
-  TreapNode* W = rB.start;
-  TreapNode* U = rB.end;
-  TreapNode nA{_A, stA, 0}; // the node that represents A
-  TreapNode nB{_B, stB, 0}; // the node that represents B
-  TreapNode* A = &nA;
-  TreapNode* B = &nB;
-  auto upsert_if= [&](TreapNode* node) {
+  TNode* X = rA.start;
+  TNode* Y = rA.end;
+  TNode* W = rB.start;
+  TNode* U = rB.end;
+  TNode nA{_A, stA}; // the node that represents A
+  TNode nB{_B, stB}; // the node that represents B
+  TNode* A = &nA;
+  TNode* B = &nB;
+  auto upsert_if= [&](TNode* node) {
     if (!node->val().is_noop()) {
       _tree.upsert(node->key(), node->val());
     }
   };
   // update region between n1 and n2
-  auto update = [&](TreapNode* n1, TreapNode* n2) {
+  auto update = [&](TNode* n1, TNode* n2) {
     update_region(n1, n2, req, diff);
   };
-  auto remove_if = [&](TreapNode* node) -> bool{
+  auto remove_if = [&](TNode* node) -> bool{
     if (node->val().is_noop()) {
       _tree.remove(node->key());
       return true;
@@ -347,8 +348,8 @@ VMATree::SummaryDiff VMATree::register_mapping(position _A, position _B, StateTy
   GrowableArrayCHeap<position, mtNMT> to_be_removed;
   // update regions in range A to B
   auto update_loop = [&]() {
-    TreapNode* prev = nullptr;
-    _tree.visit_range_in_order(_A + 1, _B + 1, [&](TreapNode* curr) {
+    TNode* prev = nullptr;
+    _tree.visit_range_in_order(_A + 1, _B + 1, [&](TNode* curr) {
       if (prev != nullptr) {
         update_region(prev, curr, req, diff);
         // during visit, structure of the tree should not be changed
@@ -362,7 +363,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position _A, position _B, StateTy
     });
   };
   // update region of [A,T)
-  auto update_A = [&](TreapNode* T) {
+  auto update_A = [&](TNode* T) {
     A->val().out = A->val().in;
     update(A, T);
   };
@@ -644,13 +645,11 @@ VMATree::SummaryDiff VMATree::register_mapping(position _A, position _B, StateTy
   while(to_be_removed.length() != 0) {
     _tree.remove(to_be_removed.pop());
   }
-
-  return diff;
 }
 
 #ifdef ASSERT
 void VMATree::print_on(outputStream* out) {
-  visit_in_order([&](TreapNode* current) {
+  visit_in_order([&](const TNode* current) {
     out->print("%zu (%s) - %s [%d, %d]-> ", current->key(), NMTUtil::tag_to_name(out_state(current).mem_tag()),
               statetype_to_string(out_state(current).type()), current->val().out.reserved_stack(), current->val().out.committed_stack());
     return true;
@@ -659,12 +658,12 @@ void VMATree::print_on(outputStream* out) {
 }
 #endif
 
-VMATree::SummaryDiff VMATree::set_tag(const position start, const size size, const MemTag tag) {
-  auto pos = [](TreapNode* n) { return n->key(); };
+void VMATree::set_tag(const position start, const size size, const MemTag tag, SummaryDiff& diff) {
+  auto pos = [](TNode* n) { return n->key(); };
   position from = start;
   position end  = from+size;
   size_t remsize = size;
-  VMATreap::Range range(nullptr, nullptr);
+  VMARBTree::Range range(nullptr, nullptr);
 
   // Find the next range to adjust and set range, remsize and from
   // appropriately. If it returns false, there is no valid next range.
@@ -691,18 +690,18 @@ VMATree::SummaryDiff VMATree::set_tag(const position start, const size size, con
   };
 
   bool success = find_next_range();
-  if (!success) return SummaryDiff();
+  if (!success) return;
   assert(range.start != nullptr && range.end != nullptr, "must be");
 
   end = MIN2(from + remsize, pos(range.end));
   IntervalState& out = out_state(range.start);
   StateType type = out.type();
 
-  SummaryDiff diff;
   // Ignore any released ranges, these must be mtNone and have no stack
   if (type != StateType::Released) {
     RegionData new_data = RegionData(out.reserved_stack(), tag);
-    SummaryDiff result = register_mapping(from, end, type, new_data);
+    SummaryDiff result;
+    register_mapping(from, end, type, new_data, result);
     diff.add(result);
   }
 
@@ -714,7 +713,7 @@ VMATree::SummaryDiff VMATree::set_tag(const position start, const size size, con
     // Using register_mapping may invalidate the already found range, so we must
     // use find_next_range repeatedly
     bool success = find_next_range();
-    if (!success) return diff;
+    if (!success) return;
     assert(range.start != nullptr && range.end != nullptr, "must be");
 
     end = MIN2(from + remsize, pos(range.end));
@@ -723,24 +722,138 @@ VMATree::SummaryDiff VMATree::set_tag(const position start, const size size, con
 
     if (type != StateType::Released) {
       RegionData new_data = RegionData(out.reserved_stack(), tag);
-      SummaryDiff result = register_mapping(from, end, type, new_data);
+      SummaryDiff result;
+      register_mapping(from, end, type, new_data, result);
       diff.add(result);
     }
     remsize = remsize - (end - from);
     from = end;
   }
-
-  return diff;
 }
 
 #ifdef ASSERT
 void VMATree::SummaryDiff::print_on(outputStream* out) {
-  for (int i = 0; i < mt_number_of_tags; i++) {
-    if (tag[i].reserve == 0 && tag[i].commit == 0) {
-      continue;
-    }
-    out->print_cr("Tag %s R: " INT64_FORMAT " C: " INT64_FORMAT, NMTUtil::tag_to_enum_name((MemTag)i), tag[i].reserve,
-                  tag[i].commit);
-  }
+  visit([&](MemTag mt, const SingleDiff& sd) {
+    out->print_cr("Tag %s R: " INT64_FORMAT " C: " INT64_FORMAT,
+                  NMTUtil::tag_to_enum_name(mt), sd.reserve, sd.commit);
+  });
 }
 #endif
+
+void VMATree::clear() {
+  _tree.remove_all();
+}
+
+bool VMATree::is_empty() {
+  return _tree.size() == 0;
+}
+
+VMATree::SummaryDiff::KVEntry&
+VMATree::SummaryDiff::hash_insert_or_get(const KVEntry& kv, bool* found) {
+  DEBUG_ONLY(int counter = 0);
+  // If the length is large (picked as 32)
+  // then we apply a load-factor check and rehash if it exceeds it.
+  // When the length is small we're OK with a full linear search for an empty space
+  // to avoid a grow and rehash.
+  constexpr float load_factor = 0.5;
+  constexpr int load_factor_cutoff_length = 32;
+  if (_length > load_factor_cutoff_length &&
+      (float)_occupied / _length > load_factor) {
+    grow_and_rehash();
+  }
+  while (true) {
+    DEBUG_ONLY(counter++);
+    assert(counter < 8, "Infinite loop?");
+    int i = hash_to_bucket(kv.mem_tag);
+    while (i < _length && _members[i].marker == Marker::Occupied) {
+      if (_members[i].mem_tag == kv.mem_tag) {
+        // Found previous
+        *found = true;
+        return _members[i];
+      }
+      i++;
+    }
+    *found = false;
+    // We didn't find it but ran out of space, grow and rehash
+    // Then look at again
+    if (i >= _length) {
+      assert(_length < std::numeric_limits<std::underlying_type_t<MemTag>>::max(), "");
+      grow_and_rehash();
+      continue;
+    }
+    // We didn't find it, but _members[i] is empty, allocate a new one
+    assert(_members[i].marker == Marker::Empty, "must be");
+    _members[i] = kv;
+    _occupied++;
+    return _members[i];
+  }
+}
+
+void VMATree::SummaryDiff::grow_and_rehash() {
+  assert(is_power_of_2(_length), "must be");
+  constexpr int length_limit = std::numeric_limits<std::underlying_type_t<MemTag>>::max() + 1;
+  assert(is_power_of_2(length_limit), "must be");
+  if (_length == length_limit) {
+    // If we are at MemTag's maximum size, then just continue with the current size.
+    return;
+  }
+
+  int new_len = _length * 2;
+  // Save old entries (can't use ResourceMark, too early)
+  GrowableArrayCHeap<KVEntry, mtNMT> tmp(_length);
+  for (int i = 0; i < _length; i++) {
+    tmp.push(_members[i]);
+  }
+
+  // Clear previous -- if applicable
+  if (_members != _small) {
+    FREE_C_HEAP_ARRAY(KVEntry, _members);
+  }
+
+  _members = NEW_C_HEAP_ARRAY(KVEntry, new_len, mtNMT);
+  // Clear new array
+  memset(_members, 0, sizeof(KVEntry) * new_len);
+  _length = new_len;
+  _occupied = 0;
+
+  for (int i = 0; i < tmp.length(); i++) {
+    bool _found = false;
+    hash_insert_or_get(tmp.at(i), &_found);
+  }
+}
+
+VMATree::SingleDiff& VMATree::SummaryDiff::tag(MemTag tag) {
+  KVEntry kv{Marker::Occupied, tag, {}};
+  bool _found = false;
+  KVEntry& inserted = hash_insert_or_get(kv, &_found);
+  return inserted.single_diff;
+}
+
+VMATree::SingleDiff& VMATree::SummaryDiff::tag(int mt_index) {
+  return tag((MemTag)mt_index);
+}
+
+void VMATree::SummaryDiff::add(const SummaryDiff& other) {
+  other.visit([&](MemTag mt, const SingleDiff& single_diff) {
+    bool found = false;
+    KVEntry other_kv = {Marker::Occupied, mt, single_diff};
+    KVEntry& this_kv = hash_insert_or_get(other_kv, &found);
+    if (found) {
+      this_kv.single_diff.reserve += other_kv.single_diff.reserve;
+      this_kv.single_diff.commit += other_kv.single_diff.commit;
+    }
+  });
+}
+
+void VMATree::SummaryDiff::clear() {
+  if (_members != _small) {
+    FREE_C_HEAP_ARRAY(KVEntry, _members);
+  }
+  memset(_small, 0, sizeof(_small));
+}
+
+uint32_t VMATree::SummaryDiff::hash_to_bucket(MemTag mt) {
+  uint32_t hash = primitive_hash<uint32_t>((uint32_t)mt);
+  assert(is_power_of_2(_length), "must be");
+  return hash & ((uint32_t)_length - 1);
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,9 @@
  * @run main KeyStrokeTest
  */
 
-import java.awt.BorderLayout;
 import java.awt.Button;
 import java.awt.Dialog;
+import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Robot;
 import java.awt.TextField;
@@ -39,25 +39,53 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class KeyStrokeTest {
     static boolean keyTyped;
     static Frame frame;
+    static Robot robot;
+    static final CountDownLatch latch = new CountDownLatch(1);
 
     public static void main(String[] args) throws Exception {
+        robot = new Robot();
         try {
-            KeyStrokeTest test = new KeyStrokeTest();
-            test.doTest();
-        } finally {
-            if (frame != null) {
-                frame.dispose();
+            EventQueue.invokeAndWait(() -> {
+                KeyStrokeTest test = new KeyStrokeTest();
+                test.initTest();
+            });
+            robot.waitForIdle();
+            robot.delay(1000);
+            robot.keyPress(KeyEvent.VK_TAB);
+            robot.keyRelease(KeyEvent.VK_TAB);
+
+            robot.delay(1000);
+            robot.keyPress(KeyEvent.VK_SPACE);
+            robot.keyRelease(KeyEvent.VK_SPACE);
+
+            robot.delay(1000);
+            robot.keyPress(KeyEvent.VK_A);
+            robot.keyRelease(KeyEvent.VK_A);
+            try {
+                latch.await(3, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {}
+            if (!keyTyped) {
+                throw new
+                RuntimeException("First keystroke after JDialog is closed is lost");
             }
+            System.out.println("Test passed");
+        } finally {
+            EventQueue.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
     }
 
-    private static void doTest() throws Exception {
-        final Object monitor = new Object();
-        frame = new Frame();
+    private static void initTest() {
+        frame = new Frame("KeyStrokeTest");
         TextField textField = new TextField() {
                 public void transferFocus() {
                     System.err.println("transferFocus()");
@@ -71,6 +99,7 @@ public class KeyStrokeTest {
                         });
                     dialog.add(btn);
                     dialog.setSize(200, 200);
+                    dialog.setLocationRelativeTo(null);
                     dialog.setVisible(true);
                 }
             };
@@ -81,38 +110,12 @@ public class KeyStrokeTest {
                     if (e.getKeyChar() == 'a') {
                         keyTyped = true;
                     }
-
-                    synchronized (monitor) {
-                        monitor.notifyAll();
-                    }
+                    latch.countDown();
                 }
             });
         frame.add(textField);
         frame.setSize(400, 400);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
-
-        Robot robot = new Robot();
-        robot.waitForIdle();
-        robot.delay(1000);
-        robot.keyPress(KeyEvent.VK_TAB);
-        robot.keyRelease(KeyEvent.VK_TAB);
-
-        robot.delay(1000);
-        robot.keyPress(KeyEvent.VK_SPACE);
-        robot.keyRelease(KeyEvent.VK_SPACE);
-
-        robot.delay(1000);
-        synchronized (monitor) {
-            robot.keyPress(KeyEvent.VK_A);
-            robot.keyRelease(KeyEvent.VK_A);
-            monitor.wait(3000);
-        }
-
-        if (!keyTyped) {
-            throw new RuntimeException("TEST FAILED");
-        }
-
-        System.out.println("Test passed");
     }
-
 }

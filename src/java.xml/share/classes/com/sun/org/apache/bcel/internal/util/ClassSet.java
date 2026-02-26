@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -30,7 +30,7 @@ import com.sun.org.apache.bcel.internal.classfile.JavaClass;
  * Utility class implementing a (type-safe) set of JavaClass objects. Since JavaClass has no equals() method, the name of the class is used for comparison.
  *
  * @see ClassStack
- * @LastModified: Feb 2023
+ * @LastModified: Sept 2025
  */
 public class ClassSet {
 

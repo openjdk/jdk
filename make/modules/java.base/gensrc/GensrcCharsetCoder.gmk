@@ -28,91 +28,74 @@ ifeq ($(INCLUDE), true)
 
 ################################################################################
 
-GENSRC_CHARSETCODER :=
-
-GENSRC_CHARSETCODER_DST := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/nio/charset
-
-GENSRC_CHARSETCODER_SRC := $(MODULE_SRC)/share/classes/java/nio
-
-GENSRC_CHARSETCODER_TEMPLATE := $(GENSRC_CHARSETCODER_SRC)/charset/Charset-X-Coder.java.template
+CHARSETCODER_INPUT := $(MODULE_SRC)/share/classes/java/nio/charset/Charset-X-Coder.java.template
+CHARSETCODER_OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/nio/charset
 
 ################################################################################
 
-$(GENSRC_CHARSETCODER_DST)/CharsetDecoder.java: $(GENSRC_CHARSETCODER_TEMPLATE)
-	$(call MakeTargetDir)
-	$(RM) $@.tmp
-	$(call ExecuteWithLog, $(SUPPORT_OUTPUTDIR)/gensrc/java.base/_charset_decoder, \
-	    $(TOOL_SPP) -i$< -o$@.tmp \
-	    -Kdecoder \
-	    -DA='A' \
-	    -Da='a' \
-	    -DCode='Decode' \
-	    -Dcode='decode' \
-	    -DitypesPhrase='bytes in a specific charset' \
-	    -DotypesPhrase='sixteen-bit Unicode characters' \
-	    -Ditype='byte' \
-	    -Dotype='character' \
-	    -DItype='Byte' \
-	    -DOtype='Char' \
-	    -Dcoder='decoder' \
-	    -DCoder='Decoder' \
-	    -Dcoding='decoding' \
-	    -DOtherCoder='Encoder' \
-	    -DreplTypeName='string' \
-	    -DdefaultRepl='"\\uFFFD"' \
-	    -DdefaultReplName='<code>"\&#92;uFFFD"<\/code>' \
-	    -DreplType='String' \
-	    -DreplFQType='java.lang.String' \
-	    -DreplLength='length()' \
-	    -DItypesPerOtype='CharsPerByte' \
-	    -DnotLegal='not legal for this charset' \
-	    -Dotypes-per-itype='chars-per-byte' \
-	    -DoutSequence='Unicode character')
-	$(MV) $@.tmp $@
+$(eval $(call SetupStreamPreProcessing, GEN_CHARSETDECODER, \
+    SOURCE_FILE := $(CHARSETCODER_INPUT), \
+    OUTPUT_FILE := $(CHARSETCODER_OUTPUT_DIR)/CharsetDecoder.java, \
+    INFO := Generating CharsetDecoder.java, \
+    KEYS := decoder, \
+    REPLACEMENTS := \
+        A='A' \
+        a='a' \
+        Code='Decode' \
+        code='decode' \
+        itypesPhrase='bytes$$(SPACE)in$$(SPACE)a$$(SPACE)specific$$(SPACE)charset' \
+        otypesPhrase='sixteen-bit$$(SPACE)Unicode$$(SPACE)characters' \
+        itype='byte' \
+        otype='character' \
+        Itype='Byte' \
+        Otype='Char' \
+        coder='decoder' \
+        Coder='Decoder' \
+        coding='decoding' \
+        OtherCoder='Encoder' \
+        replTypeName='string' \
+        replType='String' \
+        replFQType='java.lang.String' \
+        replLength='length()' \
+        ItypesPerOtype='CharsPerByte' \
+        notLegal='not$$(SPACE)legal$$(SPACE)for$$(SPACE)this$$(SPACE)charset' \
+        otypes-per-itype='chars-per-byte' \
+        outSequence='Unicode$$(SPACE)character', \
+))
 
-GENSRC_CHARSETCODER += $(GENSRC_CHARSETCODER_DST)/CharsetDecoder.java
+TARGETS += $(GEN_CHARSETDECODER)
 
-################################################################################
+$(eval $(call SetupStreamPreProcessing, GEN_CHARSETENCODER, \
+    SOURCE_FILE := $(CHARSETCODER_INPUT), \
+    OUTPUT_FILE := $(CHARSETCODER_OUTPUT_DIR)/CharsetEncoder.java, \
+    INFO := Generating CharsetEncoder.java, \
+    KEYS := encoder, \
+    REPLACEMENTS := \
+        A='An' \
+        a='an' \
+        Code='Encode' \
+        code='encode' \
+        itypesPhrase='sixteen-bit$$(SPACE)Unicode$$(SPACE)characters' \
+        otypesPhrase='bytes$$(SPACE)in$$(SPACE)a$$(SPACE)specific$$(SPACE)charset' \
+        itype='character' \
+        otype='byte' \
+        Itype='Char' \
+        Otype='Byte' \
+        coder='encoder' \
+        Coder='Encoder' \
+        coding='encoding' \
+        OtherCoder='Decoder' \
+        replTypeName='byte$$(SPACE)array' \
+        replType='byte[]' \
+        replFQType='byte[]' \
+        replLength='length' \
+        ItypesPerOtype='BytesPerChar' \
+        notLegal='not$$(SPACE)a$$(SPACE)legal$$(SPACE)sixteen-bit$$(SPACE)Unicode$$(SPACE)sequence' \
+        otypes-per-itype='bytes-per-char' \
+        outSequence='byte$$(SPACE)sequence$$(SPACE)in$$(SPACE)the$$(SPACE)given$$(SPACE)charset', \
+))
 
-$(GENSRC_CHARSETCODER_DST)/CharsetEncoder.java: $(GENSRC_CHARSETCODER_TEMPLATE)
-	$(call MakeTargetDir)
-	$(RM) $@.tmp
-	$(call ExecuteWithLog, $(SUPPORT_OUTPUTDIR)/gensrc/java.base/_charset_encoder, \
-	    $(TOOL_SPP) -i$< -o$@.tmp \
-	    -Kencoder \
-	    -DA='An' \
-	    -Da='an' \
-	    -DCode='Encode' \
-	    -Dcode='encode' \
-	    -DitypesPhrase='sixteen-bit Unicode characters' \
-	    -DotypesPhrase='bytes in a specific charset' \
-	    -Ditype='character' \
-	    -Dotype='byte' \
-	    -DItype='Char' \
-	    -DOtype='Byte' \
-	    -Dcoder='encoder' \
-	    -DCoder='Encoder' \
-	    -Dcoding='encoding' \
-	    -DOtherCoder='Decoder' \
-	    -DreplTypeName='byte array' \
-	    -DdefaultRepl='new byte[] { (byte)'"'"\\?"'"' }' \
-	    -DdefaultReplName='<code>{<\/code>\&nbsp;<code>(byte)'"'"\\?"'"'<\/code>\&nbsp;<code>}<\/code>' \
-	    -DreplType='byte[]' \
-	    -DreplFQType='byte[]' \
-	    -DreplLength='length' \
-	    -DItypesPerOtype='BytesPerChar' \
-	    -DnotLegal='not a legal sixteen-bit Unicode sequence' \
-	    -Dotypes-per-itype='bytes-per-char' \
-	    -DoutSequence='byte sequence in the given charset')
-	$(MV) $@.tmp $@
-
-GENSRC_CHARSETCODER += $(GENSRC_CHARSETCODER_DST)/CharsetEncoder.java
-
-################################################################################
-
-$(GENSRC_CHARSETCODER): $(BUILD_TOOLS_JDK)
-
-TARGETS += $(GENSRC_CHARSETCODER)
+TARGETS += $(GEN_CHARSETENCODER)
 
 ################################################################################
 

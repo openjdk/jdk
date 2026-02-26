@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,27 +25,21 @@
 #ifndef SHARE_UTILITIES_RBTREE_HPP
 #define SHARE_UTILITIES_RBTREE_HPP
 
-#include "metaprogramming/enableIf.hpp"
+#include "cppstdlib/type_traits.hpp"
+#include "memory/allocation.hpp"
 #include "nmt/memTag.hpp"
-#include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
-
-#include <type_traits>
 
 // An intrusive red-black tree is constructed with two template parameters:
 // K is the key type used.
 // COMPARATOR must have a static function `cmp(K a, const IntrusiveRBNode* b)` which returns:
-//     - an int < 0 when a < b
-//     - an int == 0 when a == b
-//     - an int > 0 when a > b
-// Additional static functions used for extra validation can optionally be provided:
-//   `cmp(K a, K b)` which returns:
-//       - an int < 0 when a < b
-//       - an int == 0 when a == b
-//       - an int > 0 when a > b
-//   `cmp(const IntrusiveRBNode* a, const IntrusiveRBNode* b)` which returns:
-//       - true if a < b
-//       - false otherwise
+//     - RBTreeOrdering::LT when a < b
+//     - RBTreeOrdering::EQ when a == b
+//     - RBTreeOrdering::GT when a > b
+// A second static function `less_than(const IntrusiveRBNode* a, const IntrusiveRBNode* b)`
+// used for extra validation can optionally be provided. This should return:
+//     - true if a < b
+//     - false otherwise
 // K needs to be of a type that is trivially destructible.
 // K needs to be stored by the user and is not stored inside the tree.
 // Nodes are address stable and will not change during its lifetime.
@@ -54,22 +48,24 @@
 // K is the key type stored in the tree nodes.
 // V is the value type stored in the tree nodes.
 // COMPARATOR must have a static function `cmp(K a, K b)` which returns:
-//     - an int < 0 when a < b
-//     - an int == 0 when a == b
-//     - an int > 0 when a > b
-// A second static function `cmp(const RBNode<K, V>* a, const RBNode<K, V>* b)`
+//     - RBTreeOrdering::LT when a < b
+//     - RBTreeOrdering::EQ when a == b
+//     - RBTreeOrdering::GT when a > b
+// A second static function `less_than(const RBNode<K, V>* a, const RBNode<K, V>* b)`
 // used for extra validation can optionally be provided. This should return:
 //     - true if a < b
 //     - false otherwise
-// ALLOCATOR must check for oom and exit, as RBTree does not handle the allocation failing.
 // K needs to be of a type that is trivially destructible.
 // The tree will call a value's destructor when its node is removed.
 // Nodes are address stable and will not change during its lifetime.
 
+enum class RBTreeOrdering : int { LT, EQ, GT };
+
 template <typename K, typename NodeType, typename COMPARATOR>
 class AbstractRBTree;
-
+class Arena;
 class outputStream;
+class ResourceArea;
 
 class IntrusiveRBNode {
   template <typename K, typename NodeType, typename COMPARATOR>
@@ -85,7 +81,7 @@ class IntrusiveRBNode {
   DEBUG_ONLY(mutable bool _visited);
 
 public:
-  IntrusiveRBNode() : _parent(0), _left(nullptr), _right(nullptr) DEBUG_ONLY(COMMA _visited(false)) {}
+  IntrusiveRBNode();
 
   // Gets the previous in-order node in the tree.
   // nullptr is returned if there is no previous node.
@@ -100,22 +96,18 @@ public:
   void print_on(outputStream* st, int depth = 0) const;
 
 private:
-  bool is_black() const { return (_parent & 0x1) != 0; }
-  bool is_red() const { return (_parent & 0x1) == 0; }
+  bool is_black() const;
+  bool is_red() const;
 
-  void set_black() { _parent |= 0x1; }
-  void set_red() { _parent &= ~0x1; }
+  void set_black();
+  void set_red();
 
-  IntrusiveRBNode* parent() const { return (IntrusiveRBNode*)(_parent & ~0x1); }
-  void set_parent(IntrusiveRBNode* new_parent) { _parent = (_parent & 0x1) | (uintptr_t)new_parent; }
+  IntrusiveRBNode* parent() const;
+  void set_parent(IntrusiveRBNode* new_parent);
 
-  bool is_right_child() const {
-    return parent() != nullptr && parent()->_right == this;
-  }
+  bool is_right_child() const;
 
-  bool is_left_child() const {
-    return parent() != nullptr && parent()->_left == this;
-  }
+  bool is_left_child() const;
 
   void replace_child(IntrusiveRBNode* old_child, IntrusiveRBNode* new_child);
 
@@ -127,10 +119,11 @@ private:
   // Returns left child (now parent)
   IntrusiveRBNode* rotate_right();
 
-  template <typename NodeType, typename NodeVerifier>
+  template <typename NodeType, typename NODE_VERIFIER, typename USER_VERIFIER>
   void verify(size_t& num_nodes, size_t& black_nodes_until_leaf,
               size_t& shortest_leaf_path, size_t& longest_leaf_path,
-              size_t& tree_depth, bool expect_visited, NodeVerifier verifier) const;
+              size_t& tree_depth, bool expect_visited, NODE_VERIFIER verifier,
+              const USER_VERIFIER& extra_verifier) const;
 
 };
 
@@ -145,20 +138,20 @@ private:
   V _value;
 
 public:
-  const K& key() const { return _key; }
+  const K& key() const;
 
-  V& val() { return _value; }
-  const V& val() const { return _value; }
-  void set_val(const V& v) { _value = v; }
+  V& val();
+  const V& val() const;
+  void set_val(const V& v);
 
-  RBNode() {}
-  RBNode(const K& key) : IntrusiveRBNode(), _key(key) {}
-  RBNode(const K& key, const V& val) : IntrusiveRBNode(), _key(key), _value(val) {}
+  RBNode();
+  RBNode(const K& key);
+  RBNode(const K& key, const V& val);
 
-  const RBNode<K, V>* prev() const { return (RBNode<K, V>*)IntrusiveRBNode::prev(); }
-  const RBNode<K, V>* next() const { return (RBNode<K, V>*)IntrusiveRBNode::next(); }
-  RBNode<K, V>* prev() { return (RBNode<K, V>*)IntrusiveRBNode::prev(); }
-  RBNode<K, V>* next() { return (RBNode<K, V>*)IntrusiveRBNode::next(); }
+  const RBNode<K, V>* prev() const;
+  const RBNode<K, V>* next() const;
+  RBNode<K, V>* prev();
+  RBNode<K, V>* next();
 
   void print_on(outputStream* st, int depth = 0) const;
 
@@ -167,6 +160,7 @@ public:
 template <typename K, typename NodeType, typename COMPARATOR>
 class AbstractRBTree {
   friend class RBTreeTest;
+  friend class NMTVMATreeTest;
   typedef AbstractRBTree<K, NodeType, COMPARATOR> TreeType;
 
 public:
@@ -178,17 +172,15 @@ public:
     friend AbstractRBTree<K, NodeType, COMPARATOR>;
     NodeType** _insert_location;
     NodeType* _parent;
-    Cursor() : _insert_location(nullptr), _parent(nullptr) {}
-    Cursor(NodeType** insert_location, NodeType* parent)
-        : _insert_location(insert_location), _parent(parent) {}
-    Cursor(NodeType* const* insert_location, NodeType* parent)
-        : _insert_location((NodeType**)insert_location), _parent(parent) {}
+    Cursor();
+    Cursor(NodeType** insert_location, NodeType* parent);
+    Cursor(NodeType* const* insert_location, NodeType* parent);
 
   public:
-    bool valid() const { return _insert_location != nullptr; }
-    bool found() const { return *_insert_location != nullptr; }
-    NodeType* node() { return _insert_location == nullptr ? nullptr : *_insert_location; }
-    NodeType* node() const { return _insert_location == nullptr ? nullptr : *_insert_location; }
+    bool valid() const;
+    bool found() const;
+    NodeType* node();
+    NodeType* node() const;
   };
 
 protected:
@@ -197,57 +189,33 @@ protected:
   DEBUG_ONLY(mutable bool _expected_visited);
 
 private:
-  template <typename CMP, typename RET, typename ARG1, typename ARG2, typename = void>
-  struct has_cmp_type : std::false_type {};
-  template <typename CMP, typename RET, typename ARG1, typename ARG2>
-  struct has_cmp_type<CMP, RET, ARG1, ARG2, decltype(static_cast<RET(*)(ARG1, ARG2)>(CMP::cmp), void())> : std::true_type {};
+  static constexpr bool HasKeyComparator =
+      std::is_invocable_r_v<RBTreeOrdering, decltype(&COMPARATOR::cmp), K, K>;
+
+  static constexpr bool HasNodeComparator =
+      std::is_invocable_r_v<RBTreeOrdering, decltype(&COMPARATOR::cmp), K, const NodeType*>;
+
+  // Due to a bug in older GCC versions with static templated constexpr data members (see GCC PR 71954),
+  // we have to express this trait through a struct instead of a constexpr variable directly.
+  template<typename, typename = void>
+  struct HasNodeVerifierImpl : std::false_type {};
 
   template <typename CMP>
-  static constexpr bool HasKeyComparator = has_cmp_type<CMP, int, K, K>::value;
+  struct HasNodeVerifierImpl<CMP, std::void_t<decltype(&CMP::less_than)>>
+      : std::bool_constant<std::is_invocable_r_v<bool, decltype(&CMP::less_than), const NodeType*, const NodeType*>> {};
 
-  template <typename CMP>
-  static constexpr bool HasNodeComparator = has_cmp_type<CMP, int, K, const NodeType*>::value;
+  static constexpr bool HasNodeVerifier = HasNodeVerifierImpl<COMPARATOR>::value;
 
-  template <typename CMP>
-  static constexpr bool HasNodeVerifier = has_cmp_type<CMP, bool, const NodeType*, const NodeType*>::value;
+  RBTreeOrdering cmp(const K& a, const NodeType* b) const;
 
-  template <typename CMP = COMPARATOR, ENABLE_IF(HasKeyComparator<CMP> && !HasNodeComparator<CMP>)>
-  int cmp(const K& a, const NodeType* b) const {
-    return COMPARATOR::cmp(a, b->key());
-  }
+  bool less_than(const NodeType* a, const NodeType* b) const;
 
-  template <typename CMP = COMPARATOR, ENABLE_IF(HasNodeComparator<CMP>)>
-  int cmp(const K& a, const NodeType* b) const {
-    return COMPARATOR::cmp(a, b);
-  }
-
-  template <typename CMP = COMPARATOR, ENABLE_IF(!HasNodeVerifier<CMP>)>
-  bool cmp(const NodeType* a, const NodeType* b) const {
-    return true;
-  }
-
-  template <typename CMP = COMPARATOR, ENABLE_IF(HasNodeVerifier<CMP>)>
-  bool cmp(const NodeType* a, const NodeType* b) const {
-    return COMPARATOR::cmp(a, b);
-  }
-
-  // Cannot assert if no key comparator exist.
-  template <typename CMP = COMPARATOR, ENABLE_IF(!HasKeyComparator<CMP>)>
-  void assert_key_leq(K a, K b) const {}
-
-  template <typename CMP = COMPARATOR, ENABLE_IF(HasKeyComparator<CMP>)>
-  void assert_key_leq(K a, K b) const {
-    assert(COMPARATOR::cmp(a, b) <= 0, "key a must be less or equal to key b");
-  }
+  void assert_key_leq(K a, K b) const;
 
   // True if node is black (nil nodes count as black)
-  static inline bool is_black(const IntrusiveRBNode* node) {
-    return node == nullptr || node->is_black();
-  }
+  static inline bool is_black(const IntrusiveRBNode* node);
 
-  static inline bool is_red(const IntrusiveRBNode* node) {
-    return node != nullptr && node->is_red();
-  }
+  static inline bool is_red(const IntrusiveRBNode* node);
 
   void fix_insert_violations(IntrusiveRBNode* node);
 
@@ -256,21 +224,26 @@ private:
   // Assumption: node has at most one child. Two children is handled in `remove_at_cursor()`
   void remove_from_tree(IntrusiveRBNode* node);
 
-  template <typename NodeVerifier>
-  void verify_self(NodeVerifier verifier) const;
+  struct empty_verifier {
+    bool operator()(const NodeType* n) const;
+  };
 
-  void print_node_on(outputStream* st, int depth, const NodeType* n) const;
+  template <typename NODE_VERIFIER, typename USER_VERIFIER>
+  void verify_self(NODE_VERIFIER verifier, const USER_VERIFIER& extra_verifier) const;
+
+  struct default_printer {
+    void operator()(outputStream* st, const NodeType* n, int depth) const;
+  };
+
+  template <typename PRINTER>
+  void print_node_on(outputStream* st, int depth, const NodeType* n, const PRINTER& node_printer) const;
 
 public:
   NONCOPYABLE(AbstractRBTree);
 
-  AbstractRBTree() : _num_nodes(0), _root(nullptr) DEBUG_ONLY(COMMA _expected_visited(false)) {
-    static_assert(std::is_trivially_destructible<K>::value, "key type must be trivially destructable");
-    static_assert(HasKeyComparator<COMPARATOR> || HasNodeComparator<COMPARATOR>,
-                  "comparator must be of correct type");
-  }
+  AbstractRBTree();
 
-  size_t size() const { return _num_nodes; }
+  size_t size() const;
 
   // Gets the cursor associated with the given node or key.
   Cursor cursor(const K& key, const NodeType* hint_node = nullptr);
@@ -305,87 +278,39 @@ public:
   void replace_at_cursor(NodeType* new_node, const Cursor& node_cursor);
 
   // Finds the node associated with the given key.
-  NodeType* find_node(const K& key, const NodeType* hint_node = nullptr) const {
-    Cursor node_cursor = cursor(key, hint_node);
-    return node_cursor.node();
-  }
-
-  NodeType* find_node(const K& key, const NodeType* hint_node = nullptr) {
-    Cursor node_cursor = cursor(key, hint_node);
-    return node_cursor.node();
-  }
+  NodeType* find_node(const K& key, const NodeType* hint_node = nullptr);
+  NodeType* find_node(const K& key, const NodeType* hint_node = nullptr) const;
 
   // Inserts the given node into the tree.
-  void insert(const K& key, NodeType* node, const NodeType* hint_node = nullptr) {
-    Cursor node_cursor = cursor(key, hint_node);
-    insert_at_cursor(node, node_cursor);
-  }
+  void insert(const K& key, NodeType* node, const NodeType* hint_node = nullptr);
 
-  void remove(NodeType* node) {
-    Cursor node_cursor = cursor(node);
-    remove_at_cursor(node_cursor);
-  }
+  // Removes the given node from the tree.
+  void remove(NodeType* node);
 
   // Finds the node with the closest key <= the given key.
   // If no node is found, null is returned instead.
-  NodeType* closest_leq(const K& key) const {
-    Cursor node_cursor = cursor(key);
-    return node_cursor.found() ? node_cursor.node() : prev(node_cursor).node();
-  }
-
-  NodeType* closest_leq(const K& key) {
-    Cursor node_cursor = cursor(key);
-    return node_cursor.found() ? node_cursor.node() : prev(node_cursor).node();
-  }
+  NodeType* closest_leq(const K& key);
+  NodeType* closest_leq(const K& key) const;
 
   // Finds the node with the closest key > the given key.
   // If no node is found, null is returned instead.
-  NodeType* closest_gt(const K& key) const {
-    Cursor node_cursor = cursor(key);
-    return next(node_cursor).node();
-  }
-
-  NodeType* closest_gt(const K& key) {
-    Cursor node_cursor = cursor(key);
-    return next(node_cursor).node();
-  }
+  NodeType* closest_gt(const K& key);
+  NodeType* closest_gt(const K& key) const;
 
   // Finds the node with the closest key >= the given key.
   // If no node is found, null is returned instead.
-  NodeType* closest_ge(const K& key) const {
-    Cursor node_cursor = cursor(key);
-    return node_cursor.found() ? node_cursor.node() : next(node_cursor).node();
-  }
-
-  NodeType* closest_ge(const K& key) {
-    Cursor node_cursor = cursor(key);
-    return node_cursor.found() ? node_cursor.node() : next(node_cursor).node();
-  }
+  NodeType* closest_ge(const K& key);
+  NodeType* closest_ge(const K& key) const;
 
   // Returns leftmost node, nullptr if tree is empty.
   // If COMPARATOR::cmp(a, b) behaves canonically (positive value for a > b), this will the smallest key value.
-  const NodeType* leftmost() const {
-    IntrusiveRBNode* n = _root, *n2 = nullptr;
-    while (n != nullptr) {
-      n2 = n;
-      n = n->_left;
-    }
-    return (NodeType*)n2;
-  }
+  NodeType* leftmost();
+  const NodeType* leftmost() const;
 
   // Returns rightmost node, nullptr if tree is empty.
   // If COMPARATOR::cmp(a, b) behaves canonically (positive value for a > b), this will the largest key value.
-  const NodeType* rightmost() const {
-    IntrusiveRBNode* n = _root, *n2 = nullptr;
-    while (n != nullptr) {
-      n2 = n;
-      n = n->_right;
-    }
-    return (NodeType*)n2;
-  }
-
-  NodeType* leftmost()  { return const_cast<NodeType*>(static_cast<const TreeType*>(this)->leftmost()); }
-  NodeType* rightmost() { return const_cast<NodeType*>(static_cast<const TreeType*>(this)->rightmost()); }
+  NodeType* rightmost();
+  const NodeType* rightmost() const;
 
   struct Range {
     NodeType* start;
@@ -397,39 +322,37 @@ public:
   // Return the range [start, end)
   // where start->key() <= addr < end->key().
   // Failure to find the range leads to start and/or end being null.
-  Range find_enclosing_range(K key) const {
-    NodeType* start = closest_leq(key);
-    NodeType* end = closest_gt(key);
-    return Range(start, end);
-  }
+  Range find_enclosing_range(K key) const;
 
   // Visit all RBNodes in ascending order, calling f on each node.
+  // If f returns `true` the iteration continues, otherwise it is stopped at the current node.
   template <typename F>
   void visit_in_order(F f) const;
 
+  template <typename F>
+  void visit_in_order(F f);
+
   // Visit all RBNodes in ascending order whose keys are in range [from, to], calling f on each node.
+  // If f returns `true` the iteration continues, otherwise it is stopped at the current node.
   template <typename F>
   void visit_range_in_order(const K& from, const K& to, F f) const;
 
+  template <typename F>
+  void visit_range_in_order(const K &from, const K &to, F f);
+
   // Verifies that the tree is correct and holds rb-properties
   // If not using a key comparator (when using IntrusiveRBTree for example),
-  // A second `cmp` must exist in COMPARATOR (see top of file).
-  template <typename CMP = COMPARATOR, ENABLE_IF(HasNodeVerifier<CMP>)>
-  void verify_self() const {
-    verify_self([](const NodeType* a, const NodeType* b){ return COMPARATOR::cmp(a, b);});
-  }
+  // a function `less_than` must exist in COMPARATOR (see top of file).
+  // Accepts an optional callable `bool extra_verifier(const Node* n)`.
+  // This should return true if the node is valid.
+  // If provided, each node is also verified through this callable.
+  template <typename USER_VERIFIER = empty_verifier>
+  void verify_self(const USER_VERIFIER& extra_verifier = USER_VERIFIER()) const;
 
-  template <typename CMP = COMPARATOR, ENABLE_IF(HasKeyComparator<CMP> && !HasNodeVerifier<CMP>)>
-  void verify_self() const {
-    verify_self([](const NodeType* a, const NodeType* b){ return COMPARATOR::cmp(a->key(), b->key()) < 0; });
-  }
-
-  template <typename CMP = COMPARATOR, ENABLE_IF(HasNodeComparator<CMP> && !HasKeyComparator<CMP> && !HasNodeVerifier<CMP>)>
-  void verify_self() const {
-    verify_self([](const NodeType*, const NodeType*){ return true;});
-  }
-
-  void print_on(outputStream* st) const;
+  // Accepts an optional printing callable `void node_printer(outputStream* st, const Node* n, int depth)`.
+  // If provided, each node is printed through this callable rather than the default `print_on`.
+  template <typename PRINTER = default_printer>
+  void print_on(outputStream* st, const PRINTER& node_printer = PRINTER()) const;
 
 };
 
@@ -441,112 +364,81 @@ class RBTree : public AbstractRBTree<K, RBNode<K, V>, COMPARATOR> {
   ALLOCATOR _allocator;
 
 public:
-  RBTree() : BaseType(), _allocator() {}
-  ~RBTree() { remove_all(); }
+  template<typename... AllocArgs>
+  RBTree(AllocArgs... alloc_args);
+  ~RBTree();
+  NONCOPYABLE(RBTree);
+
+  bool copy_into(RBTree& other) const;
 
   typedef typename BaseType::Cursor Cursor;
   using BaseType::cursor;
   using BaseType::insert_at_cursor;
-  using BaseType::remove_at_cursor;
   using BaseType::next;
   using BaseType::prev;
 
-  void replace_at_cursor(RBNode<K, V>* new_node, const Cursor& node_cursor) {
-    RBNode<K, V>* old_node = node_cursor.node();
-    BaseType::replace_at_cursor(new_node, node_cursor);
-    free_node(old_node);
-  }
+  void remove_at_cursor(const Cursor& node_cursor);
+  void replace_at_cursor(RBNode<K, V>* new_node, const Cursor& node_cursor);
 
-  RBNode<K, V>* allocate_node(const K& key, const V& val) {
-    void* node_place = _allocator.allocate(sizeof(RBNode<K, V>));
-    assert(node_place != nullptr, "rb-tree allocator must exit on failure");
-    return new (node_place) RBNode<K, V>(key, val);
-  }
+  RBNode<K, V>* allocate_node(const K& key);
+  RBNode<K, V>* allocate_node(const K& key, const V& val);
 
-  void free_node(RBNode<K, V>* node) {
-    node->_value.~V();
-    _allocator.free(node);
-  }
+  void free_node(RBNode<K, V>* node);
 
   // Inserts a node with the given key/value into the tree,
   // if the key already exist, the value is updated instead.
-  void upsert(const K& key, const V& val, const RBNode<K, V>* hint_node = nullptr) {
-    Cursor node_cursor = cursor(key, hint_node);
-    RBNode<K, V>* node = node_cursor.node();
-    if (node != nullptr) {
-      node->set_val(val);
-      return;
-    }
-
-    node = allocate_node(key, val);
-    insert_at_cursor(node, node_cursor);
-  }
+  // Returns false if and only if allocation of a new node failed.
+  bool upsert(const K& key, const V& val, const RBNode<K, V>* hint_node = nullptr);
 
   // Finds the value of the node associated with the given key.
-  V* find(const K& key) {
-    Cursor node_cursor = cursor(key);
-    return node_cursor.found() ? &node_cursor.node()->_value : nullptr;
-  }
+  V* find(const K& key);
+  V* find(const K& key) const;
 
-  V* find(const K& key) const {
-    const Cursor node_cursor = cursor(key);
-    return node_cursor.found() ? &node_cursor.node()->_value : nullptr;
-  }
-
-  void remove(RBNode<K, V>* node) {
-    Cursor node_cursor = cursor(node);
-    remove_at_cursor(node_cursor);
-    free_node(node);
-  }
+  void remove(RBNode<K, V>* node);
 
   // Removes the node with the given key from the tree if it exists.
   // Returns true if the node was successfully removed, false otherwise.
-  bool remove(const K& key) {
-    Cursor node_cursor = cursor(key);
-    if (!node_cursor.found()) {
-      return false;
-    }
-    RBNode<K, V>* node = node_cursor.node();
-    remove_at_cursor(node_cursor);
-    free_node((RBNode<K, V>*)node);
-    return true;
-  }
+  bool remove(const K& key);
 
   // Removes all existing nodes from the tree.
-  void remove_all() {
-    IntrusiveRBNode* to_delete[64];
-    int stack_idx = 0;
-    to_delete[stack_idx++] = BaseType::_root;
-
-    while (stack_idx > 0) {
-      IntrusiveRBNode* head = to_delete[--stack_idx];
-      if (head == nullptr) continue;
-      to_delete[stack_idx++] = head->_left;
-      to_delete[stack_idx++] = head->_right;
-      free_node((RBNode<K, V>*)head);
-    }
-    BaseType::_num_nodes = 0;
-    BaseType::_root = nullptr;
-  }
+  void remove_all();
 };
 
-template <MemTag mem_tag>
+template <MemTag mem_tag, AllocFailType strategy>
 class RBTreeCHeapAllocator {
 public:
-  void* allocate(size_t sz) {
-    void* allocation = os::malloc(sz, mem_tag);
-    if (allocation == nullptr) {
-      vm_exit_out_of_memory(sz, OOM_MALLOC_ERROR,
-                            "red-black tree failed allocation");
-    }
-    return allocation;
-  }
-
-  void free(void* ptr) { os::free(ptr); }
+  void* allocate(size_t sz);
+  void free(void* ptr);
 };
 
-template <typename K, typename V, typename COMPARATOR, MemTag mem_tag>
-using RBTreeCHeap = RBTree<K, V, COMPARATOR, RBTreeCHeapAllocator<mem_tag>>;
+template <AllocFailType strategy>
+class RBTreeArenaAllocator {
+  Arena* _arena;
+public:
+  RBTreeArenaAllocator(Arena* arena);
+  void* allocate(size_t sz);
+  void free(void* ptr);
+};
+
+template <AllocFailType strategy>
+class RBTreeResourceAreaAllocator {
+  ResourceArea* _rarea;
+public:
+  RBTreeResourceAreaAllocator(ResourceArea* rarea);
+  void* allocate(size_t sz);
+  void free(void* ptr);
+};
+
+
+
+template <typename K, typename V, typename COMPARATOR, MemTag mem_tag, AllocFailType strategy = AllocFailStrategy::EXIT_OOM>
+using RBTreeCHeap = RBTree<K, V, COMPARATOR, RBTreeCHeapAllocator<mem_tag, strategy>>;
+
+template <typename K, typename V, typename COMPARATOR, AllocFailType strategy = AllocFailStrategy::EXIT_OOM>
+using RBTreeArena = RBTree<K, V, COMPARATOR, RBTreeArenaAllocator<strategy>>;
+
+template <typename K, typename V, typename COMPARATOR, AllocFailType strategy = AllocFailStrategy::EXIT_OOM>
+using RBTreeResourceArea = RBTree<K, V, COMPARATOR, RBTreeResourceAreaAllocator<strategy>>;
 
 template <typename K, typename COMPARATOR>
 using IntrusiveRBTree = AbstractRBTree<K, IntrusiveRBNode, COMPARATOR>;

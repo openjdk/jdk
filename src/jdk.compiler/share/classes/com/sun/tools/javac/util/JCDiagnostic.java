@@ -38,7 +38,6 @@ import javax.tools.JavaFileObject;
 import com.sun.tools.javac.api.DiagnosticFormatter;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.DefinedBy.Api;
 
@@ -364,10 +363,38 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         /** Get the position within the file that most accurately defines the
          *  location for the diagnostic. */
         int getPreferredPosition();
-        /** If there is a tree node, and if endPositions are available, get
-         *  the end position of the tree node. Otherwise, just returns the
-         *  same as getPreferredPosition(). */
-        int getEndPosition(EndPosTable endPosTable);
+        /** If there is a tree node, get the end position of the tree node. */
+        int getEndPosition();
+        /** Get the position that determines which Lint configuration applies. */
+        default int getLintPosition() {
+            return getStartPosition();
+        }
+        /** Create a new instance from this instance and the given lint position. */
+        default DiagnosticPosition withLintPosition(int lintPos) {
+            DiagnosticPosition orig = this;
+            return new DiagnosticPosition() {
+                @Override
+                public JCTree getTree() {
+                    return orig.getTree();
+                }
+                @Override
+                public int getStartPosition() {
+                    return orig.getStartPosition();
+                }
+                @Override
+                public int getPreferredPosition() {
+                    return orig.getPreferredPosition();
+                }
+                @Override
+                public int getEndPosition() {
+                    return orig.getEndPosition();
+                }
+                @Override
+                public int getLintPosition() {
+                    return lintPos;
+                }
+            };
+        }
     }
 
     /**
@@ -391,7 +418,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
             return pos;
         }
 
-        public int getEndPosition(EndPosTable endPosTable) {
+        public int getEndPosition() {
             return pos;
         }
 
@@ -405,6 +432,10 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         RECOVERABLE,
         NON_DEFERRABLE,
         COMPRESSED,
+        /** Flag for lint diagnostics that should be emitted even when their category
+         *  is not explicitly enabled, as long as it is not explicitly suppressed.
+         */
+        DEFAULT_ENABLED,
         /** Flags mandatory warnings that should pass through a mandatory warning aggregator.
          */
         AGGREGATE,
@@ -713,7 +744,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
     }
 
     protected int getIntEndPosition() {
-        return (position == null ? Position.NOPOS : position.getEndPosition(source.getEndPosTable()));
+        return (position == null ? Position.NOPOS : position.getEndPosition());
     }
 
     @DefinedBy(Api.COMPILER)

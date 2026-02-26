@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/sizes.hpp"
+
+class stringStream;
 
 class VM_Version : public Abstract_VM_Version {
   friend class VMStructs;
@@ -197,8 +199,8 @@ class VM_Version : public Abstract_VM_Version {
   union ExtCpuid8Ecx {
     uint32_t value;
     struct {
-      uint32_t cores_per_cpu : 8,
-                             : 24;
+      uint32_t threads_per_cpu : 8,
+                               : 24;
     } bits;
   };
 
@@ -274,7 +276,8 @@ class VM_Version : public Abstract_VM_Version {
         fast_short_rep_mov : 1,
                            : 9,
                  serialize : 1,
-                           : 5,
+                     hybrid: 1,
+                           : 4,
                    cet_ibt : 1,
                            : 2,
               avx512_fp16  : 1,
@@ -300,6 +303,14 @@ class VM_Version : public Abstract_VM_Version {
                      : 1,
               apx_f  : 1,
                      : 10;
+    } bits;
+  };
+
+  union StdCpuidEax29Ecx0 {
+    uint32_t value;
+    struct {
+      uint32_t  apx_nci_ndd_nf  : 1,
+                                : 31;
     } bits;
   };
 
@@ -366,83 +377,84 @@ protected:
    */
   enum Feature_Flag {
 #define CPU_FEATURE_FLAGS(decl) \
-    decl(CX8,               "cx8",               0)  /*  next bits are from cpuid 1 (EDX) */ \
-    decl(CMOV,              "cmov",              1)  \
-    decl(FXSR,              "fxsr",              2)  \
-    decl(HT,                "ht",                3)  \
+    decl(CX8,               cx8,               0)  /*  next bits are from cpuid 1 (EDX) */ \
+    decl(CMOV,              cmov,              1)  \
+    decl(FXSR,              fxsr,              2)  \
+    decl(HT,                ht,                3)  \
                                                      \
-    decl(MMX,               "mmx",               4)  \
-    decl(3DNOW_PREFETCH,    "3dnowpref",         5)  /* Processor supports 3dnow prefetch and prefetchw instructions */ \
+    decl(MMX,               mmx,               4)  \
+    decl(3DNOW_PREFETCH,    3dnowpref,         5)  /* Processor supports 3dnow prefetch and prefetchw instructions */ \
                                                      /* may not necessarily support other 3dnow instructions */ \
-    decl(SSE,               "sse",               6)  \
-    decl(SSE2,              "sse2",              7)  \
+    decl(SSE,               sse,               6)  \
+    decl(SSE2,              sse2,              7)  \
                                                      \
-    decl(SSE3,              "sse3",              8 ) /* SSE3 comes from cpuid 1 (ECX) */ \
-    decl(SSSE3,             "ssse3",             9 ) \
-    decl(SSE4A,             "sse4a",             10) \
-    decl(SSE4_1,            "sse4.1",            11) \
+    decl(SSE3,              sse3,              8 ) /* SSE3 comes from cpuid 1 (ECX) */ \
+    decl(SSSE3,             ssse3,             9 ) \
+    decl(SSE4A,             sse4a,             10) \
+    decl(SSE4_1,            sse4.1,            11) \
                                                      \
-    decl(SSE4_2,            "sse4.2",            12) \
-    decl(POPCNT,            "popcnt",            13) \
-    decl(LZCNT,             "lzcnt",             14) \
-    decl(TSC,               "tsc",               15) \
+    decl(SSE4_2,            sse4.2,            12) \
+    decl(POPCNT,            popcnt,            13) \
+    decl(LZCNT,             lzcnt,             14) \
+    decl(TSC,               tsc,               15) \
                                                      \
-    decl(TSCINV_BIT,        "tscinvbit",         16) \
-    decl(TSCINV,            "tscinv",            17) \
-    decl(AVX,               "avx",               18) \
-    decl(AVX2,              "avx2",              19) \
+    decl(TSCINV_BIT,        tscinvbit,         16) \
+    decl(TSCINV,            tscinv,            17) \
+    decl(AVX,               avx,               18) \
+    decl(AVX2,              avx2,              19) \
                                                      \
-    decl(AES,               "aes",               20) \
-    decl(ERMS,              "erms",              21) /* enhanced 'rep movsb/stosb' instructions */ \
-    decl(CLMUL,             "clmul",             22) /* carryless multiply for CRC */ \
-    decl(BMI1,              "bmi1",              23) \
+    decl(AES,               aes,               20) \
+    decl(ERMS,              erms,              21) /* enhanced 'rep movsb/stosb' instructions */ \
+    decl(CLMUL,             clmul,             22) /* carryless multiply for CRC */ \
+    decl(BMI1,              bmi1,              23) \
                                                      \
-    decl(BMI2,              "bmi2",              24) \
-    decl(RTM,               "rtm",               25) /* Restricted Transactional Memory instructions */ \
-    decl(ADX,               "adx",               26) \
-    decl(AVX512F,           "avx512f",           27) /* AVX 512bit foundation instructions */ \
+    decl(BMI2,              bmi2,              24) \
+    decl(RTM,               rtm,               25) /* Restricted Transactional Memory instructions */ \
+    decl(ADX,               adx,               26) \
+    decl(AVX512F,           avx512f,           27) /* AVX 512bit foundation instructions */ \
                                                      \
-    decl(AVX512DQ,          "avx512dq",          28) \
-    decl(AVX512PF,          "avx512pf",          29) \
-    decl(AVX512ER,          "avx512er",          30) \
-    decl(AVX512CD,          "avx512cd",          31) \
+    decl(AVX512DQ,          avx512dq,          28) \
+    decl(AVX512PF,          avx512pf,          29) \
+    decl(AVX512ER,          avx512er,          30) \
+    decl(AVX512CD,          avx512cd,          31) \
                                                      \
-    decl(AVX512BW,          "avx512bw",          32) /* Byte and word vector instructions */ \
-    decl(AVX512VL,          "avx512vl",          33) /* EVEX instructions with smaller vector length */ \
-    decl(SHA,               "sha",               34) /* SHA instructions */ \
-    decl(FMA,               "fma",               35) /* FMA instructions */ \
+    decl(AVX512BW,          avx512bw,          32) /* Byte and word vector instructions */ \
+    decl(AVX512VL,          avx512vl,          33) /* EVEX instructions with smaller vector length */ \
+    decl(SHA,               sha,               34) /* SHA instructions */ \
+    decl(FMA,               fma,               35) /* FMA instructions */ \
                                                      \
-    decl(VZEROUPPER,        "vzeroupper",        36) /* Vzeroupper instruction */ \
-    decl(AVX512_VPOPCNTDQ,  "avx512_vpopcntdq",  37) /* Vector popcount */ \
-    decl(AVX512_VPCLMULQDQ, "avx512_vpclmulqdq", 38) /* Vector carryless multiplication */ \
-    decl(AVX512_VAES,       "avx512_vaes",       39) /* Vector AES instruction */ \
+    decl(VZEROUPPER,        vzeroupper,        36) /* Vzeroupper instruction */ \
+    decl(AVX512_VPOPCNTDQ,  avx512_vpopcntdq,  37) /* Vector popcount */ \
+    decl(AVX512_VPCLMULQDQ, avx512_vpclmulqdq, 38) /* Vector carryless multiplication */ \
+    decl(AVX512_VAES,       avx512_vaes,       39) /* Vector AES instruction */ \
                                                      \
-    decl(AVX512_VNNI,       "avx512_vnni",       40) /* Vector Neural Network Instructions */ \
-    decl(FLUSH,             "clflush",           41) /* flush instruction */ \
-    decl(FLUSHOPT,          "clflushopt",        42) /* flusopth instruction */ \
-    decl(CLWB,              "clwb",              43) /* clwb instruction */ \
+    decl(AVX512_VNNI,       avx512_vnni,       40) /* Vector Neural Network Instructions */ \
+    decl(FLUSH,             clflush,           41) /* flush instruction */ \
+    decl(FLUSHOPT,          clflushopt,        42) /* flusopth instruction */ \
+    decl(CLWB,              clwb,              43) /* clwb instruction */ \
                                                      \
-    decl(AVX512_VBMI2,      "avx512_vbmi2",      44) /* VBMI2 shift left double instructions */ \
-    decl(AVX512_VBMI,       "avx512_vbmi",       45) /* Vector BMI instructions */ \
-    decl(HV,                "hv",                46) /* Hypervisor instructions */ \
-    decl(SERIALIZE,         "serialize",         47) /* CPU SERIALIZE */ \
-    decl(RDTSCP,            "rdtscp",            48) /* RDTSCP instruction */ \
-    decl(RDPID,             "rdpid",             49) /* RDPID instruction */ \
-    decl(FSRM,              "fsrm",              50) /* Fast Short REP MOV */ \
-    decl(GFNI,              "gfni",              51) /* Vector GFNI instructions */ \
-    decl(AVX512_BITALG,     "avx512_bitalg",     52) /* Vector sub-word popcount and bit gather instructions */\
-    decl(F16C,              "f16c",              53) /* Half-precision and single precision FP conversion instructions*/ \
-    decl(PKU,               "pku",               54) /* Protection keys for user-mode pages */ \
-    decl(OSPKE,             "ospke",             55) /* OS enables protection keys */ \
-    decl(CET_IBT,           "cet_ibt",           56) /* Control Flow Enforcement - Indirect Branch Tracking */ \
-    decl(CET_SS,            "cet_ss",            57) /* Control Flow Enforcement - Shadow Stack */ \
-    decl(AVX512_IFMA,       "avx512_ifma",       58) /* Integer Vector FMA instructions*/ \
-    decl(AVX_IFMA,          "avx_ifma",          59) /* 256-bit VEX-coded variant of AVX512-IFMA*/ \
-    decl(APX_F,             "apx_f",             60) /* Intel Advanced Performance Extensions*/ \
-    decl(SHA512,            "sha512",            61) /* SHA512 instructions*/ \
-    decl(AVX512_FP16,       "avx512_fp16",       62) /* AVX512 FP16 ISA support*/ \
-    decl(AVX10_1,           "avx10_1",           63) /* AVX10 512 bit vector ISA Version 1 support*/ \
-    decl(AVX10_2,           "avx10_2",           64) /* AVX10 512 bit vector ISA Version 2 support*/
+    decl(AVX512_VBMI2,      avx512_vbmi2,      44) /* VBMI2 shift left double instructions */ \
+    decl(AVX512_VBMI,       avx512_vbmi,       45) /* Vector BMI instructions */ \
+    decl(HV,                hv,                46) /* Hypervisor instructions */ \
+    decl(SERIALIZE,         serialize,         47) /* CPU SERIALIZE */ \
+    decl(RDTSCP,            rdtscp,            48) /* RDTSCP instruction */ \
+    decl(RDPID,             rdpid,             49) /* RDPID instruction */ \
+    decl(FSRM,              fsrm,              50) /* Fast Short REP MOV */ \
+    decl(GFNI,              gfni,              51) /* Vector GFNI instructions */ \
+    decl(AVX512_BITALG,     avx512_bitalg,     52) /* Vector sub-word popcount and bit gather instructions */\
+    decl(F16C,              f16c,              53) /* Half-precision and single precision FP conversion instructions*/ \
+    decl(PKU,               pku,               54) /* Protection keys for user-mode pages */ \
+    decl(OSPKE,             ospke,             55) /* OS enables protection keys */ \
+    decl(CET_IBT,           cet_ibt,           56) /* Control Flow Enforcement - Indirect Branch Tracking */ \
+    decl(CET_SS,            cet_ss,            57) /* Control Flow Enforcement - Shadow Stack */ \
+    decl(AVX512_IFMA,       avx512_ifma,       58) /* Integer Vector FMA instructions*/ \
+    decl(AVX_IFMA,          avx_ifma,          59) /* 256-bit VEX-coded variant of AVX512-IFMA*/ \
+    decl(APX_F,             apx_f,             60) /* Intel Advanced Performance Extensions*/ \
+    decl(SHA512,            sha512,            61) /* SHA512 instructions*/ \
+    decl(AVX512_FP16,       avx512_fp16,       62) /* AVX512 FP16 ISA support*/ \
+    decl(AVX10_1,           avx10_1,           63) /* AVX10 512 bit vector ISA Version 1 support*/ \
+    decl(AVX10_2,           avx10_2,           64) /* AVX10 512 bit vector ISA Version 2 support*/ \
+    decl(HYBRID,            hybrid,            65) /* Hybrid architecture */
 
 #define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = (bit),
     CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
@@ -503,6 +515,15 @@ protected:
     bool supports_feature(VM_Version::Feature_Flag feature) {
       int idx = index(feature);
       return (_features_bitmap[idx] & bit_mask(feature)) != 0;
+    }
+
+    bool supports_features(VM_Features* features_to_test) {
+      for (int i = 0; i < features_bitmap_element_count(); i++) {
+        if ((_features_bitmap[i] & features_to_test->_features_bitmap[i]) != features_to_test->_features_bitmap[i]) {
+          return false;
+       }
+      }
+      return true;
     }
   };
 
@@ -587,6 +608,10 @@ protected:
     StdCpuid24MainLeafEax std_cpuid24_eax;
     StdCpuid24MainLeafEbx std_cpuid24_ebx;
 
+    // cpuid function 0x29 APX Advanced Performance Extensions Leaf
+    // eax = 0x29, ecx = 0
+    StdCpuidEax29Ecx0 std_cpuid29_ebx;
+
     // cpuid function 0xB (processor topology)
     // ecx = 0
     uint32_t     tpl_cpuidB0_eax;
@@ -660,6 +685,10 @@ protected:
     // Space to save apx registers after signal handle
     jlong        apx_save[2]; // Save r16 and r31
 
+    // cpuid function 0xD, subleaf 19 (APX extended state)
+    uint32_t          apx_xstate_size;          // EAX: size of APX state (128)
+    uint32_t          apx_xstate_offset;        // EBX: offset in standard XSAVE area
+
     VM_Features feature_flags() const;
 
     // Asserts
@@ -707,6 +736,7 @@ public:
   static ByteSize std_cpuid0_offset() { return byte_offset_of(CpuidInfo, std_max_function); }
   static ByteSize std_cpuid1_offset() { return byte_offset_of(CpuidInfo, std_cpuid1_eax); }
   static ByteSize std_cpuid24_offset() { return byte_offset_of(CpuidInfo, std_cpuid24_eax); }
+  static ByteSize std_cpuid29_offset() { return byte_offset_of(CpuidInfo, std_cpuid29_ebx); }
   static ByteSize dcp_cpuid4_offset() { return byte_offset_of(CpuidInfo, dcp_cpuid4_eax); }
   static ByteSize sef_cpuid7_offset() { return byte_offset_of(CpuidInfo, sef_cpuid7_eax); }
   static ByteSize sefsl1_cpuid7_offset() { return byte_offset_of(CpuidInfo, sefsl1_cpuid7_eax); }
@@ -722,6 +752,11 @@ public:
   static ByteSize ymm_save_offset() { return byte_offset_of(CpuidInfo, ymm_save); }
   static ByteSize zmm_save_offset() { return byte_offset_of(CpuidInfo, zmm_save); }
   static ByteSize apx_save_offset() { return byte_offset_of(CpuidInfo, apx_save); }
+  static ByteSize apx_xstate_offset_offset() { return byte_offset_of(CpuidInfo, apx_xstate_offset); }
+  static ByteSize apx_xstate_size_offset() { return byte_offset_of(CpuidInfo, apx_xstate_size); }
+
+  static uint32_t apx_xstate_offset() { return _cpuid_info.apx_xstate_offset; }
+  static uint32_t apx_xstate_size()   { return _cpuid_info.apx_xstate_size; }
 
   // The value used to check ymm register after signal handle
   static int ymm_test_value()    { return 0xCAFEBABE; }
@@ -756,7 +791,9 @@ public:
     _features.set_feature(CPU_SSE2);
     _features.set_feature(CPU_VZEROUPPER);
   }
-  static void set_apx_cpuFeatures() { _features.set_feature(CPU_APX_F); }
+  static void set_apx_cpuFeatures() {
+    _features.set_feature(CPU_APX_F);
+  }
   static void set_bmi_cpuFeatures() {
     _features.set_feature(CPU_BMI1);
     _features.set_feature(CPU_BMI2);
@@ -875,6 +912,7 @@ public:
   static bool supports_avx512_fp16()  { return _features.supports_feature(CPU_AVX512_FP16); }
   static bool supports_hv()           { return _features.supports_feature(CPU_HV); }
   static bool supports_serialize()    { return _features.supports_feature(CPU_SERIALIZE); }
+  static bool supports_hybrid()       { return _features.supports_feature(CPU_HYBRID); }
   static bool supports_f16c()         { return _features.supports_feature(CPU_F16C); }
   static bool supports_pku()          { return _features.supports_feature(CPU_PKU); }
   static bool supports_ospke()        { return _features.supports_feature(CPU_OSPKE); }
@@ -918,11 +956,13 @@ public:
 
   static bool is_intel_cascade_lake();
 
+  static bool is_intel_darkmont();
+
   static int avx3_threshold();
 
   static bool is_intel_tsc_synched_at_init();
 
-  static void insert_features_names(VM_Version::VM_Features features, char* buf, size_t buflen);
+  static void insert_features_names(VM_Version::VM_Features features, stringStream& ss);
 
   // This checks if the JVM is potentially affected by an erratum on Intel CPUs (SKX102)
   // that causes unpredictable behaviour when jcc crosses 64 byte boundaries. Its microcode
@@ -973,7 +1013,7 @@ public:
     return true;
   }
 
-  constexpr static bool supports_recursive_lightweight_locking() {
+  constexpr static bool supports_recursive_fast_locking() {
     return true;
   }
 
@@ -1071,8 +1111,21 @@ public:
 
   static bool supports_tscinv_ext(void);
 
-  static void initialize_tsc();
   static void initialize_cpu_information(void);
+
+  static void get_cpu_features_name(void* features_buffer, stringStream& ss);
+
+  // Returns names of features present in features_set1 but not in features_set2
+  static void get_missing_features_name(void* features_set1, void* features_set2, stringStream& ss);
+
+  // Returns number of bytes required to store cpu features representation
+  static int cpu_features_size();
+
+  // Stores cpu features representation in the provided buffer. This representation is arch dependent.
+  // Size of the buffer must be same as returned by cpu_features_size()
+  static void store_cpu_features(void* buf);
+
+  static bool supports_features(void* features_to_test);
 };
 
 #endif // CPU_X86_VM_VERSION_X86_HPP

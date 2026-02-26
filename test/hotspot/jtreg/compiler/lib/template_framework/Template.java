@@ -65,7 +65,7 @@ import compiler.lib.ir_framework.TestFramework;
  *
  * <p>
  * {@snippet lang=java :
- * var testTemplate = Template.make("typeName", "operator", "generator", (String typeName, String operator, MyGenerator generator) -> body(
+ * var testTemplate = Template.make("typeName", "operator", "generator", (String typeName, String operator, MyGenerator generator) -> scope(
  *     let("con1", generator.next()),
  *     let("con2", generator.next()),
  *     """
@@ -86,13 +86,13 @@ import compiler.lib.ir_framework.TestFramework;
  * }
  *
  * <p>
- * To get an executable test, we define a {@link Template} that produces a class body with a main method. The Template
+ * To get an executable test, we define a {@link Template} that produces a class scope with a main method. The Template
  * takes a list of types, and calls the {@code testTemplate} defined above for each type and operator. We use
  * the {@link TestFramework} to call our {@code @Test} methods.
  *
  * <p>
  * {@snippet lang=java :
- * var classTemplate = Template.make("types", (List<Type> types) -> body(
+ * var classTemplate = Template.make("types", (List<Type> types) -> scope(
  *     let("classpath", comp.getEscapedClassPathOfCompiledClasses()),
  *     """
  *     package p.xyz;
@@ -148,12 +148,12 @@ import compiler.lib.ir_framework.TestFramework;
  * {@link Template#make(String, Function)}. For each number of arguments there is an implementation
  * (e.g. {@link Template.TwoArgs} for two arguments). This allows the use of generics for the
  * {@link Template} argument types which enables type checking of the {@link Template} arguments.
- *  It is currently only allowed to use up to three arguments.
+ * It is currently only allowed to use up to three arguments.
  *
  * <p>
  * A {@link Template} can be rendered to a {@link String} (e.g. {@link Template.ZeroArgs#render()}).
  * Alternatively, we can generate a {@link Token} (more specifically, a {@link TemplateToken}) with {@code asToken()}
- * (e.g. {@link Template.ZeroArgs#asToken()}), and use the {@link Token} inside another {@link Template#body}.
+ * (e.g. {@link Template.ZeroArgs#asToken()}), and use the {@link Token} inside another {@link Template#scope}.
  *
  * <p>
  * Ideally, we would have used <a href="https://openjdk.org/jeps/430">string templates</a> to inject these Template
@@ -161,6 +161,11 @@ import compiler.lib.ir_framework.TestFramework;
  * <strong>hashtag replacements</strong> in the {@link String}s: the Template argument names are captured, and
  * the argument values automatically replace any {@code "#name"} in the {@link String}s. See the different overloads
  * of {@link #make} for examples. Additional hashtag replacements can be defined with {@link #let}.
+ * We have decided to keep hashtag replacements constrained to the scope of one Template. They
+ * do not escape to outer or inner Template uses. If one needs to pass values to inner Templates,
+ * this can be done with Template arguments. Keeping hashtag replacements local to Templates
+ * has the benefit that there is no conflict in recursive templates, where outer and inner Templates
+ * define the same hashtag replacement.
  *
  * <p>
  * When using nested Templates, there can be collisions with identifiers (e.g. variable names and method names).
@@ -174,25 +179,6 @@ import compiler.lib.ir_framework.TestFramework;
  * or underscore (i.e. {@code a-zA-Z_}), the other characters can also be digits (i.e. {@code a-zA-Z0-9_}).
  * One can use them with or without curly braces, e.g. {@code #name}, {@code #{name}}, {@code $name}, or
  * {@code #{name}}.
- *
- * <p>
- * A {@link TemplateToken} cannot just be used in {@link Template#body}, but it can also be
- * {@link Hook#insert}ed to where a {@link Hook} was {@link Hook#anchor}ed earlier (in some outer scope of the code).
- * For example, while generating code in a method, one can reach out to the scope of the class, and insert a
- * new field, or define a utility method.
- *
- * <p>
- * A {@link TemplateBinding} allows the recursive use of Templates. With the indirection of such a binding,
- * a Template can reference itself.
- *
- * <p>
- * The writer of recursive {@link Template}s must ensure that this recursion terminates. To unify the
- * approach across {@link Template}s, we introduce the concept of {@link #fuel}. Templates are rendered starting
- * with a limited amount of {@link #fuel} (default: 100, see {@link #DEFAULT_FUEL}), which is decreased at each
- * Template nesting by a certain amount (default: 10, see {@link #DEFAULT_FUEL_COST}). The default fuel for a
- * template can be changed when we {@code render()} it (e.g. {@link ZeroArgs#render(float)}) and the default
- * fuel cost with {@link #setFuelCost}) when defining the {@link #body(Object...)}. Recursive templates are
- * supposed to terminate once the {@link #fuel} is depleted (i.e. reaches zero).
  *
  * <p>
  * Code generation can involve keeping track of fields and variables, as well as the scopes in which they
@@ -211,61 +197,70 @@ import compiler.lib.ir_framework.TestFramework;
  * are not concerned about mutability.
  *
  * <p>
- * When working with {@link DataName}s and {@link StructuralName}s, it is important to be aware of the
- * relevant scopes, as well as the execution order of the {@link Template} lambdas and the evaluation
- * of the {@link Template#body} tokens. When a {@link Template} is rendered, its lambda is invoked. In the
- * lambda, we generate the tokens, and create the {@link Template#body}. Once the lambda returns, the
- * tokens are evaluated one by one. While evaluating the tokens, the {@link Renderer} might encounter a nested
- * {@link TemplateToken}, which in turn triggers the evaluation of that nested {@link Template}, i.e.
- * the evaluation of its lambda and later the evaluation of its tokens. It is important to keep in mind
- * that the lambda is always executed first, and the tokens are evaluated afterwards. A method like
- * {@code dataNames(MUTABLE).exactOf(type).count()} is a method that is executed during the evaluation
- * of the lambda. But a method like {@link #addDataName} returns a token, and does not immediately add
- * the {@link DataName}. This ensures that the {@link DataName} is only inserted when the tokens are
- * evaluated, so that it is inserted at the exact scope where we would expect it.
+ * Code generation can involve keeping track of scopes in the code (e.g. liveness and availability of
+ * {@link DataName}s) and of the hashtag replacements in the templates. The {@link ScopeToken} serves
+ * this purpose, and allows the definition of transparent scopes (e.g. {@link #transparentScope}) and
+ * non-transparent scopes (e.g. {@link #scope}).
+ *
+ * <table border="1">
+ *   <caption>Scopes and (non-)transparency</caption>
+ *   <tr>
+ *     <th>                           </th><th> hashtag         </th><th> {@link DataName} and {@link StructuralName} </th><th> {@link #setFuelCost} </th>
+ *   </tr>
+ *   <tr>
+ *     <th> {@link #scope}            </th><th> non-transparent </th><th> non-transparent                             </th><th> non-transparent     </th>
+ *   </tr>
+ *   <tr>
+ *     <th> {@link #hashtagScope}     </th><th> non-transparent </th><th> transparent                                 </th><th> transparent         </th>
+ *   </tr>
+ *   <tr>
+ *     <th> {@link #nameScope}        </th><th> transparent     </th><th> non-transparent                             </th><th> transparent         </th>
+ *   </tr>
+ *   <tr>
+ *     <th> {@link #setFuelCostScope} </th><th> transparent     </th><th> transparent                                 </th><th> non-transparent     </th>
+ *   </tr>
+ *   <tr>
+ *     <th> {@link #transparentScope} </th><th> transparent     </th><th> transparent                                 </th><th> transparent         </th>
+ *   </tr>
+ * </table>
  *
  * <p>
- * Let us look at the following example to better understand the execution order.
+ * In some cases, we may be deeper nested in templates and scopes, and would like to reach "back" or
+ * to outer scopes. This is possible with {@link Hook#anchor}ing in some outer scope, and later
+ * {@link Hook#insert}ing from an inner scope to the scope of the anchoring. For example, while
+ * generating code in a method, one can reach out to the scope of the class, and insert a new field,
+ * or define a utility method.
  *
  * <p>
- * {@snippet lang=java :
- * var testTemplate = Template.make(() -> body(
- *     // The lambda has just been invoked.
- *     // We count the DataNames and assign the count to the hashtag replacement "c1".
- *     let("c1", dataNames(MUTABLE).exactOf(someType).count()),
- *     // We want to define a DataName "v1", and create a token for it.
- *     addDataName($("v1"), someType, MUTABLE),
- *     // We count the DataNames again, but the count does NOT change compared to "c1".
- *     // This is because the token for "v1" is only evaluated later.
- *     let("c2", dataNames(MUTABLE).exactOf(someType).count()),
- *     // Create a nested scope.
- *     METHOD_HOOK.anchor(
- *         // We want to define a DataName "v2", which is only valid inside this
- *         // nested scope.
- *         addDataName($("v2"), someType, MUTABLE),
- *         // The count is still not different to "c1".
- *         let("c3", dataNames(MUTABLE).exactOf(someType).count()),
- *         // We nest a Template. This creates a TemplateToken, which is later evaluated.
- *         // By the time the TemplateToken is evaluated, the tokens from above will
- *         // be already evaluated. Hence, "v1" and "v2" are added by then, and if the
- *         // "otherTemplate" were to count the DataNames, the count would be increased
- *         // by 2 compared to "c1".
- *         otherTemplate.asToken()
- *     ),
- *     // After closing the scope, "v2" is no longer available.
- *     // The count is still the same as "c1", since "v1" is still only a token.
- *     let("c4", dataNames(MUTABLE).exactOf(someType).count()),
- *     // We nest another Template. Again, this creates a TemplateToken, which is only
- *     // evaluated later. By that time, the token for "v1" is evaluated, and so the
- *     // nested Template would observe an increment in the count.
- *     anotherTemplate.asToken()
- *     // By this point, all methods are called, and the tokens generated.
- *     // The lambda returns the "body", which is all of the tokens that we just
- *     // generated. After returning from the lambda, the tokens will be evaluated
- *     // one by one.
- * ));
- * }
-
+ * A {@link TemplateBinding} allows the recursive use of Templates. With the indirection of such a binding,
+ * a Template can reference itself.
+ *
+ * <p>
+ * The writer of recursive {@link Template}s must ensure that this recursion terminates. To unify the
+ * approach across {@link Template}s, we introduce the concept of {@link #fuel}. Templates are rendered starting
+ * with a limited amount of {@link #fuel} (default: 100, see {@link #DEFAULT_FUEL}), which is decreased at each
+ * Template nesting by a certain amount (default: 10, see {@link #DEFAULT_FUEL_COST}). The default fuel for a
+ * template can be changed when we {@code render()} it (e.g. {@link ZeroArgs#render(float)}) and the default
+ * fuel cost with {@link #setFuelCost}) when defining the {@link #scope(Object...)}. Recursive templates are
+ * supposed to terminate once the {@link #fuel} is depleted (i.e. reaches zero).
+ *
+ * <p>
+ * A note from the implementor to the user: We have decided to implement the Template Framework using
+ * a functional (lambdas) and data-oriented (tokens) model. The consequence is that there are three
+ * orders in template rendering: (1) the execution order in lambdas, where we usually assemble the
+ * tokens and pass them to some scope ({@link ScopeToken}) as arguments. (2) the token evaluation
+ * order, which occurs in the order of how tokens are listed in a scope. By design, the token order
+ * is the same order as execution in lambdas. To keep the lambda and token order in sync, most of the
+ * queries about the state of code generation, such as {@link DataName}s and {@link Hook}s cannot
+ * return the values immediately, but have to be expressed as tokens. If we had a mix of tokens and
+ * immediate queries, then the immediate queries would "float" by the tokens, because the immediate
+ * queries are executed during the lambda execution, but the tokens are only executed later. Having
+ * to express everything as tokens can be a little more cumbersome (e.g. sample requires a lambda
+ * that captures the {@link DataName}, and sample does not return the {@link DataName} directly).
+ * But this ensures that reasoning about execution order is relatively straight forward, namely in
+ * the order of the specified tokens. (3) the final code order is the same as the lambda and token
+ * order, except when using {@link Hook#insert}, which places the code at the innermost {@link Hook#anchor}.
+ *
  * <p>
  * More examples for these functionalities can be found in {@code TestTutorial.java}, {@code TestSimple.java},
  * and {@code TestAdvanced.java}, which all produce compilable Java code. Additional examples can be found in
@@ -281,10 +276,10 @@ public sealed interface Template permits Template.ZeroArgs,
     /**
      * A {@link Template} with no arguments.
      *
-     * @param function The {@link Supplier} that creates the {@link TemplateBody}.
+     * @param function The {@link Supplier} that creates the {@link ScopeToken}.
      */
-    record ZeroArgs(Supplier<TemplateBody> function) implements Template {
-        TemplateBody instantiate() {
+    record ZeroArgs(Supplier<ScopeToken> function) implements Template {
+        ScopeToken instantiate() {
             return function.get();
         }
 
@@ -324,10 +319,10 @@ public sealed interface Template permits Template.ZeroArgs,
      *
      * @param arg1Name The name of the (first) argument, used for hashtag replacements in the {@link Template}.
      * @param <T1> The type of the (first) argument.
-     * @param function The {@link Function} that creates the {@link TemplateBody} given the template argument.
+     * @param function The {@link Function} that creates the {@link ScopeToken} given the template argument.
      */
-    record OneArg<T1>(String arg1Name, Function<T1, TemplateBody> function) implements Template {
-        TemplateBody instantiate(T1 arg1) {
+    record OneArg<T1>(String arg1Name, Function<T1, ScopeToken> function) implements Template {
+        ScopeToken instantiate(T1 arg1) {
             return function.apply(arg1);
         }
 
@@ -372,10 +367,10 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param arg2Name The name of the second argument, used for hashtag replacements in the {@link Template}.
      * @param <T1> The type of the first argument.
      * @param <T2> The type of the second argument.
-     * @param function The {@link BiFunction} that creates the {@link TemplateBody} given the template arguments.
+     * @param function The {@link BiFunction} that creates the {@link ScopeToken} given the template arguments.
      */
-    record TwoArgs<T1, T2>(String arg1Name, String arg2Name, BiFunction<T1, T2, TemplateBody> function) implements Template {
-        TemplateBody instantiate(T1 arg1, T2 arg2) {
+    record TwoArgs<T1, T2>(String arg1Name, String arg2Name, BiFunction<T1, T2, ScopeToken> function) implements Template {
+        ScopeToken instantiate(T1 arg1, T2 arg2) {
             return function.apply(arg1, arg2);
         }
 
@@ -447,10 +442,10 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param <T1> The type of the first argument.
      * @param <T2> The type of the second argument.
      * @param <T3> The type of the third argument.
-     * @param function The function with three arguments that creates the {@link TemplateBody} given the template arguments.
+     * @param function The function with three arguments that creates the {@link ScopeToken} given the template arguments.
      */
-    record ThreeArgs<T1, T2, T3>(String arg1Name, String arg2Name, String arg3Name, TriFunction<T1, T2, T3, TemplateBody> function) implements Template {
-        TemplateBody instantiate(T1 arg1, T2 arg2, T3 arg3) {
+    record ThreeArgs<T1, T2, T3>(String arg1Name, String arg2Name, String arg3Name, TriFunction<T1, T2, T3, ScopeToken> function) implements Template {
+        ScopeToken instantiate(T1 arg1, T2 arg2, T3 arg3) {
             return function.apply(arg1, arg2, arg3);
         }
 
@@ -496,28 +491,28 @@ public sealed interface Template permits Template.ZeroArgs,
 
     /**
      * Creates a {@link Template} with no arguments.
-     * See {@link #body} for more details about how to construct a Template with {@link Token}s.
+     * See {@link #scope} for more details about how to construct a Template with {@link Token}s.
      *
      * <p>
      * Example:
      * {@snippet lang=java :
-     * var template = Template.make(() -> body(
+     * var template = Template.make(() -> scope(
      *     """
      *     Multi-line string or other tokens.
      *     """
      * ));
      * }
      *
-     * @param body The {@link TemplateBody} created by {@link Template#body}.
+     * @param scope The {@link ScopeToken} created by {@link Template#scope}.
      * @return A {@link Template} with zero arguments.
      */
-    static Template.ZeroArgs make(Supplier<TemplateBody> body) {
-        return new Template.ZeroArgs(body);
+    static Template.ZeroArgs make(Supplier<ScopeToken> scope) {
+        return new Template.ZeroArgs(scope);
     }
 
     /**
      * Creates a {@link Template} with one argument.
-     * See {@link #body} for more details about how to construct a Template with {@link Token}s.
+     * See {@link #scope} for more details about how to construct a Template with {@link Token}s.
      * Good practice but not enforced but not enforced: {@code arg1Name} should match the lambda argument name.
      *
      * <p>
@@ -525,7 +520,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * for use in hashtag replacements, and captured once as lambda argument with the corresponding type
      * of the generic argument.
      * {@snippet lang=java :
-     * var template = Template.make("a", (Integer a) -> body(
+     * var template = Template.make("a", (Integer a) -> scope(
      *     """
      *     Multi-line string or other tokens.
      *     We can use the hashtag replacement #a to directly insert the String value of a.
@@ -534,18 +529,18 @@ public sealed interface Template permits Template.ZeroArgs,
      * ));
      * }
      *
-     * @param body The {@link TemplateBody} created by {@link Template#body}.
+     * @param scope The {@link ScopeToken} created by {@link Template#scope}.
      * @param <T1> Type of the (first) argument.
      * @param arg1Name The name of the (first) argument for hashtag replacement.
      * @return A {@link Template} with one argument.
      */
-    static <T1> Template.OneArg<T1> make(String arg1Name, Function<T1, TemplateBody> body) {
-        return new Template.OneArg<>(arg1Name, body);
+    static <T1> Template.OneArg<T1> make(String arg1Name, Function<T1, ScopeToken> scope) {
+        return new Template.OneArg<>(arg1Name, scope);
     }
 
     /**
      * Creates a {@link Template} with two arguments.
-     * See {@link #body} for more details about how to construct a Template with {@link Token}s.
+     * See {@link #scope} for more details about how to construct a Template with {@link Token}s.
      * Good practice but not enforced: {@code arg1Name} and {@code arg2Name} should match the lambda argument names.
      *
      * <p>
@@ -553,7 +548,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * for use in hashtag replacements, and captured once as lambda arguments with the corresponding types
      * of the generic arguments.
      * {@snippet lang=java :
-     * var template = Template.make("a", "b", (Integer a, String b) -> body(
+     * var template = Template.make("a", "b", (Integer a, String b) -> scope(
      *     """
      *     Multi-line string or other tokens.
      *     We can use the hashtag replacement #a and #b to directly insert the String value of a and b.
@@ -562,23 +557,23 @@ public sealed interface Template permits Template.ZeroArgs,
      * ));
      * }
      *
-     * @param body The {@link TemplateBody} created by {@link Template#body}.
+     * @param scope The {@link ScopeToken} created by {@link Template#scope}.
      * @param <T1> Type of the first argument.
      * @param arg1Name The name of the first argument for hashtag replacement.
      * @param <T2> Type of the second argument.
      * @param arg2Name The name of the second argument for hashtag replacement.
      * @return A {@link Template} with two arguments.
      */
-    static <T1, T2> Template.TwoArgs<T1, T2> make(String arg1Name, String arg2Name, BiFunction<T1, T2, TemplateBody> body) {
-        return new Template.TwoArgs<>(arg1Name, arg2Name, body);
+    static <T1, T2> Template.TwoArgs<T1, T2> make(String arg1Name, String arg2Name, BiFunction<T1, T2, ScopeToken> scope) {
+        return new Template.TwoArgs<>(arg1Name, arg2Name, scope);
     }
 
     /**
      * Creates a {@link Template} with three arguments.
-     * See {@link #body} for more details about how to construct a Template with {@link Token}s.
+     * See {@link #scope} for more details about how to construct a Template with {@link Token}s.
      * Good practice but not enforced: {@code arg1Name}, {@code arg2Name}, and {@code arg3Name} should match the lambda argument names.
      *
-     * @param body The {@link TemplateBody} created by {@link Template#body}.
+     * @param scope The {@link ScopeToken} created by {@link Template#scope}.
      * @param <T1> Type of the first argument.
      * @param arg1Name The name of the first argument for hashtag replacement.
      * @param <T2> Type of the second argument.
@@ -587,18 +582,35 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param arg3Name The name of the third argument for hashtag replacement.
      * @return A {@link Template} with three arguments.
      */
-    static <T1, T2, T3> Template.ThreeArgs<T1, T2, T3> make(String arg1Name, String arg2Name, String arg3Name, Template.TriFunction<T1, T2, T3, TemplateBody> body) {
-        return new Template.ThreeArgs<>(arg1Name, arg2Name, arg3Name, body);
+    static <T1, T2, T3> Template.ThreeArgs<T1, T2, T3> make(String arg1Name, String arg2Name, String arg3Name, Template.TriFunction<T1, T2, T3, ScopeToken> scope) {
+        return new Template.ThreeArgs<>(arg1Name, arg2Name, arg3Name, scope);
     }
 
     /**
-     * Creates a {@link TemplateBody} from a list of tokens, which can be {@link String}s,
-     * boxed primitive types (for example {@link Integer} or auto-boxed {@code int}), any {@link Token},
-     * or {@link List}s of any of these.
+     * Creates a {@link ScopeToken} that represents a scope that is completely
+     * non-transparent, <strong>not</strong> allowing anything to escape. This
+     * means that no {@link DataName}, {@link StructuralName}s, hashtag-replacement
+     * or {@link #setFuelCost} defined inside the scope is available outside. All
+     * these usages are only local to the defining scope here.
+     *
+     * <p>
+     * The scope is formed from a list of tokens, which can be {@link String}s,
+     * boxed primitive types (for example {@link Integer} or auto-boxed {@code int}),
+     * any {@link Token}, or {@link List}s of any of these.
+     *
+     * <p>
+     * If you require a scope that is either fully transparent (i.e. everything escapes)
+     * or only restricts a specific kind to not escape, consider using one of the other
+     * provided scopes: {@link #transparentScope}, {@link #nameScope}, {@link #hashtagScope},
+     * or {@link #setFuelCostScope}. A "scope-transparency-matrix" can also be found in
+     * the interface comment for {@link Template}.
+     *
+     * <p>
+     * The most common use of {@link #scope} is in the construction of templates:
      *
      * <p>
      * {@snippet lang=java :
-     * var template = Template.make(() -> body(
+     * var template = Template.make(() -> scope(
      *     """
      *     Multi-line string
      *     """,
@@ -608,14 +620,200 @@ public sealed interface Template permits Template.ZeroArgs,
      * ));
      * }
      *
+     * <p>
+     * Note that regardless of the chosen scope for {@code Template.make},
+     * hashtag-replacements and {@link #setFuelCost} are always implicitly
+     * non-transparent (i.e. non-escaping). For example, {@link #let} will
+     * not escape the template scope even when using {@link #transparentScope}.
+     * As a default, it is recommended to use {@link #scope} for
+     * {@code Template.make} since in most cases template scopes align with
+     * code scopes that are non-transparent for fields, variables, etc. In
+     * rare cases, where the scope of the template needs to be transparent
+     * (e.g. because we need to insert a variable or field into an outer scope),
+     * it is recommended to use {@link #transparentScope}. This allows to make
+     * {@link DataName}s and {@link StructuralName}s available outside this
+     * template crossing the template boundary.
+     *
+     * <p>
+     * We can also use nested scopes inside of templates:
+     *
+     * <p>
+     * {@snippet lang=java :
+     * var template = Template.make(() -> scope(
+     *     // CODE1: some code in the outer scope
+     *     scope(
+     *       // CODE2: some code in the inner scope. Names, hashtags and setFuelCost
+     *       //        do not escape the inner scope.
+     *     ),
+     *     // CODE3: more code in the outer scope, names and hashtags from CODE2 are
+     *     //        not available anymore because of the non-transparent "scope".
+     *     transparentScope(
+     *       // CODE4: some code in the inner "transparentScope". Names, hashtags and setFuelCost
+     *       //        escape the "transparentScope" and are still available after the "transparentScope"
+     *       //        closes.
+     *     )
+     *     // CODE5: we still have access to names and hashtags from CODE4.
+     * ));
+     * }
+     *
      * @param tokens A list of tokens, which can be {@link String}s, boxed primitive types
      *               (for example {@link Integer}), any {@link Token}, or {@link List}s
      *               of any of these.
-     * @return The {@link TemplateBody} which captures the list of validated {@link Token}s.
+     * @return The {@link ScopeToken} which captures the list of validated {@link Token}s.
      * @throws IllegalArgumentException if the list of tokens contains an unexpected object.
      */
-    static TemplateBody body(Object... tokens) {
-        return new TemplateBody(TokenParser.parse(tokens));
+    static ScopeToken scope(Object... tokens) {
+        return new ScopeTokenImpl(TokenParser.parse(tokens), false, false, false);
+    }
+
+    /**
+     * Creates a {@link ScopeToken} that represents a completely transparent scope.
+     * This means that {@link DataName}s, {@link StructuralName}s,
+     * hashtag-replacements and {@link #setFuelCost} declared inside the scope will be available
+     * in the outer scope.
+     * The scope is formed from a list of tokens, which can be {@link String}s,
+     * boxed primitive types (for example {@link Integer} or auto-boxed {@code int}),
+     * any {@link Token}, or {@link List}s of any of these.
+     *
+     * <p>
+     * If you require a scope that is non-transparent (i.e. nothing escapes) or only restricts
+     * a specific kind to not escape, consider using one of the other provided scopes:
+     * {@link #scope}, {@link #nameScope}, {@link #hashtagScope}, or {@link #setFuelCostScope}.
+     * A "scope-transparency-matrix" can also be found in the interface comment for {@link Template}.
+     *
+     * @param tokens A list of tokens, which can be {@link String}s, boxed primitive types
+     *               (for example {@link Integer}), any {@link Token}, or {@link List}s
+     *               of any of these.
+     * @return The {@link ScopeToken} which captures the list of validated {@link Token}s.
+     * @throws IllegalArgumentException if the list of tokens contains an unexpected object.
+     */
+    static ScopeToken transparentScope(Object... tokens) {
+        return new ScopeTokenImpl(TokenParser.parse(tokens), true, true, true);
+    }
+
+    /**
+     * Creates a {@link ScopeToken} that represents a scope that is non-transparent for
+     * {@link DataName}s and {@link StructuralName}s (i.e. cannot escape), but
+     * transparent for hashtag-replacements and {@link #setFuelCost} (i.e. available
+     * in outer scope).
+     *
+     * <p>
+     * The scope is formed from a list of tokens, which can be {@link String}s,
+     * boxed primitive types (for example {@link Integer} or auto-boxed {@code int}),
+     * any {@link Token}, or {@link List}s of any of these.
+     *
+     * <p>
+     * If you require a scope that is transparent or uses a different restriction, consider
+     * using one of the other provided scopes: {@link #scope}, {@link #transparentScope},
+     * {@link #hashtagScope}, or {@link #setFuelCostScope}. A "scope-transparency-matrix" can
+     * also be found in the interface comment for {@link Template}.
+     *
+     * @param tokens A list of tokens, which can be {@link String}s, boxed primitive types
+     *               (for example {@link Integer}), any {@link Token}, or {@link List}s
+     *               of any of these.
+     * @return The {@link ScopeToken} which captures the list of validated {@link Token}s.
+     * @throws IllegalArgumentException if the list of tokens contains an unexpected object.
+     */
+    static ScopeToken nameScope(Object... tokens) {
+        return new ScopeTokenImpl(TokenParser.parse(tokens), false, true, true);
+    }
+
+    /**
+     * Creates a {@link ScopeToken} that represents a scope that is non-transparent for
+     * hashtag-replacements (i.e. cannot escape), but transparent for {@link DataName}s
+     * and {@link StructuralName}s and {@link #setFuelCost} (i.e. available in outer scope).
+     *
+     * <p>
+     * The scope is formed from a list of tokens, which can be {@link String}s,
+     * boxed primitive types (for example {@link Integer} or auto-boxed {@code int}),
+     * any {@link Token}, or {@link List}s of any of these.
+     *
+     * <p>
+     * If you require a scope that is transparent or uses a different restriction, consider
+     * using one of the other provided scopes: {@link #scope}, {@link #transparentScope},
+     * {@link #nameScope}, or {@link #setFuelCostScope}. A "scope-transparency-matrix" can
+     * also be found in the interface comment for {@link Template}.
+     *
+     * <p>
+     * Keeping hashtag-replacements local but letting {@link DataName}s escape can be
+     * useful in cases like the following, where we may want to reuse the hashtag
+     * multiple times:
+     *
+     * <p>
+     * {@snippet lang=java :
+     * var template = Template.make(() -> scope(
+     *     List.of("a", "b", "c").stream().map(name -> hashtagScope(
+     *         let("name", name), // assumes values: a, b, c
+     *         addDataName(name, PrimitiveType.INTS, MUTABLE), // escapes
+     *         """
+     *         int #name = 42;
+     *         """
+     *     ))
+     *     // We still have access to the three DataNames.
+     * ));
+     * }
+     *
+     * @param tokens A list of tokens, which can be {@link String}s, boxed primitive types
+     *               (for example {@link Integer}), any {@link Token}, or {@link List}s
+     *               of any of these.
+     * @return The {@link ScopeToken} which captures the list of validated {@link Token}s.
+     * @throws IllegalArgumentException if the list of tokens contains an unexpected object.
+     */
+    static ScopeToken hashtagScope(Object... tokens) {
+        return new ScopeTokenImpl(TokenParser.parse(tokens), true, false, true);
+    }
+
+    /**
+     * Creates a {@link ScopeToken} that represents a scope that is non-transparent for
+     * {@link #setFuelCost} (i.e. cannot escape), but transparent for hashtag-replacements,
+     * {@link DataName}s and {@link StructuralName}s (i.e. available in outer scope).
+     * The scope is formed from a list of tokens, which can be {@link String}s,
+     * boxed primitive types (for example {@link Integer} or auto-boxed {@code int}),
+     * any {@link Token}, or {@link List}s of any of these.
+     *
+     * <p>
+     * If you require a scope that is transparent or uses a different restriction, consider
+     * using one of the other provided scopes: {@link #scope}, {@link #transparentScope},
+     * {@link #hashtagScope}, or {@link #nameScope}. A "scope-transparency-matrix" can
+     * also be found in the interface comment for {@link Template}.
+     *
+     * <p>
+     * In some cases, it can be helpful to have different {@link #setFuelCost} within
+     * a single template, depending on the code nesting depth. Example:
+     *
+     * <p>
+     * {@snippet lang=java :
+     * var template = Template.make(() -> scope(
+     *     setFuelCost(1),
+     *     // CODE1: some shallow code, allowing recursive template uses here
+     *     //        to use more fuel.
+     *     """
+     *     for (int i = 0; i < 1000; i++) {
+     *     """,
+     *     setFuelCostScope(
+     *         setFuelCost(100)
+     *         // CODE2: with the for-loop, we already have a deeper nesting
+     *         //        depth, and recursive template uses should not get
+     *         //        as much fuel as in CODE1.
+     *     ),
+     *     """
+     *     }
+     *     """
+     *     // CODE3: we are back in the outer scope of CODE1, and can use
+     *     //        more fuel again in nested template uses. setFuelCost
+     *     //        is automatically restored to what was set before the
+     *     //        inner scope.
+     * ));
+     * }
+     *
+     * @param tokens A list of tokens, which can be {@link String}s, boxed primitive types
+     *               (for example {@link Integer}), any {@link Token}, or {@link List}s
+     *               of any of these.
+     * @return The {@link ScopeToken} which captures the list of validated {@link Token}s.
+     * @throws IllegalArgumentException if the list of tokens contains an unexpected object.
+     */
+    static ScopeToken setFuelCostScope(Object... tokens) {
+        return new ScopeTokenImpl(TokenParser.parse(tokens), true, true, false);
     }
 
     /**
@@ -628,7 +826,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * with an implicit dollar replacement, and then captures that dollar replacement
      * using {@link #$} for the use inside a nested template.
      * {@snippet lang=java :
-     * var template = Template.make(() -> body(
+     * var template = Template.make(() -> scope(
      *     """
      *     int $var = 42;
      *     """,
@@ -640,6 +838,9 @@ public sealed interface Template permits Template.ZeroArgs,
      * @return The dollar replacement for the {@code 'name'}.
      */
     static String $(String name) {
+        // Note, since the dollar replacements do not change within a template
+        // and the retrieval has no side effects, we can return the value immediately,
+        // and do not need a token.
         return Renderer.getCurrent().$(name);
     }
 
@@ -648,7 +849,7 @@ public sealed interface Template permits Template.ZeroArgs,
      *
      * <p>
      * {@snippet lang=java :
-     * var template = Template.make("a", (Integer a) -> body(
+     * var template = Template.make("a", (Integer a) -> scope(
      *     let("b", a * 5),
      *     """
      *     System.out.println("Use a and b with hashtag replacement: #a and #b");
@@ -656,41 +857,50 @@ public sealed interface Template permits Template.ZeroArgs,
      * ));
      * }
      *
+     * <p>
+     * Note that a {@code let} definition makes the hashtag replacement available
+     * for anything that follows it, until the the end of the next outer scope
+     * that is non-transparent for hashtag replacements. Additionally, hashtag
+     * replacements are limited to the template they were defined in.
+     * If you want to pass values from an outer to an inner template, this cannot
+     * be done with hashtags directly. Instead, one has to pass the values via
+     * template arguments.
+     *
      * @param key Name for the hashtag replacement.
      * @param value The value that the hashtag is replaced with.
-     * @return A token that does nothing, so that the {@link #let} can easily be put in a list of tokens
-     *         inside a {@link Template#body}.
-     * @throws RendererException if there is a duplicate hashtag {@code key}.
+     * @return A token that represents the hashtag replacement definition.
      */
     static Token let(String key, Object value) {
-        Renderer.getCurrent().addHashtagReplacement(key, value);
-        return new NothingToken();
+        return new LetToken(key, value, v -> transparentScope());
     }
 
     /**
      * Define a hashtag replacement for {@code "#key"}, with a specific value, which is also captured
-     * by the provided {@code function} with type {@code <T>}.
+     * by the provided {@code function} with type {@code <T>}. While the argument of the lambda that
+     * captures the value is naturally bounded to the scope of the lambda, the hashtag replacement
+     * may be bound to the scope or escape it, depending on the choice of scope, see {@link #scope}
+     * and {@link #transparentScope}.
      *
      * <p>
      * {@snippet lang=java :
-     * var template = Template.make("a", (Integer a) -> let("b", a * 2, (Integer b) -> body(
-     *     """
-     *     System.out.println("Use a and b with hashtag replacement: #a and #b");
-     *     """,
-     *     "System.out.println(\"Use a and b as capture variables:\"" + a + " and " + b + ");\n"
-     * )));
+     * var template = Template.make("a", (Integer a) -> scope(
+     *     let("b", a * 2, (Integer b) -> scope(
+     *         """
+     *         System.out.println("Use a and b with hashtag replacement: #a and #b");
+     *         """,
+     *         "System.out.println(\"Use a and b as capture variables:\"" + a + " and " + b + ");\n"
+     *     ))
+     * ));
      * }
      *
      * @param key Name for the hashtag replacement.
      * @param value The value that the hashtag is replaced with.
      * @param <T> The type of the value.
      * @param function The function that is applied with the provided {@code value}.
-     * @return A {@link TemplateBody}.
-     * @throws RendererException if there is a duplicate hashtag {@code key}.
+     * @return A {@link Token} representing the hashtag replacement definition and inner scope.
      */
-    static <T> TemplateBody let(String key, T value, Function<T, TemplateBody> function) {
-        Renderer.getCurrent().addHashtagReplacement(key, value);
-        return function.apply(value);
+    static <T> Token let(String key, T value, Function<T, ScopeToken> function) {
+        return new LetToken(key, value, function);
     }
 
     /**
@@ -702,7 +912,7 @@ public sealed interface Template permits Template.ZeroArgs,
     /**
      * The default amount of fuel spent per Template. It is subtracted from the current {@link #fuel} at every
      * nesting level, and once the {@link #fuel} reaches zero, the nesting is supposed to terminate. Can be changed
-     * with {@link #setFuelCost(float)} inside {@link #body(Object...)}.
+     * with {@link #setFuelCost(float)} inside {@link #scope(Object...)}.
      */
     float DEFAULT_FUEL_COST = 10.0f;
 
@@ -721,7 +931,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * <p>
      * {@snippet lang=java :
      * var binding = new TemplateBinding<Template.OneArg<Integer>>();
-     * var template = Template.make("depth", (Integer depth) -> body(
+     * var template = Template.make("depth", (Integer depth) -> scope(
      *     setFuelCost(5.0f),
      *     let("fuel", fuel()),
      *     """
@@ -737,6 +947,9 @@ public sealed interface Template permits Template.ZeroArgs,
      * @return The amount of fuel left for nested Template use.
      */
     static float fuel() {
+        // Note, since the fuel amount does not change within a template
+        // and the retrieval has no side effects, we can return the value immediately,
+        // and do not need a token.
         return Renderer.getCurrent().fuel();
     }
 
@@ -745,16 +958,17 @@ public sealed interface Template permits Template.ZeroArgs,
      * {@link Template#DEFAULT_FUEL_COST}.
      *
      * @param fuelCost The amount of fuel used for the current Template.
-     * @return A token for convenient use in {@link Template#body}.
+     * @return A token for convenient use in {@link Template#scope}.
      */
     static Token setFuelCost(float fuelCost) {
-        Renderer.getCurrent().setFuelCost(fuelCost);
-        return new NothingToken();
+        return new SetFuelCostToken(fuelCost);
     }
 
     /**
-     * Add a {@link DataName} in the current scope, that is the innermost of either
-     * {@link Template#body} or {@link Hook#anchor}.
+     * Add a {@link DataName} in the current {@link #scope}.
+     * If the current scope is transparent to {@link DataName}s, it escapes to the next
+     * outer scope that is non-transparent, and is available for everything that follows
+     * the {@code addDataName} until the end of that non-transparent scope.
      *
      * @param name The name of the {@link DataName}, i.e. the {@link String} used in code.
      * @param type The type of the {@link DataName}.
@@ -779,8 +993,10 @@ public sealed interface Template permits Template.ZeroArgs,
     }
 
     /**
-     * Add a {@link DataName} in the current scope, that is the innermost of either
-     * {@link Template#body} or {@link Hook#anchor}, with a {@code weight} of 1.
+     * Add a {@link DataName} in the current {@link #scope}, with a {@code weight} of 1.
+     * If the current scope is transparent to {@link DataName}s, it escapes to the next
+     * outer scope that is non-transparent, and is available for everything that follows
+     * the {@code addDataName} until the end of that non-transparent scope.
      *
      * @param name The name of the {@link DataName}, i.e. the {@link String} used in code.
      * @param type The type of the {@link DataName}.
@@ -804,8 +1020,10 @@ public sealed interface Template permits Template.ZeroArgs,
     }
 
     /**
-     * Add a {@link StructuralName} in the current scope, that is the innermost of either
-     * {@link Template#body} or {@link Hook#anchor}.
+     * Add a {@link StructuralName} in the current {@link #scope}.
+     * If the current scope is transparent to {@link StructuralName}s, it escapes to the next
+     * outer scope that is non-transparent, and is available for everything that follows
+     * the {@code addStructuralName} until the end of that non-transparent scope.
      *
      * @param name The name of the {@link StructuralName}, i.e. the {@link String} used in code.
      * @param type The type of the {@link StructuralName}.
@@ -822,8 +1040,10 @@ public sealed interface Template permits Template.ZeroArgs,
     }
 
     /**
-     * Add a {@link StructuralName} in the current scope, that is the innermost of either
-     * {@link Template#body} or {@link Hook#anchor}, with a {@code weight} of 1.
+     * Add a {@link StructuralName} in the current {@link #scope}, with a {@code weight} of 1.
+     * If the current scope is transparent to {@link StructuralName}s, it escapes to the next
+     * outer scope that is non-transparent, and is available for everything that follows
+     * the {@code addStructuralName} until the end of that non-transparent scope.
      *
      * @param name The name of the {@link StructuralName}, i.e. the {@link String} used in code.
      * @param type The type of the {@link StructuralName}.

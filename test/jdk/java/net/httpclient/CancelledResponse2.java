@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,10 @@
  * questions.
  */
 
-import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestExchange;
-import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestServer;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.internal.net.http.common.OperationTrackers.Tracker;
 import jdk.test.lib.RandomFactory;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -38,6 +34,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
+import java.net.http.HttpOption.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.nio.ByteBuffer;
@@ -51,36 +48,52 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.System.out;
-import static java.net.http.HttpClient.Version.*;
-import static jdk.httpclient.test.lib.common.HttpServerAdapters.*;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /*
  * @test
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
- * @run testng/othervm -Djdk.internal.httpclient.debug=true CancelledResponse2
+ * @compile ReferenceTracker.java
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true CancelledResponse2
  */
+// -Djdk.internal.httpclient.debug=true
+public class CancelledResponse2 implements HttpServerAdapters {
 
-public class CancelledResponse2 {
-
-
-    HttpTestServer h2TestServer;
-    URI h2TestServerURI;
-    private SSLContext sslContext;
-    private static final Random random = RandomFactory.getRandom();
+    private static final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
+    private static final Random RANDOM = RandomFactory.getRandom();
     private static final int MAX_CLIENT_DELAY = 160;
 
-    @DataProvider(name = "versions")
-    public Object[][] positive() {
+    private static HttpTestServer h2TestServer;
+    private static URI h2TestServerURI;
+    private static URI h2h3TestServerURI;
+    private static URI h2h3HeadTestServerURI;
+    private static URI h3TestServerURI;
+    private static HttpTestServer h2h3TestServer;
+    private static HttpTestServer h3TestServer;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+
+    public static Object[][] positive() {
         return new Object[][]{
-                { HTTP_2, h2TestServerURI },
+                { HTTP_2, null, h2TestServerURI },
+                { HTTP_3, null, h2h3TestServerURI },
+                { HTTP_3, HTTP_3_URI_ONLY, h3TestServerURI },
         };
     }
 
     private static void delay() {
-        int delay = random.nextInt(MAX_CLIENT_DELAY);
+        int delay = RANDOM.nextInt(MAX_CLIENT_DELAY);
         try {
             System.out.println("client delay: " + delay);
             Thread.sleep(delay);
@@ -88,13 +101,26 @@ public class CancelledResponse2 {
             out.println("Unexpected exception: " + x);
         }
     }
-
-    @Test(dataProvider = "versions")
-    public void test(Version version, URI uri) throws Exception {
+    @ParameterizedTest
+    @MethodSource("positive")
+    public void test(Version version, Http3DiscoveryMode config, URI uri) throws Exception {
         for (int i = 0; i < 5; i++) {
-            HttpClient httpClient = HttpClient.newBuilder().sslContext(sslContext).version(version).build();
+            HttpClient httpClient = newClientBuilderForH3().sslContext(sslContext).version(version).build();
+            Http3DiscoveryMode reqConfig = null;
+            if (version.equals(HTTP_3)) {
+                if (config != null) {
+                    reqConfig = (config.equals(HTTP_3_URI_ONLY)) ? HTTP_3_URI_ONLY : ALT_SVC;
+                }
+                // if config is null, we are talking to the H2H3 server, which may
+                // not support direct connection, in which case we should send a headRequest
+                if ((config == null && !h2h3TestServer.supportsH3DirectConnection())
+                        || (reqConfig != null && reqConfig.equals(ALT_SVC))) {
+                    headRequest(httpClient);
+                }
+            }
             HttpRequest httpRequest = HttpRequest.newBuilder(uri)
                     .version(version)
+                    .setOption(H3_DISCOVERY, reqConfig)
                     .GET()
                     .build();
             AtomicBoolean cancelled = new AtomicBoolean();
@@ -104,26 +130,54 @@ public class CancelledResponse2 {
                 cf.get();
             } catch (Exception e) {
                 e.printStackTrace();
-                assertTrue(e.getCause() instanceof IOException, "HTTP/2 should cancel with an IOException when the Subscription is cancelled.");
+                assertTrue(e.getCause() instanceof IOException, "HTTP/2 & HTTP/3 should cancel with an IOException when the Subscription is cancelled.");
             }
             assertTrue(cf.isCompletedExceptionally());
             assertTrue(cancelled.get());
+
+            Tracker tracker = TRACKER.getTracker(httpClient);
+            httpClient = null;
+            var error = TRACKER.check(tracker, 5000);
+            if (error != null) throw error;
         }
     }
 
-    @BeforeTest
-    public void setup() throws IOException {
-        sslContext = new SimpleSSLContext().get();
+    void headRequest(HttpClient client) throws Exception {
+        HttpRequest request = HttpRequest.newBuilder(h2h3HeadTestServerURI)
+                .version(HTTP_2)
+                .HEAD()
+                .build();
+        var resp = client.send(request, HttpResponse.BodyHandlers.discarding());
+        assertEquals(200, resp.statusCode());
+    }
+
+    @BeforeAll
+    public static void setup() throws IOException {
         h2TestServer = HttpTestServer.create(HTTP_2, sslContext);
         h2TestServer.addHandler(new CancelledResponseHandler(), "/h2");
         h2TestServerURI = URI.create("https://" + h2TestServer.serverAuthority() + "/h2");
 
+        h2h3TestServer = HttpTestServer.create(HTTP_3, sslContext);
+        h2h3TestServer.addHandler(new CancelledResponseHandler(), "/h2h3");
+        h2h3TestServerURI = URI.create("https://" + h2h3TestServer.serverAuthority() + "/h2h3");
+        h2h3TestServer.addHandler(new HttpHeadOrGetHandler(), "/h2h3/head");
+        h2h3HeadTestServerURI = URI.create("https://" + h2h3TestServer.serverAuthority() + "/h2h3/head");
+
+
+        h3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
+        h3TestServer.addHandler(new CancelledResponseHandler(), "/h3");
+        h3TestServerURI = URI.create("https://" + h3TestServer.serverAuthority() + "/h3");
+
         h2TestServer.start();
+        h2h3TestServer.start();
+        h3TestServer.start();
     }
 
-    @AfterTest
-    public void teardown() {
+    @AfterAll
+    public static void teardown() {
         h2TestServer.stop();
+        h2h3TestServer.stop();
+        h3TestServer.stop();
     }
 
     BodyHandler<String> ofString(String expected, AtomicBoolean cancelled) {
@@ -233,6 +287,7 @@ public class CancelledResponse2 {
                 subscription.request(1);
             }
         }
+
 
         @Override
         public void onError(Throwable throwable) {

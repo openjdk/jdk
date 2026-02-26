@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,6 @@
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "prims/jvmtiTagMap.hpp"
-#include "runtime/atomic.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/safepoint.hpp"
@@ -110,6 +109,16 @@ static const ZStatSampler ZSamplerJavaThreads("System", "Java Threads", ZStatUni
 
 ZGenerationYoung* ZGeneration::_young;
 ZGenerationOld*   ZGeneration::_old;
+
+class ZRendezvousHandshakeClosure : public HandshakeClosure {
+public:
+  ZRendezvousHandshakeClosure()
+    : HandshakeClosure("ZRendezvous") {}
+
+  void do_thread(Thread* thread) {
+    // Does nothing
+  }
+};
 
 ZGeneration::ZGeneration(ZGenerationId id, ZPageTable* page_table, ZPageAllocator* page_allocator)
   : _id(id),
@@ -168,11 +177,20 @@ void ZGeneration::free_empty_pages(ZRelocationSetSelector* selector, int bulk) {
 }
 
 void ZGeneration::flip_age_pages(const ZRelocationSetSelector* selector) {
-  if (is_young()) {
-    _relocate.flip_age_pages(selector->not_selected_small());
-    _relocate.flip_age_pages(selector->not_selected_medium());
-    _relocate.flip_age_pages(selector->not_selected_large());
-  }
+  _relocate.flip_age_pages(selector->not_selected_small());
+  _relocate.flip_age_pages(selector->not_selected_medium());
+  _relocate.flip_age_pages(selector->not_selected_large());
+
+  // Perform a handshake between flip promotion and running the promotion barrier. This ensures
+  // that ZBarrierSet::on_slowpath_allocation_exit() observing a young page that was then racingly
+  // flip promoted, will run any stores without barriers to completion before responding to the
+  // handshake at the subsequent safepoint poll. This ensures that the flip promotion barriers always
+  // run after compiled code missing barriers, but before relocate start.
+  ZRendezvousHandshakeClosure cl;
+  Handshake::execute(&cl);
+
+  _relocate.barrier_promoted_pages(_relocation_set.flip_promoted_pages(),
+                                   _relocation_set.relocate_promoted_pages());
 }
 
 static double fragmentation_limit(ZGenerationId generation) {
@@ -235,7 +253,9 @@ void ZGeneration::select_relocation_set(bool promote_all) {
   _relocation_set.install(&selector);
 
   // Flip age young pages that were not selected
-  flip_age_pages(&selector);
+  if (is_young()) {
+    flip_age_pages(&selector);
+  }
 
   // Setup forwarding table
   ZRelocationSetIterator rs_iter(&_relocation_set);
@@ -277,33 +297,33 @@ bool ZGeneration::is_relocate_queue_active() const {
 
 void ZGeneration::reset_statistics() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-  _freed = 0;
-  _promoted = 0;
-  _compacted = 0;
+  _freed.store_relaxed(0u);
+  _promoted.store_relaxed(0u);
+  _compacted.store_relaxed(0u);
 }
 
 size_t ZGeneration::freed() const {
-  return _freed;
+  return _freed.load_relaxed();
 }
 
 void ZGeneration::increase_freed(size_t size) {
-  Atomic::add(&_freed, size, memory_order_relaxed);
+  _freed.add_then_fetch(size, memory_order_relaxed);
 }
 
 size_t ZGeneration::promoted() const {
-  return _promoted;
+  return _promoted.load_relaxed();;
 }
 
 void ZGeneration::increase_promoted(size_t size) {
-  Atomic::add(&_promoted, size, memory_order_relaxed);
+  _promoted.add_then_fetch(size, memory_order_relaxed);
 }
 
 size_t ZGeneration::compacted() const {
-  return _compacted;
+  return _compacted.load_relaxed();;
 }
 
 void ZGeneration::increase_compacted(size_t size) {
-  Atomic::add(&_compacted, size, memory_order_relaxed);
+  _compacted.add_then_fetch(size, memory_order_relaxed);
 }
 
 ConcurrentGCTimer* ZGeneration::gc_timer() const {
@@ -661,7 +681,6 @@ public:
   }
 };
 
-
 bool ZGenerationYoung::pause_mark_end() {
   return VM_ZMarkEndYoung().pause();
 }
@@ -702,13 +721,11 @@ uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats st
   double young_life_expectancy_sum = 0.0;
   uint young_life_expectancy_samples = 0;
   uint last_populated_age = 0;
-  size_t last_populated_live = 0;
 
   for (ZPageAge age : ZPageAgeRangeAll) {
     const size_t young_live = stats.small(age).live() + stats.medium(age).live() + stats.large(age).live();
     if (young_live > 0) {
       last_populated_age = untype(age);
-      last_populated_live = young_live;
       if (young_live_last > 0) {
         young_life_expectancy_sum += double(young_live) / double(young_live_last);
         young_life_expectancy_samples++;
@@ -722,7 +739,6 @@ uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats st
     return 0;
   }
 
-  const size_t young_used_at_mark_start = ZGeneration::young()->stat_heap()->used_generation_at_mark_start();
   const size_t young_garbage = ZGeneration::young()->stat_heap()->garbage_at_mark_end();
   const size_t young_allocated = ZGeneration::young()->stat_heap()->allocated_at_mark_end();
   const size_t soft_max_capacity = ZHeap::heap()->soft_max_capacity();
@@ -1284,16 +1300,6 @@ bool ZGenerationOld::uses_clear_all_soft_reference_policy() const {
   return _reference_processor.uses_clear_all_soft_reference_policy();
 }
 
-class ZRendezvousHandshakeClosure : public HandshakeClosure {
-public:
-  ZRendezvousHandshakeClosure()
-    : HandshakeClosure("ZRendezvous") {}
-
-  void do_thread(Thread* thread) {
-    // Does nothing
-  }
-};
-
 class ZRendezvousGCThreads: public VM_Operation {
  public:
   VMOp_Type type() const { return VMOp_ZRendezvousGCThreads; }
@@ -1319,7 +1325,6 @@ class ZRendezvousGCThreads: public VM_Operation {
     SuspendibleThreadSet::desynchronize();
   };
 };
-
 
 void ZGenerationOld::process_non_strong_references() {
   // Process Soft/Weak/Final/PhantomReferences

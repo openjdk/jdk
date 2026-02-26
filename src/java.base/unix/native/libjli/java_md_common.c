@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -257,29 +257,6 @@ JLI_ReportErrorMessageSys(const char* fmt, ...) {
 JNIEXPORT void JNICALL
 JLI_ReportExceptionDescription(JNIEnv * env) {
   (*env)->ExceptionDescribe(env);
-}
-
-/*
- *      Since using the file system as a registry is a bit risky, perform
- *      additional sanity checks on the identified directory to validate
- *      it as a valid JDK.
- *
- *      Return 0 if the tests fail; otherwise return non-zero (true).
- *
- *      Note that checking for anything more than the existence of an
- *      executable object at bin/java relative to the path being checked
- *      will break the regression tests.
- */
-static int
-CheckSanity(char *path, char *dir)
-{
-    char    buffer[PATH_MAX];
-
-    if (JLI_StrLen(path) + JLI_StrLen(dir) + 11 > PATH_MAX)
-        return (0);     /* Silently reject "impossibly" long paths */
-
-    JLI_Snprintf(buffer, sizeof(buffer), "%s/%s/bin/java", path, dir);
-    return ((access(buffer, X_OK) == 0) ? 1 : 0);
 }
 
 /*

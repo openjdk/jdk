@@ -26,7 +26,7 @@
 #include "gc/g1/g1HeapSizingPolicy.hpp"
 #include "gc/g1/jvmFlagConstraintsG1.hpp"
 #include "gc/shared/bufferNode.hpp"
-#include "gc/shared/ptrQueue.hpp"
+#include "gc/shared/satbMarkQueue.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -202,12 +202,6 @@ static JVMFlag::Error buffer_size_constraint_helper(JVMFlagsEnum flagid,
 
 JVMFlag::Error G1SATBBufferSizeConstraintFunc(size_t value, bool verbose) {
   return buffer_size_constraint_helper(FLAG_MEMBER_ENUM(G1SATBBufferSize),
-                                       value,
-                                       verbose);
-}
-
-JVMFlag::Error G1UpdateBufferSizeConstraintFunc(size_t value, bool verbose) {
-  return buffer_size_constraint_helper(FLAG_MEMBER_ENUM(G1UpdateBufferSize),
                                        value,
                                        verbose);
 }

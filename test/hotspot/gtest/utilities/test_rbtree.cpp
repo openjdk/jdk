@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,26 +36,30 @@ public:
   using RBTreeIntNode = RBNode<int, int>;
 
   struct Cmp {
-    static int cmp(int a, int b) {
-      return a - b;
+    static RBTreeOrdering cmp(int a, int b) {
+      if (a < b) return RBTreeOrdering::LT;
+      if (a > b) return RBTreeOrdering::GT;
+      return RBTreeOrdering::EQ;
     }
 
-    static bool cmp(const RBTreeIntNode* a, const RBTreeIntNode* b) {
+    static bool less_than(const RBTreeIntNode* a, const RBTreeIntNode* b) {
       return a->key() < b->key();
     }
   };
 
   struct CmpInverse {
-    static int cmp(int a, int b) {
-      return b - a;
+    static RBTreeOrdering cmp(int a, int b) {
+      if (a < b) return RBTreeOrdering::GT;
+      if (a > b) return RBTreeOrdering::LT;
+      return RBTreeOrdering::EQ;
     }
   };
 
   struct FCmp {
-    static int cmp(float a, float b) {
-      if (a < b) return -1;
-      if (a == b) return 0;
-      return 1;
+    static RBTreeOrdering cmp(float a, float b) {
+      if (a < b) return RBTreeOrdering::LT;
+      if (a > b) return RBTreeOrdering::GT;
+      return RBTreeOrdering::EQ;
     }
   };
 
@@ -94,16 +98,15 @@ struct ArrayAllocator {
   };
 
   struct IntrusiveCmp {
-    static int cmp(int a, const IntrusiveTreeNode* b) {
-      return a - IntrusiveHolder::cast_to_self(b)->key;
-    }
-
-    static int cmp(int a, int b) {
-      return a - b;
+    static RBTreeOrdering cmp(int a, const IntrusiveTreeNode* b_node) {
+      int b = IntrusiveHolder::cast_to_self(b_node)->key;
+      if (a < b) return RBTreeOrdering::LT;
+      if (a > b) return RBTreeOrdering::GT;
+      return RBTreeOrdering::EQ;
     }
 
     // true if a < b
-    static bool cmp(const IntrusiveTreeNode* a, const IntrusiveTreeNode* b) {
+    static bool less_than(const IntrusiveTreeNode* a, const IntrusiveTreeNode* b) {
       return (IntrusiveHolder::cast_to_self(a)->key -
               IntrusiveHolder::cast_to_self(b)->key) < 0;
     }
@@ -111,6 +114,16 @@ struct ArrayAllocator {
 
   using IntrusiveTreeInt = IntrusiveRBTree<int, IntrusiveCmp>;
   using IntrusiveCursor = IntrusiveTreeInt::Cursor;
+
+  struct DestructionTracker {
+    static int destructed_count;
+    int value;
+
+    DestructionTracker(int value) : value(value) {}
+    ~DestructionTracker() { destructed_count++; }
+
+    static void reset() { destructed_count = 0; }
+  };
 
 public:
   void inserting_duplicates_results_in_one_value() {
@@ -129,6 +142,7 @@ public:
 
     rbtree_const.visit_in_order([&](const RBTreeIntNode* node) {
       nums_seen.at(node->key())++;
+      return true;
     });
     for (int i = 0; i < up_to; i++) {
       EXPECT_EQ(1, nums_seen.at(i));
@@ -210,6 +224,7 @@ public:
 
       rbtree_const.visit_range_in_order(0, 100, [&](const Node* x) {
         EXPECT_TRUE(false) << "Empty rbtree has no nodes to visit";
+        return true;
       });
 
       // Single-element set
@@ -217,14 +232,21 @@ public:
       int count = 0;
       rbtree_const.visit_range_in_order(0, 100, [&](const Node* x) {
         count++;
+        return true;
       });
       EXPECT_EQ(1, count);
 
       count = 0;
       rbtree_const.visit_in_order([&](const Node* x) {
         count++;
+        return true;
       });
       EXPECT_EQ(1, count);
+      rbtree.visit_in_order([&](const Node* x) {
+        count++;
+        return true;
+      });
+      EXPECT_EQ(2, count);
 
       // Add an element outside of the range that should not be visited on the right side and
       // one on the left side.
@@ -233,21 +255,62 @@ public:
       count = 0;
       rbtree_const.visit_range_in_order(0, 100, [&](const Node* x) {
         count++;
+        return true;
       });
       EXPECT_EQ(1, count);
+      rbtree.visit_range_in_order(0, 100, [&](const Node* x) {
+        count++;
+        return true;
+      });
+      EXPECT_EQ(2, count);
 
       count = 0;
       rbtree_const.visit_in_order([&](const Node* x) {
         count++;
+        return true;
       });
       EXPECT_EQ(3, count);
+      rbtree.visit_in_order([&](const Node* x) {
+        count++;
+        return true;
+      });
+      EXPECT_EQ(6, count);
 
       count = 0;
       rbtree.upsert(0, 0);
       rbtree_const.visit_range_in_order(0, 0, [&](const Node* x) {
         count++;
+        return true;
       });
       EXPECT_EQ(1, count);
+      rbtree.visit_range_in_order(0, 0, [&](const Node* x) {
+        count++;
+        return true;
+      });
+      EXPECT_EQ(2, count);
+
+      // Test exiting visit early
+      rbtree.remove_all();
+      for (int i = 0; i < 11; i++) {
+        rbtree.upsert(i, 0);
+      }
+
+      count = 0;
+      rbtree_const.visit_in_order([&](const Node* x) {
+        if (x->key() >= 6) return false;
+        count++;
+        return true;
+      });
+      EXPECT_EQ(6, count);
+
+      count = 0;
+      rbtree_const.visit_range_in_order(6, 10, [&](const Node* x) {
+        if (x->key() >= 6) return false;
+        count++;
+        return true;
+      });
+
+      EXPECT_EQ(0, count);
 
       rbtree.remove_all();
       for (int i = 0; i < 11; i++) {
@@ -258,6 +321,7 @@ public:
       GrowableArray<int> seen;
       rbtree_const.visit_range_in_order(0, 9, [&](const Node* x) {
         seen.push(x->key());
+        return true;
       });
       EXPECT_EQ(10, seen.length());
       for (int i = 0; i < 10; i++) {
@@ -267,6 +331,7 @@ public:
       seen.clear();
       rbtree_const.visit_in_order([&](const Node* x) {
         seen.push(x->key());
+        return true;
       });
       EXPECT_EQ(11, seen.length());
       for (int i = 0; i < 10; i++) {
@@ -276,6 +341,7 @@ public:
       seen.clear();
       rbtree_const.visit_range_in_order(10, 12, [&](const Node* x) {
         seen.push(x->key());
+        return true;
       });
       EXPECT_EQ(1, seen.length());
       EXPECT_EQ(10, seen.at(0));
@@ -292,6 +358,7 @@ public:
       GrowableArray<int> seen;
       rbtree_const.visit_range_in_order(9, -1, [&](const Node* x) {
         seen.push(x->key());
+        return true;
       });
       EXPECT_EQ(10, seen.length());
       for (int i = 0; i < 10; i++) {
@@ -301,6 +368,7 @@ public:
 
       rbtree_const.visit_in_order([&](const Node* x) {
         seen.push(x->key());
+        return true;
       });
       EXPECT_EQ(10, seen.length());
       for (int i = 0; i < 10; i++) {
@@ -320,9 +388,12 @@ public:
                                       {4, 4}, {6, 6}, {6, 7}, {7, 7}};
 
     for (const int (&test_case)[2] : test_cases) {
-      rbtree.visit_range_in_order(test_case[0], test_case[1], [&](const Node* x) {
-        FAIL() << "Range should not visit nodes";
+      bool visited = false;
+      rbtree.visit_range_in_order(test_case[0], test_case[1], [&](const Node* x) -> bool {
+        visited = true;
+        return true;
       });
+      EXPECT_FALSE(visited);
     }
   }
 
@@ -515,6 +586,7 @@ public:
     // After deleting, values should have remained consistant
     rbtree.visit_in_order([&](const Node* node) {
       EXPECT_EQ(node, node->val());
+      return true;
     });
   }
 
@@ -543,6 +615,55 @@ public:
         ASSERT_EQ(target_node, hint_find_node);
       }
     }
+  }
+
+  void test_remove_destructs() {
+    using Tree = RBTreeCHeap<int, DestructionTracker, Cmp, mtTest>;
+    using Node = RBNode<int, DestructionTracker>;
+    using Cursor = Tree::Cursor;
+
+    Tree tree;
+
+    // Test the 3 ways of removing a single node
+    tree.upsert(0, DestructionTracker(0));
+    tree.upsert(1, DestructionTracker(1));
+    tree.upsert(2, DestructionTracker(2));
+
+    DestructionTracker::reset();
+
+    tree.remove(0);
+
+    Node* n = tree.find_node(1);
+    tree.remove(n);
+
+    Cursor remove_cursor = tree.cursor(2);
+    tree.remove_at_cursor(remove_cursor);
+
+    EXPECT_EQ(3, DestructionTracker::destructed_count);
+
+    // Test clearing the tree
+    constexpr int num_nodes = 10;
+    for (int n = 0; n < num_nodes; n++) {
+      tree.upsert(n, DestructionTracker(n));
+    }
+
+    DestructionTracker::reset();
+
+    tree.remove_all();
+    EXPECT_EQ(num_nodes, DestructionTracker::destructed_count);
+
+    // Test replacing a node
+    tree.upsert(0, DestructionTracker(0));
+    Cursor replace_cursor = tree.cursor(0);
+    Node* new_node = tree.allocate_node(1, DestructionTracker(1));
+
+    DestructionTracker::reset();
+
+    tree.replace_at_cursor(new_node, replace_cursor);
+    EXPECT_EQ(1, DestructionTracker::destructed_count);
+
+    tree.remove_at_cursor(replace_cursor);
+    EXPECT_EQ(2, DestructionTracker::destructed_count);
   }
 
   void test_cursor() {
@@ -778,6 +899,50 @@ public:
     }
   }
 
+  static bool custom_validator(const IntrusiveRBNode* n) {
+    IntrusiveHolder* holder = IntrusiveHolder::cast_to_self(n);
+    assert(holder->key == holder->data, "must be");
+
+    return true;
+  }
+
+  void test_custom_verify_intrusive() {
+    IntrusiveTreeInt intrusive_tree;
+    int num_nodes = 100;
+
+    // Insert values
+    for (int n = 0; n < num_nodes; n++) {
+      IntrusiveCursor cursor = intrusive_tree.cursor(n);
+      EXPECT_NULL(cursor.node());
+
+      // Custom allocation here is just malloc
+      IntrusiveHolder* place = (IntrusiveHolder*)os::malloc(sizeof(IntrusiveHolder), mtTest);
+      new (place) IntrusiveHolder(n, n);
+
+      intrusive_tree.insert_at_cursor(place->get_node(), cursor);
+      IntrusiveCursor cursor2 = intrusive_tree.cursor(n);
+
+      EXPECT_NOT_NULL(cursor2.node());
+    }
+
+    intrusive_tree.verify_self(RBTreeTest::custom_validator);
+
+    int node_count = 0;
+    intrusive_tree.verify_self([&](const IntrusiveRBNode* n) {
+      node_count++;
+
+      IntrusiveHolder* holder = IntrusiveHolder::cast_to_self(n);
+      assert(holder->key >= 0, "must be");
+      assert(holder->data >= 0, "must be");
+      assert(holder->key < num_nodes, "must be");
+      assert(holder->data < num_nodes, "must be");
+
+      return true;
+    });
+
+    EXPECT_EQ(node_count, num_nodes);
+  }
+
   #ifdef ASSERT
   void test_nodes_visited_once() {
     constexpr size_t memory_size = 65536;
@@ -865,6 +1030,11 @@ TEST_VM_F(RBTreeTest, NodeHints) {
   this->test_node_hints();
 }
 
+int RBTreeTest::DestructionTracker::destructed_count = 0;
+TEST_VM_F(RBTreeTest, RemoveDestructs) {
+  this->test_remove_destructs();
+}
+
 TEST_VM_F(RBTreeTest, CursorFind) {
   this->test_cursor();
 }
@@ -886,10 +1056,13 @@ TEST_VM_F(RBTreeTest, LeftMostRightMost) {
 }
 
 struct PtrCmp {
-  static int cmp(const void* a, const void* b) {
+  static RBTreeOrdering cmp(const void* a, const void* b) {
     const uintptr_t ai = p2u(a);
     const uintptr_t bi = p2u(b);
-    return ai == bi ? 0 : (ai > bi ? 1 : -1);
+
+    if (ai < bi) return RBTreeOrdering::LT;
+    if (ai > bi) return RBTreeOrdering::GT;
+    return RBTreeOrdering::EQ;
   }
 };
 
@@ -923,31 +1096,67 @@ TEST_VM(RBTreeTestNonFixture, TestPrintPointerTree) {
 }
 
 struct IntCmp {
-  static int cmp(int a, int b) { return a == b ? 0 : (a > b ? 1 : -1); }
+  static RBTreeOrdering cmp(int a, int b) {
+    if (a < b) return RBTreeOrdering::LT;
+    if (a > b) return RBTreeOrdering::GT;
+    return RBTreeOrdering::EQ;
+  }
 };
 
 TEST_VM(RBTreeTestNonFixture, TestPrintIntegerTree) {
-  typedef RBTree<int, unsigned, IntCmp, RBTreeCHeapAllocator<mtTest> > TreeType;
-    TreeType tree;
-    const int i1 = 82924;
-    const char* const s1 = "[82924] = 1";
-    const int i2 = -13591;
-    const char* const s2 = "[-13591] = 2";
-    const int i3 = 0;
-    const char* const s3 = "[0] = 3";
-    tree.upsert(i1, 1U);
-    tree.upsert(i2, 2U);
-    tree.upsert(i3, 3U);
-    stringStream ss;
-    tree.print_on(&ss);
-    const char* const N = nullptr;
-    ASSERT_NE(strstr(ss.base(), s1), N);
-    ASSERT_NE(strstr(ss.base(), s2), N);
-    ASSERT_NE(strstr(ss.base(), s3), N);
+  using TreeType = RBTreeCHeap<int, unsigned, IntCmp, mtTest>;
+  TreeType tree;
+  const int i1 = 82924;
+  const char* const s1 = "[82924] = 1";
+  const int i2 = -13591;
+  const char* const s2 = "[-13591] = 2";
+  const int i3 = 0;
+  const char* const s3 = "[0] = 3";
+  tree.upsert(i1, 1U);
+  tree.upsert(i2, 2U);
+  tree.upsert(i3, 3U);
+  stringStream ss;
+  tree.print_on(&ss);
+  const char* const N = nullptr;
+  ASSERT_NE(strstr(ss.base(), s1), N);
+  ASSERT_NE(strstr(ss.base(), s2), N);
+  ASSERT_NE(strstr(ss.base(), s3), N);
+}
+
+TEST_VM(RBTreeTestNonFixture, TestPrintCustomPrinter) {
+  typedef RBTreeCHeap<int, unsigned, IntCmp, mtTest> TreeType;
+  typedef RBNode<int, unsigned> NodeType;
+
+  TreeType tree;
+  const int i1 = -13591;
+  const int i2 = 0;
+  const int i3 = 82924;
+  tree.upsert(i1, 1U);
+  tree.upsert(i2, 2U);
+  tree.upsert(i3, 3U);
+
+  stringStream ss;
+  int print_count = 0;
+  tree.print_on(&ss, [&](outputStream* st, const NodeType* n, int depth) {
+    st->print_cr("[%d] (%d): %d", depth, n->val(), n->key());
+    print_count++;
+  });
+
+const char* const expected =
+    "[0] (2): 0\n"
+    "[1] (1): -13591\n"
+    "[1] (3): 82924\n";
+
+  ASSERT_EQ(print_count, 3);
+  ASSERT_STREQ(ss.base(), expected);
 }
 
 TEST_VM_F(RBTreeTest, IntrusiveTest) {
   this->test_intrusive();
+}
+
+TEST_VM_F(RBTreeTest, IntrusiveCustomVerifyTest) {
+  this->test_custom_verify_intrusive();
 }
 
 TEST_VM_F(RBTreeTest, FillAndVerify) {
@@ -962,6 +1171,22 @@ TEST_VM_F(RBTreeTest, CursorReplace) {
 TEST_VM_F(RBTreeTest, NodesVisitedOnce) {
   this->test_nodes_visited_once();
 }
+
+TEST_VM_ASSERT_MSG(RBTreeTestNonFixture, CustomVerifyAssert, ".*failed on key = 7") {
+  typedef RBTreeCHeap<int, int, IntCmp, mtTest> TreeType;
+  typedef RBNode<int, int> NodeType;
+
+  TreeType tree;
+  for (int i = 0; i < 10; i++) {
+    tree.upsert(i, i);
+  }
+
+  tree.verify_self([&](const NodeType* n) {
+    assert(n->key() != 7, "failed on key = %d", n->key());
+    return true;
+  });
+}
+
 #endif // ASSERT
 
 TEST_VM_F(RBTreeTest, InsertRemoveVerify) {
@@ -978,6 +1203,25 @@ TEST_VM_F(RBTreeTest, InsertRemoveVerify) {
       tree.verify_self();
     }
   }
+}
+
+TEST_VM_F(RBTreeTest, CustomVerify) {
+  constexpr int num_nodes = 1000;
+  RBTreeInt tree;
+  for (int i = 0; i < num_nodes; i++) {
+    tree.upsert(i, i);
+  }
+
+  int node_count = 0;
+  tree.verify_self([&](const RBTreeIntNode* n) {
+    node_count++;
+
+    assert(n->key() >= 0, "must be");
+    assert(n->key() < num_nodes, "must be");
+    return true;
+  });
+
+  EXPECT_EQ(node_count, num_nodes);
 }
 
 TEST_VM_F(RBTreeTest, VerifyItThroughStressTest) {
@@ -1020,3 +1264,69 @@ TEST_VM_F(RBTreeTest, VerifyItThroughStressTest) {
   }
 }
 
+TEST_VM_F(RBTreeTest, TestCopyInto) {
+  {
+    RBTreeInt rbtree1;
+    RBTreeInt rbtree2;
+
+    rbtree1.copy_into(rbtree2);
+    rbtree2.verify_self();
+  }
+
+  RBTreeInt rbtree1;
+  RBTreeInt rbtree2;
+
+  int size = 1000;
+  for (int i = 0; i < size; i++) {
+    rbtree1.upsert(i, i);
+  }
+
+  rbtree1.copy_into(rbtree2);
+  rbtree2.verify_self();
+
+  ResourceMark rm;
+  GrowableArray<int> allocations(size);
+  int size1 = 0;
+  rbtree1.visit_in_order([&](RBTreeIntNode* node) {
+    size1++;
+    allocations.append(node->key());
+    return true;
+  });
+
+  int size2 = 0;
+  rbtree2.visit_in_order([&](RBTreeIntNode* node) {
+    EXPECT_EQ(node->key(), allocations.at(size2++));
+    return true;
+  });
+
+  EXPECT_EQ(size1, size2);
+  EXPECT_EQ(rbtree1.size(), rbtree2.size());
+  EXPECT_EQ(size2, static_cast<int>(rbtree2.size()));
+}
+
+struct OomAllocator {
+  void* allocate(size_t sz) {
+    return nullptr;
+  }
+  void free(void* ptr) {}
+};
+TEST_VM_F(RBTreeTest, AllocatorMayReturnNull) {
+  RBTree<int, int, Cmp, OomAllocator> rbtree;
+  bool success = rbtree.upsert(5, 5);
+  EXPECT_EQ(false, success);
+  // The test didn't exit the VM, so it was succesful.
+}
+
+TEST_VM_F(RBTreeTest, ArenaAllocator) {
+  Arena arena(mtTest);
+  RBTreeArena<int, int, Cmp> rbtree(&arena);
+  bool success = rbtree.upsert(5, 5);
+  ASSERT_EQ(true, success);
+}
+
+TEST_VM_F(RBTreeTest, ResourceAreaAllocator) {
+  ResourceArea area(mtTest);
+  RBTreeResourceArea<int, int, Cmp> rbtree(&area);
+  bool success = rbtree.upsert(5, 5);
+  ASSERT_EQ(true, success);
+}

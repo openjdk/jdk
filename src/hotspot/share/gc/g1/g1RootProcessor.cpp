@@ -46,10 +46,12 @@
 #include "utilities/enumIterator.hpp"
 #include "utilities/macros.hpp"
 
-G1RootProcessor::G1RootProcessor(G1CollectedHeap* g1h, uint n_workers) :
+G1RootProcessor::G1RootProcessor(G1CollectedHeap* g1h, bool is_parallel) :
     _g1h(g1h),
     _process_strong_tasks(G1RP_PS_NumElements),
-    _srs(n_workers) {}
+    _nmethod_marking_scope(),
+    _threads_claim_token_scope(),
+    _is_parallel(is_parallel) {}
 
 void G1RootProcessor::evacuate_roots(G1ParScanThreadState* pss, uint worker_id) {
   G1GCPhaseTimes* phase_times = _g1h->phase_times();
@@ -175,8 +177,7 @@ void G1RootProcessor::process_java_roots(G1RootClosures* closures,
   // oops_do_process_weak and oops_do_process_strong in nmethod.hpp
   {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::ThreadRoots, worker_id);
-    bool is_par = n_workers() > 1;
-    Threads::possibly_parallel_oops_do(is_par,
+    Threads::possibly_parallel_oops_do(_is_parallel,
                                        closures->strong_oops(),
                                        closures->strong_nmethods());
   }
@@ -208,8 +209,4 @@ void G1RootProcessor::process_code_cache_roots(NMethodClosure* nmethod_closure,
   if (_process_strong_tasks.try_claim_task(G1RP_PS_CodeCache_oops_do)) {
     CodeCache::nmethods_do(nmethod_closure);
   }
-}
-
-uint G1RootProcessor::n_workers() const {
-  return _srs.n_threads();
 }

@@ -1904,8 +1904,8 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         while ((r = result) == null) {
             if (q == null) {
                 q = new Signaller(interruptible, 0L, 0L);
-                if (Thread.currentThread() instanceof ForkJoinWorkerThread)
-                    ForkJoinPool.helpAsyncBlocker(defaultExecutor(), q);
+                if (Thread.currentThread() instanceof ForkJoinWorkerThread wt)
+                    ForkJoinPool.helpAsyncBlocker(wt.pool, q);
             }
             else if (!queued)
                 queued = tryPushStack(q);
@@ -1950,8 +1950,8 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
                 break;
             else if (q == null) {
                 q = new Signaller(true, nanos, deadline);
-                if (Thread.currentThread() instanceof ForkJoinWorkerThread)
-                    ForkJoinPool.helpAsyncBlocker(defaultExecutor(), q);
+                if (Thread.currentThread() instanceof ForkJoinWorkerThread wt)
+                    ForkJoinPool.helpAsyncBlocker(wt.pool, q);
             }
             else if (!queued)
                 queued = tryPushStack(q);

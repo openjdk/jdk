@@ -54,6 +54,7 @@
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmOperations.hpp"
 #include "services/classLoadingService.hpp"
+#include "services/cpuTimeUsage.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "services/diagnosticFramework.hpp"
 #include "services/finalizerService.hpp"
@@ -889,6 +890,21 @@ static jint get_num_flags() {
   return count;
 }
 
+static jlong get_gc_cpu_time() {
+  if (!os::is_thread_cpu_time_supported()) {
+    return -1;
+  }
+
+  {
+    MutexLocker hl(Heap_lock);
+    if (Universe::heap()->is_shutting_down()) {
+      return -1;
+    }
+
+    return CPUTimeUsage::GC::total();
+  }
+}
+
 static jlong get_long_attribute(jmmLongAttribute att) {
   switch (att) {
   case JMM_CLASS_LOADED_COUNT:
@@ -914,6 +930,9 @@ static jlong get_long_attribute(jmmLongAttribute att) {
 
   case JMM_JVM_UPTIME_MS:
     return Management::ticks_to_ms(os::elapsed_counter());
+
+  case JMM_TOTAL_GC_CPU_TIME:
+    return get_gc_cpu_time();
 
   case JMM_COMPILE_TOTAL_TIME_MS:
     return Management::ticks_to_ms(CompileBroker::total_compilation_ticks());
@@ -975,7 +994,7 @@ static jlong get_long_attribute(jmmLongAttribute att) {
     return ClassLoadingService::class_method_data_size();
 
   case JMM_OS_MEM_TOTAL_PHYSICAL_BYTES:
-    return os::physical_memory();
+    return static_cast<jlong>(os::physical_memory());
 
   default:
     return -1;
@@ -2013,7 +2032,11 @@ JVM_ENTRY(void, jmm_GetDiagnosticCommandInfo(JNIEnv *env, jobjectArray cmds,
     infoArray[i].description = info->description();
     infoArray[i].impact = info->impact();
     infoArray[i].num_arguments = info->num_arguments();
-    infoArray[i].enabled = info->is_enabled();
+
+    // All registered DCmds are always enabled. We set the dcmdInfo::enabled
+    // field to true to be compatible with the Java API
+    // com.sun.management.internal.DiagnosticCommandInfo.
+    infoArray[i].enabled = true;
   }
 JVM_END
 
@@ -2101,12 +2124,12 @@ JVM_ENTRY(jlong, jmm_GetTotalThreadAllocatedMemory(JNIEnv *env))
 
     // We keep a high water mark to ensure monotonicity in case threads counted
     // on a previous call end up in state (2).
-    static jlong high_water_result = 0;
+    static uint64_t high_water_result = 0;
 
     JavaThreadIteratorWithHandle jtiwh;
-    jlong result = ThreadService::exited_allocated_bytes();
+    uint64_t result = ThreadService::exited_allocated_bytes();
     for (; JavaThread* thread = jtiwh.next();) {
-      jlong size = thread->cooked_allocated_bytes();
+      uint64_t size = thread->cooked_allocated_bytes();
       result += size;
     }
 
@@ -2121,7 +2144,7 @@ JVM_ENTRY(jlong, jmm_GetTotalThreadAllocatedMemory(JNIEnv *env))
         high_water_result = result;
       }
     }
-    return result;
+    return checked_cast<jlong>(result);
 JVM_END
 
 // Gets the amount of memory allocated on the Java heap for a single thread.
@@ -2133,13 +2156,13 @@ JVM_ENTRY(jlong, jmm_GetOneThreadAllocatedMemory(JNIEnv *env, jlong thread_id))
   }
 
   if (thread_id == 0) { // current thread
-    return thread->cooked_allocated_bytes();
+    return checked_cast<jlong>(thread->cooked_allocated_bytes());
   }
 
   ThreadsListHandle tlh;
   JavaThread* java_thread = tlh.list()->find_JavaThread_from_java_tid(thread_id);
   if (is_platform_thread(java_thread)) {
-    return java_thread->cooked_allocated_bytes();
+    return checked_cast<jlong>(java_thread->cooked_allocated_bytes());
   }
   return -1;
 JVM_END

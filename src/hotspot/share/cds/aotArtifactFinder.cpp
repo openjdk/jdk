@@ -37,7 +37,7 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/trainingData.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 
 // All the classes that should be included in the AOT cache (in at least the "allocated" state)
 static GrowableArrayCHeap<Klass*, mtClassShared>* _all_cached_classes = nullptr;
@@ -47,7 +47,7 @@ static GrowableArrayCHeap<Klass*, mtClassShared>* _all_cached_classes = nullptr;
 static GrowableArrayCHeap<InstanceKlass*, mtClassShared>* _pending_aot_inited_classes = nullptr;
 
 static const int TABLE_SIZE = 15889; // prime number
-using ClassesTable = ResourceHashtable<Klass*, bool, TABLE_SIZE, AnyObj::C_HEAP, mtClassShared>;
+using ClassesTable = HashTable<Klass*, bool, TABLE_SIZE, AnyObj::C_HEAP, mtClassShared>;
 static ClassesTable* _seen_classes;       // all classes that have been seen by AOTArtifactFinder
 static ClassesTable* _aot_inited_classes; // all classes that need to be AOT-initialized.
 
@@ -145,7 +145,7 @@ void AOTArtifactFinder::find_artifacts() {
 
 #if INCLUDE_CDS_JAVA_HEAP
   // Keep scanning until we discover no more class that need to be AOT-initialized.
-  if (CDSConfig::is_initing_classes_at_dump_time()) {
+  if (CDSConfig::is_dumping_aot_linked_classes()) {
     while (_pending_aot_inited_classes->length() > 0) {
       InstanceKlass* ik = _pending_aot_inited_classes->pop();
       HeapShared::copy_and_rescan_aot_inited_mirror(ik);
@@ -188,7 +188,7 @@ void AOTArtifactFinder::end_scanning_for_oops() {
 }
 
 void AOTArtifactFinder::add_aot_inited_class(InstanceKlass* ik) {
-  if (CDSConfig::is_initing_classes_at_dump_time()) {
+  if (CDSConfig::is_dumping_aot_linked_classes()) {
     if (RegeneratedClasses::is_regenerated_object(ik)) {
       precond(RegeneratedClasses::get_original_object(ik)->is_initialized());
     } else {
@@ -201,7 +201,7 @@ void AOTArtifactFinder::add_aot_inited_class(InstanceKlass* ik) {
     if (created) {
       _pending_aot_inited_classes->push(ik);
 
-      InstanceKlass* s = ik->java_super();
+      InstanceKlass* s = ik->super();
       if (s != nullptr) {
         add_aot_inited_class(s);
       }
@@ -224,7 +224,7 @@ void AOTArtifactFinder::append_to_all_cached_classes(Klass* k) {
 }
 
 void AOTArtifactFinder::add_cached_instance_class(InstanceKlass* ik) {
-  if (CDSConfig::is_dumping_dynamic_archive() && ik->is_shared()) {
+  if (CDSConfig::is_dumping_dynamic_archive() && ik->in_aot_cache()) {
     // This class is already included in the base archive. No need to cache
     // it again in the dynamic archive.
     return;
@@ -236,7 +236,7 @@ void AOTArtifactFinder::add_cached_instance_class(InstanceKlass* ik) {
     append_to_all_cached_classes(ik);
 
     // All super types must be added.
-    InstanceKlass* s = ik->java_super();
+    InstanceKlass* s = ik->super();
     if (s != nullptr) {
       add_cached_instance_class(s);
     }
@@ -258,7 +258,7 @@ void AOTArtifactFinder::add_cached_instance_class(InstanceKlass* ik) {
       return;
     }
     scan_oops_in_instance_class(ik);
-    if (ik->is_hidden() && CDSConfig::is_initing_classes_at_dump_time()) {
+    if (ik->is_hidden() && CDSConfig::is_dumping_aot_linked_classes()) {
       bool succeed = AOTClassLinker::try_add_candidate(ik);
       guarantee(succeed, "All cached hidden classes must be aot-linkable");
       add_aot_inited_class(ik);

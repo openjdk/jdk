@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8350896
+ * @bug 8350896 8370459
  * @library /test/lib /
  * @summary C2: wrong result: Integer/Long.compress gets wrong type from CompressBitsNode::Value.
  * @run driver compiler.c2.gvn.TestBitCompressValueTransform
@@ -62,11 +62,15 @@ public class TestBitCompressValueTransform {
     public final long LIMIT_L7 = GEN_L.next();
     public final long LIMIT_L8 = GEN_L.next();
 
-    public final int BOUND_LO_I = GEN_I.next();
-    public final int BOUND_HI_I = GEN_I.next();
+    public final int BOUND1_LO_I = GEN_I.next();
+    public final int BOUND2_LO_I = GEN_I.next();
+    public final int BOUND1_HI_I = GEN_I.next();
+    public final int BOUND2_HI_I = GEN_I.next();
 
-    public final long BOUND_LO_L = GEN_L.next();
-    public final long BOUND_HI_L = GEN_L.next();
+    public final long BOUND1_LO_L = GEN_L.next();
+    public final long BOUND2_LO_L = GEN_L.next();
+    public final long BOUND1_HI_L = GEN_L.next();
+    public final long BOUND2_HI_L = GEN_L.next();
 
     @Test
     @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = { "bmi2", "true" })
@@ -75,11 +79,8 @@ public class TestBitCompressValueTransform {
     }
 
     @Run(test = "test1")
-    public void run1(RunInfo info) {
-        long res = 0;
-        for (int i = 0; i < 10000; i++) {
-            res |= test1(field_L);
-        }
+    public void run1() {
+        long res = test1(field_L);
         Asserts.assertEQ(res, gold_L);
     }
 
@@ -91,11 +92,8 @@ public class TestBitCompressValueTransform {
     }
 
     @Run(test = "test2")
-    public void run2(RunInfo info) {
-        int res = 0;
-        for (int i = 0; i < 10000; i++) {
-            res |= test2(field_I);
-        }
+    public void run2() {
+        int res = test2(field_I);
         Asserts.assertEQ(res, gold_I);
     }
 
@@ -111,9 +109,9 @@ public class TestBitCompressValueTransform {
     }
 
     @Run(test = "test3")
-    public void run3(RunInfo info) {
+    public void run3() {
         int res = 0;
-        for (int i = 1; i < 10000; i++) {
+        for (int i = 1; i < 100; i++) {
             res |= test3(i);
         }
         Asserts.assertLTE(0, res);
@@ -131,9 +129,9 @@ public class TestBitCompressValueTransform {
     }
 
     @Run(test = "test4")
-    public void run4(RunInfo info) {
+    public void run4() {
         long res = 0;
-        for (long i = 1; i < 10000; i++) {
+        for (long i = 1; i < 100; i++) {
             res |= test4(i);
         }
         Asserts.assertLTE(0L, res);
@@ -149,9 +147,9 @@ public class TestBitCompressValueTransform {
     }
 
     @Run(test = "test5")
-    public void run5(RunInfo info) {
+    public void run5() {
         long res = 0;
-        for (int i = -10000; i < 10000; i++) {
+        for (int i = -100; i < 100; i++) {
             res |= test5((long)i);
         }
         Asserts.assertEQ(-1L, res);
@@ -167,9 +165,9 @@ public class TestBitCompressValueTransform {
     }
 
     @Run(test = "test6")
-    public void run6(RunInfo info) {
+    public void run6() {
         long res = 0;
-        for (int i = -10000; i < 10000; i++) {
+        for (int i = -100; i < 100; i++) {
             res |= test6((long)i);
         }
         Asserts.assertLTE(0L, res);
@@ -186,9 +184,9 @@ public class TestBitCompressValueTransform {
     }
 
     @Run(test = "test7")
-    public void run7(RunInfo info) {
+    public void run7() {
         long res = Long.MIN_VALUE;
-        for (int i = -10000; i < 10000; i++) {
+        for (int i = -100; i < 100; i++) {
             res = Long.max(test7((long)i), res);
         }
         Asserts.assertGTE(10000L, res);
@@ -204,9 +202,9 @@ public class TestBitCompressValueTransform {
     }
 
     @Run(test = "test8")
-    public void run8(RunInfo info) {
+    public void run8() {
         int res = 0;
-        for (int i = -10000; i < 10000; i++) {
+        for (int i = -100; i < 100; i++) {
             res |= test8(i);
         }
         Asserts.assertEQ(-1, res);
@@ -222,9 +220,9 @@ public class TestBitCompressValueTransform {
     }
 
     @Run(test = "test9")
-    public void run9(RunInfo info) {
+    public void run9() {
         int res = 0;
-        for (int i = -10000; i < 10000; i++) {
+        for (int i = -100; i < 100; i++) {
             res |= test9(i);
         }
         Asserts.assertLTE(0, res);
@@ -241,12 +239,12 @@ public class TestBitCompressValueTransform {
     }
 
     @Run(test = "test10")
-    public void run10(RunInfo info) {
+    public void run10() {
         int res = Integer.MIN_VALUE;
-        for (int i = -10000; i < 10000; i++) {
+        for (int i = -100; i < 100; i++) {
             res = Integer.max(test10(i), res);
         }
-        Asserts.assertGTE(10000, res);
+        Asserts.assertGTE(100, res);
     }
 
     @Test
@@ -258,9 +256,9 @@ public class TestBitCompressValueTransform {
     }
 
     @Run(test = "test11")
-    public void run11(RunInfo info) {
+    public void run11() {
         int res = 0;
-        for (int i = -10000; i < 10000; i++) {
+        for (int i = -100; i < 100; i++) {
             res |= test11(i);
         }
         Asserts.assertEQ(0, res);
@@ -275,9 +273,9 @@ public class TestBitCompressValueTransform {
     }
 
     @Run(test = "test12")
-    public void run12(RunInfo info) {
+    public void run12() {
         long res = 0;
-        for (int i = -10000; i < 10000; i++) {
+        for (int i = -100; i < 100; i++) {
             res |= test12(i);
         }
         Asserts.assertEQ(0L, res);
@@ -292,9 +290,9 @@ public class TestBitCompressValueTransform {
     }
 
     @Run(test = "test13")
-    public void run13(RunInfo info) {
+    public void run13() {
         int res = 0;
-        for (int i = -10000; i < 10000; i++) {
+        for (int i = -100; i < 100; i++) {
             res |= test13(i);
         }
         Asserts.assertEQ(0, res);
@@ -309,9 +307,9 @@ public class TestBitCompressValueTransform {
     }
 
     @Run(test = "test14")
-    public void run14(RunInfo info) {
+    public void run14() {
         long res = 0;
-        for (int i = -10000; i < 10000; i++) {
+        for (int i = -100; i < 100; i++) {
             res |= test14(i);
         }
         Asserts.assertEQ(0L, res);
@@ -326,17 +324,15 @@ public class TestBitCompressValueTransform {
     }
 
     @Run (test = "test15")
-    public void run15(RunInfo info) {
-        int res = 0;
-        for (int i = 0; i < 10000; i++) {
-            res |= test15(0, 0);
-        }
+    public void run15() {
+        int res = test15(0, 0);
         Asserts.assertEQ(0, res);
     }
 
     @DontCompile
     public int test16_interpreted(int src, int mask) {
-        src = Math.max(BOUND_LO_I, Math.min(src, BOUND_HI_I));
+        src = Math.max(BOUND1_LO_I, Math.min(src, BOUND1_HI_I));
+        mask = Math.max(BOUND2_LO_I, Math.min(mask, BOUND2_HI_I));
         int res = Integer.compress(src, mask);
 
         if (res > LIMIT_I1) {
@@ -369,7 +365,8 @@ public class TestBitCompressValueTransform {
     @Test
     @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = {"bmi2" , "true"})
     public int test16(int src, int mask) {
-        src = Math.max(BOUND_LO_I, Math.min(src, BOUND_HI_I));
+        src = Math.max(BOUND1_LO_I, Math.min(src, BOUND1_HI_I));
+        mask = Math.max(BOUND2_LO_I, Math.min(mask, BOUND2_HI_I));
         int res = Integer.compress(src, mask);
 
         // Check the result with some random value ranges, if any of the
@@ -404,11 +401,11 @@ public class TestBitCompressValueTransform {
     }
 
     @Run (test = "test16")
-    public void run16(RunInfo info) {
+    public void run16() {
         int actual = 0;
         int expected = 0;
 
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 100; i++) {
             int arg1 = GEN_I.next();
             int arg2 = GEN_I.next();
 
@@ -420,7 +417,8 @@ public class TestBitCompressValueTransform {
 
     @DontCompile
     public int test17_interpreted(int src, int mask) {
-        src = Math.max(BOUND_LO_I, Math.min(src, BOUND_HI_I));
+        src = Math.max(BOUND1_LO_I, Math.min(src, BOUND1_HI_I));
+        mask = Math.max(BOUND2_LO_I, Math.min(mask, BOUND2_HI_I));
         int res = Integer.expand(src, mask);
 
         if (res > LIMIT_I1) {
@@ -453,7 +451,8 @@ public class TestBitCompressValueTransform {
     @Test
     @IR (counts = { IRNode.EXPAND_BITS, " >0 " }, applyIfCPUFeature = {"bmi2" , "true"})
     public int test17(int src, int mask) {
-        src = Math.max(BOUND_LO_I, Math.min(src, BOUND_HI_I));
+        src = Math.max(BOUND1_LO_I, Math.min(src, BOUND1_HI_I));
+        mask = Math.max(BOUND2_LO_I, Math.min(mask, BOUND2_HI_I));
         int res = Integer.expand(src, mask);
 
         // Check the result with some random value ranges, if any of the
@@ -488,11 +487,11 @@ public class TestBitCompressValueTransform {
     }
 
     @Run (test = "test17")
-    public void run17(RunInfo info) {
+    public void run17() {
         int actual = 0;
         int expected = 0;
 
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 100; i++) {
             int arg1 = GEN_I.next();
             int arg2 = GEN_I.next();
 
@@ -504,7 +503,8 @@ public class TestBitCompressValueTransform {
 
     @DontCompile
     public long test18_interpreted(long src, long mask) {
-        src = Math.max(BOUND_LO_L, Math.min(src, BOUND_HI_L));
+        src = Math.max(BOUND1_LO_L, Math.min(src, BOUND1_HI_L));
+        mask = Math.max(BOUND2_LO_L, Math.min(mask, BOUND2_HI_L));
         long res = Long.compress(src, mask);
 
         if (res > LIMIT_L1) {
@@ -537,7 +537,8 @@ public class TestBitCompressValueTransform {
     @Test
     @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = {"bmi2" , "true"})
     public long test18(long src, long mask) {
-        src = Math.max(BOUND_LO_L, Math.min(src, BOUND_HI_L));
+        src = Math.max(BOUND1_LO_L, Math.min(src, BOUND1_HI_L));
+        mask = Math.max(BOUND2_LO_L, Math.min(mask, BOUND2_HI_L));
         long res = Long.compress(src, mask);
 
         // Check the result with some random value ranges, if any of the
@@ -572,11 +573,11 @@ public class TestBitCompressValueTransform {
     }
 
     @Run (test = "test18")
-    public void run18(RunInfo info) {
+    public void run18() {
         long actual = 0;
         long expected = 0;
 
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 100; i++) {
             long arg1 = GEN_L.next();
             long arg2 = GEN_L.next();
 
@@ -588,7 +589,8 @@ public class TestBitCompressValueTransform {
 
     @DontCompile
     public long test19_interpreted(long src, long mask) {
-        src = Math.max(BOUND_LO_L, Math.min(src, BOUND_HI_L));
+        src = Math.max(BOUND1_LO_L, Math.min(src, BOUND1_HI_L));
+        mask = Math.max(BOUND2_LO_L, Math.min(mask, BOUND2_HI_L));
         long res = Long.expand(src, mask);
 
         if (res > LIMIT_L1) {
@@ -621,7 +623,8 @@ public class TestBitCompressValueTransform {
     @Test
     @IR (counts = { IRNode.EXPAND_BITS, " >0 " }, applyIfCPUFeature = {"bmi2" , "true"})
     public long test19(long src, long mask) {
-        src = Math.max(BOUND_LO_L, Math.min(src, BOUND_HI_L));
+        src = Math.max(BOUND1_LO_L, Math.min(src, BOUND1_HI_L));
+        mask = Math.max(BOUND2_LO_L, Math.min(mask, BOUND2_HI_L));
         long res = Long.expand(src, mask);
 
         // Check the result with some random value ranges, if any of the
@@ -656,11 +659,11 @@ public class TestBitCompressValueTransform {
     }
 
     @Run (test = "test19")
-    public void run19(RunInfo info) {
+    public void run19() {
         long actual = 0;
         long expected = 0;
 
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 100; i++) {
             long arg1 = GEN_L.next();
             long arg2 = GEN_L.next();
 
@@ -668,6 +671,90 @@ public class TestBitCompressValueTransform {
             expected += test19_interpreted(arg1, arg2);
         }
         Asserts.assertEQ(actual, expected);
+    }
+
+    @Test
+    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = { "bmi2", "true" })
+    public static long test20(int x) {
+        // Analysis of when this is used to produce wrong results on Windows:
+        //
+        // src  = -2683206580L = ffff_ffff_6011_844c
+        // mask = 0..maxuint, at runtime: 4294950911 = 0xffff_bfff
+        //
+        // Hence we go to the B) case of CompressBits in bitshuffle_value
+        //
+        // mask_bit_width = 64
+        // clz = 32
+        // result_bit_width = 32
+        //
+        // So we have result_bit_width < mask_bit_width
+        //
+        // And we do:
+        // lo = result_bit_width == mask_bit_width ? lo : 0L;
+        // -> lo = 0
+        //
+        // And we do:
+        // hi = MIN2((jlong)((1UL << result_bit_width) - 1L), hi);
+        //
+        // But watch out: on windows 1UL is only a 32 bit value. Intended was probably 1ULL.
+        // So when we calculate "1UL << 32", we just get 1. And so then hi would be 0 now.
+        // If we instead did "1ULL << 32", we would get 0x1_0000_0000, and hi = 0xffff_ffff.
+        //
+        // We create type [lo, hi]:
+        // Windows: [0, 0]           -> constant zero
+        // correct:  [0, 0xffff_ffff] -> does not constant fold. At runtime: 0x3008_c44c
+        return Long.compress(-2683206580L, Integer.toUnsignedLong(x));
+    }
+
+    @DontCompile
+    public static long test20_interpreted(int x) {
+        return Long.compress(-2683206580L, Integer.toUnsignedLong(x));
+    }
+
+    @Run (test = "test20")
+    public void run20() {
+        for (int i = 0; i < 100; i++) {
+            int arg = GEN_I.next();
+
+            long actual = test20(arg);
+            long expected = test20_interpreted(arg);
+            Asserts.assertEQ(actual, expected);
+        }
+    }
+
+    @Test
+    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = { "bmi2", "true" })
+    public static long test21(long x) {
+        // Analysis of when this is used to produce wrong results on Windows:
+        //
+        // Very similar to case in test20, but this time we go into the A) case.
+        //
+        // maskcon = 0xffff_ffff
+        // bitcount = 32
+        //
+        // And now the problematic part:
+        // hi = (1UL << bitcount) - 1;
+        //
+        // On Windows, this becomes 0 (but it should be 0xffff_ffff).
+        // Hence, the range wrongly collapses to [0, 0], and the CompressBits node
+        // is wrongly replaced with a zero constant.
+        return Long.compress(x, 0xffff_ffffL);
+    }
+
+    @DontCompile
+    public static long test21_interpreted(long x) {
+        return Long.compress(x, 0xffff_ffffL);
+    }
+
+    @Run (test = "test21")
+    public void run21() {
+        for (int i = 0; i < 100; i++) {
+            int arg = GEN_I.next();
+
+            long actual = test21(arg);
+            long expected = test21_interpreted(arg);
+            Asserts.assertEQ(actual, expected);
+        }
     }
 
     public static void main(String[] args) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,8 @@ package java.awt.color;
 
 import java.io.Serial;
 
+import sun.java2d.cmm.BuiltinProfileInfo;
 import sun.java2d.cmm.Profile;
-import sun.java2d.cmm.ProfileDeferralInfo;
 
 /**
  * The {@code ICC_ProfileGray} class is a subclass of the {@code ICC_Profile}
@@ -87,10 +87,10 @@ public final class ICC_ProfileGray extends ICC_Profile {
 
     /**
      * Constructs a new {@code ICC_ProfileGray} from a
-     * {@code ProfileDeferralInfo} object.
+     * {@code BuiltinProfileInfo} object.
      */
-    ICC_ProfileGray(ProfileDeferralInfo pdi) {
-        super(pdi);
+    ICC_ProfileGray(BuiltinProfileInfo bpi) {
+        super(bpi);
     }
 
     /**
@@ -100,6 +100,7 @@ public final class ICC_ProfileGray extends ICC_Profile {
      * @return an array containing the components of the mediaWhitePointTag in
      *         the ICC profile
      */
+    @Override
     public float[] getMediaWhitePoint() {
         return super.getMediaWhitePoint();
     }

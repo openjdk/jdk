@@ -62,8 +62,10 @@ MemoryUsage ShenandoahMemoryPool::get_memory_usage() {
   // the assert below, which would also fail in downstream code. To avoid that, adjust values
   // to make sense under the race. See JDK-8207200.
   committed = MAX2(used, committed);
-  assert(used <= committed, "used: %zu, committed: %zu", used,      committed);
-
+  assert(used <= committed, "used: %zu, committed: %zu", used, committed);
+  assert(initial <= _heap->max_capacity(), "sanity");
+  assert(committed <= _heap->max_capacity(), "sanity");
+  assert(max <= _heap->max_capacity(), "sanity");
   return MemoryUsage(initial, used, committed, max);
 }
 
@@ -86,6 +88,10 @@ MemoryUsage ShenandoahGenerationalMemoryPool::get_memory_usage() {
   size_t used      = used_in_bytes();
   size_t committed = _generation->used_regions_size();
 
+  assert(initial <= _heap->max_capacity(), "sanity");
+  assert(used <= _heap->max_capacity(), "sanity");
+  assert(committed <= _heap->max_capacity(), "sanity");
+  assert(max <= _heap->max_capacity(), "sanity");
   return MemoryUsage(initial, used, committed, max);
 }
 

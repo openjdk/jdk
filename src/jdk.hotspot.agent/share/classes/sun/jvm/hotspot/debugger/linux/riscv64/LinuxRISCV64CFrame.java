@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, Red Hat Inc.
  * Copyright (c) 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -31,13 +31,17 @@ import sun.jvm.hotspot.debugger.riscv64.*;
 import sun.jvm.hotspot.debugger.linux.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.cdbg.basic.*;
+import sun.jvm.hotspot.runtime.*;
+import sun.jvm.hotspot.runtime.riscv64.*;
 
 public final class LinuxRISCV64CFrame extends BasicCFrame {
    private static final int C_FRAME_LINK_OFFSET        = -2;
    private static final int C_FRAME_RETURN_ADDR_OFFSET = -1;
+   private static final int C_FRAME_SENDER_SP_OFFSET   =  0;
 
-   public LinuxRISCV64CFrame(LinuxDebugger dbg, Address fp, Address pc) {
+   public LinuxRISCV64CFrame(LinuxDebugger dbg, Address sp, Address fp, Address pc) {
       super(dbg.getCDebugger());
+      this.sp = sp;
       this.fp = fp;
       this.pc = pc;
       this.dbg = dbg;
@@ -57,28 +61,53 @@ public final class LinuxRISCV64CFrame extends BasicCFrame {
       return fp;
    }
 
+   @Override
    public CFrame sender(ThreadProxy thread) {
-      RISCV64ThreadContext context = (RISCV64ThreadContext) thread.getContext();
-      Address rsp = context.getRegisterAsAddress(RISCV64ThreadContext.SP);
+      return sender(thread, null, null, null);
+   }
 
-      if ((fp == null) || fp.lessThan(rsp)) {
+   @Override
+   public CFrame sender(ThreadProxy thread, Address nextSP, Address nextFP, Address nextPC) {
+      // Check fp
+      // Skip if both nextFP and nextPC are given - do not need to load from fp.
+      if (nextFP == null && nextPC == null) {
+        if (fp == null) {
+          return null;
+        }
+
+        // Check alignment of fp
+        if (dbg.getAddressValue(fp) % (2 * ADDRESS_SIZE) != 0) {
+          return null;
+        }
+      }
+
+      if (nextSP == null) {
+        nextSP = fp.getAddressAt(C_FRAME_SENDER_SP_OFFSET * ADDRESS_SIZE);
+      }
+      if (nextSP == null) {
         return null;
       }
 
-      // Check alignment of fp
-      if (dbg.getAddressValue(fp) % (2 * ADDRESS_SIZE) != 0) {
+      if (nextFP == null) {
+        nextFP = fp.getAddressAt(C_FRAME_LINK_OFFSET * ADDRESS_SIZE);
+      }
+      if (nextFP == null) {
         return null;
       }
 
-      Address nextFP = fp.getAddressAt(C_FRAME_LINK_OFFSET * ADDRESS_SIZE);
-      if (nextFP == null || nextFP.lessThanOrEqual(fp)) {
-        return null;
+      if (nextPC == null) {
+        nextPC = fp.getAddressAt(C_FRAME_RETURN_ADDR_OFFSET * ADDRESS_SIZE);
       }
-      Address nextPC  = fp.getAddressAt(C_FRAME_RETURN_ADDR_OFFSET * ADDRESS_SIZE);
       if (nextPC == null) {
         return null;
       }
-      return new LinuxRISCV64CFrame(dbg, nextFP, nextPC);
+
+      return new LinuxRISCV64CFrame(dbg, nextSP, nextFP, nextPC);
+   }
+
+   @Override
+   public Frame toFrame() {
+      return new RISCV64Frame(sp, fp, pc);
    }
 
    // package/class internals only

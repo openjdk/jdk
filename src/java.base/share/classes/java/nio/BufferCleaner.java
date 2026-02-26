@@ -29,6 +29,7 @@ import java.lang.ref.PhantomReference;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.util.Objects;
+import jdk.internal.misc.InnocuousThread;
 import sun.nio.Cleaner;
 
 /**
@@ -200,8 +201,9 @@ class BufferCleaner {
         }
     }
 
-    private static final class CleaningThread extends Thread {
-        public CleaningThread() {}
+
+    private static final class CleaningRunnable implements Runnable {
+        public CleaningRunnable() {}
 
         @Override
         public void run() {
@@ -234,14 +236,14 @@ class BufferCleaner {
 
     private static final CleanerList cleanerList = new CleanerList();
     private static final ReferenceQueue<Object> queue = new ReferenceQueue<Object>();
-    private static CleaningThread cleaningThread = null;
+    private static Thread cleaningThread;
 
     private static void startCleaningThreadIfNeeded() {
         synchronized (cleanerList) {
             if (cleaningThread != null) {
                 return;
             }
-            cleaningThread = new CleaningThread();
+            cleaningThread = InnocuousThread.newThread(new CleaningRunnable());
         }
         cleaningThread.setDaemon(true);
         cleaningThread.start();

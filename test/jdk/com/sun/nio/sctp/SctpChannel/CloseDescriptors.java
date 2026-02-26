@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8238274
+ * @key intermittent
  * @summary Potential leak file descriptor for SCTP
  * @requires (os.family == "linux")
  * @library /test/lib
@@ -45,6 +46,8 @@ import java.util.Optional;
 import com.sun.nio.sctp.SctpChannel;
 import com.sun.nio.sctp.SctpServerChannel;
 
+import jtreg.SkippedException;
+
 public class CloseDescriptors {
     private static Selector selector;
     private static final int LOOP = 10;
@@ -54,7 +57,7 @@ public class CloseDescriptors {
 
     public static void main(String[] args) throws Exception {
         if (!Util.isSCTPSupported()) {
-            throw new jtreg.SkippedException("SCTP protocol is not supported");
+            throw new SkippedException("SCTP protocol is not supported");
         }
 
         List<String> lsofDirs = List.of("/usr/bin", "/usr/sbin");
@@ -63,7 +66,7 @@ public class CloseDescriptors {
                             .filter(f -> Files.isExecutable(f))
                             .findFirst();
         if (!lsof.isPresent()) {
-            throw new jtreg.SkippedException("Cannot locate lsof in " + lsofDirs);
+            throw new SkippedException("Cannot locate lsof in " + lsofDirs);
         }
 
         try (ServerSocket ss = new ServerSocket(0)) {

@@ -27,6 +27,7 @@
 #include "gc/z/zRangeRegistry.hpp"
 
 #include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zArray.inline.hpp"
 #include "gc/z/zList.inline.hpp"
 #include "gc/z/zLock.inline.hpp"
 

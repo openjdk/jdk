@@ -95,7 +95,7 @@ public final class SWITCH implements CompoundInstruction {
      * @param maxGap maximum gap that may between case branches
      */
     public SWITCH(final int[] match, final InstructionHandle[] targets, final InstructionHandle target, final int maxGap) {
-        int[] matchClone = match.clone();
+        final int[] matchClone = match.clone();
         final InstructionHandle[] targetsClone = targets.clone();
         final int matchLength = match.length;
         if (matchLength < 2) {

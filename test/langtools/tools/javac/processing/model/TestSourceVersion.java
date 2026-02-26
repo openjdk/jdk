@@ -26,7 +26,6 @@
  * @bug 7025809 8028543 6415644 8028544 8029942 8187951 8193291 8196551 8233096
  *      8275308 8355536
  * @summary Test latest, latestSupported, underscore as keyword, etc.
- * @author  Joseph D. Darcy
  * @modules java.compiler
  *          jdk.compiler
  * @run junit/othervm -DTestSourceVersion.DIFFERENT_LATEST_SUPPORTED=false TestSourceVersion

@@ -289,7 +289,7 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
   // this CodeEmitInfo must not have the xhandlers because here the
   // object is already locked (xhandlers expect object to be unlocked)
   CodeEmitInfo* info = state_for(x, x->state(), true);
-  LIR_Opr tmp = LockingMode == LM_LIGHTWEIGHT ? new_register(T_ADDRESS) : LIR_OprFact::illegalOpr;
+  LIR_Opr tmp = new_register(T_ADDRESS);
   monitor_enter(obj.result(), lock, syncTempOpr(), tmp,
                         x->monitor_no(), info_for_exception, info);
 }
@@ -720,8 +720,8 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
   if (x->id() == vmIntrinsics::_dexp || x->id() == vmIntrinsics::_dlog ||
       x->id() == vmIntrinsics::_dpow || x->id() == vmIntrinsics::_dcos ||
       x->id() == vmIntrinsics::_dsin || x->id() == vmIntrinsics::_dtan ||
-      x->id() == vmIntrinsics::_dlog10 || x->id() == vmIntrinsics::_dtanh ||
-      x->id() == vmIntrinsics::_dcbrt
+      x->id() == vmIntrinsics::_dlog10 || x->id() == vmIntrinsics::_dsinh ||
+      x->id() == vmIntrinsics::_dtanh || x->id() == vmIntrinsics::_dcbrt
       ) {
     do_LibmIntrinsic(x);
     return;
@@ -833,6 +833,12 @@ void LIRGenerator::do_LibmIntrinsic(Intrinsic* x) {
         __ call_runtime_leaf(StubRoutines::dtan(), getThreadTemp(), result_reg, cc->args());
       } else {
         __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtan), getThreadTemp(), result_reg, cc->args());
+      }
+      break;
+    case vmIntrinsics::_dsinh:
+      assert(StubRoutines::dsinh() != nullptr, "sinh intrinsic not found");
+      if (StubRoutines::dsinh() != nullptr) {
+        __ call_runtime_leaf(StubRoutines::dsinh(), getThreadTemp(), result_reg, cc->args());
       }
       break;
     case vmIntrinsics::_dtanh:
@@ -955,7 +961,7 @@ void LIRGenerator::do_update_CRC32(Intrinsic* x) {
       CallingConvention* cc = frame_map()->c_calling_convention(&signature);
       const LIR_Opr result_reg = result_register_for(x->type());
 
-      LIR_Opr addr = new_pointer_register();
+      LIR_Opr addr = new_register(T_ADDRESS);
       __ leal(LIR_OprFact::address(a), addr);
 
       crc.load_item_force(cc->at(0));
@@ -1094,10 +1100,10 @@ void LIRGenerator::do_vectorizedMismatch(Intrinsic* x) {
   CallingConvention* cc = frame_map()->c_calling_convention(&signature);
   const LIR_Opr result_reg = result_register_for(x->type());
 
-  LIR_Opr ptr_addr_a = new_pointer_register();
+  LIR_Opr ptr_addr_a = new_register(T_ADDRESS);
   __ leal(LIR_OprFact::address(addr_a), ptr_addr_a);
 
-  LIR_Opr ptr_addr_b = new_pointer_register();
+  LIR_Opr ptr_addr_b = new_register(T_ADDRESS);
   __ leal(LIR_OprFact::address(addr_b), ptr_addr_b);
 
   __ move(ptr_addr_a, cc->at(0));

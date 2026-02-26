@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023 Google LLC. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,6 +28,7 @@
 #define SHARE_RUNTIME_CPUTIMECOUNTERS_HPP
 
 
+#include "gc/shared/gc_globals.hpp"
 #include "memory/iterator.hpp"
 #include "runtime/os.hpp"
 #include "runtime/perfData.hpp"
@@ -40,6 +41,7 @@ public:
     gc_parallel_workers,
     gc_conc_mark,
     gc_conc_refine,
+    gc_conc_refine_control,
     gc_service,
     vm,
     conc_dedup,
@@ -64,7 +66,7 @@ private:
 
   // A long which atomically tracks how much CPU time has been spent doing GC
   // since the last time we called `publish_total_cpu_time()`.
-  // It is incremented using Atomic::add() to prevent race conditions, and
+  // It is incremented using AtomicAccess::add() to prevent race conditions, and
   // is added to the `gc_total` CPUTimeType at the end of GC.
   volatile jlong _gc_total_cpu_time_diff;
 
@@ -82,7 +84,9 @@ public:
     assert(_instance == nullptr, "we can only allocate one CPUTimeCounters object");
     if (UsePerfData && os::is_thread_cpu_time_supported()) {
       _instance = new CPUTimeCounters();
-      create_counter(SUN_THREADS, CPUTimeGroups::CPUTimeType::gc_total);
+      if (UseG1GC || UseParallelGC) {
+        create_counter(SUN_THREADS, CPUTimeGroups::CPUTimeType::gc_total);
+      }
     }
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ import java.util.*;
  * @test
  * @bug     6911258 6962571 6963622 6991528 7005628 8012044
  * @summary Basic tests of suppressed exceptions
- * @author  Joseph D. Darcy
  */
 
 public class SuppressedExceptions {

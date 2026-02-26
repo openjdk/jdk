@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,7 @@ abstract class KeyWrapCipher extends CipherSpi {
         }
         int keyLen = keyBytes.length;
         if (!key.getAlgorithm().equalsIgnoreCase("AES") ||
-            !AESCrypt.isKeySizeValid(keyLen) ||
+            !AES_Crypt.isKeySizeValid(keyLen) ||
             (fixedKeySize != -1 && fixedKeySize != keyLen)) {
                 throw new InvalidKeyException("Invalid key length: " +
                         keyLen + " bytes");

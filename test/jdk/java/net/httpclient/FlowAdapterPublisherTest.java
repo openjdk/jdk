@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,12 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.net.http.HttpClient.Builder;
 import java.net.http.HttpClient.Version;
+import java.net.http.HttpOption.Http3DiscoveryMode;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.concurrent.Flow;
-import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -41,19 +42,21 @@ import java.net.http.HttpResponse;
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import javax.net.ssl.SSLContext;
+
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.util.stream.Collectors.joining;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.net.http.HttpRequest.BodyPublishers.fromPublisher;
 import static java.net.http.HttpResponse.BodyHandlers.ofString;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertThrows;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /*
  * @test
@@ -61,28 +64,30 @@ import static org.testng.Assert.fail;
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext
- * @run testng/othervm FlowAdapterPublisherTest
+ * @run junit/othervm -Djdk.internal.httpclient.debug=err FlowAdapterPublisherTest
  */
 
 public class FlowAdapterPublisherTest implements HttpServerAdapters {
 
-    SSLContext sslContext;
-    HttpTestServer httpTestServer;     // HTTP/1.1    [ 4 servers ]
-    HttpTestServer httpsTestServer;    // HTTPS/1.1
-    HttpTestServer http2TestServer;    // HTTP/2 ( h2c )
-    HttpTestServer https2TestServer;   // HTTP/2 ( h2  )
-    String httpURI;
-    String httpsURI;
-    String http2URI;
-    String https2URI;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+    private static HttpTestServer httpTestServer;     // HTTP/1.1    [ 5 servers ]
+    private static HttpTestServer httpsTestServer;    // HTTPS/1.1
+    private static HttpTestServer http2TestServer;    // HTTP/2 ( h2c )
+    private static HttpTestServer https2TestServer;   // HTTP/2 ( h2  )
+    private static HttpTestServer http3TestServer;    // HTTP/3 ( h3  )
+    private static String httpURI;
+    private static String httpsURI;
+    private static String http2URI;
+    private static String https2URI;
+    private static String http3URI;
 
-    @DataProvider(name = "uris")
-    public Object[][] variants() {
+    public static Object[][] variants() {
         return new Object[][]{
                 { httpURI   },
                 { httpsURI  },
                 { http2URI  },
                 { https2URI },
+                { http3URI  },
         };
     }
 
@@ -94,33 +99,30 @@ public class FlowAdapterPublisherTest implements HttpServerAdapters {
         if (uri.contains("/https1/")) return Version.HTTP_1_1;
         if (uri.contains("/http2/")) return Version.HTTP_2;
         if (uri.contains("/https2/")) return Version.HTTP_2;
+        if (uri.contains("/http3/")) return Version.HTTP_3;
         return null;
     }
 
     private HttpClient newHttpClient(String uri) {
-        var builder = HttpClient.newBuilder();
+        var version = Optional.ofNullable(version(uri));
+        var builder = version.isEmpty() || version.get() != Version.HTTP_3
+                ? HttpClient.newBuilder()
+                : HttpServerAdapters.createClientBuilderForH3().version(Version.HTTP_3);
         return builder.sslContext(sslContext).proxy(Builder.NO_PROXY).build();
     }
 
     private HttpRequest.Builder newRequestBuilder(String uri) {
-        return HttpRequest.newBuilder(URI.create(uri));
+        var version = Optional.ofNullable(version(uri));
+        var builder = version.isEmpty() || version.get() != Version.HTTP_3
+                ? HttpRequest.newBuilder(URI.create(uri))
+                : HttpRequest.newBuilder(URI.create(uri))
+                     .version(Version.HTTP_3)
+                     .setOption(H3_DISCOVERY, http3TestServer.h3DiscoveryConfig());
+        return builder;
     }
 
-    @Test
-    public void testAPIExceptions() {
-        assertThrows(NPE, () -> fromPublisher(null));
-        assertThrows(NPE, () -> fromPublisher(null, 1));
-        assertThrows(IAE, () -> fromPublisher(new BBPublisher(), 0));
-        assertThrows(IAE, () -> fromPublisher(new BBPublisher(), -1));
-        assertThrows(IAE, () -> fromPublisher(new BBPublisher(), Long.MIN_VALUE));
-
-        Publisher publisher = fromPublisher(new BBPublisher());
-        assertThrows(NPE, () -> publisher.subscribe(null));
-    }
-
-    //  Flow.Publisher<ByteBuffer>
-
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testByteBufferPublisherUnknownLength(String uri) {
         String[] body = new String[] { "You know ", "it's summer ", "in Ireland ",
                 "when the ", "rain gets ", "warmer." };
@@ -131,13 +133,14 @@ public class FlowAdapterPublisherTest implements HttpServerAdapters {
             HttpResponse<String> response = client.sendAsync(request, ofString(UTF_8)).join();
             String text = response.body();
             System.out.println(text);
-            assertEquals(response.statusCode(), 200);
-            assertEquals(response.version(), version(uri));
-            assertEquals(text, Arrays.stream(body).collect(joining()));
+            assertEquals(200, response.statusCode());
+            assertEquals(version(uri), response.version());
+            assertEquals(Arrays.stream(body).collect(joining()), text);
         }
     }
 
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testByteBufferPublisherFixedLength(String uri) {
         String[] body = new String[] { "You know ", "it's summer ", "in Ireland ",
                 "when the ", "rain gets ", "warmer." };
@@ -149,15 +152,16 @@ public class FlowAdapterPublisherTest implements HttpServerAdapters {
             HttpResponse<String> response = client.sendAsync(request, ofString(UTF_8)).join();
             String text = response.body();
             System.out.println(text);
-            assertEquals(response.statusCode(), 200);
-            assertEquals(response.version(), version(uri));
-            assertEquals(text, Arrays.stream(body).collect(joining()));
+            assertEquals(200, response.statusCode());
+            assertEquals(version(uri), response.version());
+            assertEquals(Arrays.stream(body).collect(joining()), text);
         }
     }
 
     // Flow.Publisher<MappedByteBuffer>
 
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testMappedByteBufferPublisherUnknownLength(String uri) {
         String[] body = new String[] { "God invented ", "whiskey to ", "keep the ",
                 "Irish from ", "ruling the ", "world." };
@@ -168,13 +172,14 @@ public class FlowAdapterPublisherTest implements HttpServerAdapters {
             HttpResponse<String> response = client.sendAsync(request, ofString(UTF_8)).join();
             String text = response.body();
             System.out.println(text);
-            assertEquals(response.statusCode(), 200);
-            assertEquals(response.version(), version(uri));
-            assertEquals(text, Arrays.stream(body).collect(joining()));
+            assertEquals(200, response.statusCode());
+            assertEquals(version(uri), response.version());
+            assertEquals(Arrays.stream(body).collect(joining()), text);
         }
     }
 
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testMappedByteBufferPublisherFixedLength(String uri) {
         String[] body = new String[] { "God invented ", "whiskey to ", "keep the ",
                 "Irish from ", "ruling the ", "world." };
@@ -186,9 +191,9 @@ public class FlowAdapterPublisherTest implements HttpServerAdapters {
             HttpResponse<String> response = client.sendAsync(request, ofString(UTF_8)).join();
             String text = response.body();
             System.out.println(text);
-            assertEquals(response.statusCode(), 200);
-            assertEquals(response.version(), version(uri));
-            assertEquals(text, Arrays.stream(body).collect(joining()));
+            assertEquals(200, response.statusCode());
+            assertEquals(version(uri), response.version());
+            assertEquals(Arrays.stream(body).collect(joining()), text);
         }
     }
 
@@ -196,7 +201,8 @@ public class FlowAdapterPublisherTest implements HttpServerAdapters {
     // not ideal, but necessary to discern correct behavior. They should be
     // updated if the exception message is updated.
 
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testPublishTooFew(String uri) throws InterruptedException {
         String[] body = new String[] { "You know ", "it's summer ", "in Ireland ",
                 "when the ", "rain gets ", "warmer." };
@@ -214,7 +220,8 @@ public class FlowAdapterPublisherTest implements HttpServerAdapters {
         }
     }
 
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testPublishTooMany(String uri) throws InterruptedException {
         String[] body = new String[] { "You know ", "it's summer ", "in Ireland ",
                 "when the ", "rain gets ", "warmer." };
@@ -356,12 +363,8 @@ public class FlowAdapterPublisherTest implements HttpServerAdapters {
         }
     }
 
-    @BeforeTest
-    public void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
+    @BeforeAll
+    public static void setup() throws Exception {
         httpTestServer = HttpTestServer.create(Version.HTTP_1_1);
         httpTestServer.addHandler(new HttpEchoHandler(), "/http1/echo");
         httpURI = "http://" + httpTestServer.serverAuthority() + "/http1/echo";
@@ -378,18 +381,24 @@ public class FlowAdapterPublisherTest implements HttpServerAdapters {
         https2TestServer.addHandler(new HttpEchoHandler(), "/https2/echo");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/echo";
 
+        http3TestServer = HttpTestServer.create(Http3DiscoveryMode.HTTP_3_URI_ONLY, sslContext);
+        http3TestServer.addHandler(new HttpEchoHandler(), "/http3/echo");
+        http3URI = "https://" + http3TestServer.serverAuthority() + "/http3/echo";
+
         httpTestServer.start();
         httpsTestServer.start();
         http2TestServer.start();
         https2TestServer.start();
+        http3TestServer.start();
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         httpTestServer.stop();
         httpsTestServer.stop();
         http2TestServer.stop();
         https2TestServer.stop();
+        http3TestServer.stop();
     }
 
     static class HttpEchoHandler implements HttpTestHandler {

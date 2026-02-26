@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,6 +119,12 @@ final class ProcessImpl extends Process {
                     stdHandles[1] = -1L;
                 } else if (redirects[1] == Redirect.INHERIT) {
                     stdHandles[1] = fdAccess.getHandle(FileDescriptor.out);
+                    if (stdHandles[1] == -1L) {
+                        // FileDescriptor.out has been closed.
+                        f1 = newFileOutputStream(Redirect.DISCARD.file(),
+                                                 Redirect.DISCARD.append());
+                        stdHandles[1] = fdAccess.getHandle(f1.getFD());
+                    }
                 } else if (redirects[1] instanceof ProcessBuilder.RedirectPipeImpl) {
                     stdHandles[1] = fdAccess.getHandle(((ProcessBuilder.RedirectPipeImpl) redirects[1]).getFd());
                     // Force getInputStream to return a null stream,
@@ -134,6 +140,12 @@ final class ProcessImpl extends Process {
                     stdHandles[2] = -1L;
                 } else if (redirects[2] == Redirect.INHERIT) {
                     stdHandles[2] = fdAccess.getHandle(FileDescriptor.err);
+                    if (stdHandles[2] == -1L) {
+                        // FileDescriptor.err has been closed.
+                        f2 = newFileOutputStream(Redirect.DISCARD.file(),
+                                                 Redirect.DISCARD.append());
+                        stdHandles[2] = fdAccess.getHandle(f2.getFD());
+                    }
                 } else if (redirects[2] instanceof ProcessBuilder.RedirectPipeImpl) {
                     stdHandles[2] = fdAccess.getHandle(((ProcessBuilder.RedirectPipeImpl) redirects[2]).getFd());
                 } else {
@@ -199,7 +211,6 @@ final class ProcessImpl extends Process {
     }
 
     private static final int VERIFICATION_CMD_BAT = 0;
-    private static final int VERIFICATION_WIN32 = 1;
     private static final int VERIFICATION_WIN32_SAFE = 2; // inside quotes not allowed
     private static final int VERIFICATION_LEGACY = 3;
     // See Command shell overview for documentation of special characters.
@@ -384,12 +395,6 @@ final class ProcessImpl extends Process {
         return (upName.endsWith(".EXE") || upName.indexOf('.') < 0);
     }
 
-    // Old version that can be bypassed
-    private boolean isShellFile(String executablePath) {
-        String upPath = executablePath.toUpperCase(Locale.ROOT);
-        return (upPath.endsWith(".CMD") || upPath.endsWith(".BAT"));
-    }
-
     private String quoteString(String arg) {
         StringBuilder argbuf = new StringBuilder(arg.length() + 2);
         return argbuf.append('"').append(arg).append('"').toString();
@@ -472,12 +477,10 @@ final class ProcessImpl extends Process {
             // Quotation protects from interpretation of the [path] argument as
             // start of longer path with spaces. Quotation has no influence to
             // [.exe] extension heuristic.
-            boolean isShell = allowAmbiguousCommands ? isShellFile(executablePath)
-                    : !isExe(executablePath);
+            boolean isShell = !isExe(executablePath);
             cmdstr = createCommandLine(
                     // We need the extended verification procedures
-                    isShell ? VERIFICATION_CMD_BAT
-                            : (allowAmbiguousCommands ? VERIFICATION_WIN32 : VERIFICATION_WIN32_SAFE),
+                    isShell ? VERIFICATION_CMD_BAT : VERIFICATION_WIN32_SAFE,
                     quoteString(executablePath),
                     cmd);
         }

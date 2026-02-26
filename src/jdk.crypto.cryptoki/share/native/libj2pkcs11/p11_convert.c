@@ -1461,8 +1461,7 @@ jobject ckAttributeValueToJObject(JNIEnv *env, const CK_ATTRIBUTE_PTR ckpAttribu
         case CKA_OWNER:
         case CKA_AC_ISSUER:
         case CKA_ATTR_TYPES:
-        case CKA_ECDSA_PARAMS:
-            /* CKA_EC_PARAMS is the same, these two are equivalent */
+        case CKA_EC_PARAMS:
         case CKA_EC_POINT:
         case CKA_PRIVATE_EXPONENT:
         case CKA_PRIME_1:

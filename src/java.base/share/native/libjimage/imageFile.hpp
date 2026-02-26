@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -302,20 +302,6 @@ public:
     }
 };
 
-//
-// Manage the image module meta data.
-class ImageModuleData {
-    const ImageFileReader* _image_file; // Source image file
-    Endian* _endian;                    // Endian handler
-
-public:
-    ImageModuleData(const ImageFileReader* image_file);
-    ~ImageModuleData();
-
-    // Return the module in which a package resides.    Returns NULL if not found.
-    const char* package_to_module(const char* package_name);
-};
-
 // Image file header, starting at offset 0.
 class ImageHeader {
 private:
@@ -389,9 +375,6 @@ public:
 
     // Remove an image entry from the table.
     void remove(ImageFileReader* image);
-
-    // Determine if image entry is in table.
-    bool contains(ImageFileReader* image);
 };
 
 // Manage the image file.
@@ -428,7 +411,6 @@ private:
     u4* _offsets_table;  // Location offset table
     u1* _location_bytes; // Location attributes
     u1* _string_bytes;   // String table
-    ImageModuleData *_module_data;       // The ImageModuleData for this image
 
     ImageFileReader(const char* name, bool big_endian);
     ~ImageFileReader();
@@ -459,15 +441,6 @@ public:
 
     // Close an image file if the file is not in use elsewhere.
     static void close(ImageFileReader *reader);
-
-    // Return an id for the specified ImageFileReader.
-    static u8 reader_to_ID(ImageFileReader *reader);
-
-    // Validate the image id.
-    static bool id_check(u8 id);
-
-    // Return an id for the specified ImageFileReader.
-    static ImageFileReader* id_to_reader(u8 id);
 
     // Open image file for read access.
     bool open();
@@ -560,10 +533,6 @@ public:
         return _endian->get(_offsets_table[index]);
     }
 
-    // Find the location attributes associated with the path.    Returns true if
-    // the location is found, false otherwise.
-    bool find_location(const char* path, ImageLocation& location) const;
-
     // Find the location index and size associated with the path.
     // Returns the location index and size if the location is found,
     // ImageFileReader::NOT_FOUND otherwise.
@@ -577,9 +546,5 @@ public:
 
     // Return the resource for the supplied path.
     void get_resource(ImageLocation& location, u1* uncompressed_data) const;
-
-    // Return the ImageModuleData for this image
-    ImageModuleData * get_image_module_data();
-
 };
 #endif // LIBJIMAGE_IMAGEFILE_HPP

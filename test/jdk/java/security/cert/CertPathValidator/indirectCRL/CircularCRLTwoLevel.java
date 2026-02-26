@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,16 +32,34 @@
  *
  * @bug 6720721
  * @summary CRL check with circular depency support needed
+ * @enablePreview
  * @run main/othervm CircularCRLTwoLevel
  * @author Xuelei Fan
  */
 
-import java.io.*;
-import java.net.SocketException;
-import java.util.*;
+import java.security.DEREncodable;
+import java.security.PEMDecoder;
 import java.security.Security;
-import java.security.cert.*;
+import java.security.cert.CertPath;
+import java.security.cert.CertPathValidator;
+import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertPathValidatorException.BasicReason;
+import java.security.cert.CertStore;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.CollectionCertStoreParameters;
+import java.security.cert.PKIXParameters;
+import java.security.cert.TrustAnchor;
+import java.security.cert.X509CRL;
+import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class CircularCRLTwoLevel {
 
@@ -149,25 +167,19 @@ public class CircularCRLTwoLevel {
         "ARGr6Qu68MYGtLMC6ZqP3u0=\n" +
         "-----END X509 CRL-----";
 
+    private static final PEMDecoder pemDecoder = PEMDecoder.of();
+
     private static CertPath generateCertificatePath()
             throws CertificateException {
         // generate certificate from cert strings
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
 
-        ByteArrayInputStream is;
-
-        is = new ByteArrayInputStream(targetCertStr.getBytes());
-        Certificate targetCert = cf.generateCertificate(is);
-
-        is = new ByteArrayInputStream(subCaCertStr.getBytes());
-        Certificate subCaCert = cf.generateCertificate(is);
-
-        is = new ByteArrayInputStream(selfSignedCertStr.getBytes());
-        Certificate selfSignedCert = cf.generateCertificate(is);
+        Certificate targetCert = pemDecoder.decode(targetCertStr, X509Certificate.class);
+        Certificate subCaCert =  pemDecoder.decode(subCaCertStr, X509Certificate.class);
+        Certificate selfSignedCert = pemDecoder.decode(selfSignedCertStr, X509Certificate.class);
 
         // generate certification path
-        List<Certificate> list = Arrays.asList(new Certificate[] {
-                        targetCert, subCaCert, selfSignedCert});
+        List<Certificate> list = Arrays.asList(targetCert, subCaCert, selfSignedCert);
 
         return cf.generateCertPath(list);
     }
@@ -175,42 +187,33 @@ public class CircularCRLTwoLevel {
     private static Set<TrustAnchor> generateTrustAnchors()
             throws CertificateException {
         // generate certificate from cert string
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
 
-        ByteArrayInputStream is =
-                    new ByteArrayInputStream(selfSignedCertStr.getBytes());
-        Certificate selfSignedCert = cf.generateCertificate(is);
+        final X509Certificate selfSignedCert = pemDecoder.decode(selfSignedCertStr, X509Certificate.class);
 
         // generate a trust anchor
         TrustAnchor anchor =
-            new TrustAnchor((X509Certificate)selfSignedCert, null);
+            new TrustAnchor(selfSignedCert, null);
 
         return Collections.singleton(anchor);
     }
 
     private static CertStore generateCertificateStore() throws Exception {
-        Collection entries = new HashSet();
+        Collection<DEREncodable> entries = new HashSet<>();
 
         // generate CRL from CRL string
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
 
-        ByteArrayInputStream is =
-                    new ByteArrayInputStream(topCrlStr.getBytes());
-        Collection mixes = cf.generateCRLs(is);
-        entries.addAll(mixes);
+        DEREncodable mixes = pemDecoder.decode(topCrlStr, X509CRL.class);
+        entries.add(mixes);
 
-        is = new ByteArrayInputStream(subCrlStr.getBytes());
-        mixes = cf.generateCRLs(is);
-        entries.addAll(mixes);
+        mixes = pemDecoder.decode(subCrlStr, X509CRL.class);
+        entries.add(mixes);
 
         // intermediate certs
-        is = new ByteArrayInputStream(topCrlIssuerCertStr.getBytes());
-        mixes = cf.generateCertificates(is);
-        entries.addAll(mixes);
+        mixes = pemDecoder.decode(topCrlIssuerCertStr, X509Certificate.class);
+        entries.add(mixes);
 
-        is = new ByteArrayInputStream(subCrlIssuerCertStr.getBytes());
-        mixes = cf.generateCertificates(is);
-        entries.addAll(mixes);
+        mixes = pemDecoder.decode(subCrlIssuerCertStr, X509Certificate.class);
+        entries.add(mixes);
 
         return CertStore.getInstance("Collection",
                             new CollectionCertStoreParameters(entries));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ package gc.g1;
  * during concurrent mark, and verify that after the concurrent cycle additional code
  * cache gc requests start more concurrent cycles.
  * @requires vm.gc.G1
+ * @requires vm.flagless
  * @library /test/lib /testlibrary /
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -53,9 +54,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import static jdk.test.lib.Asserts.*;
 import jdk.test.whitebox.WhiteBox;
 
 public class TestCodeCacheUnloadDuringConcCycle {
@@ -70,9 +71,10 @@ public class TestCodeCacheUnloadDuringConcCycle {
                                                                     "-Xbootclasspath/a:.",
                                                                     "-Xlog:gc=trace,codecache",
                                                                     "-XX:+WhiteBoxAPI",
-                                                                    "-XX:ReservedCodeCacheSize=8M",
+                                                                    "-XX:ReservedCodeCacheSize=" + (Platform.is32bit() ? "4M" : "8M"),
                                                                     "-XX:StartAggressiveSweepingAt=50",
                                                                     "-XX:CompileCommand=compileonly,gc.g1.SomeClass::*",
+                                                                    "-XX:CompileCommand=compileonly,gc.g1.Foo*::*",
                                                                     TestCodeCacheUnloadDuringConcCycleRunner.class.getName(),
                                                                     concPhase);
         return output;
@@ -147,6 +149,7 @@ class TestCodeCacheUnloadDuringConcCycleRunner {
     }
 
     public static void main(String[] args) throws Exception {
+        System.out.println("Running to breakpoint: " + args[0]);
         try {
             WB.concurrentGCAcquireControl();
             WB.concurrentGCRunTo(args[0]);
@@ -157,9 +160,12 @@ class TestCodeCacheUnloadDuringConcCycleRunner {
 
             WB.concurrentGCRunToIdle();
         } finally {
+            // Make sure that the marker we use to find the expected log message is printed
+            // before we release whitebox control, i.e. before the expected garbage collection
+            // can start.
+            System.out.println(TestCodeCacheUnloadDuringConcCycle.AFTER_FIRST_CYCLE_MARKER);
             WB.concurrentGCReleaseControl();
         }
-        System.out.println(TestCodeCacheUnloadDuringConcCycle.AFTER_FIRST_CYCLE_MARKER);
         Thread.sleep(1000);
         triggerCodeCacheGC();
     }

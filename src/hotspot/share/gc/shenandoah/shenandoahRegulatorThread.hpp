@@ -45,8 +45,6 @@ class ShenandoahOldHeuristics;
  * sleep time.
  */
 class ShenandoahRegulatorThread: public ConcurrentGCThread {
-  friend class VMStructs;
-
  public:
   explicit ShenandoahRegulatorThread(ShenandoahGenerationalControlThread* control_thread);
 
@@ -64,7 +62,6 @@ class ShenandoahRegulatorThread: public ConcurrentGCThread {
   bool start_old_cycle() const;
   bool start_young_cycle() const;
   bool start_global_cycle() const;
-  bool resume_old_cycle();
 
   // The generational mode can only unload classes in a global cycle. The regulator
   // thread itself will trigger a global cycle if metaspace is out of memory.

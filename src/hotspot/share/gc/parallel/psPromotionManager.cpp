@@ -27,7 +27,7 @@
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/parallel/psPromotionManager.inline.hpp"
-#include "gc/parallel/psScavenge.inline.hpp"
+#include "gc/parallel/psScavenge.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/partialArraySplitter.inline.hpp"
@@ -43,6 +43,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "utilities/checkedCast.hpp"
 
 PaddedEnd<PSPromotionManager>* PSPromotionManager::_manager_array = nullptr;
@@ -84,15 +85,6 @@ void PSPromotionManager::initialize() {
   for (uint i = 0; i < promotion_manager_num; i += 1) {
     _manager_array[i].register_preserved_marks(_preserved_marks_set->get(i));
   }
-}
-
-// Helper functions to get around the circular dependency between
-// psScavenge.inline.hpp and psPromotionManager.inline.hpp.
-bool PSPromotionManager::should_scavenge(oop* p, bool check_to_space) {
-  return PSScavenge::should_scavenge(p, check_to_space);
-}
-bool PSPromotionManager::should_scavenge(narrowOop* p, bool check_to_space) {
-  return PSScavenge::should_scavenge(p, check_to_space);
 }
 
 PSPromotionManager* PSPromotionManager::gc_thread_promotion_manager(uint index) {
@@ -212,7 +204,7 @@ void PSPromotionManager::restore_preserved_marks() {
   _preserved_marks_set->restore(&ParallelScavengeHeap::heap()->workers());
 }
 
-void PSPromotionManager::drain_stacks_depth(bool totally_drain) {
+void PSPromotionManager::drain_stacks(bool totally_drain) {
   const uint threshold = totally_drain ? 0
                                        : _target_stack_size;
 
@@ -257,30 +249,19 @@ void PSPromotionManager::flush_labs() {
   }
 }
 
-template <class T>
-void PSPromotionManager::process_array_chunk_work(oop obj, int start, int end) {
-  assert(start <= end, "invariant");
-  T* const base      = (T*)objArrayOop(obj)->base();
-  T* p               = base + start;
-  T* const chunk_end = base + end;
-  while (p < chunk_end) {
-    claim_or_forward_depth(p);
-    ++p;
-  }
+void PSPromotionManager::process_array_chunk(objArrayOop obj, size_t start, size_t end) {
+  PSPushContentsClosure pcc(this);
+  obj->oop_iterate_elements_range(&pcc,
+                                  checked_cast<int>(start),
+                                  checked_cast<int>(end));
 }
 
 void PSPromotionManager::process_array_chunk(PartialArrayState* state, bool stolen) {
   // Access before release by claim().
-  oop new_obj = state->destination();
+  objArrayOop to_array = objArrayOop(state->destination());
   PartialArraySplitter::Claim claim =
     _partial_array_splitter.claim(state, &_claimed_stack_depth, stolen);
-  int start = checked_cast<int>(claim._start);
-  int end = checked_cast<int>(claim._end);
-  if (UseCompressedOops) {
-    process_array_chunk_work<narrowOop>(new_obj, start, end);
-  } else {
-    process_array_chunk_work<oop>(new_obj, start, end);
-  }
+  process_array_chunk(to_array, claim._start, claim._end);
 }
 
 void PSPromotionManager::push_objArray(oop old_obj, oop new_obj) {
@@ -293,12 +274,8 @@ void PSPromotionManager::push_objArray(oop old_obj, oop new_obj) {
   size_t initial_chunk_size =
     // The source array is unused when processing states.
     _partial_array_splitter.start(&_claimed_stack_depth, nullptr, to_array, array_length);
-  int end = checked_cast<int>(initial_chunk_size);
-  if (UseCompressedOops) {
-    process_array_chunk_work<narrowOop>(to_array, 0, end);
-  } else {
-    process_array_chunk_work<oop>(to_array, 0, end);
-  }
+
+  process_array_chunk(to_array, 0, initial_chunk_size);
 }
 
 oop PSPromotionManager::oop_promotion_failed(oop obj, markWord obj_mark) {

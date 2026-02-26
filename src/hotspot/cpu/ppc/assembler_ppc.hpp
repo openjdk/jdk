@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -568,6 +568,9 @@ class Assembler : public AbstractAssembler {
     XSCVDPHP_OPCODE= (60u << OPCODE_SHIFT |  347u << 2 | 17u << 16), // XX2-FORM
     XXPERM_OPCODE  = (60u << OPCODE_SHIFT |   26u << 3),
     XXSEL_OPCODE   = (60u << OPCODE_SHIFT |    3u << 4),
+    XSCMPEQDP_OPCODE=(60u << OPCODE_SHIFT |   3u <<  3),
+    XSCMPGEDP_OPCODE=(60u << OPCODE_SHIFT |  19u <<  3),
+    XSCMPGTDP_OPCODE=(60u << OPCODE_SHIFT |  11u <<  3),
     XXSPLTIB_OPCODE= (60u << OPCODE_SHIFT |  360u << 1),
     XVDIVDP_OPCODE = (60u << OPCODE_SHIFT |  120u << 3),
     XVABSSP_OPCODE = (60u << OPCODE_SHIFT |  409u << 2),
@@ -595,6 +598,9 @@ class Assembler : public AbstractAssembler {
     XVMINDP_OPCODE = (60u << OPCODE_SHIFT |  232u << 3),
     XVMAXSP_OPCODE = (60u << OPCODE_SHIFT |  192u << 3),
     XVMAXDP_OPCODE = (60u << OPCODE_SHIFT |  224u << 3),
+
+    XSMINJDP_OPCODE = (60u << OPCODE_SHIFT | 152u << 3),
+    XSMAXJDP_OPCODE = (60u << OPCODE_SHIFT | 144u << 3),
 
     // Deliver A Random Number (introduced with POWER9)
     DARN_OPCODE    = (31u << OPCODE_SHIFT |  755u << 1),
@@ -2059,12 +2065,12 @@ class Assembler : public AbstractAssembler {
  protected:
   inline void tdi_unchecked(int tobits, Register a, int si16);
   inline void twi_unchecked(int tobits, Register a, int si16);
+ public:
   inline void tdi(          int tobits, Register a, int si16);   // asserts UseSIGTRAP
   inline void twi(          int tobits, Register a, int si16);   // asserts UseSIGTRAP
   inline void td(           int tobits, Register a, Register b); // asserts UseSIGTRAP
   inline void tw(           int tobits, Register a, Register b); // asserts UseSIGTRAP
 
- public:
   static bool is_tdi(int x, int tobits, int ra, int si16) {
      return (TDI_OPCODE == (x & TDI_OPCODE_MASK))
          && (tobits == inv_to_field(x))
@@ -2424,6 +2430,9 @@ class Assembler : public AbstractAssembler {
   inline void xscvdphp( VectorSRegister d, VectorSRegister b);
   inline void xxland(   VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xxsel(    VectorSRegister d, VectorSRegister a, VectorSRegister b, VectorSRegister c);
+  inline void xscmpeqdp(VectorSRegister t, VectorSRegister a, VectorSRegister b); // Requires Power9
+  inline void xscmpgedp(VectorSRegister t, VectorSRegister a, VectorSRegister b); // Requires Power9
+  inline void xscmpgtdp(VectorSRegister t, VectorSRegister a, VectorSRegister b); // Requires Power9
   inline void xxspltib( VectorSRegister d, int ui8);
   inline void xvdivsp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xvdivdp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
@@ -2448,6 +2457,9 @@ class Assembler : public AbstractAssembler {
   inline void xvrdpic(  VectorSRegister d, VectorSRegister b);
   inline void xvrdpim(  VectorSRegister d, VectorSRegister b);
   inline void xvrdpip(  VectorSRegister d, VectorSRegister b);
+
+  inline void xsminjdp( VectorSRegister d, VectorSRegister a, VectorSRegister b); // Requires Power 9
+  inline void xsmaxjdp( VectorSRegister d, VectorSRegister a, VectorSRegister b); // Requires Power 9
 
   // The following functions do not match exactly the Java.math semantics.
   inline void xvminsp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);

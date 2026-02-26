@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,17 +29,20 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.common.TestServerConfigurator
- * @run testng/othervm
- *      -Djdk.httpclient.HttpClient.log=headers,errors,channel
+ * @run junit/othervm
+ *      -Djdk.internal.httpclient.debug=true
  *      ConcurrentResponses
  */
 
+//*      -Djdk.internal.httpclient.HttpClient.log=all
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.net.http.HttpClient.Version;
+import java.net.http.HttpOption.Http3DiscoveryMode;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
@@ -64,30 +67,38 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.HttpResponse.BodySubscriber;
 import java.net.http.HttpResponse.BodySubscribers;
 
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestHandler;
+import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestServer;
 import jdk.httpclient.test.lib.common.TestServerConfigurator;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.httpclient.test.lib.http2.Http2TestExchange;
 import jdk.httpclient.test.lib.http2.Http2Handler;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.net.http.HttpResponse.BodyHandlers.discarding;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.fail;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class ConcurrentResponses {
 
-    SSLContext sslContext;
-    HttpServer httpTestServer;         // HTTP/1.1    [ 4 servers ]
-    HttpsServer httpsTestServer;       // HTTPS/1.1
-    Http2TestServer http2TestServer;   // HTTP/2 ( h2c )
-    Http2TestServer https2TestServer;  // HTTP/2 ( h2  )
-    String httpFixedURI, httpsFixedURI, httpChunkedURI, httpsChunkedURI;
-    String http2FixedURI, https2FixedURI, http2VariableURI, https2VariableURI;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+    private static HttpServer httpTestServer;         // HTTP/1.1    [ 4 servers ]
+    private static HttpsServer httpsTestServer;       // HTTPS/1.1
+    private static Http2TestServer http2TestServer;   // HTTP/2 ( h2c )
+    private static Http2TestServer https2TestServer;  // HTTP/2 ( h2  )
+    private static HttpTestServer https3TestServer;
+    private static String httpFixedURI, httpsFixedURI, httpChunkedURI, httpsChunkedURI;
+    private static String http2FixedURI, https2FixedURI, http2VariableURI, https2VariableURI;
+    private static String https3FixedURI, https3VariableURI;
 
     static final int CONCURRENT_REQUESTS = 13;
     static final AtomicInteger IDS = new AtomicInteger();
@@ -121,7 +132,7 @@ public class ConcurrentResponses {
      */
     static final <T> CompletionStage<HttpResponse<T>>
     assert200ResponseCode(HttpResponse<T> response) {
-        assertEquals(response.statusCode(), 200);
+        assertEquals(200, response.statusCode());
         return CompletableFuture.completedFuture(response);
     }
 
@@ -131,12 +142,11 @@ public class ConcurrentResponses {
      */
     static final <T> CompletionStage<HttpResponse<T>>
     assertbody(HttpResponse<T> response, T body) {
-        assertEquals(response.body(), body);
+        assertEquals(body, response.body());
         return CompletableFuture.completedFuture(response);
     }
 
-    @DataProvider(name = "uris")
-    public Object[][] variants() {
+    public static Object[][] variants() {
         return new Object[][]{
                 { httpFixedURI },
                 { httpsFixedURI },
@@ -145,32 +155,40 @@ public class ConcurrentResponses {
                 { http2FixedURI },
                 { https2FixedURI },
                 { http2VariableURI },
-                { https2VariableURI }
+                { https2VariableURI },
+                { https3FixedURI },
+                { https3VariableURI }
         };
     }
 
 
     // The ofString implementation accumulates data, below a certain threshold
     // into the byte buffers it is given.
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testAsString(String uri) throws Exception {
         int id = IDS.getAndIncrement();
         ExecutorService virtualExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
                 .name("HttpClient-" + id + "-Worker", 0).factory());
-        HttpClient client = HttpClient.newBuilder()
-                .sslContext(sslContext)
+        var http3 = uri.contains("/https3/");
+       Http3DiscoveryMode config = http3 ? Http3DiscoveryMode.HTTP_3_URI_ONLY : null;
+        var builder = http3 ? HttpServerAdapters.createClientBuilderForH3() : HttpClient.newBuilder();
+        if (http3) builder.version(Version.HTTP_3);
+        HttpClient client = builder
                 .executor(virtualExecutor)
-                .build();
+                .sslContext(sslContext).build();
         try {
             Map<HttpRequest, String> requests = new HashMap<>();
             for (int i = 0; i < CONCURRENT_REQUESTS; i++) {
                 HttpRequest request = HttpRequest.newBuilder(URI.create(uri + "?" + i))
+                        .setOption(H3_DISCOVERY, config)
                         .build();
                 requests.put(request, BODIES[i]);
             }
 
             // initial connection to seed the cache so next parallel connections reuse it
-            client.sendAsync(HttpRequest.newBuilder(URI.create(uri)).build(), discarding()).join();
+            client.sendAsync(HttpRequest.newBuilder(URI.create(uri))
+                    .setOption(H3_DISCOVERY, config).build(), discarding()).join();
 
             // will reuse connection cached from the previous request ( when HTTP/2 )
             CompletableFuture.allOf(requests.keySet().parallelStream()
@@ -187,24 +205,31 @@ public class ConcurrentResponses {
 
     // The custom subscriber aggressively attacks any area, between the limit
     // and the capacity, in the byte buffers it is given, by writing 'X' into it.
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testWithCustomSubscriber(String uri) throws Exception {
         int id = IDS.getAndIncrement();
         ExecutorService virtualExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
                 .name("HttpClient-" + id + "-Worker", 0).factory());
-        HttpClient client = HttpClient.newBuilder()
+        var http3 = uri.contains("/https3/");
+        Http3DiscoveryMode config = http3 ? Http3DiscoveryMode.HTTP_3_URI_ONLY : null;
+        var builder = http3 ? HttpServerAdapters.createClientBuilderForH3() : HttpClient.newBuilder();
+        if (http3) builder.version(Version.HTTP_3);
+        HttpClient client = builder
                 .executor(virtualExecutor)
                 .sslContext(sslContext).build();
         try {
             Map<HttpRequest, String> requests = new HashMap<>();
             for (int i = 0; i < CONCURRENT_REQUESTS; i++) {
                 HttpRequest request = HttpRequest.newBuilder(URI.create(uri + "?" + i))
+                        .setOption(H3_DISCOVERY, config)
                         .build();
                 requests.put(request, BODIES[i]);
             }
 
             // initial connection to seed the cache so next parallel connections reuse it
-            client.sendAsync(HttpRequest.newBuilder(URI.create(uri)).build(), discarding()).join();
+            client.sendAsync(HttpRequest.newBuilder(URI.create(uri))
+                    .setOption(H3_DISCOVERY, config).build(), discarding()).join();
 
             // will reuse connection cached from the previous request ( when HTTP/2 )
             CompletableFuture.allOf(requests.keySet().parallelStream()
@@ -278,12 +303,8 @@ public class ConcurrentResponses {
                 + server.getAddress().getPort();
     }
 
-    @BeforeTest
-    public void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
+    @BeforeAll
+    public static void setup() throws Exception {
         InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         httpTestServer = HttpServer.create(sa, 0);
         httpTestServer.createContext("/http1/fixed", new Http1FixedHandler());
@@ -310,18 +331,26 @@ public class ConcurrentResponses {
         https2TestServer.addHandler(new Http2VariableHandler(), "/https2/variable");
         https2VariableURI = "https://" + https2TestServer.serverAuthority() + "/https2/variable";
 
+        https3TestServer = HttpTestServer.create(Http3DiscoveryMode.HTTP_3_URI_ONLY, sslContext);
+        https3TestServer.addHandler(new Http3FixedHandler(), "/https3/fixed");
+        https3FixedURI = "https://" + https3TestServer.serverAuthority() + "/https3/fixed";
+        https3TestServer.addHandler(new Http3VariableHandler(), "/https3/variable");
+        https3VariableURI = "https://" + https3TestServer.serverAuthority() + "/https3/variable";
+
         httpTestServer.start();
         httpsTestServer.start();
         http2TestServer.start();
         https2TestServer.start();
+        https3TestServer.start();
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         httpTestServer.stop(0);
         httpsTestServer.stop(0);
         http2TestServer.stop();
         https2TestServer.stop();
+        https3TestServer.stop();
     }
 
     interface SendResponseHeadersFunction {
@@ -405,6 +434,28 @@ public class ConcurrentResponses {
                               t.getResponseBody(),
                               t.getRequestURI(),
                               (rcode, ignored) -> t.sendResponseHeaders(rcode, 0 /* no Content-Length */));
+        }
+    }
+
+    static class Http3FixedHandler implements HttpTestHandler {
+
+        @Override
+        public void handle(HttpServerAdapters.HttpTestExchange t) throws IOException {
+            serverHandlerImpl(t.getRequestBody(),
+                    t.getResponseBody(),
+                    t.getRequestURI(),
+                    (rcode, length) -> t.sendResponseHeaders(rcode, length));
+        }
+    }
+
+    static class Http3VariableHandler implements HttpTestHandler {
+
+        @Override
+        public void handle(HttpServerAdapters.HttpTestExchange t) throws IOException {
+            serverHandlerImpl(t.getRequestBody(),
+                    t.getResponseBody(),
+                    t.getRequestURI(),
+                    (rcode, ignored) -> t.sendResponseHeaders(rcode, -1/* no Content-Length */));
         }
     }
 }

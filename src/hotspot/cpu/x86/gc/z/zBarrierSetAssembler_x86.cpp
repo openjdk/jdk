@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1328,6 +1328,19 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
   __ jmp(slow_continuation);
 }
 
+void ZBarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj, Label& slow_path) {
+  // Resolve weak handle using the standard implementation.
+  BarrierSetAssembler::try_resolve_weak_handle_in_c2(masm, obj, slow_path);
+
+  // Check if the oop is bad, in which case we need to take the slow path.
+  __ testptr(obj, Address(r15_thread, ZThreadLocalData::mark_bad_mask_offset()));
+  __ jcc(Assembler::notZero, slow_path);
+
+  // Oop is okay, so we uncolor it.
+  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeShl);
+  __ shrq(obj, barrier_Relocation::unpatched);
+}
+
 #undef __
 #endif // COMPILER2
 
@@ -1410,10 +1423,8 @@ void ZBarrierSetAssembler::patch_barriers() {
   }
 }
 
-
 #undef __
 #define __ masm->
-
 
 void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
   // C1 calls verfy_oop in the middle of barriers, before they have been uncolored

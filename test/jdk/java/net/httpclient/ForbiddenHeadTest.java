@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,32 +28,19 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build DigestEchoServer ForbiddenHeadTest jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext
- * @run testng/othervm
+ * @run junit/othervm
  *       -Djdk.http.auth.tunneling.disabledSchemes
  *       -Djdk.httpclient.HttpClient.log=headers,requests
  *       -Djdk.internal.httpclient.debug=true
  *       ForbiddenHeadTest
  */
 
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsServer;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.ITestContext;
-import org.testng.ITestResult;
-import org.testng.SkipException;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Authenticator;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.Proxy;
@@ -65,7 +52,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -76,33 +62,49 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 import static java.lang.System.err;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+
+import org.junit.jupiter.api.AfterAll;
+
+import static jdk.httpclient.test.lib.common.HttpServerAdapters.createClientBuilderForH3;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.extension.TestWatcher;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class ForbiddenHeadTest implements HttpServerAdapters {
 
-    SSLContext sslContext;
-    HttpTestServer httpTestServer;        // HTTP/1.1
-    HttpTestServer httpsTestServer;       // HTTPS/1.1
-    HttpTestServer http2TestServer;       // HTTP/2 ( h2c )
-    HttpTestServer https2TestServer;      // HTTP/2 ( h2  )
-    DigestEchoServer.TunnelingProxy proxy;
-    DigestEchoServer.TunnelingProxy authproxy;
-    String httpURI;
-    String httpsURI;
-    String http2URI;
-    String https2URI;
-    HttpClient authClient;
-    HttpClient noAuthClient;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+    private static HttpTestServer httpTestServer;        // HTTP/1.1
+    private static HttpTestServer httpsTestServer;       // HTTPS/1.1
+    private static HttpTestServer http2TestServer;       // HTTP/2 ( h2c )
+    private static HttpTestServer https2TestServer;      // HTTP/2 ( h2  )
+    private static HttpTestServer http3TestServer;       // HTTP/3 ( h3  )
+    private static DigestEchoServer.TunnelingProxy proxy;
+    private static DigestEchoServer.TunnelingProxy authproxy;
+    private static String httpURI;
+    private static String httpsURI;
+    private static String http2URI;
+    private static String https2URI;
+    private static String https3URI;
+    private static HttpClient authClient;
+    private static HttpClient noAuthClient;
 
-    final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
+    private static final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
     static final long SLEEP_AFTER_TEST = 0; // milliseconds
     static final int ITERATIONS = 3;
     static final Executor executor = new TestExecutor(Executors.newCachedThreadPool());
@@ -143,34 +145,39 @@ public class ForbiddenHeadTest implements HttpServerAdapters {
         }
     }
 
-    protected boolean stopAfterFirstFailure() {
+    private static boolean stopAfterFirstFailure() {
         return Boolean.getBoolean("jdk.internal.httpclient.debug");
     }
 
-    final AtomicReference<SkipException> skiptests = new AtomicReference<>();
-    void checkSkip() {
-        var skip = skiptests.get();
-        if (skip != null) throw skip;
-    }
-    static String name(ITestResult result) {
-        var params = result.getParameters();
-        return result.getName()
-                + (params == null ? "()" : Arrays.toString(result.getParameters()));
-    }
-
-    @BeforeMethod
-    void beforeMethod(ITestContext context) {
-        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
-            if (skiptests.get() == null) {
-                SkipException skip = new SkipException("some tests failed");
-                skip.setStackTrace(new StackTraceElement[0]);
-                skiptests.compareAndSet(null, skip);
+    static final class TestStopper implements TestWatcher, BeforeEachCallback {
+        final AtomicReference<String> failed = new AtomicReference<>();
+        TestStopper() { }
+        @Override
+        public void testFailed(ExtensionContext context, Throwable cause) {
+            if (stopAfterFirstFailure()) {
+                String msg = "Aborting due to: " + cause;
+                failed.compareAndSet(null, msg);
+                FAILURES.putIfAbsent(context.getDisplayName(), cause);
+                System.out.printf("%nTEST FAILED: %s%s%n\tAborting due to %s%n%n",
+                        now(), context.getDisplayName(), cause);
+                System.err.printf("%nTEST FAILED: %s%s%n\tAborting due to %s%n%n",
+                        now(), context.getDisplayName(), cause);
             }
+        }
+
+        @Override
+        public void beforeEach(ExtensionContext context) {
+            String msg = failed.get();
+            Assumptions.assumeTrue(msg == null, msg);
         }
     }
 
-    @AfterClass
-    static final void printFailedTests(ITestContext context) {
+    @RegisterExtension
+    static final TestStopper stopper = new TestStopper();
+
+
+    @AfterAll
+    static void printFailedTests() {
         out.println("\n=========================");
         try {
             // Exceptions should already have been added to FAILURES
@@ -202,8 +209,7 @@ public class ForbiddenHeadTest implements HttpServerAdapters {
     static final String MESSAGE = "Unauthorized";
 
 
-    @DataProvider(name = "all")
-    public Object[][] allcases() {
+    public static Object[][] allcases() {
         List<Object[]> result = new ArrayList<>();
         for (boolean useAuth : List.of(true, false)) {
             for (boolean async : List.of(true, false)) {
@@ -218,14 +224,14 @@ public class ForbiddenHeadTest implements HttpServerAdapters {
                         for (var uri : List.of(httpURI, httpsURI, http2URI, https2URI)) {
                             result.add(new Object[]{uri + srv + auth, pcode, async, useAuth});
                         }
+                        if (code == PROXY_UNAUTHORIZED) continue; // no HTTP/3 with proxy
+                        result.add(new Object[] {https3URI + srv + auth, pcode, async, useAuth});
                     }
                 }
             }
         }
         return result.toArray(new Object[0][0]);
     }
-
-    static final AtomicLong requestCounter = new AtomicLong();
 
     static final Authenticator authenticator = new Authenticator() {
         @Override
@@ -236,9 +242,9 @@ public class ForbiddenHeadTest implements HttpServerAdapters {
 
     static final AtomicLong sleepCount = new AtomicLong();
 
-    @Test(dataProvider = "all")
+    @ParameterizedTest
+    @MethodSource("allcases")
     void test(String uriString, int code, boolean async, boolean useAuth) throws Throwable {
-        checkSkip();
         HttpClient client = useAuth ? authClient : noAuthClient;
         var name = String.format("test(%s, %d, %s, %s)", uriString, code, async ? "async" : "sync",
                 client.authenticator().isPresent() ? "authClient" : "noAuthClient");
@@ -274,6 +280,10 @@ public class ForbiddenHeadTest implements HttpServerAdapters {
         HttpRequest.Builder requestBuilder = HttpRequest
                 .newBuilder(uri)
                 .method("HEAD", HttpRequest.BodyPublishers.noBody());
+
+        if (uriString.contains("/http3/")) {
+            requestBuilder.version(HTTP_3).setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
+        }
 
         HttpRequest request = requestBuilder.build();
         out.println("Initial request: " + request.uri());
@@ -313,27 +323,23 @@ public class ForbiddenHeadTest implements HttpServerAdapters {
 
 
         out.println("  Got response: " + response);
-        assertEquals(response.statusCode(), forbidden? FORBIDDEN : code);
-        assertEquals(response.body(), expectedValue == null ? null : "");
-        assertEquals(response.headers().firstValue("X-value"), Optional.ofNullable(expectedValue));
+        assertEquals(forbidden? FORBIDDEN : code, response.statusCode());
+        assertEquals(expectedValue == null ? null : "", response.body());
+        assertEquals(Optional.ofNullable(expectedValue), response.headers().firstValue("X-value"));
         // when the CONNECT request fails, its body is discarded - but
         // the response header may still contain its content length.
         // don't check content length in that case.
         if (expectedValue != null) {
             String clen = String.valueOf(expectedValue.getBytes(UTF_8).length);
-            assertEquals(response.headers().firstValue("Content-Length"), Optional.of(clen));
+            assertEquals(Optional.of(clen), response.headers().firstValue("Content-Length"));
         }
 
     }
 
     // -- Infrastructure
 
-    @BeforeTest
-    public void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
+    @BeforeAll
+    public static void setup() throws Exception {
         httpTestServer = HttpTestServer.create(HTTP_1_1);
         httpTestServer.addHandler(new UnauthorizedHandler(), "/http1/");
         httpTestServer.addHandler(new UnauthorizedHandler(), "/http2/proxy/");
@@ -349,10 +355,14 @@ public class ForbiddenHeadTest implements HttpServerAdapters {
         https2TestServer.addHandler(new UnauthorizedHandler(), "/https2/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2";
 
+        http3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
+        http3TestServer.addHandler(new UnauthorizedHandler(), "/http3/");
+        https3URI = "https://" + http3TestServer.serverAuthority() + "/http3";
+
         proxy = DigestEchoServer.createHttpsProxyTunnel(DigestEchoServer.HttpAuthSchemeType.NONE);
         authproxy = DigestEchoServer.createHttpsProxyTunnel(DigestEchoServer.HttpAuthSchemeType.BASIC);
 
-        authClient = TRACKER.track(HttpClient.newBuilder()
+        authClient = TRACKER.track(createClientBuilderForH3()
                 .proxy(TestProxySelector.of(proxy, authproxy, httpTestServer))
                 .sslContext(sslContext)
                 .executor(executor)
@@ -360,7 +370,7 @@ public class ForbiddenHeadTest implements HttpServerAdapters {
                 .build());
         clientCount.incrementAndGet();
 
-        noAuthClient = TRACKER.track(HttpClient.newBuilder()
+        noAuthClient = TRACKER.track(createClientBuilderForH3()
                 .proxy(TestProxySelector.of(proxy, authproxy, httpTestServer))
                 .sslContext(sslContext)
                 .executor(executor)
@@ -375,10 +385,12 @@ public class ForbiddenHeadTest implements HttpServerAdapters {
         serverCount.incrementAndGet();
         https2TestServer.start();
         serverCount.incrementAndGet();
+        http3TestServer.start();
+        serverCount.incrementAndGet();
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         authClient = noAuthClient = null;
         Thread.sleep(100);
         AssertionError fail = TRACKER.check(1500);
@@ -389,6 +401,7 @@ public class ForbiddenHeadTest implements HttpServerAdapters {
             httpsTestServer.stop();
             http2TestServer.stop();
             https2TestServer.stop();
+            http3TestServer.stop();
         } finally {
             if (fail != null) throw fail;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -270,13 +270,6 @@
   product(intx, TieredRateUpdateMaxTime, 25,                                \
           "Maximum rate sampling interval (in milliseconds)")               \
           range(1, max_intx)                                                \
-                                                                            \
-  product(double, Tier0ProfileDelayFactor, 100.0, DIAGNOSTIC,               \
-          "Delay profiling/compiling of methods that were "                 \
-          "observed to be lukewarm")                                        \
-                                                                            \
-  product(double, Tier2ProfileDelayFactor, 250.0, DIAGNOSTIC,               \
-          "Delay profiling of methods that were observed to be lukewarm")   \
                                                                             \
   product(bool, SkipTier2IfPossible, false, DIAGNOSTIC,                     \
           "Compile at tier 4 instead of tier 2 in training replay "         \

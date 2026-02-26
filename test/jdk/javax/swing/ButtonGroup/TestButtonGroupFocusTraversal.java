@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
  * @run main TestButtonGroupFocusTraversal
  */
 
-import javax.swing.AbstractAction;
 import javax.swing.ButtonGroup;
 import javax.swing.JCheckBox;
 import javax.swing.JFrame;
@@ -43,9 +42,7 @@ import java.awt.Component;
 import java.awt.Container;
 import java.awt.FlowLayout;
 import java.awt.KeyboardFocusManager;
-import java.awt.Point;
 import java.awt.Robot;
-import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 
 public class TestButtonGroupFocusTraversal {
@@ -53,24 +50,10 @@ public class TestButtonGroupFocusTraversal {
     private static JTextField textFieldFirst, textFieldLast;
     private static JToggleButton toggleButton1, toggleButton2;
     private static JCheckBox checkBox1, checkBox2;
-    private static boolean toggleButtonActionPerformed;
-    private static boolean checkboxActionPerformed;
+    private static volatile boolean toggleButtonActionPerformed;
+    private static volatile boolean checkboxActionPerformed;
     private static JRadioButton radioButton1, radioButton2;
     private static Robot robot;
-
-    private static void blockTillDisplayed(Component comp) {
-        Point p = null;
-        while (p == null) {
-            try {
-                p = comp.getLocationOnScreen();
-            } catch (IllegalStateException e) {
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException ie) {
-                }
-            }
-        }
-    }
 
     private static void createUI() throws Exception {
         SwingUtilities.invokeAndWait(new Runnable() {
@@ -84,33 +67,11 @@ public class TestButtonGroupFocusTraversal {
                 checkBox1 = new JCheckBox("1");
                 checkBox2 = new JCheckBox("2");
 
-                toggleButton1.setAction(new AbstractAction() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        toggleButtonActionPerformed = true;
-                    }
-                });
+                toggleButton1.addActionListener((_) -> toggleButtonActionPerformed = true);
+                toggleButton2.addActionListener((_) -> toggleButtonActionPerformed = true);
 
-                toggleButton2.setAction(new AbstractAction() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        toggleButtonActionPerformed = true;
-                    }
-                });
-
-                checkBox1.setAction(new AbstractAction() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        checkboxActionPerformed = true;
-                    }
-                });
-
-                checkBox2.setAction(new AbstractAction() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        checkboxActionPerformed = true;
-                    }
-                });
+                checkBox1.addActionListener((_) -> checkboxActionPerformed = true);
+                checkBox2.addActionListener((_) -> checkboxActionPerformed = true);
 
                 ButtonGroup toggleGroup = new ButtonGroup();
                 toggleGroup.add(toggleButton1);
@@ -128,7 +89,7 @@ public class TestButtonGroupFocusTraversal {
                 radioButton2.setSelected(true);
                 checkBox2.setSelected(true);
 
-                frame = new JFrame("Test");
+                frame = new JFrame("TestButtonGroupFocusTraversal");
                 frame.setLayout(new FlowLayout());
 
                 Container pane = frame.getContentPane();
@@ -178,7 +139,7 @@ public class TestButtonGroupFocusTraversal {
     }
 
     private static void checkCheckboxActionPerformed() {
-        if (toggleButtonActionPerformed) {
+        if (checkboxActionPerformed) {
             throw new RuntimeException("Checkbox Action should not be" +
                     "performed");
         }
@@ -196,19 +157,13 @@ public class TestButtonGroupFocusTraversal {
                 createUI();
 
                 robot.waitForIdle();
-                robot.delay(200);
-
-                blockTillDisplayed(frame);
+                robot.delay(500);
 
                 SwingUtilities.invokeAndWait(textFieldFirst::requestFocus);
 
                 if (!textFieldFirst.equals(KeyboardFocusManager.getCurrentKeyboardFocusManager()
                         .getFocusOwner())) {
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+                    robot.delay(300);
                     SwingUtilities.invokeAndWait(textFieldFirst::requestFocus);
                 }
 

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -37,56 +37,25 @@ AC_DEFUN([FLAGS_SETUP_SHARED_LIBS],
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
     # Default works for linux, might work on other platforms as well.
     SHARED_LIBRARY_FLAGS='-shared'
-    # --disable-new-dtags forces use of RPATH instead of RUNPATH for rpaths.
-    # This protects internal library dependencies within the JDK from being
-    # overridden using LD_LIBRARY_PATH. See JDK-8326891 for more information.
-    SET_EXECUTABLE_ORIGIN='-Wl,-rpath,\$$ORIGIN[$]1 -Wl,--disable-new-dtags'
-    SET_SHARED_LIBRARY_ORIGIN="-Wl,-z,origin $SET_EXECUTABLE_ORIGIN"
-    SET_SHARED_LIBRARY_NAME='-Wl,-soname=[$]1'
 
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     if test "x$OPENJDK_TARGET_OS" = xmacosx; then
       # Linking is different on MacOSX
       SHARED_LIBRARY_FLAGS="-dynamiclib -compatibility_version 1.0.0 -current_version 1.0.0"
-      SET_EXECUTABLE_ORIGIN='-Wl,-rpath,@loader_path$(or [$]1,/.)'
-      SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
-      SET_SHARED_LIBRARY_NAME='-Wl,-install_name,@rpath/[$]1'
 
     elif test "x$OPENJDK_TARGET_OS" = xaix; then
       # Linking is different on aix
       SHARED_LIBRARY_FLAGS="-shared -Wl,-bM:SRE -Wl,-bnoentry"
-      SET_EXECUTABLE_ORIGIN=""
-      SET_SHARED_LIBRARY_ORIGIN=''
-      SET_SHARED_LIBRARY_NAME=''
 
     else
       # Default works for linux, might work on other platforms as well.
       SHARED_LIBRARY_FLAGS='-shared'
-      SET_EXECUTABLE_ORIGIN='-Wl,-rpath,\$$ORIGIN[$]1'
-      if test "x$OPENJDK_TARGET_OS" = xlinux; then
-        SET_EXECUTABLE_ORIGIN="$SET_EXECUTABLE_ORIGIN -Wl,--disable-new-dtags"
-      fi
-      SET_SHARED_LIBRARY_NAME='-Wl,-soname=[$]1'
-
-      # arm specific settings
-      if test "x$OPENJDK_TARGET_CPU" = "xarm"; then
-        # '-Wl,-z,origin' isn't used on arm.
-        SET_SHARED_LIBRARY_ORIGIN='-Wl,-rpath,\$$$$ORIGIN[$]1'
-      else
-        SET_SHARED_LIBRARY_ORIGIN="-Wl,-z,origin $SET_EXECUTABLE_ORIGIN"
-      fi
     fi
 
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     SHARED_LIBRARY_FLAGS="-dll"
-    SET_EXECUTABLE_ORIGIN=''
-    SET_SHARED_LIBRARY_ORIGIN=''
-    SET_SHARED_LIBRARY_NAME=''
   fi
 
-  AC_SUBST(SET_EXECUTABLE_ORIGIN)
-  AC_SUBST(SET_SHARED_LIBRARY_ORIGIN)
-  AC_SUBST(SET_SHARED_LIBRARY_NAME)
   AC_SUBST(SHARED_LIBRARY_FLAGS)
 ])
 
@@ -99,6 +68,19 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
 
   # Debug prefix mapping if supported by compiler
   DEBUG_PREFIX_CFLAGS=
+
+  UTIL_ARG_WITH(NAME: native-debug-symbols-level, TYPE: literal,
+    DEFAULT: [auto], VALID_VALUES: [auto 1 2 3],
+    CHECK_AVAILABLE: [
+      if test x$TOOLCHAIN_TYPE = xmicrosoft; then
+        AVAILABLE=false
+      fi
+    ],
+    DESC: [set the native debug symbol level (GCC and Clang only)],
+    DEFAULT_DESC: [toolchain default],
+    IF_AUTO: [
+      RESULT=""
+    ])
 
   # Debug symbols
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
@@ -124,8 +106,9 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
       )
     fi
 
-    CFLAGS_DEBUG_SYMBOLS="-g -gdwarf-4"
-    ASFLAGS_DEBUG_SYMBOLS="-g"
+    # Debug info level should follow the debug format to be effective.
+    CFLAGS_DEBUG_SYMBOLS="-gdwarf-4 -g${NATIVE_DEBUG_SYMBOLS_LEVEL}"
+    ASFLAGS_DEBUG_SYMBOLS="-g${NATIVE_DEBUG_SYMBOLS_LEVEL}"
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     if test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = "xfalse"; then
       # Check if compiler supports -fdebug-prefix-map. If so, use that to make
@@ -144,8 +127,9 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
     FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${GDWARF_FLAGS}],
         IF_FALSE: [GDWARF_FLAGS=""])
 
-    CFLAGS_DEBUG_SYMBOLS="-g ${GDWARF_FLAGS}"
-    ASFLAGS_DEBUG_SYMBOLS="-g"
+    # Debug info level should follow the debug format to be effective.
+    CFLAGS_DEBUG_SYMBOLS="${GDWARF_FLAGS} -g${NATIVE_DEBUG_SYMBOLS_LEVEL}"
+    ASFLAGS_DEBUG_SYMBOLS="-g${NATIVE_DEBUG_SYMBOLS_LEVEL}"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     CFLAGS_DEBUG_SYMBOLS="-Z7"
   fi
@@ -225,8 +209,12 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       BUILD_CC_DISABLE_WARNING_PREFIX="-wd"
       CFLAGS_WARNINGS_ARE_ERRORS="-WX"
 
-      WARNINGS_ENABLE_ALL="-W3"
+      WARNINGS_ENABLE_ALL_NORMAL="-W3"
+      WARNINGS_ENABLE_ADDITIONAL=""
+      WARNINGS_ENABLE_ADDITIONAL_CXX=""
+      WARNINGS_ENABLE_ADDITIONAL_JVM=""
       DISABLED_WARNINGS="4800 5105"
+      CFLAGS_CONVERSION_WARNINGS=
       ;;
 
     gcc)
@@ -234,14 +222,16 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       BUILD_CC_DISABLE_WARNING_PREFIX="-Wno-"
       CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
 
+      WARNINGS_ENABLE_ALL_NORMAL="-Wall -Wextra"
+
       # Additional warnings that are not activated by -Wall and -Wextra
-      WARNINGS_ENABLE_ADDITIONAL="-Winvalid-pch -Wpointer-arith -Wreturn-type \
+      WARNINGS_ENABLE_ADDITIONAL="-Wformat=2 \
+          -Winvalid-pch -Wpointer-arith -Wreturn-type \
           -Wsign-compare -Wtrampolines -Wtype-limits -Wundef -Wuninitialized \
           -Wunused-const-variable=1 -Wunused-function -Wunused-result \
           -Wunused-value"
       WARNINGS_ENABLE_ADDITIONAL_CXX="-Woverloaded-virtual -Wreorder"
-      WARNINGS_ENABLE_ALL_CFLAGS="-Wall -Wextra -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"
-      WARNINGS_ENABLE_ALL_CXXFLAGS="$WARNINGS_ENABLE_ALL_CFLAGS $WARNINGS_ENABLE_ADDITIONAL_CXX"
+      WARNINGS_ENABLE_ADDITIONAL_JVM="-Wzero-as-null-pointer-constant"
 
       # These warnings will never be turned on, since they generate too many
       # false positives.
@@ -250,6 +240,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       if test "x$OPENJDK_TARGET_CPU_ARCH" = "xppc"; then
         DISABLED_WARNINGS="$DISABLED_WARNINGS psabi"
       fi
+      CFLAGS_CONVERSION_WARNINGS="-Wconversion -Wno-float-conversion"
       ;;
 
     clang)
@@ -257,22 +248,32 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       BUILD_CC_DISABLE_WARNING_PREFIX="-Wno-"
       CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
 
+      WARNINGS_ENABLE_ALL_NORMAL="-Wall -Wextra"
+
       # Additional warnings that are not activated by -Wall and -Wextra
-      WARNINGS_ENABLE_ADDITIONAL="-Wpointer-arith -Wsign-compare -Wreorder \
+      WARNINGS_ENABLE_ADDITIONAL="-Wformat=2 \
+          -Wpointer-arith -Wsign-compare -Wreorder \
           -Wunused-function -Wundef -Wunused-value -Woverloaded-virtual"
-      WARNINGS_ENABLE_ALL="-Wall -Wextra -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"
+      WARNINGS_ENABLE_ADDITIONAL_CXX=""
+      WARNINGS_ENABLE_ADDITIONAL_JVM="-Wzero-as-null-pointer-constant"
 
       # These warnings will never be turned on, since they generate too many
       # false positives.
       DISABLED_WARNINGS="unknown-warning-option unused-parameter"
+      CFLAGS_CONVERSION_WARNINGS="-Wimplicit-int-conversion"
       ;;
   esac
+  WARNINGS_ENABLE_ALL="$WARNINGS_ENABLE_ALL_NORMAL $WARNINGS_ENABLE_ADDITIONAL"
+  WARNINGS_ENABLE_ALL_CXX="$WARNINGS_ENABLE_ALL $WARNINGS_ENABLE_ADDITIONAL_CXX"
+  WARNINGS_ENABLE_ALL_JVM="$WARNINGS_ENABLE_ALL_CXX $WARNINGS_ENABLE_ADDITIONAL_JVM"
+
   AC_SUBST(DISABLE_WARNING_PREFIX)
   AC_SUBST(BUILD_CC_DISABLE_WARNING_PREFIX)
   AC_SUBST(CFLAGS_WARNINGS_ARE_ERRORS)
   AC_SUBST(DISABLED_WARNINGS)
   AC_SUBST(DISABLED_WARNINGS_C)
   AC_SUBST(DISABLED_WARNINGS_CXX)
+  AC_SUBST(CFLAGS_CONVERSION_WARNINGS)
 ])
 
 AC_DEFUN([FLAGS_SETUP_QUALITY_CHECKS],
@@ -313,10 +314,17 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
     C_O_FLAG_DEBUG_JVM="-O0"
     C_O_FLAG_NONE="-O0"
 
+    if test "x$TOOLCHAIN_TYPE" = xgcc; then
+      C_O_FLAG_LTO="-flto=auto -fuse-linker-plugin -fno-strict-aliasing -fno-fat-lto-objects"
+    else
+      C_O_FLAG_LTO="-flto -fno-strict-aliasing"
+    fi
+
     if test "x$TOOLCHAIN_TYPE" = xclang && test "x$OPENJDK_TARGET_OS" = xaix; then
       C_O_FLAG_HIGHEST_JVM="${C_O_FLAG_HIGHEST_JVM} -finline-functions"
       C_O_FLAG_HIGHEST="${C_O_FLAG_HIGHEST} -finline-functions"
       C_O_FLAG_HI="${C_O_FLAG_HI} -finline-functions"
+      C_O_FLAG_LTO="${C_O_FLAG_LTO} -ffat-lto-objects"
     fi
 
     # -D_FORTIFY_SOURCE=2 hardening option needs optimization (at least -O1) enabled
@@ -348,6 +356,7 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
     C_O_FLAG_DEBUG_JVM=""
     C_O_FLAG_NONE="-Od"
     C_O_FLAG_SIZE="-O1"
+    C_O_FLAG_LTO="-GL"
   fi
 
   # Now copy to C++ flags
@@ -359,6 +368,7 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
   CXX_O_FLAG_DEBUG_JVM="$C_O_FLAG_DEBUG_JVM"
   CXX_O_FLAG_NONE="$C_O_FLAG_NONE"
   CXX_O_FLAG_SIZE="$C_O_FLAG_SIZE"
+  CXX_O_FLAG_LTO="$C_O_FLAG_LTO"
 
   # Adjust optimization flags according to debug level.
   case $DEBUG_LEVEL in
@@ -391,12 +401,15 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
   AC_SUBST(C_O_FLAG_NORM)
   AC_SUBST(C_O_FLAG_NONE)
   AC_SUBST(C_O_FLAG_SIZE)
+  AC_SUBST(C_O_FLAG_LTO)
+
   AC_SUBST(CXX_O_FLAG_HIGHEST_JVM)
   AC_SUBST(CXX_O_FLAG_HIGHEST)
   AC_SUBST(CXX_O_FLAG_HI)
   AC_SUBST(CXX_O_FLAG_NORM)
   AC_SUBST(CXX_O_FLAG_NONE)
   AC_SUBST(CXX_O_FLAG_SIZE)
+  AC_SUBST(CXX_O_FLAG_LTO)
 ])
 
 AC_DEFUN([FLAGS_SETUP_CFLAGS],
@@ -597,30 +610,20 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
 
   # CXXFLAGS C++ language level for all of JDK, including Hotspot.
   if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
-    LANGSTD_CXXFLAGS="-std=c++14"
+    LANGSTD_CXXFLAGS="-std=c++17"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    LANGSTD_CXXFLAGS="-std:c++14"
+    LANGSTD_CXXFLAGS="-std:c++17"
   else
-    AC_MSG_ERROR([Cannot enable C++14 for this toolchain])
+    AC_MSG_ERROR([Cannot enable C++17 for this toolchain])
   fi
   TOOLCHAIN_CFLAGS_JDK_CXXONLY="$TOOLCHAIN_CFLAGS_JDK_CXXONLY $LANGSTD_CXXFLAGS"
   TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM $LANGSTD_CXXFLAGS"
   ADLC_LANGSTD_CXXFLAGS="$LANGSTD_CXXFLAGS"
 
   # CFLAGS WARNINGS STUFF
-  # Set JVM_CFLAGS warning handling
-  if test "x$TOOLCHAIN_TYPE" = xgcc; then
-    WARNING_CFLAGS_JDK_CONLY="$WARNINGS_ENABLE_ALL_CFLAGS"
-    WARNING_CFLAGS_JDK_CXXONLY="$WARNINGS_ENABLE_ALL_CXXFLAGS"
-    WARNING_CFLAGS_JVM="$WARNINGS_ENABLE_ALL_CXXFLAGS"
-
-  elif test "x$TOOLCHAIN_TYPE" = xclang; then
-    WARNING_CFLAGS="$WARNINGS_ENABLE_ALL"
-
-  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    WARNING_CFLAGS="$WARNINGS_ENABLE_ALL"
-
-  fi
+  WARNING_CFLAGS_JDK_CONLY="$WARNINGS_ENABLE_ALL"
+  WARNING_CFLAGS_JDK_CXXONLY="$WARNINGS_ENABLE_ALL_CXX"
+  WARNING_CFLAGS_JVM="$WARNINGS_ENABLE_ALL_JVM"
 
   # Set some additional per-OS defines.
 
@@ -882,12 +885,12 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
   CFLAGS_JVM_COMMON="$ALWAYS_CFLAGS_JVM $ALWAYS_DEFINES_JVM \
       $TOOLCHAIN_CFLAGS_JVM ${$1_TOOLCHAIN_CFLAGS_JVM} \
       $OS_CFLAGS $OS_CFLAGS_JVM $CFLAGS_OS_DEF_JVM $DEBUG_CFLAGS_JVM \
-      $WARNING_CFLAGS $WARNING_CFLAGS_JVM $JVM_PICFLAG $FILE_MACRO_CFLAGS \
+      $WARNING_CFLAGS_JVM $JVM_PICFLAG $FILE_MACRO_CFLAGS \
       $REPRODUCIBLE_CFLAGS $BRANCH_PROTECTION_CFLAGS"
 
   CFLAGS_JDK_COMMON="$ALWAYS_DEFINES_JDK $TOOLCHAIN_CFLAGS_JDK \
       $OS_CFLAGS $CFLAGS_OS_DEF_JDK $DEBUG_CFLAGS_JDK $DEBUG_OPTIONS_FLAGS_JDK \
-      $WARNING_CFLAGS $WARNING_CFLAGS_JDK $DEBUG_SYMBOLS_CFLAGS_JDK \
+      $DEBUG_SYMBOLS_CFLAGS_JDK \
       $FILE_MACRO_CFLAGS $REPRODUCIBLE_CFLAGS $BRANCH_PROTECTION_CFLAGS"
 
   # Use ${$2EXTRA_CFLAGS} to block EXTRA_CFLAGS to be added to build flags.
@@ -934,37 +937,6 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
         IF_FALSE: [$2FDLIBM_CFLAGS=""])
   fi
   AC_SUBST($2FDLIBM_CFLAGS)
-
-  # Check whether the compiler supports the Arm C Language Extensions (ACLE)
-  # for SVE. Set SVE_CFLAGS to -march=armv8-a+sve if it does.
-  # ACLE and this flag are required to build the aarch64 SVE related functions in
-  # libvectormath. Apple Silicon does not support SVE; use macOS as a proxy for
-  # that check.
-  if test "x$OPENJDK_TARGET_CPU" = "xaarch64" && test "x$OPENJDK_TARGET_CPU" = "xlinux"; then
-    if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
-      AC_LANG_PUSH(C)
-      OLD_CFLAGS="$CFLAGS"
-      CFLAGS="$CFLAGS -march=armv8-a+sve"
-      AC_MSG_CHECKING([if Arm SVE ACLE is supported])
-      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include <arm_sve.h>],
-          [
-            svint32_t r = svdup_n_s32(1);
-            return 0;
-          ])],
-          [
-            AC_MSG_RESULT([yes])
-            $2SVE_CFLAGS="-march=armv8-a+sve"
-          ],
-          [
-            AC_MSG_RESULT([no])
-            $2SVE_CFLAGS=""
-          ]
-      )
-      CFLAGS="$OLD_CFLAGS"
-      AC_LANG_POP(C)
-    fi
-  fi
-  AC_SUBST($2SVE_CFLAGS)
 ])
 
 AC_DEFUN_ONCE([FLAGS_SETUP_BRANCH_PROTECTION],

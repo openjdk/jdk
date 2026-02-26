@@ -26,7 +26,7 @@
 #define SHARE_UTILITIES_BITMAP_HPP
 
 #include "nmt/memTag.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // Forward decl;

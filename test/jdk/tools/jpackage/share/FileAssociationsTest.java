@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,10 @@
  * questions.
  */
 
-import static jdk.jpackage.test.JPackageStringBundle.MAIN;
+import static java.util.Map.entry;
 
 import java.nio.file.Path;
-import java.util.Map;
+import java.util.List;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.FileAssociations;
@@ -114,15 +114,15 @@ public class FileAssociationsTest {
         final Path propFile = TKit.workDir().resolve("fa.properties");
 
         initPackageTest().addRunOnceInitializer(() -> {
-            TKit.createPropertiesFile(propFile, Map.of(
-                "extension", "foo",
-                "description", "bar"
+            TKit.createPropertiesFile(propFile, List.of(
+                    entry("extension", "foo"),
+                    entry("description", "bar")
             ));
         }).addInitializer(cmd -> {
             cmd.addArguments("--file-associations", propFile);
-            cmd.validateOutput(
-                    MAIN.cannedFormattedString("error.no-content-types-for-file-association", 1),
-                    MAIN.cannedFormattedString("error.no-content-types-for-file-association.advice", 1));
+            cmd.validateErr(
+                    JPackageCommand.makeError("error.no-content-types-for-file-association", 1),
+                    JPackageCommand.makeAdvice("error.no-content-types-for-file-association.advice", 1));
         }).run();
     }
 
@@ -131,16 +131,16 @@ public class FileAssociationsTest {
         final Path propFile = TKit.workDir().resolve("fa.properties");
 
         initPackageTest().addRunOnceInitializer(() -> {
-            TKit.createPropertiesFile(propFile, Map.of(
-                "mime-type", "application/x-jpackage-foo, application/x-jpackage-bar",
-                "extension", "foo",
-                "description", "bar"
+            TKit.createPropertiesFile(propFile, List.of(
+                    entry("mime-type", "application/x-jpackage-foo, application/x-jpackage-bar"),
+                    entry("extension", "foo"),
+                    entry("description", "bar")
             ));
         }).addInitializer(cmd -> {
             cmd.addArguments("--file-associations", propFile);
-            cmd.validateOutput(
-                    MAIN.cannedFormattedString("error.too-many-content-types-for-file-association", 1),
-                    MAIN.cannedFormattedString("error.too-many-content-types-for-file-association.advice", 1));
+            cmd.validateErr(
+                    JPackageCommand.makeError("error.too-many-content-types-for-file-association", 1),
+                    JPackageCommand.makeAdvice("error.too-many-content-types-for-file-association.advice", 1));
         }).run();
     }
 

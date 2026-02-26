@@ -151,6 +151,8 @@ public:
 
   inline static CompilerType compiler_type();
 
+  static bool should_set_client_emulation_mode_flags();
+
 private:
   static bool is_compilation_mode_selected();
   static void set_compilation_policy_flags();

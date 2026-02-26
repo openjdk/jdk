@@ -28,9 +28,13 @@ import com.sun.tools.attach.AgentLoadException;
 import com.sun.tools.attach.AttachNotSupportedException;
 import com.sun.tools.attach.spi.AttachProvider;
 
+import sun.jvmstat.PlatformSupport;
+
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -39,14 +43,17 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 @SuppressWarnings("restricted")
 public class VirtualMachineImpl extends HotSpotVirtualMachine {
-    // "tmpdir" is used as a global well-known location for the files
-    // .java_pid<pid>. and .attach_pid<pid>. It is important that this
-    // location is the same for all processes, otherwise the tools
-    // will not be able to find all Hotspot processes.
-    // This is intentionally not the same as java.io.tmpdir, since
-    // the latter can be changed by the user.
-    // Any changes to this needs to be synchronized with HotSpot.
-    private static final String tmpdir;
+
+    /**
+     * HotSpot PerfData file prefix
+     */
+    private static final String HSPERFDATA_PREFIX = "hsperfdata_";
+
+    /**
+     * Use platform specific methods for looking up temporary directories.
+     */
+    private static final PlatformSupport platformSupport = PlatformSupport.getInstance();
+
     String socket_path;
     private OperationProperties props = new OperationProperties(VERSION_1); // updated in ctor
 
@@ -67,10 +74,12 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         // Find the socket file. If not found then we attempt to start the
         // attach mechanism in the target VM by sending it a QUIT signal.
         // Then we attempt to find the socket file again.
-        File socket_file = new File(tmpdir, ".java_pid" + pid);
+        // In macOS the socket file is located in per-user temp directory.
+        String tempdir = getTempDirFromPid(pid);
+        File socket_file = new File(tempdir, ".java_pid" + pid);
         socket_path = socket_file.getPath();
         if (!socket_file.exists()) {
-            File f = createAttachFile(pid);
+            File f = createAttachFile(tempdir, pid);
             try {
                 checkCatchesAndSendQuitTo(pid, false);
 
@@ -211,10 +220,32 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         }
     }
 
-    private File createAttachFile(int pid) throws IOException {
+    private File createAttachFile(String tmpdir, int pid) throws IOException {
         File f = new File(tmpdir, ".attach_pid" + pid);
         createAttachFile0(f.getPath());
         return f;
+    }
+
+    /*
+     * Returns a platform-specific temporary directory for a given process.
+     * In VMs running as unprivileged user it returns the default platform-specific
+     * temporary directory. In VMs running as root it searches over the list of
+     * temporary directories for one containing HotSpot PerfData directory.
+     */
+    private String getTempDirFromPid(int pid) {
+        ProcessHandle ph = ProcessHandle.of(pid).orElse(null);
+        if (ph != null) {
+            String user = ph.info().user().orElse(null);
+            if (user != null) {
+                for (String dir : platformSupport.getTemporaryDirectories(pid)) {
+                    Path fullPath = Path.of(dir, HSPERFDATA_PREFIX + user, String.valueOf(pid));
+                    if (Files.exists(fullPath)) {
+                        return dir;
+                    }
+                }
+            }
+        }
+        return PlatformSupport.getTemporaryDirectory();
     }
 
     //-- native methods
@@ -235,10 +266,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
     static native void createAttachFile0(String path);
 
-    static native String getTempDir();
-
     static {
         System.loadLibrary("attach");
-        tmpdir = getTempDir();
     }
 }

@@ -198,13 +198,6 @@
           constraint(MarkStackSizeConstraintFunc,AfterErgo)                 \
           range(1, (INT_MAX - 1))                                           \
                                                                             \
-  product(bool, ParallelRefProcEnabled, false,                              \
-          "(Deprecated) Enable parallel reference processing "              \
-          "whenever possible")                                              \
-                                                                            \
-  product(bool, ParallelRefProcBalancingEnabled, true,                      \
-          "(Deprecated) Enable balancing of reference processing queues")   \
-                                                                            \
   product(size_t, ReferencesPerThread, 1000, EXPERIMENTAL,                  \
                "Ergonomically start one thread for this amount of "         \
                "references for reference processing if "                    \
@@ -261,23 +254,21 @@
   develop(uintx, ObjArrayMarkingStride, 2048,                               \
           "Number of object array elements to push onto the marking stack " \
           "before pushing a continuation entry")                            \
+          range(1, INT_MAX/2)                                               \
                                                                             \
   product_pd(bool, NeverActAsServerClassMachine,                            \
-          "Never act like a server-class machine")                          \
+          "(Deprecated) Never act like a server-class machine")             \
                                                                             \
   product(bool, AlwaysActAsServerClassMachine, false,                       \
-          "Always act like a server-class machine")                         \
-                                                                            \
-  product_pd(uint64_t, MaxRAM,                                              \
-          "Real memory size (in bytes) used to set maximum heap size")      \
-          range(0, 0XFFFFFFFFFFFFFFFF)                                      \
+          "(Deprecated) Always act like a server-class machine")            \
                                                                             \
   product(bool, AggressiveHeap, false,                                      \
-          "Optimize heap options for long-running memory intensive apps")   \
+          "(Deprecated) Optimize heap options for long-running memory "     \
+          "intensive apps")                                                 \
                                                                             \
   product(size_t, ErgoHeapSizeLimit, 0,                                     \
           "Maximum ergonomically set heap size (in bytes); zero means use " \
-          "MaxRAM * MaxRAMPercentage / 100")                                \
+          "(System RAM) * MaxRAMPercentage / 100")                          \
           range(0, max_uintx)                                               \
                                                                             \
   product(double, MaxRAMPercentage, 25.0,                                   \
@@ -289,7 +280,7 @@
           "size on systems with small physical memory size")                \
           range(0.0, 100.0)                                                 \
                                                                             \
-  product(double, InitialRAMPercentage, 1.5625,                             \
+  product(double, InitialRAMPercentage, 0.0,                                \
           "Percentage of real memory used for initial heap size")           \
           range(0.0, 100.0)                                                 \
                                                                             \
@@ -357,7 +348,7 @@
           "Initial ratio of young generation/survivor space size")          \
           range(3, max_uintx)                                               \
                                                                             \
-  product(bool, UseGCOverheadLimit, true,                                   \
+  product(bool, UseGCOverheadLimit, falseInDebug,                           \
           "Use policy to limit of proportion of time spent in GC "          \
           "before an OutOfMemory error is thrown")                          \
                                                                             \
@@ -417,10 +408,6 @@
           "threads, heap, symbol_table, string_table, codecache, "          \
           "dictionary, classloader_data_graph, metaspace, jni_handles, "    \
           "codecache_oops, resolved_method_table, stringdedup")             \
-                                                                            \
-  product(bool, DeferInitialCardMark, false, DIAGNOSTIC,                    \
-          "When +ReduceInitialCardMarks, explicitly defer any that "        \
-          "may arise from new_pre_store_barrier")                           \
                                                                             \
   product(bool, UseCondCardMark, false,                                     \
           "Check for already marked card before updating card table")       \
@@ -483,11 +470,6 @@
   product_pd(size_t, HeapBaseMinAddress,                                    \
           "OS specific low limit for heap base address")                    \
           constraint(HeapBaseMinAddressConstraintFunc,AfterErgo)            \
-                                                                            \
-  product(size_t, PretenureSizeThreshold, 0,                                \
-          "Maximum size in bytes of objects allocated in DefNew "           \
-          "generation; zero means no maximum")                              \
-          range(0, max_uintx)                                               \
                                                                             \
   product(uintx, SurvivorRatio, 8,                                          \
           "Ratio of eden/survivor space size")                              \

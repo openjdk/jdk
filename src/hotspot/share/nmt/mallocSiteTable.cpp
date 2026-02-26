@@ -24,7 +24,7 @@
 
 #include "memory/allocation.inline.hpp"
 #include "nmt/mallocSiteTable.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/permitForbiddenFunctions.hpp"
 
@@ -123,7 +123,7 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t*
     if (entry == nullptr) return nullptr;
 
     // swap in the head
-    if (Atomic::replace_if_null(&_table[index], entry)) {
+    if (AtomicAccess::replace_if_null(&_table[index], entry)) {
       *marker = build_marker(index, 0);
       return entry->data();
     }
@@ -163,13 +163,17 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t*
 // Access malloc site
 MallocSite* MallocSiteTable::malloc_site(uint32_t marker) {
   uint16_t bucket_idx = bucket_idx_from_marker(marker);
-  assert(bucket_idx < table_size, "Invalid bucket index");
+  if (bucket_idx >= table_size) {
+    return nullptr;
+  }
   const uint16_t pos_idx = pos_idx_from_marker(marker);
   MallocSiteHashtableEntry* head = _table[bucket_idx];
   for (size_t index = 0;
        index < pos_idx && head != nullptr;
        index++, head = (MallocSiteHashtableEntry*)head->next()) {}
-  assert(head != nullptr, "Invalid position index");
+  if (head == nullptr) {
+    return nullptr;
+  }
   return head->data();
 }
 
@@ -250,5 +254,5 @@ void MallocSiteTable::print_tuning_statistics(outputStream* st) {
 }
 
 bool MallocSiteHashtableEntry::atomic_insert(MallocSiteHashtableEntry* entry) {
-  return Atomic::replace_if_null(&_next, entry);
+  return AtomicAccess::replace_if_null(&_next, entry);
 }

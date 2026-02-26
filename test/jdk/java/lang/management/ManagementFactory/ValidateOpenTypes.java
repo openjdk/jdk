@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Validate open types mapped for the MXBeans in the platform
  *          MBeanServer.
  * @author  Mandy Chung
+ * @requires test.thread.factory != "Virtual"
  *
  * @compile ValidateOpenTypes.java
  * @run main/othervm -verbose:gc ValidateOpenTypes

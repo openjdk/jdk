@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,6 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 4109023 4153060 4153061
- * @summary test ParsePosition and FieldPosition
- * @run junit PositionTest
- */
 /*
 (C) Copyright Taligent, Inc. 1996 - All Rights Reserved
 (C) Copyright IBM Corp. 1996 - All Rights Reserved
@@ -39,14 +33,70 @@ attribution to Taligent may not be removed.
   Taligent is a registered trademark of Taligent, Inc.
 */
 
-import java.text.*;
-import java.io.*;
+/*
+ * @test
+ * @bug 4109023 4153060 4153061 8366400
+ * @summary test ParsePosition and FieldPosition
+ * @run junit PositionTest
+ */
 
 import org.junit.jupiter.api.Test;
 
+import java.text.DecimalFormat;
+import java.text.FieldPosition;
+import java.text.NumberFormat;
+import java.text.ParsePosition;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class PositionTest {
+
+    // Parsing text which contains un-parseable data, but the index
+    // begins at the valid portion. Ensure PP is properly updated.
+    @Test
+    public void modifiedPositionTest() {
+        var df = new DecimalFormat("YY#");
+        df.setStrict(false); // Lenient by default, set for test explicitness
+        var pp = new ParsePosition(9);
+        assertEquals(123L, assertDoesNotThrow(() -> df.parse("FOOBARBAZYY123", pp)));
+        assertEquals(-1, pp.getErrorIndex());
+        assertEquals(14, pp.getIndex());
+    }
+
+    // Clearly invalid index value that could not work under any scenarios
+    // Specifically, ensuring no SIOOBE during affix matching
+    @Test
+    public void invalidPositionParseTest() {
+        var df = new DecimalFormat();
+        df.setStrict(false); // Lenient by default, set for test explicitness
+        assertNull(assertDoesNotThrow(() -> df.parse("1", new ParsePosition(-1))));
+        assertNull(assertDoesNotThrow(() -> df.parse("1", new ParsePosition(Integer.MAX_VALUE))));
+    }
+
+    // When prefix matching, position + affix length is greater than parsed String length
+    // Ensure we do not index out of bounds of the length of the parsed String
+    @Test
+    public void prefixMatchingTest() {
+        var df = new DecimalFormat("ZZZ#;YYY#");
+        df.setStrict(false); // Lenient by default, set for test explicitness
+        // 0 + 3 > 2 = (pos + prefix > text)
+        assertNull(assertDoesNotThrow(() -> df.parse("Z1", new ParsePosition(0))));
+        assertNull(assertDoesNotThrow(() -> df.parse("Y1", new ParsePosition(0))));
+    }
+
+    // When suffix matching, position + affix length is greater than parsed String length
+    // Ensure we do not index out of bounds of the length of the parsed String
+    @Test
+    public void suffixMatchingTest() {
+        var df = new DecimalFormat("#ZZ;#YY");
+        df.setStrict(false); // Lenient by default, set for test explicitness
+        // Matches prefix properly first. Then 3 + 2 > 4 = (pos + suffix > text)
+        assertNull(assertDoesNotThrow(() -> df.parse("123Z", new ParsePosition(0))));
+        assertNull(assertDoesNotThrow(() -> df.parse("123Y", new ParsePosition(0))));
+    }
 
     @Test
     public void TestParsePosition() {

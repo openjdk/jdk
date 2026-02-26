@@ -215,20 +215,20 @@ void JVMCICompiler::CodeInstallStats::print_on(outputStream* st, const char* pre
 }
 
 void JVMCICompiler::CodeInstallStats::on_install(CodeBlob* cb) {
-  Atomic::inc(&_count);
-  Atomic::add(&_codeBlobs_size, cb->size());
-  Atomic::add(&_codeBlobs_code_size, cb->code_size());
+  AtomicAccess::inc(&_count);
+  AtomicAccess::add(&_codeBlobs_size, cb->size());
+  AtomicAccess::add(&_codeBlobs_code_size, cb->code_size());
 }
 
 void JVMCICompiler::inc_methods_compiled() {
-  Atomic::inc(&_methods_compiled);
-  Atomic::inc(&_global_compilation_ticks);
+  AtomicAccess::inc(&_methods_compiled);
+  AtomicAccess::inc(&_global_compilation_ticks);
 }
 
 void JVMCICompiler::on_upcall(const char* error, JVMCICompileState* compile_state) {
   if (error != nullptr) {
 
-    Atomic::inc(&_err_upcalls);
+    AtomicAccess::inc(&_err_upcalls);
     int ok = _ok_upcalls;
     int err = _err_upcalls;
     // If there have been at least 10 upcalls with an error
@@ -257,10 +257,10 @@ void JVMCICompiler::on_upcall(const char* error, JVMCICompileState* compile_stat
     }
     JVMCI_event_1("JVMCI upcall had an error: %s", error);
   } else {
-    Atomic::inc(&_ok_upcalls);
+    AtomicAccess::inc(&_ok_upcalls);
   }
 }
 
 void JVMCICompiler::inc_global_compilation_ticks() {
-  Atomic::inc(&_global_compilation_ticks);
+  AtomicAccess::inc(&_global_compilation_ticks);
 }

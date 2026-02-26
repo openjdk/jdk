@@ -39,7 +39,7 @@
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 
 //
@@ -253,6 +253,10 @@ inline void ShenandoahConcUpdateRefsClosure::work(T* p) {
   _heap->conc_update_with_forwarded(p);
 }
 
+inline void ShenandoahFlushSATB::do_thread(Thread* thread) {
+  // Transfer any partial buffer to the qset for completed buffer processing.
+  _satb_qset.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(thread));
+}
 
 //
 // ========= Utilities

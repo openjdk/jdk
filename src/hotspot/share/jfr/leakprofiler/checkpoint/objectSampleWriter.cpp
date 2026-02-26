@@ -22,7 +22,6 @@
  *
  */
 
-#include "jfrfiles/jfrTypes.hpp"
 #include "jfr/leakprofiler/chains/edge.hpp"
 #include "jfr/leakprofiler/chains/edgeStore.hpp"
 #include "jfr/leakprofiler/chains/edgeUtils.hpp"
@@ -34,6 +33,7 @@
 #include "jfr/leakprofiler/utilities/unifiedOopRef.inline.hpp"
 #include "jfr/metadata/jfrSerializer.hpp"
 #include "jfr/writers/jfrTypeWriterHost.hpp"
+#include "jfrfiles/jfrTypes.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "utilities/growableArray.hpp"

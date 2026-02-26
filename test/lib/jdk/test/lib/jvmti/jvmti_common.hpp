@@ -124,6 +124,12 @@ char* julong_to_string(julong value, char *string) {
 }
 
 static void
+fatal(const char* msg) {
+  LOG("FATAL ERROR: %s\n", msg);
+  abort();
+}
+
+static void
 fatal(JNIEnv* jni, const char* msg) {
   jni->FatalError(msg);
 }
@@ -314,6 +320,17 @@ get_thread_name(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
 }
 
 static char*
+get_method_name(jvmtiEnv *jvmti, jmethodID method) {
+  char*  mname = nullptr;
+  jvmtiError err;
+
+  err = jvmti->GetMethodName(method, &mname, nullptr, nullptr);
+  check_jvmti_error(err, "get_method_name: error in JVMTI GetMethodName call");
+
+  return mname;
+}
+
+static char*
 get_method_name(jvmtiEnv *jvmti, JNIEnv* jni, jmethodID method) {
   char*  mname = nullptr;
   jvmtiError err;
@@ -322,6 +339,24 @@ get_method_name(jvmtiEnv *jvmti, JNIEnv* jni, jmethodID method) {
   check_jvmti_status(jni, err, "get_method_name: error in JVMTI GetMethodName call");
 
   return mname;
+}
+
+static char*
+get_field_name(jvmtiEnv *jvmti, JNIEnv* jni, jclass field_class, jfieldID field) {
+  char* name = nullptr;
+  jvmtiError err = jvmti->GetFieldName(field_class, field, &name, nullptr, nullptr);
+  check_jvmti_status(jni, err, "get_field_name: error in JVMTI GetFieldName call");
+  return name;
+}
+
+static char*
+get_object_class_name(jvmtiEnv *jvmti, JNIEnv* jni, jobject object) {
+  char *obj_class_name = nullptr;
+  jclass object_class = jni->GetObjectClass(object);
+  jvmtiError err = jvmti->GetClassSignature(object_class, &obj_class_name, nullptr);
+  check_jvmti_error(err, "GetClassSignature");
+  jni->DeleteLocalRef(object_class);
+  return obj_class_name;
 }
 
 static jclass

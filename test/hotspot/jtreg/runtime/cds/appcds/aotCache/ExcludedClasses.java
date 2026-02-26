@@ -99,7 +99,6 @@ public class ExcludedClasses {
             if (runMode == RunMode.ASSEMBLY) {
                 out.shouldNotMatch("aot,resolve.*archived field.*TestApp.Foo => TestApp.Foo.ShouldBeExcluded.f:I");
             } else if (runMode == RunMode.PRODUCTION) {
-                out.shouldContain("check_verification_constraint: TestApp$Foo$Taz: TestApp$Foo$ShouldBeExcludedChild must be subclass of TestApp$Foo$ShouldBeExcluded");
                 out.shouldContain("jdk.jfr.Event source: jrt:/jdk.jfr");
                 out.shouldMatch("TestApp[$]Foo[$]ShouldBeExcluded source: .*/app.jar");
                 out.shouldMatch("TestApp[$]Foo[$]ShouldBeExcludedChild source: .*/app.jar");
@@ -259,14 +258,9 @@ class TestApp {
 
         static class Taz {
             static ShouldBeExcluded m() {
-                // When verifying this method, we need to check the constraint that
-                // ShouldBeExcluded must be a supertype of ShouldBeExcludedChild. This information
-                // is checked by SystemDictionaryShared::check_verification_constraints() when the Taz
-                // class is linked during the production run.
-                //
-                // Because ShouldBeExcluded is excluded from the AOT archive, it must be loaded
-                // dynamically from app.jar inside SystemDictionaryShared::check_verification_constraints().
-                // This must happen after the app class loader has been fully restored from the AOT cache.
+                // Taz should be excluded from the AOT cache because it has a verification constraint that
+                // "ShouldBeExcludedChild must be a subtype of ShouldBeExcluded", but ShouldBeExcluded is
+                // excluded from the AOT cache.
                 return new ShouldBeExcludedChild();
             }
             static void hotSpot4() {

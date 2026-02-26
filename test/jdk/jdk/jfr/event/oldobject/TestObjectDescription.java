@@ -46,7 +46,7 @@ import jdk.test.lib.jfr.Events;
  * @comment Marked as flagless until JDK-8344015 is fixed
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal.test
- * @run main/othervm -XX:TLABSize=2k jdk.jfr.event.oldobject.TestObjectDescription
+ * @run main/othervm/timeout=960 -XX:TLABSize=2k jdk.jfr.event.oldobject.TestObjectDescription
  */
 public class TestObjectDescription {
 

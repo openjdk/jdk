@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,10 +63,12 @@ public final class EnumEditor implements PropertyEditor {
         }
     }
 
+    @Override
     public Object getValue() {
         return this.value;
     }
 
+    @Override
     public void setValue( Object value ) {
         if ( ( value != null ) && !this.type.isInstance( value ) ) {
             throw new IllegalArgumentException( "Unsupported value: " + value );
@@ -92,12 +94,14 @@ public final class EnumEditor implements PropertyEditor {
         }
     }
 
+    @Override
     public String getAsText() {
         return ( this.value != null )
                 ? ( ( Enum )this.value ).name()
                 : null;
     }
 
+    @Override
     public void setAsText( String text ) {
         @SuppressWarnings("unchecked")
         Object tmp = ( text != null )
@@ -106,10 +110,12 @@ public final class EnumEditor implements PropertyEditor {
         setValue(tmp);
     }
 
+    @Override
     public String[] getTags() {
         return this.tags.clone();
     }
 
+    @Override
     public String getJavaInitializationString() {
         String name = getAsText();
         return ( name != null )
@@ -117,27 +123,33 @@ public final class EnumEditor implements PropertyEditor {
                 : "null";
     }
 
+    @Override
     public boolean isPaintable() {
         return false;
     }
 
+    @Override
     public void paintValue( Graphics gfx, Rectangle box ) {
     }
 
+    @Override
     public boolean supportsCustomEditor() {
         return false;
     }
 
+    @Override
     public Component getCustomEditor() {
         return null;
     }
 
+    @Override
     public void addPropertyChangeListener( PropertyChangeListener listener ) {
         synchronized ( this.listeners ) {
             this.listeners.add( listener );
         }
     }
 
+    @Override
     public void removePropertyChangeListener( PropertyChangeListener listener ) {
         synchronized ( this.listeners ) {
             this.listeners.remove( listener );

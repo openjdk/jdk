@@ -2,7 +2,6 @@
  * @test  /nodynamiccopyright/
  * @bug 7039822
  * @summary Verify typing of lub of exception parameter w.r.t getClass
- * @author Joseph D. Darcy
  * @compile/fail/ref=Neg07.out -XDrawDiagnostics Neg07.java
  */
 

@@ -345,18 +345,21 @@ class ConsoleIOContext extends IOContext {
                 ConsoleIOContextTestSupport.willComputeCompletion();
                 int[] anchor = new int[] {-1};
                 List<Suggestion> suggestions;
-                List<String> doc;
+                List<AttributedString> doc;
                 boolean command = prefix.isEmpty() && text.startsWith("/");
                 if (command) {
                     suggestions = repl.commandCompletionSuggestions(text, cursor, anchor);
-                    doc = repl.commandDocumentation(text, cursor, true);
+                    doc = repl.commandDocumentation(text, cursor, true)
+                              .stream()
+                              .map(AttributedString::new)
+                              .toList();
                 } else {
                     int prefixLength = prefix.length();
                     suggestions = repl.analysis.completionSuggestions(prefix + text, cursor + prefixLength, anchor);
                     anchor[0] -= prefixLength;
                     doc = repl.analysis.documentation(prefix + text, cursor + prefix.length(), false)
                                        .stream()
-                                       .map(Documentation::signature)
+                                       .map(this::renderSignature)
                                        .toList();
                 }
                 long smartCount = suggestions.stream().filter(Suggestion::matchesType).count();
@@ -394,9 +397,9 @@ class ConsoleIOContext extends IOContext {
                                        .reduce(ConsoleIOContext::commonPrefix);
 
                     String prefix =
-                            prefixOpt.orElse("").substring(cursor - anchor[0]);
+                            prefixOpt.orElse("");
 
-                    if (!prefix.isEmpty() && !command) {
+                    if (prefix.length() > cursor - anchor[0] && !command) {
                         //the completion will fill in the prefix, which will invalidate
                         //the documentation, avoid adding documentation tasks into the
                         //todo list:
@@ -405,6 +408,7 @@ class ConsoleIOContext extends IOContext {
 
                     ordinaryCompletion =
                             new OrdinaryCompletionTask(ordinaryCompletionToShow,
+                                                       anchor[0],
                                                        prefix,
                                                        !command && !doc.isEmpty(),
                                                        hasBoth);
@@ -499,6 +503,41 @@ class ConsoleIOContext extends IOContext {
         } catch (IOException ex) {
             throw new IllegalStateException(ex);
         }
+    }
+
+    private AttributedString renderSignature(Documentation doc) {
+        int activeParamIndex = doc.activeParameterIndex();
+        String signature = doc.signature();
+
+        if (activeParamIndex == (-1)) {
+            return new AttributedString(signature);
+        }
+
+        int lparen = signature.indexOf('(');
+        int rparen = signature.indexOf(')', lparen);
+
+        if (lparen == (-1) || rparen == (-1)) {
+            return new AttributedString(signature);
+        }
+
+        AttributedStringBuilder result = new AttributedStringBuilder();
+
+        result.append(signature.substring(0, lparen + 1), AttributedStyle.DEFAULT);
+
+        String[] params = signature.substring(lparen + 1, rparen).split(", *");
+        String sep = "";
+
+        for (int i = 0; i < params.length; i++) {
+            result.append(sep);
+            result.append(params[i], i == activeParamIndex ? AttributedStyle.BOLD
+                                                           : AttributedStyle.DEFAULT);
+
+            sep = ", ";
+        }
+
+        result.append(signature.substring(rparen), AttributedStyle.DEFAULT);
+
+        return result.toAttributedString();
     }
 
     private CompletionTask.Result doPrintFullDocumentation(List<CompletionTask> todo, List<String> doc, boolean command) {
@@ -609,15 +648,18 @@ class ConsoleIOContext extends IOContext {
 
     private final class OrdinaryCompletionTask implements CompletionTask {
         private final List<? extends CharSequence> toShow;
+        private final int anchor;
         private final String prefix;
         private final boolean cont;
         private final boolean showSmart;
 
         public OrdinaryCompletionTask(List<? extends CharSequence> toShow,
+                                      int anchor,
                                       String prefix,
                                       boolean cont,
                                       boolean showSmart) {
             this.toShow = toShow;
+            this.anchor = anchor;
             this.prefix = prefix;
             this.cont = cont;
             this.showSmart = showSmart;
@@ -630,7 +672,14 @@ class ConsoleIOContext extends IOContext {
 
         @Override
         public Result perform(String text, int cursor) throws IOException {
-            in.putString(prefix);
+            String existingPrefix = in.getBuffer().substring(anchor, cursor);
+
+            if (prefix.startsWith(existingPrefix)) {
+                in.putString(prefix.substring(existingPrefix.length()));
+            } else {
+                in.getBuffer().backspace(existingPrefix.length());
+                in.putString(prefix);
+            }
 
             boolean showItems = toShow.size() > 1 || showSmart;
 
@@ -639,7 +688,7 @@ class ConsoleIOContext extends IOContext {
                 printColumns(toShow);
             }
 
-            if (!prefix.isEmpty())
+            if (prefix.length() > existingPrefix.length())
                 return showItems ? Result.FINISH : Result.SKIP_NOREPAINT;
 
             return cont ? Result.CONTINUE : Result.FINISH;
@@ -711,9 +760,9 @@ class ConsoleIOContext extends IOContext {
 
     private final class CommandSynopsisTask implements CompletionTask {
 
-        private final List<String> synopsis;
+        private final List<AttributedString> synopsis;
 
-        public CommandSynopsisTask(List<String> synposis) {
+        public CommandSynopsisTask(List<AttributedString> synposis) {
             this.synopsis = synposis;
         }
 
@@ -727,6 +776,7 @@ class ConsoleIOContext extends IOContext {
 //            try {
                 in.getTerminal().writer().println();
                 in.getTerminal().writer().println(synopsis.stream()
+                                   .map(doc -> doc.toAnsi(in.getTerminal()))
                                    .map(l -> l.replaceAll("\n", LINE_SEPARATOR))
                                    .collect(Collectors.joining(LINE_SEPARATORS2)));
 //            } catch (IOException ex) {
@@ -760,9 +810,9 @@ class ConsoleIOContext extends IOContext {
 
     private final class ExpressionSignaturesTask implements CompletionTask {
 
-        private final List<String> doc;
+        private final List<AttributedString> doc;
 
-        public ExpressionSignaturesTask(List<String> doc) {
+        public ExpressionSignaturesTask(List<AttributedString> doc) {
             this.doc = doc;
         }
 
@@ -775,7 +825,9 @@ class ConsoleIOContext extends IOContext {
         public Result perform(String text, int cursor) throws IOException {
             in.getTerminal().writer().println();
             in.getTerminal().writer().println(repl.getResourceString("jshell.console.completion.current.signatures"));
-            in.getTerminal().writer().println(doc.stream().collect(Collectors.joining(LINE_SEPARATOR)));
+            in.getTerminal().writer().println(doc.stream()
+                                                 .map(doc -> doc.toAnsi(in.getTerminal()))
+                                                 .collect(Collectors.joining(LINE_SEPARATOR)));
             return Result.FINISH;
         }
 

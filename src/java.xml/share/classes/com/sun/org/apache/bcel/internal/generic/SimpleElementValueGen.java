@@ -166,7 +166,7 @@ public class SimpleElementValueGen extends ElementValueGen {
             dos.writeShort(idx);
             break;
         default:
-            throw new IllegalStateException("SimpleElementValueGen doesnt know how to write out type " + super.getElementValueType());
+            throw new IllegalStateException("SimpleElementValueGen doesn't know how to write out type " + super.getElementValueType());
         }
     }
 
@@ -184,7 +184,7 @@ public class SimpleElementValueGen extends ElementValueGen {
 
     public int getValueInt() {
         if (super.getElementValueType() != PRIMITIVE_INT) {
-            throw new IllegalStateException("Dont call getValueString() on a non STRING ElementValue");
+            throw new IllegalStateException("Don't call getValueString() on a non STRING ElementValue");
         }
         final ConstantInteger c = (ConstantInteger) getConstantPool().getConstant(idx);
         return c.getBytes();
@@ -192,7 +192,7 @@ public class SimpleElementValueGen extends ElementValueGen {
 
     public String getValueString() {
         if (super.getElementValueType() != STRING) {
-            throw new IllegalStateException("Dont call getValueString() on a non STRING ElementValue");
+            throw new IllegalStateException("Don't call getValueString() on a non STRING ElementValue");
         }
         final ConstantUtf8 c = (ConstantUtf8) getConstantPool().getConstant(idx);
         return c.getBytes();

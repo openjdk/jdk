@@ -136,6 +136,12 @@ public final class SunJCE extends Provider {
     void putEntries() {
         // reuse attribute map and reset before each reuse
         HashMap<String, String> attrs = new HashMap<>(3);
+        attrs.put("SupportedKeyClasses",
+                "java.security.interfaces.RSAPublicKey" +
+                "|java.security.interfaces.RSAPrivateKey");
+        ps("Signature", "NONEwithRSA",
+                "com.sun.crypto.provider.RSACipherAdaptor", null, attrs);
+        // continue adding cipher specific attributes
         attrs.put("SupportedModes", "ECB");
         attrs.put("SupportedPaddings", "NOPADDING|PKCS1PADDING|OAEPPADDING"
                 + "|OAEPWITHMD5ANDMGF1PADDING"
@@ -147,9 +153,6 @@ public final class SunJCE extends Provider {
                 + "|OAEPWITHSHA-512ANDMGF1PADDING"
                 + "|OAEPWITHSHA-512/224ANDMGF1PADDING"
                 + "|OAEPWITHSHA-512/256ANDMGF1PADDING");
-        attrs.put("SupportedKeyClasses",
-                "java.security.interfaces.RSAPublicKey" +
-                "|java.security.interfaces.RSAPrivateKey");
         ps("Cipher", "RSA",
                 "com.sun.crypto.provider.RSACipher", null, attrs);
 
@@ -367,6 +370,8 @@ public final class SunJCE extends Provider {
 
         ps("Cipher", "PBEWithHmacSHA512/256AndAES_256",
                 "com.sun.crypto.provider.PBES2Core$HmacSHA512_256AndAES_256");
+
+        ps("Cipher", "HPKE", "com.sun.crypto.provider.HPKE");
 
         /*
          * Key(pair) Generator engines

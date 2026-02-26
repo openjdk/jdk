@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,13 @@
 #ifndef SHARE_CLASSFILE_CLASSLOADERSTATS_HPP
 #define SHARE_CLASSFILE_CLASSLOADERSTATS_HPP
 
-
 #include "classfile/classLoaderData.hpp"
 #include "oops/klass.hpp"
 #include "oops/oop.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/vmOperation.hpp"
 #include "services/diagnosticCommand.hpp"
-#include "utilities/resourceHash.hpp"
-
+#include "utilities/hashTable.hpp"
 
 class ClassLoaderStatsDCmd : public DCmd {
 public:
@@ -105,7 +103,7 @@ protected:
     return hash;
   }
 
-  typedef ResourceHashtable<oop, ClassLoaderStats,
+  typedef HashTable<oop, ClassLoaderStats,
                             256, AnyObj::C_HEAP, mtStatistics,
                             ClassLoaderStatsClosure::oop_hash> StatsTable;
 

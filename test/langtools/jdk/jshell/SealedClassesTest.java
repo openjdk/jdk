@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary Test sealed class in jshell
  * @modules jdk.jshell
  * @build KullaTesting TestingInputStream ExpectedDiagnostic
- * @run testng SealedClassesTest
+ * @run junit SealedClassesTest
  */
 
 import javax.lang.model.SourceVersion;
@@ -35,14 +35,13 @@ import javax.lang.model.SourceVersion;
 import jdk.jshell.TypeDeclSnippet;
 import jdk.jshell.Snippet.Status;
 
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 
 import static jdk.jshell.Snippet.Status.VALID;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class SealedClassesTest extends KullaTesting {
 
+    @Test
     public void testSealed() {
         TypeDeclSnippet base = classKey(
                 assertEval("sealed class B permits I {}",
@@ -53,6 +52,7 @@ public class SealedClassesTest extends KullaTesting {
         assertEval("new I()");
     }
 
+    @Test
     public void testInterface() {
         TypeDeclSnippet base = classKey(
                 assertEval("sealed interface I permits C {}",
@@ -63,6 +63,7 @@ public class SealedClassesTest extends KullaTesting {
         assertEval("new C()");
     }
 
+    @Test
     public void testNonSealed() {
         TypeDeclSnippet base = classKey(
                 assertEval("sealed class B permits I {}",
@@ -74,6 +75,7 @@ public class SealedClassesTest extends KullaTesting {
         assertEval("new I2()");
     }
 
+    @Test
     public void testNonSealedInterface() {
         TypeDeclSnippet base = classKey(
                 assertEval("sealed interface B permits C {}",

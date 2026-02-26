@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@
 #include "jfr/jfrEvents.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -63,7 +62,8 @@ public:
 
 G1HeapRegionManager::G1HeapRegionManager() :
   _bot_mapper(nullptr),
-  _cardtable_mapper(nullptr),
+  _card_table_mapper(nullptr),
+  _refinement_table_mapper(nullptr),
   _committed_map(),
   _next_highest_used_hrm_index(0),
   _regions(), _heap_mapper(nullptr),
@@ -74,7 +74,8 @@ G1HeapRegionManager::G1HeapRegionManager() :
 void G1HeapRegionManager::initialize(G1RegionToSpaceMapper* heap_storage,
                                      G1RegionToSpaceMapper* bitmap,
                                      G1RegionToSpaceMapper* bot,
-                                     G1RegionToSpaceMapper* cardtable) {
+                                     G1RegionToSpaceMapper* card_table,
+                                     G1RegionToSpaceMapper* refinement_table) {
   _next_highest_used_hrm_index = 0;
 
   _heap_mapper = heap_storage;
@@ -82,7 +83,8 @@ void G1HeapRegionManager::initialize(G1RegionToSpaceMapper* heap_storage,
   _bitmap_mapper = bitmap;
 
   _bot_mapper = bot;
-  _cardtable_mapper = cardtable;
+  _card_table_mapper = card_table;
+  _refinement_table_mapper = refinement_table;
 
   _regions.initialize(heap_storage->reserved(), G1HeapRegion::GrainBytes);
 
@@ -186,7 +188,8 @@ void G1HeapRegionManager::commit_regions(uint index, size_t num_regions, WorkerT
   _bitmap_mapper->commit_regions(index, num_regions, pretouch_workers);
 
   _bot_mapper->commit_regions(index, num_regions, pretouch_workers);
-  _cardtable_mapper->commit_regions(index, num_regions, pretouch_workers);
+  _card_table_mapper->commit_regions(index, num_regions, pretouch_workers);
+  _refinement_table_mapper->commit_regions(index, num_regions, pretouch_workers);
 }
 
 void G1HeapRegionManager::uncommit_regions(uint start, uint num_regions) {
@@ -209,7 +212,8 @@ void G1HeapRegionManager::uncommit_regions(uint start, uint num_regions) {
   _bitmap_mapper->uncommit_regions(start, num_regions);
 
   _bot_mapper->uncommit_regions(start, num_regions);
-  _cardtable_mapper->uncommit_regions(start, num_regions);
+  _card_table_mapper->uncommit_regions(start, num_regions);
+  _refinement_table_mapper->uncommit_regions(start, num_regions);
 
   _committed_map.uncommit(start, end);
 }
@@ -261,19 +265,23 @@ void G1HeapRegionManager::clear_auxiliary_data_structures(uint start, uint num_r
   // Signal G1BlockOffsetTable to clear the given regions.
   _bot_mapper->signal_mapping_changed(start, num_regions);
   // Signal G1CardTable to clear the given regions.
-  _cardtable_mapper->signal_mapping_changed(start, num_regions);
+  _card_table_mapper->signal_mapping_changed(start, num_regions);
+  // Signal refinement table to clear the given regions.
+  _refinement_table_mapper->signal_mapping_changed(start, num_regions);
 }
 
 MemoryUsage G1HeapRegionManager::get_auxiliary_data_memory_usage() const {
   size_t used_sz =
     _bitmap_mapper->committed_size() +
     _bot_mapper->committed_size() +
-    _cardtable_mapper->committed_size();
+    _card_table_mapper->committed_size() +
+    _refinement_table_mapper->committed_size();
 
   size_t committed_sz =
     _bitmap_mapper->reserved_size() +
     _bot_mapper->reserved_size() +
-    _cardtable_mapper->reserved_size();
+    _card_table_mapper->reserved_size() +
+    _refinement_table_mapper->reserved_size();
 
   return MemoryUsage(0, used_sz, committed_sz, committed_sz);
 }
@@ -704,8 +712,10 @@ void G1HeapRegionManager::verify_optional() {
 
 G1HeapRegionClaimer::G1HeapRegionClaimer(uint n_workers) :
     _n_workers(n_workers), _n_regions(G1CollectedHeap::heap()->_hrm._next_highest_used_hrm_index), _claims(nullptr) {
-  uint* new_claims = NEW_C_HEAP_ARRAY(uint, _n_regions, mtGC);
-  memset(new_claims, Unclaimed, sizeof(*_claims) * _n_regions);
+  Atomic<uint>* new_claims = NEW_C_HEAP_ARRAY(Atomic<uint>, _n_regions, mtGC);
+  for (uint i = 0; i < _n_regions; i++) {
+    new_claims[i].store_relaxed(Unclaimed);
+  }
   _claims = new_claims;
 }
 
@@ -721,13 +731,12 @@ uint G1HeapRegionClaimer::offset_for_worker(uint worker_id) const {
 
 bool G1HeapRegionClaimer::is_region_claimed(uint region_index) const {
   assert(region_index < _n_regions, "Invalid index.");
-  return _claims[region_index] == Claimed;
+  return _claims[region_index].load_relaxed() == Claimed;
 }
 
 bool G1HeapRegionClaimer::claim_region(uint region_index) {
   assert(region_index < _n_regions, "Invalid index.");
-  uint old_val = Atomic::cmpxchg(&_claims[region_index], Unclaimed, Claimed);
-  return old_val == Unclaimed;
+  return _claims[region_index].compare_set(Unclaimed, Claimed);
 }
 
 class G1RebuildFreeListTask : public WorkerTask {

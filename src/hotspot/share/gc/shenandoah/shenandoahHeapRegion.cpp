@@ -43,7 +43,6 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -75,6 +74,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _plab_allocs(0),
   _live_data(0),
   _critical_pins(0),
+  _mixed_candidate_garbage_words(0),
   _update_watermark(start),
   _age(0),
 #ifdef SHENANDOAH_CENSUS_NOISE
@@ -142,27 +142,17 @@ void ShenandoahHeapRegion::make_affiliated_maybe() {
 
 void ShenandoahHeapRegion::make_regular_bypass() {
   shenandoah_assert_heaplocked();
-  assert (!Universe::is_fully_initialized() ||
-          ShenandoahHeap::heap()->is_full_gc_in_progress() ||
+  assert (ShenandoahHeap::heap()->is_full_gc_in_progress() ||
           ShenandoahHeap::heap()->is_degenerated_gc_in_progress(),
-          "Only for STW GC or when Universe is initializing (CDS)");
+          "Only for STW GC");
   reset_age();
-  auto cur_state = state();
-  switch (cur_state) {
+  switch (state()) {
     case _empty_uncommitted:
       do_commit();
     case _empty_committed:
     case _cset:
     case _humongous_start:
     case _humongous_cont:
-      if (cur_state == _humongous_start || cur_state == _humongous_cont) {
-        // CDS allocates chunks of the heap to fill with regular objects. The allocator
-        // will dutifully track any waste in the unused portion of the last region. Once
-        // CDS has finished initializing the objects, it will convert these regions to
-        // regular regions. The 'waste' in the last region is no longer wasted at this point,
-        // so we must stop treating it as such.
-        decrement_humongous_waste();
-      }
       set_state(_regular);
       return;
     case _pinned_cset:
@@ -325,9 +315,9 @@ void ShenandoahHeapRegion::make_trash_immediate() {
 
   // On this path, we know there are no marked objects in the region,
   // tell marking context about it to bypass bitmap resets.
-  assert(ShenandoahHeap::heap()->gc_generation()->is_mark_complete(), "Marking should be complete here.");
-  shenandoah_assert_generations_reconciled();
-  ShenandoahHeap::heap()->marking_context()->reset_top_bitmap(this);
+  const ShenandoahHeap* heap = ShenandoahHeap::heap();
+  assert(heap->generation_for(affiliation())->is_mark_complete(), "Marking should be complete here.");
+  heap->marking_context()->reset_top_bitmap(this);
 }
 
 void ShenandoahHeapRegion::make_empty() {
@@ -393,7 +383,7 @@ size_t ShenandoahHeapRegion::get_plab_allocs() const {
 
 void ShenandoahHeapRegion::set_live_data(size_t s) {
   assert(Thread::current()->is_VM_thread(), "by VM thread");
-  _live_data = (s >> LogHeapWordSize);
+  _live_data.store_relaxed(s >> LogHeapWordSize);
 }
 
 void ShenandoahHeapRegion::print_on(outputStream* st) const {
@@ -444,7 +434,7 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
   st->print("|TAMS " SHR_PTR_FORMAT,
             p2i(ShenandoahHeap::heap()->marking_context()->top_at_mark_start(const_cast<ShenandoahHeapRegion*>(this))));
   st->print("|UWM " SHR_PTR_FORMAT,
-            p2i(_update_watermark));
+            p2i(_update_watermark.load_relaxed()));
   st->print("|U %5zu%1s", byte_size_in_proper_unit(used()),                proper_unit_for_byte_size(used()));
   st->print("|T %5zu%1s", byte_size_in_proper_unit(get_tlab_allocs()),     proper_unit_for_byte_size(get_tlab_allocs()));
   st->print("|G %5zu%1s", byte_size_in_proper_unit(get_gclab_allocs()),    proper_unit_for_byte_size(get_gclab_allocs()));
@@ -471,9 +461,9 @@ bool ShenandoahHeapRegion::oop_coalesce_and_fill(bool cancellable) {
   ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
   ShenandoahMarkingContext* marking_context = heap->marking_context();
 
-  // Expect marking to be completed before these threads invoke this service.
-  assert(heap->gc_generation()->is_mark_complete(), "sanity");
-  shenandoah_assert_generations_reconciled();
+  // Expect marking to be completed for the old generation before we fill in unmarked objects
+  assert(heap->old_generation()->is_mark_complete(), "sanity");
+  assert(is_old(), "Only need to coalesce and fill old regions");
 
   // All objects above TAMS are considered live even though their mark bits will not be set.  Note that young-
   // gen evacuations that interrupt a long-running old-gen concurrent mark may promote objects into old-gen
@@ -575,6 +565,7 @@ void ShenandoahHeapRegion::recycle_internal() {
   assert(_recycling.is_set() && is_trash(), "Wrong state");
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
+  _mixed_candidate_garbage_words = 0;
   set_top(bottom());
   clear_live_data();
   reset_alloc_metadata();
@@ -588,21 +579,23 @@ void ShenandoahHeapRegion::recycle_internal() {
   set_affiliation(FREE);
 }
 
+// Upon return, this region has been recycled.  We try to recycle it.
+// We may fail if some other thread recycled it before we do.
 void ShenandoahHeapRegion::try_recycle_under_lock() {
   shenandoah_assert_heaplocked();
   if (is_trash() && _recycling.try_set()) {
     if (is_trash()) {
-      ShenandoahHeap* heap = ShenandoahHeap::heap();
-      ShenandoahGeneration* generation = heap->generation_for(affiliation());
-
-      heap->decrease_used(generation, used());
-      generation->decrement_affiliated_region_count();
-
+      // At freeset rebuild time, which precedes recycling of collection set, we treat all cset regions as
+      // part of capacity, as empty, as fully available, and as unaffiliated.  This provides short-lived optimism
+      // for triggering heuristics.  It greatly simplifies and reduces the locking overhead required
+      // by more time-precise accounting of these details.
       recycle_internal();
     }
     _recycling.unset();
   } else {
     // Ensure recycling is unset before returning to mutator to continue memory allocation.
+    // Otherwise, the mutator might see region as fully recycled and might change its affiliation only to have
+    // the racing GC worker thread overwrite its affiliation to FREE.
     while (_recycling.is_set()) {
       if (os::is_MP()) {
         SpinPause();
@@ -613,16 +606,17 @@ void ShenandoahHeapRegion::try_recycle_under_lock() {
   }
 }
 
+// Note that return from try_recycle() does not mean the region has been recycled.  It only means that
+// some GC worker thread has taken responsibility to recycle the region, eventually.
 void ShenandoahHeapRegion::try_recycle() {
   shenandoah_assert_not_heaplocked();
   if (is_trash() && _recycling.try_set()) {
     // Double check region state after win the race to set recycling flag
     if (is_trash()) {
-      ShenandoahHeap* heap = ShenandoahHeap::heap();
-      ShenandoahGeneration* generation = heap->generation_for(affiliation());
-      heap->decrease_used(generation, used());
-      generation->decrement_affiliated_region_count_without_lock();
-
+      // At freeset rebuild time, which precedes recycling of collection set, we treat all cset regions as
+      // part of capacity, as empty, as fully available, and as unaffiliated.  This provides short-lived optimism
+      // for triggering and pacing heuristics.  It greatly simplifies and reduces the locking overhead required
+      // by more time-precise accounting of these details.
       recycle_internal();
     }
     _recycling.unset();
@@ -822,11 +816,7 @@ void ShenandoahHeapRegion::do_commit() {
 void ShenandoahHeapRegion::do_uncommit() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (!heap->is_heap_region_special()) {
-    bool success = os::uncommit_memory((char *) bottom(), RegionSizeBytes);
-    if (!success) {
-      log_warning(gc)("Region uncommit failed: " PTR_FORMAT " (%zu bytes)", p2i(bottom()), RegionSizeBytes);
-      assert(false, "Region uncommit should always succeed");
-    }
+    os::uncommit_memory((char *) bottom(), RegionSizeBytes);
   }
   if (!heap->is_bitmap_region_special()) {
     heap->uncommit_bitmap_slice(this);
@@ -844,20 +834,20 @@ void ShenandoahHeapRegion::set_state(RegionState to) {
     evt.set_to(to);
     evt.commit();
   }
-  Atomic::store(&_state, to);
+  _state.store_relaxed(to);
 }
 
 void ShenandoahHeapRegion::record_pin() {
-  Atomic::add(&_critical_pins, (size_t)1);
+  _critical_pins.add_then_fetch((size_t)1);
 }
 
 void ShenandoahHeapRegion::record_unpin() {
   assert(pin_count() > 0, "Region %zu should have non-zero pins", index());
-  Atomic::sub(&_critical_pins, (size_t)1);
+  _critical_pins.sub_then_fetch((size_t)1);
 }
 
 size_t ShenandoahHeapRegion::pin_count() const {
-  return Atomic::load(&_critical_pins);
+  return _critical_pins.load_relaxed();
 }
 
 void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation) {
@@ -869,7 +859,7 @@ void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation
     log_debug(gc)("Setting affiliation of Region %zu from %s to %s, top: " PTR_FORMAT ", TAMS: " PTR_FORMAT
                   ", watermark: " PTR_FORMAT ", top_bitmap: " PTR_FORMAT,
                   index(), shenandoah_affiliation_name(region_affiliation), shenandoah_affiliation_name(new_affiliation),
-                  p2i(top()), p2i(ctx->top_at_mark_start(this)), p2i(_update_watermark), p2i(ctx->top_bitmap(this)));
+                  p2i(top()), p2i(ctx->top_at_mark_start(this)), p2i(_update_watermark.load_relaxed()), p2i(ctx->top_bitmap(this)));
   }
 
 #ifdef ASSERT
@@ -910,12 +900,11 @@ void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation
   heap->set_affiliation(this, new_affiliation);
 }
 
-void ShenandoahHeapRegion::decrement_humongous_waste() const {
+void ShenandoahHeapRegion::decrement_humongous_waste() {
   assert(is_humongous(), "Should only use this for humongous regions");
   size_t waste_bytes = free();
   if (waste_bytes > 0) {
     ShenandoahHeap* heap = ShenandoahHeap::heap();
-    ShenandoahGeneration* generation = heap->generation_for(affiliation());
-    heap->decrease_humongous_waste(generation, waste_bytes);
+    heap->free_set()->decrease_humongous_waste_for_regular_bypass(this, waste_bytes);
   }
 }

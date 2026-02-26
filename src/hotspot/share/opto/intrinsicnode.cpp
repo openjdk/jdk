@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,8 @@ Node* StrIntrinsicNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (in(0) && in(0)->is_top())  return nullptr;
 
   if (can_reshape) {
-    Node* mem = phase->transform(in(MemNode::Memory));
-    // If transformed to a MergeMem, get the desired slice
+    Node* mem = in(MemNode::Memory);
+    // If mem input is a MergeMem, get the desired slice
     uint alias_idx = phase->C->get_alias_index(adr_type());
     mem = mem->is_MergeMem() ? mem->as_MergeMem()->memory_at(alias_idx) : mem;
     if (mem != in(MemNode::Memory)) {
@@ -273,7 +273,7 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
       //  result.lo = 0
       if (maskcon != -1L) {
         int bitcount = population_count(static_cast<julong>(bt == T_INT ? maskcon & 0xFFFFFFFFL : maskcon));
-        hi = (1UL << bitcount) - 1;
+        hi = right_n_bits_typed<jlong>(bitcount);
         lo = 0L;
       } else {
         // preserve originally assigned hi (MAX_INT/LONG) and lo (MIN_INT/LONG) values
@@ -376,7 +376,7 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
         // Rule 3:
         // We can further constrain the upper bound of bit compression if the number of bits
         // which can be set(one) is less than the maximum number of bits of integral type.
-        hi = MIN2((jlong)((1UL << result_bit_width) - 1L), hi);
+        hi = MIN2(right_n_bits_typed<jlong>(result_bit_width), hi);
       }
     } else {
       assert(opc == Op_ExpandBits, "");

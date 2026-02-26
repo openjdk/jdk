@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  *          java.instrument
  * @requires vm.jvmti
  * @run main RedefineClassHelper
- * @run main/othervm -Xmx256m -XX:MaxMetaspaceSize=64m -javaagent:redefineagent.jar -Xlog:all=trace:file=all.log RedefineClasses
+ * @run main/othervm/timeout=480 -Xmx256m -XX:MaxMetaspaceSize=64m -javaagent:redefineagent.jar -Xlog:all=trace:file=all.log RedefineClasses
  */
 
 // package access top-level class to avoid problem with RedefineClassHelper

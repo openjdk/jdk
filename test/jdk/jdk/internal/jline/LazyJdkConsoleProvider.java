@@ -23,15 +23,19 @@
 
 /**
  * @test
- * @bug 8333086 8344706
+ * @bug 8333086 8344706 8361613
  * @summary Verify the JLine backend is not initialized for simple printing.
- * @enablePreview
- * @modules jdk.internal.le/jdk.internal.org.jline.reader
+ * @modules java.base/jdk.internal.io
+ *          jdk.internal.le/jdk.internal.org.jline
+ *          jdk.internal.le/jdk.internal.org.jline.reader
  *          jdk.internal.le/jdk.internal.org.jline.terminal
  * @library /test/lib
  * @run main LazyJdkConsoleProvider
  */
 
+import java.nio.charset.StandardCharsets;
+
+import jdk.internal.org.jline.JdkConsoleProviderImpl;
 import jdk.internal.org.jline.reader.LineReader;
 import jdk.internal.org.jline.terminal.Terminal;
 
@@ -41,19 +45,18 @@ import jdk.test.lib.process.ProcessTools;
 public class LazyJdkConsoleProvider {
 
     public static void main(String... args) throws Throwable {
+        // directly instantiate JLine JdkConsole, simulating isTTY=true
         switch (args.length > 0 ? args[0] : "default") {
             case "write" -> {
-                System.console().printf("Hello!\n");
-                System.console().printf("Hello!");
-                System.console().format("\nHello!\n");
-                System.console().flush();
-                IO.println("Hello!");
-                IO.print("Hello!");
+                var impl = new JdkConsoleProviderImpl().console(true, StandardCharsets.UTF_8, StandardCharsets.UTF_8);
+                impl.println("Hello!\n");
+                impl.println("Hello!");
+                impl.format(null, "\nHello!\n");
+                impl.flush();
             }
-            case "read" -> System.console().readLine("Hello!");
-            case "IO-read" -> {
-                IO.readln("Hello!");
-            }
+            case "read" -> new JdkConsoleProviderImpl()
+                .console(true, StandardCharsets.UTF_8, StandardCharsets.UTF_8)
+                .readLine(null, "Hello!");
             case "default" -> {
                 new LazyJdkConsoleProvider().runTest();
             }
@@ -64,14 +67,15 @@ public class LazyJdkConsoleProvider {
         record TestCase(String testKey, String expected, String notExpected) {}
         TestCase[] testCases = new TestCase[] {
             new TestCase("write", null, Terminal.class.getName()),
-            new TestCase("read", LineReader.class.getName(), null),
-            new TestCase("IO-read", null, Terminal.class.getName())
+            new TestCase("read", LineReader.class.getName(), null)
         };
         for (TestCase tc : testCases) {
             ProcessBuilder builder =
-                    ProcessTools.createTestJavaProcessBuilder("--enable-preview",
-                                                              "-verbose:class",
-                                                              "-Djdk.console=jdk.internal.le",
+                    ProcessTools.createTestJavaProcessBuilder("-verbose:class",
+                                                              "--add-exports",
+                                                              "java.base/jdk.internal.io=ALL-UNNAMED",
+                                                              "--add-exports",
+                                                              "jdk.internal.le/jdk.internal.org.jline=ALL-UNNAMED",
                                                               LazyJdkConsoleProvider.class.getName(),
                                                               tc.testKey());
             OutputAnalyzer output = ProcessTools.executeProcess(builder, "");

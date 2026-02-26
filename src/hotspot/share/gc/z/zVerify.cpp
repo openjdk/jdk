@@ -51,8 +51,8 @@
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/preserveException.hpp"
-#include "utilities/resourceHash.hpp"
 #include "utilities/vmError.hpp"
 
 #ifdef ASSERT
@@ -130,7 +130,10 @@ static void z_verify_root_oop_object(zaddress addr, void* p) {
 
 static void z_verify_old_oop(zpointer* p) {
   const zpointer o = *p;
-  assert(o != zpointer::null, "Old should not contain raw null");
+  if (o == zpointer::null) {
+    guarantee(ZGeneration::young()->is_phase_mark_complete(), "Only possible when flip promoting");
+    guarantee(ZHeap::heap()->page(p)->is_allocating(), "Raw nulls only possible in allocating pages");
+  }
   if (!z_is_null_relaxed(o)) {
     if (ZPointer::is_mark_good(o)) {
       // Even though the pointer is mark good, we can't verify that it should
@@ -444,7 +447,7 @@ public:
   virtual void do_field(oop base, oop* p) {
     _visited_base = to_zaddress(base);
     _visited_p = (volatile zpointer*)p;
-    _visited_ptr_pre_loaded = Atomic::load(_visited_p);
+    _visited_ptr_pre_loaded = AtomicAccess::load(_visited_p);
   }
 };
 
@@ -516,7 +519,7 @@ void ZVerify::after_weak_processing() {
 // Remembered set verification
 //
 
-typedef ResourceHashtable<volatile zpointer*, bool, 1009, AnyObj::C_HEAP, mtGC> ZStoreBarrierBufferTable;
+typedef HashTable<volatile zpointer*, bool, 1009, AnyObj::C_HEAP, mtGC> ZStoreBarrierBufferTable;
 
 static ZStoreBarrierBufferTable* z_verify_store_barrier_buffer_table = nullptr;
 
@@ -652,7 +655,7 @@ public:
 
   virtual void do_oop(oop* p_) {
     volatile zpointer* const p = (volatile zpointer*)p_;
-    const zpointer ptr = Atomic::load(p);
+    const zpointer ptr = AtomicAccess::load(p);
 
     // Order this load w.r.t. the was_remembered load which can race when
     // the remset scanning of the to-space object is concurrently forgetting
@@ -695,7 +698,7 @@ public:
     }
 
     OrderAccess::loadload();
-    if (Atomic::load(p) != ptr) {
+    if (AtomicAccess::load(p) != ptr) {
       // Order the was_remembered bitmap load w.r.t. the reload of the zpointer.
       // Sometimes the was_remembered() call above races with clearing of the
       // previous bits, when the to-space object is concurrently forgetting

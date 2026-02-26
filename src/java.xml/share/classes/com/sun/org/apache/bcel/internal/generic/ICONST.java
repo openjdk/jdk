@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -25,7 +25,6 @@ package com.sun.org.apache.bcel.internal.generic;
  * <PRE>
  * Stack: ... -&gt; ...,
  * </PRE>
- *
  */
 public class ICONST extends Instruction implements ConstantPushInstruction {
 

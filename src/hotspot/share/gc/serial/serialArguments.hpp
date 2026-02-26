@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +28,14 @@
 
 #include "gc/shared/genArguments.hpp"
 
-class CollectedHeap;
-
 class SerialArguments : public GenArguments {
 private:
+  virtual void initialize_alignments();
   virtual void initialize();
+  virtual size_t conservative_max_heap_alignment();
   virtual CollectedHeap* create_heap();
+  virtual size_t young_gen_size_lower_bound();
+  virtual size_t old_gen_size_lower_bound();
 };
 
 #endif // SHARE_GC_SERIAL_SERIALARGUMENTS_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,7 @@
  * @library /lib/testlibrary/java/util/jar /test/lib
  * @modules jdk.jartool
  *          jdk.compiler
- *          jdk.httpserver
  * @build CreateMultiReleaseTestJars
- *        jdk.test.lib.net.SimpleHttpServer
  *        jdk.test.lib.compiler.Compiler
  *        jdk.test.lib.util.JarBuilder
  * @run testng MultiReleaseJarHttpProperties
@@ -51,21 +49,28 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Path;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-import jdk.test.lib.net.SimpleHttpServer;
+import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.SimpleFileServer;
 import jdk.test.lib.net.URIBuilder;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 public class MultiReleaseJarHttpProperties extends MultiReleaseJarProperties {
-    private SimpleHttpServer server;
+    private HttpServer server;
+    private ExecutorService executor;
     static final String TESTCONTEXT = "/multi-release.jar";  //mapped to local file path
 
     @BeforeClass
     public void initialize() throws Exception {
-        server = new SimpleHttpServer(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), TESTCONTEXT,
-                System.getProperty("user.dir", "."));
+        server = SimpleFileServer.createFileServer(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0),
+                Path.of(System.getProperty("user.dir", ".")), SimpleFileServer.OutputLevel.INFO);
+        executor = Executors.newCachedThreadPool();
+        server.setExecutor(executor);
         server.start();
         super.initialize();
     }
@@ -73,7 +78,7 @@ public class MultiReleaseJarHttpProperties extends MultiReleaseJarProperties {
     @Override
     protected void initializeClassLoader() throws Exception {
         URL[] urls = new URL[]{
-                URIBuilder.newBuilder().scheme("http").port(server.getPort()).loopback()
+                URIBuilder.newBuilder().scheme("http").port(server.getAddress().getPort()).loopback()
                         .path(TESTCONTEXT).toURL(),
         };
         cldr = new URLClassLoader(urls);
@@ -84,8 +89,10 @@ public class MultiReleaseJarHttpProperties extends MultiReleaseJarProperties {
     @AfterClass
     public void close() throws IOException {
         // Windows requires server to stop before file is deleted
-        if (server != null)
-            server.stop();
+        if (server != null) {
+            server.stop(0);
+            executor.shutdown();
+        }
         super.close();
     }
 

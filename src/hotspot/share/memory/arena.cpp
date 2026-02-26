@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,7 +24,7 @@
  */
 
 #include "compiler/compilationMemoryStatistic.hpp"
-#include "memory/allocation.hpp"
+#include "cppstdlib/new.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/arena.hpp"
 #include "memory/resourceArea.hpp"
@@ -40,19 +40,26 @@
 // It is used very early in the vm initialization, in allocation
 // code and other areas.  For many calls, the current thread has not
 // been created so we cannot use Mutex.
-static PlatformMutex* GlobalChunkPoolMutex = nullptr;
+static DeferredStatic<PlatformMutex> GlobalChunkPoolMutex;
 
 void Arena::initialize_chunk_pool() {
-  GlobalChunkPoolMutex = new PlatformMutex();
+  GlobalChunkPoolMutex.initialize();
 }
 
-ChunkPoolLocker::ChunkPoolLocker() {
-  assert(GlobalChunkPoolMutex != nullptr, "must be initialized");
-  GlobalChunkPoolMutex->lock();
+ChunkPoolLocker::ChunkPoolLocker(LockStrategy ls) {
+  if (ls == LockStrategy::Lock) {
+    GlobalChunkPoolMutex->lock();
+    _locked = true;
+  } else {
+    assert(ls == LockStrategy::Try, "must be");
+    _locked = GlobalChunkPoolMutex->try_lock();
+  }
 };
 
 ChunkPoolLocker::~ChunkPoolLocker() {
-  GlobalChunkPoolMutex->unlock();
+  if (_locked) {
+    GlobalChunkPoolMutex->unlock();
+  }
 };
 
 // Pre-defined default chunk sizes must be arena-aligned, see Chunk::operator new()
@@ -323,6 +330,9 @@ void* Arena::grow(size_t x, AllocFailType alloc_failmode) {
   size_t len = MAX2(ARENA_ALIGN(x), (size_t) Chunk::size);
 
   if (MemTracker::check_exceeds_limit(x, _mem_tag)) {
+    if (alloc_failmode == AllocFailStrategy::EXIT_OOM) {
+      vm_exit_out_of_memory(x, OOM_MALLOC_ERROR, "MallocLimit in Arena::grow");
+    }
     return nullptr;
   }
 

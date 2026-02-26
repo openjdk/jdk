@@ -46,7 +46,10 @@ void InlinePrinter::print_on(outputStream* tty) const {
   if (!is_enabled()) {
     return;
   }
-  _root.dump(tty, -1);
+  // using stringStream prevents interleaving with multiple compile threads
+  stringStream ss;
+  _root.dump(&ss, -1);
+  tty->print_raw(ss.freeze());
 }
 
 InlinePrinter::IPInlineSite* InlinePrinter::locate(JVMState* state, ciMethod* callee) {
@@ -68,21 +71,25 @@ InlinePrinter::IPInlineSite* InlinePrinter::locate(JVMState* state, ciMethod* ca
 }
 
 InlinePrinter::IPInlineSite& InlinePrinter::IPInlineSite::at_bci(int bci, ciMethod* callee) {
-  auto find_result = _children.find(bci);
-  IPInlineSite& child = find_result.node->val();
+  RBTreeCHeap<int, IPInlineSite, Cmp, mtCompiler>::Cursor cursor = _children.cursor(bci);
 
-  if (find_result.new_node) {
-    assert(callee != nullptr, "an inline call is missing in the chain up to the root");
-    child.set_source(callee, bci);
-  } else { // We already saw a call at this site before
+  if (cursor.found()) { // We already saw a call at this site before
+    IPInlineSite& child = cursor.node()->val();
     if (callee != nullptr && callee != child._method) {
       outputStream* stream = child.add(InliningResult::SUCCESS);
       stream->print("callee changed to ");
       CompileTask::print_inline_inner_method_info(stream, callee);
     }
+    return child;
   }
 
-  return child;
+  assert(callee != nullptr, "an inline call is missing in the chain up to the root");
+
+  RBNode<int, IPInlineSite>* node = _children.allocate_node(bci);
+  _children.insert_at_cursor(node, cursor);
+  node->val().set_source(callee, bci);
+
+  return node->val();
 }
 
 outputStream* InlinePrinter::IPInlineSite::add(InliningResult result) {
