@@ -692,7 +692,9 @@ public class ZipFile implements ZipConstants, Closeable {
         final Set<InputStream> istreams;
 
         // List of cached Inflater objects for decompression
-        List<Inflater> inflaterCache;
+        final List<Inflater> inflaterCache;
+        // Flag to mark inflater cache as closed. Access guarded by 'inflaterCache'.
+        boolean inflaterCacheClosed;
 
         final Cleanable cleanable;
 
@@ -728,36 +730,27 @@ public class ZipFile implements ZipConstants, Closeable {
          * Releases the specified inflater to the list of available inflaters.
          */
         void releaseInflater(Inflater inf) {
-            List<Inflater> inflaters = this.inflaterCache;
-            if (inflaters != null) {
-                synchronized (inflaters) {
-                    // double checked!
-                    if (inflaters == this.inflaterCache) {
-                        inf.reset();
-                        inflaters.add(inf);
-                        return;
-                    }
+            synchronized (inflaterCache) {
+                if (inflaterCacheClosed) {
+                    // inflaters cache already closed - just end it.
+                    inf.end();
+                } else {
+                    inf.reset();
+                    inflaterCache.add(inf);
                 }
             }
-            // inflaters cache already closed - just end it.
-            inf.end();
         }
 
         public void run() {
             IOException ioe = null;
 
             // Release cached inflaters and close the cache first
-            List<Inflater> inflaters = this.inflaterCache;
-            if (inflaters != null) {
-                synchronized (inflaters) {
-                    // no need to double-check as only one thread gets a
-                    // chance to execute run() (Cleaner guarantee)...
-                    for (Inflater inf : inflaters) {
-                        inf.end();
-                    }
-                    // close inflaters cache
-                    this.inflaterCache = null;
+            synchronized (inflaterCache) {
+                for (Inflater inf : inflaterCache) {
+                    inf.end();
                 }
+                // close inflaters cache
+                this.inflaterCacheClosed = true;
             }
 
             // Close streams, release their inflaters
