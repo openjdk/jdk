@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,13 @@
  * @run main TestXDH
  */
 
+import java.math.BigInteger;
 import java.security.*;
 import java.security.spec.*;
 import javax.crypto.*;
 import java.util.Arrays;
 import java.util.HexFormat;
 
-import jdk.test.lib.Convert;
 import jdk.test.lib.hexdump.ASN1Formatter;
 import jdk.test.lib.hexdump.HexPrinter;
 
@@ -354,7 +354,6 @@ public class TestXDH {
             throw new RuntimeException("fail: expected=" + result + ", actual="
                 + HexFormat.of().withUpperCase().formatHex(sharedSecret));
         }
-
     }
 
     private static void runDiffieHellmanTest(String curveName, String a_pri,
@@ -366,7 +365,7 @@ public class TestXDH {
             HexFormat.of().parseHex(a_pri));
         PrivateKey privateKey = kf.generatePrivate(privateSpec);
         KeySpec publicSpec = new XECPublicKeySpec(paramSpec,
-            Convert.hexStringToBigInteger(b_pub));
+            hexStringToBigInteger(b_pub));
         PublicKey publicKey = kf.generatePublic(publicSpec);
 
         byte[] encodedPrivateKey = privateKey.getEncoded();
@@ -391,6 +390,21 @@ public class TestXDH {
             throw new RuntimeException("fail: expected=" + result + ", actual="
                 + HexFormat.of().withUpperCase().formatHex(sharedSecret));
         }
+    }
+
+    /*
+     * Converts a hexidecimal string to the corresponding little-endian
+     * number as a BigInteger
+     */
+    private static BigInteger hexStringToBigInteger(String str) {
+        BigInteger result = BigInteger.ZERO;
+        for (int i = 0; i < str.length() / 2; i++) {
+            int curVal = Character.digit(str.charAt(2 * i), 16);
+            curVal <<= 4;
+            curVal += Character.digit(str.charAt(2 * i + 1), 16);
+            result = result.add(BigInteger.valueOf(curVal).shiftLeft(8 * i));
+        }
+        return result;
     }
 
     /*

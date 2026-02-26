@@ -41,23 +41,6 @@ public class Convert {
         return result;
     }
 
-    /*
-     * Convert a hexadecimal string to the corresponding little-ending number
-     * as a BigInteger. The clearHighBit argument determines whether the most
-     * significant bit of the highest byte should be set to 0 in the result.
-     */
-    public static
-    BigInteger hexStringToBigInteger(String str) {
-        BigInteger result = BigInteger.ZERO;
-        for (int i = 0; i < str.length() / 2; i++) {
-            int curVal = Character.digit(str.charAt(2 * i), 16);
-            curVal <<= 4;
-            curVal += Character.digit(str.charAt(2 * i + 1), 16);
-            result = result.add(BigInteger.valueOf(curVal).shiftLeft(8 * i));
-        }
-        return result;
-    }
-
     private static EdECPoint byteArrayToEdPoint(byte[] arr) {
         byte msb = arr[arr.length - 1];
         boolean xOdd = (msb & 0x80) != 0;
