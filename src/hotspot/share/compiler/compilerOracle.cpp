@@ -486,7 +486,7 @@ bool CompilerOracle::applies_to_comp_level(const methodHandle& method, CompileCo
     return false;
   }
 
-  return command_level && comp_level_bitmask(current_level);
+  return command_level & comp_level_bitmask(current_level);
 }
 
 bool CompilerOracle::has_option(const methodHandle& method, CompileCommandEnum option) {
@@ -500,8 +500,7 @@ bool CompilerOracle::should_exclude(const methodHandle& method, const CompLevel 
     return true;
   }
   if (has_command(CompileCommandEnum::CompileOnly)) {
-    intx command_level;
-    return !has_option_value(method, CompileCommandEnum::CompileOnly, command_level);
+    return !applies_to_comp_level(method, CompileCommandEnum::CompileOnly, level);
   }
   return false;
 }

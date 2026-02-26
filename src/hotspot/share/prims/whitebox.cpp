@@ -904,7 +904,9 @@ WB_ENTRY(jboolean, WB_IsMethodCompilable(JNIEnv* env, jobject o, jobject method,
   // to exclude a compilation of 'method'.
   if (comp_level == CompLevel_any) {
     // Both compilers could have ExcludeOption set. Check all combinations.
-    bool excluded_c1 = is_excluded_for_compiler(CompileBroker::compiler1(), CompLevel_simple, mh);
+    bool excluded_c1 = is_excluded_for_compiler(CompileBroker::compiler1(), CompLevel_simple, mh)
+                    && is_excluded_for_compiler(CompileBroker::compiler1(), CompLevel_limited_profile, mh)
+                    && is_excluded_for_compiler(CompileBroker::compiler1(), CompLevel_full_profile, mh);
     bool excluded_c2 = is_excluded_for_compiler(CompileBroker::compiler2(), CompLevel_full_optimization, mh);
     if (excluded_c1 && excluded_c2) {
       // Compilation of 'method' excluded by both compilers.
