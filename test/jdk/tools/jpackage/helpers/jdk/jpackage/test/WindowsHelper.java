@@ -43,6 +43,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
 
@@ -52,6 +53,12 @@ public class WindowsHelper {
         cmd.verifyIsOfType(PackageType.WINDOWS);
         return String.format("%s-%s%s", cmd.installerName(), cmd.version(),
                 cmd.packageType().getSuffix());
+    }
+
+    static String getNormalizedVersion(String version) {
+        // Windows requires between 2 and 4 components version string.
+        // One component will be normalized to 2 and more then 4 will be trim to 4.
+        return DottedVersion.lazy(version).trim(4).pad(2).toComponentsString();
     }
 
     static Path getInstallationDirectory(JPackageCommand cmd) {

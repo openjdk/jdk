@@ -30,6 +30,7 @@ import static jdk.jpackage.internal.MacPackagingPipeline.APPLICATION_LAYOUT;
 import static jdk.jpackage.internal.MacRuntimeValidator.validateRuntimeHasJliLib;
 import static jdk.jpackage.internal.MacRuntimeValidator.validateRuntimeHasNoBinDir;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.SIGN_MAC_APP_IMAGE;
+import static jdk.jpackage.internal.cli.StandardOption.APP_VERSION;
 import static jdk.jpackage.internal.cli.StandardOption.APPCLASS;
 import static jdk.jpackage.internal.cli.StandardOption.ICON;
 import static jdk.jpackage.internal.cli.StandardOption.MAC_APP_CATEGORY;
@@ -62,6 +63,7 @@ import jdk.jpackage.internal.SigningIdentityBuilder.StandardCertificateSelector;
 import jdk.jpackage.internal.cli.OptionValue;
 import jdk.jpackage.internal.cli.Options;
 import jdk.jpackage.internal.cli.StandardFaOption;
+import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ExternalApplication;
 import jdk.jpackage.internal.model.FileAssociation;
@@ -216,7 +218,13 @@ final class MacFromOptions {
             superAppBuilder.launchers(new ApplicationLaunchers(MacLauncher.create(mainLauncher), launchers.additionalLaunchers()));
         }
 
-        final var app = superAppBuilder.create();
+        var app = superAppBuilder.create();
+
+        if (!APP_VERSION.containsIn(options)) {
+            // User didn't explicitly specify the version on the command line. jpackage derived it from the input.
+            // In this case it should ensure the derived value is valid MacOS version.
+            app = ApplicationBuilder.normalizeVersion(app, app.version(), MacFromOptions::normalizeVersion);
+        }
 
         final var appBuilder = new MacApplicationBuilder(app);
 
@@ -330,5 +338,12 @@ final class MacFromOptions {
         StandardFaOption.MAC_UTTYPECONFORMSTO.ifPresentIn(options, builder::utTypeConformsTo);
 
         return builder.create(fa);
+    }
+
+    static String normalizeVersion(String version) {
+        // macOS requires 1, 2 or 3 components version string.
+        // When reading from release file it can be 1 or 3 or maybe more.
+        // We will always normalize to 3 components if needed.
+        return DottedVersion.lazy(version).trim(3).toComponentsString();
     }
 }

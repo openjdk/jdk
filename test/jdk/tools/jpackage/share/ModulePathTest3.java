@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import javax.xml.xpath.XPathExpressionException;
+import jdk.jpackage.internal.util.MacBundle;
 import jdk.jpackage.test.AppImageFile;
 import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JavaAppDesc;
@@ -53,9 +55,8 @@ import jdk.jpackage.test.TKit;
 
 public final class ModulePathTest3 {
 
-    public ModulePathTest3(String jlinkOutputSubdir, String runtimeSubdir) {
-        this.jlinkOutputSubdir = Path.of(jlinkOutputSubdir);
-        this.runtimeSubdir = Path.of(runtimeSubdir);
+    public ModulePathTest3(RuntimeType runtimeType) {
+        this.runtimeType = Objects.requireNonNull(runtimeType);
     }
 
     /**
@@ -74,8 +75,24 @@ public final class ModulePathTest3 {
         HelloApp.createBundle(appDesc, moduleOutputDir);
 
         final Path workDir = TKit.createTempDirectory("runtime").resolve("data");
-        final Path jlinkOutputDir = workDir.resolve(jlinkOutputSubdir);
-        Files.createDirectories(jlinkOutputDir.getParent());
+        final Path jlinkOutputDir;
+        switch (runtimeType) {
+            case IMAGE -> {
+                jlinkOutputDir = workDir;
+            }
+            case MAC_BUNDLE -> {
+                var macBundle = new MacBundle(workDir);
+
+                // Create macOS bundle structure sufficient to pass jpackage validation.
+                Files.createDirectories(macBundle.homeDir().getParent());
+                Files.createDirectories(macBundle.macOsDir());
+                Files.createFile(macBundle.infoPlistFile());
+                jlinkOutputDir = macBundle.homeDir();
+            }
+            default -> {
+                throw new AssertionError();
+            }
+        }
 
         new Executor()
         .setToolProvider(JavaTool.JLINK)
@@ -96,7 +113,7 @@ public final class ModulePathTest3 {
         .setDefaultInputOutput()
         .removeArgumentWithValue("--input")
         .addArguments("--module", appDesc.moduleName() + "/" + appDesc.className())
-        .setArgumentValue("--runtime-image", workDir.resolve(runtimeSubdir));
+        .setArgumentValue("--runtime-image", workDir);
 
         cmd.executeAndAssertHelloAppImageCreated();
 
@@ -108,23 +125,25 @@ public final class ModulePathTest3 {
     }
 
     @Parameters
-    public static Collection<?> data() {
-        final List<String[]> paths = new ArrayList<>();
-        paths.add(new String[] { "", "" });
+    public static Collection<Object[]> data() {
+        final List<RuntimeType> testCases = new ArrayList<>();
+        testCases.add(RuntimeType.IMAGE);
         if (TKit.isOSX()) {
             // On OSX jpackage should accept both runtime root and runtime home
             // directories.
-            paths.add(new String[] { "Contents/Home", "" });
+            testCases.add(RuntimeType.MAC_BUNDLE);
         }
 
-        List<Object[]> data = new ArrayList<>();
-        for (var pathCfg : paths) {
-            data.add(new Object[] { pathCfg[0], pathCfg[1] });
-        }
-
-        return data;
+        return testCases.stream().map(v -> {
+            return new Object[] {v};
+        }).toList();
     }
 
-    private final Path jlinkOutputSubdir;
-    private final Path runtimeSubdir;
+    public enum RuntimeType {
+        IMAGE,
+        MAC_BUNDLE,
+        ;
+    }
+
+    private final RuntimeType runtimeType;
 }

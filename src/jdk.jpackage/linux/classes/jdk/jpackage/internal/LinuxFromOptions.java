@@ -27,6 +27,8 @@ package jdk.jpackage.internal;
 import static jdk.jpackage.internal.FromOptions.buildApplicationBuilder;
 import static jdk.jpackage.internal.FromOptions.createPackageBuilder;
 import static jdk.jpackage.internal.LinuxPackagingPipeline.APPLICATION_LAYOUT;
+import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_LINUX_RPM;
+import static jdk.jpackage.internal.cli.StandardOption.APP_VERSION;
 import static jdk.jpackage.internal.cli.StandardOption.LINUX_APP_CATEGORY;
 import static jdk.jpackage.internal.cli.StandardOption.LINUX_DEB_MAINTAINER_EMAIL;
 import static jdk.jpackage.internal.cli.StandardOption.LINUX_MENU_GROUP;
@@ -37,8 +39,8 @@ import static jdk.jpackage.internal.cli.StandardOption.LINUX_RPM_LICENSE_TYPE;
 import static jdk.jpackage.internal.cli.StandardOption.LINUX_SHORTCUT_HINT;
 import static jdk.jpackage.internal.model.StandardPackageType.LINUX_DEB;
 import static jdk.jpackage.internal.model.StandardPackageType.LINUX_RPM;
-
 import jdk.jpackage.internal.cli.Options;
+import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.LinuxApplication;
 import jdk.jpackage.internal.model.LinuxDebPackage;
@@ -67,7 +69,18 @@ final class LinuxFromOptions {
 
         appBuilder.launchers().map(LinuxPackagingPipeline::normalizeShortcuts).ifPresent(appBuilder::launchers);
 
-        return LinuxApplication.create(appBuilder.create());
+        var app = appBuilder.create();
+
+        if (!APP_VERSION.containsIn(options)) {
+            // User didn't explicitly specify the version on the command line. jpackage derived it from the input.
+            // In this case it should ensure the derived value is valid RPM version.
+            if (OptionUtils.bundlingOperation(options) == CREATE_LINUX_RPM) {
+                app = ApplicationBuilder.normalizeVersion(app, app.version(),
+                        LinuxFromOptions::normalizeRpmVersion);
+            }
+        }
+
+        return LinuxApplication.create(app);
     }
 
     static LinuxRpmPackage createLinuxRpmPackage(Options options, LinuxRpmSystemEnvironment sysEnv) {
@@ -118,4 +131,15 @@ final class LinuxFromOptions {
         return pkgBuilder;
     }
 
+    static String normalizeRpmVersion(String version) {
+        // RPM does not support "-" symbol in version. In some case
+        // we might have "-" from "release" file version.
+        // Normalize version if it has "-" symbols. All other supproted version
+        // formats by "release" file should be supported by RPM.
+        if (version.contains("-")) {
+            return DottedVersion.lazy(version).toComponentsString();
+        }
+
+        return version;
+    }
 }

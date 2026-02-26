@@ -54,6 +54,8 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import jdk.jpackage.internal.cli.Options;
+import jdk.jpackage.internal.util.RuntimeImageUtils;
+import jdk.jpackage.internal.util.RuntimeVersionReader;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ApplicationLayout;
@@ -142,7 +144,6 @@ final class FromOptions {
         private RuntimeLayout predefinedRuntimeLayout;
     }
 
-
     private static <T extends Launcher> ApplicationBuilder createApplicationBuilder(Options options,
             Function<Options, Launcher> launcherCtor,
             BiFunction<T, Launcher, T> launcherOverrideCtor,
@@ -182,6 +183,18 @@ final class FromOptions {
 
         if (isRuntimeInstaller) {
             appBuilder.appImageLayout(runtimeLayout);
+            if (!APP_VERSION.containsIn(options)) {
+                // Version is not specified explicitly. Try to get it from the release file.
+                final var runtimeHome = RuntimeImageUtils.getRuntimeHomeForRuntimeRoot(
+                        predefinedRuntimeImage.orElseThrow());
+                final var releaseFile = RuntimeImageUtils.getReleaseFilePath(runtimeHome);
+                RuntimeVersionReader.readVersion(releaseFile)
+                        .ifPresent(version -> {
+                            appBuilder.version(version.toString());
+                            Log.verbose(I18N.format("message.release-version",
+                                    version.toString(), predefinedRuntimeImage.orElseThrow()));
+                        });
+            }
         } else {
             appBuilder.appImageLayout(appLayout);
 

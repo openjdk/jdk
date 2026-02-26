@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -112,6 +115,103 @@ public class DottedVersionTest {
         ));
 
         return data;
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    public void testTrim(DottedVersion ver, String expectedStr, int limit) {
+        var expected = DottedVersion.lazy(expectedStr);
+        var actual = ver.trim(limit);
+        assertEquals(expected, actual);
+        if (limit >= ver.getComponents().length) {
+            assertSame(ver, actual);
+        } else {
+            assertNotSame(ver, actual);
+        }
+        assertEquals(expectedStr, actual.toString());
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    public void testTrimNegative(DottedVersion ver, int limit) {
+        assertThrowsExactly(IllegalArgumentException.class, () -> {
+            ver.trim(limit);
+        });
+    }
+
+    private static Stream<Arguments> testTrim() {
+
+        var testCases = new ArrayList<Arguments>();
+
+        for (var suffix : List.of("", ".foo")) {
+            testCases.addAll(List.of(
+                    Arguments.of("1.02.3" + suffix, "" + suffix, 0),
+                    Arguments.of("1.02.3" + suffix, "1" + suffix, 1),
+                    Arguments.of("1.02.3" + suffix, "1.02" + suffix, 2),
+                    Arguments.of("1.02.3" + suffix, "1.02.3" + suffix, 3),
+                    Arguments.of("1.02.3" + suffix, "1.02.3" + suffix, 4)
+            ));
+        }
+
+        return testCases.stream().map(DottedVersionTest::mapFirstStringToDottedVersion);
+    }
+
+    private static Stream<Arguments> testTrimNegative() {
+        return Stream.of(
+                Arguments.of("10.5.foo", -1)
+        ).map(DottedVersionTest::mapFirstStringToDottedVersion);
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    public void testPad(DottedVersion ver, String expectedStr, int limit) {
+        var expected = DottedVersion.lazy(expectedStr);
+        var actual = ver.pad(limit);
+        assertEquals(expected, actual);
+        if (limit <= ver.getComponents().length) {
+            assertSame(ver, actual);
+        } else {
+            assertNotSame(ver, actual);
+        }
+        assertEquals(expectedStr, actual.toString());
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    public void testPadNegative(DottedVersion ver, int limit) {
+        assertThrowsExactly(IllegalArgumentException.class, () -> {
+            ver.pad(limit);
+        });
+    }
+
+    private static Stream<Arguments> testPad() {
+
+        var testCases = new ArrayList<Arguments>();
+
+        for (var suffix : List.of("", ".foo")) {
+            testCases.addAll(List.of(
+                    Arguments.of("" + suffix, "" + suffix, 0),
+                    Arguments.of("1.02.3" + suffix, "1.02.3" + suffix, 0),
+                    Arguments.of("" + suffix, "0" + suffix, 1),
+                    Arguments.of("1" + suffix, "1" + suffix, 1),
+                    Arguments.of("1" + suffix, "1.0" + suffix, 2),
+                    Arguments.of("1.02.3" + suffix, "1.02.3.0.0" + suffix, 5)
+            ));
+        }
+
+        return testCases.stream().map(DottedVersionTest::mapFirstStringToDottedVersion);
+    }
+
+    private static Stream<Arguments> testPadNegative() {
+        return Stream.of(
+                Arguments.of("10.5.foo", -1)
+        ).map(DottedVersionTest::mapFirstStringToDottedVersion);
+    }
+
+    private static Arguments mapFirstStringToDottedVersion(Arguments v) {
+        var objs = v.get();
+        objs[0] = DottedVersion.lazy((String)objs[0]);
+        return Arguments.of(objs);
     }
 
     record InvalidVersionTestSpec(String version, String invalidComponent) {

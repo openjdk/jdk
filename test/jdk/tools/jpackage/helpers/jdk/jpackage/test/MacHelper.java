@@ -74,6 +74,7 @@ import jdk.jpackage.internal.util.PListReader;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.RetryExecutor;
 import jdk.jpackage.internal.util.XmlUtils;
+import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingSupplier;
 import jdk.jpackage.test.MacSign.CertificateRequest;
@@ -1122,6 +1123,12 @@ public final class MacHelper {
         cmd.verifyIsOfType(PackageType.MAC);
         return String.format("%s-%s%s", getPackageName(cmd), cmd.version(),
                 cmd.packageType().getSuffix());
+    }
+
+    static String getNormalizedVersion(String version) {
+        // macOS requires 1, 2 or 3 components version string.
+        // We will always normalize to 3 components if needed.
+        return DottedVersion.lazy(version).trim(3).toComponentsString();
     }
 
     static Path getInstallationDirectory(JPackageCommand cmd) {

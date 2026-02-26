@@ -49,6 +49,7 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.test.LauncherShortcut.InvokeShortcutSpec;
@@ -125,6 +126,18 @@ public final class LinuxHelper {
 
         return String.format(format, getPackageName(cmd), version, releaseSuffix,
                 getDefaultPackageArch(packageType)) + packageType.getSuffix();
+    }
+
+    static String getNormalizedRpmVersion(String version) {
+        // RPM does not support "-" symbol in version. In some case
+        // we might have "-" from "release" file version.
+        // Normalize version if it has "-" symbols. All other supproted version
+        // formats by "release" file should be supported by RPM.
+        if (version.contains("-")) {
+            return DottedVersion.lazy(version).toComponentsString();
+        }
+
+        return version;
     }
 
     public static Stream<Path> getPackageFiles(JPackageCommand cmd) {

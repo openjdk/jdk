@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,29 @@
 
 import static jdk.internal.util.OperatingSystem.LINUX;
 import static jdk.internal.util.OperatingSystem.MACOS;
+import static jdk.internal.util.OperatingSystem.WINDOWS;
 import static jdk.jpackage.test.TKit.assertFalse;
 import static jdk.jpackage.test.TKit.assertTrue;
-
+import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Objects;
+import java.util.Properties;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import jdk.jpackage.internal.util.function.ExceptionBox;
 import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageStringBundle;
+import jdk.jpackage.test.JPackageOutputValidator;
 import jdk.jpackage.test.LinuxHelper;
 import jdk.jpackage.test.MacHelper;
 import jdk.jpackage.test.PackageTest;
@@ -108,6 +120,164 @@ public class RuntimePackageTest {
         // command line jpackage will create a package named 'sed' that will conflict
         // with the default 'sed' package.
         .run(Action.CREATE_AND_UNPACK);
+    }
+
+    @Test
+    @ParameterSupplier
+    public void testReleaseFileVersion(TestSpec spec) {
+        spec.run();
+    }
+
+    public static Collection<Object[]> testReleaseFileVersion() {
+        var testCases = new ArrayList<TestSpec>();
+
+        // Invalid version
+        testCases.add(TestSpec.build().invalidVersion("foo").create());
+        testCases.add(TestSpec.build().invalidVersion("").create());
+        testCases.add(TestSpec.build().invalidVersion("17.21.3+foo").create());
+
+        // Valid version
+        // For Windows and macOS version handling is same, but Linux RPM is different from Linux DEB
+        PackageType.NATIVE.stream().forEach(type -> {
+            for (var suffix : List.of("", "-foo", "-ea")) {
+                for (var ver : List.of("17", "17.1", "17.1.2", "17.1.2.3", "17.1.2.3.5")) {
+                    var builder = TestSpec.build().forPackageTypes(type);
+                    switch (type) {
+                        case PackageType.LINUX_RPM -> {
+                            builder.validVersion(ver + suffix).expectedVersion(ver);
+                        }
+                        case PackageType.LINUX_DEB -> {
+                            builder.validVersion(ver + suffix);
+                        }
+                        case PackageType.WIN_MSI, PackageType.WIN_EXE -> {
+                            builder.validVersion(ver + suffix);
+                            // Requires between 2 and 4
+                            // One component will be normalized to 2 and
+                            // more then 4 will be trim to 4.
+                            var components = ver.split("\\.");
+                            if (components.length == 1) {
+                                builder.expectedVersion(ver + ".0");
+                            } else {
+                                builder.expectedVersion(String.join(".",
+                                        Arrays.copyOf(components,
+                                        Math.min(components.length, 4))));
+                            }
+                        }
+                        case PackageType.MAC_DMG, PackageType.MAC_PKG  -> {
+                            // Requires between 1 and 3
+                            builder.validVersion(ver + suffix);
+                            var components = ver.split("\\.");
+                            builder.expectedVersion(String.join(".",
+                                        Arrays.copyOf(components,
+                                        Math.min(components.length, 3))));
+                        }
+                        default -> {
+                            throw ExceptionBox.reachedUnreachable();
+                        }
+                    }
+                    testCases.add(builder.create());
+                }
+            }
+        });
+
+        return testCases.stream().map(v -> {
+            return new Object[]{v};
+        }).toList();
+    }
+
+    record TestSpec(String version, Set<PackageType> packageTypes, String expectedAppVersion) {
+
+        public void run() {
+            new PackageTest()
+            .forTypes(packageTypes)
+            .addInitializer(cmd -> {
+                // Remove --input parameter from jpackage command line as we don't
+                // create input directory in the test and jpackage fails
+                // if --input references non existant directory.
+                cmd.removeArgumentWithValue("--input");
+
+                cmd.setFakeRuntime();
+
+                // Execute prerequisite actions, so fake runtime gets created
+                cmd.executePrerequisiteActions();
+
+                // Create release file with version in fake runtime
+                Path runtimeImage = Path.of(cmd.getArgumentValue("--runtime-image"));
+                Path releaseFile = runtimeImage.resolve("release");
+                Properties props = new Properties();
+                props.setProperty("JAVA_VERSION", "\"" + version + "\"");
+                try (Writer writer = Files.newBufferedWriter(releaseFile)) {
+                    props.store(writer, null);
+                }
+
+                // Validate output only if release version is valid for release file
+                if (isVersionValid()) {
+                    var releaseVersionStr = JPackageStringBundle.MAIN
+                            .cannedFormattedString("message.release-version",
+                            version, runtimeImage.toString());
+                    new JPackageOutputValidator()
+                            .expectMatchingStrings(releaseVersionStr)
+                            .matchTimestamps()
+                            .stripTimestamps()
+                            .applyTo(cmd);
+                    // Normalization message is only printed if we did normalization.
+                    if (!version.equals(expectedAppVersion)) {
+                        var versionNormalizedStr = JPackageStringBundle.MAIN
+                                .cannedFormattedString("message.version-normalized",
+                                expectedAppVersion, version);
+                        new JPackageOutputValidator()
+                                .expectMatchingStrings(versionNormalizedStr)
+                                .matchTimestamps()
+                                .stripTimestamps()
+                                .applyTo(cmd);
+                    }
+                }
+            })
+            // Just create package. It is enough to verify version in bundle name.
+            .run(Action.CREATE);
+        }
+
+        private boolean isVersionValid()  {
+            return !expectedAppVersion.equals("1.0");
+        }
+
+        static Builder build() {
+            return new Builder();
+        }
+
+        static final class Builder {
+
+            Builder validVersion(String v) {
+                version = v;
+                expectedAppVersion = v;
+                return this;
+            }
+
+            Builder expectedVersion(String v) {
+                expectedAppVersion = v;
+                return this;
+            }
+
+            Builder invalidVersion(String v) {
+                version = v;
+                expectedAppVersion = "1.0";
+                return this;
+            }
+
+            Builder forPackageTypes(PackageType... v) {
+                packageTypes = new LinkedHashSet<>(List.of(v));
+                return this;
+            }
+
+            TestSpec create() {
+                return new TestSpec(version, packageTypes, expectedAppVersion);
+            }
+
+            private String version;
+            // Default to NATIVE
+            private Set<PackageType> packageTypes = PackageType.NATIVE;
+            private String expectedAppVersion;
+        }
     }
 
     private static PackageTest init() {

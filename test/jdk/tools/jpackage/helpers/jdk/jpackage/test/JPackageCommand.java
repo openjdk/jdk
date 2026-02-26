@@ -43,7 +43,6 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -61,6 +60,8 @@ import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import jdk.jpackage.internal.util.RuntimeImageUtils;
+import jdk.jpackage.internal.util.RuntimeVersionReader;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingFunction;
@@ -245,7 +246,29 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public String version() {
-        return getArgumentValue("--app-version", () -> "1.0");
+        return Optional.ofNullable(getArgumentValue("--app-version")).or(() -> {
+            if (isRuntime()) {
+                final var runtimeHome = RuntimeImageUtils.getRuntimeHomeForRuntimeRoot(
+                        Path.of(getArgumentValue("--runtime-image")));
+                final var releaseFile = RuntimeImageUtils.getReleaseFilePath(runtimeHome);
+                return RuntimeVersionReader.readVersion(releaseFile).map(releaseVersion -> {
+                    switch (packageType()) {
+                        case WIN_EXE, WIN_MSI -> {
+                            return WindowsHelper.getNormalizedVersion(releaseVersion.toString());
+                        }
+                        case MAC_DMG, MAC_PKG -> {
+                            return MacHelper.getNormalizedVersion(releaseVersion.toString());
+                        }
+                        case LINUX_RPM -> {
+                            return LinuxHelper.getNormalizedRpmVersion(releaseVersion.toString());
+                        }
+                    }
+                    return releaseVersion.toString();
+                });
+            } else {
+                return Optional.empty();
+            }
+        }).orElse("1.0");
     }
 
     public String name() {

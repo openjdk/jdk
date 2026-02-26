@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,20 @@
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.List;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import jdk.jpackage.internal.util.MacBundle;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Executor;
+import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JavaAppDesc;
 import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.TKit;
-import jdk.jpackage.test.HelloApp;
 
 
 /*
@@ -50,9 +52,8 @@ import jdk.jpackage.test.HelloApp;
 
 public final class NoMPathRuntimeTest {
 
-    public NoMPathRuntimeTest(String jlinkOutputSubdir, String runtimeSubdir) {
-        this.jlinkOutputSubdir = Path.of(jlinkOutputSubdir);
-        this.runtimeSubdir = Path.of(runtimeSubdir);
+    public NoMPathRuntimeTest(RuntimeType runtimeType) {
+        this.runtimeType = Objects.requireNonNull(runtimeType);
     }
 
     @Test
@@ -65,8 +66,24 @@ public final class NoMPathRuntimeTest {
         cmd.executePrerequisiteActions();
 
         final Path workDir = TKit.createTempDirectory("runtime").resolve("data");
-        final Path jlinkOutputDir = workDir.resolve(jlinkOutputSubdir);
-        Files.createDirectories(jlinkOutputDir.getParent());
+        final Path jlinkOutputDir;
+        switch (runtimeType) {
+            case IMAGE -> {
+                jlinkOutputDir = workDir;
+            }
+            case MAC_BUNDLE -> {
+                var macBundle = new MacBundle(workDir);
+
+                // Create macOS bundle structure sufficient to pass jpackage validation.
+                Files.createDirectories(macBundle.homeDir().getParent());
+                Files.createDirectories(macBundle.macOsDir());
+                Files.createFile(macBundle.infoPlistFile());
+                jlinkOutputDir = macBundle.homeDir();
+            }
+            default -> {
+                throw new AssertionError();
+            }
+        }
 
         // List of modules required for test app.
         final var modules = new String[] {
@@ -74,7 +91,7 @@ public final class NoMPathRuntimeTest {
             "java.desktop"
         };
 
-        Executor jlink = new Executor()
+        new Executor()
         .setToolProvider(JavaTool.JLINK)
         .dumpOutput()
         .addArguments(
@@ -82,18 +99,17 @@ public final class NoMPathRuntimeTest {
                 "--output", jlinkOutputDir.toString(),
                 "--strip-debug",
                 "--no-header-files",
-                "--no-man-pages");
-
-        jlink.addArguments("--add-modules", appDesc.moduleName(),
-               "--module-path", Path.of(cmd.getArgumentValue("--module-path"))
-               .resolve("hello.jar").toString());
-
-        jlink.execute();
+                "--no-man-pages"
+        )
+        .addArguments(
+                "--add-modules", appDesc.moduleName(),
+                "--module-path", Path.of(cmd.getArgumentValue("--module-path")).resolve("hello.jar").toString()
+        ).execute();
 
         // non-modular jar in current dir caused error whe no module-path given
         cmd.removeArgumentWithValue("--module-path");
 
-        cmd.setArgumentValue("--runtime-image", workDir.resolve(runtimeSubdir));
+        cmd.setArgumentValue("--runtime-image", workDir);
         Path junkJar = null;
         try {
             // create a non-modular jar in the current directory
@@ -110,24 +126,26 @@ public final class NoMPathRuntimeTest {
     }
 
     @Parameters
-    public static Collection<?> data() {
+    public static Collection<Object[]> data() {
 
-        final List<String[]> paths = new ArrayList<>();
-        paths.add(new String[] { "", "" });
+        final List<RuntimeType> testCases = new ArrayList<>();
+        testCases.add(RuntimeType.IMAGE);
         if (TKit.isOSX()) {
             // On OSX jpackage should accept both runtime root and runtime home
             // directories.
-            paths.add(new String[] { "Contents/Home", "" });
+            testCases.add(RuntimeType.MAC_BUNDLE);
         }
 
-        List<Object[]> data = new ArrayList<>();
-        for (var pathCfg : paths) {
-            data.add(new Object[] { pathCfg[0], pathCfg[1] });
-        }
-
-        return data;
+        return testCases.stream().map(v -> {
+            return new Object[] {v};
+        }).toList();
     }
 
-    private final Path jlinkOutputSubdir;
-    private final Path runtimeSubdir;
+    public enum RuntimeType {
+        IMAGE,
+        MAC_BUNDLE,
+        ;
+    }
+
+    private final RuntimeType runtimeType;
 }
