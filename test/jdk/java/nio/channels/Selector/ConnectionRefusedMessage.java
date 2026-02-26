@@ -42,7 +42,8 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * @summary Verify that when a SocketChannel is registered with a Selector
  *          with an interest in CONNECT operation, then SocketChannel.finishConnect()
  *          throws the correct exception message, if the connect() fails
- * @run junit ${test.main.class}
+ * @run junit/othervm -Djdk.includeInExceptions=hostInfoExclSocket ${test.main.class}
+ * @run junit/othervm -Djdk.includeInExceptions=hostInfo -Dcheck.relaxed=true ${test.main.class}
  */
 class ConnectionRefusedMessage {
 
@@ -108,9 +109,9 @@ class ConnectionRefusedMessage {
     }
 
     private static void assertExceptionMessage(final ConnectException ce) {
-        // check that message starts with "Connection refused". It might contain more information
-        // when, e.g. jdk.includeInExceptions=hostInfo is set through java security properties.
-        if (ce.getMessage() == null || !ce.getMessage().startsWith("Connection refused")) {
+        if (Boolean.getBoolean("check.relaxed") ?
+            (ce.getMessage() == null || !ce.getMessage().startsWith("Connection refused")) :
+            !"Connection refused".equals(ce.getMessage())) {
             // propagate the original exception
             fail("unexpected exception message: " + ce.getMessage(), ce);
         }
