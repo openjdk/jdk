@@ -109,7 +109,7 @@ public final class StandardOption {
 
     public static final OptionValue<Boolean> VERBOSE = auxilaryOption("verbose").create();
 
-    public static final OptionValue<BundleType> TYPE = option("type", BundleType.class).addAliases("t")
+    static final OptionValue<BundleType> TYPE = option("type", BundleType.class).addAliases("t")
             .scope(StandardBundlingOperation.values()).inScope(NOT_BUILDING_APP_IMAGE)
             .converterExceptionFactory(ERROR_WITH_VALUE).converterExceptionFormatString("ERR_InvalidInstallerType")
             .converter(str -> {

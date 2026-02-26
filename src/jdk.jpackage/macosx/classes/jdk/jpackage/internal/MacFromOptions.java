@@ -29,6 +29,8 @@ import static jdk.jpackage.internal.FromOptions.createPackageBuilder;
 import static jdk.jpackage.internal.MacPackagingPipeline.APPLICATION_LAYOUT;
 import static jdk.jpackage.internal.MacRuntimeValidator.validateRuntimeHasJliLib;
 import static jdk.jpackage.internal.MacRuntimeValidator.validateRuntimeHasNoBinDir;
+import static jdk.jpackage.internal.OptionUtils.isBundlingOperation;
+import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_MAC_PKG;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.SIGN_MAC_APP_IMAGE;
 import static jdk.jpackage.internal.cli.StandardOption.APPCLASS;
 import static jdk.jpackage.internal.cli.StandardOption.ICON;
@@ -120,23 +122,39 @@ final class MacFromOptions {
 
         final Optional<SigningIdentityBuilder> pkgSigningIdentityBuilder;
 
-        if (sign && (MAC_INSTALLER_SIGN_IDENTITY.containsIn(options) || MAC_SIGNING_KEY_NAME.containsIn(options))) {
+        if (!sign) {
+            pkgSigningIdentityBuilder = Optional.empty();
+        } else if (hasAppImageSignIdentity(options) && !hasPkgInstallerSignIdentity(options)) {
+            // They explicitly request to sign the app image,
+            // but don't specify signing identity for signing the PKG package.
+            // They want signed app image inside of unsigned PKG.
+            pkgSigningIdentityBuilder = Optional.empty();
+        } else {
             final var signingIdentityBuilder = createSigningIdentityBuilder(options);
-            MAC_INSTALLER_SIGN_IDENTITY.ifPresentIn(options, signingIdentityBuilder::signingIdentity);
-            MAC_SIGNING_KEY_NAME.findIn(options).ifPresent(userName -> {
-                final StandardCertificateSelector domain;
-                if (appStore) {
-                    domain = StandardCertificateSelector.APP_STORE_PKG_INSTALLER;
-                } else {
-                    domain = StandardCertificateSelector.PKG_INSTALLER;
-                }
 
-                signingIdentityBuilder.certificateSelector(StandardCertificateSelector.create(userName, domain));
-            });
+            MAC_INSTALLER_SIGN_IDENTITY.findIn(options).ifPresentOrElse(
+                    signingIdentityBuilder::signingIdentity,
+                    () -> {
+                        MAC_SIGNING_KEY_NAME.findIn(options).or(() -> {
+                            if (MAC_APP_IMAGE_SIGN_IDENTITY.findIn(options).isPresent()) {
+                                return Optional.empty();
+                            } else {
+                                return Optional.of("");
+                            }
+                        }).ifPresent(userName -> {
+                            final StandardCertificateSelector domain;
+                            if (appStore) {
+                                domain = StandardCertificateSelector.APP_STORE_PKG_INSTALLER;
+                            } else {
+                                domain = StandardCertificateSelector.PKG_INSTALLER;
+                            }
+
+                            signingIdentityBuilder.certificateSelector(StandardCertificateSelector.create(userName, domain));
+                        });
+                    }
+            );
 
             pkgSigningIdentityBuilder = Optional.of(signingIdentityBuilder);
-        } else {
-            pkgSigningIdentityBuilder = Optional.empty();
         }
 
         ApplicationWithDetails app = null;
@@ -230,33 +248,47 @@ final class MacFromOptions {
         MAC_BUNDLE_IDENTIFIER.ifPresentIn(options, appBuilder::bundleIdentifier);
         MAC_APP_CATEGORY.ifPresentIn(options, appBuilder::category);
 
-        final boolean sign;
+        final boolean sign = MAC_SIGN.getFrom(options);
         final boolean appStore;
 
-        if (PREDEFINED_APP_IMAGE.containsIn(options) && OptionUtils.bundlingOperation(options) != SIGN_MAC_APP_IMAGE) {
+        if (PREDEFINED_APP_IMAGE.containsIn(options)) {
             final var appImageFileOptions = superAppBuilder.externalApplication().orElseThrow().extra();
-            sign = MAC_SIGN.getFrom(appImageFileOptions);
             appStore = MAC_APP_STORE.getFrom(appImageFileOptions);
         } else {
-            sign = MAC_SIGN.getFrom(options);
             appStore = MAC_APP_STORE.getFrom(options);
         }
 
         appBuilder.appStore(appStore);
 
-        if (sign && (MAC_APP_IMAGE_SIGN_IDENTITY.containsIn(options) || MAC_SIGNING_KEY_NAME.containsIn(options))) {
-            final var signingIdentityBuilder = createSigningIdentityBuilder(options);
-            MAC_APP_IMAGE_SIGN_IDENTITY.ifPresentIn(options, signingIdentityBuilder::signingIdentity);
-            MAC_SIGNING_KEY_NAME.findIn(options).ifPresent(userName -> {
-                final StandardCertificateSelector domain;
-                if (appStore) {
-                    domain = StandardCertificateSelector.APP_STORE_APP_IMAGE;
-                } else {
-                    domain = StandardCertificateSelector.APP_IMAGE;
-                }
+        final var signOnlyPkgInstaller = sign && (
+                isBundlingOperation(options, CREATE_MAC_PKG)
+                && !hasAppImageSignIdentity(options)
+                && hasPkgInstallerSignIdentity(options));
 
-                signingIdentityBuilder.certificateSelector(StandardCertificateSelector.create(userName, domain));
-            });
+        if (sign && !signOnlyPkgInstaller) {
+            final var signingIdentityBuilder = createSigningIdentityBuilder(options);
+
+            MAC_APP_IMAGE_SIGN_IDENTITY.findIn(options).ifPresentOrElse(
+                    signingIdentityBuilder::signingIdentity,
+                    () -> {
+                        MAC_SIGNING_KEY_NAME.findIn(options).or(() -> {
+                            if (MAC_INSTALLER_SIGN_IDENTITY.containsIn(options)) {
+                                return Optional.empty();
+                            } else {
+                                return Optional.of("");
+                            }
+                        }).ifPresent(userName -> {
+                            final StandardCertificateSelector domain;
+                            if (appStore) {
+                                domain = StandardCertificateSelector.APP_STORE_APP_IMAGE;
+                            } else {
+                                domain = StandardCertificateSelector.APP_IMAGE;
+                            }
+
+                            signingIdentityBuilder.certificateSelector(StandardCertificateSelector.create(userName, domain));
+                        });
+                    }
+            );
 
             final var signingBuilder = new AppImageSigningConfigBuilder(signingIdentityBuilder);
             if (appStore) {
@@ -330,5 +362,13 @@ final class MacFromOptions {
         StandardFaOption.MAC_UTTYPECONFORMSTO.ifPresentIn(options, builder::utTypeConformsTo);
 
         return builder.create(fa);
+    }
+
+    private static boolean hasAppImageSignIdentity(Options options) {
+        return options.contains(MAC_SIGNING_KEY_NAME) || options.contains(MAC_APP_IMAGE_SIGN_IDENTITY);
+    }
+
+    private static boolean hasPkgInstallerSignIdentity(Options options) {
+        return options.contains(MAC_SIGNING_KEY_NAME) || options.contains(MAC_INSTALLER_SIGN_IDENTITY);
     }
 }
