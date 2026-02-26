@@ -1143,17 +1143,26 @@ bool CompilerOracle::parse_from_line(char* line) {
           return false;
         }
         return true;
-      } else if (option == CompileCommandEnum::MemStat) {
-        // MemStat default action is to collect data but to not print
-        if (!register_command(matcher, option, error_buf, sizeof(error_buf), (uintx)MemStatAction::collect)) {
+      }
+
+      switch (option) {
+        case CompileCommandEnum::Break:
+        case CompileCommandEnum::CompileOnly:
+        case CompileCommandEnum::Exclude:
+        case CompileCommandEnum::Print:
+          // Just fall through to scan_value() call: it handles empty values for the commands above
+          break;
+        case CompileCommandEnum::MemStat:
+          // MemStat default action is to collect data but to not print
+          if (!register_command(matcher, option, error_buf, sizeof(error_buf), (uintx)MemStatAction::collect)) {
+            print_parse_error(error_buf, original.get());
+            return false;
+          }
+          return true;
+        default:
+          jio_snprintf(error_buf, sizeof(error_buf), "  Option '%s' is not followed by a value", option2name(option));
           print_parse_error(error_buf, original.get());
           return false;
-        }
-        return true;
-      } else {
-        jio_snprintf(error_buf, sizeof(error_buf), "  Option '%s' is not followed by a value", option2name(option));
-        print_parse_error(error_buf, original.get());
-        return false;
       }
     }
     if (!scan_value(type, line, bytes_read, matcher, option, error_buf, sizeof(error_buf))) {
