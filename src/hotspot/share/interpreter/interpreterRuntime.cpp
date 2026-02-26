@@ -1213,7 +1213,7 @@ JRT_ENTRY(void, InterpreterRuntime::post_field_access(JavaThread* current, oopDe
 JRT_END
 
 JRT_ENTRY(void, InterpreterRuntime::post_field_modification(JavaThread* current, oopDesc* obj,
-                                                            ResolvedFieldEntry *entry, jvalue *value))
+                                                            ResolvedFieldEntry* entry, jvalue* value))
 
   entry->assert_is_valid();
 
