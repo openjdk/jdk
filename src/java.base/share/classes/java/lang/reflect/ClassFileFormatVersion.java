@@ -26,19 +26,23 @@
 package java.lang.reflect;
 
 import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassFileVersion;
 
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * A {@code class} file format version represents a set of VM features.
- * The JVMS lists the class file format versions supported by each Java SE
- * release in {@jvms 4.1}.
+ * A {@code class} file format version represents a set of VM features, derived
+ * from a supported class {@linkplain ClassFileVersion#majorVersion() major} and
+ * {@linkplain ClassFileVersion#minorVersion() minor} version combination.
+ * The appropriate edition of <cite>The Java Virtual Machine Specification</cite>
+ * for each Java SE release lists its supported major and minor version
+ * combinations and their correspoding format versions.
  * <p>
  * Additional class file format version constants will be added to model future
  * class file formats defined by future releases of the JVMS.
  * <p>
- * A special constant, {@link #CURRENT_PREVIEW_FEATURES}, represents the VM
- * features of the current Java SE release when preview features are enabled.
+ * A special constant, {@link #PREVIEW_ENABLED}, represents the VM features of
+ * the current Java SE release when preview features are enabled.
  *
  * @apiNote
  * A class file format version is derived from a supported class major and minor
@@ -53,8 +57,8 @@ import jdk.internal.javac.PreviewFeature;
 @SuppressWarnings("doclint:reference") // cross-module links
 public enum ClassFileFormatVersion {
     /*
-     * Summary of class file format evolution; previews listed for convenience
-     *
+     * Summary of class file format evolution; previews are listed for
+     * convenience, but they are not modeled by the RELEASE_ constants.
      * 1.1: InnerClasses, Synthetic, Deprecated attributes
      * 1.2: ACC_STRICT modifier
      * 1.3: no changes
@@ -411,11 +415,11 @@ public enum ClassFileFormatVersion {
      * @apiNote
      * This is a reflective preview API to allow tools running in Java runtime
      * environments with no preview feature enabled to examine preview VM
-     * features.
+     * features, such as those present in {@code class} files.
      * <p>
      * This constant represents different sets of features on runtimes of
      * different Java SE releases.  Programmers should check the current Java
-     * SE version to ensure they are accessing the desired set of feature.
+     * SE version to ensure they are accessing the desired set of features.
      *
      * @since 27
      * @jls 1.5 Preview Features
@@ -424,7 +428,7 @@ public enum ClassFileFormatVersion {
      * JEP 12: Preview Features</a>
      */
     @PreviewFeature(feature = PreviewFeature.Feature.LANGUAGE_MODEL, reflective = true)
-    CURRENT_PREVIEW_FEATURES(ClassFile.latestMajorVersion());
+    PREVIEW_ENABLED(ClassFile.latestMajorVersion());
 
     private final int major;
 
@@ -489,11 +493,11 @@ public enum ClassFileFormatVersion {
      * and has no other elements set.
      * <p>
      * Class file format versions greater than or equal to {@link
-     * #RELEASE_6}, except {@link #CURRENT_PREVIEW_FEATURES}, have
+     * #RELEASE_6}, except {@link #PREVIEW_ENABLED}, have
      * non-{@code null} results.
      */
     public Runtime.Version runtimeVersion() {
-        if (this == CURRENT_PREVIEW_FEATURES)
+        if (this == PREVIEW_ENABLED)
             return null;
         // Starting with Java SE 6, the leading digit was the primary
         // way of identifying the platform version.
