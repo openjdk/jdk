@@ -1050,7 +1050,7 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0",
                   IRNode.XOR_REDUCTION_V, "> 0",
                   IRNode.XOR_VI,          "> 0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true", "rvv", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
     @IR(failOn = IRNode.LOAD_VECTOR_S,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
