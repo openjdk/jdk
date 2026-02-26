@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -970,13 +970,14 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
   SwitchRange* orig_hi = hi;
 #endif
 
-  int depth = switch_depth;
-
   // The lower-range processing is done iteratively to avoid O(N) stack depth
   // when the profiling-based pivot repeatedly selects mid==lo (JDK-8366138).
   // The upper-range processing remains recursive but is only reached for
   // balanced splits, bounding its depth to O(log N).
-  while (true) {
+  // Termination: every iteration either exits or strictly decreases hi-lo:
+  //   lo == mid && mid < hi, increments lo
+  //   lo < mid <= hi, sets hi = mid - 1.
+  for (int depth = switch_depth;; depth++) {
 #ifndef PRODUCT
     _max_switch_depth = MAX2(depth, _max_switch_depth);
 #endif
@@ -1022,7 +1023,7 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
       assert(nr != 2 || mid == hi,   "should pick higher of 2");
       assert(nr != 3 || mid == hi-1, "should pick middle of 3");
     }
-
+    assert(mid != nullptr, "mid must be set");
 
     Node *test_val = _gvn.intcon(mid == lo ? mid->hi() : mid->lo());
 
@@ -1070,18 +1071,15 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
     }
 
     // Process the lower range: iterate instead of recursing.
-    depth++;
     if (mid == lo) {
       if (mid->is_singleton()) {
         lo++;
-        continue;
       } else {
         jump_if_always_fork(lo->dest(), trim_ranges && lo->cnt() == 0);
         break;
       }
     } else {
       hi = mid - 1;
-      continue;
     }
   }
 
