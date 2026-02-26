@@ -29,7 +29,7 @@ import java.util.Objects;
 
 /*
  * @test
- * @bug 8259609 8276116 8311932
+ * @bug 8259609 8276116 8311932 8356184
  * @summary C2: optimize long range checks in long counted loops
  * @library /test/lib /
  * @requires vm.compiler2.enabled
@@ -260,6 +260,83 @@ public class TestLongRangeChecks {
     @Run(test = "testStridePosScaleNegInIntLoop2")
     private void testStridePosScaleNegInIntLoop2_runner() {
         testStridePosScaleNegInIntLoop2(0, 100, 200, 198);
+    }
+
+    @Test
+    @IR(applyIf = { "ShortRunningLongLoop", "false" }, counts = { IRNode.LOOP, "1" })
+    @IR(applyIf = { "ShortRunningLongLoop", "true" }, failOn = IRNode.LOOP)
+    @IR(failOn = { IRNode.COUNTED_LOOP})
+    public static void testStridePosScalePosInIntLoop3(int start, int stop, long length, long offset) {
+        final int scale = 2;
+        final int stride = 1;
+        final int intOffset = (int) offset;
+
+        // Same but with int loop, int scale, and int offset (short_offset path)
+        for (int i = start; i < stop; i += stride) {
+            Objects.checkIndex(scale * i + intOffset, length);
+        }
+    }
+
+    @Run(test = "testStridePosScalePosInIntLoop3")
+    private void testStridePosScalePosInIntLoop3_runner() {
+        testStridePosScalePosInIntLoop3(0, 100, 200, 0);
+    }
+
+    @Test
+    @IR(applyIf = { "ShortRunningLongLoop", "false" }, counts = { IRNode.LOOP, "1" })
+    @IR(applyIf = { "ShortRunningLongLoop", "true" }, failOn = IRNode.LOOP)
+    @IR(failOn = { IRNode.COUNTED_LOOP})
+    public static void testStrideNegScaleNegInIntLoop3(int start, int stop, long length, long offset) {
+        final int scale = -2;
+        final int stride = 1;
+        final int intOffset = (int) offset;
+
+        for (int i = stop; i > start; i -= stride) {
+            Objects.checkIndex(scale * i + intOffset, length);
+        }
+    }
+
+    @Run(test = "testStrideNegScaleNegInIntLoop3")
+    private void testStrideNegScaleNegInIntLoop3_runner() {
+        testStrideNegScaleNegInIntLoop3(0, 100, 200, 200);
+    }
+
+    @Test
+    @IR(applyIf = { "ShortRunningLongLoop", "false" }, counts = { IRNode.LOOP, "1" })
+    @IR(applyIf = { "ShortRunningLongLoop", "true" }, failOn = IRNode.LOOP)
+    @IR(failOn = { IRNode.COUNTED_LOOP})
+    public static void testStrideNegScalePosInIntLoop3(int start, int stop, long length, long offset) {
+        final int scale = 2;
+        final int stride = 1;
+        final int intOffset = (int) offset;
+
+        for (int i = stop-1; i >= start; i -= stride) {
+            Objects.checkIndex(scale * i + intOffset, length);
+        }
+    }
+
+    @Run(test = "testStrideNegScalePosInIntLoop3")
+    private void testStrideNegScalePosInIntLoop3_runner() {
+        testStrideNegScalePosInIntLoop3(0, 100, 200, 0);
+    }
+
+    @Test
+    @IR(applyIf = { "ShortRunningLongLoop", "false" }, counts = { IRNode.LOOP, "1" })
+    @IR(applyIf = { "ShortRunningLongLoop", "true" }, failOn = IRNode.LOOP)
+    @IR(failOn = { IRNode.COUNTED_LOOP})
+    public static void testStridePosScaleNegInIntLoop3(int start, int stop, long length, long offset) {
+        final int scale = -2;
+        final int stride = 1;
+        final int intOffset = (int) offset;
+
+        for (int i = start; i < stop; i += stride) {
+            Objects.checkIndex(scale * i + intOffset, length);
+        }
+    }
+
+    @Run(test = "testStridePosScaleNegInIntLoop3")
+    private void testStridePosScaleNegInIntLoop3_runner() {
+        testStridePosScaleNegInIntLoop3(0, 100, 200, 198);
     }
 
     @Test
