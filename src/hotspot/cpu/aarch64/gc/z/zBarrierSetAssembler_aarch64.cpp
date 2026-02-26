@@ -879,9 +879,7 @@ void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format) {
     ShouldNotReachHere();
   }
 
-  if (UseDeferredICacheInvalidation) {
-    assert(ICacheInvalidationContext::is_deferring_icache_invalidation(),
-           "UseDeferredICacheInvalidation requires ICacheInvalidationContext to defer icache invalidation.");
+  if (UseSingleICacheInvalidation) {
     return;
   }
 

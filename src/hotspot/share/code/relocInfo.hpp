@@ -1029,8 +1029,7 @@ class metadata_Relocation : public DataRelocation {
   // Fixes a Metadata pointer in the code. Most platforms embeds the
   // Metadata pointer in the code at compile time so this is empty
   // for them.
-  // Returns true if code was modified.
-  bool pd_fix_value(address x);
+  void pd_fix_value(address x);
 
  public:
   int metadata_index() { return _metadata_index; }
@@ -1039,7 +1038,10 @@ class metadata_Relocation : public DataRelocation {
   void pack_data_to(CodeSection* dest) override;
   void unpack_data() override;
 
-  bool fix_metadata_relocation();        // reasserts metadata value
+  void fix_metadata_relocation();        // reasserts metadata value
+  bool is_modifying_code() const
+    NOT_ARM32({ return false; })
+    ARM32_ONLY(;)
 
   address value() override { return (address) *metadata_addr(); }
 

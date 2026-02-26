@@ -27,7 +27,7 @@ package gc;
 /*
  * @test id=parallel
  * @bug 8370947
- * @summary Check no assertion is triggered when UseDeferredICacheInvalidation is enabled for ParallelGC
+ * @summary Check no assertion is triggered when UseSingleICacheInvalidation is enabled for ParallelGC
  * @library /test/lib
  * @requires vm.debug
  * @requires vm.gc.Parallel
@@ -42,7 +42,7 @@ package gc;
 /*
  * @test id=g1
  * @bug 8370947
- * @summary Check no assertion is triggered when UseDeferredICacheInvalidation is enabled for G1GC
+ * @summary Check no assertion is triggered when UseSingleICacheInvalidation is enabled for G1GC
  * @library /test/lib
  * @requires vm.debug
  * @requires vm.gc.G1
@@ -57,7 +57,7 @@ package gc;
 /*
  * @test id=shenandoah
  * @bug 8370947
- * @summary Check no assertion is triggered when UseDeferredICacheInvalidation is enabled for ShenandoahGC
+ * @summary Check no assertion is triggered when UseSingleICacheInvalidation is enabled for ShenandoahGC
  * @library /test/lib
  * @requires vm.debug
  * @requires vm.gc.Shenandoah
@@ -70,7 +70,7 @@ package gc;
 /*
  * @test id=genshen
  * @bug 8370947
- * @summary Check no assertion is triggered when UseDeferredICacheInvalidation is enabled for generational ShenandoahGC
+ * @summary Check no assertion is triggered when UseSingleICacheInvalidation is enabled for generational ShenandoahGC
  * @library /test/lib
  * @requires vm.debug
  * @requires vm.gc.Shenandoah
@@ -85,7 +85,7 @@ package gc;
 /*
  * @test id=z
  * @bug 8370947
- * @summary Check no assertion is triggered when UseDeferredICacheInvalidation is enabled for ZGC
+ * @summary Check no assertion is triggered when UseSingleICacheInvalidation is enabled for ZGC
  * @library /test/lib
  * @requires vm.debug
  * @requires vm.gc.Z
@@ -300,8 +300,8 @@ public class TestDeferredICacheInvalidation {
     }
 
     public static void main(String[] args) throws Exception {
-        if (!Boolean.TRUE.equals(WB.getBooleanVMFlag("UseDeferredICacheInvalidation"))) {
-            System.out.println("Skip. Test requires UseDeferredICacheInvalidation enabled.");
+        if (!Boolean.TRUE.equals(WB.getBooleanVMFlag("UseSingleICacheInvalidation"))) {
+            System.out.println("Skip. Test requires UseSingleICacheInvalidation enabled.");
         }
         compLevel = (args[1].equals("C1")) ? 1 : 4;
         compileMethods();

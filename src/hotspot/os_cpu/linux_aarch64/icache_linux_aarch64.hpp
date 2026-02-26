@@ -82,7 +82,7 @@ class AArch64ICacheInvalidationContext : StackObj {
   ~AArch64ICacheInvalidationContext() {
     NOT_PRODUCT(_current_context = nullptr);
 
-    if (!_has_modified_code || !UseDeferredICacheInvalidation) {
+    if (!_has_modified_code || !UseSingleICacheInvalidation) {
       return;
     }
 
@@ -136,12 +136,6 @@ class AArch64ICacheInvalidationContext : StackObj {
   void set_has_modified_code() {
     _has_modified_code = true;
   }
-
-#ifdef ASSERT
-  static bool is_deferring_icache_invalidation() {
-    return _current_context != nullptr && UseDeferredICacheInvalidation;
-  }
-#endif
 };
 
 #define PD_ICACHE_INVALIDATION_CONTEXT AArch64ICacheInvalidationContext

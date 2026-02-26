@@ -666,8 +666,8 @@ void VM_Version::initialize() {
     clear_feature(CPU_SVE);
   }
 
-  if (FLAG_IS_DEFAULT(UseDeferredICacheInvalidation) && is_cache_idc_enabled() && is_cache_dic_enabled()) {
-    FLAG_SET_DEFAULT(UseDeferredICacheInvalidation, true);
+  if (FLAG_IS_DEFAULT(UseSingleICacheInvalidation) && is_cache_idc_enabled() && is_cache_dic_enabled()) {
+    FLAG_SET_DEFAULT(UseSingleICacheInvalidation, true);
   }
 
   if (FLAG_IS_DEFAULT(NeoverseN1ICacheErratumMitigation) && has_neoverse_n1_errata_1542419()) {
@@ -678,18 +678,18 @@ void VM_Version::initialize() {
     if (!has_neoverse_n1_errata_1542419()) {
       vm_exit_during_initialization("NeoverseN1ICacheErratumMitigation is set for the CPU not having Neoverse N1 errata 1542419");
     }
-    if (FLAG_IS_DEFAULT(UseDeferredICacheInvalidation)) {
-      FLAG_SET_DEFAULT(UseDeferredICacheInvalidation, true);
+    if (FLAG_IS_DEFAULT(UseSingleICacheInvalidation)) {
+      FLAG_SET_DEFAULT(UseSingleICacheInvalidation, true);
     }
 
-    if (!UseDeferredICacheInvalidation) {
-      vm_exit_during_initialization("NeoverseN1ICacheErratumMitigation is set but UseDeferredICacheInvalidation is not enabled");
+    if (!UseSingleICacheInvalidation) {
+      vm_exit_during_initialization("NeoverseN1ICacheErratumMitigation is set but UseSingleICacheInvalidation is not enabled");
     }
   }
 
-  if (UseDeferredICacheInvalidation
+  if (UseSingleICacheInvalidation
       && (!is_cache_idc_enabled() || (!is_cache_dic_enabled() && !NeoverseN1ICacheErratumMitigation))) {
-    vm_exit_during_initialization("UseDeferredICacheInvalidation is set but neither IDC nor DIC nor NeoverseN1ICacheErratumMitigation is enabled");
+    vm_exit_during_initialization("UseSingleICacheInvalidation is set but neither IDC nor DIC nor NeoverseN1ICacheErratumMitigation is enabled");
   }
 
   // Construct the "features" string

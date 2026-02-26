@@ -108,11 +108,14 @@ address Relocation::pd_get_address_from_code() {
 void poll_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) {
 }
 
-bool metadata_Relocation::pd_fix_value(address x) {
+bool metadata_Relocation::is_modifying_code() const {
+  return !metadata_is_immediate() && !VM_Version::supports_movw();
+}
+
+void metadata_Relocation::pd_fix_value(address x) {
   assert(! addr_in_const(), "Do not use");
   if (!VM_Version::supports_movw()) {
     set_value(x);
-    return true;
 #ifdef ASSERT
   } else {
     // the movw/movt data should be correct
@@ -129,5 +132,4 @@ bool metadata_Relocation::pd_fix_value(address x) {
     // assert(ni->data() == (int)x, "metadata relocation mismatch");
 #endif
   }
-  return false;
 }

@@ -57,7 +57,7 @@ void Relocation::pd_set_data_value(address x, bool verify_only) {
 
   assert(_binding != nullptr, "expect to be called with RelocIterator in use");
 
-  if (UseDeferredICacheInvalidation) {
+  if (UseSingleICacheInvalidation) {
     return;
   }
 
@@ -122,6 +122,5 @@ void poll_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffe
   }
 }
 
-bool metadata_Relocation::pd_fix_value(address x) {
-  return false;
+void metadata_Relocation::pd_fix_value(address x) {
 }

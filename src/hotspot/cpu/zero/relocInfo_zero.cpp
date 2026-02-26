@@ -57,7 +57,6 @@ void poll_Relocation::fix_relocation_after_move(const CodeBuffer* src,
   ShouldNotCallThis();
 }
 
-bool metadata_Relocation::pd_fix_value(address x) {
+void metadata_Relocation::pd_fix_value(address x) {
   ShouldNotCallThis();
-  return false;
 }
