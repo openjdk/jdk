@@ -1899,11 +1899,6 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
   if (state == nullptr) {
     return;
   }
-#if 1
-  if (method->jvmti_mount_transition() || thread->should_hide_jvmti_events()) {
-    return;
-  }
-#endif
   // At this point we only have the address of a "raw result" and
   // we just call into the interpreter to convert this into a jvalue.
   // This method always makes transition to vm and back where GC can happen.
@@ -1927,14 +1922,6 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
   JRT_BLOCK
     if (state != nullptr) {
       if (state->is_enabled(JVMTI_EVENT_METHOD_EXIT)) {
-#if 0
-        if (!state->is_interp_only_mode()) {
-          printf("DBG: post_method_exit: %p state: %p virt: %d s.interp: %d t.interp: %d is_peinding_interp: %d\n",
-                 (void*)thread, (void*)state, state->is_virtual(), state->is_interp_only_mode(), thread->is_interp_only_mode(),
-                 state->is_pending_interp_only_mode()); fflush(0);
-        }
-        assert(state->is_interp_only_mode() || state->is_pending_interp_only_mode(), "sanity check");
-#endif
         // Deferred saving Object result into value.
         if (is_reference_type(type)) {
           value.l = JNIHandles::make_local(thread, result());
@@ -1965,11 +1952,9 @@ void JvmtiExport::post_method_exit_inner(JavaThread* thread,
                                          bool exception_exit,
                                          frame current_frame,
                                          jvalue& value) {
-#if 0
   if (mh->jvmti_mount_transition() || thread->should_hide_jvmti_events()) {
     return;
   }
-#endif
 
   EVT_TRIG_TRACE(JVMTI_EVENT_METHOD_EXIT, ("[%s] Trg Method Exit triggered %s.%s",
                                            JvmtiTrace::safe_get_thread_name(thread),
