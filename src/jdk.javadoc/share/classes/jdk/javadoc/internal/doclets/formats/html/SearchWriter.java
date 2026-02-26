@@ -92,17 +92,15 @@ public class SearchWriter extends HtmlDocletWriter {
                 .add(resourceSection)
                 .add(HtmlTree.P(contents.getContent("doclet.search.loading"))
                         .setId(HtmlId.of("page-search-notify")))
-                .add(HtmlTree.DIV(HtmlTree.DIV(HtmlId.of("result-container"))
+                .add(HtmlTree.DIV(HtmlTree.DIV(HtmlIds.SEARCH_RESULT_CONTAINER)
                                 .addUnchecked(Text.EMPTY))
-                        .setId(HtmlId.of("result-section"))
+                        .setId(HtmlIds.SEARCH_RESULT_SECTION)
                         .put(HtmlAttr.STYLE, "display: none;"));
-                        // .add(HtmlTree.SCRIPT(pathToRoot.resolve(DocPaths.SCRIPT_FILES)
-                        //                                .resolve(DocPaths.SEARCH_PAGE_JS).getPath())));
     }
 
     private Content createModuleSelector() {
 
-        if (!configuration.showModules) {
+        if (!configuration.showModules || configuration.modules.size() < 2) {
             return Text.EMPTY;
         }
 
@@ -118,7 +116,7 @@ public class SearchWriter extends HtmlDocletWriter {
                     .put(HtmlAttr.VALUE, module.getQualifiedName().toString())
                     .add(Text.of(module.getQualifiedName().toString())));
         }
-        return new ContentBuilder(contents.getContent("doclet.search.in", select));
+        return new ContentBuilder(contents.getContent("doclet.search.in_modules"), select);
     }
 
     private Content createResourceSection() {

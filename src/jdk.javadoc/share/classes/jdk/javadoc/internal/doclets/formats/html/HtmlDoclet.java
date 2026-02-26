@@ -335,12 +335,8 @@ public class HtmlDoclet extends AbstractDoclet {
 
         if (options.createIndex()) {
             copyResource(DocPaths.SEARCH_JS_TEMPLATE, DocPaths.SCRIPT_FILES.resolve(DocPaths.SEARCH_JS), true);
-            copyResource(DocPaths.SEARCH_PAGE_JS, DocPaths.SCRIPT_FILES.resolve(DocPaths.SEARCH_PAGE_JS), true);
             copyResource(DocPaths.GLASS_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.GLASS_SVG), false);
             copyResource(DocPaths.X_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.X_SVG), false);
-            // No newline replacement for JQuery files
-            copyResource(DocPaths.JQUERY_DIR.resolve(DocPaths.JQUERY_JS),
-                    DocPaths.SCRIPT_FILES.resolve(DocPaths.JQUERY_JS), false);
         }
 
         copyLegalFiles(options.createIndex(), options.syntaxHighlight());
@@ -366,7 +362,7 @@ public class HtmlDoclet extends AbstractDoclet {
             case "", "default" -> {
                 // use a known resource as a stand-in, because we cannot get the URL for a resources directory
                 var url = HtmlDoclet.class.getResource(
-                        DocPaths.RESOURCES.resolve(DocPaths.LEGAL).resolve(DocPaths.JQUERY_MD).getPath());
+                        DocPaths.RESOURCES.resolve(DocPaths.LEGAL).resolve(DocPaths.DEJAVU_MD).getPath());
                 if (url != null) {
                     try {
                         legalNoticesDir = Path.of(url.toURI()).getParent();

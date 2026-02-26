@@ -112,6 +112,11 @@ public class HtmlIds {
     static final HtmlId RELATED_PACKAGE_SUMMARY = HtmlId.of("related-package-summary");
     static final HtmlId RESET_SEARCH = HtmlId.of("reset-search");
     static final HtmlId SEARCH_INPUT = HtmlId.of("search-input");
+    static final HtmlId SEARCH_INPUT_CONTAINER = HtmlId.of("search-input-container");
+    static final HtmlId SEARCH_MODULES = HtmlId.of("search-modules");
+    static final HtmlId SEARCH_PAGE_LINK = HtmlId.of("search-page-link");
+    static final HtmlId SEARCH_RESULT_CONTAINER = HtmlId.of("search-result-container");
+    static final HtmlId SEARCH_RESULT_SECTION = HtmlId.of("search-result-section");
     static final HtmlId SERVICES = HtmlId.of("services-summary");
     static final HtmlId SKIP_NAVBAR_TOP = HtmlId.of("skip-navbar-top");
     static final HtmlId THEME_BUTTON = HtmlId.of("theme-button");

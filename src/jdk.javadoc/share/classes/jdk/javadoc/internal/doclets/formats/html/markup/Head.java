@@ -376,7 +376,6 @@ public class Head extends Content {
                         .append("loadScripts();\n")
                         .append("initTheme();\n");
             }
-            addScriptElement(head, DocPaths.JQUERY_JS);
         }
         for (HtmlConfiguration.JavaScriptFile javaScriptFile : additionalScripts) {
             addScriptElement(head, javaScriptFile);

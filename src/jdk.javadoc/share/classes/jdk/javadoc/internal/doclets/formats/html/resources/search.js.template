@@ -97,7 +97,7 @@ function getURLPrefix(item, category) {
         if (item.m) {
             urlPrefix = item.m + slash;
         } else {
-            $.each(packageSearchIndex, function(index, it) {
+            packageSearchIndex.forEach(function(it) {
                 if (it.m && item.p === it.l) {
                     urlPrefix = it.m + slash;
                     item.m = it.m;
@@ -316,7 +316,7 @@ function doSearch(request, response) {
             }
             return matches;
         }
-        $.each(indexArray, function (i, item) {
+        indexArray.forEach(function (item) {
             if (module) {
                 var modulePrefix = getURLPrefix(item, category) || item.u;
                 if (modulePrefix.indexOf("/") > -1 && !modulePrefix.startsWith(module)) {
@@ -341,9 +341,13 @@ function doSearch(request, response) {
                 m.indexItem = item;
                 m.name = simpleName;
                 m.category = category;
-                m.boundaries = m.boundaries.map(function(b) {
-                    return b - prefix.length;
-                });
+                if (m.boundaries[0] < prefix.length) {
+                    m.name = qualName;
+                } else {
+                    m.boundaries = m.boundaries.map(function(b) {
+                        return b - prefix.length;
+                    });
+                }
                 // m.name = m.name + " " + m.score.toFixed(3);
                 matches.push(m);
             }
@@ -420,7 +424,7 @@ function getEnclosingDescription(elem, desc, label) {
 }
 function getEnclosingTypeDesc(item) {
     if (!item.typeDesc) {
-        $.each(typeSearchIndex, function(index, it) {
+        typeSearchIndex.forEach(function(it) {
             if (it.l === item.c && it.p === item.p && it.m === item.m) {
                 item.typeDesc = itemDesc[it.k || 12][1];
                 return false;
@@ -430,172 +434,318 @@ function getEnclosingTypeDesc(item) {
     return item.typeDesc || "";
 }
 
-$(window).on("load", function() {
-    var input = $("#search-input, #page-search-input");
-    var reset = $("#reset-search, #page-search-reset");
-    var modules = $("#search-modules");
-    var notify = $("#page-search-notify");
-    var resultSection = $("div#result-section");
-    var resultContainer = $("div#result-container");
-    var overlay;
-    var selectedLink;
-    var searchTerm = "";
-    var activeTab = "";
-    var fixedTab = false;
-    var visibleTabs = [];
-    var feelingLucky = false;
+
+// Plain JavaScript (refactored):
+// 1) Single “active input” (whichever search input is focused/used)
+// 2) Use textContent instead of innerHTML everywhere (safer; no HTML rendering)
+//
+// Assumes these globals exist: messages, categories, pathtoroot, getURL(),
+// getResultLabel(), getResultDescription(), doSearch().
+
+window.addEventListener("load", () => {
+    const $ = (sel, root = document) => root.querySelector(sel);
+    var copy = $("#page-search-copy");
+    if (!copy) {
+        return;
+    }
+    var expand = $("#page-search-expand");
+    var searchLink = $("span#page-search-link");
+    var redirect = $("input#search-redirect");
+    function setSearchUrlTemplate() {
+        var href = document.location.href.split(/[#?]/)[0];
+        href += "?q=" + "%s";
+        if (redirect.checked) {
+            href += "&r=1";
+        }
+        searchLink.innerHTML = href;
+        copy.onmouseenter();
+    }
+    function copyLink(e) {
+        copyToClipboard(this.previousSibling.innerText);
+        switchCopyLabel(this, this.lastElementChild);
+    }
+    copy.addEventListener("click", copyLink.bind(copy));
+    copy.onmouseenter = function() {};
+    redirect.addEventListener("click", setSearchUrlTemplate);
+    setSearchUrlTemplate();
+    copy.disabled = false;
+    redirect.disabled = false;
+    expand.addEventListener("click", function (e) {
+        var searchInfo = $("div.page-search-info");
+        if(this.parentElement.hasAttribute("open")) {
+            searchInfo.setAttribute("style", " display:none;");
+        } else {
+            searchInfo.setAttribute("style", "display:block;");
+        }
+    });
+});
+window.addEventListener("load", () => {
+    // Helper functions
+    const $ = (sel, root = document) => root.querySelector(sel);
+    const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+    const empty = (el) => { if (el) el.replaceChildren(); };
+    const show = (el) => { if (el) el.style.display = "block"; };
+    const hide = (el) => { if (el) el.style.display = "none"; };
+    const isVisible = (el) => !!(el && (el.offsetWidth || el.offsetHeight || el.getClientRects().length));
+    const setContent = (el, text) => { if (el) el.textContent = text; };
+    const setVisibility = (el, value) => { if (el) el.style.visibility = value; };
+    const triggerClick = (el) => el && el.dispatchEvent(new MouseEvent("click"));
+
+    const input = $("#search-input, #page-search-input");
+    const reset = $("#reset-search, #page-search-reset");
+    const modules = $("#search-modules");
+    const notify = $("#page-search-notify");
+    const resultSection = $("#search-result-section");
+    const resultContainer = $("#search-result-container");
+
+    let overlay = null;
+    let selectedLink = null;
+
+    let searchTerm = "";
+    let activeTab = "";
+    let fixedTab = false;
+    let visibleTabs = [];
+    let redirect = false;
+
     const MIN_TABBED_RESULTS = 10;
+
     function renderResults(result) {
-        resultContainer.empty();
+        empty(resultContainer);
+
         if (!result.length) {
-            notify.empty();
-            resultContainer.append($("<p></p>").append(messages.noResult));
+            empty(notify);
+            const p = document.createElement("p");
+            p.textContent = messages.noResult;
+            resultContainer.appendChild(p);
             return;
         } else if (result.length === 1) {
-            notify.html(messages.oneResult);
+            setContent(notify, messages.oneResult);
         } else {
-            notify.html(messages.manyResults.replace("{0}", result.length));
+            setContent(notify, messages.manyResults.replace("{0}", String(result.length)));
         }
-        var r = {
-            "types": [],
-            "members": [],
-            "packages": [],
-            "modules": [],
-            "searchTags": []
-        };
-        for (var i in result) {
-            var item = result[i];
-            var arr = r[item.category];
-            arr.push(item);
-        }
+
+        const r = { types: [], members: [], packages: [], modules: [], searchTags: [] };
+        for (const item of result) (r[item.category] ??= []).push(item);
+
         if (!activeTab || r[activeTab].length === 0) {
-            activeTab = Object.keys(r).find(category => r[category].length > 0);
+            activeTab = Object.keys(r).find(category => r[category].length > 0) || "";
         }
-        if (feelingLucky && activeTab) {
-            notify.html(messages.redirecting)
-            var firstItem = r[activeTab][0];
+
+        if (redirect && activeTab) {
+            setContent(notify, messages.redirecting);
+            const firstItem = r[activeTab][0];
             window.location = pathtoroot + getURL(firstItem.indexItem, firstItem.category);
-            input.val('');
+            input.value = "";
             return;
         }
+
         if (searchTerm.endsWith(".") && result.length > MIN_TABBED_RESULTS) {
-            if (activeTab === "types" && r["members"].length > r["types"].length) {
+            if (activeTab === "types" && r.members.length > r.types.length) {
                 activeTab = "members";
-            } else if (activeTab === "packages" && r["types"].length > r["packages"].length) {
+            } else if (activeTab === "packages" && r.types.length > r.packages.length) {
                 activeTab = "types";
             }
         }
-        var categoryCount = Object.keys(r).reduce(function(prev, curr) {
-            return prev + (r[curr].length > 0 ? 1 : 0);
-        }, 0);
+
+        const categoryCount = Object.keys(r).reduce(
+            (prev, curr) => prev + (r[curr].length > 0 ? 1 : 0),
+            0
+        );
+
         visibleTabs = [];
-        var tableTabs = $("<div class='table-tabs'></div>");
-        var resultTable = $("<div class='result-table'></div>");
-        for (var key in r) {
-            var id = "#result-tab-" + key.replace("searchTags", "search_tags");
-            if (r[key].length) {
-                var count = r[key].length >= 1000 ? "1000+" : r[key].length;
-                if (result.length > MIN_TABBED_RESULTS && categoryCount > 1) {
-                    $("<button/>")
-                        .attr("id", "result-tab-" + key)
-                        .attr("tabIndex", "-1")
-                        .addClass("page-search-header")
-                        .append($("<span/>")
-                            .html(categories[key])
-                            .append($("<span/>")
-                                .attr("style", "font-weight:normal;")
-                                .html(" (" + count + ")")))
-                        .on("click", null, key, function(e) {
-                            fixedTab = true;
-                            renderResult(e.data, $(this));
-                        }).appendTo(tableTabs);
-                    visibleTabs.push(key);
-                } else {
-                    $("<span class='page-search-header'>" + categories[key]
-                        + "<span style='font-weight: normal'> (" + count + ")</span></span>").appendTo(tableTabs);
-                    tableTabs.appendTo(categoryCount > 1 ? resultTable : resultContainer);
-                    renderItems(r[key], resultTable);
-                    tableTabs = $("<div class='table-tabs'></div>");
-                }
+
+        let tableTabs = document.createElement("div");
+        tableTabs.className = "table-tabs";
+
+        const resultTable = document.createElement("div");
+        resultTable.className = "result-table";
+
+        for (const key in r) {
+            if (!r[key].length) continue;
+
+            const count = r[key].length >= 1000 ? "1000+" : String(r[key].length);
+
+            if (result.length > MIN_TABBED_RESULTS && categoryCount > 1) {
+                const btn = document.createElement("button");
+                btn.id = `result-tab-${key}`;
+                btn.tabIndex = -1;
+                btn.classList.add("page-search-header");
+
+                const labelSpan = document.createElement("span");
+                setContent(labelSpan, categories[key]);
+
+                const countSpan = document.createElement("span");
+                countSpan.style.fontWeight = "normal";
+                countSpan.textContent = ` (${count})`;
+
+                labelSpan.appendChild(countSpan);
+                btn.appendChild(labelSpan);
+
+                btn.addEventListener("click", () => {
+                    fixedTab = true;
+                    renderResult(key, btn);
+                });
+
+                tableTabs.appendChild(btn);
+                visibleTabs.push(key);
+            } else {
+                const header = document.createElement("span");
+                header.className = "page-search-header";
+                header.appendChild(document.createTextNode(categories[key]));
+
+                const countSpan = document.createElement("span");
+                countSpan.style.fontWeight = "normal";
+                countSpan.textContent = ` (${count})`;
+                header.appendChild(countSpan);
+
+                tableTabs.appendChild(header);
+
+                (categoryCount > 1 ? resultTable : resultContainer).appendChild(tableTabs);
+
+                renderItems(r[key], resultTable);
+
+                tableTabs = document.createElement("div");
+                tableTabs.className = "table-tabs";
             }
         }
+
         if (activeTab && result.length > MIN_TABBED_RESULTS && categoryCount > 1) {
-            tableTabs.appendTo(resultContainer);
-            $("button#result-tab-" + activeTab).addClass("active-table-tab").attr("tabIndex", "0");
+            resultContainer.appendChild(tableTabs);
+
+            const activeBtn = $(`button#result-tab-${activeTab}`);
+            if (activeBtn) {
+                activeBtn.classList.add("active-table-tab");
+                activeBtn.tabIndex = 0;
+            }
+
             renderItems(r[activeTab], resultTable);
         }
-        resultTable.appendTo(resultContainer);
+
+        resultContainer.appendChild(resultTable);
+
         function renderResult(category, button) {
             activeTab = category;
-            resultContainer.find("div.result-table").remove();
-            renderItems(r[activeTab]).appendTo(resultContainer);
-            button.siblings().removeClass("active-table-tab").attr("tabIndex", "-1");
-            button.addClass("active-table-tab").attr("tabIndex", "0");
+
+            $$("div.result-table", resultContainer).forEach(el => el.remove());
+
+            const newTable = renderItems(r[activeTab]);
+            resultContainer.appendChild(newTable);
+
+            const siblings = Array.from(button.parentElement?.children ?? []).filter(n => n !== button);
+            siblings.forEach(sib => {
+                sib.classList?.remove("active-table-tab");
+                if (sib instanceof HTMLElement) sib.tabIndex = -1;
+            });
+
+            button.classList.add("active-table-tab");
+            button.tabIndex = 0;
         }
     }
+
     function selectTab(category) {
-        $("button#result-tab-" + category).focus().trigger("click");
-        // setSelected(document.querySelector("div.result-table > a.search-result-link"));
+        const btn = $(`button#result-tab-${category}`);
+        if (!btn) return;
+        btn.focus();
+        triggerClick(btn);
     }
+
     function select() {
-        if (!this.classList.contains("selected")) {
-            setSelected(this);
-        }
+        if (!this.classList.contains("selected")) setSelected(this);
     }
+
     function unselect() {
-        if (this.classList.contains("selected")) {
-            setSelected(null);
-        }
+        if (this.classList.contains("selected")) setSelected(null);
     }
+
     function renderItems(items, table) {
         if (!table) {
-            table = $("<div class='result-table'></div>");
+            table = document.createElement("div");
+            table.className = "result-table";
         }
-        $.each(items, function(index, item) {
-            renderItem(item, table);
-        });
+        items.forEach(item => renderItem(item, table));
         return table;
     }
+
     function renderItem(item, table) {
-        var label = getResultLabel(item);
-        var desc = getResultDescription(item);
-        var link = $("<a/>")
-            .attr("href",  pathtoroot + getURL(item.indexItem, item.category))
-            .attr("tabindex", "0")
-            .addClass("search-result-link");
-        link.on("focus", select.bind(link[0]))
-            .on("blur", unselect.bind(link[0]))
-            .append($("<span/>").addClass("search-result-label").html(label))
-            .append($("<span/>").addClass("search-result-desc").html(desc))
-            .appendTo(table);
+        const label = getResultLabel(item);
+        const desc = getResultDescription(item);
+
+        const link = document.createElement("a");
+        link.href = pathtoroot + getURL(item.indexItem, item.category);
+        link.tabIndex = 0;
+        link.className = "search-result-link";
+
+        link.addEventListener("focus", select.bind(link));
+        link.addEventListener("blur", unselect.bind(link));
+        link.addEventListener("click", closeSearch);
+
+        const labelSpan = document.createElement("span");
+        labelSpan.className = "search-result-label";
+        labelSpan.innerHTML = label;
+
+        const descSpan = document.createElement("span");
+        descSpan.className = "search-result-desc";
+        descSpan.innerHTML = desc;
+
+        link.appendChild(labelSpan);
+        link.appendChild(descSpan);
+        table.appendChild(link);
     }
-    var timeout;
-    function schedulePageSearch() {
-        if (timeout) {
-            clearTimeout(timeout);
-        }
-        timeout = setTimeout(function () {
-            doPageSearch()
-        }, 100);
+
+    let timeout;
+    function scheduleSearch() {
+        if (timeout) clearTimeout(timeout);
+        timeout = setTimeout(search, 200);
     }
-    function doPageSearch() {
-        var term = searchTerm = input.val().trim();
+
+    function search() {
+        setSearchUrl();
+        const term = (searchTerm = input.value.trim());
         if (term === "") {
             clearResult();
         } else {
-            notify.html(messages.searching);
-            var module = modules.val();
-            doSearch({ term: term, maxResults: 1200, module: module}, renderResults);
+            setContent(notify, messages.searching);
+            const module = modules ? modules.value : "";
+            doSearch({ term, maxResults: 1200, module }, renderResults);
         }
     }
-    input.on("input", function(e) {
-        feelingLucky = false;
-        reset.css("visibility", input.val() ? "visible" : "hidden");
-        schedulePageSearch();
+
+    function setSearchUrl() {
+        var query = input.value.trim();
+        if (input.id === "search-input") {
+            var link = document.getElementById("search-page-link");
+            var href = pathtoroot + "search.html?q=" + encodeURI(query);
+            if (modules && modules.value) {
+                href += "&m=" + modules.value;
+            }
+            link.href = href;
+        } else {
+            var url = document.location.pathname;
+            if (query) {
+                url += "?q=" + encodeURI(query);
+                if (activeTab && fixedTab) {
+                    url += "&c=" + activeTab;
+                }
+                if (modules && modules.value) {
+                    url += "&m=" + modules.value;
+                }
+            }
+            history.replaceState({ query: query }, "", url);
+        }
+    }
+
+    input.addEventListener("input", () => {
+        redirect = false;
+        setVisibility(reset, input.value ? "visible" : "hidden");
+        scheduleSearch();
     });
-    input.on("focus", function(e) {
-        openSearch();
+
+    input.addEventListener("focus", openSearch);
+
+    input.addEventListener("mouseup", function(e) {
+        e.preventDefault();
     });
+
     function setSelected(link) {
         if (selectedLink) {
             selectedLink.classList.remove("selected");
@@ -603,75 +753,94 @@ $(window).on("load", function() {
         }
         if (link) {
             link.classList.add("selected");
-            link.focus({focusVisible: true});
-            link.scrollIntoView({ block: 'nearest' });
+            link.focus({ focusVisible: true });
+            link.scrollIntoView({ block: "nearest" });
         }
         selectedLink = link;
     }
+
     function clearResult() {
-        notify.html(messages.enterTerm);
+        setContent(notify, messages.enterTerm);
         activeTab = "";
         fixedTab = false;
-        resultContainer.empty();
-        reset.css("visibility", input.val() ? "visible" : "hidden");
+        empty(resultContainer);
+        setVisibility(reset, input.value ? "visible" : "hidden");
+        setSearchUrl();
     }
+
     function openSearch() {
-        resultSection.show();
-        if (input.attr('id') !== "search-input" || (overlay && overlay.is(":visible"))) {
-            return;
-        }
-        overlay = $("<div class='overlay'></div>");
-        $("header").append(overlay);
-        overlay.click(closeSearch);
-        overlay.show();
+        show(resultSection);
+
+        if (input.id !== "search-input" || overlay) return;
+
+        overlay = document.createElement("div");
+        overlay.className = "overlay";
+        $("header")?.appendChild(overlay);
+        overlay.addEventListener("click", closeSearch);
+        show(overlay);
+
         document.body.style.setProperty("overflow-y", "hidden");
-        if (input.val()) {
+
+        var inputDiv = document.getElementById("search-input-container");
+        inputDiv.appendChild(input);
+        inputDiv.appendChild(reset);
+        input.focus();
+
+        if (input.value) {
             input.select();
-            doPageSearch();
+            search();
         }
     }
+
     function closeSearch() {
         clearResult();
-        resultSection.hide();
+        hide(resultSection);
+
         if (overlay) {
+            var inputDiv = document.querySelector("div.sub-nav div.nav-list-search");
+            inputDiv.appendChild(input);
+            inputDiv.appendChild(reset);
+
             overlay.remove();
             overlay = null;
             document.body.style.removeProperty("overflow-y");
         }
     }
-    window.addEventListener("hashchange", closeSearch); // TODO
-    document.addEventListener("keydown", e => {
-        if (e.ctrlKey || e.altKey || e.metaKey || !resultSection.is(":visible")) {
-            return;
-        }
+
+    window.addEventListener("hashchange", closeSearch);
+
+    document.addEventListener("keydown", (e) => {
+        if (e.ctrlKey || e.altKey || e.metaKey || !isVisible(resultSection)) return;
+
         if (e.key === "Escape") {
-            if (input.val()) {
-                input.val('').focus();
+            if (input.value) {
+                input.value = "";
+                input.focus();
                 clearResult();
             } else {
                 closeSearch();
                 input.blur();
             }
             e.preventDefault();
-        }
-        if (e.target === modules[0]) {
             return;
         }
+
+        if (e.target === modules) return;
+
         if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-            if (activeTab && visibleTabs.length > 1 && e.target !== input[0]) {
-                var tab = visibleTabs.indexOf(activeTab);
-                var newTab = e.key === "ArrowLeft"
+            if (activeTab && visibleTabs.length > 1 && e.target !== input) {
+                const tab = visibleTabs.indexOf(activeTab);
+                const newTab = e.key === "ArrowLeft"
                     ? Math.max(0, tab - 1)
                     : Math.min(visibleTabs.length - 1, tab + 1);
-                if (newTab !== tab) {
-                    selectTab(visibleTabs[newTab]);
-                }
+
+                if (newTab !== tab) selectTab(visibleTabs[newTab]);
                 e.preventDefault();
             }
         } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
-            let links = Array.from(
-                document.querySelectorAll("div.result-table > a.search-result-link"));
-            let current = links.indexOf(selectedLink);
+            const links = $$("div.result-table > a.search-result-link");
+            const current = links.indexOf(selectedLink);
+
             if (e.key === "ArrowUp" || (e.key === "Tab" && e.shiftKey)) {
                 if (current > 0) {
                     setSelected(links[current - 1]);
@@ -680,48 +849,70 @@ $(window).on("load", function() {
                     input.focus();
                 }
             } else if (e.key === "ArrowDown") {
-                if (current < links.length - 1) {
-                    setSelected(links[current + 1]);
-                }
+                if (current < links.length - 1) setSelected(links[current + 1]);
             }
             e.preventDefault();
-        } else if (selectedLink && (e.key.length === 1 || e.key === "Backspace")) {
+        } else if (e.target !== input && (e.key.length === 1 || e.key === "Backspace")) {
             setSelected(null);
             input.focus();
+            e.preventDefault();
         }
     });
-    reset.on("click", function() {
-        input.val('').focus();
+
+    reset.addEventListener("click", () => {
+        input.value = "";
+        input.focus();
         clearResult();
     });
-    modules.on("change", function() {
-        if (input.val()) {
-            doPageSearch();
-        }
-        input.focus();
-        try {
-            localStorage.setItem("search-modules", modules.val());
-        } catch (unsupported) {
-            console.log("Error setting module: " + unsupported);
-        }
-    });
 
-    input.prop("disabled", false);
-    input.attr("autocapitalize", "off");
-    reset.prop("disabled", false);
-
-    try {
-        var searchModules = localStorage.getItem("search-modules");
-        if (searchModules) {
-            modules.val(searchModules);
-        }
-    } catch (unsupported) {
-        console.log("Error getting module: " + unsupported);
+    if (modules) {
+        modules.addEventListener("change", () => {
+            if (input.value) search();
+            input.focus();
+            try {
+                localStorage.setItem("search-modules", modules.value);
+            } catch (unsupported) {
+                console.log("Error setting module: " + unsupported);
+            }
+        });
     }
 
-    if (input.val()) {
-        doPageSearch();
+    // Enable/initialize
+    input.disabled = false;
+    input.setAttribute("autocapitalize", "off");
+    reset.disabled = false;
+
+    var urlParams = new URLSearchParams(window.location.search);
+    if (modules) {
+        if (urlParams.has("m")) {
+            modules.value = urlParams.get("m");
+        } else {
+            try {
+                const searchModules = localStorage.getItem("search-modules");
+                if (searchModules) modules.value = searchModules;
+            } catch (unsupported) {
+                console.log("Error getting module: " + unsupported);
+            }
+        }
+    }
+    if (urlParams.has("q")) {
+        input.value = urlParams.get("q");
+        setVisibility(reset, input.value ? "visible" : "hidden");
+    }
+    if (urlParams.has("c")) {
+        activeTab = urlParams.get("c");
+        fixedTab = true;
+    }
+    if (urlParams.get("r")) {
+        redirect = true;
+    }
+    if (input.value) {
+        search();
     } else {
-        notify.html(messages.enterTerm);
+        setContent(notify, messages.enterTerm);
+    }
+    if (input.id === "page-search-input") {
+        input.select();
+        input.focus();
     }
 });

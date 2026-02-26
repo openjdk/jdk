@@ -735,6 +735,16 @@ public enum HtmlStyles implements HtmlStyle {
     pageSearchInfo,
 
     /**
+     * The class for a {@code div} element in the search widget containing the search form inputs.
+     */
+    searchForm,
+
+    /**
+     * The class for a {@code div} element in the search widget containing search-related links.
+     */
+    searchLinks,
+
+    /**
      * The class for a link in the static "Index" pages to a custom searchable item,
      * such as defined with an {@code @index} tag.
      */

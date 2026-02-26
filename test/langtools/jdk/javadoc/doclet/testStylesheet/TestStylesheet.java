@@ -132,6 +132,7 @@ public class TestStylesheet extends JavadocTester {
                         min-height:12px;
                         font-size:0;
                         visibility:hidden;
+                        cursor: pointer;
                     }""",
                 """
                     ::placeholder {
