@@ -376,9 +376,13 @@ void JvmtiEventControllerPrivate::enter_interp_only_mode(JvmtiThreadState *state
   }
   // This flag will be cleared in EnterInterpOnlyModeClosure handshake.
   state->set_pending_interp_only_mode(true);
+
+  // There are two cases when entering interp_only_mode is postponed:
+  // 1. Unmounted virtual thread - EnterInterpOnlyModeClosure::do_thread will be executed at mount;
+  // 2. Carrier thread with mounted virtual thread - EnterInterpOnlyModeClosure::do_thread will be executed at unmount.
   if (target == nullptr ||                                                         // an unmounted virtual thread
       JvmtiEnvBase::is_thread_carrying_vthread(target, state->get_thread_oop())) { // a vthread carrying thread
-    return;  // EnterInterpOnlyModeClosure will be executed right after mount.
+    return;  // EnterInterpOnlyModeClosure will be executed right after mount or unmount.
   }
   EnterInterpOnlyModeClosure hs(state);
   if (target->is_handshake_safe_for(current)) {
