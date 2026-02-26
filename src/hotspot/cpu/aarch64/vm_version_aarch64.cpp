@@ -446,7 +446,9 @@ void VM_Version::initialize() {
       FLAG_SET_DEFAULT(BlockZeroingLowLimit, 4 * VM_Version::zva_length());
     }
   } else if (UseBlockZeroing) {
-    warning("DC ZVA is not available on this CPU");
+    if (!FLAG_IS_DEFAULT(UseBlockZeroing)) {
+      warning("DC ZVA is not available on this CPU");
+    }
     FLAG_SET_DEFAULT(UseBlockZeroing, false);
   }
 

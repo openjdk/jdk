@@ -207,7 +207,7 @@ public:
     return false;
   }
 
-  static bool is_zva_enabled() { return 0 <= _zva_length; }
+  static bool is_zva_enabled() { return 0 < _zva_length; }
   static int zva_length() {
     assert(is_zva_enabled(), "ZVA not available");
     return _zva_length;
