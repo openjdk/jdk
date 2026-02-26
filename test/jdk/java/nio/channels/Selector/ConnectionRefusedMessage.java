@@ -109,12 +109,14 @@ class ConnectionRefusedMessage {
     }
 
     private static void assertExceptionMessage(final ConnectException ce) {
-        if (Boolean.getBoolean("check.relaxed") ?
-            (ce.getMessage() == null || !ce.getMessage().startsWith("Connection refused")) :
-            !"Connection refused".equals(ce.getMessage())) {
-            // propagate the original exception
-            fail("unexpected exception message: " + ce.getMessage(), ce);
+        if ("Connection refused".equals(ce.getMessage())) {
+            return;
         }
+        if (Boolean.getBoolean("check.relaxed") && ce.getMessage() != null && ce.getMessage().startsWith("Connection refused")) {
+            return;
+        }
+        // propagate the original exception
+        fail("unexpected exception message: " + ce.getMessage(), ce);
     }
 
     // Try to find a suitable port to provoke a "Connection Refused" error.
