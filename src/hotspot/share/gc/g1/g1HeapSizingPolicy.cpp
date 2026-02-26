@@ -366,6 +366,12 @@ static size_t target_heap_capacity(size_t used_bytes, uintx free_ratio) {
 }
 
 size_t G1HeapSizingPolicy::full_collection_resize_amount(bool& expand, size_t allocation_word_size) {
+  // User-requested Full GCs introduce GC load unrelated to heap size; reset CPU
+  // usage tracking so heap resizing heuristics are driven only by GC pressure.
+  if (GCCause::is_user_requested_gc(const_cast<G1CollectedHeap*>(_g1h)->gc_cause())) {
+    reset_cpu_usage_tracking_data();
+  }
+
   const size_t capacity_after_gc = _g1h->capacity();
   // Capacity, free and used after the GC counted as full regions to
   // include the waste in the following calculations.
