@@ -1027,7 +1027,7 @@ void ObjectMonitor::enter_internal(JavaThread* current, ObjectWaiter* current_no
     assert(!has_owner(current), "invariant");
 
     if (reenter_path) {
-      // If try_lock failed, spin again - we expect the notifier to release the monitor quicly. 
+      // If try_lock failed, spin again - we expect the notifier to release the monitor quicly.
       // Note that spin count may be zero so the above try_lock is necessary.
       if (try_spin(current)) {
         break;
