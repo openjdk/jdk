@@ -35,8 +35,8 @@
  * @requires vm.opt.UseCompactObjectHeaders != "false"
  * @comment Driver sets compressed oops/class pointers, jtreg overrides will cause problems.
             Only run the test if the flags are not set via the command line.
- * @requires !(vm.opt.UseCompressedOops == "true" | vm.opt.UseCompressedOops == "false")
- * @requires !(vm.opt.UseCompressedClassPointers == "true" | vm.opt.UseCompressedClassPointers == "false")
+ * @requires vm.opt.UseCompressedOops == null
+ * @requires vm.opt.UseCompressedClassPointers == null
  * @run driver TestZGCWithCDS true
  */
 
@@ -54,8 +54,8 @@
  * @requires vm.opt.UseCompactObjectHeaders != "true"
  * @comment Driver sets compressed oops/class pointers, jtreg overrides will cause problems.
             Only run the test if the flags are not set via the command line.
- * @requires !(vm.opt.UseCompressedOops == "true" | vm.opt.UseCompressedOops == "false")
- * @requires !(vm.opt.UseCompressedClassPointers == "true" | vm.opt.UseCompressedClassPointers == "false")
+ * @requires vm.opt.UseCompressedOops == null
+ * @requires vm.opt.UseCompressedClassPointers == null
  * @run driver TestZGCWithCDS false
  */
 
