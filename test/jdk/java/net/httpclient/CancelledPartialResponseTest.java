@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @bug 8309118
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
- * @run testng/othervm/timeout=40  -Djdk.internal.httpclient.debug=false -Djdk.httpclient.HttpClient.log=trace,errors,headers
+ * @run junit/othervm/timeout=40  -Djdk.internal.httpclient.debug=false -Djdk.httpclient.HttpClient.log=trace,errors,headers
  *                              CancelledPartialResponseTest
  */
 
@@ -47,11 +47,6 @@ import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.frame.ResetFrame;
 import jdk.internal.net.http.http3.Http3Error;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.TestException;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
@@ -74,16 +69,22 @@ import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.fail;
+
 public class CancelledPartialResponseTest {
 
-    Http2TestServer http2TestServer;
+    private static Http2TestServer http2TestServer;
 
-    HttpTestServer http3TestServer;
+    private static HttpTestServer http3TestServer;
 
     // "NoError" urls complete with an exception. "NoError" or "Error" here refers to the error code in the RST_STREAM frame
     // and not the outcome of the test.
-    URI warmup, h2PartialResponseResetNoError, h2PartialResponseResetError, h2FullResponseResetNoError, h2FullResponseResetError;
-    URI h3PartialResponseStopSending, h3FullResponseStopSending;
+    private static URI warmup, h2PartialResponseResetNoError, h2PartialResponseResetError, h2FullResponseResetNoError, h2FullResponseResetError;
+    private static URI h3PartialResponseStopSending, h3FullResponseStopSending;
 
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
 
@@ -91,8 +92,7 @@ public class CancelledPartialResponseTest {
     static PrintStream out = System.out;
 
     // TODO: Investigate further if checking against HTTP/3 Full Response is necessary
-    @DataProvider(name = "testData")
-    public Object[][] testData() {
+    public static Object[][] testData() {
         return new Object[][] {
                 { HTTP_2, h2PartialResponseResetNoError },
                 { HTTP_2, h2PartialResponseResetError },  // Checks RST_STREAM is processed if client sees no END_STREAM
@@ -104,7 +104,8 @@ public class CancelledPartialResponseTest {
     }
 
 
-    @Test(dataProvider = "testData")
+    @ParameterizedTest
+    @MethodSource("testData")
     public void test(Version version, URI uri) {
         out.printf("\nTesting with Version: %s, URI: %s\n", version, uri.toASCIIString());
         err.printf("\nTesting with Version: %s, URI: %s\n", version, uri.toASCIIString());
@@ -161,8 +162,8 @@ public class CancelledPartialResponseTest {
         }
     }
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         http2TestServer = new Http2TestServer(false, 0);
         http3TestServer = HttpTestServer.create(Http3DiscoveryMode.HTTP_3_URI_ONLY, sslContext);
 
@@ -187,8 +188,8 @@ public class CancelledPartialResponseTest {
         http3TestServer.start();
     }
 
-    @AfterTest
-    public void teardown() {
+    @AfterAll
+    public static void teardown() {
         http2TestServer.stop();
     }
 
@@ -246,10 +247,10 @@ public class CancelledPartialResponseTest {
                 switch (exchange.getRequestURI().getPath()) {
                     case "/partialResponse/codeNoError" -> testExchange.addResetToOutputQ(ResetFrame.NO_ERROR);
                     case "/partialResponse/codeError" -> testExchange.addResetToOutputQ(ResetFrame.PROTOCOL_ERROR);
-                    default -> throw new TestException("Invalid Request Path");
+                    default -> fail("Invalid Request Path");
                 }
             } else {
-                throw new TestException("Wrong Exchange type used");
+                fail("Wrong Exchange type used");
             }
         }
     }
@@ -268,10 +269,10 @@ public class CancelledPartialResponseTest {
                 switch (exchange.getRequestURI().getPath()) {
                     case "/fullResponse/codeNoError" -> testExchange.addResetToOutputQ(ResetFrame.NO_ERROR);
                     case "/fullResponse/codeError" -> testExchange.addResetToOutputQ(ResetFrame.PROTOCOL_ERROR);
-                    default -> throw new TestException("Invalid Request Path");
+                    default -> fail("Invalid Request Path");
                 }
             } else {
-                throw new TestException("Wrong Exchange type used");
+                fail("Wrong Exchange type used");
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,30 +32,31 @@ import java.util.concurrent.Phaser;
 import java.util.concurrent.SubmissionPublisher;
 import java.util.stream.IntStream;
 import java.net.http.HttpResponse.BodySubscriber;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import static java.lang.Long.MAX_VALUE;
 import static java.lang.Long.MIN_VALUE;
 import static java.nio.ByteBuffer.wrap;
 import static java.net.http.HttpResponse.BodySubscribers.buffering;
-import static org.testng.Assert.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /*
  * @test
  * @summary Test for HttpResponse.BodySubscriber.buffering() onError/onComplete
- * @run testng/othervm BufferingSubscriberErrorCompleteTest
+ * @run junit/othervm BufferingSubscriberErrorCompleteTest
  */
 
 public class BufferingSubscriberErrorCompleteTest {
 
-    @DataProvider(name = "illegalDemand")
-    public Object[][] illegalDemand() {
+    public static Object[][] illegalDemand() {
         return new Object[][]{
             {0L}, {-1L}, {-5L}, {-100L}, {-101L}, {-100_001L}, {MIN_VALUE}
         };
     }
 
-    @Test(dataProvider = "illegalDemand")
+    @ParameterizedTest
+    @MethodSource("illegalDemand")
     public void illegalRequest(long demand) throws Exception {
         ExecutorService executor = Executors.newFixedThreadPool(1);
         SubmissionPublisher<List<ByteBuffer>> publisher =
@@ -72,18 +73,17 @@ public class BufferingSubscriberErrorCompleteTest {
         s.request(demand);
         gate.arriveAndAwaitAdvance();
 
-        assertEquals(previous + 1, exposingSubscriber.onErrorInvocations);
+        assertEquals(exposingSubscriber.onErrorInvocations, previous + 1);
         assertTrue(exposingSubscriber.throwable instanceof IllegalArgumentException,
                 "Expected IAE, got:" + exposingSubscriber.throwable);
 
         furtherCancelsRequestsShouldBeNoOp(s);
-        assertEquals(exposingSubscriber.onErrorInvocations, 1);
+        assertEquals(1, exposingSubscriber.onErrorInvocations);
         executor.shutdown();
     }
 
 
-    @DataProvider(name = "bufferAndItemSizes")
-    public Object[][] bufferAndItemSizes() {
+    public static Object[][] bufferAndItemSizes() {
         List<Object[]> values = new ArrayList<>();
 
         for (int bufferSize : new int[] { 1, 5, 10, 100, 1000 })
@@ -93,7 +93,8 @@ public class BufferingSubscriberErrorCompleteTest {
         return values.stream().toArray(Object[][]::new);
     }
 
-    @Test(dataProvider = "bufferAndItemSizes")
+    @ParameterizedTest
+    @MethodSource("bufferAndItemSizes")
     public void onErrorFromPublisher(int bufferSize,
                                      int numberOfItems)
         throws Exception
@@ -117,19 +118,19 @@ public class BufferingSubscriberErrorCompleteTest {
 
         Subscription s = exposingSubscriber.subscription;
 
-        assertEquals(exposingSubscriber.onErrorInvocations, 1);
-        assertEquals(exposingSubscriber.onCompleteInvocations, 0);
-        assertEquals(exposingSubscriber.throwable, t);
-        assertEquals(exposingSubscriber.throwable.getMessage(),
-                     "a message from me to me");
+        assertEquals(1, exposingSubscriber.onErrorInvocations);
+        assertEquals(0, exposingSubscriber.onCompleteInvocations);
+        assertEquals(t, exposingSubscriber.throwable);
+        assertEquals("a message from me to me", exposingSubscriber.throwable.getMessage());
 
         furtherCancelsRequestsShouldBeNoOp(s);
-        assertEquals(exposingSubscriber.onErrorInvocations, 1);
-        assertEquals(exposingSubscriber.onCompleteInvocations, 0);
+        assertEquals(1, exposingSubscriber.onErrorInvocations);
+        assertEquals(0, exposingSubscriber.onCompleteInvocations);
         executor.shutdown();
     }
 
-    @Test(dataProvider = "bufferAndItemSizes")
+    @ParameterizedTest
+    @MethodSource("bufferAndItemSizes")
     public void onCompleteFromPublisher(int bufferSize,
                                         int numberOfItems)
         throws Exception
@@ -152,14 +153,14 @@ public class BufferingSubscriberErrorCompleteTest {
 
         Subscription s = exposingSubscriber.subscription;
 
-        assertEquals(exposingSubscriber.onErrorInvocations, 0);
-        assertEquals(exposingSubscriber.onCompleteInvocations, 1);
-        assertEquals(exposingSubscriber.throwable, null);
+        assertEquals(0, exposingSubscriber.onErrorInvocations);
+        assertEquals(1, exposingSubscriber.onCompleteInvocations);
+        assertEquals(null, exposingSubscriber.throwable);
 
         furtherCancelsRequestsShouldBeNoOp(s);
-        assertEquals(exposingSubscriber.onErrorInvocations, 0);
-        assertEquals(exposingSubscriber.onCompleteInvocations, 1);
-        assertEquals(exposingSubscriber.throwable, null);
+        assertEquals(0, exposingSubscriber.onErrorInvocations);
+        assertEquals(1, exposingSubscriber.onCompleteInvocations);
+        assertEquals(null, exposingSubscriber.throwable);
         executor.shutdown();
     }
 

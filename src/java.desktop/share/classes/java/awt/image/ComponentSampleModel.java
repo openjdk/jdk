@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -503,7 +503,11 @@ public class ComponentSampleModel extends SampleModel
     }
 
     /** Returns the number of bits per sample for the specified band.
-     *  @param band the specified band
+     * <p>
+     * Since all bands of a {@code ComponentSampleModel} are the same
+     * size, this method ignores the {@code band} parameter and returns
+     * the size of the first (0th) band.
+     *  @param band the specified band (ignored)
      *  @return the number of bits per sample for the specified band.
      */
     public final int getSampleSize(int band) {

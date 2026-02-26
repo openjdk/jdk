@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,12 @@
 /* @test
  * @bug 4313887 6838333 8273922
  * @summary Unit test for java.nio.file.attribute.UserDefinedFileAttributeView
+ *     (use -Dseed=X to set PRNG seed)
  * @library ../.. /test/lib
  * @key randomness
  * @build jdk.test.lib.Platform
+ * @build jdk.test.lib.RandomFactory
+ * @build jtreg.SkippedException
  * @run main Basic
  */
 
@@ -38,17 +41,20 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import static java.nio.file.LinkOption.*;
-import java.nio.file.attribute.*;
+import java.nio.file.attribute.UserDefinedFileAttributeView;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Random;
+
 import jdk.test.lib.Platform;
+import jdk.test.lib.RandomFactory;
+
+import jtreg.SkippedException;
 
 public class Basic {
 
     // Must be indeterministic
-    private static final Random rand = new Random();
+    private static final Random rand = RandomFactory.getRandom();
 
     private static final String ATTR_NAME = "mime_type";
     private static final String ATTR_VALUE = "text/plain";
@@ -281,10 +287,8 @@ public class Basic {
         // create temporary directory to run tests
         Path dir = TestUtil.createTemporaryDirectory();
         try {
-            if (!Files.getFileStore(dir).supportsFileAttributeView("user")) {
-                System.out.println("UserDefinedFileAttributeView not supported - skip test");
-                return;
-            }
+            if (!Files.getFileStore(dir).supportsFileAttributeView("user"))
+                throw new SkippedException("UserDefinedFileAttributeView not supported");
 
             // test access to user defined attributes of regular file
             Path file = dir.resolve("foo.html");
@@ -310,7 +314,7 @@ public class Basic {
                 Path link = dir.resolve("link");
                 Files.createSymbolicLink(link, target);
                 try {
-                    test(link, NOFOLLOW_LINKS);
+                    test(link, LinkOption.NOFOLLOW_LINKS);
                 } catch (IOException x) {
                     // access to attributes of sym link may not be supported
                 } finally {

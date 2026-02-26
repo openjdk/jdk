@@ -28,6 +28,7 @@
 #include "gc/parallel/psYoungGen.hpp"
 #include "gc/shared/gcUtil.hpp"
 #include "gc/shared/genArguments.hpp"
+#include "gc/shared/hSpaceCounters.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
@@ -133,12 +134,21 @@ void PSYoungGen::initialize_work() {
     max_eden_size = size - 2 * max_survivor_size;
   }
 
-  _eden_counters = new SpaceCounters("eden", 0, max_eden_size, _eden_space,
-                                     _gen_counters);
-  _from_counters = new SpaceCounters("s0", 1, max_survivor_size, _from_space,
-                                     _gen_counters);
-  _to_counters = new SpaceCounters("s1", 2, max_survivor_size, _to_space,
-                                   _gen_counters);
+  _eden_counters = new HSpaceCounters(_gen_counters->name_space(),
+                                       "eden",
+                                       0,
+                                       max_eden_size,
+                                       _eden_space->capacity_in_bytes());
+  _from_counters = new HSpaceCounters(_gen_counters->name_space(),
+                                       "s0",
+                                       1,
+                                       max_survivor_size,
+                                       _from_space->capacity_in_bytes());
+  _to_counters = new HSpaceCounters(_gen_counters->name_space(),
+                                     "s1",
+                                     2,
+                                     max_survivor_size,
+                                     _to_space->capacity_in_bytes());
 
   compute_initial_space_boundaries();
 }
@@ -161,9 +171,9 @@ void PSYoungGen::compute_initial_space_boundaries() {
   space_invariants();
 
   if (UsePerfData) {
-    _eden_counters->update_capacity();
-    _from_counters->update_capacity();
-    _to_counters->update_capacity();
+    _eden_counters->update_capacity(_eden_space->capacity_in_bytes());
+    _from_counters->update_capacity(_from_space->capacity_in_bytes());
+    _to_counters->update_capacity(_to_space->capacity_in_bytes());
   }
 }
 
@@ -606,9 +616,9 @@ void PSYoungGen::post_resize() {
 
 void PSYoungGen::update_counters() {
   if (UsePerfData) {
-    _eden_counters->update_all();
-    _from_counters->update_all();
-    _to_counters->update_all();
+    _eden_counters->update_all(_eden_space->capacity_in_bytes(), _eden_space->used_in_bytes());
+    _from_counters->update_all(_from_space->capacity_in_bytes(), _from_space->used_in_bytes());
+    _to_counters->update_all(_to_space->capacity_in_bytes(), _to_space->used_in_bytes());
     _gen_counters->update_capacity(_virtual_space->committed_size());
   }
 }

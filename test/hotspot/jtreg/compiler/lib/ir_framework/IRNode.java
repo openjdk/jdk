@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -640,6 +640,11 @@ public class IRNode {
         beforeMatchingNameRegex(CONV, "Conv");
     }
 
+    public static final String CONV_D2F = PREFIX + "CONV_D2F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CONV_D2F, "ConvD2F");
+    }
+
     public static final String CONV_D2I = PREFIX + "CONV_D2I" + POSTFIX;
     static {
         beforeMatchingNameRegex(CONV_D2I, "ConvD2I");
@@ -648,6 +653,11 @@ public class IRNode {
     public static final String CONV_D2L = PREFIX + "CONV_D2L" + POSTFIX;
     static {
         beforeMatchingNameRegex(CONV_D2L, "ConvD2L");
+    }
+
+    public static final String CONV_F2D = PREFIX + "CONV_F2D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CONV_F2D, "ConvF2D");
     }
 
     public static final String CONV_F2HF = PREFIX + "CONV_F2HF" + POSTFIX;
@@ -1574,6 +1584,16 @@ public class IRNode {
         superWordNodes(MAX_REDUCTION_V, "MaxReductionV");
     }
 
+    public static final String UMIN_REDUCTION_V = PREFIX + "UMIN_REDUCTION_V" + POSTFIX;
+    static {
+        superWordNodes(UMIN_REDUCTION_V, "UMinReductionV");
+    }
+
+    public static final String UMAX_REDUCTION_V = PREFIX + "UMAX_REDUCTION_V" + POSTFIX;
+    static {
+        superWordNodes(UMAX_REDUCTION_V, "UMaxReductionV");
+    }
+
     public static final String NEG_VF = VECTOR_PREFIX + "NEG_VF" + POSTFIX;
     static {
         vectorNode(NEG_VF, "NegVF", TYPE_FLOAT);
@@ -1983,6 +2003,11 @@ public class IRNode {
     public static final String SQRT_HF = PREFIX + "SQRT_HF" + POSTFIX;
     static {
        beforeMatchingNameRegex(SQRT_HF, "SqrtHF");
+    }
+
+    public static final String SQRT_D = PREFIX + "SQRT_D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(SQRT_D, "SqrtD");
     }
 
     public static final String SQRT_F = PREFIX + "SQRT_F" + POSTFIX;
@@ -3080,6 +3105,11 @@ public class IRNode {
         machOnlyNameRegex(X86_CMOVEL_IMM01UCF, "cmovL_imm_01UCF");
     }
 
+    public static final String X86_CMOVEL_IMM01UCFE = PREFIX + "X86_CMOVEL_IMM01UCFE" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_CMOVEL_IMM01UCFE, "cmovL_imm_01UCFE");
+    }
+
     public static final String MOD_F = PREFIX + "MOD_F" + POSTFIX;
     static {
         String regex = START + "ModF" + MID + END;
@@ -3135,6 +3165,11 @@ public class IRNode {
     public static final String REPLICATE_HF_IMM8 = PREFIX + "REPLICATE_HF_IMM8" + POSTFIX;
     static {
         machOnlyNameRegex(REPLICATE_HF_IMM8, "replicateHF_imm8_gt128b");
+    }
+
+    public static final String OPAQUE_CONSTANT_BOOL = PREFIX + "OPAQUE_CONSTANT_BOOL" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(OPAQUE_CONSTANT_BOOL, "OpaqueConstantBool");
     }
 
     /*

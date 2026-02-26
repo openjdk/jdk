@@ -56,6 +56,7 @@ import jdk.jpackage.test.mock.CommandMockSpec;
 import jdk.jpackage.test.mock.MockIllegalStateException;
 import jdk.jpackage.test.mock.ScriptSpec;
 import jdk.jpackage.test.mock.ScriptSpecInDir;
+import jdk.jpackage.test.stdmock.JPackageMockUtils;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -240,7 +241,7 @@ public class MacDmgPackagerTest {
 
             var script = dir(Objects.requireNonNull(workDir)).create();
 
-            ExecutorFactory executorFactory = MockUtils.buildJPackage()
+            ExecutorFactory executorFactory = JPackageMockUtils.buildJPackage()
                     .script(script).listener(System.out::println).createExecutorFactory();
 
             var objectFactory = ObjectFactory.build()
@@ -406,14 +407,14 @@ public class MacDmgPackagerTest {
         }
     }
 
-    private final static BiConsumer<Path, Consumer<Path>> EXPAND_PATH = (path, sink) -> {
+    private static final BiConsumer<Path, Consumer<Path>> EXPAND_PATH = (path, sink) -> {
         do {
             sink.accept(path);
             path = path.getParent();
         } while (path != null);
     };
 
-    private final static List<Path> DMG_ICON_FILES = Stream.of(
+    private static final List<Path> DMG_ICON_FILES = Stream.of(
             ".VolumeIcon.icns",
             ".background/background.tiff"
     ).map(Path::of).collect(Collectors.toUnmodifiableList());

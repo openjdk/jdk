@@ -24,8 +24,6 @@
  */
 package javax.swing.plaf.nimbus;
 
-import sun.awt.AppContext;
-
 import java.awt.image.BufferedImage;
 import java.lang.ref.SoftReference;
 
@@ -81,13 +79,10 @@ abstract class Effect {
     // =================================================================================================================
     // Static data cache
 
+    private static final ArrayCache ARRAY_CACHE = new ArrayCache();
+
     protected static ArrayCache getArrayCache() {
-        ArrayCache cache = (ArrayCache)AppContext.getAppContext().get(ArrayCache.class);
-        if (cache == null){
-            cache = new ArrayCache();
-            AppContext.getAppContext().put(ArrayCache.class,cache);
-        }
-        return cache;
+        return ARRAY_CACHE;
     }
 
     protected static class ArrayCache {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,13 @@ import java.util.List;
 import java.util.Map;
 
 import jdk.internal.net.http.quic.QuicConnectionIdFactory;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
 
-/**
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+
+/*
  * @test
- * @run testng/othervm ConnectionIDSTest
+ * @run junit/othervm ConnectionIDSTest
  */
 public class ConnectionIDSTest {
 
@@ -76,14 +77,14 @@ public class ConnectionIDSTest {
             int expectedLength = Math.min(length, 20);
             expectedLength = Math.max(9, expectedLength);
             long token = idFactory.newToken();
-            assertEquals(token, previous +1);
+            assertEquals(previous +1, token);
             previous = token;
             var id = idFactory.newConnectionId(length, token);
             var cid = new ConnID(token, id);
             System.out.printf("%s: %s/%s%n", length, token, cid);
-            assertEquals(id.length, expectedLength);
-            assertEquals(idFactory.getConnectionIdLength(id), expectedLength);
-            assertEquals(idFactory.getConnectionIdToken(id), token);
+            assertEquals(expectedLength, id.length);
+            assertEquals(expectedLength, idFactory.getConnectionIdLength(id));
+            assertEquals(token, idFactory.getConnectionIdToken(id));
             ids.add(cid);
         }
 
@@ -101,9 +102,9 @@ public class ConnectionIDSTest {
                 var id = idFactory.newConnectionId(length, token);
                 var cid = new ConnID(expectedToken, id);
                 System.out.printf("%s: %s/%s%n", length, token, cid);
-                assertEquals(id.length, length);
-                assertEquals(idFactory.getConnectionIdLength(id), length);
-                assertEquals(idFactory.getConnectionIdToken(id), expectedToken);
+                assertEquals(length, id.length);
+                assertEquals(length, idFactory.getConnectionIdLength(id));
+                assertEquals(expectedToken, idFactory.getConnectionIdToken(id));
                 ids.add(cid);
             }
         }
@@ -119,15 +120,15 @@ public class ConnectionIDSTest {
                 var id = idFactory.newConnectionId(length, token);
                 var cid = new ConnID(expectedToken, id);
                 System.out.printf("%s: %s/%s%n", length, token, cid);
-                assertEquals(id.length, length);
-                assertEquals(idFactory.getConnectionIdLength(id), length);
-                assertEquals(idFactory.getConnectionIdToken(id), expectedToken);
+                assertEquals(length, id.length);
+                assertEquals(length, idFactory.getConnectionIdLength(id));
+                assertEquals(expectedToken, idFactory.getConnectionIdToken(id));
                 ids.add(cid);
             }
         }
 
         // now verify uniqueness
-        Map<ConnID, ConnID> tested = new HashMap();
+        Map<ConnID, ConnID> tested = new HashMap<>();
         record duplicates(ConnID first, ConnID second) {}
         List<duplicates> duplicates = new ArrayList<>();
         for (var cid : ids) {
@@ -144,9 +145,9 @@ public class ConnectionIDSTest {
         // and the token value is too big; check and remove them
         for (var iter = duplicates.iterator(); iter.hasNext(); ) {
             var dup = iter.next();
-            assertEquals(dup.first.token(), dup.second.token());
-            assertEquals(dup.first.bytes().length, dup.second.bytes().length);
-            assertEquals(dup.first.bytes(), dup.second.bytes());
+            assertEquals(dup.second.token(), dup.first.token());
+            assertEquals(dup.second.bytes().length, dup.first.bytes().length);
+            assertArrayEquals(dup.second.bytes(), dup.first.bytes());
             long mask = 0x00FFFFFF00000000L;
             for (int i=0; i<3; i++) {
                 mask = mask << 8;
@@ -165,6 +166,6 @@ public class ConnectionIDSTest {
         for (var dup : duplicates) {
             System.out.println("unexpected duplicate: " + dup);
         }
-        assertEquals(duplicates.size(), 0);
+        assertEquals(0, duplicates.size());
     }
 }

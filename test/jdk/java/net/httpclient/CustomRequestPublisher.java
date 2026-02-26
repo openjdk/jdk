@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @summary Checks correct handling of Publishers that call onComplete without demand
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
- * @run testng/othervm CustomRequestPublisher
+ * @run junit/othervm CustomRequestPublisher
  */
 
 import java.net.InetAddress;
@@ -51,10 +51,6 @@ import java.net.http.HttpResponse;
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
@@ -62,27 +58,31 @@ import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.net.http.HttpResponse.BodyHandlers.ofString;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class CustomRequestPublisher implements HttpServerAdapters {
 
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
-    HttpTestServer httpTestServer;    // HTTP/1.1        [ 4 servers ]
-    HttpTestServer httpsTestServer;   // HTTPS/1.1
-    HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
-    HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
-    HttpTestServer http3TestServer;   // HTTP/3 ( h3  )
-    String httpURI;
-    String httpsURI;
-    String http2URI;
-    String https2URI;
-    String http3URI;
+    private static HttpTestServer httpTestServer;    // HTTP/1.1        [ 4 servers ]
+    private static HttpTestServer httpsTestServer;   // HTTPS/1.1
+    private static HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
+    private static HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
+    private static HttpTestServer http3TestServer;   // HTTP/3 ( h3  )
+    private static String httpURI;
+    private static String httpsURI;
+    private static String http2URI;
+    private static String https2URI;
+    private static String http3URI;
 
-    @DataProvider(name = "variants")
-    public Object[][] variants() {
+    public static Object[][] variants() {
         Supplier<BodyPublisher> fixedSupplier   = () -> new FixedLengthBodyPublisher();
         Supplier<BodyPublisher> unknownSupplier = () -> new UnknownLengthBodyPublisher();
 
@@ -114,12 +114,12 @@ public class CustomRequestPublisher implements HttpServerAdapters {
     /** Asserts HTTP Version, and SSLSession presence when applicable. */
     static void assertVersionAndSession(int step, HttpResponse response, String uri) {
         if (uri.contains("http2") || uri.contains("https2")) {
-            assertEquals(response.version(), HTTP_2);
+            assertEquals(HTTP_2, response.version());
         } else if (uri.contains("http1") || uri.contains("https1")) {
-            assertEquals(response.version(), HTTP_1_1);
+            assertEquals(HTTP_1_1, response.version());
         } else if (uri.contains("http3")) {
-            if (step == 0) assertNotEquals(response.version(), HTTP_1_1);
-            else assertEquals(response.version(), HTTP_3,
+            if (step == 0) assertNotEquals(HTTP_1_1, response.version());
+            else assertEquals(HTTP_3, response.version(),
                     "unexpected response version on step " + step);
         } else {
             fail("Unknown HTTP version in test for: " + uri);
@@ -160,7 +160,8 @@ public class CustomRequestPublisher implements HttpServerAdapters {
         return builder;
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     void test(String uri, Supplier<BodyPublisher> bpSupplier, boolean sameClient)
             throws Exception
     {
@@ -180,13 +181,14 @@ public class CustomRequestPublisher implements HttpServerAdapters {
             out.println("Got body: " + resp.body());
             assertTrue(resp.statusCode() == 200,
                     "Expected 200, got:" + resp.statusCode());
-            assertEquals(resp.body(), bodyPublisher.bodyAsString());
+            assertEquals(bodyPublisher.bodyAsString(), resp.body());
 
             assertVersionAndSession(i, resp, uri);
         }
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testAsync(String uri, Supplier<BodyPublisher> bpSupplier, boolean sameClient)
             throws Exception
     {
@@ -207,7 +209,7 @@ public class CustomRequestPublisher implements HttpServerAdapters {
             out.println("Got body: " + resp.body());
             assertTrue(resp.statusCode() == 200,
                     "Expected 200, got:" + resp.statusCode());
-            assertEquals(resp.body(), bodyPublisher.bodyAsString());
+            assertEquals(bodyPublisher.bodyAsString(), resp.body());
 
             assertVersionAndSession(0, resp, uri);
         }
@@ -337,8 +339,8 @@ public class CustomRequestPublisher implements HttpServerAdapters {
         }
     }
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         httpTestServer = HttpTestServer.create(HTTP_1_1);
         httpTestServer.addHandler(new HttpTestEchoHandler(), "/http1/echo");
@@ -367,8 +369,8 @@ public class CustomRequestPublisher implements HttpServerAdapters {
         http3TestServer.start();
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         httpTestServer.stop();
         httpsTestServer.stop();
         http2TestServer.stop();

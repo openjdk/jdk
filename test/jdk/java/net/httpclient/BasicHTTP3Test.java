@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.Builder;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -40,28 +39,32 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.net.ssl.SSLContext;
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.internal.net.quic.QuicVersion;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.ITestContext;
-import org.testng.SkipException;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.H3_DISCOVERY;
-import static org.testng.Assert.*;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 import static java.lang.System.out;
 import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.extension.TestWatcher;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /*
  * @test
@@ -70,7 +73,7 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  *        ReferenceTracker
  *        jdk.httpclient.test.lib.quic.QuicStandaloneServer
- * @run testng/othervm -Djdk.internal.httpclient.debug=true
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true
  *                     -Djdk.httpclient.HttpClient.log=requests,responses,errors
  *                      -Djavax.net.debug=all
  *                     BasicHTTP3Test
@@ -79,20 +82,20 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
 public class BasicHTTP3Test implements HttpServerAdapters {
 
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
-    HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
-    String https2URI;
-    HttpTestServer h3TestServer;  // HTTP/2 ( h2 + h3)
-    String h3URI;
-    HttpTestServer h3qv2TestServer;  // HTTP/2 ( h2 + h3 on Quic v2, incompatible nego)
-    String h3URIQv2;
-    HttpTestServer h3qv2CTestServer;  // HTTP/2 ( h2 + h3 on Quic v2, compatible nego)
-    String h3URIQv2C;
-    HttpTestServer h3mtlsTestServer;  // HTTP/2 ( h2 + h3), h3 requires client cert
-    String h3mtlsURI;
-    HttpTestServer h3TestServerWithRetry;  // h3
-    String h3URIRetry;
-    HttpTestServer h3TestServerWithTLSHelloRetry;  // h3
-    String h3URITLSHelloRetry;
+    static HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
+    static String https2URI;
+    static HttpTestServer h3TestServer;  // HTTP/2 ( h2 + h3)
+    static String h3URI;
+    static HttpTestServer h3qv2TestServer;  // HTTP/2 ( h2 + h3 on Quic v2, incompatible nego)
+    static String h3URIQv2;
+    static HttpTestServer h3qv2CTestServer;  // HTTP/2 ( h2 + h3 on Quic v2, compatible nego)
+    static String h3URIQv2C;
+    static HttpTestServer h3mtlsTestServer;  // HTTP/2 ( h2 + h3), h3 requires client cert
+    static String h3mtlsURI;
+    static HttpTestServer h3TestServerWithRetry;  // h3
+    static String h3URIRetry;
+    static HttpTestServer h3TestServerWithTLSHelloRetry;  // h3
+    static String h3URITLSHelloRetry;
 
     static final int ITERATION_COUNT = 4;
     // a shared executor helps reduce the amount of threads created by the test
@@ -109,8 +112,8 @@ public class BasicHTTP3Test implements HttpServerAdapters {
         return String.format("[%d s, %d ms, %d ns] ", secs, mill, nan);
     }
 
-    final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
-    private volatile HttpClient sharedClient;
+    private static final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
+    private static volatile HttpClient sharedClient;
 
     static class TestExecutor implements Executor {
         final AtomicLong tasks = new AtomicLong();
@@ -136,21 +139,38 @@ public class BasicHTTP3Test implements HttpServerAdapters {
         }
     }
 
-    protected boolean stopAfterFirstFailure() {
+    private static boolean stopAfterFirstFailure() {
         return Boolean.getBoolean("jdk.internal.httpclient.debug");
     }
 
-    @BeforeMethod
-    void beforeMethod(ITestContext context) {
-        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
-            var x = new SkipException("Skipping: some test failed");
-            x.setStackTrace(new StackTraceElement[0]);
-            throw x;
+    static final class TestStopper implements TestWatcher, BeforeEachCallback {
+        final AtomicReference<String> failed = new AtomicReference<>();
+        TestStopper() { }
+        @Override
+        public void testFailed(ExtensionContext context, Throwable cause) {
+            if (stopAfterFirstFailure()) {
+                String msg = "Aborting due to: " + cause;
+                failed.compareAndSet(null, msg);
+                FAILURES.putIfAbsent(context.getDisplayName(), cause);
+                System.out.printf("%nTEST FAILED: %s%s%n\tAborting due to %s%n%n",
+                        now(), context.getDisplayName(), cause);
+                System.err.printf("%nTEST FAILED: %s%s%n\tAborting due to %s%n%n",
+                        now(), context.getDisplayName(), cause);
+            }
+        }
+
+        @Override
+        public void beforeEach(ExtensionContext context) {
+            String msg = failed.get();
+            Assumptions.assumeTrue(msg == null, msg);
         }
     }
 
-    @AfterClass
-    static final void printFailedTests() {
+    @RegisterExtension
+    static final TestStopper stopper = new TestStopper();
+
+    @AfterAll
+    static void printFailedTests() {
         out.println("\n=========================");
         try {
             out.printf("%n%sCreated %d clients%n",
@@ -170,18 +190,14 @@ public class BasicHTTP3Test implements HttpServerAdapters {
         }
     }
 
-    private String[] uris() {
+    private static String[] uris() {
         return new String[] {
                 https2URI,
                 h3URI
         };
     }
 
-    @DataProvider(name = "variants")
-    public Object[][] variants(ITestContext context) {
-        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
-            return new Object[0][];
-        }
+    public static Object[][] variants() {
         String[] uris = uris();
         Object[][] result = new Object[uris.length * 2 * 2][];
         int i = 0;
@@ -196,11 +212,7 @@ public class BasicHTTP3Test implements HttpServerAdapters {
         return result;
     }
 
-    @DataProvider(name = "h3URIs")
-    public Object[][] versions(ITestContext context) {
-        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
-            return new Object[0][];
-        }
+    public static Object[][] versions() {
         Object[][] result = {
                 {h3URI}, {h3URIRetry},
                 {h3URIQv2}, {h3URIQv2C},
@@ -233,9 +245,11 @@ public class BasicHTTP3Test implements HttpServerAdapters {
         }
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void test(String uri, boolean sameClient, Optional<Version> version) throws Exception {
-        System.out.println("Request to " + uri);
+        System.out.printf("%n%s-- test version=%s, sameClient=%s, uri=%s%n%n",
+                now(), version, sameClient, uri);
 
         HttpClient client = newHttpClient(sameClient);
 
@@ -267,8 +281,10 @@ public class BasicHTTP3Test implements HttpServerAdapters {
         System.out.println("test: DONE");
     }
 
-    @Test(dataProvider = "h3URIs")
+    @ParameterizedTest
+    @MethodSource("versions")
     public void testH3(final String h3URI) throws Exception {
+        System.out.printf("%n%s-- testH3 h3URI=%s%n%n", now(), h3URI);
         HttpClient client = makeNewClient();
         URI uri = URI.create(h3URI);
         Builder builder = HttpRequest.newBuilder(uri)
@@ -278,17 +294,17 @@ public class BasicHTTP3Test implements HttpServerAdapters {
         HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
         out.println("Response #1: " + response);
         out.println("Version  #1: " + response.version());
-        assertEquals(response.statusCode(), 200, "first response status");
-        assertEquals(response.version(), HTTP_2, "first response version");
+        assertEquals(200, response.statusCode(), "first response status");
+        assertEquals(HTTP_2, response.version(), "first response version");
 
         request = builder.version(Version.HTTP_3).build();
         response = client.send(request, BodyHandlers.ofString());
         out.println("Response #2: " + response);
         out.println("Version  #2: " + response.version());
-        assertEquals(response.statusCode(), 200, "second response status");
-        assertEquals(response.version(), Version.HTTP_3, "second response version");
+        assertEquals(200, response.statusCode(), "second response status");
+        assertEquals(Version.HTTP_3, response.version(), "second response version");
 
-        if (h3URI == h3mtlsURI) {
+        if (h3URI.equals(h3mtlsURI)) {
             assertNotNull(response.sslSession().get().getLocalCertificates());
         } else {
             assertNull(response.sslSession().get().getLocalCertificates());
@@ -303,6 +319,7 @@ public class BasicHTTP3Test implements HttpServerAdapters {
     // verify that the client handles HTTP/3 reset stream correctly
     @Test
     public void testH3Reset() throws Exception {
+        System.out.printf("%n%s-- testH3Reset uri=%s%n%n", now(), h3URI);
         HttpClient client = makeNewClient();
         URI uri = URI.create(h3URI);
         Builder builder = HttpRequest.newBuilder(uri)
@@ -312,8 +329,8 @@ public class BasicHTTP3Test implements HttpServerAdapters {
         HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
         out.println("Response #1: " + response);
         out.println("Version  #1: " + response.version());
-        assertEquals(response.statusCode(), 200, "first response status");
-        assertEquals(response.version(), HTTP_2, "first response version");
+        assertEquals(200, response.statusCode(), "first response status");
+        assertEquals(HTTP_2, response.version(), "first response version");
 
         // instruct the server side handler to throw an exception
         // that then causes the test server to reset the stream
@@ -341,8 +358,8 @@ public class BasicHTTP3Test implements HttpServerAdapters {
         if (error != null) throw error;
     }
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         https2TestServer = HttpTestServer.create(HTTP_2, sslContext);
         https2TestServer.addHandler(new Handler(), "/https2/test/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/test/x";
@@ -360,7 +377,7 @@ public class BasicHTTP3Test implements HttpServerAdapters {
                 .enableH3AltServiceOnEphemeralPortWithVersion(QuicVersion.QUIC_V2, false);
         h3qv2TestServer = HttpTestServer.of(h2q2Server);
         h3qv2TestServer.addHandler(h3Handler, "/h3/testH3/");
-        h3URIQv2 = "https://" + h3qv2TestServer.serverAuthority() + "/h3/testH3/h3qv2";;
+        h3URIQv2 = "https://" + h3qv2TestServer.serverAuthority() + "/h3/testH3/h3qv2";
         assertTrue(h3qv2TestServer.canHandle(HTTP_2, Version.HTTP_3), "Server was expected" +
                 " to handle both HTTP2 and HTTP3, but doesn't");
 
@@ -369,7 +386,7 @@ public class BasicHTTP3Test implements HttpServerAdapters {
                 .enableH3AltServiceOnEphemeralPortWithVersion(QuicVersion.QUIC_V2, true);
         h3qv2CTestServer = HttpTestServer.of(h2q2CServer);
         h3qv2CTestServer.addHandler(h3Handler, "/h3/testH3/");
-        h3URIQv2C = "https://" + h3qv2CTestServer.serverAuthority() + "/h3/testH3/h3qv2c";;
+        h3URIQv2C = "https://" + h3qv2CTestServer.serverAuthority() + "/h3/testH3/h3qv2c";
         assertTrue(h3qv2CTestServer.canHandle(HTTP_2, Version.HTTP_3), "Server was expected" +
                 " to handle both HTTP2 and HTTP3, but doesn't");
 
@@ -411,8 +428,8 @@ public class BasicHTTP3Test implements HttpServerAdapters {
         h3TestServerWithTLSHelloRetry.start();
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         System.err.println("=======================================================");
         System.err.println("               Tearing down test");
         System.err.println("=======================================================");

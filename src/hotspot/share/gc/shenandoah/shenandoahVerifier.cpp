@@ -42,7 +42,7 @@
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "runtime/atomicAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/threads.hpp"
 #include "utilities/align.hpp"
@@ -110,15 +110,15 @@ private:
   void do_oop_work(T* p) {
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
-      oop obj = CompressedOops::decode_not_null(o);
+      // Basic verification should happen before we touch anything else.
+      // For performance reasons, only fully verify non-marked field values.
+      // We are here when the host object for *p is already marked.
+      oop obj = CompressedOops::decode_raw_not_null(o);
+      verify_oop_at_basic(p, obj);
+
       if (is_instance_ref_klass(ShenandoahForwarding::klass(obj))) {
         obj = ShenandoahForwarding::get_forwardee(obj);
       }
-      // Single threaded verification can use faster non-atomic stack and bitmap
-      // methods.
-      //
-      // For performance reasons, only fully verify non-marked field values.
-      // We are here when the host object for *p is already marked.
       if (in_generation(obj) && _map->par_mark(obj)) {
         verify_oop_at(p, obj);
         _stack->push(ShenandoahVerifierTask(obj));
@@ -131,7 +131,7 @@ private:
     return _generation->contains(region);
   }
 
-  void verify_oop(oop obj) {
+  void verify_oop(oop obj, bool basic = false) {
     // Perform consistency checks with gradually decreasing safety level. This guarantees
     // that failure report would not try to touch something that was not yet verified to be
     // safe to process.
@@ -174,17 +174,21 @@ private:
         }
       }
 
+      check(ShenandoahAsserts::_safe_unknown, obj, obj_reg->is_active(),
+           "Object should be in active region");
+
       // ------------ obj is safe at this point --------------
 
-      check(ShenandoahAsserts::_safe_oop, obj, obj_reg->is_active(),
-            "Object should be in active region");
+      if (basic) {
+        return;
+      }
 
       switch (_options._verify_liveness) {
         case ShenandoahVerifier::_verify_liveness_disable:
           // skip
           break;
         case ShenandoahVerifier::_verify_liveness_complete:
-          AtomicAccess::add(&_ld[obj_reg->index()], (uint) ShenandoahForwarding::size(obj), memory_order_relaxed);
+          _ld[obj_reg->index()].add_then_fetch((uint) ShenandoahForwarding::size(obj), memory_order_relaxed);
           // fallthrough for fast failure for un-live regions:
         case ShenandoahVerifier::_verify_liveness_conservative:
           check(ShenandoahAsserts::_safe_oop, obj, obj_reg->has_live() ||
@@ -332,6 +336,18 @@ public:
   }
 
   /**
+   * Verify object with known interior reference, with only basic verification.
+   * @param p interior reference where the object is referenced from; can be off-heap
+   * @param obj verified object
+   */
+  template <class T>
+  void verify_oop_at_basic(T* p, oop obj) {
+    _interior_loc = p;
+    verify_oop(obj, /* basic = */ true);
+    _interior_loc = nullptr;
+  }
+
+  /**
    * Verify object without known interior reference.
    * Useful when picking up the object at known offset in heap,
    * but without knowing what objects reference it.
@@ -420,7 +436,14 @@ public:
 
   // span is the total memory affiliated with these stats (some of which is in use and other is available)
   size_t span() const { return _regions * ShenandoahHeapRegion::region_size_bytes(); }
-  size_t non_trashed_span() const { return (_regions - _trashed_regions) * ShenandoahHeapRegion::region_size_bytes(); }
+  size_t non_trashed_span() const {
+    assert(_regions >= _trashed_regions, "sanity");
+    return (_regions - _trashed_regions) * ShenandoahHeapRegion::region_size_bytes();
+  }
+  size_t non_trashed_committed() const {
+    assert(_committed >= _trashed_regions * ShenandoahHeapRegion::region_size_bytes(), "sanity");
+    return _committed - (_trashed_regions * ShenandoahHeapRegion::region_size_bytes());
+  }
 };
 
 class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
@@ -586,7 +609,7 @@ private:
   ShenandoahHeap* _heap;
   ShenandoahLivenessData* _ld;
   MarkBitMap* _bitmap;
-  volatile size_t _processed;
+  Atomic<size_t> _processed;
   ShenandoahGeneration* _generation;
 
 public:
@@ -605,7 +628,7 @@ public:
     _generation(generation) {};
 
   size_t processed() const {
-    return _processed;
+    return _processed.load_relaxed();
   }
 
   void work(uint worker_id) override {
@@ -641,7 +664,7 @@ public:
       }
     }
 
-    AtomicAccess::add(&_processed, processed, memory_order_relaxed);
+    _processed.add_then_fetch(processed, memory_order_relaxed);
   }
 };
 
@@ -662,8 +685,8 @@ class ShenandoahVerifierMarkedRegionTask : public WorkerTask {
   ShenandoahHeap *_heap;
   MarkBitMap* _bitmap;
   ShenandoahLivenessData* _ld;
-  volatile size_t _claimed;
-  volatile size_t _processed;
+  Atomic<size_t> _claimed;
+  Atomic<size_t> _processed;
   ShenandoahGeneration* _generation;
 
 public:
@@ -683,7 +706,7 @@ public:
           _generation(generation) {}
 
   size_t processed() {
-    return AtomicAccess::load(&_processed);
+    return _processed.load_relaxed();
   }
 
   void work(uint worker_id) override {
@@ -698,7 +721,7 @@ public:
                                   _options);
 
     while (true) {
-      size_t v = AtomicAccess::fetch_then_add(&_claimed, 1u, memory_order_relaxed);
+      size_t v = _claimed.fetch_then_add(1u, memory_order_relaxed);
       if (v < _heap->num_regions()) {
         ShenandoahHeapRegion* r = _heap->get_region(v);
         if (!in_generation(r)) {
@@ -726,7 +749,7 @@ public:
     if (_generation->complete_marking_context()->is_marked(cast_to_oop(obj))) {
       verify_and_follow(obj, stack, cl, &processed);
     }
-    AtomicAccess::add(&_processed, processed, memory_order_relaxed);
+    _processed.add_then_fetch(processed, memory_order_relaxed);
   }
 
   virtual void work_regular(ShenandoahHeapRegion *r, ShenandoahVerifierStack &stack, ShenandoahVerifyOopClosure &cl) {
@@ -759,7 +782,7 @@ public:
       }
     }
 
-    AtomicAccess::add(&_processed, processed, memory_order_relaxed);
+    _processed.add_then_fetch(processed, memory_order_relaxed);
   }
 
   void verify_and_follow(HeapWord *addr, ShenandoahVerifierStack &stack, ShenandoahVerifyOopClosure &cl, size_t *processed) {
@@ -1028,12 +1051,12 @@ void ShenandoahVerifier::verify_at_safepoint(ShenandoahGeneration* generation,
       if (r->is_humongous()) {
         // For humongous objects, test if start region is marked live, and if so,
         // all humongous regions in that chain have live data equal to their "used".
-        juint start_live = AtomicAccess::load(&ld[r->humongous_start_region()->index()]);
+        juint start_live = ld[r->humongous_start_region()->index()].load_relaxed();
         if (start_live > 0) {
           verf_live = (juint)(r->used() / HeapWordSize);
         }
       } else {
-        verf_live = AtomicAccess::load(&ld[r->index()]);
+        verf_live = ld[r->index()].load_relaxed();
       }
 
       size_t reg_live = r->get_live_data_words();
@@ -1225,7 +1248,9 @@ private:
   void do_oop_work(T* p) {
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
-      oop obj = CompressedOops::decode_not_null(o);
+      oop obj = CompressedOops::decode_raw_not_null(o);
+      ShenandoahAsserts::assert_correct(p, obj, __FILE__, __LINE__);
+
       oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
       if (obj != fwd) {
         ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, nullptr,
@@ -1245,7 +1270,9 @@ private:
   void do_oop_work(T* p) {
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
-      oop obj = CompressedOops::decode_not_null(o);
+      oop obj = CompressedOops::decode_raw_not_null(o);
+      ShenandoahAsserts::assert_correct(p, obj, __FILE__, __LINE__);
+
       ShenandoahHeap* heap = ShenandoahHeap::heap();
 
       if (!heap->marking_context()->is_marked_or_old(obj)) {
@@ -1299,7 +1326,9 @@ public:
   inline void work(T* p) {
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
-      oop obj = CompressedOops::decode_not_null(o);
+      oop obj = CompressedOops::decode_raw_not_null(o);
+      ShenandoahAsserts::assert_correct(p, obj, __FILE__, __LINE__);
+
       if (_heap->is_in_young(obj) && !_scanner->is_card_dirty((HeapWord*) p)) {
         ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, nullptr,
                                          _message, "clean card, it should be dirty.", __FILE__, __LINE__);

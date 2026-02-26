@@ -43,22 +43,25 @@ import static java.lang.Math.multiplyExact;
 /**
  * Parse files of the form:
  *
+ * {@snippet lang=c:
  * #define foo_width w
  * #define foo_height h
  * static char foo_bits[] = {
  * 0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,
  * 0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,0xnn,
  * 0xnn,0xnn,0xnn,0xnn};
+ * }
  *
  * @author James Gosling
  */
 public class XbmImageDecoder extends ImageDecoder {
-    private static byte[] XbmColormap = {(byte) 255, (byte) 255, (byte) 255,
-                                         0, 0, 0};
-    private static int XbmHints = (ImageConsumer.TOPDOWNLEFTRIGHT |
-                                   ImageConsumer.COMPLETESCANLINES |
-                                   ImageConsumer.SINGLEPASS |
-                                   ImageConsumer.SINGLEFRAME);
+    private static final byte[] XbmColormap = {(byte) 255, (byte) 255, (byte) 255,
+                                               0, 0, 0};
+    private static final int XbmHints = (ImageConsumer.TOPDOWNLEFTRIGHT |
+                                         ImageConsumer.COMPLETESCANLINES |
+                                         ImageConsumer.SINGLEPASS |
+                                         ImageConsumer.SINGLEFRAME);
+
     private static final int MAX_XBM_SIZE = 16384;
     private static final int HEADER_SCAN_LIMIT = 100;
 
@@ -110,20 +113,15 @@ public class XbmImageDecoder extends ImageDecoder {
                         error("Error while parsing define statement");
                     }
                     try {
-                        if (!token[2].isBlank() && state == 0) {
-                            if (token[1].endsWith("th")) {
+                        if (state < 2) {
+                            if (token[1].endsWith("h")) {
                                 W = Integer.parseInt(token[2]);
-                            } else if (token[1].endsWith("t")) {
+                            } else if (token[1].endsWith("ht")) {
                                 H = Integer.parseInt(token[2]);
                             }
-                            state = 1; // after first dimension is set
-                        } else if (!token[2].isBlank() && state == 1) {
-                            if (token[1].endsWith("th")) {
-                                W = Integer.parseInt(token[2]);
-                            } else if (token[1].endsWith("t")) {
-                                H = Integer.parseInt(token[2]);
-                            }
-                            state = 2; // after second dimension is set
+                            // After the 1st dimension is set, state becomes 1;
+                            // after the 2nd dimension is set, state becomes 2
+                            ++state;
                         }
                     } catch (NumberFormatException nfe) {
                         // parseInt() can throw NFE

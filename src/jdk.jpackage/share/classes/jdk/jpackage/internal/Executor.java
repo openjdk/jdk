@@ -49,7 +49,7 @@ import jdk.jpackage.internal.util.CommandOutputControl.Result;
 import jdk.jpackage.internal.util.RetryExecutor;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 
-final class Executor {
+public final class Executor {
 
     static Executor of(String... cmdline) {
         return of(List.of(cmdline));
@@ -78,118 +78,118 @@ final class Executor {
         mapper = other.mapper;
     }
 
-    Executor saveOutput(boolean v) {
+    public Executor saveOutput(boolean v) {
         commandOutputControl.saveOutput(v);
         return this;
     }
 
-    Executor saveOutput() {
+    public Executor saveOutput() {
         return saveOutput(true);
     }
 
-    Executor saveFirstLineOfOutput() {
+    public Executor saveFirstLineOfOutput() {
         commandOutputControl.saveFirstLineOfOutput();
         return this;
     }
 
-    Executor charset(Charset v) {
+    public Executor charset(Charset v) {
         commandOutputControl.charset(v);
         return this;
     }
 
-    Executor storeOutputInFiles(boolean v) {
+    public Executor storeOutputInFiles(boolean v) {
         commandOutputControl.storeOutputInFiles(v);
         return this;
     }
 
-    Executor storeOutputInFiles() {
+    public Executor storeOutputInFiles() {
         return storeOutputInFiles(true);
     }
 
-    Executor binaryOutput(boolean v) {
+    public Executor binaryOutput(boolean v) {
         commandOutputControl.binaryOutput(v);
         return this;
     }
 
-    Executor binaryOutput() {
+    public Executor binaryOutput() {
         return binaryOutput(true);
     }
 
-    Executor discardStdout(boolean v) {
+    public Executor discardStdout(boolean v) {
         commandOutputControl.discardStdout(v);
         return this;
     }
 
-    Executor discardStdout() {
+    public Executor discardStdout() {
         return discardStdout(true);
     }
 
-    Executor discardStderr(boolean v) {
+    public Executor discardStderr(boolean v) {
         commandOutputControl.discardStderr(v);
         return this;
     }
 
-    Executor discardStderr() {
+    public Executor discardStderr() {
         return discardStderr(true);
     }
 
-    Executor timeout(long v, TimeUnit unit) {
+    public Executor timeout(long v, TimeUnit unit) {
         return timeout(Duration.of(v, unit.toChronoUnit()));
     }
 
-    Executor timeout(Duration v) {
+    public Executor timeout(Duration v) {
         timeout = v;
         return this;
     }
 
-    Executor toolProvider(ToolProvider v) {
+    public Executor toolProvider(ToolProvider v) {
         toolProvider = Objects.requireNonNull(v);
         processBuilder = null;
         return this;
     }
 
-    Optional<ToolProvider> toolProvider() {
+    public Optional<ToolProvider> toolProvider() {
         return Optional.ofNullable(toolProvider);
     }
 
-    Executor processBuilder(ProcessBuilder v) {
+    public Executor processBuilder(ProcessBuilder v) {
         processBuilder = Objects.requireNonNull(v);
         toolProvider = null;
         return this;
     }
 
-    Optional<ProcessBuilder> processBuilder() {
+    public Optional<ProcessBuilder> processBuilder() {
         return Optional.ofNullable(processBuilder);
     }
 
-    Executor args(List<String> v) {
+    public Executor args(List<String> v) {
         args.addAll(v);
         return this;
     }
 
-    Executor args(String... args) {
+    public Executor args(String... args) {
         return args(List.of(args));
     }
 
-    List<String> args() {
+    public List<String> args() {
         return args;
     }
 
-    Executor setQuiet(boolean v) {
+    public Executor setQuiet(boolean v) {
         quietCommand = v;
         return this;
     }
 
-    Executor mapper(UnaryOperator<Executor> v) {
+    public Executor mapper(UnaryOperator<Executor> v) {
         mapper = v;
         return this;
     }
 
-    Optional<UnaryOperator<Executor>> mapper() {
+    public Optional<UnaryOperator<Executor>> mapper() {
         return Optional.ofNullable(mapper);
     }
 
-    Executor copy() {
+    public Executor copy() {
         return new Executor(this);
     }
 
@@ -261,7 +261,7 @@ final class Executor {
         });
     }
 
-    List<String> commandLine() {
+    public List<String> commandLine() {
         if (processBuilder != null) {
             return Stream.of(processBuilder.command(), args).flatMap(Collection::stream).toList();
         } else if (toolProvider != null) {

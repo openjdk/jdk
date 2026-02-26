@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,6 @@
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.http3.Http3TestServer;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.ITestContext;
-import org.testng.SkipException;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -44,18 +36,29 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.Builder;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.time.Duration;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpOption.H3_DISCOVERY;
-import static org.testng.Assert.assertEquals;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.extension.TestWatcher;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 
 /*
@@ -64,7 +67,7 @@ import static org.testng.Assert.assertEquals;
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.httpclient.test.lib.quic.QuicStandaloneServer
- * @run testng/othervm/timeout=480 -Djdk.internal.httpclient.debug=true
+ * @run junit/othervm/timeout=480 -Djdk.internal.httpclient.debug=true
  *                     -Djdk.httpclient.HttpClient.log=requests,responses,errors
  *                     -Djavax.net.debug=all
  *                     H3DataLimitsTest
@@ -73,8 +76,8 @@ import static org.testng.Assert.assertEquals;
 public class H3DataLimitsTest implements HttpServerAdapters {
 
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
-    HttpTestServer h3TestServer;
-    String h3URI;
+    private static HttpTestServer h3TestServer;
+    private static String h3URI;
 
     static final Executor executor = new TestExecutor(Executors.newCachedThreadPool());
     static final ConcurrentMap<String, Throwable> FAILURES = new ConcurrentHashMap<>();
@@ -114,20 +117,37 @@ public class H3DataLimitsTest implements HttpServerAdapters {
         }
     }
 
-    protected boolean stopAfterFirstFailure() {
+    private static boolean stopAfterFirstFailure() {
         return Boolean.getBoolean("jdk.internal.httpclient.debug");
     }
 
-    @BeforeMethod
-    void beforeMethod(ITestContext context) {
-        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
-            var x = new SkipException("Skipping: some test failed");
-            x.setStackTrace(new StackTraceElement[0]);
-            throw x;
+    static final class TestStopper implements TestWatcher, BeforeEachCallback {
+        final AtomicReference<String> failed = new AtomicReference<>();
+        TestStopper() { }
+        @Override
+        public void testFailed(ExtensionContext context, Throwable cause) {
+            if (stopAfterFirstFailure()) {
+                String msg = "Aborting due to: " + cause;
+                failed.compareAndSet(null, msg);
+                FAILURES.putIfAbsent(context.getDisplayName(), cause);
+                System.out.printf("%nTEST FAILED: %s%s%n\tAborting due to %s%n%n",
+                        now(), context.getDisplayName(), cause);
+                System.err.printf("%nTEST FAILED: %s%s%n\tAborting due to %s%n%n",
+                        now(), context.getDisplayName(), cause);
+            }
+        }
+
+        @Override
+        public void beforeEach(ExtensionContext context) {
+            String msg = failed.get();
+            Assumptions.assumeTrue(msg == null, msg);
         }
     }
 
-    @AfterClass
+    @RegisterExtension
+    static final TestStopper stopper = new TestStopper();
+
+    @AfterAll
     static void printFailedTests() {
         out.println("\n=========================");
         try {
@@ -148,13 +168,8 @@ public class H3DataLimitsTest implements HttpServerAdapters {
         }
     }
 
-    @DataProvider(name = "h3URIs")
-    public Object[][] versions(ITestContext context) {
-        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
-            return new Object[0][];
-        }
-        Object[][] result = {{h3URI}};
-        return result;
+    public static Object[][] versions() {
+        return new Object[][] {{h3URI}};
     }
 
     private HttpClient makeNewClient() {
@@ -168,7 +183,8 @@ public class H3DataLimitsTest implements HttpServerAdapters {
         return client;
     }
 
-    @Test(dataProvider = "h3URIs")
+    @ParameterizedTest
+    @MethodSource("versions")
     public void testHugeResponse(final String h3URI) throws Exception {
         HttpClient client = makeNewClient();
         URI uri = URI.create(h3URI + "?16000000");
@@ -180,17 +196,18 @@ public class H3DataLimitsTest implements HttpServerAdapters {
         HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
         out.println("Response #1: " + response);
         out.println("Version  #1: " + response.version());
-        assertEquals(response.statusCode(), 200, "first response status");
-        assertEquals(response.version(), HTTP_3, "first response version");
+        assertEquals(200, response.statusCode(), "first response status");
+        assertEquals(HTTP_3, response.version(), "first response version");
 
         response = client.send(request, BodyHandlers.ofString());
         out.println("Response #2: " + response);
         out.println("Version  #2: " + response.version());
-        assertEquals(response.statusCode(), 200, "second response status");
-        assertEquals(response.version(), HTTP_3, "second response version");
+        assertEquals(200, response.statusCode(), "second response status");
+        assertEquals(HTTP_3, response.version(), "second response version");
     }
 
-    @Test(dataProvider = "h3URIs")
+    @ParameterizedTest
+    @MethodSource("versions")
     public void testManySmallResponses(final String h3URI) throws Exception {
         HttpClient client = makeNewClient();
         URI uri = URI.create(h3URI + "?160000");
@@ -203,13 +220,13 @@ public class H3DataLimitsTest implements HttpServerAdapters {
             HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
             out.println("Response #" + i + ": " + response);
             out.println("Version  #" + i + ": " + response.version());
-            assertEquals(response.statusCode(), 200, "response status");
-            assertEquals(response.version(), HTTP_3, "response version");
+            assertEquals(200, response.statusCode(), "response status");
+            assertEquals(HTTP_3, response.version(), "response version");
         }
     }
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         // An HTTP/3 server that only supports HTTP/3
         h3TestServer = HttpTestServer.of(new Http3TestServer(sslContext));
         final HttpTestHandler h3Handler = new Handler();
@@ -220,8 +237,8 @@ public class H3DataLimitsTest implements HttpServerAdapters {
         h3TestServer.start();
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         System.err.println("=======================================================");
         System.err.println("               Tearing down test");
         System.err.println("=======================================================");

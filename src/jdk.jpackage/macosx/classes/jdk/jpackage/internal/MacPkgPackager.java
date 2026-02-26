@@ -215,7 +215,6 @@ record MacPkgPackager(BuildEnv env, MacPkgPackage pkg, Optional<Services> servic
     @Override
     public void accept(PackagingPipeline.Builder pipelineBuilder) {
         pipelineBuilder
-                .excludeDirFromCopying(outputDir)
                 .task(PkgPackageTaskID.PREPARE_MAIN_SCRIPTS)
                         .action(this::prepareMainScripts)
                         .addDependent(PackageTaskID.RUN_POST_IMAGE_USER_SCRIPT)

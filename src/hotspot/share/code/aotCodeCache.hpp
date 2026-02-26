@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,10 +185,12 @@ protected:
       restrictContendedPadding = 128
     };
     uint _flags;
+    uint _cpu_features_offset; // offset in the cache where cpu features are stored
 
   public:
-    void record();
-    bool verify() const;
+    void record(uint cpu_features_offset);
+    bool verify_cpu_features(AOTCodeCache* cache) const;
+    bool verify(AOTCodeCache* cache) const;
   };
 
   class Header : public CHeapObj<mtCode> {
@@ -206,14 +208,15 @@ protected:
     uint   _shared_blobs_count;
     uint   _C1_blobs_count;
     uint   _C2_blobs_count;
-    Config _config;
+    Config _config; // must be the last element as there is trailing data stored immediately after Config
 
   public:
     void init(uint cache_size,
               uint strings_count,  uint strings_offset,
               uint entries_count,  uint entries_offset,
               uint adapters_count, uint shared_blobs_count,
-              uint C1_blobs_count, uint C2_blobs_count) {
+              uint C1_blobs_count, uint C2_blobs_count,
+              uint cpu_features_offset) {
       _version        = AOT_CODE_VERSION;
       _cache_size     = cache_size;
       _strings_count  = strings_count;
@@ -224,7 +227,7 @@ protected:
       _shared_blobs_count = shared_blobs_count;
       _C1_blobs_count = C1_blobs_count;
       _C2_blobs_count = C2_blobs_count;
-      _config.record();
+      _config.record(cpu_features_offset);
     }
 
 
@@ -239,8 +242,8 @@ protected:
     uint C2_blobs_count() const { return _C2_blobs_count; }
 
     bool verify(uint load_size)  const;
-    bool verify_config() const { // Called after Universe initialized
-      return _config.verify();
+    bool verify_config(AOTCodeCache* cache) const { // Called after Universe initialized
+      return _config.verify(cache);
     }
   };
 
@@ -320,6 +323,8 @@ public:
 
   AOTCodeEntry* find_entry(AOTCodeEntry::Kind kind, uint id);
 
+  void store_cpu_features(char*& buffer, uint buffer_size);
+
   bool finish_write();
 
   bool write_relocations(CodeBlob& code_blob);
@@ -361,7 +366,7 @@ private:
   static bool open_cache(bool is_dumping, bool is_using);
   bool verify_config() {
     if (for_use()) {
-      return _load_header->verify_config();
+      return _load_header->verify_config(this);
     }
     return true;
   }

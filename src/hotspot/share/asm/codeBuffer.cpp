@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,8 @@ CodeBuffer::CodeBuffer(const CodeBlob* blob) DEBUG_ONLY(: Scrubber(this, sizeof(
 }
 
 void CodeBuffer::initialize(csize_t code_size, csize_t locs_size) {
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
+
   // Always allow for empty slop around each section.
   int slop = (int) CodeSection::end_slop();
 
@@ -466,9 +468,7 @@ void CodeBuffer::compute_final_layout(CodeBuffer* dest) const {
   assert(!_finalize_stubs, "non-finalized stubs");
 
   {
-    // not sure why this is here, but why not...
-    int alignSize = MAX2((intx) sizeof(jdouble), CodeEntryAlignment);
-    assert( (dest->_total_start - _insts.start()) % alignSize == 0, "copy must preserve alignment");
+    assert( (dest->_total_start - _insts.start()) % CodeEntryAlignment == 0, "copy must preserve alignment");
   }
 
   const CodeSection* prev_cs      = nullptr;

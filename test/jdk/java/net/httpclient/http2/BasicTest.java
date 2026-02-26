@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@
  * @library /test/jdk/java/net/httpclient/lib
  *          /test/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer
- *        jdk.httpclient.test.lib.http2.Http2TestExchange
- *        jdk.httpclient.test.lib.http2.Http2EchoHandler
  *        jdk.test.lib.Asserts
  *        jdk.test.lib.Utils
  *        jdk.test.lib.net.SimpleSSLContext
@@ -49,9 +47,9 @@ import java.util.concurrent.*;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
-import jdk.httpclient.test.lib.http2.Http2TestExchange;
-import jdk.httpclient.test.lib.http2.Http2EchoHandler;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.junit.jupiter.api.Test;
 
@@ -60,13 +58,13 @@ import static jdk.test.lib.Asserts.assertFileContentsEqual;
 import static jdk.test.lib.Utils.createTempFile;
 import static jdk.test.lib.Utils.createTempFileOfSize;
 
-public class BasicTest {
+public class BasicTest implements HttpServerAdapters {
 
     private static final String TEMP_FILE_PREFIX =
             HttpClient.class.getPackageName() + '-' + BasicTest.class.getSimpleName() + '-';
 
     static int httpPort, httpsPort;
-    static Http2TestServer httpServer, httpsServer;
+    static HttpTestServer httpServer, httpsServer;
     static HttpClient client = null;
     static ExecutorService clientExec;
     static ExecutorService serverExec;
@@ -77,18 +75,20 @@ public class BasicTest {
     static void initialize() throws Exception {
         try {
             client = getClient();
-            httpServer = new Http2TestServer(false, 0, serverExec, sslContext);
-            httpServer.addHandler(new Http2EchoHandler(), "/");
+            httpServer = HttpTestServer.of(
+                    new Http2TestServer(false, 0, serverExec, sslContext));
+            httpServer.addHandler(new HttpTestFileEchoHandler(), "/");
             httpServer.addHandler(new EchoWithPingHandler(), "/ping");
             httpPort = httpServer.getAddress().getPort();
 
-            httpsServer = new Http2TestServer(true, 0, serverExec, sslContext);
-            httpsServer.addHandler(new Http2EchoHandler(), "/");
+            httpsServer = HttpTestServer.of(
+                    new Http2TestServer(true, 0, serverExec, sslContext));
+            httpsServer.addHandler(new HttpTestFileEchoHandler(), "/");
 
             httpsPort = httpsServer.getAddress().getPort();
-            httpURIString = "http://localhost:" + httpPort + "/foo/";
-            pingURIString = "http://localhost:" + httpPort + "/ping/";
-            httpsURIString = "https://localhost:" + httpsPort + "/bar/";
+            httpURIString = "http://" + httpServer.serverAuthority() + "/foo/";
+            pingURIString = "http://" + httpServer.serverAuthority() + "/ping/";
+            httpsURIString = "https://" + httpsServer.serverAuthority() + "/bar/";
 
             httpServer.start();
             httpsServer.start();
@@ -104,11 +104,11 @@ public class BasicTest {
 
     static CompletableFuture<Long> currentCF;
 
-    static class EchoWithPingHandler extends Http2EchoHandler {
+    static class EchoWithPingHandler extends HttpTestFileEchoHandler {
         private final Object lock = new Object();
 
         @Override
-        public void handle(Http2TestExchange exchange) throws IOException {
+        public void handle(HttpTestExchange exchange) throws IOException {
             // for now only one ping active at a time. don't want to saturate
             synchronized(lock) {
                 CompletableFuture<Long> cf = currentCF;
@@ -221,17 +221,17 @@ public class BasicTest {
     }
 
     static void paramsTest() throws Exception {
-        httpsServer.addHandler((t -> {
+        httpsServer.addHandler(((HttpTestExchange t) -> {
             SSLSession s = t.getSSLSession();
             String prot = s.getProtocol();
             if (prot.equals("TLSv1.2") || prot.equals("TLSv1.3")) {
-                t.sendResponseHeaders(200, -1);
+                t.sendResponseHeaders(200, HttpTestExchange.RSPBODY_EMPTY);
             } else {
                 System.err.printf("Protocols =%s\n", prot);
-                t.sendResponseHeaders(500, -1);
+                t.sendResponseHeaders(500, HttpTestExchange.RSPBODY_EMPTY);
             }
         }), "/");
-        URI u = new URI("https://localhost:"+httpsPort+"/foo");
+        URI u = new URI("https://" + httpsServer.serverAuthority() + "/foo");
         HttpClient client = getClient();
         HttpRequest req = HttpRequest.newBuilder(u).build();
         HttpResponse<String> resp = client.send(req, BodyHandlers.ofString());

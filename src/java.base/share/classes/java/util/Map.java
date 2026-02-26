@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1777,7 +1777,7 @@ public interface Map<K, V> {
      * The values of any {@link Map#values()} or {@link Map#entrySet()} views of
      * the returned map are also lazily computed.
      * <p>
-     * If the provided computing function recursively calls itself or
+     * If the provided computing function recursively calls itself via
      * the returned lazy map for the same key, an {@linkplain IllegalStateException}
      * will be thrown.
      * <p>

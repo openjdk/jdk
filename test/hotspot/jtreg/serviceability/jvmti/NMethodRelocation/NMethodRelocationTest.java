@@ -29,7 +29,8 @@
  *           vm.gc != "Epsilon" &
  *           vm.flavor == "server" &
  *           !vm.emulatedClient &
- *           (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
+ *           (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4) &
+ *           vm.compMode == "Xmixed"
  * @library /test/lib /test/hotspot/jtreg
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox

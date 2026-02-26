@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1326,6 +1326,32 @@ int ReductionNode::opcode(int opc, BasicType bt) {
       assert(bt == T_DOUBLE, "must be");
       vopc = Op_MaxReductionV;
       break;
+    case Op_UMinV:
+      switch (bt) {
+        case T_BOOLEAN:
+        case T_CHAR: return 0;
+        case T_BYTE:
+        case T_SHORT:
+        case T_INT:
+        case T_LONG:
+          vopc = Op_UMinReductionV;
+          break;
+        default: ShouldNotReachHere(); return 0;
+      }
+      break;
+    case Op_UMaxV:
+      switch (bt) {
+        case T_BOOLEAN:
+        case T_CHAR: return 0;
+        case T_BYTE:
+        case T_SHORT:
+        case T_INT:
+        case T_LONG:
+          vopc = Op_UMaxReductionV;
+          break;
+        default: ShouldNotReachHere(); return 0;
+      }
+      break;
     case Op_AndI:
       switch (bt) {
       case T_BOOLEAN:
@@ -1400,6 +1426,8 @@ ReductionNode* ReductionNode::make(int opc, Node* ctrl, Node* n1, Node* n2, Basi
   case Op_MulReductionVD: return new MulReductionVDNode(ctrl, n1, n2, requires_strict_order);
   case Op_MinReductionV:  return new MinReductionVNode (ctrl, n1, n2);
   case Op_MaxReductionV:  return new MaxReductionVNode (ctrl, n1, n2);
+  case Op_UMinReductionV: return new UMinReductionVNode(ctrl, n1, n2);
+  case Op_UMaxReductionV: return new UMaxReductionVNode(ctrl, n1, n2);
   case Op_AndReductionV:  return new AndReductionVNode (ctrl, n1, n2);
   case Op_OrReductionV:   return new OrReductionVNode  (ctrl, n1, n2);
   case Op_XorReductionV:  return new XorReductionVNode (ctrl, n1, n2);
@@ -1609,6 +1637,30 @@ Node* ReductionNode::make_identity_con_scalar(PhaseGVN& gvn, int sopc, BasicType
         case T_DOUBLE:
           return gvn.makecon(TypeD::NEG_INF);
           default: Unimplemented(); return nullptr;
+      }
+      break;
+    case Op_UMinReductionV:
+      switch (bt) {
+        case T_BYTE:
+          return gvn.makecon(TypeInt::make(max_jubyte));
+        case T_SHORT:
+          return gvn.makecon(TypeInt::make(max_jushort));
+        case T_INT:
+          return gvn.makecon(TypeInt::MINUS_1);
+        case T_LONG:
+          return gvn.makecon(TypeLong::MINUS_1);
+        default: Unimplemented(); return nullptr;
+      }
+      break;
+    case Op_UMaxReductionV:
+      switch (bt) {
+        case T_BYTE:
+        case T_SHORT:
+        case T_INT:
+          return gvn.makecon(TypeInt::ZERO);
+        case T_LONG:
+          return gvn.makecon(TypeLong::ZERO);
+        default: Unimplemented(); return nullptr;
       }
       break;
     default:
@@ -1919,6 +1971,15 @@ Node* VectorMaskToLongNode::Ideal_MaskAll(PhaseGVN* phase) {
   // saved with a predicate type.
   if (in1->Opcode() == Op_VectorStoreMask) {
     Node* mask = in1->in(1);
+    // Skip the optimization if the mask is dead.
+    if (phase->type(mask) == Type::TOP) {
+      return nullptr;
+    }
+    // If the ideal graph is transformed correctly, the input mask should be a
+    // vector type node. Following optimization can ignore the mismatched type
+    // issue. But we still keep the sanity check for the mask type by using
+    // "is_vect()" in the assertion below, so that there can be less optimizations
+    // evolved before the compiler finally runs into a problem.
     assert(!Matcher::mask_op_prefers_predicate(Opcode(), mask->bottom_type()->is_vect()), "sanity");
     in1 = mask;
   }

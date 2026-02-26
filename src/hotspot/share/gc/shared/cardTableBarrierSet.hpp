@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,9 @@
 
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "memory/memRegion.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/align.hpp"
 
 // This kind of "BarrierSet" allows a "CollectedHeap" to detect and
@@ -48,7 +50,7 @@ class CardTableBarrierSet: public BarrierSet {
 
 protected:
   typedef CardTable::CardValue CardValue;
-  CardTable* _card_table;
+  Atomic<CardTable*> _card_table;
 
   CardTableBarrierSet(BarrierSetAssembler* barrier_set_assembler,
                       BarrierSetC1* barrier_set_c1,
@@ -59,6 +61,10 @@ protected:
 public:
   CardTableBarrierSet(CardTable* card_table);
   virtual ~CardTableBarrierSet();
+
+  inline static CardTableBarrierSet* barrier_set() {
+    return barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
+  }
 
   template <DecoratorSet decorators, typename T>
   inline void write_ref_field_pre(T* addr) {}
@@ -85,7 +91,13 @@ public:
   // at the address "start", which may not necessarily be HeapWord-aligned
   inline void write_ref_array(HeapWord* start, size_t count);
 
-  CardTable* card_table() const { return _card_table; }
+  CardTable* card_table() { return _card_table.load_relaxed(); }
+  CardTable* card_table() const { return _card_table.load_relaxed(); }
+
+  CardValue* card_table_base_const() const {
+    assert(UseSerialGC || UseParallelGC, "Only these GCs have constant card table base");
+    return card_table()->byte_map_base();
+  }
 
   virtual void on_slowpath_allocation_exit(JavaThread* thread, oop new_obj);
 

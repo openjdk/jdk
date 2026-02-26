@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,13 +41,15 @@ import jdk.internal.net.http.quic.QuicClient;
 import jdk.internal.net.quic.QuicTLSContext;
 import jdk.internal.net.quic.QuicVersion;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.expectThrows;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 /*
  * @test
@@ -57,19 +59,19 @@ import static org.testng.Assert.expectThrows;
  *        jdk.httpclient.test.lib.common.TestUtil
  *        jdk.httpclient.test.lib.quic.ClientConnection
  *        jdk.test.lib.net.SimpleSSLContext
- * @run testng/othervm -Djdk.internal.httpclient.debug=true VersionNegotiationTest
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true VersionNegotiationTest
  */
 public class VersionNegotiationTest {
 
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     private static ExecutorService executor;
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() throws Exception {
         executor = Executors.newCachedThreadPool();
     }
 
-    @AfterClass
+    @AfterAll
     public static void afterClass() throws Exception {
         if (executor != null) executor.shutdown();
     }
@@ -96,7 +98,7 @@ public class VersionNegotiationTest {
             try (final QuicServer server = createAndStartServer(serverVersion)) {
                 System.out.println("Attempting to connect " + client.getAvailableVersions()
                         + " client to a " + server.getAvailableVersions() + " server");
-                final IOException thrown = expectThrows(IOException.class,
+                final IOException thrown = Assertions.assertThrows(IOException.class,
                         () -> ClientConnection.establishConnection(client, server.getAddress()));
                 // a version negotiation failure (since it happens during a QUIC connection
                 // handshake) gets thrown as a SSLHandshakeException
@@ -105,7 +107,7 @@ public class VersionNegotiationTest {
                 }
                 System.out.println("Received (potentially expected) exception: " + sslhe);
                 // additional check to make sure it was thrown for the right reason
-                assertEquals(sslhe.getMessage(), "QUIC connection establishment failed");
+                assertEquals("QUIC connection establishment failed", sslhe.getMessage());
                 // underlying cause of SSLHandshakeException should be version negotiation failure
                 final Throwable underlyingCause = sslhe.getCause();
                 assertNotNull(underlyingCause, "missing cause in SSLHandshakeException");

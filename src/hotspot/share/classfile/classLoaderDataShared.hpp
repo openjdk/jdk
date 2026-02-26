@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,11 +40,11 @@ class ClassLoaderDataShared : AllStatic {
 public:
   static void load_archived_platform_and_system_class_loaders() NOT_CDS_JAVA_HEAP_RETURN;
   static void restore_archived_modules_for_preloading_classes(JavaThread* current) NOT_CDS_JAVA_HEAP_RETURN;
+  static void build_tables(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
+  static void iterate_roots(MetaspaceClosure* closure) NOT_CDS_JAVA_HEAP_RETURN;
+  static void remove_unshareable_info() NOT_CDS_JAVA_HEAP_RETURN;
 #if INCLUDE_CDS_JAVA_HEAP
   static void ensure_module_entry_tables_exist();
-  static void allocate_archived_tables();
-  static void iterate_symbols(MetaspaceClosure* closure);
-  static void init_archived_tables();
   static void serialize(SerializeClosure* f);
   static void clear_archived_oops();
   static void restore_archived_entries_for_null_class_loader_data();

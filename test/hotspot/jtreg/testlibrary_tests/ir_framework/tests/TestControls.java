@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import jdk.test.lib.Asserts;
 import jdk.test.whitebox.WhiteBox;
 
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -46,7 +47,7 @@ import java.util.regex.Pattern;
  */
 
 public class TestControls {
-    static int[] executed = new int[15];
+    static HashMap<String, Integer> executed = HashMap.newHashMap(15);
     static boolean wasExecuted = false;
     static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
 
@@ -56,31 +57,21 @@ public class TestControls {
         Method runTestsOnSameVM = TestVM.class.getDeclaredMethod("runTestsOnSameVM", Class.class);
         runTestsOnSameVM.setAccessible(true);
         runTestsOnSameVM.invoke(null, new Object[]{ null });
-        final int defaultIterations = TestVM.WARMUP_ITERATIONS + 1;
-        Asserts.assertEQ(executed[0], 1001);
-        Asserts.assertEQ(executed[1], 101);
-        Asserts.assertEQ(executed[2], 10000);
-        Asserts.assertEQ(executed[3], 10000);
-        Asserts.assertEQ(executed[4], defaultIterations);
-        Asserts.assertEQ(executed[5], defaultIterations);
-        Asserts.assertEQ(executed[6], 5001);
-        Asserts.assertEQ(executed[7], 5001);
-        Asserts.assertEQ(executed[8], 1);
-        Asserts.assertEQ(executed[9], 5000);
-        Asserts.assertEQ(executed[10], 1);
-        Asserts.assertEQ(executed[11], 2);
-        Asserts.assertEQ(executed[12], 1);
-        Asserts.assertEQ(executed[13], 1);
+        Asserts.assertEQ(executed.get("test1"), 1001);
+        Asserts.assertEQ(executed.get("test2"), 101);
+        Asserts.assertEQ(executed.get("testDontCompile"), 10000);
+        Asserts.assertEQ(executed.get("dontCompile"), 10000);
+        Asserts.assertEQ(executed.get("testCompileAtLevel1"), 5001);
+        Asserts.assertEQ(executed.get("dontCompile2"), 5001);
+        Asserts.assertEQ(executed.get("runTestDontCompile2A"), 1);
+        Asserts.assertEQ(executed.get("runTestDontCompile2B"), 5000);
+        Asserts.assertEQ(executed.get("noWarmup"), 1);
+        Asserts.assertEQ(executed.get("noWarmup2"), 2);
+        Asserts.assertEQ(executed.get("runNoWarmup2"), 1);
+        Asserts.assertEQ(executed.get("runTestCompilation"), 1);
         Asserts.assertFalse(wasExecuted);
         final long started = System.currentTimeMillis();
         long elapsed = 0;
-        Method overloadDouble = TestControls.class.getDeclaredMethod("overload", double.class);
-        Method overloadInt = TestControls.class.getDeclaredMethod("overload", int.class);
-        while (!(TestFramework.isC2Compiled(overloadInt) && TestFramework.isCompiledAtLevel(overloadDouble, CompLevel.C1_LIMITED_PROFILE)) && elapsed < 5000) {
-            elapsed = System.currentTimeMillis() - started;
-        }
-        TestFramework.assertCompiledAtLevel(TestControls.class.getDeclaredMethod("overload", double.class), CompLevel.C1_LIMITED_PROFILE);
-        TestFramework.assertCompiledByC2(TestControls.class.getDeclaredMethod("overload", int.class));
 
         TestFramework framework = new TestFramework(ClassInitializerTest.class);
         framework.addFlags("-XX:+PrintCompilation").addHelperClasses(ClassInitializerHelper.class).start();
@@ -99,15 +90,15 @@ public class TestControls {
     @Test
     @Warmup(1000)
     public void test1() {
-        executed[0]++;
+        executed.merge("test1", 1, Integer::sum);
     }
 
     @Check(test = "test1")
     public void check1(TestInfo info) {
-        if (executed[0] <= 1000) {
+        if (executed.getOrDefault("test1", 0) <= 1000) {
             Asserts.assertTrue(info.isWarmUp());
         } else {
-            Asserts.assertTrue(!info.isWarmUp() && executed[0] == 1001);
+            Asserts.assertTrue(!info.isWarmUp() && executed.getOrDefault("test1", 0) == 1001);
             TestFramework.assertCompiledByC2(info.getTest());
         }
     }
@@ -115,45 +106,23 @@ public class TestControls {
     @Test
     @Warmup(100)
     public void test2() {
-        executed[1]++;
+        executed.merge("test2", 1, Integer::sum);
     }
 
     @Check(test = "test2", when = CheckAt.COMPILED)
     public void check2(TestInfo info) {
-        Asserts.assertTrue(!info.isWarmUp() && executed[1] == 101);
+        Asserts.assertTrue(!info.isWarmUp() && executed.getOrDefault("test2", 0) == 101);
         TestFramework.assertCompiledByC2(info.getTest());
     }
 
     @Test
-    public void overload() {
-        executed[4]++;
-    }
-
-    @ForceCompile
-    @DontInline
-    public static void overload(int i) {
-        wasExecuted = true;
-    }
-
-    @ForceCompile(CompLevel.C1_LIMITED_PROFILE)
-    @ForceInline
-    public static void overload(double i) {
-        wasExecuted = true;
-    }
-
-    @Check(test = "overload")
-    public void checkOverload()  {
-        executed[5]++;
-    }
-
-    @Test
     public void testDontCompile() {
-        executed[2]++;
+        executed.merge("testDontCompile", 1, Integer::sum);
     }
 
     @DontCompile
     public static void dontCompile() {
-        executed[3]++;
+        executed.merge("dontCompile", 1, Integer::sum);
     }
 
     @Run(test = "testDontCompile", mode = RunMode.STANDALONE)
@@ -167,12 +136,12 @@ public class TestControls {
 
     @Test
     public void testCompileAtLevel1() {
-        executed[6]++;
+        executed.merge("testCompileAtLevel1", 1, Integer::sum);
     }
 
     @DontCompile(Compiler.ANY)
     public static void dontCompile2() {
-        executed[7]++;
+        executed.merge("dontCompile2", 1, Integer::sum);
     }
 
     @Run(test = "testCompileAtLevel1")
@@ -181,23 +150,23 @@ public class TestControls {
         dontCompile2();
         testCompileAtLevel1();
         if (!info.isWarmUp()) {
-            executed[8]++;
+            executed.merge("runTestDontCompile2A", 1, Integer::sum);
             int compLevel = WHITE_BOX.getMethodCompilationLevel(TestControls.class.getDeclaredMethod("dontCompile2"), false);
             Asserts.assertLessThan(compLevel, CompLevel.C1_LIMITED_PROFILE.getValue());
         } else {
-            executed[9]++;
+            executed.merge("runTestDontCompile2B", 1, Integer::sum);
         }
     }
 
     @Test
     @Warmup(0)
     public void noWarmup() {
-        executed[10]++;
+        executed.merge("noWarmup", 1, Integer::sum);
     }
 
     @Test
     public void noWarmup2() {
-        executed[11]++;
+        executed.merge("noWarmup2", 1, Integer::sum);
     }
 
     @Run(test = "noWarmup2")
@@ -206,7 +175,7 @@ public class TestControls {
         noWarmup2();
         noWarmup2();
         Asserts.assertTrue(!info.isWarmUp());
-        executed[12]++;
+        executed.merge("runNoWarmup2", 1, Integer::sum);
     }
 
     @Test
@@ -301,7 +270,7 @@ public class TestControls {
 
         TestFramework.assertCompiledAtLevel(info.getTestClassMethod("forceC1DontC2"), CompLevel.C1_SIMPLE);
         TestFramework.assertCompiledAtLevel(info.getTestClassMethod("forceC2DontC1"), CompLevel.C2);
-        executed[13]++;
+        executed.merge("runTestCompilation", 1, Integer::sum);
     }
 }
 

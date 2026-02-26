@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -213,7 +213,7 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm) {
 // Is vector's size (in bytes) bigger than a size saved by default?
 // riscv does not ovlerlay the floating-point registers on vector registers like aarch64.
 bool SharedRuntime::is_wide_vector(int size) {
-  return UseRVV;
+  return UseRVV && size > 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -637,22 +637,20 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
 
   // Class initialization barrier for static methods
   entry_address[AdapterBlob::C2I_No_Clinit_Check] = nullptr;
-  if (VM_Version::supports_fast_class_init_checks()) {
-    Label L_skip_barrier;
+  assert(VM_Version::supports_fast_class_init_checks(), "sanity");
+  Label L_skip_barrier;
 
-    { // Bypass the barrier for non-static methods
-      __ load_unsigned_short(t0, Address(xmethod, Method::access_flags_offset()));
-      __ test_bit(t1, t0, exact_log2(JVM_ACC_STATIC));
-      __ beqz(t1, L_skip_barrier); // non-static
-    }
+  // Bypass the barrier for non-static methods
+  __ load_unsigned_short(t0, Address(xmethod, Method::access_flags_offset()));
+  __ test_bit(t1, t0, exact_log2(JVM_ACC_STATIC));
+  __ beqz(t1, L_skip_barrier); // non-static
 
-    __ load_method_holder(t1, xmethod);
-    __ clinit_barrier(t1, t0, &L_skip_barrier);
-    __ far_jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
+  __ load_method_holder(t1, xmethod);
+  __ clinit_barrier(t1, t0, &L_skip_barrier);
+  __ far_jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
 
-    __ bind(L_skip_barrier);
-    entry_address[AdapterBlob::C2I_No_Clinit_Check] = __ pc();
-  }
+  __ bind(L_skip_barrier);
+  entry_address[AdapterBlob::C2I_No_Clinit_Check] = __ pc();
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->c2i_entry_barrier(masm);
@@ -1443,7 +1441,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ nop();  // 4 bytes
   }
 
-  if (VM_Version::supports_fast_class_init_checks() && method->needs_clinit_barrier()) {
+  if (method->needs_clinit_barrier()) {
+    assert(VM_Version::supports_fast_class_init_checks(), "sanity");
     Label L_skip_barrier;
     __ mov_metadata(t1, method->method_holder()); // InstanceKlass*
     __ clinit_barrier(t1, t0, &L_skip_barrier);

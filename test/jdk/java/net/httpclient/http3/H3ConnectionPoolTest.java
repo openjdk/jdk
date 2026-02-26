@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -51,9 +50,7 @@ import java.util.function.Supplier;
 import javax.net.ssl.SSLContext;
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2Handler;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
-import jdk.httpclient.test.lib.http2.Http2EchoHandler;
 import jdk.httpclient.test.lib.http3.Http3TestServer;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.Test;
@@ -73,17 +70,17 @@ public class H3ConnectionPoolTest implements HttpServerAdapters {
     private static final String CLASS_NAME = H3ConnectionPoolTest.class.getSimpleName();
 
     static int altsvcPort, https2Port, http3Port;
-    static Http3TestServer http3OnlyServer;
-    static Http2TestServer https2AltSvcServer;
+    static HttpTestServer http3OnlyServer;
+    static HttpTestServer https2AltSvcServer;
     static volatile HttpClient client = null;
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     static volatile String http3OnlyURIString, https2URIString, http3AltSvcURIString, http3DirectURIString;
 
     static void initialize(boolean samePort) throws Exception {
-        initialize(samePort, Http2EchoHandler::new);
+        initialize(samePort, HttpTestFileEchoHandler::new);
     }
 
-    static void initialize(boolean samePort, Supplier<Http2Handler> handlers) throws Exception {
+    static void initialize(boolean samePort, Supplier<HttpTestHandler> handlers) throws Exception {
         System.out.println("\nConfiguring for advertised AltSvc on "
                 + (samePort ? "same port" : "ephemeral port"));
         try {
@@ -91,16 +88,17 @@ public class H3ConnectionPoolTest implements HttpServerAdapters {
             client = getClient();
 
             // server that supports both HTTP/2 and HTTP/3, with HTTP/3 on an altSvc port.
-            https2AltSvcServer = new Http2TestServer(true, sslContext);
+            Http2TestServer serverImpl = new Http2TestServer(true, sslContext);
             if (samePort) {
                 System.out.println("Attempting to enable advertised HTTP/3 service on same port");
-                https2AltSvcServer.enableH3AltServiceOnSamePort();
+                serverImpl.enableH3AltServiceOnSamePort();
                 System.out.println("Advertised AltSvc on same port " +
-                        (https2AltSvcServer.supportsH3DirectConnection() ? "enabled" : " not enabled"));
+                        (serverImpl.supportsH3DirectConnection() ? "enabled" : " not enabled"));
             } else {
                 System.out.println("Attempting to enable advertised HTTP/3 service on different port");
-                https2AltSvcServer.enableH3AltServiceOnEphemeralPort();
+                serverImpl.enableH3AltServiceOnEphemeralPort();
             }
+            https2AltSvcServer = HttpTestServer.of(serverImpl);
             https2AltSvcServer.addHandler(handlers.get(), "/" + CLASS_NAME + "/https2/");
             https2AltSvcServer.addHandler(handlers.get(), "/" + CLASS_NAME + "/h2h3/");
             https2Port = https2AltSvcServer.getAddress().getPort();
@@ -113,18 +111,20 @@ public class H3ConnectionPoolTest implements HttpServerAdapters {
             //   one advertised (the alt service endpoint og the HTTP/2 server)
             //   one non advertised (the direct endpoint, at the same authority as HTTP/2, but which
             //   is in fact our http3OnlyServer)
+            Http3TestServer http3ServerImpl;
             try {
-                http3OnlyServer = new Http3TestServer(sslContext, samePort ? 0 : https2Port);
+                http3ServerImpl = new Http3TestServer(sslContext, samePort ? 0 : https2Port);
                 System.out.println("Unadvertised service enabled on "
                         + (samePort ? "ephemeral port" : "same port"));
             } catch (IOException ex) {
                 System.out.println("Can't create HTTP/3 server on same port: " + ex);
-                http3OnlyServer = new Http3TestServer(sslContext, 0);
+                http3ServerImpl = new Http3TestServer(sslContext, 0);
             }
-            http3OnlyServer.addHandler("/" + CLASS_NAME + "/http3/", handlers.get());
-            http3OnlyServer.addHandler("/" + CLASS_NAME + "/h2h3/", handlers.get());
+            http3OnlyServer = HttpTestServer.of(http3ServerImpl);
+            http3OnlyServer.createContext("/" + CLASS_NAME + "/http3/", handlers.get());
+            http3OnlyServer.createContext("/" + CLASS_NAME + "/h2h3/", handlers.get());
             http3OnlyServer.start();
-            http3Port = http3OnlyServer.getQuicServer().getAddress().getPort();
+            http3Port = http3ServerImpl.getQuicServer().getAddress().getPort();
 
             if (http3Port == https2Port) {
                 System.out.println("HTTP/3 server enabled on same port than HTTP/2 server");

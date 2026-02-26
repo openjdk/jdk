@@ -34,7 +34,6 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +46,7 @@ import jdk.jpackage.internal.PackagingPipeline.TaskID;
 import jdk.jpackage.internal.model.MacDmgPackage;
 import jdk.jpackage.internal.util.FileUtils;
 import jdk.jpackage.internal.util.PathGroup;
+import jdk.jpackage.internal.util.RootedPath;
 
 record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
         MacDmgSystemEnvironment sysEnv) implements Consumer<PackagingPipeline.Builder> {
@@ -61,7 +61,6 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
     @Override
     public void accept(PackagingPipeline.Builder pipelineBuilder) {
         pipelineBuilder
-                .excludeDirFromCopying(outputDir)
                 .task(DmgPackageTaskID.COPY_DMG_CONTENT)
                         .action(this::copyDmgContent)
                         .addDependent(PackageTaskID.CREATE_PACKAGE_FILE)
@@ -105,7 +104,7 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
         return env.configDir().resolve(pkg.app().name() + "-volume.icns");
     }
 
-    Path licenseFile() {
+    Path licensePListFile() {
         return env.configDir().resolve(pkg.app().name() + "-license.plist");
     }
 
@@ -131,9 +130,7 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
 
     private void copyDmgContent() throws IOException {
         final var srcFolder = env.appImageDir();
-        for (Path path : pkg.content()) {
-            FileUtils.copyRecursive(path, srcFolder.resolve(path.getFileName()));
-        }
+        RootedPath.copy(pkg.dmgRootDirSources().stream(), srcFolder);
     }
 
     private Executor hdiutil(String... args) {
@@ -175,26 +172,6 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
                 .saveToFile(dmgSetup);
     }
 
-    private void prepareLicense() throws IOException {
-        final var licFile = pkg.licenseFile();
-        if (licFile.isEmpty()) {
-            return;
-        }
-
-        byte[] licenseContentOriginal =
-                Files.readAllBytes(licFile.orElseThrow());
-        String licenseInBase64 =
-                Base64.getEncoder().encodeToString(licenseContentOriginal);
-
-        Map<String, String> data = new HashMap<>();
-        data.put("APPLICATION_LICENSE_TEXT", licenseInBase64);
-
-        env.createResource(DEFAULT_LICENSE_PLIST)
-                .setCategory(I18N.getString("resource.license-setup"))
-                .setSubstitutionData(data)
-                .saveToFile(licenseFile());
-    }
-
     private void prepareConfigFiles() throws IOException {
 
         env.createResource(DEFAULT_BACKGROUND_IMAGE)
@@ -206,7 +183,9 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
                 .setExternal(pkg.icon().orElse(null))
                 .saveToFile(volumeIcon());
 
-        prepareLicense();
+        if (pkg.licenseFile().isPresent()) {
+            MacDmgLicense.prepareLicensePListFile(pkg.licenseFile().get(), licensePListFile());
+        }
 
         prepareDMGSetupScript();
     }
@@ -359,7 +338,7 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
                     "udifrez",
                     normalizedAbsolutePathString(finalDMG),
                     "-xml",
-                    normalizedAbsolutePathString(licenseFile())
+                    normalizedAbsolutePathString(licensePListFile())
             ).retry()
                     .setMaxAttemptsCount(10)
                     .setAttemptTimeout(3, TimeUnit.SECONDS)
@@ -441,6 +420,4 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
     private static final String DEFAULT_BACKGROUND_IMAGE = "background_dmg.tiff";
     private static final String DEFAULT_DMG_SETUP_SCRIPT = "DMGsetup.scpt";
     private static final String TEMPLATE_BUNDLE_ICON = "JavaApp.icns";
-
-    private static final String DEFAULT_LICENSE_PLIST="lic_template.plist";
 }

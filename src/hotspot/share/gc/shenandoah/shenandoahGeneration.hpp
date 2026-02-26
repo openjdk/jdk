@@ -60,30 +60,6 @@ protected:
   ShenandoahHeuristics* _heuristics;
 
 private:
-  // Compute evacuation budgets prior to choosing collection set.
-  void compute_evacuation_budgets(ShenandoahHeap* heap);
-
-  // Adjust evacuation budgets after choosing collection set.
-  void adjust_evacuation_budgets(ShenandoahHeap* heap,
-                                 ShenandoahCollectionSet* collection_set);
-
-  // Preselect for possible inclusion into the collection set exactly the most
-  // garbage-dense regions, including those that satisfy criteria 1 & 2 below,
-  // and whose live bytes will fit within old_available budget:
-  // Criterion 1. region age >= tenuring threshold
-  // Criterion 2. region garbage percentage > old garbage threshold
-  //
-  // Identifies regions eligible for promotion in place,
-  // being those of at least tenuring_threshold age that have lower garbage
-  // density.
-  //
-  // Updates promotion_potential and pad_for_promote_in_place fields
-  // of the heap. Returns bytes of live object memory in the preselected
-  // regions, which are marked in the preselected_regions() indicator
-  // array of the heap's collection set, which should be initialized
-  // to false.
-  size_t select_aged_regions(size_t old_promotion_reserve);
-
   // Return available assuming that we can allocate no more than capacity bytes within this generation.
   size_t available(size_t capacity) const;
 
@@ -144,6 +120,22 @@ private:
   virtual void prepare_gc();
 
   // Called during final mark, chooses collection set, rebuilds free set.
+  // Upon return from prepare_regions_and_collection_set(), certain parameters have been established to govern the
+  // evacuation efforts that are about to begin.  In particular:
+  //
+  // old_generation->get_promoted_reserve() represents the amount of memory within old-gen's available memory that has
+  //   been set aside to hold objects promoted from young-gen memory.  This represents an estimated percentage
+  //   of the live young-gen memory within the collection set.  If there is more data ready to be promoted than
+  //   can fit within this reserve, the promotion of some objects will be deferred until a subsequent evacuation
+  //   pass.
+  //
+  // old_generation->get_evacuation_reserve() represents the amount of memory within old-gen's available memory that has been
+  //  set aside to hold objects evacuated from the old-gen collection set.
+  //
+  // young_generation->get_evacuation_reserve() represents the amount of memory within young-gen's available memory that has
+  //  been set aside to hold objects evacuated from the young-gen collection set.  Conservatively, this value
+  //  equals the entire amount of live young-gen memory within the collection set, even though some of this memory
+  //  will likely be promoted.
   virtual void prepare_regions_and_collection_set(bool concurrent);
 
   // Cancel marking (used by Full collect and when cancelling cycle).

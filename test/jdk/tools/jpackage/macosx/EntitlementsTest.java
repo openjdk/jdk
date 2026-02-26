@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,10 +56,9 @@ import jdk.jpackage.test.TKit;
  * @test
  * @summary jpackage with --type app-image "--mac-entitlements" parameter
  * @library /test/jdk/tools/jpackage/helpers
- * @library base
- * @build SigningBase
  * @build jdk.jpackage.test.*
- * @build EntitlementsTest
+ * @compile -Xlint:all -Werror SigningBase.java
+ * @compile -Xlint:all -Werror EntitlementsTest.java
  * @requires (jpackage.test.MacSignTests == "run")
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=EntitlementsTest
@@ -142,7 +141,8 @@ public class EntitlementsTest {
 
         cmd.mutate(MacHelper.useKeychain(keychain)).mutate(new SignKeyOption(
                 SignKeyOption.Type.SIGN_KEY_IDENTITY,
-                SigningBase.StandardCertificateRequest.CODESIGN.spec()
+                SigningBase.StandardCertificateRequest.CODESIGN,
+                keychain
         )::addTo);
 
         cmd.mutate(new AdditionalLauncher("x")::applyTo);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,9 +43,10 @@ import jdk.internal.net.http.quic.QuicClient;
 import jdk.internal.net.quic.QuicTLSContext;
 import jdk.internal.net.quic.QuicVersion;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 /*
  * @test
@@ -54,18 +55,18 @@ import org.testng.annotations.Test;
  *        jdk.httpclient.test.lib.quic.ClientConnection
  *        jdk.httpclient.test.lib.common.TestUtil
  *        jdk.test.lib.net.SimpleSSLContext
- * @run testng/othervm -Djdk.internal.httpclient.debug=true QuicRequestResponseTest
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true QuicRequestResponseTest
  */
 public class QuicRequestResponseTest {
 
-    private QuicStandaloneServer server;
+    private static QuicStandaloneServer server;
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
-    private ExecutorService executor;
+    private static ExecutorService executor;
 
     private static final byte[] HELLO_MSG = "Hello Quic".getBytes(StandardCharsets.UTF_8);
 
-    @BeforeClass
-    public void beforeClass() throws Exception {
+    @BeforeAll
+    public static void beforeClass() throws Exception {
         executor = Executors.newCachedThreadPool();
         server = QuicStandaloneServer.newBuilder()
                 .availableVersions(new QuicVersion[]{QuicVersion.QUIC_V1})
@@ -77,8 +78,8 @@ public class QuicRequestResponseTest {
         System.out.println("Server started at " + server.getAddress());
     }
 
-    @AfterClass
-    public void afterClass() throws Exception {
+    @AfterAll
+    public static void afterClass() throws Exception {
         if (server != null) {
             System.out.println("Stopping server " + server.getAddress());
             server.close();

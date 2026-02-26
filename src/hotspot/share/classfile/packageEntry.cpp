@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  *
  */
 
+#include "cds/aotGrowableArray.inline.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
@@ -31,13 +33,13 @@
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/metadataFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/array.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "utilities/events.hpp"
-#include "utilities/growableArray.hpp"
 #include "utilities/hashTable.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/quickSort.hpp"
@@ -51,7 +53,7 @@ PackageEntry::PackageEntry(Symbol* name, ModuleEntry* module) :
   _qualified_exports(nullptr),
   _defined_by_cds_in_class_path(0)
 {
-  // name can't be null
+  // name can't be null -- a class in the default package gets a PackageEntry of nullptr.
   _name->increment_refcount();
 
   JFR_ONLY(INIT_ID(this);)
@@ -81,7 +83,7 @@ void PackageEntry::add_qexport(ModuleEntry* m) {
   if (!has_qual_exports_list()) {
     // Lazily create a package's qualified exports list.
     // Initial size is small, do not anticipate export lists to be large.
-    _qualified_exports = new (mtModule) GrowableArray<ModuleEntry*>(QUAL_EXP_SIZE, mtModule);
+    _qualified_exports = new (mtModule) AOTGrowableArray<ModuleEntry*>(QUAL_EXP_SIZE, mtModule);
   }
 
   // Determine, based on this newly established export to module m,
@@ -183,10 +185,22 @@ void PackageEntry::purge_qualified_exports() {
 }
 
 void PackageEntry::delete_qualified_exports() {
-  if (_qualified_exports != nullptr) {
+  if (_qualified_exports != nullptr && !AOTMetaspace::in_aot_cache(_qualified_exports)) {
     delete _qualified_exports;
   }
   _qualified_exports = nullptr;
+}
+
+void PackageEntry::pack_qualified_exports() {
+  if (_qualified_exports != nullptr) {
+    _qualified_exports->shrink_to_fit();
+  }
+}
+
+void PackageEntry::metaspace_pointers_do(MetaspaceClosure* it) {
+  it->push(&_name);
+  it->push(&_module);
+  it->push(&_qualified_exports);
 }
 
 PackageEntryTable::PackageEntryTable() { }
@@ -212,66 +226,19 @@ PackageEntryTable::~PackageEntryTable() {
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
-typedef HashTable<
-  const PackageEntry*,
-  PackageEntry*,
-  557, // prime number
-  AnyObj::C_HEAP> ArchivedPackageEntries;
-static ArchivedPackageEntries* _archived_packages_entries = nullptr;
-
 bool PackageEntry::should_be_archived() const {
   return module()->should_be_archived();
 }
 
-PackageEntry* PackageEntry::allocate_archived_entry() const {
-  precond(should_be_archived());
-  PackageEntry* archived_entry = (PackageEntry*)ArchiveBuilder::rw_region_alloc(sizeof(PackageEntry));
-  memcpy((void*)archived_entry, (void*)this, sizeof(PackageEntry));
-
-  if (_archived_packages_entries == nullptr) {
-    _archived_packages_entries = new (mtClass)ArchivedPackageEntries();
+void PackageEntry::remove_unshareable_info() {
+  if (_qualified_exports != nullptr) {
+    _qualified_exports->set_in_aot_cache();
   }
-  assert(_archived_packages_entries->get(this) == nullptr, "Each PackageEntry must not be shared across PackageEntryTables");
-  _archived_packages_entries->put(this, archived_entry);
-
-  return archived_entry;
-}
-
-PackageEntry* PackageEntry::get_archived_entry(PackageEntry* orig_entry) {
-  PackageEntry** ptr = _archived_packages_entries->get(orig_entry);
-  if (ptr != nullptr) {
-    return *ptr;
-  } else {
-    return nullptr;
-  }
-}
-
-void PackageEntry::iterate_symbols(MetaspaceClosure* closure) {
-  closure->push(&_name);
-}
-
-void PackageEntry::init_as_archived_entry() {
-  Array<ModuleEntry*>* archived_qualified_exports = ModuleEntry::write_growable_array(_qualified_exports);
-
-  _name = ArchiveBuilder::get_buffered_symbol(_name);
-  _module = ModuleEntry::get_archived_entry(_module);
-  _qualified_exports = (GrowableArray<ModuleEntry*>*)archived_qualified_exports;
   _defined_by_cds_in_class_path = 0;
   JFR_ONLY(set_trace_id(0);) // re-init at runtime
-
-  ArchivePtrMarker::mark_pointer((address*)&_name);
-  ArchivePtrMarker::mark_pointer((address*)&_module);
-  ArchivePtrMarker::mark_pointer((address*)&_qualified_exports);
-
-  LogStreamHandle(Info, aot, package) st;
-  if (st.is_enabled()) {
-    st.print("archived ");
-    print(&st);
-  }
 }
 
 void PackageEntry::load_from_archive() {
-  _qualified_exports = ModuleEntry::restore_growable_array((Array<ModuleEntry*>*)_qualified_exports);
   JFR_ONLY(INIT_ID(this);)
 }
 
@@ -280,14 +247,7 @@ static int compare_package_by_name(PackageEntry* a, PackageEntry* b) {
   return a->name()->fast_compare(b->name());
 }
 
-void PackageEntryTable::iterate_symbols(MetaspaceClosure* closure) {
-  auto syms = [&] (const SymbolHandle& key, PackageEntry*& p) {
-      p->iterate_symbols(closure);
-  };
-  _table.iterate_all(syms);
-}
-
-Array<PackageEntry*>* PackageEntryTable::allocate_archived_entries() {
+Array<PackageEntry*>* PackageEntryTable::build_aot_table(ClassLoaderData* loader_data, TRAPS) {
   // First count the packages in named modules
   int n = 0;
   auto count = [&] (const SymbolHandle& key, PackageEntry*& p) {
@@ -297,12 +257,19 @@ Array<PackageEntry*>* PackageEntryTable::allocate_archived_entries() {
   };
   _table.iterate_all(count);
 
-  Array<PackageEntry*>* archived_packages = ArchiveBuilder::new_rw_array<PackageEntry*>(n);
+  Array<PackageEntry*>* archived_packages = MetadataFactory::new_array<PackageEntry*>(loader_data, n, nullptr, CHECK_NULL);
   // reset n
   n = 0;
   auto grab = [&] (const SymbolHandle& key, PackageEntry*& p) {
     if (p->should_be_archived()) {
+      p->pack_qualified_exports();
       archived_packages->at_put(n++, p);
+
+      LogStreamHandle(Info, aot, package) st;
+      if (st.is_enabled()) {
+        st.print("archived ");
+        p->print(&st);
+      }
     }
   };
   _table.iterate_all(grab);
@@ -311,18 +278,8 @@ Array<PackageEntry*>* PackageEntryTable::allocate_archived_entries() {
     // Always allocate in the same order to produce deterministic archive.
     QuickSort::sort(archived_packages->data(), n, compare_package_by_name);
   }
-  for (int i = 0; i < n; i++) {
-    archived_packages->at_put(i, archived_packages->at(i)->allocate_archived_entry());
-    ArchivePtrMarker::mark_pointer((address*)archived_packages->adr_at(i));
-  }
-  return archived_packages;
-}
 
-void PackageEntryTable::init_archived_entries(Array<PackageEntry*>* archived_packages) {
-  for (int i = 0; i < archived_packages->length(); i++) {
-    PackageEntry* archived_entry = archived_packages->at(i);
-    archived_entry->init_as_archived_entry();
-  }
+  return archived_packages;
 }
 
 void PackageEntryTable::load_archived_entries(Array<PackageEntry*>* archived_packages) {

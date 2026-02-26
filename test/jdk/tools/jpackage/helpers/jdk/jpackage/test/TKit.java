@@ -65,6 +65,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
@@ -1082,13 +1083,21 @@ public final class TKit {
             predicate(String::contains);
         }
 
+        TextStreamVerifier(Pattern value) {
+            this(Objects.requireNonNull(value).pattern());
+            predicate(value.asPredicate());
+        }
+
         TextStreamVerifier(TextStreamVerifier other) {
             predicate = other.predicate;
             label = other.label;
             negate = other.negate;
             createException = other.createException;
-            anotherVerifier = other.anotherVerifier;
             value = other.value;
+        }
+
+        public TextStreamVerifier copy() {
+            return new TextStreamVerifier(this);
         }
 
         public TextStreamVerifier label(String v) {
@@ -1099,6 +1108,13 @@ public final class TKit {
         public TextStreamVerifier predicate(BiPredicate<String, String> v) {
             predicate = Objects.requireNonNull(v);
             return this;
+        }
+
+        public TextStreamVerifier predicate(Predicate<String> v) {
+            Objects.requireNonNull(v);
+            return predicate((str, _) -> {
+                return v.test(str);
+            });
         }
 
         public TextStreamVerifier negate() {
@@ -1116,7 +1132,12 @@ public final class TKit {
             return this;
         }
 
-        private String findMatch(Iterator<String> lineIt) {
+        public TextStreamVerifier mutate(Consumer<TextStreamVerifier> mutator) {
+            mutator.accept(this);
+            return this;
+        }
+
+        private String find(Iterator<String> lineIt) {
             while (lineIt.hasNext()) {
                 final var line = lineIt.next();
                 if (predicate.test(line, value)) {
@@ -1131,7 +1152,7 @@ public final class TKit {
         }
 
         public void apply(Iterator<String> lineIt) {
-            final String matchedStr = findMatch(lineIt);
+            final String matchedStr = find(lineIt);
             final String labelStr = Optional.ofNullable(label).orElse("output");
             if (negate) {
                 String msg = String.format(
@@ -1156,74 +1177,30 @@ public final class TKit {
                     }
                 }
             }
-
-            if (anotherVerifier != null) {
-                anotherVerifier.accept(lineIt);
-            }
-        }
-
-        public static TextStreamVerifier.Group group() {
-            return new TextStreamVerifier.Group();
-        }
-
-        public static final class Group {
-            public Group add(TextStreamVerifier verifier) {
-                if (verifier.anotherVerifier != null) {
-                    throw new IllegalArgumentException();
-                }
-                verifiers.add(verifier);
-                return this;
-            }
-
-            public Group add(Group other) {
-                verifiers.addAll(other.verifiers);
-                return this;
-            }
-
-            public boolean isEmpty() {
-                return verifiers.isEmpty();
-            }
-
-            public Optional<Consumer<Iterator<String>>> tryCreate() {
-                if (isEmpty()) {
-                    return Optional.empty();
-                } else {
-                    return Optional.of(create());
-                }
-            }
-
-            public Consumer<Iterator<String>> create() {
-                if (verifiers.isEmpty()) {
-                    throw new IllegalStateException();
-                }
-
-                if (verifiers.size() == 1) {
-                    return verifiers.getFirst()::apply;
-                }
-
-                final var head = new TextStreamVerifier(verifiers.getFirst());
-                var prev = head;
-                for (var verifier : verifiers.subList(1, verifiers.size())) {
-                    verifier = new TextStreamVerifier(verifier);
-                    prev.anotherVerifier = verifier::apply;
-                    prev = verifier;
-                }
-                return head::apply;
-            }
-
-            private final List<TextStreamVerifier> verifiers = new ArrayList<>();
         }
 
         private BiPredicate<String, String> predicate;
         private String label;
         private boolean negate;
         private Supplier<RuntimeException> createException;
-        private Consumer<? super Iterator<String>> anotherVerifier;
         private final String value;
     }
 
     public static TextStreamVerifier assertTextStream(String what) {
         return new TextStreamVerifier(what);
+    }
+
+    public static TextStreamVerifier assertTextStream(Pattern what) {
+        return new TextStreamVerifier(what);
+    }
+
+    public static Consumer<Iterator<String>> assertEndOfTextStream(String label) {
+        Objects.requireNonNull(label);
+        return it -> {
+            var tail = new ArrayList<String>();
+            it.forEachRemaining(tail::add);
+            assertStringListEquals(List.of(), tail, String.format("Check the end of %s", label));
+        };
     }
 
     public record PathSnapshot(List<String> contentHashes) {

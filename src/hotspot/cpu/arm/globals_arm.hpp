@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ define_pd_global(bool,  TrapBasedNullChecks,      false); // Not needed
 define_pd_global(bool,  DelayCompilerStubsGeneration, false); // No need - only few compiler's stubs
 
 define_pd_global(size_t, CodeCacheSegmentSize,     64);
-define_pd_global(intx,   CodeEntryAlignment,       16);
+define_pd_global(uint,   CodeEntryAlignment,       16);
 define_pd_global(intx,   OptoLoopAlignment,        16);
 
 #define DEFAULT_STACK_YELLOW_PAGES (2)

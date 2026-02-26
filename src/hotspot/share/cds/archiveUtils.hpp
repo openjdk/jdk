@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,7 +153,6 @@ private:
   char* _base;
   char* _top;
   char* _end;
-  uintx _max_delta;
   bool _is_packed;
   ReservedSpace* _rs;
   VirtualSpace* _vs;
@@ -161,9 +160,9 @@ private:
   void commit_to(char* newtop);
 
 public:
-  DumpRegion(const char* name, uintx max_delta = 0)
+  DumpRegion(const char* name)
     : _name(name), _base(nullptr), _top(nullptr), _end(nullptr),
-      _max_delta(max_delta), _is_packed(false),
+      _is_packed(false),
       _rs(nullptr), _vs(nullptr) {}
 
   char* expand_top_to(char* newtop);
@@ -237,13 +236,13 @@ public:
 class ReadClosure : public SerializeClosure {
 private:
   intptr_t** _ptr_array;
-  intptr_t _base_address;
+  address _base_address;
   inline intptr_t nextPtr() {
     return *(*_ptr_array)++;
   }
 
 public:
-  ReadClosure(intptr_t** ptr_array, intptr_t base_address) :
+  ReadClosure(intptr_t** ptr_array, address base_address) :
     _ptr_array(ptr_array), _base_address(base_address) {}
 
   void do_ptr(void** p);
@@ -260,7 +259,6 @@ class ArchiveUtils {
   template <typename T> static Array<T>* archive_ptr_array(GrowableArray<T>* tmp_array);
 
 public:
-  static const uintx MAX_SHARED_DELTA = 0x7FFFFFFF;
   static void log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) NOT_CDS_RETURN;
   static bool has_aot_initialized_mirror(InstanceKlass* src_ik);
 
@@ -272,50 +270,6 @@ public:
   template <typename T, ENABLE_IF(std::is_pointer<T>::value)>
   static Array<T>* archive_array(GrowableArray<T>* tmp_array) {
     return archive_ptr_array(tmp_array);
-  }
-
-  // The following functions translate between a u4 offset and an address in the
-  // the range of the mapped CDS archive (e.g., Metaspace::in_aot_cache()).
-  // Since the first 16 bytes in this range are dummy data (see ArchiveBuilder::reserve_buffer()),
-  // we know that offset 0 never represents a valid object. As a result, an offset of 0
-  // is used to encode a nullptr.
-  //
-  // Use the "archived_address_or_null" variants if a nullptr may be encoded.
-
-  // offset must represent an object of type T in the mapped shared space. Return
-  // a direct pointer to this object.
-  template <typename T> T static offset_to_archived_address(u4 offset) {
-    assert(offset != 0, "sanity");
-    T p = (T)(SharedBaseAddress + offset);
-    assert(Metaspace::in_aot_cache(p), "must be");
-    return p;
-  }
-
-  template <typename T> T static offset_to_archived_address_or_null(u4 offset) {
-    if (offset == 0) {
-      return nullptr;
-    } else {
-      return offset_to_archived_address<T>(offset);
-    }
-  }
-
-  // p must be an archived object. Get its offset from SharedBaseAddress
-  template <typename T> static u4 archived_address_to_offset(T p) {
-    uintx pn = (uintx)p;
-    uintx base = (uintx)SharedBaseAddress;
-    assert(Metaspace::in_aot_cache(p), "must be");
-    assert(pn > base, "sanity"); // No valid object is stored at 0 offset from SharedBaseAddress
-    uintx offset = pn - base;
-    assert(offset <= MAX_SHARED_DELTA, "range check");
-    return static_cast<u4>(offset);
-  }
-
-  template <typename T> static u4 archived_address_or_null_to_offset(T p) {
-    if (p == nullptr) {
-      return 0;
-    } else {
-      return archived_address_to_offset<T>(p);
-    }
   }
 };
 

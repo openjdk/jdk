@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,6 @@
 
 import jdk.test.lib.net.IPSupport;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 import java.io.Closeable;
@@ -50,6 +45,12 @@ import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 /*
  * @test
  * @summary Tests HttpClient usage when configured with a local address to bind
@@ -60,7 +61,7 @@ import static java.net.http.HttpClient.Version.HTTP_2;
  * @build jdk.test.lib.net.SimpleSSLContext jdk.test.lib.net.IPSupport
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  *
- * @run testng/othervm
+ * @run junit/othervm
  *      -Djdk.httpclient.HttpClient.log=frames,ssl,requests,responses,errors
  *      -Djdk.internal.httpclient.debug=true
  *      -Dsun.net.httpserver.idleInterval=50000
@@ -81,7 +82,7 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
     private static final AtomicInteger IDS = new AtomicInteger();
 
     // start various HTTP/HTTPS servers that will be invoked against in the tests
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() throws Exception {
         HttpServerAdapters.HttpTestHandler handler = (exchange) -> {
             // the handler receives a request and sends back a 200 response with the
@@ -126,7 +127,7 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
     }
 
     // stop each of the started servers
-    @AfterClass
+    @AfterAll
     public static void afterClass() throws Exception {
         // stop each of the server and accumulate any exception
         // that might happen during stop and finally throw
@@ -166,8 +167,7 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
         return prevException;
     }
 
-    @DataProvider(name = "params")
-    private Object[][] paramsProvider() throws Exception {
+    private static Object[][] paramsProvider() throws Exception {
         final List<Object[]> testMethodParams = new ArrayList<>();
         final URI[] requestURIs = new URI[]{httpURI, httpsURI, http2URI, https2URI};
         final Predicate<URI> requiresSSLContext = (uri) -> uri.getScheme().equals("https");
@@ -224,7 +224,7 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
     // An object that holds a client and that can be closed
     // Used when closing the client might require closing additional
     // resources, such as an executor
-    sealed interface ClientCloseable extends Closeable {
+    public sealed interface ClientCloseable extends Closeable {
 
         HttpClient client();
 
@@ -261,7 +261,7 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
     }
 
     // A supplier of ClientCloseable
-    sealed interface ClientProvider extends Supplier<ClientCloseable> {
+    public sealed interface ClientProvider extends Supplier<ClientCloseable> {
 
         ClientCloseable get();
 
@@ -323,7 +323,8 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
      * seen by the server side handler is the same one as that is set on the
      * {@code client}
      */
-    @Test(dataProvider = "params")
+    @ParameterizedTest
+    @MethodSource("paramsProvider")
     public void testSend(ClientProvider clientProvider, URI requestURI, InetAddress localAddress) throws Exception {
         try (var c = clientProvider.get()) {
             HttpClient client = c.client();
@@ -332,10 +333,10 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
             // GET request
             var req = HttpRequest.newBuilder(requestURI).build();
             var resp = client.send(req, HttpResponse.BodyHandlers.ofByteArray());
-            Assert.assertEquals(resp.statusCode(), 200, "Unexpected status code");
+            Assertions.assertEquals(200, resp.statusCode(), "Unexpected status code");
             // verify the address only if a specific one was set on the client
             if (localAddress != null && !localAddress.isAnyLocalAddress()) {
-                Assert.assertEquals(resp.body(), localAddress.getAddress(),
+                Assertions.assertArrayEquals(localAddress.getAddress(), resp.body(),
                         "Unexpected client address seen by the server handler");
             }
         }
@@ -347,7 +348,8 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
      * seen by the server side handler is the same one as that is set on the
      * {@code client}
      */
-    @Test(dataProvider = "params")
+    @ParameterizedTest
+    @MethodSource("paramsProvider")
     public void testSendAsync(ClientProvider clientProvider, URI requestURI, InetAddress localAddress) throws Exception {
         try (var c = clientProvider.get()) {
             HttpClient client = c.client();
@@ -359,10 +361,10 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
             var cf = client.sendAsync(req,
                     HttpResponse.BodyHandlers.ofByteArray());
             var resp = cf.get();
-            Assert.assertEquals(resp.statusCode(), 200, "Unexpected status code");
+            Assertions.assertEquals(200, resp.statusCode(), "Unexpected status code");
             // verify the address only if a specific one was set on the client
             if (localAddress != null && !localAddress.isAnyLocalAddress()) {
-                Assert.assertEquals(resp.body(), localAddress.getAddress(),
+                Assertions.assertArrayEquals(localAddress.getAddress(), resp.body(),
                         "Unexpected client address seen by the server handler");
             }
         }
@@ -374,7 +376,8 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
      * is used when multiple concurrent threads are involved in sending requests from
      * the {@code client}
      */
-    @Test(dataProvider = "params")
+    @ParameterizedTest
+    @MethodSource("paramsProvider")
     public void testMultiSendRequests(ClientProvider clientProvider,
                                       URI requestURI,
                                       InetAddress localAddress) throws Exception {

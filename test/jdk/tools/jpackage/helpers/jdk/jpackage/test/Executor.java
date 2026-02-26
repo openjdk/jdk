@@ -183,12 +183,12 @@ public final class Executor extends CommandArguments<Executor> {
         return commandOutputControl.charset();
     }
 
-    Executor storeOutputInFiles(boolean v) {
+    public Executor storeOutputInFiles(boolean v) {
         commandOutputControl.storeOutputInFiles(v);
         return this;
     }
 
-    Executor storeOutputInFiles() {
+    public Executor storeOutputInFiles() {
         return storeOutputInFiles(true);
     }
 

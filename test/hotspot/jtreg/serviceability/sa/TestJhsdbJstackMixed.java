@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.Platform;
 import jdk.test.lib.SA.SATestUtils;
 import jdk.test.lib.Utils;
 import jdk.test.lib.apps.LingeredApp;
@@ -35,8 +36,8 @@ import jdk.test.lib.process.OutputAnalyzer;
 /**
  * @test
  * @key randomness
- * @bug 8208091
- * @requires (os.family == "linux") & (vm.hasSA)
+ * @bug 8208091 8374469 8377710
+ * @requires (os.family == "linux" | os.family == "windows") & (vm.hasSA)
  * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run driver TestJhsdbJstackMixed
@@ -50,8 +51,11 @@ public class TestJhsdbJstackMixed {
     private static final Pattern LINE_PATTERN = Pattern
             .compile(LINE_MATCHER_STR);
     private static final String HEX_STR_PATTERN = "0x([a-fA-F0-9]+)";
-    private static final String FIB_SPLIT_PATTERN = NATIVE_FUNCTION_NAME
+
+    // On windows the native symbol will be prefixed with "NoFramePointer!"
+    private static final String FIB_SPLIT_PATTERN = "(NoFramePointer!)?" + NATIVE_FUNCTION_NAME
             + "\\s+\\+";
+
     private static final Pattern HEX_PATTERN = Pattern.compile(HEX_STR_PATTERN);
     private static final int ADDRESS_ALIGNMENT_X86 = 4;
 
@@ -149,6 +153,11 @@ public class TestJhsdbJstackMixed {
             System.err.println(out.getStderr());
 
             out.shouldContain(LingeredAppWithNativeMethod.THREAD_NAME);
+            out.shouldNotContain("sun.jvm.hotspot.debugger.UnmappedAddressException:");
+            if (Platform.isWindows()) {
+                // We need to check stdout/stderr only once on Windows.
+                break;
+            }
             if (isFibAndAlignedAddress(out.asLines())) {
                 System.out.println("DEBUG: Test triggered interesting condition.");
                 out.shouldNotContain("sun.jvm.hotspot.debugger.UnmappedAddressException:");
@@ -157,7 +166,6 @@ public class TestJhsdbJstackMixed {
             }
             System.out.println("DEBUG: Iteration: " + (i + 1)
                                  + " - Test didn't trigger interesting condition.");
-            out.shouldNotContain("sun.jvm.hotspot.debugger.UnmappedAddressException:");
         }
         System.out.println("DEBUG: Test didn't trigger interesting condition " +
                              "but no UnmappedAddressException was thrown. PASS!");

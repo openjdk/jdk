@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  *        ReferenceTracker
- * @run testng/othervm -Djdk.internal.httpclient.debug=true
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true
  *                     -Djdk.httpclient.HttpClient.log=requests,responses,errors
  *                     BasicHTTP2Test
  * @summary Basic HTTP/2 test when HTTP/3 is requested
@@ -44,37 +44,40 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.Builder;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.time.Duration;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.net.ssl.SSLContext;
 
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import org.testng.ITestContext;
-import org.testng.SkipException;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
 
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
 import static java.net.http.HttpOption.H3_DISCOVERY;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.extension.TestWatcher;
 
 public class BasicHTTP2Test implements HttpServerAdapters {
 
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
-    HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
-    String https2URI;
-    DatagramSocket udp;
+    private static HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
+    private static String https2URI;
+    private static DatagramSocket udp;
 
     // a shared executor helps reduce the amount of threads created by the test
     static final Executor executor = new TestExecutor(Executors.newCachedThreadPool());
@@ -91,8 +94,7 @@ public class BasicHTTP2Test implements HttpServerAdapters {
         return String.format("[%d s, %d ms, %d ns] ", secs, mill, nan);
     }
 
-    final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
-    private volatile HttpClient sharedClient;
+    private static final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
 
     static class TestExecutor implements Executor {
         final AtomicLong tasks = new AtomicLong();
@@ -118,20 +120,37 @@ public class BasicHTTP2Test implements HttpServerAdapters {
         }
     }
 
-    protected boolean stopAfterFirstFailure() {
+    private static boolean stopAfterFirstFailure() {
         return Boolean.getBoolean("jdk.internal.httpclient.debug");
     }
 
-    @BeforeMethod
-    void beforeMethod(ITestContext context) {
-        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
-            var x = new SkipException("Skipping: some test failed");
-            x.setStackTrace(new StackTraceElement[0]);
-            throw x;
+    static final class TestStopper implements TestWatcher, BeforeEachCallback {
+        final AtomicReference<String> failed = new AtomicReference<>();
+        TestStopper() { }
+        @Override
+        public void testFailed(ExtensionContext context, Throwable cause) {
+            if (stopAfterFirstFailure()) {
+                String msg = "Aborting due to: " + cause;
+                failed.compareAndSet(null, msg);
+                FAILURES.putIfAbsent(context.getDisplayName(), cause);
+                System.out.printf("%nTEST FAILED: %s%s%n\tAborting due to %s%n%n",
+                        now(), context.getDisplayName(), cause);
+                System.err.printf("%nTEST FAILED: %s%s%n\tAborting due to %s%n%n",
+                        now(), context.getDisplayName(), cause);
+            }
+        }
+
+        @Override
+        public void beforeEach(ExtensionContext context) {
+            String msg = failed.get();
+            Assumptions.assumeTrue(msg == null, msg);
         }
     }
 
-    @AfterClass
+    @RegisterExtension
+    static final TestStopper stopper = new TestStopper();
+
+    @AfterAll
     static final void printFailedTests() {
         out.println("\n=========================");
         try {
@@ -152,14 +171,6 @@ public class BasicHTTP2Test implements HttpServerAdapters {
         }
     }
 
-    private String[] uris() {
-        return new String[] {
-                https2URI,
-        };
-    }
-
-    static AtomicLong URICOUNT = new AtomicLong();
-
     private HttpClient makeNewClient() {
         clientCount.incrementAndGet();
         HttpClient client =  HttpClient.newBuilder()
@@ -169,37 +180,6 @@ public class BasicHTTP2Test implements HttpServerAdapters {
                 .build();
         return TRACKER.track(client);
     }
-
-    HttpClient newHttpClient(boolean share) {
-        if (!share) return makeNewClient();
-        HttpClient shared = sharedClient;
-        if (shared != null) return shared;
-        synchronized (this) {
-            shared = sharedClient;
-            if (shared == null) {
-                shared = sharedClient = makeNewClient();
-            }
-            return shared;
-        }
-    }
-
-
-    static void checkStatus(int expected, int found) throws Exception {
-        if (expected != found) {
-            System.err.printf ("Test failed: wrong status code %d/%d\n",
-                expected, found);
-            throw new RuntimeException("Test failed");
-        }
-    }
-
-    static void checkStrings(String expected, String found) throws Exception {
-        if (!expected.equals(found)) {
-            System.err.printf ("Test failed: wrong string %s/%s\n",
-                expected, found);
-            throw new RuntimeException("Test failed");
-        }
-    }
-
 
     @Test
     public void testH2() throws Exception {
@@ -220,8 +200,8 @@ public class BasicHTTP2Test implements HttpServerAdapters {
         HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
         out.println("Response #1: " + response);
         out.println("Version  #1: " + response.version());
-        assertEquals(response.statusCode(), 200, "first response status");
-        assertEquals(response.version(), HTTP_2, "first response version");
+        assertEquals(200, response.statusCode(), "first response status");
+        assertEquals(HTTP_2, response.version(), "first response version");
 
         Thread.sleep(1000);
 
@@ -232,16 +212,15 @@ public class BasicHTTP2Test implements HttpServerAdapters {
         response = client.send(request, BodyHandlers.ofString());
         out.println("Response #2: " + response);
         out.println("Version  #2: " + response.version());
-        assertEquals(response.statusCode(), 200, "second response status");
-        assertEquals(response.version(), HTTP_2, "second response version");
+        assertEquals(200, response.statusCode(), "second response status");
+        assertEquals(HTTP_2, response.version(), "second response version");
 
     }
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         // HTTP/2
         HttpTestHandler handler = new Handler();
-        HttpTestHandler h3Handler = new Handler();
 
         https2TestServer = HttpTestServer.create(HTTP_2, sslContext);
         https2TestServer.addHandler(handler, "/https2/test204/");
@@ -259,11 +238,8 @@ public class BasicHTTP2Test implements HttpServerAdapters {
         https2TestServer.start();
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
-        String sharedClientName =
-                sharedClient == null ? null : sharedClient.toString();
-        sharedClient = null;
+    @AfterAll
+    public static void teardown() throws Exception {
         Thread.sleep(100);
         AssertionError fail = TRACKER.check(500);
         try {
@@ -271,10 +247,7 @@ public class BasicHTTP2Test implements HttpServerAdapters {
             https2TestServer.stop();
         } finally {
             if (fail != null) {
-                if (sharedClientName != null) {
-                    System.err.println("Shared client name is: " + sharedClientName);
-                }
-                throw fail;
+                 throw fail;
             }
         }
     }

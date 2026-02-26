@@ -32,7 +32,6 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"

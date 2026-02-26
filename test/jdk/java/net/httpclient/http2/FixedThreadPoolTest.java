@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
  * @library /test/jdk/java/net/httpclient/lib
  *          /test/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer
- *        jdk.httpclient.test.lib.http2.Http2EchoHandler
  *        jdk.test.lib.Asserts
  *        jdk.test.lib.Utils
  *        jdk.test.lib.net.SimpleSSLContext
@@ -41,8 +40,10 @@ import java.net.http.HttpResponse.BodyHandlers;
 import javax.net.ssl.*;
 import java.nio.file.*;
 import java.util.concurrent.*;
+
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestExchange;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
-import jdk.httpclient.test.lib.http2.Http2EchoHandler;
 import jdk.test.lib.net.SimpleSSLContext;
 
 import static java.net.http.HttpClient.Version.HTTP_2;
@@ -52,14 +53,13 @@ import static jdk.test.lib.Utils.createTempFileOfSize;
 
 import org.testng.annotations.Test;
 
-@Test
-public class FixedThreadPoolTest {
+public class FixedThreadPoolTest implements HttpServerAdapters {
 
     private static final String TEMP_FILE_PREFIX =
             HttpClient.class.getPackageName() + '-' + FixedThreadPoolTest.class.getSimpleName() + '-';
 
     static int httpPort, httpsPort;
-    static Http2TestServer httpServer, httpsServer;
+    static HttpTestServer httpServer, httpsServer;
     static HttpClient client = null;
     static ExecutorService exec;
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
@@ -69,16 +69,18 @@ public class FixedThreadPoolTest {
     static void initialize() throws Exception {
         try {
             client = getClient();
-            httpServer = new Http2TestServer(false, 0, exec, sslContext);
-            httpServer.addHandler(new Http2EchoHandler(), "/");
+            httpServer = HttpTestServer.of(
+                    new Http2TestServer(false, 0, exec, sslContext));
+            httpServer.addHandler(new HttpTestFileEchoHandler(), "/");
             httpPort = httpServer.getAddress().getPort();
 
-            httpsServer = new Http2TestServer(true, 0, exec, sslContext);
-            httpsServer.addHandler(new Http2EchoHandler(), "/");
+            httpsServer = HttpTestServer.of(
+                    new Http2TestServer(true, 0, exec, sslContext));
+            httpsServer.addHandler(new HttpTestFileEchoHandler(), "/");
 
             httpsPort = httpsServer.getAddress().getPort();
-            httpURIString = "http://localhost:" + httpPort + "/foo/";
-            httpsURIString = "https://localhost:" + httpsPort + "/bar/";
+            httpURIString = "http://" + httpServer.serverAuthority() + "/foo/";
+            httpsURIString = "https://" + httpsServer.serverAuthority() + "/bar/";
 
             httpServer.start();
             httpsServer.start();
@@ -193,7 +195,7 @@ public class FixedThreadPoolTest {
     static void paramsTest() throws Exception {
         System.err.println("paramsTest");
         Http2TestServer server = new Http2TestServer(true, 0, exec, sslContext);
-        server.addHandler((t -> {
+        server.addHandler(((Http2TestExchange t) -> {
             SSLSession s = t.getSSLSession();
             String prot = s.getProtocol();
             if (prot.equals(expectedTLSVersion(sslContext))) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,34 +27,20 @@
  * @summary checks that a different proxy returned for
  *          the same host:port is taken into account
  * @library /test/lib /test/jdk/java/net/httpclient/lib
- * @build DigestEchoServer ProxySelectorTest jdk.httpclient.test.lib.http2.Http2TestServer
+ * @build DigestEchoServer ProxySelectorTest
  *        jdk.test.lib.net.SimpleSSLContext
- * @run testng/othervm
+ * @run junit/othervm
  *       -Djdk.http.auth.tunneling.disabledSchemes
  *       -Djdk.httpclient.HttpClient.log=headers,requests
  *       -Djdk.internal.httpclient.debug=true
  *       ProxySelectorTest
  */
 
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsServer;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.ITestContext;
-import org.testng.ITestResult;
-import org.testng.SkipException;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.SocketAddress;
@@ -63,7 +49,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -73,37 +58,44 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 import static java.lang.System.err;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.assertEquals;
+
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.extension.TestWatcher;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ProxySelectorTest implements HttpServerAdapters {
 
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
-    HttpTestServer httpTestServer;            // HTTP/1.1
-    HttpTestServer proxyHttpTestServer;       // HTTP/1.1
-    HttpTestServer authProxyHttpTestServer;   // HTTP/1.1
-    HttpTestServer http2TestServer;           // HTTP/2 ( h2c )
-    HttpTestServer httpsTestServer;           // HTTPS/1.1
-    HttpTestServer https2TestServer;          // HTTP/2 ( h2  )
-    DigestEchoServer.TunnelingProxy proxy;
-    DigestEchoServer.TunnelingProxy authproxy;
-    String httpURI;
-    String httpsURI;
-    String proxyHttpURI;
-    String authProxyHttpURI;
-    String http2URI;
-    String https2URI;
-    HttpClient client;
+    private static HttpTestServer httpTestServer;            // HTTP/1.1
+    private static HttpTestServer proxyHttpTestServer;       // HTTP/1.1
+    private static HttpTestServer authProxyHttpTestServer;   // HTTP/1.1
+    private static HttpTestServer http2TestServer;           // HTTP/2 ( h2c )
+    private static HttpTestServer httpsTestServer;           // HTTPS/1.1
+    private static HttpTestServer https2TestServer;          // HTTP/2 ( h2  )
+    private static DigestEchoServer.TunnelingProxy proxy;
+    private static DigestEchoServer.TunnelingProxy authproxy;
+    private static String httpURI;
+    private static String httpsURI;
+    private static String proxyHttpURI;
+    private static String http2URI;
+    private static String https2URI;
+    private static HttpClient client;
 
-    final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
+    private static final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
     static final long SLEEP_AFTER_TEST = 0; // milliseconds
     static final int ITERATIONS = 3;
     static final Executor executor = new TestExecutor(Executors.newCachedThreadPool());
@@ -144,34 +136,38 @@ public class ProxySelectorTest implements HttpServerAdapters {
         }
     }
 
-    protected boolean stopAfterFirstFailure() {
+    private static boolean stopAfterFirstFailure() {
         return Boolean.getBoolean("jdk.internal.httpclient.debug");
     }
 
-    final AtomicReference<SkipException> skiptests = new AtomicReference<>();
-    void checkSkip() {
-        var skip = skiptests.get();
-        if (skip != null) throw skip;
-    }
-    static String name(ITestResult result) {
-        var params = result.getParameters();
-        return result.getName()
-                + (params == null ? "()" : Arrays.toString(result.getParameters()));
-    }
-
-    @BeforeMethod
-    void beforeMethod(ITestContext context) {
-        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
-            if (skiptests.get() == null) {
-                SkipException skip = new SkipException("some tests failed");
-                skip.setStackTrace(new StackTraceElement[0]);
-                skiptests.compareAndSet(null, skip);
+    static final class TestStopper implements TestWatcher, BeforeEachCallback {
+        final AtomicReference<String> failed = new AtomicReference<>();
+        TestStopper() { }
+        @Override
+        public void testFailed(ExtensionContext context, Throwable cause) {
+            if (stopAfterFirstFailure()) {
+                String msg = "Aborting due to: " + cause;
+                failed.compareAndSet(null, msg);
+                FAILURES.putIfAbsent(context.getDisplayName(), cause);
+                System.out.printf("%nTEST FAILED: %s%s%n\tAborting due to %s%n%n",
+                        now(), context.getDisplayName(), cause);
+                System.err.printf("%nTEST FAILED: %s%s%n\tAborting due to %s%n%n",
+                        now(), context.getDisplayName(), cause);
             }
+        }
+
+        @Override
+        public void beforeEach(ExtensionContext context) {
+            String msg = failed.get();
+            Assumptions.assumeTrue(msg == null, msg);
         }
     }
 
-    @AfterClass
-    static final void printFailedTests() {
+    @RegisterExtension
+    static final TestStopper stopper = new TestStopper();
+
+    @AfterAll
+    static void printFailedTests() {
         out.println("\n=========================");
         try {
             // Exceptions should already have been added to FAILURES
@@ -204,12 +200,10 @@ public class ProxySelectorTest implements HttpServerAdapters {
     static final int UNAUTHORIZED = 401;
     static final int PROXY_UNAUTHORIZED = 407;
     static final int HTTP_OK = 200;
-    static final String MESSAGE = "Unauthorized";
     enum Schemes {
         HTTP, HTTPS
     }
-    @DataProvider(name = "all")
-    public Object[][] positive() {
+    public static Object[][] positive() {
         return new Object[][] {
                 { Schemes.HTTP,  HTTP_1_1, httpURI,   true},
                 { Schemes.HTTP,  HttpClient.Version.HTTP_2,   http2URI,  true},
@@ -222,15 +216,13 @@ public class ProxySelectorTest implements HttpServerAdapters {
         };
     }
 
-    static final AtomicLong requestCounter = new AtomicLong();
-
     static final AtomicLong sleepCount = new AtomicLong();
 
-    @Test(dataProvider = "all")
+    @ParameterizedTest
+    @MethodSource("positive")
     void test(Schemes scheme, HttpClient.Version version, String uri, boolean async)
             throws Throwable
     {
-        checkSkip();
         var name = String.format("test(%s, %s, %s)", scheme, version, async);
         out.printf("%n---- starting %s ----%n", name);
 
@@ -260,7 +252,7 @@ public class ProxySelectorTest implements HttpServerAdapters {
         HttpRequest request = requestBuilder.build();
         out.println("Sending request: " + request.uri());
 
-        HttpResponse<T> response = null;
+        HttpResponse<T> response;
         if (async) {
             response = client.send(request, handler);
         } else {
@@ -288,9 +280,11 @@ public class ProxySelectorTest implements HttpServerAdapters {
         // A plain server or https server should serve it, and we should get 200 OK
         response = send(client, uri1, BodyHandlers.ofString(), async);
         out.println("Got response from plain server: " + response);
-        assertEquals(response.statusCode(), HTTP_OK);
-        assertEquals(response.headers().firstValue("X-value"),
-                scheme == Schemes.HTTPS ? Optional.of("https-server") : Optional.of("plain-server"));
+        assertEquals(HTTP_OK, response.statusCode());
+        assertEquals(scheme == Schemes.HTTPS
+                ? Optional.of("https-server")
+                : Optional.of("plain-server"),
+                response.headers().firstValue("X-value"));
 
         // Second request should go through a non authenticating proxy.
         // For a clear connection - a proxy-server should serve it, and we should get 200 OK
@@ -298,9 +292,11 @@ public class ProxySelectorTest implements HttpServerAdapters {
         // authenticating proxy - and we should receive 200 OK from an https-server
         response = send(client, uri2, BodyHandlers.ofString(), async);
         out.println("Got response through noauth proxy: " + response);
-        assertEquals(response.statusCode(), HTTP_OK);
-        assertEquals(response.headers().firstValue("X-value"),
-                scheme == Schemes.HTTPS ? Optional.of("https-server") : Optional.of("proxy-server"));
+        assertEquals(HTTP_OK, response.statusCode());
+        assertEquals(scheme == Schemes.HTTPS
+                ? Optional.of("https-server")
+                : Optional.of("proxy-server"),
+                response.headers().firstValue("X-value"));
 
         // Third request should go through an authenticating proxy.
         // For a clear connection - an auth-proxy-server should serve it, and we
@@ -310,16 +306,18 @@ public class ProxySelectorTest implements HttpServerAdapters {
         // proxy - so the X-value header will be absent
         response = send(client, uri3, BodyHandlers.ofString(), async);
         out.println("Got response through auth proxy: " + response);
-        assertEquals(response.statusCode(), PROXY_UNAUTHORIZED);
-        assertEquals(response.headers().firstValue("X-value"),
-                scheme == Schemes.HTTPS ? Optional.empty() : Optional.of("auth-proxy-server"));
+        assertEquals(PROXY_UNAUTHORIZED, response.statusCode());
+        assertEquals(scheme == Schemes.HTTPS
+                ? Optional.empty()
+                : Optional.of("auth-proxy-server"),
+                response.headers().firstValue("X-value"));
 
     }
 
     // -- Infrastructure
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         httpTestServer = HttpTestServer.create(HTTP_1_1);
         httpTestServer.addHandler(new PlainServerHandler("plain-server"), "/http1/");
         httpURI = "http://" + httpTestServer.serverAuthority() + "/http1";
@@ -368,8 +366,8 @@ public class ProxySelectorTest implements HttpServerAdapters {
         serverCount.incrementAndGet();
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         client = null;
         Thread.sleep(100);
         AssertionError fail = TRACKER.check(1500);
@@ -387,7 +385,7 @@ public class ProxySelectorTest implements HttpServerAdapters {
         }
     }
 
-    class TestProxySelector extends ProxySelector {
+    static final class TestProxySelector extends ProxySelector {
         @Override
         public List<Proxy> select(URI uri) {
             String path = uri.getPath();
@@ -426,11 +424,8 @@ public class ProxySelectorTest implements HttpServerAdapters {
             String path = t.getRequestURI().getPath();
             HttpTestRequestHeaders  reqh = t.getRequestHeaders();
             HttpTestResponseHeaders rsph = t.getResponseHeaders();
-
-            String xValue = serverType;
             rsph.addHeader("X-value", serverType);
 
-            t.getResponseHeaders().addHeader("X-value", xValue);
             byte[] body = "RESPONSE".getBytes(UTF_8);
             t.sendResponseHeaders(HTTP_OK, body.length);
             try (var out = t.getResponseBody()) {
@@ -449,20 +444,16 @@ public class ProxySelectorTest implements HttpServerAdapters {
         @Override
         public void handle(HttpTestExchange t) throws IOException {
             readAllRequestData(t); // shouldn't be any
-            String method = t.getRequestMethod();
             String path = t.getRequestURI().getPath();
-            HttpTestRequestHeaders  reqh = t.getRequestHeaders();
             HttpTestResponseHeaders rsph = t.getResponseHeaders();
 
-            String xValue = serverType;
-            String srv = path.contains("/proxy/") ? "proxy" : "server";
             String prefix = path.contains("/proxy/") ? "Proxy-" : "WWW-";
             int code = path.contains("/proxy/") ? PROXY_UNAUTHORIZED : UNAUTHORIZED;
             String resp = prefix + "Unauthorized";
             rsph.addHeader(prefix + "Authenticate", "Basic realm=\"earth\", charset=\"UTF-8\"");
 
             byte[] body = resp.getBytes(UTF_8);
-            t.getResponseHeaders().addHeader("X-value", xValue);
+            rsph.addHeader("X-value", serverType);
             t.sendResponseHeaders(code, body.length);
             try (var out = t.getResponseBody()) {
                 out.write(body);

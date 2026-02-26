@@ -56,6 +56,7 @@ import jdk.jpackage.internal.model.DefaultLauncherIcon;
 import jdk.jpackage.internal.model.FileAssociation;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.LauncherIcon;
+import jdk.jpackage.internal.util.RootedPath;
 
 final class LauncherFromOptions {
 
@@ -92,7 +93,9 @@ final class LauncherFromOptions {
         if (PREDEFINED_APP_IMAGE.findIn(options).isEmpty()) {
             final var startupInfoBuilder = new LauncherStartupInfoBuilder();
 
-            INPUT.ifPresentIn(options, startupInfoBuilder::inputDir);
+            INPUT.findIn(options).flatMap(v -> {
+                return v.stream().findAny().map(RootedPath::root);
+            }).ifPresent(startupInfoBuilder::inputDir);
             ARGUMENTS.ifPresentIn(options, startupInfoBuilder::defaultParameters);
             JAVA_OPTIONS.ifPresentIn(options, startupInfoBuilder::javaOptions);
             MAIN_JAR.ifPresentIn(options, startupInfoBuilder::mainJar);

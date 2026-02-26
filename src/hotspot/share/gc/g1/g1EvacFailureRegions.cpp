@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +29,6 @@
 #include "gc/g1/g1EvacFailureRegions.inline.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 G1EvacFailureRegions::G1EvacFailureRegions() :
@@ -43,7 +43,7 @@ G1EvacFailureRegions::~G1EvacFailureRegions() {
 }
 
 void G1EvacFailureRegions::pre_collection(uint max_regions) {
-  AtomicAccess::store(&_num_regions_evac_failed, 0u);
+  _num_regions_evac_failed.store_relaxed(0u);
   _regions_evac_failed.resize(max_regions);
   _regions_pinned.resize(max_regions);
   _regions_alloc_failed.resize(max_regions);
@@ -69,6 +69,6 @@ void G1EvacFailureRegions::par_iterate(G1HeapRegionClosure* closure,
   G1CollectedHeap::heap()->par_iterate_regions_array(closure,
                                                      hrclaimer,
                                                      _evac_failed_regions,
-                                                     AtomicAccess::load(&_num_regions_evac_failed),
+                                                     num_regions_evac_failed(),
                                                      worker_id);
 }

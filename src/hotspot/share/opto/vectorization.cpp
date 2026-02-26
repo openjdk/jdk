@@ -1122,7 +1122,7 @@ Node* make_last(Node* initL, jint stride, Node* limitL, PhaseIdealLoop* phase) {
   Node* last = new AddLNode(initL, k_mul_stride);
 
   // Make sure that the last does not lie "before" init.
-  Node* last_clamped = MaxNode::build_min_max_long(&igvn, initL, last, stride > 0);
+  Node* last_clamped = MinMaxNode::build_min_max_long(&igvn, initL, last, stride > 0);
 
   phase->register_new_node_with_ctrl_of(diffL,        initL);
   phase->register_new_node_with_ctrl_of(diffL_m1,     initL);

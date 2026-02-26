@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -639,6 +639,10 @@ public:
 
   bool is_partial_array_state() const {
     return (raw_value() & PartialArrayTag) != 0;
+  }
+
+  bool is_null() const {
+    return _p == nullptr;
   }
 
   oop* to_oop_ptr() const {

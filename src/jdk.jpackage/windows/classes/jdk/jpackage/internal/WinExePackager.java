@@ -52,7 +52,7 @@ final record WinExePackager(BuildEnv env, WinExePackage pkg, Path outputDir, Pat
 
     @Override
     public void accept(PackagingPipeline.Builder pipelineBuilder) {
-        pipelineBuilder.excludeDirFromCopying(outputDir)
+        pipelineBuilder
                 .task(ExePackageTaskID.RUN_POST_MSI_USER_SCRIPT)
                         .action(this::runPostMsiScript)
                         .addDependency(PackageTaskID.CREATE_PACKAGE_FILE)

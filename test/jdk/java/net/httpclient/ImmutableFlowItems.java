@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.http2.Http2TestServer
  *        jdk.httpclient.test.lib.common.TestServerConfigurator
- * @run testng/othervm ImmutableFlowItems
+ * @run junit/othervm ImmutableFlowItems
  */
 
 import java.io.IOException;
@@ -58,32 +58,33 @@ import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.httpclient.test.lib.http2.Http2TestExchange;
 import jdk.httpclient.test.lib.http2.Http2Handler;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import static java.lang.System.out;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.*;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class ImmutableFlowItems {
 
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
-    HttpServer httpTestServer;         // HTTP/1.1    [ 4 servers ]
-    HttpsServer httpsTestServer;       // HTTPS/1.1
-    Http2TestServer http2TestServer;   // HTTP/2 ( h2c )
-    Http2TestServer https2TestServer;  // HTTP/2 ( h2  )
-    String httpURI_fixed;
-    String httpURI_chunk;
-    String httpsURI_fixed;
-    String httpsURI_chunk;
-    String http2URI_fixed;
-    String http2URI_chunk;
-    String https2URI_fixed;
-    String https2URI_chunk;
+    private static HttpServer httpTestServer;         // HTTP/1.1    [ 4 servers ]
+    private static HttpsServer httpsTestServer;       // HTTPS/1.1
+    private static Http2TestServer http2TestServer;   // HTTP/2 ( h2c )
+    private static Http2TestServer https2TestServer;  // HTTP/2 ( h2  )
+    private static String httpURI_fixed;
+    private static String httpURI_chunk;
+    private static String httpsURI_fixed;
+    private static String httpsURI_chunk;
+    private static String http2URI_fixed;
+    private static String http2URI_chunk;
+    private static String https2URI_fixed;
+    private static String https2URI_chunk;
 
-    @DataProvider(name = "variants")
-    public Object[][] variants() {
+    public static Object[][] variants() {
         return new Object[][]{
                 { httpURI_fixed   },
                 { httpURI_chunk   },
@@ -104,7 +105,8 @@ public class ImmutableFlowItems {
                 .build();
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void testAsString(String uri) throws Exception {
         HttpClient client = newHttpClient();
 
@@ -114,14 +116,14 @@ public class ImmutableFlowItems {
         BodyHandler<String> handler = new CRSBodyHandler();
         client.sendAsync(req, handler)
                 .thenApply(HttpResponse::body)
-                .thenAccept(body -> assertEquals(body, BODY))
+                .thenAccept(body -> assertEquals(BODY, body))
                 .join();
     }
 
     static class CRSBodyHandler implements BodyHandler<String> {
         @Override
         public BodySubscriber<String> apply(HttpResponse.ResponseInfo rinfo) {
-            assertEquals(rinfo.statusCode(), 200);
+            assertEquals(200, rinfo.statusCode());
             return new CRSBodySubscriber();
         }
     }
@@ -138,7 +140,7 @@ public class ImmutableFlowItems {
         public void onNext(List<ByteBuffer> item) {
             assertUnmodifiableList(item);
             long c = item.stream().filter(ByteBuffer::isReadOnly).count();
-            assertEquals(c, item.size(), "Unexpected writable buffer in: " +item);
+            assertEquals(item.size(), c, "Unexpected writable buffer in: " +item);
             ofString.onNext(item);
         }
 
@@ -173,8 +175,8 @@ public class ImmutableFlowItems {
                 + server.getAddress().getPort();
     }
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         // HTTP/1.1
         HttpHandler h1_fixedLengthHandler = new HTTP1_FixedLengthHandler();
         HttpHandler h1_chunkHandler = new HTTP1_ChunkedHandler();
@@ -214,8 +216,8 @@ public class ImmutableFlowItems {
         https2TestServer.start();
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         httpTestServer.stop(0);
         httpsTestServer.stop(0);
         http2TestServer.stop();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,9 @@ import jdk.jpackage.test.TKit;
  *
  * Mac:
  *
+ * For DMG license should be displayed on command line when "hdiutil attach"
+ * is called.
+ *
  * Windows
  *
  * Installer should display license text matching contents of the license file
@@ -96,6 +99,7 @@ public class LicenseTest {
                     LICENSE_FILE));
         });
 
+        initMacDmgLicenseVerifier(test.forTypes(PackageType.MAC_DMG));
         initLinuxLicenseVerifier(test.forTypes(PackageType.LINUX));
 
         test.run();
@@ -129,6 +133,33 @@ public class LicenseTest {
     @Test(ifOS = LINUX)
     public static void testCustomDebianCopyrightSubst() {
         new CustomDebianCopyrightTest().withSubstitution(true).run();
+    }
+
+    private static PackageTest initMacDmgLicenseVerifier(PackageTest test) {
+        return test
+        .addBundleVerifier(cmd -> {
+            verifyLicenseFileInDMGPackage(cmd);
+        });
+    }
+
+    private static void verifyLicenseFileInDMGPackage(JPackageCommand cmd)
+            throws IOException {
+        // DMG should have license, so attach with "no", since we only need license.
+        // With "no" attach will be canceled.
+        final var attachExec = Executor.of("sh", "-c", String.join(" ",
+                "no",
+                "|",
+                "/usr/bin/hdiutil",
+                "attach",
+                JPackageCommand.escapeAndJoin(cmd.outputBundle().toString())
+        )).saveOutput().storeOutputInFiles();
+
+        // Expected exit code is 1, since we canceling license.
+        final var attachResult = attachExec.executeAndRepeatUntilExitCode(1, 10, 6);
+        TKit.assertStringListEquals(Files.readAllLines(LICENSE_FILE),
+                attachResult.stdout(), String.format(
+                "Check output of \"hdiutil attach\" has the same license as contents of source license file [%s]",
+                LICENSE_FILE));
     }
 
     private static PackageTest initLinuxLicenseVerifier(PackageTest test) {

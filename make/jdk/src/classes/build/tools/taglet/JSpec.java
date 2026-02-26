@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,13 +49,15 @@ import static com.sun.source.doctree.DocTree.Kind.*;
  * The tags can be used as follows:
  *
  * <pre>
- * &commat;jls section-number description
+ * &commat;jls chapter.section description
+ * &commat;jls preview-feature-chapter.section description
  * </pre>
  *
  * For example:
  *
  * <pre>
  * &commat;jls 3.4 Line Terminators
+ * &commat;jls primitive-types-in-patterns-instanceof-switch-5.7.1 Exact Testing Conversions
  * </pre>
  *
  * will produce the following HTML, depending on the file containing
@@ -64,10 +66,24 @@ import static com.sun.source.doctree.DocTree.Kind.*;
  * <pre>{@code
  * <dt>See <i>Java Language Specification</i>:
  * <dd><a href="../../specs/jls/jls-3.html#jls-3.4">3.4 Line terminators</a>
+ * <dd><a href="../../specs/primitive-types-in-patterns-instanceof-switch-jls.html#jls-5.7.1">
+ * 5.7.1 Exact Testing Conversions</a><sup class="preview-mark">
+ * <a href="../../specs/jls/jls-1.html#jls-1.5.1">PREVIEW</a></sup>
  * }</pre>
  *
- * Copies of JLS and JVMS are expected to have been placed in the {@code specs}
- * folder. These documents are not included in open-source repositories.
+ * In inline tags (note you need manual JLS/JVMS prefix):
+ * <pre>
+ * JLS {&commat;jls 3.4}
+ * </pre>
+ *
+ * produces (note the section sign and no trailing dot):
+ * <pre>
+ * JLS <a href="../../specs/jls/jls-3.html#jls-3.4">§3.4</a>
+ * </pre>
+ *
+ * Copies of JLS, JVMS, and preview JLS and JVMS changes are expected to have
+ * been placed in the {@code specs} folder. These documents are not included
+ * in open-source repositories.
  */
 public class JSpec implements Taglet  {
 
@@ -87,9 +103,9 @@ public class JSpec implements Taglet  {
         }
     }
 
-    private String tagName;
-    private String specTitle;
-    private String idPrefix;
+    private final String tagName;
+    private final String specTitle;
+    private final String idPrefix;
 
     JSpec(String tagName, String specTitle, String idPrefix) {
         this.tagName = tagName;
@@ -98,7 +114,7 @@ public class JSpec implements Taglet  {
     }
 
     // Note: Matches special cases like @jvms 6.5.checkcast
-    private static final Pattern TAG_PATTERN = Pattern.compile("(?s)(.+ )?(?<chapter>[1-9][0-9]*)(?<section>[0-9a-z_.]*)( .*)?$");
+    private static final Pattern TAG_PATTERN = Pattern.compile("(?s)(.+ )?(?<preview>([a-z0-9]+-)+)?(?<chapter>[1-9][0-9]*)(?<section>[0-9a-z_.]*)( .*)?$");
 
     /**
      * Returns the set of locations in which the tag may be used.
@@ -157,18 +173,49 @@ public class JSpec implements Taglet  {
                     .trim();
             Matcher m = TAG_PATTERN.matcher(tagText);
             if (m.find()) {
+                // preview-feature-4.6 is preview-feature-, 4, .6
+                String preview = m.group("preview"); // null if no preview feature
                 String chapter = m.group("chapter");
                 String section = m.group("section");
                 String rootParent = currentPath().replaceAll("[^/]+", "..");
 
-                String url = String.format("%1$s/specs/%2$s/%2$s-%3$s.html#%2$s-%3$s%4$s",
-                        rootParent, idPrefix, chapter, section);
+                String url = preview == null ?
+                        String.format("%1$s/specs/%2$s/%2$s-%3$s.html#%2$s-%3$s%4$s",
+                                rootParent, idPrefix, chapter, section) :
+                        String.format("%1$s/specs/%5$s%2$s.html#%2$s-%3$s%4$s",
+                                rootParent, idPrefix, chapter, section, preview);
+
+                var literal = expand(contents).trim();
+                var prefix = (preview == null ? "" : preview) + chapter + section;
+                if (literal.startsWith(prefix)) {
+                    var hasFullTitle = literal.length() > prefix.length();
+                    if (hasFullTitle) {
+                        // Drop the preview identifier
+                        literal = chapter + section + literal.substring(prefix.length());
+                    } else {
+                        // No section sign if the tag refers to a chapter, like {@jvms 4}
+                        String sectionSign = section.isEmpty() ? "" : "§";
+                        // Change whole text to "§chapter.x" in inline tags.
+                        literal = sectionSign + chapter + section;
+                    }
+                }
 
                 sb.append("<a href=\"")
                         .append(url)
                         .append("\">")
-                        .append(expand(contents))
+                        .append(literal)
                         .append("</a>");
+
+                if (preview != null) {
+                    // Add PREVIEW superscript that links to JLS/JVMS 1.5.1
+                    // "Restrictions on the Use of Preview Features"
+                    // Similar to how APIs link to the Preview info box warning
+                    var sectionLink = String.format("%1$s/specs/%2$s/%2$s-%3$s.html#%2$s-%3$s%4$s",
+                            rootParent, idPrefix, "1", ".5.1");
+                    sb.append("<sup class=\"preview-mark\"><a href=\"")
+                            .append(sectionLink)
+                            .append("\">PREVIEW</a></sup>");
+                }
 
                 if (tag.getKind() == DocTree.Kind.UNKNOWN_BLOCK_TAG) {
                     sb.append("<br>");

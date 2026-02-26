@@ -44,15 +44,15 @@ import jdk.test.lib.Utils;
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *   -XX:+UseG1GC -XX:G1SummarizeRSetStatsPeriod=1 -Xlog:gc
+ *   -XX:+UseG1GC -XX:G1SummarizeRSetStatsPeriod=1 -Xlog:gc -XX:-UseGCOverheadLimit
  *   -Xmx500m -XX:G1HeapRegionSize=1m -XX:MaxGCPauseMillis=1000 gc.stress.TestMultiThreadStressRSet 10 4
  *
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *   -XX:+UseG1GC -XX:G1SummarizeRSetStatsPeriod=100 -Xlog:gc
+ *   -XX:+UseG1GC -XX:G1SummarizeRSetStatsPeriod=100 -Xlog:gc -XX:-UseGCOverheadLimit
  *   -Xmx1G -XX:G1HeapRegionSize=8m -XX:MaxGCPauseMillis=1000 gc.stress.TestMultiThreadStressRSet 60 16
  *
  * @run main/othervm/timeout=1200 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *   -XX:+UseG1GC -XX:G1SummarizeRSetStatsPeriod=100 -Xlog:gc
+ *   -XX:+UseG1GC -XX:G1SummarizeRSetStatsPeriod=100 -Xlog:gc -XX:-UseGCOverheadLimit
  *   -Xmx500m -XX:G1HeapRegionSize=1m -XX:MaxGCPauseMillis=1000 gc.stress.TestMultiThreadStressRSet 600 32
  */
 public class TestMultiThreadStressRSet {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,7 @@ public sealed interface CharacterRangeInfo
      * <li>{@link CharacterRange#FLAG_BRANCH_TRUE} A condition encoded
      * in the branch instruction immediately contained in the code range for
      * this item is not inverted towards the corresponding branch condition in
-     * the source code. I.e. actual jump occurs if and only if the the source
+     * the source code. I.e. actual jump occurs if and only if the source
      * code branch condition evaluates to true. Entries of this type are
      * produced only for conditions that are listed in the description of
      * CRT_FLOW_CONTROLLER flag. The source range for the entry contains flow
@@ -136,7 +136,7 @@ public sealed interface CharacterRangeInfo
      * <li>{@link CharacterRange#FLAG_BRANCH_FALSE} A condition encoded
      * in the branch instruction immediately contained in the code range for
      * this item is inverted towards the corresponding branch condition in the
-     * source code. I.e. actual jump occurs if and only if the the source code
+     * source code. I.e. actual jump occurs if and only if the source code
      * branch condition evaluates to false. Entries of this type are produced
      * only for conditions that are listed in the description of
      * CRT_FLOW_CONTROLLER flag. The source range for the entry contains flow

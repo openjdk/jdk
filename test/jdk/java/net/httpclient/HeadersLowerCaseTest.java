@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ import jdk.internal.net.http.common.Utils;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -63,19 +62,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  * @run junit/othervm -Djdk.internal.httpclient.debug=true HeadersLowerCaseTest
  */
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class HeadersLowerCaseTest implements HttpServerAdapters {
 
     private static Set<String> REQUEST_HEADERS;
 
-    private HttpTestServer h2server;
-    private HttpTestServer h3server;
-    private String h2ReqURIBase;
-    private String h3ReqURIBase;
+    private static HttpTestServer h2server;
+    private static HttpTestServer h3server;
+    private static String h2ReqURIBase;
+    private static String h3ReqURIBase;
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
 
     @BeforeAll
-    public void beforeAll() throws Exception {
+    public static void beforeAll() throws Exception {
         h2server = HttpTestServer.create(HTTP_2, sslContext);
         h2server.start();
         h2ReqURIBase = "https://" + h2server.serverAuthority();
@@ -100,7 +98,7 @@ public class HeadersLowerCaseTest implements HttpServerAdapters {
     }
 
     @AfterAll
-    public void afterAll() throws Exception {
+    public static void afterAll() throws Exception {
         if (h2server != null) {
             h2server.stop();
         }
@@ -157,14 +155,14 @@ public class HeadersLowerCaseTest implements HttpServerAdapters {
         }
     }
 
-    private Stream<Arguments> params() throws Exception {
+    private static Stream<Arguments> params() throws Exception {
         return Stream.of(
                 Arguments.of(HTTP_2, new URI(h2ReqURIBase + "/h2verifyReqHeaders")),
                 Arguments.of(Version.HTTP_3, new URI(h3ReqURIBase + "/h3verifyReqHeaders")));
     }
 
     /**
-     * Issues a HTTP/2 or HTTP/3 request with header names of varying case (some in lower,
+     * Issues an HTTP/2 or HTTP/3 request with header names of varying case (some in lower,
      * some mixed, some upper case) and expects that the client internally converts them
      * to lower case before encoding and sending to the server. The server side handler verifies
      * that it receives the header names in lower case and if it doesn't then it returns a

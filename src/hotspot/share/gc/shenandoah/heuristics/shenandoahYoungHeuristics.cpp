@@ -33,7 +33,7 @@
 #include "utilities/quickSort.hpp"
 
 ShenandoahYoungHeuristics::ShenandoahYoungHeuristics(ShenandoahYoungGeneration* generation)
-        : ShenandoahGenerationalHeuristics(generation) {
+    : ShenandoahGenerationalHeuristics(generation) {
 }
 
 
@@ -48,13 +48,24 @@ void ShenandoahYoungHeuristics::choose_collection_set_from_regiondata(Shenandoah
   // array before younger regions that typically contain more garbage. This is one reason why,
   // for example, we continue examining regions even after rejecting a region that has
   // more live data than we can evacuate.
+  ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
+  bool need_to_finalize_mixed = heap->old_generation()->heuristics()->prime_collection_set(cset);
 
   // Better select garbage-first regions
-  QuickSort::sort<RegionData>(data, (int) size, compare_by_garbage);
+  QuickSort::sort<RegionData>(data, size, compare_by_garbage);
 
   size_t cur_young_garbage = add_preselected_regions_to_collection_set(cset, data, size);
 
   choose_young_collection_set(cset, data, size, actual_free, cur_young_garbage);
+
+  // Especially when young-gen trigger is expedited in order to finish mixed evacuations, there may not be
+  // enough consolidated garbage to make effective use of young-gen evacuation reserve.  If there is still
+  // young-gen reserve available following selection of the young-gen collection set, see if we can use
+  // this memory to expand the old-gen evacuation collection set.
+  need_to_finalize_mixed |= heap->old_generation()->heuristics()->top_off_collection_set(_add_regions_to_old);
+  if (need_to_finalize_mixed) {
+    heap->old_generation()->heuristics()->finalize_mixed_evacs();
+  }
 }
 
 void ShenandoahYoungHeuristics::choose_young_collection_set(ShenandoahCollectionSet* cset,

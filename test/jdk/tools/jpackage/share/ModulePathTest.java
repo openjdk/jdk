@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,14 +125,14 @@ public final class ModulePathTest {
         } else {
             final CannedFormattedString expectedErrorMessage;
             if (modulePathArgs.isEmpty()) {
-                expectedErrorMessage = JPackageStringBundle.MAIN.cannedFormattedString(
+                expectedErrorMessage = JPackageCommand.makeError(
                         "ERR_MissingArgument2", "--runtime-image", "--module-path");
             } else {
-                expectedErrorMessage = JPackageStringBundle.MAIN.cannedFormattedString(
+                expectedErrorMessage = JPackageCommand.makeError(
                         "error.no-module-in-path", appDesc.moduleName());
             }
 
-            cmd.validateOutput(expectedErrorMessage).execute(1);
+            cmd.validateErr(expectedErrorMessage).execute(1);
         }
     }
 

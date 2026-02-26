@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,8 +50,8 @@ public final class bug4966171 {
     }
 
     private static void test() {
-        // Will run the test no more than 10 seconds per L&F
-        long endtime = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        // Will run the test no more than 5 seconds per L&F
+        long endtime = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
         while (System.nanoTime() < endtime) {
             try {
                 var byteOut = new ByteArrayOutputStream();

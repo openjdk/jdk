@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @bug 8286171 8307648
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
- * @run testng/othervm -Djdk.internal.httpclient.debug=true -Djdk.httpclient.HttpClient.log=errors ExpectContinueTest
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true -Djdk.httpclient.HttpClient.log=errors ExpectContinueTest
  */
 
 
@@ -40,11 +40,6 @@ import jdk.httpclient.test.lib.http2.Http2TestServerConnection;
 import jdk.httpclient.test.lib.http2.Http2TestServerConnection.ResponseHeaders;
 import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.frame.HeaderFrame;
-import org.testng.TestException;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLSession;
@@ -79,23 +74,29 @@ import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.*;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class ExpectContinueTest implements HttpServerAdapters {
 
-    HttpTestServer http1TestServer; // HTTP/1.1
-    Http1HangServer http1HangServer;
-    Http2TestServer http2TestServer; // HTTP/2
+    private static HttpTestServer http1TestServer; // HTTP/1.1
+    private static Http1HangServer http1HangServer;
+    private static Http2TestServer http2TestServer; // HTTP/2
 
-    URI getUri, postUri, forcePostUri, hangUri;
-    URI h2postUri, h2forcePostUri, h2hangUri, h2endStreamUri, h2warmupURI;
+    private static URI getUri, postUri, forcePostUri, hangUri;
+    private static URI h2postUri, h2forcePostUri, h2hangUri, h2endStreamUri, h2warmupURI;
 
     static PrintStream err = new PrintStream(System.err);
     static PrintStream out = new PrintStream(System.out);
     static final String EXPECTATION_FAILED_417 = "417 Expectation Failed";
 
-    @DataProvider(name = "uris")
-    public Object[][] urisData() {
+    public static Object[][] urisData() {
         return new Object[][]{
                 // URI, Expected Status Code, Will finish with Exception, Protocol Version
                 { postUri, 200, false, HTTP_1_1 },
@@ -107,7 +108,8 @@ public class ExpectContinueTest implements HttpServerAdapters {
                 { h2endStreamUri, 200, true, HTTP_2 }, // Error
         };
     }
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("urisData")
     public void test(URI uri, int expectedStatusCode, boolean exceptionally, HttpClient.Version version)
             throws CancellationException, InterruptedException, ExecutionException, IOException {
 
@@ -135,8 +137,8 @@ public class ExpectContinueTest implements HttpServerAdapters {
         }
     }
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         InetSocketAddress saHang = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         http1TestServer = HttpTestServer.create(HTTP_1_1);
         http1TestServer.addHandler(new GetHandler(), "/http1/get");
@@ -173,8 +175,8 @@ public class ExpectContinueTest implements HttpServerAdapters {
         http1HangServer.start();
         http2TestServer.start();
     }
-    @AfterTest
-    public void teardown() throws IOException {
+    @AfterAll
+    public static void teardown() throws IOException {
         http1TestServer.stop();
         http1HangServer.close();
         http2TestServer.stop();
@@ -372,11 +374,11 @@ public class ExpectContinueTest implements HttpServerAdapters {
         }
         if (exceptionally && testThrowable != null) {
             err.println("Finished exceptionally Test throwable: " + testThrowable);
-            assertEquals(testThrowable.getClass(), ProtocolException.class);
+            assertEquals(ProtocolException.class, testThrowable.getClass());
         } else if (exceptionally) {
-            throw new TestException("Expected case to finish with an IOException but testException is null");
+            fail("Expected case to finish with an IOException but testException is null");
         } else if (resp != null) {
-            assertEquals(resp.statusCode(), expectedStatusCode);
+            assertEquals(expectedStatusCode, resp.statusCode());
             err.println("Request completed successfully for path " + path);
             err.println("Response Headers: " + resp.headers());
             err.println("Response Status Code: " + resp.statusCode());

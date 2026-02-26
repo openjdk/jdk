@@ -48,7 +48,6 @@ import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.code.Type.*;
 
 import com.sun.tools.javac.jvm.Target;
-import com.sun.tools.javac.tree.EndPosTable;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.BLOCK;
@@ -155,10 +154,6 @@ public class Lower extends TreeTranslator {
     /** Environment for symbol lookup, set by translateTopLevelClass.
      */
     Env<AttrContext> attrEnv;
-
-    /** A hash table mapping syntax trees to their ending source positions.
-     */
-    EndPosTable endPosTable;
 
 /* ************************************************************************
  * Global mappings
@@ -2059,8 +2054,8 @@ public class Lower extends TreeTranslator {
         } else {
             make_at(tree.pos());
             T result = super.translate(tree);
-            if (endPosTable != null && result != tree) {
-                endPosTable.replaceTree(tree, result);
+            if (result != null && result != tree) {
+                result.endpos = tree.endpos;
             }
             return result;
         }
@@ -4352,7 +4347,6 @@ public class Lower extends TreeTranslator {
         try {
             attrEnv = env;
             this.make = make;
-            endPosTable = env.toplevel.endPositions;
             currentClass = null;
             currentRestype = null;
             currentMethodDef = null;
@@ -4382,7 +4376,6 @@ public class Lower extends TreeTranslator {
             // note that recursive invocations of this method fail hard
             attrEnv = null;
             this.make = null;
-            endPosTable = null;
             currentClass = null;
             currentRestype = null;
             currentMethodDef = null;

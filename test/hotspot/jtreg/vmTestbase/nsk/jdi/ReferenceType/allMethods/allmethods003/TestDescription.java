@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,8 @@
  *        nsk.jdi.ReferenceType.allMethods.allmethods003a
  *
  * @comment compile loadclassXX to bin/loadclassXX
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver nsk.share.ExtraClassesBuilder
  *      loadclass
  *
@@ -65,6 +67,7 @@
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}" ./bin
+ *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts} -Xbootclasspath/a:.
+ *                      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI"
+ *      ./bin
  */
-

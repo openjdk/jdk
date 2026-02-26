@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8205418 8207229 8207230 8230847 8245786 8247334 8248641 8240658 8246774 8274347 8347989
+ * @bug 8205418 8207229 8207230 8230847 8245786 8247334 8248641 8240658 8246774 8274347 8347989 8308637
  * @summary Test the outcomes from Trees.getScope
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.comp
@@ -100,6 +100,7 @@ public class TestGetScopeResult {
         new TestGetScopeResult().testNestedSwitchExpression();
         new TestGetScopeResult().testModuleImportScope();
         new TestGetScopeResult().testClassTypeSetInEnterGetScope();
+        new TestGetScopeResult().testNotYetAttributedGetScope();
     }
 
     public void run() throws IOException {
@@ -962,6 +963,110 @@ public class TestGetScopeResult {
 
             if (!expected.equals(actual)) {
                 throw new AssertionError("Unexpected Scope content: " + actual);
+            }
+        }
+    }
+
+    void testNotYetAttributedGetScope() throws IOException { //JDK-8308637
+        JavacTool c = JavacTool.create();
+        record TestCase(String code, List<List<String>> expected) {}
+        TestCase[] cases = new TestCase[] {
+            new TestCase("""
+                          class B {
+                              public class Test {}
+                              void m() {
+                                  this.new Test() {};
+                              }
+                          }
+                          """,
+                          List.of(List.of("super:java.lang.Object",
+                                          "this:B"))),
+            new TestCase("""
+                          class B {
+                              public class Test {}
+                              void m() {
+                                  int local1 = 0;
+                                  new Test() {};
+                                  this.new Test() {};
+                                  class Inner {
+                                       class InnerNested {
+                                           void m() {
+                                               int local2 = 0;
+                                               new Test() {};
+                                               B.this.new Test() {};
+                                           }
+                                       }
+                                  }
+                              }
+                          }
+                          """,
+                          List.of(
+                            List.of("local1:int",
+                                    "super:java.lang.Object",
+                                    "this:B"),
+                            List.of(":<anonymous B.Test>",
+                                    "local1:int",
+                                    "super:java.lang.Object",
+                                    "this:B"),
+                            List.of("local2:int",
+                                    "super:java.lang.Object",
+                                    "this:Inner.InnerNested",
+                                    "super:java.lang.Object",
+                                    "this:Inner",
+                                    "Inner:Inner",
+                                    ":<anonymous B.Test>",
+                                    ":<anonymous B.Test>",
+                                    "local1:int",
+                                    "super:java.lang.Object",
+                                    "this:B"),
+                            List.of(":<anonymous B.Test>",
+                                    "local2:int",
+                                    "super:java.lang.Object",
+                                    "this:Inner.InnerNested",
+                                    "super:java.lang.Object",
+                                    "this:Inner",
+                                    "Inner:Inner",
+                                    ":<anonymous B.Test>",
+                                    ":<anonymous B.Test>",
+                                    "local1:int",
+                                    "super:java.lang.Object",
+                                    "this:B")
+                            )),
+        };
+        try (StandardJavaFileManager fm = c.getStandardFileManager(null, null, null)) {
+            for (TestCase tc : cases) {
+                JavaFileObject input =
+                        SimpleJavaFileObject.forSource(URI.create("myfo:///Test.java"), tc.code());
+                JavacTask t = (JavacTask) c.getTask(null, fm, null, null, null,
+                                                    List.of(input));
+                Trees trees = Trees.instance(t);
+                List<List<String>> actual = new ArrayList<>();
+
+                t.addTaskListener(new TaskListener() {
+                    @Override
+                    public void finished(TaskEvent e) {
+                        if (e.getKind() == TaskEvent.Kind.ENTER) {
+                            new TreePathScanner<Void, Void>() {
+                                @Override
+                                public Void visitIdentifier(IdentifierTree node, Void p) {
+                                    if (node.getName().contentEquals("Test")) {
+                                        Scope scope = trees.getScope(getCurrentPath());
+                                        actual.add(dumpScope(scope));
+                                    }
+                                    return super.visitIdentifier(node, p);
+                                }
+                            }.scan(e.getCompilationUnit(), null);
+                        }
+                    }
+
+                });
+
+                t.analyze();
+
+                if (!tc.expected().equals(actual)) {
+                    throw new AssertionError("Unexpected Scope content: " + actual +
+                                             ", expected: " + tc.expected());
+                }
             }
         }
     }

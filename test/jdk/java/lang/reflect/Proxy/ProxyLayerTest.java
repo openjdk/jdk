@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,17 +32,18 @@ import java.util.Arrays;
 import jdk.test.lib.compiler.CompilerUtils;
 import static jdk.test.lib.process.ProcessTools.executeTestJava;
 
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
-/**
+/*
  * @test
  * @library /test/lib
  * @modules jdk.compiler
  * @build ProxyTest jdk.test.lib.process.ProcessTools
  *        jdk.test.lib.compiler.CompilerUtils
- * @run testng ProxyLayerTest
+ * @run junit ProxyLayerTest
  * @summary Test proxies to implement interfaces in a layer
  */
 
@@ -62,8 +63,8 @@ public class ProxyLayerTest {
     /**
      * Compiles all modules used by the test
      */
-    @BeforeTest
-    public void compileAll() throws Exception {
+    @BeforeAll
+    public static void compileAll() throws Exception {
         for (String mn : modules) {
             Path msrc = SRC_DIR.resolve(mn);
             assertTrue(CompilerUtils.compile(msrc, MODS_DIR, "--module-source-path", SRC_DIR.toString()));
@@ -102,7 +103,7 @@ public class ProxyLayerTest {
         assertTrue(proxyClass.getModule().isNamed());
         assertTrue(pkg.isSealed());
         assertTrue(proxyClass.getModule().isExported(pkg.getName()));
-        assertEquals(proxyClass.getModule().getLayer(), null);
+        assertNull(proxyClass.getModule().getLayer());
     }
 
     /**
@@ -134,7 +135,7 @@ public class ProxyLayerTest {
         assertTrue(proxyClass.getModule().isNamed());
         assertTrue(pkg.isSealed());
         assertFalse(proxyClass.getModule().isExported(pkg.getName()));
-        assertEquals(proxyClass.getModule().getLayer(), null);
+        assertNull(proxyClass.getModule().getLayer());
     }
 
     /**
@@ -164,15 +165,8 @@ public class ProxyLayerTest {
     }
 
     private void checkIAE(ClassLoader loader, Class<?>[] interfaces) {
-        try {
-            Proxy.getProxyClass(loader, interfaces);
-            throw new RuntimeException("Expected IllegalArgumentException thrown");
-        } catch (IllegalArgumentException e) {}
-
-        try {
-            Proxy.newProxyInstance(loader, interfaces, handler);
-            throw new RuntimeException("Expected IllegalArgumentException thrown");
-        } catch (IllegalArgumentException e) {}
+        assertThrows(IllegalArgumentException.class, () -> Proxy.getProxyClass(loader, interfaces));
+        assertThrows(IllegalArgumentException.class, () -> Proxy.newProxyInstance(loader, interfaces, handler));
     }
 
     private final static InvocationHandler handler =

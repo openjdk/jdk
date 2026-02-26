@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
  /*
   * @test
-  * @bug 8171279
+  * @bug 8171279 8314323
   * @library /javax/net/ssl/templates
   * @summary Test TLS connection with each individual supported group
   * @run main/othervm SupportedGroups x25519
@@ -36,6 +36,9 @@
   * @run main/othervm SupportedGroups ffdhe4096
   * @run main/othervm SupportedGroups ffdhe6144
   * @run main/othervm SupportedGroups ffdhe8192
+  * @run main/othervm SupportedGroups X25519MLKEM768
+  * @run main/othervm SupportedGroups SecP256r1MLKEM768
+  * @run main/othervm SupportedGroups SecP384r1MLKEM1024
  */
 import java.net.InetAddress;
 import java.util.Arrays;
@@ -45,15 +48,24 @@ import javax.net.ssl.SSLServerSocket;
 public class SupportedGroups extends SSLSocketTemplate {
 
     private static volatile int index;
-    private static final String[][][] protocols = {
+    private static final String[][][] protocolsForClassic = {
         {{"TLSv1.3"}, {"TLSv1.3"}},
         {{"TLSv1.3", "TLSv1.2"}, {"TLSv1.2"}},
         {{"TLSv1.2"}, {"TLSv1.3", "TLSv1.2"}},
         {{"TLSv1.2"}, {"TLSv1.2"}}
     };
 
-    public SupportedGroups() {
+    private static final String[][][] protocolsForHybrid = {
+            {{"TLSv1.3"}, {"TLSv1.3"}},
+            {{"TLSv1.3", "TLSv1.2"}, {"TLSv1.3"}},
+            {{"TLSv1.3"}, {"TLSv1.3", "TLSv1.2"}}
+    };
+
+    private final String[][][] protocols;
+
+    public SupportedGroups(String[][][] protocols) {
         this.serverAddress = InetAddress.getLoopbackAddress();
+        this.protocols = protocols;
     }
 
     // Servers are configured before clients, increment test case after.
@@ -85,8 +97,18 @@ public class SupportedGroups extends SSLSocketTemplate {
     public static void main(String[] args) throws Exception {
         System.setProperty("jdk.tls.namedGroups", args[0]);
 
+        boolean hybridGroup = hybridNamedGroup(args[0]);
+        String[][][] protocols = hybridGroup ?
+                protocolsForHybrid : protocolsForClassic;
+
         for (index = 0; index < protocols.length; index++) {
-            (new SupportedGroups()).run();
+            (new SupportedGroups(protocols)).run();
         }
+    }
+
+    private static boolean hybridNamedGroup(String namedGroup) {
+        return namedGroup.equals("X25519MLKEM768") ||
+                namedGroup.equals("SecP256r1MLKEM768") ||
+                namedGroup.equals("SecP384r1MLKEM1024");
     }
 }

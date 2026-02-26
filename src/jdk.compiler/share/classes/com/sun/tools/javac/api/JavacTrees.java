@@ -114,7 +114,6 @@ import com.sun.tools.javac.tree.DCTree.DCParam;
 import com.sun.tools.javac.tree.DCTree.DCReference;
 import com.sun.tools.javac.tree.DocCommentTable;
 import com.sun.tools.javac.tree.DocTreeMaker;
-import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCBlock;
 import com.sun.tools.javac.tree.JCTree.JCCatch;
@@ -240,8 +239,7 @@ public class JavacTrees extends DocTrees {
 
                 @Override @DefinedBy(Api.COMPILER_TREE)
                 public long getEndPosition(CompilationUnitTree file, Tree tree) {
-                    EndPosTable endPosTable = ((JCCompilationUnit) file).endPositions;
-                    return TreeInfo.getEndPos((JCTree) tree, endPosTable);
+                    return TreeInfo.getEndPos((JCTree) tree);
                 }
 
                 @Override @DefinedBy(Api.COMPILER_TREE)

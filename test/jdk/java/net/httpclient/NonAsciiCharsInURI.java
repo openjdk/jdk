@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
  * @compile -encoding utf-8 NonAsciiCharsInURI.java
- * @run testng/othervm
+ * @run junit/othervm
  *       -Djdk.httpclient.HttpClient.log=requests,headers,errors,quic
  *       NonAsciiCharsInURI
  */
@@ -51,10 +51,6 @@ import java.util.List;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.http3.Http3TestServer;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import static java.lang.System.err;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
@@ -63,24 +59,29 @@ import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
-import static org.testng.Assert.assertEquals;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class NonAsciiCharsInURI implements HttpServerAdapters {
 
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
-    HttpTestServer httpTestServer;         // HTTP/1.1    [ 5 servers ]
-    HttpTestServer httpsTestServer;        // HTTPS/1.1
-    HttpTestServer http2TestServer;        // HTTP/2 ( h2c )
-    HttpTestServer https2TestServer;       // HTTP/2 ( h2  )
-    HttpTestServer http3TestServer;        // HTTP/3 ( h3  )
-    String httpURI;
-    String httpsURI;
-    String http2URI;
-    String https2URI;
-    String http3URI;
-    String http3URI_head;
+    private static HttpTestServer httpTestServer;         // HTTP/1.1    [ 5 servers ]
+    private static HttpTestServer httpsTestServer;        // HTTPS/1.1
+    private static HttpTestServer http2TestServer;        // HTTP/2 ( h2c )
+    private static HttpTestServer https2TestServer;       // HTTP/2 ( h2  )
+    private static HttpTestServer http3TestServer;        // HTTP/3 ( h3  )
+    private static String httpURI;
+    private static String httpsURI;
+    private static String http2URI;
+    private static String https2URI;
+    private static String http3URI;
+    private static String http3URI_head;
 
-    private volatile HttpClient sharedClient;
+    private static volatile HttpClient sharedClient;
 
     // € = '\u20AC' => 0xE20x820xAC
     static final String[][] pathsAndQueryStrings = new String[][] {
@@ -93,8 +94,7 @@ public class NonAsciiCharsInURI implements HttpServerAdapters {
             {  "/006/x?url=https://ja.wikipedia.org/wiki/エリザベス1世_(イングランド女王)" },
     };
 
-    @DataProvider(name = "variants")
-    public Object[][] variants() {
+    public static Object[][] variants() {
         List<Object[]> list = new ArrayList<>();
 
         for (boolean sameClient : new boolean[] { false, true }) {
@@ -136,7 +136,7 @@ public class NonAsciiCharsInURI implements HttpServerAdapters {
         return null;
     }
 
-    HttpRequest.Builder newRequestBuilder(String uri) {
+    static HttpRequest.Builder newRequestBuilder(String uri) {
         var builder = HttpRequest.newBuilder(URI.create(uri));
         if (version(uri) == HTTP_3) {
             builder.version(HTTP_3);
@@ -145,7 +145,7 @@ public class NonAsciiCharsInURI implements HttpServerAdapters {
         return builder;
     }
 
-    HttpResponse<String> headRequest(HttpClient client)
+    static HttpResponse<String> headRequest(HttpClient client)
             throws IOException, InterruptedException
     {
         out.println("\n" + now() + "--- Sending HEAD request ----\n");
@@ -154,25 +154,26 @@ public class NonAsciiCharsInURI implements HttpServerAdapters {
         var request = newRequestBuilder(http3URI_head)
                 .HEAD().version(HTTP_2).build();
         var response = client.send(request, BodyHandlers.ofString());
-        assertEquals(response.statusCode(), 200);
-        assertEquals(response.version(), HTTP_2);
+        assertEquals(200, response.statusCode());
+        assertEquals(HTTP_2, response.version());
         out.println("\n" + now() + "--- HEAD request succeeded ----\n");
         err.println("\n" + now() + "--- HEAD request succeeded ----\n");
         return response;
     }
 
-    private HttpClient makeNewClient() {
-        return newClientBuilderForH3()
+    private static HttpClient makeNewClient() {
+        return HttpServerAdapters.createClientBuilderForH3()
                 .proxy(NO_PROXY)
                 .sslContext(sslContext)
                 .build();
     }
 
-    HttpClient newHttpClient(boolean share) {
+    private static final Object zis = new Object();
+    static HttpClient newHttpClient(boolean share) {
         if (!share) return makeNewClient();
         HttpClient shared = sharedClient;
         if (shared != null) return shared;
-        synchronized (this) {
+        synchronized (zis) {
             shared = sharedClient;
             if (shared == null) {
                 shared = sharedClient = makeNewClient();
@@ -191,7 +192,8 @@ public class NonAsciiCharsInURI implements HttpServerAdapters {
 
     static final int ITERATION_COUNT = 3; // checks upgrade and re-use
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     void test(String uriString, boolean sameClient) throws Exception {
         out.println("\n--- Starting ");
         // The single-argument factory requires any illegal characters in its
@@ -215,7 +217,7 @@ public class NonAsciiCharsInURI implements HttpServerAdapters {
 
                 out.println("Got response: " + resp);
                 out.println("Got body: " + resp.body());
-                assertEquals(resp.statusCode(), 200,
+                assertEquals(200, resp.statusCode(),
                         "Expected 200, got:" + resp.statusCode());
 
                 // the response body should contain the toASCIIString
@@ -228,12 +230,13 @@ public class NonAsciiCharsInURI implements HttpServerAdapters {
                 } else {
                     out.println("Found expected " + resp.body() + " in " + expectedURIString);
                 }
-                assertEquals(resp.version(), version(uriString));
+                assertEquals(version(uriString), resp.version());
             }
         }
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testAsync(String uriString, boolean sameClient) throws Exception {
         out.println("\n--- Starting ");
         URI uri = URI.create(uriString);
@@ -254,8 +257,8 @@ public class NonAsciiCharsInURI implements HttpServerAdapters {
                         .thenApply(response -> {
                             out.println("Got response: " + response);
                             out.println("Got body: " + response.body());
-                            assertEquals(response.statusCode(), 200);
-                            assertEquals(response.version(), version(uriString));
+                            assertEquals(200, response.statusCode());
+                            assertEquals(version(uriString), response.version());
                             return response.body();
                         })
                         .thenAccept(body -> {
@@ -276,8 +279,8 @@ public class NonAsciiCharsInURI implements HttpServerAdapters {
         }
     }
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         out.println(now() + "begin setup");
 
         HttpTestHandler handler = new HttpUriStringHandler();
@@ -324,8 +327,8 @@ public class NonAsciiCharsInURI implements HttpServerAdapters {
         err.println(now() + "setup done");
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         sharedClient.close();
         httpTestServer.stop();
         httpsTestServer.stop();

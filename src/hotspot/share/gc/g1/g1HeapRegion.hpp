@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "gc/shared/verifyOption.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/mutex.hpp"
 #include "utilities/macros.hpp"
 
@@ -73,7 +74,7 @@ class G1HeapRegion : public CHeapObj<mtGC> {
   HeapWord* const _bottom;
   HeapWord* const _end;
 
-  HeapWord* volatile _top;
+  Atomic<HeapWord*> _top;
 
   G1BlockOffsetTable* _bot;
 
@@ -89,8 +90,8 @@ public:
   HeapWord* bottom() const         { return _bottom; }
   HeapWord* end() const            { return _end;    }
 
-  void set_top(HeapWord* value) { _top = value; }
-  HeapWord* top() const { return _top; }
+  void set_top(HeapWord* value) { _top.store_relaxed(value); }
+  HeapWord* top() const { return _top.load_relaxed(); }
 
   // See the comment above in the declaration of _pre_dummy_top for an
   // explanation of what it is.
@@ -231,10 +232,10 @@ private:
   //
   // Below this limit the marking bitmap must be used to determine size and
   // liveness.
-  HeapWord* volatile _parsable_bottom;
+  Atomic<HeapWord*> _parsable_bottom;
 
   // Amount of dead data in the region.
-  size_t _garbage_bytes;
+  Atomic<size_t> _garbage_bytes;
 
   // Approximate number of references to this regions at the end of concurrent
   // marking. We we do not mark through all objects, so this is an estimate.
@@ -249,7 +250,7 @@ private:
   uint _node_index;
 
   // Number of objects in this region that are currently pinned.
-  volatile size_t _pinned_object_count;
+  Atomic<size_t> _pinned_object_count;
 
   void report_region_type_change(G1HeapRegionTraceType::Type to);
 
@@ -331,7 +332,7 @@ public:
   }
 
   // A lower bound on the amount of garbage bytes in the region.
-  size_t garbage_bytes() const { return _garbage_bytes; }
+  size_t garbage_bytes() const { return _garbage_bytes.load_relaxed(); }
 
   // Return the amount of bytes we'll reclaim if we collect this
   // region. This includes not only the known garbage bytes in the
@@ -393,8 +394,8 @@ public:
 
   bool is_old_or_humongous() const { return _type.is_old_or_humongous(); }
 
-  size_t pinned_count() const { return AtomicAccess::load(&_pinned_object_count); }
-  bool has_pinned_objects() const { return pinned_count() > 0; }
+  inline size_t pinned_count() const;
+  inline bool has_pinned_objects() const;
 
   void set_free();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -820,6 +820,12 @@ public abstract class Charset$Coder$ {
     public final $Otype$Buffer $code$($Itype$Buffer in)
         throws CharacterCodingException
     {
+        return $code$(in, true);
+    }
+
+    private $Otype$Buffer $code$($Itype$Buffer in, boolean throwOnError)
+        throws CharacterCodingException
+    {
         int n = Math.min((int)(in.remaining() * average$ItypesPerOtype$()),
                     ArraysSupport.SOFT_MAX_ARRAY_LENGTH);
         $Otype$Buffer out = $Otype$Buffer.allocate(n);
@@ -844,7 +850,11 @@ public abstract class Charset$Coder$ {
                 out = o;
                 continue;
             }
-            cr.throwException();
+            if (throwOnError) {
+                cr.throwException();
+            } else {
+                return null;
+            }
         }
         out.flip();
         return out;
@@ -938,7 +948,8 @@ public abstract class Charset$Coder$ {
         try {
             onMalformedInput(CodingErrorAction.REPORT);
             onUnmappableCharacter(CodingErrorAction.REPORT);
-            encode(cb);
+            ByteBuffer bb = encode(cb, false);
+            return bb != null;
         } catch (CharacterCodingException x) {
             return false;
         } finally {
@@ -946,7 +957,6 @@ public abstract class Charset$Coder$ {
             onUnmappableCharacter(ua);
             reset();
         }
-        return true;
     }
 
     /**

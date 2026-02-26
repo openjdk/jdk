@@ -51,9 +51,9 @@ inline const char* bool_to_str(bool b) {
 
 const char* basictype_to_str(BasicType t);
 
-CardTable::CardValue* ci_card_table_address();
+CardTable::CardValue* ci_card_table_address_const();
 template <typename T> T ci_card_table_address_as() {
-  return reinterpret_cast<T>(ci_card_table_address());
+  return reinterpret_cast<T>(ci_card_table_address_const());
 }
 
 #endif // SHARE_CI_CIUTILITIES_HPP

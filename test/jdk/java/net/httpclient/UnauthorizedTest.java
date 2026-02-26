@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,16 +32,12 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext ReferenceTracker
- * @run testng/othervm
+ * @run junit/othervm
  *       -Djdk.httpclient.HttpClient.log=headers
  *       UnauthorizedTest
  */
 
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -65,24 +61,29 @@ import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class UnauthorizedTest implements HttpServerAdapters {
 
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
-    HttpTestServer httpTestServer;        // HTTP/1.1
-    HttpTestServer httpsTestServer;       // HTTPS/1.1
-    HttpTestServer http2TestServer;       // HTTP/2 ( h2c )
-    HttpTestServer https2TestServer;      // HTTP/2 ( h2  )
-    HttpTestServer http3TestServer;       // HTTP/3 ( h3  )
-    String httpURI;
-    String httpsURI;
-    String http2URI;
-    String https2URI;
-    String http3URI;
-    HttpClient authClient;
-    HttpClient noAuthClient;
+    private static HttpTestServer httpTestServer;        // HTTP/1.1
+    private static HttpTestServer httpsTestServer;       // HTTPS/1.1
+    private static HttpTestServer http2TestServer;       // HTTP/2 ( h2c )
+    private static HttpTestServer https2TestServer;      // HTTP/2 ( h2  )
+    private static HttpTestServer http3TestServer;       // HTTP/3 ( h3  )
+    private static String httpURI;
+    private static String httpsURI;
+    private static String http2URI;
+    private static String https2URI;
+    private static String http3URI;
+    private static HttpClient authClient;
+    private static HttpClient noAuthClient;
 
     static final int ITERATIONS = 3;
 
@@ -100,8 +101,7 @@ public class UnauthorizedTest implements HttpServerAdapters {
         return new WeakReference<>(client);
     }
 
-    @DataProvider(name = "all")
-    public Object[][] positive() {
+    public static Object[][] positive() {
         return new Object[][] {
                 { http3URI  + "/server", UNAUTHORIZED, true, ref(authClient)},
                 { http3URI  + "/server", UNAUTHORIZED, false, ref(authClient)},
@@ -144,8 +144,6 @@ public class UnauthorizedTest implements HttpServerAdapters {
         };
     }
 
-    static final AtomicLong requestCounter = new AtomicLong();
-
     static final Authenticator authenticator = new Authenticator() {
     };
 
@@ -158,7 +156,8 @@ public class UnauthorizedTest implements HttpServerAdapters {
         return builder;
     }
 
-    @Test(dataProvider = "all")
+    @ParameterizedTest
+    @MethodSource("positive")
     void test(String uriString, int code, boolean async, WeakReference<HttpClient> clientRef) throws Throwable {
         HttpClient client = clientRef.get();
         out.printf("%n---- starting (%s, %d, %s, %s) ----%n",
@@ -195,9 +194,8 @@ public class UnauthorizedTest implements HttpServerAdapters {
         }
 
         out.println("  Got response: " + response);
-        assertEquals(response.statusCode(), code);
-        assertEquals(response.body(),
-                (code == UNAUTHORIZED ? "WWW-" : "Proxy-") + MESSAGE);
+        assertEquals(code, response.statusCode());
+        assertEquals(                (code == UNAUTHORIZED ? "WWW-" : "Proxy-") + MESSAGE, response.body());
         if (shouldThrow) {
             throw new RuntimeException("Expected IOException not thrown.");
         }
@@ -205,8 +203,8 @@ public class UnauthorizedTest implements HttpServerAdapters {
 
     // -- Infrastructure
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         httpTestServer = HttpTestServer.create(HTTP_1_1);
         httpTestServer.addHandler(new UnauthorizedHandler(), "/http1/");
         httpURI = "http://" + httpTestServer.serverAuthority() + "/http1";
@@ -225,13 +223,13 @@ public class UnauthorizedTest implements HttpServerAdapters {
         http3TestServer.addHandler(new UnauthorizedHandler(), "/http3/");
         http3URI = "https://" + http3TestServer.serverAuthority() + "/http3";
 
-        authClient = newClientBuilderForH3()
+        authClient = HttpServerAdapters.createClientBuilderForH3()
                 .proxy(HttpClient.Builder.NO_PROXY)
                 .sslContext(sslContext)
                 .authenticator(authenticator)
                 .build();
 
-        noAuthClient = newClientBuilderForH3()
+        noAuthClient = HttpServerAdapters.createClientBuilderForH3()
                 .proxy(HttpClient.Builder.NO_PROXY)
                 .sslContext(sslContext)
                 .build();
@@ -243,8 +241,8 @@ public class UnauthorizedTest implements HttpServerAdapters {
         http3TestServer.start();
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         // authClient.close();
         // noAuthClient.close();
         var TRACKER = ReferenceTracker.INSTANCE;

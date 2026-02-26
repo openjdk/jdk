@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  *        DependentActionsTest
- * @run testng/othervm -Djdk.internal.httpclient.debug=true
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true
  *                     -Djdk.httpclient.quic.maxPtoBackoff=9
  *                      DependentActionsTest
   */
@@ -39,12 +39,6 @@ import java.io.InputStreamReader;
 import java.lang.StackWalker.StackFrame;
 import jdk.httpclient.test.lib.http3.Http3TestServer;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.SkipException;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -89,28 +83,35 @@ import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.util.stream.Collectors.toList;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class DependentActionsTest implements HttpServerAdapters {
 
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
-    HttpTestServer httpTestServer;    // HTTP/1.1    [ 4 servers ]
-    HttpTestServer httpsTestServer;   // HTTPS/1.1
-    HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
-    HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
-    HttpTestServer http3TestServer;   // HTTP/3 ( h3  )
-    String httpURI_fixed;
-    String httpURI_chunk;
-    String httpsURI_fixed;
-    String httpsURI_chunk;
-    String http2URI_fixed;
-    String http2URI_chunk;
-    String https2URI_fixed;
-    String https2URI_chunk;
-    String http3URI_fixed;
-    String http3URI_chunk;
-    String http3URI_head;
+    private static HttpTestServer httpTestServer;    // HTTP/1.1    [ 4 servers ]
+    private static HttpTestServer httpsTestServer;   // HTTPS/1.1
+    private static HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
+    private static HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
+    private static HttpTestServer http3TestServer;   // HTTP/3 ( h3  )
+    private static String httpURI_fixed;
+    private static String httpURI_chunk;
+    private static String httpsURI_fixed;
+    private static String httpsURI_chunk;
+    private static String http2URI_fixed;
+    private static String http2URI_chunk;
+    private static String https2URI_fixed;
+    private static String https2URI_chunk;
+    private static String http3URI_fixed;
+    private static String http3URI_chunk;
+    private static String http3URI_head;
 
     static final StackWalker WALKER =
             StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
@@ -132,7 +133,7 @@ public class DependentActionsTest implements HttpServerAdapters {
         return String.format("[%d s, %d ms, %d ns] ", secs, mill, nan);
     }
 
-    private volatile HttpClient sharedClient;
+    private static volatile HttpClient sharedClient;
 
     static class TestExecutor implements Executor {
         final AtomicLong tasks = new AtomicLong();
@@ -158,7 +159,7 @@ public class DependentActionsTest implements HttpServerAdapters {
         }
     }
 
-    @AfterClass
+    @AfterAll
     static final void printFailedTests() {
         out.println("\n=========================");
         try {
@@ -179,7 +180,7 @@ public class DependentActionsTest implements HttpServerAdapters {
         }
     }
 
-    private String[] uris() {
+    private static String[] uris() {
         return new String[] {
                 httpURI_fixed,
                 httpURI_chunk,
@@ -206,8 +207,7 @@ public class DependentActionsTest implements HttpServerAdapters {
         }
     }
 
-    @DataProvider(name = "noStalls")
-    public Object[][] noThrows() {
+    public static Object[][] noThrows() {
         String[] uris = uris();
         Object[][] result = new Object[uris.length * 2][];
         int i = 0;
@@ -220,8 +220,7 @@ public class DependentActionsTest implements HttpServerAdapters {
         return result;
     }
 
-    @DataProvider(name = "variants")
-    public Object[][] variants() {
+    public static Object[][] variants() {
         String[] uris = uris();
         Object[][] result = new Object[uris.length * 2][];
         int i = 0;
@@ -237,20 +236,21 @@ public class DependentActionsTest implements HttpServerAdapters {
         return result;
     }
 
-    private HttpClient makeNewClient() {
+    private static HttpClient makeNewClient() {
         clientCount.incrementAndGet();
-        return newClientBuilderForH3()
+        return HttpServerAdapters.createClientBuilderForH3()
                 .proxy(Builder.NO_PROXY)
                 .executor(executor)
                 .sslContext(sslContext)
                 .build();
     }
 
-    HttpClient newHttpClient(boolean share) {
+    private static final Object zis = new Object();
+    static HttpClient newHttpClient(boolean share) {
         if (!share) return makeNewClient();
         HttpClient shared = sharedClient;
         if (shared != null) return shared;
-        synchronized (this) {
+        synchronized (zis) {
             shared = sharedClient;
             if (shared == null) {
                 shared = sharedClient = makeNewClient();
@@ -259,7 +259,8 @@ public class DependentActionsTest implements HttpServerAdapters {
         }
     }
 
-    @Test(dataProvider = "noStalls")
+    @ParameterizedTest
+    @MethodSource("noThrows")
     public void testNoStalls(String uri, boolean sameClient)
             throws Exception {
         HttpClient client = null;
@@ -279,11 +280,12 @@ public class DependentActionsTest implements HttpServerAdapters {
                             BodyHandlers.ofString());
             HttpResponse<String> response = client.send(req, handler);
             String body = response.body();
-            assertEquals(URI.create(body).getPath(), URI.create(uri).getPath());
+            assertEquals(URI.create(uri).getPath(), URI.create(body).getPath());
         }
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void testAsStringAsync(String uri,
                                   boolean sameClient,
                                   Supplier<Staller> s)
@@ -296,7 +298,8 @@ public class DependentActionsTest implements HttpServerAdapters {
                 this::finish, this::extractString, staller);
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void testAsLinesAsync(String uri,
                                  boolean sameClient,
                                  Supplier<Staller> s)
@@ -309,7 +312,8 @@ public class DependentActionsTest implements HttpServerAdapters {
                 this::finish, this::extractStream, staller);
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void testAsInputStreamAsync(String uri,
                                        boolean sameClient,
                                        Supplier<Staller> s)
@@ -329,11 +333,8 @@ public class DependentActionsTest implements HttpServerAdapters {
                                      Staller staller)
             throws Exception
     {
-        if (errorRef.get() != null) {
-            SkipException sk = new SkipException("skipping due to previous failure: " + name);
-            sk.setStackTrace(new StackTraceElement[0]);
-            throw sk;
-        }
+        Assumptions.assumeTrue(errorRef.get() == null,
+                "skipping due to previous failure: " + name);
         out.printf("%n%s%s%n", now(), name);
         try {
             testDependent(uri, sameClient, handlers, finisher, extractor, staller);
@@ -376,7 +377,7 @@ public class DependentActionsTest implements HttpServerAdapters {
                     // it's possible that the first request still went through HTTP/2
                     // if the config was HTTP3_ANY. Retry it - the next time we should
                     // have HTTP/3
-                    assertEquals(resp.version(), HTTP_3,
+                    assertEquals(HTTP_3, resp.version(),
                             "expected second request to go through HTTP/3 (serverConfig="
                                     + http3TestServer.h3DiscoveryConfig() + ")");
                 }
@@ -479,10 +480,10 @@ public class DependentActionsTest implements HttpServerAdapters {
                 throw new RuntimeException("Test failed in "
                         + w + ": " + response, error);
             }
-            assertEquals(result, List.of(response.request().uri().getPath()));
+            assertEquals(List.of(response.request().uri().getPath()), result);
             var uriStr = response.request().uri().toString();
             if (HTTP_3 != version(uriStr) || http3TestServer.h3DiscoveryConfig() != Http3DiscoveryMode.ANY) {
-                assertEquals(response.version(), version(uriStr), uriStr);
+                assertEquals(version(uriStr), response.version(), uriStr);
             }
             return response;
         } finally {
@@ -619,7 +620,7 @@ public class DependentActionsTest implements HttpServerAdapters {
         return null;
     }
 
-    HttpRequest.Builder newRequestBuilder(String uri) {
+    static HttpRequest.Builder newRequestBuilder(String uri) {
         var builder = HttpRequest.newBuilder(URI.create(uri));
         if (version(uri) == HTTP_3) {
             builder.version(HTTP_3);
@@ -628,21 +629,21 @@ public class DependentActionsTest implements HttpServerAdapters {
         return builder;
     }
 
-    HttpResponse<String> headRequest(HttpClient client)
+    static HttpResponse<String> headRequest(HttpClient client)
             throws IOException, InterruptedException
     {
         var request = newRequestBuilder(http3URI_head)
                 .HEAD().version(HTTP_2).build();
         var response = client.send(request, BodyHandlers.ofString());
-        assertEquals(response.statusCode(), 200);
-        assertEquals(response.version(), HTTP_2);
+        assertEquals(200, response.statusCode());
+        assertEquals(HTTP_2, response.version());
         System.out.println("\n--- HEAD request succeeded ----\n");
         System.err.println("\n--- HEAD request succeeded ----\n");
         return response;
     }
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         // HTTP/1.1
         HttpTestHandler h1_fixedLengthHandler = new HTTP_FixedLengthHandler();
         HttpTestHandler h1_chunkHandler = new HTTP_ChunkedHandler();
@@ -703,8 +704,8 @@ public class DependentActionsTest implements HttpServerAdapters {
         headRequest(newHttpClient(true));
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         sharedClient = null;
         httpTestServer.stop();
         httpsTestServer.stop();

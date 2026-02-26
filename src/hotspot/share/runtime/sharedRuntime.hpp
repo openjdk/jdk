@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,10 @@
 #ifndef SHARE_RUNTIME_SHAREDRUNTIME_HPP
 #define SHARE_RUNTIME_SHAREDRUNTIME_HPP
 
-#include "classfile/compactHashtable.hpp"
 #include "code/codeBlob.hpp"
 #include "code/vmreg.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/allStatic.hpp"
-#include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/stubInfo.hpp"
@@ -38,6 +36,8 @@
 
 class AdapterHandlerEntry;
 class AdapterFingerPrint;
+class MetaspaceClosure;
+class SerializeClosure;
 class vframeStream;
 
 // Runtime is the base class for various runtime interfaces
