@@ -268,7 +268,7 @@ AC_DEFUN_ONCE([LIB_SETUP_ZLIB],
   if test "x$USE_EXTERNAL_LIBZ" = "xfalse"; then
     LIBZ_CFLAGS="$LIBZ_CFLAGS -I$TOPDIR/src/java.base/share/native/libzip/zlib"
     if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-        LIBZ_CFLAGS="$LIBZ_CFLAGS -DHAVE_UNISTD_H"
+        LIBZ_CFLAGS="$LIBZ_CFLAGS -DHAVE_UNISTD_H=1 -DHAVE_STDARG_H=1"
     fi
   else
     LIBZ_LIBS="-lz"
