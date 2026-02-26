@@ -750,7 +750,8 @@ public class ZipFile implements ZipConstants, Closeable {
                     inf.end();
                 }
                 // close inflaters cache
-                this.inflaterCacheClosed = true;
+                inflaterCache.clear();
+                inflaterCacheClosed = true;
             }
 
             // Close streams, release their inflaters
