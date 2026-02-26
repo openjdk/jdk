@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8262731 8268675
- * @key headful printer
+ * @key printer
  * @summary Verify that "PrinterJob.print" throws the expected exception,
  *          if "Printable.print" throws an exception.
  * @run main ExceptionFromPrintableIsIgnoredTest MAIN PE
