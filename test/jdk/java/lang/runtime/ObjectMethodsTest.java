@@ -159,7 +159,7 @@ public class ObjectMethodsTest {
         assertThrows(IAE, () -> ObjectMethods.bootstrap(LOOKUP, "equals",   C.HASHCODE_DESC,  C.class, "x;y", C.ACCESSORS));
     }
 
-    record NamePlusType(String mn, MethodType mt) {}
+    record NamePlusType(String name, MethodType type) {}
 
     static List<NamePlusType> namePlusTypeList() {
         return List.of(
@@ -172,33 +172,36 @@ public class ObjectMethodsTest {
     @MethodSource("namePlusTypeList")
     @ParameterizedTest
     void commonExceptions(NamePlusType npt) {
+        String name = npt.name();
+        MethodType type = npt.type();
+
         // Null checks
-        assertThrows(NPE, () -> ObjectMethods.bootstrap(LOOKUP, npt.mn(), npt.mt(), C.class, "x;y", null));
-        assertThrows(NPE, () -> ObjectMethods.bootstrap(LOOKUP, npt.mn(), npt.mt(), C.class, "x;y", new MethodHandle[]{null}));
-        assertThrows(NPE, () -> ObjectMethods.bootstrap(LOOKUP, npt.mn(), npt.mt(), C.class, null,  C.ACCESSORS));
-        assertThrows(NPE, () -> ObjectMethods.bootstrap(LOOKUP, npt.mn(), npt.mt(), null,    "x;y", C.ACCESSORS));
-        assertThrows(NPE, () -> ObjectMethods.bootstrap(LOOKUP, npt.mn(), null,     C.class, "x;y", C.ACCESSORS));
-        assertThrows(NPE, () -> ObjectMethods.bootstrap(LOOKUP, null,     npt.mt(), C.class, "x;y", C.ACCESSORS));
-        assertThrows(NPE, () -> ObjectMethods.bootstrap(null,   npt.mn(), npt.mt(), C.class, "x;y", C.ACCESSORS));
+        assertThrows(NPE, () -> ObjectMethods.bootstrap(LOOKUP, name, type, C.class, "x;y", null));
+        assertThrows(NPE, () -> ObjectMethods.bootstrap(LOOKUP, name, type, C.class, "x;y", new MethodHandle[]{null}));
+        assertThrows(NPE, () -> ObjectMethods.bootstrap(LOOKUP, name, type, C.class, null,  C.ACCESSORS));
+        assertThrows(NPE, () -> ObjectMethods.bootstrap(LOOKUP, name, type, null,    "x;y", C.ACCESSORS));
+        assertThrows(NPE, () -> ObjectMethods.bootstrap(LOOKUP, name, null, C.class, "x;y", C.ACCESSORS));
+        assertThrows(NPE, () -> ObjectMethods.bootstrap(LOOKUP, null, type, C.class, "x;y", C.ACCESSORS));
+        assertThrows(NPE, () -> ObjectMethods.bootstrap(null,   name, type, C.class, "x;y", C.ACCESSORS));
 
         // Bad indy call receiver type - change C to this test class
-        assertThrows(IAE, () -> ObjectMethods.bootstrap(LOOKUP, npt.mn(), npt.mt().changeParameterType(0, this.getClass()), C.class, "x;y", C.ACCESSORS));
+        assertThrows(IAE, () -> ObjectMethods.bootstrap(LOOKUP, name, type.changeParameterType(0, this.getClass()), C.class, "x;y", C.ACCESSORS));
 
         // Bad getter types
         var wrongReceiverGetter = assertDoesNotThrow(() -> MethodHandles.lookup().findGetter(this.getClass(), "y", int.class));
-        assertThrows(IAE, () -> ObjectMethods.bootstrap(LOOKUP, npt.mn(), npt.mt(), C.class, "x;y",
+        assertThrows(IAE, () -> ObjectMethods.bootstrap(LOOKUP, name, type, C.class, "x;y",
                 new MethodHandle[]{
                         C.ACCESSORS[0],
                         wrongReceiverGetter,
                 }));
         var extraArgGetter = MethodHandles.dropArguments(C.ACCESSORS[1], 1, int.class);
-        assertThrows(IAE, () -> ObjectMethods.bootstrap(LOOKUP, npt.mn(), npt.mt(), C.class, "x;y",
+        assertThrows(IAE, () -> ObjectMethods.bootstrap(LOOKUP, name, type, C.class, "x;y",
                 new MethodHandle[]{
                         C.ACCESSORS[0],
                         extraArgGetter,
                 }));
         var voidReturnGetter = MethodHandles.empty(MethodType.methodType(void.class, C.class));
-        assertThrows(IAE, () -> ObjectMethods.bootstrap(LOOKUP, npt.mn(), npt.mt(), C.class, "x;y",
+        assertThrows(IAE, () -> ObjectMethods.bootstrap(LOOKUP, name, type, C.class, "x;y",
                 new MethodHandle[]{
                         C.ACCESSORS[0],
                         voidReturnGetter,
