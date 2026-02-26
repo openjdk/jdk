@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #define SHARE_OOPS_RESOLVEDFIELDENTRY_HPP
 
 #include "interpreter/bytecodes.hpp"
-#include "oops/instanceKlass.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/sizes.hpp"
@@ -46,7 +45,8 @@
 // The explicit paddings are necessary for generating deterministic CDS archives. They prevent
 // the C++ compiler from potentially inserting random values in unused gaps.
 
-//class InstanceKlass;
+class InstanceKlass;
+
 class ResolvedFieldEntry {
   friend class VMStructs;
 
@@ -84,6 +84,7 @@ public:
   enum {
       is_volatile_shift     = 0,
       is_final_shift        = 1, // unused
+      max_flag_shift        = is_final_shift
   };
 
   // Getters
@@ -139,6 +140,7 @@ public:
     // These must be set after the other fields
     set_bytecode(&_get_code, b1);
     set_bytecode(&_put_code, b2);
+    assert_is_valid();
   }
 
   // CDS
@@ -156,6 +158,8 @@ public:
   static ByteSize type_offset()         { return byte_offset_of(ResolvedFieldEntry, _tos_state);    }
   static ByteSize flags_offset()        { return byte_offset_of(ResolvedFieldEntry, _flags);        }
 
+   // Debug help
+  void assert_is_valid() const NOT_DEBUG_RETURN;
 };
 
 #endif //SHARE_OOPS_RESOLVEDFIELDENTRY_HPP

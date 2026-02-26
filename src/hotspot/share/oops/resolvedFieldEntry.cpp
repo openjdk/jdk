@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,11 @@
 
 #include "cds/archiveBuilder.hpp"
 #include "cppstdlib/type_traits.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/instanceOop.hpp"
 #include "oops/resolvedFieldEntry.hpp"
+#include "utilities/globalDefinitions.hpp"
+
 
 static_assert(std::is_trivially_copyable_v<ResolvedFieldEntry>);
 
@@ -51,6 +55,20 @@ void ResolvedFieldEntry::print_on(outputStream* st) const {
   st->print_cr(" - Get Bytecode: %s", Bytecodes::name((Bytecodes::Code)get_code()));
   st->print_cr(" - Put Bytecode: %s", Bytecodes::name((Bytecodes::Code)put_code()));
 }
+
+#ifdef ASSERT
+void ResolvedFieldEntry::assert_is_valid() const {
+  assert(field_holder()->is_instance_klass(), "should be instanceKlass");
+  assert(field_offset() >= instanceOopDesc::base_offset_in_bytes() && field_offset() < 0x7fffffff,
+         "field offset out of range %d < %d < 0x7fffffff", instanceOopDesc::base_offset_in_bytes(), field_offset());
+  assert(as_BasicType((TosState)tos_state()) != T_ILLEGAL, "tos_state is ILLEGAL");
+  assert(_flags < (1 << (max_flag_shift + 1)), "flags are too large %d", _flags);
+  assert((get_code() == 0 || get_code() == Bytecodes::_getstatic || get_code() == Bytecodes::_getfield),
+         "invalid get bytecode %d", get_code());
+  assert((put_code() == 0 || put_code() == Bytecodes::_putstatic || put_code() == Bytecodes::_putfield),
+          "invalid put bytecode %d", put_code());
+}
+#endif
 
 #if INCLUDE_CDS
 void ResolvedFieldEntry::remove_unshareable_info() {
