@@ -692,7 +692,7 @@ public class ZipFile implements ZipConstants, Closeable {
         final Set<InputStream> istreams;
 
         // List of cached Inflater objects for decompression
-        final List<Inflater> inflaterCache;
+        final ArrayList<Inflater> inflaterCache;
         // Flag to mark inflater cache as closed. Access guarded by 'inflaterCache'.
         boolean inflaterCacheClosed;
 
@@ -749,8 +749,10 @@ public class ZipFile implements ZipConstants, Closeable {
                 for (Inflater inf : inflaterCache) {
                     inf.end();
                 }
-                // close inflaters cache
+                // Reduce memory retained by a closed ZipFile
                 inflaterCache.clear();
+                inflaterCache.trimToSize();
+                // Mark inflater cache as closed
                 inflaterCacheClosed = true;
             }
 
