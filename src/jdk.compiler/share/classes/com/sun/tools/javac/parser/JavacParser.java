@@ -5406,6 +5406,12 @@ public class JavacParser implements Parser {
 
         if (recordComponent) {
             mods = modifiersOpt();
+            /* it could be that the user added a javadoc with the @deprecated tag, when analyzing this
+             * javadoc, javac will set the DEPRECATED flag. This is correct in most cases but not for
+             * record components and thus should be removed in that case. Any javadoc applied to
+             * record components is ignored
+             */
+            mods.flags &= ~Flags.DEPRECATED;
         } else {
             mods = optFinal(Flags.PARAMETER | (lambdaParameter ? Flags.LAMBDA_PARAMETER : 0));
         }
