@@ -1,4 +1,4 @@
-## libpng v1.6.54
+## libpng v1.6.55
 
 ### libpng License
 <pre>
@@ -170,6 +170,7 @@ Authors, for copyright and licensing purposes.
  * Guy Eric Schalnat
  * James Yu
  * John Bowler
+ * Joshua Inscoe
  * Kevin Bracey
  * Lucas Chollet
  * Magnus Holmgren
