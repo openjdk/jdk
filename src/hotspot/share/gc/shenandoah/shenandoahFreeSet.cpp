@@ -1194,6 +1194,18 @@ void ShenandoahRegionPartitions::assert_bounds() {
   assert(_humongous_waste[int(ShenandoahFreeSetPartitionId::Mutator)] == young_humongous_waste,
          "Mutator humongous waste must match");
 }
+
+inline void ShenandoahRegionPartitions::assert_bounds_sanity() {
+  for (uint8_t i = 0; i < UIntNumPartitions; i++) {
+    ShenandoahFreeSetPartitionId partition = static_cast<ShenandoahFreeSetPartitionId>(i);
+    assert(leftmost(partition) == _max || membership(leftmost(partition)) == partition, "Left most boundry must be sane");
+    assert(rightmost(partition) == -1 || membership(rightmost(partition)) == partition, "Right most boundry must be sane");
+
+    assert(leftmost_empty(partition) == _max || leftmost_empty(partition) >= leftmost(partition), "Left most empty must be sane");
+    assert(rightmost_empty(partition) == -1 || rightmost_empty(partition) <= rightmost(partition), "Right most empty must be sane");
+  }
+}
+
 #endif
 
 ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
@@ -1654,6 +1666,12 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     // Not old collector alloc, so this is a young collector gclab or shared allocation
     orig_partition = ShenandoahFreeSetPartitionId::Collector;
   }
+  DEBUG_ONLY(bool boundary_changed = false;)
+  if ((result != nullptr) && in_new_region) {
+    _partitions.one_region_is_no_longer_empty(orig_partition);
+    DEBUG_ONLY(boundary_changed = true;)
+  }
+
   if (alloc_capacity(r) < PLAB::min_size() * HeapWordSize) {
     // Regardless of whether this allocation succeeded, if the remaining memory is less than PLAB:min_size(), retire this region.
     // Note that retire_from_partition() increases used to account for waste.
@@ -1662,15 +1680,11 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     // then retire the region so that subsequent searches can find available memory more quickly.
 
     size_t idx = r->index();
-    if ((result != nullptr) && in_new_region) {
-      _partitions.one_region_is_no_longer_empty(orig_partition);
-    }
     size_t waste_bytes = _partitions.retire_from_partition(orig_partition, idx, r->used());
+    DEBUG_ONLY(boundary_changed = true;)
     if (req.is_mutator_alloc() && (waste_bytes > 0)) {
       increase_bytes_allocated(waste_bytes);
     }
-  } else if ((result != nullptr) && in_new_region) {
-    _partitions.one_region_is_no_longer_empty(orig_partition);
   }
 
   switch (orig_partition) {
@@ -1711,7 +1725,13 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
   default:
     assert(false, "won't happen");
   }
-  _partitions.assert_bounds();
+#ifdef ASSERT
+  if (boundary_changed) {
+    _partitions.assert_bounds();
+  } else {
+    _partitions.assert_bounds_sanity();
+  }
+#endif
   return result;
 }
 
