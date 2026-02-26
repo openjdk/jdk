@@ -347,7 +347,7 @@ void AOTConstantPoolResolver::maybe_resolve_fmi_ref(InstanceKlass* ik, Method* m
     break;
 
   case Bytecodes::_invokehandle:
-    {
+    if (CDSConfig::is_dumping_method_handles()) {
       ResolvedMethodEntry* method_entry = cp->resolved_method_entry_at(raw_index);
       int cp_index = method_entry->constant_pool_index();
       Symbol* sig = cp->uncached_signature_ref_at(cp_index);
@@ -428,6 +428,11 @@ bool AOTConstantPoolResolver::check_methodtype_signature(ConstantPool* cp, Symbo
         }
         return false;
       }
+
+      // cp->pool_holder() must be able to resolve k in production run
+      precond(CDSConfig::is_dumping_aot_linked_classes());
+      precond(SystemDictionaryShared::is_builtin_loader(cp->pool_holder()->class_loader_data()));
+      precond(SystemDictionaryShared::is_builtin_loader(k->class_loader_data()));
 
       if (ss.at_return_type() && return_type_ret != nullptr) {
         *return_type_ret = k;
@@ -517,6 +522,11 @@ bool AOTConstantPoolResolver::check_lambda_metafactory_methodhandle_arg(Constant
       }
       return false;
     }
+
+    // cp->pool_holder() must be able to resolve k in production run
+    precond(CDSConfig::is_dumping_aot_linked_classes());
+    precond(SystemDictionaryShared::is_builtin_loader(cp->pool_holder()->class_loader_data()));
+    precond(SystemDictionaryShared::is_builtin_loader(k->class_loader_data()));
   }
 
   return check_methodtype_signature(cp, sig);
