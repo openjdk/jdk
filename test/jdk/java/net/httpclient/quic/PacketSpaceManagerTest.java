@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,34 +73,35 @@ import jdk.internal.net.quic.QuicVersion;
 import jdk.internal.net.quic.QuicTransportException;
 import jdk.internal.net.quic.QuicTransportParametersConsumer;
 import jdk.test.lib.RandomFactory;
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import javax.crypto.AEADBadTagException;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+/*
  * @test
  * @summary tests the logic to build an AckFrame
  * @library /test/lib
  * @library ../debug
  * @build java.net.http/jdk.internal.net.http.common.TestLoggerUtil
- * @run testng/othervm PacketSpaceManagerTest
- * @run testng/othervm -Dseed=-7947549564260911920 PacketSpaceManagerTest
- * @run testng/othervm -Dseed=-5413111674202728207 PacketSpaceManagerTest
- * @run testng/othervm -Dseed=-176652423987357212 PacketSpaceManagerTest
- * @run testng/othervm -Dseed=6550551791799910315 PacketSpaceManagerTest
- * @run testng/othervm -Dseed=-4159871071396382784 PacketSpaceManagerTest
- * @run testng/othervm -Dseed=2252276218459363615 PacketSpaceManagerTest
- * @run testng/othervm -Dseed=-5130588140709404919 PacketSpaceManagerTest
+ * @run junit/othervm PacketSpaceManagerTest
+ * @run junit/othervm -Dseed=-7947549564260911920 PacketSpaceManagerTest
+ * @run junit/othervm -Dseed=-5413111674202728207 PacketSpaceManagerTest
+ * @run junit/othervm -Dseed=-176652423987357212 PacketSpaceManagerTest
+ * @run junit/othervm -Dseed=6550551791799910315 PacketSpaceManagerTest
+ * @run junit/othervm -Dseed=-4159871071396382784 PacketSpaceManagerTest
+ * @run junit/othervm -Dseed=2252276218459363615 PacketSpaceManagerTest
+ * @run junit/othervm -Dseed=-5130588140709404919 PacketSpaceManagerTest
  */
 // -Djdk.internal.httpclient.debug=true
 public class PacketSpaceManagerTest {
@@ -337,7 +338,7 @@ public class PacketSpaceManagerTest {
      * @param first the first packet acknowledged, inclusive
      * @param last  the last packet acknowledged, inclusive
      */
-    public static record Acknowledged(long first, long last) {
+    public record Acknowledged(long first, long last) {
         public Acknowledged {
             assert first >= 0 && first <= last;
         }
@@ -360,7 +361,7 @@ public class PacketSpaceManagerTest {
      * @param packetNumber the packet number of the packet to send
      * @param delay a delay before the next packet should be emitted
      */
-    public static record Packet(long packetNumber, long delay) {
+    public record Packet(long packetNumber, long delay) {
         Packet(long packetNumber) {
             this(packetNumber, RANDOM.nextLong(1, 255));
         }
@@ -391,7 +392,7 @@ public class PacketSpaceManagerTest {
      *                  before it's been emitted).
      * @param shuffled whether the list of packets is shuffled.
      */
-    public static record TestCase(List<Acknowledged> acks,
+    public record TestCase(List<Acknowledged> acks,
                                   List<Packet> packets,
                                   List<AckFrame> ackframes,
                                   boolean shuffled) {
@@ -440,7 +441,7 @@ public class PacketSpaceManagerTest {
      * a list of special testcases, and a list of random testcases.
      * @return A list of TestCases to test.
      */
-    List<TestCase> generateTests() {
+    static List<TestCase> generateTests() {
         List<TestCase> tests = new ArrayList<>();
         List<TestCase> simples = List.of(
                 new TestCase(List.of(new Acknowledged(5,5))),
@@ -485,7 +486,7 @@ public class PacketSpaceManagerTest {
      * A packet should only be present once.
      * @return a random list of increasing acknowledgement ranges.
      */
-    List<Acknowledged> generateAcks() {
+    static List<Acknowledged> generateAcks() {
         int count = RANDOM.nextInt(3, 10);
         List<Acknowledged> acks = new ArrayList<>(count);
         long prev = -1;
@@ -516,8 +517,7 @@ public class PacketSpaceManagerTest {
         return res;
     }
 
-    @DataProvider(name = "tests")
-    public Object[][] tests() {
+    public static Object[][] tests() {
         return generateTests().stream()
                 .map(List::of)
                 .map(List::toArray)
@@ -757,7 +757,7 @@ public class PacketSpaceManagerTest {
         final CopyOnWriteArrayList<Retransmission> retransmissions = new CopyOnWriteArrayList<>();
         final CopyOnWriteArrayList<Retransmission> successfulExpectations = new CopyOnWriteArrayList<>();
 
-        static record Retransmission(long packetNumber, Deadline atOrAfter, long largestAckSent) {
+        record Retransmission(long packetNumber, Deadline atOrAfter, long largestAckSent) {
             boolean isFor(long number) {
                 return number == packetNumber;
             }
@@ -774,7 +774,7 @@ public class PacketSpaceManagerTest {
          * the test.
          * This method checks that the retransmission logic works as
          * expected.
-         * @throws Exception
+         * @throws Exception if the call fails
          */
         // TODO: in the end we need to check that everything that was
         //       expected to happen happened. What is missing is to
@@ -890,7 +890,7 @@ public class PacketSpaceManagerTest {
                             .stream().filter(AckFrame.class::isInstance)
                             .map(AckFrame.class::cast)
                             .toList();
-                    assertEquals(frames.size(), 1,
+                    assertEquals(1, frames.size(),
                             "unexpected ack frames: " + frames);
                     AckFrame ackFrame = ackFrames.get(0);
                     LongStream.range(firstAckPaket, lastAckPacket + 1)
@@ -1029,10 +1029,11 @@ public class PacketSpaceManagerTest {
         void check() {
             assertFalse(now().isBefore(timeSource.first.plusMillis(timeline)));
             assertTrue(expectedRetransmissions.isEmpty());
-            assertEquals(retransmissions.stream()
+            assertEquals(successfulExpectations.stream()
                             .map(Retransmission::packetNumber)
                             .filter(pn -> pn <= maxPacketNumber).toList(),
-                    successfulExpectations.stream().map(Retransmission::packetNumber)
+                        retransmissions.stream()
+                            .map(Retransmission::packetNumber)
                             .filter(pn -> pn <= maxPacketNumber).toList());
             for (Retransmission r : retransmissions) {
                 if (r.packetNumber > maxPacketNumber ||
@@ -1040,14 +1041,14 @@ public class PacketSpaceManagerTest {
                 List<Retransmission> succesful = successfulExpectations.stream()
                         .filter(s -> s.isFor(r.packetNumber))
                         .toList();
-                assertEquals(succesful.size(), 1);
+                assertEquals(1, succesful.size());
                 succesful.forEach(s -> assertFalse(s.atOrAfter.isAfter(r.atOrAfter)));
             }
 
             List<Long> acknowledged = new ArrayList<>(acknowledgePackets(allAcks.build()));
             Collections.sort(acknowledged);
-            assertEquals(acknowledged, test.packets.stream()
-                    .map(Packet::packetNumber).sorted().toList());
+            assertEquals(test.packets.stream()
+                    .map(Packet::packetNumber).sorted().toList(), acknowledged);
         }
 
         // TODO: add a LongStream acknowledged() to AckFrame - write a spliterator
@@ -1073,8 +1074,8 @@ public class PacketSpaceManagerTest {
             default String negation() {
                 return (this == FALSE) ? "doesn't " : "";
             }
-            Assertion TRUE = Assert::assertTrue;
-            Assertion FALSE = Assert::assertFalse;
+            Assertion TRUE = Assertions::assertTrue;
+            Assertion FALSE = Assertions::assertFalse;
         }
         static void assertContains(Assertion assertion, List<Long> list, long number, String desc) {
             assertion.check(list.contains(number),
@@ -1115,7 +1116,8 @@ public class PacketSpaceManagerTest {
         }
     }
 
-    @Test(dataProvider = "tests")
+    @ParameterizedTest
+    @MethodSource("tests")
     public void testPacketSpaceManager(TestCase testCase) throws Exception {
         System.out.printf("%n -------  testPacketSpaceManager ------- %n");
         SynchronousTestDriver driver = new SynchronousTestDriver(testCase);

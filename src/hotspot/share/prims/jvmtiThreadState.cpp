@@ -51,7 +51,7 @@ static const int UNKNOWN_STACK_DEPTH = -99;
 //
 
 JvmtiThreadState *JvmtiThreadState::_head = nullptr;
-bool JvmtiThreadState::_seen_interp_only_mode = false;
+Atomic<bool> JvmtiThreadState::_seen_interp_only_mode{false};
 
 JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
   : _thread_event_enable() {
@@ -323,6 +323,7 @@ void JvmtiThreadState::add_env(JvmtiEnvBase *env) {
 
 void JvmtiThreadState::enter_interp_only_mode() {
   assert(_thread != nullptr, "sanity check");
+  assert(JvmtiThreadState_lock->is_locked(), "sanity check");
   assert(!is_interp_only_mode(), "entering interp only when in interp only mode");
   assert(_thread->jvmti_vthread() == nullptr || _thread->jvmti_vthread() == get_thread_oop(), "sanity check");
   assert(_thread->jvmti_thread_state() == this, "sanity check");
@@ -333,6 +334,7 @@ void JvmtiThreadState::enter_interp_only_mode() {
 }
 
 void JvmtiThreadState::leave_interp_only_mode() {
+  assert(JvmtiThreadState_lock->is_locked(), "sanity check");
   assert(is_interp_only_mode(), "leaving interp only when not in interp only mode");
   _saved_interp_only_mode = false;
   if (_thread != nullptr && _thread->jvmti_thread_state() == this) {
@@ -483,8 +485,6 @@ void JvmtiThreadState::update_for_pop_top_frame() {
     }
     // force stack depth to be recalculated
     invalidate_cur_stack_depth();
-  } else {
-    assert(!is_enabled(JVMTI_EVENT_FRAME_POP), "Must have no framepops set");
   }
 }
 

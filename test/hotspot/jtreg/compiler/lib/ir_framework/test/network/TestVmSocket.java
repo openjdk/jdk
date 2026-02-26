@@ -25,6 +25,7 @@ package compiler.lib.ir_framework.test.network;
 
 import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.shared.TestRunException;
+import compiler.lib.ir_framework.test.TestVM;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -44,6 +45,20 @@ public class TestVmSocket {
      */
     public static void send(String message) {
         sendWithTag(MessageTag.STDOUT, message);
+    }
+
+    /**
+     * Send a message with multiple lines to the Driver VM with a {@link MessageTag}. Not all messages are shown by
+     * default in the Driver VM output and require setting some property flags first like {@code -DPrintTimes=true}.
+     */
+    public static void sendMultiLine(String tag, String message) {
+        if (REPRODUCE) {
+            // Debugging Test VM: Skip writing due to -DReproduce;
+            return;
+        }
+
+        TestFramework.check(socket != null, "must be connected");
+        writer.println(tag + System.lineSeparator() + message);
     }
 
     /**
