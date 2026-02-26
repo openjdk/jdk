@@ -272,8 +272,10 @@ public class TestVectorAlgorithms {
     @Test
     @IR(counts = {IRNode.ADD_VI,       "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // Note: also works with NEON/asimd, but only with TieredCompilation.
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"TieredCompilation", "true"})
+    // IR check only works with TieredCompilation. Needs to make it
+    // work with -XX:-TieredCompilation in future (see JDK-8378640).
     public Object iotaI_VectorAPI(int[] r) {
         return VectorAlgorithmsImpl.iotaI_VectorAPI(r);
     }
@@ -527,7 +529,10 @@ public class TestVectorAlgorithms {
                   IRNode.OR_V_MASK,                 "> 0",
                   IRNode.ADD_VI,                    "> 0",
                   IRNode.ADD_REDUCTION_VI,          "> 0"},
-        applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"})
+        applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"},
+        applyIf = {"TieredCompilation", "true"})
+    // IR check only works with TieredCompilation. Needs to make it
+    // work with -XX:-TieredCompilation in future (see JDK-8378640).
     public int reduceAddIFieldsX4_VectorAPI(int[] oops, int[] mem) {
         return VectorAlgorithmsImpl.reduceAddIFieldsX4_VectorAPI(oops, mem);
     }
