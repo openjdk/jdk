@@ -1026,10 +1026,12 @@ void ObjectMonitor::enter_internal(JavaThread* current, ObjectWaiter* current_no
     }
     assert(!has_owner(current), "invariant");
 
-    // If that fails, spin again.  Note that spin count may be zero so the above TryLock
-    // is necessary.
-    if (reenter_path && try_spin(current)) {
-      break;
+    if (reenter_path) {
+      // If try_lock failed, spin again - we expect the notifier to release the monitor quicly. 
+      // Note that spin count may be zero so the above try_lock is necessary.
+      if (try_spin(current)) {
+        break;
+      }
     }
 
     // park self
@@ -1069,7 +1071,7 @@ void ObjectMonitor::enter_internal(JavaThread* current, ObjectWaiter* current_no
     // Invariant: after clearing _succ a thread *must* retry _owner before parking.
     OrderAccess::fence();
 
-    // See comment in notify_internal.
+    // Will only potentially change on the reenter path - see comment in notify_internal.
     do_timed_park |= current_node->_do_timed_park;
   }
 
