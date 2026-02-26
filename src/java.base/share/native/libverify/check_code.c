@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3832,7 +3832,7 @@ signature_to_fieldtype(context_type *context,
             case JVM_SIGNATURE_CLASS: {
                 char buffer_space[256];
                 char *buffer = buffer_space;
-                char *finish = strchr(p, JVM_SIGNATURE_ENDCLASS);
+                const char* finish = strchr(p, JVM_SIGNATURE_ENDCLASS);
                 int length;
                 if (finish == NULL) {
                     /* Signature must have ';' after the class name.

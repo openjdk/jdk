@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,7 +227,7 @@ static int initRpmPackage(void* desc, const char* str) {
 
 
 static int initDebPackage(void* desc, const char* str) {
-    char* colonChrPos = strchr(str, ':');
+    char* colonChrPos = (char*) strchr(str, ':');
     if (colonChrPos) {
         *colonChrPos = 0;
     }
