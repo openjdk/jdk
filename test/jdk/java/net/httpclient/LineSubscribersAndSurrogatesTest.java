@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,10 +42,11 @@ import java.util.concurrent.SubmissionPublisher;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.testng.annotations.Test;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.charset.StandardCharsets.UTF_16;
-import static org.testng.Assert.assertEquals;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
 /*
  * @test
@@ -53,7 +54,7 @@ import static org.testng.Assert.assertEquals;
  *       In particular tests that surrogate characters are handled
  *       correctly.
  * @modules java.net.http java.logging
- * @run testng/othervm LineSubscribersAndSurrogatesTest
+ * @run junit/othervm LineSubscribersAndSurrogatesTest
  */
 
 public class LineSubscribersAndSurrogatesTest {
@@ -61,7 +62,7 @@ public class LineSubscribersAndSurrogatesTest {
 
     static final Class<NullPointerException> NPE = NullPointerException.class;
 
-    private static final List<String> lines(String text, String eol) {
+    private static List<String> lines(String text, String eol) {
         if (eol == null) {
             return new BufferedReader(new StringReader(text)).lines().collect(Collectors.toList());
         } else {
@@ -104,14 +105,14 @@ public class LineSubscribersAndSurrogatesTest {
             ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
             BufferedReader reader = new BufferedReader(new InputStreamReader(bais, UTF_8));
             String resp2 = reader.lines().collect(Collectors.joining(""));
-            assertEquals(resp, resp2);
-            assertEquals(subscriber.list, List.of("Bient\u00f4t",
+            assertEquals(resp2, resp);
+            assertEquals(List.of("Bient\u00f4t",
                     " nous plongerons",
                     " dans",
                     " les",
                     "",
                     " fr\u00f4\ud801\udc00des",
-                    " t\u00e9n\u00e8bres\ufffd"));
+                    " t\u00e9n\u00e8bres\ufffd"), subscriber.list);
         } catch (ExecutionException x) {
             Throwable cause = x.getCause();
             if (cause instanceof MalformedInputException) {
@@ -147,10 +148,10 @@ public class LineSubscribersAndSurrogatesTest {
                 "",
                 " fr\u00f4\ud801\udc00des\r",
                 " t\u00e9n\u00e8bres\r");
-        assertEquals(subscriber.list, expected);
-        assertEquals(resp, Stream.of(text.split("\n")).collect(Collectors.joining("")));
-        assertEquals(resp, expected.stream().collect(Collectors.joining("")));
-        assertEquals(subscriber.list, lines(text, "\n"));
+        assertEquals(expected, subscriber.list);
+        assertEquals(Stream.of(text.split("\n")).collect(Collectors.joining("")), resp);
+        assertEquals(expected.stream().collect(Collectors.joining("")), resp);
+        assertEquals(lines(text, "\n"), subscriber.list);
     }
 
 
@@ -172,14 +173,14 @@ public class LineSubscribersAndSurrogatesTest {
         publisher.close();
         String resp = bodySubscriber.getBody().toCompletableFuture().get();
         System.out.println("***** Got: " + resp);
-        assertEquals(resp, text.replace("\r", ""));
-        assertEquals(subscriber.list, List.of("Bient\u00f4t",
+        assertEquals(text.replace("\r", ""), resp);
+        assertEquals(List.of("Bient\u00f4t",
                 "\n nous plongerons",
                 "\n dans",
                 " les fr\u00f4\ud801\udc00des",
                 "\n t\u00e9n\u00e8bres",
-                ""));
-        assertEquals(subscriber.list, lines(text, "\r"));
+                ""), subscriber.list);
+        assertEquals(lines(text, "\r"), subscriber.list);
     }
 
     @Test
@@ -200,12 +201,12 @@ public class LineSubscribersAndSurrogatesTest {
         publisher.close();
         String resp = bodySubscriber.getBody().toCompletableFuture().get();
         System.out.println("***** Got: " + resp);
-        assertEquals(resp, text.replace("\r\n",""));
-        assertEquals(subscriber.list, List.of("Bient\u00f4t",
+        assertEquals(text.replace("\r\n",""), resp);
+        assertEquals(List.of("Bient\u00f4t",
                 " nous plongerons",
                 " dans\r les fr\u00f4\ud801\udc00des",
-                " t\u00e9n\u00e8bres"));
-        assertEquals(subscriber.list, lines(text, "\r\n"));
+                " t\u00e9n\u00e8bres"), subscriber.list);
+        assertEquals(lines(text, "\r\n"), subscriber.list);
     }
 
 
@@ -234,9 +235,9 @@ public class LineSubscribersAndSurrogatesTest {
                 "",
                 " fr\u00f4\ud801\udc00des",
                 " t\u00e9n\u00e8bres");
-        assertEquals(subscriber.list, expected);
-        assertEquals(resp, expected.stream().collect(Collectors.joining("")));
-        assertEquals(subscriber.list, lines(text, null));
+        assertEquals(expected, subscriber.list);
+        assertEquals(expected.stream().collect(Collectors.joining("")), resp);
+        assertEquals(lines(text, null), subscriber.list);
     }
 
     @Test
@@ -265,9 +266,9 @@ public class LineSubscribersAndSurrogatesTest {
                 " fr\u00f4\ud801\udc00des",
                 " t\u00e9n\u00e8bres",
                 "");
-        assertEquals(resp, expected.stream().collect(Collectors.joining("")));
-        assertEquals(subscriber.list, expected);
-        assertEquals(subscriber.list, lines(text, null));
+        assertEquals(expected.stream().collect(Collectors.joining("")), resp);
+        assertEquals(expected, subscriber.list);
+        assertEquals(lines(text, null), subscriber.list);
     }
 
     void testStringWithoutFinisherBR() throws Exception {
@@ -293,9 +294,9 @@ public class LineSubscribersAndSurrogatesTest {
                 "",
                 " fr\u00f4\ud801\udc00des",
                 " t\u00e9n\u00e8bres");
-        assertEquals(subscriber.text, expected.stream().collect(Collectors.joining("")));
-        assertEquals(subscriber.list, expected);
-        assertEquals(subscriber.list, lines(text, null));
+        assertEquals(expected.stream().collect(Collectors.joining("")), subscriber.text);
+        assertEquals(expected, subscriber.list);
+        assertEquals(lines(text, null), subscriber.list);
     }
 
 

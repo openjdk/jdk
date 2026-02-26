@@ -140,7 +140,7 @@ void CppVtableCloner<T>::initialize(const char* name, CppVtableInfo* info) {
 
   // We already checked (and, if necessary, adjusted n) when the vtables were allocated, so we are
   // safe to do memcpy.
-  log_debug(aot, vtables)("Copying %3d vtable entries for %s", n, name);
+  log_debug(aot, vtables)("Copying %3d vtable entries for %s to " INTPTR_FORMAT, n, name, p2i(dstvtable));
   memcpy(dstvtable, srcvtable, sizeof(intptr_t) * n);
 }
 

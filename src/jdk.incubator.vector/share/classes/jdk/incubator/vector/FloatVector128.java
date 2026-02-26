@@ -54,6 +54,8 @@ final class FloatVector128 extends FloatVector {
 
     static final int VLENGTH = VSPECIES.laneCount(); // used by the JVM
 
+    static final Class<Float> CTYPE = float.class; // carrier type used by the JVM
+
     static final Class<Float> ETYPE = float.class; // used by the JVM
 
     FloatVector128(float[] v) {
@@ -91,6 +93,9 @@ final class FloatVector128 extends FloatVector {
     @ForceInline
     @Override
     public final Class<Float> elementType() { return float.class; }
+
+    @ForceInline
+    final Class<Float> carrierType() { return CTYPE; }
 
     @ForceInline
     @Override
@@ -561,7 +566,8 @@ final class FloatVector128 extends FloatVector {
 
     static final class FloatMask128 extends AbstractMask<Float> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Float> ETYPE = float.class; // used by the JVM
+
+        static final Class<Float> CTYPE = float.class; // used by the JVM
 
         FloatMask128(boolean[] bits) {
             this(bits, 0);
@@ -793,7 +799,8 @@ final class FloatVector128 extends FloatVector {
 
     static final class FloatShuffle128 extends AbstractShuffle<Float> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Integer> ETYPE = int.class; // used by the JVM
+
+        static final Class<Integer> CTYPE = int.class; // used by the JVM
 
         FloatShuffle128(int[] indices) {
             super(indices);

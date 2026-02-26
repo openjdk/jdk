@@ -692,7 +692,7 @@ public class ZipFile implements ZipConstants, Closeable {
         final Set<InputStream> istreams;
 
         // List of cached Inflater objects for decompression
-        Deque<Inflater> inflaterCache;
+        List<Inflater> inflaterCache;
 
         final Cleanable cleanable;
 
@@ -702,7 +702,7 @@ public class ZipFile implements ZipConstants, Closeable {
             assert zipCoder != null : "null ZipCoder";
             this.cleanable = CleanerFactory.cleaner().register(zf, this);
             this.istreams = Collections.newSetFromMap(new WeakHashMap<>());
-            this.inflaterCache = new ArrayDeque<>();
+            this.inflaterCache = new ArrayList<>();
             this.zsrc = Source.get(file, (mode & OPEN_DELETE) != 0, zipCoder);
         }
 
@@ -715,10 +715,10 @@ public class ZipFile implements ZipConstants, Closeable {
          * a new one.
          */
         Inflater getInflater() {
-            Inflater inf;
             synchronized (inflaterCache) {
-                if ((inf = inflaterCache.poll()) != null) {
-                    return inf;
+                if (!inflaterCache.isEmpty()) {
+                    // return the most recently used Inflater from the cache of not-in-use Inflaters
+                    return inflaterCache.removeLast();
                 }
             }
             return new Inflater(true);
@@ -728,7 +728,7 @@ public class ZipFile implements ZipConstants, Closeable {
          * Releases the specified inflater to the list of available inflaters.
          */
         void releaseInflater(Inflater inf) {
-            Deque<Inflater> inflaters = this.inflaterCache;
+            List<Inflater> inflaters = this.inflaterCache;
             if (inflaters != null) {
                 synchronized (inflaters) {
                     // double checked!
@@ -747,13 +747,12 @@ public class ZipFile implements ZipConstants, Closeable {
             IOException ioe = null;
 
             // Release cached inflaters and close the cache first
-            Deque<Inflater> inflaters = this.inflaterCache;
+            List<Inflater> inflaters = this.inflaterCache;
             if (inflaters != null) {
                 synchronized (inflaters) {
                     // no need to double-check as only one thread gets a
                     // chance to execute run() (Cleaner guarantee)...
-                    Inflater inf;
-                    while ((inf = inflaters.poll()) != null) {
+                    for (Inflater inf : inflaters) {
                         inf.end();
                     }
                     // close inflaters cache
@@ -762,22 +761,21 @@ public class ZipFile implements ZipConstants, Closeable {
             }
 
             // Close streams, release their inflaters
-            if (istreams != null) {
-                synchronized (istreams) {
-                    if (!istreams.isEmpty()) {
-                        InputStream[] copy = istreams.toArray(new InputStream[0]);
-                        istreams.clear();
-                        for (InputStream is : copy) {
-                            try {
-                                is.close();
-                            } catch (IOException e) {
-                                if (ioe == null) ioe = e;
-                                else ioe.addSuppressed(e);
-                            }
+            synchronized (istreams) {
+                if (!istreams.isEmpty()) {
+                    InputStream[] copy = istreams.toArray(new InputStream[0]);
+                    istreams.clear();
+                    for (InputStream is : copy) {
+                        try {
+                            is.close();
+                        } catch (IOException e) {
+                            if (ioe == null) ioe = e;
+                            else ioe.addSuppressed(e);
                         }
                     }
                 }
             }
+
 
             // Release ZIP src
             if (zsrc != null) {

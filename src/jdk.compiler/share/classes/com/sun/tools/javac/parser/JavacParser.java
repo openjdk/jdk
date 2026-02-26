@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -977,13 +977,11 @@ public class JavacParser implements Parser {
             pattern = toP(F.at(token.pos).AnyPattern());
         }
         else {
-            int varTypePos = Position.NOPOS;
             if (parsedType == null) {
                 boolean var = token.kind == IDENTIFIER && token.name() == names.var;
                 e = unannotatedType(allowVar, TYPE | NOLAMBDA);
                 if (var) {
-                    varTypePos = e.pos;
-                    e = null;
+                    e = replaceTypeWithVar(e);
                 }
             } else {
                 e = parsedType;
@@ -1021,12 +1019,9 @@ public class JavacParser implements Parser {
                     name = names.empty;
                 }
                 JCVariableDecl var = toP(F.at(varPos).VarDef(mods, name, e, null,
-                  varTypePos != Position.NOPOS ? JCVariableDecl.DeclKind.VAR : JCVariableDecl.DeclKind.EXPLICIT,
-                  varTypePos));
-                if (e == null) {
-                    if (var.name == names.underscore && !allowVar) {
-                        log.error(DiagnosticFlag.SYNTAX, varPos, Errors.UseOfUnderscoreNotAllowed);
-                    }
+                  e.hasTag(VARTYPE) ? JCVariableDecl.DeclKind.VAR : JCVariableDecl.DeclKind.EXPLICIT));
+                if (var.name == names.underscore && !allowVar) {
+                    log.error(DiagnosticFlag.SYNTAX, varPos, Errors.UseOfUnderscoreNotAllowed);
                 }
                 pattern = toP(F.at(pos).BindingPattern(var));
             }
@@ -2178,8 +2173,7 @@ public class JavacParser implements Parser {
                         && restrictedTypeName(param.vartype, true) != null) {
                     checkSourceLevel(param.pos, Feature.VAR_SYNTAX_IMPLICIT_LAMBDAS);
                     param.declKind = JCVariableDecl.DeclKind.VAR;
-                    param.typePos = TreeInfo.getStartPos(param.vartype);
-                    param.vartype = null;
+                    param.vartype = replaceTypeWithVar(param.vartype);
                 }
             }
         }
@@ -3792,7 +3786,6 @@ public class JavacParser implements Parser {
      */
     JCVariableDecl variableDeclaratorRest(int pos, JCModifiers mods, JCExpression type, Name name,
                                   boolean reqInit, Comment dc, boolean localDecl, boolean compound) {
-        boolean declaredUsingVar = false;
         JCExpression init = null;
         type = bracketsOpt(type);
 
@@ -3818,7 +3811,6 @@ public class JavacParser implements Parser {
             syntaxError(token.pos, Errors.Expected(EQ));
         }
 
-        int varTypePos = Position.NOPOS;
         JCTree elemType = TreeInfo.innermostType(type, true);
         if (elemType.hasTag(IDENT)) {
             Name typeName = ((JCIdent) elemType).name;
@@ -3829,19 +3821,25 @@ public class JavacParser implements Parser {
                     //error - 'var' and arrays
                     reportSyntaxError(elemType.pos, Errors.RestrictedTypeNotAllowedArray(typeName));
                 } else {
-                    declaredUsingVar = true;
-                    varTypePos = elemType.pos;
+                    type = replaceTypeWithVar(type);
+
                     if (compound)
                         //error - 'var' in compound local var decl
                         reportSyntaxError(elemType.pos, Errors.RestrictedTypeNotAllowedCompound(typeName));
-                    //implicit type
-                    type = null;
                 }
             }
         }
         JCVariableDecl result = toP(F.at(pos).VarDef(mods, name, type, init,
-          declaredUsingVar ? JCVariableDecl.DeclKind.VAR : JCVariableDecl.DeclKind.EXPLICIT, varTypePos));
+          type.hasTag(VARTYPE) ? JCVariableDecl.DeclKind.VAR : JCVariableDecl.DeclKind.EXPLICIT));
         return attach(result, dc);
+    }
+
+    JCExpression replaceTypeWithVar(JCExpression type) {
+        JCVarType varType = F.at(type).VarType();
+
+        varType.endpos = type.endpos;
+
+        return varType;
     }
 
     Name restrictedTypeName(JCExpression e, boolean shouldWarn) {
@@ -3902,7 +3900,7 @@ public class JavacParser implements Parser {
         if (allowThisIdent ||
             !lambdaParameter ||
             LAX_IDENTIFIER.test(token.kind) ||
-            mods.flags != Flags.PARAMETER ||
+            (mods.flags & ~(Flags.PARAMETER | Flags.LAMBDA_PARAMETER)) != 0 ||
             mods.annotations.nonEmpty()) {
             JCExpression pn;
             if (token.kind == UNDERSCORE && (catchParameter || lambdaParameter)) {
@@ -3954,11 +3952,10 @@ public class JavacParser implements Parser {
             name = names.empty;
         }
 
-        boolean declaredUsingVar = type != null && type.hasTag(IDENT) && ((JCIdent)type).name == names.var;
+        boolean declaredUsingVar = type != null && type.hasTag(VARTYPE);
         JCVariableDecl.DeclKind declKind = declaredUsingVar ? JCVariableDecl.DeclKind.VAR :
           type != null ? JCVariableDecl.DeclKind.EXPLICIT : JCVariableDecl.DeclKind.IMPLICIT;
-        int typePos = type != null ? type.pos : pos;
-        return toP(F.at(pos).VarDef(mods, name, type, null, declKind, typePos));
+        return toP(F.at(pos).VarDef(mods, name, type, null, declKind));
     }
 
     /** Resources = Resource { ";" Resources }
@@ -5405,7 +5402,13 @@ public class JavacParser implements Parser {
      *  LastFormalParameter = { FINAL | '@' Annotation } Type '...' Ident | FormalParameter
      */
     protected JCVariableDecl formalParameter(boolean lambdaParameter, boolean recordComponent) {
-        JCModifiers mods = !recordComponent ? optFinal(Flags.PARAMETER) : modifiersOpt();
+        JCModifiers mods;
+
+        if (recordComponent) {
+            mods = modifiersOpt();
+        } else {
+            mods = optFinal(Flags.PARAMETER | (lambdaParameter ? Flags.LAMBDA_PARAMETER : 0));
+        }
         if (recordComponent && mods.flags != 0) {
             log.error(mods.pos, Errors.RecordCantDeclareFieldModifiers);
         }
@@ -5436,7 +5439,7 @@ public class JavacParser implements Parser {
     }
 
     protected JCVariableDecl implicitParameter() {
-        JCModifiers mods = F.at(token.pos).Modifiers(Flags.PARAMETER);
+        JCModifiers mods = F.at(token.pos).Modifiers(Flags.PARAMETER | Flags.LAMBDA_PARAMETER);
         return variableDeclaratorId(mods, null, false, true, false);
     }
 

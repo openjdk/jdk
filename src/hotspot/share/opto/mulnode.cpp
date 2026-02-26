@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -902,27 +902,28 @@ static bool mask_shift_amount(PhaseGVN* phase, const Node* shift_node, uint nBit
 }
 
 // Use this in ::Ideal only with shiftNode == this!
-// Returns the masked shift amount if constant or 0 if not constant.
-static uint mask_and_replace_shift_amount(PhaseGVN* phase, Node* shift_node, uint nBits) {
+// Sets masked_shift to the masked shift amount if constant or 0 if not constant.
+// Returns shift_node if the shift amount input node was modified, nullptr otherwise.
+static Node* mask_and_replace_shift_amount(PhaseGVN* phase, Node* shift_node, uint nBits, uint& masked_shift) {
   int real_shift;
-  uint masked_shift;
   if (mask_shift_amount(phase, shift_node, nBits, real_shift, masked_shift)) {
     if (masked_shift == 0) {
       // Let Identity() handle 0 shift count.
-      return 0;
+      return nullptr;
     }
 
     if (real_shift != (int)masked_shift) {
-      PhaseIterGVN* igvn = phase->is_IterGVN();
-      if (igvn != nullptr) {
-        igvn->_worklist.push(shift_node);
-      }
       shift_node->set_req(2, phase->intcon(masked_shift)); // Replace shift count with masked value.
+
+      // We need to notify the caller that the graph was reshaped, as Ideal needs
+      // to return the root of the reshaped graph if any change was made.
+      return shift_node;
     }
-    return masked_shift;
+  } else {
+    // Not a shift by a constant.
+    masked_shift = 0;
   }
-  // Not a shift by a constant.
-  return 0;
+  return nullptr;
 }
 
 // Called with
@@ -974,7 +975,8 @@ Node* LShiftINode::Identity(PhaseGVN* phase) {
 }
 
 Node* LShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
-  uint con = mask_and_replace_shift_amount(phase, this, bits_per_java_integer(bt));
+  uint con;
+  Node* progress = mask_and_replace_shift_amount(phase, this, bits_per_java_integer(bt), con);
   if (con == 0) {
     return nullptr;
   }
@@ -1113,7 +1115,7 @@ Node* LShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
     return doubleShift;
   }
 
-  return nullptr;
+  return progress;
 }
 
 //------------------------------Ideal------------------------------------------
@@ -1274,7 +1276,9 @@ Node* RShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
   if (t1 == nullptr) {
     return NodeSentinel;        // Left input is an integer
   }
-  int shift = mask_and_replace_shift_amount(phase, this, bits_per_java_integer(bt));
+
+  uint shift;
+  Node* progress = mask_and_replace_shift_amount(phase, this, bits_per_java_integer(bt), shift);
   if (shift == 0) {
     return NodeSentinel;
   }
@@ -1284,7 +1288,7 @@ Node* RShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
   // Such expressions arise normally from shift chains like (byte)(x >> 24).
   const Node* and_node = in(1);
   if (and_node->Opcode() != Op_And(bt)) {
-    return nullptr;
+    return progress;
   }
   const TypeInteger* mask_t = phase->type(and_node->in(2))->isa_integer(bt);
   if (mask_t != nullptr && mask_t->is_con()) {
@@ -1293,7 +1297,8 @@ Node* RShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
     Node* shr_nomask = phase->transform(RShiftNode::make(and_node->in(1), in(2), bt));
     return MulNode::make_and(shr_nomask, phase->integercon(maskbits >> shift, bt), bt);
   }
-  return nullptr;
+
+  return progress;
 }
 
 Node* RShiftINode::Ideal(PhaseGVN* phase, bool can_reshape) {
@@ -1304,18 +1309,19 @@ Node* RShiftINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (progress != nullptr) {
     return progress;
   }
-  int shift = mask_and_replace_shift_amount(phase, this, BitsPerJavaInteger);
+  uint shift;
+  progress = mask_and_replace_shift_amount(phase, this, BitsPerJavaInteger, shift);
   assert(shift != 0, "handled by IdealIL");
 
   // Check for "(short[i] <<16)>>16" which simply sign-extends
   const Node *shl = in(1);
   if (shl->Opcode() != Op_LShiftI) {
-    return nullptr;
+    return progress;
   }
 
   const TypeInt* left_shift_t = phase->type(shl->in(2))->isa_int();
   if (left_shift_t == nullptr) {
-    return nullptr;
+    return progress;
   }
   if (shift == 16 && left_shift_t->is_con(16)) {
     Node *ld = shl->in(1);
@@ -1347,7 +1353,7 @@ Node* RShiftINode::Ideal(PhaseGVN* phase, bool can_reshape) {
     }
   }
 
-  return nullptr;
+  return progress;
 }
 
 const Type* RShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
@@ -1503,7 +1509,8 @@ Node* URShiftINode::Identity(PhaseGVN* phase) {
 
 //------------------------------Ideal------------------------------------------
 Node* URShiftINode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  int con = mask_and_replace_shift_amount(phase, this, BitsPerJavaInteger);
+  uint con;
+  Node* progress = mask_and_replace_shift_amount(phase, this, BitsPerJavaInteger, con);
   if (con == 0) {
     return nullptr;
   }
@@ -1585,7 +1592,7 @@ Node* URShiftINode::Ideal(PhaseGVN* phase, bool can_reshape) {
     }
   }
 
-  return nullptr;
+  return progress;
 }
 
 //------------------------------Value------------------------------------------
@@ -1675,7 +1682,8 @@ Node* URShiftLNode::Identity(PhaseGVN* phase) {
 
 //------------------------------Ideal------------------------------------------
 Node* URShiftLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  int con = mask_and_replace_shift_amount(phase, this, BitsPerJavaLong);
+  uint con;
+  Node* progress = mask_and_replace_shift_amount(phase, this, BitsPerJavaLong, con);
   if (con == 0) {
     return nullptr;
   }
@@ -1739,7 +1747,8 @@ Node* URShiftLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return new URShiftLNode(in11, phase->intcon(63));
     }
   }
-  return nullptr;
+
+  return progress;
 }
 
 //------------------------------Value------------------------------------------
