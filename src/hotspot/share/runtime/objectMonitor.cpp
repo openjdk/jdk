@@ -1900,7 +1900,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     } else {
       // This means the thread has been un-parked and added to the entry_list
       // in notify_internal, i.e. notified while waiting.
-      guarantee(v == ObjectWaiter::TS_ENTER, "invariant");     
+      guarantee(v == ObjectWaiter::TS_ENTER, "invariant");
       ExitOnSuspend eos(this);
       {
         ThreadBlockInVMPreprocess<ExitOnSuspend> tbivs(current, eos, true /* allow_suspend */);
