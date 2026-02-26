@@ -113,7 +113,7 @@ private:
   static void pop_inner(); // no lock version of pop
 public:
   static void init();
-  static DirectiveSet* getMatchingDirective(const methodHandle& mh, AbstractCompiler* comp, int comp_level);
+  static DirectiveSet* getMatchingDirective(const methodHandle& mh, int comp_level);
   static DirectiveSet* getDefaultDirective(AbstractCompiler* comp);
   static void push(CompilerDirectives* directive);
   static void pop(int count);
@@ -132,19 +132,16 @@ private:
   CHeapBitMap _ideal_phase_name_set;
   CHeapBitMap _trace_auto_vectorization_tags;
   CHeapBitMap _trace_merge_stores_tags;
-  CompLevel _comp_level;
-
-  CompLevel comp_level() const { return _comp_level; }
 
 public:
-  DirectiveSet(CompilerDirectives* directive, CompLevel comp_level);
+  DirectiveSet(CompilerDirectives* directive);
   ~DirectiveSet();
   void init_control_intrinsic();
   CompilerDirectives* directive();
   bool parse_and_add_inline(char* str, const char*& error_msg);
   void append_inline(InlineMatcher* m);
   bool should_inline(ciMethod* inlinee);
-  bool should_not_inline(ciMethod* inlinee);
+  bool should_not_inline(ciMethod* inlinee, int comp_level);
   bool should_delay_inline(ciMethod* inlinee);
   void print_inline(outputStream* st);
   DirectiveSet* compilecommand_compatibility_init(const methodHandle& method, int comp_level);

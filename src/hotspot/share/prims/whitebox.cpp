@@ -876,7 +876,7 @@ static bool is_excluded_for_compiler(AbstractCompiler* comp, int comp_level, met
   if (comp == nullptr) {
     return true;
   }
-  DirectiveSet* directive = DirectivesStack::getMatchingDirective(mh, comp, comp_level);
+  DirectiveSet* directive = DirectivesStack::getMatchingDirective(mh, comp_level);
   bool exclude = directive->ExcludeOption;
   DirectivesStack::release(directive);
   return exclude;
@@ -904,8 +904,6 @@ WB_ENTRY(jboolean, WB_IsMethodCompilable(JNIEnv* env, jobject o, jobject method,
   // to exclude a compilation of 'method'.
   if (comp_level == CompLevel_any) {
     // Both compilers could have ExcludeOption set. Check all combinations.
-    bool excluded_c1 = is_excluded_for_compiler(CompileBroker::compiler1(), mh);
-    bool excluded_c2 = is_excluded_for_compiler(CompileBroker::compiler2(), mh);
     bool excluded_c1 = is_excluded_for_compiler(CompileBroker::compiler1(), CompLevel_simple, mh);
     bool excluded_c2 = is_excluded_for_compiler(CompileBroker::compiler2(), CompLevel_full_optimization, mh);
     if (excluded_c1 && excluded_c2) {
@@ -957,7 +955,7 @@ WB_ENTRY(jboolean, WB_IsIntrinsicAvailable(JNIEnv* env, jobject o, jobject metho
     compilation_context_id = reflected_method_to_jmid(thread, env, compilation_context);
     CHECK_JNI_EXCEPTION_(env, JNI_FALSE);
     methodHandle cch(THREAD, Method::checked_resolve_jmethod_id(compilation_context_id));
-    directive = DirectivesStack::getMatchingDirective(cch, comp, compLevel);
+    directive = DirectivesStack::getMatchingDirective(cch, compLevel);
   } else {
     // Calling with null matches default directive
     directive = DirectivesStack::getDefaultDirective(comp);
@@ -1138,7 +1136,7 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, JavaThrea
 
   // Check if compilation is blocking
   methodHandle mh(THREAD, method);
-  DirectiveSet* directive = DirectivesStack::getMatchingDirective(mh, comp, comp_level);
+  DirectiveSet* directive = DirectivesStack::getMatchingDirective(mh, comp_level);
   bool is_blocking = !directive->BackgroundCompilationOption;
   DirectivesStack::release(directive);
 
@@ -1191,7 +1189,7 @@ WB_ENTRY(jboolean, WB_ShouldPrintAssembly(JNIEnv* env, jobject o, jobject method
   CHECK_JNI_EXCEPTION_(env, JNI_FALSE);
 
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  DirectiveSet* directive = DirectivesStack::getMatchingDirective(mh, CompileBroker::compiler(comp_level), comp_level);
+  DirectiveSet* directive = DirectivesStack::getMatchingDirective(mh, comp_level);
   bool result = directive->PrintAssemblyOption;
   DirectivesStack::release(directive);
 

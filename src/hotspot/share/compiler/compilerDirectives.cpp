@@ -27,6 +27,7 @@
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerDirectives.hpp"
+#include "compileBroker.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -36,9 +37,9 @@
 #include "runtime/globals_extension.hpp"
 
 CompilerDirectives::CompilerDirectives() : _next(nullptr), _match(nullptr), _ref_count(0) {
-  _c1_store = new DirectiveSet(this, CompLevel_simple);
+  _c1_store = new DirectiveSet(this);
   _c1_store->init_control_intrinsic();
-  _c2_store = new DirectiveSet(this, CompLevel_full_optimization);
+  _c2_store = new DirectiveSet(this);
   _c2_store->init_control_intrinsic();
 };
 
@@ -298,13 +299,12 @@ void DirectiveSet::init_control_intrinsic() {
   }
 }
 
-DirectiveSet::DirectiveSet(CompilerDirectives* d, CompLevel comp_level) :
+DirectiveSet::DirectiveSet(CompilerDirectives* d) :
   _inlinematchers(nullptr),
   _directive(d),
   _ideal_phase_name_set(PHASE_NUM_TYPES, mtCompiler),
   _trace_auto_vectorization_tags(TRACE_AUTO_VECTORIZATION_TAG_NUM, mtCompiler),
-  _trace_merge_stores_tags(TraceMergeStores::TAG_NUM, mtCompiler),
-  _comp_level(comp_level)
+  _trace_merge_stores_tags(TraceMergeStores::TAG_NUM, mtCompiler)
 {
 #define init_defaults_definition(name, type, dvalue, compiler) this->name##Option = dvalue;
   compilerdirectives_common_flags(init_defaults_definition)
@@ -548,7 +548,7 @@ bool DirectiveSet::should_inline(ciMethod* inlinee) {
   return false;
 }
 
-bool DirectiveSet::should_not_inline(ciMethod* inlinee) {
+bool DirectiveSet::should_not_inline(ciMethod* inlinee, int comp_level) {
   inlinee->check_is_loaded();
   VM_ENTRY_MARK;
   methodHandle mh(THREAD, inlinee->get_Method());
@@ -557,7 +557,7 @@ bool DirectiveSet::should_not_inline(ciMethod* inlinee) {
     return matches_inline(mh, InlineMatcher::dont_inline);
   }
   if (!CompilerDirectivesIgnoreCompileCommandsOption) {
-    return CompilerOracle::should_not_inline(mh, comp_level());
+    return CompilerOracle::should_not_inline(mh, static_cast<CompLevel>(comp_level));
   }
   return false;
 }
@@ -628,7 +628,7 @@ bool DirectiveSet::is_intrinsic_disabled(vmIntrinsics::ID id) {
 }
 
 DirectiveSet* DirectiveSet::clone(DirectiveSet const* src) {
-  DirectiveSet* set = new DirectiveSet(nullptr, src->_comp_level);
+  DirectiveSet* set = new DirectiveSet(nullptr);
   // Ordinary allocations of DirectiveSet would call init_control_intrinsic()
   // immediately to create a new copy for set->Control/DisableIntrinsicOption.
   // However, here it does not need to because the code below creates
@@ -773,8 +773,9 @@ void DirectivesStack::release(CompilerDirectives* dir) {
   }
 }
 
-DirectiveSet* DirectivesStack::getMatchingDirective(const methodHandle& method, AbstractCompiler *comp, int comp_level) {
+DirectiveSet* DirectivesStack::getMatchingDirective(const methodHandle& method, int comp_level) {
   assert(_depth > 0, "Must never be empty");
+  AbstractCompiler* comp = CompileBroker::compiler(comp_level);
 
   DirectiveSet* match = nullptr;
   {
@@ -799,7 +800,6 @@ DirectiveSet* DirectivesStack::getMatchingDirective(const methodHandle& method, 
   guarantee(match != nullptr, "There should always be a default directive that matches");
 
   // Check for legacy compile commands update, without DirectivesStack_lock
-  return match->compilecommand_compatibility_init(method);
   DirectiveSet* result = match->compilecommand_compatibility_init(method, comp_level);
   return result;
 }

@@ -3558,7 +3558,7 @@ const char* GraphBuilder::check_can_parse(ciMethod* callee) const {
 
 // negative filter: should callee NOT be inlined?  returns null, ok to inline, or rejection msg
 const char* GraphBuilder::should_not_inline(ciMethod* callee) const {
-  if ( compilation()->directive()->should_not_inline(callee)) return "disallowed by CompileCommand";
+  if ( compilation()->directive()->should_not_inline(callee, compilation()->env()->comp_level())) return "disallowed by CompileCommand";
   if ( callee->dont_inline())          return "don't inline by annotation";
   return nullptr;
 }
