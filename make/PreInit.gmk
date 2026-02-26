@@ -66,7 +66,7 @@ CALLED_SPEC_TARGETS := $(filter-out $(ALL_GLOBAL_TARGETS), $(CALLED_TARGETS))
 ifeq ($(CALLED_SPEC_TARGETS), )
   SKIP_SPEC := true
 endif
-ifeq ($(findstring p, $(MAKEFLAGS))$(findstring q, $(MAKEFLAGS)), pq)
+ifeq ($(findstring p, $(firstword -$(MAKEFLAGS)))$(findstring q, $(firstword -$(MAKEFLAGS))), pq)
   SKIP_SPEC := true
 endif
 
