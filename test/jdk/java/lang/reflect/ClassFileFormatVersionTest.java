@@ -66,19 +66,21 @@ class ClassFileFormatVersionTest {
         assertTrue(ClassFileFormatVersion.latest().compareTo(PREVIEW_ENABLED) < 0);
         assertEquals(ClassFile.latestMajorVersion(), PREVIEW_ENABLED.major());
         assertEquals(ClassFileFormatVersion.values().length - 1, PREVIEW_ENABLED.ordinal());
-        assertEquals(latest().runtimeVersion(), PREVIEW_ENABLED.runtimeVersion());
+        assertNull(PREVIEW_ENABLED.runtimeVersion());
     }
 
-    static Stream<ClassFileFormatVersion> majorCffvs() {
-        return Arrays.stream(ClassFileFormatVersion.values()).filter(e -> e.compareTo(latest()) <= 0);
+    static Stream<ClassFileFormatVersion> releaseVersions() {
+        return Arrays.stream(ClassFileFormatVersion.values()).filter(e -> e != PREVIEW_ENABLED);
     }
 
     @ParameterizedTest
-    @MethodSource("majorCffvs")
+    @MethodSource("releaseVersions")
     void testEachVersion(ClassFileFormatVersion cffv) {
         if (cffv.compareTo(ClassFileFormatVersion.RELEASE_6) >= 0) {
             assertEquals(cffv.major() - 44, cffv.runtimeVersion().feature());
             assertEquals(cffv, ClassFileFormatVersion.valueOf(cffv.runtimeVersion()));
+        } else {
+            assertNull(cffv.runtimeVersion());
         }
         if (cffv != ClassFileFormatVersion.RELEASE_0) {
             assertEquals(cffv, ClassFileFormatVersion.fromMajor(cffv.major()));
