@@ -1907,7 +1907,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
         assert( _waiters > 0, "invariant");
         OSThreadContendState osts(current->osthread());
         enter_internal(current, &node, true /* reenter_path */);
-		// We can go to a safepoint at the end of this block. If we
+        // We can go to a safepoint at the end of this block. If we
         // do a thread dump during that safepoint, then this thread will show
         // as having "-locked" the monitor, but the OS and java.lang.Thread
         // states will still report that the thread is blocked trying to
