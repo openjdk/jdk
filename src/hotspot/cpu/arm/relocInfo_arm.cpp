@@ -108,7 +108,7 @@ address Relocation::pd_get_address_from_code() {
 void poll_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) {
 }
 
-bool metadata_Relocation::is_modifying_code() const {
+bool metadata_Relocation::is_modifying_code() {
   return !metadata_is_immediate() && !VM_Version::supports_movw();
 }
 
