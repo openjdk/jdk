@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1012,9 +1012,16 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     public static class JCVariableDecl extends JCStatement implements VariableTree {
 
         public enum DeclKind {
-            EXPLICIT,       // "SomeType name"
-            IMPLICIT,       // "name"
-            VAR,            // "var name"
+            EXPLICIT(0),                        // "SomeType name"
+            IMPLICIT(Flags.VAR_VARIABLE),       // "name"
+            VAR(Flags.VAR_VARIABLE),            // "var name"
+            ;
+
+            public final long additionalSymbolFlags;
+
+            private DeclKind(long additionalSymbolFlags) {
+                this.additionalSymbolFlags = additionalSymbolFlags;
+            }
         }
 
         /** variable modifiers */

@@ -42,6 +42,7 @@
  * @run main/othervm/timeout=180
  *         -javaagent:redefineagent.jar
  *         -Xlog:class+init,exceptions
+ *         -XX:+UnlockDiagnosticVMOptions
  *         -XX:-BytecodeVerificationRemote
  *         RedefineVerifyError
  */

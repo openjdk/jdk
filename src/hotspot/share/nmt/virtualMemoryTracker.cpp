@@ -80,16 +80,17 @@ void VirtualMemoryTracker::Instance::set_reserved_region_tag(address addr, size_
 }
 
 void VirtualMemoryTracker::set_reserved_region_tag(address addr, size_t size, MemTag mem_tag) {
-    VMATree::SummaryDiff diff = tree()->set_tag((VMATree::position) addr, size, mem_tag);
-    apply_summary_diff(diff);
+  VMATree::SummaryDiff diff;
+  tree()->set_tag((VMATree::position)addr, size, mem_tag, diff);
+  apply_summary_diff(diff);
 }
 
-void VirtualMemoryTracker::Instance::apply_summary_diff(VMATree::SummaryDiff diff) {
+void VirtualMemoryTracker::Instance::apply_summary_diff(VMATree::SummaryDiff& diff) {
   assert(_tracker != nullptr, "Sanity check");
   _tracker->apply_summary_diff(diff);
 }
 
-void VirtualMemoryTracker::apply_summary_diff(VMATree::SummaryDiff diff) {
+void VirtualMemoryTracker::apply_summary_diff(VMATree::SummaryDiff& diff) {
   VMATree::SingleDiff::delta reserve_delta, commit_delta;
   size_t reserved, committed;
   MemTag tag = mtNone;
@@ -104,10 +105,9 @@ void VirtualMemoryTracker::apply_summary_diff(VMATree::SummaryDiff diff) {
 #endif
   };
 
-  for (int i = 0; i < mt_number_of_tags; i++) {
-    reserve_delta = diff.tag[i].reserve;
-    commit_delta = diff.tag[i].commit;
-    tag = NMTUtil::index_to_tag(i);
+  diff.visit([&](MemTag tag, const VMATree::SingleDiff& single_diff) {
+    reserve_delta = single_diff.reserve;
+    commit_delta = single_diff.commit;
     reserved = VirtualMemorySummary::as_snapshot()->by_tag(tag)->reserved();
     committed = VirtualMemorySummary::as_snapshot()->by_tag(tag)->committed();
     if (reserve_delta != 0) {
@@ -138,7 +138,7 @@ void VirtualMemoryTracker::apply_summary_diff(VMATree::SummaryDiff diff) {
         }
       }
     }
-  }
+  });
 }
 
 void VirtualMemoryTracker::Instance::add_committed_region(address addr, size_t size,
