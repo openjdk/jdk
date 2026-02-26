@@ -3408,9 +3408,6 @@ encode %{
         if (! __ is_valid_AArch64_address(con) ||
             con < (address)(uintptr_t)os::vm_page_size()) {
           __ mov(dst_reg, con);
-        } else if (rtype == relocInfo::external_word_type) {
-          // load external address with a suitable reloc
-          __ lea(dst_reg, ExternalAddress(con));
         } else {
           // no reloc so just use adrp and add
           uint64_t offset;
