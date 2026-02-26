@@ -25,7 +25,10 @@
  * @test
  * @bug 8268965
  * @summary Socket reset issue for TLS socket close
- * @run main SSLSocketReset
+ * @comment The test uses SSLContext.getDefault(), so we use othervm to prevent
+ *          usage of unexpected default SSLContext that might be set by some
+ *          other test
+ * @run main/othervm SSLSocketReset
  */
 
 import javax.net.ssl.*;
