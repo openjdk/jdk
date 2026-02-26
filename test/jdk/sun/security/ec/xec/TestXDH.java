@@ -26,7 +26,6 @@
  * @bug 8171277 8206915
  * @summary Test XDH key agreement
  * @library /test/lib
- * @build jdk.test.lib.Convert
  * @run main TestXDH
  */
 
