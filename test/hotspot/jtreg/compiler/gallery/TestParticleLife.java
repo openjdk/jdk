@@ -25,6 +25,7 @@
  * @test id=ir
  * @bug 8378166
  * @summary Visual example of the Vector API: NBody / Particle Life simulation.
+ * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
  * @library /test/lib /
  * @modules jdk.incubator.vector
  * @run driver ${test.main.class} ir
