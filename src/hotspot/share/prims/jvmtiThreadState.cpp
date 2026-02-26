@@ -328,7 +328,6 @@ void JvmtiThreadState::enter_interp_only_mode() {
   assert(_thread->jvmti_vthread() == nullptr || _thread->jvmti_vthread() == get_thread_oop(), "sanity check");
   assert(_thread->jvmti_thread_state() == this, "sanity check");
   _saved_interp_only_mode = true;
-  _seen_interp_only_mode = true;
   _thread->set_interp_only_mode(true);
   invalidate_cur_stack_depth();
 }
