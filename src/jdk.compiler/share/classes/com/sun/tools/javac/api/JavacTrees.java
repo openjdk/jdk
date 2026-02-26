@@ -365,7 +365,7 @@ public class JavacTrees extends DocTrees {
                 JavaFileObject prevSource = log.useSource(env.toplevel.sourcefile);
 
                 try {
-                   Type t = attr.attribType(dcReference.qualifierExpression, env);
+                    Type t = attr.attribType(dcReference.qualifierExpression, env);
                     if (t != null && !t.isErroneous()) {
                         if (dcReference.memberName != null) {
                             Symbol sym = resolveMember(t, (Name) dcReference.memberName, dcReference, env);
@@ -515,6 +515,7 @@ public class JavacTrees extends DocTrees {
             paramTypes = lb.toList();
         }
 
+        // skipTypeVars conversion below is needed if type is itself a type variable
         ClassSymbol sym = (ClassSymbol) types.skipTypeVars(type, false).tsym;
         boolean explicitType = ref.qualifierExpression != null;
         Symbol msym = (memberName == sym.name)

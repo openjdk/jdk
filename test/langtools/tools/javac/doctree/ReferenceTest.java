@@ -362,11 +362,16 @@ class ReferenceTestExtras {
      * @see #X()       Method
      * @see #m         Method
      * @see X          Type_Parameter
+     * @see Y          Type_Parameter
+     * @see X#wait     Method
+     * @see X#wait()   Method
+     * @see Y#getSupportedSourceVersion   Method
+     * @see Y#init(ProcessingEnvironment) Method
      * @see Inner#X    Bad
      * @see Inner#X()  Bad
      * @see Inner#m    Bad
      */
-    interface Inner<X> {}
+    interface Inner<X, Y extends ReferenceTest> {}
 }
 
 
