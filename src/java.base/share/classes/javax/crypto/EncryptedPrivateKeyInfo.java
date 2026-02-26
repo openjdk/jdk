@@ -344,7 +344,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
      * Cipher Algorithms</a> section of the Java Security Standard Algorithm Names
      * Specification.
      *
-     * @param de the {@code BinaryEncodable} to encrypt. Supported types include
+     * @param be the {@code BinaryEncodable} to encrypt. Supported types include
      *           {@code PrivateKey}, {@code KeyPair}, and {@code PKCS8EncodedKeySpec}.
      * @param password the password used for PBE encryption. This array is cloned
      *                 before use.
@@ -367,15 +367,15 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
      * @since 27
      */
 
-    public static EncryptedPrivateKeyInfo encrypt(BinaryEncodable de,
+    public static EncryptedPrivateKeyInfo encrypt(BinaryEncodable be,
         char[] password, String algorithm, AlgorithmParameterSpec params,
         Provider provider) {
 
-        Objects.requireNonNull(de, "a key must be specified");
+        Objects.requireNonNull(be, "a key must be specified");
         Objects.requireNonNull(password, "a password must be specified");
         Objects.requireNonNull(algorithm, "an algorithm must be specified");
         char[] passwd = password.clone();
-        byte[] encoding = getEncoding(de);
+        byte[] encoding = getEncoding(be);
         try {
             return encryptImpl(encoding, algorithm,
                 generateSecretKey(passwd, algorithm, provider), params,
@@ -389,7 +389,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
      * {@code BinaryEncodable}. A valid password must be specified. A default
      * password-based encryption (PBE) algorithm and provider are used.
      *
-     * @param de the {@code BinaryEncodable} to encrypt. Supported types include
+     * @param be the {@code BinaryEncodable} to encrypt. Supported types include
      *           {@code PrivateKey}, {@code KeyPair}, and {@code PKCS8EncodedKeySpec}.
      * @param password the password used for PBE encryption. This array is cloned
      *                 before use.
@@ -407,9 +407,9 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
      *
      * @since 27
      */
-    public static EncryptedPrivateKeyInfo encrypt(BinaryEncodable de,
+    public static EncryptedPrivateKeyInfo encrypt(BinaryEncodable be,
         char[] password) {
-        return encrypt(de, password, Pem.DEFAULT_ALGO, null,
+        return encrypt(be, password, Pem.DEFAULT_ALGO, null,
             null);
     }
 
@@ -423,7 +423,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
      * Cipher Algorithms</a> section of the Java Security Standard Algorithm Names
      * Specification.
      *
-     * @param de the {@code BinaryEncodable} to encrypt. Supported types include
+     * @param be the {@code BinaryEncodable} to encrypt. Supported types include
      *           {@code PrivateKey}, {@code KeyPair}, and {@code PKCS8EncodedKeySpec}.
      * @param encryptKey the key used to encrypt the encoding
      * @param algorithm the encryption algorithm, such as a password-based
@@ -445,14 +445,14 @@ public non-sealed class EncryptedPrivateKeyInfo implements BinaryEncodable {
      *
      * @since 27
      */
-    public static EncryptedPrivateKeyInfo encrypt(BinaryEncodable de,
+    public static EncryptedPrivateKeyInfo encrypt(BinaryEncodable be,
         Key encryptKey, String algorithm, AlgorithmParameterSpec params,
         Provider provider, SecureRandom random) {
 
-        Objects.requireNonNull(de, "a key must be specified");
+        Objects.requireNonNull(be, "a key must be specified");
         Objects.requireNonNull(encryptKey, "an encryption key must be specified");
         Objects.requireNonNull(algorithm, "an algorithm must be specified");
-        return encryptImpl(getEncoding(de), algorithm, encryptKey,
+        return encryptImpl(getEncoding(be), algorithm, encryptKey,
             params, provider, random);
     }
 

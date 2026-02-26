@@ -33,9 +33,7 @@ import java.security.spec.X509EncodedKeySpec;
 
 /**
  * This interface is implemented by security API classes that contain
- * binary-encodable key or certificate material.
- * These APIs or their subclasses typically provide methods to convert
- * their instances to and from byte arrays in a binary format.
+ * binary-encodable cryptographic material.
  *
  * @see AsymmetricKey
  * @see KeyPair

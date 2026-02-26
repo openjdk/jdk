@@ -73,7 +73,7 @@ import java.util.Objects;
  * @since 27
  */
 
-final public class PEM implements BinaryEncodable {
+public final class PEM implements BinaryEncodable {
 
     private final String type;
     private final byte[] content;
@@ -95,7 +95,7 @@ final public class PEM implements BinaryEncodable {
      * @see Base64#getMimeDecoder()
      */
     public PEM(String type, String base64Content, byte[] leadingData) {
-        Objects.requireNonNull(leadingData, "\"leadingData\" cannot be null.");
+        Objects.requireNonNull(leadingData, "leadingData cannot be null");
         this(type, base64Content);
         this.leadingData = leadingData.clone();
     }
@@ -115,8 +115,8 @@ final public class PEM implements BinaryEncodable {
      * @see Base64#getMimeDecoder()
      */
     public PEM(String type, String base64Content) {
-        Objects.requireNonNull(type, "\"type\" cannot be null.");
-        Objects.requireNonNull(base64Content, "\"base64Content\" cannot be null.");
+        Objects.requireNonNull(type, "type cannot be null");
+        Objects.requireNonNull(base64Content, "base64Content cannot be null");
 
         // The `type` is not checked against any specification. The onus is on
         // the caller.  Only minor formatting checks are done
@@ -147,7 +147,7 @@ final public class PEM implements BinaryEncodable {
      * @throws NullPointerException if any parameter is {@code null}
      */
     public PEM(String type, byte[] binaryContent, byte[] leadingData) {
-        Objects.requireNonNull(leadingData, "\"leadingData\" cannot be null.");
+        Objects.requireNonNull(leadingData, "leadingData cannot be null");
         this(type, binaryContent);
         this.leadingData = leadingData.clone();
     }
@@ -163,8 +163,8 @@ final public class PEM implements BinaryEncodable {
      * @throws NullPointerException if any parameter is {@code null}
      */
     public PEM(String type, byte[] binaryContent) {
-        Objects.requireNonNull(type, "\"type\" cannot be null.");
-        Objects.requireNonNull(binaryContent, "\"binaryContent\" cannot be null.");
+        Objects.requireNonNull(type, "type cannot be null");
+        Objects.requireNonNull(binaryContent, "binaryContent cannot be null");
 
         // The `type` is not checked against any specification. The onus is on
         // the caller.  Only minor formatting checks are done

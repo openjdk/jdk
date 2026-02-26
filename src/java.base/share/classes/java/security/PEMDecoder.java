@@ -511,7 +511,7 @@ public final class PEMDecoder {
     /**
      * Returns a copy of this {@code PEMDecoder} that decodes and decrypts
      * encrypted private keys using the specified password.
-     * Unencrypted PEM can also be decoded by the returned instance
+     * Unencrypted PEM can also be decoded by the returned instance.
      *
      * @param password the password to decrypt the encrypted PEM data. This array
      *                 is cloned and stored in the new instance.
