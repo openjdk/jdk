@@ -1418,7 +1418,7 @@ HeapShared::resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAP
     }
     return nullptr;
   } else {
-    if (record->is_full_module_graph() && !CDSConfig::is_using_full_module_graph()) {
+    if (record->is_full_module_graph() && !CDSConfig::is_using_full_module_graph() && do_init) {
       if (log_is_enabled(Info, aot, heap)) {
         ResourceMark rm(THREAD);
         log_info(aot, heap)("subgraph %s cannot be used because full module graph is disabled",
