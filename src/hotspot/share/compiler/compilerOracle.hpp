@@ -169,7 +169,7 @@ class CompilerOracle : AllStatic {
   static bool should_log(const methodHandle& method);
 
   // Tells whether to break when compiling method
-  static bool should_break_at(const methodHandle& method, const CompLevel level);
+  static bool should_break_at(const methodHandle& method, CompLevel level);
 
   // Tells whether there are any methods to print for print_method_statistics()
   static bool should_print_methods();

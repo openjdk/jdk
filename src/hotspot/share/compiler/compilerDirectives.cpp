@@ -379,7 +379,7 @@ class DirectiveSetPtr {
 // - if some option is changed we need to copy directiveset since it no longer can be shared
 // - Need to free copy after use
 // - Requires a modified bit so we don't overwrite options that is set by directives
-DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle& method) {
+DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle& method, int comp_level) {
   // Early bail out - checking all options is expensive - we rely on them not being used
   // Only set a flag if it has not been modified and value changes.
   // Only copy set if a flag needs to be set
@@ -398,7 +398,7 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
 
     // All CompileCommands are not equal so this gets a bit verbose
     // When CompileCommands have been refactored less clutter will remain.
-    if (CompilerOracle::should_break_at(method, comp_level())) {
+    if (CompilerOracle::should_break_at(method, static_cast<CompLevel>(comp_level))) {
       // If the directives didn't have 'BreakAtCompile' or 'BreakAtExecute',
       // the sub-command 'Break' of the 'CompileCommand' would become effective.
       if (!_modified[BreakAtCompileIndex]) {
@@ -415,13 +415,13 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
       }
     }
 
-    if (CompilerOracle::should_print(method, comp_level())) {
+    if (CompilerOracle::should_print(method, static_cast<CompLevel>(comp_level))) {
       if (!_modified[PrintAssemblyIndex]) {
         set.cloned()->PrintAssemblyOption = true;
       }
     }
     // Exclude as in should not compile == Enabled
-    if (CompilerOracle::should_exclude(method, comp_level())) {
+    if (CompilerOracle::should_exclude(method, static_cast<CompLevel>(comp_level))) {
       if (!_modified[ExcludeIndex]) {
         set.cloned()->ExcludeOption = true;
       }
@@ -773,7 +773,7 @@ void DirectivesStack::release(CompilerDirectives* dir) {
   }
 }
 
-DirectiveSet* DirectivesStack::getMatchingDirective(const methodHandle& method, AbstractCompiler *comp) {
+DirectiveSet* DirectivesStack::getMatchingDirective(const methodHandle& method, AbstractCompiler *comp, int comp_level) {
   assert(_depth > 0, "Must never be empty");
 
   DirectiveSet* match = nullptr;
@@ -800,4 +800,6 @@ DirectiveSet* DirectivesStack::getMatchingDirective(const methodHandle& method, 
 
   // Check for legacy compile commands update, without DirectivesStack_lock
   return match->compilecommand_compatibility_init(method);
+  DirectiveSet* result = match->compilecommand_compatibility_init(method, comp_level);
+  return result;
 }

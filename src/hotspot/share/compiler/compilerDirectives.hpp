@@ -113,7 +113,7 @@ private:
   static void pop_inner(); // no lock version of pop
 public:
   static void init();
-  static DirectiveSet* getMatchingDirective(const methodHandle& mh, AbstractCompiler* comp);
+  static DirectiveSet* getMatchingDirective(const methodHandle& mh, AbstractCompiler* comp, int comp_level);
   static DirectiveSet* getDefaultDirective(AbstractCompiler* comp);
   static void push(CompilerDirectives* directive);
   static void pop(int count);
@@ -147,7 +147,7 @@ public:
   bool should_not_inline(ciMethod* inlinee);
   bool should_delay_inline(ciMethod* inlinee);
   void print_inline(outputStream* st);
-  DirectiveSet* compilecommand_compatibility_init(const methodHandle& method);
+  DirectiveSet* compilecommand_compatibility_init(const methodHandle& method, int comp_level);
   bool is_exclusive_copy() { return _directive == nullptr; }
   bool matches_inline(const methodHandle& method, int inline_action);
   static DirectiveSet* clone(DirectiveSet const* src);

@@ -61,7 +61,24 @@ static const char* const default_compile_commands[] = {
 #endif
     nullptr };
 
-static const intx default_comp_level_argument = CompLevel_none;
+// CompLevel               | -XX:CompileCommand bitmask
+// ----------------------------------------------------
+// 1 (C1)                  | 1
+// 2 (C1 + counters)       | 2
+// 3 (C1 + counters + mdo) | 4
+// 4 (C2/JVMCI)            | 8
+// All C1 levels           | 7
+// All levels              | 15
+inline int comp_level_bitmask(int comp_level) {
+  assert(comp_level > 0 && comp_level < static_cast<int>(CompLevel_count), "CompLevel out of bounds");
+  return 1 << (comp_level - 1);
+}
+
+static const intx default_comp_level_argument =
+           comp_level_bitmask(CompLevel_simple)
+        || comp_level_bitmask(CompLevel_limited_profile)
+        || comp_level_bitmask(CompLevel_full_profile)
+        || comp_level_bitmask(CompLevel_full_optimization);
 
 static const char* optiontype_names[] = {
 #define enum_of_types(type, name) name,
@@ -460,11 +477,16 @@ template bool CompilerOracle::option_matches_type<ccstr>(CompileCommandEnum opti
 template bool CompilerOracle::option_matches_type<double>(CompileCommandEnum option, double& value);
 
 bool CompilerOracle::applies_to_comp_level(const methodHandle& method, CompileCommandEnum command, CompLevel current_level) {
+  if (current_level == CompLevel_none) {
+    return false;
+  }
+
   intx command_level = 0;
   if (!has_option_value(method, command, command_level)) {
     return false;
   }
-  return static_cast<intx>(current_level) >= command_level;
+
+  return command_level && comp_level_bitmask(current_level);
 }
 
 bool CompilerOracle::has_option(const methodHandle& method, CompileCommandEnum option) {

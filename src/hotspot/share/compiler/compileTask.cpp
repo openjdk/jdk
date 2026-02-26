@@ -65,7 +65,7 @@ CompileTask::CompileTask(int compile_id,
   _compile_reason = compile_reason;
   _nm_content_size = 0;
   AbstractCompiler* comp = compiler();
-  _directive = DirectivesStack::getMatchingDirective(method, comp);
+  _directive = DirectivesStack::getMatchingDirective(method, comp, comp_level);
   _nm_insts_size = 0;
   _nm_total_size = 0;
   _failure_reason = nullptr;
