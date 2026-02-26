@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/concurrentHashTable.hpp"
 
 class G1CardSetAllocOptions;
@@ -154,8 +155,8 @@ public:
 
 private:
   // Indices are "from" indices.
-  size_t _coarsen_from[NumCoarsenCategories];
-  size_t _coarsen_collision[NumCoarsenCategories];
+  Atomic<size_t> _coarsen_from[NumCoarsenCategories];
+  Atomic<size_t> _coarsen_collision[NumCoarsenCategories];
 
 public:
   G1CardSetCoarsenStats() { reset(); }
@@ -271,11 +272,11 @@ private:
 
   // Total number of cards in this card set. This is a best-effort value, i.e. there may
   // be (slightly) more cards in the card set than this value in reality.
-  size_t _num_occupied;
+  Atomic<size_t> _num_occupied;
 
   ContainerPtr make_container_ptr(void* value, uintptr_t type);
 
-  ContainerPtr acquire_container(ContainerPtr volatile* container_addr);
+  ContainerPtr acquire_container(Atomic<ContainerPtr>* container_addr);
   // Returns true if the card set container should be released
   bool release_container(ContainerPtr container);
   // Release card set and free if needed.
@@ -288,7 +289,7 @@ private:
   // coarsen_container does not transfer cards from cur_container
   // to the new container. Transfer is achieved by transfer_cards.
   // Returns true if this was the thread that coarsened the container (and added the card).
-  bool coarsen_container(ContainerPtr volatile* container_addr,
+  bool coarsen_container(Atomic<ContainerPtr>* container_addr,
                          ContainerPtr cur_container,
                          uint card_in_region, bool within_howl = false);
 
@@ -300,9 +301,9 @@ private:
   void transfer_cards(G1CardSetHashTableValue* table_entry, ContainerPtr source_container, uint card_region);
   void transfer_cards_in_howl(ContainerPtr parent_container, ContainerPtr source_container, uint card_region);
 
-  G1AddCardResult add_to_container(ContainerPtr volatile* container_addr, ContainerPtr container, uint card_region, uint card, bool increment_total = true);
+  G1AddCardResult add_to_container(Atomic<ContainerPtr>* container_addr, ContainerPtr container, uint card_region, uint card, bool increment_total = true);
 
-  G1AddCardResult add_to_inline_ptr(ContainerPtr volatile* container_addr, ContainerPtr container, uint card_in_region);
+  G1AddCardResult add_to_inline_ptr(Atomic<ContainerPtr>* container_addr, ContainerPtr container, uint card_in_region);
   G1AddCardResult add_to_array(ContainerPtr container, uint card_in_region);
   G1AddCardResult add_to_bitmap(ContainerPtr container, uint card_in_region);
   G1AddCardResult add_to_howl(ContainerPtr parent_container, uint card_region, uint card_in_region, bool increment_total = true);
@@ -366,7 +367,6 @@ public:
 
   size_t num_containers();
 
-  static G1CardSetCoarsenStats coarsen_stats();
   static void print_coarsen_stats(outputStream* out);
 
   // Returns size of the actual remembered set containers in bytes.
@@ -412,8 +412,15 @@ public:
   using ContainerPtr = G1CardSet::ContainerPtr;
 
   const uint _region_idx;
-  uint volatile _num_occupied;
-  ContainerPtr volatile _container;
+  Atomic<uint> _num_occupied;
+  Atomic<ContainerPtr> _container;
+
+  // Copy constructor needed for use in ConcurrentHashTable.
+  G1CardSetHashTableValue(const G1CardSetHashTableValue& other) :
+    _region_idx(other._region_idx),
+    _num_occupied(other._num_occupied.load_relaxed()),
+    _container(other._container.load_relaxed())
+  { }
 
   G1CardSetHashTableValue(uint region_idx, ContainerPtr container) : _region_idx(region_idx), _num_occupied(0), _container(container) { }
 };

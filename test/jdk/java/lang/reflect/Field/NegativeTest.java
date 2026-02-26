@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,20 +21,20 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8277451
  * @summary Test exception thrown due to bad receiver and bad value on
  *          Field with and without setAccessible(true)
- * @run testng/othervm --enable-final-field-mutation=ALL-UNNAMED NegativeTest
+ * @run junit/othervm --enable-final-field-mutation=ALL-UNNAMED NegativeTest
  */
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class NegativeTest {
     static class Fields {
@@ -167,8 +167,7 @@ public class NegativeTest {
         }
     }
 
-    @DataProvider(name = "instanceFields")
-    private Object[][] instanceFields() {
+    private static Object[][] instanceFields() {
         return new Object[][]{
                 new Object[]{i_field},
                 new Object[]{c_field},
@@ -217,7 +216,8 @@ public class NegativeTest {
      * IllegalArgumentException is thrown if the receiver is of
      * a bad type.  NullPointerException is thrown if the receiver is null.
      */
-    @Test(dataProvider = "instanceFields")
+    @ParameterizedTest
+    @MethodSource("instanceFields")
     public void testReceiver(Field f) throws ReflectiveOperationException {
         f.get(INSTANCE);     // good receiver
 
@@ -231,15 +231,10 @@ public class NegativeTest {
     private void testBadReceiver(Field f) throws ReflectiveOperationException {
         assertFalse(Modifier.isStatic(f.getModifiers()));  // instance field
         Object badObj = new NegativeTest();
-        try {
-            f.get(badObj);
-            fail("expected IllegalArgumentException");
-        } catch (IllegalArgumentException e) {
-            // expected
-        }
+        assertThrows(IllegalArgumentException.class, () -> f.get(badObj));
         Class<?> fType = f.getType();
         if (fType.isPrimitive()) {
-            try {
+            assertThrows(IllegalArgumentException.class, () -> {
                 switch (fType.descriptorString()) {
                     case "B" -> f.getByte(badObj);
                     case "C" -> f.getChar(badObj);
@@ -250,10 +245,7 @@ public class NegativeTest {
                     case "S" -> f.getShort(badObj);
                     case "Z" -> f.getBoolean(badObj);
                 }
-                fail("expected IllegalArgumentException");
-            } catch (IllegalArgumentException e) {
-                // expected
-            }
+            });
         }
     }
 
@@ -262,16 +254,11 @@ public class NegativeTest {
      */
     private void testNullReceiver(Field f) throws ReflectiveOperationException {
         assertFalse(Modifier.isStatic(f.getModifiers()));  // instance field
-        try {
-            f.get(null);
-            fail("expected NullPointerException");
-        } catch (NullPointerException e) {
-            // expected
-        }
+        assertThrows(NullPointerException.class, () -> f.get(null));
 
         Class<?> fType = f.getType();
         if (fType.isPrimitive()) {
-            try {
+            assertThrows(NullPointerException.class, () -> {
                 switch (fType.descriptorString()) {
                     case "B" -> f.getByte(null);
                     case "C" -> f.getChar(null);
@@ -282,15 +269,11 @@ public class NegativeTest {
                     case "S" -> f.getShort(null);
                     case "Z" -> f.getBoolean(null);
                 }
-                fail("expected NullPointerException");
-            } catch (NullPointerException e) {
-                // expected
-            }
+            });
         }
     }
 
-    @DataProvider(name = "writeableFields")
-    private Object[][] writeableFields() {
+    private static Object[][] writeableFields() {
         Fields obj = new Fields();
         return new Object[][]{
                 // instance fields with and without setAccessible(true)
@@ -352,7 +335,8 @@ public class NegativeTest {
      * NullPointerException is thrown if the receiver of an instance field is null.
      * The receiver is checked
      */
-    @Test(dataProvider = "writeableFields")
+    @ParameterizedTest
+    @MethodSource("writeableFields")
     public void testSetValue(Field f, Object obj, Object value) throws IllegalAccessException {
         f.set(obj, value);
         Class<?> fType = f.getType();
@@ -369,25 +353,14 @@ public class NegativeTest {
             }
 
             // test null value only if it's primitive type
-            try {
-                f.set(obj, null);
-                fail("expected IllegalArgumentException");
-            } catch (IllegalArgumentException e) {
-                // expected
-            }
+            assertThrows(IllegalArgumentException.class, () -> f.set(obj, null));
         }
 
         Object badValue = new NegativeTest();
-        try {
-            f.set(obj, badValue);
-            fail("expected IllegalArgumentException");
-        } catch (IllegalArgumentException e) {
-            // expected
-        }
+        assertThrows(IllegalArgumentException.class, () -> f.set(obj, badValue));
     }
 
-    @DataProvider(name = "readOnlyFinalFields")
-    private Object[][] readOnlyFinalFields() {
+    private static Object[][] readOnlyFinalFields() {
         Object obj = INSTANCE;
         return new Object[][]{
                 // instance final fields
@@ -427,19 +400,15 @@ public class NegativeTest {
      * IllegalAccessException is thrown regardless of whether the value
      * is of a bad type or not.
      */
-    @Test(dataProvider = "readOnlyFinalFields")
+    @ParameterizedTest
+    @MethodSource("readOnlyFinalFields")
     public void testSetValueOnFinalField(Field f, Object obj, Object value) {
         assertTrue(Modifier.isFinal(f.getModifiers()));
-        try {
-            f.set(obj, value);
-            fail("expected IllegalAccessException");
-        } catch (IllegalAccessException e) {
-            // expected
-        }
+        assertThrows(IllegalAccessException.class, () -> f.set(obj, value));
 
         Class<?> fType = f.getType();
         if (fType.isPrimitive()) {
-            try {
+            assertThrows(IllegalAccessException.class, () -> {
                 switch (fType.descriptorString()) {
                     case "B" -> f.setByte(obj, ((Byte)value).byteValue());
                     case "C" -> f.setChar(obj, ((Character)value).charValue());
@@ -450,33 +419,17 @@ public class NegativeTest {
                     case "S" -> f.setShort(obj, ((Short)value).shortValue());
                     case "Z" -> f.setBoolean(obj, ((Boolean)value).booleanValue());
                 }
-                fail("expected IllegalAccessException");
-            } catch (IllegalAccessException e) {
-                // expected
-            }
+            });
 
             // test null value only if it's primitive type
-            try {
-                f.set(obj, null);
-                fail("expected IllegalAccessException");
-            } catch (IllegalAccessException e) {
-                // expected
-            }
+            assertThrows(IllegalAccessException.class, () -> f.set(obj, null));
         }
 
         Object badValue = new NegativeTest();
-        try {
-            f.set(obj, badValue);
-            fail("expected IllegalAccessException");
-        } catch (IllegalAccessException e) {
-            // expected
-        }
+        assertThrows(IllegalAccessException.class, () -> f.set(obj, badValue));
     }
 
-
-
-    @DataProvider(name = "finalInstanceFields")
-    private Object[][] finalInstanceFields() {
+    private static Object[][] finalInstanceFields() {
         return new Object[][]{
                 new Object[]{fi_field, Integer.valueOf(10)},
                 new Object[]{fc_field, Character.valueOf('c')},
@@ -497,54 +450,27 @@ public class NegativeTest {
      * The receiver is checked before the access check is performed and
      * also before the value is checked.
      */
-    @Test(dataProvider = "finalInstanceFields")
+    @ParameterizedTest
+    @MethodSource("finalInstanceFields")
     public void testReceiverOnFinalField(Field f, Object value) {
         assertTrue(Modifier.isFinal(f.getModifiers()));
         Object badReceiver = new NegativeTest();
         // set the field with a bad receiver with a good value
-        try {
-            f.set(badReceiver, value);
-            fail("expected IllegalArgumentException");
-        } catch (IllegalArgumentException e) {
-            // expected
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException("Expected IllegalArgumentException but got: " + e.getMessage(), e);
-        }
+        assertThrows(IllegalArgumentException.class, () -> f.set(badReceiver, value));
 
         // set the field with a bad receiver with a bad value
         Object badValue = new NegativeTest();
-        try {
-            f.set(badReceiver, badValue);
-            fail("expected IllegalArgumentException");
-        } catch (IllegalArgumentException e) {
-            // expected
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException("Expected IllegalArgumentException but got: " + e.getMessage(), e);
-        }
+        assertThrows(IllegalArgumentException.class, () -> f.set(badReceiver, badValue));
 
         // set the field with a null receiver with a good value
-        try {
-            f.set(null, value);
-            fail("expected NullPointerException");
-        } catch (NullPointerException e) {
-            // expected
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException("Expected NullPointerException but got: " + e.getMessage(), e);
-        }
+        assertThrows(NullPointerException.class, () -> f.set(null, value));
         // set the field with a null receiver with a bad value
-        try {
-            f.set(null, badValue);
-            fail("expected NullPointerException");
-        } catch (NullPointerException e) {
-            // expected
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException("Expected NullPointerException but got: " + e.getMessage(), e);
-        }
+        assertThrows(NullPointerException.class, () -> f.set(null, badValue));
 
         Class<?> fType = f.getType();
         if (fType.isPrimitive()) {
             // test bad receiver
-            try {
+            assertThrows(IllegalArgumentException.class, () -> {
                 switch (fType.descriptorString()) {
                     case "B" -> f.setByte(badReceiver, ((Byte) value).byteValue());
                     case "C" -> f.setChar(badReceiver, ((Character) value).charValue());
@@ -555,12 +481,9 @@ public class NegativeTest {
                     case "S" -> f.setShort(badReceiver, ((Short) value).shortValue());
                     case "Z" -> f.setBoolean(badReceiver, ((Boolean) value).booleanValue());
                 }
-            } catch (IllegalArgumentException e) {
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException("Expected IllegalArgumentException but got: " + e.getMessage(), e);
-            }
+            });
             // test null receiver
-            try {
+            assertThrows(NullPointerException.class, () -> {
                 switch (fType.descriptorString()) {
                     case "B" -> f.setByte(null, ((Byte) value).byteValue());
                     case "C" -> f.setChar(null, ((Character) value).charValue());
@@ -571,11 +494,7 @@ public class NegativeTest {
                     case "S" -> f.setShort(null, ((Short) value).shortValue());
                     case "Z" -> f.setBoolean(null, ((Boolean) value).booleanValue());
                 }
-            } catch (NullPointerException e) {
-                // expected
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException("Expected NullPointerException but got: " + e.getMessage(), e);
-            }
+            });
         }
     }
 }

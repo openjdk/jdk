@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.nio.charset.Charset;
 import java.nio.file.InvalidPathException;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.Files;
+import java.nio.file.attribute.FileTime;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
@@ -86,11 +87,11 @@ public class ZipFile implements ZipConstants, Closeable {
     private final ZipCoder zipCoder;
     private volatile boolean closeRequested;
 
-    // The "resource" used by this ZIP file that needs to be
-    // cleaned after use.
+    // An object holding state which needs to be cleaned after
+    // this ZipFile is closed or becomes unreachable:
     // a) the input streams that need to be closed
     // b) the list of cached Inflater objects
-    // c) the "native" source of this ZIP file.
+    // c) the Source object providing read access to the actual ZIP file
     private final @Stable CleanableResource res;
 
     private static final int STORED = ZipEntry.STORED;
@@ -691,7 +692,7 @@ public class ZipFile implements ZipConstants, Closeable {
         final Set<InputStream> istreams;
 
         // List of cached Inflater objects for decompression
-        Deque<Inflater> inflaterCache;
+        List<Inflater> inflaterCache;
 
         final Cleanable cleanable;
 
@@ -701,7 +702,7 @@ public class ZipFile implements ZipConstants, Closeable {
             assert zipCoder != null : "null ZipCoder";
             this.cleanable = CleanerFactory.cleaner().register(zf, this);
             this.istreams = Collections.newSetFromMap(new WeakHashMap<>());
-            this.inflaterCache = new ArrayDeque<>();
+            this.inflaterCache = new ArrayList<>();
             this.zsrc = Source.get(file, (mode & OPEN_DELETE) != 0, zipCoder);
         }
 
@@ -714,10 +715,10 @@ public class ZipFile implements ZipConstants, Closeable {
          * a new one.
          */
         Inflater getInflater() {
-            Inflater inf;
             synchronized (inflaterCache) {
-                if ((inf = inflaterCache.poll()) != null) {
-                    return inf;
+                if (!inflaterCache.isEmpty()) {
+                    // return the most recently used Inflater from the cache of not-in-use Inflaters
+                    return inflaterCache.removeLast();
                 }
             }
             return new Inflater(true);
@@ -727,7 +728,7 @@ public class ZipFile implements ZipConstants, Closeable {
          * Releases the specified inflater to the list of available inflaters.
          */
         void releaseInflater(Inflater inf) {
-            Deque<Inflater> inflaters = this.inflaterCache;
+            List<Inflater> inflaters = this.inflaterCache;
             if (inflaters != null) {
                 synchronized (inflaters) {
                     // double checked!
@@ -746,13 +747,12 @@ public class ZipFile implements ZipConstants, Closeable {
             IOException ioe = null;
 
             // Release cached inflaters and close the cache first
-            Deque<Inflater> inflaters = this.inflaterCache;
+            List<Inflater> inflaters = this.inflaterCache;
             if (inflaters != null) {
                 synchronized (inflaters) {
                     // no need to double-check as only one thread gets a
                     // chance to execute run() (Cleaner guarantee)...
-                    Inflater inf;
-                    while ((inf = inflaters.poll()) != null) {
+                    for (Inflater inf : inflaters) {
                         inf.end();
                     }
                     // close inflaters cache
@@ -761,22 +761,21 @@ public class ZipFile implements ZipConstants, Closeable {
             }
 
             // Close streams, release their inflaters
-            if (istreams != null) {
-                synchronized (istreams) {
-                    if (!istreams.isEmpty()) {
-                        InputStream[] copy = istreams.toArray(new InputStream[0]);
-                        istreams.clear();
-                        for (InputStream is : copy) {
-                            try {
-                                is.close();
-                            } catch (IOException e) {
-                                if (ioe == null) ioe = e;
-                                else ioe.addSuppressed(e);
-                            }
+            synchronized (istreams) {
+                if (!istreams.isEmpty()) {
+                    InputStream[] copy = istreams.toArray(new InputStream[0]);
+                    istreams.clear();
+                    for (InputStream is : copy) {
+                        try {
+                            is.close();
+                        } catch (IOException e) {
+                            if (ioe == null) ioe = e;
+                            else ioe.addSuppressed(e);
                         }
                     }
                 }
             }
+
 
             // Release ZIP src
             if (zsrc != null) {
@@ -1444,10 +1443,12 @@ public class ZipFile implements ZipConstants, Closeable {
          * The unique combination of these components identifies a Source of a ZipFile.
          */
         private static class Key {
-            private final BasicFileAttributes attrs;
             private final File file;
+            private final Object fileKey;
+            private final FileTime lastModifiedTime;
             // the Charset that was provided when constructing the ZipFile instance
             private final Charset charset;
+
 
             /**
              * Constructs a {@code Key} to a {@code Source} of a {@code ZipFile}
@@ -1457,7 +1458,8 @@ public class ZipFile implements ZipConstants, Closeable {
              * @param charset the Charset that was provided when constructing the ZipFile instance
              */
             public Key(File file, BasicFileAttributes attrs, Charset charset) {
-                this.attrs = attrs;
+                this.fileKey = attrs.fileKey();
+                this.lastModifiedTime = attrs.lastModifiedTime();
                 this.file = file;
                 this.charset = charset;
             }
@@ -1465,10 +1467,9 @@ public class ZipFile implements ZipConstants, Closeable {
             @Override
             public int hashCode() {
                 long t = charset.hashCode();
-                t += attrs.lastModifiedTime().toMillis();
-                Object fk = attrs.fileKey();
+                t += lastModifiedTime.toMillis();
                 return Long.hashCode(t) +
-                        (fk != null ? fk.hashCode() : file.hashCode());
+                        (fileKey != null ? fileKey.hashCode() : file.hashCode());
             }
 
             @Override
@@ -1477,12 +1478,12 @@ public class ZipFile implements ZipConstants, Closeable {
                     if (!charset.equals(key.charset)) {
                         return false;
                     }
-                    if (!attrs.lastModifiedTime().equals(key.attrs.lastModifiedTime())) {
+                    if (!lastModifiedTime.equals(key.lastModifiedTime)) {
                         return false;
                     }
-                    Object fk = attrs.fileKey();
-                    if (fk != null) {
-                        return fk.equals(key.attrs.fileKey());
+
+                    if (fileKey != null) {
+                        return fileKey.equals(key.fileKey);
                     } else {
                         return file.equals(key.file);
                     }

@@ -226,8 +226,6 @@ inline void ShenandoahMark::do_chunked_array(ShenandoahObjToScanQueue* q, T* cl,
   assert(obj->is_objArray(), "expect object array");
   objArrayOop array = objArrayOop(obj);
 
-  assert (ObjArrayMarkingStride > 0, "sanity");
-
   // Split out tasks, as suggested in ShenandoahMarkTask docs. Avoid pushing tasks that
   // are known to start beyond the array.
   while ((1 << pow) > (int)ObjArrayMarkingStride && (chunk*2 < ShenandoahMarkTask::chunk_size())) {

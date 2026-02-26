@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,11 @@
  * @summary Tests that you can map an InputStream to a GZIPInputStream
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.HttpServerAdapters ReferenceTracker
- * @run testng/othervm GZIPInputStreamTest
+ * @run junit/othervm GZIPInputStreamTest
  */
 
 import com.sun.net.httpserver.HttpServer;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -46,7 +42,6 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.net.http.HttpOption.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodyHandlers;
@@ -68,21 +63,26 @@ import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.assertEquals;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class GZIPInputStreamTest implements HttpServerAdapters {
 
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
-    HttpTestServer httpTestServer;    // HTTP/1.1    [ 4 servers ]
-    HttpTestServer httpsTestServer;   // HTTPS/1.1
-    HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
-    HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
-    HttpTestServer https3TestServer;  // HTTP/3
-    String httpURI;
-    String httpsURI;
-    String http2URI;
-    String https2URI;
-    String https3URI;
+    private static HttpTestServer httpTestServer;    // HTTP/1.1    [ 4 servers ]
+    private static HttpTestServer httpsTestServer;   // HTTPS/1.1
+    private static HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
+    private static HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
+    private static HttpTestServer https3TestServer;  // HTTP/3
+    private static String httpURI;
+    private static String httpsURI;
+    private static String http2URI;
+    private static String https2URI;
+    private static String https3URI;
 
     static final int ITERATION_COUNT = 3;
     // a shared executor helps reduce the amount of threads created by the test
@@ -154,8 +154,7 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
 
 
 
-    @DataProvider(name = "variants")
-    public Object[][] variants() {
+    public static Object[][] variants() {
         return new Object[][]{
                 { httpURI,   false },
                 { httpURI,   true },
@@ -170,7 +169,7 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
         };
     }
 
-    final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
+    private static final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
     HttpClient newHttpClient() {
         return TRACKER.track(newClientBuilderForH3()
                          .executor(executor)
@@ -192,7 +191,8 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
                 .build());
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void testPlainSyncAsString(String uri, boolean sameClient) throws Exception {
         out.println("\nSmoke test: verify that the result we get from the server is correct.");
         out.println("Uses plain send() and `asString` to get the plain string.");
@@ -209,7 +209,8 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
         }
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void testPlainSyncAsInputStream(String uri, boolean sameClient) throws Exception {
         out.println("Uses plain send() and `asInputStream` - calls readAllBytes() from main thread");
         out.println("Uses single threaded executor");
@@ -225,7 +226,8 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
         }
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void testGZIPSyncAsInputStream(String uri, boolean sameClient) throws Exception {
         out.println("Uses plain send() and `asInputStream` - " +
                 "creates GZIPInputStream and calls readAllBytes() from main thread");
@@ -243,7 +245,8 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
         }
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void testGZIPSyncAsGZIPInputStream(String uri, boolean sameClient) throws Exception {
         out.println("Uses plain send() and a mapping subscriber to "+
                 "create the GZIPInputStream. Calls readAllBytes() from main thread");
@@ -262,7 +265,8 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
         }
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void testGZIPSyncAsGZIPInputStreamSupplier(String uri, boolean sameClient) throws Exception {
         out.println("Uses plain send() and a mapping subscriber to "+
                 "create a Supplier<GZIPInputStream>. Calls Supplier.get() " +
@@ -276,7 +280,7 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
             HttpRequest req = buildRequest(URI.create(uri + "/gz/LoremIpsum.txt.gz"));
             // This is dangerous, because the finisher will block.
             // We support this, but the executor must have enough threads.
-            BodyHandler<Supplier<InputStream>> handler = new BodyHandler<Supplier<InputStream>>() {
+            BodyHandler<Supplier<InputStream>> handler = new BodyHandler<>() {
                  public HttpResponse.BodySubscriber<Supplier<InputStream>> apply(
                          HttpResponse.ResponseInfo responseInfo)
                  {
@@ -304,7 +308,8 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
         }
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void testPlainAsyncAsInputStreamBlocks(String uri, boolean sameClient) throws Exception {
         out.println("Uses sendAsync() and `asInputStream`. Registers a dependent action "+
                 "that calls readAllBytes()");
@@ -331,7 +336,8 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
         }
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void testGZIPAsyncAsGZIPInputStreamBlocks(String uri, boolean sameClient) throws Exception {
         out.println("Uses sendAsync() and a mapping subscriber to create a GZIPInputStream. " +
                  "Registers a dependent action that calls readAllBytes()");
@@ -358,7 +364,8 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
         }
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void testGZIPSyncAsGZIPInputStreamBlocks(String uri, boolean sameClient) throws Exception {
         out.println("Uses sendAsync() and a mapping subscriber to create a GZIPInputStream," +
                 "which is mapped again using a mapping subscriber " +
@@ -386,7 +393,8 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
         }
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void testGZIPSyncAsGZIPInputStreamSupplierInline(String uri, boolean sameClient) throws Exception {
         out.println("Uses plain send() and a mapping subscriber to "+
                 "create a Supplier<GZIPInputStream>. Calls Supplier.get() " +
@@ -432,7 +440,7 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
         if (!LOREM_IPSUM.equals(responseBody)) {
             out.println("Response doesn't match");
             out.println("[" + LOREM_IPSUM + "] != [" + responseBody + "]");
-            assertEquals(LOREM_IPSUM, responseBody);
+            assertEquals(responseBody, LOREM_IPSUM);
         } else {
             out.println("Received expected response.");
         }
@@ -487,8 +495,8 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
                 + server.getAddress().getPort();
     }
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         HttpTestHandler plainHandler = new LoremIpsumPlainHandler();
         HttpTestHandler gzipHandler  = new LoremIpsumGZIPHandler();
 
@@ -526,8 +534,8 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
         https3TestServer.start();
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         Thread.sleep(100);
         AssertionError fail = TRACKER.check(500);
         try {
