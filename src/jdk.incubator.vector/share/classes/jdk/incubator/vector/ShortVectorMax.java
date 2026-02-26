@@ -56,7 +56,7 @@ final class ShortVectorMax extends ShortVector {
 
     static final Class<Short> CTYPE = short.class; // carrier type used by the JVM
 
-    static final Class<Short> ETYPE = short.class; // vector element type used by the JVM
+    static final Class<Short> ETYPE = short.class; // used by the JVM
 
     ShortVectorMax(short[] v) {
         super(v);

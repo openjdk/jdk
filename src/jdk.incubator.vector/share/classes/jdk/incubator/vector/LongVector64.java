@@ -56,7 +56,7 @@ final class LongVector64 extends LongVector {
 
     static final Class<Long> CTYPE = long.class; // carrier type used by the JVM
 
-    static final Class<Long> ETYPE = long.class; // vector element type used by the JVM
+    static final Class<Long> ETYPE = long.class; // used by the JVM
 
     LongVector64(long[] v) {
         super(v);

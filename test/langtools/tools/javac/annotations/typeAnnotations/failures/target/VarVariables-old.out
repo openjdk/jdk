@@ -1,0 +1,9 @@
+VarVariables.java:34:36: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.deconstruction.patterns), 19, 21
+VarVariables.java:18:9: compiler.err.annotation.type.not.applicable
+VarVariables.java:24:14: compiler.err.annotation.type.not.applicable
+VarVariables.java:27:14: compiler.err.annotation.type.not.applicable
+VarVariables.java:32:14: compiler.err.annotation.type.not.applicable
+VarVariables.java:36:37: compiler.err.annotation.type.not.applicable
+VarVariables.java:32:18: compiler.err.type.annotation.inadmissible: (compiler.misc.type.annotation.1: @VarVariables.TA), java.lang, @VarVariables.TA java.lang.AutoCloseable
+VarVariables.java:36:41: compiler.err.type.annotation.inadmissible: (compiler.misc.type.annotation.1: @VarVariables.TA), java.lang, @VarVariables.TA java.lang.String
+8 errors

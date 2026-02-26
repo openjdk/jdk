@@ -56,7 +56,7 @@ final class Float16Vector512 extends Float16Vector {
 
     static final Class<Short> CTYPE = short.class; // carrier type used by the JVM
 
-    static final Class<Float16> ETYPE = Float16.class; // vector element type used by the JVM
+    static final Class<Float16> ETYPE = Float16.class; // used by the JVM
 
     Float16Vector512(short[] v) {
         super(v);

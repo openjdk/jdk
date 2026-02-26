@@ -56,7 +56,7 @@ final class DoubleVector64 extends DoubleVector {
 
     static final Class<Double> CTYPE = double.class; // carrier type used by the JVM
 
-    static final Class<Double> ETYPE = double.class; // vector element type used by the JVM
+    static final Class<Double> ETYPE = double.class; // used by the JVM
 
     DoubleVector64(double[] v) {
         super(v);

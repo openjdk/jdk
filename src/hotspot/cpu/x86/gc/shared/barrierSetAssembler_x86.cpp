@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -394,6 +394,11 @@ OptoReg::Name BarrierSetAssembler::refine_register(const Node* node, OptoReg::Na
 // We use the vec_spill_helper from the x86.ad file to avoid reinventing this wheel
 extern void vec_spill_helper(C2_MacroAssembler *masm, bool is_load,
                             int stack_offset, int reg, uint ireg, outputStream* st);
+
+void BarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj, Label& slowpath) {
+  // Load the oop from the weak handle.
+  __ movptr(obj, Address(obj));
+}
 
 #undef __
 #define __ _masm->

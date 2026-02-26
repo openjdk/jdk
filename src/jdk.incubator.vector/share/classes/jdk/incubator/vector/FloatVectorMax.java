@@ -56,7 +56,7 @@ final class FloatVectorMax extends FloatVector {
 
     static final Class<Float> CTYPE = float.class; // carrier type used by the JVM
 
-    static final Class<Float> ETYPE = float.class; // vector element type used by the JVM
+    static final Class<Float> ETYPE = float.class; // used by the JVM
 
     FloatVectorMax(float[] v) {
         super(v);

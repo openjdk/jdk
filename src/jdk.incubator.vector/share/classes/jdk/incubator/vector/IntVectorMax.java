@@ -56,7 +56,7 @@ final class IntVectorMax extends IntVector {
 
     static final Class<Integer> CTYPE = int.class; // carrier type used by the JVM
 
-    static final Class<Integer> ETYPE = int.class; // vector element type used by the JVM
+    static final Class<Integer> ETYPE = int.class; // used by the JVM
 
     IntVectorMax(int[] v) {
         super(v);

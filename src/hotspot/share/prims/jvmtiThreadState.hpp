@@ -181,7 +181,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   inline JvmtiEnvThreadState* head_env_thread_state();
   inline void set_head_env_thread_state(JvmtiEnvThreadState* ets);
 
-  static bool _seen_interp_only_mode; // interp_only_mode was requested at least once
+  static Atomic<bool> _seen_interp_only_mode; // interp_only_mode was requested at least once
 
  public:
   ~JvmtiThreadState();
@@ -204,15 +204,18 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
 
   // Return true if any thread has entered interp_only_mode at any point during the JVMs execution.
   static bool seen_interp_only_mode() {
-    return _seen_interp_only_mode;
+    return _seen_interp_only_mode.load_acquire();
   }
 
   void add_env(JvmtiEnvBase *env);
 
   // The pending_interp_only_mode is set when the interp_only_mode is triggered.
   // It is cleared by EnterInterpOnlyModeClosure handshake.
-  bool is_pending_interp_only_mode() { return _pending_interp_only_mode; }
-  void set_pending_interp_only_mode(bool val) { _pending_interp_only_mode = val; }
+  bool is_pending_interp_only_mode() {  return _pending_interp_only_mode; }
+  void set_pending_interp_only_mode(bool val) {
+    _seen_interp_only_mode.release_store(true);
+    _pending_interp_only_mode = val;
+  }
 
   // Used by the interpreter for fullspeed debugging support
   bool is_interp_only_mode()                {

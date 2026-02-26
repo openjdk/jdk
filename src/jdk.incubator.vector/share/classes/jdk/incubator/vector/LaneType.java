@@ -67,8 +67,10 @@ enum LaneType {
         // printName.  If we do unsigned or vector or bit lane types,
         // report that condition also.
         this.typeChar = genericElementType.getSimpleName().charAt(0);
-        this.carrierType = carrierType;
         assert("FDBSILS".charAt(ordinal()) == typeChar) : this;
+        this.carrierType = carrierType;
+        assert(carrierType.isPrimitive());
+
     }
 
     final Class<?> elementType;

@@ -56,7 +56,7 @@ final class ByteVector64 extends ByteVector {
 
     static final Class<Byte> CTYPE = byte.class; // carrier type used by the JVM
 
-    static final Class<Byte> ETYPE = byte.class; // vector element type used by the JVM
+    static final Class<Byte> ETYPE = byte.class; // used by the JVM
 
     ByteVector64(byte[] v) {
         super(v);

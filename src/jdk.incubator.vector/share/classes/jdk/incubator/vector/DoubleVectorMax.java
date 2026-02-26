@@ -56,7 +56,7 @@ final class DoubleVectorMax extends DoubleVector {
 
     static final Class<Double> CTYPE = double.class; // carrier type used by the JVM
 
-    static final Class<Double> ETYPE = double.class; // vector element type used by the JVM
+    static final Class<Double> ETYPE = double.class; // used by the JVM
 
     DoubleVectorMax(double[] v) {
         super(v);
