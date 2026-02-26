@@ -78,19 +78,38 @@ final class StringUTF16 {
         return len << 1;
     }
 
+    /**
+     * Inserts the given code point to the specified position of the provided
+     * UTF-16 string byte array.
+     * <p>
+     * <b>WARNING: This method does not perform any input validations.</b>
+     *
+     * @param val a UTF-16 string byte array
+     * @param index the index of the character to insert the code point to
+     * @param c a code point
+     */
+    // vmIntrinsics::_putCharStringU
     @IntrinsicCandidate
-    // intrinsic performs no bounds checks
     static void putChar(byte[] val, int index, int c) {
-        assert index >= 0 && index < length(val) : "Trusted caller missed bounds check";
+        assert val != null && index >= 0 && index < length(val) : "Trusted caller violated input constraints";
         index <<= 1;
         val[index++] = (byte)(c >> HI_BYTE_SHIFT);
         val[index]   = (byte)(c >> LO_BYTE_SHIFT);
     }
 
+    /**
+     * {@return the code point at the the specified position of the provided
+     * UTF-16 string byte array}
+     * <p>
+     * <b>WARNING: This method does not perform any input validations.</b>
+     *
+     * @param val a UTF-16 string byte array
+     * @param index the index of the character to get the code point from
+     */
+    // vmIntrinsics::_getCharStringU
     @IntrinsicCandidate
-    // intrinsic performs no bounds checks
     static char getChar(byte[] val, int index) {
-        assert index >= 0 && index < length(val) : "Trusted caller missed bounds check";
+        assert val != null && index >= 0 && index < length(val) : "Trusted caller violated input constraints";
         index <<= 1;
         return (char)(((val[index++] & 0xff) << HI_BYTE_SHIFT) |
                       ((val[index]   & 0xff) << LO_BYTE_SHIFT));
