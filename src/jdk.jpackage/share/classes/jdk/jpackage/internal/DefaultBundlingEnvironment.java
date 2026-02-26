@@ -195,11 +195,11 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
     public void createBundle(BundlingOperationDescriptor op, Options cmdline) {
         final var bundler = getBundlerSupplier(op).get().orElseThrow();
         Optional<Path> permanentWorkDirectory = Optional.empty();
-        try (var tempDir = new TempDirectory(cmdline)) {
+        try (var tempDir = new TempDirectory(cmdline, Globals.instance().objectFactory())) {
             if (!tempDir.deleteOnClose()) {
                 permanentWorkDirectory = Optional.of(tempDir.path());
             }
-            bundler.accept(tempDir.options());
+            bundler.accept(tempDir.map(cmdline));
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         } finally {
