@@ -51,7 +51,7 @@ public class TestUseSHA3IntrinsicsWithUseSHADisabledOnUnsupportedCPU {
     private static final String UNLOCK_DIAGNOSTIC = "-XX:+UnlockDiagnosticVMOptions";
 
     public static void main(String[] args) throws Throwable {
-        if (IntrinsicPredicates.isSHA3IntrinsicAvailable().getAsBoolean()) {
+        if (IntrinsicPredicates.SHA3_INSTRUCTION_AVAILABLE.getAsBoolean()) {
             throw new SkippedException("Skipping... SHA3 intrinsics are available on this platform.");
         }
 

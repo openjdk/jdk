@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,7 +114,7 @@ public class MemberEnter extends JCTree.Visitor {
         ListBuffer<Type> argbuf = new ListBuffer<>();
         for (List<JCVariableDecl> l = params; l.nonEmpty(); l = l.tail) {
             memberEnter(l.head, env);
-            argbuf.append(l.head.vartype.type);
+            argbuf.append(l.head.sym.type);
         }
 
         // Attribute result type, if one is given.
@@ -276,12 +276,16 @@ public class MemberEnter extends JCTree.Visitor {
             tree.vartype.type = atype.makeVarargs();
         }
         WriteableScope enclScope = enter.enterScope(env);
-        Type vartype = tree.isImplicitlyTyped()
-                ? env.info.scope.owner.kind == MTH ? Type.noType : syms.errType
-                : tree.vartype.type;
+        Type vartype = switch (tree.declKind) {
+            case IMPLICIT -> tree.type;
+            case EXPLICIT -> tree.vartype.type;
+            case VAR -> tree.type != null ? tree.type
+                                          : env.info.scope.owner.kind == MTH ? Type.noType
+                                                                             : syms.errType;
+        };
         Name name = tree.name;
         VarSymbol v = new VarSymbol(0, name, vartype, enclScope.owner);
-        v.flags_field = chk.checkFlags(tree.mods.flags, v, tree);
+        v.flags_field = chk.checkFlags(tree.mods.flags | tree.declKind.additionalSymbolFlags, v, tree);
         tree.sym = v;
         if (tree.init != null) {
             v.flags_field |= HASINIT;
