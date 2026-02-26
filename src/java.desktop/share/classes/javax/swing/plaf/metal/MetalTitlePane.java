@@ -436,7 +436,8 @@ class MetalTitlePane extends JComponent {
      * for manipulating the Frame.
      */
     private JMenu createMenu() {
-        JMenu menu = new JMenu(" ");
+        JMenu menu = new JMenu("");
+        menu.setPreferredSize(new Dimension(IMAGE_WIDTH, IMAGE_HEIGHT));
         if (getWindowDecorationStyle() == JRootPane.FRAME) {
             addMenuItems(menu);
         }
