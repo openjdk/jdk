@@ -157,7 +157,7 @@ public final class Argon2Impl {
             dst.xor(blockR);
         }
 
-        public static Block nextAddresses(Block inBlock) {
+        static Block nextAddresses(Block inBlock) {
             Block addressBlock = new Block();
             inBlock.value[6]++;
             compressG(Block.ZERO_BLK, inBlock, addressBlock, false);
@@ -169,7 +169,7 @@ public final class Argon2Impl {
         private final int lanes;
         private final int passes;
         private final int segLen;
-        private final int laneLen;
+        private final int columns;
         private final int mem2;
         private final Block[][] b;
 
@@ -177,10 +177,10 @@ public final class Argon2Impl {
             this.type = type;
             this.lanes = parallelism;
             this.segLen = memory / (parallelism << 2);
-            this.laneLen = segLen << 2;
+            this.columns = segLen << 2;
             this.mem2 = (parallelism << 2) * segLen;
             this.passes = passes;
-            this.b = new Block[this.lanes][this.laneLen];
+            this.b = new Block[this.lanes][this.columns];
         }
 
         void fillFirstTwoBlocks(byte[] h0Plus8Bytes) {
@@ -222,7 +222,7 @@ public final class Argon2Impl {
                 wSize = pos.index - 1;
             } else {
                 wSize = (pos.pass == 0 ? pos.slice * this.segLen :
-                         this.laneLen - this.segLen);
+                         this.columns - this.segLen);
                 if (sameLane) {
                     // add blocks in current segment but the previous
                     wSize += (pos.index - 1);
@@ -240,11 +240,11 @@ public final class Argon2Impl {
                 // starts from the next segment if sliceNum = 0, 1, 2
                 startPosition = (pos.slice + 1) * this.segLen;
             }
-            int z = (startPosition + zz) % this.laneLen;
+            int z = (startPosition + zz) % this.columns;
             return z;
         }
 
-        void fillSegment(Argon2Position pos) {
+        private void fillSegment(Argon2Position pos) {
             Block inBlock = null;
             boolean dataIndependentAddressing =
                 (type == Type.ARGON2ID && (pos.pass == 0) && (pos.slice < 2)
@@ -272,13 +272,13 @@ public final class Argon2Impl {
             int currOfs = pos.slice * this.segLen + startingIdx;
             // for the first block in this lane, 'prevOfs' should
             // be the last block of the current lane
-            int prevOfs = (currOfs == 0 ?  this.laneLen - 1 : currOfs - 1);
+            int prevOfs = (currOfs == 0 ?  this.columns - 1 : currOfs - 1);
 
             long pseudoRand;
             for (int i = startingIdx; i < this.segLen; i++, currOfs++,
                     prevOfs++) {
                 // Rotating 'prevOfs' if needed
-                if (currOfs % this.laneLen == 1) {
+                if (currOfs % this.columns == 1) {
                     prevOfs = currOfs - 1;
                 }
 
@@ -335,12 +335,12 @@ public final class Argon2Impl {
 
         byte[] getFinalTag(int outLen) {
             // 7) Compute the final block C - xor of the last columns
-            Block c = (Block) b[0][this.laneLen-1].clone();
+            Block c = (Block) b[0][this.columns - 1].clone();
             byte[] cBytes = null;
             try {
                 // xor the last blocks
                 for (int i = 1; i < this.lanes; i++) {
-                    c.xor(b[i][this.laneLen-1]);
+                    c.xor(b[i][this.columns - 1]);
                 }
                 cBytes = c.getBytes();
 
@@ -353,7 +353,7 @@ public final class Argon2Impl {
                     Arrays.fill(cBytes, (byte) 0);
                 }
                 for (int i = 0; i < this.lanes; i++) {
-                    b[i][this.laneLen-1].erase();
+                    b[i][this.columns - 1].erase();
                 }
             }
         }
