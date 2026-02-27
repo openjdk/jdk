@@ -81,6 +81,9 @@ public:
   static uint64_t _dscr_val;
 
   static void initialize_cpu_information(void);
+
+  static int get_dcache_line_size();
+  static int get_icache_line_size();
 };
 
 #endif // CPU_PPC_VM_VERSION_PPC_HPP

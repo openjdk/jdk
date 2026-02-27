@@ -2614,14 +2614,6 @@ bool os::Aix::supports_64K_mmap_pages() {
   return g_multipage_support.can_use_64K_mmap_pages;
 }
 
-int os::get_dcache_line_size() {
-  return _system_configuration.dcache_line;
-}
-
-int os::get_icache_line_size() {
-  return _system_configuration.icache_line;
-}
-
 /////////////////////////////////////////////////////////////////////////////
 // thread stack
 

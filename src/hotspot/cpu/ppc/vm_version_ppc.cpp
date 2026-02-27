@@ -530,7 +530,7 @@ void VM_Version::determine_features() {
 
   _features = features;
 
-  _L1_data_cache_line_size = os::get_dcache_line_size();
+  _L1_data_cache_line_size = VM_Version::get_dcache_line_size();
   assert(_L1_data_cache_line_size >= DEFAULT_CACHE_LINE_SIZE,
          "processors with smaller cache line size are no longer supported");
 }

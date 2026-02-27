@@ -474,9 +474,6 @@ class os::Linux {
   // Calls out to GNU extension malloc_info if available
   // otherwise does nothing and returns -2.
   static int malloc_info(FILE* stream);
-
-  static int get_dcache_line_size();
-  static int get_icache_line_size();
 #endif // GLIBC
 };
 
