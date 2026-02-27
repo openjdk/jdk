@@ -1357,8 +1357,9 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     ProfileStub *stub
       = profile_capture_ratio > 1 ? new ProfileStub() : nullptr;
 
-    auto lambda = [stub, md, mdo, data, k_RInfo, obj, tmp_load_klass] (LIR_Assembler* ce, LIR_Op* base_op) {
-      auto masm = []() { return ce->masm(); };
+    auto lambda = [stub, md, mdo, data, k_RInfo, obj, tmp_load_klass]
+        (LIR_Assembler* ce, LIR_Op* base_op) {
+      auto masm = [=]() { return ce->masm(); };
       if (stub != nullptr)  __ bind(*stub->entry());
 
       Register recv = k_RInfo;
@@ -1489,9 +1490,9 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
 
       auto lambda = [profile_stub, md, data, value,
                      k_RInfo, klass_RInfo, tmp_load_klass, Rtmp1, success_target] (LIR_Assembler* ce, LIR_Op*) {
-        if (profile_stub != nullptr)  __ bind(*profile_stub->entry());
+        auto masm = [=]() { return ce->masm(); };
 
-        auto masm = []() { return ce->masm(); }
+        if (profile_stub != nullptr)  __ bind(*profile_stub->entry());
 
         __ testptr(value, value);
 
@@ -2860,10 +2861,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step_opr, LIR_Opr dest_opr,
   auto lambda = [counter_stub, overflow_stub, freq_opr, ratio_shift, step_opr,
                  md_reg, md_opr, md_offset_opr, dest_opr, dest] (LIR_Assembler* ce, LIR_Op* op) {
 
-#undef __
-#define __ masm->
-
-    auto masm = ce->masm();
+    auto masm = [=]() { return ce->masm(); };
     Address counter_address;
 
     if (counter_stub != nullptr)  __ bind(*counter_stub->entry());
@@ -2871,10 +2869,10 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step_opr, LIR_Opr dest_opr,
     if (md_opr->is_valid()) {
       if (md_opr->type() == T_METADATA) {
         __ mov_metadata(md_reg->as_register(),
-                          md_opr->as_constant_ptr()->as_metadata());
+                        md_opr->as_constant_ptr()->as_metadata());
       } else {
         __ lea(md_reg->as_pointer_register(),
-                  ExternalAddress(md_opr->as_constant_ptr()->as_pointer()));
+               ExternalAddress(md_opr->as_constant_ptr()->as_pointer()));
       }
       RegisterOrConstant offset =
         md_offset_opr->is_constant()
@@ -2945,9 +2943,6 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step_opr, LIR_Opr dest_opr,
     }
 
   exit: { }
-
-#undef __
-#define __ _masm->
   };
 
   if (counter_stub != nullptr) {
@@ -3045,26 +3040,6 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   bool not_null = op->not_null();
   bool no_conflict = op->no_conflict();
 
-  __ verify_oop(obj);
-
-#ifdef ASSERT
-  assert_different_registers(obj, tmp, rscratch1, mdo_addr.base(), mdo_addr.index());
-#endif
-
-  int profile_capture_ratio = ProfileCaptureRatio;
-  int ratio_shift = exact_log2(profile_capture_ratio);
-  auto threshold = (1ull << 32) >> ratio_shift;
-  assert(threshold > 0, "must be");
-
-  ProfileStub *stub
-    = profile_capture_ratio > 1 ? new ProfileStub() : nullptr;
-
-  auto lambda = [stub, mdo_addr, not_null, exact_klass, current_klass,
-                 obj, tmp, tmp_load_klass, no_conflict] (LIR_Assembler* ce, LIR_Op*) {
-#undef __
-#define __ masm->
-
-  auto masm = ce->masm();
   Label update, next, none;
 
   bool do_null = !not_null;
@@ -3074,11 +3049,15 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   assert(do_null || do_update, "why are we here?");
   assert(!TypeEntries::was_null_seen(current_klass) || do_update, "why are we here?");
 
-  if (stub != nullptr)  __ bind(*stub->entry());
+  __ block_comment("emit_profile_type {");
   __ verify_oop(obj);
 
 #ifdef ASSERT
-  assert_different_registers(obj, tmp, rscratch1, mdo_addr.base(), mdo_addr.index());
+  if (obj == tmp) {
+    assert_different_registers(obj, rscratch1, mdo_addr.base(), mdo_addr.index());
+  } else {
+    assert_different_registers(obj, tmp, rscratch1, mdo_addr.base(), mdo_addr.index());
+  }
 #endif
   if (do_null) {
     __ testptr(obj, obj);
@@ -3218,27 +3197,9 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
         __ orptr(mdo_addr, TypeEntries::type_unknown);
       }
     }
-  } // do_update
-
-  __ bind(next);
-  if (stub != nullptr)  __ jmp(*stub->continuation());
-
-#undef __
-#define __ _masm->
-  };
-
-  if (stub != nullptr) {
-    __ cmpl(r_profile_rng, threshold);
-    __ jcc(Assembler::below, *stub->entry());
-    __ bind(*stub->continuation());
-    __ step_random(r_profile_rng, tmp);
-
-    stub->set_action(lambda, op);
-    stub->set_name("ProfileTypeStub");
-    append_code_stub(stub);
-  } else {
-    lambda(this, op);
   }
+  __ block_comment("} emit_profile_type");
+  __ bind(next);
 }
 
 void LIR_Assembler::monitor_address(int monitor_no, LIR_Opr dst) {
