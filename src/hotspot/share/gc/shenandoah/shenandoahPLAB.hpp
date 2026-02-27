@@ -60,8 +60,6 @@ private:
 
   // Track promoted bytes in this PLAB
   void add_to_promoted(size_t increment) { _promoted += increment; }
-  // When a plab is retired, subtract from the expended promotion budget
-  void subtract_from_promoted(size_t increment);
 
   // Establish a new PLAB and allocate from it
   HeapWord* allocate_slow(size_t size, bool is_promotion);
@@ -94,6 +92,8 @@ public:
 
   // Reset promotion tracking for new evacuation phase
   void reset_promoted() { _promoted = 0; }
+  // When a plab is retired, subtract from the expended promotion budget
+  void subtract_from_promoted(size_t increment);
 
   // Record actual allocated PLAB size
   void set_actual_size(size_t value) { _actual_size = value; }
