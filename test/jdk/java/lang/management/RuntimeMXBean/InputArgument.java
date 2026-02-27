@@ -83,7 +83,7 @@ public class InputArgument {
     private static String[] vmOptions = null;
 
     public static void main(String args[]) throws Exception {
-        if (args.length > 0 && "generateFlagsFile".equals(args[0])) {
+        if (args.length > 1 && "generateFlagsFile".equals(args[0])) {
             generateFlagsFile();
             return;
         }
