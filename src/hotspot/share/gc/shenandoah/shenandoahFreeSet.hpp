@@ -32,8 +32,8 @@
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
 #include "logging/logStream.hpp"
 
-typedef ShenandoahLock    ShenandoahRebuildLock;
-typedef ShenandoahLocker  ShenandoahRebuildLocker;
+typedef ShenandoahLock                           ShenandoahRebuildLock;
+typedef ShenandoahLocker<ShenandoahRebuildLock>  ShenandoahRebuildLocker;
 
 // Each ShenandoahHeapRegion is associated with a ShenandoahFreeSetPartitionId.
 enum class ShenandoahFreeSetPartitionId : uint8_t {

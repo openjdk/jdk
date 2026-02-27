@@ -1023,7 +1023,7 @@ public:
 
   void do_nmethod(nmethod* n) {
     ShenandoahNMethod* data = ShenandoahNMethod::gc_data(n);
-    ShenandoahReentrantLocker locker(data->lock());
+    ShenandoahNMethodLocker locker(data->lock());
     // Setup EvacOOM scope below reentrant lock to avoid deadlock with
     // nmethod_entry_barrier
     ShenandoahEvacOOMScope oom;
