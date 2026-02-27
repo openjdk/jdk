@@ -31,6 +31,9 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 @State(Scope.Benchmark)
+@Warmup(iterations = 5, time = 2)
+@Measurement(iterations = 5, time = 2)
+@Fork(value = 2)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 public class Base64EncodeToString {
 
