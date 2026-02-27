@@ -2214,7 +2214,7 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) const {
     return true;
   }
 
-  if (!is_velt_basic_type_compatible_use_def(use, def)) {
+  if (!is_velt_basic_type_compatible_use_def(use, def, d_pk->size())) {
     return false;
   }
 
@@ -2280,7 +2280,7 @@ Node_List* PackSet::strided_pack_input_at_index_or_null(const Node_List* pack, c
 
 // Check if the output type of def is compatible with the input type of use, i.e. if the
 // types have the same size.
-bool SuperWord::is_velt_basic_type_compatible_use_def(Node* use, Node* def) const {
+bool SuperWord::is_velt_basic_type_compatible_use_def(Node* use, Node* def, const uint pack_size) const {
   assert(in_bb(def) && in_bb(use), "both use and def are in loop");
 
   // Conversions are trivially compatible.
@@ -2306,8 +2306,17 @@ bool SuperWord::is_velt_basic_type_compatible_use_def(Node* use, Node* def) cons
            type2aelembytes(use_bt) == 4;
   }
 
-  // Default case: input size of use equals output size of def.
-  return type2aelembytes(use_bt) == type2aelembytes(def_bt);
+  // Input size of use equals output size of def
+  if (type2aelembytes(use_bt) == type2aelembytes(def_bt)) {
+    return true;
+  }
+
+  // Subword cast: Element sizes differ, but the platform supports a cast to change the def shape to the use shape.
+  if (VectorCastNode::is_supported_subword_cast(def_bt, use_bt, pack_size)) {
+    return true;
+  }
+
+  return false;
 }
 
 // Return nullptr if success, else failure message
