@@ -168,6 +168,29 @@ class oopDesc;
 #define SIZE_FORMAT_X_0          "0x%08"      PRIxPTR
 #endif  // _LP64
 
+
+template<size_t N>
+constexpr auto sizeof_auto_impl() {
+  if constexpr (N <= std::numeric_limits<uint8_t>::max()) return uint8_t(N);
+  else if constexpr (N <= std::numeric_limits<uint16_t>::max()) return uint16_t(N);
+  else if constexpr (N <= std::numeric_limits<uint32_t>::max()) return uint32_t(N);
+  else return uint64_t(N);
+}
+
+// Yields the size (in bytes) of the operand, using the smallest
+// unsigned type that can represent the size value. The operand may be
+// an expression, which is an unevaluated operand, or it may be a
+// type. All of the restrictions for sizeof operands apply to the
+// operand. The result is a constant expression.
+//
+// Example of correct usage of sizeof/sizeof_auto:
+//   // this will wrap using sizeof_auto, use sizeof to ensure computation using size_t
+//   size_t size = std::numeric_limits<uint32_t>::max() * sizeof(uint16_t);
+//   // implicit narrowing conversion or compiler warning/error using stricter compiler flags when using sizeof
+//   int count = 42 / sizeof_auto(uint16_t);
+
+#define sizeof_auto(...) sizeof_auto_impl<sizeof(__VA_ARGS__)>()
+
 // Convert pointer to intptr_t, for use in printing pointers.
 inline intptr_t p2i(const volatile void* p) {
   return (intptr_t) p;
