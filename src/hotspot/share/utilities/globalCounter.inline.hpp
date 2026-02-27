@@ -54,11 +54,13 @@ GlobalCounter::critical_section_end(Thread *thread, CSContext context) {
 }
 
 class GlobalCounter::CriticalSection {
-  NoSafepointVerifier nsv;
+  NoSafepointVerifier _nsv;
   Thread* _thread;
   CSContext _context;
- public:
+
+public:
   inline CriticalSection(Thread* thread) :
+    _nsv(),
     _thread(thread),
     _context(GlobalCounter::critical_section_begin(_thread))
   {}
