@@ -52,36 +52,56 @@ private:
   // If true, evacuations may attempt to allocate a smaller plab if the original size fails.
   bool _retries_enabled;
 
+  // Use for allocations, min/max plab sizes
   ShenandoahGenerationalHeap* _heap;
+
+  // Enable retry logic for PLAB allocation failures
+  void enable_retries() { _retries_enabled = true; }
+
+  // Track promoted bytes in this PLAB
+  void add_to_promoted(size_t increment) { _promoted += increment; }
+  // When a plab is retired, subtract from the expended promotion budget
+  void subtract_from_promoted(size_t increment);
+
+  // Establish a new PLAB and allocate from it
+  HeapWord* allocate_slow(size_t size, bool is_promotion);
+  // Allocate a new PLAB buffer from the heap
+  HeapWord* allocate_new_plab(size_t min_size, size_t word_size, size_t* actual_size);
 
 public:
   ShenandoahPLAB();
   ~ShenandoahPLAB();
 
+  // Access the underlying PLAB buffer
   PLAB* plab() const { return _plab; }
 
+  // Heuristic size for next PLAB allocation
   size_t desired_size() const { return _desired_size; }
+  // Update heuristic size for next PLAB allocation
   void set_desired_size(size_t v) { _desired_size = v; }
 
-  void enable_retries() { _retries_enabled = true; }
-  void disable_retries() { _retries_enabled = false; }
+  // Check if retry logic is enabled
   bool retries_enabled() const { return _retries_enabled; }
+  // Disable retry logic for PLAB allocation failures
+  void disable_retries() { _retries_enabled = false; }
 
+  // Allow this thread to promote objects
   void enable_promotions() { _allows_promotion = true; }
+  // Prevent this thread from promoting objects
   void disable_promotions() { _allows_promotion = false; }
+  // Check if this thread is allowed to promote objects
   bool allows_promotion() const { return _allows_promotion; }
 
+  // Reset promotion tracking for new evacuation phase
   void reset_promoted() { _promoted = 0; }
-  void add_to_promoted(size_t increment) { _promoted += increment; }
-  void subtract_from_promoted(size_t increment);
-  size_t get_promoted() const { return _promoted; }
 
+  // Record actual allocated PLAB size
   void set_actual_size(size_t value) { _actual_size = value; }
-  size_t get_actual_size() const { return _actual_size; }
 
+  // Allocate from this PLAB
   HeapWord* allocate(size_t size, bool is_promotion);
-  HeapWord* allocate_slow(size_t size, bool is_promotion);
-  HeapWord* allocate_new_plab(size_t min_size, size_t word_size, size_t* actual_size);
+
+  // Retire this PLAB and return unused promotion budget
   void retire();
 };
 
