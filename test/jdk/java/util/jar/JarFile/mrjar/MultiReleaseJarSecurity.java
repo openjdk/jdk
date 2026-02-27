@@ -52,9 +52,9 @@ public class MultiReleaseJarSecurity {
 
     static final int MAJOR_VERSION = Runtime.version().major();
 
-    static final String userdir = System.getProperty("user.dir", ".");
-    static final File multirelease = new File(userdir, "multi-release.jar");
-    static final File signedmultirelease = new File(userdir, "signed-multi-release.jar");
+    static final String USER_DIR = System.getProperty("user.dir", ".");
+    static final File MULTI_RELEASE = new File(USER_DIR, "multi-release.jar");
+    static final File SIGNED_MULTI_RELEASE = new File(USER_DIR, "signed-multi-release.jar");
 
     @BeforeAll
     public static void initialize() throws Exception {
@@ -66,13 +66,13 @@ public class MultiReleaseJarSecurity {
 
     @AfterAll
     public static void close() throws IOException {
-        Files.delete(multirelease.toPath());
-        Files.delete(signedmultirelease.toPath());
+        Files.delete(MULTI_RELEASE.toPath());
+        Files.delete(SIGNED_MULTI_RELEASE.toPath());
     }
 
     @Test
     public void testCertsAndSigners() throws IOException {
-        try (JarFile jf = new JarFile(signedmultirelease, true, ZipFile.OPEN_READ, Runtime.version())) {
+        try (JarFile jf = new JarFile(SIGNED_MULTI_RELEASE, true, ZipFile.OPEN_READ, Runtime.version())) {
             CertsAndSigners vcas = new CertsAndSigners(jf, jf.getJarEntry("version/Version.class"));
             CertsAndSigners rcas = new CertsAndSigners(jf, jf.getJarEntry("META-INF/versions/" + MAJOR_VERSION + "/version/Version.class"));
             assertArrayEquals(rcas.getCertificates(), vcas.getCertificates());

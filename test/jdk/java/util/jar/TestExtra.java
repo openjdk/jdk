@@ -64,12 +64,8 @@ public class TestExtra {
     // ZIP content written here.
     ZipOutputStream zos = assertDoesNotThrow(() -> getOutputStream(baos));
 
-    @Test
-    void extraHeaderPlusDataTest() throws IOException {
-        testHeaderPlusData();
-    }
-
     // Test that a header + data set by client works.
+    @Test
     void testHeaderPlusData() throws IOException {
         for (byte[] b : extra) {
             ZipEntry ze = getEntry();
@@ -81,12 +77,9 @@ public class TestExtra {
             zos.putNextEntry(ze);
         }
         zos.close();
-
         ZipInputStream zis = getInputStream();
-
         ZipEntry ze = zis.getNextEntry();
         checkEntry(ze, 0, extra[0].length);
-
         ze = zis.getNextEntry();
         checkEntry(ze, 1, extra[1].length);
     }
@@ -96,7 +89,6 @@ public class TestExtra {
         byte[] extraData = ze.getExtra();
         byte[] data = getField(TEST_HEADER, extraData);
         assertNotNull(data, "unexpected null data for TEST_HEADER");
-
         if (dataLength == 0) {
             assertEquals(0, data.length, "unexpected non-zero data length for TEST_HEADER");
         } else {

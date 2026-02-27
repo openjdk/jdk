@@ -67,22 +67,8 @@ public class TestJarExtra {
     // JAR content written here.
     JarOutputStream jos = assertDoesNotThrow(() -> getOutputStream(baos));
 
-    @Test
-    void jarExtraHeaderPlusDataTest() throws IOException {
-        testHeaderPlusData();
-    }
-
-    @Test
-    void jarExtraHeaderOnlyTest() throws IOException {
-        testHeaderOnly();
-    }
-
-    @Test
-    void jarExtraClientJarMagicTest() throws IOException {
-        testClientJarMagic();
-    }
-
     // Test that a header + data set by client works.
+    @Test
     void testHeaderPlusData() throws IOException {
         for (byte[] b : extra) {
             ZipEntry ze = getEntry();
@@ -94,17 +80,15 @@ public class TestJarExtra {
             jos.putNextEntry(ze);
         }
         jos.close();
-
         ZipInputStream zis = getInputStream();
-
         ZipEntry ze = zis.getNextEntry();
         checkEntry(ze, 0, extra[0].length);
-
         ze = zis.getNextEntry();
         checkEntry(ze, 1, extra[1].length);
     }
 
     // Test that a header only (i.e., no extra "data") set by client works.
+    @Test
     void testHeaderOnly() throws IOException {
         ZipEntry ze = getEntry();
         byte[] data = new byte[4];
@@ -112,31 +96,25 @@ public class TestJarExtra {
         set16(data, 2, 0); // Length of data is 0.
         ze.setExtra(data);
         jos.putNextEntry(ze);
-
         jos.close();
-
         ZipInputStream zis = getInputStream();
-
         ze = zis.getNextEntry();
         checkExtra(data, ze.getExtra());
         checkEntry(ze, 0, 0);
     }
 
     // Tests the client providing extra data which uses JAR_MAGIC header.
+    @Test
     void testClientJarMagic() throws IOException {
         ZipEntry ze = getEntry();
         byte[] data = new byte[8];
-
         set16(data, 0, TEST_HEADER);
         set16(data, 2, 0); // Length of data is 0.
         set16(data, 4, JAR_MAGIC);
         set16(data, 6, 0); // Length of data is 0.
-
         ze.setExtra(data);
         jos.putNextEntry(ze);
-
         jos.close();
-
         ZipInputStream zis = getInputStream();
         ze = zis.getNextEntry();
         byte[] e = ze.getExtra();
@@ -204,7 +182,6 @@ public class TestJarExtra {
         byte[] extraData = ze.getExtra();
         byte[] data = getField(TEST_HEADER, extraData);
         assertNotNull(data, "unexpected null data for TEST_HEADER");
-
         if (dataLength == 0) {
             assertEquals(0, data.length, "unexpected non-zero data length for TEST_HEADER");
         } else {
