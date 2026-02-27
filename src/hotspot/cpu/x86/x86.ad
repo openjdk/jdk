@@ -5187,6 +5187,18 @@ operand immL_65535()
   interface(CONST_INTER);
 %}
 
+// AOT Runtime Constants Address
+operand immAOTRuntimeConstantsAddress()
+%{
+  // Check if the address is in the range of AOT Runtime Constants
+  predicate(AOTRuntimeConstants::contains((address)(n->get_ptr())));
+  match(ConP);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 operand kReg()
 %{
   constraint(ALLOC_IN_RC(vectmask_reg));
@@ -7330,6 +7342,19 @@ instruct loadD(regD dst, memory mem)
     __ movdbl($dst$$XMMRegister, $mem$$Address);
   %}
   ins_pipe(pipe_slow); // XXX
+%}
+
+instruct loadAOTRCAddress(rRegP dst, immAOTRuntimeConstantsAddress con)
+%{
+  match(Set dst con);
+
+  format %{ "leaq  $dst, $con\t# AOT Runtime Constants Address" %}
+
+  ins_encode %{
+    __ load_aotrc_address($dst$$Register, (address)$con$$constant);
+  %}
+
+  ins_pipe(ialu_reg_fat);
 %}
 
 // max = java.lang.Math.max(float a, float b)
