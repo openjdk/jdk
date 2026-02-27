@@ -66,8 +66,8 @@ CALLED_SPEC_TARGETS := $(filter-out $(ALL_GLOBAL_TARGETS), $(CALLED_TARGETS))
 ifeq ($(CALLED_SPEC_TARGETS), )
   SKIP_SPEC := true
 endif
-MAKEFLAGS_SINGLE := $(firstword -$(filter-out --%, $(MAKEFLAGS)))
-ifeq ($(findstring p, $(MAKEFLAGS_SINGLE))$(findstring q, $(MAKEFLAGS_SINGLE)), pq)
+MFLAGS_SINGLE := $(filter-out --%, $(MFLAGS))
+ifeq ($(findstring p, $(MFLAGS_SINGLE))$(findstring q, $(MFLAGS_SINGLE)), pq)
   SKIP_SPEC := true
 endif
 
