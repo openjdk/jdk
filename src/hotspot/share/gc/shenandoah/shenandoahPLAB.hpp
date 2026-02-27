@@ -58,9 +58,6 @@ private:
   // Enable retry logic for PLAB allocation failures
   void enable_retries() { _retries_enabled = true; }
 
-  // Track promoted bytes in this PLAB
-  void add_to_promoted(size_t increment) { _promoted += increment; }
-
   // Establish a new PLAB and allocate from it
   HeapWord* allocate_slow(size_t size, bool is_promotion);
   // Allocate a new PLAB buffer from the heap
@@ -94,9 +91,15 @@ public:
   void reset_promoted() { _promoted = 0; }
   // When a plab is retired, subtract from the expended promotion budget
   void subtract_from_promoted(size_t increment);
+  // Bytes promoted through this PLAB
+  size_t get_promoted() const { return _promoted; }
+  // Track promoted bytes in this PLAB
+  void add_to_promoted(size_t increment) { _promoted += increment; }
 
   // Record actual allocated PLAB size
   void set_actual_size(size_t value) { _actual_size = value; }
+  // Actual allocated PLAB size
+  size_t get_actual_size() const { return _actual_size; }
 
   // Allocate from this PLAB
   HeapWord* allocate(size_t size, bool is_promotion);
