@@ -1188,7 +1188,7 @@ public:
       // There are two reasons to retire all plabs between old-gen evacuation passes.
       //  1. We need to make the plab memory parsable by remembered-set scanning.
       //  2. We need to establish a trustworthy UpdateWaterMark value within each old-gen heap region
-      shenandoah_plab->retire(ShenandoahGenerationalHeap::heap());
+      shenandoah_plab->retire();
 
       // Re-enable promotions for the next evacuation phase.
       shenandoah_plab->enable_promotions();

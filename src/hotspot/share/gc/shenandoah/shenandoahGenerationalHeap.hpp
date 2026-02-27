@@ -102,8 +102,6 @@ public:
   size_t plab_min_size() const { return _min_plab_size; }
   size_t plab_max_size() const { return _max_plab_size; }
 
-  HeapWord* allocate_new_plab(size_t min_size, size_t word_size, size_t* actual_size);
-
   // ---------- Update References
   //
   // In the generational mode, we will use this function for young, mixed, and global collections.

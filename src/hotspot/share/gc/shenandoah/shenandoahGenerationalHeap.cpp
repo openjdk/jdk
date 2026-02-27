@@ -411,21 +411,6 @@ template oop ShenandoahGenerationalHeap::try_evacuate_object<YOUNG_GENERATION, Y
 template oop ShenandoahGenerationalHeap::try_evacuate_object<YOUNG_GENERATION, OLD_GENERATION>(oop p, Thread* thread, uint from_region_age);
 template oop ShenandoahGenerationalHeap::try_evacuate_object<OLD_GENERATION, OLD_GENERATION>(oop p, Thread* thread, uint from_region_age);
 
-HeapWord* ShenandoahGenerationalHeap::allocate_new_plab(size_t min_size, size_t word_size, size_t* actual_size) {
-  assert(is_aligned(min_size, CardTable::card_size_in_words()), "Align by design");
-  assert(word_size >= min_size, "Requested PLAB is too small");
-
-  ShenandoahAllocRequest req = ShenandoahAllocRequest::for_plab(min_size, word_size);
-  HeapWord* res = allocate_memory(req);
-  if (res != nullptr) {
-    *actual_size = req.actual_size();
-  } else {
-    *actual_size = 0;
-  }
-  assert(is_aligned(res, CardTable::card_size_in_words()), "Align by design");
-  return res;
-}
-
 // Make sure old-generation is large enough, but no larger than is necessary, to hold mixed evacuations
 // and promotions, if we anticipate either. Any deficit is provided by the young generation, subject to
 // mutator_xfer_limit, and any surplus is transferred to the young generation.  mutator_xfer_limit is

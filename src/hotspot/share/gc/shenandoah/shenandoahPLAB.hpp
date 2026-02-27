@@ -52,6 +52,8 @@ private:
   // If true, evacuations may attempt to allocate a smaller plab if the original size fails.
   bool _retries_enabled;
 
+  ShenandoahGenerationalHeap* _heap;
+
 public:
   ShenandoahPLAB();
   ~ShenandoahPLAB();
@@ -78,8 +80,9 @@ public:
   size_t get_actual_size() const { return _actual_size; }
 
   HeapWord* allocate(size_t size, bool is_promotion);
-  HeapWord* allocate_slow(size_t size, bool is_promotion, ShenandoahGenerationalHeap* heap);
-  void retire(ShenandoahGenerationalHeap* heap);
+  HeapWord* allocate_slow(size_t size, bool is_promotion);
+  HeapWord* allocate_new_plab(size_t min_size, size_t word_size, size_t* actual_size);
+  void retire();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHPLAB_HPP
