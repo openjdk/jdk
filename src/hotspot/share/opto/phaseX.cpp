@@ -360,6 +360,16 @@ NodeHash::~NodeHash() {
 }
 #endif
 
+// Add users of 'n' that match 'predicate' to worklist
+template <class Predicate>
+static void add_users_to_worklist_if(Unique_Node_List& worklist, const Node* n, Predicate predicate) {
+  for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+    Node* u = n->fast_out(i);
+    if (predicate(u)) {
+      worklist.push(u);
+    }
+  }
+}
 
 //=============================================================================
 //------------------------------PhaseRemoveUseless-----------------------------
