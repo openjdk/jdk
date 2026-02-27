@@ -25,7 +25,6 @@
  * @test id=ir
  * @bug 8378166
  * @summary Visual example of the Vector API: NBody / Particle Life simulation.
- * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
  * @library /test/lib /
  * @modules jdk.incubator.vector
  * @run driver ${test.main.class} ir
@@ -92,7 +91,7 @@ public class TestParticleLife {
     ParticleLife.State state = new ParticleLife.State();
 
     @Test
-    @Warmup(100)
+    @Warmup(75)
     @IR(counts = {IRNode.REPLICATE_F,     "> 0",
                   IRNode.LOAD_VECTOR_F,   "> 0",
                   IRNode.SUB_VF,          "> 0",
@@ -110,7 +109,7 @@ public class TestParticleLife {
     }
 
     @Test
-    @Warmup(10)
+    @Warmup(2)
     @IR(counts = {IRNode.REPLICATE_F,        "= 0",
                   IRNode.LOAD_VECTOR_F,      "= 0",
                   IRNode.REPLICATE_I,        "= 0",
@@ -139,7 +138,7 @@ public class TestParticleLife {
     }
 
     @Test
-    @Warmup(10)
+    @Warmup(2)
     @IR(counts = {IRNode.REPLICATE_F,        "> 0",
                   IRNode.LOAD_VECTOR_F,      "> 0",
                   IRNode.REPLICATE_I,        "> 0",
@@ -165,7 +164,7 @@ public class TestParticleLife {
     }
 
     @Test
-    @Warmup(10)
+    @Warmup(2)
     @IR(counts = {IRNode.REPLICATE_F,        "> 0",
                   IRNode.LOAD_VECTOR_F,      "> 0",
                   IRNode.REPLICATE_I,        "= 0", // No gather operation
@@ -192,7 +191,7 @@ public class TestParticleLife {
 
 
     @Test
-    @Warmup(10)
+    @Warmup(2)
     @IR(counts = {IRNode.REPLICATE_F,        "> 0",
                   IRNode.LOAD_VECTOR_F,      "> 0",
                   IRNode.REPLICATE_I,        "> 0",
