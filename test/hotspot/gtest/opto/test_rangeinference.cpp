@@ -657,7 +657,7 @@ static void test_lshift_monotonicity(const InputType& input, int shift) {
 template <class InputType>
 static void test_lshift_for_type() {
   using U = std::remove_const_t<decltype(InputType::_ulo)>;
-  constexpr int type_bits = sizeof(U) * 8;
+  constexpr int type_bits = type_width<U>();
   for (const InputType& input : all_instances<InputType>()) {
     for (int shift = 0; shift < type_bits; shift++) {
       test_lshift_correctness(input, shift);

@@ -164,4 +164,22 @@ inline unsigned count_leading_zeros(uintn_t<nbits> v) {
   return count_leading_zeros<unsigned int>(v._v & uintn_t<nbits>::_mask) - (32 - nbits);
 }
 
+template <typename T>
+constexpr int type_width_impl(T value) {
+  // Count the number of 1s in `value`.  We can't use population_count() from
+  // utilities/population_count.hpp, since it requires `std::is_integral`, which
+  // fails for `uintn_t<N>`.  Since this is a constexpr function, this function
+  // does not impose a runtime performance overhead.
+  return value == T(0) ? 0 : 1 + type_width_impl(value >> 1);
+}
+
+template <typename T>
+constexpr int type_width() {
+  // We can't use `sizeof()` on `T`, since `sizeof(uintn_t<N>)` returns the size
+  // of the underlying storage rather than the logical type width.  So we
+  // instead compute the number of 1s in the maximum value.
+  static_assert(!std::is_signed<T>::value, "type_width requires an unsigned type");
+  return type_width_impl(std::numeric_limits<T>::max());
+}
+
 #endif // SHARE_UTILITIES_INTN_T_HPP

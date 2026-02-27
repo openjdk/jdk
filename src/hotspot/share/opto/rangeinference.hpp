@@ -28,6 +28,7 @@
 #include "cppstdlib/limits.hpp"
 #include "cppstdlib/type_traits.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/intn_t.hpp"
 
 class outputStream;
 class Type;
@@ -410,11 +411,13 @@ public:
 
   // Compute `known_bits` by shifting known bits of `t1` left and setting the
   // low `shift` bits to zeros.  Also update the signed and unsigned ranges when
-  // the shift operation does not cause an overflow.
+  // the shift operation does not cause an overflow.  The caller is responsible
+  // for normalizing the shift amount (i.e. masking with 31 for ints or 63 for
+  // longs).
   template <class CTP>
-  static CTP infer_lshift(CTP t1, int shift) {
-    constexpr int type_bits = sizeof(U<CTP>) * 8;
-    int masked_shift = shift & (type_bits - 1);
+  static CTP infer_lshift(CTP t1, int masked_shift) {
+    assert(masked_shift >= 0 && masked_shift < type_width<U<CTP>>(), "shift is out of range");
+
     U<CTP> pattern = (U<CTP>(1) << masked_shift) - U<CTP>(1);
     U<CTP> known_one_bits = t1->_bits._ones << masked_shift;
     U<CTP> known_zero_bits = (t1->_bits._zeros << masked_shift) | pattern;
