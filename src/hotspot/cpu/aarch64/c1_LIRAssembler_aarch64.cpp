@@ -1219,6 +1219,8 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
 }
 
 void LIR_Assembler::increment_mdo(MacroAssembler *masm, Address dst, int32_t src) {
+  assert(masm->is_C1_MacroAssembler(), "must be");
+
 #undef __
 #define __ ((C1_MacroAssembler*)masm)->
   int ratio_shift = exact_log2(ProfileCaptureRatio);

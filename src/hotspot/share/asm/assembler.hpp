@@ -218,6 +218,10 @@ class AbstractAssembler : public ResourceObj  {
   // Code emission & accessing
   address addr_at(int pos) const { return code_section()->start() + pos; }
 
+#ifdef ASSERT
+  virtual bool is_C1_MacroAssembler() { return false; }
+#endif
+
  protected:
   // This routine is called with a label is used for an address.
   // Labels and displacements truck in offsets, but target must return a PC.
