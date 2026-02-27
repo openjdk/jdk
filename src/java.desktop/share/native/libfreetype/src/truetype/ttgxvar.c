@@ -2945,10 +2945,10 @@
       face->doblend = FALSE;
       for ( i = 0; i < num_coords; i++ )
         if ( coords[i] )
-	{
-	  face->doblend = TRUE;
-	  break;
-	}
+        {
+          face->doblend = TRUE;
+          break;
+        }
       if ( !face->doblend )
         goto Exit;
 
