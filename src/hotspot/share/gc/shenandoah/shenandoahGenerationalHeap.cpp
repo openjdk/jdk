@@ -220,13 +220,12 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
       return ShenandoahBarrierSet::resolve_forwarded(p);
     }
 
-    if (control_thread()->get_gc_id() % 2 == 0) {
-      // Only even numbered cycles get to promote
-      if (mark.has_displaced_mark_helper()) {
-        // We don't want to deal with MT here just to ensure we read the right mark word.
-        // Skip the potential promotion attempt for this one.
-      } else if (age_census()->is_tenurable(from_region->age() + mark.age())) {
-        // If the object is tenurable, try to promote it
+    if (mark.has_displaced_mark_helper()) {
+      // We don't want to deal with MT here just to ensure we read the right mark word.
+      // Skip the potential promotion attempt for this one.
+    } else if (age_census()->is_tenurable(from_region->age() + mark.age())) {
+      // If the object is tenurable, try to promote it
+      if (control_thread()->get_gc_id() % 2 == 0) {
         oop result = try_evacuate_object<YOUNG_GENERATION, OLD_GENERATION>(p, thread, from_region->age());
 
         // If we failed to promote this aged object, we'll fall through to code below and evacuate to young-gen.
