@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "runtime/semaphore.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -101,6 +102,7 @@ inline void SingleWriterSynchronizer::exit(uint enter_value) {
 }
 
 class SingleWriterSynchronizer::CriticalSection : public StackObj {
+  NoSafepointVerifier nsv;
   SingleWriterSynchronizer* _synchronizer;
   uint _enter_value;
 
