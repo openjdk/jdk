@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,18 @@
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.security.*;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.PEMDecoder;
+import java.security.PrivateKey;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.time.Instant;
 
 /*
  * @test
- * @bug 8048621 8133090 8167371 8236671
+ * @bug 8048621 8133090 8167371 8236671 8374808
  * @enablePreview
  * @summary Test basic operations with keystores (jks, jceks, pkcs12)
  * @author Yu-Ching Valerie PENG
@@ -177,6 +182,8 @@ public class TestKeyStoreBasic {
 
         // compare the creation date of the 2 key stores for all aliases
         compareCreationDate(ks, ks2, numEntries);
+        compareCreationInstant(ks, ks2, numEntries);
+
         // remove the last entry from the 2nd key store
         numEntries--;
         ks2.deleteEntry(ALIAS_HEAD + numEntries);
@@ -213,6 +220,7 @@ public class TestKeyStoreBasic {
 
         // compare the creation date of the 2 key stores for all aliases
         compareCreationDate(ks, ks2, numEntries);
+        compareCreationInstant(ks, ks2, numEntries);
 
         // check setEntry/getEntry with a password protection algorithm
         if ("PKCS12".equalsIgnoreCase(ks.getType())) {
@@ -280,6 +288,23 @@ public class TestKeyStoreBasic {
             if (!o1.getCreationDate(alias).equals(o2.getCreationDate(alias))) {
                 throw new RuntimeException("ERROR: entry creation time (" + k
                         + ") differs");
+            }
+        }
+    }
+
+    // compare the creation instants - true if all the same
+    private void compareCreationInstant(KeyStore o1, KeyStore o2, int range)
+            throws KeyStoreException {
+        String alias;
+        for (int k = 0; k < range; k++) {
+            alias = ALIAS_HEAD + k;
+            final Instant instant1 = o1.getCreationInstant(alias);
+            final Instant instant2 = o2.getCreationInstant(alias);
+            if (!(instant1.equals(instant2))) {
+                throw new RuntimeException("ERROR: entry creation time (" + k
+                                           + ") differs Instants {"
+                                           + instant1 + " - "
+                                           + instant2 + "}");
             }
         }
     }

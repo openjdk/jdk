@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,7 +184,7 @@ public class MediaTracker implements java.io.Serializable {
      * @serial
      * @see #MediaTracker(Component)
      */
-    Component target;
+    final Component target;
     /**
      * The head of the list of {@code Images} that is being
      * tracked by the {@code MediaTracker}.
@@ -194,7 +194,7 @@ public class MediaTracker implements java.io.Serializable {
      * @see #removeImage(Image)
      */
     @SuppressWarnings("serial") // Not statically typed as Serializable
-    MediaEntry head;
+    private MediaEntry head;
 
     /**
      * Use serialVersionUID from JDK 1.1 for interoperability.
@@ -864,8 +864,8 @@ public class MediaTracker implements java.io.Serializable {
 }
 
 abstract class MediaEntry {
-    MediaTracker tracker;
-    int ID;
+    final MediaTracker tracker;
+    final int ID;
     MediaEntry next;
 
     int status;
@@ -897,7 +897,7 @@ abstract class MediaEntry {
         return head;
     }
 
-    int getID() {
+    final int getID() {
         return ID;
     }
 
@@ -935,12 +935,12 @@ abstract class MediaEntry {
  * The entry of the list of {@code Images} that is being tracked by the
  * {@code MediaTracker}.
  */
-class ImageMediaEntry extends MediaEntry implements ImageObserver,
+final class ImageMediaEntry extends MediaEntry implements ImageObserver,
 java.io.Serializable {
     @SuppressWarnings("serial") // Not statically typed as Serializable
-    Image image;
-    int width;
-    int height;
+    final Image image;
+    final int width;
+    final int height;
 
     /**
      * Use serialVersionUID from JDK 1.1 for interoperability.
@@ -959,10 +959,12 @@ java.io.Serializable {
         return (image == img && width == w && height == h);
     }
 
+    @Override
     Object getMedia() {
         return image;
     }
 
+    @Override
     synchronized int getStatus(boolean doLoad, boolean doVerify) {
         if (doVerify) {
             int flags = tracker.target.checkImage(image, width, height, null);
@@ -978,6 +980,7 @@ java.io.Serializable {
         return super.getStatus(doLoad, doVerify);
     }
 
+    @Override
     void startLoad() {
         if (tracker.target.prepareImage(image, width, height, this)) {
             setStatus(COMPLETE);
@@ -995,6 +998,7 @@ java.io.Serializable {
         return 0;
     }
 
+    @Override
     public boolean imageUpdate(Image img, int infoflags,
                                int x, int y, int w, int h) {
         if (cancelled) {
