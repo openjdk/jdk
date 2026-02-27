@@ -632,7 +632,7 @@ public:
   void push(Node* def_mem_state, Node* use_mem_state) {
     if (use_mem_state->is_MergeMem()) {
       // Be sure we don't get into combinatorial problems.
-      Node *merge_mem = use_mem_state->as_MergeMem();
+      Node* merge_mem = use_mem_state->as_MergeMem();
       if (_worklist_visited.member(merge_mem)) {
         // already on work list; do not repeat
         return;
