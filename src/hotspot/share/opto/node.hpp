@@ -859,10 +859,10 @@ public:
 
 private:
   juint _class_id;
-  juint _flags;
+  uint64_t _flags;
 
 #ifdef ASSERT
-  static juint max_flags();
+  static uint64_t max_flags();
 #endif
 
 protected:
@@ -870,11 +870,11 @@ protected:
   void init_class_id(juint c) {
     _class_id = c; // cast out const
   }
-  void init_flags(uint fl) {
+  void init_flags(uint64_t fl) {
     assert(fl <= max_flags(), "invalid node flag");
     _flags |= fl;
   }
-  void clear_flag(uint fl) {
+  void clear_flag(uint64_t fl) {
     assert(fl <= max_flags(), "invalid node flag");
     _flags &= ~fl;
   }
@@ -882,11 +882,11 @@ protected:
 public:
   juint class_id() const { return _class_id; }
 
-  juint flags() const { return _flags; }
+  uint64_t flags() const { return _flags; }
 
-  void add_flag(juint fl) { init_flags(fl); }
+  void add_flag(uint64_t fl) { init_flags(fl); }
 
-  void remove_flag(juint fl) { clear_flag(fl); }
+  void remove_flag(uint64_t fl) { clear_flag(fl); }
 
   // Return a dense integer opcode number
   virtual int Opcode() const;

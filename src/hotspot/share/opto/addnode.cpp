@@ -1430,7 +1430,7 @@ int MergePrimitiveLoads::collect_merge_list(MergeLoadInfoList* merge_list, const
 #endif
 
   int bytes = collected * load->memory_size();
-  if (collected < 2 || bytes < 4 || !is_power_of_2(bytes)) {
+  if (collected < 2 || bytes < 2 || !is_power_of_2(bytes)) {
     // too few or not aligned
     return -1;
   }
@@ -1538,9 +1538,9 @@ Node* MergePrimitiveLoads::make_merged_load(const MergeLoadInfoList* merge_list,
   int merge_size = count * load->memory_size();
   BasicType bt = T_ILLEGAL;
   switch (merge_size) {
+    case 2: bt = T_CHAR;  rt = TypeInt::INT;  break;
     case 4: bt = T_INT;   rt = TypeInt::INT;   break;
     case 8: bt = T_LONG;  rt = TypeLong::LONG; break;
-    case 2: // Not merged as LoadS
     default: {
       ShouldNotReachHere();
       break;
@@ -1565,7 +1565,7 @@ Node* MergePrimitiveLoads::make_merged_load(const MergeLoadInfoList* merge_list,
     if (merge_size == 8) {
       replace = _phase->transform(new ReverseBytesLNode(merged_load));
     } else {
-      assert(merge_size == 4, "sanity");
+      assert(merge_size == 4 || merge_size == 2, "sanity");
       replace = _phase->transform(new ReverseBytesINode(merged_load));
     }
     _phase->is_IterGVN()->_worklist.push(merged_load);

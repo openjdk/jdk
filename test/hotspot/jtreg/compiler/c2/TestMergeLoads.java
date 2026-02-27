@@ -103,6 +103,13 @@ public class TestMergeLoads {
         testGroups.get("test1").put("test1g", (_,_) -> { return test1g(aB.clone()); });
         testGroups.get("test1").put("test1h", (_,_) -> { return test1h(aN); });
 
+        // Get short in little endian (2-byte merge)
+        testGroups.put("test1s", new HashMap<String,TestFunction>());
+        testGroups.get("test1s").put("test1sR", (_,_) -> { return test1sR(aB.clone()); });
+        testGroups.get("test1s").put("test1s_a", (_,_) -> { return test1s_a(aB.clone()); });
+        testGroups.get("test1s").put("test1s_b", (_,_) -> { return test1s_b(aB.clone()); });
+        testGroups.get("test1s").put("test1s_c", (_,_) -> { return test1s_c(aN); });
+
         // Get long in little endian
         testGroups.put("test2", new HashMap<String,TestFunction>());
         testGroups.get("test2").put("test2R", (_,_) -> { return test2R(aB.clone()); });
@@ -232,6 +239,10 @@ public class TestMergeLoads {
                  "test1f",
                  "test1g",
                  "test1h",
+
+                 "test1s_a",
+                 "test1s_b",
+                 "test1s_c",
 
                  "test2a",
                  "test2b",
@@ -479,9 +490,9 @@ public class TestMergeLoads {
     @Test
     @IR(counts = {
           IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "2",
-          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "2",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
           IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
-          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
           IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
           IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
         },
@@ -508,6 +519,80 @@ public class TestMergeLoads {
              ((UNSAFE.getByte(address + 1) & 0xff) << 8 )|
              ((UNSAFE.getByte(address + 2) & 0xff) << 16)|
              ((UNSAFE.getByte(address + 3) & 0xff) << 24);
+    }
+
+    /**
+     * Group 1s: get short in little endian mode (2-byte merge)
+     */
+    @DontCompile
+    static int test1sR(byte[] a) {
+      return (a[0] & 0xff) | ((a[1] & 0xff) << 8);
+    }
+
+    @Test
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+        },
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatformAnd = {"little-endian", "true"})
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.REVERSE_BYTES_I,  "1"
+        },
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatform = {"big-endian", "true"})
+    static int test1s_a(byte[] a) {
+      return (a[0] & 0xff) | ((a[1] & 0xff) << 8);
+    }
+
+    @Test
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+        },
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static int test1s_b(byte[] a) {
+      return UNSAFE.getCharUnaligned(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET, /* big-endian */ false);
+    }
+
+    @Test
+    @IR(counts = {
+          IRNode.LOAD_B,  "0",
+          IRNode.LOAD_UB, "0",
+          IRNode.LOAD_S,  "0",
+          IRNode.LOAD_US, "1",
+          IRNode.LOAD_I,  "0",
+          IRNode.LOAD_L,  "0",
+        },
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatformAnd = {"little-endian", "true"})
+    @IR(counts = {
+          IRNode.LOAD_B,  "0",
+          IRNode.LOAD_UB, "0",
+          IRNode.LOAD_S,  "0",
+          IRNode.LOAD_US, "1",
+          IRNode.LOAD_I,  "0",
+          IRNode.LOAD_L,  "0",
+          IRNode.REVERSE_BYTES_I,  "1"
+        },
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatform = {"big-endian", "true"})
+    static int test1s_c(long address) {
+      return (UNSAFE.getByte(address + 0) & 0xff) | ((UNSAFE.getByte(address + 1) & 0xff) << 8);
     }
 
     /**
