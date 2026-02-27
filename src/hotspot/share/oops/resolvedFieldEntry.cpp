@@ -74,7 +74,7 @@ void ResolvedFieldEntry::print_on(outputStream* st) const {
 void ResolvedFieldEntry::assert_is_valid() const {
   assert(field_holder()->is_instance_klass(), "should be instanceKlass");
   assert(field_offset() >= instanceOopDesc::base_offset_in_bytes(),
-         "field offset out of range %d < %d", instanceOopDesc::base_offset_in_bytes(), field_offset());
+         "field offset out of range %d >= %d", field_offset(), instanceOopDesc::base_offset_in_bytes());
   assert(as_BasicType((TosState)tos_state()) != T_ILLEGAL, "tos_state is ILLEGAL");
   assert(_flags < (1 << (max_flag_shift + 1)), "flags are too large %d", _flags);
   assert((get_code() == 0 || get_code() == Bytecodes::_getstatic || get_code() == Bytecodes::_getfield),
