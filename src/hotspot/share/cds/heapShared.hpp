@@ -69,18 +69,13 @@ class KlassSubGraphInfo: public CHeapObj<mtClass> {
   // Does this KlassSubGraphInfo belong to the archived full module graph
   bool _is_full_module_graph;
 
-  // Does this KlassSubGraphInfo references any classes that were loaded while
-  // JvmtiExport::is_early_phase()!=true. If so, this KlassSubGraphInfo cannot be
-  // used at runtime if JVMTI ClassFileLoadHook is enabled.
-  bool _has_non_early_klasses;
   static bool is_non_early_klass(Klass* k);
   static void check_allowed_klass(InstanceKlass* ik);
  public:
   KlassSubGraphInfo(Klass* k, bool is_full_module_graph) :
     _k(k),  _subgraph_object_klasses(nullptr),
     _subgraph_entry_fields(nullptr),
-    _is_full_module_graph(is_full_module_graph),
-    _has_non_early_klasses(false) {}
+    _is_full_module_graph(is_full_module_graph) {}
 
   ~KlassSubGraphInfo() {
     if (_subgraph_object_klasses != nullptr) {
@@ -105,7 +100,6 @@ class KlassSubGraphInfo: public CHeapObj<mtClass> {
            _subgraph_object_klasses->length();
   }
   bool is_full_module_graph() const { return _is_full_module_graph; }
-  bool has_non_early_klasses() const { return _has_non_early_klasses; }
 };
 
 // An archived record of object sub-graphs reachable from static

@@ -1114,7 +1114,6 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
   }
 
   _subgraph_object_klasses->append_if_missing(orig_k);
-  _has_non_early_klasses |= is_non_early_klass(orig_k);
 }
 
 void KlassSubGraphInfo::check_allowed_klass(InstanceKlass* ik) {
@@ -1157,45 +1156,12 @@ void KlassSubGraphInfo::check_allowed_klass(InstanceKlass* ik) {
   AOTMetaspace::unrecoverable_writing_error();
 }
 
-bool KlassSubGraphInfo::is_non_early_klass(Klass* k) {
-  if (k->is_objArray_klass()) {
-    k = ObjArrayKlass::cast(k)->bottom_klass();
-  }
-  if (k->is_instance_klass()) {
-    if (!SystemDictionaryShared::is_early_klass(InstanceKlass::cast(k))) {
-      ResourceMark rm;
-      log_info(aot, heap)("non-early: %s", k->external_name());
-      return true;
-    } else {
-      return false;
-    }
-  } else {
-    return false;
-  }
-}
-
 // Initialize an archived subgraph_info_record from the given KlassSubGraphInfo.
 void ArchivedKlassSubGraphInfoRecord::init(KlassSubGraphInfo* info) {
   _k = ArchiveBuilder::get_buffered_klass(info->klass());
   _entry_field_records = nullptr;
   _subgraph_object_klasses = nullptr;
   _is_full_module_graph = info->is_full_module_graph();
-
-  if (_is_full_module_graph) {
-    // Consider all classes referenced by the full module graph as early -- we will be
-    // allocating objects of these classes during JVMTI early phase, so they cannot
-    // be processed by (non-early) JVMTI ClassFileLoadHook
-    _has_non_early_klasses = false;
-  } else {
-    _has_non_early_klasses = info->has_non_early_klasses();
-  }
-
-  if (_has_non_early_klasses) {
-    ResourceMark rm;
-    log_info(aot, heap)(
-          "Subgraph of klass %s has non-early klasses and cannot be used when JVMTI ClassFileLoadHook is enabled",
-          _k->external_name());
-  }
 
   // populate the entry fields
   GrowableArray<int>* entry_fields = info->subgraph_entry_fields();
@@ -1353,10 +1319,6 @@ static void verify_the_heap(Klass* k, const char* which) {
 
 // Before GC can execute, we must ensure that all oops reachable from HeapShared::roots()
 // have a valid klass. I.e., oopDesc::klass() must have already been resolved.
-//
-// Note: if a ArchivedKlassSubGraphInfoRecord contains non-early classes, and JVMTI
-// ClassFileLoadHook is enabled, it's possible for this class to be dynamically replaced. In
-// this case, we will not load the ArchivedKlassSubGraphInfoRecord and will clear its roots.
 void HeapShared::resolve_classes(JavaThread* current) {
   assert(CDSConfig::is_using_archive(), "runtime only!");
   if (CDSConfig::is_using_klass_subgraphs()) {
@@ -1518,15 +1480,6 @@ HeapShared::resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAP
       return nullptr;
     }
 
-    if (record->has_non_early_klasses() && JvmtiExport::should_post_class_file_load_hook()) {
-      if (log_is_enabled(Info, aot, heap)) {
-        ResourceMark rm(THREAD);
-        log_info(aot, heap)("subgraph %s cannot be used because JVMTI ClassFileLoadHook is enabled",
-                            k->external_name());
-      }
-      return nullptr;
-    }
-
     if (log_is_enabled(Info, aot, heap)) {
       ResourceMark rm;
       log_info(aot, heap)("%s subgraph %s ", do_init ? "init" : "resolve", k->external_name());
@@ -1608,8 +1561,8 @@ void HeapShared::init_archived_fields_for(Klass* k, const ArchivedKlassSubGraphI
     // mirror after this point.
     if (log_is_enabled(Info, aot, heap)) {
       ResourceMark rm;
-      log_info(aot, heap)("initialize_from_archived_subgraph %s " PTR_FORMAT "%s%s",
-                          k->external_name(), p2i(k), JvmtiExport::is_early_phase() ? " (early)" : "",
+      log_info(aot, heap)("initialize_from_archived_subgraph %s " PTR_FORMAT "%s",
+                          k->external_name(), p2i(k),
                           k->has_aot_initialized_mirror() ? " (aot-inited)" : "");
     }
   }
