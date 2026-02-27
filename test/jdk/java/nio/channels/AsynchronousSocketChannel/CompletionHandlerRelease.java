@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 8202252
- * @run testng CompletionHandlerRelease
+ * @run junit CompletionHandlerRelease
  * @summary Verify that reference to CompletionHandler is cleared after use
  */
 
@@ -44,11 +44,16 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+@TestInstance(Lifecycle.PER_CLASS)
 public class CompletionHandlerRelease {
     @Test
     public void testConnect() throws Exception {
@@ -134,13 +139,13 @@ public class CompletionHandlerRelease {
 
     private AsynchronousChannelGroup GROUP;
 
-    @BeforeTest
+    @BeforeAll
     void setup() throws IOException {
         GROUP = AsynchronousChannelGroup.withFixedThreadPool(2,
             Executors.defaultThreadFactory());
     }
 
-    @AfterTest
+    @AfterAll
     void cleanup() throws IOException {
         GROUP.shutdownNow();
     }
