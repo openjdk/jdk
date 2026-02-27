@@ -177,9 +177,9 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *   [0-9][0-9a-zA-Z]{3} | [0-9a-zA-Z]{5,8}}.</dd>
  *   <dd> <em>BCP 47 deviation:</em> BCP 47 only
  *   uses hyphen ('-') as a delimiter and APIs provided by {@code Locale} which accept
- *   BCP 47 language tags expect as such. However, {@link Locale.Builder#setVariant(String)}
- *   also supports underscore ('_') and {@link Locale#of(String, String, String)}
- *   only supports underscore ('_').</dd>
+ *   BCP 47 language tags expect as such. However, for backwards compatibility,
+ *   {@link Locale.Builder#setVariant(String)} also accepts underscore ('_').
+ *   {@link Locale#of(String, String, String)} accepts only underscore ('_').</dd>
  *
  *   <dd> <em>Example:</em> "polyton" (Polytonic Greek), "POSIX"</dd>
  *
