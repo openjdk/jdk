@@ -31,7 +31,7 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
-public record CannedFormattedString(BiFunction<String, Object[], String> formatter, String key, Object[] args) implements CannedArgument {
+public record CannedFormattedString(BiFunction<String, Object[], String> formatter, String key, List<Object> args) implements CannedArgument {
 
     public static CannedArgument cannedArgument(Supplier<Object> supplier, String label) {
         Objects.requireNonNull(supplier);
@@ -59,18 +59,18 @@ public record CannedFormattedString(BiFunction<String, Object[], String> formatt
     }
 
     public CannedFormattedString mapArgs(UnaryOperator<Object> mapper) {
-        return new CannedFormattedString(formatter, key, Stream.of(args).map(mapper).toArray());
+        return new CannedFormattedString(formatter, key, args.stream().map(mapper).toList());
     }
 
     public CannedFormattedString {
         Objects.requireNonNull(formatter);
         Objects.requireNonNull(key);
         Objects.requireNonNull(args);
-        List.of(args).forEach(Objects::requireNonNull);
+        args.forEach(Objects::requireNonNull);
     }
 
     public String getValue() {
-        return formatter.apply(key, Stream.of(args).map(arg -> {
+        return formatter.apply(key, args.stream().map(arg -> {
             if (arg instanceof CannedArgument cannedArg) {
                 return cannedArg.getValue();
             } else {
@@ -80,19 +80,29 @@ public record CannedFormattedString(BiFunction<String, Object[], String> formatt
     }
 
     public CannedFormattedString addPrefix(String prefixKey) {
-        Objects.requireNonNull(prefixKey);
-        return new CannedFormattedString((theKey, theArgs) -> {
-            var str = formatter.apply((String)theArgs[0], Arrays.copyOfRange(theArgs, 1, theArgs.length));
-            return formatter.apply(theKey, new Object[] {str});
-        }, prefixKey, Stream.concat(Stream.of(key), Stream.of(args)).toArray());
+        return new CannedFormattedString(
+                new AddPrefixFormatter(formatter), prefixKey, Stream.concat(Stream.of(key), args.stream()).toList());
     }
 
     @Override
     public String toString() {
-        if (args.length == 0) {
+        if (args.isEmpty()) {
             return String.format("%s", key);
         } else {
-            return String.format("%s+%s", key, List.of(args));
+            return String.format("%s+%s", key, args);
+        }
+    }
+
+    private record AddPrefixFormatter(BiFunction<String, Object[], String> formatter) implements BiFunction<String, Object[], String> {
+
+        AddPrefixFormatter {
+            Objects.requireNonNull(formatter);
+        }
+
+        @Override
+        public String apply(String format, Object[] formatArgs) {
+            var str = formatter.apply((String)formatArgs[0], Arrays.copyOfRange(formatArgs, 1, formatArgs.length));
+            return formatter.apply(format, new Object[] {str});
         }
     }
 }
