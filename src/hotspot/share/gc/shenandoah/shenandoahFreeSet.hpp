@@ -402,6 +402,9 @@ public:
   //       idx <= rightmost
   //     }
   void assert_bounds() NOT_DEBUG_RETURN;
+  // this checks certain sanity conditions related to the bounds with much less effort than is required to
+  // more rigorously enforce correctness as is done by assert_bounds()
+  inline void assert_bounds_sanity() NOT_DEBUG_RETURN;
 };
 
 // Publicly, ShenandoahFreeSet represents memory that is available to mutator threads.  The public capacity(), used(),
