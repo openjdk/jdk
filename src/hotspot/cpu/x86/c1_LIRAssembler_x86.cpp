@@ -74,7 +74,7 @@ NEEDS_CLEANUP // remove this definitions ?
 const Register SYNC_header = rax;   // synchronization header
 const Register SHIFT_count = rcx;   // where count for shift operations must be
 
-#define __ _masm->
+#define __ masm()->
 
 
 static void select_different_registers(Register preserve,
@@ -1263,31 +1263,36 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
   __ bind(*op->stub()->continuation());
 }
 
+
+static void increment_mdo(MacroAssembler *C1_masm, Address dst, int32_t src, Register temp) {
+  auto masm = [C1_masm]() { return (C1_MacroAssembler*)C1_masm; };
+  assert(masm()->is_C1_MacroAssembler(), "must be");
+  int ratio_shift = exact_log2(ProfileCaptureRatio);
+  Label nope;
+  if (ProfileCaptureRatio > 1) {
+    auto threshold = (1ull << 32) >> ratio_shift;
+    __ cmpl(r_profile_rng, threshold);
+    __ jcc(Assembler::aboveEqual, nope);
+  }
+  __ addptr(dst, src << ratio_shift);
+  if (ProfileCaptureRatio > 1) {
+    __ bind(nope);
+    __ step_random(r_profile_rng, temp);
+  }
+}
+
 void LIR_Assembler::type_profile_helper(Register mdo,
                                         ciMethodData *md, ciProfileData *data,
                                         Register recv, Register temp) {
   int mdp_offset = md->byte_offset_of_slot(data, in_ByteSize(0));
   if (ProfileCaptureRatio > 1) {
     __ profile_receiver_type
-      (recv, mdo, mdp_offset,
-       [](MacroAssembler *masm, Address dst, int32_t src) {
-#undef __
-#define __ ((C1_MacroAssembler*)masm)->
-         int ratio_shift = exact_log2(ProfileCaptureRatio);
-         auto threshold = (1ull << 32) >> ratio_shift;
-         Label nope;
-         __ cmpl(r_profile_rng, threshold);
-         __ jcc(Assembler::aboveEqual, nope);
-         __ addptr(dst, src << ratio_shift);
-         __ bind(nope);
-       });
-#undef __
-#define __ _masm->
-    __ step_random(r_profile_rng, temp);
+      (recv, mdo, mdp_offset, temp, &increment_mdo);
   } else {
-    __ profile_receiver_type(recv, mdo, mdp_offset);
+    __ profile_receiver_type(recv, mdo, mdp_offset, temp);
   }
 }
+
 
 void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, Label* failure, Label* obj_is_null) {
   // we always need a stub for the failure case.
@@ -1353,35 +1358,28 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
       = profile_capture_ratio > 1 ? new ProfileStub() : nullptr;
 
     auto lambda = [stub, md, mdo, data, k_RInfo, obj, tmp_load_klass] (LIR_Assembler* ce, LIR_Op* base_op) {
+      auto masm = []() { return ce->masm(); };
+      if (stub != nullptr)  __ bind(*stub->entry());
 
-#undef __
-#define __ masm->
+      Register recv = k_RInfo;
+      __ load_klass(recv, obj, tmp_load_klass);
+      ce->type_profile_helper(mdo, md, data, recv, rscratch1);
 
-    auto masm = ce->masm();
-    if (stub != nullptr)  __ bind(*stub->entry());
+      if (stub != nullptr)  __ jmp(*stub->continuation());
+    };
 
-    Register recv = k_RInfo;
-    __ load_klass(recv, obj, tmp_load_klass);
-    ce->type_profile_helper(mdo, md, data, recv, rscratch1);
+    if (stub != nullptr) {
+      __ cmpl(r_profile_rng, threshold);
+      __ jcc(Assembler::below, *stub->entry());
+      __ bind(*stub->continuation());
+      __ step_random(r_profile_rng, rscratch1);
 
-    if (stub != nullptr)  __ jmp(*stub->continuation());
-
-#undef __
-#define __ _masm->
-  };
-
-  if (stub != nullptr) {
-    __ cmpl(r_profile_rng, threshold);
-    __ jcc(Assembler::below, *stub->entry());
-    __ bind(*stub->continuation());
-    __ step_random(r_profile_rng, rscratch1);
-
-    stub->set_action(lambda, op);
-    stub->set_name("Typecheck stub");
-    append_code_stub(stub);
-  } else {
-    lambda(this, op);
-  }
+      stub->set_action(lambda, op);
+      stub->set_name("Typecheck stub");
+      append_code_stub(stub);
+    } else {
+      lambda(this, op);
+    }
   } else {
     __ jcc(Assembler::equal, *obj_is_null);
   }
@@ -1491,40 +1489,34 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
 
       auto lambda = [profile_stub, md, data, value,
                      k_RInfo, klass_RInfo, tmp_load_klass, Rtmp1, success_target] (LIR_Assembler* ce, LIR_Op*) {
-#undef __
-#define __ masm->
+        if (profile_stub != nullptr)  __ bind(*profile_stub->entry());
 
-      auto masm = ce->masm();
+        auto masm = []() { return ce->masm(); }
 
-      if (profile_stub != nullptr)  __ bind(*profile_stub->entry());
+        __ testptr(value, value);
 
-      __ testptr(value, value);
+        Label not_null;
+        Register mdo  = klass_RInfo;
+        __ mov_metadata(mdo, md->constant_encoding());
+        __ jccb(Assembler::notEqual, not_null);
 
-      Label not_null;
-      Register mdo  = klass_RInfo;
-      __ mov_metadata(mdo, md->constant_encoding());
-      __ jccb(Assembler::notEqual, not_null);
+        // Object is null; update MDO and exit
+        Address data_addr(mdo, md->byte_offset_of_slot(data, DataLayout::flags_offset()));
+        int header_bits = BitData::null_seen_byte_constant();
+        __ orb(data_addr, header_bits);
+        if (profile_stub != nullptr) {
+          __ jmp(*profile_stub->continuation());
+        } else {
+          __ jmp(*success_target);
+        }
+        __ bind(not_null);
 
-      // Object is null; update MDO and exit
-      Address data_addr(mdo, md->byte_offset_of_slot(data, DataLayout::flags_offset()));
-      int header_bits = BitData::null_seen_byte_constant();
-      __ orb(data_addr, header_bits);
-      if (profile_stub != nullptr) {
-        __ jmp(*profile_stub->continuation());
-      } else {
-        __ jmp(*success_target);
-      }
-      __ bind(not_null);
+        Label update_done;
+        Register recv = k_RInfo;
+        __ load_klass(recv, value, tmp_load_klass);
+        ce->type_profile_helper(mdo, md, data, recv, Rtmp1);
 
-      Label update_done;
-      Register recv = k_RInfo;
-      __ load_klass(recv, value, tmp_load_klass);
-      ce->type_profile_helper(mdo, md, data, recv, Rtmp1);
-
-      if (profile_stub != nullptr)  __ jmp(*profile_stub->continuation());
-
-#undef __
-#define __ _masm->
+        if (profile_stub != nullptr)  __ jmp(*profile_stub->continuation());
       };
 
       if (profile_stub != nullptr) {

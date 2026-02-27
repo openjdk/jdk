@@ -4761,7 +4761,7 @@ Address MacroAssembler::argument_address(RegisterOrConstant arg_slot,
 // counter updates are not atomic.
 //
 void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_offset,
-                                           addptr_32_insn_t increment) {
+                                           Register temp, addptr_32_insn_t increment) {
   int base_receiver_offset   = in_bytes(ReceiverTypeData::receiver_offset(0));
   int end_receiver_offset    = in_bytes(ReceiverTypeData::receiver_offset(ReceiverTypeData::row_limit()));
   int poly_count_offset      = in_bytes(CounterData::count_offset());
@@ -4805,7 +4805,8 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
 
   // Corner case: no profile table. Increment poly counter and exit.
   if (ReceiverTypeData::row_limit() == 0) {
-    increment(this, Address(mdp, poly_count_offset, Address::times_ptr), DataLayout::counter_increment);
+    increment(this, Address(mdp, poly_count_offset, Address::times_ptr),
+              DataLayout::counter_increment, temp);
     BLOCK_COMMENT("} profile_receiver_type");
     return;
   }
@@ -4948,7 +4949,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
 
   bind(L_count_update);
   // addptr(Address(mdp, offset, Address::times_ptr), DataLayout::counter_increment);
-  increment(this, Address(mdp, offset, Address::times_ptr), DataLayout::counter_increment);
+  increment(this, Address(mdp, offset, Address::times_ptr), DataLayout::counter_increment, temp);
 
   BLOCK_COMMENT("} profile_receiver_type");
 }
