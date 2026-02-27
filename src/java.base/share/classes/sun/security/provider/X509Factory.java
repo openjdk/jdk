@@ -256,11 +256,16 @@ public class X509Factory extends CertificateFactorySpi {
         if (encoding.length > ENC_MAX_LENGTH) {
             return value;
         }
-        // Cache implementations are thread-safe for concurrent use. Under
-        // contention, duplicates may be constructed/inserted; callers must not
-        // rely on reference identity.
-        cache.put(new Cache.EqualByteArray(encoding), value);
-        return value;
+        Object key = new Cache.EqualByteArray(encoding);
+        // Synchronize only to make the "check + insert" decision atomic.
+        synchronized (cache) {
+            V existing = cache.get(key);
+            if (existing != null) {
+                return existing;
+            }
+            cache.put(key, value);
+            return value;
+        }
     }
 
     /**
