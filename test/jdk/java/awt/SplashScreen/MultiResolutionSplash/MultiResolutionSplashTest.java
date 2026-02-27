@@ -88,10 +88,7 @@ public class MultiResolutionSplashTest {
 
         final Robot robot = new Robot();
 
-        String fileName = "splashscreen-%1.2f-%s.png"
-                          .formatted(scaleFactor, test.name1x);
-        saveImageNoError(robot.createScreenCapture(splashBounds),
-                         new File(fileName));
+        BufferedImage splashCapture = robot.createScreenCapture(splashBounds);
 
         if (splashBounds.width != IMAGE_WIDTH) {
             throw new RuntimeException(
@@ -102,15 +99,18 @@ public class MultiResolutionSplashTest {
                     "SplashScreen#getBounds has wrong height");
         }
 
-        int screenX = (int) splashBounds.getCenterX();
-        int screenY = (int) splashBounds.getCenterY();
-        Color splashScreenColor = robot.getPixelColor(screenX, screenY);
+        Color splashScreenColor =
+                new Color(splashCapture.getRGB(splashBounds.width / 2,
+                                               splashBounds.height / 2));
         Color testColor = (1 < scaleFactor) ? test.color2x : test.color1x;
 
         if (!compare(testColor, splashScreenColor)) {
+            String captureFileName = "splashscreen-%1.2f-%s.png"
+                                     .formatted(scaleFactor, test.name1x);
+            saveImageNoError(splashCapture, new File(captureFileName));
             throw new RuntimeException(
                     "Image with wrong resolution is used for splash screen! "
-                    + "Refer to " + fileName);
+                    + "Refer to " + captureFileName);
         }
     }
 
@@ -171,11 +171,14 @@ public class MultiResolutionSplashTest {
             return;
         }
 
-        BufferedImage image = new BufferedImage((int) (scale * IMAGE_WIDTH),
-                (int) (scale * IMAGE_HEIGHT), BufferedImage.TYPE_INT_RGB);
+        final int width = (int) (scale * IMAGE_WIDTH);
+        final int height = (int) (scale * IMAGE_HEIGHT);
+        BufferedImage image = new BufferedImage(width,
+                                                height,
+                                                BufferedImage.TYPE_INT_RGB);
         Graphics g = image.getGraphics();
         g.setColor(color);
-        g.fillRect(0, 0, (int) (scale * IMAGE_WIDTH), (int) (scale * IMAGE_HEIGHT));
+        g.fillRect(0, 0, width, height);
 
         saveImage(image, file);
     }
