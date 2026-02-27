@@ -55,7 +55,7 @@ NEEDS_CLEANUP // remove this definitions ?
 const Register SYNC_header = r0;   // synchronization header
 const Register SHIFT_count = r0;   // where count for shift operations must be
 
-#define __ _masm->
+#define __ masm()->
 
 
 static void select_different_registers(Register preserve,
@@ -1218,13 +1218,12 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
   __ bind(*op->stub()->continuation());
 }
 
-void LIR_Assembler::increment_mdo(MacroAssembler *masm, Address dst, int32_t src) {
-  assert(masm->is_C1_MacroAssembler(), "must be");
+static void increment_mdo(MacroAssembler *C1_masm, Address dst, int32_t src) {
+  auto masm = [C1_masm]() { return (C1_MacroAssembler*)C1_masm; };
+  assert(masm()->is_C1_MacroAssembler(), "must be");
 
-#undef __
-#define __ ((C1_MacroAssembler*)masm)->
-  int ratio_shift = exact_log2(ProfileCaptureRatio);
   Label nope;
+  int ratio_shift = exact_log2(ProfileCaptureRatio);
   if (ProfileCaptureRatio > 1) {
     __ ubfx(rscratch1, r_profile_rng, 32-ratio_shift, ratio_shift);
     __ cbnz(rscratch1, nope);
@@ -1234,8 +1233,6 @@ void LIR_Assembler::increment_mdo(MacroAssembler *masm, Address dst, int32_t src
     __ bind(nope);
     __ step_random(r_profile_rng, rscratch2);
   }
-#undef __
-#define __ _masm->
 }
 
 void LIR_Assembler::type_profile_helper(Register mdo,
@@ -1244,7 +1241,7 @@ void LIR_Assembler::type_profile_helper(Register mdo,
   int mdp_offset = md->byte_offset_of_slot(data, in_ByteSize(0));
   if (ProfileCaptureRatio > 1) {
     __ profile_receiver_type
-      (recv, mdo, mdp_offset, &LIR_Assembler::increment_mdo);
+      (recv, mdo, mdp_offset, &increment_mdo);
   } else {
     __ profile_receiver_type(recv, mdo, mdp_offset);
   }
@@ -1318,11 +1315,8 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
       = profile_capture_ratio > 1 ? new ProfileStub() : nullptr;
 
     auto lambda = [stub, md, mdo, data, k_RInfo, obj] (LIR_Assembler* ce, LIR_Op* base_op) {
+      auto masm = [ce]() { return ce->masm(); };
 
-#undef __
-#define __ masm->
-
-      auto masm = ce->masm();
       if (stub != nullptr)  __ bind(*stub->entry());
 
       Label update_done;
@@ -1331,9 +1325,6 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
       ce->type_profile_helper(mdo, md, data, recv);
 
       if (stub != nullptr)  __ b(*stub->continuation());
-
-#undef __
-#define __ _masm->
     };
 
     if (stub != nullptr) {
@@ -1450,10 +1441,8 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
 
       auto lambda = [profile_stub, md, data, value,
                      k_RInfo, klass_RInfo, success_target] (LIR_Assembler* ce, LIR_Op*) {
-#undef __
-#define __ masm->
 
-        auto masm = ce->masm();
+        auto masm = [ce]() { return ce->masm(); };
 
         if (profile_stub != nullptr)  __ bind(*profile_stub->entry());
 
@@ -1481,9 +1470,6 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
         ce->type_profile_helper(mdo, md, data, recv);
 
         if (profile_stub != nullptr)  __ b(*profile_stub->continuation());
-
-#undef __
-#define __ _masm->
       };
 
       if (profile_stub != nullptr) {
@@ -2604,10 +2590,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr,
   auto lambda = [counter_stub, overflow_stub, freq_opr, dest_opr, dest, ratio_shift, step,
                  md_reg, md_opr, md_offset_opr] (LIR_Assembler* ce, LIR_Op* op) {
 
-#undef __
-#define __ masm->
-
-    auto masm = ce->masm();
+    auto masm = [ce]() { return ce->masm(); };
     Address counter_address;
 
     if (counter_stub != nullptr)  __ bind(*counter_stub->entry());
@@ -2684,9 +2667,6 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr,
     if (counter_stub != nullptr) {
       __ b(*counter_stub->continuation());
     }
-
-#undef __
-#define __ _masm->
   };
 
   if (counter_stub != nullptr) {
