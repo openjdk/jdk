@@ -606,13 +606,13 @@ class DeoptimizationBlob: public SingletonBlob {
     _uncommon_trap_offset = offset;
     assert(contains(code_begin() + _uncommon_trap_offset), "must be PC inside codeblob");
   }
-  address uncommon_trap() const                  { return code_begin() + _uncommon_trap_offset; }
+  address uncommon_trap() const                  { return (EnableJVMCI ? code_begin() + _uncommon_trap_offset : nullptr); }
 
   void set_implicit_exception_uncommon_trap_offset(int offset) {
     _implicit_exception_uncommon_trap_offset = offset;
     assert(contains(code_begin() + _implicit_exception_uncommon_trap_offset), "must be PC inside codeblob");
   }
-  address implicit_exception_uncommon_trap() const { return code_begin() + _implicit_exception_uncommon_trap_offset; }
+  address implicit_exception_uncommon_trap() const { return (EnableJVMCI ? code_begin() + _implicit_exception_uncommon_trap_offset : nullptr); }
 #endif // INCLUDE_JVMCI
 
   void print_value_on_impl(outputStream* st) const;

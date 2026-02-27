@@ -166,8 +166,14 @@ ATTRIBUTE_ALIGNED(4) static const juint _INF[] =
 
 address StubGenerator::generate_libmExp() {
   StubId stub_id = StubId::stubgen_dexp_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   Label L_2TAG_PACKET_0_0_2, L_2TAG_PACKET_1_0_2, L_2TAG_PACKET_2_0_2, L_2TAG_PACKET_3_0_2;
   Label L_2TAG_PACKET_4_0_2, L_2TAG_PACKET_5_0_2, L_2TAG_PACKET_6_0_2, L_2TAG_PACKET_7_0_2;
@@ -381,7 +387,31 @@ address StubGenerator::generate_libmExp() {
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
 #undef __
+
+#if INCLUDE_CDS
+void StubGenerator::init_AOTAddressTable_exp(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)addr);
+  ADD(_cv);
+  ADD(((address)_cv+16));
+  ADD(((address)_cv+32));
+  ADD(((address)_cv+48));
+  ADD(((address)_cv+64));
+  ADD(((address)_cv+80));
+  ADD(_mmask);
+  ADD(_bias);
+  ADD(_Tbl_addr);
+  ADD(_ALLONES);
+  ADD(_ebias);
+  ADD(_XMAX);
+  ADD(_XMIN);
+  ADD(_INF);
+#undef ADD
+}
+#endif // INCLUDE_CDS

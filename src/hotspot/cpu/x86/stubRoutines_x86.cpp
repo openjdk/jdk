@@ -28,6 +28,10 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "crc32c.h"
+#include "stubGenerator_x86_64.hpp"
+#ifdef COMPILER1
+#include "c1/c1_LIRAssembler.hpp"
+#endif
 
 // Implementation of the platform-specific part of StubRoutines - for
 // a description of how to extend it, see the stubRoutines.hpp file.
@@ -411,3 +415,46 @@ ATTRIBUTE_ALIGNED(64) const julong StubRoutines::x86::_k512_W[] =
     0x4cc5d4becb3e42b6ULL, 0x597f299cfc657e2aULL,
     0x5fcb6fab3ad6faecULL, 0x6c44198c4a475817ULL,
 };
+
+#if INCLUDE_CDS
+
+void StubRoutines::init_AOTAddressTable() {
+  ResourceMark rm;
+  GrowableArray<address> external_addresses;
+  // publish static addresses referred to by main x86 generator and
+  // auxiliary x86 generators
+  StubGenerator::init_AOTAddressTable(external_addresses);
+  // publish external data addresses defined in nested x86 class
+  StubRoutines::x86::init_AOTAddressTable(external_addresses);
+#ifdef COMPILER1
+  LIR_Assembler::init_AOTAddressTable(external_addresses);
+#endif
+  AOTCodeCache::publish_external_addresses(external_addresses);
+}
+
+// publish addresses of external data defined in this file which may
+// be referenced from stub or code
+void StubRoutines::x86::init_AOTAddressTable(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)addr);
+  ADD(&_mxcsr_std);
+  ADD(&_mxcsr_rz);
+  ADD(crc_by128_masks_addr());
+  ADD(crc_by128_masks_addr() + 16);
+  ADD(crc_by128_masks_addr() + 32);
+  // this is added in generic code
+  // ADD(_crc_table);
+  ADD(crc_by128_masks_avx512_addr());
+  ADD(crc_by128_masks_avx512_addr() + 16);
+  ADD(crc_by128_masks_avx512_addr() + 32);
+  ADD(_crc_table_avx512);
+  ADD(_crc32c_table_avx512);
+  ADD(_shuf_table_crc32_avx512);
+  // n.b. call accessor for this one to ensure the table is generated
+  ADD(crc32c_table_addr());
+  ADD(_arrays_hashcode_powers_of_31);
+  ADD(_k256);
+  ADD(_k256_W);
+  ADD(_k512_W);
+#undef ADD
+}
+#endif // INCLUDE_CDS
