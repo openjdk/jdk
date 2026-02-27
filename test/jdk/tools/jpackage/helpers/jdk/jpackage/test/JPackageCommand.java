@@ -1938,7 +1938,9 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         VALUE
     }
 
-    private static final Map<String, PackageType> PACKAGE_TYPES = Stream.of(PackageType.values()).collect(toMap(PackageType::getType, x -> x));
+    private static final Map<String, PackageType> PACKAGE_TYPES = Stream.of(PackageType.values()).filter(type -> {
+        return type.isNative() || type == PackageType.IMAGE;
+    }).collect(toMap(PackageType::getType, x -> x));
 
     // Set the property to the path of run-time image to speed up
     // building app images and platform bundles by avoiding running jlink.
