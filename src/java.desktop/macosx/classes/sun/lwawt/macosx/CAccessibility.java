@@ -116,8 +116,8 @@ final class CAccessibility implements PropertyChangeListener {
         if (newValue instanceof Accessible) {
             AccessibleContext nvAC = ((Accessible) newValue).getAccessibleContext();
             AccessibleRole nvRole = nvAC.getAccessibleRole();
-            String roleStr = AWTAccessor.getAccessibleBundleAccessor().
-                    getKey(nvRole);
+            String roleStr = nvRole == null ? null :
+                    AWTAccessor.getAccessibleBundleAccessor().getKey(nvRole);
             if (!ignoredRoles.contains(roleStr)) {
                 focusChanged();
             }
