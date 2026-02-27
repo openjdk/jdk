@@ -565,11 +565,10 @@ void G1ConcurrentMark::fully_initialize() {
     _tasks[i] = new G1CMTask(i, this, task_queue, _region_mark_stats);
   }
 
-  for (uint i = 0; i < _g1h->max_num_regions(); i++) {
-    ::new (&_region_mark_stats[i]) G1RegionMarkStats{};
-    ::new (&_top_at_mark_starts[i]) Atomic<HeapWord*>{};
-    ::new (&_top_at_rebuild_starts[i]) Atomic<HeapWord*>{};
-  }
+  uint max_num_regions = _g1h->max_num_regions();
+  ::new (_region_mark_stats) G1RegionMarkStats[max_num_regions]{};
+  ::new (_top_at_mark_starts) Atomic<HeapWord*>[max_num_regions]{};
+  ::new (_top_at_rebuild_starts) Atomic<HeapWord*>[max_num_regions]{};
 
   reset_at_marking_complete();
 }
@@ -594,8 +593,8 @@ void G1ConcurrentMark::reset() {
   }
 
   uint max_num_regions = _g1h->max_num_regions();
+  ::new (_top_at_rebuild_starts) Atomic<HeapWord*>[max_num_regions]{};
   for (uint i = 0; i < max_num_regions; i++) {
-    _top_at_rebuild_starts[i].store_relaxed(nullptr);
     _region_mark_stats[i].clear();
   }
 
@@ -646,8 +645,7 @@ void G1ConcurrentMark::reset_marking_for_restart() {
   _finger.store_relaxed(_heap.start());
 
   for (uint i = 0; i < _max_num_tasks; ++i) {
-    G1CMTaskQueue* queue = _task_queues->queue(i);
-    queue->set_empty();
+    _tasks[i]->reset_for_restart();
   }
 }
 
@@ -929,6 +927,8 @@ public:
   bool do_heap_region(G1HeapRegion* r) override {
     if (r->is_old_or_humongous() && !r->is_collection_set_candidate() && !r->in_collection_set()) {
       _cm->update_top_at_mark_start(r);
+    } else {
+      _cm->reset_top_at_mark_start(r);
     }
     return false;
   }
@@ -1951,11 +1951,7 @@ bool G1ConcurrentMark::concurrent_cycle_abort() {
     return false;
   }
 
-  // Empty mark stack
   reset_marking_for_restart();
-  for (uint i = 0; i < _max_num_tasks; ++i) {
-    _tasks[i]->clear_region_fields();
-  }
 
   abort_marking_threads();
 
@@ -2124,6 +2120,13 @@ void G1CMTask::reset(G1CMBitMap* mark_bitmap) {
   _termination_time_ms           = 0.0;
 
   _mark_stats_cache.reset();
+}
+
+void G1CMTask::reset_for_restart() {
+  clear_region_fields();
+  _task_queue->set_empty();
+  TASKQUEUE_STATS_ONLY(_partial_array_splitter.stats()->reset());
+  TASKQUEUE_STATS_ONLY(_task_queue->stats.reset());
 }
 
 void G1CMTask::register_partial_array_splitter() {

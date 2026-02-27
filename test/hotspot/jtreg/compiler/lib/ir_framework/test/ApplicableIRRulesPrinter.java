@@ -27,6 +27,8 @@ import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.shared.*;
+import compiler.lib.ir_framework.test.network.MessageTag;
+import compiler.lib.ir_framework.test.network.TestVmSocket;
 import jdk.test.lib.Platform;
 import jdk.test.whitebox.WhiteBox;
 
@@ -45,9 +47,7 @@ import java.util.function.Function;
  * termination of the Test VM. IR rule indices start at 1.
  */
 public class ApplicableIRRulesPrinter {
-    public static final String START = "##### ApplicableIRRules - used by TestFramework #####";
-    public static final String END = "----- END -----";
-    public static final int NO_RULE_APPLIED = -1;
+    public static final int NO_RULES = -1;
 
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
     private static final List<Function<String, Object>> LONG_GETTERS = Arrays.asList(
@@ -110,6 +110,8 @@ public class ApplicableIRRulesPrinter {
         "avx512_vbmi2",
         "avx10_2",
         "bmi2",
+        // Intel APX
+        "apx_f",
         // AArch64
         "sha3",
         "asimd",
@@ -124,13 +126,11 @@ public class ApplicableIRRulesPrinter {
         "zfh",
         "zvbb",
         "zvfh",
-        "zvkn"
+        "zvkn",
+        // PPC64
+        "darn",
+        "brw"
     ));
-
-    public ApplicableIRRulesPrinter() {
-        output.append(START).append(System.lineSeparator());
-        output.append("<method>,{comma separated applied @IR rule ids}").append(System.lineSeparator());
-    }
 
     /**
      * Emits "<method>,{ids}" where {ids} is either:
@@ -158,7 +158,7 @@ public class ApplicableIRRulesPrinter {
         if (irAnnos.length != 0) {
             output.append(m.getName());
             if (validRules.isEmpty()) {
-                output.append("," + NO_RULE_APPLIED);
+                output.append("," + NO_RULES);
             } else {
                 for (i = 0; i < validRules.size(); i++) {
                     output.append(",").append(validRules.get(i));
@@ -169,9 +169,8 @@ public class ApplicableIRRulesPrinter {
     }
 
     private void printDisableReason(String method, String reason, String[] apply, int ruleIndex, int ruleMax) {
-        TestFrameworkSocket.write("Disabling IR matching for rule " + ruleIndex + " of " + ruleMax + " in " +
-                                  method + ": " + reason + ": " + String.join(", ", apply),
-                                  "[ApplicableIRRules]", true);
+        TestVmSocket.send("Disabling IR matching for rule " + ruleIndex + " of " + ruleMax + " in " + method + ": " +
+                                  reason + ": " + String.join(", ", apply));
     }
 
     private boolean shouldApplyIrRule(IR irAnno, String m, int ruleIndex, int ruleMax) {
@@ -284,7 +283,7 @@ public class ApplicableIRRulesPrinter {
                 IRNode.checkIRNodeSupported(s);
             }
         } catch (CheckedTestFrameworkException e) {
-            TestFrameworkSocket.write("Skip Rule " + ruleIndex + ": " + e.getMessage(), TestFrameworkSocket.DEFAULT_REGEX_TAG, true);
+            TestVmSocket.send("Skip Rule " + ruleIndex + ": " + e.getMessage());
             return true;
         }
         return false;
@@ -521,8 +520,8 @@ public class ApplicableIRRulesPrinter {
     }
 
     public void emit() {
-        output.append(END);
-        TestFrameworkSocket.write(output.toString(), "ApplicableIRRules");
+        output.append(MessageTag.END_MARKER);
+        TestVmSocket.sendMultiLine(MessageTag.APPLICABLE_IR_RULES, output.toString());
     }
 }
 
