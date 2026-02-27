@@ -163,6 +163,18 @@ void zBarrierSetAssembler::load_at(MacroAssembler* masm,
     }
     __ z_lgr(Z_R3, tmp2);
 
+    __ call_VM_leaf(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(decorators));
+  }
 
+  // Slow-path has already uncolored
+  __ z_br(done);
+
+  __ bind(uncolor);
+
+  // Remove the color bits
+  __ z_srlg(dst, dst, ZPointerLoadShift);
+
+  __ bind(done);
+}
 
 #undef __
