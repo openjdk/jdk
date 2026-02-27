@@ -80,7 +80,6 @@ import java.util.ListIterator;
 
 public class InputArgument {
     private static RuntimeMXBean rm = ManagementFactory.getRuntimeMXBean();
-    private static String[] vmOptions = null;
 
     public static void main(String args[]) throws Exception {
         if (args.length == 1 && "generateFlagsFile".equals(args[0])) {
@@ -88,16 +87,8 @@ public class InputArgument {
             return;
         }
 
-        // set the expected input arguments
-        if (args.length > 0) {
-            vmOptions = args;
-        }
-
+        String[] vmOptions = args;
         List<String> options = rm.getInputArguments();
-        if (vmOptions == null) {
-            return;
-        }
-
         System.out.println("Number of arguments = " + options.size());
         int i = 0;
         for (String arg : options) {
