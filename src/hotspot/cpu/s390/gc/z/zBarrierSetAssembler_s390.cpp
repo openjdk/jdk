@@ -177,4 +177,65 @@ void zBarrierSetAssembler::load_at(MacroAssembler* masm,
   __ bind(done);
 }
 
+void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
+                                              Address ref_addr,
+                                              Register rnew_zaddress,
+                                              Register rnew_zpointer,
+                                              bool in_nmethod,
+                                              bool is_atomic,
+                                              Label& medium_path,
+                                              Label& medium_path_continuation) const {
+  assert_different_registers(ref_addr.base(), rnew_zpointer);
+  assert_different_registers(ref_addr.index(), rnew_zpointer);
+  assert_different_registers(rnew_zaddress, rnew_zpointer);
+
+  //TODO: Check for Relative long instructions
+  if (in_nmethod) {
+      // TODO: check what exactly relocate does and where it should be placed here
+    if (is_atomic) {
+      // Atomic operations must ensure that the contents of memory are store-good before
+      // an atomic operation can execute.
+      // A not relocatable object could have spurious raw null pointers in its fields after
+      // getting promoted to the old generation.
+      __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
+      __ z_lhi(rnew_zpointer, barrier_Relocation::unpatched);
+      __ z_ch(rnew_zpointer, ref_addr);
+    } else {
+      // Stores on relocatable objects never need to deal with raw null pointers in fields.
+      // Raw null pointers may only exist in the young generation, as they get pruned when
+      // the object is relocated to old. And no pre-write barrier needs to perform any action
+      // in the young generation.
+      __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreBadBeforeLoad);
+      __ z_lhi(rnew_zpointer, barrier_Relocation::unpatched);
+      __ z_cg(rnew_zpointer, ref_addr);
+    }
+    __ z_brne(medium_path);
+    __ bind(medium_path_continuation);
+    assert_different_registers(rnew_zaddress, rnew_zpointer);
+    __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
+    __ z_lhi(rnew_zpointer, barrier_Relocation::unpatched);
+    // TODO: check for the condition rnew_zaddress == noreg i.e. nullptr
+    __ z_sllg(rnew_zaddress, rnew_zaddress, ZPointerLoadShift);
+    __ z_ogr(rnew_zpointer, rnew_zaddress);
+  } else {
+    //TODO: check if this assert failure is necssary
+    assert(!is_atomic, "atomics outside of nmethods not supported");
+    __ z_la(rnew_zpointer, ref_addr);
+    //TODO: check if we want to compare 32 bits or 64 bits
+    __ z_cy(rnew_zpointer, Address(Z_thread, ZThreadLocalData::store_bad_mask_offset()));
+    __ z_brne(medium_path);
+    __ bind(medium_path_continuation);
+    if (rnew_zaddress == noreg) {
+      __ z_xgr(rnew_zpointer, rnew_zpointer);
+    } else {
+      __ z_lgr(rnew_zpointer, rnew_zaddress);
+    }
+
+    __ z_sllg(rnew_zpointer, rnew_zpointer, ZPointerLoadShift);
+    __ z_oy(rnew_zpointer,  Address(Z_thread, ZThreadLocalData::store_good_mask_offset()));
+  }
+}
+
+
+
 #undef __
