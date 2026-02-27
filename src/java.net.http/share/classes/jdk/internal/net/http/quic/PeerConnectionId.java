@@ -72,6 +72,11 @@ public final class PeerConnectionId extends QuicConnectionId {
     }
 
     private static ByteBuffer cloneBuffer(ByteBuffer src) {
+        // we make a copy of the bytes and create a new
+        // ByteBuffer here because we do not want to retain
+        // the memory that was allocated for the original
+        // ByteBuffer, which could ba a slice of a larger
+        // buffer, such as the whole datagram payload.
         final byte[] idBytes = new byte[src.remaining()];
         src.get(src.position(), idBytes);
         return ByteBuffer.wrap(idBytes);
