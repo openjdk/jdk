@@ -2461,9 +2461,9 @@ address StubGenerator::generate_checkcast_copy(StubId stub_id, address *entry) {
 
   // Registers used as temps (r13, r14 are save-on-entry)
   const Register end_from    = from;  // source array end address
-  const Register end_to      = r13;   // destination array end address
+  const Register end_to      = UseAPX ? r16 : r13;   // destination array end address
   const Register count       = rdx;   // -(count_remaining)
-  const Register r14_length  = r14;   // saved copy of length
+  const Register r14_length  = UseAPX ? r17 : r14;   // saved copy of length
   // End pointers are inclusive, and if length is not zero they point
   // to the last unit copied:  end_to[0] := end_from[0]
 
@@ -2514,10 +2514,12 @@ address StubGenerator::generate_checkcast_copy(StubId stub_id, address *entry) {
     saved_r10_offset,
     saved_rbp_offset
   };
+ if (!UseAPX) {
   __ subptr(rsp, saved_rbp_offset * wordSize);
   __ movptr(Address(rsp, saved_r13_offset * wordSize), r13);
   __ movptr(Address(rsp, saved_r14_offset * wordSize), r14);
   __ movptr(Address(rsp, saved_r10_offset * wordSize), r10);
+ }
 
 #ifdef ASSERT
     Label L2;
@@ -2630,9 +2632,11 @@ address StubGenerator::generate_checkcast_copy(StubId stub_id, address *entry) {
 
   // Common exit point (success or failure).
   __ BIND(L_done);
-  __ movptr(r13, Address(rsp, saved_r13_offset * wordSize));
-  __ movptr(r14, Address(rsp, saved_r14_offset * wordSize));
-  __ movptr(r10, Address(rsp, saved_r10_offset * wordSize));
+  if (!UseAPX) {
+    __ movptr(r13, Address(rsp, saved_r13_offset * wordSize));
+    __ movptr(r14, Address(rsp, saved_r14_offset * wordSize));
+    __ movptr(r10, Address(rsp, saved_r10_offset * wordSize));
+  }
   restore_arg_regs_using_thread();
   INC_COUNTER_NP(SharedRuntime::_checkcast_array_copy_ctr, rscratch1); // Update counter after rscratch1 is free
   __ leave(); // required for proper stackwalking of RuntimeStub frame

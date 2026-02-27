@@ -263,7 +263,7 @@ address StubGenerator::generate_galoisCounterMode_AESCrypt() {
   const Register state = c_rarg5;
   const Address subkeyH_mem(rbp, 2 * wordSize);
   const Register subkeyHtbl = r10;
-  const Register avx512_subkeyHtbl = r12;
+  const Register avx512_subkeyHtbl = UseAPX ? r16 : r12;
   const Address counter_mem(rbp, 3 * wordSize);
   const Register counter = r11;
 #else
@@ -279,16 +279,23 @@ address StubGenerator::generate_galoisCounterMode_AESCrypt() {
 #endif
   __ enter();
  // Save state before entering routine
+#ifdef _WIN64
   __ push_ppx(r12);//holds pointer to avx512_subkeyHtbl
   __ push_ppx(r14);//holds CTR_CHECK value to check for overflow
   __ push_ppx(r15);//holds number of rounds
   __ push_ppx(rbx);//scratch register
-#ifdef _WIN64
   // on win64, fill len_reg from stack position
   __ push_ppx(rsi);
   __ push_ppx(rdi);
   __ movptr(key, key_mem);
   __ movptr(state, state_mem);
+#else
+  if (!UseAPX) {
+    __ push_ppx(r12);//holds pointer to avx512_subkeyHtbl
+    __ push_ppx(r14);//holds CTR_CHECK value to check for overflow
+  }
+  __ push_ppx(r15);//holds number of rounds
+  __ push_ppx(rbx);//scratch register
 #endif
   __ movptr(subkeyHtbl, subkeyH_mem);
   __ movptr(counter, counter_mem);
@@ -306,13 +313,19 @@ address StubGenerator::generate_galoisCounterMode_AESCrypt() {
   __ lea(rsp, Address(rbp, -6 * wordSize));
   __ pop_ppx(rdi);
   __ pop_ppx(rsi);
-#else
-  __ lea(rsp, Address(rbp, -4 * wordSize));
-#endif
   __ pop_ppx(rbx);
   __ pop_ppx(r15);
   __ pop_ppx(r14);
   __ pop_ppx(r12);
+#else
+  __ lea(rsp, Address(rbp, -(2 + (UseAPX ? 0 : 2)) * wordSize));
+  __ pop_ppx(rbx);
+  __ pop_ppx(r15);
+  if (!UseAPX) {
+    __ pop_ppx(r14);
+    __ pop_ppx(r12);
+  }
+#endif
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
@@ -1816,11 +1829,24 @@ void StubGenerator::ev_add128(XMMRegister xmmdst, XMMRegister xmmsrc1, XMMRegist
 // AES-ECB Encrypt Operation
 void StubGenerator::aesecb_encrypt(Register src_addr, Register dest_addr, Register key, Register len) {
   const Register pos = rax;
+#ifdef _WIN64
   const Register rounds = r12;
+  const Register tmp1 = r13;
+#else
+  const Register rounds = UseAPX ? r16 : r12;
+  const Register tmp1 = UseAPX ? r17 : r13;
+#endif
 
   Label NO_PARTS, LOOP, Loop_start, LOOP2, AES192, END_LOOP, AES256, REMAINDER, LAST2, END, KEY_192, KEY_256, EXIT;
+#ifdef _WIN64
   __ push_ppx(r13);
   __ push_ppx(r12);
+#else
+  if (!UseAPX) {
+    __ push_ppx(r13);
+    __ push_ppx(r12);
+  }
+#endif
 
   // For EVEX with VL and BW, provide a standard mask, VL = 128 will guide the merge
   // context for the registers used, where all instructions below are using 128-bit mode
@@ -1884,11 +1910,11 @@ void StubGenerator::aesecb_encrypt(Register src_addr, Register dest_addr, Regist
   __ movq(rbx, len);
   __ shrq(len, 5);
   __ jcc(Assembler::equal, REMAINDER);
-  __ movl(r13, len);
+  __ movl(tmp1, len);
   // Compute number of blocks that will be processed 512 bytes at a time
   // Subtract this from the total number of blocks which will then be processed by REMAINDER loop
-  __ shlq(r13, 5);
-  __ subq(rbx, r13);
+  __ shlq(tmp1, 5);
+  __ subq(rbx, tmp1);
   //Begin processing 512 bytes
   __ bind(LOOP);
   // Move 64 bytes of PT data into a zmm register, as a result 512 bytes of PT loaded in zmm0-7
@@ -2019,8 +2045,15 @@ void StubGenerator::aesecb_encrypt(Register src_addr, Register dest_addr, Regist
   __ bind(EXIT);
   __ pop_ppx(rbx);
   __ pop_ppx(rax); // return length
+#ifdef _WIN64
   __ pop_ppx(r12);
   __ pop_ppx(r13);
+#else
+  if (!UseAPX) {
+    __ pop_ppx(r12);
+    __ pop_ppx(r13);
+  }
+#endif
 }
 
 // AES-ECB Decrypt Operation
@@ -2028,9 +2061,19 @@ void StubGenerator::aesecb_decrypt(Register src_addr, Register dest_addr, Regist
 
   Label NO_PARTS, LOOP, Loop_start, LOOP2, AES192, END_LOOP, AES256, REMAINDER, LAST2, END, KEY_192, KEY_256, EXIT;
   const Register pos = rax;
+#ifdef _WIN64
   const Register rounds = r12;
+  const Register tmp1 = r13;
   __ push_ppx(r13);
   __ push_ppx(r12);
+#else
+  const Register rounds = UseAPX ? r16 : r12;
+  const Register tmp1 = UseAPX ? r17 : r13;
+  if (!UseAPX) {
+    __ push_ppx(r13);
+    __ push_ppx(r12);
+  }
+#endif
 
   // For EVEX with VL and BW, provide a standard mask, VL = 128 will guide the merge
   // context for the registers used, where all instructions below are using 128-bit mode
@@ -2094,11 +2137,11 @@ void StubGenerator::aesecb_decrypt(Register src_addr, Register dest_addr, Regist
   __ movq(rbx, len);
   __ shrq(len, 5);
   __ jcc(Assembler::equal, REMAINDER);
-  __ movl(r13, len);
+  __ movl(tmp1, len);
   // Compute number of blocks that will be processed as 512 bytes at a time
   // Subtract this from the total number of blocks, which will then be processed by REMAINDER loop.
-  __ shlq(r13, 5);
-  __ subq(rbx, r13);
+  __ shlq(tmp1, 5);
+  __ subq(rbx, tmp1);
 
   __ bind(LOOP);
   // Move 64 bytes of CT data into a zmm register, as a result 512 bytes of CT loaded in zmm0-7
@@ -2230,8 +2273,15 @@ void StubGenerator::aesecb_decrypt(Register src_addr, Register dest_addr, Regist
   __ bind(EXIT);
   __ pop_ppx(rbx);
   __ pop_ppx(rax); // return length
+#ifdef _WIN64
   __ pop_ppx(r12);
   __ pop_ppx(r13);
+#else
+  if (!UseAPX) {
+    __ pop_ppx(r12);
+    __ pop_ppx(r13);
+  }
+#endif
 }
 
 
@@ -3402,7 +3452,11 @@ void StubGenerator::aesgcm_avx512(Register in, Register len, Register ct, Regist
   const KRegister MASKREG = k1;
   const Register pos = rax;
   const Register rounds = r15;
+#ifdef _WIN64
   const Register CTR_CHECK = r14;
+#else
+  const Register CTR_CHECK = UseAPX ? r17 : r14;
+#endif
 
   const int stack_offset = 64;
   const int ghashin_offset = 64;

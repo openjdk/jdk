@@ -117,22 +117,24 @@ static address generate_sha3_implCompress(StubId stub_id,
   const Register limit        = c_rarg4;
 #else
   const Address limit_mem(rbp, 6 * wordSize);
-  const Register limit = r12;
+  const Register limit = UseAPX ? r18 : r12;
 #endif
 
   const Register permsAndRots = r10;
   const Register round_consts = r11;
-  const Register constant2use = r13;
-  const Register roundsLeft = r14;
+  const Register constant2use = UseAPX ? r16 : r13;
+  const Register roundsLeft = UseAPX ? r17 : r14;
 
   Label sha3_loop;
   Label rounds24_loop, block104, block136, block144, block168;
 
   __ enter();
 
-  __ push_ppx(r12);
-  __ push_ppx(r13);
-  __ push_ppx(r14);
+  if (!UseAPX) {
+    __ push_ppx(r12);
+    __ push_ppx(r13);
+    __ push_ppx(r14);
+  }
 
 #ifdef _WIN64
   // on win64, fill limit from stack position
@@ -309,9 +311,11 @@ static address generate_sha3_implCompress(StubId stub_id,
     __ evmovdquq(Address(state, i * 40), k5, xmm(i), true, Assembler::AVX_512bit);
   }
 
-  __ pop_ppx(r14);
-  __ pop_ppx(r13);
-  __ pop_ppx(r12);
+  if (!UseAPX) {
+    __ pop_ppx(r14);
+    __ pop_ppx(r13);
+    __ pop_ppx(r12);
+  }
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
