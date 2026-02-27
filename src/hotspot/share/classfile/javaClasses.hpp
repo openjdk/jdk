@@ -1249,8 +1249,8 @@ class jdk_internal_foreign_abi_CallConv: AllStatic {
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 
   // Accessors
-  static objArrayOop argRegs(oop entry);
-  static objArrayOop retRegs(oop entry);
+  static refArrayOop argRegs(oop entry);
+  static refArrayOop retRegs(oop entry);
 
   // Testers
   static bool is_subclass(Klass* klass) {

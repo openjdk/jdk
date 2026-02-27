@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_MEMORY_OOPFACTORY_HPP
 
 #include "memory/referenceType.hpp"
+#include "oops/arrayKlass.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/exceptions.hpp"
@@ -55,6 +56,9 @@ class oopFactory: AllStatic {
 
   // Regular object arrays
   static objArrayOop     new_objArray(Klass* klass, int length, TRAPS);
+
+  // Factories to create a reference arrays
+  static refArrayOop     new_refArray(Klass* klass, int length, TRAPS);
 
   // Helper that returns a Handle
   static objArrayHandle  new_objArray_handle(Klass* klass, int length, TRAPS);

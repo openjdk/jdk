@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -761,7 +761,7 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
           __ asrw(t0, t0, Klass::_lh_array_tag_shift);
           int tag = ((id == StubId::c1_new_type_array_id)
                      ? Klass::_lh_array_tag_type_value
-                     : Klass::_lh_array_tag_obj_value);
+                     : Klass::_lh_array_tag_ref_value);
           __ mov(rscratch1, tag);
           __ cmpw(t0, rscratch1);
           __ br(Assembler::EQ, ok);

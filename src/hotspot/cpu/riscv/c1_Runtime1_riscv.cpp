@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -753,7 +753,7 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
           Register tmp = obj;
           __ lwu(tmp, Address(klass, Klass::layout_helper_offset()));
           __ sraiw(tmp, tmp, Klass::_lh_array_tag_shift);
-          int tag = ((id == StubId::c1_new_type_array_id) ? Klass::_lh_array_tag_type_value : Klass::_lh_array_tag_obj_value);
+          int tag = ((id == StubId::c1_new_type_array_id) ? Klass::_lh_array_tag_type_value : Klass::_lh_array_tag_ref_value);
           __ mv(t0, tag);
           __ beq(t0, tmp, ok);
           __ stop("assert(is an array klass)");

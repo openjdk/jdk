@@ -32,6 +32,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -163,9 +164,9 @@ void AOTReferenceObjSupport::init_keep_alive_objs_table() {
   assert_at_safepoint(); // _keep_alive_objs_table uses raw oops
   oop a = _keep_alive_objs_array.resolve();
   if (a != nullptr) {
-    precond(a->is_objArray());
+    precond(a->is_refArray());
     precond(AOTReferenceObjSupport::is_enabled());
-    objArrayOop array = objArrayOop(a);
+    refArrayOop array = oop_cast<refArrayOop>(a);
 
     _keep_alive_objs_table = new (mtClass)KeepAliveObjectsTable();
     for (int i = 0; i < array->length(); i++) {

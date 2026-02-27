@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -311,12 +311,12 @@ jint Klass::array_layout_helper(BasicType etype) {
   int  hsize = arrayOopDesc::base_offset_in_bytes(etype);
   int  esize = type2aelembytes(etype);
   bool isobj = (etype == T_OBJECT);
-  int  tag   =  isobj ? _lh_array_tag_obj_value : _lh_array_tag_type_value;
+  int  tag   =  isobj ? _lh_array_tag_ref_value : _lh_array_tag_type_value;
   int lh = array_layout_helper(tag, hsize, etype, exact_log2(esize));
 
   assert(lh < (int)_lh_neutral_value, "must look like an array layout");
   assert(layout_helper_is_array(lh), "correct kind");
-  assert(layout_helper_is_objArray(lh) == isobj, "correct kind");
+  assert(layout_helper_is_refArray(lh) == isobj, "correct kind");
   assert(layout_helper_is_typeArray(lh) == !isobj, "correct kind");
   assert(layout_helper_header_size(lh) == hsize, "correct decode");
   assert(layout_helper_element_type(lh) == etype, "correct decode");
@@ -606,7 +606,6 @@ GrowableArray<Klass*>* Klass::compute_secondary_supers(int num_extra_slots,
   set_secondary_supers(Universe::the_empty_klass_array(), Universe::the_empty_klass_bitmap());
   return nullptr;
 }
-
 
 // subklass links.  Used by the compiler (and vtable initialization)
 // May be cleaned concurrently, so must use the Compile_lock.

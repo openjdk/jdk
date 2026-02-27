@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -276,7 +276,7 @@ ResolvedMethodEntry* ConstantPoolCache::set_method_handle(int method_index, cons
   Bytecodes::Code invoke_code = Bytecodes::_invokehandle;
 
   JavaThread* current = JavaThread::current();
-  objArrayHandle resolved_references(current, constant_pool()->resolved_references());
+  refArrayHandle resolved_references(current, constant_pool()->resolved_references());
   // Use the resolved_references() lock for this cpCache entry.
   // resolved_references are created for all classes with Invokedynamic, MethodHandle
   // or MethodType constant pool cache entries.
@@ -757,7 +757,7 @@ oop ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
   JavaThread* current = JavaThread::current();
   constantPoolHandle cp(current, constant_pool());
 
-  objArrayHandle resolved_references(current, cp->resolved_references());
+  refArrayHandle resolved_references(current, cp->resolved_references());
   assert(resolved_references() != nullptr,
          "a resolved_references array should have been created for this class");
   ObjectLocker ol(resolved_references, current);

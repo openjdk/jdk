@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -2555,10 +2556,10 @@ VM_HeapWalkOperation::~VM_HeapWalkOperation() {
 // an array references its class and has a reference to
 // each element in the array
 inline bool VM_HeapWalkOperation::iterate_over_array(oop o) {
-  objArrayOop array = objArrayOop(o);
+  refArrayOop array = oop_cast<refArrayOop>(o);
 
   // array reference to its class
-  oop mirror = ObjArrayKlass::cast(array->klass())->java_mirror();
+  oop mirror = RefArrayKlass::cast(array->klass())->java_mirror();
   if (!CallbackInvoker::report_class_reference(o, mirror)) {
     return false;
   }

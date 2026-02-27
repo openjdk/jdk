@@ -1110,6 +1110,7 @@ void java_lang_Class::allocate_mirror(Klass* k, bool is_scratch, Handle protecti
       }
     } else {
       assert(k->is_objArray_klass(), "Must be");
+      assert(!k->is_refArray_klass(), "Must not have mirror");
       Klass* element_klass = ObjArrayKlass::cast(k)->element_klass();
       assert(element_klass != nullptr, "Must have an element klass");
       if (is_scratch) {
@@ -1146,10 +1147,17 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
                                     Handle classData, TRAPS) {
   assert(k != nullptr, "Use create_basic_type_mirror for primitive types");
   assert(k->java_mirror() == nullptr, "should only assign mirror once");
-
   // Class_klass has to be loaded because it is used to allocate
   // the mirror.
   if (vmClasses::Class_klass_is_loaded()) {
+    if (k->is_refined_objArray_klass()) {
+      Klass* super_klass = k->super();
+      assert(super_klass != nullptr, "Must be");
+      Handle mirror(THREAD, super_klass->java_mirror());
+      k->set_java_mirror(mirror);
+      return;
+    }
+
     Handle mirror;
     Handle comp_mirror;
 
@@ -1236,16 +1244,20 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
 
   // mirror is archived, restore
   log_debug(aot, mirror)("Archived mirror is: " PTR_FORMAT, p2i(m));
-  assert(as_Klass(m) == k, "must be");
   Handle mirror(THREAD, m);
 
   if (!k->is_array_klass()) {
+    assert(as_Klass(m) == k, "must be");
     // - local static final fields with initial values were initialized at dump time
     assert(init_lock(mirror()) != nullptr, "allocated during AOT assembly");
 
     if (protection_domain.not_null()) {
       set_protection_domain(mirror(), protection_domain());
     }
+  } else {
+    ObjArrayKlass* objarray_k = (ObjArrayKlass*)as_Klass(m);
+    // Mirror should be restored for an ObjArrayKlass or one of its refined array klasses
+    assert(objarray_k == k || objarray_k->next_refined_array_klass() == k, "must be");
   }
 
   assert(class_loader() == k->class_loader(), "should be same");
@@ -1263,7 +1275,7 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
         "Restored %s archived mirror " PTR_FORMAT, k->external_name(), p2i(mirror()));
   }
 
-  if (CDSConfig::is_dumping_heap()) {
+  if (CDSConfig::is_dumping_heap() && !k->is_refined_objArray_klass()) {
     create_scratch_mirror(k, CHECK_(false));
   }
 
@@ -1475,7 +1487,7 @@ const char* java_lang_Class::as_external_name(oop java_class) {
 
 Klass* java_lang_Class::array_klass_acquire(oop java_class) {
   Klass* k = ((Klass*)java_class->metadata_field_acquire(_array_klass_offset));
-  assert(k == nullptr || (k->is_klass() && k->is_array_klass()), "should be array klass");
+  assert(k == nullptr || (k->is_klass() && k->is_array_klass() && !k->is_refined_objArray_klass()), "should be array klass");
   return k;
 }
 
@@ -4414,12 +4426,12 @@ void jdk_internal_foreign_abi_CallConv::serialize_offsets(SerializeClosure* f) {
 }
 #endif
 
-objArrayOop jdk_internal_foreign_abi_CallConv::argRegs(oop entry) {
-  return oop_cast<objArrayOop>(entry->obj_field(_argRegs_offset));
+refArrayOop jdk_internal_foreign_abi_CallConv::argRegs(oop entry) {
+  return oop_cast<refArrayOop>(entry->obj_field(_argRegs_offset));
 }
 
-objArrayOop jdk_internal_foreign_abi_CallConv::retRegs(oop entry) {
-  return oop_cast<objArrayOop>(entry->obj_field(_retRegs_offset));
+refArrayOop jdk_internal_foreign_abi_CallConv::retRegs(oop entry) {
+  return oop_cast<refArrayOop>(entry->obj_field(_retRegs_offset));
 }
 
 oop java_lang_invoke_MethodHandle::type(oop mh) {

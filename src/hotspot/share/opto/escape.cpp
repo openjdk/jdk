@@ -3752,6 +3752,7 @@ Node* ConnectionGraph::get_addp_base(Node *addp) {
   //     AddP  ( base == address )
   //
   // case #3. Raw object's field reference for Initialize node:
+  //          Could have an additional Phi merging multiple allocations.
   //      Allocate
   //        |
   //      Proj #5 ( oop result )
@@ -3802,8 +3803,20 @@ Node* ConnectionGraph::get_addp_base(Node *addp) {
   //     \  |
   //     AddP  ( base == top )
   //
+  // case #10. Klass fetched with
+  //           LibraryCallKit::load_*_refined_array_klass()
+  //           which has en extra Phi.
+  //  LoadKlass   LoadKlass
+  //       |          |
+  //     CastPP    CastPP
+  //          \   /
+  //           Phi
+  //      top   |
+  //         \  |
+  //         AddP  ( base == top )
+  //
   Node *base = addp->in(AddPNode::Base);
-  if (base->uncast()->is_top()) { // The AddP case #3 and #6 and #9.
+  if (base->uncast()->is_top()) { // The AddP case #3, #6, #9, and #10.
     base = addp->in(AddPNode::Address);
     while (base->is_AddP()) {
       // Case #6 (unsafe access) may have several chained AddP nodes.
@@ -3815,6 +3828,7 @@ Node* ConnectionGraph::get_addp_base(Node *addp) {
         _igvn->type(base->in(1))->isa_oopptr()) {
       base = base->in(1); // Case #9
     } else {
+      // Case #3, #6, and #10
       Node* uncast_base = base->uncast();
       int opcode = uncast_base->Opcode();
       assert(opcode == Op_ConP || opcode == Op_ThreadLocal ||
@@ -3822,11 +3836,25 @@ Node* ConnectionGraph::get_addp_base(Node *addp) {
              (_igvn->C->is_osr_compilation() && uncast_base->is_Parm() && uncast_base->as_Parm()->_con == TypeFunc::Parms)||
              (uncast_base->is_Mem() && (uncast_base->bottom_type()->isa_rawptr() != nullptr)) ||
              (uncast_base->is_Mem() && (uncast_base->bottom_type()->isa_klassptr() != nullptr)) ||
-             is_captured_store_address(addp), "sanity");
+             is_captured_store_address(addp) ||
+             is_load_array_klass_related(uncast_base), "sanity");
     }
   }
   return base;
 }
+
+#ifdef ASSERT
+// Case #10
+bool ConnectionGraph::is_load_array_klass_related(const Node* uncast_base) {
+  if (!uncast_base->is_Phi() || uncast_base->req() != 3) {
+    return false;
+  }
+  Node* in1 = uncast_base->in(1);
+  Node* in2 = uncast_base->in(2);
+  return in1->uncast()->Opcode() == Op_LoadKlass &&
+         in2->uncast()->Opcode() == Op_LoadKlass;
+}
+#endif
 
 Node* ConnectionGraph::find_second_addp(Node* addp, Node* n) {
   assert(addp->is_AddP() && addp->outcnt() > 0, "Don't process dead nodes");

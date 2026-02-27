@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "ci/ciUtilities.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -59,9 +60,8 @@ ciConstant ciArray::element_value_impl(BasicType elembt,
   case T_ARRAY:
   case T_OBJECT:
     {
-      assert(ary->is_objArray(), "");
-      objArrayOop objary = (objArrayOop) ary;
-      oop elem = objary->obj_at(index);
+      refArrayOop refary = oop_cast<refArrayOop>(ary);
+      oop elem = refary->obj_at(index);
       return ciConstant(elembt, CURRENT_ENV->get_object(elem));
     }
   default:

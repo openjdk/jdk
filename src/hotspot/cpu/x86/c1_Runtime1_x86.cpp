@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -902,7 +902,7 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
           __ sarl(t0, Klass::_lh_array_tag_shift);
           int tag = ((id == StubId::c1_new_type_array_id)
                      ? Klass::_lh_array_tag_type_value
-                     : Klass::_lh_array_tag_obj_value);
+                     : Klass::_lh_array_tag_ref_value);
           __ cmpl(t0, tag);
           __ jcc(Assembler::equal, ok);
           __ stop("assert(is an array klass)");

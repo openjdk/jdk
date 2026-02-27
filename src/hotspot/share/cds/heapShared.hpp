@@ -455,7 +455,7 @@ private:
   static void finish_materialize_objects() NOT_CDS_JAVA_HEAP_RETURN;
 
   static void write_heap(AOTMappedHeapInfo* mapped_heap_info, AOTStreamedHeapInfo* streamed_heap_info) NOT_CDS_JAVA_HEAP_RETURN;
-  static objArrayOop scratch_resolved_references(ConstantPool* src);
+  static refArrayOop scratch_resolved_references(ConstantPool* src);
   static void add_scratch_resolved_references(ConstantPool* src, objArrayOop dest) NOT_CDS_JAVA_HEAP_RETURN;
   static void init_dumping() NOT_CDS_JAVA_HEAP_RETURN;
   static void init_scratch_objects_for_basic_type_mirrors(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;

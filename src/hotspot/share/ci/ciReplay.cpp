@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
@@ -512,8 +513,8 @@ class CompileReplay : public StackObj {
       }
       obj = ciReplay::obj_field(obj, field);
       // array
-      if (obj != nullptr && obj->is_objArray()) {
-        objArrayOop arr = (objArrayOop)obj;
+      if (obj != nullptr && obj->is_refArray()) {
+        refArrayOop arr = oop_cast<refArrayOop>(obj);
         int index = parse_int("index");
         if (index >= arr->length()) {
           report_error("bad array index");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 
@@ -484,8 +485,8 @@ int CDSHeapVerifier::trace_to_root(outputStream* st, oop orig_obj, oop orig_fiel
       TraceFields clo(orig_obj, orig_field, st);
       InstanceKlass::cast(k)->do_nonstatic_fields(&clo);
     } else {
-      assert(orig_obj->is_objArray(), "must be");
-      objArrayOop array = (objArrayOop)orig_obj;
+      assert(orig_obj->is_refArray(), "must be");
+      refArrayOop array = oop_cast<refArrayOop>(orig_obj);
       for (int i = 0; i < array->length(); i++) {
         if (array->obj_at(i) == orig_field) {
           st->print(" @[%d]", i);

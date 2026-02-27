@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,7 +133,8 @@ static Node* record_for_cleanup(Node* n, PhaseGVN* phase) {
   return n;
 }
 bool SubTypeCheckNode::verify_helper(PhaseGVN* phase, Node* subklass, const Type* cached_t) {
-  Node* cmp = phase->transform(new CmpPNode(subklass, in(SuperKlass)));
+  Node* cmp_orig = new CmpPNode(subklass, in(SuperKlass));
+  Node* cmp = phase->transform(cmp_orig);
   record_for_cleanup(cmp, phase);
 
   const Type* cmp_t = phase->type(cmp);
@@ -146,9 +147,10 @@ bool SubTypeCheckNode::verify_helper(PhaseGVN* phase, Node* subklass, const Type
   } else {
     t->dump(); tty->cr();
     this->dump(2); tty->cr();
+    tty->print_cr("VS.\n");
     cmp_t->dump(); tty->cr();
-    subklass->dump(2); tty->cr();
-    tty->print_cr("==============================");
+    cmp_orig->dump(2); tty->cr();
+    tty->print_cr("==============================\n");
     phase->C->root()->dump(9999);
     return false;
   }
@@ -187,7 +189,7 @@ bool SubTypeCheckNode::verify(PhaseGVN* phase) {
         record_for_cleanup(chk_off, phase);
 
         int cacheoff_con = in_bytes(Klass::secondary_super_cache_offset());
-        bool might_be_cache = (phase->find_int_con(chk_off, cacheoff_con) == cacheoff_con);
+        bool might_be_cache = phase->find_int_con(chk_off, cacheoff_con) == cacheoff_con;
         if (!might_be_cache) {
           Node* subklass = load_klass(phase);
           Node* chk_off_X = chk_off;

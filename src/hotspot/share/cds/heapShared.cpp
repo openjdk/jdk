@@ -63,6 +63,7 @@
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -596,8 +597,9 @@ void HeapShared::add_scratch_resolved_references(ConstantPool* src, objArrayOop 
   }
 }
 
-objArrayOop HeapShared::scratch_resolved_references(ConstantPool* src) {
-  return (objArrayOop)_scratch_objects_table->get_oop(src);
+refArrayOop HeapShared::scratch_resolved_references(ConstantPool* src) {
+  oop rr = _scratch_objects_table->get_oop(src);
+  return rr == nullptr ? nullptr : oop_cast<refArrayOop>(rr);
 }
 
  void HeapShared::init_dumping() {
@@ -1477,7 +1479,11 @@ void HeapShared::resolve_or_init(Klass* k, bool do_init, TRAPS) {
   if (!do_init) {
     if (k->class_loader_data() == nullptr) {
       Klass* resolved_k = SystemDictionary::resolve_or_null(k->name(), CHECK);
-      assert(resolved_k == k, "classes used by archived heap must not be replaced by JVMTI ClassFileLoadHook");
+      if (resolved_k->is_array_klass()) {
+        assert(resolved_k == k || resolved_k == k->super(), "classes used by archived heap must not be replaced by JVMTI ClassFileLoadHook");
+      } else {
+        assert(resolved_k == k, "classes used by archived heap must not be replaced by JVMTI ClassFileLoadHook");
+      }
     }
   } else {
     assert(k->class_loader_data() != nullptr, "must have been resolved by HeapShared::resolve_classes");

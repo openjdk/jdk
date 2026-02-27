@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,8 @@
 
 template<typename T>
 void ForeignGlobals::parse_register_array(objArrayOop jarray, StorageType type_index, GrowableArray<T>& array, T (*converter)(int)) {
-  objArrayOop subarray = oop_cast<objArrayOop>(jarray->obj_at((int) type_index));
+  refArrayOop refarray = oop_cast<refArrayOop>(jarray);
+  refArrayOop subarray = oop_cast<refArrayOop>(refarray->obj_at((int) type_index));
   int subarray_length = subarray->length();
   for (int i = 0; i < subarray_length; i++) {
     oop storage = subarray->obj_at(i);

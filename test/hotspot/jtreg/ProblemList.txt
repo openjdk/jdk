@@ -150,7 +150,6 @@ serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStr
 
 #############################################################################
 
-
 #############################################################################
 
 # :vmTestbase_*

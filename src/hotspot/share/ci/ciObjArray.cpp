@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "ci/ciObjArray.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 
 // ciObjArray
 //
@@ -34,7 +35,8 @@
 
 ciObject* ciObjArray::obj_at(int index) {
   VM_ENTRY_MARK;
-  objArrayOop array = get_objArrayOop();
+  // The array should be a refArray, otherwise a ciFlatArray object would have been used
+  refArrayOop array = oop_cast<refArrayOop>(get_objArrayOop());
   assert(index >= 0 && index < array->length(), "OOB access");
   oop o = array->obj_at(index);
   if (o == nullptr) {

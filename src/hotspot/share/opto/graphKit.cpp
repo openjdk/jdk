@@ -2690,6 +2690,14 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
     return C->top();
   }
 
+  const TypeKlassPtr* klass_ptr_type = gvn.type(superklass)->is_klassptr();
+  // For a direct pointer comparison, we need the refined array klass pointer
+  Node* vm_superklass = superklass;
+  if (klass_ptr_type->isa_aryklassptr() && klass_ptr_type->klass_is_exact()) {
+    assert(!klass_ptr_type->is_aryklassptr()->is_refined_type(), "Unexpected refined array klass pointer");
+    vm_superklass = gvn.makecon(klass_ptr_type->is_aryklassptr()->cast_to_refined_array_klass_ptr());
+  }
+
   // Fast check for identical types, perhaps identical constants.
   // The types can even be identical non-constants, in cases
   // involving Array.newInstance, Object.clone, etc.
@@ -2727,7 +2735,7 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
     case Compile::SSC_easy_test:
       {
         // Just do a direct pointer compare and be done.
-        IfNode* iff = gen_subtype_check_compare(*ctrl, subklass, superklass, BoolTest::eq, PROB_STATIC_FREQUENT, gvn, T_ADDRESS);
+        IfNode* iff = gen_subtype_check_compare(*ctrl, subklass, vm_superklass, BoolTest::eq, PROB_STATIC_FREQUENT, gvn, T_ADDRESS);
         *ctrl = gvn.transform(new IfTrueNode(iff));
         return gvn.transform(new IfFalseNode(iff));
       }
@@ -2805,6 +2813,10 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
         if (result != Compile::SSC_always_true && result != Compile::SSC_always_false) {
           continue;
         }
+        if (klass_t->isa_aryklassptr()) {
+          // For a direct pointer comparison, we need the refined array klass pointer
+          klass_t = klass_t->is_aryklassptr()->cast_to_refined_array_klass_ptr();
+        }
         float prob = profile.receiver_prob(i);
         ConNode* klass_node = gvn.makecon(klass_t);
         IfNode* iff = gen_subtype_check_compare(*ctrl, subklass, klass_node, BoolTest::eq, prob, gvn, T_ADDRESS);
@@ -2858,7 +2870,7 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
   // Check for self.  Very rare to get here, but it is taken 1/3 the time.
   // No performance impact (too rare) but allows sharing of secondary arrays
   // which has some footprint reduction.
-  IfNode *iff3 = gen_subtype_check_compare(*ctrl, subklass, superklass, BoolTest::eq, PROB_LIKELY(0.36f), gvn, T_ADDRESS);
+  IfNode *iff3 = gen_subtype_check_compare(*ctrl, subklass, vm_superklass, BoolTest::eq, PROB_LIKELY(0.36f), gvn, T_ADDRESS);
   r_ok_subtype->init_req(2, gvn.transform(new IfTrueNode(iff3)));
   *ctrl = gvn.transform(new IfFalseNode(iff3));
 
@@ -2924,6 +2936,11 @@ Node* GraphKit::type_check_receiver(Node* receiver, ciKlass* klass,
   assert(!klass->is_interface(), "no exact type check on interfaces");
 
   const TypeKlassPtr* tklass = TypeKlassPtr::make(klass, Type::trust_interfaces);
+  if (tklass->isa_aryklassptr()) {
+    // For a direct pointer comparison, we need the refined array klass pointer
+    tklass = tklass->is_aryklassptr()->cast_to_refined_array_klass_ptr();
+  }
+
   Node* recv_klass = load_object_klass(receiver);
   Node* want_klass = makecon(tklass);
   Node* cmp = _gvn.transform(new CmpPNode(recv_klass, want_klass));
