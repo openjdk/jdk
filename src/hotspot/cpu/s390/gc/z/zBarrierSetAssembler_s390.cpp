@@ -44,7 +44,7 @@ private:
   void save() {
     MacroAssembler* masm = _masm;
 
-    //TODO: Optimize this function to only asve the required registers
+    //TODO: Optimize this function to only save the required registers
     bool preserve_R2 = _result != Z_R2;
     _nbytes_save = (16 - (preserve_R2 ? 0 : 1)) * BytesPerWord;
     int offset = 0;
@@ -99,5 +99,70 @@ public:
     restore();
   }
 };
+
+void zBarrierSetAssembler::load_at(MacroAssembler* masm,
+                                   DecoratorSet decorators,
+                                   BasicType type,
+                                   Register dst,
+                                   Address src,
+                                   Register temp1,
+                                   Register temp2) {
+  if (!ZBarrierSet::barrier_needed(decorators, type)) {
+    // Barrier not needed
+    // TODO: load_at uses two temporary registers temp1, temp2
+    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1);
+    return;
+  }
+
+  BLOCK_COMMENT("ZBarrierSetAssembler::load_at {");
+
+  //Allocte scratch register
+  Register scratch = temp1;
+  if(temp1 == noreg) {
+    scratch = Z_R1;
+  }
+
+  assert_different_registers(dst, scratch);
+
+  Label done;
+  Label uncolor;
+
+  //
+  // Fast Path
+  //
+
+  // Load adress
+  __ z_la(scratch, src);
+
+  // Load oop at address
+  __ z_la(dst, Address(scratch, 0));
+
+  const bool on_non_strong =
+      (decorators & ON_WEAK_OOP_REF) != 0 ||
+      (decorators & ON_PHANTOM_OOP_REF) != 0;
+
+  // Test Address bad mask
+  if (on_non_strong) {
+    __ z_ltg(dst, mark_bad_mask_from_thread(Z_thread));
+  } else {
+    __ z_ltg(dst, load_bad_mask_from_thread(Z_thread));
+  }
+
+  __ brz(uncolor);
+
+  //
+  // Slow Path
+  //
+
+  {
+    // Call VM
+    ZRuntimeCallSpill rcs(masm, dst);
+
+    if (Z_R2 != dst) {
+      __ z_lgr(Z_R2, dst);
+    }
+    __ z_lgr(Z_R3, tmp2);
+
+
 
 #undef __
