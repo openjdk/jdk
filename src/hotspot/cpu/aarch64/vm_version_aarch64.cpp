@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2020, Red Hat Inc. All rights reserved.
- * Copyright 2025 Arm Limited and/or its affiliates.
+ * Copyright 2025, 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ static SpinWait get_spin_wait_desc() {
       vm_exit_during_initialization("OnSpinWaitInst is WFET but the CPU does not support the SB instruction");
     }
 
-    if (!FLAG_IS_DEFAULT(OnSpinWaitInstCount) && OnSpinWaitInstCount != 1) {
+    if (OnSpinWaitInstCount != 1) {
       vm_exit_during_initialization("OnSpinWaitInstCount for OnSpinWaitInst 'wfet' must be 1");
     }
   } else {
