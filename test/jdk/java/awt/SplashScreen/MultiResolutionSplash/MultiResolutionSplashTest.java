@@ -89,6 +89,9 @@ public class MultiResolutionSplashTest {
         final Robot robot = new Robot();
 
         BufferedImage splashCapture = robot.createScreenCapture(splashBounds);
+        String captureFileName = "splashscreen-%1.2f-%s.png"
+                                 .formatted(scaleFactor, test.name1x);
+        saveImageNoError(splashCapture, new File(captureFileName));
 
         if (splashBounds.width != IMAGE_WIDTH) {
             throw new RuntimeException(
@@ -105,9 +108,6 @@ public class MultiResolutionSplashTest {
         Color testColor = (1 < scaleFactor) ? test.color2x : test.color1x;
 
         if (!compare(testColor, splashScreenColor)) {
-            String captureFileName = "splashscreen-%1.2f-%s.png"
-                                     .formatted(scaleFactor, test.name1x);
-            saveImageNoError(splashCapture, new File(captureFileName));
             throw new RuntimeException(
                     "Image with wrong resolution is used for splash screen! "
                     + "Refer to " + captureFileName);
