@@ -23,10 +23,10 @@
 
 package compiler.lib.ir_framework.driver.network.testvm;
 
+import compiler.lib.ir_framework.driver.network.testvm.java.JavaMessageParser;
 import compiler.lib.ir_framework.driver.network.testvm.java.JavaMessages;
 import compiler.lib.ir_framework.shared.TestFrameworkException;
 import compiler.lib.ir_framework.shared.TestFrameworkSocket;
-import compiler.lib.ir_framework.test.network.MessageTag;
 
 import java.io.BufferedReader;
 import java.net.Socket;
@@ -35,33 +35,29 @@ import java.util.concurrent.Future;
 
 /**
  * Dedicated reader for Test VM messages received by the {@link TestFrameworkSocket}. The reader is used as a task
- * wrapped in a {@link Future}. The received messages are returned in a new {@link JavaMessages} wrapper. Once the
- * Test VM is terminated, the client connection is closed and the parsed messages can be fetched with
- * {@link Future#get()} which calls {@link #call()}.
+ * wrapped in a {@link Future}. The received messages are parsed with the {@link JavaMessageParser}. Once the Test VM
+ * is terminated, client connection is closed and the parsed messages can be fetched with {@link Future#get()} which
+ * calls {@link #call()}.
  */
 public class TestVmMessageReader implements Callable<JavaMessages> {
     private final Socket socket;
     private final BufferedReader reader;
-    private boolean receivedStdOut;
+    private final JavaMessageParser messageParser;
 
     public TestVmMessageReader(Socket socket, BufferedReader reader) {
         this.socket = socket;
         this.reader = reader;
-        this.receivedStdOut = false;
+        this.messageParser = new JavaMessageParser();
     }
 
     @Override
     public JavaMessages call() {
         try (socket; reader) {
-            StringBuilder builder = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) {
-                builder.append(line).append(System.lineSeparator());
-                if (line.startsWith(MessageTag.STDOUT)) {
-                    receivedStdOut = true;
-                }
+                messageParser.parseLine(line);
             }
-            return new JavaMessages(builder.toString(), receivedStdOut);
+            return messageParser.output();
         } catch (Exception e) {
             throw new TestFrameworkException("Error while reading Test VM socket messages", e);
         }
