@@ -54,6 +54,8 @@ final class IntVector512 extends IntVector {
 
     static final int VLENGTH = VSPECIES.laneCount(); // used by the JVM
 
+    static final Class<Integer> CTYPE = int.class; // carrier type used by the JVM
+
     static final Class<Integer> ETYPE = int.class; // used by the JVM
 
     IntVector512(int[] v) {
@@ -91,6 +93,9 @@ final class IntVector512 extends IntVector {
     @ForceInline
     @Override
     public final Class<Integer> elementType() { return int.class; }
+
+    @ForceInline
+    final Class<Integer> carrierType() { return CTYPE; }
 
     @ForceInline
     @Override
@@ -596,7 +601,8 @@ final class IntVector512 extends IntVector {
 
     static final class IntMask512 extends AbstractMask<Integer> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Integer> ETYPE = int.class; // used by the JVM
+
+        static final Class<Integer> CTYPE = int.class; // used by the JVM
 
         IntMask512(boolean[] bits) {
             this(bits, 0);
@@ -828,7 +834,8 @@ final class IntVector512 extends IntVector {
 
     static final class IntShuffle512 extends AbstractShuffle<Integer> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Integer> ETYPE = int.class; // used by the JVM
+
+        static final Class<Integer> CTYPE = int.class; // used by the JVM
 
         IntShuffle512(int[] indices) {
             super(indices);

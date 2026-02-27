@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -338,7 +338,7 @@ public final class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusLi
 //             Rectangle my_bounds = getBounds();
 //             setBounds(my_bounds.x, my_bounds.y, bounds.width, bounds.height, SET_BOUNDS);
         }
-        XToolkit.postEvent(XToolkit.targetToAppContext(target), new ComponentEvent(target, ComponentEvent.COMPONENT_RESIZED));
+        XToolkit.postEvent(new ComponentEvent(target, ComponentEvent.COMPONENT_RESIZED));
     }
 
     void focusNext() {
@@ -735,9 +735,7 @@ public final class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusLi
             xembedLog.finest("     Drop target=" + target.getDropTarget());
         }
         if (target.getDropTarget() instanceof XEmbedDropTarget) {
-            AppContext appContext = XToolkit.targetToAppContext(getTarget());
-            XDropTargetContextPeer peer =
-                XDropTargetContextPeer.getPeer(appContext);
+            XDropTargetContextPeer peer = XDropTargetContextPeer.getPeer();
             peer.forwardEventToEmbedded(xembed.handle, ctxt, eventID);
             return true;
         } else {
