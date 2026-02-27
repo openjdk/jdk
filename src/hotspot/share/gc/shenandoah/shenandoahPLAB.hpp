@@ -30,7 +30,7 @@
 
 class ShenandoahGenerationalHeap;
 
-class ShenandoahPLAB {
+class ShenandoahPLAB : public CHeapObj<mtGC> {
 private:
   // The actual allocation buffer
   PLAB* _plab;
