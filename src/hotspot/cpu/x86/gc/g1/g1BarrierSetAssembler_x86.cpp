@@ -269,6 +269,7 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
   __ bind(done);
 }
 
+#if INCLUDE_CDS
 // return a register that differs from reg1, reg2, reg3 and reg4
 
 static Register pick_different_reg(Register reg1, Register reg2 = noreg, Register reg3= noreg, Register reg4 = noreg) {
@@ -276,6 +277,7 @@ static Register pick_different_reg(Register reg1, Register reg2 = noreg, Registe
                       RegSet::of(reg1, reg2, reg3, reg4));
   return *(available.begin());
 }
+#endif // INCLUDE_CDS
 
 static void generate_post_barrier(MacroAssembler* masm,
                                   const Register store_addr,
