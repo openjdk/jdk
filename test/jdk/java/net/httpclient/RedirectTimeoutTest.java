@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,16 +29,11 @@
  *          an HttpTimeoutException during the redirected request.
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=errors,trace -Djdk.internal.httpclient.debug=false RedirectTimeoutTest
+ * @run junit/othervm -Djdk.httpclient.HttpClient.log=errors,trace -Djdk.internal.httpclient.debug=false RedirectTimeoutTest
  */
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.TestException;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -64,6 +59,12 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpOption.H3_DISCOVERY;
 import static jdk.test.lib.Utils.adjustTimeout;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.fail;
+
 public class RedirectTimeoutTest implements HttpServerAdapters {
 
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
@@ -75,8 +76,8 @@ public class RedirectTimeoutTest implements HttpServerAdapters {
     public static final int ITERATIONS = 4;
     private static final PrintStream out = System.out;
 
-    @BeforeTest
-    public void setup() throws IOException {
+    @BeforeAll
+    public static void setup() throws IOException {
         h1TestServer = HttpTestServer.create(HTTP_1_1);
         h2TestServer = HttpTestServer.create(HTTP_2);
         h3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
@@ -101,15 +102,14 @@ public class RedirectTimeoutTest implements HttpServerAdapters {
         h3TestServer.start();
     }
 
-    @AfterTest
-    public void teardown() {
+    @AfterAll
+    public static void teardown() {
         h1TestServer.stop();
         h2TestServer.stop();
         h3TestServer.stop();
     }
 
-    @DataProvider(name = "testData")
-    public Object[][] testData() {
+    public static Object[][] testData() {
         return new Object[][] {
                 { HTTP_3, h3Uri, h3RedirectUri },
                 { HTTP_1_1, h1Uri, h1RedirectUri },
@@ -117,7 +117,8 @@ public class RedirectTimeoutTest implements HttpServerAdapters {
         };
     }
 
-    @Test(dataProvider = "testData")
+    @ParameterizedTest
+    @MethodSource("testData")
     public void test(Version version, URI uri, URI redirectURI) throws InterruptedException {
         out.println("Testing for " + version);
         testRedirectURI = redirectURI;
@@ -159,7 +160,7 @@ public class RedirectTimeoutTest implements HttpServerAdapters {
         } catch (IOException e) {
             if (e.getClass() == HttpTimeoutException.class) {
                 e.printStackTrace(System.out);
-                throw new TestException("Timeout from original HttpRequest expired on redirect when it should have been cancelled.");
+                fail("Timeout from original HttpRequest expired on redirect when it should have been cancelled.");
             } else {
                 throw new RuntimeException(e);
             }
