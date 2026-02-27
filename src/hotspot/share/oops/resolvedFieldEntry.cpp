@@ -27,8 +27,9 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/resolvedFieldEntry.hpp"
+#include "runtime/fieldDescriptor.inline.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
-
 
 static_assert(std::is_trivially_copyable_v<ResolvedFieldEntry>);
 
@@ -37,6 +38,19 @@ class ResolvedFieldEntryWithExtra : public ResolvedFieldEntry {
   u1 _extra_field;
 };
 static_assert(sizeof(ResolvedFieldEntryWithExtra) > sizeof(ResolvedFieldEntry));
+
+void ResolvedFieldEntry::fill_in(const fieldDescriptor& info, u1 tos_state, u1 get_code, u1 put_code) {
+  set_flags(info.access_flags().is_final(), info.access_flags().is_volatile());
+  _field_holder = info.field_holder();
+  _field_offset = info.offset();
+  _field_index = checked_cast<u2>(info.index());
+  _tos_state = tos_state;
+
+  // These must be set after the other fields
+  set_bytecode(&_get_code, get_code);
+  set_bytecode(&_put_code, put_code);
+  assert_is_valid();
+}
 
 void ResolvedFieldEntry::print_on(outputStream* st) const {
   st->print_cr("Field Entry:");

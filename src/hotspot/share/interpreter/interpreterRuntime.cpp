@@ -711,9 +711,7 @@ void InterpreterRuntime::resolve_get_put(Bytecodes::Code bytecode, int field_ind
   }
 
   ResolvedFieldEntry* entry = pool->resolved_field_entry_at(field_index);
-  entry->set_flags(info.access_flags().is_final(), info.access_flags().is_volatile());
-  entry->fill_in(info.field_holder(), info.offset(),
-                 checked_cast<u2>(info.index()), checked_cast<u1>(state),
+  entry->fill_in(info, checked_cast<u1>(state),
                  static_cast<u1>(get_code), static_cast<u1>(put_code));
 }
 
@@ -1191,8 +1189,6 @@ JRT_END
 JRT_ENTRY(void, InterpreterRuntime::post_field_access(JavaThread* current, oopDesc* obj,
                                                       ResolvedFieldEntry* entry))
 
-  entry->assert_is_valid();
-
   // check the access_flags for the field in the klass
   InstanceKlass* ik = entry->field_holder();
   int index = entry->field_index();
@@ -1214,8 +1210,6 @@ JRT_END
 
 JRT_ENTRY(void, InterpreterRuntime::post_field_modification(JavaThread* current, oopDesc* obj,
                                                             ResolvedFieldEntry* entry, jvalue* value))
-
-  entry->assert_is_valid();
 
   // check the access_flags for the field in the klass
   InstanceKlass* ik = entry->field_holder();

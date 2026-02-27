@@ -114,6 +114,7 @@ public:
   // Printing
   void print_on(outputStream* st) const;
 
+ private:
   void set_flags(bool is_final_flag, bool is_volatile_flag) {
     int new_flags = (is_final_flag << is_final_shift) | static_cast<int>(is_volatile_flag);
     _flags = checked_cast<u1>(new_flags);
@@ -130,18 +131,12 @@ public:
     AtomicAccess::release_store(code, new_code);
   }
 
-  // Populate the strucutre with resolution information
-  void fill_in(InstanceKlass* klass, int offset, u2 index, u1 tos_state, u1 b1, u1 b2) {
-    _field_holder = klass;
-    _field_offset = offset;
-    _field_index = index;
-    _tos_state = tos_state;
+   // Debug help
+  void assert_is_valid() const NOT_DEBUG_RETURN;
 
-    // These must be set after the other fields
-    set_bytecode(&_get_code, b1);
-    set_bytecode(&_put_code, b2);
-    assert_is_valid();
-  }
+ public:
+  // Populate the strucutre with resolution information
+  void fill_in(const fieldDescriptor& info, u1 tos_state, u1 get_code, u1 put_code);
 
   // CDS
 #if INCLUDE_CDS
@@ -157,9 +152,6 @@ public:
   static ByteSize put_code_offset()     { return byte_offset_of(ResolvedFieldEntry, _put_code);     }
   static ByteSize type_offset()         { return byte_offset_of(ResolvedFieldEntry, _tos_state);    }
   static ByteSize flags_offset()        { return byte_offset_of(ResolvedFieldEntry, _flags);        }
-
-   // Debug help
-  void assert_is_valid() const NOT_DEBUG_RETURN;
 };
 
 #endif //SHARE_OOPS_RESOLVEDFIELDENTRY_HPP
