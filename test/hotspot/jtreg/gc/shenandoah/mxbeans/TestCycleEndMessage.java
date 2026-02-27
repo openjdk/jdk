@@ -33,10 +33,13 @@
  *      TestCycleEndMessage
  */
 
-import java.util.concurrent.atomic.*;
-import javax.management.*;
-import java.lang.management.*;
-import javax.management.openmbean.*;
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
+import java.util.concurrent.atomic.AtomicBoolean;
+import javax.management.Notification;
+import javax.management.NotificationEmitter;
+import javax.management.NotificationListener;
+import javax.management.openmbean.CompositeData;
 
 import com.sun.management.GarbageCollectionNotificationInfo;
 
