@@ -1225,6 +1225,11 @@ MergeLoadInfo MergePrimitiveLoads::merge_load_info(LoadNode* load) const {
         }
         break;
       }
+      case Op_CallStaticJava: {
+        // Ignore - load is only used for debug info in uncommon_trap
+        // This is safe because the load value is not used for actual computation
+        break;
+      }
       default:
         // can not handle other usage
         return invalid;
@@ -1321,9 +1326,20 @@ bool MergePrimitiveLoads::is_compatible_load(const LoadNode* other_load, const L
 
   assert(other_load->in(MemNode::Memory) == load->in(MemNode::Memory), "sanity");
 
-  // To simplify, assume all loads have same control.
-  if (other_load->in(MemNode::Control) != load->in(MemNode::Control)) {
-    return false;
+  // Check if controls are compatible:
+  // - Same control: OK
+  // - One dominates the other: OK (use the dominated control for merged load)
+  Node* ctrl1 = load->in(MemNode::Control);
+  Node* ctrl2 = other_load->in(MemNode::Control);
+  if (ctrl1 != ctrl2) {
+    // Handle null controls (e.g., for raw unsafe accesses)
+    if (ctrl1 == nullptr || ctrl2 == nullptr) {
+      return false;
+    }
+    // Check if ctrl1 dominates ctrl2 or vice versa
+    if (!_phase->is_dominator(ctrl1, ctrl2) && !_phase->is_dominator(ctrl2, ctrl1)) {
+      return false;
+    }
   }
 
   if (other_load->is_acquire() || !other_load->is_unordered()) {
@@ -1430,7 +1446,7 @@ int MergePrimitiveLoads::collect_merge_list(MergeLoadInfoList* merge_list, const
 #endif
 
   int bytes = collected * load->memory_size();
-  if (collected < 2 || bytes < 4 || !is_power_of_2(bytes)) {
+  if (collected < 2 || bytes < 2 || !is_power_of_2(bytes)) {
     // too few or not aligned
     return -1;
   }
@@ -1500,7 +1516,7 @@ int MergePrimitiveLoads::collect_merge_list(MergeLoadInfoList* merge_list, const
   _require_reverse_bytes = (order == LowToHigh);
 #endif
   if (_require_reverse_bytes &&
-      (!Matcher::match_rule_supported(Op_ReverseBytesS) ||
+      (!Matcher::match_rule_supported(Op_ReverseBytesUS) ||
        !Matcher::match_rule_supported(Op_ReverseBytesI) ||
        !Matcher::match_rule_supported(Op_ReverseBytesL))) {
     // Reverse Bytes is not supported
@@ -1529,8 +1545,21 @@ Node* MergePrimitiveLoads::make_merged_load(const MergeLoadInfoList* merge_list,
     load = merge_list->at(count-1)._load;
   }
   Node* adr  = load->in(MemNode::Address);
-  Node* ctrl = load->in(MemNode::Control);
   Node* mem  = load->in(MemNode::Memory);
+
+  // Find the latest control (dominated by others) among all loads
+  // This ensures all range checks have passed before the merged load
+  Node* ctrl = load->in(MemNode::Control);
+  for (int i = 0; i < count; i++) {
+    Node* other_ctrl = merge_list->at(i)._load->in(MemNode::Control);
+    if (other_ctrl != nullptr && other_ctrl != ctrl) {
+      // If other_ctrl dominates ctrl, use ctrl (ctrl is later)
+      // If ctrl dominates other_ctrl, use other_ctrl (other_ctrl is later)
+      if (ctrl == nullptr || _phase->is_dominator(ctrl, other_ctrl)) {
+        ctrl = other_ctrl;
+      }
+    }
+  }
 
   const TypePtr* at = load->adr_type();
   const Type* rt = nullptr;
@@ -1538,9 +1567,9 @@ Node* MergePrimitiveLoads::make_merged_load(const MergeLoadInfoList* merge_list,
   int merge_size = count * load->memory_size();
   BasicType bt = T_ILLEGAL;
   switch (merge_size) {
+    case 2: bt = T_CHAR;  rt = TypeInt::CHAR;  break;
     case 4: bt = T_INT;   rt = TypeInt::INT;   break;
     case 8: bt = T_LONG;  rt = TypeLong::LONG; break;
-    case 2: // Not merged as LoadS
     default: {
       ShouldNotReachHere();
       break;
@@ -1564,9 +1593,11 @@ Node* MergePrimitiveLoads::make_merged_load(const MergeLoadInfoList* merge_list,
     assert(load->memory_size() == 1, "only implemented for bytes");
     if (merge_size == 8) {
       replace = _phase->transform(new ReverseBytesLNode(merged_load));
-    } else {
-      assert(merge_size == 4, "sanity");
+    } else if (merge_size == 4) {
       replace = _phase->transform(new ReverseBytesINode(merged_load));
+    } else {
+      assert(merge_size == 2, "sanity");
+      replace = _phase->transform(new ReverseBytesUSNode(merged_load));
     }
     _phase->is_IterGVN()->_worklist.push(merged_load);
   }
