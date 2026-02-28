@@ -42,6 +42,8 @@
 #include "opto/countbitsnode.hpp"
 #include "opto/idealKit.hpp"
 #include "opto/library_call.hpp"
+
+#include "mathnode.hpp"
 #include "opto/mathexactnode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/narrowptrnode.hpp"
@@ -1833,7 +1835,22 @@ bool LibraryCallKit::runtime_math(const TypeFunc* call_type, address funcAddr, c
 }
 
 //------------------------------inline_math_pow-----------------------------
+// TODO: produce PowDNode macros instead of calls
 bool LibraryCallKit::inline_math_pow() {
+  if (UseNewCode) {
+    Node* base = argument(0);
+    Node* exp = argument(2);
+
+    CallNode* pow = new PowDNode(C, base, exp);
+    set_predefined_input_for_runtime_call(pow);
+    pow = _gvn.transform(pow)->as_CallLeafPure();
+    set_predefined_output_for_runtime_call(pow);
+    Node* result = _gvn.transform(new ProjNode(pow, TypeFunc::Parms + 0));
+    record_for_igvn(pow);
+    set_result(result);
+    return true;
+  }
+
   Node* exp = argument(2);
   const TypeD* d = _gvn.type(exp)->isa_double_constant();
   if (d != nullptr) {

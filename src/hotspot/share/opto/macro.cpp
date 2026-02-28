@@ -2499,6 +2499,7 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
         assert(n->Opcode() == Op_LoopLimit ||
                n->Opcode() == Op_ModD ||
                n->Opcode() == Op_ModF ||
+               n->Opcode() == Op_PowD ||
                n->is_OpaqueConstantBool()    ||
                n->is_OpaqueInitializedAssertionPredicate() ||
                n->Opcode() == Op_MaxL      ||
@@ -2654,6 +2655,73 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       break;
     default:
       switch (n->Opcode()) {
+      case Op_PowD: {
+        CallNode *pow_macro = n->as_Call();
+        Node *exp = pow_macro->in(TypeFunc::Parms + 2);
+        const TypeD *exp_type = _igvn.type(exp)->isa_double_constant();
+
+        if (exp_type != nullptr && exp_type->getd() == 0.5 && Matcher::match_rule_supported(Op_SqrtD)) {
+          Node *ctrl = pow_macro->in(TypeFunc::Control);
+          Node *base = pow_macro->in(TypeFunc::Parms + 0);
+          Node *zero = _igvn.zerocon(T_DOUBLE);
+
+          Node *cmp = transform_later(new CmpDNode(base, zero));
+          // According to the API specs, pow(-0.0, 0.5) = 0.0 and sqrt(-0.0) = -0.0.
+          // So pow(-0.0, 0.5) shouldn't be replaced with sqrt(-0.0).
+          // -0.0/+0.0 are both excluded since floating-point comparison doesn't distinguish -0.0 from +0.0.
+          Node *test = transform_later(new BoolNode(cmp, BoolTest::le));
+
+          IfNode *iff = new IfNode(ctrl, test, PROB_UNLIKELY_MAG(3), COUNT_UNKNOWN);
+          Node *if_slow = transform_later(new IfTrueNode(iff)); // x <= 0
+          Node *if_fast = transform_later(new IfFalseNode(iff)); // x > 0
+
+          // slow path: call pow(x, 0.5)
+          // TODO: a lot repeated code with ModeDFNodes. Refactor?
+          CallNode *call = new CallLeafPureNode(pow_macro->tf(), pow_macro->entry_point(), pow_macro->_name);
+          call->init_req(TypeFunc::Control, if_slow);
+          call->init_req(TypeFunc::I_O, C->top());
+          call->init_req(TypeFunc::Memory, C->top());
+          call->init_req(TypeFunc::ReturnAdr, C->top());
+          call->init_req(TypeFunc::FramePtr, C->top());
+          for (uint i = 0; i < pow_macro->tf()->domain()->cnt() - TypeFunc::Parms; i++) {
+            call->init_req(TypeFunc::Parms + i, pow_macro->in(TypeFunc::Parms + i));
+          }
+          transform_later(call);
+          Node *call_ctrl = transform_later(new ProjNode(call, TypeFunc::Control));
+          Node *call_result = transform_later(new ProjNode(call, TypeFunc::Parms + 0));
+
+          // fast path: sqrt(0.5)
+          Node *sqrt = transform_later(new SqrtDNode(C, if_fast, base));;
+
+          // merge paths
+          RegionNode *region = new RegionNode(3);
+          region->init_req(1, call_ctrl); // slow path
+          region->init_req(2, if_fast); // fast path
+
+          PhiNode *phi = new PhiNode(region, Type::DOUBLE);
+          phi->init_req(1, call_result); // slow: pow result
+          phi->init_req(2, sqrt); // fast: sqrt result
+
+          // TODO: Instead of inserting new tuples, we could surgically replace outgoing edges to user node with _callprojs
+          // which one's better?
+          TupleNode *tuple = TupleNode::make(
+            pow_macro->tf()->range(),
+            region, // Control → RegionNode
+            C->top(), // I_O
+            C->top(), // Memory
+            C->top(), // FramePtr
+            C->top(), // ReturnAdr
+            phi, // Parms+0 → PhiNode (the double result)
+            C->top()); // Parms+1 → HALF padding
+
+          _igvn.replace_node(pow_macro, tuple);
+          transform_later(tuple);
+          break;
+        }
+
+        // intentional fallthrough for plain pow(x, y) call that cannot to strength reduced
+        // TODO: again, a lot repeated code that could be refactored
+      }
       case Op_ModD:
       case Op_ModF: {
         CallNode* mod_macro = n->as_Call();
