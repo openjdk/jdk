@@ -73,16 +73,16 @@ dependencies in DOT language (see the `-dotoutput` option).
 [`-s`]{#option-summary} or `-summary`
 :   Prints a dependency summary only.
 
-`-v` or `-verbose`
+[`-v`]{#option-verbose} or `-verbose`
 :   Prints all class-level dependencies. This is equivalent to
 
     >   `-verbose:class -filter:none`
 
-[`-verbose:-verbose_package`]{#option-verbose_package}
+`-verbose:-verbose_package`
 :   Prints package-level dependencies excluding, by default, dependences within
     the same package.
 
-[`-verbose:-verbose_class`]{#option-verbose_class}
+`-verbose:-verbose_class`
 :   Prints class-level dependencies excluding, by default, dependencies within
     the same archive.
 
