@@ -508,10 +508,10 @@ Node *Node::clone() const {
     // If it is applicable, it will happen anyway when the cloned node is registered with IGVN.
     n->remove_flag(Node::NodeFlags::Flag_for_post_loop_opts_igvn);
   }
-  if (for_merge_stores_igvn()) {
-    // Don't add cloned node to Compile::_for_merge_stores_igvn list automatically.
+  if (for_merge_memops_igvn()) {
+    // Don't add cloned node to Compile::_for_merge_memops_igvn list automatically.
     // If it is applicable, it will happen anyway when the cloned node is registered with IGVN.
-    n->remove_flag(Node::NodeFlags::Flag_for_merge_stores_igvn);
+    n->remove_flag(Node::NodeFlags::Flag_for_merge_memops_igvn);
   }
   if (n->is_ParsePredicate()) {
     C->add_parse_predicate(n->as_ParsePredicate());
@@ -631,8 +631,8 @@ void Node::destruct(PhaseValues* phase) {
   if (for_post_loop_opts_igvn()) {
     compile->remove_from_post_loop_opts_igvn(this);
   }
-  if (for_merge_stores_igvn()) {
-    compile->remove_from_merge_stores_igvn(this);
+  if (for_merge_memops_igvn()) {
+    compile->remove_from_merge_memops_igvn(this);
   }
 
   if (is_SafePoint()) {
