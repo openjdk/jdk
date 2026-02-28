@@ -130,7 +130,7 @@ Developers are responsible for updating their custom runtime images.
 :   Suggest providers that implement the given service types from the module
     path.
 
-[`--version`]{#option--version}
+`--version`
 :   Prints version information.
 
 `@`*filename*
