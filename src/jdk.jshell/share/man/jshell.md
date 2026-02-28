@@ -172,7 +172,7 @@ use, save them to a file.
     or to start JShell without any preloaded information if no scripts are
     entered. This option can't be used if the `--startup` option is used.
 
-[`-q`]{#option-q}
+`-q`
 :   Sets the feedback mode to `concise`, which is the same as entering
     `--feedback concise`.
 
