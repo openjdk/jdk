@@ -1422,25 +1422,25 @@ address StubGenerator::generate_electronicCodeBook_encryptAESCrypt_Parallel() {
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
-  const Register from   = c_rarg0;  // source array address
-  const Register to     = c_rarg1;  // destination array address
-  const Register key    = c_rarg2;  // key array address
-  const Register len_reg = c_rarg3; // src len (must be multiple of blocksize 16)
-  const Register pos    = rax;
-  const Register keylen = rbx;
+  const Register from    = c_rarg0;  // source array address
+  const Register to      = c_rarg1;  // destination array address
+  const Register key     = c_rarg2;  // key array address
+  const Register len_reg = c_rarg3;  // src len (must be multiple of blocksize 16)
+  const Register pos     = rax;
+  const Register keylen  = rbx;
 
-  const XMMRegister xmm_result0        = xmm0;
-  const XMMRegister xmm_result1        = xmm1;
-  const XMMRegister xmm_result2        = xmm2;
-  const XMMRegister xmm_result3        = xmm3;
-  const XMMRegister xmm_key_shuf_mask  = xmm4;
-  const XMMRegister xmm_key_tmp        = xmm5;
+  const XMMRegister xmm_result0       = xmm0;
+  const XMMRegister xmm_result1       = xmm1;
+  const XMMRegister xmm_result2       = xmm2;
+  const XMMRegister xmm_result3       = xmm3;
+  const XMMRegister xmm_key_shuf_mask = xmm4;
+  const XMMRegister xmm_key_tmp       = xmm5;
+
+  // Number of AES rounds for 128/192/256-bit keys (k=0/1/2)
+  const int rounds[3] = {10, 12, 14};
 
   Label L_exit;
-  Label L_key_192, L_key_256;
-  Label L_loop4_128, L_tail_128, L_single_128, L_done_128;
-  Label L_loop4_192, L_tail_192, L_single_192, L_done_192;
-  Label L_loop4_256, L_tail_256, L_single_256, L_done_256;
+  Label L_loop4[3], L_single[3], L_done[3];
 
 #ifdef DoFour
 #undef DoFour
@@ -1455,8 +1455,8 @@ __ opc(xmm_result1, reg);         \
 __ opc(xmm_result2, reg);         \
 __ opc(xmm_result3, reg);         \
 
-#define DoOne(opc, reg)           \
-__ opc(xmm_result0, reg);        \
+#define DoOne(opc, reg)            \
+__ opc(xmm_result0, reg);         \
 
   __ enter();
   __ push(len_reg); // save original length for return value
@@ -1467,297 +1467,69 @@ __ opc(xmm_result0, reg);        \
   __ movdqu(xmm_key_shuf_mask, ExternalAddress(key_shuffle_mask_addr()), r10 /*rscratch*/);
   __ xorptr(pos, pos);
 
-  __ cmpl(keylen, 44);
-  __ jcc(Assembler::notEqual, L_key_192);
-
-  // 128-bit key path
-  __ cmpptr(len_reg, 4 * AESBlockSize);
-  __ jcc(Assembler::less, L_tail_128);
-
-  __ align(OptoLoopAlignment);
-  __ BIND(L_loop4_128);
-  __ movdqu(xmm_result0, Address(from, pos, Address::times_1, 0 * AESBlockSize));
-  __ movdqu(xmm_result1, Address(from, pos, Address::times_1, 1 * AESBlockSize));
-  __ movdqu(xmm_result2, Address(from, pos, Address::times_1, 2 * AESBlockSize));
-  __ movdqu(xmm_result3, Address(from, pos, Address::times_1, 3 * AESBlockSize));
-
-  load_key(xmm_key_tmp, key, 0x00, xmm_key_shuf_mask);
-  DoFour(pxor, xmm_key_tmp);
-
-  load_key(xmm_key_tmp, key, 0x10, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x20, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x30, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x40, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
-
-  load_key(xmm_key_tmp, key, 0x50, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x60, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x70, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x80, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
-
-  load_key(xmm_key_tmp, key, 0x90, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xa0, xmm_key_shuf_mask);
-  DoFour(aesenclast, xmm_key_tmp);
-
-  __ movdqu(Address(to, pos, Address::times_1, 0 * AESBlockSize), xmm_result0);
-  __ movdqu(Address(to, pos, Address::times_1, 1 * AESBlockSize), xmm_result1);
-  __ movdqu(Address(to, pos, Address::times_1, 2 * AESBlockSize), xmm_result2);
-  __ movdqu(Address(to, pos, Address::times_1, 3 * AESBlockSize), xmm_result3);
-
-  __ addptr(pos, 4 * AESBlockSize);
-  __ subptr(len_reg, 4 * AESBlockSize);
-  __ cmpptr(len_reg, 4 * AESBlockSize);
-  __ jcc(Assembler::greaterEqual, L_loop4_128);
-
-  __ BIND(L_tail_128);
-  __ cmpptr(len_reg, AESBlockSize);
-  __ jcc(Assembler::less, L_done_128);
-
-  __ align(OptoLoopAlignment);
-  __ BIND(L_single_128);
-  __ movdqu(xmm_result0, Address(from, pos, Address::times_1, 0));
-
-  load_key(xmm_key_tmp, key, 0x00, xmm_key_shuf_mask);
-  DoOne(pxor, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x10, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x20, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x30, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x40, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x50, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x60, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x70, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x80, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x90, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xa0, xmm_key_shuf_mask);
-  DoOne(aesenclast, xmm_key_tmp);
-
-  __ movdqu(Address(to, pos, Address::times_1, 0), xmm_result0);
-  __ addptr(pos, AESBlockSize);
-  __ subptr(len_reg, AESBlockSize);
-  __ cmpptr(len_reg, AESBlockSize);
-  __ jcc(Assembler::greaterEqual, L_single_128);
-
-  __ BIND(L_done_128);
-  __ jmp(L_exit);
-
-  __ BIND(L_key_192);
+  // Dispatch to the correct key-length path:
+  //   keylen==44 -> 128-bit (k=0)
+  //   keylen==52 -> 192-bit (k=1)
+  //   keylen==60 -> 256-bit (k=2)
   __ cmpl(keylen, 52);
-  __ jcc(Assembler::notEqual, L_key_256);
+  __ jcc(Assembler::equal, L_loop4[1]);
+  __ cmpl(keylen, 60);
+  __ jcc(Assembler::equal, L_loop4[2]);
 
-  // 192-bit key path
-  __ cmpptr(len_reg, 4 * AESBlockSize);
-  __ jcc(Assembler::less, L_tail_192);
+  // k==0: 128-bit (10 rounds), k==1: 192-bit (12 rounds), k==2: 256-bit (14 rounds)
+  for (int k = 0; k < 3; ++k) {
+    __ BIND(L_loop4[k]);
+    __ cmpptr(len_reg, 4 * AESBlockSize);
+    __ jcc(Assembler::less, L_single[k]);
 
-  __ align(OptoLoopAlignment);
-  __ BIND(L_loop4_192);
-  __ movdqu(xmm_result0, Address(from, pos, Address::times_1, 0 * AESBlockSize));
-  __ movdqu(xmm_result1, Address(from, pos, Address::times_1, 1 * AESBlockSize));
-  __ movdqu(xmm_result2, Address(from, pos, Address::times_1, 2 * AESBlockSize));
-  __ movdqu(xmm_result3, Address(from, pos, Address::times_1, 3 * AESBlockSize));
+    __ align(OptoLoopAlignment);
+    __ movdqu(xmm_result0, Address(from, pos, Address::times_1, 0 * AESBlockSize));
+    __ movdqu(xmm_result1, Address(from, pos, Address::times_1, 1 * AESBlockSize));
+    __ movdqu(xmm_result2, Address(from, pos, Address::times_1, 2 * AESBlockSize));
+    __ movdqu(xmm_result3, Address(from, pos, Address::times_1, 3 * AESBlockSize));
 
-  load_key(xmm_key_tmp, key, 0x00, xmm_key_shuf_mask);
-  DoFour(pxor, xmm_key_tmp);
+    load_key(xmm_key_tmp, key, 0x00, xmm_key_shuf_mask);
+    DoFour(pxor, xmm_key_tmp);
+    for (int i = 1; i < rounds[k]; i++) {
+      load_key(xmm_key_tmp, key, i * 0x10, xmm_key_shuf_mask);
+      DoFour(aesenc, xmm_key_tmp);
+    }
+    load_key(xmm_key_tmp, key, rounds[k] * 0x10, xmm_key_shuf_mask);
+    DoFour(aesenclast, xmm_key_tmp);
 
-  load_key(xmm_key_tmp, key, 0x10, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x20, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x30, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x40, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
+    __ movdqu(Address(to, pos, Address::times_1, 0 * AESBlockSize), xmm_result0);
+    __ movdqu(Address(to, pos, Address::times_1, 1 * AESBlockSize), xmm_result1);
+    __ movdqu(Address(to, pos, Address::times_1, 2 * AESBlockSize), xmm_result2);
+    __ movdqu(Address(to, pos, Address::times_1, 3 * AESBlockSize), xmm_result3);
 
-  load_key(xmm_key_tmp, key, 0x50, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x60, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x70, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x80, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
+    __ addptr(pos, 4 * AESBlockSize);
+    __ subptr(len_reg, 4 * AESBlockSize);
+    __ jmp(L_loop4[k]);
 
-  load_key(xmm_key_tmp, key, 0x90, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xa0, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xb0, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xc0, xmm_key_shuf_mask);
-  DoFour(aesenclast, xmm_key_tmp);
+    __ BIND(L_single[k]);
+    __ cmpptr(len_reg, AESBlockSize);
+    __ jcc(Assembler::less, L_done[k]);
 
-  __ movdqu(Address(to, pos, Address::times_1, 0 * AESBlockSize), xmm_result0);
-  __ movdqu(Address(to, pos, Address::times_1, 1 * AESBlockSize), xmm_result1);
-  __ movdqu(Address(to, pos, Address::times_1, 2 * AESBlockSize), xmm_result2);
-  __ movdqu(Address(to, pos, Address::times_1, 3 * AESBlockSize), xmm_result3);
+    __ align(OptoLoopAlignment);
+    __ movdqu(xmm_result0, Address(from, pos, Address::times_1, 0));
 
-  __ addptr(pos, 4 * AESBlockSize);
-  __ subptr(len_reg, 4 * AESBlockSize);
-  __ cmpptr(len_reg, 4 * AESBlockSize);
-  __ jcc(Assembler::greaterEqual, L_loop4_192);
+    load_key(xmm_key_tmp, key, 0x00, xmm_key_shuf_mask);
+    DoOne(pxor, xmm_key_tmp);
+    for (int i = 1; i < rounds[k]; i++) {
+      load_key(xmm_key_tmp, key, i * 0x10, xmm_key_shuf_mask);
+      DoOne(aesenc, xmm_key_tmp);
+    }
+    load_key(xmm_key_tmp, key, rounds[k] * 0x10, xmm_key_shuf_mask);
+    DoOne(aesenclast, xmm_key_tmp);
 
-  __ BIND(L_tail_192);
-  __ cmpptr(len_reg, AESBlockSize);
-  __ jcc(Assembler::less, L_done_192);
+    __ movdqu(Address(to, pos, Address::times_1, 0), xmm_result0);
+    __ addptr(pos, AESBlockSize);
+    __ subptr(len_reg, AESBlockSize);
+    __ jmp(L_single[k]);
 
-  __ align(OptoLoopAlignment);
-  __ BIND(L_single_192);
-  __ movdqu(xmm_result0, Address(from, pos, Address::times_1, 0));
-
-  load_key(xmm_key_tmp, key, 0x00, xmm_key_shuf_mask);
-  DoOne(pxor, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x10, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x20, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x30, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x40, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x50, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x60, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x70, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x80, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x90, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xa0, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xb0, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xc0, xmm_key_shuf_mask);
-  DoOne(aesenclast, xmm_key_tmp);
-
-  __ movdqu(Address(to, pos, Address::times_1, 0), xmm_result0);
-  __ addptr(pos, AESBlockSize);
-  __ subptr(len_reg, AESBlockSize);
-  __ cmpptr(len_reg, AESBlockSize);
-  __ jcc(Assembler::greaterEqual, L_single_192);
-
-  __ BIND(L_done_192);
-  __ jmp(L_exit);
-
-  __ BIND(L_key_256);
-  // 256-bit key path
-  __ cmpptr(len_reg, 4 * AESBlockSize);
-  __ jcc(Assembler::less, L_tail_256);
-
-  __ align(OptoLoopAlignment);
-  __ BIND(L_loop4_256);
-  __ movdqu(xmm_result0, Address(from, pos, Address::times_1, 0 * AESBlockSize));
-  __ movdqu(xmm_result1, Address(from, pos, Address::times_1, 1 * AESBlockSize));
-  __ movdqu(xmm_result2, Address(from, pos, Address::times_1, 2 * AESBlockSize));
-  __ movdqu(xmm_result3, Address(from, pos, Address::times_1, 3 * AESBlockSize));
-
-  load_key(xmm_key_tmp, key, 0x00, xmm_key_shuf_mask);
-  DoFour(pxor, xmm_key_tmp);
-
-  load_key(xmm_key_tmp, key, 0x10, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x20, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x30, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x40, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
-
-  load_key(xmm_key_tmp, key, 0x50, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x60, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x70, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x80, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
-
-  load_key(xmm_key_tmp, key, 0x90, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xa0, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xb0, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xc0, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xd0, xmm_key_shuf_mask);
-  DoFour(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xe0, xmm_key_shuf_mask);
-  DoFour(aesenclast, xmm_key_tmp);
-
-  __ movdqu(Address(to, pos, Address::times_1, 0 * AESBlockSize), xmm_result0);
-  __ movdqu(Address(to, pos, Address::times_1, 1 * AESBlockSize), xmm_result1);
-  __ movdqu(Address(to, pos, Address::times_1, 2 * AESBlockSize), xmm_result2);
-  __ movdqu(Address(to, pos, Address::times_1, 3 * AESBlockSize), xmm_result3);
-
-  __ addptr(pos, 4 * AESBlockSize);
-  __ subptr(len_reg, 4 * AESBlockSize);
-  __ cmpptr(len_reg, 4 * AESBlockSize);
-  __ jcc(Assembler::greaterEqual, L_loop4_256);
-
-  __ BIND(L_tail_256);
-  __ cmpptr(len_reg, AESBlockSize);
-  __ jcc(Assembler::less, L_done_256);
-
-  __ align(OptoLoopAlignment);
-  __ BIND(L_single_256);
-  __ movdqu(xmm_result0, Address(from, pos, Address::times_1, 0));
-
-  load_key(xmm_key_tmp, key, 0x00, xmm_key_shuf_mask);
-  DoOne(pxor, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x10, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x20, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x30, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x40, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x50, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x60, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x70, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x80, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x90, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xa0, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xb0, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xc0, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xd0, xmm_key_shuf_mask);
-  DoOne(aesenc, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xe0, xmm_key_shuf_mask);
-  DoOne(aesenclast, xmm_key_tmp);
-
-  __ movdqu(Address(to, pos, Address::times_1, 0), xmm_result0);
-  __ addptr(pos, AESBlockSize);
-  __ subptr(len_reg, AESBlockSize);
-  __ cmpptr(len_reg, AESBlockSize);
-  __ jcc(Assembler::greaterEqual, L_single_256);
-
-  __ BIND(L_done_256);
+    __ BIND(L_done[k]);
+    if (k < 2) __ jmp(L_exit);
+  }
 
   __ BIND(L_exit);
   __ pop(rbx);
@@ -1792,25 +1564,25 @@ address StubGenerator::generate_electronicCodeBook_decryptAESCrypt_Parallel() {
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
-  const Register from   = c_rarg0;  // source array address
-  const Register to     = c_rarg1;  // destination array address
-  const Register key    = c_rarg2;  // key array address
-  const Register len_reg = c_rarg3; // src len (must be multiple of blocksize 16)
-  const Register pos    = rax;
-  const Register keylen = rbx;
+  const Register from    = c_rarg0;  // source array address
+  const Register to      = c_rarg1;  // destination array address
+  const Register key     = c_rarg2;  // key array address
+  const Register len_reg = c_rarg3;  // src len (must be multiple of blocksize 16)
+  const Register pos     = rax;
+  const Register keylen  = rbx;
 
-  const XMMRegister xmm_result0        = xmm0;
-  const XMMRegister xmm_result1        = xmm1;
-  const XMMRegister xmm_result2        = xmm2;
-  const XMMRegister xmm_result3        = xmm3;
-  const XMMRegister xmm_key_shuf_mask  = xmm4;
-  const XMMRegister xmm_key_tmp        = xmm5;
+  const XMMRegister xmm_result0       = xmm0;
+  const XMMRegister xmm_result1       = xmm1;
+  const XMMRegister xmm_result2       = xmm2;
+  const XMMRegister xmm_result3       = xmm3;
+  const XMMRegister xmm_key_shuf_mask = xmm4;
+  const XMMRegister xmm_key_tmp       = xmm5;
+
+  // Number of AES rounds for 128/192/256-bit keys (k=0/1/2)
+  const int rounds[3] = {10, 12, 14};
 
   Label L_exit;
-  Label L_key_192, L_key_256;
-  Label L_loop4_128, L_tail_128, L_single_128, L_done_128;
-  Label L_loop4_192, L_tail_192, L_single_192, L_done_192;
-  Label L_loop4_256, L_tail_256, L_single_256, L_done_256;
+  Label L_loop4[3], L_single[3], L_done[3];
 
 #ifdef DoFour
 #undef DoFour
@@ -1825,8 +1597,8 @@ __ opc(xmm_result1, reg);         \
 __ opc(xmm_result2, reg);         \
 __ opc(xmm_result3, reg);         \
 
-#define DoOne(opc, reg)           \
-__ opc(xmm_result0, reg);        \
+#define DoOne(opc, reg)            \
+__ opc(xmm_result0, reg);         \
 
   __ enter();
   __ push(len_reg); // save original length for return value
@@ -1837,299 +1609,69 @@ __ opc(xmm_result0, reg);        \
   __ movdqu(xmm_key_shuf_mask, ExternalAddress(key_shuffle_mask_addr()), r10 /*rscratch*/);
   __ xorptr(pos, pos);
 
-  __ cmpl(keylen, 44);
-  __ jcc(Assembler::notEqual, L_key_192);
-
-  // 128-bit key path
-  __ cmpptr(len_reg, 4 * AESBlockSize);
-  __ jcc(Assembler::less, L_tail_128);
-
-  __ align(OptoLoopAlignment);
-  __ BIND(L_loop4_128);
-  __ movdqu(xmm_result0, Address(from, pos, Address::times_1, 0 * AESBlockSize));
-  __ movdqu(xmm_result1, Address(from, pos, Address::times_1, 1 * AESBlockSize));
-  __ movdqu(xmm_result2, Address(from, pos, Address::times_1, 2 * AESBlockSize));
-  __ movdqu(xmm_result3, Address(from, pos, Address::times_1, 3 * AESBlockSize));
-
-  load_key(xmm_key_tmp, key, 0x10, xmm_key_shuf_mask);
-  DoFour(pxor, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x20, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x30, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x40, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
-
-  load_key(xmm_key_tmp, key, 0x50, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x60, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x70, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x80, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
-
-  load_key(xmm_key_tmp, key, 0x90, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xa0, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x00, xmm_key_shuf_mask);
-  DoFour(aesdeclast, xmm_key_tmp);
-
-  __ movdqu(Address(to, pos, Address::times_1, 0 * AESBlockSize), xmm_result0);
-  __ movdqu(Address(to, pos, Address::times_1, 1 * AESBlockSize), xmm_result1);
-  __ movdqu(Address(to, pos, Address::times_1, 2 * AESBlockSize), xmm_result2);
-  __ movdqu(Address(to, pos, Address::times_1, 3 * AESBlockSize), xmm_result3);
-
-  __ addptr(pos, 4 * AESBlockSize);
-  __ subptr(len_reg, 4 * AESBlockSize);
-  __ cmpptr(len_reg, 4 * AESBlockSize);
-  __ jcc(Assembler::greaterEqual, L_loop4_128);
-
-  __ BIND(L_tail_128);
-  __ cmpptr(len_reg, AESBlockSize);
-  __ jcc(Assembler::less, L_done_128);
-
-  __ align(OptoLoopAlignment);
-  __ BIND(L_single_128);
-  __ movdqu(xmm_result0, Address(from, pos, Address::times_1, 0));
-
-  load_key(xmm_key_tmp, key, 0x10, xmm_key_shuf_mask);
-  DoOne(pxor, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x20, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x30, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x40, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x50, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x60, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x70, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x80, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x90, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xa0, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x00, xmm_key_shuf_mask);
-  DoOne(aesdeclast, xmm_key_tmp);
-
-  __ movdqu(Address(to, pos, Address::times_1, 0), xmm_result0);
-  __ addptr(pos, AESBlockSize);
-  __ subptr(len_reg, AESBlockSize);
-  __ cmpptr(len_reg, AESBlockSize);
-  __ jcc(Assembler::greaterEqual, L_single_128);
-
-  __ BIND(L_done_128);
-  __ jmp(L_exit);
-
-  __ BIND(L_key_192);
+  // Dispatch to the correct key-length path:
+  //   keylen==44 -> 128-bit (k=0)
+  //   keylen==52 -> 192-bit (k=1)
+  //   keylen==60 -> 256-bit (k=2)
   __ cmpl(keylen, 52);
-  __ jcc(Assembler::notEqual, L_key_256);
+  __ jcc(Assembler::equal, L_loop4[1]);
+  __ cmpl(keylen, 60);
+  __ jcc(Assembler::equal, L_loop4[2]);
 
-  // 192-bit key path
-  __ cmpptr(len_reg, 4 * AESBlockSize);
-  __ jcc(Assembler::less, L_tail_192);
+  // k==0: 128-bit (10 rounds), k==1: 192-bit (12 rounds), k==2: 256-bit (14 rounds)
+  for (int k = 0; k < 3; ++k) {
+    __ BIND(L_loop4[k]);
+    __ cmpptr(len_reg, 4 * AESBlockSize);
+    __ jcc(Assembler::less, L_single[k]);
 
-  __ align(OptoLoopAlignment);
-  __ BIND(L_loop4_192);
-  __ movdqu(xmm_result0, Address(from, pos, Address::times_1, 0 * AESBlockSize));
-  __ movdqu(xmm_result1, Address(from, pos, Address::times_1, 1 * AESBlockSize));
-  __ movdqu(xmm_result2, Address(from, pos, Address::times_1, 2 * AESBlockSize));
-  __ movdqu(xmm_result3, Address(from, pos, Address::times_1, 3 * AESBlockSize));
+    __ align(OptoLoopAlignment);
+    __ movdqu(xmm_result0, Address(from, pos, Address::times_1, 0 * AESBlockSize));
+    __ movdqu(xmm_result1, Address(from, pos, Address::times_1, 1 * AESBlockSize));
+    __ movdqu(xmm_result2, Address(from, pos, Address::times_1, 2 * AESBlockSize));
+    __ movdqu(xmm_result3, Address(from, pos, Address::times_1, 3 * AESBlockSize));
 
-  load_key(xmm_key_tmp, key, 0x10, xmm_key_shuf_mask);
-  DoFour(pxor, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x20, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x30, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x40, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
+    load_key(xmm_key_tmp, key, 0x10, xmm_key_shuf_mask);
+    DoFour(pxor, xmm_key_tmp);
+    for (int i = 2; i <= rounds[k]; i++) {
+      load_key(xmm_key_tmp, key, i * 0x10, xmm_key_shuf_mask);
+      DoFour(aesdec, xmm_key_tmp);
+    }
+    load_key(xmm_key_tmp, key, 0x00, xmm_key_shuf_mask);
+    DoFour(aesdeclast, xmm_key_tmp);
 
-  load_key(xmm_key_tmp, key, 0x50, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x60, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x70, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x80, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
+    __ movdqu(Address(to, pos, Address::times_1, 0 * AESBlockSize), xmm_result0);
+    __ movdqu(Address(to, pos, Address::times_1, 1 * AESBlockSize), xmm_result1);
+    __ movdqu(Address(to, pos, Address::times_1, 2 * AESBlockSize), xmm_result2);
+    __ movdqu(Address(to, pos, Address::times_1, 3 * AESBlockSize), xmm_result3);
 
-  load_key(xmm_key_tmp, key, 0x90, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xa0, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xb0, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xc0, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x00, xmm_key_shuf_mask);
-  DoFour(aesdeclast, xmm_key_tmp);
+    __ addptr(pos, 4 * AESBlockSize);
+    __ subptr(len_reg, 4 * AESBlockSize);
+    __ jmp(L_loop4[k]);
 
-  __ movdqu(Address(to, pos, Address::times_1, 0 * AESBlockSize), xmm_result0);
-  __ movdqu(Address(to, pos, Address::times_1, 1 * AESBlockSize), xmm_result1);
-  __ movdqu(Address(to, pos, Address::times_1, 2 * AESBlockSize), xmm_result2);
-  __ movdqu(Address(to, pos, Address::times_1, 3 * AESBlockSize), xmm_result3);
+    __ BIND(L_single[k]);
+    __ cmpptr(len_reg, AESBlockSize);
+    __ jcc(Assembler::less, L_done[k]);
 
-  __ addptr(pos, 4 * AESBlockSize);
-  __ subptr(len_reg, 4 * AESBlockSize);
-  __ cmpptr(len_reg, 4 * AESBlockSize);
-  __ jcc(Assembler::greaterEqual, L_loop4_192);
+    __ align(OptoLoopAlignment);
+    __ movdqu(xmm_result0, Address(from, pos, Address::times_1, 0));
 
-  __ BIND(L_tail_192);
-  __ cmpptr(len_reg, AESBlockSize);
-  __ jcc(Assembler::less, L_done_192);
+    load_key(xmm_key_tmp, key, 0x10, xmm_key_shuf_mask);
+    DoOne(pxor, xmm_key_tmp);
+    for (int i = 2; i <= rounds[k]; i++) {
+      load_key(xmm_key_tmp, key, i * 0x10, xmm_key_shuf_mask);
+      DoOne(aesdec, xmm_key_tmp);
+    }
+    load_key(xmm_key_tmp, key, 0x00, xmm_key_shuf_mask);
+    DoOne(aesdeclast, xmm_key_tmp);
 
-  __ align(OptoLoopAlignment);
-  __ BIND(L_single_192);
-  __ movdqu(xmm_result0, Address(from, pos, Address::times_1, 0));
+    __ movdqu(Address(to, pos, Address::times_1, 0), xmm_result0);
+    __ addptr(pos, AESBlockSize);
+    __ subptr(len_reg, AESBlockSize);
+    __ jmp(L_single[k]);
 
-  load_key(xmm_key_tmp, key, 0x10, xmm_key_shuf_mask);
-  DoOne(pxor, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x20, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x30, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x40, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-
-  load_key(xmm_key_tmp, key, 0x50, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x60, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x70, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x80, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-
-  load_key(xmm_key_tmp, key, 0x90, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xa0, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xb0, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xc0, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x00, xmm_key_shuf_mask);
-  DoOne(aesdeclast, xmm_key_tmp);
-
-  __ movdqu(Address(to, pos, Address::times_1, 0), xmm_result0);
-  __ addptr(pos, AESBlockSize);
-  __ subptr(len_reg, AESBlockSize);
-  __ cmpptr(len_reg, AESBlockSize);
-  __ jcc(Assembler::greaterEqual, L_single_192);
-
-  __ BIND(L_done_192);
-  __ jmp(L_exit);
-
-  __ BIND(L_key_256);
-  // 256-bit key path
-  __ cmpptr(len_reg, 4 * AESBlockSize);
-  __ jcc(Assembler::less, L_tail_256);
-
-  __ align(OptoLoopAlignment);
-  __ BIND(L_loop4_256);
-  __ movdqu(xmm_result0, Address(from, pos, Address::times_1, 0 * AESBlockSize));
-  __ movdqu(xmm_result1, Address(from, pos, Address::times_1, 1 * AESBlockSize));
-  __ movdqu(xmm_result2, Address(from, pos, Address::times_1, 2 * AESBlockSize));
-  __ movdqu(xmm_result3, Address(from, pos, Address::times_1, 3 * AESBlockSize));
-
-  load_key(xmm_key_tmp, key, 0x10, xmm_key_shuf_mask);
-  DoFour(pxor, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x20, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x30, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x40, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
-
-  load_key(xmm_key_tmp, key, 0x50, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x60, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x70, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x80, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
-
-  load_key(xmm_key_tmp, key, 0x90, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xa0, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xb0, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xc0, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xd0, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xe0, xmm_key_shuf_mask);
-  DoFour(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x00, xmm_key_shuf_mask);
-  DoFour(aesdeclast, xmm_key_tmp);
-
-  __ movdqu(Address(to, pos, Address::times_1, 0 * AESBlockSize), xmm_result0);
-  __ movdqu(Address(to, pos, Address::times_1, 1 * AESBlockSize), xmm_result1);
-  __ movdqu(Address(to, pos, Address::times_1, 2 * AESBlockSize), xmm_result2);
-  __ movdqu(Address(to, pos, Address::times_1, 3 * AESBlockSize), xmm_result3);
-
-  __ addptr(pos, 4 * AESBlockSize);
-  __ subptr(len_reg, 4 * AESBlockSize);
-  __ cmpptr(len_reg, 4 * AESBlockSize);
-  __ jcc(Assembler::greaterEqual, L_loop4_256);
-
-  __ BIND(L_tail_256);
-  __ cmpptr(len_reg, AESBlockSize);
-  __ jcc(Assembler::less, L_done_256);
-
-  __ align(OptoLoopAlignment);
-  __ BIND(L_single_256);
-  __ movdqu(xmm_result0, Address(from, pos, Address::times_1, 0));
-
-  load_key(xmm_key_tmp, key, 0x10, xmm_key_shuf_mask);
-  DoOne(pxor, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x20, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x30, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x40, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-
-  load_key(xmm_key_tmp, key, 0x50, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x60, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x70, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x80, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-
-  load_key(xmm_key_tmp, key, 0x90, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xa0, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xb0, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xc0, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xd0, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0xe0, xmm_key_shuf_mask);
-  DoOne(aesdec, xmm_key_tmp);
-  load_key(xmm_key_tmp, key, 0x00, xmm_key_shuf_mask);
-  DoOne(aesdeclast, xmm_key_tmp);
-
-  __ movdqu(Address(to, pos, Address::times_1, 0), xmm_result0);
-  __ addptr(pos, AESBlockSize);
-  __ subptr(len_reg, AESBlockSize);
-  __ cmpptr(len_reg, AESBlockSize);
-  __ jcc(Assembler::greaterEqual, L_single_256);
-
-  __ BIND(L_done_256);
-  __ jmp(L_exit);
+    __ BIND(L_done[k]);
+    if (k < 2) __ jmp(L_exit);
+  }
 
   __ BIND(L_exit);
   __ pop(rbx);
