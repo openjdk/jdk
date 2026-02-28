@@ -54,7 +54,27 @@ public interface SourcePositions {
      * @param tree tree for which a position is sought
      * @return the start position of tree
      */
-     long getStartPosition(CompilationUnitTree file, Tree tree);
+    default long getStartPosition(CompilationUnitTree file, Tree tree) {
+        return getStartPosition(tree);
+    }
+
+    /**
+     * Returns the starting position of tree within file.  If tree is not found within
+     * file, or if the starting position is not available,
+     * returns {@link javax.tools.Diagnostic#NOPOS}.
+     * The returned position must be at the start of the yield of this tree, that
+     * is for any sub-tree of this tree, the following must hold:
+     *
+     * <p>
+     * {@code getStartPosition(tree) <= getStartPosition(subtree)} or <br>
+     * {@code getStartPosition(tree) == NOPOS} or <br>
+     * {@code getStartPosition(subtree) == NOPOS}
+     * </p>
+     *
+     * @param tree tree for which a position is sought
+     * @return the start position of tree
+     */
+     long getStartPosition(Tree tree);
 
     /**
      * Returns the ending position of tree within file.  If tree is not found within
@@ -81,6 +101,33 @@ public interface SourcePositions {
      * @param tree tree for which a position is sought
      * @return the end position of tree
      */
-     long getEndPosition(CompilationUnitTree file, Tree tree);
+     default long getEndPosition(CompilationUnitTree file, Tree tree) {
+         return getEndPosition(tree);
+     }
 
+    /**
+     * Returns the ending position of tree within file.  If tree is not found within
+     * file, or if the ending position is not available,
+     * returns {@link javax.tools.Diagnostic#NOPOS}.
+     * The returned position must be at the end of the yield of this tree,
+     * that is for any sub-tree of this tree, the following must hold:
+     *
+     * <p>
+     * {@code getEndPosition(tree) >= getEndPosition(subtree)} or <br>
+     * {@code getEndPosition(tree) == NOPOS} or <br>
+     * {@code getEndPosition(subtree) == NOPOS}
+     * </p>
+     *
+     * In addition, the following must hold:
+     *
+     * <p>
+     * {@code getStartPosition(tree) <= getEndPosition(tree)} or <br>
+     * {@code getStartPosition(tree) == NOPOS} or <br>
+     * {@code getEndPosition(tree) == NOPOS}
+     * </p>
+     *
+     * @param tree tree for which a position is sought
+     * @return the end position of tree
+     */
+    long getEndPosition(Tree tree);
 }
