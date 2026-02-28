@@ -54,15 +54,17 @@ public class PowDNodeTests {
     // Test 2: pow(x, 0.0) -> 1.0
     @Test
     @IR(failOn = {"pow"}, phase = CompilePhase.BEFORE_MATCHING)
-    public double expZero() {
-        return Math.pow(b, 0.0);
+    @Arguments(values = {Argument.RANDOM_EACH})
+    public double expZero(double x) {
+        return Math.pow(x, 0.0);
     }
 
     // Test 3: pow(x, 1.0) -> x (identity)
     @Test
     @IR(failOn = {"pow"}, phase = CompilePhase.BEFORE_MATCHING)
-    public double expOne() {
-        return Math.pow(b, 1.0);
+    @Arguments(values = {Argument.RANDOM_EACH})
+    public double expOne(double x) {
+        return Math.pow(x, 1.0);
     }
 
     // Test 4: pow(x, 2.0) -> x * x
