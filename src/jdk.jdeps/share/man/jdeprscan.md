@@ -111,7 +111,7 @@ The following options are available:
 :   Limits scanning or listing to APIs that are deprecated for removal. Can't
     be used with a release value of 6, 7, or 8.
 
-[`--full-version`]{#option--full-version}
+`--full-version`
 :   Prints out the full version string of the tool.
 
 `--help` or `-h`

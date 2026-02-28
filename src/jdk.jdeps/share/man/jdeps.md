@@ -186,16 +186,16 @@ dependencies in DOT language (see the `-dotoutput` option).
 :   Filters dependences matching the given pattern. If give multiple times, the
     last one will be selected.
 
-[`-filter:package`]{#option-filter_package}
+`-filter:package`
 :   Filters dependences within the same package. This is the default.
 
-[`-filter:archive`]{#option-filter_archive}
+`-filter:archive`
 :   Filters dependences within the same archive.
 
-[`-filter:module`]{#option-filter_module}
+`-filter:module`
 :   Filters dependences within the same module.
 
-[`-filter:none`]{#option-filter_none}
+`-filter:none`
 :   No `-filter:package` and `-filter:archive` filtering. Filtering specified
     via the `-filter` option still applies.
 

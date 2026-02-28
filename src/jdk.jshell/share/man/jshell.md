@@ -181,7 +181,7 @@ use, save them to a file.
     For example, `-R-Dfoo=bar` means that execution of the snippet
     `System.getProperty("foo")` will return `"bar"`.
 
-[`-s`]{#option-s}
+`-s`
 :   Sets the feedback mode to `silent`, which is the same as entering
     `--feedback silent`.
 
