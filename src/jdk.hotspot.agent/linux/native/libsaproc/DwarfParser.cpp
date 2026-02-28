@@ -32,6 +32,7 @@
 
 static jfieldID p_dwarf_context_ID = 0;
 
+// DWARF_REG macro is used by DWARF_REGLIST.
 #define DWARF_REG(reg, _) \
   static jint sa_##reg = -1;
 
@@ -42,12 +43,6 @@ DWARF_REGLIST
 static jlong get_dwarf_context(JNIEnv *env, jobject obj) {
   return env->GetLongField(obj, p_dwarf_context_ID);
 }
-
-#define SET_REG(env, reg, reg_cls) \
-  jfieldID reg##_ID = env->GetStaticFieldID(reg_cls, #reg, "I"); \
-  CHECK_EXCEPTION \
-  sa_##reg = env->GetStaticIntField(reg_cls, reg##_ID); \
-  CHECK_EXCEPTION
 
 /*
  * Class:     sun_jvm_hotspot_debugger_linux_DwarfParser
@@ -65,6 +60,7 @@ JNIEXPORT void JNICALL Java_sun_jvm_hotspot_debugger_linux_DwarfParser_init0
   jclass reg_cls = env->FindClass(THREAD_CONTEXT_CLASS);
   CHECK_EXCEPTION
 
+// DWARF_REG macro is used by DWARF_REGLIST.
 #define DWARF_REG(reg, _) \
   jfieldID reg##_ID = env->GetStaticFieldID(reg_cls, #reg, "I"); \
   CHECK_EXCEPTION \
@@ -150,6 +146,7 @@ JNIEXPORT jint JNICALL Java_sun_jvm_hotspot_debugger_linux_DwarfParser_getCFAReg
   DwarfParser *parser = reinterpret_cast<DwarfParser *>(get_dwarf_context(env, this_obj));
 
   switch (parser->get_cfa_register()) {
+// DWARF_REG macro is used by DWARF_REGLIST.
 #define DWARF_REG(reg, _) \
     case reg: return sa_##reg;
 
@@ -183,6 +180,7 @@ JNIEXPORT jint JNICALL Java_sun_jvm_hotspot_debugger_linux_DwarfParser_getOffset
   (JNIEnv *env, jobject this_obj, jint sareg) {
   DwarfParser *parser = reinterpret_cast<DwarfParser *>(get_dwarf_context(env, this_obj));
 
+// DWARF_REG macro is used by DWARF_REGLIST.
 #define DWARF_REG(reg, dwreg) \
     if (sareg == sa_##reg) { \
       return parser->get_offset_from_cfa(static_cast<enum DWARF_Register>(dwreg)); \
@@ -206,6 +204,7 @@ JNIEXPORT jint JNICALL Java_sun_jvm_hotspot_debugger_linux_DwarfParser_getRARegi
   DwarfParser *parser = reinterpret_cast<DwarfParser *>(get_dwarf_context(env, this_obj));
 
   switch (parser->get_ra_register()) {
+// DWARF_REG macro is used by DWARF_REGLIST.
 #define DWARF_REG(reg, _) \
     case reg: return sa_##reg;
 

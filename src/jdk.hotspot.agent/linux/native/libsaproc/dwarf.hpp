@@ -37,6 +37,7 @@
 #endif
 
 enum DWARF_Register {
+// DWARF_REG macro is used by DWARF_REGLIST and DWARF_PSEUDO_REGLIST.
 #define DWARF_REG(reg, no) \
   reg = no,
 

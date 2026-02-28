@@ -83,10 +83,6 @@ public class DwarfCFrame extends BasicCFrame {
         return fp;
     }
 
-    public Address cfa() {
-        return cfa;
-    }
-
     public Address pc() {
         return pc;
     }
