@@ -1567,7 +1567,30 @@ Node* MergePrimitiveLoads::make_merged_load(const MergeLoadInfoList* merge_list,
   int merge_size = count * load->memory_size();
   BasicType bt = T_ILLEGAL;
   switch (merge_size) {
-    case 2: bt = T_CHAR;  rt = TypeInt::CHAR;  break;
+    case 2: {
+      // For 2-byte merge, check if the high byte is signed or unsigned.
+      // The high byte determines the sign of the merged result.
+      // Find the load at the highest shift position.
+      const MergeLoadInfo* high_byte_info = nullptr;
+      for (int i = 0; i < count; i++) {
+        const MergeLoadInfo* info = &merge_list->at(i);
+        if (info->_load != nullptr) {
+          if (high_byte_info == nullptr || info->_shift > high_byte_info->_shift) {
+            high_byte_info = info;
+          }
+        }
+      }
+      assert(high_byte_info != nullptr, "must find high byte");
+      // If the high byte is a signed load (LoadB) and its sign bit matters
+      // (i.e., it's shifted to the sign bit position of the result), use signed short.
+      // Otherwise use unsigned short.
+      if (high_byte_info->_load->Opcode() == Op_LoadB) {
+        bt = T_SHORT;  rt = TypeInt::SHORT;
+      } else {
+        bt = T_CHAR;   rt = TypeInt::CHAR;
+      }
+      break;
+    }
     case 4: bt = T_INT;   rt = TypeInt::INT;   break;
     case 8: bt = T_LONG;  rt = TypeLong::LONG; break;
     default: {
@@ -1597,7 +1620,12 @@ Node* MergePrimitiveLoads::make_merged_load(const MergeLoadInfoList* merge_list,
       replace = _phase->transform(new ReverseBytesINode(merged_load));
     } else {
       assert(merge_size == 2, "sanity");
-      replace = _phase->transform(new ReverseBytesUSNode(merged_load));
+      // Use signed or unsigned reverse bytes based on the load type
+      if (bt == T_SHORT) {
+        replace = _phase->transform(new ReverseBytesSNode(merged_load));
+      } else {
+        replace = _phase->transform(new ReverseBytesUSNode(merged_load));
+      }
     }
     _phase->is_IterGVN()->_worklist.push(merged_load);
   }
