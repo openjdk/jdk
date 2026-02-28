@@ -78,11 +78,11 @@ dependencies in DOT language (see the `-dotoutput` option).
 
     >   `-verbose:class -filter:none`
 
-`-verbose:-verbose_package`
+`-verbose:package`
 :   Prints package-level dependencies excluding, by default, dependences within
     the same package.
 
-`-verbose:-verbose_class`
+`-verbose:class`
 :   Prints class-level dependencies excluding, by default, dependencies within
     the same archive.
 
