@@ -153,9 +153,9 @@ public:
   virtual Node* Identity(PhaseGVN* phase);
 
   virtual uint ideal_reg() const { return Op_RegI; }
-  virtual bool is_merge_memops_checked()  const { return _merge_memops_checked; };
-  virtual void set_merge_memops_checked(bool v) { _merge_memops_checked = v; };
-  virtual uint size_of() const                  { return sizeof(AddINode); }
+  virtual bool is_merge_memops_checked() const { return _merge_memops_checked; }
+  virtual void set_merge_memops_checked(bool v) { _merge_memops_checked = v; }
+  virtual uint size_of() const { return sizeof(AddINode); }
 };
 
 //------------------------------AddLNode---------------------------------------
@@ -175,9 +175,9 @@ public:
   virtual Node* Identity(PhaseGVN* phase);
 
   virtual uint ideal_reg() const { return Op_RegL; }
-  virtual bool is_merge_memops_checked()  const { return _merge_memops_checked; };
-  virtual void set_merge_memops_checked(bool v) { _merge_memops_checked = v; };
-  virtual uint size_of() const                  { return sizeof(AddLNode); }
+  virtual bool is_merge_memops_checked() const { return _merge_memops_checked; }
+  virtual void set_merge_memops_checked(bool v) { _merge_memops_checked = v; }
+  virtual uint size_of() const { return sizeof(AddLNode); }
 };
 
 //------------------------------AddFNode---------------------------------------

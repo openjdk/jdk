@@ -38,7 +38,6 @@
 #include "runtime/stubRoutines.hpp"
 
 // Forward declaration for MergeLoads helper - defined after MergePrimitiveLoads class
-class MergePrimitiveLoads;
 static Node* try_merge_loads(PhaseGVN* phase, AddNode* combine);
 
 // Portions of code courtesy of Clifford Click
