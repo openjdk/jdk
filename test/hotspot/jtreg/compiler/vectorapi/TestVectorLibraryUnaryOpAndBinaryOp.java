@@ -34,10 +34,10 @@ import jdk.incubator.vector.*;
  * @summary VectorAPI: libraryUnaryOp and libraryBinaryOp should be intrinsified.
  * @modules jdk.incubator.vector
  *
- * @run driver compiler.vectorapi.TestVectorUnaryOpAndBinaryOp
+ * @run driver compiler.vectorapi.TestVectorLibraryUnaryOpAndBinaryOp
  */
 
-public class TestVectorUnaryOpAndBinaryOp {
+public class TestVectorLibraryUnaryOpAndBinaryOp {
 
     @Test
     @IR(counts = { IRNode.CALL_LEAF_VECTOR, "= 1" }, applyIfCPUFeatureOr = { "asimd", "true", "avx", "true" })
