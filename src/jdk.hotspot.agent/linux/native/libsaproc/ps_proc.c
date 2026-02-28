@@ -31,6 +31,7 @@
 #include <dirent.h>
 #include <ctype.h>
 #include <fcntl.h>
+#include <sys/auxv.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/ptrace.h>
@@ -463,25 +464,7 @@ Pgrab(pid_t pid, char* err_buf, size_t err_buf_len) {
   }
 
 #ifdef __aarch64__
-  {
-    ph->pac_enabled = false; // set false by default
-
-    char auxv_path[PATH_MAX];
-    snprintf(auxv_path, sizeof(auxv_path), "/proc/%d/auxv", pid);
-    int auxv_fd = open(auxv_path, O_RDONLY);
-    if (auxv_fd != 0) {
-      ELF_AUXV auxv;
-      while (read(auxv_fd, &auxv, sizeof(auxv)) == sizeof(auxv)) {
-        if (auxv.a_type == AT_HWCAP) {
-          ph->pac_enabled = auxv.a_un.a_val & HWCAP_PACA;
-          break;
-        } else if (auxv.a_type == AT_NULL) {
-          break;
-        }
-      }
-      close(auxv_fd);
-    }
-  }
+  ph->pac_enabled = HWCAP_PACA & getauxval(AT_HWCAP);
 #endif
 
   // initialize ps_prochandle

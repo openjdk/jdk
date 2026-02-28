@@ -116,7 +116,8 @@ struct ps_prochandle {
    thread_info*       threads;   // head of thread list
    struct core_data*  core;      // data only used for core dumps, NULL for process
 #ifdef __aarch64__
-   bool               pac_enabled; // true if PAC (PACA) is enabled
+   // true if the HWCAP_PACA variant of Pointer Authentication Code (PAC) is enabled.
+   bool               pac_enabled;
 #endif
 };
 
