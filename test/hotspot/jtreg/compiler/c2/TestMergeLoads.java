@@ -192,6 +192,16 @@ public class TestMergeLoads {
         testGroups.get("test14").put("test14a", (_,_) -> { return test14a(aS.clone()); });
         testGroups.get("test14").put("test14b", (_,_) -> { return test14b(aS.clone()); });
 
+        // Merge byte as short (little-endian)
+        testGroups.put("test15", new HashMap<String,TestFunction>());
+        testGroups.get("test15").put("test15R", (_,_) -> { return test15R(aB.clone()); });
+        testGroups.get("test15").put("test15a", (_,_) -> { return test15a(aB.clone()); });
+
+        // Merge byte as short (big-endian)
+        testGroups.put("test16", new HashMap<String,TestFunction>());
+        testGroups.get("test16").put("test16R", (_,_) -> { return test16R(aB.clone()); });
+        testGroups.get("test16").put("test16a", (_,_) -> { return test16a(aB.clone()); });
+
         // Mix different loads
         testGroups.put("test100", new HashMap<String,TestFunction>());
         testGroups.get("test100").put("test100R", (_,_) -> { return test100R(aB.clone(), aC.clone(), aS.clone(), aI.clone()); });
@@ -282,6 +292,10 @@ public class TestMergeLoads {
 
                  "test14a",
                  "test14b",
+
+                 "test15a",
+
+                 "test16a",
 
                  "test100a",
                 })
@@ -479,9 +493,9 @@ public class TestMergeLoads {
     @Test
     @IR(counts = {
           IRNode.LOAD_B_OF_CLASS,  "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "2",
-          IRNode.LOAD_UB_OF_CLASS, "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "2",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "0",
           IRNode.LOAD_S_OF_CLASS,  "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "0",
-          IRNode.LOAD_US_OF_CLASS, "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "1",
           IRNode.LOAD_I_OF_CLASS,  "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "0",
           IRNode.LOAD_L_OF_CLASS,  "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "0",
         },
@@ -1961,5 +1975,73 @@ public class TestMergeLoads {
                 (((long)(aC[6] & 0xffff)) << 32)|
                 (((long)(aC[7] & 0xffff)) << 48);
       return new long[] {i1, i2, i3, i4, i5, i6, i7};
+    }
+
+    /**
+     * Group 15: Merge byte as short (little-endian)
+     */
+    @DontCompile
+    static int test15R(byte[] a) {
+      return ((a[0] & 0xff) | ((a[1] & 0xff) << 8));
+    }
+
+    @Test
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "0",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "0",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "1",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "0",
+        },
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatform = {"little-endian", "true"})
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "0",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "0",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "1",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "0",
+          IRNode.REVERSE_BYTES_US, "1"
+        },
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatform = {"big-endian", "true"})
+    static int test15a(byte[] a) {
+      return ((a[0] & 0xff) | ((a[1] & 0xff) << 8));
+    }
+
+    /**
+     * Group 16: Merge byte as short (big-endian)
+     */
+    @DontCompile
+    static int test16R(byte[] a) {
+      return (((a[0] & 0xff) << 8) | (a[1] & 0xff));
+    }
+
+    @Test
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "0",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "0",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "1",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "0",
+          IRNode.REVERSE_BYTES_US, "1"
+        },
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatform = {"little-endian", "true"})
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "0",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "0",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "1",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\[int:>=0] \\(java/lang/Cloneable,java/io/Serializable\\)", "0",
+        },
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatform = {"big-endian", "true"})
+    static int test16a(byte[] a) {
+      return (((a[0] & 0xff) << 8) | (a[1] & 0xff));
     }
 }
