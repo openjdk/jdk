@@ -30,14 +30,15 @@
 #include <elf.h>
 #include <dirent.h>
 #include <ctype.h>
-#include <fcntl.h>
-#include <sys/auxv.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/ptrace.h>
 #include <sys/uio.h>
 #include "libproc_impl.h"
-#include "elfmacros.h"
+
+#ifdef __aarch64__
+#include <sys/auxv.h>
+#endif
 
 #if defined(x86_64) && !defined(amd64)
 #define amd64 1
