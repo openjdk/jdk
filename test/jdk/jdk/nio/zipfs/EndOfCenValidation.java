@@ -22,9 +22,8 @@
  */
 
 /* @test
- * @bug 8272746
  * @modules java.base/jdk.internal.util
- * @summary Verify that ZipFile rejects files with CEN sizes exceeding the implementation limit
+ * @summary Verify that ZipFileSystem rejects files with CEN sizes exceeding the implementation limit
  * @library /test/lib
  * @build jdk.test.lib.util.ZipUtils
  * @run junit/othervm EndOfCenValidation
@@ -37,10 +36,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.zip.ZipException;
-import java.util.zip.ZipFile;
 
 import static jdk.test.lib.util.ZipUtils.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -52,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * fast with much less resources.
  *
  * While the CEN in these files are zero-filled and the produced ZIPs are technically
- * invalid, the CEN is never actually read by ZipFile since it does
+ * invalid, the CEN is never actually read by ZipFileSystem since it does
  * 'End of central directory record' (END header) validation before reading the CEN.
  */
 public class EndOfCenValidation {
@@ -63,7 +62,7 @@ public class EndOfCenValidation {
     static final Path BAD_CEN_OFFSET_ZIP = Path.of("bad-cen-offset.zip");
     static final Path BAD_ENTRY_COUNT_ZIP = Path.of("bad-entry-count.zip");
 
-    // Maximum allowed CEN size allowed by ZipFile
+    // Maximum allowed CEN size allowed by ZipFileSystem
     static final int MAX_CEN_SIZE = ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
 
     /**
@@ -137,14 +136,14 @@ public class EndOfCenValidation {
     }
 
     /**
-     * Verify that ZipFile rejects the ZIP file with a ZipException
+     * Verify that ZipFileSystem.newFileSystem rejects the ZIP file with a ZipException
      * with the given message
      * @param zip ZIP file to open
      * @param msg exception message to expect
      */
     private static void verifyRejection(Path zip, String msg) {
         ZipException ex = assertThrows(ZipException.class, () -> {
-            new ZipFile(zip.toFile());
+            FileSystems.newFileSystem(zip);
         });
         assertEquals(msg, ex.getMessage());
     }
