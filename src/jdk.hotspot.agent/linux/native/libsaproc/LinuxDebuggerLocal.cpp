@@ -292,7 +292,7 @@ JNIEXPORT void JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal_at
 
 #ifdef __aarch64__
   if (pac_enabled(ph)) {
-    printf("WARNING: PAC is enabled. Output might not be enough and/or incorrect.\n");
+    printf("WARNING: PAC is enabled. Stack traces might be incomplete.\n");
   }
 #endif
 
