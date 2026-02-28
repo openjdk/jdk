@@ -26,24 +26,33 @@
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
 
+// Assembly function to get SVE vector length using INCB instruction
+extern "C" int get_sve_vector_length();
+
 int VM_Version::get_current_sve_vector_length() {
-  assert(_features & CPU_SVE, "should not call this");
-  ShouldNotReachHere();
-  return 0;
+  assert(VM_Version::supports_sve(), "should not call this");
+  // Use assembly instruction to get the actual SVE vector length
+  return  VM_Version::supports_sve() ? get_sve_vector_length() : 0; // This value is in bytes
 }
 
 int VM_Version::set_and_get_current_sve_vector_length(int length) {
-  assert(_features & CPU_SVE, "should not call this");
-  ShouldNotReachHere();
-  return 0;
+  assert(VM_Version::supports_sve(), "should not call this");
+  // Use assembly instruction to get the SVE vector length
+  return VM_Version::supports_sve() ? get_sve_vector_length() : 0; // This value is in bytes
 }
 
 void VM_Version::get_os_cpu_info() {
 
-  if (IsProcessorFeaturePresent(PF_ARM_V8_CRC32_INSTRUCTIONS_AVAILABLE))   _features |= CPU_CRC32;
-  if (IsProcessorFeaturePresent(PF_ARM_V8_CRYPTO_INSTRUCTIONS_AVAILABLE))  _features |= CPU_AES | CPU_SHA1 | CPU_SHA2;
-  if (IsProcessorFeaturePresent(PF_ARM_VFP_32_REGISTERS_AVAILABLE))        _features |= CPU_ASIMD;
-  // No check for CPU_PMULL, CPU_SVE, CPU_SVE2
+  if (IsProcessorFeaturePresent(PF_ARM_V8_CRC32_INSTRUCTIONS_AVAILABLE))   _features |= BIT_MASK(CPU_CRC32);
+  if (IsProcessorFeaturePresent(PF_ARM_V8_CRYPTO_INSTRUCTIONS_AVAILABLE))  _features |= BIT_MASK(CPU_AES) | BIT_MASK(CPU_SHA1) | BIT_MASK(CPU_SHA2) | BIT_MASK(CPU_PMULL);
+  if (IsProcessorFeaturePresent(PF_ARM_VFP_32_REGISTERS_AVAILABLE))        _features |= BIT_MASK(CPU_ASIMD);
+  if (IsProcessorFeaturePresent(PF_ARM_V81_ATOMIC_INSTRUCTIONS_AVAILABLE)) _features |= BIT_MASK(CPU_LSE);
+  if (IsProcessorFeaturePresent(PF_ARM_SVE_INSTRUCTIONS_AVAILABLE))        _features |= BIT_MASK(CPU_SVE);
+  if (IsProcessorFeaturePresent(PF_ARM_SVE2_INSTRUCTIONS_AVAILABLE))       _features |= BIT_MASK(CPU_SVE2);
+  if (IsProcessorFeaturePresent(PF_ARM_SVE_BITPERM_INSTRUCTIONS_AVAILABLE))  _features |= BIT_MASK(CPU_SVEBITPERM);
+  if (IsProcessorFeaturePresent(PF_ARM_SHA3_INSTRUCTIONS_AVAILABLE))        _features |= BIT_MASK(CPU_SHA3);
+  if (IsProcessorFeaturePresent(PF_ARM_SHA512_INSTRUCTIONS_AVAILABLE))      _features |= BIT_MASK(CPU_SHA512);
+
 
   __int64 dczid_el0 = _ReadStatusReg(0x5807 /* ARM64_DCZID_EL0 */);
 
@@ -94,8 +103,8 @@ void VM_Version::get_os_cpu_info() {
       SYSTEM_INFO si;
       GetSystemInfo(&si);
       _model = si.wProcessorLevel;
-      _variant = si.wProcessorRevision / 0xFF;
-      _revision = si.wProcessorRevision & 0xFF;
+      _variant = (si.wProcessorRevision >> 8) & 0xFF; // Variant is the upper byte of wProcessorRevision
+      _revision = si.wProcessorRevision & 0xFF; // Revision is the lower byte of wProcessorRevision
     }
   }
 }
