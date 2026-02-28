@@ -64,7 +64,7 @@ Developers are responsible for updating their custom runtime images.
 [`--bind-services`]{#option--bind-services}
 :   Link service provider modules and their dependencies.
 
-[`-c zip-{0-9}`]{#compress} or `--compress=zip-{0-9}`
+[`-c zip-{0-9}`]{#option--compress} or `--compress=zip-{0-9}`
 :   Enable compression of resources. The accepted values are:
     zip-{0-9}, where zip-0 provides no compression,
     and zip-9 provides the best compression. Default is zip-6.
