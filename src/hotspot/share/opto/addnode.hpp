@@ -139,8 +139,10 @@ class AddNode : public Node {
 //------------------------------AddINode---------------------------------------
 // Add 2 integers
 class AddINode : public AddNode {
+private:
+  bool _merge_memops_checked;
 public:
-  AddINode( Node *in1, Node *in2 ) : AddNode(in1,in2) {}
+  AddINode( Node *in1, Node *in2 ) : AddNode(in1,in2), _merge_memops_checked(false) {}
   virtual int Opcode() const;
   virtual const Type *add_ring( const Type *, const Type * ) const;
   virtual const Type *add_id() const { return TypeInt::ZERO; }
@@ -151,13 +153,18 @@ public:
   virtual Node* Identity(PhaseGVN* phase);
 
   virtual uint ideal_reg() const { return Op_RegI; }
+  virtual bool is_merge_memops_checked()  const { return _merge_memops_checked; };
+  virtual void set_merge_memops_checked(bool v) { _merge_memops_checked = v; };
+  virtual uint size_of() const                  { return sizeof(AddINode); }
 };
 
 //------------------------------AddLNode---------------------------------------
 // Add 2 longs
 class AddLNode : public AddNode {
+private:
+  bool _merge_memops_checked;
 public:
-  AddLNode( Node *in1, Node *in2 ) : AddNode(in1,in2) {}
+  AddLNode( Node *in1, Node *in2 ) : AddNode(in1,in2), _merge_memops_checked(false) {}
   virtual int Opcode() const;
   virtual const Type *add_ring( const Type *, const Type * ) const;
   virtual const Type *add_id() const { return TypeLong::ZERO; }
@@ -168,6 +175,9 @@ public:
   virtual Node* Identity(PhaseGVN* phase);
 
   virtual uint ideal_reg() const { return Op_RegL; }
+  virtual bool is_merge_memops_checked()  const { return _merge_memops_checked; };
+  virtual void set_merge_memops_checked(bool v) { _merge_memops_checked = v; };
+  virtual uint size_of() const                  { return sizeof(AddLNode); }
 };
 
 //------------------------------AddFNode---------------------------------------
