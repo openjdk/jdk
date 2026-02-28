@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +39,6 @@
 #include "runtime/stubRoutines.hpp"
 
 // Forward declaration for MergeLoads helper - defined after MergePrimitiveLoads class
-class MergePrimitiveLoads;
 static Node* try_merge_loads(PhaseGVN* phase, AddNode* combine);
 
 // Portions of code courtesy of Clifford Click

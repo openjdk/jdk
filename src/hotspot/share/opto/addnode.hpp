@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,9 +154,9 @@ public:
   virtual Node* Identity(PhaseGVN* phase);
 
   virtual uint ideal_reg() const { return Op_RegI; }
-  virtual bool is_merge_memops_checked()  const { return _merge_memops_checked; };
-  virtual void set_merge_memops_checked(bool v) { _merge_memops_checked = v; };
-  virtual uint size_of() const                  { return sizeof(AddINode); }
+  virtual bool is_merge_memops_checked() const { return _merge_memops_checked; }
+  virtual void set_merge_memops_checked(bool v) { _merge_memops_checked = v; }
+  virtual uint size_of() const { return sizeof(AddINode); }
 };
 
 //------------------------------AddLNode---------------------------------------
@@ -175,9 +176,9 @@ public:
   virtual Node* Identity(PhaseGVN* phase);
 
   virtual uint ideal_reg() const { return Op_RegL; }
-  virtual bool is_merge_memops_checked()  const { return _merge_memops_checked; };
-  virtual void set_merge_memops_checked(bool v) { _merge_memops_checked = v; };
-  virtual uint size_of() const                  { return sizeof(AddLNode); }
+  virtual bool is_merge_memops_checked() const { return _merge_memops_checked; }
+  virtual void set_merge_memops_checked(bool v) { _merge_memops_checked = v; }
+  virtual uint size_of() const { return sizeof(AddLNode); }
 };
 
 //------------------------------AddFNode---------------------------------------
