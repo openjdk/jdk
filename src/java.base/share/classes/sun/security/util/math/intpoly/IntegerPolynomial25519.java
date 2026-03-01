@@ -152,7 +152,6 @@ public final class IntegerPolynomial25519 extends IntegerPolynomial {
     }
 
     @Override
-    @IntrinsicCandidate
     protected void mult(long[] a, long[] b, long[] r) {
         long aa0 = a[0];
         long aa1 = a[1];
