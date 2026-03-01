@@ -165,7 +165,7 @@ public class TestExecutableGetAnnotatedType {
             .toArray(new Object[0][0]);
     }
 
-    public static Object[][] genericMethodData()  throws Exception {
+    public static Object[][] genericMethodData() throws Exception {
         return filterData(Arrays.stream(GenericMethods1.class.getMethods()), GenericMethods1.class)
             .toArray(new Object[0][0]);
     }
