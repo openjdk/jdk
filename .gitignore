@@ -16,6 +16,8 @@ NashornProfile.txt
 **/JTreport/**
 **/JTwork/**
 /src/utils/LogCompilation/target/
+/src/utils/CodeCacheFragmenter/build/
+/src/utils/CodeCacheFragmenter/codecachefragmenter.jar
 /.project/
 /.settings/
 /compile_commands.json
