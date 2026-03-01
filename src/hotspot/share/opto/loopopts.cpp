@@ -2832,8 +2832,6 @@ void PhaseIdealLoop::clone_loop_body(const Node_List& body, Node_List &old_new, 
 // with an optional truncation (left-shift followed by a right-shift)
 // of the add. Returns zero if not an iv.
 int PhaseIdealLoop::stride_of_possible_iv(Node* iff) {
-  Node* trunc1 = nullptr;
-  Node* trunc2 = nullptr;
   const TypeInteger* ttype = nullptr;
   if (!iff->is_If() || iff->in(1) == nullptr || !iff->in(1)->is_Bool()) {
     return 0;
@@ -4299,7 +4297,7 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
 #endif //ASSERT
   {
     // Is the shape of the loop that of a counted loop...
-    Node* back_control = loop_exit_control(head, loop);
+    Node* back_control = loop_exit_control(loop);
     if (back_control == nullptr) {
       return false;
     }

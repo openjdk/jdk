@@ -377,7 +377,7 @@ IdealLoopTree* PhaseIdealLoop::create_outer_strip_mined_loop(Node* init_control,
 
 
 void CountedLoopConverter::insert_loop_limit_check_predicate(const ParsePredicateSuccessProj* loop_limit_check_parse_proj,
-                                                             Node* cmp_limit, Node* bol) const {
+                                                             Node* bol) const {
   assert(loop_limit_check_parse_proj->in(0)->is_ParsePredicate(), "must be parse predicate");
   Node* new_predicate_proj = _phase->create_new_if_for_predicate(loop_limit_check_parse_proj, nullptr,
                                                                  Deoptimization::Reason_loop_limit_check,
@@ -385,7 +385,7 @@ void CountedLoopConverter::insert_loop_limit_check_predicate(const ParsePredicat
 
   PhaseIterGVN& igvn = _phase->igvn();
   Node* iff = new_predicate_proj->in(0);
-  cmp_limit = igvn.register_new_node_with_optimizer(cmp_limit);
+  Node* cmp_limit = igvn.register_new_node_with_optimizer(bol->in(1));
   bol = igvn.register_new_node_with_optimizer(bol);
   _phase->set_subtree_ctrl(bol, false);
   igvn.replace_input_of(iff, 1, bol);
@@ -408,17 +408,19 @@ void CountedLoopConverter::insert_stride_overflow_limit_check(Node* init_control
                                   _phase->igvn().integercon(adjusted_stride_con, _iv_bt), _iv_bt);
   Node* bol = new BoolNode(cmp_limit, stride_con > 0 ? BoolTest::le : BoolTest::ge);
 
-  insert_loop_limit_check_predicate(init_control->as_IfTrue(), cmp_limit, bol);
+  insert_loop_limit_check_predicate(init_control->as_IfTrue(), bol);
 }
 
 void CountedLoopConverter::insert_init_trip_limit_check(Node* init_control, jlong stride_con) const {
   Node* cmp_limit = CmpNode::make(_structure.phi()->in(LoopNode::EntryControl), _structure.limit(), _iv_bt);
   Node* bol = new BoolNode(cmp_limit, stride_con > 0 ? BoolTest::lt : BoolTest::gt);
 
-  insert_loop_limit_check_predicate(init_control->as_IfTrue(), cmp_limit, bol);
+  insert_loop_limit_check_predicate(init_control->as_IfTrue(), bol);
 }
 
-Node* PhaseIdealLoop::loop_exit_control(const Node* head, const IdealLoopTree* loop) const {
+Node* PhaseIdealLoop::loop_exit_control(const IdealLoopTree* loop) const {
+  Node* head = loop->_head;
+
   // Counted loop head must be a good RegionNode with only 3 not null
   // control input edges: Self, Entry, LoopBack.
   if (head->in(LoopNode::Self) == nullptr || head->req() != 3 || loop->_irreducible) {
@@ -474,13 +476,9 @@ PhiNode* PhaseIdealLoop::loop_iv_phi(const Node* xphi, const Node* phi_incr, con
   return phi;
 }
 
-enum StrideOverflowState {
-  Overflow          = -1,
-  NoOverflow        = 0,
-  RequireLimitCheck = 1
-};
-
-static StrideOverflowState check_stride_overflow(jlong final_correction, const TypeInteger* limit_t, BasicType bt) {
+CountedLoopConverter::StrideOverflowState CountedLoopConverter::check_stride_overflow(jlong final_correction,
+                                                                                      const TypeInteger* limit_t,
+                                                                                      BasicType bt) {
   if (final_correction > 0) {
     if (limit_t->lo_as_long() > (max_signed_integer(bt) - final_correction)) {
       return Overflow;
@@ -1686,15 +1684,15 @@ LoopNode* PhaseIdealLoop::create_inner_head(IdealLoopTree* loop, BaseCountedLoop
 }
 
 #ifdef ASSERT
-void PhaseIdealLoop::check_counted_loop_shape(IdealLoopTree* loop, Node* x, BasicType bt) {
-  Node* back_control = loop_exit_control(x, loop);
+void PhaseIdealLoop::check_counted_loop_shape(IdealLoopTree* loop, Node* head, BasicType bt) {
+  Node* back_control = loop_exit_control(loop);
   assert(back_control != nullptr, "no back control");
 
   LoopExitTest exit_test(back_control, loop, this);
   exit_test.build();
   assert(exit_test.is_valid_with_bt(bt), "no exit test");
 
-  LoopIVIncr iv_incr(x, loop);
+  LoopIVIncr iv_incr(head, loop);
   iv_incr.build(exit_test.incr());
   assert(iv_incr.is_valid_with_bt(bt), "no incr");
 
@@ -1702,7 +1700,7 @@ void PhaseIdealLoop::check_counted_loop_shape(IdealLoopTree* loop, Node* x, Basi
   stride.build(iv_incr.incr());
   assert(stride.is_valid(), "no stride");
 
-  PhiNode* phi = loop_iv_phi(stride.xphi(), iv_incr.phi_incr(), x);
+  PhiNode* phi = loop_iv_phi(stride.xphi(), iv_incr.phi_incr(), head);
   assert(phi != nullptr && phi->in(LoopNode::LoopBackControl) == iv_incr.incr(), "No phi");
 
   assert(stride.compute_non_zero_stride_con(exit_test.mask(), bt) != 0, "illegal condition");
@@ -1712,7 +1710,7 @@ void PhaseIdealLoop::check_counted_loop_shape(IdealLoopTree* loop, Node* x, Basi
   assert(exit_test.cmp()->in(1) == iv_incr.incr(), "bad exit test shape");
 
   // Safepoint on backedge not supported
-  assert(x->in(LoopNode::LoopBackControl)->Opcode() != Op_SafePoint, "no safepoint on backedge");
+  assert(head->in(LoopNode::LoopBackControl)->Opcode() != Op_SafePoint, "no safepoint on backedge");
 }
 #endif
 
@@ -2097,8 +2095,7 @@ bool CountedLoopConverter::is_counted_loop() {
   // ---- Is the loop trip counted? ----
 
   // Check trip counter will end up higher than the limit
-  const Node* limit = _structure.limit();
-  if (_structure.is_infinite_loop(limit)) {
+  if (_structure.is_infinite_loop()) {
     return false;
   }
 
@@ -2314,7 +2311,7 @@ bool CountedLoopConverter::is_counted_loop() {
   //            there is no overflow of the iv phi after the first iteration. In this case, we don't need to check (ii)
   //            again and can skip the predicate.
 
-  const TypeInteger* limit_t = igvn->type(limit)->is_integer(_iv_bt);
+  const TypeInteger* limit_t = igvn->type(_structure.limit())->is_integer(_iv_bt);
   StrideOverflowState stride_overflow_state = check_stride_overflow(_structure.final_limit_correction(), limit_t, _iv_bt);
 
   Node* init_control = _head->in(LoopNode::EntryControl);
@@ -2443,9 +2440,9 @@ bool CountedLoopConverter::is_iv_overflowing(const TypeInteger* init_t, jlong st
   return false;
 }
 
-bool CountedLoopConverter::LoopStructure::is_infinite_loop(const Node* limit) const {
+bool CountedLoopConverter::LoopStructure::is_infinite_loop() const {
   PhaseIterGVN& igvn = _phase->igvn();
-  const TypeInteger* limit_t = igvn.type(limit)->is_integer(_iv_bt);
+  const TypeInteger* limit_t = igvn.type(limit())->is_integer(_iv_bt);
 
   if (_truncated_increment.outer_trunc() != nullptr) {
     // When there is a truncation, we must be sure that after the truncation
@@ -2564,7 +2561,7 @@ IdealLoopTree* CountedLoopConverter::convert() {
     insert_init_trip_limit_check(init_control, stride_con);
   }
 
-  Node* back_control = _phase->loop_exit_control(_head, _loop);
+  Node* back_control = _phase->loop_exit_control(_loop);
   if (_head->in(LoopNode::LoopBackControl)->Opcode() == Op_SafePoint) {
     Node* backedge_sfpt = _head->in(LoopNode::LoopBackControl);
     if (_phase->is_deleteable_safept(backedge_sfpt)) {
@@ -4722,9 +4719,7 @@ void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
   }
 
   IdealLoopTree* loop = this;
-  if (_head->is_CountedLoop() ||
-      phase->try_convert_to_counted_loop(_head, loop, T_INT)) {
-
+  if (_head->is_CountedLoop() || phase->try_convert_to_counted_loop(_head, loop, T_INT)) {
     if (LoopStripMiningIter == 0 || _head->as_CountedLoop()->is_strip_mined()) {
       // Indicate we do not need a safepoint here
       _has_sfpt = 1;
@@ -4736,8 +4731,7 @@ void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
 
     // Look for induction variables
     phase->replace_parallel_iv(this);
-  } else if (_head->is_LongCountedLoop() ||
-      phase->try_convert_to_counted_loop(_head, loop, T_LONG)) {
+  } else if (_head->is_LongCountedLoop() || phase->try_convert_to_counted_loop(_head, loop, T_LONG)) {
     remove_safepoints(phase, true);
   } else {
     assert(!_head->is_Loop() || !_head->as_Loop()->is_loop_nest_inner_loop(), "transformation to counted loop should not fail");
