@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,10 @@
 #ifndef SHARE_CDS_FILEMAP_HPP
 #define SHARE_CDS_FILEMAP_HPP
 
+#include "cds/aotCompressedPointers.hpp"
+#include "cds/aotMappedHeap.hpp"
 #include "cds/aotMetaspace.hpp"
+#include "cds/aotStreamedHeap.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/heapShared.hpp"
 #include "include/cds.h"
@@ -102,7 +105,7 @@ public:
 class FileMapHeader: private CDSFileMapHeaderBase {
   friend class CDSConstants;
   friend class VMStructs;
-
+  using narrowPtr = AOTCompressedPointers::narrowPtr;
 private:
   // The following fields record the states of the VM during dump time.
   // They are compared with the runtime states to see if the archive
@@ -120,16 +123,16 @@ private:
   bool    _compressed_class_ptrs;                 // save the flag UseCompressedClassPointers
   int     _narrow_klass_pointer_bits;             // save number of bits in narrowKlass
   int     _narrow_klass_shift;                    // save shift width used to pre-compute narrowKlass IDs in archived heap objects
-  size_t  _cloned_vtables_offset;                 // The address of the first cloned vtable
-  size_t  _early_serialized_data_offset;          // Data accessed using {ReadClosure,WriteClosure}::serialize()
-  size_t  _serialized_data_offset;                // Data accessed using {ReadClosure,WriteClosure}::serialize()
+  narrowPtr _cloned_vtables;                      // The address of the first cloned vtable
+  narrowPtr _early_serialized_data;               // Data accessed using {ReadClosure,WriteClosure}::serialize()
+  narrowPtr _serialized_data;                     // Data accessed using {ReadClosure,WriteClosure}::serialize()
 
   // The following fields are all sanity checks for whether this archive
   // will function correctly with this JVM and the bootclasspath it's
   // invoked with.
   char  _jvm_ident[JVM_IDENT_MAX];  // identifier string of the jvm that created this dump
 
-  size_t _class_location_config_offset;
+  narrowPtr _class_location_config;
 
   bool   _verify_local;                 // BytecodeVerificationLocal setting
   bool   _verify_remote;                // BytecodeVerificationRemote setting
@@ -144,8 +147,8 @@ private:
   size_t _rw_ptrmap_start_pos;          // The first bit in the ptrmap corresponds to this position in the rw region
   size_t _ro_ptrmap_start_pos;          // The first bit in the ptrmap corresponds to this position in the ro region
 
-  ArchiveMappedHeapHeader _mapped_heap_header;
-  ArchiveStreamedHeapHeader _streamed_heap_header;
+  AOTMappedHeapHeader _mapped_heap_header;
+  AOTStreamedHeapHeader _streamed_heap_header;
 
   // The following are parameters that affect MethodData layout.
   u1      _compiler_type;
@@ -158,12 +161,8 @@ private:
   bool    _type_profile_casts;
   int     _spec_trap_limit_extra_entries;
 
-  template <typename T> T from_mapped_offset(size_t offset) const {
-    return (T)(mapped_base_address() + offset);
-  }
-  void set_as_offset(char* p, size_t *offset);
-  template <typename T> void set_as_offset(T p, size_t *offset) {
-    set_as_offset((char*)p, offset);
+  template <typename T> T decode(narrowPtr narrowp) const {
+    return AOTCompressedPointers::decode_not_null<T>(narrowp, reinterpret_cast<address>(mapped_base_address()));
   }
 
 public:
@@ -191,9 +190,9 @@ public:
   bool compact_headers()                   const { return _compact_headers; }
   uintx max_heap_size()                    const { return _max_heap_size; }
   CompressedOops::Mode narrow_oop_mode()   const { return _narrow_oop_mode; }
-  char* cloned_vtables()                   const { return from_mapped_offset<char*>(_cloned_vtables_offset); }
-  char* early_serialized_data()            const { return from_mapped_offset<char*>(_early_serialized_data_offset); }
-  char* serialized_data()                  const { return from_mapped_offset<char*>(_serialized_data_offset); }
+  char* cloned_vtables()                   const { return decode<char*>(_cloned_vtables); }
+  char* early_serialized_data()            const { return decode<char*>(_early_serialized_data); }
+  char* serialized_data()                  const { return decode<char*>(_serialized_data); }
   bool object_streaming_mode()             const { return _object_streaming_mode; }
   const char* jvm_ident()                  const { return _jvm_ident; }
   char* requested_base_address()           const { return _requested_base_address; }
@@ -209,16 +208,16 @@ public:
   size_t ro_ptrmap_start_pos()             const { return _ro_ptrmap_start_pos; }
 
   // Heap archiving
-  const ArchiveMappedHeapHeader*   mapped_heap()   const { return &_mapped_heap_header; }
-  const ArchiveStreamedHeapHeader* streamed_heap() const { return &_streamed_heap_header; }
+  const AOTMappedHeapHeader*   mapped_heap()   const { return &_mapped_heap_header; }
+  const AOTStreamedHeapHeader* streamed_heap() const { return &_streamed_heap_header; }
 
-  void set_streamed_heap_header(ArchiveStreamedHeapHeader header) { _streamed_heap_header = header; }
-  void set_mapped_heap_header(ArchiveMappedHeapHeader header) { _mapped_heap_header = header; }
+  void set_streamed_heap_header(AOTStreamedHeapHeader header) { _streamed_heap_header = header; }
+  void set_mapped_heap_header(AOTMappedHeapHeader header) { _mapped_heap_header = header; }
 
   void set_has_platform_or_app_classes(bool v)   { _has_platform_or_app_classes = v; }
-  void set_cloned_vtables(char* p)               { set_as_offset(p, &_cloned_vtables_offset); }
-  void set_early_serialized_data(char* p)        { set_as_offset(p, &_early_serialized_data_offset); }
-  void set_serialized_data(char* p)              { set_as_offset(p, &_serialized_data_offset); }
+  void set_cloned_vtables(char* p)               { _cloned_vtables = AOTCompressedPointers::encode_not_null(p); }
+  void set_early_serialized_data(char* p)        { _early_serialized_data = AOTCompressedPointers::encode_not_null(p); }
+  void set_serialized_data(char* p)              { _serialized_data = AOTCompressedPointers::encode_not_null(p); }
   void set_mapped_base_address(char* p)          { _mapped_base_address = p; }
   void set_rw_ptrmap_start_pos(size_t n)         { _rw_ptrmap_start_pos = n; }
   void set_ro_ptrmap_start_pos(size_t n)         { _ro_ptrmap_start_pos = n; }
@@ -226,11 +225,11 @@ public:
   void copy_base_archive_name(const char* name);
 
   void set_class_location_config(AOTClassLocationConfig* table) {
-    set_as_offset(table, &_class_location_config_offset);
+    _class_location_config = AOTCompressedPointers::encode_not_null(table);
   }
 
   AOTClassLocationConfig* class_location_config() {
-    return from_mapped_offset<AOTClassLocationConfig*>(_class_location_config_offset);
+    return decode<AOTClassLocationConfig*>(_class_location_config);
   }
 
   void set_requested_base(char* b) {
@@ -309,8 +308,8 @@ public:
   uintx   max_heap_size()      const { return header()->max_heap_size(); }
   size_t  core_region_alignment() const { return header()->core_region_alignment(); }
 
-  const ArchiveMappedHeapHeader*   mapped_heap()   const { return header()->mapped_heap(); }
-  const ArchiveStreamedHeapHeader* streamed_heap() const { return header()->streamed_heap(); }
+  const AOTMappedHeapHeader*   mapped_heap()   const { return header()->mapped_heap(); }
+  const AOTStreamedHeapHeader* streamed_heap() const { return header()->streamed_heap(); }
 
   bool object_streaming_mode()                const { return header()->object_streaming_mode(); }
   CompressedOops::Mode narrow_oop_mode()      const { return header()->narrow_oop_mode(); }
@@ -372,11 +371,11 @@ public:
   size_t remove_bitmap_zeros(CHeapBitMap* map);
   char* write_bitmap_region(CHeapBitMap* rw_ptrmap,
                             CHeapBitMap* ro_ptrmap,
-                            ArchiveMappedHeapInfo* mapped_heap_info,
-                            ArchiveStreamedHeapInfo* streamed_heap_info,
+                            AOTMappedHeapInfo* mapped_heap_info,
+                            AOTStreamedHeapInfo* streamed_heap_info,
                             size_t &size_in_bytes);
-  size_t write_mapped_heap_region(ArchiveMappedHeapInfo* heap_info) NOT_CDS_JAVA_HEAP_RETURN_(0);
-  size_t write_streamed_heap_region(ArchiveStreamedHeapInfo* heap_info) NOT_CDS_JAVA_HEAP_RETURN_(0);
+  size_t write_mapped_heap_region(AOTMappedHeapInfo* heap_info) NOT_CDS_JAVA_HEAP_RETURN_(0);
+  size_t write_streamed_heap_region(AOTStreamedHeapInfo* heap_info) NOT_CDS_JAVA_HEAP_RETURN_(0);
   void  write_bytes(const void* buffer, size_t count);
   void  write_bytes_aligned(const void* buffer, size_t count);
   size_t  read_bytes(void* buffer, size_t count);

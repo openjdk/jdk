@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
+#include "memory/metaspaceClosureType.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ArchiveBuilder;
@@ -40,7 +41,7 @@ class CppVtables : AllStatic {
 public:
   static void dumptime_init(ArchiveBuilder* builder);
   static void zero_archived_vtables();
-  static intptr_t* get_archived_vtable(MetaspaceObj::Type msotype, address obj);
+  static intptr_t* get_archived_vtable(MetaspaceClosureType type, address obj);
   static void serialize(SerializeClosure* sc);
   static bool is_valid_shared_method(const Method* m) NOT_CDS_RETURN_(false);
   static char* vtables_serialized_base() { return _vtables_serialized_base; }

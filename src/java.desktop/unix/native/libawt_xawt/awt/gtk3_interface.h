@@ -193,6 +193,7 @@ typedef void GtkMenuShell;
 typedef void GtkWidgetClass;
 typedef void PangoFontDescription;
 typedef void GtkSettings;
+typedef void GSettings;
 typedef void GtkStyleProvider;
 typedef void cairo_pattern_t;
 typedef void cairo_t;
@@ -633,6 +634,10 @@ static char* (*fp_pango_font_description_to_string)(
         const PangoFontDescription* fd);
 static GtkSettings* (*fp_gtk_settings_get_default)();
 static GtkSettings* (*fp_gtk_widget_get_settings)(GtkWidget *widget);
+
+static GSettings *(*fp_g_settings_new)(const gchar *schema_id);
+static gchar *(*fp_g_settings_get_string)(GSettings *settings, const gchar *key);
+
 static GType        (*fp_gtk_border_get_type)();
 static void (*fp_gtk_arrow_set)(GtkWidget* arrow,
                                 GtkArrowType arrow_type,

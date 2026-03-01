@@ -113,7 +113,7 @@ interface SSLTransport {
             // Code to deliver SSLv2 error message for SSL/TLS connections.
             if (!context.sslContext.isDTLS()) {
                 context.outputRecord.encodeV2NoCipher();
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.finest("may be talking to SSLv2");
                 }
             }
@@ -161,7 +161,8 @@ interface SSLTransport {
                 if (context.handshakeContext != null &&
                     context.handshakeContext.sslConfig.enableRetransmissions &&
                     context.sslContext.isDTLS()) {
-                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl,verbose")) {
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.finest("retransmitted handshake flight");
                     }
 
@@ -181,7 +182,8 @@ interface SSLTransport {
                 // Note that JDK does not support 0-RTT yet.  Otherwise, it is
                 // needed to check early_data.
                 if (!context.isNegotiated) {
-                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl,verbose")) {
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.warning("unexpected application data " +
                             "before handshake completion");
                     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,11 +149,6 @@ JvmtiEnvThreadState::~JvmtiEnvThreadState()   {
 
 bool JvmtiEnvThreadState::is_virtual() {
   return _state->is_virtual();
-}
-
-// Use _thread_saved if cthread is detached from JavaThread (_thread == nullptr).
-JavaThread* JvmtiEnvThreadState::get_thread_or_saved() {
-  return _state->get_thread_or_saved();
 }
 
 JavaThread* JvmtiEnvThreadState::get_thread() {
@@ -344,7 +339,7 @@ void JvmtiEnvThreadState::reset_current_location(jvmtiEvent event_type, bool ena
   if (enabled) {
     // If enabling breakpoint, no need to reset.
     // Can't do anything if empty stack.
-    JavaThread* thread = get_thread_or_saved();
+    JavaThread* thread = get_thread();
 
     if (event_type == JVMTI_EVENT_SINGLE_STEP &&
         ((thread == nullptr && is_virtual()) || thread->has_last_Java_frame())) {

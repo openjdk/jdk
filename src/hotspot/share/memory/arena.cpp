@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -330,6 +330,9 @@ void* Arena::grow(size_t x, AllocFailType alloc_failmode) {
   size_t len = MAX2(ARENA_ALIGN(x), (size_t) Chunk::size);
 
   if (MemTracker::check_exceeds_limit(x, _mem_tag)) {
+    if (alloc_failmode == AllocFailStrategy::EXIT_OOM) {
+      vm_exit_out_of_memory(x, OOM_MALLOC_ERROR, "MallocLimit in Arena::grow");
+    }
     return nullptr;
   }
 

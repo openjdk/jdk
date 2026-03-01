@@ -960,9 +960,9 @@ Zone	Pacific/Efate	11:13:16 -	LMT	1912 Jan 13 # Vila
 # NOTES
 
 # This file is by no means authoritative; if you think you know better,
-# go ahead and edit the file (and please send any changes to
-# tz@iana.org for general use in the future).  For more, please see
-# the file CONTRIBUTING in the tz distribution.
+# go ahead and edit the file, and please send any changes to
+# the public mailing list tz@iana.org for general use in the future.
+# For more, please see the file CONTRIBUTING in the tz distribution.
 
 # From Paul Eggert (2018-11-18):
 #
@@ -2011,6 +2011,7 @@ Zone	Pacific/Efate	11:13:16 -	LMT	1912 Jan 13 # Vila
 # From Paul Eggert (2018-11-19):
 # The 1921-01-15 introduction of standard time is in Shanks; it is also in
 # "Standard Time Throughout the World", US National Bureau of Standards (1935),
+# https://nvlpubs.nist.gov/nistpubs/Legacy/circ/nbscircular406.pdf
 # page 3, which does not give the UT offset.  In response to a comment by
 # Phake Nick I set the Nauru time of occupation by Japan to
 # 1942-08-29/1945-09-08 by using dates from:
@@ -2078,9 +2079,10 @@ Zone	Pacific/Efate	11:13:16 -	LMT	1912 Jan 13 # Vila
 # https://webspace.science.uu.nl/~gent0113/idl/idl_alaska_samoa.htm
 
 # Although Shanks & Pottenger says they both switched to UT -11:30
-# in 1911, and to -11 in 1950. many earlier sources give -11
+# in 1911, and to -11 in 1950, many earlier sources give -11
 # for American Samoa, e.g., the US National Bureau of Standards
 # circular "Standard Time Throughout the World", 1932.
+# https://nvlpubs.nist.gov/nistpubs/Legacy/circ/nbscircular399.pdf
 # Assume American Samoa switched to -11 in 1911, not 1950,
 # and that after 1950 they agreed until (western) Samoa skipped a
 # day in 2011.  Assume also that the Samoas follow the US and New

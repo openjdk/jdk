@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
  */
 package jdk.jpackage.internal.cli;
 
-import static jdk.jpackage.internal.model.AppImagePackageType.APP_IMAGE;
-
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -34,6 +32,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.model.AppImageBundleType;
+import jdk.jpackage.internal.model.BundleType;
 import jdk.jpackage.internal.model.BundlingOperationDescriptor;
 import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.StandardPackageType;
@@ -44,16 +44,16 @@ import jdk.jpackage.internal.util.SetBuilder;
  * Standard jpackage operations.
  */
 public enum StandardBundlingOperation implements BundlingOperationOptionScope {
-    CREATE_WIN_APP_IMAGE(APP_IMAGE, "^(?!(linux-|mac-|win-exe-|win-msi-))", OperatingSystem.WINDOWS),
-    CREATE_LINUX_APP_IMAGE(APP_IMAGE, "^(?!(win-|mac-|linux-rpm-|linux-deb-))", OperatingSystem.LINUX),
-    CREATE_MAC_APP_IMAGE(APP_IMAGE, "^(?!(linux-|win-|mac-dmg-|mac-pkg-))", OperatingSystem.MACOS),
+    CREATE_WIN_APP_IMAGE(AppImageBundleType.WIN_APP_IMAGE, "^(?!(linux-|mac-|win-exe-|win-msi-))", OperatingSystem.WINDOWS),
+    CREATE_LINUX_APP_IMAGE(AppImageBundleType.LINUX_APP_IMAGE, "^(?!(win-|mac-|linux-rpm-|linux-deb-))", OperatingSystem.LINUX),
+    CREATE_MAC_APP_IMAGE(AppImageBundleType.MAC_APP_IMAGE, "^(?!(linux-|win-|mac-dmg-|mac-pkg-))", OperatingSystem.MACOS),
     CREATE_WIN_EXE(StandardPackageType.WIN_EXE, "^(?!(linux-|mac-|win-msi-))", OperatingSystem.WINDOWS),
     CREATE_WIN_MSI(StandardPackageType.WIN_MSI, "^(?!(linux-|mac-|win-exe-))", OperatingSystem.WINDOWS),
     CREATE_LINUX_RPM(StandardPackageType.LINUX_RPM, "^(?!(win-|mac-|linux-deb-))", OperatingSystem.LINUX),
     CREATE_LINUX_DEB(StandardPackageType.LINUX_DEB, "^(?!(win-|mac-|linux-rpm-))", OperatingSystem.LINUX),
     CREATE_MAC_PKG(StandardPackageType.MAC_PKG, "^(?!(linux-|win-|mac-dmg-))", OperatingSystem.MACOS),
     CREATE_MAC_DMG(StandardPackageType.MAC_DMG, "^(?!(linux-|win-|mac-pkg-))", OperatingSystem.MACOS),
-    SIGN_MAC_APP_IMAGE(APP_IMAGE, OperatingSystem.MACOS, Verb.SIGN);
+    SIGN_MAC_APP_IMAGE(AppImageBundleType.MAC_APP_IMAGE, OperatingSystem.MACOS, Verb.SIGN);
 
     /**
      * Supported values of the {@link BundlingOperationDescriptor#verb()} property.
@@ -78,19 +78,19 @@ public enum StandardBundlingOperation implements BundlingOperationOptionScope {
         private final String value;
     }
 
-    StandardBundlingOperation(PackageType packageType, String optionNameRegexp, OperatingSystem os, Verb descriptorVerb) {
-        this.packageType = Objects.requireNonNull(packageType);
+    StandardBundlingOperation(BundleType bundleType, String optionNameRegexp, OperatingSystem os, Verb descriptorVerb) {
+        this.bundleType = Objects.requireNonNull(bundleType);
         optionNamePredicate = Pattern.compile(optionNameRegexp).asPredicate();
         this.os = Objects.requireNonNull(os);
         this.descriptorVerb = Objects.requireNonNull(descriptorVerb);
     }
 
-    StandardBundlingOperation(PackageType packageType, String optionNameRegexp, OperatingSystem os) {
-        this(packageType, optionNameRegexp, os, Verb.CREATE);
+    StandardBundlingOperation(BundleType bundleType, String optionNameRegexp, OperatingSystem os) {
+        this(bundleType, optionNameRegexp, os, Verb.CREATE);
     }
 
-    StandardBundlingOperation(PackageType packageType, OperatingSystem os, Verb descriptorVerb) {
-        this.packageType = Objects.requireNonNull(packageType);
+    StandardBundlingOperation(BundleType bundleType, OperatingSystem os, Verb descriptorVerb) {
+        this.bundleType = Objects.requireNonNull(bundleType);
         optionNamePredicate = v -> false;
         this.os = Objects.requireNonNull(os);
         this.descriptorVerb = Objects.requireNonNull(descriptorVerb);
@@ -100,16 +100,20 @@ public enum StandardBundlingOperation implements BundlingOperationOptionScope {
         return os;
     }
 
-    public String packageTypeValue() {
-        if (packageType.equals(APP_IMAGE)) {
+    public String bundleTypeValue() {
+        if (bundleType instanceof AppImageBundleType) {
             return "app-image";
         } else {
-            return ((StandardPackageType)packageType).suffix().substring(1);
+            return ((StandardPackageType)bundleType).suffix().substring(1);
         }
     }
 
+    public BundleType bundleType() {
+        return bundleType;
+    }
+
     public PackageType packageType() {
-        return packageType;
+        return (PackageType)bundleType();
     }
 
     /**
@@ -122,7 +126,7 @@ public enum StandardBundlingOperation implements BundlingOperationOptionScope {
 
     @Override
     public BundlingOperationDescriptor descriptor() {
-        return new BundlingOperationDescriptor(os(), packageTypeValue(), descriptorVerb.value());
+        return new BundlingOperationDescriptor(os(), bundleTypeValue(), descriptorVerb.value());
     }
 
     public static Optional<StandardBundlingOperation> valueOf(BundlingOperationDescriptor descriptor) {
@@ -199,6 +203,6 @@ public enum StandardBundlingOperation implements BundlingOperationOptionScope {
 
     private final Predicate<String> optionNamePredicate;
     private final OperatingSystem os;
-    private final PackageType packageType;
+    private final BundleType bundleType;
     private final Verb descriptorVerb;
 }

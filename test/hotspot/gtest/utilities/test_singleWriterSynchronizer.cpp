@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  *
  */
 
-#include "runtime/atomicAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
@@ -36,16 +36,16 @@
 
 class SingleWriterSynchronizerTestReader : public JavaTestThread {
   SingleWriterSynchronizer* _synchronizer;
-  volatile uintx* _synchronized_value;
-  volatile int* _continue_running;
+  Atomic<uintx>* _synchronized_value;
+  Atomic<int>* _continue_running;
 
   static const uint reader_iterations = 10;
 
 public:
   SingleWriterSynchronizerTestReader(Semaphore* post,
                                      SingleWriterSynchronizer* synchronizer,
-                                     volatile uintx* synchronized_value,
-                                     volatile int* continue_running) :
+                                     Atomic<uintx>* synchronized_value,
+                                     Atomic<int>* continue_running) :
     JavaTestThread(post),
     _synchronizer(synchronizer),
     _synchronized_value(synchronized_value),
@@ -55,14 +55,14 @@ public:
   virtual void main_run() {
     size_t iterations = 0;
     size_t values_changed = 0;
-    while (AtomicAccess::load_acquire(_continue_running) != 0) {
+    while (_continue_running->load_acquire() != 0) {
       { ThreadBlockInVM tbiv(this); } // Safepoint check outside critical section.
       ++iterations;
       SingleWriterSynchronizer::CriticalSection cs(_synchronizer);
-      uintx value = AtomicAccess::load_acquire(_synchronized_value);
+      uintx value = _synchronized_value->load_acquire();
       uintx new_value = value;
       for (uint i = 0; i < reader_iterations; ++i) {
-        new_value = AtomicAccess::load_acquire(_synchronized_value);
+        new_value = _synchronized_value->load_acquire();
         // A reader can see either the value it first read after
         // entering the critical section, or that value + 1.  No other
         // values are possible.
@@ -81,14 +81,14 @@ public:
 
 class SingleWriterSynchronizerTestWriter : public JavaTestThread {
   SingleWriterSynchronizer* _synchronizer;
-  volatile uintx* _synchronized_value;
-  volatile int* _continue_running;
+  Atomic<uintx>* _synchronized_value;
+  Atomic<int>* _continue_running;
 
 public:
   SingleWriterSynchronizerTestWriter(Semaphore* post,
                                      SingleWriterSynchronizer* synchronizer,
-                                     volatile uintx* synchronized_value,
-                                     volatile int* continue_running) :
+                                     Atomic<uintx>* synchronized_value,
+                                     Atomic<int>* continue_running) :
     JavaTestThread(post),
     _synchronizer(synchronizer),
     _synchronized_value(synchronized_value),
@@ -96,12 +96,12 @@ public:
   {}
 
   virtual void main_run() {
-    while (AtomicAccess::load_acquire(_continue_running) != 0) {
-      ++*_synchronized_value;
+    while (_continue_running->load_acquire() != 0) {
+      _synchronized_value->add_then_fetch(1u, memory_order_relaxed);
       _synchronizer->synchronize();
       { ThreadBlockInVM tbiv(this); } // Safepoint check.
     }
-    tty->print_cr("writer iterations: %zu", *_synchronized_value);
+    tty->print_cr("writer iterations: %zu", _synchronized_value->load_relaxed());
   }
 };
 
@@ -111,8 +111,8 @@ const uint milliseconds_to_run = 1000;
 TEST_VM(TestSingleWriterSynchronizer, stress) {
   Semaphore post;
   SingleWriterSynchronizer synchronizer;
-  volatile uintx synchronized_value = 0;
-  volatile int continue_running = 1;
+  Atomic<uintx> synchronized_value{0};
+  Atomic<int> continue_running{1};
 
   JavaTestThread* readers[nreaders] = {};
   for (uint i = 0; i < nreaders; ++i) {
@@ -137,7 +137,7 @@ TEST_VM(TestSingleWriterSynchronizer, stress) {
     ThreadInVMfromNative invm(cur);
     cur->sleep(milliseconds_to_run);
   }
-  continue_running = 0;
+  continue_running.store_relaxed(0);
   for (uint i = 0; i < nreaders + 1; ++i) {
     post.wait();
   }

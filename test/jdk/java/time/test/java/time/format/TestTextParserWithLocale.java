@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,24 +81,26 @@ import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalField;
 import java.util.Locale;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.DAY_OF_WEEK;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
-import static org.testng.Assert.assertEquals;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Test TextPrinterParser.
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestTextParserWithLocale extends AbstractTestPrinterParser {
     static final Locale RUSSIAN = Locale.of("ru");
     static final Locale FINNISH = Locale.of("fi");
 
-    @DataProvider(name="parseDayOfWeekText")
     Object[][] providerDayOfWeekData() {
         return new Object[][] {
             // Locale, pattern, input text, expected DayOfWeek
@@ -112,17 +114,17 @@ public class TestTextParserWithLocale extends AbstractTestPrinterParser {
         };
     }
 
-    @Test(dataProvider="parseDayOfWeekText")
+    @ParameterizedTest
+    @MethodSource("providerDayOfWeekData")
     public void test_parseDayOfWeekText(Locale locale, String pattern, String input, DayOfWeek expected) {
         DateTimeFormatter formatter = getPatternFormatter(pattern).withLocale(locale);
         ParsePosition pos = new ParsePosition(0);
-        assertEquals(DayOfWeek.from(formatter.parse(input, pos)), expected);
-        assertEquals(pos.getIndex(), input.length());
+        assertEquals(expected, DayOfWeek.from(formatter.parse(input, pos)));
+        assertEquals(input.length(), pos.getIndex());
     }
 
     //--------------------------------------------------------------------
     // Test data is dependent on localized resources.
-    @DataProvider(name="parseStandaloneText")
     Object[][] providerStandaloneText() {
         // Locale, TemporalField, TextStyle, expected value, input text
         return new Object[][] {
@@ -136,7 +138,6 @@ public class TestTextParserWithLocale extends AbstractTestPrinterParser {
     }
 
     // Test data is dependent on localized resources.
-    @DataProvider(name="parseLenientText")
     Object[][] providerLenientText() {
         // Locale, TemporalField, expected value, input text
         return new Object[][] {
@@ -147,47 +148,49 @@ public class TestTextParserWithLocale extends AbstractTestPrinterParser {
         };
     }
 
-    @Test(dataProvider="parseStandaloneText")
+    @ParameterizedTest
+    @MethodSource("providerStandaloneText")
     public void test_parseStandaloneText(Locale locale, TemporalField field, TextStyle style, int expectedValue, String input) {
         DateTimeFormatter formatter = getFormatter(field, style).withLocale(locale);
         ParsePosition pos = new ParsePosition(0);
-        assertEquals(formatter.parseUnresolved(input, pos).getLong(field), (long) expectedValue);
-        assertEquals(pos.getIndex(), input.length());
+        assertEquals((long) expectedValue, formatter.parseUnresolved(input, pos).getLong(field));
+        assertEquals(input.length(), pos.getIndex());
     }
 
     //-----------------------------------------------------------------------
+    @Test
     public void test_parse_french_short_strict_full_noMatch() throws Exception {
         setStrict(true);
         ParsePosition pos = new ParsePosition(0);
         getFormatter(MONTH_OF_YEAR, TextStyle.SHORT).withLocale(Locale.FRENCH)
                                                     .parseUnresolved("janvier", pos);
-        assertEquals(pos.getErrorIndex(), 0);
+        assertEquals(0, pos.getErrorIndex());
     }
 
+    @Test
     public void test_parse_french_short_strict_short_match() throws Exception {
         setStrict(true);
         ParsePosition pos = new ParsePosition(0);
-        assertEquals(getFormatter(MONTH_OF_YEAR, TextStyle.SHORT).withLocale(Locale.FRENCH)
-                                                                 .parseUnresolved("janv.", pos)
-                                                                 .getLong(MONTH_OF_YEAR),
-                     1L);
-        assertEquals(pos.getIndex(), 5);
+        assertEquals(1L, getFormatter(MONTH_OF_YEAR, TextStyle.SHORT).withLocale(Locale.FRENCH)
+                .parseUnresolved("janv.", pos)
+                .getLong(MONTH_OF_YEAR));
+        assertEquals(5, pos.getIndex());
     }
 
     //-----------------------------------------------------------------------
 
-    @Test(dataProvider="parseLenientText")
+    @ParameterizedTest
+    @MethodSource("providerLenientText")
     public void test_parseLenientText(Locale locale, TemporalField field, int expectedValue, String input) {
         setStrict(false);
         ParsePosition pos = new ParsePosition(0);
         DateTimeFormatter formatter = getFormatter(field).withLocale(locale);
-        assertEquals(formatter.parseUnresolved(input, pos).getLong(field), (long) expectedValue);
-        assertEquals(pos.getIndex(), input.length());
+        assertEquals((long) expectedValue, formatter.parseUnresolved(input, pos).getLong(field));
+        assertEquals(input.length(), pos.getIndex());
     }
 
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="parseChronoLocalDate")
     Object[][] provider_chronoLocalDate() {
         return new Object[][] {
             { HijrahDate.now() },
@@ -213,14 +216,15 @@ public class TestTextParserWithLocale extends AbstractTestPrinterParser {
             .appendValue(ChronoField.DAY_OF_MONTH, 1, 2, SignStyle.NEVER)
             .toFormatter();
 
-    @Test(dataProvider="parseChronoLocalDate")
+    @ParameterizedTest
+    @MethodSource("provider_chronoLocalDate")
     public void test_chronoLocalDate(ChronoLocalDate date) throws Exception {
         System.out.printf(" %s, [fmt=%s]%n", date, fmt_chrono.format(date));
-        assertEquals(date, fmt_chrono.parse(fmt_chrono.format(date), ChronoLocalDate::from));
+        assertEquals(fmt_chrono.parse(fmt_chrono.format(date), ChronoLocalDate::from), date);
 
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("[GGG ]yyy-MM-dd")
                                                  .withChronology(date.getChronology());
         System.out.printf(" %s, [fmt=%s]%n", date.toString(), fmt.format(date));
-        assertEquals(date, fmt.parse(fmt.format(date), ChronoLocalDate::from));
+        assertEquals(fmt.parse(fmt.format(date), ChronoLocalDate::from), date);
     }
 }

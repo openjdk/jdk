@@ -38,7 +38,6 @@ import javax.tools.JavaFileObject;
 import com.sun.tools.javac.api.DiagnosticFormatter;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.DefinedBy.Api;
 
@@ -364,10 +363,8 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         /** Get the position within the file that most accurately defines the
          *  location for the diagnostic. */
         int getPreferredPosition();
-        /** If there is a tree node, and if endPositions are available, get
-         *  the end position of the tree node. Otherwise, just returns the
-         *  same as getPreferredPosition(). */
-        int getEndPosition(EndPosTable endPosTable);
+        /** If there is a tree node, get the end position of the tree node. */
+        int getEndPosition();
         /** Get the position that determines which Lint configuration applies. */
         default int getLintPosition() {
             return getStartPosition();
@@ -389,8 +386,8 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
                     return orig.getPreferredPosition();
                 }
                 @Override
-                public int getEndPosition(EndPosTable endPosTable) {
-                    return orig.getEndPosition(endPosTable);
+                public int getEndPosition() {
+                    return orig.getEndPosition();
                 }
                 @Override
                 public int getLintPosition() {
@@ -421,7 +418,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
             return pos;
         }
 
-        public int getEndPosition(EndPosTable endPosTable) {
+        public int getEndPosition() {
             return pos;
         }
 
@@ -747,7 +744,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
     }
 
     protected int getIntEndPosition() {
-        return (position == null ? Position.NOPOS : position.getEndPosition(source.getEndPosTable()));
+        return (position == null ? Position.NOPOS : position.getEndPosition());
     }
 
     @DefinedBy(Api.COMPILER)

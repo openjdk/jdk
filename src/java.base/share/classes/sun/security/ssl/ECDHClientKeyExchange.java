@@ -199,7 +199,7 @@ final class ECDHClientKeyExchange {
             ECDHClientKeyExchangeMessage cke =
                     new ECDHClientKeyExchangeMessage(
                             chc, sslPossession.encode());
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                     "Produced ECDH ClientKeyExchange handshake message", cke);
             }
@@ -308,7 +308,7 @@ final class ECDHClientKeyExchange {
             // parse either handshake message containing either EC/XEC.
             ECDHClientKeyExchangeMessage cke =
                     new ECDHClientKeyExchangeMessage(shc, message);
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                     "Consuming ECDH ClientKeyExchange handshake message", cke);
             }
@@ -397,7 +397,7 @@ final class ECDHClientKeyExchange {
                     new ECDHClientKeyExchangeMessage(
                             chc, sslPossession.encode());
 
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                     "Produced ECDHE ClientKeyExchange handshake message", cke);
             }
@@ -490,7 +490,7 @@ final class ECDHClientKeyExchange {
             // parse the EC/XEC handshake message
             ECDHClientKeyExchangeMessage cke =
                     new ECDHClientKeyExchangeMessage(shc, message);
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                     "Consuming ECDHE ClientKeyExchange handshake message", cke);
             }

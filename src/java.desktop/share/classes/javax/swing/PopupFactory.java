@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,13 +80,6 @@ public class PopupFactory {
             }
         });
     }
-    /**
-     * The shared instanceof <code>PopupFactory</code> is per
-     * <code>AppContext</code>. This is the key used in the
-     * <code>AppContext</code> to locate the <code>PopupFactory</code>.
-     */
-    private static final Object SharedInstanceKey =
-        new StringBuffer("PopupFactory.SharedInstanceKey");
 
     /**
      * Max number of items to store in any one particular cache.
@@ -118,6 +111,7 @@ public class PopupFactory {
      */
     public PopupFactory() {}
 
+    static PopupFactory sharedFactory;
     /**
      * Sets the <code>PopupFactory</code> that will be used to obtain
      * <code>Popup</code>s.
@@ -132,7 +126,9 @@ public class PopupFactory {
         if (factory == null) {
             throw new IllegalArgumentException("PopupFactory can not be null");
         }
-        SwingUtilities.appContextPut(SharedInstanceKey, factory);
+        synchronized (PopupFactory.class) {
+            sharedFactory = factory;
+        }
     }
 
     /**
@@ -142,14 +138,12 @@ public class PopupFactory {
      * @return Shared PopupFactory
      */
     public static PopupFactory getSharedInstance() {
-        PopupFactory factory = (PopupFactory)SwingUtilities.appContextGet(
-                         SharedInstanceKey);
-
-        if (factory == null) {
-            factory = new PopupFactory();
-            setSharedInstance(factory);
+        synchronized (PopupFactory.class) {
+            if (sharedFactory == null) {
+                sharedFactory = new PopupFactory();
+            }
+            return sharedFactory;
         }
-        return factory;
     }
 
 
@@ -351,8 +345,6 @@ public class PopupFactory {
      * Popup implementation that uses a Window as the popup.
      */
     private static class HeavyWeightPopup extends Popup {
-        private static final Object heavyWeightPopupCacheKey =
-                 new StringBuffer("PopupFactory.heavyWeightPopupCache");
 
         private volatile boolean isCacheEnabled = true;
 
@@ -434,21 +426,16 @@ public class PopupFactory {
             }
         }
 
+        private static Map<Window, List<HeavyWeightPopup>> cache;
         /**
          * Returns the cache to use for heavy weight popups. Maps from
          * <code>Window</code> to a <code>List</code> of
          * <code>HeavyWeightPopup</code>s.
          */
-        @SuppressWarnings("unchecked")
         private static Map<Window, List<HeavyWeightPopup>> getHeavyWeightPopupCache() {
             synchronized (HeavyWeightPopup.class) {
-                Map<Window, List<HeavyWeightPopup>> cache = (Map<Window, List<HeavyWeightPopup>>)SwingUtilities.appContextGet(
-                                  heavyWeightPopupCacheKey);
-
                 if (cache == null) {
                     cache = new HashMap<>(2);
-                    SwingUtilities.appContextPut(heavyWeightPopupCacheKey,
-                                                 cache);
                 }
                 return cache;
             }
@@ -728,18 +715,17 @@ public class PopupFactory {
             return popup;
         }
 
+        private static List<LightWeightPopup> cache;
         /**
          * Returns the cache to use for heavy weight popups.
          */
-        @SuppressWarnings("unchecked")
         private static List<LightWeightPopup> getLightWeightPopupCache() {
-            List<LightWeightPopup> cache = (List<LightWeightPopup>)SwingUtilities.appContextGet(
-                                   lightWeightPopupCacheKey);
-            if (cache == null) {
-                cache = new ArrayList<>();
-                SwingUtilities.appContextPut(lightWeightPopupCacheKey, cache);
+            synchronized (LightWeightPopup.class) {
+                if (cache == null) {
+                    cache = new ArrayList<>();
+                }
+                return cache;
             }
-            return cache;
         }
 
         /**
@@ -849,8 +835,6 @@ public class PopupFactory {
      * Popup implementation that uses a Panel as the popup.
      */
     private static class MediumWeightPopup extends ContainerPopup {
-        private static final Object mediumWeightPopupCacheKey =
-                             new StringBuffer("PopupFactory.mediumPopupCache");
 
         /** Child of the panel. The contents are added to this. */
         private JRootPane rootPane;
@@ -877,19 +861,18 @@ public class PopupFactory {
             return popup;
         }
 
+        private static List<MediumWeightPopup> cache;
         /**
          * Returns the cache to use for medium weight popups.
          */
         @SuppressWarnings("unchecked")
         private static List<MediumWeightPopup> getMediumWeightPopupCache() {
-            List<MediumWeightPopup> cache = (List<MediumWeightPopup>)SwingUtilities.appContextGet(
-                                    mediumWeightPopupCacheKey);
-
-            if (cache == null) {
-                cache = new ArrayList<>();
-                SwingUtilities.appContextPut(mediumWeightPopupCacheKey, cache);
+            synchronized (MediumWeightPopup.class) {
+                if (cache == null) {
+                    cache = new ArrayList<>();
+                }
+                return cache;
             }
-            return cache;
         }
 
         /**

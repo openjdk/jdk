@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,18 +88,11 @@ public class JstatGcCapacityResults extends JstatResults {
         assertThat(EC <= NGC, "EC > NGC (eden space capacity > new generation capacity)");
 
         // Verify relative size of NGC and S0C + S1C + EC.
-        // The rule depends on if the tenured GC is parallel or not.
-        // For parallell GC:     NGC >= S0C + S1C + EC
-        // For non-parallell GC: NGC == S0C + S1C + EC
-        boolean isTenuredParallelGC = isTenuredParallelGC();
+        // NGC == S0C + S1C + EC
         String errMsg = String.format(
-                "NGC %s (S0C + S1C + EC) (NGC = %.1f, S0C = %.1f, S1C = %.1f, EC = %.1f, (S0C + S1C + EC) = %.1f)",
-                isTenuredParallelGC ? "<" : "!=", NGC, S0C, S1C, EC, S0C + S1C + EC);
-        if (isTenuredParallelGC) {
-            assertThat(NGC >= S0C + S1C + EC, errMsg);
-        } else {
-            assertThat(checkFloatIsSum(NGC, S0C, S1C, EC), errMsg);
-        }
+                "NGC != (S0C + S1C + EC) (NGC = %.1f, S0C = %.1f, S1C = %.1f, EC = %.1f, (S0C + S1C + EC) = %.1f)",
+                NGC, S0C, S1C, EC, S0C + S1C + EC);
+        assertThat(checkFloatIsSum(NGC, S0C, S1C, EC), errMsg);
 
         // Check Old Gen consistency
         float OGCMN = getFloatValue("OGCMN");
@@ -120,24 +113,5 @@ public class JstatGcCapacityResults extends JstatResults {
         float MC = getFloatValue("MC");
         assertThat(MC >= MCMN, "MC < MCMN (generation capacity < min generation capacity)");
         assertThat(MC <= MCMX, "MGC > MCMX (generation capacity > max generation capacity)");
-    }
-
-    /**
-     * Check if the tenured generation are currently using a parallel GC.
-     */
-    protected static boolean isTenuredParallelGC() {
-        // Currently the only parallel GC for the tenured generation is PS MarkSweep.
-        List<String> parallelGCs = Arrays.asList(new String[] { "PS MarkSweep"});
-        try {
-            List<GarbageCollectorMXBean> beans = ManagementFactory.getGarbageCollectorMXBeans();
-            for (GarbageCollectorMXBean bean : beans) {
-                if (parallelGCs.contains(bean.getName())) {
-                    return true;
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
     }
 }

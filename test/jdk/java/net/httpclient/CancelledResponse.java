@@ -93,11 +93,10 @@ public class CancelledResponse {
 
     static final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
     final ServerSocketFactory factory;
-    final SSLContext context;
+    private static final SSLContext context = SimpleSSLContext.findSSLContext();
     final boolean useSSL;
     CancelledResponse(boolean useSSL) throws IOException {
         this.useSSL = useSSL;
-        context = new SimpleSSLContext().get();
         SSLContext.setDefault(context);
         factory = useSSL ? SSLServerSocketFactory.getDefault()
                          : ServerSocketFactory.getDefault();

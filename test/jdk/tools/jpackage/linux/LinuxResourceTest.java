@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,9 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageOutputValidator;
 import jdk.jpackage.test.LinuxHelper;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
@@ -67,22 +69,26 @@ public class LinuxResourceTest {
             final var arhProp = property("Architecture", "bar");
 
             TKit.createTextFile(controlFile, List.of(
-                packageProp.format(),
-                verProp.format(),
-                "Section: APPLICATION_SECTION",
-                "Maintainer: APPLICATION_MAINTAINER",
-                "Priority: optional",
-                arhProp.format(),
-                "Provides: dont-install-me",
-                "Description: APPLICATION_DESCRIPTION",
-                "Installed-Size: APPLICATION_INSTALLED_SIZE",
-                "Depends: PACKAGE_DEFAULT_DEPENDENCIES"
+                    packageProp.format(),
+                    verProp.format(),
+                    "Section: APPLICATION_SECTION",
+                    "Maintainer: APPLICATION_MAINTAINER",
+                    "Priority: optional",
+                    arhProp.format(),
+                    "Provides: dont-install-me",
+                    "Description: APPLICATION_DESCRIPTION",
+                    "Installed-Size: APPLICATION_INSTALLED_SIZE",
+                    "Depends: PACKAGE_DEFAULT_DEPENDENCIES"
             ));
 
-            cmd.validateOutput(MAIN.cannedFormattedString(
-                    "message.using-custom-resource",
-                    String.format("[%s]", MAIN.cannedFormattedString("resource.deb-control-file").getValue()),
-                    controlFile.getFileName()));
+            new JPackageOutputValidator()
+                    .expectMatchingStrings(MAIN.cannedFormattedString(
+                            "message.using-custom-resource",
+                            String.format("[%s]", MAIN.cannedFormattedString("resource.deb-control-file").getValue()),
+                            controlFile.getFileName()))
+                    .matchTimestamps()
+                    .stripTimestamps()
+                    .applyTo(cmd);
 
             packageProp.expectedValue(LinuxHelper.getPackageName(cmd)).token("APPLICATION_PACKAGE").resourceDirFile(controlFile).validateOutput(cmd);
             verProp.expectedValue(cmd.version()).token("APPLICATION_VERSION_WITH_RELEASE").resourceDirFile(controlFile).validateOutput(cmd);
@@ -98,30 +104,34 @@ public class LinuxResourceTest {
             final var releaseProp = property("Release", "R2");
 
             TKit.createTextFile(specFile, List.of(
-                packageProp.format(),
-                verProp.format(),
-                releaseProp.format(),
-                "Summary: APPLICATION_SUMMARY",
-                "License: APPLICATION_LICENSE_TYPE",
-                "Prefix: %{dirname:APPLICATION_DIRECTORY}",
-                "Provides: dont-install-me",
-                "%define _build_id_links none",
-                "%description",
-                "APPLICATION_DESCRIPTION",
-                "%prep",
-                "%build",
-                "%install",
-                "rm -rf %{buildroot}",
-                "install -d -m 755 %{buildroot}APPLICATION_DIRECTORY",
-                "cp -r %{_sourcedir}APPLICATION_DIRECTORY/* %{buildroot}APPLICATION_DIRECTORY",
-                "%files",
-                "APPLICATION_DIRECTORY"
+                    packageProp.format(),
+                    verProp.format(),
+                    releaseProp.format(),
+                    "Summary: APPLICATION_SUMMARY",
+                    "License: APPLICATION_LICENSE_TYPE",
+                    "Prefix: %{dirname:APPLICATION_DIRECTORY}",
+                    "Provides: dont-install-me",
+                    "%define _build_id_links none",
+                    "%description",
+                    "APPLICATION_DESCRIPTION",
+                    "%prep",
+                    "%build",
+                    "%install",
+                    "rm -rf %{buildroot}",
+                    "install -d -m 755 %{buildroot}APPLICATION_DIRECTORY",
+                    "cp -r %{_sourcedir}APPLICATION_DIRECTORY/* %{buildroot}APPLICATION_DIRECTORY",
+                    "%files",
+                    "APPLICATION_DIRECTORY"
             ));
 
-            cmd.validateOutput(MAIN.cannedFormattedString(
-                    "message.using-custom-resource",
-                    String.format("[%s]", MAIN.cannedFormattedString("resource.rpm-spec-file").getValue()),
-                    specFile.getFileName()));
+            new JPackageOutputValidator()
+                    .expectMatchingStrings(MAIN.cannedFormattedString(
+                            "message.using-custom-resource",
+                            String.format("[%s]", MAIN.cannedFormattedString("resource.rpm-spec-file").getValue()),
+                            specFile.getFileName()))
+                    .matchTimestamps()
+                    .stripTimestamps()
+                    .applyTo(cmd);
 
             packageProp.expectedValue(LinuxHelper.getPackageName(cmd)).token("APPLICATION_PACKAGE").resourceDirFile(specFile).validateOutput(cmd);
             verProp.expectedValue(cmd.version()).token("APPLICATION_VERSION").resourceDirFile(specFile).validateOutput(cmd);
@@ -171,9 +181,15 @@ public class LinuxResourceTest {
             Objects.requireNonNull(resourceDirFile);
 
             final var customResourcePath = customResourcePath();
-            cmd.validateOutput(
-                    MAIN.cannedFormattedString("error.unexpected-package-property", name, expectedValue, customValue, customResourcePath),
-                    MAIN.cannedFormattedString("error.unexpected-package-property.advice", token, customValue, name, customResourcePath));
+
+            new JPackageOutputValidator()
+                    .expectMatchingStrings(
+                            MAIN.cannedFormattedString("error.unexpected-package-property", name, expectedValue, customValue, customResourcePath),
+                            MAIN.cannedFormattedString("error.unexpected-package-property.advice", token, customValue, name, customResourcePath)
+                    )
+                    .matchTimestamps()
+                    .stripTimestamps()
+                    .applyTo(cmd);
         }
 
         private Path customResourcePath() {

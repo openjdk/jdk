@@ -118,9 +118,16 @@ public class DiagnosticGetEndPosition {
             compiler.getTask(
                 null,
                 null,
-                d -> assertEquals("", //ideally would be "0", but the positions are not fully set yet
-                                  implCode.substring((int) d.getStartPosition(),
-                                                     (int) d.getEndPosition())),
+                d -> {
+                    // Use line and column instead of start and end positions
+                    // to handle platform-dependent newlines, which could be
+                    // different between the text block and the written file.
+                    int line = (int) d.getLineNumber();
+                    int col = (int) d.getColumnNumber();
+                    assertEquals(1, d.getEndPosition() - d.getStartPosition());
+                    String substring = implCode.split("\\R")[line - 1].substring(col - 1, col);
+                    assertEquals("0", substring);
+                },
                 List.of("-sourcepath", src.toString(), "-Xlint:divzero"),
                 null,
                 fm.getJavaFileObjects(src.resolve("test").resolve("Test.java"))

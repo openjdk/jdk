@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -491,6 +491,15 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
 
 #ifndef PRODUCT
   if (PrintDeoptimizationDetails) {
+    const bool print_codes = WizardMode && Verbose;
+    ResourceMark rm(thread);
+    stringStream codes_ss;
+    if (print_codes) {
+      // print_codes_on() may acquire MDOExtraData_lock (rank nosafepoint-1).
+      // To keep the lock acquisition order correct, call it before taking tty_lock.
+      // Avoid double buffering: set buffered=false.
+      method()->print_codes_on(&codes_ss, 0, false);
+    }
     ttyLocker ttyl;
     tty->print_cr("[%d. Interpreted Frame]", ++unpack_counter);
     iframe()->print_on(tty);
@@ -500,7 +509,9 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
                     RegisterMap::WalkContinuation::skip);
     vframe* f = vframe::new_vframe(iframe(), &map, thread);
     f->print();
-    if (WizardMode && Verbose) method()->print_codes();
+    if (print_codes) {
+      tty->print("%s", codes_ss.as_string());
+    }
     tty->cr();
   }
 #endif // !PRODUCT

@@ -191,8 +191,7 @@
 //
 // C2 stub blob/field names
 //
-// C2 stubs are provided with names in the format "C2 Runtime
-// <stubname> _blob".
+// C2 stubs are provided with names in the format "<stubname>_blob (C2 runtime)".
 //
 // A stub creation method OptoRuntime::generate(ciEnv* env) is
 // generated which invokes the C2 compiler to generate each stub in

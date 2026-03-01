@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@ package javax.swing;
 
 import java.awt.Container;
 import javax.swing.plaf.ComponentUI;
-import sun.awt.AppContext;
 
 /**
  * <code>LayoutStyle</code> provides information about how to position
@@ -40,6 +39,9 @@ import sun.awt.AppContext;
  * @since 1.6
  */
 public abstract class LayoutStyle {
+
+    private static LayoutStyle sharedInstance;
+
     /**
      * Sets the shared instance of <code>LayoutStyle</code>.  Specifying
      * <code>null</code> results in using the <code>LayoutStyle</code> from
@@ -51,10 +53,10 @@ public abstract class LayoutStyle {
     public static void setInstance(LayoutStyle style) {
         synchronized(LayoutStyle.class) {
             if (style == null) {
-                AppContext.getAppContext().remove(LayoutStyle.class);
+                sharedInstance = null;
             }
             else {
-                AppContext.getAppContext().put(LayoutStyle.class, style);
+                sharedInstance = style;
             }
         }
     }
@@ -70,8 +72,7 @@ public abstract class LayoutStyle {
     public static LayoutStyle getInstance() {
         LayoutStyle style;
         synchronized(LayoutStyle.class) {
-            style = (LayoutStyle)AppContext.getAppContext().
-                    get(LayoutStyle.class);
+            style = sharedInstance;
         }
         if (style == null) {
             return UIManager.getLookAndFeel().getLayoutStyle();

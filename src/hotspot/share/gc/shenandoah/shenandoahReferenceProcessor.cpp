@@ -504,7 +504,7 @@ void ShenandoahReferenceProcessor::process_references(ShenandoahRefProcThreadLoc
   if (!CompressedOops::is_null(*list)) {
     oop head = lrb(CompressedOops::decode_not_null(*list));
     shenandoah_assert_not_in_cset_except(&head, head, ShenandoahHeap::heap()->cancelled_gc() || !ShenandoahLoadRefBarrier);
-    oop prev = AtomicAccess::xchg(&_pending_list, head);
+    oop prev = _pending_list.exchange(head);
     set_oop_field(p, prev);
     if (prev == nullptr) {
       // First to prepend to list, record tail
@@ -519,14 +519,14 @@ void ShenandoahReferenceProcessor::process_references(ShenandoahRefProcThreadLoc
 void ShenandoahReferenceProcessor::work() {
   // Process discovered references
   uint max_workers = ShenandoahHeap::heap()->max_workers();
-  uint worker_id = AtomicAccess::add(&_iterate_discovered_list_id, 1U, memory_order_relaxed) - 1;
+  uint worker_id = _iterate_discovered_list_id.fetch_then_add(1U, memory_order_relaxed);
   while (worker_id < max_workers) {
     if (UseCompressedOops) {
       process_references<narrowOop>(_ref_proc_thread_locals[worker_id], worker_id);
     } else {
       process_references<oop>(_ref_proc_thread_locals[worker_id], worker_id);
     }
-    worker_id = AtomicAccess::add(&_iterate_discovered_list_id, 1U, memory_order_relaxed) - 1;
+    worker_id = _iterate_discovered_list_id.fetch_then_add(1U, memory_order_relaxed);
   }
 }
 
@@ -559,7 +559,7 @@ public:
 
 void ShenandoahReferenceProcessor::process_references(ShenandoahPhaseTimings::Phase phase, WorkerThreads* workers, bool concurrent) {
 
-  AtomicAccess::release_store_fence(&_iterate_discovered_list_id, 0U);
+  _iterate_discovered_list_id.release_store_fence(0U);
 
   // Process discovered lists
   ShenandoahReferenceProcessorTask task(phase, concurrent, this);
@@ -576,7 +576,7 @@ void ShenandoahReferenceProcessor::process_references(ShenandoahPhaseTimings::Ph
 
 void ShenandoahReferenceProcessor::enqueue_references_locked() {
   // Prepend internal pending list to external pending list
-  shenandoah_assert_not_in_cset_except(&_pending_list, _pending_list, ShenandoahHeap::heap()->cancelled_gc() || !ShenandoahLoadRefBarrier);
+  shenandoah_assert_not_in_cset_except(&_pending_list, _pending_list.load_relaxed(), ShenandoahHeap::heap()->cancelled_gc() || !ShenandoahLoadRefBarrier);
 
   // During reference processing, we maintain a local list of references that are identified by
   //   _pending_list and _pending_list_tail.  _pending_list_tail points to the next field of the last Reference object on
@@ -589,7 +589,7 @@ void ShenandoahReferenceProcessor::enqueue_references_locked() {
   //  2. Overwriting the next field of the last Reference on my local list to point at the previous head of the
   //     global Universe::_reference_pending_list
 
-  oop former_head_of_global_list = Universe::swap_reference_pending_list(_pending_list);
+  oop former_head_of_global_list = Universe::swap_reference_pending_list(_pending_list.load_relaxed());
   if (UseCompressedOops) {
     set_oop_field<narrowOop>(reinterpret_cast<narrowOop*>(_pending_list_tail), former_head_of_global_list);
   } else {
@@ -598,7 +598,7 @@ void ShenandoahReferenceProcessor::enqueue_references_locked() {
 }
 
 void ShenandoahReferenceProcessor::enqueue_references(bool concurrent) {
-  if (_pending_list == nullptr) {
+  if (_pending_list.load_relaxed() == nullptr) {
     // Nothing to enqueue
     return;
   }
@@ -616,7 +616,7 @@ void ShenandoahReferenceProcessor::enqueue_references(bool concurrent) {
   }
 
   // Reset internal pending list
-  _pending_list = nullptr;
+  _pending_list.store_relaxed(nullptr);
   _pending_list_tail = &_pending_list;
 }
 
@@ -640,9 +640,9 @@ void ShenandoahReferenceProcessor::abandon_partial_discovery() {
       clean_discovered_list<oop>(_ref_proc_thread_locals[index].discovered_list_addr<oop>());
     }
   }
-  if (_pending_list != nullptr) {
-    oop pending = _pending_list;
-    _pending_list = nullptr;
+  if (_pending_list.load_relaxed() != nullptr) {
+    oop pending = _pending_list.load_relaxed();
+    _pending_list.store_relaxed(nullptr);
     if (UseCompressedOops) {
       narrowOop* list = reference_discovered_addr<narrowOop>(pending);
       clean_discovered_list<narrowOop>(list);

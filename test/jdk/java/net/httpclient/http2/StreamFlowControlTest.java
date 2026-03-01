@@ -76,7 +76,7 @@ import static org.testng.Assert.fail;
 
 public class StreamFlowControlTest {
 
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
     HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
     String http2URI;
@@ -266,10 +266,6 @@ public class StreamFlowControlTest {
 
     @BeforeTest
     public void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
         var http2TestServer = new Http2TestServer("localhost", false, 0);
         http2TestServer.addHandler(new Http2TestHandler(), "/http2/");
         this.http2TestServer = HttpTestServer.of(http2TestServer);

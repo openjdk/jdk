@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -399,7 +399,7 @@ class ExtendedTextSourceLabel implements TextLineComponent, Decoration.Label {
     int start = source.getStart();
     int length = source.getLength();
 
-    GlyphLayout gl = GlyphLayout.get(null); // !!! no custom layout engines
+    GlyphLayout gl = GlyphLayout.get();
     gv = gl.layout(font, frc, context, start, length, flags, null); // ??? use textsource
     GlyphLayout.done(gl);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1899,11 +1899,6 @@ public class SwingUtilities implements SwingConstants
         return null;
     }
 
-
-    // Don't use String, as it's not guaranteed to be unique in a Hashtable.
-    private static final Object sharedOwnerFrameKey =
-       new StringBuffer("SwingUtilities.sharedOwnerFrame");
-
     @SuppressWarnings("serial") // JDK-implementation class
     static class SharedOwnerFrame extends Frame implements WindowListener {
         public void addNotify() {
@@ -1961,6 +1956,7 @@ public class SwingUtilities implements SwingConstants
         }
     }
 
+    private static Frame sharedOwnerFrame;
     /**
      * Returns a toolkit-private, shared, invisible Frame
      * to be the owner for JDialogs and JWindows created with
@@ -1970,14 +1966,12 @@ public class SwingUtilities implements SwingConstants
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
     static Frame getSharedOwnerFrame() throws HeadlessException {
-        Frame sharedOwnerFrame =
-            (Frame)SwingUtilities.appContextGet(sharedOwnerFrameKey);
-        if (sharedOwnerFrame == null) {
-            sharedOwnerFrame = new SharedOwnerFrame();
-            SwingUtilities.appContextPut(sharedOwnerFrameKey,
-                                         sharedOwnerFrame);
+        synchronized (SharedOwnerFrame.class) {
+            if (sharedOwnerFrame == null) {
+                sharedOwnerFrame = new SharedOwnerFrame();
+            }
+            return sharedOwnerFrame;
         }
-        return sharedOwnerFrame;
     }
 
     /**

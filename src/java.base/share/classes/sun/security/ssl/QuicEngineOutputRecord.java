@@ -75,14 +75,14 @@ final class QuicEngineOutputRecord extends OutputRecord implements SSLRecord {
         recordLock.lock();
         try {
             if (isClosed()) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.warning("outbound has closed, ignore outbound " +
                             "alert message: " + Alert.nameOf(description));
                 }
                 return;
             }
             if (level == Alert.Level.WARNING.level) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.warning("Suppressing warning-level " +
                             "alert message: " + Alert.nameOf(description));
                 }
@@ -90,7 +90,7 @@ final class QuicEngineOutputRecord extends OutputRecord implements SSLRecord {
             }
 
             if (alert != null) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.warning("Suppressing subsequent alert: " +
                             description + ", original: " + alert.id);
                 }
@@ -109,7 +109,7 @@ final class QuicEngineOutputRecord extends OutputRecord implements SSLRecord {
         recordLock.lock();
         try {
             if (isClosed()) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.warning("outbound has closed, ignore outbound " +
                                     "handshake message",
                             ByteBuffer.wrap(source, offset, length));

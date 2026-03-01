@@ -25,10 +25,10 @@
 #ifndef SHARE_GC_G1_G1CONCURRENTREFINESWEEPTASK_HPP
 #define SHARE_GC_G1_G1CONCURRENTREFINESWEEPTASK_HPP
 
-#include "gc/g1/g1ConcurrentRefineStats.hpp"
 #include "gc/shared/workerThread.hpp"
 
 class G1CardTableClaimTable;
+class G1ConcurrentRefineStats;
 
 class G1ConcurrentRefineSweepTask : public WorkerTask {
   G1CardTableClaimTable* _scan_state;

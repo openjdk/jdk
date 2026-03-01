@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@ import javax.swing.border.Border;
 import javax.swing.plaf.UIResource;
 import javax.swing.plaf.synth.SynthUI;
 import sun.swing.DefaultLookup;
-import sun.awt.AppContext;
 import sun.swing.SwingUtilities2;
 
 import javax.swing.plaf.basic.DragRecognitionSupport.BeforeDrag;
@@ -2234,24 +2233,19 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
         }
     }
 
+    private static volatile DragListener dragListenerSingleton;
+
     private static DragListener getDragListener() {
         synchronized(DragListener.class) {
-            DragListener listener =
-                (DragListener)AppContext.getAppContext().
-                    get(DragListener.class);
-
-            if (listener == null) {
-                listener = new DragListener();
-                AppContext.getAppContext().put(DragListener.class, listener);
+            if (dragListenerSingleton == null) {
+                dragListenerSingleton = new DragListener();
             }
-
-            return listener;
+            return dragListenerSingleton;
         }
     }
 
     /**
      * Listens for mouse events for the purposes of detecting drag gestures.
-     * BasicTextUI will maintain one of these per AppContext.
      */
     static class DragListener extends MouseInputAdapter
                               implements BeforeDrag {

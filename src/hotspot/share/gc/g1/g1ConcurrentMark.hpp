@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,20 @@
 #define SHARE_GC_G1_G1CONCURRENTMARK_HPP
 
 #include "gc/g1/g1ConcurrentMarkBitMap.hpp"
-#include "gc/g1/g1ConcurrentMarkObjArrayProcessor.hpp"
 #include "gc/g1/g1HeapRegionSet.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/shared/gcCause.hpp"
+#include "gc/shared/partialArraySplitter.hpp"
+#include "gc/shared/partialArrayState.hpp"
+#include "gc/shared/partialArrayTaskStats.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/verifyOption.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shared/workerUtils.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/numberSeq.hpp"
 
@@ -53,41 +56,7 @@ class G1RegionToSpaceMapper;
 class G1SurvivorRegions;
 class ThreadClosure;
 
-// This is a container class for either an oop or a continuation address for
-// mark stack entries. Both are pushed onto the mark stack.
-class G1TaskQueueEntry {
-private:
-  void* _holder;
-
-  static const uintptr_t ArraySliceBit = 1;
-
-  G1TaskQueueEntry(oop obj) : _holder(obj) {
-    assert(_holder != nullptr, "Not allowed to set null task queue element");
-  }
-  G1TaskQueueEntry(HeapWord* addr) : _holder((void*)((uintptr_t)addr | ArraySliceBit)) { }
-public:
-
-  G1TaskQueueEntry() : _holder(nullptr) { }
-  // Trivially copyable, for use in GenericTaskQueue.
-
-  static G1TaskQueueEntry from_slice(HeapWord* what) { return G1TaskQueueEntry(what); }
-  static G1TaskQueueEntry from_oop(oop obj) { return G1TaskQueueEntry(obj); }
-
-  oop obj() const {
-    assert(!is_array_slice(), "Trying to read array slice " PTR_FORMAT " as oop", p2i(_holder));
-    return cast_to_oop(_holder);
-  }
-
-  HeapWord* slice() const {
-    assert(is_array_slice(), "Trying to read oop " PTR_FORMAT " as array slice", p2i(_holder));
-    return (HeapWord*)((uintptr_t)_holder & ~ArraySliceBit);
-  }
-
-  bool is_oop() const { return !is_array_slice(); }
-  bool is_array_slice() const { return ((uintptr_t)_holder & ArraySliceBit) != 0; }
-  bool is_null() const { return _holder == nullptr; }
-};
-
+typedef ScannerTask G1TaskQueueEntry;
 typedef GenericTaskQueue<G1TaskQueueEntry, mtGC> G1CMTaskQueue;
 typedef GenericTaskQueueSet<G1CMTaskQueue, mtGC> G1CMTaskQueueSet;
 
@@ -172,9 +141,9 @@ private:
     size_t _capacity;
     size_t _num_buckets;
     bool _should_grow;
-    TaskQueueEntryChunk* volatile* _buckets;
+    Atomic<TaskQueueEntryChunk*>* _buckets;
     char _pad0[DEFAULT_PADDING_SIZE];
-    volatile size_t _size;
+    Atomic<size_t> _size;
     char _pad4[DEFAULT_PADDING_SIZE - sizeof(size_t)];
 
     size_t bucket_size(size_t bucket) {
@@ -212,7 +181,7 @@ private:
     bool initialize(size_t initial_capacity, size_t max_capacity);
 
     void reset() {
-      _size = 0;
+      _size.store_relaxed(0);
       _should_grow = false;
     }
 
@@ -241,17 +210,17 @@ private:
   ChunkAllocator _chunk_allocator;
 
   char _pad0[DEFAULT_PADDING_SIZE];
-  TaskQueueEntryChunk* volatile _free_list;  // Linked list of free chunks that can be allocated by users.
+  Atomic<TaskQueueEntryChunk*> _free_list;  // Linked list of free chunks that can be allocated by users.
   char _pad1[DEFAULT_PADDING_SIZE - sizeof(TaskQueueEntryChunk*)];
-  TaskQueueEntryChunk* volatile _chunk_list; // List of chunks currently containing data.
+  Atomic<TaskQueueEntryChunk*> _chunk_list; // List of chunks currently containing data.
   volatile size_t _chunks_in_chunk_list;
   char _pad2[DEFAULT_PADDING_SIZE - sizeof(TaskQueueEntryChunk*) - sizeof(size_t)];
 
   // Atomically add the given chunk to the list.
-  void add_chunk_to_list(TaskQueueEntryChunk* volatile* list, TaskQueueEntryChunk* elem);
+  void add_chunk_to_list(Atomic<TaskQueueEntryChunk*>* list, TaskQueueEntryChunk* elem);
   // Atomically remove and return a chunk from the given list. Returns null if the
   // list is empty.
-  TaskQueueEntryChunk* remove_chunk_from_list(TaskQueueEntryChunk* volatile* list);
+  TaskQueueEntryChunk* remove_chunk_from_list(Atomic<TaskQueueEntryChunk*>* list);
 
   void add_chunk_to_chunk_list(TaskQueueEntryChunk* elem);
   void add_chunk_to_free_list(TaskQueueEntryChunk* elem);
@@ -283,7 +252,7 @@ private:
 
   // Return whether the chunk list is empty. Racy due to unsynchronized access to
   // _chunk_list.
-  bool is_empty() const { return _chunk_list == nullptr; }
+  bool is_empty() const { return _chunk_list.load_relaxed() == nullptr; }
 
   size_t capacity() const  { return _chunk_allocator.capacity(); }
 
@@ -321,12 +290,12 @@ class G1CMRootMemRegions {
   MemRegion* _root_regions;
   size_t const _max_regions;
 
-  volatile size_t _num_root_regions; // Actual number of root regions.
+  Atomic<size_t> _num_root_regions;  // Actual number of root regions.
 
-  volatile size_t _claimed_root_regions; // Number of root regions currently claimed.
+  Atomic<size_t> _claimed_root_regions; // Number of root regions currently claimed.
 
-  volatile bool _scan_in_progress;
-  volatile bool _should_abort;
+  Atomic<bool> _scan_in_progress;
+  Atomic<bool> _should_abort;
 
   void notify_scan_done();
 
@@ -343,11 +312,11 @@ public:
   void prepare_for_scan();
 
   // Forces get_next() to return null so that the iteration aborts early.
-  void abort() { _should_abort = true; }
+  void abort() { _should_abort.store_relaxed(true); }
 
   // Return true if the CM thread are actively scanning root regions,
   // false otherwise.
-  bool scan_in_progress() { return _scan_in_progress; }
+  bool scan_in_progress() { return _scan_in_progress.load_relaxed(); }
 
   // Claim the next root MemRegion to scan atomically, or return null if
   // all have been claimed.
@@ -399,7 +368,7 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
 
   // For grey objects
   G1CMMarkStack           _global_mark_stack; // Grey objects behind global finger
-  HeapWord* volatile      _finger;            // The global finger, region aligned,
+  Atomic<HeapWord*>       _finger;            // The global finger, region aligned,
                                               // always pointing to the end of the
                                               // last claimed region
 
@@ -410,6 +379,8 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
 
   G1CMTaskQueueSet*       _task_queues; // Task queue set
   TaskTerminator          _terminator;  // For termination
+
+  PartialArrayStateManager* _partial_array_state_manager;
 
   // Two sync barriers that are used to synchronize tasks when an
   // overflow occurs. The algorithm is the following. All tasks enter
@@ -424,19 +395,19 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   WorkerThreadsBarrierSync     _second_overflow_barrier_sync;
 
   // Number of completed mark cycles.
-  volatile uint           _completed_mark_cycles;
+  Atomic<uint>            _completed_mark_cycles;
 
   // This is set by any task, when an overflow on the global data
   // structures is detected
-  volatile bool           _has_overflown;
+  Atomic<bool>            _has_overflown;
   // True: marking is concurrent, false: we're in remark
-  volatile bool           _concurrent;
+  Atomic<bool>            _concurrent;
   // Set at the end of a Full GC so that marking aborts
-  volatile bool           _has_aborted;
+  Atomic<bool>            _has_aborted;
 
   // Used when remark aborts due to an overflow to indicate that
   // another concurrent marking phase should start
-  volatile bool           _restart_for_overflow;
+  Atomic<bool>            _restart_for_overflow;
 
   ConcurrentGCTimer*      _gc_timer_cm;
 
@@ -488,8 +459,10 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   // Prints all gathered CM-related statistics
   void print_stats();
 
-  HeapWord*           finger()       { return _finger;   }
-  bool                concurrent()   { return _concurrent; }
+  void print_and_reset_taskqueue_stats();
+
+  HeapWord*           finger()       { return _finger.load_relaxed();   }
+  bool                concurrent()   { return _concurrent.load_relaxed(); }
   uint                active_tasks() { return _num_active_tasks; }
   TaskTerminator*     terminator()   { return &_terminator; }
 
@@ -514,7 +487,7 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   // to satisfy an allocation without doing a GC. This is fine, because all
   // objects in those regions will be considered live anyway because of
   // SATB guarantees (i.e. their TAMS will be equal to bottom).
-  bool out_of_regions() { return _finger >= _heap.end(); }
+  bool out_of_regions() { return finger() >= _heap.end(); }
 
   // Returns the task with the given id
   G1CMTask* task(uint id) {
@@ -526,10 +499,10 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
 
   // Access / manipulation of the overflow flag which is set to
   // indicate that the global stack has overflown
-  bool has_overflown()           { return _has_overflown; }
-  void set_has_overflown()       { _has_overflown = true; }
-  void clear_has_overflown()     { _has_overflown = false; }
-  bool restart_for_overflow()    { return _restart_for_overflow; }
+  bool has_overflown()           { return _has_overflown.load_relaxed(); }
+  void set_has_overflown()       { _has_overflown.store_relaxed(true); }
+  void clear_has_overflown()     { _has_overflown.store_relaxed(false); }
+  bool restart_for_overflow()    { return _restart_for_overflow.load_relaxed(); }
 
   // Methods to enter the two overflow sync barriers
   void enter_first_sync_barrier(uint worker_id);
@@ -543,12 +516,12 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   G1RegionMarkStats* _region_mark_stats;
   // Top pointer for each region at the start of marking. Must be valid for all committed
   // regions.
-  HeapWord* volatile* _top_at_mark_starts;
+  Atomic<HeapWord*>* _top_at_mark_starts;
   // Top pointer for each region at the start of the rebuild remembered set process
   // for regions which remembered sets need to be rebuilt. A null for a given region
   // means that this region does not be scanned during the rebuilding remembered
   // set phase at all.
-  HeapWord* volatile* _top_at_rebuild_starts;
+  Atomic<HeapWord*>* _top_at_rebuild_starts;
   // True when Remark pause selected regions for rebuilding.
   bool _needs_remembered_set_rebuild;
 public:
@@ -556,14 +529,14 @@ public:
   // mark_in_bitmap call. Updates various statistics data.
   void add_to_liveness(uint worker_id, oop const obj, size_t size);
   // Did the last marking find a live object between bottom and TAMS?
-  bool contains_live_object(uint region) const { return _region_mark_stats[region]._live_words != 0; }
+  bool contains_live_object(uint region) const { return _region_mark_stats[region].live_words() != 0; }
   // Live bytes in the given region as determined by concurrent marking, i.e. the amount of
   // live bytes between bottom and TAMS.
-  size_t live_bytes(uint region) const { return _region_mark_stats[region]._live_words * HeapWordSize; }
+  size_t live_bytes(uint region) const { return _region_mark_stats[region].live_words() * HeapWordSize; }
   // Set live bytes for concurrent marking.
-  void set_live_bytes(uint region, size_t live_bytes) { _region_mark_stats[region]._live_words = live_bytes / HeapWordSize; }
+  void set_live_bytes(uint region, size_t live_bytes) { _region_mark_stats[region]._live_words.store_relaxed(live_bytes / HeapWordSize); }
   // Approximate number of incoming references found during marking.
-  size_t incoming_refs(uint region) const { return _region_mark_stats[region]._incoming_refs; }
+  size_t incoming_refs(uint region) const { return _region_mark_stats[region].incoming_refs(); }
 
   // Update the TAMS for the given region to the current top.
   inline void update_top_at_mark_start(G1HeapRegion* r);
@@ -581,6 +554,11 @@ public:
   inline HeapWord* top_at_rebuild_start(G1HeapRegion* r) const;
 
   uint worker_id_offset() const { return _worker_id_offset; }
+
+  void fully_initialize();
+  bool is_fully_initialized() const { return _cm_thread != nullptr; }
+  bool in_progress() const;
+  uint max_num_tasks() const {return _max_num_tasks; }
 
   // Clear statistics gathered during the concurrent cycle for the given region after
   // it has been reclaimed.
@@ -631,6 +609,8 @@ public:
   // Calculates the number of concurrent GC threads to be used in the marking phase.
   uint calc_active_marking_workers();
 
+  PartialArrayStateManager* partial_array_state_manager() const;
+
   // Resets the global marking data structures, as well as the
   // task local ones; should be called during concurrent start.
   void reset();
@@ -641,6 +621,10 @@ public:
   // the next mark bitmap and some internal data structures. This method is intended
   // to be called concurrently to the mutator. It will yield to safepoint requests.
   void cleanup_for_next_mark();
+
+  // Recycle the memory that has been requested by allocators associated with
+  // this manager.
+  void reset_partial_array_state_manager();
 
   // Clear the next marking bitmap during safepoint.
   void clear_bitmap(WorkerThreads* workers);
@@ -695,7 +679,7 @@ public:
 
   uint completed_mark_cycles() const;
 
-  bool has_aborted()      { return _has_aborted; }
+  bool has_aborted() { return _has_aborted.load_relaxed(); }
 
   void print_summary_info();
 
@@ -732,14 +716,13 @@ private:
     refs_reached_period           = 1024,
   };
 
-  G1CMObjArrayProcessor       _objArray_processor;
-
   uint                        _worker_id;
   G1CollectedHeap*            _g1h;
   G1ConcurrentMark*           _cm;
   G1CMBitMap*                 _mark_bitmap;
   // the task queue of this task
   G1CMTaskQueue*              _task_queue;
+  PartialArraySplitter        _partial_array_splitter;
 
   G1RegionMarkStatsCache      _mark_stats_cache;
   // Number of calls to this task
@@ -850,13 +833,26 @@ private:
   // mark bitmap scan, and so needs to be pushed onto the mark stack.
   bool is_below_finger(oop obj, HeapWord* global_finger) const;
 
-  template<bool scan> void process_grey_task_entry(G1TaskQueueEntry task_entry);
+  template<bool scan> void process_grey_task_entry(G1TaskQueueEntry task_entry, bool stolen);
+
+  static bool should_be_sliced(oop obj);
+  // Start processing the given objArrayOop by first pushing its continuations and
+  // then scanning the first chunk including the header.
+  size_t start_partial_array_processing(oop obj);
+  // Process the given continuation. Returns the number of words scanned.
+  size_t process_partial_array(const G1TaskQueueEntry& task, bool stolen);
+  // Apply the closure to the given range of elements in the objArray.
+  inline void process_array_chunk(objArrayOop obj, size_t start, size_t end);
 public:
-  // Apply the closure on the given area of the objArray. Return the number of words
-  // scanned.
-  inline size_t scan_objArray(objArrayOop obj, MemRegion mr);
-  // Resets the task; should be called right at the beginning of a marking phase.
+  // Resets the task completely for a new marking; should be called right at the beginning of a marking phase.
   void reset(G1CMBitMap* mark_bitmap);
+  // Minimal reset of the task, making it ready for continuing to mark.
+  void reset_for_restart();
+  // Register/unregister Partial Array Splitter Allocator with the PartialArrayStateManager.
+  // This allows us to discard memory arenas used for partial object array states at the end
+  // of a concurrent mark cycle.
+  void register_partial_array_splitter();
+  void unregister_partial_array_splitter();
   // Clears all the fields that correspond to a claimed region.
   void clear_region_fields();
 
@@ -912,7 +908,7 @@ public:
   inline bool deal_with_reference(T* p);
 
   // Scans an object and visits its children.
-  inline void scan_task_entry(G1TaskQueueEntry task_entry);
+  inline void process_entry(G1TaskQueueEntry task_entry, bool stolen);
 
   // Pushes an object on the local queue.
   inline void push(G1TaskQueueEntry task_entry);
@@ -957,6 +953,11 @@ public:
   Pair<size_t, size_t> flush_mark_stats_cache();
   // Prints statistics associated with this task
   void print_stats();
+#if TASKQUEUE_STATS
+  PartialArrayTaskStats* partial_array_task_stats() {
+    return _partial_array_splitter.stats();
+  }
+#endif
 };
 
 // Class that's used to to print out per-region liveness

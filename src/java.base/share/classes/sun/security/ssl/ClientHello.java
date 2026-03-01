@@ -431,7 +431,7 @@ final class ClientHello {
                 if (!session.isRejoinable()) {
                     session = null;
                     if (SSLLogger.isOn() &&
-                            SSLLogger.isOn("ssl,handshake,verbose")) {
+                            SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                         SSLLogger.finest(
                             "Can't resume, the session is not rejoinable");
                     }
@@ -444,7 +444,7 @@ final class ClientHello {
                 if (!chc.isNegotiable(sessionSuite)) {
                     session = null;
                     if (SSLLogger.isOn() &&
-                            SSLLogger.isOn("ssl,handshake,verbose")) {
+                            SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                         SSLLogger.finest(
                             "Can't resume, unavailable session cipher suite");
                     }
@@ -457,7 +457,7 @@ final class ClientHello {
                 if (!chc.isNegotiable(sessionVersion)) {
                     session = null;
                     if (SSLLogger.isOn() &&
-                            SSLLogger.isOn("ssl,handshake,verbose")) {
+                            SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                         SSLLogger.finest(
                             "Can't resume, unavailable protocol version");
                     }
@@ -514,7 +514,7 @@ final class ClientHello {
                     session.getIdentificationProtocol();
                 if (!identityAlg.equalsIgnoreCase(sessionIdentityAlg)) {
                     if (SSLLogger.isOn() &&
-                    SSLLogger.isOn("ssl,handshake,verbose")) {
+                            SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                         SSLLogger.finest("Can't resume, endpoint id" +
                             " algorithm does not match, requested: " +
                             identityAlg + ", cached: " + sessionIdentityAlg);
@@ -524,7 +524,8 @@ final class ClientHello {
             }
 
             if (session != null) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake,verbose")) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                     SSLLogger.finest("Try resuming session", session);
                 }
 
@@ -548,7 +549,7 @@ final class ClientHello {
                     }
 
                     if (SSLLogger.isOn() &&
-                            SSLLogger.isOn("ssl,handshake,verbose")) {
+                            SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                         SSLLogger.finest(
                             "No new session is allowed, so try to resume " +
                             "the session cipher suite only", sessionSuite);
@@ -634,7 +635,8 @@ final class ClientHello {
                     SSLHandshake.CLIENT_HELLO, chc.activeProtocols);
             chm.extensions.produce(chc, extTypes);
 
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() &&
+                    SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine("Produced ClientHello handshake message", chm);
             }
 
@@ -700,7 +702,8 @@ final class ClientHello {
                     //
                     // The HelloVerifyRequest consumer should have updated the
                     // ClientHello handshake message with cookie.
-                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.fine(
                             "Produced ClientHello(cookie) handshake message",
                             chc.initialClientHelloMsg);
@@ -734,7 +737,8 @@ final class ClientHello {
                     // TLS 1.3
                     // The HelloRetryRequest consumer should have updated the
                     // ClientHello handshake message with cookie.
-                    if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                         SSLLogger.fine(
                             "Produced ClientHello(HRR) handshake message",
                             chc.initialClientHelloMsg);
@@ -790,7 +794,7 @@ final class ClientHello {
 
             ClientHelloMessage chm =
                     new ClientHelloMessage(shc, message, enabledExtensions);
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine("Consuming ClientHello handshake message", chm);
             }
 
@@ -820,7 +824,7 @@ final class ClientHello {
                         negotiateProtocol(context, clientHello.clientVersion);
             }
             context.negotiatedProtocol = negotiatedProtocol;
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                     "Negotiated protocol version: " + negotiatedProtocol.name);
             }
@@ -981,7 +985,7 @@ final class ClientHello {
                         (previous != null) && previous.isRejoinable();
                 if (!resumingSession) {
                     if (SSLLogger.isOn() &&
-                            SSLLogger.isOn("ssl,handshake,verbose")) {
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                         SSLLogger.finest(
                                 "Can't resume, " +
                                 "the existing session is not rejoinable");
@@ -994,7 +998,7 @@ final class ClientHello {
                     if (sessionProtocol != shc.negotiatedProtocol) {
                         resumingSession = false;
                         if (SSLLogger.isOn() &&
-                                SSLLogger.isOn("ssl,handshake,verbose")) {
+                                SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                             SSLLogger.finest(
                                 "Can't resume, not the same protocol version");
                         }
@@ -1009,7 +1013,7 @@ final class ClientHello {
                     } catch (SSLPeerUnverifiedException e) {
                         resumingSession = false;
                         if (SSLLogger.isOn() &&
-                                SSLLogger.isOn("ssl,handshake,verbose")) {
+                                SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                             SSLLogger.finest(
                                 "Can't resume, " +
                                 "client authentication is required");
@@ -1024,7 +1028,7 @@ final class ClientHello {
                             (!clientHello.cipherSuites.contains(suite))) {
                         resumingSession = false;
                         if (SSLLogger.isOn() &&
-                                SSLLogger.isOn("ssl,handshake,verbose")) {
+                                SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                             SSLLogger.finest(
                                 "Can't resume, " +
                                 "the session cipher suite is absent");
@@ -1040,7 +1044,7 @@ final class ClientHello {
                         previous.getIdentificationProtocol();
                     if (!identityAlg.equalsIgnoreCase(sessionIdentityAlg)) {
                         if (SSLLogger.isOn() &&
-                        SSLLogger.isOn("ssl,handshake,verbose")) {
+                            SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                             SSLLogger.finest("Can't resume, endpoint id" +
                             " algorithm does not match, requested: " +
                             identityAlg + ", cached: " + sessionIdentityAlg);
@@ -1055,7 +1059,7 @@ final class ClientHello {
                 shc.resumingSession = resumingSession ? previous : null;
 
                 if (!resumingSession && SSLLogger.isOn() &&
-                        SSLLogger.isOn("ssl,handshake")) {
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine("Session not resumed.");
                 }
             }
@@ -1322,7 +1326,7 @@ final class ClientHello {
                         (previous != null) && previous.isRejoinable();
                 if (!resumingSession) {
                     if (SSLLogger.isOn() &&
-                            SSLLogger.isOn("ssl,handshake,verbose")) {
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                         SSLLogger.finest(
                             "Can't resume, " +
                             "the existing session is not rejoinable");
@@ -1335,7 +1339,7 @@ final class ClientHello {
                     if (sessionProtocol != shc.negotiatedProtocol) {
                         resumingSession = false;
                         if (SSLLogger.isOn() &&
-                                SSLLogger.isOn("ssl,handshake,verbose")) {
+                            SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                             SSLLogger.finest(
                                 "Can't resume, not the same protocol version");
                         }
@@ -1351,7 +1355,7 @@ final class ClientHello {
                     } catch (SSLPeerUnverifiedException e) {
                         resumingSession = false;
                         if (SSLLogger.isOn() &&
-                                SSLLogger.isOn("ssl,handshake,verbose")) {
+                                SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                             SSLLogger.finest(
                                 "Can't resume, " +
                                 "client authentication is required");
@@ -1366,7 +1370,7 @@ final class ClientHello {
                             (!clientHello.cipherSuites.contains(suite))) {
                         resumingSession = false;
                         if (SSLLogger.isOn() &&
-                                SSLLogger.isOn("ssl,handshake,verbose")) {
+                                SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
                             SSLLogger.finest(
                                 "Can't resume, " +
                                 "the session cipher suite is absent");

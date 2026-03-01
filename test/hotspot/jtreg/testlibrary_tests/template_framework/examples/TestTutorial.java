@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,6 +226,8 @@ public class TestTutorial {
             // we automatically rename the names that have a $ prepended with
             // var_1, var_2, etc.
             """
+            // You can escape a hashtag by doubling it up. e.g. ## will render as a
+            // single hashtag. The same goes for $$.
             int $var = #con;
             System.out.println("T1: #x, #con, " + $var);
             """

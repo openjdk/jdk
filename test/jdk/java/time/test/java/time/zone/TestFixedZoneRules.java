@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,19 +61,18 @@ package test.java.time.zone;
 
 import java.time.zone.ZoneRules;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test ZoneRules for fixed offset time-zones.
  */
-@Test
 public class TestFixedZoneRules {
 
     private static final ZoneOffset OFFSET_PONE = ZoneOffset.ofHours(1);
@@ -86,16 +85,16 @@ public class TestFixedZoneRules {
     @Test
     public void test_data_nullInput() {
         ZoneRules test = make(OFFSET_PONE);
-        assertEquals(test.getOffset((Instant) null), OFFSET_PONE);
-        assertEquals(test.getOffset((LocalDateTime) null), OFFSET_PONE);
-        assertEquals(test.getValidOffsets(null).size(), 1);
-        assertEquals(test.getValidOffsets(null).get(0), OFFSET_PONE);
-        assertEquals(test.getTransition(null), null);
-        assertEquals(test.getStandardOffset(null), OFFSET_PONE);
-        assertEquals(test.getDaylightSavings(null), Duration.ZERO);
-        assertEquals(test.isDaylightSavings(null), false);
-        assertEquals(test.nextTransition(null), null);
-        assertEquals(test.previousTransition(null), null);
+        assertEquals(OFFSET_PONE, test.getOffset((Instant) null));
+        assertEquals(OFFSET_PONE, test.getOffset((LocalDateTime) null));
+        assertEquals(1, test.getValidOffsets(null).size());
+        assertEquals(OFFSET_PONE, test.getValidOffsets(null).get(0));
+        assertEquals(null, test.getTransition(null));
+        assertEquals(OFFSET_PONE, test.getStandardOffset(null));
+        assertEquals(Duration.ZERO, test.getDaylightSavings(null));
+        assertEquals(false, test.isDaylightSavings(null));
+        assertEquals(null, test.nextTransition(null));
+        assertEquals(null, test.previousTransition(null));
     }
 
 }

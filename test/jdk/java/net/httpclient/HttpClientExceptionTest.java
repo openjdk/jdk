@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,6 @@
  * questions.
  */
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
 import java.io.IOException;
 import java.net.ProtocolFamily;
 import java.net.http.HttpClient;
@@ -34,12 +32,15 @@ import java.nio.channels.Channel;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 /*
  * @test
  * @bug 8248006
  * @summary The test checks if UncheckedIOException is thrown
  * @build  HttpClientExceptionTest
- * @run testng/othervm -Djava.nio.channels.spi.SelectorProvider=HttpClientExceptionTest$CustomSelectorProvider
+ * @run junit/othervm -Djava.nio.channels.spi.SelectorProvider=HttpClientExceptionTest$CustomSelectorProvider
  *                      HttpClientExceptionTest
  */
 
@@ -50,8 +51,8 @@ public class HttpClientExceptionTest {
     @Test
     public void testHttpClientException() {
         for(int i = 0; i < ITERATIONS; i++) {
-            Assert.assertThrows(HttpClient.newBuilder()::build);
-            Assert.assertThrows(HttpClient::newHttpClient);
+            Assertions.assertThrows(Throwable.class, HttpClient.newBuilder()::build);
+            Assertions.assertThrows(Throwable.class, HttpClient::newHttpClient);
         }
     }
 

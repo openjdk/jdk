@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 package javax.swing.text;
 
 import java.util.Vector;
-import sun.awt.AppContext;
 
 /**
  * A queue of text layout tasks.
@@ -36,10 +35,10 @@ import sun.awt.AppContext;
  */
 public class LayoutQueue {
 
-    private static final Object DEFAULT_QUEUE = new Object();
-
     private Vector<Runnable> tasks;
     private Thread worker;
+
+    private static LayoutQueue defaultQueue;
 
     /**
      * Construct a layout queue.
@@ -53,15 +52,10 @@ public class LayoutQueue {
      * @return the default layout queue
      */
     public static LayoutQueue getDefaultQueue() {
-        AppContext ac = AppContext.getAppContext();
-        synchronized (DEFAULT_QUEUE) {
-            LayoutQueue defaultQueue = (LayoutQueue) ac.get(DEFAULT_QUEUE);
-            if (defaultQueue == null) {
-                defaultQueue = new LayoutQueue();
-                ac.put(DEFAULT_QUEUE, defaultQueue);
-            }
-            return defaultQueue;
+        if (defaultQueue == null) {
+            defaultQueue = new LayoutQueue();
         }
+        return defaultQueue;
     }
 
     /**
@@ -70,9 +64,7 @@ public class LayoutQueue {
      * @param q the new queue.
      */
     public static void setDefaultQueue(LayoutQueue q) {
-        synchronized (DEFAULT_QUEUE) {
-            AppContext.getAppContext().put(DEFAULT_QUEUE, q);
-        }
+        defaultQueue = q;
     }
 
     /**

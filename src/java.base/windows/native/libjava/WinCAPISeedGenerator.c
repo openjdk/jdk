@@ -31,10 +31,6 @@
 /*
  * Get a random seed from the MS CryptoAPI. Return true if successful, false
  * otherwise.
- *
- * Some early versions of Windows 95 do not support the required functions.
- * Use runtime linking to avoid problems.
- *
  */
 JNIEXPORT jboolean JNICALL Java_sun_security_provider_NativeSeedGenerator_nativeGenerateSeed
   (JNIEnv *env, jclass clazz, jbyteArray randArray)

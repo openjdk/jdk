@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,18 @@
 
 import jdk.internal.net.http.quic.frames.CryptoFrame;
 import jdk.internal.net.http.quic.streams.CryptoWriterQueue;
-import org.testng.annotations.Test;
 
 import java.nio.ByteBuffer;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
-/**
+/*
  * @test
  * @summary Tests jdk.internal.net.http.quic.streams,CryptoWriterQueue
  * @modules java.net.http/jdk.internal.net.http.quic.streams
  * java.net.http/jdk.internal.net.http.quic.frames
- * @run testng CryptoWriterQueueTest
+ * @run junit CryptoWriterQueueTest
  */
 public class CryptoWriterQueueTest {
 
@@ -54,7 +54,7 @@ public class CryptoWriterQueueTest {
         writerQueue.enqueue(buff2);
         writerQueue.enqueue(buff3);
         final int expectedRemaining = buff1.remaining() + buff2.remaining() + buff3.remaining();
-        assertEquals(writerQueue.remaining(), expectedRemaining,
+        assertEquals(expectedRemaining, writerQueue.remaining(),
                 "Unexpected remaining bytes in CryptoWriterQueue");
         // create frame(s) from the enqueued buffers
         final int maxPayloadSize = 1134;

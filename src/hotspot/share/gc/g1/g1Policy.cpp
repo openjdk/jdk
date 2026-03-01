@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
-#include "gc/g1/g1ConcurrentRefineStats.hpp"
+#include "gc/g1/g1ConcurrentRefineStats.inline.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
@@ -203,8 +203,8 @@ void G1Policy::update_young_length_bounds(size_t pending_cards, size_t card_rs_l
   // allocation.
   // That is "fine" - at most this will schedule a GC (hopefully only a little) too
   // early or too late.
-  AtomicAccess::store(&_young_list_desired_length, new_young_list_desired_length);
-  AtomicAccess::store(&_young_list_target_length, new_young_list_target_length);
+  _young_list_desired_length.store_relaxed(new_young_list_desired_length);
+  _young_list_target_length.store_relaxed(new_young_list_target_length);
 }
 
 // Calculates desired young gen length. It is calculated from:
@@ -739,7 +739,7 @@ double G1Policy::constant_other_time_ms(double pause_time_ms) const {
 }
 
 bool G1Policy::about_to_start_mixed_phase() const {
-  return _g1h->concurrent_mark()->cm_thread()->in_progress() || collector_state()->in_young_gc_before_mixed();
+  return _g1h->concurrent_mark()->in_progress() || collector_state()->in_young_gc_before_mixed();
 }
 
 bool G1Policy::need_to_start_conc_mark(const char* source, size_t allocation_word_size) {
@@ -943,7 +943,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
                           phase_times()->sum_thread_work_items(G1GCPhaseTimes::MergePSS, G1GCPhaseTimes::MergePSSToYoungGenCards));
   }
 
-  record_pause(this_pause, start_time_sec, end_time_sec, allocation_failure);
+  record_pause(this_pause, start_time_sec, end_time_sec);
 
   if (G1GCPauseTypeHelper::is_last_young_pause(this_pause)) {
     assert(!G1GCPauseTypeHelper::is_concurrent_start_pause(this_pause),
@@ -1235,7 +1235,7 @@ bool G1Policy::force_concurrent_start_if_outside_cycle(GCCause::Cause gc_cause) 
   // We actually check whether we are marking here and not if we are in a
   // reclamation phase. This means that we will schedule a concurrent mark
   // even while we are still in the process of reclaiming memory.
-  bool during_cycle = _g1h->concurrent_mark()->cm_thread()->in_progress();
+  bool during_cycle = _g1h->concurrent_mark()->in_progress();
   if (!during_cycle) {
     log_debug(gc, ergo)("Request concurrent cycle initiation (requested by GC cause). "
                         "GC cause: %s",
@@ -1389,16 +1389,13 @@ void G1Policy::update_gc_pause_time_ratios(G1GCPauseType gc_type, double start_t
 
 void G1Policy::record_pause(G1GCPauseType gc_type,
                             double start,
-                            double end,
-                            bool allocation_failure) {
+                            double end) {
   // Manage the MMU tracker. For some reason it ignores Full GCs.
   if (gc_type != G1GCPauseType::FullGC) {
     _mmu_tracker->add_pause(start, end);
   }
 
-  if (!allocation_failure) {
-    update_gc_pause_time_ratios(gc_type, start, end);
-  }
+  update_gc_pause_time_ratios(gc_type, start, end);
 
   update_time_to_mixed_tracking(gc_type, start, end);
 

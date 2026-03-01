@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 #include "gc/shared/workerThread.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/os.hpp"
 #include "runtime/semaphore.hpp"
@@ -1169,12 +1170,12 @@ TEST_VM(ConcurrentHashTable, concurrent_mt_bulk_delete) {
 class CHTParallelScanTask: public WorkerTask {
   TestTable* _cht;
   TestTable::ScanTask* _scan_task;
-  size_t *_total_scanned;
+  Atomic<size_t>* _total_scanned;
 
 public:
   CHTParallelScanTask(TestTable* cht,
                       TestTable::ScanTask* bc,
-                      size_t *total_scanned) :
+                      Atomic<size_t>* total_scanned) :
     WorkerTask("CHT Parallel Scan"),
     _cht(cht),
     _scan_task(bc),
@@ -1184,7 +1185,7 @@ public:
   void work(uint worker_id) {
     ChtCountScan par_scan;
     _scan_task->do_safepoint_scan(par_scan);
-    AtomicAccess::add(_total_scanned, par_scan._count);
+    _total_scanned->add_then_fetch(par_scan._count);
   }
 };
 
@@ -1217,13 +1218,14 @@ public:
   {}
 
   void doit() {
-    size_t total_scanned = 0;
+    Atomic<size_t> total_scanned{0};
     TestTable::ScanTask scan_task(_cht, 64);
 
     CHTParallelScanTask task(_cht, &scan_task, &total_scanned);
     CHTWorkers::run_task(&task);
 
-     EXPECT_TRUE(total_scanned == (size_t)_num_items) << " Should scan all inserted items: " << total_scanned;
+    EXPECT_TRUE(total_scanned.load_relaxed() == (size_t)_num_items)
+        << " Should scan all inserted items: " << total_scanned.load_relaxed();
   }
 };
 

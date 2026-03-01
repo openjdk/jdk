@@ -117,11 +117,6 @@ public class AttrRecover {
                             ? formals.head : ((ArrayType) formals.head).elemtype;
                     if (arg.hasTag(JCTree.Tag.LAMBDA)) {
                         final JCTree.JCLambda lambda = (JCLambda) arg;
-                        if (lambda.paramKind == JCLambda.ParameterKind.IMPLICIT) {
-                            for (JCVariableDecl var : lambda.params) {
-                                var.vartype = null; //reset type
-                            }
-                        }
                         if (types.isFunctionalInterface(formal)) {
                             Type functionalType = types.findDescriptorType(formal);
                             boolean voidCompatible = functionalType.getReturnType().hasTag(TypeTag.VOID);

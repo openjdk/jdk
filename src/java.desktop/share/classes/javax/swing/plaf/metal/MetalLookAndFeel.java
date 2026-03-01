@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,6 @@ import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicLookAndFeel;
 import javax.swing.text.DefaultEditorKit;
 
-import sun.awt.AppContext;
 import sun.awt.OSInfo;
 import sun.awt.SunToolkit;
 import sun.swing.DefaultLayoutStyle;
@@ -1600,6 +1599,8 @@ public class MetalLookAndFeel extends BasicLookAndFeel
         super.provideErrorFeedback(component);
     }
 
+    private static MetalTheme currentMetalTheme;
+
     /**
      * Set the theme used by <code>MetalLookAndFeel</code>.
      * <p>
@@ -1629,7 +1630,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
         if (theme == null) {
             throw new NullPointerException("Can't have null theme");
         }
-        AppContext.getAppContext().put( "currentMetalTheme", theme );
+        currentMetalTheme = theme;
     }
 
     /**
@@ -1641,15 +1642,10 @@ public class MetalLookAndFeel extends BasicLookAndFeel
      * @since 1.5
      */
     public static MetalTheme getCurrentTheme() {
-        MetalTheme currentTheme;
-        AppContext context = AppContext.getAppContext();
-        currentTheme = (MetalTheme) context.get( "currentMetalTheme" );
+        MetalTheme currentTheme = currentMetalTheme;
         if (currentTheme == null) {
-            // This will happen in two cases:
-            // . When MetalLookAndFeel is first being initialized.
-            // . When a new AppContext has been created that hasn't
-            //   triggered UIManager to load a LAF. Rather than invoke
-            //   a method on the UIManager, which would trigger the loading
+            //   This will happen when MetalLookAndFeel is first being initialized.
+            //   Rather than invoke a method on the UIManager, which would trigger the loading
             //   of a potentially different LAF, we directly set the
             //   Theme here.
             if (useHighContrastTheme()) {

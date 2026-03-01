@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,6 @@ import javax.swing.event.InternalFrameListener;
 import javax.swing.plaf.DesktopIconUI;
 import javax.swing.plaf.InternalFrameUI;
 
-import sun.awt.AppContext;
 import sun.swing.SwingUtilities2;
 
 /**
@@ -237,17 +236,13 @@ public class JInternalFrame extends JComponent implements
     /** Constrained property name indicating that the internal frame is iconified. */
     public static final String IS_ICON_PROPERTY = "icon";
 
-    private static final Object PROPERTY_CHANGE_LISTENER_KEY =
-        new StringBuilder("InternalFramePropertyChangeListener");
+    private static PropertyChangeListener focusListener;
 
     private static void addPropertyChangeListenerIfNecessary() {
-        if (AppContext.getAppContext().get(PROPERTY_CHANGE_LISTENER_KEY) ==
-            null) {
-            PropertyChangeListener focusListener =
-                new FocusPropertyChangeListener();
-
-            AppContext.getAppContext().put(PROPERTY_CHANGE_LISTENER_KEY,
-                focusListener);
+        synchronized (JInternalFrame.class) {
+            if (focusListener == null) {
+                focusListener = new FocusPropertyChangeListener();
+            }
 
             KeyboardFocusManager.getCurrentKeyboardFocusManager().
                 addPropertyChangeListener(focusListener);

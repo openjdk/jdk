@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,15 @@
  *
  */
 
+#include "cds/aotCompressedPointers.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/dumpTimeClassInfo.hpp"
 #include "cds/runTimeClassInfo.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 
 void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
-  ArchiveBuilder* builder = ArchiveBuilder::current();
   InstanceKlass* k = info._klass;
-  _klass_offset = builder->any_to_offset_u4(k);
+  _klass = AOTCompressedPointers::encode_not_null(k);
 
   if (!SystemDictionaryShared::is_builtin(k)) {
     CrcInfo* c = crc();
@@ -50,8 +50,8 @@ void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
     RTVerifierConstraint* vf_constraints = verifier_constraints();
     char* flags = verifier_constraint_flags();
     for (i = 0; i < _num_verifier_constraints; i++) {
-      vf_constraints[i]._name = builder->any_to_offset_u4(info._verifier_constraints->at(i).name());
-      vf_constraints[i]._from_name = builder->any_or_null_to_offset_u4(info._verifier_constraints->at(i).from_name());
+      vf_constraints[i]._name = AOTCompressedPointers::encode_not_null(info._verifier_constraints->at(i).name());
+      vf_constraints[i]._from_name = AOTCompressedPointers::encode(info._verifier_constraints->at(i).from_name());
     }
     for (i = 0; i < _num_verifier_constraints; i++) {
       flags[i] = info._verifier_constraint_flags->at(i);
@@ -61,14 +61,14 @@ void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
   if (_num_loader_constraints > 0) {
     RTLoaderConstraint* ld_constraints = loader_constraints();
     for (i = 0; i < _num_loader_constraints; i++) {
-      ld_constraints[i]._name = builder->any_to_offset_u4(info._loader_constraints->at(i).name());
+      ld_constraints[i]._name = AOTCompressedPointers::encode_not_null(info._loader_constraints->at(i).name());
       ld_constraints[i]._loader_type1 = info._loader_constraints->at(i).loader_type1();
       ld_constraints[i]._loader_type2 = info._loader_constraints->at(i).loader_type2();
     }
   }
 
   if (k->is_hidden() && info.nest_host() != nullptr) {
-    _nest_host_offset = builder->any_to_offset_u4(info.nest_host());
+    _nest_host = AOTCompressedPointers::encode_not_null(info.nest_host());
   }
   if (k->has_archived_enum_objs()) {
     int num = info.num_enum_klass_static_fields();
@@ -83,11 +83,12 @@ void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
 InstanceKlass* RunTimeClassInfo::klass() const {
   if (AOTMetaspace::in_aot_cache(this)) {
     // <this> is inside a mmaped CDS archive.
-    return ArchiveUtils::offset_to_archived_address<InstanceKlass*>(_klass_offset);
+    return AOTCompressedPointers::decode_not_null<InstanceKlass*>(_klass);
   } else {
     // <this> is a temporary copy of a RunTimeClassInfo that's being initialized
     // by the ArchiveBuilder.
-    return ArchiveBuilder::current()->offset_to_buffered<InstanceKlass*>(_klass_offset);
+    size_t byte_offset = AOTCompressedPointers::get_byte_offset(_klass);
+    return ArchiveBuilder::current()->offset_to_buffered<InstanceKlass*>(byte_offset);
   }
 }
 

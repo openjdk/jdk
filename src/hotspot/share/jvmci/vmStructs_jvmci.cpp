@@ -432,7 +432,7 @@
                                                                                                                                      \
   nonstatic_field(Thread,                   _poll_data,                                       SafepointMechanism::ThreadData)        \
   nonstatic_field(Thread,                   _tlab,                                            ThreadLocalAllocBuffer)                \
-  nonstatic_field(Thread,                   _allocated_bytes,                                 jlong)                                 \
+  nonstatic_field(Thread,                   _allocated_bytes,                                 uint64_t)                              \
   JFR_ONLY(nonstatic_field(Thread,          _jfr_thread_local,                                JfrThreadLocal))                       \
                                                                                                                                      \
   static_field(java_lang_Thread,            _tid_offset,                                      int)                                   \

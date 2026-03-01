@@ -134,6 +134,7 @@ jobs:
           --with-gtest=${{ steps.gtest.outputs.path }}
           --with-msvc-toolset-version=${{ inputs.msvc-toolset-version }}
           --with-jmod-compress=zip-1
+          --with-external-symbols-in-bundles=none
           ${{ inputs.extra-conf-options }} ${{ inputs.configure-arguments }} || (
           echo "Dumping config.log:" &&
           cat config.log &&

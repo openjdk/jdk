@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,18 +28,23 @@
 #include "cds/archiveBuilder.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
+#include "memory/metaspaceClosureType.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 
-class ArchiveMappedHeapInfo;
-class ArchiveStreamedHeapInfo;
+class AOTMappedHeapInfo;
+class AOTStreamedHeapInfo;
 class CompileTrainingData;
 class DumpRegion;
 class FileMapInfo;
+class GrowableArrayBase;
 class KlassTrainingData;
+class MethodCounters;
 class MethodTrainingData;
+class ModuleEntry;
 class outputStream;
+class PackageEntry;
 
 // Write detailed info to a mapfile to analyze contents of the AOT cache/CDS archive.
 // -Xlog:aot+map* can be used both when creating an AOT cache, or when using an AOT cache.
@@ -62,7 +67,7 @@ class AOTMapLogger : AllStatic {
     address _buffered_addr;
     address _requested_addr;
     int _bytes;
-    MetaspaceObj::Type _type;
+    MetaspaceClosureType _type;
   };
 
 public:
@@ -142,6 +147,9 @@ private:
   Thread* current);
   static void log_klass(Klass* k, address requested_addr, const char* type_name, int bytes, Thread* current);
   static void log_method(Method* m, address requested_addr, const char* type_name, int bytes, Thread* current);
+  static void log_module_entry(ModuleEntry* mod, address requested_addr, const char* type_name, int bytes, Thread* current);
+  static void log_package_entry(PackageEntry* pkg, address requested_addr, const char* type_name, int bytes, Thread* current);
+  static void log_growable_array(GrowableArrayBase* arr, address requested_addr, const char* type_name, int bytes, Thread* current);
   static void log_symbol(Symbol* s, address requested_addr, const char* type_name, int bytes, Thread* current);
   static void log_klass_training_data(KlassTrainingData* ktd, address requested_addr, const char* type_name, int bytes, Thread* current);
   static void log_method_training_data(MethodTrainingData* mtd, address requested_addr, const char* type_name, int bytes, Thread* current);
@@ -149,8 +157,8 @@ private:
 
 
 #if INCLUDE_CDS_JAVA_HEAP
-  static void dumptime_log_mapped_heap_region(ArchiveMappedHeapInfo* mapped_heap_info);
-  static void dumptime_log_streamed_heap_region(ArchiveStreamedHeapInfo* streamed_heap_info);
+  static void dumptime_log_mapped_heap_region(AOTMappedHeapInfo* mapped_heap_info);
+  static void dumptime_log_streamed_heap_region(AOTStreamedHeapInfo* streamed_heap_info);
   static void runtime_log_heap_region(FileMapInfo* mapinfo);
 
   static void print_oop_info_cr(outputStream* st, FakeOop fake_oop, bool print_location = true);
@@ -165,7 +173,7 @@ public:
   static bool is_logging_at_bootstrap() { return _is_logging_at_bootstrap; }
 
   static void dumptime_log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
-                           ArchiveMappedHeapInfo* mapped_heap_info, ArchiveStreamedHeapInfo* streamed_heap_info,
+                           AOTMappedHeapInfo* mapped_heap_info, AOTStreamedHeapInfo* streamed_heap_info,
                            char* bitmap, size_t bitmap_size_in_bytes);
   static void runtime_log(FileMapInfo* static_mapinfo, FileMapInfo* dynamic_mapinfo);
 };

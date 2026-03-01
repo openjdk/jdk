@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,14 @@
  * @test
  * @bug 8277964
  * @summary Test IllegalArgumentException be thrown when an argument is invalid
- * @run testng/othervm/timeout=720 IllegalArgumentsTest
+ * @comment Avoid using framework utilities; this is effectively a runtime test
+ *          sensitive to stack traces
+ * @run junit/othervm/timeout=720 IllegalArgumentsTest
  */
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 public class IllegalArgumentsTest {
     static class T {

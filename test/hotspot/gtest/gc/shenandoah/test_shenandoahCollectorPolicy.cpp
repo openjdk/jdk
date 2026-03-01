@@ -28,7 +28,7 @@
 TEST(ShenandoahCollectorPolicyTest, track_degen_cycles_sanity) {
   ShenandoahCollectorPolicy policy;
   EXPECT_EQ(policy.consecutive_degenerated_gc_count(), 0UL);
-  EXPECT_EQ(policy.generational_should_upgrade_degenerated_gc(), false);
+  EXPECT_EQ(policy.should_upgrade_degenerated_gc(), false);
 }
 
 TEST(ShenandoahCollectorPolicyTest, track_degen_cycles_no_upgrade) {
@@ -36,7 +36,7 @@ TEST(ShenandoahCollectorPolicyTest, track_degen_cycles_no_upgrade) {
   policy.record_degenerated(true, true, true);
   policy.record_degenerated(true, true, true);
   EXPECT_EQ(policy.consecutive_degenerated_gc_count(), 2UL);
-  EXPECT_EQ(policy.generational_should_upgrade_degenerated_gc(), false);
+  EXPECT_EQ(policy.should_upgrade_degenerated_gc(), false);
 }
 
 TEST(ShenandoahCollectorPolicyTest, track_degen_cycles_upgrade) {
@@ -44,7 +44,7 @@ TEST(ShenandoahCollectorPolicyTest, track_degen_cycles_upgrade) {
   policy.record_degenerated(true, true, false);
   policy.record_degenerated(true, true, false);
   EXPECT_EQ(policy.consecutive_degenerated_gc_count(), 2UL);
-  EXPECT_EQ(policy.generational_should_upgrade_degenerated_gc(), true);
+  EXPECT_EQ(policy.should_upgrade_degenerated_gc(), true);
 }
 
 TEST(ShenandoahCollectorPolicyTest, track_degen_cycles_reset_progress) {
@@ -52,7 +52,7 @@ TEST(ShenandoahCollectorPolicyTest, track_degen_cycles_reset_progress) {
   policy.record_degenerated(true, true, false);
   policy.record_degenerated(true, true, true);
   EXPECT_EQ(policy.consecutive_degenerated_gc_count(), 2UL);
-  EXPECT_EQ(policy.generational_should_upgrade_degenerated_gc(), false);
+  EXPECT_EQ(policy.should_upgrade_degenerated_gc(), false);
 }
 
 TEST(ShenandoahCollectorPolicyTest, track_degen_cycles_full_reset) {
@@ -60,7 +60,7 @@ TEST(ShenandoahCollectorPolicyTest, track_degen_cycles_full_reset) {
   policy.record_degenerated(true, true, false);
   policy.record_success_full();
   EXPECT_EQ(policy.consecutive_degenerated_gc_count(), 0UL);
-  EXPECT_EQ(policy.generational_should_upgrade_degenerated_gc(), false);
+  EXPECT_EQ(policy.should_upgrade_degenerated_gc(), false);
 }
 
 TEST(ShenandoahCollectorPolicyTest, track_degen_cycles_reset) {
@@ -68,5 +68,5 @@ TEST(ShenandoahCollectorPolicyTest, track_degen_cycles_reset) {
   policy.record_degenerated(true, true, false);
   policy.record_success_concurrent(true, true);
   EXPECT_EQ(policy.consecutive_degenerated_gc_count(), 0UL);
-  EXPECT_EQ(policy.generational_should_upgrade_degenerated_gc(), false);
+  EXPECT_EQ(policy.should_upgrade_degenerated_gc(), false);
 }

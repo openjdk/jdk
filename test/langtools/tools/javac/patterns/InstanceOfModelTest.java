@@ -79,7 +79,7 @@ public class InstanceOfModelTest {
         List<String> expectedInstanceOf = List.of(
             "null:R",
             "R r:R",
-            "R(int v):null"
+            "R(var v):null"
         );
 
         if (!Objects.equals(expectedInstanceOf, instanceOf)) {

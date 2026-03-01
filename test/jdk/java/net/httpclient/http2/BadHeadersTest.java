@@ -87,7 +87,7 @@ public class BadHeadersTest {
         of(entry("hello", "world!"), entry(":status", "200"))                      // Pseudo header is not the first one
     );
 
-    private static SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     private static Http2TestServer http2TestServer;   // HTTP/2 ( h2c )
     private static Http2TestServer https2TestServer;  // HTTP/2 ( h2  )
     private static String http2URI;
@@ -242,10 +242,6 @@ public class BadHeadersTest {
 
     @BeforeAll
     static void setup() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null)
-            throw new AssertionError("Unexpected null sslContext");
-
         http2TestServer = new Http2TestServer("localhost", false, 0);
         http2TestServer.addHandler(new Http2EchoHandler(), "/http2/echo");
         int port = http2TestServer.getAddress().getPort();

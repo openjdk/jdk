@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZMARKTERMINATE_HPP
 
 #include "gc/z/zLock.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ZMarkStripeSet;
@@ -32,9 +33,9 @@ class ZMarkStripeSet;
 class ZMarkTerminate {
 private:
   uint           _nworkers;
-  volatile uint  _nworking;
-  volatile uint  _nawakening;
-  volatile bool  _resurrected;
+  Atomic<uint>   _nworking;
+  Atomic<uint>   _nawakening;
+  Atomic<bool>   _resurrected;
   ZConditionLock _lock;
 
   void maybe_reduce_stripes(ZMarkStripeSet* stripes, size_t used_nstripes);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 /*
  * @test
  * @summary Ensure that the POST method is retied when the property is set.
- * @run testng/othervm -Djdk.httpclient.enableAllMethodRetry RetryPost
- * @run testng/othervm -Djdk.httpclient.enableAllMethodRetry=true RetryPost
+ * @run junit/othervm -Djdk.httpclient.enableAllMethodRetry RetryPost
+ * @run junit/othervm -Djdk.httpclient.enableAllMethodRetry=true RetryPost
  */
 
 import java.io.IOException;
@@ -41,26 +41,26 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpResponse.BodyHandlers.ofString;
 import static java.nio.charset.StandardCharsets.US_ASCII;
-import static org.testng.Assert.assertEquals;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class RetryPost {
 
-    FixedLengthServer fixedLengthServer;
-    String httpURIFixLen;
+    private static FixedLengthServer fixedLengthServer;
+    private static String httpURIFixLen;
 
     static final String RESPONSE_BODY =
             "You use a glass mirror to see your face: you use works of art to see your soul.";
 
-    @DataProvider(name = "uris")
-    public Object[][] variants() {
+    public static Object[][] variants() {
         return new Object[][] {
                 { httpURIFixLen, true  },
                 { httpURIFixLen, false },
@@ -71,7 +71,8 @@ public class RetryPost {
 
     static final String REQUEST_BODY = "Body";
 
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testSynchronousPOST(String url, boolean sameClient) throws Exception  {
         out.print("---\n");
         HttpClient client = null;
@@ -84,12 +85,13 @@ public class RetryPost {
             HttpResponse<String> response = client.send(request, ofString());
             String body = response.body();
             out.println(response + ": " + body);
-            assertEquals(response.statusCode(), 200);
-            assertEquals(body, RESPONSE_BODY);
+            assertEquals(200, response.statusCode());
+            assertEquals(RESPONSE_BODY, body);
         }
     }
 
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testAsynchronousPOST(String url, boolean sameClient) {
         out.print("---\n");
         HttpClient client = null;
@@ -101,9 +103,9 @@ public class RetryPost {
                     .build();
             client.sendAsync(request, ofString())
                     .thenApply(r -> { out.println(r + ": " + r.body()); return r; })
-                    .thenApply(r -> { assertEquals(r.statusCode(), 200); return r; })
+                    .thenApply(r -> { assertEquals(200, r.statusCode()); return r; })
                     .thenApply(HttpResponse::body)
-                    .thenAccept(b -> assertEquals(b, RESPONSE_BODY))
+                    .thenAccept(b -> assertEquals(RESPONSE_BODY, b))
                     .join();
         }
     }
@@ -223,15 +225,15 @@ public class RetryPost {
                 + server.getPort();
     }
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         fixedLengthServer = new FixedLengthServer();
         httpURIFixLen = "http://" + serverAuthority(fixedLengthServer)
                 + "/http1/fixed/baz";
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         fixedLengthServer.close();
     }
 }

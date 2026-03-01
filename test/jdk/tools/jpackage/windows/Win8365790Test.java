@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
 import jdk.jpackage.test.AdditionalLauncher;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.CfgFile;
@@ -101,13 +103,18 @@ public class Win8365790Test {
 
     private static String runLauncher(JPackageCommand cmd, String launcherName, Path traceFile, Path outputFile) throws IOException {
         // Launch the specified launcher and send Ctrl+C signal to it.
-        Thread.ofVirtual().start(() -> {
-            configureAndExecute(0, Executor.of("powershell", "-NonInteractive", "-NoLogo", "-NoProfile", "-ExecutionPolicy", "Unrestricted")
-                    .addArgument("-File").addArgument(TEST_PS1)
-                    .addArguments("-TimeoutSeconds", Long.toString(Duration.ofSeconds(5).getSeconds()))
-                    .addArgument("-Executable").addArgument(cmd.appLauncherPath(launcherName))
-                    .dumpOutput());
-        });
+
+        var state = TKit.state();
+
+        var future = CompletableFuture.runAsync(() -> {
+            TKit.withState(() -> {
+                configureAndExecute(0, Executor.of("powershell", "-NonInteractive", "-NoLogo", "-NoProfile", "-ExecutionPolicy", "Unrestricted")
+                        .addArgument("-File").addArgument(TEST_PS1)
+                        .addArguments("-TimeoutSeconds", Long.toString(Duration.ofSeconds(5).getSeconds()))
+                        .addArgument("-Executable").addArgument(cmd.appLauncherPath(launcherName))
+                        .dumpOutput());
+            }, state);
+        }, Executors.newVirtualThreadPerTaskExecutor());
 
         TKit.waitForFileCreated(traceFile, Duration.ofSeconds(20), Duration.ofSeconds(2));
 
@@ -118,6 +125,10 @@ public class Win8365790Test {
         }
 
         TKit.assertFileExists(outputFile);
+
+        // Call join() on the future to make the test fail if the future execution resulted in a throw.
+        future.join();
+
         return Files.readString(outputFile);
     }
 

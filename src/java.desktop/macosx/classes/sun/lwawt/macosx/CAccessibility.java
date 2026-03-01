@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1030,13 +1030,19 @@ final class CAccessibility implements PropertyChangeListener {
             }
 
             if (!allowIgnored) {
-                final AccessibleRole role = context.getAccessibleRole();
-                if (role != null && ignoredRoles != null && ignoredRoles.contains(roleKey(role))) {
-                    // Get the child's unignored children.
-                    _addChildren(child, whichChildren, false, childrenAndRoles, ChildrenOperations.COMMON);
-                } else {
-                    childrenAndRoles.add(child);
-                    childrenAndRoles.add(getAccessibleRole(child));
+                // If a Component isn't showing then it should be classified as
+                // "ignored", and we should skip it and its descendants
+                if (isShowing(context)) {
+                    final AccessibleRole role = context.getAccessibleRole();
+                    if (role != null && ignoredRoles != null &&
+                            ignoredRoles.contains(roleKey(role))) {
+                        // Get the child's unignored children.
+                        _addChildren(child, whichChildren, false,
+                                childrenAndRoles, ChildrenOperations.COMMON);
+                    } else {
+                        childrenAndRoles.add(child);
+                        childrenAndRoles.add(getAccessibleRole(child));
+                    }
                 }
             } else {
                 childrenAndRoles.add(child);
@@ -1048,6 +1054,46 @@ final class CAccessibility implements PropertyChangeListener {
                 return;
             }
         }
+    }
+
+    /**
+     * Return false if an AccessibleContext is not showing
+     * <p>
+     * This first checks {@link AccessibleComponent#isShowing()}, if possible.
+     * If there is no AccessibleComponent then this checks the
+     * AccessibleStateSet for {@link AccessibleState#SHOWING}. If there is no
+     * AccessibleStateSet then we assume (given the lack of information) the
+     * AccessibleContext may be visible, and we recursive check its parent if
+     * possible.
+     *
+     * Return false if an AccessibleContext is not showing
+     */
+    private static boolean isShowing(final AccessibleContext context) {
+        AccessibleComponent c = context.getAccessibleComponent();
+        if (c != null) {
+            return c.isShowing();
+        }
+
+        AccessibleStateSet ass = context.getAccessibleStateSet();
+        if (ass != null && ass.contains((AccessibleState.SHOWING))) {
+            return true;
+        } else {
+            // We don't have an AccessibleComponent. And either we don't
+            // have an AccessibleStateSet OR it doesn't include useful
+            // info to determine visibility/showing. So our status is
+            // unknown. When in doubt: assume we're showing and ask our
+            // parent if it is visible/showing.
+        }
+
+        Accessible parent = context.getAccessibleParent();
+        if (parent == null) {
+            return true;
+        }
+        AccessibleContext parentContext = parent.getAccessibleContext();
+        if (parentContext == null) {
+            return true;
+        }
+        return isShowing(parentContext);
     }
 
     private static native String roleKey(AccessibleRole aRole);

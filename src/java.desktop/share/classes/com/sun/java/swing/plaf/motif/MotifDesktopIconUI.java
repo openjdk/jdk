@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,7 @@ public class MotifDesktopIconUI extends BasicDesktopIconUI
     public MotifDesktopIconUI() {
     }
 
+    @Override
     protected void installDefaults(){
         super.installDefaults();
         setDefaultIcon(UIManager.getIcon("DesktopIcon.icon"));
@@ -94,12 +95,15 @@ public class MotifDesktopIconUI extends BasicDesktopIconUI
         JLayeredPane.putLayer(desktopIcon, JLayeredPane.getLayer(frame));
     }
 
+    @Override
     protected void installComponents(){
     }
 
+    @Override
     protected void uninstallComponents(){
     }
 
+    @Override
     protected void installListeners(){
         super.installListeners();
         desktopIconActionListener = createDesktopIconActionListener();
@@ -149,6 +153,7 @@ public class MotifDesktopIconUI extends BasicDesktopIconUI
         return new DesktopIconMouseListener();
     }
 
+    @Override
     protected void uninstallDefaults(){
         super.uninstallDefaults();
         desktopIcon.setLayout(null);
@@ -156,6 +161,7 @@ public class MotifDesktopIconUI extends BasicDesktopIconUI
         desktopIcon.remove(iconLabel);
     }
 
+    @Override
     protected void uninstallListeners(){
         super.uninstallListeners();
         iconButton.removeActionListener(desktopIconActionListener);
@@ -163,6 +169,7 @@ public class MotifDesktopIconUI extends BasicDesktopIconUI
         sysMenuTitlePane.uninstallListeners();
     }
 
+    @Override
     public Dimension getMinimumSize(JComponent c) {
         JInternalFrame iframe = desktopIcon.getInternalFrame();
 
@@ -180,10 +187,12 @@ public class MotifDesktopIconUI extends BasicDesktopIconUI
         return new Dimension(w, h);
     }
 
+    @Override
     public Dimension getPreferredSize(JComponent c) {
         return getMinimumSize(c);
     }
 
+    @Override
     public Dimension getMaximumSize(JComponent c){
         return getMinimumSize(c);
     }
@@ -213,26 +222,33 @@ public class MotifDesktopIconUI extends BasicDesktopIconUI
 
             // Forward mouse events to titlebar for moves.
             addMouseMotionListener(new MouseMotionListener() {
+                @Override
                 public void mouseDragged(MouseEvent e) {
                     forwardEventToParent(e);
                 }
+                @Override
                 public void mouseMoved(MouseEvent e) {
                     forwardEventToParent(e);
                 }
             });
             addMouseListener(new MouseListener() {
+                @Override
                 public void mouseClicked(MouseEvent e) {
                     forwardEventToParent(e);
                 }
+                @Override
                 public void mousePressed(MouseEvent e) {
                     forwardEventToParent(e);
                 }
+                @Override
                 public void mouseReleased(MouseEvent e) {
                     forwardEventToParent(e);
                 }
+                @Override
                 public void mouseEntered(MouseEvent e) {
                     forwardEventToParent(e);
                 }
+                @Override
                 public void mouseExited(MouseEvent e) {
                     forwardEventToParent(e);
                 }
@@ -251,16 +267,19 @@ public class MotifDesktopIconUI extends BasicDesktopIconUI
             getParent().dispatchEvent(newEvent);
         }
 
+        @Override
         @SuppressWarnings("deprecation")
         public boolean isFocusTraversable() {
             return false;
         }
 
+        @Override
         public Dimension getMinimumSize() {
             return new Dimension(defaultIcon.getIconWidth() + 1,
                                  LABEL_HEIGHT + LABEL_DIVIDER);
         }
 
+        @Override
         public Dimension getPreferredSize() {
             String title = frame.getTitle();
             FontMetrics fm = frame.getFontMetrics(defaultTitleFont);
@@ -271,6 +290,7 @@ public class MotifDesktopIconUI extends BasicDesktopIconUI
             return new Dimension(w, LABEL_HEIGHT + LABEL_DIVIDER);
         }
 
+        @Override
         public void paint(Graphics g) {
             super.paint(g);
 
@@ -308,28 +328,35 @@ public class MotifDesktopIconUI extends BasicDesktopIconUI
             this.icon = icon;
             // Forward mouse events to titlebar for moves.
             addMouseMotionListener(new MouseMotionListener() {
+                @Override
                 public void mouseDragged(MouseEvent e) {
                     forwardEventToParent(e);
                 }
+                @Override
                 public void mouseMoved(MouseEvent e) {
                     forwardEventToParent(e);
                 }
             });
             addMouseListener(new MouseListener() {
+                @Override
                 public void mouseClicked(MouseEvent e) {
                     forwardEventToParent(e);
                 }
+                @Override
                 public void mousePressed(MouseEvent e) {
                     forwardEventToParent(e);
                 }
+                @Override
                 public void mouseReleased(MouseEvent e) {
                     if (!systemMenu.isShowing()) {
                         forwardEventToParent(e);
                     }
                 }
+                @Override
                 public void mouseEntered(MouseEvent e) {
                     forwardEventToParent(e);
                 }
+                @Override
                 public void mouseExited(MouseEvent e) {
                     forwardEventToParent(e);
                 }
@@ -347,6 +374,7 @@ public class MotifDesktopIconUI extends BasicDesktopIconUI
             getParent().dispatchEvent(newEvent);
         }
 
+        @Override
         @SuppressWarnings("deprecation")
         public boolean isFocusTraversable() {
             return false;
@@ -355,6 +383,7 @@ public class MotifDesktopIconUI extends BasicDesktopIconUI
 
 
     protected class DesktopIconActionListener implements ActionListener {
+        @Override
         public void actionPerformed(ActionEvent e){
             systemMenu.show(iconButton, 0, getDesktopIcon().getHeight());
         }
@@ -362,6 +391,7 @@ public class MotifDesktopIconUI extends BasicDesktopIconUI
 
     protected class DesktopIconMouseListener extends MouseAdapter {
         // if we drag or move we should deengage the popup
+        @Override
         public void mousePressed(MouseEvent e){
             if (e.getClickCount() > 1) {
                 try {
