@@ -150,6 +150,14 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
     int laneTypeOrdinal() {
         return laneType.ordinal();
     }
+
+    @ForceInline
+    @SuppressWarnings("unchecked")
+    //NOT FINAL: SPECIALIZED
+    Class<E> carrierType() {
+        return (Class<E>) laneType.carrierType;
+    }
+
     // FIXME: appeal to general method (see https://bugs.openjdk.org/browse/JDK-6176992)
     // replace usages of this method and remove
     @ForceInline
@@ -326,7 +334,7 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
         return makeDummyVector();
     }
     private AbstractVector<E> makeDummyVector() {
-        Object za = Array.newInstance(elementType(), laneCount);
+        Object za = Array.newInstance(carrierType(), laneCount);
         return dummyVector = vectorFactory.apply(za);
         // This is the only use of vectorFactory.
         // All other factory requests are routed
@@ -421,8 +429,7 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
     Object iotaArray() {
         // Create an iota array.  It's OK if this is really slow,
         // because it happens only once per species.
-        Object ia = Array.newInstance(laneType.elementType,
-                                      laneCount);
+        Object ia = Array.newInstance(carrierType(), laneCount);
         assert(ia.getClass() == laneType.arrayType);
         checkValue(laneCount-1);  // worst case
         for (int i = 0; i < laneCount; i++) {
