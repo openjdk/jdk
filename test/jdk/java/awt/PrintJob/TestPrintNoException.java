@@ -1,0 +1,83 @@
+/*
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+import java.awt.Button;
+import java.awt.Frame;
+import java.awt.PrintJob;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+/*
+ * @test
+ * @bug 8378417
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @summary Verifies No Exception is thrown when Printing "All" pages
+ * @run main/manual TestPrintNoException
+ */
+
+public class TestPrintNoException {
+
+    public static void main(String[] args) throws Exception {
+        String INSTRUCTIONS = """
+                Press 'Print' button from the test UI.
+
+                The test will bring up a print dialog. 
+                Select a printer with "All" pages selected and proceed.
+                Verify that no exception message is displayed in the logarea.
+                
+                If no exception is thrown, press Pass else Fail.
+                Note: There's no need to verify the actual print output.""";
+
+        PassFailJFrame.builder()
+                .instructions(INSTRUCTIONS)
+                .columns(40)
+                .testUI(TestPrintNoException::createUI)
+                .logArea(8)
+                .build()
+                .awaitAndCheck();
+    }
+
+    private static Frame createUI() {
+        Frame frame = new Frame("Exception");
+        Button b = new Button("Print");
+        b.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    PrintJob pj = frame.getToolkit().getPrintJob(frame, "ResolutionTest", null);
+                    PassFailJFrame.log("Printing code started.");
+                    if (pj != null) {
+                        pj.end();
+                    }
+                } catch (Exception ex) {
+                    PassFailJFrame.log(ex.toString());
+                    return;
+                }
+                PassFailJFrame.log("Printing code finished.");
+            }
+        });
+        frame.add(b);
+        frame.setSize(50, 100);
+        return frame;
+    }
+}
