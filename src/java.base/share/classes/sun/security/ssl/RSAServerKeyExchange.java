@@ -264,7 +264,7 @@ final class RSAServerKeyExchange {
             RSAServerKeyExchangeMessage skem =
                     new RSAServerKeyExchangeMessage(
                             shc, x509Possession, rsaPossession);
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                     "Produced RSA ServerKeyExchange handshake message", skem);
             }
@@ -296,7 +296,7 @@ final class RSAServerKeyExchange {
 
             RSAServerKeyExchangeMessage skem =
                     new RSAServerKeyExchangeMessage(chc, message);
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                     "Consuming RSA ServerKeyExchange handshake message", skem);
             }
