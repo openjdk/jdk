@@ -1240,11 +1240,11 @@ void LIR_Assembler::type_profile_helper(Register mdo,
                                         Register recv) {
   int mdp_offset = md->byte_offset_of_slot(data, in_ByteSize(0));
   if (ProfileCaptureRatio > 1) {
-    __ profile_receiver_type
-      (recv, mdo, mdp_offset, &increment_mdo);
+    __ profile_receiver_type(recv, mdo, mdp_offset, &increment_mdo);
   } else {
     __ profile_receiver_type(recv, mdo, mdp_offset);
   }
+}
 
 void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, Label* failure, Label* obj_is_null) {
   // we always need a stub for the failure case.

@@ -50,14 +50,8 @@ friend class ArrayCopyStub;
   Address stack_slot_address(int index, uint shift, Register tmp, int adjust = 0);
 
   // Record the type of the receiver in ReceiverTypeData
-<<<<<<< HEAD
-  void type_profile_helper(Register mdo,
-                           ciMethodData *md, ciProfileData *data,
-                           Register recv);
-=======
   void type_profile_helper(Register mdo, ciMethodData *md,
                            ciProfileData *data, Register recv);
->>>>>>> master
   void add_debug_info_for_branch(address adr, CodeEmitInfo* info);
   void casw(Register addr, Register newval, Register cmpval);
   void casl(Register addr, Register newval, Register cmpval);
