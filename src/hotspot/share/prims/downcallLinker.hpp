@@ -41,8 +41,9 @@ public:
                                          int captured_state_mask,
                                          bool needs_transition);
 
-  // This is defined as JVM_LEAF which adds the JNICALL modifier.
-  static void JNICALL capture_state(int32_t* value_ptr, int captured_state_mask);
+  // These are defined as JVM_LEAF which adds the JNICALL modifier.
+  static void JNICALL capture_state_pre(int32_t* value_ptr, int captured_state_mask);
+  static void JNICALL capture_state_post(int32_t* value_ptr, int captured_state_mask);
 
   class StubGenerator : public StubCodeGenerator {
     BasicType* _signature;
