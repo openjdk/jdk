@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,21 +32,20 @@ import java.util.List;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.testng.annotations.Test;
 
 import static java.lang.constant.ConstantDescs.*;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
-/**
+/*
  * @test
  * @bug 8304932
  * @compile MethodTypeDescTest.java
- * @run testng MethodTypeDescTest
+ * @run junit MethodTypeDescTest
  * @summary unit tests for java.lang.constant.MethodTypeDesc
  */
-@Test
 public class MethodTypeDescTest extends SymbolicDescTest {
 
     private void testMethodTypeDesc(MethodTypeDesc r) throws ReflectiveOperationException {
@@ -75,16 +74,16 @@ public class MethodTypeDescTest extends SymbolicDescTest {
     private void testMethodTypeDesc(MethodTypeDesc r, MethodType mt) throws ReflectiveOperationException {
         testMethodTypeDesc(r);
 
-        assertEquals(r.resolveConstantDesc(LOOKUP), mt);
-        assertEquals(mt.describeConstable().get(), r);
+        assertEquals(mt, r.resolveConstantDesc(LOOKUP));
+        assertEquals(r, mt.describeConstable().get());
 
-        assertEquals(r.descriptorString(), mt.toMethodDescriptorString());
-        assertEquals(r.parameterCount(), mt.parameterCount());
-        assertEquals(r.parameterList(), mt.parameterList().stream().map(SymbolicDescTest::classToDesc).collect(toList()));
-        assertEquals(r.parameterArray(), Stream.of(mt.parameterArray()).map(SymbolicDescTest::classToDesc).toArray(ClassDesc[]::new));
+        assertEquals(mt.toMethodDescriptorString(), r.descriptorString());
+        assertEquals(mt.parameterCount(), r.parameterCount());
+        assertEquals(mt.parameterList().stream().map(SymbolicDescTest::classToDesc).collect(toList()), r.parameterList());
+        assertArrayEquals(Stream.of(mt.parameterArray()).map(SymbolicDescTest::classToDesc).toArray(ClassDesc[]::new), r.parameterArray());
         for (int i=0; i<r.parameterCount(); i++)
-            assertEquals(r.parameterType(i), classToDesc(mt.parameterType(i)));
-        assertEquals(r.returnType(), classToDesc(mt.returnType()));
+            assertEquals(classToDesc(mt.parameterType(i)), r.parameterType(i));
+        assertEquals(classToDesc(mt.returnType()), r.returnType());
     }
 
     private void assertMethodType(ClassDesc returnType,
@@ -94,13 +93,13 @@ public class MethodTypeDescTest extends SymbolicDescTest {
         MethodTypeDesc mtDesc = MethodTypeDesc.of(returnType, paramTypes);
 
         // MTDesc accessors
-        assertEquals(descriptor, mtDesc.descriptorString());
-        assertEquals(returnType, mtDesc.returnType());
-        assertEquals(paramTypes, mtDesc.parameterArray());
-        assertEquals(Arrays.asList(paramTypes), mtDesc.parameterList());
-        assertEquals(paramTypes.length, mtDesc.parameterCount());
+        assertEquals(mtDesc.descriptorString(), descriptor);
+        assertEquals(mtDesc.returnType(), returnType);
+        assertArrayEquals(mtDesc.parameterArray(), paramTypes);
+        assertEquals(mtDesc.parameterList(), Arrays.asList(paramTypes));
+        assertEquals(mtDesc.parameterCount(), paramTypes.length);
         for (int i=0; i<paramTypes.length; i++)
-            assertEquals(paramTypes[i], mtDesc.parameterType(i));
+            assertEquals(mtDesc.parameterType(i), paramTypes[i]);
 
         // Consistency between MT and MTDesc
         MethodType mt = MethodType.fromMethodDescriptorString(descriptor, null);
@@ -110,14 +109,12 @@ public class MethodTypeDescTest extends SymbolicDescTest {
         for (String r : returnDescs) {
             ClassDesc rc = ClassDesc.ofDescriptor(r);
             MethodTypeDesc newDesc = mtDesc.changeReturnType(rc);
-            assertEquals(newDesc, MethodTypeDesc.of(rc, paramTypes));
+            assertEquals(MethodTypeDesc.of(rc, paramTypes), newDesc);
             testMethodTypeDesc(newDesc, mt.changeReturnType(rc.resolveConstantDesc(LOOKUP)));
         }
 
         // try with null parameter
-        expectThrows(NullPointerException.class, () -> {
-            MethodTypeDesc newDesc = mtDesc.changeReturnType(null);
-        });
+        assertThrows(NullPointerException.class, () -> mtDesc.changeReturnType(null));
 
         // changeParamType
         for (int i=0; i<paramTypes.length; i++) {
@@ -126,7 +123,7 @@ public class MethodTypeDescTest extends SymbolicDescTest {
                 ClassDesc[] ps = paramTypes.clone();
                 ps[i] = pc;
                 MethodTypeDesc newDesc = mtDesc.changeParameterType(i, pc);
-                assertEquals(newDesc, MethodTypeDesc.of(returnType, ps));
+                assertEquals(MethodTypeDesc.of(returnType, ps), newDesc);
                 testMethodTypeDesc(newDesc, mt.changeParameterType(i, pc.resolveConstantDesc(LOOKUP)));
             }
         }
@@ -139,7 +136,7 @@ public class MethodTypeDescTest extends SymbolicDescTest {
                                       .mapToObj(j -> paramTypes[j])
                                       .toArray(ClassDesc[]::new);
             MethodTypeDesc newDesc = mtDesc.dropParameterTypes(i, i + 1);
-            assertEquals(newDesc, MethodTypeDesc.of(returnType, ps));
+            assertEquals(MethodTypeDesc.of(returnType, ps), newDesc);
             testMethodTypeDesc(newDesc, mt.dropParameterTypes(i, i+1));
 
             // drop multiple params
@@ -147,7 +144,7 @@ public class MethodTypeDescTest extends SymbolicDescTest {
                 var t = new ArrayList<>(Arrays.asList(paramTypes));
                 t.subList(i, j).clear();
                 MethodTypeDesc multiDrop = mtDesc.dropParameterTypes(i, j);
-                assertEquals(multiDrop, MethodTypeDesc.of(returnType, t.toArray(ClassDesc[]::new)));
+                assertEquals(MethodTypeDesc.of(returnType, t.toArray(ClassDesc[]::new)), multiDrop);
                 testMethodTypeDesc(multiDrop, mt.dropParameterTypes(i, j));
             }
         }
@@ -162,7 +159,7 @@ public class MethodTypeDescTest extends SymbolicDescTest {
                                           .mapToObj(j -> (j < k) ? paramTypes[j] : (j == k) ? p : paramTypes[j-1])
                                           .toArray(ClassDesc[]::new);
                 MethodTypeDesc newDesc = mtDesc.insertParameterTypes(i, p);
-                assertEquals(newDesc, MethodTypeDesc.of(returnType, ps));
+                assertEquals(MethodTypeDesc.of(returnType, ps), newDesc);
                 testMethodTypeDesc(newDesc, mt.insertParameterTypes(i, p.resolveConstantDesc(LOOKUP)));
             }
 
@@ -172,7 +169,7 @@ public class MethodTypeDescTest extends SymbolicDescTest {
             a.addAll(i, Arrays.asList(addition));
 
             MethodTypeDesc newDesc = mtDesc.insertParameterTypes(i, addition);
-            assertEquals(newDesc, MethodTypeDesc.of(returnType, a.toArray(ClassDesc[]::new)));
+            assertEquals(MethodTypeDesc.of(returnType, a.toArray(ClassDesc[]::new)), newDesc);
             testMethodTypeDesc(newDesc, mt.insertParameterTypes(i, Arrays.stream(addition).map(d -> {
                 try {
                     return (Class<?>) d.resolveConstantDesc(LOOKUP);
@@ -190,32 +187,28 @@ public class MethodTypeDescTest extends SymbolicDescTest {
                 IntStream.rangeClosed(0, paramDescTypes.length - 1)
                         .mapToObj(i -> ClassDesc.ofDescriptor(paramDescTypes[i])).toArray(ClassDesc[]::new);
         MethodTypeDesc mtDesc = MethodTypeDesc.of(returnType, paramTypes);
-        expectThrows(IndexOutOfBoundsException.class, () -> {
-            MethodTypeDesc newDesc = mtDesc.insertParameterTypes(-1, paramTypes);
-        });
+        assertThrows(IndexOutOfBoundsException.class, () -> mtDesc.insertParameterTypes(-1, paramTypes));
 
-        expectThrows(IndexOutOfBoundsException.class, () -> {
-            MethodTypeDesc newDesc = mtDesc.insertParameterTypes(paramTypes.length + 1, paramTypes);
-        });
+        assertThrows(IndexOutOfBoundsException.class, () -> mtDesc.insertParameterTypes(paramTypes.length + 1, paramTypes));
 
-        expectThrows(IllegalArgumentException.class, () -> {
+        {
             ClassDesc[] newParamTypes = new ClassDesc[1];
             newParamTypes[0] = CD_void;
             MethodTypeDesc newDesc = MethodTypeDesc.of(returnType, CD_int);
-            newDesc = newDesc.insertParameterTypes(0, newParamTypes);
-        });
+            assertThrows(IllegalArgumentException.class, () -> newDesc.insertParameterTypes(0, newParamTypes));
+        }
 
-        expectThrows(NullPointerException.class, () -> {
+        {
             MethodTypeDesc newDesc = MethodTypeDesc.of(returnType, CD_int);
-            newDesc = newDesc.insertParameterTypes(0, null);
-        });
+            assertThrows(NullPointerException.class, () -> newDesc.insertParameterTypes(0, null));
+        }
 
-        expectThrows(NullPointerException.class, () -> {
+        {
             ClassDesc[] newParamTypes = new ClassDesc[1];
             newParamTypes[0] = null;
             MethodTypeDesc newDesc = MethodTypeDesc.of(returnType, CD_int);
-            newDesc = newDesc.insertParameterTypes(0, newParamTypes);
-        });
+            assertThrows(NullPointerException.class, () -> newDesc.insertParameterTypes(0, newParamTypes));
+        }
     }
 
     private void badDropParametersTypes(ClassDesc returnType, String... paramDescTypes) {
@@ -224,27 +217,18 @@ public class MethodTypeDescTest extends SymbolicDescTest {
                         .mapToObj(i -> ClassDesc.ofDescriptor(paramDescTypes[i])).toArray(ClassDesc[]::new);
         MethodTypeDesc mtDesc = MethodTypeDesc.of(returnType, paramTypes);
 
-        expectThrows(IndexOutOfBoundsException.class, () -> {
-            MethodTypeDesc newDesc = mtDesc.dropParameterTypes(-1, 0);
-        });
+        assertThrows(IndexOutOfBoundsException.class, () -> mtDesc.dropParameterTypes(-1, 0));
 
-        expectThrows(IndexOutOfBoundsException.class, () -> {
-            MethodTypeDesc newDesc = mtDesc.dropParameterTypes(paramTypes.length, 0);
-        });
+        assertThrows(IndexOutOfBoundsException.class, () -> mtDesc.dropParameterTypes(paramTypes.length, 0));
 
-        expectThrows(IndexOutOfBoundsException.class, () -> {
-            MethodTypeDesc newDesc = mtDesc.dropParameterTypes(paramTypes.length + 1, 0);
-        });
+        assertThrows(IndexOutOfBoundsException.class, () -> mtDesc.dropParameterTypes(paramTypes.length + 1, 0));
 
-        expectThrows(IndexOutOfBoundsException.class, () -> {
-            MethodTypeDesc newDesc = mtDesc.dropParameterTypes(0, paramTypes.length + 1);
-        });
+        assertThrows(IndexOutOfBoundsException.class, () -> mtDesc.dropParameterTypes(0, paramTypes.length + 1));
 
-        expectThrows(IndexOutOfBoundsException.class, () -> {
-            MethodTypeDesc newDesc = mtDesc.dropParameterTypes(1, 0);
-        });
+        assertThrows(IndexOutOfBoundsException.class, () -> mtDesc.dropParameterTypes(1, 0));
     }
 
+    @Test
     public void testMethodTypeDesc() throws ReflectiveOperationException {
         for (String r : returnDescs) {
             assertMethodType(ClassDesc.ofDescriptor(r));
@@ -257,6 +241,7 @@ public class MethodTypeDescTest extends SymbolicDescTest {
         }
     }
 
+    @Test
     public void testBadMethodTypeRefs() {
         // ofDescriptor
         List<String> badDescriptors = List.of("()II", "()I;", "(I;)", "(I)", "()L", "(V)V",
@@ -283,29 +268,32 @@ public class MethodTypeDescTest extends SymbolicDescTest {
         assertThrows(IllegalArgumentException.class, () -> MethodTypeDesc.of(CD_int, List.of(CD_void)));
     }
 
+    @Test
     public void testOfArrayImmutability() {
         ClassDesc[] args = {CD_Object, CD_int};
         var mtd = MethodTypeDesc.of(CD_void, args);
 
         args[1] = CD_void;
-        assertEquals(mtd, MethodTypeDesc.of(CD_void, CD_Object, CD_int));
+        assertEquals(MethodTypeDesc.of(CD_void, CD_Object, CD_int), mtd);
 
         mtd.parameterArray()[1] = CD_void;
-        assertEquals(mtd, MethodTypeDesc.of(CD_void, CD_Object, CD_int));
+        assertEquals(MethodTypeDesc.of(CD_void, CD_Object, CD_int), mtd);
     }
 
+    @Test
     public void testOfListImmutability() {
         List<ClassDesc> args = Arrays.asList(CD_Object, CD_int);
         var mtd = MethodTypeDesc.of(CD_void, args);
 
         args.set(1, CD_void);
-        assertEquals(mtd, MethodTypeDesc.of(CD_void, CD_Object, CD_int));
+        assertEquals(MethodTypeDesc.of(CD_void, CD_Object, CD_int), mtd);
 
         assertThrows(UnsupportedOperationException.class, () ->
                 mtd.parameterList().set(1, CD_void));
-        assertEquals(mtd, MethodTypeDesc.of(CD_void, CD_Object, CD_int));
+        assertEquals(MethodTypeDesc.of(CD_void, CD_Object, CD_int), mtd);
     }
 
+    @Test
     public void testMissingClass() {
         var mtd = MTD_void.insertParameterTypes(0, ClassDesc.of("does.not.exist.DoesNotExist"));
         assertThrows(ReflectiveOperationException.class, () -> mtd.resolveConstantDesc(MethodHandles.publicLookup()));

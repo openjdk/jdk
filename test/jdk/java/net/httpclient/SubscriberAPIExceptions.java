@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,26 +36,26 @@ import java.net.http.HttpResponse.BodySubscriber;
 import java.net.http.HttpResponse.BodySubscribers;
 import java.util.function.Function;
 
-import org.testng.annotations.Test;
 
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.DELETE_ON_CLOSE;
 import static java.nio.file.StandardOpenOption.WRITE;
 import static java.nio.file.StandardOpenOption.READ;
-import static org.testng.Assert.assertThrows;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.Test;
 
 /*
  * @test
  * @summary Basic tests for API specified exceptions from Handler,
  *          and Subscriber convenience static factory methods.
- * @run testng SubscriberAPIExceptions
+ * @run junit SubscriberAPIExceptions
  */
 
 public class SubscriberAPIExceptions {
 
     static final Class<NullPointerException> NPE = NullPointerException.class;
     static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
-    static final Class<IndexOutOfBoundsException> IOB = IndexOutOfBoundsException.class;
 
     @Test
     public void handlerAPIExceptions() throws Exception {

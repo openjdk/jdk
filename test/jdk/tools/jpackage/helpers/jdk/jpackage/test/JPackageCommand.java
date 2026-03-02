@@ -1292,7 +1292,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             }
         }),
         MAC_BUNDLE_UNSIGNED_SIGNATURE(cmd -> {
-            if (TKit.isOSX() && !MacHelper.appImageSigned(cmd)) {
+            if (TKit.isOSX()) {
                 MacHelper.verifyUnsignedBundleSignature(cmd);
             }
         }),
@@ -1316,7 +1316,14 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         }),
         PREDEFINED_APP_IMAGE_COPY(cmd -> {
             Optional.ofNullable(cmd.getArgumentValue("--app-image")).filter(_ -> {
-                return !TKit.isOSX() || !MacHelper.signPredefinedAppImage(cmd);
+                if (!TKit.isOSX() || !cmd.hasArgument("--mac-sign")) {
+                    return true;
+                } else {
+                    var signAppImage = MacHelper.signPredefinedAppImage(cmd)
+                            || MacHelper.hasAppImageSignIdentity(cmd)
+                            || MacHelper.isSignWithoutSignIdentity(cmd);
+                    return !signAppImage;
+                }
             }).filter(_ -> {
                 // Don't examine the contents of the output app image if this is Linux package installing in the "/usr" subtree.
                 return Optional.<Boolean>ofNullable(cmd.onLinuxPackageInstallDir(null, _ -> false)).orElse(true);
