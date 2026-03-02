@@ -843,6 +843,38 @@ void LibraryCallKit::set_result(RegionNode* region, PhiNode* value) {
   assert(value->type()->basic_type() == result()->bottom_type()->basic_type(), "sanity");
 }
 
+#define EXIT_ON_BAILOUT(region, halt_on_failure, ...) \
+  do { \
+    RegionNode* region = create_bailout(); \
+    __VA_ARGS__; \
+    check_bailout(region, halt_on_failure); \
+  } while (0); \
+  if (stopped()) { \
+    return true; \
+  }
+
+inline RegionNode* LibraryCallKit::create_bailout() {
+  RegionNode* region = new RegionNode(1);
+  record_for_igvn(region);
+  return region;
+}
+
+inline void LibraryCallKit::check_bailout(RegionNode* region, bool halt_on_failure) {
+  if (region->req() > 1) {
+    if (halt_on_failure) {
+      region = _gvn.transform(region)->as_Region();
+      Node* frame = _gvn.transform(new ParmNode(C->start(), TypeFunc::FramePtr));
+      Node* halt = _gvn.transform(new HaltNode(region, frame, "unexpected guard failure in intrinsic"));
+      C->root()->add_req(halt);
+    } else {
+      PreserveJVMState pjvms(this);
+      set_control(_gvn.transform(region));
+      uncommon_trap(Deoptimization::Reason_intrinsic,
+                    Deoptimization::Action_maybe_recompile);
+    }
+  }
+}
+
 //------------------------------generate_guard---------------------------
 // Helper function for generating guarded fast-slow graph structures.
 // The given 'test', if true, guards a slow path.  If the test fails
@@ -951,36 +983,22 @@ void LibraryCallKit::generate_string_range_check(Node* array,
                                                  Node* offset,
                                                  Node* count,
                                                  bool char_count,
-                                                 bool halt_on_oob) {
+                                                 bool with_opaque,
+                                                 RegionNode* region) {
   if (stopped()) {
     return; // already stopped
   }
-  RegionNode* bailout = new RegionNode(1);
-  record_for_igvn(bailout);
   if (char_count) {
     // Convert char count to byte count
     count = _gvn.transform(new LShiftINode(count, intcon(1)));
   }
 
+  RegionNode* bailout = region != nullptr ? region : create_bailout();
   // Offset and count must not be negative
-  generate_negative_guard(offset, bailout, nullptr, halt_on_oob);
-  generate_negative_guard(count, bailout, nullptr, halt_on_oob);
+  generate_negative_guard(offset, bailout, nullptr, with_opaque);
+  generate_negative_guard(count, bailout, nullptr, with_opaque);
   // Offset + count must not exceed length of array
-  generate_limit_guard(offset, count, load_array_length(array), bailout, halt_on_oob);
-
-  if (bailout->req() > 1) {
-    if (halt_on_oob) {
-      bailout = _gvn.transform(bailout)->as_Region();
-      Node* frame = _gvn.transform(new ParmNode(C->start(), TypeFunc::FramePtr));
-      Node* halt = _gvn.transform(new HaltNode(bailout, frame, "unexpected guard failure in intrinsic"));
-      C->root()->add_req(halt);
-    } else {
-      PreserveJVMState pjvms(this);
-      set_control(_gvn.transform(bailout));
-      uncommon_trap(Deoptimization::Reason_intrinsic,
-                    Deoptimization::Action_maybe_recompile);
-    }
-  }
+  generate_limit_guard(offset, count, load_array_length(array), bailout, with_opaque);
 }
 
 Node* LibraryCallKit::current_thread_helper(Node*& tls_output, ByteSize handle_offset,
@@ -1150,10 +1168,9 @@ bool LibraryCallKit::inline_countPositives() {
   Node* len        = argument(2);
 
   ba = must_be_not_null(ba, true);
-  generate_string_range_check(ba, offset, len, false, true);
-  if (stopped()) {
-    return true;
-  }
+  EXIT_ON_BAILOUT(bailout, true, {
+    generate_string_range_check(ba, offset, len, false, true, bailout);
+  })
 
   Node* ba_start = array_element_address(ba, offset, T_BYTE);
   Node* result = new CountPositivesNode(control(), memory(TypeAryPtr::BYTES), ba_start, len);
@@ -1307,11 +1324,10 @@ bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
   Node* tgt_start = array_element_address(tgt, intcon(0), T_BYTE);
 
   // Range checks
-  generate_string_range_check(src, src_offset, src_count, ae != StrIntrinsicNode::LL, true);
-  generate_string_range_check(tgt, intcon(0), tgt_count, ae == StrIntrinsicNode::UU, true);
-  if (stopped()) {
-    return true;
-  }
+  EXIT_ON_BAILOUT(bailout, true, {
+    generate_string_range_check(src, src_offset, src_count, ae != StrIntrinsicNode::LL, true, bailout);
+    generate_string_range_check(tgt, intcon(0), tgt_count, ae == StrIntrinsicNode::UU, true, bailout);
+  })
 
   RegionNode* region = new RegionNode(5);
   Node* phi = new PhiNode(region, TypeInt::INT);
@@ -1404,7 +1420,9 @@ bool LibraryCallKit::inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae) {
   Node* src_count = _gvn.transform(new SubINode(max, from_index));
 
   // Range checks
-  generate_string_range_check(src, src_offset, src_count, ae == StrIntrinsicNode::U, true);
+  EXIT_ON_BAILOUT(bailout, true, {
+    generate_string_range_check(src, src_offset, src_count, ae == StrIntrinsicNode::U, true, bailout);
+  })
 
   // Check for int_ch >= 0
   Node* int_ch_cmp = _gvn.transform(new CmpINode(int_ch, intcon(0)));
@@ -1495,11 +1513,10 @@ bool LibraryCallKit::inline_string_copy(bool compress) {
   }
 
   // Range checks
-  generate_string_range_check(src, src_offset, length, convert_src, true);
-  generate_string_range_check(dst, dst_offset, length, convert_dst, true);
-  if (stopped()) {
-    return true;
-  }
+  EXIT_ON_BAILOUT(bailout, true, {
+    generate_string_range_check(src, src_offset, length, convert_src, true, bailout);
+    generate_string_range_check(dst, dst_offset, length, convert_dst, true, bailout);
+  })
 
   Node* src_start = array_element_address(src, src_offset, src_elem);
   Node* dst_start = array_element_address(dst, dst_offset, dst_elem);
@@ -1669,51 +1686,48 @@ bool LibraryCallKit::inline_string_getCharsU() {
   src_begin = _gvn.transform(new LShiftINode(src_begin, intcon(1)));
 
   // Range checks
-  generate_string_range_check(src, src_begin, length, true);
-  generate_string_range_check(dst, dst_begin, length, false);
-  if (stopped()) {
-    return true;
-  }
+  EXIT_ON_BAILOUT(bailout, false, {
+    generate_string_range_check(src, src_begin, length, true, false, bailout);
+    generate_string_range_check(dst, dst_begin, length, false, false, bailout);
+  })
 
-  if (!stopped()) {
-    // Calculate starting addresses.
-    Node* src_start = array_element_address(src, src_begin, T_BYTE);
-    Node* dst_start = array_element_address(dst, dst_begin, T_CHAR);
+  // Calculate starting addresses.
+  Node* src_start = array_element_address(src, src_begin, T_BYTE);
+  Node* dst_start = array_element_address(dst, dst_begin, T_CHAR);
 
-    // Check if array addresses are aligned to HeapWordSize
-    const TypeInt* tsrc = gvn().type(src_begin)->is_int();
-    const TypeInt* tdst = gvn().type(dst_begin)->is_int();
-    bool aligned = tsrc->is_con() && ((arrayOopDesc::base_offset_in_bytes(T_BYTE) + tsrc->get_con() * type2aelembytes(T_BYTE)) % HeapWordSize == 0) &&
-                   tdst->is_con() && ((arrayOopDesc::base_offset_in_bytes(T_CHAR) + tdst->get_con() * type2aelembytes(T_CHAR)) % HeapWordSize == 0);
+  // Check if array addresses are aligned to HeapWordSize
+  const TypeInt* tsrc = gvn().type(src_begin)->is_int();
+  const TypeInt* tdst = gvn().type(dst_begin)->is_int();
+  bool aligned = tsrc->is_con() && ((arrayOopDesc::base_offset_in_bytes(T_BYTE) + tsrc->get_con() * type2aelembytes(T_BYTE)) % HeapWordSize == 0) &&
+                 tdst->is_con() && ((arrayOopDesc::base_offset_in_bytes(T_CHAR) + tdst->get_con() * type2aelembytes(T_CHAR)) % HeapWordSize == 0);
 
-    // Figure out which arraycopy runtime method to call (disjoint, uninitialized).
-    const char* copyfunc_name = "arraycopy";
-    address     copyfunc_addr = StubRoutines::select_arraycopy_function(T_CHAR, aligned, true, copyfunc_name, true);
-    Node* call = make_runtime_call(RC_LEAF|RC_NO_FP,
-                      OptoRuntime::fast_arraycopy_Type(),
-                      copyfunc_addr, copyfunc_name, TypeRawPtr::BOTTOM,
-                      src_start, dst_start, ConvI2X(length) XTOP);
-    // Do not let reads from the cloned object float above the arraycopy.
-    if (alloc != nullptr) {
-      if (alloc->maybe_set_complete(&_gvn)) {
-        // "You break it, you buy it."
-        InitializeNode* init = alloc->initialization();
-        assert(init->is_complete(), "we just did this");
-        init->set_complete_with_arraycopy();
-        assert(dst->is_CheckCastPP(), "sanity");
-        assert(dst->in(0)->in(0) == init, "dest pinned");
-      }
-      // Do not let stores that initialize this object be reordered with
-      // a subsequent store that would make this object accessible by
-      // other threads.
-      // Record what AllocateNode this StoreStore protects so that
-      // escape analysis can go from the MemBarStoreStoreNode to the
-      // AllocateNode and eliminate the MemBarStoreStoreNode if possible
-      // based on the escape status of the AllocateNode.
-      insert_mem_bar(Op_MemBarStoreStore, alloc->proj_out_or_null(AllocateNode::RawAddress));
-    } else {
-      insert_mem_bar(Op_MemBarCPUOrder);
+  // Figure out which arraycopy runtime method to call (disjoint, uninitialized).
+  const char* copyfunc_name = "arraycopy";
+  address     copyfunc_addr = StubRoutines::select_arraycopy_function(T_CHAR, aligned, true, copyfunc_name, true);
+  Node* call = make_runtime_call(RC_LEAF|RC_NO_FP,
+                    OptoRuntime::fast_arraycopy_Type(),
+                    copyfunc_addr, copyfunc_name, TypeRawPtr::BOTTOM,
+                    src_start, dst_start, ConvI2X(length) XTOP);
+  // Do not let reads from the cloned object float above the arraycopy.
+  if (alloc != nullptr) {
+    if (alloc->maybe_set_complete(&_gvn)) {
+      // "You break it, you buy it."
+      InitializeNode* init = alloc->initialization();
+      assert(init->is_complete(), "we just did this");
+      init->set_complete_with_arraycopy();
+      assert(dst->is_CheckCastPP(), "sanity");
+      assert(dst->in(0)->in(0) == init, "dest pinned");
     }
+    // Do not let stores that initialize this object be reordered with
+    // a subsequent store that would make this object accessible by
+    // other threads.
+    // Record what AllocateNode this StoreStore protects so that
+    // escape analysis can go from the MemBarStoreStoreNode to the
+    // AllocateNode and eliminate the MemBarStoreStoreNode if possible
+    // based on the escape status of the AllocateNode.
+    insert_mem_bar(Op_MemBarStoreStore, alloc->proj_out_or_null(AllocateNode::RawAddress));
+  } else {
+    insert_mem_bar(Op_MemBarCPUOrder);
   }
 
   C->set_has_split_ifs(true); // Has chance for split-if optimization
@@ -6225,11 +6239,10 @@ bool LibraryCallKit::inline_encodeISOArray(bool ascii) {
   }
 
   // Check source & target bounds
-  generate_string_range_check(src, src_offset, length, src_elem == T_BYTE, true);
-  generate_string_range_check(dst, dst_offset, length, false, true);
-  if (stopped()) {
-    return true;
-  }
+  EXIT_ON_BAILOUT(bailout, true, {
+    generate_string_range_check(src, src_offset, length, src_elem == T_BYTE, true, bailout);
+    generate_string_range_check(dst, dst_offset, length, false, true, bailout);
+  })
 
   Node* src_start = array_element_address(src, src_offset, T_CHAR);
   Node* dst_start = array_element_address(dst, dst_offset, dst_elem);

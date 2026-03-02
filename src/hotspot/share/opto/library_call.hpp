@@ -153,6 +153,8 @@ class LibraryCallKit : public GraphKit {
   };
 
   // Helper functions to inline natives
+  RegionNode* create_bailout();
+  void check_bailout(RegionNode* region, bool halt_on_failure = false);
   Node* generate_guard(Node* test, RegionNode* region, float true_prob);
   Node* generate_slow_guard(Node* test, RegionNode* region);
   Node* generate_fair_guard(Node* test, RegionNode* region);
@@ -166,7 +168,8 @@ class LibraryCallKit : public GraphKit {
                              bool with_opaque = false);
   void  generate_string_range_check(Node* array, Node* offset,
                                     Node* length, bool char_count,
-                                    bool halt_on_oob = false);
+                                    bool with_opaque = false,
+                                    RegionNode* region = nullptr);
   Node* current_thread_helper(Node* &tls_output, ByteSize handle_offset,
                               bool is_immutable);
   Node* generate_current_thread(Node* &tls_output);
