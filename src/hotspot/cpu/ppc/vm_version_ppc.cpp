@@ -475,11 +475,9 @@ void VM_Version::print_features() {
 
 void VM_Version::determine_features() {
 #if defined(ABI_ELFv2)
-  // 1 InstWord per call for the blr instruction.
-  const int code_size = (num_features+1+1)*BytesPerInstWord;
+  const int code_size = (num_features + 1 /*blr*/) * BytesPerInstWord;
 #else
-  // 7 InstWords for each call (function descriptor + blr instruction).
-  const int code_size = (num_features+1+7)*BytesPerInstWord;
+  const int code_size = (num_features + 1 /*blr*/ + 6 /* fd */) * BytesPerInstWord;
 #endif
   int features = 0;
 
