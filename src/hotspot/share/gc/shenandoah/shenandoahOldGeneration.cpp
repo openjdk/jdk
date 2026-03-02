@@ -38,6 +38,7 @@
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
+#include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
@@ -109,8 +110,6 @@ ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues)
     _promoted_expended(0),
     _promotion_potential(0),
     _pad_for_promote_in_place(0),
-    _promotion_failure_count(0),
-    _promotion_failure_words(0),
     _promotable_humongous_regions(0),
     _promotable_regular_regions(0),
     _is_parsable(true),
@@ -148,8 +147,43 @@ void ShenandoahOldGeneration::augment_promoted_reserve(size_t increment) {
 void ShenandoahOldGeneration::reset_promoted_expended() {
   shenandoah_assert_heaplocked_or_safepoint();
   _promoted_expended.store_relaxed(0);
-  _promotion_failure_count.store_relaxed(0);
-  _promotion_failure_words.store_relaxed(0);
+}
+
+void ShenandoahOldGeneration::maybe_log_promotion_failure_stats() const {
+  typedef LogTarget(Info, gc, cset) cset_info;
+  if (cset_info::is_enabled()) {
+    size_t failed_count = 0;
+    size_t failed_words = 0;
+
+    class AggregatePromotionFailuresClosure : public ThreadClosure {
+    private:
+      size_t _total_count;
+      size_t _total_words;
+    public:
+      AggregatePromotionFailuresClosure() : _total_count(0), _total_words(0) {}
+
+      void do_thread(Thread* thread) override {
+        ShenandoahPLAB* plab = ShenandoahThreadLocalData::shenandoah_plab(thread);
+        if (plab != nullptr) {
+          _total_count += plab->get_promotion_failure_count();
+          _total_words += plab->get_promotion_failure_words();
+          plab->reset_promotion_failures();
+        }
+      }
+
+      size_t total_count() const { return _total_count; }
+      size_t total_words() const { return _total_words; }
+    };
+
+    AggregatePromotionFailuresClosure cl;
+    Threads::threads_do(&cl);
+    failed_count = cl.total_count();
+    failed_words = cl.total_words();
+
+    log_info(gc, cset)("Cycle complete, promotions reserved: %zu, promotions expended: %zu, failed count: %zu, failed bytes: %zu",
+                       get_promoted_reserve(), get_promoted_expended(),
+                       failed_count, failed_words * HeapWordSize);
+  }
 }
 
 size_t ShenandoahOldGeneration::expend_promoted(size_t increment) {
@@ -584,12 +618,15 @@ void ShenandoahOldGeneration::handle_failed_evacuation() {
 }
 
 void ShenandoahOldGeneration::handle_failed_promotion(Thread* thread, size_t size) {
-  _promotion_failure_count.add_then_fetch(1UL);
-  _promotion_failure_words.add_then_fetch(size);
+  typedef LogTarget(Info, gc, cset) cset_info;
+  if (cset_info::is_enabled()) {
+    ShenandoahThreadLocalData::shenandoah_plab(thread)->record_promotion_failure(size);
+  }
 
-  LogTarget(Debug, gc, plab) lt;
-  LogStream ls(lt);
-  if (lt.is_enabled()) {
+  typedef LogTarget(Debug, gc, plab) plab_debug;
+  if (plab_debug::is_enabled()) {
+    plab_debug lt;
+    LogStream ls(lt);
     log_failed_promotion(ls, thread, size);
   }
 }

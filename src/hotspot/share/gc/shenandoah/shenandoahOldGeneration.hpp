@@ -76,11 +76,6 @@ private:
   // objects). This field records the total amount of padding used for such regions.
   size_t _pad_for_promote_in_place;
 
-  // Keep track of the number and size of promotions that failed. Perhaps we should use this to increase
-  // the size of the old generation for the next collection cycle.
-  Atomic<size_t> _promotion_failure_count;
-  Atomic<size_t> _promotion_failure_words;
-
   // During construction of the collection set, we keep track of regions that are eligible
   // for promotion in place. These fields track the count of those humongous and regular regions.
   // This data is used to force the evacuation phase even when the collection set is otherwise
@@ -125,9 +120,8 @@ public:
   // This is used on the allocation path to gate promotions that would exceed the reserve
   size_t get_promoted_expended() const;
 
-  // Return the count and size (in words) of failed promotions since the last reset
-  size_t get_promotion_failed_count() const { return _promotion_failure_count.load_relaxed(); }
-  size_t get_promotion_failed_words() const { return _promotion_failure_words.load_relaxed(); }
+  // Aggregate and log promotion failure stats if logging is enabled
+  void maybe_log_promotion_failure_stats() const;
 
   // Test if there is enough memory reserved for this promotion
   bool can_promote(size_t requested_bytes) const {

@@ -34,6 +34,8 @@ ShenandoahPLAB::ShenandoahPLAB() :
   _desired_size(0),
   _actual_size(0),
   _promoted(0),
+  _promotion_failure_count(0),
+  _promotion_failure_words(0),
   _allows_promotion(false),
   _retries_enabled(false),
   _heap(ShenandoahGenerationalHeap::heap()) {

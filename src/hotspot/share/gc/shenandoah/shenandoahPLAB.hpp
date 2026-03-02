@@ -46,6 +46,10 @@ private:
   // the old generation's promotion reserve (i.e., it will be 'unexpended').
   size_t _promoted;
 
+  // Track failed promotion attempts per thread
+  size_t _promotion_failure_count;
+  size_t _promotion_failure_words;
+
   // If false, no more promotion by this thread during this evacuation phase.
   bool _allows_promotion;
 
@@ -95,6 +99,21 @@ public:
   size_t get_promoted() const { return _promoted; }
   // Track promoted bytes in this PLAB
   void add_to_promoted(size_t increment) { _promoted += increment; }
+
+  // Track failed promotion attempts
+  void record_promotion_failure(size_t size) {
+    _promotion_failure_count++;
+    _promotion_failure_words += size;
+  }
+  // Get failed promotion count for aggregation
+  size_t get_promotion_failure_count() const { return _promotion_failure_count; }
+  // Get failed promotion words for aggregation
+  size_t get_promotion_failure_words() const { return _promotion_failure_words; }
+  // Reset failure tracking for new evacuation phase
+  void reset_promotion_failures() {
+    _promotion_failure_count = 0;
+    _promotion_failure_words = 0;
+  }
 
   // Record actual allocated PLAB size
   void set_actual_size(size_t value) { _actual_size = value; }
