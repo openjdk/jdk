@@ -198,7 +198,7 @@ public record AppImageFile(String mainLauncherName, Optional<String> mainLaunche
             return "linux";
         } else if (TKit.isWindows()) {
             return "windows";
-        }  else if (TKit.isOSX()) {
+        } else if (TKit.isOSX()) {
             return "macOS";
         } else {
             throw new IllegalStateException();
