@@ -141,17 +141,13 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
     return nullptr;
   }
 
-  // A phi input that is also a user of the phi implies a backedge, i.e. this region is
-  // a loop header not yet converted to a LoopNode. Splitting through a loop header would
-  // place the backedge value in the new phi and rewire it to use that same phi, creating
-  // a self-referencing data cycle.
+  // If a phi input uses the phi (directly or transitively), this region is a loop header
+  // not yet converted to a LoopNode. Splitting through a loop header would create a
+  // self-referencing data cycle.
   for (uint i = 1; i < r->req(); i++) {
     Node* phi_in = phi->in(i);
-    if (phi_in == nullptr) continue;
-    for (DUIterator_Fast kmax, k = phi_in->fast_outs(kmax); k < kmax; k++) {
-      if (phi_in->fast_out(k) == phi) {
-        return nullptr;
-      }
+    if (phi_in != nullptr && phi->as_Phi()->is_unsafe_data_reference(phi_in)) {
+      return nullptr;
     }
   }
 
