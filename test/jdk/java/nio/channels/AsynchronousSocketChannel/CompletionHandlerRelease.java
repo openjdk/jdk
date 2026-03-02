@@ -47,13 +47,10 @@ import java.util.concurrent.Future;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-@TestInstance(Lifecycle.PER_CLASS)
 public class CompletionHandlerRelease {
     @Test
     public void testConnect() throws Exception {
@@ -137,16 +134,16 @@ public class CompletionHandlerRelease {
         }
     }
 
-    private AsynchronousChannelGroup GROUP;
+    private static AsynchronousChannelGroup GROUP;
 
     @BeforeAll
-    void setup() throws IOException {
+    static void setup() throws IOException {
         GROUP = AsynchronousChannelGroup.withFixedThreadPool(2,
             Executors.defaultThreadFactory());
     }
 
     @AfterAll
-    void cleanup() throws IOException {
+    static void cleanup() throws IOException {
         GROUP.shutdownNow();
     }
 
@@ -204,7 +201,7 @@ public class CompletionHandlerRelease {
         }
     }
 
-    private void waitForRefToClear(Reference ref, ReferenceQueue queue)
+    private static void waitForRefToClear(Reference ref, ReferenceQueue queue)
         throws InterruptedException {
         Reference r;
         while ((r = queue.remove(20)) == null) {
