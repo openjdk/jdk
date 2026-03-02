@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,9 @@
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.http2.Http2TestServer
  * @run testng/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
+ *                     -Djdk.httpclient.quic.idleTimeout=100000
+ *                     -Djdk.httpclient.keepalive.timeout.h3=100000
+ *                     -Djdk.test.server.quic.idleTimeout=100000
  *                     -Djdk.httpclient.quic.minPtoBackoffTime=60
  *                     -Djdk.httpclient.quic.maxPtoBackoffTime=90
  *                     -Djdk.httpclient.quic.maxPtoBackoff=10
@@ -53,6 +56,9 @@
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.http2.Http2TestServer
  * @run testng/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
+ *                     -Djdk.httpclient.quic.idleTimeout=100000
+ *                     -Djdk.httpclient.keepalive.timeout.h3=100000
+ *                     -Djdk.test.server.quic.idleTimeout=100000
  *                     -Djdk.httpclient.quic.minPtoBackoffTime=45
  *                     -Djdk.httpclient.quic.maxPtoBackoffTime=60
  *                     -Djdk.httpclient.quic.maxPtoBackoff=9
@@ -76,9 +82,9 @@
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.http2.Http2TestServer
  * @run testng/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
- *                     -Djdk.httpclient.quic.idleTimeout=120
- *                     -Djdk.httpclient.keepalive.timeout.h3=120
- *                     -Djdk.test.server.quic.idleTimeout=90
+ *                     -Djdk.httpclient.quic.idleTimeout=100000
+ *                     -Djdk.httpclient.keepalive.timeout.h3=100000
+ *                     -Djdk.test.server.quic.idleTimeout=100000
  *                     -Djdk.httpclient.quic.minPtoBackoffTime=60
  *                     -Djdk.httpclient.quic.maxPtoBackoffTime=120
  *                     -Djdk.httpclient.quic.maxPtoBackoff=9
@@ -101,9 +107,9 @@
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.http2.Http2TestServer
  * @run testng/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
- *                     -Djdk.httpclient.quic.idleTimeout=120
- *                     -Djdk.httpclient.keepalive.timeout.h3=120
- *                     -Djdk.test.server.quic.idleTimeout=90
+ *                     -Djdk.httpclient.quic.idleTimeout=100000
+ *                     -Djdk.httpclient.keepalive.timeout.h3=100000
+ *                     -Djdk.test.server.quic.idleTimeout=100000
  *                     -Djdk.httpclient.quic.minPtoBackoffTime=60
  *                     -Djdk.httpclient.quic.maxPtoBackoffTime=120
  *                     -Djdk.httpclient.quic.maxPtoBackoff=9
