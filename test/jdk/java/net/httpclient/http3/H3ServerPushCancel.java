@@ -110,7 +110,7 @@ public class H3ServerPushCancel implements HttpServerAdapters {
     static final String MAIN_RESPONSE_BODY = "the main response body";
     static final int REQUESTS = 5;
 
-    private static HttpTestServer  server;
+    private static HttpTestServer server;
     private static URI uri;
     private static URI headURI;
     private static ServerPushHandler pushHandler;
