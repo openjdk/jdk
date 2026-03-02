@@ -80,7 +80,7 @@ public class H3ImplicitPushCancel implements HttpServerAdapters {
     );
     static final String MAIN_RESPONSE_BODY = "the main response body";
 
-    private static HttpTestServer  server;
+    private static HttpTestServer server;
     private static URI uri;
     private static URI headURI;
 
