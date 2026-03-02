@@ -39,6 +39,7 @@
 // TODO: remove the x64 and linux restriction above. I added that for now so we are not flooded
 //       with failures in the CI. We should remove these restriction once more bugs are fixed.
 //       x64 linux is the easiest to debug on for me, that's why I picked it.
+//       In addition, I put a UseAVX=2 restriction below, to avoid AVX512 bugs for now.
 
 package compiler.vectorapi;
 
@@ -83,7 +84,8 @@ public class VectorExpressionFuzzer {
         comp.invoke("p.xyz.InnerTest", "main", new Object[] {new String[] {
             "--add-modules=jdk.incubator.vector",
             "--add-opens", "jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED",
-            "--add-opens", "java.base/java.lang=ALL-UNNAMED"
+            "--add-opens", "java.base/java.lang=ALL-UNNAMED",
+            "-XX:UseAVX=2" // TODO: remove restriction, after bugs are fixed
         }});
     }
 
