@@ -328,9 +328,11 @@ public class TestArrayCopyEliminationUncRematerialization {
                         private static final VarHandle #handle = MethodHandles.arrayElementVarHandle(#type[].class);
                         """
                     )),
-                    testCaseConstX64Only.asToken("ConstGetAndSet" + pty.abbrev(), 2 * config.copyLen - 1, new TestTemplates(getAndSetStoreConst, unstableTrap)),
+                    // We cannot look through MemBars emitted by the atomic operations, so all rematerailization loads are
+                    // commoned up in the common path.
+                    testCaseConst.asToken("ConstGetAndSet" + pty.abbrev(), config.copyLen, new TestTemplates(getAndSetStoreConst, unstableTrap)),
                     testCaseIdx.asToken("IdxGetAndSet" + pty.abbrev(), new TestTemplates(getAndSetStoreIdx, unstableTrap)),
-                    testCaseConstX64Only.asToken("ConstCompareAndSet" + pty.abbrev(), 2 * config.copyLen - 1, new TestTemplates(casStoreConst, unstableTrap)),
+                    testCaseConst.asToken("ConstCompareAndSet" + pty.abbrev(), config.copyLen, new TestTemplates(casStoreConst, unstableTrap)),
                     testCaseIdx.asToken("IdxCompareAndSet" + pty.abbrev(), new TestTemplates(casStoreIdx, unstableTrap))
                 );
             });
