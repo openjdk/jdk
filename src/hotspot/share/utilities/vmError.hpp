@@ -95,7 +95,7 @@ class VMError : public AllStatic {
   // Whether or not the last error reporting step did timeout.
   static Atomic<bool> _step_did_timeout;
   // Whether or not the last error reporting step did succeed.
-  static volatile bool _step_did_succeed;
+  static Atomic<bool> _step_did_succeed;
 
   // Install secondary signal handler to handle secondary faults during error reporting
   // (see VMError::crash_handler)

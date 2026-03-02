@@ -89,7 +89,7 @@ Atomic<jlong>     VMError::_reporting_start_time{-1};
 Atomic<bool>      VMError::_reporting_did_timeout{false};
 Atomic<jlong>     VMError::_step_start_time{-1};
 Atomic<bool>      VMError::_step_did_timeout{false};
-volatile bool     VMError::_step_did_succeed = false;
+Atomic<bool>      VMError::_step_did_succeed{false};
 volatile intptr_t VMError::_first_error_tid = -1;
 int               VMError::_id;
 const char*       VMError::_message;
@@ -611,17 +611,17 @@ void VMError::report(outputStream* st, bool _verbose) {
   const char* stop_reattempt_reason = nullptr;
 # define BEGIN                                             \
   if (_current_step == 0) {                                \
-    _step_did_succeed = false;                             \
+    _step_did_succeed.store_relaxed(false);                \
     _current_step = __LINE__;                              \
     {
       // [Begin logic]
 
 # define STEP_IF(s, cond)                                  \
     }                                                      \
-    _step_did_succeed = true;                              \
+    _step_did_succeed.store_relaxed(true);                 \
   }                                                        \
   if (_current_step < __LINE__) {                          \
-    _step_did_succeed = false;                             \
+    _step_did_succeed.store_relaxed(false);                \
     _current_step = __LINE__;                              \
     _current_step_info = s;                                \
     if ((cond)) {                                          \
@@ -633,9 +633,9 @@ void VMError::report(outputStream* st, bool _verbose) {
 
 # define REATTEMPT_STEP_IF(s, cond)                        \
     }                                                      \
-    _step_did_succeed = true;                              \
+    _step_did_succeed.store_relaxed(true);                 \
   }                                                        \
-  if (_current_step < __LINE__ && !_step_did_succeed) {    \
+  if (_current_step < __LINE__ && !_step_did_succeed.load_relaxed()) { \
     _current_step = __LINE__;                              \
     _current_step_info = s;                                \
     const bool cond_value = (cond);                        \
@@ -649,7 +649,7 @@ void VMError::report(outputStream* st, bool _verbose) {
 
 # define END                                               \
     }                                                      \
-    _step_did_succeed = true;                              \
+    _step_did_succeed.store_relaxed(true);                 \
     clear_step_start_time();                               \
   }
 
