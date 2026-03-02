@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,7 @@
 #define SHARE_UTILITIES_VMERROR_HPP
 
 #include "memory/allStatic.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
@@ -85,7 +86,7 @@ class VMError : public AllStatic {
 
   // Timeout handling:
   // Timestamp at which error reporting started; -1 if no error reporting in progress.
-  static volatile jlong _reporting_start_time;
+  static Atomic<jlong> _reporting_start_time;
   // Whether or not error reporting did timeout.
   static volatile bool _reporting_did_timeout;
   // Timestamp at which the last error reporting step started; -1 if no error reporting

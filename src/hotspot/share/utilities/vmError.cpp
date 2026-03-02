@@ -43,7 +43,6 @@
 #include "oops/compressedOops.hpp"
 #include "prims/whitebox.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/init.hpp"
@@ -86,7 +85,7 @@ bool              VMError::coredump_status;
 char              VMError::coredump_message[O_BUFLEN];
 int               VMError::_current_step;
 const char*       VMError::_current_step_info;
-volatile jlong    VMError::_reporting_start_time = -1;
+Atomic<jlong>     VMError::_reporting_start_time{-1};
 volatile bool     VMError::_reporting_did_timeout = false;
 volatile jlong    VMError::_step_start_time = -1;
 volatile bool     VMError::_step_did_timeout = false;
@@ -560,11 +559,11 @@ jlong VMError::get_current_timestamp() {
 
 void VMError::record_reporting_start_time() {
   const jlong now = get_current_timestamp();
-  AtomicAccess::store(&_reporting_start_time, now);
+  _reporting_start_time.store_relaxed(now);
 }
 
 jlong VMError::get_reporting_start_time() {
-  return AtomicAccess::load(&_reporting_start_time);
+  return _reporting_start_time.load_relaxed();
 }
 
 void VMError::record_step_start_time() {
@@ -1800,7 +1799,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
         // up, the process is about to be stopped by the WatcherThread.
         st->print_cr("------ Timeout during error reporting after " INT64_FORMAT " s. ------",
                      (int64_t)
-                     ((get_current_timestamp() - _reporting_start_time) / TIMESTAMP_TO_SECONDS_FACTOR));
+                     ((get_current_timestamp() - get_reporting_start_time()) / TIMESTAMP_TO_SECONDS_FACTOR));
         st->flush();
         // Watcherthread is about to call os::die. Lets just wait.
         os::infinite_sleep();
