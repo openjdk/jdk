@@ -48,8 +48,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -68,7 +66,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @run junit EqualsCompareTest
  */
 
-@TestInstance(Lifecycle.PER_CLASS)
 public class EqualsCompareTest {
 
     // Maximum width in bits

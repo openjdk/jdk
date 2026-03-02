@@ -53,7 +53,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
-@TestInstance(Lifecycle.PER_CLASS)
 public class ByteBufferViews {
     static final int SIZE = 32;
 

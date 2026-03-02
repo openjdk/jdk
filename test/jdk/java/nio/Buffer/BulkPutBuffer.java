@@ -43,8 +43,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.stream.Stream;
 
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -60,7 +58,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @compile BulkPutBuffer.java
  * @run junit/othervm BulkPutBuffer
  */
-@TestInstance(Lifecycle.PER_CLASS)
 public class BulkPutBuffer {
     static final long SEED = System.nanoTime();
     static final MyRandom RND = new MyRandom(SEED);
@@ -304,9 +301,10 @@ public class BulkPutBuffer {
         return proxies;
     }
 
-    static Stream<Arguments>  proxies() {
+    static Stream<Arguments> proxies() {
         List<Arguments> args = new ArrayList<Arguments>();
         for (Class<?> type : typeToAttr.keySet()) {
+
             List<BufferProxy> proxies = getProxies(type);
             for (BufferProxy proxy : proxies) {
                 args.add(Arguments.of(proxy));
