@@ -487,7 +487,7 @@ public class HBShaper {
          * done with it.
          */
 
-        Font2D font2D  = scopedVars.get().font();
+        Font2D font2D = scopedVars.get().font();
 
         @SuppressWarnings("restricted")
         MemorySegment data_ptr = data_ptr_out.reinterpret(ADDRESS.byteSize());
