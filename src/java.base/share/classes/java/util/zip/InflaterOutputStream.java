@@ -183,8 +183,8 @@ public class InflaterOutputStream extends FilterOutputStream {
     }
 
     /**
-     * Flushes this output stream, forcing any pending buffered output bytes to be
-     * written.
+     * Flushes this output stream, writing any pending buffered decompressed data to
+     * the underlying output stream.
      *
      * @throws IOException if an I/O error occurs or this stream is already
      * closed
@@ -221,10 +221,10 @@ public class InflaterOutputStream extends FilterOutputStream {
     }
 
     /**
-     * Forces writing any pending buffered decompressed data to the output stream,
+     * Writes out any pending buffered decompressed data to the underlying output stream,
      * without closing the underlying stream.
      *
-     * @implSpec This method calls {@link #flush()} to write out any pending buffered
+     * @implSpec This method calls {@link #flush()} to write any pending buffered
      * decompressed data.
      * <p>
      * If this {@code InflaterOutputStream} was created without specifying
