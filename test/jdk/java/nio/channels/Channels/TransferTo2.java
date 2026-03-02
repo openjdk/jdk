@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,13 @@ import java.io.OutputStream;
 import java.io.IOException;
 import java.nio.channels.Channels;
 import java.nio.channels.Pipe;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static java.lang.String.format;
 
@@ -35,7 +39,7 @@ import static java.lang.String.format;
  * @test
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
- * @run testng/othervm/timeout=180 TransferTo2
+ * @run junit/othervm/timeout=180 TransferTo2
  * @bug 8278268
  * @summary Tests FileChannel.transferFrom() optimized case
  * @key randomness
@@ -46,33 +50,30 @@ public class TransferTo2 extends TransferToBase {
      * Provides test scenarios, i.e., combinations of input and output streams
      * to be tested.
      */
-    @DataProvider
-    public static Object[][] streamCombinations() {
-        return new Object[][] {
-            // tests FileChannel.transferFrom(SelectableChannelOutput) optimized case
-            {selectableChannelInput(), fileChannelOutput()},
+    public static Stream<Arguments> streamCombinations() {
+        return List.of
+            (// tests FileChannel.transferFrom(SelectableChannelOutput) optimized case
+             Arguments.of(selectableChannelInput(), fileChannelOutput()),
 
             // tests FileChannel.transferFrom(ReadableByteChannelInput) optimized case
-            {readableByteChannelInput(), fileChannelOutput()},
-        };
+             Arguments.of(readableByteChannelInput(), fileChannelOutput()))
+            .stream();
     }
 
     /*
      * Input streams to be tested.
      */
-    @DataProvider
-    public static Object[][] inputStreamProviders() {
-        return new Object[][] {
-            {selectableChannelInput()},
-            {readableByteChannelInput()}
-        };
+    public static Stream<Arguments> inputStreamProviders() {
+        return List.of(Arguments.of(selectableChannelInput()),
+                       Arguments.of(readableByteChannelInput())).stream();
     }
 
     /*
      * Testing API compliance: input stream must throw NullPointerException
      * when parameter "out" is null.
      */
-    @Test(dataProvider = "inputStreamProviders")
+    @ParameterizedTest
+    @MethodSource("inputStreamProviders")
     public void testNullPointerException(InputStreamProvider inputStreamProvider) {
         assertNullPointerException(inputStreamProvider);
     }
@@ -81,7 +82,8 @@ public class TransferTo2 extends TransferToBase {
      * Testing API compliance: complete content of input stream must be
      * transferred to output stream.
      */
-    @Test(dataProvider = "streamCombinations")
+    @ParameterizedTest
+    @MethodSource("streamCombinations")
     public void testStreamContents(InputStreamProvider inputStreamProvider,
             OutputStreamProvider outputStreamProvider) throws Exception {
         assertStreamContents(inputStreamProvider, outputStreamProvider);

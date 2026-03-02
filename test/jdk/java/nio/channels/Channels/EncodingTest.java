@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,16 +34,23 @@ import java.nio.charset.Charset;
 import java.nio.charset.MalformedInputException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @test
  * @bug 8183743
  * @summary Test to verify the new overload method with Charset functions the same
  * as the existing method that takes a charset name.
- * @run testng EncodingTest
+ * @run junit EncodingTest
  */
 public class EncodingTest {
     static final int ITERATIONS = 2;
@@ -73,53 +80,50 @@ public class EncodingTest {
         }
     }
 
-    String testFile = Paths.get(USER_DIR, "channelsEncodingTest.txt").toString();
-    String testIllegalInput = Paths.get(USER_DIR, "channelsIllegalInputTest.txt").toString();
-    String testIllegalOutput = Paths.get(USER_DIR, "channelsIllegalOutputTest.txt").toString();
+    static String testFile = Paths.get(USER_DIR, "channelsEncodingTest.txt").toString();
+    static String testIllegalInput = Paths.get(USER_DIR, "channelsIllegalInputTest.txt").toString();
+    static String testIllegalOutput = Paths.get(USER_DIR, "channelsIllegalOutputTest.txt").toString();
 
 
     /*
      * DataProvider for read and write test.
      * Writes and reads with the same encoding
      */
-    @DataProvider(name = "writeAndRead")
-    public Object[][] getWRParameters() {
-        return new Object[][]{
-            {testFile, StandardCharsets.ISO_8859_1.name(), null,
-                StandardCharsets.ISO_8859_1.name(), StandardCharsets.ISO_8859_1},
-            {testFile, null, StandardCharsets.ISO_8859_1,
-                StandardCharsets.ISO_8859_1.name(), StandardCharsets.ISO_8859_1},
-            {testFile, StandardCharsets.UTF_8.name(), null,
-                StandardCharsets.UTF_8.name(), StandardCharsets.UTF_8},
-            {testFile, null, StandardCharsets.UTF_8,
-                StandardCharsets.UTF_8.name(), StandardCharsets.UTF_8}
-        };
+    public static Stream<Arguments> writeAndRead() {
+        List<Arguments> list = new ArrayList<Arguments>();
+        list.add(Arguments.of(testFile, StandardCharsets.ISO_8859_1.name(), null,
+                              StandardCharsets.ISO_8859_1.name(), StandardCharsets.ISO_8859_1));
+        list.add(Arguments.of(testFile, null, StandardCharsets.ISO_8859_1,
+                              StandardCharsets.ISO_8859_1.name(), StandardCharsets.ISO_8859_1));
+        list.add(Arguments.of(testFile, StandardCharsets.UTF_8.name(), null,
+                              StandardCharsets.UTF_8.name(), StandardCharsets.UTF_8));
+        list.add(Arguments.of(testFile, null, StandardCharsets.UTF_8,
+                              StandardCharsets.UTF_8.name(), StandardCharsets.UTF_8));
+        return list.stream();
     }
 
     /*
      * DataProvider for illegal input test
      * Writes the data in ISO8859 and reads with UTF8, expects MalformedInputException
      */
-    @DataProvider(name = "illegalInput")
-    public Object[][] getParameters() {
-        return new Object[][]{
-            {testIllegalInput, StandardCharsets.ISO_8859_1.name(), null, StandardCharsets.UTF_8.name(), null},
-            {testIllegalInput, StandardCharsets.ISO_8859_1.name(), null, null, StandardCharsets.UTF_8},
-            {testIllegalInput, null, StandardCharsets.ISO_8859_1, StandardCharsets.UTF_8.name(), null},
-            {testIllegalInput, null, StandardCharsets.ISO_8859_1, null, StandardCharsets.UTF_8},
-        };
+    public static Stream<Arguments> illegalInput() {
+        List<Arguments> list = new ArrayList<Arguments>();
+        list.add(Arguments.of(testIllegalInput, StandardCharsets.ISO_8859_1.name(), null, StandardCharsets.UTF_8.name(), null));
+        list.add(Arguments.of(testIllegalInput, StandardCharsets.ISO_8859_1.name(), null, null, StandardCharsets.UTF_8));
+        list.add(Arguments.of(testIllegalInput, null, StandardCharsets.ISO_8859_1, StandardCharsets.UTF_8.name(), null));
+        list.add(Arguments.of(testIllegalInput, null, StandardCharsets.ISO_8859_1, null, StandardCharsets.UTF_8));
+        return list.stream();
     }
 
     /*
      * DataProvider for illegal output test
      * Attemps to write some malformed chars, expects MalformedInputException
      */
-    @DataProvider(name = "illegalOutput")
-    public Object[][] getWriteParameters() {
-        return new Object[][]{
-            {testIllegalOutput, StandardCharsets.UTF_8.name(), null},
-            {testIllegalOutput, null, StandardCharsets.UTF_8}
-        };
+    public static Stream<Arguments> illegalOutput() {
+        List<Arguments> list = new ArrayList<Arguments>();
+        list.add(Arguments.of(testIllegalOutput, StandardCharsets.UTF_8.name(), null));
+        list.add(Arguments.of(testIllegalOutput, null, StandardCharsets.UTF_8));
+        return list.stream();
     }
 
     /**
@@ -140,7 +144,8 @@ public class EncodingTest {
      * @param charsetReader the charset for creating the reader
      * @throws Exception
      */
-    @Test(dataProvider = "writeAndRead")
+    @ParameterizedTest
+    @MethodSource("writeAndRead")
     public void testWriteAndRead(String file, String csnWriter, Charset charsetWriter,
             String csnReader, Charset charsetReader) throws Exception {
         writeToFile(data, file, csnWriter, charsetWriter);
@@ -148,7 +153,7 @@ public class EncodingTest {
         String result1 = readFileToString(file, csnReader, null);
         String result2 = readFileToString(file, null, charsetReader);
 
-        Assert.assertEquals(result1, result2);
+        assertEquals(result1, result2);
     }
 
     /**
@@ -162,11 +167,14 @@ public class EncodingTest {
      * @param charsetReader the charset for creating the reader
      * @throws Exception
      */
-    @Test(dataProvider = "illegalInput", expectedExceptions = MalformedInputException.class)
+    @ParameterizedTest
+    @MethodSource( "illegalInput")
     void testMalformedInput(String file, String csnWriter, Charset charsetWriter,
-            String csnReader, Charset charsetReader) throws Exception {
+                            String csnReader, Charset charsetReader)
+        throws Exception {
         writeToFile(data, file, csnWriter, charsetWriter);
-        readFileToString(file, csnReader, charsetReader);
+        assertThrows(MalformedInputException.class,
+                     () -> readFileToString(file, csnReader, charsetReader));
     }
 
     /**
@@ -178,23 +186,23 @@ public class EncodingTest {
      * @param charset the charset
      * @throws Exception
      */
-    @Test(dataProvider = "illegalOutput", expectedExceptions = MalformedInputException.class)
+    @ParameterizedTest
+    @MethodSource("illegalOutput")
     public void testMalformedOutput(String fileName, String csn, Charset charset)
-            throws Exception {
+        throws Exception {
         try (FileOutputStream fos = new FileOutputStream(fileName);
-                WritableByteChannel wbc = (WritableByteChannel) fos.getChannel();) {
-            Writer writer;
-            if (csn != null) {
-                writer = Channels.newWriter(wbc, csn);
-            } else {
-                writer = Channels.newWriter(wbc, charset);
-            }
-
-            for (int i = 0; i < ITERATIONS; i++) {
-                writer.write(illChars);
-            }
-            writer.flush();
-            writer.close();
+             WritableByteChannel wbc = (WritableByteChannel) fos.getChannel();) {
+            assertThrows(MalformedInputException.class,
+                         () -> {
+                             try (Writer writer = csn != null ?
+                                  Channels.newWriter(wbc, csn) :
+                                  Channels.newWriter(wbc, charset)) {
+                                 for (int i = 0; i < ITERATIONS; i++) {
+                                     writer.write(illChars);
+                                 }
+                                 writer.flush();
+                             }
+                         });
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,9 +43,9 @@ import jdk.test.lib.RandomFactory;
 import static java.lang.String.format;
 import static java.nio.file.StandardOpenOption.*;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertThrows;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TransferToBase {
     static final int MIN_SIZE      = 10_000;
