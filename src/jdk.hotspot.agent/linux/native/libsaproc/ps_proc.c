@@ -38,6 +38,13 @@
 
 #ifdef __aarch64__
 #include <sys/auxv.h>
+
+// HWCAP_PACA was introduced in glibc 2.30
+// https://sourceware.org/git/?p=glibc.git;a=commit;h=a2e57f89a35e6056c9488428e68c4889e114ef71
+#if defined(__aarch64__) && !defined(HWCAP_PACA)
+HWCAP_PACA (1 << 30)
+#endif
+
 #endif
 
 #if defined(x86_64) && !defined(amd64)
