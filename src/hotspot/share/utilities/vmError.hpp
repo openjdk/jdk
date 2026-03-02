@@ -145,7 +145,7 @@ class VMError : public AllStatic {
 
   // Handshake/safepoint timed out threads
   static Atomic<Thread*> _handshake_timed_out_thread;
-  static Thread* volatile _safepoint_timed_out_thread;
+  static Atomic<Thread*> _safepoint_timed_out_thread;
 
   WINDOWS_ONLY([[noreturn]] static void raise_fail_fast(const void* exrecord, const void* context);)
 
