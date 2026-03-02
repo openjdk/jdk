@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2021, NTT DATA.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,7 +205,7 @@ extern "C"
 JNIEXPORT jint JNICALL Java_sun_jvm_hotspot_debugger_linux_amd64_DwarfParser_getReturnAddressOffsetFromCFA
   (JNIEnv *env, jobject this_obj) {
   DwarfParser *parser = reinterpret_cast<DwarfParser *>(get_dwarf_context(env, this_obj));
-  return parser->get_ra_cfa_offset();
+  return parser->get_offset_from_cfa(RA);
 }
 
 /*
@@ -217,18 +217,5 @@ extern "C"
 JNIEXPORT jint JNICALL Java_sun_jvm_hotspot_debugger_linux_amd64_DwarfParser_getBasePointerOffsetFromCFA
   (JNIEnv *env, jobject this_obj) {
   DwarfParser *parser = reinterpret_cast<DwarfParser *>(get_dwarf_context(env, this_obj));
-  return parser->get_bp_cfa_offset();
+  return parser->get_offset_from_cfa(RBP);
 }
-
-/*
- * Class:     sun_jvm_hotspot_debugger_linux_amd64_DwarfParser
- * Method:    isBPOffsetAvailable
- * Signature: ()Z
- */
-extern "C"
-JNIEXPORT jboolean JNICALL Java_sun_jvm_hotspot_debugger_linux_amd64_DwarfParser_isBPOffsetAvailable
-  (JNIEnv *env, jobject this_obj) {
-  DwarfParser *parser = reinterpret_cast<DwarfParser *>(get_dwarf_context(env, this_obj));
-  return parser->is_bp_offset_available();
-}
-

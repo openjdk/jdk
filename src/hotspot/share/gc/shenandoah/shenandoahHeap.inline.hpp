@@ -49,7 +49,7 @@
 #include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomicAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
@@ -61,7 +61,7 @@ inline ShenandoahHeap* ShenandoahHeap::heap() {
 }
 
 inline ShenandoahHeapRegion* ShenandoahRegionIterator::next() {
-  size_t new_index = AtomicAccess::add(&_index, (size_t) 1, memory_order_relaxed);
+  size_t new_index = _index.add_then_fetch((size_t) 1, memory_order_relaxed);
   // get_region() provides the bounds-check and returns null on OOB.
   return _heap->get_region(new_index - 1);
 }
@@ -75,15 +75,15 @@ inline WorkerThreads* ShenandoahHeap::safepoint_workers() {
 }
 
 inline void ShenandoahHeap::notify_gc_progress() {
-  AtomicAccess::store(&_gc_no_progress_count, (size_t) 0);
+  _gc_no_progress_count.store_relaxed((size_t) 0);
 
 }
 inline void ShenandoahHeap::notify_gc_no_progress() {
-  AtomicAccess::inc(&_gc_no_progress_count);
+  _gc_no_progress_count.add_then_fetch((size_t) 1);
 }
 
 inline size_t ShenandoahHeap::get_gc_no_progress_count() const {
-  return AtomicAccess::load(&_gc_no_progress_count);
+  return _gc_no_progress_count.load_relaxed();
 }
 
 inline size_t ShenandoahHeap::heap_region_index_containing(const void* addr) const {

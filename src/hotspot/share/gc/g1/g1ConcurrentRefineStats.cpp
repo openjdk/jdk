@@ -23,20 +23,7 @@
  */
 
 #include "gc/g1/g1ConcurrentRefineStats.inline.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/timer.hpp"
-
-G1ConcurrentRefineStats::G1ConcurrentRefineStats() :
-  _sweep_duration(0),
-  _yield_during_sweep_duration(0),
-  _cards_scanned(0),
-  _cards_clean(0),
-  _cards_not_parsable(0),
-  _cards_already_refer_to_cset(0),
-  _cards_refer_to_cset(0),
-  _cards_no_cross_region(0),
-  _refine_duration(0)
-{}
 
 void G1ConcurrentRefineStats::add_atomic(G1ConcurrentRefineStats* other) {
   _sweep_duration.add_then_fetch(other->_sweep_duration.load_relaxed(), memory_order_relaxed);

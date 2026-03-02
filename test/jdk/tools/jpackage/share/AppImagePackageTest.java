@@ -173,7 +173,7 @@ public class AppImagePackageTest {
 
         final var appImageDir = appImageCmd.outputBundle();
 
-        final var expectedError = JPackageStringBundle.MAIN.cannedFormattedString(
+        final var expectedError = JPackageCommand.makeError(
                 "error.invalid-app-image-file", AppImageFile.getPathInAppImage(Path.of("")), appImageDir);
 
         configureBadAppImage(appImageDir, expectedError).addRunOnceInitializer(() -> {
@@ -204,7 +204,7 @@ public class AppImagePackageTest {
     }
 
     private static PackageTest configureBadAppImage(Path appImageDir) {
-        return configureBadAppImage(appImageDir, JPackageStringBundle.MAIN.cannedFormattedString(
+        return configureBadAppImage(appImageDir, JPackageCommand.makeError(
                 "error.missing-app-image-file", AppImageFile.getPathInAppImage(Path.of("")), appImageDir));
     }
 
@@ -212,7 +212,7 @@ public class AppImagePackageTest {
         return new PackageTest().addInitializer(cmd -> {
             cmd.usePredefinedAppImage(appImageDir);
             cmd.ignoreDefaultVerbose(true); // no "--verbose" option
-            cmd.validateOutput(expectedError);
+            cmd.validateErr(expectedError);
         }).setExpectedExitCode(1);
     }
 

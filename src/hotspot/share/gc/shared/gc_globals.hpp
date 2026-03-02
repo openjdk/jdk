@@ -198,13 +198,6 @@
           constraint(MarkStackSizeConstraintFunc,AfterErgo)                 \
           range(1, (INT_MAX - 1))                                           \
                                                                             \
-  product(bool, ParallelRefProcEnabled, false,                              \
-          "(Deprecated) Enable parallel reference processing "              \
-          "whenever possible")                                              \
-                                                                            \
-  product(bool, ParallelRefProcBalancingEnabled, true,                      \
-          "(Deprecated) Enable balancing of reference processing queues")   \
-                                                                            \
   product(size_t, ReferencesPerThread, 1000, EXPERIMENTAL,                  \
                "Ergonomically start one thread for this amount of "         \
                "references for reference processing if "                    \
@@ -269,18 +262,13 @@
   product(bool, AlwaysActAsServerClassMachine, false,                       \
           "(Deprecated) Always act like a server-class machine")            \
                                                                             \
-  product(uint64_t, MaxRAM, 0,                                              \
-          "(Deprecated) Real memory size (in bytes) used to set maximum "   \
-          "heap size")                                                      \
-          range(0, 0XFFFFFFFFFFFFFFFF)                                      \
-                                                                            \
   product(bool, AggressiveHeap, false,                                      \
           "(Deprecated) Optimize heap options for long-running memory "     \
           "intensive apps")                                                 \
                                                                             \
   product(size_t, ErgoHeapSizeLimit, 0,                                     \
           "Maximum ergonomically set heap size (in bytes); zero means use " \
-          "MaxRAM * MaxRAMPercentage / 100")                                \
+          "(System RAM) * MaxRAMPercentage / 100")                          \
           range(0, max_uintx)                                               \
                                                                             \
   product(double, MaxRAMPercentage, 25.0,                                   \

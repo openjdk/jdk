@@ -3692,11 +3692,12 @@ public class Lower extends TreeTranslator {
             if (tree.var.type.isPrimitive())
                 vardefinit = make.TypeCast(types.cvarUpperBound(iteratorTarget), vardefinit);
             else
-                vardefinit = make.TypeCast(tree.var.type, vardefinit);
+                vardefinit = transTypes.coerce(attrEnv, vardefinit, tree.var.type);
             JCVariableDecl indexDef = (JCVariableDecl)make.VarDef(tree.var.mods,
                                                   tree.var.name,
                                                   tree.var.vartype,
-                                                  vardefinit).setType(tree.var.type);
+                                                  vardefinit,
+                                                  tree.var.declKind).setType(tree.var.type);
             indexDef.sym = tree.var.sym;
             JCBlock body = make.Block(0, List.of(indexDef, tree.body));
             body.bracePos = TreeInfo.endPos(tree.body);
