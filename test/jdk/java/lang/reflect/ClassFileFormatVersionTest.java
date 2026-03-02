@@ -34,11 +34,8 @@ import java.util.Arrays;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
 
-import static java.lang.reflect.ClassFileFormatVersion.PREVIEW_ENABLED;
-import static java.lang.reflect.ClassFileFormatVersion.latest;
+import static java.lang.reflect.ClassFileFormatVersion.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -58,32 +55,35 @@ class ClassFileFormatVersionTest {
         var latest = ClassFileFormatVersion.latest();
         assertNotSame(PREVIEW_ENABLED, latest);
         assertEquals(ClassFile.latestMajorVersion(), latest.major());
+        assertEquals(Runtime.version().feature(), latest.runtimeVersion().feature());
         assertEquals(ClassFileFormatVersion.values().length - 2, latest.ordinal());
     }
 
     @Test
     void testPreviewEnabled() {
-        assertTrue(ClassFileFormatVersion.latest().compareTo(PREVIEW_ENABLED) < 0);
-        assertEquals(ClassFile.latestMajorVersion(), PREVIEW_ENABLED.major());
+        var latest = ClassFileFormatVersion.latest();
+        assertTrue(latest.compareTo(PREVIEW_ENABLED) < 0);
+        assertEquals(latest.major(), PREVIEW_ENABLED.major());
+        assertEquals(latest.runtimeVersion(), PREVIEW_ENABLED.runtimeVersion());
         assertEquals(ClassFileFormatVersion.values().length - 1, PREVIEW_ENABLED.ordinal());
-        assertNull(PREVIEW_ENABLED.runtimeVersion());
     }
 
-    static Stream<ClassFileFormatVersion> releaseVersions() {
-        return Arrays.stream(ClassFileFormatVersion.values()).filter(e -> e != PREVIEW_ENABLED);
-    }
-
-    @ParameterizedTest
-    @MethodSource("releaseVersions")
-    void testEachVersion(ClassFileFormatVersion cffv) {
-        if (cffv.compareTo(ClassFileFormatVersion.RELEASE_6) >= 0) {
-            assertEquals(cffv.major() - 44, cffv.runtimeVersion().feature());
-            assertEquals(cffv, ClassFileFormatVersion.valueOf(cffv.runtimeVersion()));
-        } else {
-            assertNull(cffv.runtimeVersion());
-        }
-        if (cffv != ClassFileFormatVersion.RELEASE_0) {
-            assertEquals(cffv, ClassFileFormatVersion.fromMajor(cffv.major()));
+    @Test
+    void testSequentialVersions() {
+        ClassFileFormatVersion[] values = ClassFileFormatVersion.values();
+        assertSame(RELEASE_0, values[0]);
+        assertSame(PREVIEW_ENABLED, values[values.length - 1]);
+        for (int i = 1; i < values.length - 1; i++) {
+            var cffv = values[i];
+            int expectedMajor = i + 44;
+            assertEquals(expectedMajor, cffv.major());
+            assertEquals(cffv, ClassFileFormatVersion.fromMajor(expectedMajor));
+            if (cffv.compareTo(ClassFileFormatVersion.RELEASE_6) >= 0) {
+                assertEquals(i, cffv.runtimeVersion().feature());
+                assertEquals(cffv, ClassFileFormatVersion.valueOf(cffv.runtimeVersion()));
+            } else {
+                assertNull(cffv.runtimeVersion());
+            }
         }
     }
 

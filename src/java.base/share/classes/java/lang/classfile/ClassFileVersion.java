@@ -77,6 +77,17 @@ public sealed interface ClassFileVersion
     int minorVersion();
 
     /**
+     * {@return the class file format version associated with the version numbers}
+     *
+     * @throws IllegalArgumentException if the version number does not represent
+     *         a class file format recognized by the Java SE release of this
+     *         runtime, such as class files that depend on the preview features
+     *         of an older release
+     * @since 27
+     */
+    ClassFileFormatVersion formatVersion();
+
+    /**
      * {@return a {@link ClassFileVersion} element}  The minor version number
      * may be {@code -1} to represent {@value ClassFile#PREVIEW_MINOR_VERSION}.
      *

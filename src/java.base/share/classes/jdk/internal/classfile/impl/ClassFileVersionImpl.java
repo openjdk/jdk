@@ -25,6 +25,9 @@
 package jdk.internal.classfile.impl;
 
 import java.lang.classfile.ClassFileVersion;
+import java.lang.reflect.ClassFileFormatVersion;
+
+import jdk.internal.misc.VM;
 
 import static java.lang.classfile.ClassFile.PREVIEW_MINOR_VERSION;
 
@@ -47,6 +50,15 @@ public final class ClassFileVersionImpl
     @Override
     public int minorVersion() {
         return minorVersion;
+    }
+
+    @Override
+    public ClassFileFormatVersion formatVersion() {
+        var version = VM.findFormatVersion(majorVersion, minorVersion);
+        if (version == null) {
+            throw new IllegalArgumentException("Unsupported class file version " + majorVersion + "." + minorVersion);
+        }
+        return version;
     }
 
     @Override

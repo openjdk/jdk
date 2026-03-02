@@ -39,6 +39,7 @@ import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.module.ModuleDescriptor;
+import java.lang.reflect.ClassFileFormatVersion;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.net.URI;
@@ -2029,8 +2030,8 @@ public final class System {
             E[] getEnumConstantsShared(Class<E> klass) {
                 return klass.getEnumConstantsShared();
             }
-            public int classFileVersion(Class<?> clazz) {
-                return clazz.getClassFileVersion();
+            public ClassFileFormatVersion classFileFormat(Class<?> clazz) {
+                return clazz.getFormatVersion();
             }
             public void blockedOn(Interruptible b) {
                 Thread.currentThread().blockedOn(b);

@@ -29,6 +29,7 @@ import static java.lang.Thread.State.*;
 
 import java.io.PrintStream;
 import java.lang.classfile.ClassFile;
+import java.lang.reflect.ClassFileFormatVersion;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -172,11 +173,34 @@ public class VM {
      * @jvms 4.1 Table 4.1-A. class file format major versions
      */
     public static boolean isSupportedClassFileVersion(int major, int minor) {
-        if (major < ClassFile.JAVA_1_VERSION || major > ClassFile.latestMajorVersion()) return false;
+        return findFormatVersion(major, minor) != null;
+    }
+
+    /**
+     * Finds the supported format version for a {@code class} file version.
+     * Returns null if this major.minor version is not supported by the current
+     * Java SE release.
+     *
+     * @jvms 4.1 Table 4.1-A. class file format major versions
+     */
+    public static ClassFileFormatVersion findFormatVersion(int major, int minor) {
+        if (major < ClassFile.JAVA_1_VERSION || major > ClassFile.latestMajorVersion())
+            return null;
         // for major version is between 45 and 55 inclusive, the minor version may be any value
-        if (major < ClassFile.JAVA_12_VERSION) return true;
+        if (major < ClassFile.JAVA_12_VERSION) {
+            if (major == ClassFile.JAVA_1_VERSION && minor < 3) {
+                return ClassFileFormatVersion.RELEASE_0;
+            }
+            return ClassFileFormatVersion.fromMajor(major);
+        };
         // otherwise, the minor version must be 0 or 65535
-        return minor == 0 || (minor == ClassFile.PREVIEW_MINOR_VERSION && major == ClassFile.latestMajorVersion());
+        if (minor == 0) {
+            return ClassFileFormatVersion.fromMajor(major);
+        }
+        if (minor == ClassFile.PREVIEW_MINOR_VERSION && major == ClassFile.latestMajorVersion()) {
+            return ClassFileFormatVersion.PREVIEW_ENABLED;
+        }
+        return null;
     }
 
     /**

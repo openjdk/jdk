@@ -31,24 +31,19 @@ import java.lang.classfile.ClassFileVersion;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * A {@code class} file format version represents a set of VM features, derived
- * from a supported class {@linkplain ClassFileVersion#majorVersion() major} and
- * {@linkplain ClassFileVersion#minorVersion() minor} version combination.
- * The appropriate edition of <cite>The Java Virtual Machine Specification</cite>
- * for each Java SE release lists its supported major and minor version
- * combinations and their correspoding format versions.
+ * Represents a {@code class} file format supported by the Java SE release
+ * implemented by the current Java runtime environment.
  * <p>
+ * Every Java SE release introduces a new class file format version, supported
+ * by all future Java SE releases.  The edition of <cite>The Java Virtual
+ * Machine Specification</cite> for that release describes that format.
  * Additional class file format version constants will be added to model future
  * class file formats defined by future releases of the JVMS.
  * <p>
- * A special constant, {@link #PREVIEW_ENABLED}, represents the VM features of
- * the current Java SE release when preview features are enabled.
- *
- * @apiNote
- * A class file format version is derived from a supported class major and minor
- * version combination.  Given a supported combination, the major version alone
- * is sufficient to identify most class file format versions; see {@link
- * #fromMajor(int)} and JVMS {@jvms 4.1}.
+ * Beginning with Java SE 12, every Java SE release also introduces a class file
+ * format using preview features of that release.  This format is unsupported by
+ * any other Java SE release; it is modeled by the constant {@link
+ * #PREVIEW_ENABLED}.
  *
  * @since 20
  * @see System#getProperties System property {@code java.class.version}
@@ -409,8 +404,13 @@ public enum ClassFileFormatVersion {
     /**
      * All VM features of the {@linkplain #latest() current Java SE release}
      * when preview features are enabled.  This includes all preview VM features
-     * of the current Java SE release, which may not be supported by later Java
-     * SE releases.
+     * of the current release, and does not include the preview features from
+     * any previous release.
+     * <p>
+     * This constant has the same {@link #major() major} and {@link #runtimeVersion()
+     * runtimeVersion} as {@code ClassFileFormatVersion.latest()}, but
+     * is never returned by {@link #fromMajor(int) fromMajor} or {@link
+     * #valueOf(Runtime.Version) valueOf(Runtime.Version)}.
      *
      * @apiNote
      * This is a reflective preview API to allow tools running in Java runtime
@@ -493,16 +493,13 @@ public enum ClassFileFormatVersion {
      * and has no other elements set.
      * <p>
      * Class file format versions greater than or equal to {@link
-     * #RELEASE_6}, except {@link #PREVIEW_ENABLED}, have
-     * non-{@code null} results.
+     * #RELEASE_6} have non-{@code null} results.
      */
     public Runtime.Version runtimeVersion() {
-        if (this == PREVIEW_ENABLED)
-            return null;
         // Starting with Java SE 6, the leading digit was the primary
         // way of identifying the platform version.
         if (this.compareTo(RELEASE_6) >= 0) {
-            return Runtime.Version.parse(Integer.toString(ordinal()));
+            return Runtime.Version.parse(Integer.toString(major - 44));
         } else {
             return null;
         }

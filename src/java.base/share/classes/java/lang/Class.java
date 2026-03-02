@@ -26,6 +26,7 @@
 package java.lang;
 
 import java.lang.annotation.Annotation;
+import java.lang.classfile.ClassFile;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.invoke.TypeDescriptor;
@@ -34,23 +35,7 @@ import java.lang.ref.SoftReference;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectStreamField;
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.AnnotatedType;
-import java.lang.reflect.AccessFlag;
-import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Executable;
-import java.lang.reflect.Field;
-import java.lang.reflect.GenericArrayType;
-import java.lang.reflect.GenericDeclaration;
-import java.lang.reflect.GenericSignatureFormatError;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Member;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.RecordComponent;
-import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
+import java.lang.reflect.*;
 import java.lang.constant.Constable;
 import java.net.URL;
 import java.security.AllPermission;
@@ -72,7 +57,9 @@ import java.util.stream.Collectors;
 import jdk.internal.constant.ConstantUtils;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.BuiltinClassLoader;
+import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.misc.VM;
 import jdk.internal.module.Resources;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.CallerSensitiveAdapter;
@@ -1826,6 +1813,12 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     private native String getSimpleBinaryName0();
+
+    private boolean isClassOrInterface() {
+        // Array and primitives are both abstract and final, but not for class or interfaces
+        final int fakeMask = Modifier.ABSTRACT | Modifier.FINAL;
+        return (getModifiers() & fakeMask) != fakeMask;
+    }
 
     /**
      * Returns {@code true} if this is a top level class.  Returns {@code false}
@@ -4110,6 +4103,36 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     private native Class<?>[] getPermittedSubclasses0();
+
+    /**
+     * Returns the format version for the {@code class} file that derived
+     * the class or interface represented by this {@code Class} object.  If this
+     * {@code Class} object represents an array type, a primitive type, or
+     * {@code void}, returns {@link ClassFileFormatVersion#latest()}.
+     *
+     * @apiNote
+     * The APIs in {@code Class} represents classes and interfaces uniformly
+     * regardless of their format version. There is no need to interpret
+     * reflective API results differently due to different format versions.
+     *
+     * @return the format version of the underlying {@code class} file
+     * @jvms 4.1 The {@code ClassFile} Structure
+     */
+    // Internal. The reflected properties of a Class don't change by the format
+    // version, this does not need to be exposed in public for now.
+    ClassFileFormatVersion getFormatVersion() {
+        if (!isClassOrInterface()) {
+            return ClassFileFormatVersion.latest();
+        }
+
+        int raw = getClassFileVersion();
+        int major = raw & 0xFFFF;
+        int minor = raw >>> Character.SIZE;
+
+        var ret = VM.findFormatVersion(major, minor);
+        assert ret != null : major + "." + minor;
+        return ret;
+    }
 
     /*
      * Return the class's major and minor class file version packed into an int.

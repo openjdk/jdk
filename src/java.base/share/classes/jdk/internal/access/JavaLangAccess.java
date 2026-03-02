@@ -33,6 +33,7 @@ import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.module.ModuleDescriptor;
+import java.lang.reflect.ClassFileFormatVersion;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.net.URI;
@@ -125,10 +126,9 @@ public interface JavaLangAccess {
     <E extends Enum<E>> E[] getEnumConstantsShared(Class<E> klass);
 
     /**
-     * Returns the big-endian packed minor-major version of the class file
-     * of this class.
+     * Returns the recognized class file format of the class file of this class.
      */
-    int classFileVersion(Class<?> clazz);
+    ClassFileFormatVersion classFileFormat(Class<?> clazz);
 
     /**
      * Set current thread's blocker field.
