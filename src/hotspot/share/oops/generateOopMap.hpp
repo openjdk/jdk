@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -348,17 +348,15 @@ class GenerateOopMap {
 
   // Basicblock info
   BasicBlock *    _basic_blocks;             // Array of basicblock info
-  int             _gc_points;
   int             _bb_count;
   ResourceBitMap  _bb_hdr_bits;
 
   // Basicblocks methods
   void          initialize_bb               ();
-  void          mark_bbheaders_and_count_gc_points();
+  void          mark_bbheaders();
   bool          is_bb_header                (int bci) const   {
     return _bb_hdr_bits.at(bci);
   }
-  int           gc_points                   () const                          { return _gc_points; }
   int           bb_count                    () const                          { return _bb_count; }
   void          set_bbmark_bit              (int bci);
   BasicBlock *  get_basic_block_at          (int bci) const;
@@ -450,7 +448,7 @@ class GenerateOopMap {
   int  binsToHold                           (int no)                      { return  ((no+(BitsPerWord-1))/BitsPerWord); }
   char *state_vec_to_string                 (CellTypeState* vec, int len);
 
-  // Helper method. Can be used in subclasses to fx. calculate gc_points. If the current instruction
+  // Helper method. If the current instruction
   // is a control transfer, then calls the jmpFct all possible destinations.
   void  ret_jump_targets_do                 (BytecodeStream *bcs, jmpFct_t jmpFct, int varNo,int *data);
   bool  jump_targets_do                     (BytecodeStream *bcs, jmpFct_t jmpFct, int *data);
@@ -480,13 +478,7 @@ class GenerateOopMap {
   bool monitor_safe()                              { return _monitor_safe; }
 
   // Specialization methods. Intended use:
-  // - possible_gc_point must return true for every bci for which the stackmaps must be returned
-  // - fill_stackmap_prolog is called just before the result is reported. The arguments tells the estimated
-  //   number of gc points
   // - fill_stackmap_for_opcodes is called once for each bytecode index in order (0...code_length-1)
-  // - fill_stackmap_epilog is called after all results has been reported. Note: Since the algorithm does not report
-  //   stackmaps for deadcode, fewer gc_points might have been encountered than assumed during the epilog. It is the
-  //   responsibility of the subclass to count the correct number.
   // - fill_init_vars are called once with the result of the init_vars computation
   //
   // All these methods are used during a call to: compute_map. Note: Non of the return results are valid
@@ -496,9 +488,6 @@ class GenerateOopMap {
   virtual bool allow_rewrites             () const                        { return false; }
   virtual bool report_results             () const                        { return true;  }
   virtual bool report_init_vars           () const                        { return true;  }
-  virtual bool possible_gc_point          (BytecodeStream *bcs)           { ShouldNotReachHere(); return false; }
-  virtual void fill_stackmap_prolog       (int nof_gc_points)             { ShouldNotReachHere(); }
-  virtual void fill_stackmap_epilog       ()                              { ShouldNotReachHere(); }
   virtual void fill_stackmap_for_opcodes  (BytecodeStream *bcs,
                                            CellTypeState* vars,
                                            CellTypeState* stack,
@@ -518,9 +507,6 @@ class ResolveOopMapConflicts: public GenerateOopMap {
   virtual bool report_results() const     { return false; }
   virtual bool report_init_vars() const   { return true;  }
   virtual bool allow_rewrites() const     { return true;  }
-  virtual bool possible_gc_point          (BytecodeStream *bcs)           { return false; }
-  virtual void fill_stackmap_prolog       (int nof_gc_points)             {}
-  virtual void fill_stackmap_epilog       ()                              {}
   virtual void fill_stackmap_for_opcodes  (BytecodeStream *bcs,
                                            CellTypeState* vars,
                                            CellTypeState* stack,
@@ -551,9 +537,6 @@ class GeneratePairingInfo: public GenerateOopMap {
   virtual bool report_results() const     { return false; }
   virtual bool report_init_vars() const   { return false; }
   virtual bool allow_rewrites() const     { return false;  }
-  virtual bool possible_gc_point          (BytecodeStream *bcs)           { return false; }
-  virtual void fill_stackmap_prolog       (int nof_gc_points)             {}
-  virtual void fill_stackmap_epilog       ()                              {}
   virtual void fill_stackmap_for_opcodes  (BytecodeStream *bcs,
                                            CellTypeState* vars,
                                            CellTypeState* stack,
