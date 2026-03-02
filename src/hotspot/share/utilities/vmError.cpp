@@ -90,7 +90,7 @@ Atomic<bool>      VMError::_reporting_did_timeout{false};
 Atomic<jlong>     VMError::_step_start_time{-1};
 Atomic<bool>      VMError::_step_did_timeout{false};
 Atomic<bool>      VMError::_step_did_succeed{false};
-volatile intptr_t VMError::_first_error_tid = -1;
+Atomic<intptr_t>  VMError::_first_error_tid{-1};
 int               VMError::_id;
 const char*       VMError::_message;
 char              VMError::_detail_msg[1024];
@@ -542,12 +542,12 @@ static void report_vm_version(outputStream* st, char* buf, int buflen) {
 
 // Returns true if at least one thread reported a fatal error and fatal error handling is in process.
 bool VMError::is_error_reported() {
-  return _first_error_tid != -1;
+  return _first_error_tid.load_relaxed() != -1;
 }
 
 // Returns true if the current thread reported a fatal error.
 bool VMError::is_error_reported_in_current_thread() {
-  return _first_error_tid == os::current_thread_id();
+  return _first_error_tid.load_relaxed() == os::current_thread_id();
 }
 
 // Helper, return current timestamp for timeout handling.
@@ -1707,8 +1707,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
   static bool log_done = false;         // done saving error log
 
   intptr_t mytid = os::current_thread_id();
-  if (_first_error_tid == -1 &&
-      AtomicAccess::cmpxchg(&_first_error_tid, (intptr_t)-1, mytid) == -1) {
+  if (_first_error_tid.compare_set(-1, mytid)) {
 
     if (SuppressFatalErrorMessage) {
       os::abort(CreateCoredumpOnCrash);
@@ -1755,7 +1754,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
   } else {
     // This is not the first error, see if it happened in a different thread
     // or in the same thread during error reporting.
-    if (_first_error_tid != mytid) {
+    if (_first_error_tid.load_relaxed() != mytid) {
       if (!SuppressFatalErrorMessage) {
         char msgbuf[64];
         jio_snprintf(msgbuf, sizeof(msgbuf),

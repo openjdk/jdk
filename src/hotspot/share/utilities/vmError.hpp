@@ -74,7 +74,7 @@ class VMError : public AllStatic {
 
   // Thread id of the first error. We must be able to handle native thread,
   // so use thread id instead of Thread* to identify thread.
-  static volatile intptr_t _first_error_tid;
+  static Atomic<intptr_t> _first_error_tid;
 
   // Core dump status, false if we have been unable to write a core/minidump for some reason
   static bool coredump_status;
