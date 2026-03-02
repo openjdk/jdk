@@ -178,7 +178,7 @@ public class InflaterOutputStream extends FilterOutputStream {
             closed = true;
         }
         if (toThrow != null) {
-            throw  toThrow;
+            throw toThrow;
         }
     }
 
