@@ -110,7 +110,7 @@ void zBarrierSetAssembler::load_at(MacroAssembler* masm,
   if (!ZBarrierSet::barrier_needed(decorators, type)) {
     // Barrier not needed
     // TODO: load_at uses two temporary registers temp1, temp2
-    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1);
+    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, temp1);
     return;
   }
 
@@ -161,7 +161,7 @@ void zBarrierSetAssembler::load_at(MacroAssembler* masm,
     if (Z_R2 != dst) {
       __ z_lgr(Z_R2, dst);
     }
-    __ z_lgr(Z_R3, tmp2);
+    __ z_lgr(Z_R3, temp2);
 
     __ call_VM_leaf(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(decorators));
   }
@@ -267,5 +267,59 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
   __ z_la(temp1, Address(temp1, 0));
   __ z_st(temp1, Address(temp2, in_bytes(ZStoreBarrierEntry::prev_offset())));
 }  
+
+void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
+                                                Address ref_addr,
+                                                Register temp1,
+                                                Register temp2,
+                                                bool is_native,
+                                                bool is_atomic,
+                                                Label& medium_path_continuation,
+                                                Label& slow_path,
+                                                Label& slow_path_continuation) const {
+  assert_different_registers(ref_addr.base(), temp1, temp2);
+
+  // The reason to end up in the medium path is that the pre-value was not 'good'.
+
+  if (is_native) {
+    __ z_br(slow_path);
+    __ bind(slow_path_continuation);
+    __ z_br(medium_path_continuation);
+  } else if (is_atomic) {
+    // Atomic accesses can get to the medium fast path because the value was a
+    // raw null value. If it was not null, then there is no doubt we need to take a slow path.
+    // TODO: see of there is more efficient way to do this i.e. branch if not zero like in aarch64
+    __ z_xgr(temp1, temp1);
+    __ z_cg(temp1, ref_addr);
+    __ z_brne(slow_path);
+
+    // If we get this far, we know there is a young raw null value in the field.
+    // Try to self-heal null values for atomic accesses
+    __ z_la(temp2, Address(Z_thread , ZThreadLocalData::store_good_mask_offset());
+    __ z_csg(temp1, temp2, ref_addr);
+
+    __ z_brne(slow_path);
+
+    __ bind(slow_path_continuation);
+    __ z_br(medium_path_continuation);
+  } else {
+    // A non-atomic relocatable object won't get to the medium fast path due to a
+    // raw null in the young generation. We only get here because the field is bad.
+    // In this path we don't need any self healing, so we can avoid a runtime call
+    // most of the time by buffering the store barrier to be applied lazily.
+    store_barrier_buffer_add(masm,
+                             ref_addr,
+                             temp1,
+                             temp2,
+                             slow_path);
+    __ bind(slow_path_continuation);
+    __ z_br(medium_path_continuation);
+  }
+}
+
+
+
+
+
 
 #undef __
