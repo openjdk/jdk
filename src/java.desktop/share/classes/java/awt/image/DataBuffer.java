@@ -575,7 +575,7 @@ public abstract class DataBuffer {
     }
 
     static final void checkArraySize(int size, int offset, int arrayLen) {
-        if (size <= 0 || (size + offset) > arrayLen  ||
+        if (size <= 0 || (size + offset) > arrayLen ||
             (offset > 0) && ((size + offset) < size)) {
             throw new IllegalArgumentException("Bad size/offset. Size = " + size +
                 " offset = " + offset + " bank length = " + arrayLen);

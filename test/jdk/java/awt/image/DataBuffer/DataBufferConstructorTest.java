@@ -714,7 +714,7 @@ public class DataBufferConstructorTest {
 
         // DataBufferFloat(byte[][] dataArray, int size)
         testFloatConstructor(nullFloatArrays, 0, NullPointerException.class);
-        testFloatConstructor(zeroFloatSubArrays, 0,  IllegalArgumentException.class);
+        testFloatConstructor(zeroFloatSubArrays, 0, IllegalArgumentException.class);
         testFloatConstructor(oneFloatSubArrays, -1, IllegalArgumentException.class);
         testFloatConstructor(oneFloatSubArrays, 2, IllegalArgumentException.class);
 
