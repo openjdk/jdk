@@ -1391,13 +1391,14 @@ void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     case Op_If:
     case Op_CountedLoopEnd:
     case Op_LongCountedLoopEnd:
-      // Ideal(can_reshape=true) for these nodes is not a pure query: split_if
-      // (called from Ideal_common) speculatively clones a compare node to test
-      // constant foldability, then destroys it. When the test fails, Ideal returns
-      // nullptr (the node IS at its fixed point), but clone() has already bumped
-      // C->unique(). This triggers a false assertion in the old_unique check below.
-      // Deep revisit convergence for these nodes is instead verified via the
-      // drain-based check in verify_optimize().
+      // Ideal(can_reshape=true) is not a pure query for these nodes; it has two
+      // distinct destructive side-effects that make the BFS verify_Ideal_for loop unsafe:
+      // 1. split_if speculatively clones a compare node then destroys it, bumping
+      //     C->unique() even when Ideal returns nullptr, causing a false assertion.
+      // 2. search_identical -> dominated_by kills other If nodes mid-BFS, shortening
+      //     the dominator chain and enabling later Ifs (already at fixed point after
+      //     deep_revisit) to find new matches, causing a false "Missed Ideal" assertion.
+      // Convergence is instead verified via the drain-based check in verify_optimize().
       return;
 
     // RegionNode::Ideal does "Skip around the useless IF diamond".
