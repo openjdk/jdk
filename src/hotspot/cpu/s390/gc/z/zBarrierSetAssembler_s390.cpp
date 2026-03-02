@@ -236,6 +236,36 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
   }
 }
 
+static void store_barrier_buffer_add(MacroAssembler* masm,
+                                     Address ref_addr,
+                                     Register temp1,
+                                     Register temp2,
+                                     Label& slow_path) {
+  Address buffer(Z_thread, ZThreadLocalData::store_barrier_buffer_offset());
 
+  __ z_la(temp1, buffer);
+
+  // Combined pointer bump and check if the buffer is disabled or full
+  // TODO: z_chy is not implemented and also check if we need to only compare the 8 bits
+  __ z_la(temp2, Address(temp1, ZStoreBarrierBuffer::current_offset()));
+  __ z_chi(temp2, (uint8_t)0);
+  __ z_bre(slow_path);
+  
+  // Bump the pointer
+  __ z_agfi(temp2, -(int)sizeof(ZStoreBarrierEntry));
+  __ z_st(temp2, Address(temp1, ZStoreBarrierBuffer::current_offset()));
+
+  // Compute the buffer entry address
+  __ z_la(temp2, Address(temp2, ZStoreBarrierBuffer::buffer_offset()));
+  __ z_agr(temp2, temp1);
+
+  // Compute and log the store address
+  __ z_la(temp1, ref_addr);
+  __ z_st(temp1, Address(temp2, in_bytes(ZStoreBarrierEntry::p_offset())));
+
+  // Load and log the prev value
+  __ z_la(temp1, Address(temp1, 0));
+  __ z_st(temp1, Address(temp2, in_bytes(ZStoreBarrierEntry::prev_offset())));
+}  
 
 #undef __
