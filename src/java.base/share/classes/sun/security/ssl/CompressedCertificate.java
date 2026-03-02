@@ -162,7 +162,7 @@ final class CompressedCertificate {
             byte[] certMsg = hos.toByteArray();
             byte[] compressedCertMsg;
 
-            // First byte is the size of certificate_request_contex which
+            // First byte is the size of certificate_request_context which
             // should be random if present. Don't cache a randomized message.
             if (certMsg[0] != 0) {
                 compressedCertMsg = hc.certDeflater.getValue().apply(certMsg);
