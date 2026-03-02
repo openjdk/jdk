@@ -197,7 +197,9 @@ public class Platform {
                 BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
                 String l = b.readLine();
                 return (l != null && l.contains("musl"));
-            } catch (Exception e) {}
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
         return false;
     }
