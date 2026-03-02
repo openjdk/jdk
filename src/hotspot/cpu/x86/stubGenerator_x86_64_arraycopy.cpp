@@ -586,7 +586,7 @@ address StubGenerator::generate_disjoint_copy_avx3_masked(StubId stub_id, addres
   if (start != nullptr) {
     assert(entries.length() == expected_entry_count - 1,
            "unexpected extra entry count %d", entries.length());
-    assert(extras.length() == expected_extra_count,
+    assert((UseZGC && is_oop) || extras.length() == expected_extra_count,
            "unexpected extra addresses count %d", extras.length());
     if (entry != nullptr) {
       *entry = entries.at(0);
@@ -594,6 +594,12 @@ address StubGenerator::generate_disjoint_copy_avx3_masked(StubId stub_id, addres
     if (add_extras) {
       // restore 1 x UMAM {start,end,handler} addresses from extras
       register_unsafe_access_handlers(extras, 0, 1);
+#if INCLUDE_ZGC
+      // register addresses at which ZGC does colour patching
+      if ((UseZGC && is_oop))  {
+        register_reloc_addresses(extras, 3, extras.length());
+      }
+#endif // INCLUDE_ZGC
     }
     return start;
   }
@@ -826,8 +832,14 @@ address StubGenerator::generate_disjoint_copy_avx3_masked(StubId stub_id, addres
   address end = __ pc();
   if (add_extras) {
     retrieve_unsafe_access_handlers(start, end, extras);
+#if INCLUDE_ZGC
+    // retrieve addresses at which ZGC does colour patching
+    if ((UseZGC && is_oop)) {
+      retrieve_reloc_addresses(start, end, extras);
+    }
+#endif // INCLUDE_ZGC
   }
-  assert(extras.length() == expected_extra_count,
+  assert((UseZGC && is_oop) || extras.length() == expected_extra_count,
          "unexpected extra addresses count %d", extras.length());
 
   // record the stub entry and end plus the no_push entry and any
@@ -961,7 +973,7 @@ address StubGenerator::generate_conjoint_copy_avx3_masked(StubId stub_id, addres
   if (start != nullptr) {
     assert(entries.length() == expected_entry_count - 1,
            "unexpected extra entry count %d", entries.length());
-    assert(extras.length() == expected_extra_count,
+    assert((UseZGC && is_oop) || extras.length() == expected_extra_count,
            "unexpected extra addresses count %d", extras.length());
     if (entry != nullptr) {
       *entry = entries.at(0);
@@ -969,6 +981,12 @@ address StubGenerator::generate_conjoint_copy_avx3_masked(StubId stub_id, addres
     if (add_extras) {
       // restore 1 x UMAM {start,end,handler} addresses from extras
       register_unsafe_access_handlers(extras, 0, 1);
+#if INCLUDE_ZGC
+      if ((UseZGC && is_oop))  {
+        // register addresses at which ZGC does colour patching
+        register_reloc_addresses(extras, 3, extras.length());
+      }
+#endif // INCLUDE_ZGC
     }
     return start;
   }
@@ -1141,8 +1159,14 @@ address StubGenerator::generate_conjoint_copy_avx3_masked(StubId stub_id, addres
   address end = __ pc();
   if (add_extras) {
     retrieve_unsafe_access_handlers(start, end, extras);
+#if INCLUDE_ZGC
+    // retrieve addresses at which ZGC does colour patching
+    if ((UseZGC && is_oop)) {
+      retrieve_reloc_addresses(start, end, extras);
+    }
+#endif // INCLUDE_ZGC
   }
-  assert(extras.length() == expected_extra_count,
+  assert((UseZGC && is_oop) || extras.length() == expected_extra_count,
          "unexpected extra addresses count %d", extras.length());
 
   // record the stub entry and end plus the no_push entry and any
@@ -2138,7 +2162,7 @@ address StubGenerator::generate_disjoint_int_oop_copy(StubId stub_id, address* e
   if (start != nullptr) {
     assert(entries.length() == expected_entry_count - 1,
            "unexpected extra entry count %d", entries.length());
-    assert(extras.length() == expected_extra_count,
+    assert((UseZGC && is_oop) || extras.length() == expected_extra_count,
            "unexpected extra addresses count %d", extras.length());
     if (entry != nullptr) {
       *entry = entries.at(0);
@@ -2146,6 +2170,12 @@ address StubGenerator::generate_disjoint_int_oop_copy(StubId stub_id, address* e
     if (add_extras) {
       // restore 2 UMAM {start,end,handler} addresses from extras
       register_unsafe_access_handlers(extras, 0, 2);
+#if INCLUDE_ZGC
+      // register addresses at which ZGC does colour patching
+      if ((UseZGC && is_oop))  {
+        register_reloc_addresses(extras, 6, extras.length());
+      }
+#endif // INCLUDE_ZGC
     }
     return start;
   }
@@ -2237,8 +2267,14 @@ address StubGenerator::generate_disjoint_int_oop_copy(StubId stub_id, address* e
   address end = __ pc();
   if (add_extras) {
     retrieve_unsafe_access_handlers(start, end, extras);
+#if INCLUDE_ZGC
+    // retrieve addresses at which ZGC does colour patching
+    if ((UseZGC && is_oop)) {
+      retrieve_reloc_addresses(start, end, extras);
+    }
+#endif // INCLUDE_ZGC
   }
-  assert(extras.length() == expected_extra_count,
+  assert((UseZGC && is_oop) || extras.length() == expected_extra_count,
          "unexpected extra addresses count %d", extras.length());
 
   // record the stub entry and end plus the no_push entry and any
@@ -2306,7 +2342,7 @@ address StubGenerator::generate_conjoint_int_oop_copy(StubId stub_id, address no
   if (start != nullptr) {
     assert(entries.length() == expected_entry_count - 1,
            "unexpected extra entry count %d", entries.length());
-    assert(extras.length() == expected_extra_count,
+    assert((UseZGC && is_oop) || extras.length() == expected_extra_count,
            "unexpected extra addresses count %d", extras.length());
     if (entry != nullptr) {
       *entry = entries.at(0);
@@ -2314,6 +2350,12 @@ address StubGenerator::generate_conjoint_int_oop_copy(StubId stub_id, address no
     if (add_extras) {
       // restore 2 UMAM {start,end,handler} addresses from extras
       register_unsafe_access_handlers(extras, 0, 2);
+#if INCLUDE_ZGC
+      // register addresses at which ZGC does colour patching
+      if ((UseZGC && is_oop))  {
+        register_reloc_addresses(extras, 6, extras.length());
+      }
+#endif // INCLUDE_ZGC
     }
     return start;
   }
@@ -2409,8 +2451,14 @@ address StubGenerator::generate_conjoint_int_oop_copy(StubId stub_id, address no
   address end = __ pc();
   if (add_extras) {
     retrieve_unsafe_access_handlers(start, end, extras);
+#if INCLUDE_ZGC
+    // retrieve addresses at which ZGC does colour patching
+    if ((UseZGC && is_oop)) {
+      retrieve_reloc_addresses(start, end, extras);
+    }
+#endif // INCLUDE_ZGC
   }
-  assert(extras.length() == expected_extra_count,
+  assert((UseZGC && is_oop) || extras.length() == expected_extra_count,
          "unexpected extra addresses count %d", extras.length());
 
   // record the stub entry and end plus the no_push entry and any
@@ -2476,7 +2524,7 @@ address StubGenerator::generate_disjoint_long_oop_copy(StubId stub_id, address *
   if (start != nullptr) {
     assert(entries.length() == expected_entry_count - 1,
            "unexpected extra entry count %d", entries.length());
-    assert(extras.length() == expected_extra_count,
+    assert((UseZGC && is_oop) || extras.length() == expected_extra_count,
            "unexpected extra addresses count %d", extras.length());
     if (entry != nullptr) {
       *entry = entries.at(0);
@@ -2484,6 +2532,12 @@ address StubGenerator::generate_disjoint_long_oop_copy(StubId stub_id, address *
     if (add_extras) {
       // restore 2 UMAM {start,end,handler} addresses from extras
       register_unsafe_access_handlers(extras, 0, 2);
+#if INCLUDE_ZGC
+      // register addresses at which ZGC does colour patching
+      if ((UseZGC && is_oop))  {
+        register_reloc_addresses(extras, 6, extras.length());
+      }
+#endif // INCLUDE_ZGC
     }
     return start;
   }
@@ -2581,8 +2635,14 @@ address StubGenerator::generate_disjoint_long_oop_copy(StubId stub_id, address *
   address end = __ pc();
   if (add_extras) {
     retrieve_unsafe_access_handlers(start, end, extras);
+#if INCLUDE_ZGC
+    // retrieve addresses at which ZGC does colour patching
+    if ((UseZGC && is_oop)) {
+      retrieve_reloc_addresses(start, end, extras);
+    }
+#endif // INCLUDE_ZGC
   }
-  assert(extras.length() == expected_extra_count,
+  assert((UseZGC && is_oop) || extras.length() == expected_extra_count,
          "unexpected extra addresses count %d", extras.length());
 
   // record the stub entry and end plus the no_push entry and any
@@ -2646,7 +2706,7 @@ address StubGenerator::generate_conjoint_long_oop_copy(StubId stub_id, address n
   if (start != nullptr) {
     assert(entries.length() == expected_entry_count - 1,
            "unexpected extra entry count %d", entries.length());
-    assert(extras.length() == expected_extra_count,
+    assert((UseZGC && is_oop) || extras.length() == expected_extra_count,
            "unexpected extra addresses count %d", extras.length());
     if (entry != nullptr) {
       *entry = entries.at(0);
@@ -2654,6 +2714,12 @@ address StubGenerator::generate_conjoint_long_oop_copy(StubId stub_id, address n
     if (add_extras) {
       // restore 2 UMAM {start,end,handler} addresses from extras
       register_unsafe_access_handlers(extras, 0, 2);
+#if INCLUDE_ZGC
+      // register addresses at which ZGC does colour patching
+      if ((UseZGC && is_oop))  {
+        register_reloc_addresses(extras, 6, extras.length());
+      }
+#endif // INCLUDE_ZGC
     }
     return start;
   }
@@ -2743,8 +2809,14 @@ address StubGenerator::generate_conjoint_long_oop_copy(StubId stub_id, address n
   address end = __ pc();
   if (add_extras) {
     retrieve_unsafe_access_handlers(start, end, extras);
+#if INCLUDE_ZGC
+    // retrieve addresses at which ZGC does colour patching
+    if ((UseZGC && is_oop)) {
+      retrieve_reloc_addresses(start, end, extras);
+    }
+#endif // INCLUDE_ZGC
   }
-  assert(extras.length() == expected_extra_count,
+  assert((UseZGC && is_oop) || extras.length() == expected_extra_count,
          "unexpected extra addresses count %d", extras.length());
 
   // record the stub entry and end plus the no_push entry and any
@@ -2807,16 +2879,21 @@ address StubGenerator::generate_checkcast_copy(StubId stub_id, address *entry) {
   }
 
   GrowableArray<address> entries;
+  GrowableArray<address> extras;
   int expected_entry_count = (entry != nullptr ? 2 : 1);
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == expected_entry_count, "sanity check");
   GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
-  address start = load_archive_data(stub_id, entries_ptr);
+  GrowableArray<address>* extras_ptr = (UseZGC ? &extras : nullptr);
+  address start = load_archive_data(stub_id, entries_ptr, extras_ptr);
   if (start != nullptr) {
-    assert(entries.length() == expected_entry_count - 1,
+    assert(UseZGC || entries.length() == expected_entry_count - 1,
            "unexpected extra entry count %d", entries.length());
     if (entry != nullptr) {
       *entry = entries.at(0);
+    }
+    if (UseZGC)  {
+      register_reloc_addresses(extras, 0, extras.length());
     }
     return start;
   }
@@ -3010,8 +3087,15 @@ address StubGenerator::generate_checkcast_copy(StubId stub_id, address *entry) {
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 
+  address end = __ pc();
+#if INCLUDE_ZGC
+    // retrieve addresses at which ZGC does colour patching
+    if (UseZGC) {
+      retrieve_reloc_addresses(start, end, extras);
+    }
+#endif // INCLUDE_ZGC
   // record the stub entry and end plus the no_push entry
-  store_archive_data(stub_id, start, __ pc(), entries_ptr);
+    store_archive_data(stub_id, start, end, entries_ptr, extras_ptr);
 
   return start;
 }

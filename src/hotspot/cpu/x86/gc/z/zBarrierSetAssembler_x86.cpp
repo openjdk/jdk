@@ -1426,6 +1426,71 @@ void ZBarrierSetAssembler::patch_barriers() {
 #undef __
 #define __ masm->
 
+void ZBarrierSetAssembler::register_reloc_addresses(GrowableArray<address> &entries, int begin, int count) {
+  int formats[] = {
+    ZBarrierRelocationFormatLoadBadAfterTest,
+    ZBarrierRelocationFormatStoreBadAfterTest,
+    ZBarrierRelocationFormatStoreGoodAfterOr
+  };
+  int format_idx = 0;
+  int format = formats[format_idx];
+  for (int i = begin; i < begin + count; i++) {
+    address addr = entries.at(i);
+    // reloc addresses occur in 3 groups terminated with a nullptr
+    if (addr == nullptr) {
+      assert(((uint)format_idx) < (int)(sizeof(formats) / sizeof(formats[0])),
+             "unexpected reloc group count");
+      format = formats[format_idx++];
+    } else {
+      switch(format) {
+      case ZBarrierRelocationFormatLoadBadAfterTest:
+        _load_bad_relocations.append(addr);
+        break;
+      case ZBarrierRelocationFormatStoreBadAfterTest:
+        _store_bad_relocations.append(addr);
+        break;
+      case ZBarrierRelocationFormatStoreGoodAfterOr:
+        _store_good_relocations.append(addr);
+        break;
+      }
+      patch_barrier_relocation(addr, format);
+    }
+  }
+  assert(format_idx == (int)(sizeof(formats) / sizeof(formats[0])),
+         "not enough reloc groups %d - expecting %d", format_idx,  (int)(sizeof(formats) / sizeof(formats[0])));
+}
+
+void ZBarrierSetAssembler::retrieve_reloc_addresses(address start, address end, GrowableArray<address> &entries) {
+  assert(start != nullptr, "start address must not be null");
+  assert(end != nullptr, "start address must not be null");
+  assert(start < end, "stub range must not be empty");
+  for (int i = 0; i < _load_bad_relocations.length(); i++) {
+    address addr = _load_bad_relocations.at(i);
+    assert(addr != nullptr, "load bad reloc address shoudl not be null!");
+    if (start <= addr && addr < end) {
+      entries.append(addr);
+    }
+  }
+  entries.append(nullptr);
+  for (int i = 0; i < _store_bad_relocations.length(); i++) {
+    address addr = _store_bad_relocations.at(i);
+    assert(addr != nullptr, "store bad reloc address shoudl not be null!");
+    if (start <= addr && addr < end) {
+      entries.append(addr);
+    }
+  }
+  entries.append(nullptr);
+  for (int i = 0; i < _store_good_relocations.length(); i++) {
+    address addr = _store_good_relocations.at(i);
+    assert(addr != nullptr, "store good reloc address shoudl not be null!");
+    if (start <= addr && addr < end) {
+      entries.append(addr);
+    }
+  }
+  entries.append(nullptr);
+}
+
+
 void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
   // C1 calls verfy_oop in the middle of barriers, before they have been uncolored
   // and after being colored. Therefore, we must deal with colored oops as well.

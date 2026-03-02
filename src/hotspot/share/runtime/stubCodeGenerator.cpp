@@ -31,7 +31,9 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
-
+#if INCLUDE_ZGC
+#include "gc/z/zBarrierSetAssembler.hpp"
+#endif // INCLUDE_ZGC
 
 // Implementation of StubCodeDesc
 
@@ -138,6 +140,23 @@ void StubCodeGenerator::register_unsafe_access_handlers(GrowableArray<address> &
 void StubCodeGenerator::retrieve_unsafe_access_handlers(address start, address end, GrowableArray<address> &entries) {
   UnsafeMemoryAccess::collect_entries(start, end, entries);
 }
+
+#if INCLUDE_ZGC
+// Helper used to restore ZGC pointer colouring relocation addresses
+// retrieved from the AOT cache.
+void StubCodeGenerator::register_reloc_addresses(GrowableArray<address> &entries, int begin, int count) {
+  ZBarrierSetAssembler *zbs = (ZBarrierSetAssembler*)BarrierSet::barrier_set()->barrier_set_assembler();
+  zbs->register_reloc_addresses(entries, begin, count);
+}
+
+// Helper used to retrieve ranges and handler addresses registered
+// during generation of the stub which spans [start, end) in order to
+// allow them to be saved to an AOT cache.
+void StubCodeGenerator::retrieve_reloc_addresses(address start, address end, GrowableArray<address> &entries) {
+  ZBarrierSetAssembler *zbs = (ZBarrierSetAssembler*)BarrierSet::barrier_set()->barrier_set_assembler();
+  zbs->retrieve_reloc_addresses(start, end, entries);
+}
+#endif // INCLUDE_ZGC
 
 void StubCodeGenerator::stub_prolog(StubCodeDesc* cdesc) {
   // default implementation - do nothing

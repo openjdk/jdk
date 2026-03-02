@@ -118,8 +118,12 @@ class StubCodeGenerator: public StackObj {
   // unsafe handler management
   void register_unsafe_access_handlers(GrowableArray<address> &entries, int begin, int count);
   void retrieve_unsafe_access_handlers(address start, address end, GrowableArray<address> &entries);
+#if INCLUDE_ZGC
+  void register_reloc_addresses(GrowableArray<address> &entries, int begin, int count);
+  void retrieve_reloc_addresses(address start, address end, GrowableArray<address> &entries);
+#endif // INCLUDE_ZGC
 
- public:
+public:
   StubCodeGenerator(CodeBuffer* code, bool print_code = false);
   StubCodeGenerator(CodeBuffer* code, BlobId blob_id, AOTStubData* stub_data = nullptr, bool print_code = false);
   ~StubCodeGenerator();

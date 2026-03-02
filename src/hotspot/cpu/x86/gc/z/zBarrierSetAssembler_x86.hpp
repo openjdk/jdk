@@ -193,6 +193,10 @@ public:
 
   void patch_barriers();
 
+  void register_reloc_addresses(GrowableArray<address> &entries, int begin, int count);
+
+  void retrieve_reloc_addresses(address start, address end, GrowableArray<address> &entries);
+
   void check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error);
 };
 
