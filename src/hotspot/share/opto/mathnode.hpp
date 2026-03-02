@@ -27,6 +27,7 @@
 
 #include "callnode.hpp"
 
+// TODO: move to subnode.hpp/cpp
 class PowDNode : public CallLeafPureNode {
     TupleNode* make_tuple_of_input_state_and_result(PhaseIterGVN* phase, Node* result) const;
 

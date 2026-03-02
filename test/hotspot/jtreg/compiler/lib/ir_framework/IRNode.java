@@ -700,6 +700,11 @@ public class IRNode {
         beforeMatchingNameRegex(CON_L, "ConL");
     }
 
+    public static final String CON_D = PREFIX + "CON_D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CON_D, "ConD");
+    }
+
     public static final String COUNTED_LOOP = PREFIX + "COUNTED_LOOP" + POSTFIX;
     static {
         String regex = START + "CountedLoop\\b" + MID + END;
@@ -3120,6 +3125,12 @@ public class IRNode {
     static {
         String regex = START + "ModD" + MID + END;
         macroNodes(MOD_D, regex);
+    }
+
+    public static final String POW_D = PREFIX + "POW_D" + POSTFIX;
+    static {
+        String regex = START + "PowD" + MID + END;
+        macroNodes(POW_D, regex);
     }
 
     public static final String BLACKHOLE = PREFIX + "BLACKHOLE" + POSTFIX;

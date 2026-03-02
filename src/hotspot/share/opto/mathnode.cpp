@@ -24,15 +24,15 @@
 
 #include "mathnode.hpp"
 
+#include <math.h>
+
 #include "runtime.hpp"
 #include "runtime/stubRoutines.hpp"
 
 PowDNode::PowDNode(Compile* C, Node* base, Node* exp)
     : CallLeafPureNode(
         OptoRuntime::Math_DD_D_Type(),
-        StubRoutines::dpow() != nullptr
-            ? StubRoutines::dpow()
-            : CAST_FROM_FN_PTR(address, SharedRuntime::dpow),
+        StubRoutines::dpow() != nullptr ? StubRoutines::dpow() : CAST_FROM_FN_PTR(address, SharedRuntime::dpow),
         "pow") {
   add_flag(Flag_is_macro);
   C->add_macro_node(this);
@@ -59,6 +59,7 @@ Node* PowDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
 
   // constant folding: both inputs are constants
+  // TODO: move to Value()
   const TypeD* base_con = t_base->isa_double_constant();
   const TypeD* exp_con  = t_exp->isa_double_constant();
   if (base_con != nullptr && exp_con != nullptr) {
@@ -67,79 +68,39 @@ Node* PowDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return make_tuple_of_input_state_and_result(igvn, phase->makecon(TypeD::make(result)));
   }
 
-  // strength reductions: only the exponent is a constant
+  // Special cases when only the exponent is known:
   if (exp_con != nullptr) {
     double e = exp_con->getd();
+    // If the second argument is positive or negative zero, then the result is 1.0.
+    // i.e., pow(x, +/-0.0D) => 1.0
+    if (e == -0.0 || e == +0.0) {
+      return make_tuple_of_input_state_and_result(igvn, phase->makecon(TypeD::ONE));
+    }
 
-    // Special case: pow(x, 2.0) => x * x
+    // If the second argument is 1.0, then the result is the same as the first argument.
+    // i.e., pow(x, 1.0) => x
+    if (e == 1.0) {
+      return make_tuple_of_input_state_and_result(igvn, base);
+    }
+
+    // If the second argument is NaN, then the result is NaN.
+    // i.e., pow(x, NaN) => NaN
+    if (isnan(e)) {
+      return make_tuple_of_input_state_and_result(igvn, phase->makecon(TypeD::make(NAN)));
+    }
+
+    // If the second argument is 2.0, then strength reduce to multiplications.
+    // i.e., pow(x, 2.0) => x * x
     if (e == 2.0) {
       Node* mul = igvn->transform(new MulDNode(base, base));
       return make_tuple_of_input_state_and_result(igvn, mul);
     }
 
-    // Special case: pow(x, 0.5) => sqrt(x)
-    if (e == 0.5) {
-      // This one is tricker because pow(-0.0, 0.5) => +0.0 but sqrt(-0.0) => -0.0
-      // Since we can't build control flow here in Ideal(), we defer this to macro expansion.
-      //
-      // TODO: actually, is it better to build control flow at parse time (at inlining)? If x becomes a constant later,
-      // expanding pow(CON, 0.5) to sqrt(CON) at macro expansion time leaves us no change to fold it. And there is
-      // possible regression too.
-      //
-      // However, with building control flow at parse time, we risk missing optimization opportunity if exp cannot
-      // become a constant early enough.
-      //
-      // Doing both? One at parse time to ensure sqrt(CON) is always folded, one at expansion time ensure exp have
-      // enough chance to be propagated.
-      //
-      // New idea: still delay to macro expansion so base have a change to constant propagate
-
-      // Node* zero = igvn->zerocon(T_DOUBLE);
-      // RegionNode* region = new RegionNode(3);
-      // Node* phi = new PhiNode(region, Type::DOUBLE);
-      //
-      // Node* cmp  = igvn->transform(new CmpDNode(base, zero));
-      // // According to the API specs, pow(-0.0, 0.5) = 0.0 and sqrt(-0.0) = -0.0.
-      // // So pow(-0.0, 0.5) shouldn't be replaced with sqrt(-0.0).
-      // // -0.0/+0.0 are both excluded since floating-point comparison doesn't distinguish -0.0 from +0.0.
-      // Node* test = igvn->transform(new BoolNode(cmp, BoolTest::le));
-      //
-      // Node* if_pow = generate_slow_guard(test, nullptr);
-      // Node* value_sqrt = igvn->transform(new SqrtDNode(igvn->C, control(), base));
-      // phi->init_req(1, value_sqrt);
-      // region->init_req(1, control());
-      //
-      // if (if_pow != nullptr) {
-      //
-      // }
-
-      return CallLeafPureNode::Ideal(phase, can_reshape);
-    }
-
-    // Special case: pow(x, 0.0) => 1
-    // FIXME: x^0 => 1 is not in the original code. FP spec compliance reasons?
-    // if (e == 0.0) {
-    //   return make_result_tuple(igvn, phase->makecon(TypeD::make(1.0)));
-    // }
-
-    // Special case: pow(x, 1.0) => x
-    // FIXME: x^1 => x is not in the original code. Forgotten or handled somewhere else?
-    // if (e == 1.0) {
-    //   return make_result_tuple(igvn, base);
-    // }
-
-    // Special case: pow(x, -1.0) => 1.0 / x
-    // FIXME: x^1 => x is not in the original code. FP sepc compliance reasons?
-    // if (e == -1.0) {
-    //   Node* one = phase->makecon(TypeD::make(1.0));
-    //   Node* div = igvn->transform(new DivDNode(nullptr, one, base));
-    //   return make_result_tuple(igvn, div);
-    // }
+    // If the second argument is 0.5, the strength reduce to saqure roots.
+    // i.e., pow(x, 0.5) => sqrt(x)
+    // This one is tricker because pow(-0.0, 0.5) => +0.0 but sqrt(-0.0) => -0.0, which rquires building a control flow
+    // diamond. We defer this to marcro expansion to give the base more chances to be constant folded.
   }
-
-  // FIXME: we could also do the following?
-  // Special case: pow(0, y) => 0
-  // Special case: pow(1, y) => 1
 
   return CallLeafPureNode::Ideal(phase, can_reshape);
 }

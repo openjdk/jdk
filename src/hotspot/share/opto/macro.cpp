@@ -2702,6 +2702,8 @@ bool PhaseMacroExpand::expand_macro_nodes() {
           phi->init_req(1, call_result); // slow: pow result
           phi->init_req(2, sqrt); // fast: sqrt result
 
+          C->set_has_split_ifs(true); // Has chance for split-if optimization
+
           // TODO: Instead of inserting new tuples, we could surgically replace outgoing edges to user node with _callprojs
           // which one's better?
           TupleNode *tuple = TupleNode::make(

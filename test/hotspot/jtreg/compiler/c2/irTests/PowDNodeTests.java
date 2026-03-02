@@ -45,15 +45,16 @@ public class PowDNodeTests {
 
     // Test 1: pow(constant, constant) -> constant (no "pow" call in IR)
     @Test
-    @IR(failOn = {"pow"}, phase = CompilePhase.BEFORE_MATCHING)
-//    @IR(counts = {IRNode.CON_I, "1"}) // TODO: no CON_D node?
+    @IR(failOn = {IRNode.POW_D})
+    @IR(counts = {IRNode.CON_D, "1"})
     public double constantFolding() {
         return Math.pow(2.0, 10.0);  // should fold to 1024.0
     }
 
     // Test 2: pow(x, 0.0) -> 1.0
     @Test
-    @IR(failOn = {"pow"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(failOn = {IRNode.POW_D})
+    @IR(counts = {IRNode.CON_D, "1"})
     @Arguments(values = {Argument.RANDOM_EACH})
     public double expZero(double x) {
         return Math.pow(x, 0.0);
@@ -61,7 +62,7 @@ public class PowDNodeTests {
 
     // Test 3: pow(x, 1.0) -> x (identity)
     @Test
-    @IR(failOn = {"pow"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(failOn = {IRNode.POW_D, IRNode.CON_D})
     @Arguments(values = {Argument.RANDOM_EACH})
     public double expOne(double x) {
         return Math.pow(x, 1.0);
@@ -69,7 +70,7 @@ public class PowDNodeTests {
 
     // Test 4: pow(x, 2.0) -> x * x
     @Test
-    @IR(failOn = {"pow"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(failOn = {IRNode.POW_D, IRNode.CON_D})
     @IR(counts = {IRNode.MUL_D, "1"})
     @Arguments(values = {Argument.RANDOM_EACH})
     public double expTwo(double x) {
@@ -78,7 +79,7 @@ public class PowDNodeTests {
 
     // Test 5: non-constant exponent stays as call
     @Test
-    @IR(counts = {"pow", "1"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(counts = {IRNode.POW_D, "1"})
     @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     public double nonConstant(double x, double y) {
         return Math.pow(x, y);
@@ -86,8 +87,7 @@ public class PowDNodeTests {
 
     // Test 6: late constant discovery (value becomes constant after loop opts)
     @Test
-    @IR(failOn = {"pow"}, phase = CompilePhase.BEFORE_MATCHING)
-//    @IR(counts = {IRNode.CON_I, "1"}) // TODO: no CON_D node?
+    @IR(failOn = {IRNode.POW_D})
     public double lateConstant() {
         double val = 0;
         for (int i = 0; i < 4; i++) {
@@ -95,7 +95,7 @@ public class PowDNodeTests {
                 val = b;
             }
         }
-        return Math.pow(val, 3.0);
         // After loop opts, val == q (constant), so pow(q, 3.0) folds
+        return Math.pow(val, 3.0);
     }
 }
