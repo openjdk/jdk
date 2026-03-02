@@ -263,13 +263,7 @@ public class BulkPutBuffer {
 
         void put(Buffer src, int srcOff, Buffer dst, int dstOff, int length)
             throws Throwable {
-            try {
-                putBufAbs.invoke(dst, dstOff, src, srcOff, length);
-            } catch (ReadOnlyBufferException ro) {
-                throw ro;
-            } catch (Exception e) {
-                throw new AssertionError(e);
-            }
+            putBufAbs.invoke(dst, dstOff, src, srcOff, length);
         }
 
         void put(Buffer src, Buffer dst) throws Throwable {
@@ -326,38 +320,27 @@ public class BulkPutBuffer {
         return args.stream();
     }
 
-    private static void expectThrows(Class<?> exClass, Executable r) {
-        try {
-            r.execute();
-        } catch(Throwable e) {
-            if (e.getClass() != exClass && e.getCause().getClass() != exClass) {
-                throw new RuntimeException("Expected " + exClass +
-                "; got " + e.getCause().getClass(), e);
-            }
-        }
-    }
-
     @ParameterizedTest
     @MethodSource("proxies")
     public void testExceptions(BufferProxy bp) throws Throwable {
         int cap = 27;
         Buffer buf = bp.create(cap);
 
-        expectThrows(IndexOutOfBoundsException.class,
+        assertThrows(IndexOutOfBoundsException.class,
             () -> bp.put(buf, -1, buf, 0, 1));
-        expectThrows(IndexOutOfBoundsException.class,
+        assertThrows(IndexOutOfBoundsException.class,
             () -> bp.put(buf, 0, buf, -1, 1));
-        expectThrows(IndexOutOfBoundsException.class,
+        assertThrows(IndexOutOfBoundsException.class,
             () -> bp.put(buf, 1, buf, 0, cap));
-        expectThrows(IndexOutOfBoundsException.class,
+        assertThrows(IndexOutOfBoundsException.class,
             () -> bp.put(buf, 0, buf, 1, cap));
-        expectThrows(IndexOutOfBoundsException.class,
+        assertThrows(IndexOutOfBoundsException.class,
             () -> bp.put(buf, 0, buf, 0, cap + 1));
-        expectThrows(IndexOutOfBoundsException.class,
+        assertThrows(IndexOutOfBoundsException.class,
             () -> bp.put(buf, 0, buf, 0, Integer.MAX_VALUE));
 
         Buffer rob = buf.isReadOnly() ? buf : bp.asReadOnlyBuffer(buf);
-        expectThrows(ReadOnlyBufferException.class,
+        assertThrows(ReadOnlyBufferException.class,
             () -> bp.put(buf, 0, rob, 0, cap));
     }
 
