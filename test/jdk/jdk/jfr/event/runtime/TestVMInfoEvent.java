@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,10 @@ import java.lang.management.RuntimeMXBean;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Properties;
 import java.util.stream.Collectors;
 
+import jdk.internal.vm.VMSupport;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.Asserts;
@@ -38,6 +40,7 @@ import jdk.test.lib.jfr.Events;
 
 /**
  * @test
+ * @modules java.base/jdk.internal.vm
  * @requires vm.flagless
  * @requires vm.gc == "Serial" | vm.gc == null
  * @requires vm.hasJFR
@@ -69,13 +72,12 @@ public class TestVMInfoEvent {
                 Asserts.fail(String.format("%s does not contain %s", jvmVersion, mbean.getVmVersion()));
             }
 
-            String jvmArgs = Events.assertField(event, "jvmArguments").notNull().getValue();
-            String jvmFlags = Events.assertField(event, "jvmFlags").notNull().getValue();
             Long pid = Events.assertField(event, "pid").atLeast(0L).getValue();
             Asserts.assertEquals(pid, ProcessHandle.current().pid());
-            String eventArgs = (jvmFlags.trim() + " " + jvmArgs).trim();
-            String beanArgs = mbean.getInputArguments().stream().collect(Collectors.joining(" "));
-            Asserts.assertEquals(eventArgs, beanArgs, "Wrong inputArgs");
+
+            Properties agentProps = VMSupport.getAgentProperties();
+            Events.assertField(event, "jvmArguments").equal(agentProps.getProperty("sun.jvm.args"));
+            Events.assertField(event, "jvmFlags").equal(agentProps.getProperty("sun.jvm.flags"));
 
             final String javaCommand = mbean.getSystemProperties().get("sun.java.command");
             Events.assertField(event, "javaArguments").equal(javaCommand);
