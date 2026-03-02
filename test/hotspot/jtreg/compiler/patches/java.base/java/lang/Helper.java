@@ -40,11 +40,6 @@ public class Helper {
     }
 
     @jdk.internal.vm.annotation.ForceInline
-    public static int StringCodingEncodeAsciiArray0(char[] sa, int sp, byte[] da, int dp, int len) {
-        return StringCoding.encodeAsciiArray0(sa, sp, da, dp, len);
-    }
-
-    @jdk.internal.vm.annotation.ForceInline
     public static byte[] compressByte(byte[] src, int srcOff, int dstSize, int dstOff, int len) {
         byte[] dst = new byte[dstSize];
         StringUTF16.compress(src, srcOff, dst, dstOff, len);

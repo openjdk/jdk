@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ import static org.testng.Assert.assertTrue;
 public class KeyUpdateTest {
 
     private QuicStandaloneServer server;
-    private SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     private ExecutorService executor;
 
     private static final byte[] HELLO_MSG = "Hello Quic".getBytes(StandardCharsets.UTF_8);
@@ -94,10 +94,6 @@ public class KeyUpdateTest {
 
     @BeforeClass
     public void beforeClass() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null) {
-            throw new AssertionError("Unexpected null sslContext");
-        }
         executor = Executors.newCachedThreadPool();
         server = QuicStandaloneServer.newBuilder()
                 .availableVersions(new QuicVersion[]{QuicVersion.QUIC_V1})

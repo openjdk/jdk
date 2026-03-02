@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,16 +68,14 @@ NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
 void
 NET_ThrowNew(JNIEnv *env, int errorNumber, char *msg) {
     char fullMsg[512];
-    if (!msg) {
-        msg = "no further information";
-    }
     switch(errorNumber) {
     case EBADF:
-        jio_snprintf(fullMsg, sizeof(fullMsg), "socket closed: %s", msg);
-        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", fullMsg);
-        break;
-    case EINTR:
-        JNU_ThrowByName(env, JNU_JAVAIOPKG "InterruptedIOException", msg);
+        if (msg == NULL) {
+            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "socket closed");
+        } else {
+            jio_snprintf(fullMsg, sizeof(fullMsg), "socket closed: %s", msg);
+            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", fullMsg);
+        }
         break;
     default:
         errno = errorNumber;
@@ -282,7 +280,7 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port,
     } else {
         jint address;
         if (family != java_net_InetAddress_IPv4) {
-            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Protocol family unavailable");
+            JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "IPv6 protocol family unavailable");
             return -1;
         }
         address = getInetAddress_addr(env, iaObj);
@@ -627,11 +625,11 @@ NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout)
         pfd.fd = fd;
         pfd.events = 0;
         if (flags & NET_WAIT_READ)
-          pfd.events |= POLLIN;
+            pfd.events |= POLLIN;
         if (flags & NET_WAIT_WRITE)
-          pfd.events |= POLLOUT;
+            pfd.events |= POLLOUT;
         if (flags & NET_WAIT_CONNECT)
-          pfd.events |= POLLOUT;
+            pfd.events |= POLLOUT;
 
         errno = 0;
         read_rv = poll(&pfd, 1, nanoTimeout / NET_NSEC_PER_MSEC);
@@ -639,13 +637,13 @@ NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout)
         newNanoTime = JVM_NanoTime(env, 0);
         nanoTimeout -= (newNanoTime - prevNanoTime);
         if (nanoTimeout < NET_NSEC_PER_MSEC) {
-          return read_rv > 0 ? 0 : -1;
+            return read_rv > 0 ? 0 : -1;
         }
         prevNanoTime = newNanoTime;
 
         if (read_rv > 0) {
-          break;
+            break;
         }
-      } /* while */
+    } /* while */
     return (nanoTimeout / NET_NSEC_PER_MSEC);
 }

@@ -57,14 +57,14 @@ class ChunkedOutputStream extends FilterOutputStream
     private byte[] buf = new byte [CHUNK_SIZE+OFFSET+2];
     ExchangeImpl t;
 
-    ChunkedOutputStream (ExchangeImpl t, OutputStream src) {
-        super (src);
+    ChunkedOutputStream(ExchangeImpl t, OutputStream src) {
+        super(src);
         this.t = t;
     }
 
-    public void write (int b) throws IOException {
+    public void write(int b) throws IOException {
         if (closed) {
-            throw new StreamClosedException ();
+            throw new StreamClosedException();
         }
         buf [pos++] = (byte)b;
         count ++;
@@ -74,23 +74,23 @@ class ChunkedOutputStream extends FilterOutputStream
         assert count < CHUNK_SIZE;
     }
 
-    public void write (byte[]b, int off, int len) throws IOException {
+    public void write(byte[] b, int off, int len) throws IOException {
         Objects.checkFromIndexSize(off, len, b.length);
         if (len == 0) {
             return;
         }
         if (closed) {
-            throw new StreamClosedException ();
+            throw new StreamClosedException();
         }
         int remain = CHUNK_SIZE - count;
         if (len > remain) {
-            System.arraycopy (b,off,buf,pos,remain);
+            System.arraycopy(b, off, buf, pos, remain);
             count = CHUNK_SIZE;
             writeChunk();
             len -= remain;
             off += remain;
             while (len >= CHUNK_SIZE) {
-                System.arraycopy (b,off,buf,OFFSET,CHUNK_SIZE);
+                System.arraycopy(b, off, buf, OFFSET, CHUNK_SIZE);
                 len -= CHUNK_SIZE;
                 off += CHUNK_SIZE;
                 count = CHUNK_SIZE;
@@ -98,7 +98,7 @@ class ChunkedOutputStream extends FilterOutputStream
             }
         }
         if (len > 0) {
-            System.arraycopy (b,off,buf,pos,len);
+            System.arraycopy(b, off, buf, pos, len);
             count += len;
             pos += len;
         }
@@ -112,8 +112,8 @@ class ChunkedOutputStream extends FilterOutputStream
      * chunk does not have to be CHUNK_SIZE bytes
      * count must == number of user bytes (<= CHUNK_SIZE)
      */
-    private void writeChunk () throws IOException {
-        char[] c = Integer.toHexString (count).toCharArray();
+    private void writeChunk() throws IOException {
+        char[] c = Integer.toHexString(count).toCharArray();
         int clen = c.length;
         int startByte = 4 - clen;
         int i;
@@ -124,12 +124,12 @@ class ChunkedOutputStream extends FilterOutputStream
         buf[startByte + (i++)] = '\n';
         buf[startByte + (i++) + count] = '\r';
         buf[startByte + (i++) + count] = '\n';
-        out.write (buf, startByte, i+count);
+        out.write(buf, startByte, i+count);
         count = 0;
         pos = OFFSET;
     }
 
-    public void close () throws IOException {
+    public void close() throws IOException {
         if (closed) {
             return;
         }
@@ -156,12 +156,12 @@ class ChunkedOutputStream extends FilterOutputStream
         }
 
         Event e = new Event.WriteFinished(t);
-        t.getHttpContext().getServerImpl().addEvent (e);
+        t.getHttpContext().getServerImpl().addEvent(e);
     }
 
-    public void flush () throws IOException {
+    public void flush() throws IOException {
         if (closed) {
-            throw new StreamClosedException ();
+            throw new StreamClosedException();
         }
         if (count > 0) {
             writeChunk();

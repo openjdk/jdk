@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -132,10 +132,10 @@ VStatus VLoop::check_preconditions_helper() {
       tty->print_cr(" Infrastructure for speculative runtime-checks:");
       if (_auto_vectorization_parse_predicate_proj != nullptr) {
         tty->print_cr("  auto_vectorization_parse_predicate_proj: speculate and trap");
-        _auto_vectorization_parse_predicate_proj->dump_bfs(5,0,"");
+        _auto_vectorization_parse_predicate_proj->dump_bfs(5, nullptr, "");
       } else if (_multiversioning_fast_proj != nullptr) {
         tty->print_cr("  multiversioning_fast_proj: speculate and multiversion");
-        _multiversioning_fast_proj->dump_bfs(5,0,"");
+        _multiversioning_fast_proj->dump_bfs(5, nullptr, "");
       } else {
         tty->print_cr("  Not found.");
       }
@@ -187,7 +187,10 @@ VStatus VLoopAnalyzer::setup_submodules_helper() {
     return body_status;
   }
 
-  _memory_slices.find_memory_slices();
+  VStatus slices_status = _memory_slices.find_memory_slices();
+  if (!slices_status.is_success()) {
+    return slices_status;
+  }
 
   // If there is no memory slice detected, it means there is no store.
   // If there is no reduction and no store, then we give up, because
@@ -207,9 +210,11 @@ VStatus VLoopAnalyzer::setup_submodules_helper() {
 }
 
 // There are 2 kinds of slices:
-// - No memory phi: only loads. All have the same input memory state from before the loop.
+// - No memory phi: only loads.
+//   - Usually, all loads have the same input memory state from before the loop.
+//   - Only rarely this is not the case, and we just bail out for now.
 // - With memory phi. Chain of memory operations inside the loop.
-void VLoopMemorySlices::find_memory_slices() {
+VStatus VLoopMemorySlices::find_memory_slices() {
   Compile* C = _vloop.phase()->C;
   // We iterate over the body, which is topologically sorted. Hence, if there is a phi
   // in a slice, we will find it first, and the loads and stores afterwards.
@@ -228,8 +233,15 @@ void VLoopMemorySlices::find_memory_slices() {
       PhiNode* head = _heads.at(alias_idx);
       if (head == nullptr) {
         // We did not find a phi on this slice yet -> must be a slice with only loads.
-        assert(_inputs.at(alias_idx) == nullptr || _inputs.at(alias_idx) == load->in(1),
-               "not yet touched or the same input");
+        // For now, we can only handle slices with a single memory input before the loop,
+        // so if we find multiple, we bail out of auto vectorization. If this becomes
+        // too restrictive in the fututure, we could consider tracking multiple inputs.
+        // Different memory inputs can for example happen if one load has its memory state
+        // optimized, and the other load fails to have it optimized, for example because
+        // it does not end up on the IGVN worklist any more.
+        if (_inputs.at(alias_idx) != nullptr && _inputs.at(alias_idx) != load->in(1)) {
+          return VStatus::make_failure(FAILURE_DIFFERENT_MEMORY_INPUT);
+        }
         _inputs.at_put(alias_idx, load->in(1));
       } // else: the load belongs to a slice with a phi that already set heads and inputs.
 #ifdef ASSERT
@@ -243,6 +255,7 @@ void VLoopMemorySlices::find_memory_slices() {
     }
   }
   NOT_PRODUCT( if (_vloop.is_trace_memory_slices()) { print(); } )
+  return VStatus::make_success();
 }
 
 #ifndef PRODUCT
@@ -1060,6 +1073,29 @@ bool VPointer::can_make_speculative_aliasing_check_with(const VPointer& other) c
     return false;
   }
 
+  // The speculative check also needs to create the pointer expressions for both
+  // VPointers. We must check that we can do that, i.e. that all variables of the
+  // VPointers are available at the speculative check (and not just pre-loop invariant).
+  if (!this->can_make_pointer_expression_at_speculative_check()) {
+#ifdef ASSERT
+    if (_vloop.is_trace_speculative_aliasing_analysis()) {
+      tty->print_cr("VPointer::can_make_speculative_aliasing_check_with: not all variables of VPointer are avaialbe at speculative check!");
+      this->print_on(tty);
+    }
+#endif
+    return false;
+  }
+
+  if (!other.can_make_pointer_expression_at_speculative_check()) {
+#ifdef ASSERT
+    if (_vloop.is_trace_speculative_aliasing_analysis()) {
+      tty->print_cr("VPointer::can_make_speculative_aliasing_check_with: not all variables of VPointer are avaialbe at speculative check!");
+      other.print_on(tty);
+    }
+#endif
+    return false;
+  }
+
   return true;
 }
 
@@ -1086,7 +1122,7 @@ Node* make_last(Node* initL, jint stride, Node* limitL, PhaseIdealLoop* phase) {
   Node* last = new AddLNode(initL, k_mul_stride);
 
   // Make sure that the last does not lie "before" init.
-  Node* last_clamped = MaxNode::build_min_max_long(&igvn, initL, last, stride > 0);
+  Node* last_clamped = MinMaxNode::build_min_max_long(&igvn, initL, last, stride > 0);
 
   phase->register_new_node_with_ctrl_of(diffL,        initL);
   phase->register_new_node_with_ctrl_of(diffL_m1,     initL);
@@ -1147,6 +1183,8 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other, 
   Node* main_init = new ConvL2INode(main_initL);
   phase->register_new_node_with_ctrl_of(main_init, pre_init);
 
+  assert(vp1.can_make_pointer_expression_at_speculative_check(), "variables must be available early enough to avoid cycles");
+  assert(vp2.can_make_pointer_expression_at_speculative_check(), "variables must be available early enough to avoid cycles");
   Node* p1_init = vp1.make_pointer_expression(main_init, ctrl);
   Node* p2_init = vp2.make_pointer_expression(main_init, ctrl);
   Node* size1 = igvn.longcon(vp1.size());

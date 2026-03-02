@@ -280,7 +280,7 @@ public:
 
   // Record a nest host resolution/validation error
   static void add_nest_host_error(const constantPoolHandle& pool, int which,
-                                  const char* message);
+                                  const stringStream& message);
   static const char* find_nest_host_error(const constantPoolHandle& pool, int which);
 
   static void add_to_initiating_loader(JavaThread* current, InstanceKlass* k,

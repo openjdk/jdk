@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
+#include "cppstdlib/cstdlib.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "jvmtifiles/jvmti.h"
@@ -838,7 +839,15 @@ bool os::available_memory(physical_memory_size_type& value) {
   return win32::available_memory(value);
 }
 
+bool os::Machine::available_memory(physical_memory_size_type& value) {
+  return win32::available_memory(value);
+}
+
 bool os::free_memory(physical_memory_size_type& value) {
+  return win32::available_memory(value);
+}
+
+bool os::Machine::free_memory(physical_memory_size_type& value) {
   return win32::available_memory(value);
 }
 
@@ -857,7 +866,11 @@ bool os::win32::available_memory(physical_memory_size_type& value) {
   }
 }
 
-bool os::total_swap_space(physical_memory_size_type& value) {
+bool os::total_swap_space(physical_memory_size_type& value)  {
+  return Machine::total_swap_space(value);
+}
+
+bool os::Machine::total_swap_space(physical_memory_size_type& value) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   BOOL res = GlobalMemoryStatusEx(&ms);
@@ -871,6 +884,10 @@ bool os::total_swap_space(physical_memory_size_type& value) {
 }
 
 bool os::free_swap_space(physical_memory_size_type& value) {
+  return Machine::free_swap_space(value);
+}
+
+bool os::Machine::free_swap_space(physical_memory_size_type& value) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   BOOL res = GlobalMemoryStatusEx(&ms);
@@ -884,6 +901,10 @@ bool os::free_swap_space(physical_memory_size_type& value) {
 }
 
 physical_memory_size_type os::physical_memory() {
+  return win32::physical_memory();
+}
+
+physical_memory_size_type os::Machine::physical_memory() {
   return win32::physical_memory();
 }
 
@@ -910,6 +931,10 @@ int os::active_processor_count() {
     return ActiveProcessorCount;
   }
 
+  return Machine::active_processor_count();
+}
+
+int os::Machine::active_processor_count() {
   bool schedules_all_processor_groups = win32::is_windows_11_or_greater() || win32::is_windows_server_2022_or_greater();
   if (UseAllWindowsProcessorGroups && !schedules_all_processor_groups && !win32::processor_group_warning_displayed()) {
     win32::set_processor_group_warning_displayed(true);
@@ -4782,8 +4807,8 @@ int os::stat(const char *path, struct stat *sbuf) {
     path_to_target = get_path_to_target(wide_path);
     if (path_to_target == nullptr) {
       // it is a symbolic link, but we failed to resolve it
-      errno = ENOENT;
       os::free(wide_path);
+      errno = ENOENT;
       return -1;
     }
   }
@@ -4794,14 +4819,14 @@ int os::stat(const char *path, struct stat *sbuf) {
   // if getting attributes failed, GetLastError should be called immediately after that
   if (!bret) {
     DWORD errcode = ::GetLastError();
+    log_debug(os)("os::stat() failed to GetFileAttributesExW: GetLastError->%lu.", errcode);
+    os::free(wide_path);
+    os::free(path_to_target);
     if (errcode == ERROR_FILE_NOT_FOUND || errcode == ERROR_PATH_NOT_FOUND) {
       errno = ENOENT;
     } else {
       errno = 0;
     }
-    log_debug(os)("os::stat() failed to GetFileAttributesExW: GetLastError->%lu.", errcode);
-    os::free(wide_path);
-    os::free(path_to_target);
     return -1;
   }
 
@@ -5000,8 +5025,8 @@ int os::open(const char *path, int oflag, int mode) {
     path_to_target = get_path_to_target(wide_path);
     if (path_to_target == nullptr) {
       // it is a symbolic link, but we failed to resolve it
-      errno = ENOENT;
       os::free(wide_path);
+      errno = ENOENT;
       return -1;
     }
   }
@@ -5275,6 +5300,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
     } else {
       errno = ENAMETOOLONG;
     }
+    ErrnoPreserver ep;
     permit_forbidden_function::free(p); // *not* os::free
   }
   return result;

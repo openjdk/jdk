@@ -39,9 +39,9 @@ class ShenandoahGlobalHeuristics : public ShenandoahGenerationalHeuristics {
 public:
   ShenandoahGlobalHeuristics(ShenandoahGlobalGeneration* generation);
 
-  void choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
-                                             RegionData* data, size_t size,
-                                             size_t actual_free) override;
+  size_t choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
+                                               RegionData* data, size_t size,
+                                               size_t actual_free) override;
 
 private:
   void choose_global_collection_set(ShenandoahCollectionSet* cset,

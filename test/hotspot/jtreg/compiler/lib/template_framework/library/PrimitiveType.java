@@ -93,6 +93,7 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
         return name();
     }
 
+    @Override
     public Object con() {
         return switch (kind) {
             case BYTE    -> "(byte)" + GEN_BYTE.next();

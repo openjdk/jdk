@@ -76,15 +76,13 @@ public class HTTP3NoBodyTest {
     static HttpClient client = null;
     static ExecutorService clientExec;
     static ExecutorService serverExec;
-    static SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     static final String TEST_STRING = "The quick brown fox jumps over the lazy dog ";
 
     static volatile String http3URIString, https2URIString;
 
     static void initialize() throws Exception {
         try {
-            SimpleSSLContext sslct = new SimpleSSLContext();
-            sslContext = sslct.get();
             client = getClient();
 
             // server that only supports HTTP/3

@@ -243,8 +243,7 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
 #ifdef ASSERT
   assert(ShenandoahHeap::heap()->mode()->is_generational(), "Do not use in non-generational mode");
   assert(region->is_old(), "Do not use for young regions");
-  // For HumongousRegion:s it's more efficient to jump directly to the
-  // start region.
+  // For humongous regions it's more efficient to jump directly to the start region.
   assert(!region->is_humongous(), "Use region->humongous_start_region() instead");
 #endif
 

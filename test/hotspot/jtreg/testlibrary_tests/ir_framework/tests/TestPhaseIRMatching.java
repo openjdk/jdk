@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ public class TestPhaseIRMatching {
         TestVMProcess testVMProcess = new TestVMProcess(testVMFlags, testClass, null, -1, false, false);
         TestClassParser testClassParser = new TestClassParser(testClass, false);
         Matchable testClassMatchable = testClassParser.parse(testVMProcess.getHotspotPidFileName(),
-                                                             testVMProcess.getIrEncoding());
+                                                             testVMProcess.getApplicableIRRules());
         MatchResult result = testClassMatchable.match();
         List<Failure> expectedFails = new ExpectedFailsBuilder().build(testClass);
         List<Failure> foundFailures = new FailureBuilder().build(result);

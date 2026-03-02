@@ -1465,6 +1465,8 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     ciMethodData* md = nullptr;
     ciProfileData* data = nullptr;
 
+    __ block_comment("void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {");
+
     if (op->should_profile()) {
       ciMethod* method = op->profiled_method();
       assert(method != nullptr, "Should have method");
@@ -1479,62 +1481,22 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     Label* success_target = &done;
     Label* failure_target = stub->entry();
 
+    __ testptr(value, value);
     if (op->should_profile()) {
-      int profile_capture_ratio = ProfileCaptureRatio;
-      int ratio_shift = exact_log2(profile_capture_ratio);
-      auto threshold = (1ull << 32) >> ratio_shift;
-      assert(threshold > 0, "must be");
+      Label not_null;
+      Register mdo  = klass_RInfo;
+      __ mov_metadata(mdo, md->constant_encoding());
+      __ jccb(Assembler::notEqual, not_null);
+      // Object is null; update MDO and exit
+      Address data_addr(mdo, md->byte_offset_of_slot(data, DataLayout::flags_offset()));
+      int header_bits = BitData::null_seen_byte_constant();
+      __ orb(data_addr, header_bits);
+      __ jmp(done);
+      __ bind(not_null);
 
-      ProfileStub *profile_stub
-        = profile_capture_ratio > 1 ? new ProfileStub() : nullptr;
-
-      auto lambda = [profile_stub, md, data, value,
-                     k_RInfo, klass_RInfo, tmp_load_klass, Rtmp1, success_target] (LIR_Assembler* ce, LIR_Op*) {
-        auto masm = [=]() { return ce->masm(); };
-
-        if (profile_stub != nullptr)  __ bind(*profile_stub->entry());
-
-        __ testptr(value, value);
-
-        Label not_null;
-        Register mdo  = klass_RInfo;
-        __ mov_metadata(mdo, md->constant_encoding());
-        __ jccb(Assembler::notEqual, not_null);
-
-        // Object is null; update MDO and exit
-        Address data_addr(mdo, md->byte_offset_of_slot(data, DataLayout::flags_offset()));
-        int header_bits = BitData::null_seen_byte_constant();
-        __ orb(data_addr, header_bits);
-        if (profile_stub != nullptr) {
-          __ jmp(*profile_stub->continuation());
-        } else {
-          __ jmp(*success_target);
-        }
-        __ bind(not_null);
-
-        Label update_done;
-        Register recv = k_RInfo;
-        __ load_klass(recv, value, tmp_load_klass);
-        ce->type_profile_helper(mdo, md, data, recv, Rtmp1);
-
-        if (profile_stub != nullptr)  __ jmp(*profile_stub->continuation());
-      };
-
-      if (profile_stub != nullptr) {
-        __ cmpl(r_profile_rng, threshold);
-        __ jcc(Assembler::below, *profile_stub->entry());
-        __ bind(*profile_stub->continuation());
-        __ step_random(r_profile_rng, rscratch1);
-        __ testptr(value, value);
-        __ jcc(Assembler::equal, done);
-
-        profile_stub->set_action(lambda, op);
-        profile_stub->set_name("Typecheck profile stub");
-        append_code_stub(profile_stub);
-      } else {
-        lambda(this, op);
-      }
-
+      Register recv = k_RInfo;
+      __ load_klass(recv, value, tmp_load_klass);
+      type_profile_helper(mdo, md, data, recv, Rtmp1);
     } else {
       __ testptr(value, value);
       __ jcc(Assembler::equal, done);

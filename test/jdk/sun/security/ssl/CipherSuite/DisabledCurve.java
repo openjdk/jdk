@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,24 @@
 
 /*
  * @test
- * @bug 8246330
+ * @bug 8246330 8314323
  * @library /javax/net/ssl/templates /test/lib
  * @run main/othervm -Djdk.tls.namedGroups="secp384r1"
         DisabledCurve DISABLE_NONE PASS
  * @run main/othervm -Djdk.tls.namedGroups="secp384r1"
         DisabledCurve secp384r1 FAIL
+ * @run main/othervm -Djdk.tls.namedGroups="X25519MLKEM768"
+        DisabledCurve DISABLE_NONE PASS
+ * @run main/othervm -Djdk.tls.namedGroups="X25519MLKEM768"
+        DisabledCurve X25519MLKEM768 FAIL
+ * @run main/othervm -Djdk.tls.namedGroups="SecP256r1MLKEM768"
+        DisabledCurve DISABLE_NONE PASS
+ * @run main/othervm -Djdk.tls.namedGroups="SecP256r1MLKEM768"
+        DisabledCurve SecP256r1MLKEM768 FAIL
+ * @run main/othervm -Djdk.tls.namedGroups="SecP384r1MLKEM1024"
+        DisabledCurve DISABLE_NONE PASS
+ * @run main/othervm -Djdk.tls.namedGroups="SecP384r1MLKEM1024"
+        DisabledCurve SecP384r1MLKEM1024 FAIL
 */
 import java.security.Security;
 import java.util.Arrays;
@@ -45,8 +57,10 @@ public class DisabledCurve extends SSLSocketTemplate {
     private static final String[][][] protocols = {
             { { "TLSv1.3", "TLSv1.2", "TLSv1.1", "TLSv1" }, { "TLSv1.2" } },
             { { "TLSv1.2" }, { "TLSv1.3", "TLSv1.2", "TLSv1.1", "TLSv1" } },
-            { { "TLSv1.2" }, { "TLSv1.2" } }, { { "TLSv1.1" }, { "TLSv1.1" } },
-            { { "TLSv1" }, { "TLSv1" } } };
+            { { "TLSv1.2" }, { "TLSv1.2" } },
+            { { "TLSv1.1" }, { "TLSv1.1" } },
+            { { "TLSv1" }, { "TLSv1" } },
+            { { "TLSv1.3" }, { "TLSv1.3" } } };
 
     @Override
     protected SSLContext createClientSSLContext() throws Exception {
@@ -94,17 +108,36 @@ public class DisabledCurve extends SSLSocketTemplate {
         String expected = args[1];
         String disabledName = ("DISABLE_NONE".equals(args[0]) ? "" : args[0]);
         boolean disabled = false;
-        if (disabledName.equals("")) {
+
+        if (disabledName.isEmpty()) {
             Security.setProperty("jdk.disabled.namedCurves", "");
+            Security.setProperty("jdk.certpath.disabledAlgorithms", "");
         } else {
             disabled = true;
-            Security.setProperty("jdk.certpath.disabledAlgorithms", "secp384r1");
+            Security.setProperty("jdk.certpath.disabledAlgorithms", disabledName);
+            if (!disabledName.contains("MLKEM")) {
+                Security.setProperty("jdk.disabled.namedCurves", disabledName);
+            } else {
+                Security.setProperty("jdk.disabled.namedCurves", "");
+            }
         }
 
         // Re-enable TLSv1 and TLSv1.1 since test depends on it.
         SecurityUtils.removeFromDisabledTlsAlgs("TLSv1", "TLSv1.1");
 
+        String namedGroups = System.getProperty("jdk.tls.namedGroups", "");
+        boolean hybridGroup = namedGroups.contains("MLKEM");
+
         for (index = 0; index < protocols.length; index++) {
+            if (hybridGroup) {
+                String[] clientProtos = protocols[index][0];
+                String[] serverProtos = protocols[index][1];
+
+                if (!(isTLS13(clientProtos) && isTLS13(serverProtos))) {
+                    continue;
+                }
+            }
+
             try {
                 (new DisabledCurve()).run();
                 if (expected.equals("FAIL")) {
@@ -122,5 +155,9 @@ public class DisabledCurve extends SSLSocketTemplate {
             }
 
         }
+    }
+
+    private static boolean isTLS13(String[] protocols) {
+        return protocols.length == 1 && "TLSv1.3".equals(protocols[0]);
     }
 }

@@ -1245,7 +1245,6 @@ void LIR_Assembler::type_profile_helper(Register mdo,
   } else {
     __ profile_receiver_type(recv, mdo, mdp_offset);
   }
-}
 
 void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, Label* failure, Label* obj_is_null) {
   // we always need a stub for the failure case.
@@ -1311,34 +1310,9 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     __ b(*obj_is_null);
     __ bind(not_null);
 
-    ProfileStub *stub
-      = profile_capture_ratio > 1 ? new ProfileStub() : nullptr;
-
-    auto lambda = [stub, md, mdo, data, k_RInfo, obj] (LIR_Assembler* ce, LIR_Op* base_op) {
-      auto masm = [ce]() { return ce->masm(); };
-
-      if (stub != nullptr)  __ bind(*stub->entry());
-
-      Label update_done;
-      Register recv = k_RInfo;
-      __ load_klass(recv, obj);
-      ce->type_profile_helper(mdo, md, data, recv);
-
-      if (stub != nullptr)  __ b(*stub->continuation());
-    };
-
-    if (stub != nullptr) {
-      __ ubfx(rscratch1, r_profile_rng, 32-ratio_shift, ratio_shift);
-      __ cbz(rscratch1, *stub->entry());
-      __ bind(*stub->continuation());
-      __ step_random(r_profile_rng, rscratch2);
-
-      stub->set_action(lambda, op);
-      stub->set_name("Typecheck stub");
-      append_code_stub(stub);
-    } else {
-      lambda(this, op);
-    }
+    Register recv = k_RInfo;
+    __ load_klass(recv, obj);
+    type_profile_helper(mdo, md, data, recv);
   } else {
     __ cbz(obj, *obj_is_null);
   }
@@ -1431,60 +1405,23 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     Label* failure_target = stub->entry();
 
     if (should_profile) {
-      int profile_capture_ratio = ProfileCaptureRatio;
-      int ratio_shift = exact_log2(profile_capture_ratio);
-      auto threshold = (1ull << 32) >> ratio_shift;
-      assert(threshold > 0, "must be");
+      Label not_null;
+      Register mdo  = klass_RInfo;
+      __ mov_metadata(mdo, md->constant_encoding());
+      __ cbnz(value, not_null);
+      // Object is null; update MDO and exit
+      Address data_addr
+        = __ form_address(rscratch2, mdo,
+                          md->byte_offset_of_slot(data, DataLayout::flags_offset()), 0);
+      __ ldrb(rscratch1, data_addr);
+      __ orr(rscratch1, rscratch1, BitData::null_seen_byte_constant());
+      __ strb(rscratch1, data_addr);
+      __ b(done);
+      __ bind(not_null);
 
-      ProfileStub *profile_stub
-        = profile_capture_ratio > 1 ? new ProfileStub() : nullptr;
-
-      auto lambda = [profile_stub, md, data, value,
-                     k_RInfo, klass_RInfo, success_target] (LIR_Assembler* ce, LIR_Op*) {
-
-        auto masm = [ce]() { return ce->masm(); };
-
-        if (profile_stub != nullptr)  __ bind(*profile_stub->entry());
-
-        Label not_null;
-        Register mdo  = klass_RInfo;
-        __ mov_metadata(mdo, md->constant_encoding());
-        __ cbnz(value, not_null);
-        // Object is null; update MDO and exit
-        Address data_addr
-          = __ form_address(rscratch2, mdo,
-                            md->byte_offset_of_slot(data, DataLayout::flags_offset()), 0);
-        __ ldrb(rscratch1, data_addr);
-        __ orr(rscratch1, rscratch1, BitData::null_seen_byte_constant());
-        __ strb(rscratch1, data_addr);
-        if (profile_stub != nullptr) {
-          __ b(*profile_stub->continuation());
-        } else {
-          __ b(*success_target);
-        }
-        __ bind(not_null);
-
-        Label update_done;
-        Register recv = k_RInfo;
-        __ load_klass(recv, value);
-        ce->type_profile_helper(mdo, md, data, recv);
-
-        if (profile_stub != nullptr)  __ b(*profile_stub->continuation());
-      };
-
-      if (profile_stub != nullptr) {
-        __ ubfx(rscratch1, r_profile_rng, 32-ratio_shift, ratio_shift);
-        __ cbz(rscratch1, *profile_stub->entry());
-        __ bind(*profile_stub->continuation());
-        __ step_random(r_profile_rng, rscratch2);
-        __ cbz(value, done);
-
-        profile_stub->set_action(lambda, op);
-        profile_stub->set_name("Typecheck profile stub");
-        append_code_stub(profile_stub);
-      } else {
-        lambda(this, op);
-      }
+      Register recv = k_RInfo;
+      __ load_klass(recv, value);
+      type_profile_helper(mdo, md, data, recv);
     } else {
       __ cbz(value, done);
     }

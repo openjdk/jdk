@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,63 @@
 #include "opto/opcodes.hpp"
 #include "prims/vectorSupport.hpp"
 
-//------------------------------VectorNode-------------------------------------
+//=======================Notes-for-VectorMask-Representation=======================
+//
+// There are three distinct representations for vector masks based on platform and
+// use scenarios:
+//
+// - BVectMask: Platform-independent mask stored in a vector register with 8-bit
+//   lanes containing 1/0 values. The corresponding type is TypeVectA ~ TypeVectZ.
+//
+// - NVectMask: Platform-specific mask stored in vector registers with N-bit lanes,
+//   where all bits in each lane are either set (true) or unset (false). Generated
+//   on architectures without predicate/mask feature, such as AArch64 NEON, x86
+//   AVX2, etc. The corresponding type is TypeVectA ~ TypeVectZ.
+//
+// - PVectMask: Platform-specific mask stored in predicate/mask registers. Generated
+//   on architectures with predicate/mask feature, such as AArch64 SVE, x86 AVX-512,
+//   and RISC-V Vector Extension (RVV). The corresponding type is TypeVectMask.
+//
+// NVectMask and PVectMask encode element data type and vector length information.
+// They are the primary mask representations used in most mask and masked vector
+// operations. BVectMask primarily represents mask values loaded from or stored to
+// Java boolean memory (mask backing storage). VectorLoadMask/VectorStoreMask nodes
+// are needed to transform it to/from P/NVectMask. It is also used in certain mask
+// operations (e.g. VectorMaskOpNode).
+//
+//=========================Notes-for-Masked-Vector-Nodes===========================
+//
+// Each lane-wise and cross-lane (reduction) ALU node supports both non-masked
+// and masked operations.
+//
+// Currently masked vector nodes are only used to implement the Vector API's masked
+// operations (which might also be used for auto-vectorization in future), such as:
+//   Vector<E> lanewise(VectorOperators.Binary op, Vector<E> v, VectorMask<E> m)
+//
+// They are generated during intrinsification for Vector API, only on architectures
+// that support the relevant predicated instructions. The compiler uses
+// "Matcher::match_rule_supported_vector_masked()" to check whether the current
+// platform supports the predicated/masked vector instructions for an operation. It
+// generates the masked vector node for the operation if supported. Otherwise, it
+// generates the unpredicated vector node and implements the masked operation with
+// the help of a VectorBlendNode. Please see more details from API intrinsification
+// in vectorIntrinsics.cpp.
+//
+// To differentiate the masked and non-masked nodes, flag "Flag_is_predicated_vector"
+// is set for the masked version. Meanwhile, there is an additional mask input for
+// the masked nodes.
+//
+// For example:
+//   - Non-masked version:
+//          in1  in2
+//           \   /
+//         AddVBNode
+//
+//   - Masked version (with "Flag_is_predicated_vector" being set):
+//       in1  in2  mask
+//         \   |   /
+//         AddVBNode
+
 // Vector Operation
 class VectorNode : public TypeNode {
  public:
@@ -103,6 +159,8 @@ class VectorNode : public TypeNode {
   static bool implemented(int opc, uint vlen, BasicType bt);
   static bool is_shift(Node* n);
   static bool is_vshift_cnt(Node* n);
+  // Returns true if the lower vlen bits (bits [0, vlen-1]) of the long value
+  // are all 1s or all 0s, indicating a "mask all" or "mask none" pattern.
   static bool is_maskall_type(const TypeLong* type, int vlen);
   static bool is_muladds2i(const Node* n);
   static bool is_roundopD(Node* n);
@@ -117,7 +175,6 @@ class VectorNode : public TypeNode {
   static bool is_vector_bitwise_not_pattern(Node* n);
   static Node* degenerate_vector_rotate(Node* n1, Node* n2, bool is_rotate_left, int vlen,
                                         BasicType bt, PhaseGVN* phase);
-  static Node* try_to_gen_masked_vector(PhaseGVN* gvn, Node* node, const TypeVect* vt);
 
   // [Start, end) half-open range defining which operands are vectors
   static void vector_operands(Node* n, uint* start, uint* end);
@@ -177,7 +234,6 @@ class SaturatingVectorNode : public VectorNode {
   bool is_unsigned() { return _is_unsigned; }
 };
 
-//------------------------------AddVBNode--------------------------------------
 // Vector add byte
 class AddVBNode : public VectorNode {
  public:
@@ -185,7 +241,6 @@ class AddVBNode : public VectorNode {
   virtual int Opcode() const;
 };
 
-//------------------------------AddVSNode--------------------------------------
 // Vector add char/short
 class AddVSNode : public VectorNode {
  public:
@@ -193,7 +248,6 @@ class AddVSNode : public VectorNode {
   virtual int Opcode() const;
 };
 
-//------------------------------AddVINode--------------------------------------
 // Vector add int
 class AddVINode : public VectorNode {
  public:
@@ -201,7 +255,6 @@ class AddVINode : public VectorNode {
   virtual int Opcode() const;
 };
 
-//------------------------------AddVLNode--------------------------------------
 // Vector add long
 class AddVLNode : public VectorNode {
 public:
@@ -209,7 +262,6 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------AddVHFNode--------------------------------------
 // Vector add float
 class AddVHFNode : public VectorNode {
 public:
@@ -217,7 +269,6 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------AddVFNode--------------------------------------
 // Vector add float
 class AddVFNode : public VectorNode {
 public:
@@ -225,7 +276,6 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------AddVDNode--------------------------------------
 // Vector add double
 class AddVDNode : public VectorNode {
 public:
@@ -233,7 +283,6 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------ReductionNode------------------------------------
 // Perform reduction of a vector
 class ReductionNode : public Node {
  private:
@@ -295,7 +344,6 @@ class ReductionNode : public Node {
 #endif
 };
 
-//------------------------------AddReductionVINode--------------------------------------
 // Vector add byte, short and int as a reduction
 class AddReductionVINode : public ReductionNode {
 public:
@@ -303,7 +351,6 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------AddReductionVLNode--------------------------------------
 // Vector add long as a reduction
 class AddReductionVLNode : public ReductionNode {
 public:
@@ -311,7 +358,6 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------AddReductionVFNode--------------------------------------
 // Vector add float as a reduction
 class AddReductionVFNode : public ReductionNode {
 private:
@@ -338,7 +384,6 @@ public:
   virtual uint size_of() const { return sizeof(*this); }
 };
 
-//------------------------------AddReductionVDNode--------------------------------------
 // Vector add double as a reduction
 class AddReductionVDNode : public ReductionNode {
 private:
@@ -365,7 +410,6 @@ public:
   virtual uint size_of() const { return sizeof(*this); }
 };
 
-//------------------------------SubVBNode--------------------------------------
 // Vector subtract byte
 class SubVBNode : public VectorNode {
  public:
@@ -373,7 +417,6 @@ class SubVBNode : public VectorNode {
   virtual int Opcode() const;
 };
 
-//------------------------------SubVSNode--------------------------------------
 // Vector subtract short
 class SubVSNode : public VectorNode {
  public:
@@ -381,7 +424,6 @@ class SubVSNode : public VectorNode {
   virtual int Opcode() const;
 };
 
-//------------------------------SubVINode--------------------------------------
 // Vector subtract int
 class SubVINode : public VectorNode {
  public:
@@ -389,7 +431,6 @@ class SubVINode : public VectorNode {
   virtual int Opcode() const;
 };
 
-//------------------------------SubVLNode--------------------------------------
 // Vector subtract long
 class SubVLNode : public VectorNode {
  public:
@@ -397,7 +438,6 @@ class SubVLNode : public VectorNode {
   virtual int Opcode() const;
 };
 
-//------------------------------SaturatingAddVNode-----------------------------
 // Vector saturating addition.
 class SaturatingAddVNode : public SaturatingVectorNode {
  public:
@@ -405,7 +445,6 @@ class SaturatingAddVNode : public SaturatingVectorNode {
   virtual int Opcode() const;
 };
 
-//------------------------------SaturatingSubVNode-----------------------------
 // Vector saturating subtraction.
 class SaturatingSubVNode : public SaturatingVectorNode {
  public:
@@ -413,7 +452,6 @@ class SaturatingSubVNode : public SaturatingVectorNode {
   virtual int Opcode() const;
 };
 
-//------------------------------SubVHFNode--------------------------------------
 // Vector subtract half float
 class SubVHFNode : public VectorNode {
 public:
@@ -421,8 +459,6 @@ public:
   virtual int Opcode() const;
 };
 
-
-//------------------------------SubVFNode--------------------------------------
 // Vector subtract float
 class SubVFNode : public VectorNode {
  public:
@@ -430,7 +466,6 @@ class SubVFNode : public VectorNode {
   virtual int Opcode() const;
 };
 
-//------------------------------SubVDNode--------------------------------------
 // Vector subtract double
 class SubVDNode : public VectorNode {
  public:
@@ -438,7 +473,6 @@ class SubVDNode : public VectorNode {
   virtual int Opcode() const;
 };
 
-//------------------------------MulVBNode--------------------------------------
 // Vector multiply byte
 class MulVBNode : public VectorNode {
  public:
@@ -446,7 +480,6 @@ class MulVBNode : public VectorNode {
   virtual int Opcode() const;
 };
 
-//------------------------------MulVSNode--------------------------------------
 // Vector multiply short
 class MulVSNode : public VectorNode {
  public:
@@ -454,7 +487,6 @@ class MulVSNode : public VectorNode {
   virtual int Opcode() const;
 };
 
-//------------------------------MulVINode--------------------------------------
 // Vector multiply int
 class MulVINode : public VectorNode {
  public:
@@ -462,7 +494,6 @@ class MulVINode : public VectorNode {
   virtual int Opcode() const;
 };
 
-//------------------------------MulVLNode--------------------------------------
 // Vector multiply long
 class MulVLNode : public VectorNode {
 public:
@@ -474,7 +505,6 @@ public:
   bool has_uint_inputs() const;
 };
 
-//------------------------------MulVFNode--------------------------------------
 // Vector multiply half float
 class MulVHFNode : public VectorNode {
 public:
@@ -482,7 +512,6 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------MulVFNode--------------------------------------
 // Vector multiply float
 class MulVFNode : public VectorNode {
 public:
@@ -490,7 +519,6 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------MulVDNode--------------------------------------
 // Vector multiply double
 class MulVDNode : public VectorNode {
 public:
@@ -498,7 +526,6 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------MulAddVS2VINode--------------------------------
 // Vector multiply shorts to int and add adjacent ints.
 class MulAddVS2VINode : public VectorNode {
   public:
@@ -506,7 +533,6 @@ class MulAddVS2VINode : public VectorNode {
     virtual int Opcode() const;
 };
 
-//------------------------------FmaVNode--------------------------------------
 // Vector fused-multiply-add
 class FmaVNode : public VectorNode {
 public:
@@ -516,7 +542,6 @@ public:
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
-//------------------------------FmaVDNode--------------------------------------
 // Vector fused-multiply-add double
 class FmaVDNode : public FmaVNode {
 public:
@@ -524,7 +549,6 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------FmaVFNode--------------------------------------
 // Vector fused-multiply-add float
 class FmaVFNode : public FmaVNode {
 public:
@@ -532,7 +556,6 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------FmaVHFNode-------------------------------------
 // Vector fused-multiply-add half-precision float
 class FmaVHFNode : public FmaVNode {
 public:
@@ -540,7 +563,6 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------MulReductionVINode--------------------------------------
 // Vector multiply byte, short and int as a reduction
 class MulReductionVINode : public ReductionNode {
 public:
@@ -548,7 +570,6 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------MulReductionVLNode--------------------------------------
 // Vector multiply int as a reduction
 class MulReductionVLNode : public ReductionNode {
 public:
@@ -556,7 +577,6 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------MulReductionVFNode--------------------------------------
 // Vector multiply float as a reduction
 class MulReductionVFNode : public ReductionNode {
   // True if mul reduction operation for floats requires strict ordering.
@@ -582,7 +602,6 @@ public:
   virtual uint size_of() const { return sizeof(*this); }
 };
 
-//------------------------------MulReductionVDNode--------------------------------------
 // Vector multiply double as a reduction
 class MulReductionVDNode : public ReductionNode {
   // True if mul reduction operation for doubles requires strict ordering.
@@ -608,7 +627,6 @@ public:
   virtual uint size_of() const { return sizeof(*this); }
 };
 
-//------------------------------DivVHFNode-------------------------------------
 // Vector divide half float
 class DivVHFNode : public VectorNode {
 public:
@@ -616,7 +634,6 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------DivVFNode--------------------------------------
 // Vector divide float
 class DivVFNode : public VectorNode {
  public:
@@ -624,7 +641,6 @@ class DivVFNode : public VectorNode {
   virtual int Opcode() const;
 };
 
-//------------------------------DivVDNode--------------------------------------
 // Vector Divide double
 class DivVDNode : public VectorNode {
  public:
@@ -632,7 +648,6 @@ class DivVDNode : public VectorNode {
   virtual int Opcode() const;
 };
 
-//------------------------------AbsVBNode--------------------------------------
 // Vector Abs byte
 class AbsVBNode : public VectorNode {
 public:
@@ -640,7 +655,6 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------AbsVSNode--------------------------------------
 // Vector Abs short
 class AbsVSNode : public VectorNode {
 public:
@@ -648,7 +662,6 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------MinVNode--------------------------------------
 // Vector Min
 class MinVNode : public VectorNode {
 public:
@@ -656,7 +669,6 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------MinVHFNode------------------------------------
 // Vector Min for half floats
 class MinVHFNode : public VectorNode {
 public:
@@ -664,7 +676,6 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------MaxVHFNode------------------------------------
 // Vector Max for half floats
 class MaxVHFNode : public VectorNode {
 public:
@@ -672,6 +683,7 @@ public:
   virtual int Opcode() const;
 };
 
+// Vector Unsigned Min
 class UMinVNode : public VectorNode {
  public:
   UMinVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2 ,vt) {
@@ -682,8 +694,6 @@ class UMinVNode : public VectorNode {
   virtual int Opcode() const;
 };
 
-
-//------------------------------MaxVNode--------------------------------------
 // Vector Max
 class MaxVNode : public VectorNode {
  public:
@@ -691,6 +701,7 @@ class MaxVNode : public VectorNode {
   virtual int Opcode() const;
 };
 
+// Vector Unsigned Max
 class UMaxVNode : public VectorNode {
  public:
   UMaxVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {
@@ -701,7 +712,6 @@ class UMaxVNode : public VectorNode {
   virtual int Opcode() const;
 };
 
-//------------------------------AbsVINode--------------------------------------
 // Vector Abs int
 class AbsVINode : public VectorNode {
  public:
@@ -709,7 +719,6 @@ class AbsVINode : public VectorNode {
   virtual int Opcode() const;
 };
 
-//------------------------------AbsVLNode--------------------------------------
 // Vector Abs long
 class AbsVLNode : public VectorNode {
 public:
@@ -717,7 +726,6 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------AbsVFNode--------------------------------------
 // Vector Abs float
 class AbsVFNode : public VectorNode {
  public:
@@ -725,7 +733,6 @@ class AbsVFNode : public VectorNode {
   virtual int Opcode() const;
 };
 
-//------------------------------AbsVDNode--------------------------------------
 // Vector Abs double
 class AbsVDNode : public VectorNode {
  public:
@@ -733,7 +740,6 @@ class AbsVDNode : public VectorNode {
   virtual int Opcode() const;
 };
 
-//------------------------------NegVNode---------------------------------------
 // Vector Neg parent class (not for code generation).
 class NegVNode : public VectorNode {
  public:
@@ -747,7 +753,6 @@ class NegVNode : public VectorNode {
   Node* degenerate_integral_negate(PhaseGVN* phase, bool is_predicated);
 };
 
-//------------------------------NegVINode--------------------------------------
 // Vector Neg byte/short/int
 class NegVINode : public NegVNode {
  public:
@@ -755,7 +760,6 @@ class NegVINode : public NegVNode {
   virtual int Opcode() const;
 };
 
-//------------------------------NegVLNode--------------------------------------
 // Vector Neg long
 class NegVLNode : public NegVNode {
  public:
@@ -763,7 +767,6 @@ class NegVLNode : public NegVNode {
   virtual int Opcode() const;
 };
 
-//------------------------------NegVFNode--------------------------------------
 // Vector Neg float
 class NegVFNode : public NegVNode {
  public:
@@ -771,7 +774,6 @@ class NegVFNode : public NegVNode {
   virtual int Opcode() const;
 };
 
-//------------------------------NegVDNode--------------------------------------
 // Vector Neg double
 class NegVDNode : public NegVNode {
  public:
@@ -779,7 +781,6 @@ class NegVDNode : public NegVNode {
   virtual int Opcode() const;
 };
 
-//------------------------------PopCountVINode---------------------------------
 // Vector popcount integer bits
 class PopCountVINode : public VectorNode {
  public:
@@ -787,7 +788,6 @@ class PopCountVINode : public VectorNode {
   virtual int Opcode() const;
 };
 
-//------------------------------PopCountVLNode---------------------------------
 // Vector popcount long bits
 class PopCountVLNode : public VectorNode {
  public:
@@ -797,7 +797,6 @@ class PopCountVLNode : public VectorNode {
   virtual int Opcode() const;
 };
 
-//------------------------------SqrtVHFNode-------------------------------------
 // Vector Sqrt half-precision float
 class SqrtVHFNode : public VectorNode {
 public:
@@ -805,14 +804,13 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------SqrtVFNode--------------------------------------
 // Vector Sqrt float
 class SqrtVFNode : public VectorNode {
  public:
   SqrtVFNode(Node* in, const TypeVect* vt) : VectorNode(in,vt) {}
   virtual int Opcode() const;
 };
-//------------------------------RoundDoubleVNode--------------------------------
+
 // Vector round double
 class RoundDoubleModeVNode : public VectorNode {
  public:
@@ -820,7 +818,6 @@ class RoundDoubleModeVNode : public VectorNode {
   virtual int Opcode() const;
 };
 
-//------------------------------SqrtVDNode--------------------------------------
 // Vector Sqrt double
 class SqrtVDNode : public VectorNode {
  public:
@@ -828,8 +825,7 @@ class SqrtVDNode : public VectorNode {
   virtual int Opcode() const;
 };
 
-//------------------------------ShiftVNode-----------------------------------
-// Class ShiftV functionality.  This covers the common behaviors for all kinds
+// Class ShiftV functionality. This covers the common behaviors for all kinds
 // of vector shifts.
 class ShiftVNode : public VectorNode {
  private:
@@ -849,7 +845,6 @@ class ShiftVNode : public VectorNode {
   virtual uint size_of() const { return sizeof(ShiftVNode); }
 };
 
-//------------------------------LShiftVBNode-----------------------------------
 // Vector left shift bytes
 class LShiftVBNode : public ShiftVNode {
  public:
@@ -858,7 +853,6 @@ class LShiftVBNode : public ShiftVNode {
   virtual int Opcode() const;
 };
 
-//------------------------------LShiftVSNode-----------------------------------
 // Vector left shift shorts
 class LShiftVSNode : public ShiftVNode {
  public:
@@ -867,7 +861,6 @@ class LShiftVSNode : public ShiftVNode {
   virtual int Opcode() const;
 };
 
-//------------------------------LShiftVINode-----------------------------------
 // Vector left shift ints
 class LShiftVINode : public ShiftVNode {
  public:
@@ -876,7 +869,6 @@ class LShiftVINode : public ShiftVNode {
   virtual int Opcode() const;
 };
 
-//------------------------------LShiftVLNode-----------------------------------
 // Vector left shift longs
 class LShiftVLNode : public ShiftVNode {
  public:
@@ -885,7 +877,6 @@ class LShiftVLNode : public ShiftVNode {
   virtual int Opcode() const;
 };
 
-//------------------------------RShiftVBNode-----------------------------------
 // Vector right arithmetic (signed) shift bytes
 class RShiftVBNode : public ShiftVNode {
  public:
@@ -894,7 +885,6 @@ class RShiftVBNode : public ShiftVNode {
   virtual int Opcode() const;
 };
 
-//------------------------------RShiftVSNode-----------------------------------
 // Vector right arithmetic (signed) shift shorts
 class RShiftVSNode : public ShiftVNode {
  public:
@@ -903,7 +893,6 @@ class RShiftVSNode : public ShiftVNode {
   virtual int Opcode() const;
 };
 
-//------------------------------RShiftVINode-----------------------------------
 // Vector right arithmetic (signed) shift ints
 class RShiftVINode : public ShiftVNode {
  public:
@@ -912,7 +901,6 @@ class RShiftVINode : public ShiftVNode {
   virtual int Opcode() const;
 };
 
-//------------------------------RShiftVLNode-----------------------------------
 // Vector right arithmetic (signed) shift longs
 class RShiftVLNode : public ShiftVNode {
  public:
@@ -921,7 +909,6 @@ class RShiftVLNode : public ShiftVNode {
   virtual int Opcode() const;
 };
 
-//------------------------------URShiftVBNode----------------------------------
 // Vector right logical (unsigned) shift bytes
 class URShiftVBNode : public ShiftVNode {
  public:
@@ -930,7 +917,6 @@ class URShiftVBNode : public ShiftVNode {
   virtual int Opcode() const;
 };
 
-//------------------------------URShiftVSNode----------------------------------
 // Vector right logical (unsigned) shift shorts
 class URShiftVSNode : public ShiftVNode {
  public:
@@ -939,7 +925,6 @@ class URShiftVSNode : public ShiftVNode {
   virtual int Opcode() const;
 };
 
-//------------------------------URShiftVINode----------------------------------
 // Vector right logical (unsigned) shift ints
 class URShiftVINode : public ShiftVNode {
  public:
@@ -948,7 +933,6 @@ class URShiftVINode : public ShiftVNode {
   virtual int Opcode() const;
 };
 
-//------------------------------URShiftVLNode----------------------------------
 // Vector right logical (unsigned) shift longs
 class URShiftVLNode : public ShiftVNode {
  public:
@@ -957,7 +941,6 @@ class URShiftVLNode : public ShiftVNode {
   virtual int Opcode() const;
 };
 
-//------------------------------LShiftCntVNode---------------------------------
 // Vector left shift count
 class LShiftCntVNode : public VectorNode {
  public:
@@ -965,7 +948,6 @@ class LShiftCntVNode : public VectorNode {
   virtual int Opcode() const;
 };
 
-//------------------------------RShiftCntVNode---------------------------------
 // Vector right shift count
 class RShiftCntVNode : public VectorNode {
  public:
@@ -973,7 +955,6 @@ class RShiftCntVNode : public VectorNode {
   virtual int Opcode() const;
 };
 
-//------------------------------AndVNode---------------------------------------
 // Vector and integer
 class AndVNode : public VectorNode {
  public:
@@ -982,7 +963,6 @@ class AndVNode : public VectorNode {
   virtual Node* Identity(PhaseGVN* phase);
 };
 
-//------------------------------AndReductionVNode--------------------------------------
 // Vector and byte, short, int, long as a reduction
 class AndReductionVNode : public ReductionNode {
  public:
@@ -990,8 +970,7 @@ class AndReductionVNode : public ReductionNode {
   virtual int Opcode() const;
 };
 
-//------------------------------OrVNode---------------------------------------
-// Vector or byte, short, int, long as a reduction
+// Vector or integer
 class OrVNode : public VectorNode {
  public:
   OrVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
@@ -999,15 +978,13 @@ class OrVNode : public VectorNode {
   virtual Node* Identity(PhaseGVN* phase);
 };
 
-//------------------------------OrReductionVNode--------------------------------------
-// Vector xor byte, short, int, long as a reduction
+// Vector or byte, short, int, long as a reduction
 class OrReductionVNode : public ReductionNode {
  public:
   OrReductionVNode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
-//------------------------------XorVNode---------------------------------------
 // Vector xor integer
 class XorVNode : public VectorNode {
  public:
@@ -1017,15 +994,13 @@ class XorVNode : public VectorNode {
   Node* Ideal_XorV_VectorMaskCmp(PhaseGVN* phase, bool can_reshape);
 };
 
-//------------------------------XorReductionVNode--------------------------------------
-// Vector and int, long as a reduction
+// Vector xor byte, short, int, long as a reduction
 class XorReductionVNode : public ReductionNode {
  public:
   XorReductionVNode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
-//------------------------------MinReductionVNode--------------------------------------
 // Vector min byte, short, int, long, float, double as a reduction
 class MinReductionVNode : public ReductionNode {
 public:
@@ -1033,15 +1008,13 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------MaxReductionVNode--------------------------------------
-// Vector min byte, short, int, long, float, double as a reduction
+// Vector max byte, short, int, long, float, double as a reduction
 class MaxReductionVNode : public ReductionNode {
 public:
   MaxReductionVNode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
-//------------------------------CompressVNode--------------------------------------
 // Vector compress
 class CompressVNode: public VectorNode {
  public:
@@ -1052,6 +1025,7 @@ class CompressVNode: public VectorNode {
   virtual int Opcode() const;
 };
 
+// Vector mask compress
 class CompressMNode: public VectorNode {
  public:
   CompressMNode(Node* mask, const TypeVect* vt) :
@@ -1061,7 +1035,6 @@ class CompressMNode: public VectorNode {
   virtual int Opcode() const;
 };
 
-//------------------------------ExpandVNode--------------------------------------
 // Vector expand
 class ExpandVNode: public VectorNode {
  public:
@@ -1074,7 +1047,6 @@ class ExpandVNode: public VectorNode {
 
 //================================= M E M O R Y ===============================
 
-//------------------------------LoadVectorNode---------------------------------
 // Load Vector from memory
 class LoadVectorNode : public LoadNode {
  private:
@@ -1116,7 +1088,6 @@ class LoadVectorNode : public LoadNode {
 #endif
 };
 
-//------------------------------LoadVectorGatherNode------------------------------
 // Load Vector from memory via index map
 class LoadVectorGatherNode : public LoadVectorNode {
  public:
@@ -1139,7 +1110,6 @@ class LoadVectorGatherNode : public LoadVectorNode {
   }
 };
 
-//------------------------------StoreVectorNode--------------------------------
 // Store Vector to memory
 class StoreVectorNode : public StoreNode {
  private:
@@ -1181,9 +1151,7 @@ class StoreVectorNode : public StoreNode {
 #endif
 };
 
-//------------------------------StoreVectorScatterNode------------------------------
 // Store Vector into memory via index map
-
  class StoreVectorScatterNode : public StoreVectorNode {
   public:
    enum { Indices = 4 };
@@ -1201,7 +1169,6 @@ class StoreVectorNode : public StoreNode {
    virtual Node* indices() const { return in(Indices); }
 };
 
-//------------------------------StoreVectorMaskedNode--------------------------------
 // Store Vector to memory under the influence of a predicate register(mask).
 class StoreVectorMaskedNode : public StoreVectorNode {
  public:
@@ -1222,7 +1189,6 @@ class StoreVectorMaskedNode : public StoreVectorNode {
   virtual Node* mask() const { return in(Mask); }
 };
 
-//------------------------------LoadVectorMaskedNode--------------------------------
 // Load Vector from memory under the influence of a predicate register(mask).
 class LoadVectorMaskedNode : public LoadVectorNode {
  public:
@@ -1246,7 +1212,6 @@ class LoadVectorMaskedNode : public LoadVectorNode {
   }
 };
 
-//-------------------------------LoadVectorGatherMaskedNode---------------------------------
 // Load Vector from memory via index map under the influence of a predicate register(mask).
 class LoadVectorGatherMaskedNode : public LoadVectorNode {
  public:
@@ -1269,7 +1234,6 @@ class LoadVectorGatherMaskedNode : public LoadVectorNode {
   }
 };
 
-//------------------------------StoreVectorScatterMaskedNode--------------------------------
 // Store Vector into memory via index map under the influence of a predicate register(mask).
 class StoreVectorScatterMaskedNode : public StoreVectorNode {
   public:
@@ -1313,7 +1277,6 @@ public:
   virtual const Type *bottom_type() const { return in(1)->bottom_type(); }
 };
 
-//------------------------------VectorCmpMaskedNode--------------------------------
 // Vector Comparison under the influence of a predicate register(mask).
 class VectorCmpMaskedNode : public TypeNode {
   public:
@@ -1326,7 +1289,8 @@ class VectorCmpMaskedNode : public TypeNode {
   virtual int Opcode() const;
 };
 
-//------------------------------VectorMaskGenNode----------------------------------
+// Generate a vector mask based on the given length. Lanes with indices in
+// [0, length) are set to true, while the remaining lanes are set to false.
 class VectorMaskGenNode : public TypeNode {
  public:
   VectorMaskGenNode(Node* length, const Type* ty): TypeNode(ty, 2) {
@@ -1339,7 +1303,8 @@ class VectorMaskGenNode : public TypeNode {
   static Node* make(Node* length, BasicType vmask_bt, int vmask_len);
 };
 
-//------------------------------VectorMaskOpNode-----------------------------------
+// Base class for certain vector mask operations. The supported input mask can
+// be either "BVectMask" or "PVectMask" depending on the platform.
 class VectorMaskOpNode : public TypeNode {
  private:
   int _mopc;
@@ -1360,6 +1325,7 @@ class VectorMaskOpNode : public TypeNode {
   static Node* make(Node* mask, const Type* ty, int mopc);
 };
 
+// Count the number of true (set) lanes in the vector mask.
 class VectorMaskTrueCountNode : public VectorMaskOpNode {
  public:
   VectorMaskTrueCountNode(Node* mask, const Type* ty):
@@ -1367,6 +1333,8 @@ class VectorMaskTrueCountNode : public VectorMaskOpNode {
   virtual int Opcode() const;
 };
 
+// Returns the index of the first true (set) lane in the vector mask.
+// If no lanes are set, returns the vector length.
 class VectorMaskFirstTrueNode : public VectorMaskOpNode {
  public:
   VectorMaskFirstTrueNode(Node* mask, const Type* ty):
@@ -1374,6 +1342,8 @@ class VectorMaskFirstTrueNode : public VectorMaskOpNode {
   virtual int Opcode() const;
 };
 
+// Returns the index of the last true (set) lane in the vector mask.
+// If no lanes are set, returns -1 .
 class VectorMaskLastTrueNode : public VectorMaskOpNode {
  public:
   VectorMaskLastTrueNode(Node* mask, const Type* ty):
@@ -1381,6 +1351,10 @@ class VectorMaskLastTrueNode : public VectorMaskOpNode {
   virtual int Opcode() const;
 };
 
+// Pack the mask lane values into a long value, supporting at most the
+// first 64 lanes. Each mask lane is packed into one bit in the long
+// value, ordered from the least significant bit to the most significant
+// bit.
 class VectorMaskToLongNode : public VectorMaskOpNode {
  public:
   VectorMaskToLongNode(Node* mask, const Type* ty):
@@ -1392,6 +1366,9 @@ class VectorMaskToLongNode : public VectorMaskOpNode {
   virtual Node* Identity(PhaseGVN* phase);
 };
 
+// Unpack bits from a long value into vector mask lane values. Each bit
+// in the long value is unpacked into one mask lane, ordered from the
+// least significant bit to the sign bit.
 class VectorLongToMaskNode : public VectorNode {
  public:
   VectorLongToMaskNode(Node* mask, const TypeVect* ty):
@@ -1401,36 +1378,40 @@ class VectorLongToMaskNode : public VectorNode {
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
-//-------------------------- Vector mask broadcast -----------------------------------
+// Broadcast a scalar value to all lanes of a vector mask. All lanes are set
+// to true if the input value is non-zero, or false if the input value is
+// zero. This node is only used to generate a mask with "PVectMask" layout.
 class MaskAllNode : public VectorNode {
  public:
   MaskAllNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {}
   virtual int Opcode() const;
 };
 
-//--------------------------- Vector mask logical and --------------------------------
+// Perform a bitwise AND operation between two vector masks. This node is
+// only used for vector masks with "PVectMask" layout.
 class AndVMaskNode : public AndVNode {
  public:
   AndVMaskNode(Node* in1, Node* in2, const TypeVect* vt) : AndVNode(in1, in2, vt) {}
   virtual int Opcode() const;
 };
 
-//--------------------------- Vector mask logical or ---------------------------------
+// Perform a bitwise OR operation between two vector masks. This node is
+// only used for vector masks with "PVectMask" layout.
 class OrVMaskNode : public OrVNode {
  public:
   OrVMaskNode(Node* in1, Node* in2, const TypeVect* vt) : OrVNode(in1, in2, vt) {}
   virtual int Opcode() const;
 };
 
-//--------------------------- Vector mask logical xor --------------------------------
+// Perform a bitwise XOR operation between two vector masks. This node is
+// only used for vector masks with "PVectMask" layout.
 class XorVMaskNode : public XorVNode {
  public:
   XorVMaskNode(Node* in1, Node* in2, const TypeVect* vt) : XorVNode(in1, in2, vt) {}
   virtual int Opcode() const;
 };
 
-//=========================Promote_Scalar_to_Vector============================
-
+// Replicate a scalar value to all lanes of a vector.
 class ReplicateNode : public VectorNode {
  public:
   ReplicateNode(Node* in1, const TypeVect* vt) : VectorNode(in1, vt) {
@@ -1440,7 +1421,7 @@ class ReplicateNode : public VectorNode {
   virtual int Opcode() const;
 };
 
-//======================Populate_Indices_into_a_Vector=========================
+// Populate indices into a vector.
 class PopulateIndexNode : public VectorNode {
  public:
   PopulateIndexNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
@@ -1449,7 +1430,6 @@ class PopulateIndexNode : public VectorNode {
 
 //========================Pack_Scalars_into_a_Vector===========================
 
-//------------------------------PackNode---------------------------------------
 // Pack parent class (not for code generation).
 class PackNode : public VectorNode {
  public:
@@ -1467,7 +1447,6 @@ class PackNode : public VectorNode {
   static PackNode* make(Node* s, uint vlen, BasicType bt);
 };
 
-//------------------------------PackBNode--------------------------------------
 // Pack byte scalars into vector
 class PackBNode : public PackNode {
  public:
@@ -1475,7 +1454,6 @@ class PackBNode : public PackNode {
   virtual int Opcode() const;
 };
 
-//------------------------------PackSNode--------------------------------------
 // Pack short scalars into a vector
 class PackSNode : public PackNode {
  public:
@@ -1484,7 +1462,6 @@ class PackSNode : public PackNode {
   virtual int Opcode() const;
 };
 
-//------------------------------PackINode--------------------------------------
 // Pack integer scalars into a vector
 class PackINode : public PackNode {
  public:
@@ -1493,7 +1470,6 @@ class PackINode : public PackNode {
   virtual int Opcode() const;
 };
 
-//------------------------------PackLNode--------------------------------------
 // Pack long scalars into a vector
 class PackLNode : public PackNode {
  public:
@@ -1502,7 +1478,6 @@ class PackLNode : public PackNode {
   virtual int Opcode() const;
 };
 
-//------------------------------Pack2LNode-------------------------------------
 // Pack 2 long scalars into a vector
 class Pack2LNode : public PackNode {
  public:
@@ -1510,7 +1485,6 @@ class Pack2LNode : public PackNode {
   virtual int Opcode() const;
 };
 
-//------------------------------PackFNode--------------------------------------
 // Pack float scalars into vector
 class PackFNode : public PackNode {
  public:
@@ -1519,7 +1493,6 @@ class PackFNode : public PackNode {
   virtual int Opcode() const;
 };
 
-//------------------------------PackDNode--------------------------------------
 // Pack double scalars into a vector
 class PackDNode : public PackNode {
  public:
@@ -1528,7 +1501,6 @@ class PackDNode : public PackNode {
   virtual int Opcode() const;
 };
 
-//------------------------------Pack2DNode-------------------------------------
 // Pack 2 double scalars into a vector
 class Pack2DNode : public PackNode {
  public:
@@ -1536,7 +1508,10 @@ class Pack2DNode : public PackNode {
   virtual int Opcode() const;
 };
 
-
+// Load the IOTA constant vector containing sequential indices starting from 0
+// and incrementing by 1 up to "VLENGTH - 1". So far, the first input is an int
+// constant 0. For example, a 128-bit vector with int (32-bit) elements produces
+// a vector like "[0, 1, 2, 3]".
 class VectorLoadConstNode : public VectorNode {
  public:
   VectorLoadConstNode(Node* in1, const TypeVect* vt) : VectorNode(in1, vt) {}
@@ -1545,8 +1520,7 @@ class VectorLoadConstNode : public VectorNode {
 
 //========================Extract_Scalar_from_Vector===========================
 
-//------------------------------ExtractNode------------------------------------
-// Extract a scalar from a vector at position "pos"
+// The base class for all extract nodes.
 class ExtractNode : public Node {
  public:
   ExtractNode(Node* src, Node* pos) : Node(nullptr, src, pos) {}
@@ -1555,8 +1529,7 @@ class ExtractNode : public Node {
   static int opcode(BasicType bt);
 };
 
-//------------------------------ExtractBNode-----------------------------------
-// Extract a byte from a vector at position "pos"
+// Extract a byte from a vector at position "pos".
 class ExtractBNode : public ExtractNode {
  public:
   ExtractBNode(Node* src, Node* pos) : ExtractNode(src, pos) {}
@@ -1565,8 +1538,7 @@ class ExtractBNode : public ExtractNode {
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
-//------------------------------ExtractUBNode----------------------------------
-// Extract a boolean from a vector at position "pos"
+// Extract a boolean from a vector at position "pos".
 class ExtractUBNode : public ExtractNode {
  public:
   ExtractUBNode(Node* src, Node* pos) : ExtractNode(src, pos) {}
@@ -1575,8 +1547,7 @@ class ExtractUBNode : public ExtractNode {
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
-//------------------------------ExtractCNode-----------------------------------
-// Extract a char from a vector at position "pos"
+// Extract a char from a vector at position "pos".
 class ExtractCNode : public ExtractNode {
  public:
   ExtractCNode(Node* src, Node* pos) : ExtractNode(src, pos) {}
@@ -1585,8 +1556,7 @@ class ExtractCNode : public ExtractNode {
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
-//------------------------------ExtractSNode-----------------------------------
-// Extract a short from a vector at position "pos"
+// Extract a short from a vector at position "pos".
 class ExtractSNode : public ExtractNode {
  public:
   ExtractSNode(Node* src, Node* pos) : ExtractNode(src, pos) {}
@@ -1595,8 +1565,7 @@ class ExtractSNode : public ExtractNode {
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
-//------------------------------ExtractINode-----------------------------------
-// Extract an int from a vector at position "pos"
+// Extract an int from a vector at position "pos".
 class ExtractINode : public ExtractNode {
  public:
   ExtractINode(Node* src, Node* pos) : ExtractNode(src, pos) {}
@@ -1605,8 +1574,7 @@ class ExtractINode : public ExtractNode {
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
-//------------------------------ExtractLNode-----------------------------------
-// Extract a long from a vector at position "pos"
+// Extract a long from a vector at position "pos".
 class ExtractLNode : public ExtractNode {
  public:
   ExtractLNode(Node* src, Node* pos) : ExtractNode(src, pos) {}
@@ -1615,8 +1583,7 @@ class ExtractLNode : public ExtractNode {
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
-//------------------------------ExtractFNode-----------------------------------
-// Extract a float from a vector at position "pos"
+// Extract a float from a vector at position "pos".
 class ExtractFNode : public ExtractNode {
  public:
   ExtractFNode(Node* src, Node* pos) : ExtractNode(src, pos) {}
@@ -1625,8 +1592,7 @@ class ExtractFNode : public ExtractNode {
   virtual uint ideal_reg() const { return Op_RegF; }
 };
 
-//------------------------------ExtractDNode-----------------------------------
-// Extract a double from a vector at position "pos"
+// Extract a double from a vector at position "pos".
 class ExtractDNode : public ExtractNode {
  public:
   ExtractDNode(Node* src, Node* pos) : ExtractNode(src, pos) {}
@@ -1635,7 +1601,6 @@ class ExtractDNode : public ExtractNode {
   virtual uint ideal_reg() const { return Op_RegD; }
 };
 
-//------------------------------MacroLogicVNode-------------------------------
 // Vector logical operations packing node.
 class MacroLogicVNode : public VectorNode {
 private:
@@ -1654,6 +1619,8 @@ public:
                                Node* mask, uint truth_table, const TypeVect* vt);
 };
 
+// Compare two vectors lane-wise using the specified predicate and produce a
+// vector mask.
 class VectorMaskCmpNode : public VectorNode {
  private:
   BoolTest::mask _predicate;
@@ -1698,6 +1665,8 @@ class VectorMaskWrapperNode : public VectorNode {
   Node* vector_mask() const { return in(2); }
 };
 
+// Test whether all or any lanes in the first input vector mask is true,
+// based on the specified predicate.
 class VectorTestNode : public CmpNode {
  private:
   BoolTest::mask _predicate;
@@ -1720,6 +1689,9 @@ class VectorTestNode : public CmpNode {
   }
 };
 
+// Blend two vectors based on a vector mask. For each lane, select the value
+// from the first input vector (vec1) if the corresponding mask lane is set,
+// otherwise select from the second input vector (vec2).
 class VectorBlendNode : public VectorNode {
  public:
   VectorBlendNode(Node* vec1, Node* vec2, Node* mask)
@@ -1733,11 +1705,14 @@ class VectorBlendNode : public VectorNode {
   Node* vec_mask() const { return in(3); }
 };
 
+// Rearrange lane elements from a source vector under the control of a shuffle
+// (indexes) vector. Each lane in the shuffle vector specifies which lane from
+// the source vector to select for the corresponding output lane. All indexes
+// are in the range [0, VLENGTH).
 class VectorRearrangeNode : public VectorNode {
  public:
   VectorRearrangeNode(Node* vec1, Node* shuffle)
     : VectorNode(vec1, shuffle, vec1->bottom_type()->is_vect()) {
-    // assert(mask->is_VectorMask(), "VectorBlendNode requires that third argument be a mask");
   }
 
   virtual int Opcode() const;
@@ -1745,9 +1720,12 @@ class VectorRearrangeNode : public VectorNode {
   Node* vec_shuffle() const { return in(2); }
 };
 
-
-// Select elements from two source vectors based on the wrapped indexes held in
-// the first vector.
+// Select lane elements from two source vectors ("src1" and "src2") under the
+// control of an "indexes" vector. The two source vectors are logically concatenated
+// to form a table of 2*VLENGTH elements, where src1 occupies indices [0, VLENGTH)
+// and src2 occupies indices [VLENGTH, 2*VLENGTH). Each lane in the "indexes"
+// vector specifies which element from this table to select for the corresponding
+// output lane.
 class SelectFromTwoVectorNode : public VectorNode {
 public:
   SelectFromTwoVectorNode(Node* indexes, Node* src1, Node* src2, const TypeVect* vt)
@@ -1759,13 +1737,19 @@ public:
   virtual int Opcode() const;
 };
 
-// The target may not directly support the rearrange operation for an element type. In those cases,
-// we can transform the rearrange into a different element type. For example, on x86 before AVX512,
-// there is no rearrange instruction for short elements, what we will then do is to transform the
-// shuffle vector into one that we can do byte rearrange such that it would provide the same
-// result. This could have been done in VectorRearrangeNode during code emission but we eagerly
-// expand this out because it is often the case that an index vector is reused in many rearrange
-// operations. This allows the index preparation to be GVN-ed as well as hoisted out of loops, etc.
+// Transform a shuffle vector when the target does not directly support rearrange
+// operations for the original element type. In such cases, the rearrange can be
+// transformed to use a different element type.
+//
+// For example, on x86 before AVX512, there are no rearrange instructions for short
+// elements. The shuffle vector is transformed into one suitable for byte rearrange
+// that produces the same result. This could have been done in VectorRearrangeNode
+// during code emission, but we eagerly expand it out because shuffle vectors are
+// often reused in many rearrange operations. This allows the transformation to be
+// GVN-ed and hoisted out of loops.
+//
+// Input:  Original shuffle vector (indices for the desired element type)
+// Output: Transformed shuffle vector (indices for the supported element type)
 class VectorLoadShuffleNode : public VectorNode {
  public:
   VectorLoadShuffleNode(Node* in, const TypeVect* vt)
@@ -1774,6 +1758,8 @@ class VectorLoadShuffleNode : public VectorNode {
   virtual int Opcode() const;
 };
 
+// Convert a "BVectMask" into a platform-specific vector mask (either "NVectMask"
+// or "PVectMask").
 class VectorLoadMaskNode : public VectorNode {
  public:
   VectorLoadMaskNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {
@@ -1785,6 +1771,8 @@ class VectorLoadMaskNode : public VectorNode {
   Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
+// Convert a platform-specific vector mask (either "NVectMask" or "PVectMask")
+// into a "BVectMask".
 class VectorStoreMaskNode : public VectorNode {
  protected:
   VectorStoreMaskNode(Node* in1, ConINode* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
@@ -1796,6 +1784,8 @@ class VectorStoreMaskNode : public VectorNode {
   static VectorStoreMaskNode* make(PhaseGVN& gvn, Node* in, BasicType in_type, uint num_elem);
 };
 
+// Lane-wise type cast a vector mask to the given vector type. The vector length
+// of the input and output must be the same.
 class VectorMaskCastNode : public VectorNode {
  public:
   VectorMaskCastNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {
@@ -1832,6 +1822,8 @@ class VectorReinterpretNode : public VectorNode {
   virtual int Opcode() const;
 };
 
+// Lane-wise type cast a vector to the given vector type. This is the base
+// class for all vector type cast operations.
 class VectorCastNode : public VectorNode {
  public:
   VectorCastNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {}
@@ -1844,6 +1836,7 @@ class VectorCastNode : public VectorNode {
   virtual Node* Identity(PhaseGVN* phase);
 };
 
+// Cast a byte vector to the given vector type.
 class VectorCastB2XNode : public VectorCastNode {
  public:
   VectorCastB2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
@@ -1852,6 +1845,7 @@ class VectorCastB2XNode : public VectorCastNode {
   virtual int Opcode() const;
 };
 
+// Cast a short vector to the given vector type.
 class VectorCastS2XNode : public VectorCastNode {
  public:
   VectorCastS2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
@@ -1860,6 +1854,7 @@ class VectorCastS2XNode : public VectorCastNode {
   virtual int Opcode() const;
 };
 
+// Cast an int vector to the given vector type.
 class VectorCastI2XNode : public VectorCastNode {
  public:
   VectorCastI2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
@@ -1868,6 +1863,7 @@ class VectorCastI2XNode : public VectorCastNode {
   virtual int Opcode() const;
 };
 
+// Cast a long vector to the given vector type.
 class VectorCastL2XNode : public VectorCastNode {
  public:
   VectorCastL2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
@@ -1876,6 +1872,7 @@ class VectorCastL2XNode : public VectorCastNode {
   virtual int Opcode() const;
 };
 
+// Cast a float vector to the given vector type.
 class VectorCastF2XNode : public VectorCastNode {
  public:
   VectorCastF2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
@@ -1884,6 +1881,7 @@ class VectorCastF2XNode : public VectorCastNode {
   virtual int Opcode() const;
 };
 
+// Cast a double vector to the given vector type.
 class VectorCastD2XNode : public VectorCastNode {
  public:
   VectorCastD2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
@@ -1892,6 +1890,7 @@ class VectorCastD2XNode : public VectorCastNode {
   virtual int Opcode() const;
 };
 
+// Cast a half float vector to float vector type.
 class VectorCastHF2FNode : public VectorCastNode {
  public:
   VectorCastHF2FNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
@@ -1900,6 +1899,7 @@ class VectorCastHF2FNode : public VectorCastNode {
   virtual int Opcode() const;
 };
 
+// Cast a float vector to a half float vector type.
 class VectorCastF2HFNode : public VectorCastNode {
  public:
   VectorCastF2HFNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
@@ -1908,8 +1908,12 @@ class VectorCastF2HFNode : public VectorCastNode {
   virtual int Opcode() const;
 };
 
-// So far, VectorUCastNode can only be used in Vector API unsigned extensions
-// between integral types. E.g., extending byte to float is not supported now.
+// Unsigned vector cast operations can only be used in unsigned (zero)
+// extensions between integral types so far. E.g., extending byte to
+// float is not supported now.
+
+// Unsigned cast a byte vector to the given vector type with short, int,
+// or long element type.
 class VectorUCastB2XNode : public VectorCastNode {
  public:
   VectorUCastB2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
@@ -1921,6 +1925,8 @@ class VectorUCastB2XNode : public VectorCastNode {
   virtual int Opcode() const;
 };
 
+// Unsigned cast a short vector to the given vector type with int or long
+// element type.
 class VectorUCastS2XNode : public VectorCastNode {
  public:
   VectorUCastS2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
@@ -1931,6 +1937,7 @@ class VectorUCastS2XNode : public VectorCastNode {
   virtual int Opcode() const;
 };
 
+// Unsigned cast an int vector to the given vector type with long element type.
 class VectorUCastI2XNode : public VectorCastNode {
  public:
   VectorUCastI2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
@@ -1940,6 +1947,7 @@ class VectorUCastI2XNode : public VectorCastNode {
   virtual int Opcode() const;
 };
 
+// Vector round float to nearest integer.
 class RoundVFNode : public VectorNode {
  public:
   RoundVFNode(Node* in, const TypeVect* vt) :VectorNode(in, vt) {
@@ -1948,6 +1956,7 @@ class RoundVFNode : public VectorNode {
   virtual int Opcode() const;
 };
 
+// Vector round double to nearest integer.
 class RoundVDNode : public VectorNode {
  public:
   RoundVDNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {
@@ -1956,6 +1965,7 @@ class RoundVDNode : public VectorNode {
   virtual int Opcode() const;
 };
 
+// Insert a new value into a vector lane at the specified position.
 class VectorInsertNode : public VectorNode {
  public:
   VectorInsertNode(Node* vsrc, Node* new_val, ConINode* pos, const TypeVect* vt) : VectorNode(vsrc, new_val, (Node*)pos, vt) {
@@ -1969,6 +1979,9 @@ class VectorInsertNode : public VectorNode {
   static Node* make(Node* vec, Node* new_val, int position, PhaseGVN& gvn);
 };
 
+// Box a vector value into a Vector API object (e.g., IntMaxVector).
+// This is a macro node that gets expanded during vector optimization
+// phase.
 class VectorBoxNode : public Node {
  private:
   const TypeInstPtr* const _box_type;
@@ -1996,6 +2009,8 @@ class VectorBoxNode : public Node {
   static const TypeFunc* vec_box_type(const TypeInstPtr* box_type);
 };
 
+// Allocate storage for boxing a vector value. This is used during vector
+// box expansion.
 class VectorBoxAllocateNode : public CallStaticJavaNode {
  public:
   VectorBoxAllocateNode(Compile* C, const TypeInstPtr* vbox_type)
@@ -2010,6 +2025,9 @@ class VectorBoxAllocateNode : public CallStaticJavaNode {
 #endif // !PRODUCT
 };
 
+// Unbox a Vector API object (e.g., IntMaxVector) to extract the underlying
+// vector value. This is a macro node expanded during vector optimization
+// phase.
 class VectorUnboxNode : public VectorNode {
  protected:
   uint size_of() const { return sizeof(*this); }
@@ -2028,6 +2046,7 @@ class VectorUnboxNode : public VectorNode {
   Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
+// Lane-wise right rotation of the first input by the second input.
 class RotateRightVNode : public VectorNode {
 public:
   RotateRightVNode(Node* in1, Node* in2, const TypeVect* vt)
@@ -2037,6 +2056,7 @@ public:
   Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
+// Lane-wise left rotation of the first input by the second input.
 class RotateLeftVNode : public VectorNode {
 public:
   RotateLeftVNode(Node* in1, Node* in2, const TypeVect* vt)
@@ -2046,6 +2066,7 @@ public:
   Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
+// Count the number of leading zeros in each lane of the input.
 class CountLeadingZerosVNode : public VectorNode {
  public:
   CountLeadingZerosVNode(Node* in, const TypeVect* vt)
@@ -2057,6 +2078,7 @@ class CountLeadingZerosVNode : public VectorNode {
   virtual int Opcode() const;
 };
 
+// Count the number of trailing zeros in each lane of the input.
 class CountTrailingZerosVNode : public VectorNode {
  public:
   CountTrailingZerosVNode(Node* in, const TypeVect* vt)
@@ -2068,6 +2090,7 @@ class CountTrailingZerosVNode : public VectorNode {
   virtual int Opcode() const;
 };
 
+// Reverse the bits within each lane (e.g., 0b10110010 becomes 0b01001101).
 class ReverseVNode : public VectorNode {
 public:
   ReverseVNode(Node* in, const TypeVect* vt)
@@ -2077,6 +2100,7 @@ public:
   virtual int Opcode() const;
 };
 
+// Reverse the byte order within each lane (e.g., 0x12345678 becomes 0x78563412).
 class ReverseBytesVNode : public VectorNode {
 public:
   ReverseBytesVNode(Node* in, const TypeVect* vt)
@@ -2086,6 +2110,7 @@ public:
   virtual int Opcode() const;
 };
 
+// Vector signum float.
 class SignumVFNode : public VectorNode {
 public:
   SignumVFNode(Node* in1, Node* zero, Node* one, const TypeVect* vt)
@@ -2094,6 +2119,7 @@ public:
   virtual int Opcode() const;
 };
 
+// Vector signum double.
 class SignumVDNode : public VectorNode {
 public:
   SignumVDNode(Node* in1, Node* zero, Node* one, const TypeVect* vt)
@@ -2102,6 +2128,8 @@ public:
   virtual int Opcode() const;
 };
 
+// Compress (extract and pack) bits in each lane of the first input
+// based on the mask input.
 class CompressBitsVNode : public VectorNode {
 public:
   CompressBitsVNode(Node* in, Node* mask, const TypeVect* vt)
@@ -2109,6 +2137,8 @@ public:
   virtual int Opcode() const;
 };
 
+// Expand (deposit) bits in each lane of the first input based on the
+// mask input.
 class ExpandBitsVNode : public VectorNode {
 public:
   ExpandBitsVNode(Node* in, Node* mask, const TypeVect* vt)
