@@ -88,7 +88,7 @@ const char*       VMError::_current_step_info;
 Atomic<jlong>     VMError::_reporting_start_time{-1};
 Atomic<bool>      VMError::_reporting_did_timeout{false};
 Atomic<jlong>     VMError::_step_start_time{-1};
-volatile bool     VMError::_step_did_timeout = false;
+Atomic<bool>      VMError::_step_did_timeout{false};
 volatile bool     VMError::_step_did_succeed = false;
 volatile intptr_t VMError::_first_error_tid = -1;
 int               VMError::_id;
@@ -247,7 +247,7 @@ bool VMError::can_reattempt_step(const char* &stop_reason) {
     return false;
   }
 
-  if (_step_did_timeout) {
+  if (_step_did_timeout.load_relaxed()) {
     stop_reason = "Step time limit reached";
     return false;
   }
@@ -626,7 +626,7 @@ void VMError::report(outputStream* st, bool _verbose) {
     _current_step_info = s;                                \
     if ((cond)) {                                          \
       record_step_start_time();                            \
-      _step_did_timeout = false;
+      _step_did_timeout.store_relaxed(false);
       // [Step logic]
 
 # define STEP(s) STEP_IF(s, true)
@@ -1787,7 +1787,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
       st->cr();
 
       // Timeout handling.
-      if (_step_did_timeout) {
+      if (_step_did_timeout.load_relaxed()) {
         // The current step had a timeout. Lets continue reporting with the next step.
         st->print_raw("[timeout occurred during error reporting in step \"");
         st->print_raw(_current_step_info);
@@ -2118,10 +2118,10 @@ bool VMError::check_timeout() {
     const int max_step_timeout_secs = 5;
     const jlong timeout_duration = MAX2((jlong)max_step_timeout_secs, (jlong)ErrorLogTimeout * TIMESTAMP_TO_SECONDS_FACTOR / 4);
     const jlong end = step_start_time + timeout_duration;
-    if (end <= now && !_step_did_timeout) {
+    if (end <= now && !_step_did_timeout.load_relaxed()) {
       // The step timed out and we haven't interrupted the reporting
       // thread yet.
-      _step_did_timeout = true;
+      _step_did_timeout.store_relaxed(true);
       interrupt_reporting_thread();
       return false; // (Not a global timeout)
     }

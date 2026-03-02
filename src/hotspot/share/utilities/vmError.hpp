@@ -93,7 +93,7 @@ class VMError : public AllStatic {
   //   in progress.
   static Atomic<jlong> _step_start_time;
   // Whether or not the last error reporting step did timeout.
-  static volatile bool _step_did_timeout;
+  static Atomic<bool> _step_did_timeout;
   // Whether or not the last error reporting step did succeed.
   static volatile bool _step_did_succeed;
 
