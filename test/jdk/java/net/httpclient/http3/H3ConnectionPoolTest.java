@@ -28,7 +28,7 @@
  *        jdk.test.lib.Asserts
  *        jdk.test.lib.Utils
  *        jdk.test.lib.net.SimpleSSLContext
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors,http3,quic:hs
+ * @run junit/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors,http3,quic:hs
  *                     -Djdk.internal.httpclient.debug=false
  *                     H3ConnectionPoolTest
  */
@@ -53,7 +53,6 @@ import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.httpclient.test.lib.http3.Http3TestServer;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.Test;
 
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
@@ -64,6 +63,8 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static jdk.test.lib.Asserts.assertEquals;
 import static jdk.test.lib.Asserts.assertNotEquals;
 import static jdk.test.lib.Asserts.assertTrue;
+
+import org.junit.jupiter.api.Test;
 
 public class H3ConnectionPoolTest implements HttpServerAdapters {
 
@@ -172,7 +173,7 @@ public class H3ConnectionPoolTest implements HttpServerAdapters {
     }
 
     @Test
-    public static void testH3Only() throws Exception {
+    public void testH3Only() throws Exception {
         System.out.println("\nTesting HTTP/3 only");
         initialize(true);
         try (HttpClient client = getClient()) {
@@ -212,12 +213,12 @@ public class H3ConnectionPoolTest implements HttpServerAdapters {
     }
 
     @Test
-    public static void testH2H3WithTwoAltSVC() throws Exception {
+    public void testH2H3WithTwoAltSVC() throws Exception {
         testH2H3(false);
     }
 
     @Test
-    public static void testH2H3WithAltSVCOnSamePort() throws Exception {
+    public void testH2H3WithAltSVCOnSamePort() throws Exception {
         testH2H3(true);
     }
 
@@ -309,7 +310,7 @@ public class H3ConnectionPoolTest implements HttpServerAdapters {
                 // fourth request with HTTP_3_URI_ONLY should reuse the first connection,
                 // and not reuse the second.
                 HttpRequest request4 = req1Builder.copy().build();
-                HttpResponse<String> response4 = client.send(request1, BodyHandlers.ofString());
+                HttpResponse<String> response4 = client.send(request4, BodyHandlers.ofString());
                 assertEquals(HTTP_3, response4.version());
                 assertEquals(response4.connectionLabel().get(), response1.connectionLabel().get());
                 assertNotEquals(response4.connectionLabel().get(), response3.connectionLabel().get());
@@ -345,12 +346,12 @@ public class H3ConnectionPoolTest implements HttpServerAdapters {
     }
 
     @Test
-    public static void testParallelH2H3WithTwoAltSVC() throws Exception {
+    public void testParallelH2H3WithTwoAltSVC() throws Exception {
         testH2H3Concurrent(false);
     }
 
     @Test
-    public static void testParallelH2H3WithAltSVCOnSamePort() throws Exception {
+    public void testParallelH2H3WithAltSVCOnSamePort() throws Exception {
         testH2H3Concurrent(true);
     }
 
