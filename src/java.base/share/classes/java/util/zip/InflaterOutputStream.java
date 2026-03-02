@@ -221,7 +221,7 @@ public class InflaterOutputStream extends FilterOutputStream {
     }
 
     /**
-     * Writes out any pending buffered decompressed data to the underlying output stream,
+     * Writes any pending buffered decompressed data to the underlying output stream,
      * without closing the underlying stream.
      *
      * @implSpec This method calls {@link #flush()} to write any pending buffered
