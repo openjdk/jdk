@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,8 +43,10 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -448,7 +450,7 @@ public final class ProcessTools {
     private static ProcessBuilder createJavaProcessBuilder(String... command) {
         String javapath = JDKToolFinder.getJDKTool("java");
 
-        ArrayList<String> args = new ArrayList<>();
+        List<String> args = new ArrayList<>();
         args.add(javapath);
 
         String noCPString = System.getProperty("test.noclasspath", "false");
@@ -465,6 +467,8 @@ public final class ProcessTools {
             Collections.addAll(args, command);
         }
 
+        checkDuplicateAgentOpts(args);
+
         // Reporting
         StringBuilder cmdLine = new StringBuilder();
         for (String cmd : args)
@@ -477,6 +481,30 @@ public final class ProcessTools {
             pb.environment().remove("CLASSPATH");
         }
         return pb;
+    }
+
+    // 8377729: Check for duplicate VM JVMTI agent options, as it may
+    // cause test to fail
+    public static void checkDuplicateAgentOpts(List<String> args) {
+        if (args == null || args.isEmpty()) {
+            return;
+        }
+
+        Set<String> seen = new HashSet<>();
+        List<String> dupArgs = args.stream()
+                .filter(arg -> (arg.startsWith("-agent")
+                                || arg.startsWith("-javaagent:"))
+                        && !seen.add(arg))
+                .collect(Collectors.toList());
+
+        if (!dupArgs.isEmpty()) {
+            System.err.println("WARNING: Duplicate JVMTI agent options may"
+                + " cause test to fail:\n" + dupArgs);
+        }
+    }
+
+    public static void checkDuplicateAgentOpts(String[] args) {
+        checkDuplicateAgentOpts(Arrays.asList(args));
     }
 
     private static void printStack(Thread t, StackTraceElement[] stack) {

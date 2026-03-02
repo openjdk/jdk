@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,8 @@ import static java.nio.file.StandardOpenOption.WRITE;
  */
 final class ZipPath implements Path {
 
+    private static final byte[] EMPTY_PATH = new byte[0];
+
     private final ZipFileSystem zfs;
     private final byte[] path;
     private volatile int[] offsets;
@@ -93,8 +95,15 @@ final class ZipPath implements Path {
     @Override
     public ZipPath getFileName() {
         int off = path.length;
-        if (off == 0 || off == 1 && path[0] == '/')
+        if (off == 0) {
+            // empty path, which is defined as consisting solely of
+            // one name element that is empty
+            return new ZipPath(getFileSystem(), EMPTY_PATH, true);
+        }
+        if (off == 1 && path[0] == '/') {
+            // root path, which is defined as having 0 name elements
             return null;
+        }
         while (--off >= 0 && path[off] != '/') {}
         if (off < 0)
             return this;

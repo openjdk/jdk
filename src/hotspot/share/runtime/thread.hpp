@@ -257,7 +257,7 @@ class Thread: public ThreadShadow {
 
  private:
   ThreadLocalAllocBuffer _tlab;                 // Thread-local eden
-  jlong _allocated_bytes;                       // Cumulative number of bytes allocated on
+  uint64_t _allocated_bytes;                    // Cumulative number of bytes allocated on
                                                 // the Java heap
   ThreadHeapSampler _heap_sampler;              // For use when sampling the memory.
 
@@ -410,9 +410,9 @@ class Thread: public ThreadShadow {
   void retire_tlab(ThreadLocalAllocStats* stats = nullptr);
   void fill_tlab(HeapWord* start, size_t pre_reserved, size_t new_size);
 
-  jlong allocated_bytes()               { return _allocated_bytes; }
-  void incr_allocated_bytes(jlong size) { _allocated_bytes += size; }
-  inline jlong cooked_allocated_bytes() const;
+  uint64_t allocated_bytes()               { return _allocated_bytes; }
+  void incr_allocated_bytes(uint64_t size) { _allocated_bytes += size; }
+  inline uint64_t cooked_allocated_bytes() const;
 
   ThreadHeapSampler& heap_sampler()     { return _heap_sampler; }
 

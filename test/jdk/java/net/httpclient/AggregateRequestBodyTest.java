@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.HttpServerAdapters
  *       ReferenceTracker AggregateRequestBodyTest
- * @run testng/othervm -Djdk.internal.httpclient.debug=true
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true
  *                     -Djdk.httpclient.HttpClient.log=requests,responses,errors,headers,frames
  *                     AggregateRequestBodyTest
  * @summary Tests HttpRequest.BodyPublishers::concat
@@ -41,7 +41,6 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -70,40 +69,43 @@ import javax.net.ssl.SSLContext;
 
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
-import org.testng.Assert;
-import org.testng.ITestContext;
-import org.testng.ITestResult;
-import org.testng.SkipException;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.expectThrows;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.extension.TestWatcher;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class AggregateRequestBodyTest implements HttpServerAdapters {
 
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
-    HttpTestServer http1TestServer;   // HTTP/1.1 ( http )
-    HttpTestServer https1TestServer;  // HTTPS/1.1 ( https  )
-    HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
-    HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
-    HttpTestServer http3TestServer;   // HTTP/3 ( h3 )
-    URI http1URI;
-    URI https1URI;
-    URI http2URI;
-    URI https2URI;
-    URI http3URI;
+    private static HttpTestServer http1TestServer;   // HTTP/1.1 ( http )
+    private static HttpTestServer https1TestServer;  // HTTPS/1.1 ( https  )
+    private static HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
+    private static HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
+    private static HttpTestServer http3TestServer;   // HTTP/3 ( h3 )
+    private static URI http1URI;
+    private static URI https1URI;
+    private static URI http2URI;
+    private static URI https2URI;
+    private static URI http3URI;
 
     static final int RESPONSE_CODE = 200;
     static final int ITERATION_COUNT = 4;
@@ -123,8 +125,8 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         return String.format("[%d s, %d ms, %d ns] ", secs, mill, nan);
     }
 
-    final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
-    private volatile HttpClient sharedClient;
+    private static final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
+    private static volatile HttpClient sharedClient;
 
     static class TestExecutor implements Executor {
         final AtomicLong tasks = new AtomicLong();
@@ -150,40 +152,40 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         }
     }
 
-    protected boolean stopAfterFirstFailure() {
+    private static boolean stopAfterFirstFailure() {
         return Boolean.getBoolean("jdk.internal.httpclient.debug");
     }
 
-    final AtomicReference<SkipException> skiptests = new AtomicReference<>();
-    void checkSkip() {
-        var skip = skiptests.get();
-        if (skip != null) throw skip;
-    }
-    static String name(ITestResult result) {
-        var params = result.getParameters();
-        return result.getName()
-                + (params == null ? "()" : Arrays.toString(result.getParameters()));
-    }
-
-    @BeforeMethod
-    void beforeMethod(ITestContext context) {
-        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
-            if (skiptests.get() == null) {
-                SkipException skip = new SkipException("some tests failed");
-                skip.setStackTrace(new StackTraceElement[0]);
-                skiptests.compareAndSet(null, skip);
+    static final class TestStopper implements TestWatcher, BeforeEachCallback {
+        final AtomicReference<String> failed = new AtomicReference<>();
+        TestStopper() { }
+        @Override
+        public void testFailed(ExtensionContext context, Throwable cause) {
+            if (stopAfterFirstFailure()) {
+                String msg = "Aborting due to: " + cause;
+                failed.compareAndSet(null, msg);
+                FAILURES.putIfAbsent(context.getDisplayName(), cause);
+                System.out.printf("%nTEST FAILED: %s%s%n\tAborting due to %s%n%n",
+                        now(), context.getDisplayName(), cause);
+                System.err.printf("%nTEST FAILED: %s%s%n\tAborting due to %s%n%n",
+                        now(), context.getDisplayName(), cause);
             }
+        }
+
+        @Override
+        public void beforeEach(ExtensionContext context) {
+            String msg = failed.get();
+            Assumptions.assumeTrue(msg == null, msg);
         }
     }
 
-    @AfterClass
-    static final void printFailedTests(ITestContext context) {
+    @RegisterExtension
+    static final TestStopper stopper = new TestStopper();
+
+    @AfterAll
+    static void printFailedTests() {
         out.println("\n=========================");
         try {
-            var failed = context.getFailedTests().getAllResults().stream()
-                    .collect(Collectors.toMap(r -> name(r), ITestResult::getThrowable));
-            FAILURES.putAll(failed);
-
             out.printf("%n%sCreated %d servers and %d clients%n",
                     now(), serverCount.get(), clientCount.get());
             if (FAILURES.isEmpty()) return;
@@ -201,7 +203,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         }
     }
 
-    private URI[] uris() {
+    private static URI[] uris() {
         return new URI[] {
                 http1URI,
                 https1URI,
@@ -211,13 +213,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         };
     }
 
-    static AtomicLong URICOUNT = new AtomicLong();
-
-    @DataProvider(name = "variants")
-    public Object[][] variants(ITestContext context) {
-        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
-            return new Object[0][];
-        }
+    public static Object[][] variants() {
         URI[] uris = uris();
         Object[][] result = new Object[uris.length * 2][];
         int i = 0;
@@ -285,8 +281,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         return s;
     }
 
-    @DataProvider(name = "sparseContent")
-    Object[][] nulls() {
+    static Object[][] nulls() {
         return new Object[][] {
                 {"null array", null},
                 {"null element", strings((String)null)},
@@ -304,8 +299,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
                 .collect(Collectors.toList());
     }
 
-    @DataProvider(name = "contentLengths")
-    Object[][] contentLengths() {
+    static Object[][] contentLengths() {
         return new Object[][] {
                 {-1, lengths(-1)},
                 {-42, lengths(-42)},
@@ -332,8 +326,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         };
     }
 
-    @DataProvider(name="negativeRequests")
-    Object[][] negativeRequests() {
+    static Object[][] negativeRequests() {
         return new Object[][] {
                 {0L}, {-1L}, {-2L}, {Long.MIN_VALUE + 1L}, {Long.MIN_VALUE}
         };
@@ -492,31 +485,33 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
                 () -> new AssertionError("Should not happen!"));
     }
 
-    @Test(dataProvider = "sparseContent") // checks that NPE is thrown
+    @ParameterizedTest // checks that NPE is thrown
+    @MethodSource("nulls")
     public void testNullPointerException(String description, String[] content) {
-        checkSkip();
+        out.printf("%n%s-- testNullPointerException %s%n%n", now(), description);
         BodyPublisher[] publishers = publishers(content);
-        Assert.assertThrows(NullPointerException.class, () -> BodyPublishers.concat(publishers));
+        Assertions.assertThrows(NullPointerException.class, () -> BodyPublishers.concat(publishers));
     }
 
     // Verifies that an empty array creates a "noBody" publisher
     @Test
     public void testEmpty() {
-        checkSkip();
+        out.printf("%n%s-- testEmpty%n%n", now());
         BodyPublisher publisher = BodyPublishers.concat();
         RequestSubscriber subscriber = new RequestSubscriber();
-        assertEquals(publisher.contentLength(), 0);
+        assertEquals(0, publisher.contentLength());
         publisher.subscribe(subscriber);
         subscriber.subscriptionCF.thenAccept(s -> s.request(1));
         List<ByteBuffer> result = subscriber.resultCF.join();
-        assertEquals(result, List.of());
+        assertEquals(List.of(), result);
         assertTrue(subscriber.items.isEmpty());
     }
 
     // verifies that error emitted by upstream publishers are propagated downstream.
-    @Test(dataProvider = "sparseContent") // nulls are replaced with error publisher
+    @ParameterizedTest // nulls are replaced with error publisher
+    @MethodSource("nulls")
     public void testOnError(String description, String[] content) {
-        checkSkip();
+        out.printf("%n%s-- testOnError %s%n%n", now(), description);
         final RequestSubscriber subscriber = new RequestSubscriber();
         final PublishWithError errorPublisher;
         final BodyPublisher[] publishers;
@@ -556,13 +551,13 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         publisher.subscribe(subscriber);
         subscriber.subscriptionCF.thenAccept(s -> s.request(Long.MAX_VALUE));
         if (errorPublisher.hasErrors()) {
-            CompletionException ce = expectThrows(CompletionException.class,
+            CompletionException ce = Assertions.assertThrows(CompletionException.class,
                     () -> subscriber.resultCF.join());
             out.println(description + ": got expected " + ce);
-            assertEquals(ce.getCause().getClass(), Exception.class);
-            assertEquals(stringFromBytes(subscriber.items.stream()) + "<error>", result);
+            assertEquals(Exception.class, ce.getCause().getClass());
+            assertEquals(result, stringFromBytes(subscriber.items.stream()) + "<error>");
         } else {
-            assertEquals(stringFromBytes(subscriber.resultCF.join().stream()), result);
+            assertEquals(result, stringFromBytes(subscriber.resultCF.join().stream()));
             out.println(description + ": got expected result: " + result);
         }
     }
@@ -570,9 +565,10 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
     // Verifies that if an upstream publisher has an unknown length, the
     // aggregate publisher will have an unknown length as well. Otherwise
     // the length should be known.
-    @Test(dataProvider = "sparseContent") // nulls are replaced with unknown length
+    @ParameterizedTest // nulls are replaced with unknown length
+    @MethodSource("nulls")
     public void testUnknownContentLength(String description, String[] content) {
-        checkSkip();
+        out.printf("%n%s-- testUnknownContentLength %s%n%n", now(), description);
         if (content == null) {
             content = BODIES.toArray(String[]::new);
             description = "BODIES (known length)";
@@ -598,9 +594,9 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
                 length += content[i].length();
             }
         }
-        out.printf("testUnknownContentLength(%s): %d%n", description, length);
+        out.printf("%stestUnknownContentLength(%s): %d%n", now(), description, length);
         BodyPublisher publisher = BodyPublishers.concat(publishers);
-        assertEquals(publisher.contentLength(), length,
+        assertEquals(length, publisher.contentLength(),
                 description.replace("null", "length(-1)"));
     }
 
@@ -611,9 +607,10 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         return x.getCause();
     }
 
-    @Test(dataProvider = "negativeRequests")
+    @ParameterizedTest
+    @MethodSource("negativeRequests")
     public void testNegativeRequest(long n) {
-        checkSkip();
+        out.printf("%n%s-- testNegativeRequest %s%n%n", now(), n);
         assert n <= 0 : "test for negative request called with n > 0 : " + n;
         BodyPublisher[] publishers = ContentLengthPublisher.of(List.of(1L, 2L, 3L));
         BodyPublisher publisher = BodyPublishers.concat(publishers);
@@ -621,7 +618,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         publisher.subscribe(subscriber);
         Subscription subscription = subscriber.subscriptionCF.join();
         subscription.request(n);
-        CompletionException expected = expectThrows(CE, () -> subscriber.resultCF.join());
+        CompletionException expected = Assertions.assertThrows(CE, () -> subscriber.resultCF.join());
         Throwable cause = completionCause(expected);
         if (cause instanceof IllegalArgumentException) {
             System.out.printf("Got expected IAE for %d: %s%n", n, cause);
@@ -637,7 +634,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
 
     @Test
     public void testPositiveRequests()  {
-        checkSkip();
+        out.printf("%n%s-- testPositiveRequests%n%n", now());
         // A composite array of publishers
         BodyPublisher[] publishers = Stream.of(
                 Stream.of(ofStrings("Lorem", " ", "ipsum", " ")),
@@ -657,7 +654,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         List<ByteBuffer> list1 = requestSubscriber1.resultCF().join();
         assertTrue(requestSubscriber1.resultCF().isDone());
         String result1 = stringFromBytes(list1.stream());
-        assertEquals(result1, "Lorem ipsum dolor sit amet, consectetur adipiscing elit.");
+        assertEquals("Lorem ipsum dolor sit amet, consectetur adipiscing elit.", result1);
         System.out.println("Got expected sentence with one request: \"%s\"".formatted(result1));
 
         // Test that we can split our requests call any which way we want
@@ -675,16 +672,17 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         List<ByteBuffer> list2 = requestSubscriber2.resultCF().join();
         assertTrue(requestSubscriber2.resultCF().isDone());
         String result2 = stringFromBytes(list2.stream());
-        assertEquals(result2, "Lorem ipsum dolor sit amet, consectetur adipiscing elit.");
+        assertEquals("Lorem ipsum dolor sit amet, consectetur adipiscing elit.", result2);
         System.out.println("Got expected sentence with 4 requests: \"%s\"".formatted(result1));
     }
 
-    @Test(dataProvider = "contentLengths")
+    @ParameterizedTest
+    @MethodSource("contentLengths")
     public void testContentLength(long expected, List<Long> lengths) {
-        checkSkip();
+        out.printf("%n%s-- testContentLength expected=%s %s%n%n", now(), expected, lengths);
         BodyPublisher[] publishers = ContentLengthPublisher.of(lengths);
         BodyPublisher aggregate = BodyPublishers.concat(publishers);
-        assertEquals(aggregate.contentLength(), expected,
+        assertEquals(expected, aggregate.contentLength(),
                 "Unexpected result for %s".formatted(lengths));
     }
 
@@ -692,14 +690,13 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
     // publishers are no longer subscribed etc...
     @Test
     public void testCancel() {
-        checkSkip();
+        out.printf("%n%s-- testCancel%n%n", now());
         BodyPublisher[] publishers = BODIES.stream()
                 .map(BodyPublishers::ofString)
                 .toArray(BodyPublisher[]::new);
         BodyPublisher publisher = BodyPublishers.concat(publishers);
 
-        assertEquals(publisher.contentLength(),
-                BODIES.stream().mapToInt(String::length).sum());
+        assertEquals(BODIES.stream().mapToInt(String::length).sum(), publisher.contentLength());
         Map<RequestSubscriber, String> subscribers = new LinkedHashMap<>();
 
         for (int n=0; n < BODIES.size(); n++) {
@@ -731,7 +728,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
 
         // subscription was cancelled, so nothing should be received...
         try {
-            TimeoutException x = Assert.expectThrows(TimeoutException.class,
+            TimeoutException x = Assertions.assertThrows(TimeoutException.class,
                     () -> any.get(5, TimeUnit.SECONDS));
             out.println("Got expected " + x);
         } finally {
@@ -742,8 +739,8 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
                             subscribers.get(rs), rs.resultCF));
         }
         Consumer<RequestSubscriber> check = (rs) -> {
-            Assert.assertTrue(rs.items.isEmpty(), subscribers.get(rs) + " has items");
-            Assert.assertFalse(rs.resultCF.isDone(), subscribers.get(rs) + " was not cancelled");
+            assertTrue(rs.items.isEmpty(), subscribers.get(rs) + " has items");
+            assertFalse(rs.resultCF.isDone(), subscribers.get(rs) + " was not cancelled");
             out.println(subscribers.get(rs) + ": PASSED");
         };
         subscribers.keySet().stream().forEach(check);
@@ -752,13 +749,12 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
     // Verifies that cancelling the subscription is propagated downstream
     @Test
     public void testCancelSubscription() {
-        checkSkip();
+        out.printf("%n%s-- testCancelSubscription%n%n", now());
         PublishWithError upstream = new PublishWithError(BODIES, BODIES.size(),
                 () -> new AssertionError("should not come here"));
         BodyPublisher publisher = BodyPublishers.concat(upstream);
 
-        assertEquals(publisher.contentLength(),
-                BODIES.stream().mapToInt(String::length).sum());
+        assertEquals(BODIES.stream().mapToInt(String::length).sum(), publisher.contentLength());
         Map<RequestSubscriber, String> subscribers = new LinkedHashMap<>();
 
         for (int n=0; n < BODIES.size(); n++) {
@@ -793,7 +789,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
 
         // subscription was cancelled, so nothing should be received...
         try {
-            TimeoutException x = Assert.expectThrows(TimeoutException.class,
+            TimeoutException x = Assertions.assertThrows(TimeoutException.class,
                     () -> any.get(5, TimeUnit.SECONDS));
             out.println("Got expected " + x);
         } finally {
@@ -804,17 +800,19 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
                             subscribers.get(rs), rs.resultCF));
         }
         Consumer<RequestSubscriber> check = (rs) -> {
-            Assert.assertTrue(rs.items.isEmpty(), subscribers.get(rs) + " has items");
-            Assert.assertFalse(rs.resultCF.isDone(), subscribers.get(rs) + " was not cancelled");
+            assertTrue(rs.items.isEmpty(), subscribers.get(rs) + " has items");
+            assertFalse(rs.resultCF.isDone(), subscribers.get(rs) + " was not cancelled");
             out.println(subscribers.get(rs) + ": PASSED");
         };
         subscribers.keySet().stream().forEach(check);
 
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void test(URI uri, HttpClient.Version version, boolean sameClient) throws Exception {
-        checkSkip();
+        out.printf("%n%s-- test sameClient=%s, version=%s, uri=%s%n%n",
+                now(), sameClient, version, uri);
         System.out.printf("Request to %s (sameClient: %s)%n", uri, sameClient);
         System.err.printf("Request to %s (sameClient: %s)%n", uri, sameClient);
 
@@ -838,13 +836,13 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
             int expectedResponse =  RESPONSE_CODE;
             if (response.statusCode() != expectedResponse)
                 throw new RuntimeException("wrong response code " + Integer.toString(response.statusCode()));
-            assertEquals(response.body(), BODIES.stream().collect(Collectors.joining()));
+            assertEquals(BODIES.stream().collect(Collectors.joining()), response.body());
         }
         if (!sameClient) client.close();
         System.out.println("test: DONE");
     }
 
-    private URI buildURI(String scheme, String path, int port) {
+    private static URI buildURI(String scheme, String path, int port) {
         return URIBuilder.newBuilder()
                 .scheme(scheme)
                 .loopback()
@@ -853,8 +851,8 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
                 .buildUnchecked();
     }
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         HttpTestHandler handler = new HttpTestEchoHandler();
         http1TestServer = HttpTestServer.create(HTTP_1_1);
         http1TestServer.addHandler(handler, "/http1/echo/");
@@ -884,8 +882,8 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         http3TestServer.start();
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         String sharedClientName =
                 sharedClient == null ? null : sharedClient.toString();
         sharedClient.close();
