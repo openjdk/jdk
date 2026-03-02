@@ -87,7 +87,7 @@ int               VMError::_current_step;
 const char*       VMError::_current_step_info;
 Atomic<jlong>     VMError::_reporting_start_time{-1};
 Atomic<bool>      VMError::_reporting_did_timeout{false};
-volatile jlong    VMError::_step_start_time = -1;
+Atomic<jlong>     VMError::_step_start_time{-1};
 volatile bool     VMError::_step_did_timeout = false;
 volatile bool     VMError::_step_did_succeed = false;
 volatile intptr_t VMError::_first_error_tid = -1;
@@ -568,15 +568,15 @@ jlong VMError::get_reporting_start_time() {
 
 void VMError::record_step_start_time() {
   const jlong now = get_current_timestamp();
-  AtomicAccess::store(&_step_start_time, now);
+  _step_start_time.store_relaxed(now);
 }
 
 jlong VMError::get_step_start_time() {
-  return AtomicAccess::load(&_step_start_time);
+  return _step_start_time.load_relaxed();
 }
 
 void VMError::clear_step_start_time() {
-  return AtomicAccess::store(&_step_start_time, (jlong)0);
+  return _step_start_time.store_relaxed(0);
 }
 
 // This is the main function to report a fatal error. Only one thread can
@@ -1793,7 +1793,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
         st->print_raw(_current_step_info);
         st->print_cr("\"] after " INT64_FORMAT " s.",
                      (int64_t)
-                     ((get_current_timestamp() - _step_start_time) / TIMESTAMP_TO_SECONDS_FACTOR));
+                     ((get_current_timestamp() - get_step_start_time()) / TIMESTAMP_TO_SECONDS_FACTOR));
       } else if (_reporting_did_timeout.load_relaxed()) {
         // We hit ErrorLogTimeout. Reporting will stop altogether. Let's wrap things
         // up, the process is about to be stopped by the WatcherThread.
