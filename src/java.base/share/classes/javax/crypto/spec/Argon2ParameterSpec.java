@@ -26,7 +26,7 @@ package javax.crypto.spec;
 
 import java.nio.charset.Charset;
 import java.security.spec.AlgorithmParameterSpec;
-import sun.security.util.Argon2Util;
+import sun.security.util.Debug;
 import sun.security.util.KeyUtil;
 import sun.security.util.PBEUtil;
 
@@ -374,20 +374,6 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec {
         return new Builder(t);
     }
 
-    /**
-     * Creates an {@code Argon2ParameterSpec} builder using the specified
-     * PHC String {@code str} which encodes the Argon2 parameter values
-     * following the {@spec https://github.com/P-H-C/phc-string-format/blob/master/phc-sf-spec.md}
-     *
-     * @param str the PHC String which encodes Argon2 info
-     * @return a new Argon2ParameterSpec builder
-     * @throws IllegalArgumentException if the {@code str} is null or invalid.
-     */
-    public static Builder newBuilder(String str) {
-        Builder.checkNonNull(str, "encoded hash");
-        return Argon2Util.decodeHash(str);
-    }
-
     private static final byte[] B0 = new byte[0];
 
     /*
@@ -515,9 +501,10 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec {
      * {@return a String representation of the parameter set}
      */
     public String toString() {
-        String s = Argon2Util.encodeHash(this, null);
-
-        s += (" w/ tagLen = " + tagLen);
+        String s = String.format("%s %s nonce=%s parallelism=%d tagLen=%d memory=%d iterations=%d",
+                type.name(), ver.name(), Debug.toString(nonce),
+                p, tagLen, memory, t);
+        // skip msg/password and secret k due to their sensitivity
         return s;
     }
 

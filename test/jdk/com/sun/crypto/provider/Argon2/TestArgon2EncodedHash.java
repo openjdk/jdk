@@ -28,74 +28,47 @@ import javax.crypto.spec.Argon2ParameterSpec;
 import static javax.crypto.spec.Argon2ParameterSpec.Type;
 import com.sun.crypto.provider.Argon2Impl;
 import com.sun.crypto.provider.Argon2DerivedKey;
-
+import sun.security.util.Argon2Util;
 
 /**
  * @test
  * @bug 8253914
- * @modules java.base/com.sun.crypto.provider:+open
+ * @modules java.base/sun.security.util:+open java.base/com.sun.crypto.provider:+open
  * @summary Test the Argon2 encoded hash parsing
  */
 public class TestArgon2EncodedHash {
 
-    record TestVector(String encodedStr, Argon2ParameterSpec.Type type,
-            String inStr, String saltStr, int p, int m, int t, int outLen) {
-        public Argon2ParameterSpec[] getParameters() {
-            // return using both newBuilder factory methods
-            byte[] pwdBytes = inStr.getBytes();
-            Argon2ParameterSpec[] res = new Argon2ParameterSpec[2];
-            res[0] = Argon2ParameterSpec.newBuilder(type)
-                .nonce(saltStr.getBytes()).parallelism(p).memoryKiB(m)
-                .iterations(t).tagLen(outLen).build(pwdBytes);
-            res[1] = Argon2ParameterSpec.newBuilder(encodedStr).build(pwdBytes);
-            return res;
+    record TestVector(String encodedStr, String inStr) {
+        public Argon2ParameterSpec getParameters() {
+            return Argon2Util.decodeHash(encodedStr).build(inStr.getBytes());
         }
     }
 
     private static TestVector[] TEST_VALUES = {
-            new TestVector("$argon2i$v=19$m=16,t=2,p=1$d3VVZ0s3bnBIN25UbXVzQw$h682lr+siItjK7c6QJhhcw",
-            Type.ARGON2I, "12345678", "wuUgK7npH7nTmusC",
-            1, 16, 2, 16),
-            new TestVector("$argon2d$v=19$m=16,t=2,p=1$d3VVZ0s3bnBIN25UbXVzQw$4piwyhK7cr9pZM1N88kyoQ",
-            Type.ARGON2D, "12345678", "wuUgK7npH7nTmusC",
-            1, 16, 2, 16),
-            new TestVector("$argon2id$v=19$m=16,t=2,p=1$d3VVZ0s3bnBIN25UbXVzQw$y4JucCGmImWC66EyPsQNGg",
-            Type.ARGON2ID, "12345678", "wuUgK7npH7nTmusC",
-            1, 16, 2, 16),
+            new TestVector("$argon2i$v=19$m=16,t=2,p=1$d3VVZ0s3bnBIN25UbXVzQw$h682lr+siItjK7c6QJhhcw", "12345678"),
+            new TestVector("$argon2d$v=19$m=16,t=2,p=1$d3VVZ0s3bnBIN25UbXVzQw$4piwyhK7cr9pZM1N88kyoQ", "12345678"),
+            new TestVector("$argon2id$v=19$m=16,t=2,p=1$d3VVZ0s3bnBIN25UbXVzQw$y4JucCGmImWC66EyPsQNGg", "12345678"),
     };
 
     private static void run(TestVector tv) throws Exception {
-        Argon2ParameterSpec[] params = tv.getParameters();
-        byte[] data = null;
-        System.out.println("Testing " + tv.encodedStr());
-        for (Argon2ParameterSpec p : params) {
-            System.out.println("params = " + p);
-            Argon2Impl res = new Argon2Impl(p.type());
-            byte[] bytes = res.derive(p);
-            String encoded =
-                new Argon2DerivedKey(p, bytes,"Generic").toString();
-            if (!tv.encodedStr().equals(encoded)) {
-                System.out.println("Actual: " + encoded);
-                System.out.println("Expected: " + tv.encodedStr());
-                throw new RuntimeException("Failed Key/Hash check");
-            }
-            if (data == null) {
-                data = res.derive(p);
-            } else {
-                if (!Arrays.equals(data, res.derive(p))) {
-                    throw new RuntimeException("Failed Data check");
-                }
-                data = null;
-            }
+        String expected = tv.encodedStr();
+        System.out.println("Testing " + expected);
+        Argon2ParameterSpec params = tv.getParameters();
+        System.out.println("params = " + params);
+        Type type = params.type();
+        Argon2Impl res = new Argon2Impl(type);
+        byte[] bytes = res.derive(params);
+        String encoded2 =
+                new Argon2DerivedKey(params, bytes, "Generic").toString();
+        if (!expected.equals(encoded2)) {
+            throw new RuntimeException("Failed! got " + encoded2);
+        }
 
-            if (tv.type() == Type.ARGON2ID) {
-                KDF kdf = KDF.getInstance(tv.type().name());
-                String encoded2 = kdf.deriveKey("Argon2", p).toString();
-                if (!tv.encodedStr().equals(encoded2)) {
-                    System.out.println("Actual: " + encoded2);
-                    System.out.println("Expected: " + tv.encodedStr());
-                    throw new RuntimeException("Encoded Hash Check Failed!");
-                }
+        if (type == Type.ARGON2ID) {
+            KDF kdf = KDF.getInstance(type.name());
+            encoded2 = kdf.deriveKey("Generic", params).toString();
+            if (!expected.equals(encoded2)) {
+                throw new RuntimeException("Failed! got " + encoded2);
             }
         }
     }

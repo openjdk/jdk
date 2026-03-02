@@ -43,31 +43,6 @@ public class InvalidArgs {
 
         Utils.runAndCheckException(()->Argon2ParameterSpec.newBuilder
                 ((Type)null), iaeCls);
-        Utils.runAndCheckException(()->Argon2ParameterSpec.newBuilder
-                ((String)null), iaeCls);
-
-        Utils.runAndCheckException(()->Argon2ParameterSpec.newBuilder
-                ("Argon2"), iaeCls);
-
-        String[] invalidPHCs = {
-            "$argon2$v=19$m=16,t=2,p=1$d3VVZ0s3bnBIN25UbXVzQw$h682lr+siItjK7c6QJhhcw",
-            "$argon2i$v=10$m=16,t=2,p=1$d3VVZ0s3bnBIN25UbXVzQw$h682lr+siItjK7c6QJhhcw",
-            "$argon2i$v=19$t=2,p=1$d3VVZ0s3bnBIN25UbXVzQw$h682lr+siItjK7c6QJhhcw",
-            "$argon2id$v=19$m=16,p=2$d3VVZ0s3bnBIN25UbXVzQw$h682lr+siItjK7c6QJhhcw",
-            "$argon2id$v=19$m=16,t=1$d3VVZ0s3bnBIN25UbXVzQw$h682lr+siItjK7c6QJhhcw",
-            "$argon2id$v=19$m=16,t=2,p=4$d3VVZ0s3bnBIN25UbXVzQw$h682lr+siItjK7c6QJhhcw",
-            "$argon2id$v=19$m=16,t=2,p=2,keyid=1$d3VVZ0s3bnBIN25UbXVzQw$h682lr+siItjK7c6QJhhcw",
-            "$argon2id$v=19$m=16,t=2,p=2,data=2$d3VVZ0s3bnBIN25UbXVzQw$h682lr+siItjK7c6QJhhcw",
-            "$argon2id$v=19$m=16,t=2,p=2,keyid=3,data=4$d3VVZ0s3bnBIN25UbXVzQw$h682lr+siItjK7c6QJhhcw",
-            "$argon2id$v=19$m=16,t=2,p=2$d3VVZ$h682lr+siItjK7c6QJhhcw",
-            "$argon2id$v=19$m=16,t=2,p=2$d3VVZ0s3bnBIN25UbXVzQw$tjK7",
-        };
-
-        for (String s : invalidPHCs) {
-            System.out.println("testing " + s);
-            Utils.runAndCheckException(()->Argon2ParameterSpec.newBuilder(s),
-                    iaeCls);
-        }
 
         Builder b = Argon2ParameterSpec.newBuilder(Type.ARGON2ID);
         Utils.runAndCheckException(()->b.nonce(null), iaeCls);

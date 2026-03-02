@@ -31,11 +31,12 @@ import javax.crypto.SecretKey;
 import static javax.crypto.spec.Argon2ParameterSpec.Type;
 import static javax.crypto.spec.Argon2ParameterSpec.Builder;
 import com.sun.crypto.provider.Argon2Impl;
+import sun.security.util.Argon2Util;
 
 /**
  * @test
  * @bug 8253914
- * @modules java.base/com.sun.crypto.provider:+open
+ * @modules java.base/sun.security.util:+open java.base/com.sun.crypto.provider:+open
  * @summary Test the Argon2id KDF impl with test values from RFC 9106
  *     and self generated ones.
  */
@@ -100,9 +101,10 @@ public class TestArgon2KAT {
     }
 
     // Argon2id only
-    private static void runPHC(Argon2ParameterSpec spec, String expected)
+    private static void runPHC(String expected, byte[] msg)
             throws Exception {
-        System.out.println("test against: " + spec);
+        System.out.println("test against: " + expected);
+        Argon2ParameterSpec spec = Argon2Util.decodeHash(expected).build(msg);
         Type t = spec.type();
         switch (t) {
             case ARGON2ID:
@@ -201,9 +203,7 @@ public class TestArgon2KAT {
             "$argon2id$v=19$m=66560,t=3,p=3$MDUwNTA1MDUwNTA1MDUwNTAxMDEwMTAxMDEwMTAxMDE$lABKLpy9mARU8P5gKIh0eWwBjCB7yq1NRPufJEiow/g"
         };
         for (String e : expectedPHCs) {
-            Argon2ParameterSpec params =
-                Argon2ParameterSpec.newBuilder(e).build(msg);
-            runPHC(params, e);
+            runPHC(e, msg);
         }
     }
 
