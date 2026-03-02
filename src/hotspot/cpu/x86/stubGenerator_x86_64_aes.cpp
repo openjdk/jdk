@@ -1453,10 +1453,10 @@ address StubGenerator::generate_electronicCodeBook_encryptAESCrypt_Parallel() {
 __ opc(xmm_result0, reg);         \
 __ opc(xmm_result1, reg);         \
 __ opc(xmm_result2, reg);         \
-__ opc(xmm_result3, reg);         \
+__ opc(xmm_result3, reg);
 
 #define DoOne(opc, reg)            \
-__ opc(xmm_result0, reg);         \
+__ opc(xmm_result0, reg);
 
   __ enter();
   __ push(len_reg); // save original length for return value
@@ -1595,10 +1595,10 @@ address StubGenerator::generate_electronicCodeBook_decryptAESCrypt_Parallel() {
 __ opc(xmm_result0, reg);         \
 __ opc(xmm_result1, reg);         \
 __ opc(xmm_result2, reg);         \
-__ opc(xmm_result3, reg);         \
+__ opc(xmm_result3, reg);
 
 #define DoOne(opc, reg)            \
-__ opc(xmm_result0, reg);         \
+__ opc(xmm_result0, reg);
 
   __ enter();
   __ push(len_reg); // save original length for return value
@@ -1779,7 +1779,7 @@ address StubGenerator::generate_cipherBlockChaining_decryptAESCrypt_Parallel() {
 __ opc(xmm_result0, src_reg);         \
 __ opc(xmm_result1, src_reg);         \
 __ opc(xmm_result2, src_reg);         \
-__ opc(xmm_result3, src_reg);         \
+__ opc(xmm_result3, src_reg);
 
   for (int k = 0; k < 3; ++k) {
     __ BIND(L_multiBlock_loopTopHead[k]);
