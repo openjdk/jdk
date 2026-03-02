@@ -92,7 +92,6 @@ import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 
 import sun.awt.AWTAccessor;
-import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 import sun.font.FontDesignMetrics;
 import sun.font.FontUtilities;
@@ -1241,21 +1240,12 @@ public class SwingUtilities2 {
         return null;
     }
 
-    private static final Object APP_CONTEXT_FRC_CACHE_KEY = new Object();
+    private static final Map<Object, FontRenderContext> cache = new HashMap<>();
 
     private static FontRenderContext getFRCFromCache(AffineTransform tx,
                                                      Object aaHint) {
         if (tx == null && aaHint == null) {
             return null;
-        }
-
-        @SuppressWarnings("unchecked")
-        Map<Object, FontRenderContext> cache = (Map<Object, FontRenderContext>)
-                AppContext.getAppContext().get(APP_CONTEXT_FRC_CACHE_KEY);
-
-        if (cache == null) {
-            cache = new HashMap<>();
-            AppContext.getAppContext().put(APP_CONTEXT_FRC_CACHE_KEY, cache);
         }
 
         Object key = (tx == null)
