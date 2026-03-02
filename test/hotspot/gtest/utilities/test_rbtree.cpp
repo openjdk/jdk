@@ -115,6 +115,16 @@ struct ArrayAllocator {
   using IntrusiveTreeInt = IntrusiveRBTree<int, IntrusiveCmp>;
   using IntrusiveCursor = IntrusiveTreeInt::Cursor;
 
+  struct DestructionTracker {
+    static int destructed_count;
+    int value;
+
+    DestructionTracker(int value) : value(value) {}
+    ~DestructionTracker() { destructed_count++; }
+
+    static void reset() { destructed_count = 0; }
+  };
+
 public:
   void inserting_duplicates_results_in_one_value() {
     constexpr int up_to = 10;
@@ -607,6 +617,55 @@ public:
     }
   }
 
+  void test_remove_destructs() {
+    using Tree = RBTreeCHeap<int, DestructionTracker, Cmp, mtTest>;
+    using Node = RBNode<int, DestructionTracker>;
+    using Cursor = Tree::Cursor;
+
+    Tree tree;
+
+    // Test the 3 ways of removing a single node
+    tree.upsert(0, DestructionTracker(0));
+    tree.upsert(1, DestructionTracker(1));
+    tree.upsert(2, DestructionTracker(2));
+
+    DestructionTracker::reset();
+
+    tree.remove(0);
+
+    Node* n = tree.find_node(1);
+    tree.remove(n);
+
+    Cursor remove_cursor = tree.cursor(2);
+    tree.remove_at_cursor(remove_cursor);
+
+    EXPECT_EQ(3, DestructionTracker::destructed_count);
+
+    // Test clearing the tree
+    constexpr int num_nodes = 10;
+    for (int n = 0; n < num_nodes; n++) {
+      tree.upsert(n, DestructionTracker(n));
+    }
+
+    DestructionTracker::reset();
+
+    tree.remove_all();
+    EXPECT_EQ(num_nodes, DestructionTracker::destructed_count);
+
+    // Test replacing a node
+    tree.upsert(0, DestructionTracker(0));
+    Cursor replace_cursor = tree.cursor(0);
+    Node* new_node = tree.allocate_node(1, DestructionTracker(1));
+
+    DestructionTracker::reset();
+
+    tree.replace_at_cursor(new_node, replace_cursor);
+    EXPECT_EQ(1, DestructionTracker::destructed_count);
+
+    tree.remove_at_cursor(replace_cursor);
+    EXPECT_EQ(2, DestructionTracker::destructed_count);
+  }
+
   void test_cursor() {
     constexpr int num_nodes = 10;
     RBTreeInt tree;
@@ -969,6 +1028,11 @@ TEST_VM_F(RBTreeTest, NodeStableAddressTest) {
 
 TEST_VM_F(RBTreeTest, NodeHints) {
   this->test_node_hints();
+}
+
+int RBTreeTest::DestructionTracker::destructed_count = 0;
+TEST_VM_F(RBTreeTest, RemoveDestructs) {
+  this->test_remove_destructs();
 }
 
 TEST_VM_F(RBTreeTest, CursorFind) {

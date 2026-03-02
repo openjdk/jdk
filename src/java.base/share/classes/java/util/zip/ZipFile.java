@@ -692,7 +692,7 @@ public class ZipFile implements ZipConstants, Closeable {
         final Set<InputStream> istreams;
 
         // List of cached Inflater objects for decompression
-        Deque<Inflater> inflaterCache;
+        List<Inflater> inflaterCache;
 
         final Cleanable cleanable;
 
@@ -702,7 +702,7 @@ public class ZipFile implements ZipConstants, Closeable {
             assert zipCoder != null : "null ZipCoder";
             this.cleanable = CleanerFactory.cleaner().register(zf, this);
             this.istreams = Collections.newSetFromMap(new WeakHashMap<>());
-            this.inflaterCache = new ArrayDeque<>();
+            this.inflaterCache = new ArrayList<>();
             this.zsrc = Source.get(file, (mode & OPEN_DELETE) != 0, zipCoder);
         }
 
@@ -715,10 +715,10 @@ public class ZipFile implements ZipConstants, Closeable {
          * a new one.
          */
         Inflater getInflater() {
-            Inflater inf;
             synchronized (inflaterCache) {
-                if ((inf = inflaterCache.poll()) != null) {
-                    return inf;
+                if (!inflaterCache.isEmpty()) {
+                    // return the most recently used Inflater from the cache of not-in-use Inflaters
+                    return inflaterCache.removeLast();
                 }
             }
             return new Inflater(true);
@@ -728,7 +728,7 @@ public class ZipFile implements ZipConstants, Closeable {
          * Releases the specified inflater to the list of available inflaters.
          */
         void releaseInflater(Inflater inf) {
-            Deque<Inflater> inflaters = this.inflaterCache;
+            List<Inflater> inflaters = this.inflaterCache;
             if (inflaters != null) {
                 synchronized (inflaters) {
                     // double checked!
@@ -747,13 +747,12 @@ public class ZipFile implements ZipConstants, Closeable {
             IOException ioe = null;
 
             // Release cached inflaters and close the cache first
-            Deque<Inflater> inflaters = this.inflaterCache;
+            List<Inflater> inflaters = this.inflaterCache;
             if (inflaters != null) {
                 synchronized (inflaters) {
                     // no need to double-check as only one thread gets a
                     // chance to execute run() (Cleaner guarantee)...
-                    Inflater inf;
-                    while ((inf = inflaters.poll()) != null) {
+                    for (Inflater inf : inflaters) {
                         inf.end();
                     }
                     // close inflaters cache
@@ -762,22 +761,21 @@ public class ZipFile implements ZipConstants, Closeable {
             }
 
             // Close streams, release their inflaters
-            if (istreams != null) {
-                synchronized (istreams) {
-                    if (!istreams.isEmpty()) {
-                        InputStream[] copy = istreams.toArray(new InputStream[0]);
-                        istreams.clear();
-                        for (InputStream is : copy) {
-                            try {
-                                is.close();
-                            } catch (IOException e) {
-                                if (ioe == null) ioe = e;
-                                else ioe.addSuppressed(e);
-                            }
+            synchronized (istreams) {
+                if (!istreams.isEmpty()) {
+                    InputStream[] copy = istreams.toArray(new InputStream[0]);
+                    istreams.clear();
+                    for (InputStream is : copy) {
+                        try {
+                            is.close();
+                        } catch (IOException e) {
+                            if (ioe == null) ioe = e;
+                            else ioe.addSuppressed(e);
                         }
                     }
                 }
             }
+
 
             // Release ZIP src
             if (zsrc != null) {
@@ -1721,8 +1719,10 @@ public class ZipFile implements ZipConstants, Closeable {
                     this.cen = null;
                     return;         // only END header present
                 }
-                if (end.cenlen > end.endpos)
+                // Validate END header
+                if (end.cenlen > end.endpos) {
                     zerror("invalid END header (bad central directory size)");
+                }
                 long cenpos = end.endpos - end.cenlen;     // position of CEN table
                 // Get position of first local file (LOC) header, taking into
                 // account that there may be a stub prefixed to the ZIP file.
@@ -1730,18 +1730,22 @@ public class ZipFile implements ZipConstants, Closeable {
                 if (locpos < 0) {
                     zerror("invalid END header (bad central directory offset)");
                 }
-                // read in the CEN
                 if (end.cenlen > MAX_CEN_SIZE) {
                     zerror("invalid END header (central directory size too large)");
                 }
                 if (end.centot < 0 || end.centot > end.cenlen / CENHDR) {
                     zerror("invalid END header (total entries count too large)");
                 }
-                cen = this.cen = new byte[(int)end.cenlen];
-                if (readFullyAt(cen, 0, cen.length, cenpos) != end.cenlen) {
+                // Validation ensures these are <= Integer.MAX_VALUE
+                int cenlen = Math.toIntExact(end.cenlen);
+                int centot = Math.toIntExact(end.centot);
+
+                // read in the CEN
+                cen = this.cen = new byte[cenlen];
+                if (readFullyAt(cen, 0, cen.length, cenpos) != cenlen) {
                     zerror("read CEN tables failed");
                 }
-                this.total = Math.toIntExact(end.centot);
+                this.total = centot;
             } else {
                 cen = this.cen;
                 this.total = knownTotal;

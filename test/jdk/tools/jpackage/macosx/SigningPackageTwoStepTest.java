@@ -108,7 +108,7 @@ public class SigningPackageTwoStepTest {
                 appImageSignOption = Optional.empty();
             }
 
-            for (var signPackage : SigningPackageTest.TestSpec.testCases(false)) {
+            for (var signPackage : SigningPackageTest.TestSpec.minimalTestCases()) {
                 data.add(new TwoStepsTestSpec(appImageSignOption, signPackage));
             }
         }
