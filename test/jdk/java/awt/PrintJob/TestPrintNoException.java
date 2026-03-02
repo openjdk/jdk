@@ -42,10 +42,10 @@ public class TestPrintNoException {
         String INSTRUCTIONS = """
                 Press 'Print' button from the test UI.
 
-                The test will bring up a print dialog. 
+                The test will bring up a print dialog.
                 Select a printer with "All" pages selected and proceed.
                 Verify that no exception message is displayed in the logarea.
-                
+
                 If no exception is thrown, press Pass else Fail.
                 Note: There's no need to verify the actual print output.""";
 
