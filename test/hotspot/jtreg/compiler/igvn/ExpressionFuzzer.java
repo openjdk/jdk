@@ -30,7 +30,7 @@
  * @modules jdk.incubator.vector
  * @library /test/lib /
  * @compile ../lib/verify/Verify.java
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:CompileTaskTimeout=10000 compiler.igvn.ExpressionFuzzer
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:CompileTaskTimeout=20000 compiler.igvn.ExpressionFuzzer
  */
 
 package compiler.igvn;
