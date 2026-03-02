@@ -790,7 +790,7 @@ AccessAnalyzer::AccessAnalyzer(PhaseValues* phase, MemNode* n)
 
 // Decide whether the memory accessed by '_n' and 'other' may overlap. This function may be used
 // when we want to walk the memory graph to fold a load, or when we want to hoist a load above a
-// loop when there is no stores that may overlap with the load inside the loop.
+// loop when there are no stores that may overlap with the load inside the loop.
 AccessAnalyzer::AccessIndependence AccessAnalyzer::detect_access_independence(Node* other) {
   assert(_phase->type(other) == Type::MEMORY, "must be a memory node %s", other->Name());
   assert(!other->is_Phi(), "caller must handle Phi");
@@ -799,7 +799,7 @@ AccessAnalyzer::AccessIndependence AccessAnalyzer::detect_access_independence(No
     // This means the access is dead
     return {false, _phase->C->top()};
   } else if (_adr_type->base() == TypePtr::AnyPtr) {
-    // An example for this case is an access into the memory address 0 peformed using Unsafe
+    // An example for this case is an access into the memory address 0 performed using Unsafe
     assert(_adr_type->ptr() == TypePtr::Null, "MemNode should never access a wide memory");
     return {false, nullptr};
   }
