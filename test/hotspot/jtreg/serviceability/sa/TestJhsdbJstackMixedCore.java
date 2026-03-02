@@ -37,7 +37,7 @@ import jtreg.SkippedException;
 
 /**
  * @test
- * @bug 8374482 8376264 8376284
+ * @bug 8374482 8376264 8376284 8377395
  * @requires (os.family == "linux") & (vm.hasSA)
  * @requires os.arch == "amd64"
  * @library /test/lib
@@ -66,7 +66,7 @@ public class TestJhsdbJstackMixedCore {
 
         out.shouldContain("__restore_rt <signal trampoline>");
         out.shouldContain("Java_jdk_test_lib_apps_LingeredApp_crash");
-        out.shouldContain("* jdk.test.lib.apps.LingeredApp.crash()");
+        out.shouldContain("jdk.test.lib.apps.LingeredApp.crash()");
     }
 
     public static void main(String... args) throws Throwable {

@@ -47,8 +47,6 @@ class G1ConcurrentRefineStats : public CHeapObj<mtGC> {
   Atomic<jlong> _refine_duration;             // Time spent during actual refinement.
 
 public:
-  G1ConcurrentRefineStats();
-
   // Time spent performing sweeping the refinement table (includes actual refinement,
   // but not yield time).
   inline jlong sweep_duration() const;
