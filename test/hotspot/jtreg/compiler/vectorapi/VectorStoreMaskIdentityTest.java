@@ -61,33 +61,6 @@ public class VectorStoreMaskIdentityTest {
         }
     }
 
-    @ForceInline
-    private static void testOneCastKernel(VectorSpecies<?> from_species,
-                                          VectorSpecies<?> to_species) {
-        VectorMask.fromArray(from_species, mask_in, 0)
-                  .cast(to_species).intoArray(mask_out, 0);
-    }
-
-    @ForceInline
-    private static void testTwoCastsKernel(VectorSpecies<?> from_species,
-                                           VectorSpecies<?> to_species1,
-                                           VectorSpecies<?> to_species2) {
-        VectorMask.fromArray(from_species, mask_in, 0)
-                  .cast(to_species1)
-                  .cast(to_species2).intoArray(mask_out, 0);
-    }
-
-    @ForceInline
-    private static void testThreeCastsKernel(VectorSpecies<?> from_species,
-                                             VectorSpecies<?> to_species1,
-                                             VectorSpecies<?> to_species2,
-                                             VectorSpecies<?> to_species3) {
-        VectorMask.fromArray(from_species, mask_in, 0)
-                  .cast(to_species1)
-                  .cast(to_species2)
-                  .cast(to_species3).intoArray(mask_out, 0);
-    }
-
     @DontInline
     private static void verifyResult(int vlen) {
         for (int i = 0; i < vlen; i++) {
@@ -96,218 +69,242 @@ public class VectorStoreMaskIdentityTest {
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_8, ">= 3",
+    @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_8, ">= 1",
                    IRNode.VECTOR_LOAD_MASK, "= 0",
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true" },
         applyIf = { "MaxVectorSize", ">= 16" })
     public static void testVectorMaskStoreIdentityByte() {
-        testOneCastKernel(B64, S128);
+        VectorMask<Byte> mask_byte_64 = VectorMask.fromArray(B64, mask_in, 0);
+
+        mask_byte_64.cast(S128).intoArray(mask_out, 0);
         verifyResult(B64.length());
 
-        testTwoCastsKernel(B64, S128, B64);
+        mask_byte_64.cast(S128).cast(B64).intoArray(mask_out, 0);
         verifyResult(B64.length());
 
-        testThreeCastsKernel(B64, S128, B64, S128);
+        mask_byte_64.cast(S128).cast(B64).cast(S128).intoArray(mask_out, 0);
         verifyResult(B64.length());
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_8, ">= 3",
+    @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_8, ">= 1",
                    IRNode.VECTOR_LOAD_MASK, "= 0",
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
         applyIfCPUFeatureOr = { "sve", "true", "avx2", "true" },
         applyIf = { "MaxVectorSize", "> 16" })
     public static void testVectorMaskStoreIdentityByte256() {
-        testOneCastKernel(B64, I256);
+        VectorMask<Byte> mask_byte_64 = VectorMask.fromArray(B64, mask_in, 0);
+
+        mask_byte_64.cast(I256).intoArray(mask_out, 0);
         verifyResult(B64.length());
 
-        testTwoCastsKernel(B64, S128, I256);
+        mask_byte_64.cast(S128).cast(F256).intoArray(mask_out, 0);
         verifyResult(B64.length());
 
-        testThreeCastsKernel(B64, S128, F256, I256);
+        mask_byte_64.cast(F256).cast(S128).cast(I256).intoArray(mask_out, 0);
         verifyResult(B64.length());
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_8, ">= 3",
+    @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_8, ">= 1",
                    IRNode.VECTOR_LOAD_MASK, "= 0",
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true" },
         applyIf = { "MaxVectorSize", ">= 16" })
     public static void testVectorMaskStoreIdentityShort() {
-        testOneCastKernel(S128, B64);
+        VectorMask<Short> mask_short_128 = VectorMask.fromArray(S128, mask_in, 0);
+
+        mask_short_128.cast(B64).intoArray(mask_out, 0);
         verifyResult(S128.length());
 
-        testTwoCastsKernel(S128, B64, S128);
+        mask_short_128.cast(B64).cast(S128).intoArray(mask_out, 0);
         verifyResult(S128.length());
 
-        testThreeCastsKernel(S128, B64, S128, B64);
+        mask_short_128.cast(B64).cast(S128).cast(B64).intoArray(mask_out, 0);
         verifyResult(S128.length());
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_8, ">= 3",
+    @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_8, ">= 1",
                    IRNode.VECTOR_LOAD_MASK, "= 0",
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
         applyIfCPUFeatureOr = { "sve", "true", "avx2", "true" },
         applyIf = { "MaxVectorSize", "> 16" })
     public static void testVectorMaskStoreIdentityShort256() {
-        testOneCastKernel(S128, I256);
+        VectorMask<Short> mask_short_128 = VectorMask.fromArray(S128, mask_in, 0);
+
+        mask_short_128.cast(I256).intoArray(mask_out, 0);
         verifyResult(S128.length());
 
-        testTwoCastsKernel(S128, B64, I256);
+        mask_short_128.cast(B64).cast(I256).intoArray(mask_out, 0);
         verifyResult(S128.length());
 
-        testThreeCastsKernel(S128, B64, F256, I256);
+        mask_short_128.cast(F256).cast(B64).cast(I256).intoArray(mask_out, 0);
         verifyResult(S128.length());
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_4, ">= 3",
+    @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_4, ">= 1",
                    IRNode.VECTOR_LOAD_MASK, "= 0",
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true" },
         applyIf = { "MaxVectorSize", ">= 16" })
     public static void testVectorMaskStoreIdentityInt() {
-        testOneCastKernel(I128, F128);
+        VectorMask<Integer> mask_int_128 = VectorMask.fromArray(I128, mask_in, 0);
+
+        mask_int_128.cast(F128).intoArray(mask_out, 0);
         verifyResult(I128.length());
 
-        testTwoCastsKernel(I128, S64, F128);
+        mask_int_128.cast(S64).cast(F128).intoArray(mask_out, 0);
         verifyResult(I128.length());
 
-        testThreeCastsKernel(I128, S64, F128, S64);
+        mask_int_128.cast(F128).cast(I128).cast(S64).intoArray(mask_out, 0);
         verifyResult(I128.length());
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_4, ">= 3",
+    @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_4, ">= 1",
                    IRNode.VECTOR_LOAD_MASK, "= 0",
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
         applyIfCPUFeatureOr = { "sve", "true", "avx2", "true" },
         applyIf = { "MaxVectorSize", "> 16" })
     public static void testVectorMaskStoreIdentityInt256() {
-        testOneCastKernel(I128, F128);
+        VectorMask<Integer> mask_int_128 = VectorMask.fromArray(I128, mask_in, 0);
+
+        mask_int_128.cast(F128).intoArray(mask_out, 0);
         verifyResult(I128.length());
 
-        testTwoCastsKernel(I128, S64, L256);
+        mask_int_128.cast(S64).cast(L256).intoArray(mask_out, 0);
         verifyResult(I128.length());
 
-        testThreeCastsKernel(I128, S64, F128, L256);
+        mask_int_128.cast(L256).cast(S64).cast(F128).intoArray(mask_out, 0);
         verifyResult(I128.length());
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_2, ">= 3",
+    @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_2, ">= 1",
                    IRNode.VECTOR_LOAD_MASK, "= 0",
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
         applyIfCPUFeatureOr = { "asimd", "true" },
         applyIf = { "MaxVectorSize", ">= 16" })
     public static void testVectorMaskStoreIdentityLong() {
-        testOneCastKernel(L128, D128);
+        VectorMask<Long> mask_long_128 = VectorMask.fromArray(L128, mask_in, 0);
+
+        mask_long_128.cast(D128).intoArray(mask_out, 0);
         verifyResult(L128.length());
 
-        testTwoCastsKernel(L128, I64, D128);
+        mask_long_128.cast(I64).cast(D128).intoArray(mask_out, 0);
         verifyResult(L128.length());
 
-        testThreeCastsKernel(L128, I64, D128, I64);
+        mask_long_128.cast(I64).cast(D128).cast(I64).intoArray(mask_out, 0);
         verifyResult(L128.length());
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_4, ">= 3",
+    @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_4, ">= 1",
                    IRNode.VECTOR_LOAD_MASK, "= 0",
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
         applyIfCPUFeatureOr = { "sve", "true", "avx2", "true" },
         applyIf = { "MaxVectorSize", "> 16" })
     public static void testVectorMaskStoreIdentityLong256() {
-        testOneCastKernel(L256, I128);
+        VectorMask<Long> mask_long_256 = VectorMask.fromArray(L256, mask_in, 0);
+
+        mask_long_256.cast(I128).intoArray(mask_out, 0);
         verifyResult(L256.length());
 
-        testTwoCastsKernel(L256, I128, S64);
+        mask_long_256.cast(S64).cast(I128).intoArray(mask_out, 0);
         verifyResult(L256.length());
 
-        testThreeCastsKernel(L256, I128, F128, S64);
+        mask_long_256.cast(F128).cast(I128).cast(S64).intoArray(mask_out, 0);
         verifyResult(L256.length());
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_4, ">= 3",
+    @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_4, ">= 1",
                    IRNode.VECTOR_LOAD_MASK, "= 0",
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
         applyIfCPUFeatureOr = { "asimd", "true", "avx", "true" },
         applyIf = { "MaxVectorSize", ">= 16" })
     public static void testVectorMaskStoreIdentityFloat() {
-        testOneCastKernel(F128, I128);
+        VectorMask<Float> mask_float_128 = VectorMask.fromArray(F128, mask_in, 0);
+
+        mask_float_128.cast(I128).intoArray(mask_out, 0);
         verifyResult(F128.length());
 
-        testTwoCastsKernel(F128, S64, I128);
+        mask_float_128.cast(S64).cast(I128).intoArray(mask_out, 0);
         verifyResult(F128.length());
 
-        testThreeCastsKernel(F128, S64, I128, S64);
+        mask_float_128.cast(S64).cast(I128).cast(S64).intoArray(mask_out, 0);
         verifyResult(F128.length());
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_4, ">= 3",
+    @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_4, ">= 1",
                    IRNode.VECTOR_LOAD_MASK, "= 0",
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
         applyIfCPUFeatureOr = { "sve", "true", "avx2", "true" },
         applyIf = { "MaxVectorSize", "> 16" })
     public static void testVectorMaskStoreIdentityFloat256() {
-        testOneCastKernel(F128, I128);
+        VectorMask<Float> mask_float_128 = VectorMask.fromArray(F128, mask_in, 0);
+
+        mask_float_128.cast(I128).intoArray(mask_out, 0);
         verifyResult(F128.length());
 
-        testTwoCastsKernel(F128, S64, L256);
+        mask_float_128.cast(S64).cast(L256).intoArray(mask_out, 0);
         verifyResult(F128.length());
 
-        testThreeCastsKernel(F128, S64, I128, L256);
+        mask_float_128.cast(L256).cast(S64).cast(I128).intoArray(mask_out, 0);
         verifyResult(F128.length());
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_2, ">= 3",
+    @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_2, ">= 1",
                    IRNode.VECTOR_LOAD_MASK, "= 0",
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
         applyIfCPUFeatureOr = { "asimd", "true" },
         applyIf = { "MaxVectorSize", ">= 16" })
     public static void testVectorMaskStoreIdentityDouble() {
-        testOneCastKernel(D128, L128);
+        VectorMask<Double> mask_double_128 = VectorMask.fromArray(D128, mask_in, 0);
+
+        mask_double_128.cast(L128).intoArray(mask_out, 0);
         verifyResult(D128.length());
 
-        testTwoCastsKernel(D128, I64, L128);
+        mask_double_128.cast(I64).cast(L128).intoArray(mask_out, 0);
         verifyResult(D128.length());
 
-        testThreeCastsKernel(D128, I64, L128, I64);
+        mask_double_128.cast(I64).cast(L128).cast(I64).intoArray(mask_out, 0);
         verifyResult(D128.length());
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_4, ">= 3",
+    @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_4, ">= 1",
                    IRNode.VECTOR_LOAD_MASK, "= 0",
                    IRNode.VECTOR_STORE_MASK, "= 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
         applyIfCPUFeatureOr = { "sve", "true", "avx2", "true" },
         applyIf = { "MaxVectorSize", "> 16" })
     public static void testVectorMaskStoreIdentityDouble256() {
-        testOneCastKernel(D256, F128);
+        VectorMask<Double> mask_double_256 = VectorMask.fromArray(D256, mask_in, 0);
+
+        mask_double_256.cast(F128).intoArray(mask_out, 0);
         verifyResult(D256.length());
 
-        testTwoCastsKernel(D256, S64, I128);
+        mask_double_256.cast(S64).cast(I128).intoArray(mask_out, 0);
         verifyResult(D256.length());
 
-        testThreeCastsKernel(D256, S64, L256, I128);
+        mask_double_256.cast(I128).cast(S64).cast(L256).intoArray(mask_out, 0);
         verifyResult(D256.length());
     }
 
