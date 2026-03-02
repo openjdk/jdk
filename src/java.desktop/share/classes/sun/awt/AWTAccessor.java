@@ -452,16 +452,6 @@ public final class AWTAccessor {
      */
     public interface MenuComponentAccessor {
         /**
-         * Returns the appContext of the menu component.
-         */
-        AppContext getAppContext(MenuComponent menuComp);
-
-        /**
-         * Sets the appContext of the menu component.
-         */
-        void setAppContext(MenuComponent menuComp, AppContext appContext);
-
-        /**
          * Returns the peer of the menu component.
          */
         <T extends MenuComponentPeer> T getPeer(MenuComponent menuComp);
