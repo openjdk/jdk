@@ -86,7 +86,7 @@ char              VMError::coredump_message[O_BUFLEN];
 int               VMError::_current_step;
 const char*       VMError::_current_step_info;
 Atomic<jlong>     VMError::_reporting_start_time{-1};
-volatile bool     VMError::_reporting_did_timeout = false;
+Atomic<bool>      VMError::_reporting_did_timeout{false};
 volatile jlong    VMError::_step_start_time = -1;
 volatile bool     VMError::_step_did_timeout = false;
 volatile bool     VMError::_step_did_succeed = false;
@@ -1794,7 +1794,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
         st->print_cr("\"] after " INT64_FORMAT " s.",
                      (int64_t)
                      ((get_current_timestamp() - _step_start_time) / TIMESTAMP_TO_SECONDS_FACTOR));
-      } else if (_reporting_did_timeout) {
+      } else if (_reporting_did_timeout.load_relaxed()) {
         // We hit ErrorLogTimeout. Reporting will stop altogether. Let's wrap things
         // up, the process is about to be stopped by the WatcherThread.
         st->print_cr("------ Timeout during error reporting after " INT64_FORMAT " s. ------",
@@ -2099,10 +2099,10 @@ bool VMError::check_timeout() {
     // Timestamp is stored in nanos.
     if (reporting_start_time > 0) {
       const jlong end = reporting_start_time + (jlong)ErrorLogTimeout * TIMESTAMP_TO_SECONDS_FACTOR;
-      if (end <= now && !_reporting_did_timeout) {
+      if (end <= now && !_reporting_did_timeout.load_relaxed()) {
         // We hit ErrorLogTimeout and we haven't interrupted the reporting
         // thread yet.
-        _reporting_did_timeout = true;
+        _reporting_did_timeout.store_relaxed(true);
         interrupt_reporting_thread();
         return true; // global timeout
       }

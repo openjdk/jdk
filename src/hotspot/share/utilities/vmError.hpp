@@ -88,7 +88,7 @@ class VMError : public AllStatic {
   // Timestamp at which error reporting started; -1 if no error reporting in progress.
   static Atomic<jlong> _reporting_start_time;
   // Whether or not error reporting did timeout.
-  static volatile bool _reporting_did_timeout;
+  static Atomic<bool> _reporting_did_timeout;
   // Timestamp at which the last error reporting step started; -1 if no error reporting
   //   in progress.
   static volatile jlong _step_start_time;
