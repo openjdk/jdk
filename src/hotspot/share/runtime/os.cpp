@@ -2442,22 +2442,6 @@ char* os::reserve_memory_special(size_t size, size_t alignment, size_t page_size
   return result;
 }
 
-void os::release_memory_special(char* addr, size_t bytes) {
-  bool res;
-  if (MemTracker::enabled()) {
-    MemTracker::NmtVirtualMemoryLocker nvml;
-    res = pd_release_memory_special(addr, bytes);
-    if (res) {
-      MemTracker::record_virtual_memory_release(addr, bytes);
-    }
-  } else {
-    res = pd_release_memory_special(addr, bytes);
-  }
-  if (!res) {
-    fatal("Failed to release memory special " RANGEFMT, RANGEFMTARGS(addr, bytes));
-  }
-}
-
 // Convenience wrapper around naked_short_sleep to allow for longer sleep
 // times. Only for use by non-JavaThreads.
 void os::naked_sleep(jlong millis) {
