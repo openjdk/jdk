@@ -422,42 +422,55 @@ public class      BeanContextSupport extends BeanContextChildSupport
             BeanContextChild cbcc  = getChildBeanContextChild(targetChild);
             BeanContextChild  bccp = null;
 
-            synchronized(targetChild) {
 
-                if (targetChild instanceof BeanContextProxy) {
-                    bccp = ((BeanContextProxy)targetChild).getBeanContextProxy();
+            if (targetChild instanceof BeanContextProxy) {
+                bccp = ((BeanContextProxy)targetChild).getBeanContextProxy();
 
-                    if (bccp == null) throw new NullPointerException("BeanContextPeer.getBeanContextProxy()");
-                }
+                if (bccp == null) throw new NullPointerException("BeanContextPeer.getBeanContextProxy()");
+            }
 
-                BCSChild bcsc  = createBCSChild(targetChild, bccp);
-                BCSChild pbcsc = null;
+            BCSChild bcsc  = createBCSChild(targetChild, bccp);
+            BCSChild pbcsc = null;
 
-                synchronized (children) {
-                    children.put(targetChild, bcsc);
+            synchronized (children) {
+                children.put(targetChild, bcsc);
 
-                    if (bccp != null) children.put(bccp, pbcsc = createBCSChild(bccp, targetChild));
-                }
+                if (bccp != null) children.put(bccp, pbcsc = createBCSChild(bccp, targetChild));
+            }
 
-                if (cbcc != null) synchronized(cbcc) {
-                    try {
-                        cbcc.setBeanContext(getBeanContextPeer());
-                    } catch (PropertyVetoException pve) {
+            if (cbcc != null) synchronized(cbcc) {
+                try {
+                    cbcc.setBeanContext(getBeanContextPeer());
+                } catch (PropertyVetoException pve) {
 
-                        synchronized (children) {
-                            children.remove(targetChild);
+                    synchronized (children) {
+                        children.remove(targetChild);
 
-                            if (bccp != null) children.remove(bccp);
-                        }
-
-                        throw new IllegalStateException();
+                        if (bccp != null) children.remove(bccp);
                     }
 
-                    cbcc.addPropertyChangeListener("beanContext", childPCL);
-                    cbcc.addVetoableChangeListener("beanContext", childVCL);
+                    throw new IllegalStateException();
                 }
 
-                Visibility v = getChildVisibility(targetChild);
+                cbcc.addPropertyChangeListener("beanContext", childPCL);
+                cbcc.addVetoableChangeListener("beanContext", childVCL);
+            }
+
+            Visibility v = getChildVisibility(targetChild);
+
+            if (v != null) {
+                if (okToUseGui)
+                    v.okToUseGui();
+                else
+                    v.dontUseGui();
+            }
+
+            if (getChildSerializable(targetChild) != null) serializable++;
+
+            childJustAddedHook(targetChild, bcsc);
+
+            if (bccp != null) {
+                v = getChildVisibility(bccp);
 
                 if (v != null) {
                     if (okToUseGui)
@@ -466,27 +479,12 @@ public class      BeanContextSupport extends BeanContextChildSupport
                         v.dontUseGui();
                 }
 
-                if (getChildSerializable(targetChild) != null) serializable++;
+                if (getChildSerializable(bccp) != null) serializable++;
 
-                childJustAddedHook(targetChild, bcsc);
-
-                if (bccp != null) {
-                    v = getChildVisibility(bccp);
-
-                    if (v != null) {
-                        if (okToUseGui)
-                            v.okToUseGui();
-                        else
-                            v.dontUseGui();
-                    }
-
-                    if (getChildSerializable(bccp) != null) serializable++;
-
-                    childJustAddedHook(bccp, pbcsc);
-                }
-
-
+                childJustAddedHook(bccp, pbcsc);
             }
+
+
 
             // The specification requires that we fire a notification of the change
 
@@ -536,42 +534,40 @@ public class      BeanContextSupport extends BeanContextChildSupport
             // we are required to notify the child that it is no longer nested here if
             // it implements java.beans.beancontext.BeanContextChild
 
-            synchronized(targetChild) {
-                if (callChildSetBC) {
-                    BeanContextChild cbcc = getChildBeanContextChild(targetChild);
-                    if (cbcc != null) synchronized(cbcc) {
-                        cbcc.removePropertyChangeListener("beanContext", childPCL);
-                        cbcc.removeVetoableChangeListener("beanContext", childVCL);
+            if (callChildSetBC) {
+                BeanContextChild cbcc = getChildBeanContextChild(targetChild);
+                if (cbcc != null) synchronized(cbcc) {
+                    cbcc.removePropertyChangeListener("beanContext", childPCL);
+                    cbcc.removeVetoableChangeListener("beanContext", childVCL);
 
-                        try {
-                            cbcc.setBeanContext(null);
-                        } catch (PropertyVetoException pve1) {
-                            cbcc.addPropertyChangeListener("beanContext", childPCL);
-                            cbcc.addVetoableChangeListener("beanContext", childVCL);
-                            throw new IllegalStateException();
-                        }
-
+                    try {
+                        cbcc.setBeanContext(null);
+                    } catch (PropertyVetoException pve1) {
+                        cbcc.addPropertyChangeListener("beanContext", childPCL);
+                        cbcc.addVetoableChangeListener("beanContext", childVCL);
+                        throw new IllegalStateException();
                     }
+
                 }
+            }
 
-                synchronized (children) {
-                    children.remove(targetChild);
+            synchronized (children) {
+                children.remove(targetChild);
 
-                    if (bcsc.isProxyPeer()) {
-                        pbcsc = children.get(peer = bcsc.getProxyPeer());
-                        children.remove(peer);
-                    }
+                if (bcsc.isProxyPeer()) {
+                    pbcsc = children.get(peer = bcsc.getProxyPeer());
+                    children.remove(peer);
                 }
+            }
 
-                if (getChildSerializable(targetChild) != null) serializable--;
+            if (getChildSerializable(targetChild) != null) serializable--;
 
-                childJustRemovedHook(targetChild, bcsc);
+            childJustRemovedHook(targetChild, bcsc);
 
-                if (peer != null) {
-                    if (getChildSerializable(peer) != null) serializable--;
+            if (peer != null) {
+                if (getChildSerializable(peer) != null) serializable--;
 
-                    childJustRemovedHook(peer, pbcsc);
-                }
+                childJustRemovedHook(peer, pbcsc);
             }
 
             fireChildrenRemoved(new BeanContextMembershipEvent(getBeanContextPeer(), peer == null ? new Object[] { targetChild } : new Object[] { targetChild, peer } ));
