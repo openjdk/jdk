@@ -35,19 +35,20 @@ import static jdk.incubator.vector.VectorIntrinsics.*;
  * It caches all sorts of goodies that we can't put on java.lang.Class.
  */
 enum LaneType {
-    FLOAT(float.class, Float.class, float[].class, 'F', 24, Float.SIZE),
-    DOUBLE(double.class, Double.class, double[].class, 'F', 53, Double.SIZE),
-    BYTE(byte.class, Byte.class, byte[].class, 'I', -1, Byte.SIZE),
-    SHORT(short.class, Short.class, short[].class, 'I', -1, Short.SIZE),
-    INT(int.class, Integer.class, int[].class, 'I', -1, Integer.SIZE),
-    LONG(long.class, Long.class, long[].class, 'I', -1, Long.SIZE);
+    FLOAT(float.class, Float.class, float[].class, 'F', 24, Float.SIZE, float.class),
+    DOUBLE(double.class, Double.class, double[].class, 'F', 53, Double.SIZE, double.class),
+    BYTE(byte.class, Byte.class, byte[].class, 'I', -1, Byte.SIZE, byte.class),
+    SHORT(short.class, Short.class, short[].class, 'I', -1, Short.SIZE, short.class),
+    INT(int.class, Integer.class, int[].class, 'I', -1, Integer.SIZE, int.class),
+    LONG(long.class, Long.class, long[].class, 'I', -1, Long.SIZE, long.class);
 
     LaneType(Class<?> elementType,
              Class<?> genericElementType,
              Class<?> arrayType,
              char elementKind,
              int elementPrecision,
-             int elementSize) {
+             int elementSize,
+             Class<?> carrierType) {
         if (elementPrecision <= 0)
             elementPrecision += elementSize;
         this.elementType = elementType;
@@ -66,6 +67,9 @@ enum LaneType {
         // report that condition also.
         this.typeChar = genericElementType.getSimpleName().charAt(0);
         assert("FDBSIL".indexOf(typeChar) == ordinal()) : this;
+        this.carrierType = carrierType;
+        assert(carrierType.isPrimitive());
+
     }
 
     final Class<?> elementType;
@@ -78,6 +82,7 @@ enum LaneType {
     final int switchKey;  // 1+ordinal(), which is non-zero
     final String printName;
     final char typeChar; // one of "BSILFD"
+    final Class<?> carrierType;
 
     private @Stable LaneType asIntegral;
     private @Stable LaneType asFloating;
