@@ -696,11 +696,17 @@ public class CDSTestUtils {
             System.out.println("[STDOUT]\n" + output.getStdout());
 
         if (output.getExitValue() != 0 && output.getStdout().contains("A fatal error has been detected")) {
-          throw new RuntimeException("Hotspot crashed");
+            System.out.println(getCrashMessage(output.getStdout()));
+            throw new RuntimeException("Hotspot crashed");
         }
         return output;
     }
 
+    static String getCrashMessage(String stdOut) {
+        int start = stdOut.indexOf("# A fatal error has been detected by the Java Runtime Environment:");
+        int end = stdOut.indexOf(".log", start) + 4;
+        return stdOut.substring(start, end);
+    }
 
     private static void writeFile(File file, String content) throws Exception {
         FileOutputStream fos = new FileOutputStream(file);
