@@ -1203,6 +1203,8 @@ void PhaseIterGVN::optimize(bool deep) {
   // Pull from worklist and transform the node.
   if (drain_worklist(loop_count)) return;
 
+  // In debug builds, always run deep_revisit before verify_PhaseIterGVN() below.
+  NOT_PRODUCT(deep = true;)
   if (deep && UseDeepIGVNRevisit) {
     deep_revisit(loop_count);
     if (C->failing()) return;
