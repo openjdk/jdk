@@ -597,61 +597,6 @@ static void test_binary() {
 }
 
 template <class U>
-class OpAnd {
-public:
-  U operator()(U v1, U v2) const {
-    return v1 & v2;
-  }
-};
-
-template <class CTP>
-class InferAnd {
-public:
-  CTP operator()(CTP t1, CTP t2) const {
-    return RangeInference::infer_and(t1, t2);
-  }
-};
-
-template <class U>
-class OpOr {
-public:
-  U operator()(U v1, U v2) const {
-    return v1 | v2;
-  }
-};
-
-template <class CTP>
-class InferOr {
-public:
-  CTP operator()(CTP t1, CTP t2) const {
-    return RangeInference::infer_or(t1, t2);
-  }
-};
-
-template <class U>
-class OpXor {
-public:
-  U operator()(U v1, U v2) const {
-    return v1 ^ v2;
-  }
-};
-
-template <class CTP>
-class InferXor {
-public:
-  CTP operator()(CTP t1, CTP t2) const {
-    return RangeInference::infer_xor(t1, t2);
-  }
-};
-
-TEST(opto, range_inference_binary_op) {
-  test_binary<OpAnd, InferAnd>();
-  test_binary<OpOr, InferOr>();
-  test_binary<OpXor, InferXor>();
-}
-
-// Left shift tests
-template <class U>
 static U lshift_op(U v, int shift) {
   return v << shift;
 }
@@ -663,7 +608,8 @@ static void test_lshift_correctness(const InputType& input, int shift) {
   auto result = RangeInference::infer_lshift(input, shift);
   for (juint v = 0; v <= juint(std::numeric_limits<U>::max()); v++) {
     if (input.contains(U(v))) {
-      ASSERT_TRUE(result.contains(lshift_op(U(v), shift)));
+      U r = lshift_op(U(v), shift);
+      ASSERT_TRUE(result.contains(r));
     }
   }
 }
@@ -679,6 +625,8 @@ static void test_lshift_correctness_samples(const InputType& input, int shift) {
   populate_sample_values(samples, sample_count, input);
 
   for (size_t i = 0; i < sample_count; i++) {
+    ASSERT_TRUE(input.contains(samples[i]));
+
     U r = lshift_op(samples[i], shift);
     ASSERT_TRUE(result.contains(r));
   }
@@ -741,10 +689,65 @@ static void test_lshift_random() {
   }
 }
 
-TEST(opto, range_inference_lshift) {
+static void test_lshift() {
   test_lshift_for_type<TypeIntMirror<intn_t<1>, uintn_t<1>>>();
   test_lshift_for_type<TypeIntMirror<intn_t<2>, uintn_t<2>>>();
   test_lshift_for_type<TypeIntMirror<intn_t<3>, uintn_t<3>>>();
   test_lshift_random<TypeIntMirror<jint, juint>>();
   test_lshift_random<TypeIntMirror<jlong, julong>>();
+}
+
+template <class U>
+class OpAnd {
+public:
+  U operator()(U v1, U v2) const {
+    return v1 & v2;
+  }
+};
+
+template <class CTP>
+class InferAnd {
+public:
+  CTP operator()(CTP t1, CTP t2) const {
+    return RangeInference::infer_and(t1, t2);
+  }
+};
+
+template <class U>
+class OpOr {
+public:
+  U operator()(U v1, U v2) const {
+    return v1 | v2;
+  }
+};
+
+template <class CTP>
+class InferOr {
+public:
+  CTP operator()(CTP t1, CTP t2) const {
+    return RangeInference::infer_or(t1, t2);
+  }
+};
+
+template <class U>
+class OpXor {
+public:
+  U operator()(U v1, U v2) const {
+    return v1 ^ v2;
+  }
+};
+
+template <class CTP>
+class InferXor {
+public:
+  CTP operator()(CTP t1, CTP t2) const {
+    return RangeInference::infer_xor(t1, t2);
+  }
+};
+
+TEST(opto, range_inference) {
+  test_binary<OpAnd, InferAnd>();
+  test_binary<OpOr, InferOr>();
+  test_binary<OpXor, InferXor>();
+  test_lshift();
 }
