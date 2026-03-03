@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * @library /test/lib/
  * @modules jdk.compiler
  * @build ReflectionCallerCacheTest Members jdk.test.lib.compiler.CompilerUtils
- * @run testng/othervm ReflectionCallerCacheTest
+ * @run junit/othervm ReflectionCallerCacheTest
  */
 
 import java.io.IOException;
@@ -44,16 +44,16 @@ import java.util.concurrent.Callable;
 
 import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.util.ForceGC;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class ReflectionCallerCacheTest {
     private static final Path CLASSES = Paths.get("classes");
     private static final ReflectionCallerCacheTest TEST = new ReflectionCallerCacheTest();
 
-    @BeforeTest
-    public void setup() throws IOException {
+    @BeforeAll
+    public static void setup() throws IOException {
         String src = System.getProperty("test.src", ".");
         String classpath = System.getProperty("test.classes", ".");
         boolean rc = CompilerUtils.compile(Paths.get(src, "AccessTest.java"), CLASSES, "-cp", classpath);
@@ -61,8 +61,8 @@ public class ReflectionCallerCacheTest {
             throw new RuntimeException("fail compilation");
         }
     }
-    @DataProvider(name = "memberAccess")
-    public Object[][] memberAccess() {
+
+    public static Object[][] memberAccess() {
         return new Object[][] {
             { "AccessTest$PublicConstructor" },
             { "AccessTest$PublicMethod" },
@@ -102,8 +102,9 @@ public class ReflectionCallerCacheTest {
         }
     }
 
-    @Test(dataProvider = "memberAccess")
-    private void load(String classname) throws Exception {
+    @ParameterizedTest
+    @MethodSource("memberAccess")
+    void load(String classname) throws Exception {
         WeakReference<?> weakLoader = loadAndRunClass(classname);
 
         // Force garbage collection to trigger unloading of class loader

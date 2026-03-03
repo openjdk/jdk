@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -311,6 +311,12 @@ AC_DEFUN([PLATFORM_EXTRACT_TARGET_AND_BUILD],
   else
     OPENJDK_BUILD_OS_ENV="$VAR_OS"
   fi
+  # Special handling for MSYS2 that reports a Cygwin triplet as the default host triplet.
+  case `uname` in
+    MSYS*)
+      OPENJDK_BUILD_OS_ENV=windows.msys2
+      ;;
+  esac
   OPENJDK_BUILD_CPU="$VAR_CPU"
   OPENJDK_BUILD_CPU_ARCH="$VAR_CPU_ARCH"
   OPENJDK_BUILD_CPU_BITS="$VAR_CPU_BITS"

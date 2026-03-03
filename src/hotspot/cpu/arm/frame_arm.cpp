@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -356,10 +356,10 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
 bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   assert(is_interpreted_frame(), "Not an interpreted frame");
   // These are reasonable sanity checks
-  if (fp() == 0 || (intptr_t(fp()) & (wordSize-1)) != 0) {
+  if (fp() == nullptr || (intptr_t(fp()) & (wordSize-1)) != 0) {
     return false;
   }
-  if (sp() == 0 || (intptr_t(sp()) & (wordSize-1)) != 0) {
+  if (sp() == nullptr || (intptr_t(sp()) & (wordSize-1)) != 0) {
     return false;
   }
   if (fp() + interpreter_frame_initial_sp_offset < sp()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -703,7 +703,9 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             return;
         }
         if (debug.on()) {
-            debug.log("scheduleForDecryption: %d bytes", received);
+            debug.log("scheduleForDecryption: %s bytes [idbytes: %s(%s,%s)]",
+                    received, datagram.destConnId().getClass().getSimpleName(),
+                    datagram.destConnId().position(), datagram.destConnId().limit());
         }
         endpoint.buffer(received);
         incoming.add(datagram);
@@ -1246,7 +1248,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             final PacketSpace space = packetSpace(PacketNumberSpace.APPLICATION);
             final int maxDatagramSize = getMaxDatagramSize();
             final QuicConnectionId peerConnectionId = peerConnectionId();
-            final int dstIdLength = peerConnectionId().length();
+            final int dstIdLength = peerConnectionId.length();
             if (!canSend()) {
                 return false;
             }
@@ -1747,6 +1749,11 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         return localConnIdManager.connectionIds();
     }
 
+    @Override
+    public List<byte[]> activeResetTokens() {
+        return peerConnIdManager.activeResetTokens();
+    }
+
     LocalConnIdManager localConnectionIdManager() {
         return localConnIdManager;
     }
@@ -1842,6 +1849,10 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                                     header.destinationId().toHexString(),
                                     Utils.asHexString(destConnId));
                         }
+                        assert packetIndex > 1 :
+                                "first long packet CID does not match itself %s(%s,%s)"
+                                        .formatted(destConnId.getClass().getSimpleName(),
+                                                destConnId.position(), destConnId.limit());
                         return;
                     }
                     var peekedVersion = header.version();
@@ -1913,6 +1924,10 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                                             " wrong connection id (%s vs %s)",
                                     packetIndex, Utils.asHexString(cid), Utils.asHexString(destConnId));
                         }
+                        assert packetIndex > 1 : "first short packet CID does not match itself %s(%s,%s)"
+                                        .formatted(destConnId.getClass().getSimpleName(),
+                                                destConnId.position(), destConnId.limit());
+
                         return;
                     }
 
@@ -1928,6 +1943,9 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         } catch (Throwable t) {
             if (debug.on()) {
                 debug.log("Failed to process incoming packet", t);
+            }
+            if (t instanceof AssertionError) {
+                this.terminator.terminate(TerminationCause.forException(t));
             }
         }
     }
@@ -2453,7 +2471,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 }
                 return;
             }
-            final QuicConnectionId currentPeerConnId = this.peerConnIdManager.getPeerConnId();
+            final QuicConnectionId currentPeerConnId = peerConnectionId();
             if (rt.sourceId().equals(currentPeerConnId)) {
                 if (debug.on()) {
                     debug.log("Invalid retry, same connection ID");

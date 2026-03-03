@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@
 package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.util.RootedPath;
 
 /**
  * A generic application for packaging.
@@ -78,27 +80,25 @@ public non-sealed interface Application extends BundleSpec {
     String copyright();
 
     /**
-     * Gets the source directory of this application if available or an empty
-     * {@link Optional} instance.
+     * Gets the source paths that should be copied into
+     * {@link ApplicationLayout#appDirectory()} directory of the image of this
+     * application.
      * <p>
-     * Source directory is a directory with the applications's classes and other
+     * Source paths are supposed to contain the applications's classes and other
      * resources.
      *
-     * @return the source directory of this application
+     * @return the source paths
      */
-    Optional<Path> srcDir();
+    Collection<RootedPath> appDirSources();
 
     /**
-     * Gets the input content directories of this application.
-     * <p>
-     * Contents of the content directories will be copied as-is into the dedicated
-     * location of the application image.
+     * Gets the source paths that should be copied into
+     * {@link ApplicationLayout#contentDirectory()} directory of the image of this
+     * application.
      *
-     * @see ApplicationLayout#contentDirectory
-     *
-     * @return the input content directories of this application
+     * @return the source paths
      */
-    List<Path> contentDirs();
+    Collection<RootedPath> contentDirSources();
 
     /**
      * Gets the unresolved app image layout of this application.
@@ -244,8 +244,17 @@ public non-sealed interface Application extends BundleSpec {
     /**
      * Default implementation of {@link Application} interface.
      */
-    record Stub(String name, String description, String version, String vendor, String copyright, Optional<Path> srcDir,
-            List<Path> contentDirs, AppImageLayout imageLayout, Optional<RuntimeBuilder> runtimeBuilder,
-            List<Launcher> launchers,  Map<String, String> extraAppImageFileData) implements Application {
+    record Stub(
+            String name,
+            String description,
+            String version,
+            String vendor,
+            String copyright,
+            Collection<RootedPath> appDirSources,
+            Collection<RootedPath> contentDirSources,
+            AppImageLayout imageLayout,
+            Optional<RuntimeBuilder> runtimeBuilder,
+            List<Launcher> launchers,
+            Map<String, String> extraAppImageFileData) implements Application {
     }
 }

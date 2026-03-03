@@ -1177,7 +1177,21 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
 //------------------------------basic_plus_adr---------------------------------
 Node* GraphKit::basic_plus_adr(Node* base, Node* ptr, Node* offset) {
   // short-circuit a common case
-  if (offset == intcon(0))  return ptr;
+  if (offset == MakeConX(0)) {
+    return ptr;
+  }
+#ifdef ASSERT
+  // Both 32-bit and 64-bit zeros should have been handled by the previous `if`
+  // statement, so if we see either 32-bit or 64-bit zeros here, then we have a
+  // problem.
+  if (offset->is_Con()) {
+    const Type* t = offset->bottom_type();
+    bool is_zero_int = t->isa_int() && t->is_int()->get_con() == 0;
+    bool is_zero_long = t->isa_long() && t->is_long()->get_con() == 0;
+    assert(!is_zero_int && !is_zero_long,
+           "Unexpected zero offset - should have matched MakeConX(0)");
+  }
+#endif
   return _gvn.transform( new AddPNode(base, ptr, offset) );
 }
 
@@ -1472,7 +1486,7 @@ Node* GraphKit::cast_not_null(Node* obj, bool do_replace_in_map) {
 // In that case that data path will die and we need the control path
 // to become dead as well to keep the graph consistent. So we have to
 // add a check for null for which one branch can't be taken. It uses
-// an OpaqueNotNull node that will cause the check to be removed after loop
+// an OpaqueConstantBool node that will cause the check to be removed after loop
 // opts so the test goes away and the compiled code doesn't execute a
 // useless check.
 Node* GraphKit::must_be_not_null(Node* value, bool do_replace_in_map) {
@@ -1481,7 +1495,7 @@ Node* GraphKit::must_be_not_null(Node* value, bool do_replace_in_map) {
   }
   Node* chk = _gvn.transform(new CmpPNode(value, null()));
   Node* tst = _gvn.transform(new BoolNode(chk, BoolTest::ne));
-  Node* opaq = _gvn.transform(new OpaqueNotNullNode(C, tst));
+  Node* opaq = _gvn.transform(new OpaqueConstantBoolNode(C, tst, true));
   IfNode* iff = new IfNode(control(), opaq, PROB_MAX, COUNT_UNKNOWN);
   _gvn.set_type(iff, iff->Value(&_gvn));
   if (!tst->is_Con()) {
@@ -1489,8 +1503,7 @@ Node* GraphKit::must_be_not_null(Node* value, bool do_replace_in_map) {
   }
   Node *if_f = _gvn.transform(new IfFalseNode(iff));
   Node *frame = _gvn.transform(new ParmNode(C->start(), TypeFunc::FramePtr));
-  Node* halt = _gvn.transform(new HaltNode(if_f, frame, "unexpected null in intrinsic"));
-  C->root()->add_req(halt);
+  halt(if_f, frame, "unexpected null in intrinsic");
   Node *if_t = _gvn.transform(new IfTrueNode(iff));
   set_control(if_t);
   return cast_not_null(value, do_replace_in_map);
@@ -2073,6 +2086,12 @@ void GraphKit::increment_counter(Node* counter_addr) {
   store_to_memory(ctrl, counter_addr, incr, T_LONG, MemNode::unordered);
 }
 
+void GraphKit::halt(Node* ctrl, Node* frameptr, const char* reason, bool generate_code_in_product) {
+  Node* halt = new HaltNode(ctrl, frameptr, reason
+                            PRODUCT_ONLY(COMMA generate_code_in_product));
+  halt = _gvn.transform(halt);
+  root()->add_req(halt);
+}
 
 //------------------------------uncommon_trap----------------------------------
 // Bail out to the interpreter in mid-method.  Implemented by calling the
@@ -2195,11 +2214,15 @@ Node* GraphKit::uncommon_trap(int trap_request,
   // The debug info is the only real input to this call.
 
   // Halt-and-catch fire here.  The above call should never return!
-  HaltNode* halt = new HaltNode(control(), frameptr(), "uncommon trap returned which should never happen"
-                                                       PRODUCT_ONLY(COMMA /*reachable*/false));
-  _gvn.set_type_bottom(halt);
-  root()->add_req(halt);
-
+  // We only emit code for the HaltNode in debug, which is enough for
+  // verifying correctness. In product, we don't want to emit it so
+  // that we can save on code space. HaltNode often get folded because
+  // the compiler can prove that the unreachable path is dead. But we
+  // cannot generally expect that for uncommon traps, which are often
+  // reachable and occasionally taken.
+  halt(control(), frameptr(),
+       "uncommon trap returned which should never happen",
+       false /* don't emit code in product */);
   stop_and_kill_map();
   return call;
 }
@@ -2734,7 +2757,7 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
   // will always succeed.  We could leave a dependency behind to ensure this.
 
   // First load the super-klass's check-offset
-  Node *p1 = gvn.transform(new AddPNode(superklass, superklass, gvn.MakeConX(in_bytes(Klass::super_check_offset_offset()))));
+  Node *p1 = gvn.transform(new AddPNode(C->top(), superklass, gvn.MakeConX(in_bytes(Klass::super_check_offset_offset()))));
   Node* m = C->immutable_memory();
   Node *chk_off = gvn.transform(new LoadINode(nullptr, m, p1, gvn.type(p1)->is_ptr(), TypeInt::INT, MemNode::unordered));
   int cacheoff_con = in_bytes(Klass::secondary_super_cache_offset());
@@ -2752,7 +2775,7 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
 #ifdef _LP64
   chk_off_X = gvn.transform(new ConvI2LNode(chk_off_X));
 #endif
-  Node *p2 = gvn.transform(new AddPNode(subklass,subklass,chk_off_X));
+  Node* p2 = gvn.transform(new AddPNode(C->top(), subklass, chk_off_X));
   // For some types like interfaces the following loadKlass is from a 1-word
   // cache which is mutable so can't use immutable memory.  Other
   // types load from the super-class display table which is immutable.
@@ -3589,7 +3612,7 @@ Node* GraphKit::get_layout_helper(Node* klass_node, jint& constant_value) {
     }
   }
   constant_value = Klass::_lh_neutral_value;  // put in a known value
-  Node* lhp = basic_plus_adr(klass_node, klass_node, in_bytes(Klass::layout_helper_offset()));
+  Node* lhp = basic_plus_adr(top(), klass_node, in_bytes(Klass::layout_helper_offset()));
   return make_load(nullptr, lhp, TypeInt::INT, T_INT, MemNode::unordered);
 }
 

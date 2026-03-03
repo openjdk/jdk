@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8246774
  * @summary Basic tests for ObjectMethods
- * @run testng ObjectMethodsTest
+ * @run junit ObjectMethodsTest
  */
 
 import java.util.List;
@@ -34,14 +34,14 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.runtime.ObjectMethods;
-import org.testng.annotations.Test;
 import static java.lang.invoke.MethodType.methodType;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertThrows;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
 
-@Test
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.*;
+
 public class ObjectMethodsTest {
 
     public static class C {
@@ -80,6 +80,7 @@ public class ObjectMethodsTest {
 
     static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
+    @Test
     public void testEqualsC() throws Throwable {
         CallSite cs = (CallSite)ObjectMethods.bootstrap(LOOKUP, "equals", C.EQUALS_DESC, C.class, C.NAME_LIST, C.ACCESSORS);
         MethodHandle handle = cs.dynamicInvoker();
@@ -92,6 +93,7 @@ public class ObjectMethodsTest {
         assertFalse((boolean)handle.invokeExact(c, new Object()));
     }
 
+    @Test
     public void testEqualsEmpty() throws Throwable {
         CallSite cs = (CallSite)ObjectMethods.bootstrap(LOOKUP, "equals", Empty.EQUALS_DESC, Empty.class, Empty.NAME_LIST, Empty.ACCESSORS);
         MethodHandle handle = cs.dynamicInvoker();
@@ -102,45 +104,50 @@ public class ObjectMethodsTest {
         assertFalse((boolean)handle.invokeExact(e, new Object()));
     }
 
+    @Test
     public void testHashCodeC() throws Throwable {
         CallSite cs = (CallSite)ObjectMethods.bootstrap(LOOKUP, "hashCode", C.HASHCODE_DESC, C.class, "x;y", C.ACCESSORS);
         MethodHandle handle = cs.dynamicInvoker();
         C c = new C(6, 7);
         int hc = (int)handle.invokeExact(c);
-        assertEquals(hc, hashCombiner(c.x(), c.y()));
+        assertEquals(hashCombiner(c.x(), c.y()), hc);
 
-        assertEquals((int)handle.invokeExact(new C(100, 1)),  hashCombiner(100, 1));
-        assertEquals((int)handle.invokeExact(new C(0, 0)),    hashCombiner(0, 0));
-        assertEquals((int)handle.invokeExact(new C(-1, 100)), hashCombiner(-1, 100));
-        assertEquals((int)handle.invokeExact(new C(100, 1)),  hashCombiner(100, 1));
-        assertEquals((int)handle.invokeExact(new C(100, -1)), hashCombiner(100, -1));
+        assertEquals(hashCombiner(100, 1), (int)handle.invokeExact(new C(100, 1)));
+        assertEquals(hashCombiner(0, 0), (int)handle.invokeExact(new C(0, 0)));
+        assertEquals(hashCombiner(-1, 100), (int)handle.invokeExact(new C(-1, 100)));
+        assertEquals(hashCombiner(100, 1), (int)handle.invokeExact(new C(100, 1)));
+        assertEquals(hashCombiner(100, -1), (int)handle.invokeExact(new C(100, -1)));
     }
 
+    @Test
     public void testHashCodeEmpty() throws Throwable {
         CallSite cs = (CallSite)ObjectMethods.bootstrap(LOOKUP, "hashCode", Empty.HASHCODE_DESC, Empty.class, "", Empty.ACCESSORS);
         MethodHandle handle = cs.dynamicInvoker();
         Empty e = new Empty();
-        assertEquals((int)handle.invokeExact(e), 0);
+        assertEquals(0, (int)handle.invokeExact(e));
     }
 
+    @Test
     public void testToStringC() throws Throwable {
         CallSite cs = (CallSite)ObjectMethods.bootstrap(LOOKUP, "toString", C.TO_STRING_DESC, C.class, C.NAME_LIST, C.ACCESSORS);
         MethodHandle handle = cs.dynamicInvoker();
-        assertEquals((String)handle.invokeExact(new C(8, 9)),    "C[x=8, y=9]"   );
-        assertEquals((String)handle.invokeExact(new C(10, 11)),  "C[x=10, y=11]" );
-        assertEquals((String)handle.invokeExact(new C(100, -9)), "C[x=100, y=-9]");
-        assertEquals((String)handle.invokeExact(new C(0, 0)),    "C[x=0, y=0]"   );
+        assertEquals("C[x=8, y=9]", (String)handle.invokeExact(new C(8, 9))   );
+        assertEquals("C[x=10, y=11]", (String)handle.invokeExact(new C(10, 11)) );
+        assertEquals("C[x=100, y=-9]", (String)handle.invokeExact(new C(100, -9)));
+        assertEquals("C[x=0, y=0]", (String)handle.invokeExact(new C(0, 0))   );
     }
 
+    @Test
     public void testToStringEmpty() throws Throwable {
         CallSite cs = (CallSite)ObjectMethods.bootstrap(LOOKUP, "toString", Empty.TO_STRING_DESC, Empty.class, Empty.NAME_LIST, Empty.ACCESSORS);
         MethodHandle handle = cs.dynamicInvoker();
-        assertEquals((String)handle.invokeExact(new Empty()),    "Empty[]");
+        assertEquals("Empty[]", (String)handle.invokeExact(new Empty()));
     }
 
-    Class<NullPointerException> NPE = NullPointerException.class;
-    Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
+    private static final Class<NullPointerException> NPE = NullPointerException.class;
+    private static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
 
+    @Test
     public void exceptions()  {
         assertThrows(IAE, () -> ObjectMethods.bootstrap(LOOKUP, "badName",  C.EQUALS_DESC,    C.class,         C.NAME_LIST, C.ACCESSORS));
         assertThrows(IAE, () -> ObjectMethods.bootstrap(LOOKUP, "toString", C.TO_STRING_DESC, C.class,         "x;y;z",     C.ACCESSORS));
@@ -150,24 +157,59 @@ public class ObjectMethodsTest {
         assertThrows(IAE, () -> ObjectMethods.bootstrap(LOOKUP, "toString", C.EQUALS_DESC,    C.class, "x;y", C.ACCESSORS));
         assertThrows(IAE, () -> ObjectMethods.bootstrap(LOOKUP, "hashCode", C.TO_STRING_DESC, C.class, "x;y", C.ACCESSORS));
         assertThrows(IAE, () -> ObjectMethods.bootstrap(LOOKUP, "equals",   C.HASHCODE_DESC,  C.class, "x;y", C.ACCESSORS));
+    }
 
-        record NamePlusType(String mn, MethodType mt) {}
-        List<NamePlusType> namePlusTypeList = List.of(
+    record NamePlusType(String name, MethodType type) {}
+
+    static List<NamePlusType> namePlusTypeList() {
+        return List.of(
                 new NamePlusType("toString", C.TO_STRING_DESC),
                 new NamePlusType("equals", C.EQUALS_DESC),
                 new NamePlusType("hashCode", C.HASHCODE_DESC)
         );
-
-        for (NamePlusType npt : namePlusTypeList) {
-            assertThrows(NPE, () -> ObjectMethods.bootstrap(LOOKUP, npt.mn(), npt.mt(), C.class, "x;y", null));
-            assertThrows(NPE, () -> ObjectMethods.bootstrap(LOOKUP, npt.mn(), npt.mt(), C.class, "x;y", new MethodHandle[]{null}));
-            assertThrows(NPE, () -> ObjectMethods.bootstrap(LOOKUP, npt.mn(), npt.mt(), C.class, null,  C.ACCESSORS));
-            assertThrows(NPE, () -> ObjectMethods.bootstrap(LOOKUP, npt.mn(), npt.mt(), null,    "x;y", C.ACCESSORS));
-            assertThrows(NPE, () -> ObjectMethods.bootstrap(LOOKUP, npt.mn(), null,     C.class, "x;y", C.ACCESSORS));
-            assertThrows(NPE, () -> ObjectMethods.bootstrap(LOOKUP, null,     npt.mt(), C.class, "x;y", C.ACCESSORS));
-            assertThrows(NPE, () -> ObjectMethods.bootstrap(null, npt.mn(),     npt.mt(), C.class, "x;y", C.ACCESSORS));
-        }
     }
+
+    @MethodSource("namePlusTypeList")
+    @ParameterizedTest
+    void commonExceptions(NamePlusType npt) {
+        String name = npt.name();
+        MethodType type = npt.type();
+
+        // Null checks
+        assertThrows(NPE, () -> ObjectMethods.bootstrap(LOOKUP, name, type, C.class, "x;y", null));
+        assertThrows(NPE, () -> ObjectMethods.bootstrap(LOOKUP, name, type, C.class, "x;y", new MethodHandle[]{null}));
+        assertThrows(NPE, () -> ObjectMethods.bootstrap(LOOKUP, name, type, C.class, null,  C.ACCESSORS));
+        assertThrows(NPE, () -> ObjectMethods.bootstrap(LOOKUP, name, type, null,    "x;y", C.ACCESSORS));
+        assertThrows(NPE, () -> ObjectMethods.bootstrap(LOOKUP, name, null, C.class, "x;y", C.ACCESSORS));
+        assertThrows(NPE, () -> ObjectMethods.bootstrap(LOOKUP, null, type, C.class, "x;y", C.ACCESSORS));
+        assertThrows(NPE, () -> ObjectMethods.bootstrap(null,   name, type, C.class, "x;y", C.ACCESSORS));
+
+        // Bad indy call receiver type - change C to this test class
+        assertThrows(IAE, () -> ObjectMethods.bootstrap(LOOKUP, name, type.changeParameterType(0, this.getClass()), C.class, "x;y", C.ACCESSORS));
+
+        // Bad getter types
+        var wrongReceiverGetter = assertDoesNotThrow(() -> MethodHandles.lookup().findGetter(this.getClass(), "y", int.class));
+        assertThrows(IAE, () -> ObjectMethods.bootstrap(LOOKUP, name, type, C.class, "x;y",
+                new MethodHandle[]{
+                        C.ACCESSORS[0],
+                        wrongReceiverGetter,
+                }));
+        var extraArgGetter = MethodHandles.dropArguments(C.ACCESSORS[1], 1, int.class);
+        assertThrows(IAE, () -> ObjectMethods.bootstrap(LOOKUP, name, type, C.class, "x;y",
+                new MethodHandle[]{
+                        C.ACCESSORS[0],
+                        extraArgGetter,
+                }));
+        var voidReturnGetter = MethodHandles.empty(MethodType.methodType(void.class, C.class));
+        assertThrows(IAE, () -> ObjectMethods.bootstrap(LOOKUP, name, type, C.class, "x;y",
+                new MethodHandle[]{
+                        C.ACCESSORS[0],
+                        voidReturnGetter,
+                }));
+    }
+
+    // same field name and type as C::y, for wrongReceiverGetter
+    private int y;
 
     // Based on the ObjectMethods internal implementation
     private static int hashCombiner(int x, int y) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,25 +26,25 @@
  * @bug 8154556
  * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop sets to 2000 iterations
  *          to hit compilation thresholds
- * @run testng/othervm/timeout=360 -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:TieredStopAtLevel=1 VarHandleTestByteArrayAsDouble
- * @run testng/othervm/timeout=360 -Diters=2000 -XX:CompileThresholdScaling=0.1                         VarHandleTestByteArrayAsDouble
- * @run testng/othervm/timeout=360 -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:-TieredCompilation  VarHandleTestByteArrayAsDouble
+ * @run junit/othervm/timeout=360 -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:TieredStopAtLevel=1 VarHandleTestByteArrayAsDouble
+ * @run junit/othervm/timeout=360 -Diters=2000 -XX:CompileThresholdScaling=0.1                         VarHandleTestByteArrayAsDouble
+ * @run junit/othervm/timeout=360 -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:-TieredCompilation  VarHandleTestByteArrayAsDouble
  */
-
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.List;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
     static final int SIZE = Double.BYTES;
 
@@ -107,7 +107,8 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
         }
     }
 
-    @Test(dataProvider = "varHandlesProvider")
+    @ParameterizedTest
+    @MethodSource("VarHandleBaseByteArrayTest#varHandlesProvider")
     public void testIsAccessModeSupported(VarHandleSource vhs) {
         VarHandle vh = vhs.s;
 
@@ -172,17 +173,16 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
             assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_BITWISE_XOR_RELEASE));
     }
 
-    @Test(dataProvider = "typesProvider")
+    @ParameterizedTest
+    @MethodSource("typesProvider")
     public void testTypes(VarHandle vh, List<java.lang.Class<?>> pts) {
-        assertEquals(vh.varType(), double.class);
+        assertEquals(double.class, vh.varType());
 
-        assertEquals(vh.coordinateTypes(), pts);
+        assertEquals(pts, vh.coordinateTypes());
 
         testTypes(vh);
     }
 
-
-    @DataProvider
     public Object[][] accessTestCaseProvider() throws Exception {
         List<AccessTestCase<?>> cases = new ArrayList<>();
 
@@ -244,7 +244,8 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
         return cases.stream().map(tc -> new Object[]{tc.toString(), tc}).toArray(Object[][]::new);
     }
 
-    @Test(dataProvider = "accessTestCaseProvider")
+    @ParameterizedTest
+    @MethodSource("accessTestCaseProvider")
     public <T> void testAccess(String desc, AccessTestCase<T> atc) throws Throwable {
         T t = atc.get();
         int iters = atc.requiresLoop() ? ITERS : 1;
@@ -252,7 +253,6 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
             atc.testAccess(t);
         }
     }
-
 
     static void testArrayNPE(ByteArraySource bs, VarHandleSource vhs) {
         VarHandle vh = vhs.s;
@@ -883,7 +883,7 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
             {
                 vh.set(array, i, VALUE_1);
                 double x = (double) vh.get(array, i);
-                assertEquals(x, VALUE_1, "get double value");
+                assertEquals(VALUE_1, x, "get double value");
             }
         }
     }
@@ -902,7 +902,7 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
             {
                 vh.set(array, i, VALUE_1);
                 double x = (double) vh.get(array, i);
-                assertEquals(x, VALUE_1, "get double value");
+                assertEquals(VALUE_1, x, "get double value");
             }
 
             if (iAligned) {
@@ -910,21 +910,21 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
                 {
                     vh.setVolatile(array, i, VALUE_2);
                     double x = (double) vh.getVolatile(array, i);
-                    assertEquals(x, VALUE_2, "setVolatile double value");
+                    assertEquals(VALUE_2, x, "setVolatile double value");
                 }
 
                 // Lazy
                 {
                     vh.setRelease(array, i, VALUE_1);
                     double x = (double) vh.getAcquire(array, i);
-                    assertEquals(x, VALUE_1, "setRelease double value");
+                    assertEquals(VALUE_1, x, "setRelease double value");
                 }
 
                 // Opaque
                 {
                     vh.setOpaque(array, i, VALUE_2);
                     double x = (double) vh.getOpaque(array, i);
-                    assertEquals(x, VALUE_2, "setOpaque double value");
+                    assertEquals(VALUE_2, x, "setOpaque double value");
                 }
 
                 vh.set(array, i, VALUE_1);
@@ -934,56 +934,56 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
                     boolean r = vh.compareAndSet(array, i, VALUE_1, VALUE_2);
                     assertEquals(r, true, "success compareAndSet double");
                     double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "success compareAndSet double value");
+                    assertEquals(VALUE_2, x, "success compareAndSet double value");
                 }
 
                 {
                     boolean r = vh.compareAndSet(array, i, VALUE_1, VALUE_3);
                     assertEquals(r, false, "failing compareAndSet double");
                     double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "failing compareAndSet double value");
+                    assertEquals(VALUE_2, x, "failing compareAndSet double value");
                 }
 
                 {
                     double r = (double) vh.compareAndExchange(array, i, VALUE_2, VALUE_1);
                     assertEquals(r, VALUE_2, "success compareAndExchange double");
                     double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "success compareAndExchange double value");
+                    assertEquals(VALUE_1, x, "success compareAndExchange double value");
                 }
 
                 {
                     double r = (double) vh.compareAndExchange(array, i, VALUE_2, VALUE_3);
                     assertEquals(r, VALUE_1, "failing compareAndExchange double");
                     double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "failing compareAndExchange double value");
+                    assertEquals(VALUE_1, x, "failing compareAndExchange double value");
                 }
 
                 {
                     double r = (double) vh.compareAndExchangeAcquire(array, i, VALUE_1, VALUE_2);
                     assertEquals(r, VALUE_1, "success compareAndExchangeAcquire double");
                     double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "success compareAndExchangeAcquire double value");
+                    assertEquals(VALUE_2, x, "success compareAndExchangeAcquire double value");
                 }
 
                 {
                     double r = (double) vh.compareAndExchangeAcquire(array, i, VALUE_1, VALUE_3);
                     assertEquals(r, VALUE_2, "failing compareAndExchangeAcquire double");
                     double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "failing compareAndExchangeAcquire double value");
+                    assertEquals(VALUE_2, x, "failing compareAndExchangeAcquire double value");
                 }
 
                 {
                     double r = (double) vh.compareAndExchangeRelease(array, i, VALUE_2, VALUE_1);
                     assertEquals(r, VALUE_2, "success compareAndExchangeRelease double");
                     double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "success compareAndExchangeRelease double value");
+                    assertEquals(VALUE_1, x, "success compareAndExchangeRelease double value");
                 }
 
                 {
                     double r = (double) vh.compareAndExchangeRelease(array, i, VALUE_2, VALUE_3);
                     assertEquals(r, VALUE_1, "failing compareAndExchangeRelease double");
                     double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "failing compareAndExchangeRelease double value");
+                    assertEquals(VALUE_1, x, "failing compareAndExchangeRelease double value");
                 }
 
                 {
@@ -994,14 +994,14 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
                     }
                     assertEquals(success, true, "success weakCompareAndSetPlain double");
                     double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "success weakCompareAndSetPlain double value");
+                    assertEquals(VALUE_2, x, "success weakCompareAndSetPlain double value");
                 }
 
                 {
                     boolean success = vh.weakCompareAndSetPlain(array, i, VALUE_1, VALUE_3);
                     assertEquals(success, false, "failing weakCompareAndSetPlain double");
                     double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "failing weakCompareAndSetPlain double value");
+                    assertEquals(VALUE_2, x, "failing weakCompareAndSetPlain double value");
                 }
 
                 {
@@ -1012,14 +1012,14 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
                     }
                     assertEquals(success, true, "success weakCompareAndSetAcquire double");
                     double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "success weakCompareAndSetAcquire double");
+                    assertEquals(VALUE_1, x, "success weakCompareAndSetAcquire double");
                 }
 
                 {
                     boolean success = vh.weakCompareAndSetAcquire(array, i, VALUE_2, VALUE_3);
                     assertEquals(success, false, "failing weakCompareAndSetAcquire double");
                     double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "failing weakCompareAndSetAcquire double value");
+                    assertEquals(VALUE_1, x, "failing weakCompareAndSetAcquire double value");
                 }
 
                 {
@@ -1030,14 +1030,14 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
                     }
                     assertEquals(success, true, "success weakCompareAndSetRelease double");
                     double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "success weakCompareAndSetRelease double");
+                    assertEquals(VALUE_2, x, "success weakCompareAndSetRelease double");
                 }
 
                 {
                     boolean success = vh.weakCompareAndSetRelease(array, i, VALUE_1, VALUE_3);
                     assertEquals(success, false, "failing weakCompareAndSetRelease double");
                     double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "failing weakCompareAndSetRelease double value");
+                    assertEquals(VALUE_2, x, "failing weakCompareAndSetRelease double value");
                 }
 
                 {
@@ -1048,14 +1048,14 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
                     }
                     assertEquals(success, true, "success weakCompareAndSet double");
                     double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "success weakCompareAndSet double");
+                    assertEquals(VALUE_1, x, "success weakCompareAndSet double");
                 }
 
                 {
                     boolean success = vh.weakCompareAndSet(array, i, VALUE_2, VALUE_3);
                     assertEquals(success, false, "failing weakCompareAndSet double");
                     double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_1, "failing weakCompareAndSet double value");
+                    assertEquals(VALUE_1, x, "failing weakCompareAndSet double value");
                 }
 
                 // Compare set and get
@@ -1063,27 +1063,27 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
                     vh.set(array, i, VALUE_1);
 
                     double o = (double) vh.getAndSet(array, i, VALUE_2);
-                    assertEquals(o, VALUE_1, "getAndSet double");
+                    assertEquals(VALUE_1, o, "getAndSet double");
                     double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "getAndSet double value");
+                    assertEquals(VALUE_2, x, "getAndSet double value");
                 }
 
                 {
                     vh.set(array, i, VALUE_1);
 
                     double o = (double) vh.getAndSetAcquire(array, i, VALUE_2);
-                    assertEquals(o, VALUE_1, "getAndSetAcquire double");
+                    assertEquals(VALUE_1, o, "getAndSetAcquire double");
                     double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "getAndSetAcquire double value");
+                    assertEquals(VALUE_2, x, "getAndSetAcquire double value");
                 }
 
                 {
                     vh.set(array, i, VALUE_1);
 
                     double o = (double) vh.getAndSetRelease(array, i, VALUE_2);
-                    assertEquals(o, VALUE_1, "getAndSetRelease double");
+                    assertEquals(VALUE_1, o, "getAndSetRelease double");
                     double x = (double) vh.get(array, i);
-                    assertEquals(x, VALUE_2, "getAndSetRelease double value");
+                    assertEquals(VALUE_2, x, "getAndSetRelease double value");
                 }
 
 
@@ -1109,26 +1109,26 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
             // Plain
             {
                 double x = (double) vh.get(array, i);
-                assertEquals(x, v, "get double value");
+                assertEquals(v, x, "get double value");
             }
 
             if (iAligned) {
                 // Volatile
                 {
                     double x = (double) vh.getVolatile(array, i);
-                    assertEquals(x, v, "getVolatile double value");
+                    assertEquals(v, x, "getVolatile double value");
                 }
 
                 // Lazy
                 {
                     double x = (double) vh.getAcquire(array, i);
-                    assertEquals(x, v, "getRelease double value");
+                    assertEquals(v, x, "getRelease double value");
                 }
 
                 // Opaque
                 {
                     double x = (double) vh.getOpaque(array, i);
-                    assertEquals(x, v, "getOpaque double value");
+                    assertEquals(v, x, "getOpaque double value");
                 }
             }
         }
