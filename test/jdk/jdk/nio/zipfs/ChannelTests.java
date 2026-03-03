@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,9 @@
  * questions.
  *
  */
-package test;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import util.ZipFsBaseTest;
 
 import java.io.ByteArrayOutputStream;
@@ -33,7 +33,11 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.SeekableByteChannel;
-import java.nio.file.*;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Random;
@@ -41,15 +45,24 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.nio.file.StandardOpenOption.*;
-import static org.testng.Assert.*;
+import static java.nio.file.StandardOpenOption.APPEND;
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.CREATE_NEW;
+import static java.nio.file.StandardOpenOption.READ;
+import static java.nio.file.StandardOpenOption.WRITE;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
+/*
  * @test
  * @bug 8242006
  * @summary Improve FileChannel and SeekableByteChannel Zip FS test coverage
  * @modules jdk.zipfs
- * @run testng test.ChannelTests
+ * @run junit ChannelTests
  */
 public class ChannelTests extends ZipFsBaseTest {
 
@@ -81,7 +94,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void sbcFromOSToZipTest(final Map<String, String> env,
                                    final int compression) throws Exception {
         Entry e00 = Entry.of("Entry-00", compression, FIFTH_MAJOR);
@@ -108,7 +122,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void sbcFromZipToOSTest(final Map<String, String> env,
                                    final int compression) throws Exception {
         Entry e0 = Entry.of("Entry-0", compression, THE_SLAMS);
@@ -125,7 +140,7 @@ public class ChannelTests extends ZipFsBaseTest {
         }
         // Check to see if the file exists and the bytes match
         assertTrue(Files.isRegularFile(osFile));
-        assertEquals(Files.readAllBytes(osFile), e0.bytes);
+        assertArrayEquals(e0.bytes, Files.readAllBytes(osFile));
         Files.deleteIfExists(zipFile);
         Files.deleteIfExists(osFile);
     }
@@ -138,7 +153,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void sbcFromZipToZipTest(final Map<String, String> env,
                                     final int compression) throws Exception {
         Entry e0 = Entry.of("Entry-0", compression, THE_SLAMS);
@@ -170,7 +186,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param expectedCompression The compression to be used when copying the entry
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "copyMoveMap")
+    @ParameterizedTest
+    @MethodSource("copyMoveMap")
     public void sbcChangeCompressionTest(final Map<String, String> env,
                                          final int compression,
                                          final int expectedCompression) throws Exception {
@@ -206,7 +223,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void sbcReadTest(final Map<String, String> env,
                             final int compression) throws Exception {
         Path zipFile = generatePath(HERE, "test", ".zip");
@@ -222,7 +240,7 @@ public class ChannelTests extends ZipFsBaseTest {
             int bytesRead = sbc.read(buf);
             // Check to see if the expected bytes were read
             byte[] result = Arrays.copyOfRange(buf.array(), 0, bytesRead);
-            assertEquals(THE_SLAMS.getBytes(UTF_8), result);
+            assertArrayEquals(result, THE_SLAMS.getBytes(UTF_8));
         }
         Files.deleteIfExists(zipFile);
     }
@@ -234,7 +252,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void sbcWriteTest(final Map<String, String> env,
                              final int compression) throws Exception {
         Entry e0 = Entry.of("Entry-0", compression, THE_SLAMS);
@@ -261,7 +280,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void sbcAppendTest(final Map<String, String> env,
                               final int compression) throws Exception {
         Path zipFile = generatePath(HERE, "test", ".zip");
@@ -291,7 +311,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void sbcTruncateTest(final Map<String, String> env,
                                 final int compression) throws Exception {
         Path zipFile = generatePath(HERE, "test", ".zip");
@@ -317,7 +338,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void sbcFAETest(final Map<String, String> env,
                            final int compression) throws Exception {
         Path zipFile = generatePath(HERE, "test", ".zip");
@@ -344,7 +366,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void sbcCloseTest(final Map<String, String> env,
                              final int compression) throws Exception {
         Path zipFile = generatePath(HERE, "test", ".zip");
@@ -369,7 +392,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void sbcCCETest(final Map<String, String> env,
                            final int compression) throws Exception {
         Path zipFile = generatePath(HERE, "test", ".zip");
@@ -401,7 +425,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void sbcSizeTest(final Map<String, String> env,
                             final int compression) throws Exception {
         Entry e0 = Entry.of("Entry-0", compression, THE_SLAMS);
@@ -412,17 +437,17 @@ public class ChannelTests extends ZipFsBaseTest {
         try (FileSystem zipfs = FileSystems.newFileSystem(zipFile, env);
              SeekableByteChannel sbc = Files.newByteChannel(
                      zipfs.getPath(e0.name), Set.of(READ))) {
-            assertEquals(sbc.size(), THE_SLAMS.length());
+            assertEquals(THE_SLAMS.length(), sbc.size());
         }
         try (FileSystem zipfs = FileSystems.newFileSystem(zipFile, env);
              SeekableByteChannel sbc = Files.newByteChannel(zipfs.getPath(e0.name))) {
-            assertEquals(sbc.size(), THE_SLAMS.length());
+            assertEquals(THE_SLAMS.length(), sbc.size());
         }
         try (FileSystem zipfs = FileSystems.newFileSystem(zipFile, env);
              SeekableByteChannel sbc = Files.newByteChannel(zipfs.getPath("Entry-01")
                      , Set.of(CREATE, WRITE))) {
             sbc.write(ByteBuffer.wrap(FIFTH_MAJOR.getBytes(UTF_8)));
-            assertEquals(sbc.size(), FIFTH_MAJOR.length());
+            assertEquals(FIFTH_MAJOR.length(), sbc.size());
         }
         Files.deleteIfExists(zipFile);
     }
@@ -435,7 +460,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void sbcOpenClosedTest(final Map<String, String> env,
                                   final int compression) throws Exception {
         Path zipFile = generatePath(HERE, "test", ".zip");
@@ -462,7 +488,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void sbcPositionTest(final Map<String, String> env,
                                 final int compression) throws Exception {
         Path zipFile = generatePath(HERE, "test", ".zip");
@@ -480,7 +507,7 @@ public class ChannelTests extends ZipFsBaseTest {
             for (var i = 0; i < fSize; i++) {
                 long pos = RANDOM.nextInt(seed);
                 sbc.position(pos);
-                assertEquals(sbc.position(), pos);
+                assertEquals(pos, sbc.position());
             }
         }
         Files.deleteIfExists(zipFile);
@@ -496,7 +523,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void fcFromOSToZipTest(final Map<String, String> env,
                                   final int compression) throws Exception {
         Entry e0 = Entry.of("Entry-0", compression, THE_SLAMS);
@@ -522,7 +550,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void fcFromZipToOSTest(final Map<String, String> env,
                                   final int compression) throws Exception {
         Entry e0 = Entry.of("Entry-0", compression, THE_SLAMS);
@@ -538,7 +567,7 @@ public class ChannelTests extends ZipFsBaseTest {
         }
         // Check to see if the file exists and the bytes match
         assertTrue(Files.isRegularFile(osFile));
-        assertEquals(Files.readAllBytes(osFile), e0.bytes);
+        assertArrayEquals(e0.bytes, Files.readAllBytes(osFile));
         Files.deleteIfExists(zipFile);
         Files.deleteIfExists(osFile);
     }
@@ -551,7 +580,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void fcFromZipToZipTest(final Map<String, String> env,
                                    final int compression) throws Exception {
         Entry e0 = Entry.of("Entry-0", compression, THE_SLAMS);
@@ -583,7 +613,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param expectedCompression The compression to be used when copying the entry
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "copyMoveMap")
+    @ParameterizedTest
+    @MethodSource("copyMoveMap")
     public void fcChangeCompressionTest(final Map<String, String> env,
                                         final int compression,
                                         final int expectedCompression) throws Exception {
@@ -620,7 +651,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void fcAppendTest(final Map<String, String> env,
                              final int compression) throws Exception {
         Path zipFile = generatePath(HERE, "test", ".zip");
@@ -647,7 +679,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void fcTruncateTest(final Map<String, String> env,
                                final int compression) throws Exception {
         Path zipFile = generatePath(HERE, "test", ".zip");
@@ -672,7 +705,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void fcMapTest(final Map<String, String> env,
                           final int compression) throws Exception {
         Path zipFile = generatePath(HERE, "test", ".zip");
@@ -701,7 +735,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void fcOpenClosedTest(final Map<String, String> env,
                                  final int compression) throws Exception {
         Path zipFile = generatePath(HERE, "test", ".zip");
@@ -728,7 +763,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void fcFAETest(final Map<String, String> env,
                           final int compression) throws Exception {
         Path zipFile = generatePath(HERE, "test", ".zip");
@@ -752,7 +788,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void fcCloseTest(final Map<String, String> env,
                              final int compression) throws Exception {
         Path zipFile = generatePath(HERE, "test", ".zip");
@@ -777,7 +814,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void fcCCETest(final Map<String, String> env,
                           final int compression) throws Exception {
         Path zipFile = generatePath(HERE, "test", ".zip");
@@ -839,7 +877,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void fcReadTest(final Map<String, String> env,
                            final int compression) throws Exception {
         Path zipFile = generatePath(HERE, "test", ".zip");
@@ -854,7 +893,7 @@ public class ChannelTests extends ZipFsBaseTest {
             int bytesRead = fc.read(buf);
             // Check to see if the expected bytes were read
             byte[] result = Arrays.copyOfRange(buf.array(), 0, bytesRead);
-            assertEquals(THE_SLAMS.getBytes(UTF_8), result);
+            assertArrayEquals(result, THE_SLAMS.getBytes(UTF_8));
         }
         Files.deleteIfExists(zipFile);
     }
@@ -867,7 +906,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void fcReadPosTest(final Map<String, String> env,
                               final int compression) throws Exception {
         Path zipFile = generatePath(HERE, "test", ".zip");
@@ -882,7 +922,7 @@ public class ChannelTests extends ZipFsBaseTest {
             int bytesRead = fc.read(buf, GRAND_SLAMS_HEADER.length());
             // Check to see if the expected bytes were read
             byte[] result = Arrays.copyOfRange(buf.array(), 0, bytesRead);
-            assertEquals(GRAND_SLAMS.getBytes(UTF_8), result);
+            assertArrayEquals(result, GRAND_SLAMS.getBytes(UTF_8));
         }
         Files.deleteIfExists(zipFile);
     }
@@ -895,7 +935,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void fcReadArrayTest(final Map<String, String> env,
                                 final int compression) throws Exception {
         Path zipFile = generatePath(HERE, "test", ".zip");
@@ -921,7 +962,7 @@ public class ChannelTests extends ZipFsBaseTest {
                 bos.write(b.array());
             }
             // Check to see if the returned byte array is what is expected
-            assertEquals(e0.bytes, bos.toByteArray());
+            assertArrayEquals(bos.toByteArray(), e0.bytes);
         }
         Files.deleteIfExists(zipFile);
     }
@@ -934,7 +975,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void fcReadArrayWithOffsetTest(final Map<String, String> env,
                                           final int compression) throws Exception {
         Entry e0 = Entry.of("Entry-0", compression, THE_SLAMS);
@@ -969,7 +1011,7 @@ public class ChannelTests extends ZipFsBaseTest {
             bos.write(b.array());
         }
         // Check to see if the returned byte array is what is expected
-        assertEquals(GRAND_SLAMS.getBytes(UTF_8), bos.toByteArray());
+        assertArrayEquals(bos.toByteArray(), GRAND_SLAMS.getBytes(UTF_8));
         Files.deleteIfExists(zipFile);
     }
 
@@ -981,7 +1023,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void fcTransferToZipTest(final Map<String, String> env,
                                     final int compression) throws Exception {
         Entry e00 = Entry.of("Entry-00", compression, THE_SLAMS);
@@ -995,7 +1038,7 @@ public class ChannelTests extends ZipFsBaseTest {
         }
         // Verify the entry was copied
         verify(zipFile, e00);
-        assertEquals(Files.readAllBytes(osFile), e00.bytes);
+        assertArrayEquals(e00.bytes, Files.readAllBytes(osFile));
         Files.deleteIfExists(osFile);
         Files.deleteIfExists(zipFile);
     }
@@ -1008,7 +1051,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void fcTransferToOsTest(final Map<String, String> env,
                                    final int compression) throws Exception {
         Entry e00 = Entry.of("Entry-00", compression, THE_SLAMS);
@@ -1021,7 +1065,7 @@ public class ChannelTests extends ZipFsBaseTest {
             fcTransferTo(zipfs.getPath(e00.name), osFile);
         }
         // Verify the entry was copied
-        assertEquals(Files.readAllBytes(osFile), e00.bytes);
+        assertArrayEquals(e00.bytes, Files.readAllBytes(osFile));
         Files.deleteIfExists(osFile);
         Files.deleteIfExists(zipFile);
     }
@@ -1034,7 +1078,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void fcTransferToZipToZipTest(final Map<String, String> env,
                                          final int compression) throws Exception {
         Entry e0 = Entry.of("Entry-0", compression, THE_SLAMS);
@@ -1065,7 +1110,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void fcTransferFromOsTest(final Map<String, String> env,
                                      final int compression) throws Exception {
         Entry e00 = Entry.of("Entry-00", compression, THE_SLAMS);
@@ -1079,7 +1125,7 @@ public class ChannelTests extends ZipFsBaseTest {
         }
         // Verify the entry was copied
         zip(zipFile, env, e00);
-        assertEquals(Files.readAllBytes(osFile), e00.bytes);
+        assertArrayEquals(e00.bytes, Files.readAllBytes(osFile));
         Files.deleteIfExists(osFile);
         Files.deleteIfExists(zipFile);
     }
@@ -1092,7 +1138,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void fcTransferFromZipTest(final Map<String, String> env,
                                       final int compression) throws Exception {
         Entry e00 = Entry.of("Entry-00", compression, THE_SLAMS);
@@ -1105,7 +1152,7 @@ public class ChannelTests extends ZipFsBaseTest {
             fcTransferFrom(zipfs.getPath(e00.name), osFile);
         }
         // Verify the bytes match
-        assertEquals(Files.readAllBytes(osFile), e00.bytes);
+        assertArrayEquals(e00.bytes, Files.readAllBytes(osFile));
         Files.deleteIfExists(osFile);
         Files.deleteIfExists(zipFile);
     }
@@ -1118,7 +1165,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void fcTransferFromZipToZipTest(final Map<String, String> env,
                                            final int compression) throws Exception {
         Entry e0 = Entry.of("Entry-0", compression, THE_SLAMS);
@@ -1148,7 +1196,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void fcWriteTest(final Map<String, String> env,
                             final int compression) throws Exception {
         Entry e0 = Entry.of("Entry-0", compression, THE_SLAMS);
@@ -1174,7 +1223,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void fcWritePosTest(final Map<String, String> env,
                                final int compression) throws Exception {
         // Use this value to replace the value specified for AUSTRALIAN_OPEN
@@ -1209,7 +1259,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void fcWriteArrayTest(final Map<String, String> env,
                                  final int compression) throws Exception {
         Path zipFile = generatePath(HERE, "test", ".zip");
@@ -1227,7 +1278,7 @@ public class ChannelTests extends ZipFsBaseTest {
              FileChannel fc = FileChannel.open(zipfs.getPath(e0.name),
                      Set.of(CREATE, WRITE))) {
             fc.write(bb);
-            assertEquals(fc.size(), GRAND_SLAMS.length());
+            assertEquals(GRAND_SLAMS.length(), fc.size());
         }
         // Verify the entry was created
         verify(zipFile, e0);
@@ -1242,7 +1293,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void fcWriteArrayWithOffsetTest(final Map<String, String> env,
                                            final int compression) throws Exception {
 
@@ -1276,7 +1328,7 @@ public class ChannelTests extends ZipFsBaseTest {
             fc.position(GRAND_SLAMS_HEADER.length());
             // Replace the original values
             fc.write(bb, 0, 2);
-            assertEquals(fc.size(), THE_SLAMS.length());
+            assertEquals(THE_SLAMS.length(), fc.size());
         }
         // Verify the entry was updated
         verify(zipFile, e0.content(updatedFile));
@@ -1290,7 +1342,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void fcForceWriteTest(final Map<String, String> env,
                             final int compression) throws Exception {
         Entry e0 = Entry.of("Entry-0", compression, THE_SLAMS);
@@ -1317,7 +1370,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void fcPositionTest(final Map<String, String> env,
                                 final int compression) throws Exception {
         Path zipFile = generatePath(HERE, "test", ".zip");
@@ -1334,7 +1388,7 @@ public class ChannelTests extends ZipFsBaseTest {
             for (var i = 0; i < fSize; i++) {
                 long pos = RANDOM.nextInt(seed);
                 fc.position(pos);
-                assertEquals(fc.position(), pos);
+                assertEquals(pos, fc.position());
             }
         }
         Files.deleteIfExists(zipFile);
@@ -1347,7 +1401,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void fcSizeTest(final Map<String, String> env,
                            final int compression) throws Exception {
         Path osFile = Path.of("GrandSlams.txt");
@@ -1360,29 +1415,29 @@ public class ChannelTests extends ZipFsBaseTest {
         // Validate the file sizes match
         try (FileSystem zipfs = FileSystems.newFileSystem(zipFile, env);
              FileChannel fc = FileChannel.open(zipfs.getPath(e0.name))) {
-            assertEquals(fc.size(), THE_SLAMS.length());
+            assertEquals(THE_SLAMS.length(), fc.size());
         }
         try (FileSystem zipfs = FileSystems.newFileSystem(zipFile, env);
              FileChannel fc = FileChannel.open(zipfs.getPath(e0.name), Set.of(READ))) {
-            assertEquals(fc.size(), THE_SLAMS.length());
+            assertEquals(THE_SLAMS.length(), fc.size());
         }
         try (FileSystem zipfs = FileSystems.newFileSystem(zipFile, env);
              FileChannel fc = FileChannel.open(zipfs.getPath(e0.name), Set.of(READ, WRITE))) {
-            assertEquals(fc.size(), THE_SLAMS.length());
+            assertEquals(THE_SLAMS.length(), fc.size());
         }
         try (FileSystem zipfs = FileSystems.newFileSystem(zipFile, env);
              FileChannel fc = FileChannel.open(zipfs.getPath(e0.name), Set.of(WRITE))) {
-            assertEquals(fc.size(), THE_SLAMS.length());
+            assertEquals(THE_SLAMS.length(), fc.size());
         }
         try (FileSystem zipfs = FileSystems.newFileSystem(zipFile, env);
              FileChannel fc = FileChannel.open(zipfs.getPath(e0.name), Set.of(APPEND))) {
-            assertEquals(fc.size(), THE_SLAMS.length());
+            assertEquals(THE_SLAMS.length(), fc.size());
         }
         try (FileSystem zipfs = FileSystems.newFileSystem(zipFile, env);
              FileChannel fc = FileChannel.open(zipfs.getPath("Entry-01"),
                      Set.of(CREATE, WRITE))) {
             fc.write(ByteBuffer.wrap(FIFTH_MAJOR.getBytes(UTF_8)));
-            assertEquals(fc.size(), FIFTH_MAJOR.length());
+            assertEquals(FIFTH_MAJOR.length(), fc.size());
         }
         Files.deleteIfExists(zipFile);
         Files.deleteIfExists(osFile);
@@ -1395,7 +1450,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void fcLockTest(final Map<String, String> env,
                            final int compression) throws Exception {
         Path zipFile = generatePath(HERE, "test", ".zip");
@@ -1426,7 +1482,8 @@ public class ChannelTests extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void fcTryLockTest(final Map<String, String> env,
                               final int compression) throws Exception {
         Path zipFile = generatePath(HERE, "test", ".zip");

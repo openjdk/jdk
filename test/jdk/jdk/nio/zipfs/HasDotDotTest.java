@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,6 @@
  * questions.
  *
  */
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -37,14 +35,20 @@ import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import static org.testng.Assert.assertThrows;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.junit.jupiter.api.Test;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 /**
  * @test
  * @bug 8251329
  * @summary Excercise Zip FS with "." or ".." in a Zip Entry name
  * @modules jdk.zipfs
- * @run testng/othervm HasDotDotTest
+ * @run junit/othervm HasDotDotTest
  */
 public class HasDotDotTest {
     // Zip file to be created
@@ -56,22 +60,21 @@ public class HasDotDotTest {
     private static final boolean DEBUG = false;
 
     /**
-     * DataProvider containing Zip entry names which should result in an IOException
+     * MethodSource containing Zip entry names which should result in an IOException
      * @return Array of Zip entry names
      */
-    @DataProvider
-    private Object[][] checkForDotOrDotDotPaths() {
-        return new Object[][]{
-                {"/./foo"},
-                {"/../foo"},
-                {"/../foo/.."},
-                {"/foo/.."},
-                {"/foo/."},
-                {"/.."},
-                {"/."},
-                {"/.foo/./"},
-                {"/.././"},
-        };
+    private static Stream<Arguments> checkForDotOrDotDotPaths() {
+        return Stream.of(
+                Arguments.of("/./foo"),
+                Arguments.of("/../foo"),
+                Arguments.of("/../foo/.."),
+                Arguments.of("/foo/.."),
+                Arguments.of("/foo/."),
+                Arguments.of("/.."),
+                Arguments.of("/."),
+                Arguments.of("/.foo/./"),
+                Arguments.of("/.././")
+        );
     }
 
     // Zip entry names to create a Zip file with for validating they are not
@@ -111,7 +114,8 @@ public class HasDotDotTest {
      * @param path
      * @throws IOException
      */
-    @Test(dataProvider = "checkForDotOrDotDotPaths")
+    @ParameterizedTest
+    @MethodSource("checkForDotOrDotDotPaths")
     public void hasDotOrDotDotTest(String path) throws IOException {
         if (DEBUG) {
             System.out.printf("Validating entry: %s%n", path);
@@ -147,7 +151,7 @@ public class HasDotDotTest {
                     }
                 }
                 Arrays.sort(EXPECTED_PATHS);
-                assertTrue(Arrays.equals(entries, EXPECTED_PATHS));
+                assertArrayEquals(entries, EXPECTED_PATHS);
             }
         }
         Files.deleteIfExists(ZIPFILE);

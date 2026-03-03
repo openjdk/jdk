@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,33 +21,45 @@
  * questions.
  *
  */
-package test;
 
-import org.testng.annotations.BeforeSuite;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import util.ZipFsBaseTest;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.*;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.jar.*;
+import java.util.jar.Attributes;
 import java.util.jar.Attributes.Name;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.JarInputStream;
+import java.util.jar.Manifest;
 import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
+/*
  * @test
  * @bug 8211917
  * @summary Validate that Zip FS will always add META-INF/MANIFEST.MF to the
  * beginning of a Zip file allowing the Manifest be found and processed
  * by java.util.jar.JarInputStream.
-
+ * @run junit ManifestOrderTest
  */
 public class ManifestOrderTest extends ZipFsBaseTest {
 
@@ -73,8 +85,8 @@ public class ManifestOrderTest extends ZipFsBaseTest {
     /**
      * Create the Manifests and Map of attributes included in the Manifests
      */
-    @BeforeSuite
-    public void setup() {
+    @BeforeAll
+    public static void setup() {
         String jdkVendor = System.getProperty("java.vendor");
         String jdkVersion = System.getProperty("java.version");
         String attributeKey = "Player";
@@ -109,7 +121,8 @@ public class ManifestOrderTest extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void testJarWithManifestAddedFirst(final Map<String, String> env,
                                               final int compression)
             throws Exception {
@@ -137,7 +150,8 @@ public class ManifestOrderTest extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void testJarWithManifestAddedLast(final Map<String, String> env,
                                              final int compression) throws Exception {
         final Path jarPath = generatePath(HERE, "test", ".jar");
@@ -164,7 +178,8 @@ public class ManifestOrderTest extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void testJarWithManifestAddedInBetween(final Map<String, String> env,
                                                   final int compression)
             throws Exception {
@@ -192,7 +207,8 @@ public class ManifestOrderTest extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void testJarWithNoManifest(final Map<String, String> env,
                                       final int compression) throws Exception {
         final Path jarPath = generatePath(HERE, "test", ".jar");
@@ -218,7 +234,8 @@ public class ManifestOrderTest extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void testManifestCopiedFromOSFile(final Map<String, String> env,
                                              final int compression) throws Exception {
         final Path jarPath = generatePath(HERE, "test", ".jar");
@@ -248,7 +265,8 @@ public class ManifestOrderTest extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void copyJarToJarTest(final Map<String, String> env, final int compression)
             throws Exception {
         final Path jarPath = generatePath(HERE, "test", ".jar");
@@ -290,7 +308,8 @@ public class ManifestOrderTest extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "compressionMethods")
+    @ParameterizedTest
+    @MethodSource("compressionMethods")
     public void testJarToolGeneratedJarWithManifest(final int compression)
             throws Exception {
 
@@ -319,7 +338,7 @@ public class ManifestOrderTest extends ZipFsBaseTest {
                 jarPath.getFileName().toString(),
                 manifestFile.toAbsolutePath().toString(),
                 "-C", tmpdir.toAbsolutePath().toString(), ".");
-        assertEquals(exitCode, 0, "jar tool exited with failure");
+        assertEquals(0, exitCode, "jar tool exited with failure");
         verify(jarPath, MANIFEST_ATTRS, compression, entries);
 
         // Add an additional entry and re-verify
@@ -338,7 +357,8 @@ public class ManifestOrderTest extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void createWithManifestTest(final Map<String, String> env,
                                        final int compression) throws Exception {
         Path jarPath = generatePath(HERE, "test", ".jar");
@@ -373,7 +393,8 @@ public class ManifestOrderTest extends ZipFsBaseTest {
      * @param compression The compression used when writing the entries
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void updateManifestTest(final Map<String, String> env,
                                    final int compression) throws Exception {
         final Path jarPath = generatePath(HERE, "test", ".jar");
@@ -442,12 +463,12 @@ public class ManifestOrderTest extends ZipFsBaseTest {
                     }
                     final Entry e = expected.remove(je.getName());
                     assertNotNull(e, "Unexpected entry in jar ");
-                    assertEquals(je.getMethod(), e.method, "Compression method mismatch");
-                    assertEquals(jis.readAllBytes(), e.bytes);
+                    assertEquals(e.method, je.getMethod(), "Compression method mismatch");
+                    assertArrayEquals(e.bytes, jis.readAllBytes());
 
                     je = jis.getNextJarEntry();
                 }
-                assertEquals(expected.size(), 0, "Missing entries in jar!");
+                assertEquals(0, expected.size(), "Missing entries in jar!");
             }
         }
 
@@ -462,14 +483,14 @@ public class ManifestOrderTest extends ZipFsBaseTest {
                     System.out.printf("Entry Name: %s, method: %s, Expected Method: %s%n",
                             e.name, je.getMethod(), e.method);
                 }
-                assertEquals(e.method, je.getMethod(), "Compression methods mismatch");
+                assertEquals(je.getMethod(), e.method, "Compression methods mismatch");
                 try (InputStream in = jf.getInputStream(je)) {
                     byte[] bytes = in.readAllBytes();
                     if (DEBUG) {
                         System.out.printf("bytes= %s, actual=%s%n",
                                 new String(bytes), new String(e.bytes));
                     }
-                    assertTrue(Arrays.equals(bytes, e.bytes), "Entries do not match");
+                    assertArrayEquals(bytes, e.bytes, "Entries do not match");
                 }
             }
         }
@@ -480,7 +501,7 @@ public class ManifestOrderTest extends ZipFsBaseTest {
             Path top = fs.getPath("/");
             long count = Files.find(top, Integer.MAX_VALUE,
                     (path, attrs) -> attrs.isRegularFile()).count();
-            assertEquals(entries.length + (!attributes.isEmpty() ? 1 : 0), count);
+            assertEquals(count, entries.length + (!attributes.isEmpty() ? 1 : 0));
             Path mf = fs.getPath("META-INF", "MANIFEST.MF");
             Manifest m = null;
 
@@ -497,7 +518,7 @@ public class ManifestOrderTest extends ZipFsBaseTest {
                     System.out.printf("Entry name = %s, bytes= %s, actual=%s%n", e.name,
                             new String(Files.readAllBytes(file)), new String(e.bytes));
                 }
-                assertEquals(Files.readAllBytes(file), e.bytes);
+                assertArrayEquals(e.bytes, Files.readAllBytes(file));
             }
         }
     }
@@ -519,7 +540,7 @@ public class ManifestOrderTest extends ZipFsBaseTest {
                     System.out.printf("Key: %s, Value: %s%n", k, v);
                 }
                 assertTrue(attrs.containsKey(k));
-                assertEquals(v, attrs.get(k));
+                assertEquals(attrs.get(k), v);
             });
         } else {
             assertNull(m, "Manifest was found!");

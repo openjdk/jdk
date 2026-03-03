@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  *
  */
-import org.testng.annotations.Test;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -32,20 +31,20 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 /**
  * @test
  * @bug 8232879
  * @summary Test OutputStream::write with Zip FS
  * @modules jdk.zipfs
- * @run testng/othervm CRCWriteTest
+ * @run junit/othervm CRCWriteTest
  */
 public class CRCWriteTest {
 
@@ -114,16 +113,16 @@ public class CRCWriteTest {
         // check entries with ZipFile API
         try (ZipFile zf = new ZipFile(zipfile.toFile())) {
             // check entry count
-            assertEquals(entries.length, zf.size());
+            assertEquals(zf.size(), entries.length);
 
             // Check compression method and content of each entry
             for (Entry e : entries) {
                 ZipEntry ze = zf.getEntry(e.name);
                 assertNotNull(ze);
-                assertEquals(e.method, ze.getMethod());
+                assertEquals(ze.getMethod(), e.method);
                 try (InputStream in = zf.getInputStream(ze)) {
                     byte[] bytes = in.readAllBytes();
-                    assertTrue(Arrays.equals(bytes, e.bytes));
+                    assertArrayEquals(bytes, e.bytes);
                 }
             }
         }
@@ -134,9 +133,9 @@ public class CRCWriteTest {
                          new ZipInputStream(new FileInputStream(zipfile.toFile()))) {
                 ZipEntry ze;
                 while ((ze = zis.getNextEntry()) != null) {
-                    assertEquals(e.method, ze.getMethod());
+                    assertEquals(ze.getMethod(), e.method);
                     byte[] bytes = zis.readAllBytes();
-                    assertTrue(Arrays.equals(bytes, e.bytes));
+                    assertArrayEquals(bytes, e.bytes);
                 }
             }
         }
@@ -147,13 +146,13 @@ public class CRCWriteTest {
             Path top = fs.getPath("/");
             long count = Files.find(top, Integer.MAX_VALUE,
                     (path, attrs) -> attrs.isRegularFile()).count();
-            assertEquals(entries.length, count);
+            assertEquals(count, entries.length);
 
             // check content of each entry
             for (Entry e : entries) {
                 Path file = fs.getPath(e.name);
                 byte[] bytes = Files.readAllBytes(file);
-                assertTrue(Arrays.equals(bytes, e.bytes));
+                assertArrayEquals(bytes, e.bytes);
             }
         }
     }
