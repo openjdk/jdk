@@ -225,13 +225,11 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
       // Skip the potential promotion attempt for this one.
     } else if (age_census()->is_tenurable(from_region->age() + mark.age())) {
       // If the object is tenurable, try to promote it
-      if (control_thread()->get_gc_id() % 2 == 0) {
-        oop result = try_evacuate_object<YOUNG_GENERATION, OLD_GENERATION>(p, thread, from_region->age());
+      oop result = try_evacuate_object<YOUNG_GENERATION, OLD_GENERATION>(p, thread, from_region->age());
 
-        // If we failed to promote this aged object, we'll fall through to code below and evacuate to young-gen.
-        if (result != nullptr) {
-          return result;
-        }
+      // If we failed to promote this aged object, we'll fall through to code below and evacuate to young-gen.
+      if (result != nullptr) {
+        return result;
       }
     }
     return try_evacuate_object<YOUNG_GENERATION, YOUNG_GENERATION>(p, thread, from_region->age());
