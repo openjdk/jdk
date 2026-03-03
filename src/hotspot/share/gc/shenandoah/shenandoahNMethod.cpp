@@ -241,7 +241,7 @@ void ShenandoahNMethodTable::register_nmethod(nmethod* nm) {
     assert(nm == data->nm(), "Must be same nmethod");
     // Prevent updating a nmethod while concurrent iteration is in progress.
     wait_until_concurrent_iteration_done();
-    ShenandoahReentrantLocker data_locker(data->lock());
+    ShenandoahNMethodLocker data_locker(data->lock());
     data->update();
   } else {
     // For a new nmethod, we can safely append it to the list, because
