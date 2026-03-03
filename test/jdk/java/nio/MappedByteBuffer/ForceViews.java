@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,32 +25,38 @@
  * @test
  * @bug 4833719
  * @summary Verify MappedByteBuffer force on compact, duplicate, and slice views
- * @run testng ForceViews
+ * @run junit ForceViews
  */
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.ReadOnlyBufferException;
 import java.nio.channels.FileChannel;
-import static java.nio.channels.FileChannel.MapMode.*;
 import java.nio.file.Path;
-import static java.nio.file.StandardOpenOption.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BiFunction;
+import java.util.stream.Stream;
 
-import org.testng.Assert;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static java.nio.channels.FileChannel.MapMode.*;
+import static java.nio.file.StandardOpenOption.*;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ForceViews {
 
     static record Segment(int position, int length) {}
 
-    private FileChannel fc;
+    private static FileChannel fc;
 
-    @BeforeTest(alwaysRun=true)
-    public void openChannel() throws IOException {
+    @BeforeAll
+    public static void openChannel() throws IOException {
         Path file = Path.of(".", "junk");
         fc = FileChannel.open(file, CREATE_NEW, READ, WRITE, DELETE_ON_CLOSE);
         ByteBuffer buf = ByteBuffer.wrap(new byte[1024]);
@@ -58,13 +64,12 @@ public class ForceViews {
         fc.position(0);
     }
 
-    @AfterTest(alwaysRun=true)
-    public void closeChannel() throws IOException {
+    @AfterAll
+    public static void closeChannel() throws IOException {
         fc.close();
     }
 
-    @DataProvider
-    public Object[][] provider() throws IOException {
+    public static Stream<Arguments> provider() throws IOException {
         BiFunction<MappedByteBuffer,Segment,MappedByteBuffer> absSlice =
             (m, s) -> { return m.slice(s.position, s.length); };
         BiFunction<MappedByteBuffer,Segment,MappedByteBuffer> relSlice =
@@ -75,17 +80,16 @@ public class ForceViews {
         BiFunction<MappedByteBuffer,Segment,MappedByteBuffer> compact =
             (m, s) -> { return m.compact(); };
 
-        Object[][] result = new Object[][] {
-            {"Absolute slice", fc, 256, 512, 128, 128, 32, 32, absSlice},
-            {"Relative slice", fc, 256, 512, 0, 128, 32, 32, relSlice},
-            {"Duplicate", fc, 256, 512, 0, 256, 32, 32, duplicate},
-            {"Compact", fc, 256, 512, 0, 256, 32, 32, compact}
-        };
-
-        return result;
+        return List.of
+            (Arguments.of("Absolute slice", fc, 256, 512, 128, 128, 32, 32, absSlice),
+             Arguments.of("Relative slice", fc, 256, 512, 0, 128, 32, 32, relSlice),
+             Arguments.of("Duplicate", fc, 256, 512, 0, 256, 32, 32, duplicate),
+             Arguments.of("Compact", fc, 256, 512, 0, 256, 32, 32, compact))
+            .stream();
     }
 
-    @Test(dataProvider = "provider")
+    @ParameterizedTest(autoCloseArguments=false)
+    @MethodSource("provider")
     public void test(String tst, FileChannel fc, int mapPosition, int mapLength,
         int sliceIndex, int sliceLength, int regionOffset, int regionLength,
         BiFunction<MappedByteBuffer,Segment,MappedByteBuffer> f)
@@ -108,9 +112,9 @@ public class ForceViews {
             int fcVal = buf.get(i);
             int mbbVal = mbb.get(mbbPos + i);
             int val = regionOffset + i;
-            Assert.assertTrue(fcVal == val && mbbVal == val,
-                String.format("%s: i %d, fcVal %d, mbbVal %d, val %d",
-                    tst, i, fcVal, mbbVal, val));
+            assertTrue(fcVal == val && mbbVal == val,
+                       String.format("%s: i %d, fcVal %d, mbbVal %d, val %d",
+                                     tst, i, fcVal, mbbVal, val));
         }
     }
 }
