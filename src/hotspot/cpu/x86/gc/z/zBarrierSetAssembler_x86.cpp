@@ -31,6 +31,7 @@
 #include "gc/z/zBarrierSetAssembler.hpp"
 #include "gc/z/zBarrierSetRuntime.hpp"
 #include "gc/z/zThreadLocalData.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -1391,10 +1392,13 @@ static uint16_t patch_barrier_relocation_value(int format) {
   }
 }
 
-void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format) {
+void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format, bool log) {
   const int offset = patch_barrier_relocation_offset(format);
   const uint16_t value = patch_barrier_relocation_value(format);
   uint8_t* const patch_addr = (uint8_t*)addr + offset;
+  if (log) {
+    log_trace(aot, codecache, stubs)("patching address " INTPTR_FORMAT " offset %d value 0x%x", p2i(addr), offset, value);
+  }
   if (format == ZBarrierRelocationFormatLoadGoodBeforeShl) {
     if (VM_Version::supports_apx_f()) {
       NativeInstruction* instruction = nativeInstruction_at(addr);
@@ -1453,7 +1457,7 @@ void ZBarrierSetAssembler::register_reloc_addresses(GrowableArray<address> &entr
         _store_good_relocations.append(addr);
         break;
       }
-      patch_barrier_relocation(addr, format);
+      patch_barrier_relocation(addr, format, true);
     }
   }
   assert(format_idx == (int)(sizeof(formats) / sizeof(formats[0])),

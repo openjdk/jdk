@@ -189,7 +189,7 @@ public:
                             Label& slow_path,
                             Label& slow_path_continuation) const;
 
-  void patch_barrier_relocation(address addr, int format);
+  void patch_barrier_relocation(address addr, int format, bool log = false);
 
   void patch_barriers();
 
