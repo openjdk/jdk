@@ -315,18 +315,6 @@ final class VirtualThread extends BaseVirtualThread {
     }
 
     /**
-     * Submits the given task to the given executor. If the scheduler is a
-     * ForkJoinPool then the task is first adapted to a ForkJoinTask.
-     */
-    private void submit(Executor executor, Runnable task) {
-        if (executor instanceof ForkJoinPool pool) {
-            pool.submit(ForkJoinTask.adapt(task));
-        } else {
-            executor.execute(task);
-        }
-    }
-
-    /**
      * Submits the runContinuation task to the scheduler. For the default scheduler,
      * and calling it on a worker thread, the task will be pushed to the local queue,
      * otherwise it will be pushed to an external submission queue.
@@ -346,12 +334,12 @@ final class VirtualThread extends BaseVirtualThread {
                 if (currentThread().isVirtual()) {
                     Continuation.pin();
                     try {
-                        submit(scheduler, runContinuation);
+                        scheduler.execute(runContinuation);
                     } finally {
                         Continuation.unpin();
                     }
                 } else {
-                    submit(scheduler, runContinuation);
+                    scheduler.execute(runContinuation);
                 }
                 done = true;
             } catch (RejectedExecutionException ree) {
