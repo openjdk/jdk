@@ -170,6 +170,34 @@ enum CompressionAlgorithm {
 
                 while (!inflater.finished()) {
                     int decompressedSize = inflater.inflate(buffer);
+
+                    if (decompressedSize == 0) {
+                        if (inflater.needsDictionary()) {
+                            if (SSLLogger.isOn()
+                                    && SSLLogger.isOn(
+                                    SSLLogger.Opt.HANDSHAKE)) {
+                                SSLLogger.warning("Compressed input requires"
+                                        + " a dictionary");
+                            }
+
+                            return null;
+                        }
+
+                        if (inflater.needsInput()) {
+                            if (SSLLogger.isOn()
+                                    && SSLLogger.isOn(
+                                    SSLLogger.Opt.HANDSHAKE)) {
+                                SSLLogger.warning(
+                                        "Incomplete compressed input");
+                            }
+
+                            return null;
+                        }
+
+                        // Else just break the loop.
+                        break;
+                    }
+
                     outputStream.write(buffer, 0, decompressedSize);
 
                     // Bound the memory usage.
