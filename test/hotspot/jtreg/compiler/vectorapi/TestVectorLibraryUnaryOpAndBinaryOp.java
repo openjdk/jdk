@@ -30,8 +30,9 @@ import jdk.incubator.vector.*;
 /**
  * @test
  * @bug 8378312
+ * @requires (os.arch == "amd64" & (os.family == "linux" | os.family =="windows")) | ((os.arch == "riscv64" | os.arch == "aarch64") & os.family == "linux") | (os.arch == "aarch64" & os.family == "mac")
  * @library /test/lib /
- * @summary VectorAPI: libraryUnaryOp and libraryBinaryOp should be intrinsified.
+ * @summary VectorAPI: libraryUnaryOp and libraryBinaryOp should be intrinsified. This test would be run on x64 on Linux and Windows (SVML) and ARM and RISC-V on Linux and macOS (SLEEF).
  * @modules jdk.incubator.vector
  *
  * @run driver compiler.vectorapi.TestVectorLibraryUnaryOpAndBinaryOp
