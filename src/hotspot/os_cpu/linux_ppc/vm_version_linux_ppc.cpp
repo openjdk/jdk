@@ -28,13 +28,17 @@
 #include <unistd.h>
 
 int VM_Version::get_dcache_line_size() {
+  // This should work on all modern linux versions:
   int size = sysconf(_SC_LEVEL1_DCACHE_LINESIZE);
-  // On some Linuxes this is not available, then return DEFAULT_CACHE_LINE_SIZE.
+  // It may fail with very old linux / glibc versions. We use DEFAULT_CACHE_LINE_SIZE in this case.
+  // That is the correct value for all currently supported processors.
   return (size <= 0) ? DEFAULT_CACHE_LINE_SIZE : size;
 }
 
 int VM_Version::get_icache_line_size() {
+  // This should work on all modern linux versions:
   int size = sysconf(_SC_LEVEL1_ICACHE_LINESIZE);
-  // On some Linuxes this is not available, then return DEFAULT_CACHE_LINE_SIZE.
+  // It may fail with very old linux / glibc versions. We use DEFAULT_CACHE_LINE_SIZE in this case.
+  // That is the correct value for all currently supported processors.
   return (size <= 0) ? DEFAULT_CACHE_LINE_SIZE : size;
 }

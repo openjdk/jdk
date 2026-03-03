@@ -25,7 +25,7 @@
 
 #include "runtime/vm_version.hpp"
 
-#include <unistd.h>
+#include <sys/systemcfg.h>
 
 int VM_Version::get_dcache_line_size() {
   return _system_configuration.dcache_line;
