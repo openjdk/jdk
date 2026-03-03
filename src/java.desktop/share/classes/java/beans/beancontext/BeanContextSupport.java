@@ -422,7 +422,6 @@ public class      BeanContextSupport extends BeanContextChildSupport
             BeanContextChild cbcc  = getChildBeanContextChild(targetChild);
             BeanContextChild  bccp = null;
 
-
             if (targetChild instanceof BeanContextProxy) {
                 bccp = ((BeanContextProxy)targetChild).getBeanContextProxy();
 
@@ -483,8 +482,6 @@ public class      BeanContextSupport extends BeanContextChildSupport
 
                 childJustAddedHook(bccp, pbcsc);
             }
-
-
 
             // The specification requires that we fire a notification of the change
 
