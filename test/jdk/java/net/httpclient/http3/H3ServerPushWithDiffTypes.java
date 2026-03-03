@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.http2.Http2TestServer
- * @run testng/othervm
+ * @run junit/othervm
  *       -Djdk.internal.httpclient.debug=true
  *       -Djdk.httpclient.HttpClient.log=errors,requests,responses
  *       H3ServerPushWithDiffTypes
@@ -65,11 +65,12 @@ import java.util.function.BiPredicate;
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.Test;
 
 import static java.net.http.HttpOption.Http3DiscoveryMode.ANY;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.assertEquals;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
 public class H3ServerPushWithDiffTypes implements HttpServerAdapters {
 
@@ -89,13 +90,13 @@ public class H3ServerPushWithDiffTypes implements HttpServerAdapters {
         HttpRequest headRequest = HttpRequest.newBuilder(headURI)
                 .HEAD().version(Version.HTTP_2).build();
         var headResponse = client.send(headRequest, BodyHandlers.ofString());
-        assertEquals(headResponse.statusCode(), 200);
-        assertEquals(headResponse.version(), Version.HTTP_2);
+        assertEquals(200, headResponse.statusCode());
+        assertEquals(Version.HTTP_2, headResponse.version());
     }
 
     @Test
     public void test() throws Exception {
-        var sslContext = new SimpleSSLContext().get();
+        var sslContext = SimpleSSLContext.findSSLContext();
         try (HttpTestServer server = HttpTestServer.create(ANY, sslContext)) {
             HttpTestHandler pushHandler =
                     new ServerPushHandler("the main response body",
@@ -127,13 +128,13 @@ public class H3ServerPushWithDiffTypes implements HttpServerAdapters {
                 results.put(request, cf);
                 cf.join();
 
-                assertEquals(results.size(), PUSH_PROMISES.size() + 1);
+                assertEquals(PUSH_PROMISES.size() + 1, results.size());
 
                 for (HttpRequest r : results.keySet()) {
                     URI u = r.uri();
                     var resp = results.get(r).get();
-                    assertEquals(resp.statusCode(), 200);
-                    assertEquals(resp.version(), Version.HTTP_3);
+                    assertEquals(200, resp.statusCode());
+                    assertEquals(Version.HTTP_3, resp.version());
                     BodyAndType<?> body = resp.body();
                     String result;
                     // convert all body types to String for easier comparison
@@ -153,7 +154,7 @@ public class H3ServerPushWithDiffTypes implements HttpServerAdapters {
                     String expected = PUSH_PROMISES.get(r.uri().getPath());
                     if (expected == null)
                         expected = "the main response body";
-                    assertEquals(result, expected);
+                    assertEquals(expected, result);
                 }
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -223,6 +223,9 @@ class IdealKit: public StackObj {
              bool require_atomic_access = false,
              MemNode::MemOrd mo = MemNode::unordered,
              LoadNode::ControlDependency control_dependency = LoadNode::DependsOnlyOnTest);
+
+  // Load AOT runtime constant
+  Node* load_aot_const(Node* adr, const Type* t);
 
   // Return the new StoreXNode
   Node* store(Node* ctl,

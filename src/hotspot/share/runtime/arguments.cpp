@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,6 @@
 #include "runtime/vm_version.hpp"
 #include "services/management.hpp"
 #include "utilities/align.hpp"
-#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
@@ -537,9 +536,6 @@ static SpecialFlag const special_jvm_flags[] = {
 #ifdef _LP64
   { "UseCompressedClassPointers",   JDK_Version::jdk(25),  JDK_Version::jdk(27), JDK_Version::undefined() },
 #endif
-  { "ParallelRefProcEnabled",       JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "ParallelRefProcBalancingEnabled", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "MaxRAM",                       JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "AggressiveHeap",               JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "NeverActAsServerClassMachine", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "AlwaysActAsServerClassMachine", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
@@ -554,6 +550,9 @@ static SpecialFlag const special_jvm_flags[] = {
 #endif
 
   { "PSChunkLargeArrays",           JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
+  { "ParallelRefProcEnabled",       JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
+  { "ParallelRefProcBalancingEnabled", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
+  { "MaxRAM",                       JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
@@ -1207,16 +1206,22 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
   }
 
   char token[1024];
-  int  pos = 0;
+  size_t pos = 0;
 
   bool in_white_space = true;
   bool in_comment     = false;
   bool in_quote       = false;
-  int  quote_c        = 0;
+  char quote_c        = 0;
   bool result         = true;
 
-  int c = getc(stream);
-  while(c != EOF && pos < (int)(sizeof(token)-1)) {
+  int c_or_eof = getc(stream);
+  while (c_or_eof != EOF && pos < (sizeof(token) - 1)) {
+    // We have checked the c_or_eof for EOF. getc should only ever return the
+    // EOF or an unsigned char converted to an int. We cast down to a char to
+    // avoid the char to int promotions we would otherwise do in the comparisons
+    // below (which would be incorrect if we ever compared to a non-ascii char),
+    // and the int to char conversions we would otherwise do in the assignments.
+    const char c = static_cast<char>(c_or_eof);
     if (in_white_space) {
       if (in_comment) {
         if (c == '\n') in_comment = false;
@@ -1224,7 +1229,7 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
         if (c == '#') in_comment = true;
         else if (!isspace((unsigned char) c)) {
           in_white_space = false;
-          token[pos++] = checked_cast<char>(c);
+          token[pos++] = c;
         }
       }
     } else {
@@ -1244,10 +1249,10 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
       } else if (in_quote && (c == quote_c)) {
         in_quote = false;
       } else {
-        token[pos++] = checked_cast<char>(c);
+        token[pos++] = c;
       }
     }
-    c = getc(stream);
+    c_or_eof = getc(stream);
   }
   if (pos > 0) {
     token[pos] = '\0';
@@ -1505,25 +1510,19 @@ void Arguments::set_heap_size() {
   // Check if the user has configured any limit on the amount of RAM we may use.
   bool has_ram_limit = !FLAG_IS_DEFAULT(MaxRAMPercentage) ||
                        !FLAG_IS_DEFAULT(MinRAMPercentage) ||
-                       !FLAG_IS_DEFAULT(InitialRAMPercentage) ||
-                       !FLAG_IS_DEFAULT(MaxRAM);
+                       !FLAG_IS_DEFAULT(InitialRAMPercentage);
 
-  if (FLAG_IS_DEFAULT(MaxRAM)) {
-    if (CompilerConfig::should_set_client_emulation_mode_flags()) {
-      // Limit the available memory if client emulation mode is enabled.
-      FLAG_SET_ERGO(MaxRAM, 1ULL*G);
-    } else {
-      // Use the available physical memory on the system.
-      FLAG_SET_ERGO(MaxRAM, os::physical_memory());
-    }
-  }
+  // Limit the available memory if client emulation mode is enabled.
+  const size_t avail_mem = CompilerConfig::should_set_client_emulation_mode_flags()
+      ? 1ULL*G
+      : os::physical_memory();
 
   // If the maximum heap size has not been set with -Xmx, then set it as
   // fraction of the size of physical memory, respecting the maximum and
   // minimum sizes of the heap.
   if (FLAG_IS_DEFAULT(MaxHeapSize)) {
-    uint64_t min_memory = (uint64_t)(((double)MaxRAM * MinRAMPercentage) / 100);
-    uint64_t max_memory = (uint64_t)(((double)MaxRAM * MaxRAMPercentage) / 100);
+    uint64_t min_memory = (uint64_t)(((double)avail_mem * MinRAMPercentage) / 100);
+    uint64_t max_memory = (uint64_t)(((double)avail_mem * MaxRAMPercentage) / 100);
 
     const size_t reasonable_min = clamp_by_size_t_max(min_memory);
     size_t reasonable_max = clamp_by_size_t_max(max_memory);
@@ -1610,7 +1609,7 @@ void Arguments::set_heap_size() {
     reasonable_minimum = limit_heap_by_allocatable_memory(reasonable_minimum);
 
     if (InitialHeapSize == 0) {
-      uint64_t initial_memory = (uint64_t)(((double)MaxRAM * InitialRAMPercentage) / 100);
+      uint64_t initial_memory = (uint64_t)(((double)avail_mem * InitialRAMPercentage) / 100);
       size_t reasonable_initial = clamp_by_size_t_max(initial_memory);
       reasonable_initial = limit_heap_by_allocatable_memory(reasonable_initial);
 

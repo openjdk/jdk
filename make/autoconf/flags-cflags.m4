@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,19 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
   # Debug prefix mapping if supported by compiler
   DEBUG_PREFIX_CFLAGS=
 
+  UTIL_ARG_WITH(NAME: native-debug-symbols-level, TYPE: literal,
+    DEFAULT: [auto], VALID_VALUES: [auto 1 2 3],
+    CHECK_AVAILABLE: [
+      if test x$TOOLCHAIN_TYPE = xmicrosoft; then
+        AVAILABLE=false
+      fi
+    ],
+    DESC: [set the native debug symbol level (GCC and Clang only)],
+    DEFAULT_DESC: [toolchain default],
+    IF_AUTO: [
+      RESULT=""
+    ])
+
   # Debug symbols
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
     if test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = "xfalse"; then
@@ -93,8 +106,9 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
       )
     fi
 
-    CFLAGS_DEBUG_SYMBOLS="-g -gdwarf-4"
-    ASFLAGS_DEBUG_SYMBOLS="-g"
+    # Debug info level should follow the debug format to be effective.
+    CFLAGS_DEBUG_SYMBOLS="-gdwarf-4 -g${NATIVE_DEBUG_SYMBOLS_LEVEL}"
+    ASFLAGS_DEBUG_SYMBOLS="-g${NATIVE_DEBUG_SYMBOLS_LEVEL}"
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     if test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = "xfalse"; then
       # Check if compiler supports -fdebug-prefix-map. If so, use that to make
@@ -113,8 +127,9 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
     FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${GDWARF_FLAGS}],
         IF_FALSE: [GDWARF_FLAGS=""])
 
-    CFLAGS_DEBUG_SYMBOLS="-g ${GDWARF_FLAGS}"
-    ASFLAGS_DEBUG_SYMBOLS="-g"
+    # Debug info level should follow the debug format to be effective.
+    CFLAGS_DEBUG_SYMBOLS="${GDWARF_FLAGS} -g${NATIVE_DEBUG_SYMBOLS_LEVEL}"
+    ASFLAGS_DEBUG_SYMBOLS="-g${NATIVE_DEBUG_SYMBOLS_LEVEL}"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     CFLAGS_DEBUG_SYMBOLS="-Z7"
   fi
@@ -194,8 +209,12 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       BUILD_CC_DISABLE_WARNING_PREFIX="-wd"
       CFLAGS_WARNINGS_ARE_ERRORS="-WX"
 
-      WARNINGS_ENABLE_ALL="-W3"
+      WARNINGS_ENABLE_ALL_NORMAL="-W3"
+      WARNINGS_ENABLE_ADDITIONAL=""
+      WARNINGS_ENABLE_ADDITIONAL_CXX=""
+      WARNINGS_ENABLE_ADDITIONAL_JVM=""
       DISABLED_WARNINGS="4800 5105"
+      CFLAGS_CONVERSION_WARNINGS=
       ;;
 
     gcc)
@@ -203,14 +222,16 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       BUILD_CC_DISABLE_WARNING_PREFIX="-Wno-"
       CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
 
+      WARNINGS_ENABLE_ALL_NORMAL="-Wall -Wextra"
+
       # Additional warnings that are not activated by -Wall and -Wextra
-      WARNINGS_ENABLE_ADDITIONAL="-Winvalid-pch -Wpointer-arith -Wreturn-type \
+      WARNINGS_ENABLE_ADDITIONAL="-Wformat=2 \
+          -Winvalid-pch -Wpointer-arith -Wreturn-type \
           -Wsign-compare -Wtrampolines -Wtype-limits -Wundef -Wuninitialized \
           -Wunused-const-variable=1 -Wunused-function -Wunused-result \
           -Wunused-value"
       WARNINGS_ENABLE_ADDITIONAL_CXX="-Woverloaded-virtual -Wreorder"
-      WARNINGS_ENABLE_ALL_CFLAGS="-Wall -Wextra -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"
-      WARNINGS_ENABLE_ALL_CXXFLAGS="$WARNINGS_ENABLE_ALL_CFLAGS $WARNINGS_ENABLE_ADDITIONAL_CXX"
+      WARNINGS_ENABLE_ADDITIONAL_JVM="-Wzero-as-null-pointer-constant"
 
       # These warnings will never be turned on, since they generate too many
       # false positives.
@@ -219,6 +240,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       if test "x$OPENJDK_TARGET_CPU_ARCH" = "xppc"; then
         DISABLED_WARNINGS="$DISABLED_WARNINGS psabi"
       fi
+      CFLAGS_CONVERSION_WARNINGS="-Wconversion -Wno-float-conversion"
       ;;
 
     clang)
@@ -226,22 +248,32 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       BUILD_CC_DISABLE_WARNING_PREFIX="-Wno-"
       CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
 
+      WARNINGS_ENABLE_ALL_NORMAL="-Wall -Wextra"
+
       # Additional warnings that are not activated by -Wall and -Wextra
-      WARNINGS_ENABLE_ADDITIONAL="-Wpointer-arith -Wsign-compare -Wreorder \
+      WARNINGS_ENABLE_ADDITIONAL="-Wformat=2 \
+          -Wpointer-arith -Wsign-compare -Wreorder \
           -Wunused-function -Wundef -Wunused-value -Woverloaded-virtual"
-      WARNINGS_ENABLE_ALL="-Wall -Wextra -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"
+      WARNINGS_ENABLE_ADDITIONAL_CXX=""
+      WARNINGS_ENABLE_ADDITIONAL_JVM="-Wzero-as-null-pointer-constant"
 
       # These warnings will never be turned on, since they generate too many
       # false positives.
       DISABLED_WARNINGS="unknown-warning-option unused-parameter"
+      CFLAGS_CONVERSION_WARNINGS="-Wimplicit-int-conversion"
       ;;
   esac
+  WARNINGS_ENABLE_ALL="$WARNINGS_ENABLE_ALL_NORMAL $WARNINGS_ENABLE_ADDITIONAL"
+  WARNINGS_ENABLE_ALL_CXX="$WARNINGS_ENABLE_ALL $WARNINGS_ENABLE_ADDITIONAL_CXX"
+  WARNINGS_ENABLE_ALL_JVM="$WARNINGS_ENABLE_ALL_CXX $WARNINGS_ENABLE_ADDITIONAL_JVM"
+
   AC_SUBST(DISABLE_WARNING_PREFIX)
   AC_SUBST(BUILD_CC_DISABLE_WARNING_PREFIX)
   AC_SUBST(CFLAGS_WARNINGS_ARE_ERRORS)
   AC_SUBST(DISABLED_WARNINGS)
   AC_SUBST(DISABLED_WARNINGS_C)
   AC_SUBST(DISABLED_WARNINGS_CXX)
+  AC_SUBST(CFLAGS_CONVERSION_WARNINGS)
 ])
 
 AC_DEFUN([FLAGS_SETUP_QUALITY_CHECKS],
@@ -589,19 +621,9 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   ADLC_LANGSTD_CXXFLAGS="$LANGSTD_CXXFLAGS"
 
   # CFLAGS WARNINGS STUFF
-  # Set JVM_CFLAGS warning handling
-  if test "x$TOOLCHAIN_TYPE" = xgcc; then
-    WARNING_CFLAGS_JDK_CONLY="$WARNINGS_ENABLE_ALL_CFLAGS"
-    WARNING_CFLAGS_JDK_CXXONLY="$WARNINGS_ENABLE_ALL_CXXFLAGS"
-    WARNING_CFLAGS_JVM="$WARNINGS_ENABLE_ALL_CXXFLAGS"
-
-  elif test "x$TOOLCHAIN_TYPE" = xclang; then
-    WARNING_CFLAGS="$WARNINGS_ENABLE_ALL"
-
-  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    WARNING_CFLAGS="$WARNINGS_ENABLE_ALL"
-
-  fi
+  WARNING_CFLAGS_JDK_CONLY="$WARNINGS_ENABLE_ALL"
+  WARNING_CFLAGS_JDK_CXXONLY="$WARNINGS_ENABLE_ALL_CXX"
+  WARNING_CFLAGS_JVM="$WARNINGS_ENABLE_ALL_JVM"
 
   # Set some additional per-OS defines.
 
@@ -863,12 +885,12 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
   CFLAGS_JVM_COMMON="$ALWAYS_CFLAGS_JVM $ALWAYS_DEFINES_JVM \
       $TOOLCHAIN_CFLAGS_JVM ${$1_TOOLCHAIN_CFLAGS_JVM} \
       $OS_CFLAGS $OS_CFLAGS_JVM $CFLAGS_OS_DEF_JVM $DEBUG_CFLAGS_JVM \
-      $WARNING_CFLAGS $WARNING_CFLAGS_JVM $JVM_PICFLAG $FILE_MACRO_CFLAGS \
+      $WARNING_CFLAGS_JVM $JVM_PICFLAG $FILE_MACRO_CFLAGS \
       $REPRODUCIBLE_CFLAGS $BRANCH_PROTECTION_CFLAGS"
 
   CFLAGS_JDK_COMMON="$ALWAYS_DEFINES_JDK $TOOLCHAIN_CFLAGS_JDK \
       $OS_CFLAGS $CFLAGS_OS_DEF_JDK $DEBUG_CFLAGS_JDK $DEBUG_OPTIONS_FLAGS_JDK \
-      $WARNING_CFLAGS $WARNING_CFLAGS_JDK $DEBUG_SYMBOLS_CFLAGS_JDK \
+      $DEBUG_SYMBOLS_CFLAGS_JDK \
       $FILE_MACRO_CFLAGS $REPRODUCIBLE_CFLAGS $BRANCH_PROTECTION_CFLAGS"
 
   # Use ${$2EXTRA_CFLAGS} to block EXTRA_CFLAGS to be added to build flags.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2021, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -33,6 +33,59 @@
                             product_pd,                                     \
                             range,                                          \
                             constraint)                                     \
+                                                                            \
+  product(uint, ShenandoahAccelerationSamplePeriod, 15, EXPERIMENTAL,       \
+          "When at least this much time (measured in ms) has passed "       \
+          "since the acceleration allocation rate was most recently "       \
+          "sampled, capture another allocation rate sample for the purpose "\
+          "of detecting acceleration or momentary spikes in allocation "    \
+          "rate. A smaller value allows quicker response to changes in "    \
+          "allocation rates but is more vulnerable to noise and requires "  \
+          "more monitoring effort.")                                        \
+          range(1, 1000)                                                    \
+                                                                            \
+  product(uint, ShenandoahRateAccelerationSampleSize, 8, EXPERIMENTAL,      \
+          "In selected ShenandoahControlIntervals "                         \
+          "(if ShenandoahAccelerationSamplePeriod ms have passed "          \
+          "since previous allocation rate sample), "                        \
+          "we compute the allocation rate since the previous rate was "     \
+          "sampled.  This many samples are analyzed to determine whether "  \
+          "allocation rates are accelerating.  Acceleration may occur "     \
+          "due to increasing client demand or due to phase changes in "     \
+          "an application.  A larger value reduces sensitivity to "         \
+          "noise and delays recognition of the accelerating trend.  A "     \
+          "larger value may also cause the heuristic to miss detection "    \
+          "of very quick accelerations.  Smaller values may cause random "  \
+          "noise to be perceived as acceleration of allocation rate, "      \
+          "triggering excess collections.  Note that the acceleration "     \
+          "need not last the entire span of the sampled duration to be "    \
+          "detected.  If the last several of all samples are signficantly " \
+          "larger than the other samples, the best fit line through all "   \
+          "sampled values will have an upward slope, manifesting as "       \
+          "acceleration.")                                                  \
+          range(1,64)                                                       \
+                                                                            \
+  product(uint, ShenandoahMomentaryAllocationRateSpikeSampleSize,           \
+          2, EXPERIMENTAL,                                                  \
+          "In selected ShenandoahControlIntervals "                         \
+          "(if ShenandoahAccelerationSamplePeriod ms have passed "          \
+          "since previous allocation rate sample), we compute "             \
+          "the allocation rate since the previous rate was sampled. "       \
+          "The weighted average of this "                                   \
+          "many most recent momentary allocation rate samples is compared " \
+          "against current allocation runway and anticipated GC time to "   \
+          "determine whether a spike in momentary allocation rate "         \
+          "justifies an early GC trigger.  Momentary allocation spike "     \
+          "detection is in addition to previously implemented "             \
+          "ShenandoahAdaptiveInitialSpikeThreshold, the latter of which "   \
+          "is more effective at detecting slower spikes.  The latter "      \
+          "spike detection samples at the rate specifieid by "              \
+          "ShenandoahAdaptiveSampleFrequencyHz.  The value of this "        \
+          "parameter must be less than the value of "                       \
+          "ShenandoahRateAccelerationSampleSize.  A larger value makes "    \
+          "momentary spike detection less sensitive.  A smaller value "     \
+          "may result in excessive GC triggers.")                           \
+          range(1,64)                                                       \
                                                                             \
   product(uintx, ShenandoahGenerationalMinPIPUsage, 30, EXPERIMENTAL,       \
           "(Generational mode only) What percent of a heap region "         \
@@ -400,27 +453,20 @@
           "reserve/waste is incorrect, at the risk that application "       \
           "runs out of memory too early.")                                  \
                                                                             \
-  product(uintx, ShenandoahOldEvacRatioPercent, 75, EXPERIMENTAL,           \
-          "The maximum proportion of evacuation from old-gen memory, "      \
-          "expressed as a percentage. The default value 75 denotes that "   \
-          "no more than 75% of the collection set evacuation workload may " \
-          "be towards evacuation of old-gen heap regions. This limits both "\
-          "the promotion of aged regions and the compaction of existing "   \
-          "old regions. A value of 75 denotes that the total evacuation "   \
-          "work may increase to up to four times the young gen evacuation " \
-          "work. A larger value allows quicker promotion and allows "       \
-          "a smaller number of mixed evacuations to process "               \
-          "the entire list of old-gen collection candidates at the cost "   \
-          "of an increased disruption of the normal cadence of young-gen "  \
-          "collections.  A value of 100 allows a mixed evacuation to "      \
-          "focus entirely on old-gen memory, allowing no young-gen "        \
-          "regions to be collected, likely resulting in subsequent "        \
-          "allocation failures because the allocation pool is not "         \
-          "replenished.  A value of 0 allows a mixed evacuation to "        \
-          "focus entirely on young-gen memory, allowing no old-gen "        \
-          "regions to be collected, likely resulting in subsequent "        \
-          "promotion failures and triggering of stop-the-world full GC "    \
-          "events.")                                                        \
+  product(uintx, ShenandoahOldEvacPercent, 75, EXPERIMENTAL,                \
+          "The maximum evacuation to old-gen expressed as a percent of "    \
+          "the total live memory within the collection set.  With the "     \
+          "default setting, if collection set evacuates X, no more than "   \
+          "75% of X may hold objects evacuated from old or promoted to "    \
+          "old from young.  A value of 100 allows the entire collection "   \
+          "set to be comprised of old-gen regions and young regions that "  \
+          "have reached the tenure age.  Larger values allow fewer mixed "  \
+          "evacuations to reclaim all the garbage from old.  Smaller "      \
+          "values result in less variation in GC cycle times between "      \
+          "young vs. mixed cycles.  A value of 0 prevents mixed "           \
+          "evacations from running and blocks promotion of aged regions "   \
+          "by evacuation.  Setting the value to 0 does not prevent "        \
+          "regions from being promoted in place.")                          \
           range(0,100)                                                      \
                                                                             \
   product(bool, ShenandoahEvacTracking, false, DIAGNOSTIC,                  \
@@ -429,18 +475,6 @@
           "how many were abandoned. The information will be categorized "   \
           "by thread type (worker or mutator) and evacuation type (young, " \
           "old, or promotion.")                                             \
-                                                                            \
-  product(uintx, ShenandoahMinYoungPercentage, 20, EXPERIMENTAL,            \
-          "The minimum percentage of the heap to use for the young "        \
-          "generation. Heuristics will not adjust the young generation "    \
-          "to be less than this.")                                          \
-          range(0, 100)                                                     \
-                                                                            \
-  product(uintx, ShenandoahMaxYoungPercentage, 100, EXPERIMENTAL,           \
-          "The maximum percentage of the heap to use for the young "        \
-          "generation. Heuristics will not adjust the young generation "    \
-          "to be more than this.")                                          \
-          range(0, 100)                                                     \
                                                                             \
   product(uintx, ShenandoahCriticalFreeThreshold, 1, EXPERIMENTAL,          \
           "How much of the heap needs to be free after recovery cycles, "   \

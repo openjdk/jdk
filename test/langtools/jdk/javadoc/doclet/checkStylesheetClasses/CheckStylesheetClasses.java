@@ -122,7 +122,7 @@ public class CheckStylesheetClasses {
                 "modifiers", "permits", "return-type");
 
         // misc: these are defined in HtmlStyle, and used by the doclet
-        removeAll(htmlStyleNames, "col-plain", "external-link", "header", "index",
+        removeAll(htmlStyleNames, "col-plain", "external-link", "header",
                 "package-uses", "packages", "permits-note", "serialized-package-container",
                 "source-container");
 

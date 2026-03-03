@@ -40,17 +40,18 @@ class ShenandoahGenerationalHeap : public ShenandoahHeap {
 public:
   explicit ShenandoahGenerationalHeap(ShenandoahCollectorPolicy* policy);
   void post_initialize() override;
+  void initialize_generations() override;
   void initialize_heuristics() override;
   void post_initialize_heuristics() override;
 
   static ShenandoahGenerationalHeap* heap() {
-    assert(ShenandoahCardBarrier, "Should have card barrier to use genenrational heap");
+    assert(ShenandoahCardBarrier, "Should have card barrier to use generational heap");
     CollectedHeap* heap = Universe::heap();
     return cast(heap);
   }
 
   static ShenandoahGenerationalHeap* cast(CollectedHeap* heap) {
-    assert(ShenandoahCardBarrier, "Should have card barrier to use genenrational heap");
+    assert(ShenandoahCardBarrier, "Should have card barrier to use generational heap");
     return checked_cast<ShenandoahGenerationalHeap*>(heap);
   }
 
@@ -81,6 +82,8 @@ public:
   }
 
   inline bool is_tenurable(const ShenandoahHeapRegion* r) const;
+
+  void start_idle_span() override;
 
   // Ages regions that haven't been used for allocations in the current cycle.
   // Resets ages for regions that have been used for allocations.
@@ -136,7 +139,7 @@ public:
   void reset_generation_reserves();
 
   // Computes the optimal size for the old generation, represented as a surplus or deficit of old regions
-  void compute_old_generation_balance(size_t old_xfer_limit, size_t old_cset_regions);
+  void compute_old_generation_balance(size_t old_xfer_limit, size_t old_trashed_regions, size_t young_trashed_regions);
 
   // Balances generations, coalesces and fills old regions if necessary
   void complete_degenerated_cycle();

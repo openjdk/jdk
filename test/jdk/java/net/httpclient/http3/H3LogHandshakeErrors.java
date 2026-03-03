@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,8 @@
 import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
-import java.net.Socket;
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpOption;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
@@ -44,16 +42,16 @@ import javax.net.ssl.SSLContext;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.internal.net.http.quic.QuicConnectionImpl;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
-import static org.testng.Assert.*;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 /*
  * @test
@@ -63,26 +61,22 @@ import static org.testng.Assert.*;
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
- * @run testng/othervm
+ * @run junit/othervm
  *              -Djdk.httpclient.HttpClient.log=errors
  *              H3LogHandshakeErrors
  */
 // -Djava.security.debug=all
 public class H3LogHandshakeErrors implements HttpServerAdapters {
 
-    private SSLContext sslContext;
-    private HttpTestServer h3Server;
-    private ServerSocket tcpServerSocket = null;
-    private Thread tcpServerThread = null;
-    private String requestURI;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+    private static HttpTestServer h3Server;
+    private static ServerSocket tcpServerSocket = null;
+    private static Thread tcpServerThread = null;
+    private static String requestURI;
     private static Logger clientLogger;
 
-    @BeforeClass
-    public void beforeClass() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null) {
-            throw new AssertionError("Unexpected null sslContext");
-        }
+    @BeforeAll
+    public static void beforeClass() throws Exception {
         // create an H3 only server
         h3Server = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         h3Server.addHandler((exchange) -> exchange.sendResponseHeaders(200, 0), "/hello");
@@ -117,8 +111,8 @@ public class H3LogHandshakeErrors implements HttpServerAdapters {
         }
     }
 
-    @AfterClass
-    public void afterClass() throws Exception {
+    @AfterAll
+    public static void afterClass() throws Exception {
         if (h3Server != null) {
             System.out.println("Stopping server " + h3Server.getAddress());
             h3Server.stop();

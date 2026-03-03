@@ -91,11 +91,8 @@ static void loadAgentModule(TRAPS) {
                          THREAD);
 }
 
-void DCmd::register_dcmds(){
-  // Registration of the diagnostic commands
-  // First argument specifies which interfaces will export the command
-  // Second argument specifies if the command is enabled
-  // Third  argument specifies if the command is hidden
+void DCmd::register_dcmds() {
+  // Argument specifies on which interfaces a command is made available:
   uint32_t full_export = DCmd_Source_Internal | DCmd_Source_AttachAPI
                          | DCmd_Source_MBean;
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HelpDCmd>(full_export));

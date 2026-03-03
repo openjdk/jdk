@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,16 +27,17 @@
  * @summary reflection test for records
  * @build R10
  * @compile RecordReflectionTest.java
- * @run testng/othervm RecordReflectionTest
+ * @run junit/othervm RecordReflectionTest
  */
 
 import java.lang.annotation.*;
 import java.lang.reflect.*;
 import java.util.List;
-import org.testng.annotations.*;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-@Test
 public class RecordReflectionTest {
 
     class NoRecord {}
@@ -78,8 +79,7 @@ public class RecordReflectionTest {
         R13 {} // compact constructor, will contain mandated parameters
     }
 
-    @DataProvider(name = "recordClasses")
-    public Object[][] recordClassData() {
+    public static Object[][] recordClassData() {
         return List.of(R1.class,
                        R2.class,
                        R3.class,
@@ -96,17 +96,17 @@ public class RecordReflectionTest {
         ).stream().map(c -> new Object[] {c}).toArray(Object[][]::new);
     }
 
-    @Test(dataProvider = "recordClasses")
+    @ParameterizedTest
+    @MethodSource("recordClassData")
     public void testIsRecord(Class<?> cls) {
         String message = cls.toGenericString();
         assertTrue(cls.isRecord());
-        assertTrue(cls.getSuperclass() == java.lang.Record.class);
-        assertTrue(cls.getRecordComponents() != null);
+        assertSame(Record.class, cls.getSuperclass());
+        assertNotNull(cls.getRecordComponents());
         assertTrue(message.contains("record"), message);
     }
 
-    @DataProvider(name = "notRecordClasses")
-    public Object[][] notRecordClasses() {
+    public static List<Class<?>> notRecordClasses() {
         return List.of(NoRecord.class,
                        NoRecord[].class,
                        Record.class,  // java.lang.Record is not itself a record class
@@ -116,19 +116,18 @@ public class RecordReflectionTest {
                        int.class,
                        int[].class,
                        long.class,
-                       long[].class)
-                   .stream().map(c -> new Object[] {c}).toArray(Object[][]::new);
+                       long[].class);
     }
 
-    @Test(dataProvider = "notRecordClasses")
+    @ParameterizedTest
+    @MethodSource("notRecordClasses")
     public void testNotARecordClass(Class<?> cls) {
         assertFalse(cls.isRecord());
-        assertFalse(cls.getSuperclass() == java.lang.Record.class);
-        assertTrue(cls.getRecordComponents() == null);
+        assertNotSame(Record.class, cls.getSuperclass());
+        assertNull(cls.getRecordComponents());
     }
 
-    @DataProvider(name = "reflectionData")
-    public Object[][] reflectionData() {
+    public static Object[][] reflectionData() {
         return new Object[][] {
             new Object[] { new R1(),
                            0,
@@ -181,7 +180,8 @@ public class RecordReflectionTest {
         };
     }
 
-    @Test(dataProvider = "reflectionData")
+    @ParameterizedTest
+    @MethodSource("reflectionData")
     public void testRecordReflection(Object recordOb,
                                      int numberOfComponents,
                                      Object[] values,
@@ -192,13 +192,13 @@ public class RecordReflectionTest {
         Class<?> recordClass = recordOb.getClass();
         assertTrue(recordClass.isRecord());
         RecordComponent[] recordComponents = recordClass.getRecordComponents();
-        assertEquals(recordComponents.length, numberOfComponents);
+        assertEquals(numberOfComponents, recordComponents.length);
         int i = 0;
         for (RecordComponent rc : recordComponents) {
-            assertEquals(rc.getName(), names[i]);
-            assertEquals(rc.getType(), rc.getAccessor().getReturnType());
-            assertEquals(rc.getAccessor().invoke(recordOb), values[i]);
-            assertEquals(rc.getAccessor().getGenericReturnType().toString(), signatures[i],
+            assertEquals(names[i], rc.getName());
+            assertEquals(rc.getAccessor().getReturnType(), rc.getType());
+            assertEquals(values[i], rc.getAccessor().invoke(recordOb));
+            assertEquals(signatures[i], rc.getAccessor().getGenericReturnType().toString(),
                          String.format("signature of method \"%s\" different from expected signature \"%s\"",
                                  rc.getAccessor().getGenericReturnType(), signatures[i]));
             i++;
@@ -207,7 +207,7 @@ public class RecordReflectionTest {
         var constructor = recordClass.getDeclaredConstructors()[0];
         i = 0;
         for (var p: constructor.getParameters()) {
-            assertEquals(p.getParameterizedType().toString(), signatures[i],
+            assertEquals(signatures[i], p.getParameterizedType().toString(),
                     String.format("signature of method \"%s\" different from expected signature \"%s\"",
                             p.getType().toString(), signatures[i]));
             i++;
@@ -215,7 +215,7 @@ public class RecordReflectionTest {
         // similar as above but testing another API
         i = 0;
         for (var p : constructor.getGenericParameterTypes()) {
-            assertEquals(p.toString(), signatures[i],
+            assertEquals(signatures[i], p.toString(),
                     String.format("signature of method \"%s\" different from expected signature \"%s\"",
                             p.toString(), signatures[i]));
             i++;
@@ -228,16 +228,17 @@ public class RecordReflectionTest {
 
     record AnnotatedRec(@RCA int i) {}
 
+    @Test
     public void testDeclAnnotationsInRecordComp() throws Throwable {
         Class<?> recordClass = AnnotatedRec.class;
         RecordComponent rc = recordClass.getRecordComponents()[0];
         Annotation[] annos = rc.getAnnotations();
-        assertEquals(annos.length, 1);
-        assertEquals(annos[0].toString(), "@RecordReflectionTest.RCA()");
+        assertEquals(1, annos.length);
+        assertEquals("@RecordReflectionTest.RCA()", annos[0].toString());
 
         Field f = recordClass.getDeclaredField("i");
-        assertEquals(f.getAnnotations().length, 1);
-        assertEquals(f.getAnnotations()[0].toString(), annos[0].toString());
+        assertEquals(1, f.getAnnotations().length);
+        assertEquals(annos[0].toString(), f.getAnnotations()[0].toString());
     }
 
     @Retention(RetentionPolicy.RUNTIME)
@@ -246,30 +247,28 @@ public class RecordReflectionTest {
 
     record TypeAnnotatedRec(@TYPE_USE int i) {}
 
+    @Test
     public void testTypeAnnotationsInRecordComp() throws Throwable {
         Class<?> recordClass = TypeAnnotatedRec.class;
         RecordComponent rc = recordClass.getRecordComponents()[0];
         AnnotatedType at = rc.getAnnotatedType();
         Annotation[] annos = at.getAnnotations();
-        assertEquals(annos.length, 1);
-        assertEquals(annos[0].toString(), "@RecordReflectionTest.TYPE_USE()");
+        assertEquals(1, annos.length);
+        assertEquals("@RecordReflectionTest.TYPE_USE()", annos[0].toString());
 
         Field f = recordClass.getDeclaredField("i");
-        assertEquals(f.getAnnotatedType().getAnnotations().length, 1);
-        assertEquals(f.getAnnotatedType().getAnnotations()[0].toString(), annos[0].toString());
+        assertEquals(1, f.getAnnotatedType().getAnnotations().length);
+        assertEquals(annos[0].toString(), f.getAnnotatedType().getAnnotations()[0].toString());
     }
 
+    @Test
     public void testReadOnlyFieldInRecord() throws Throwable {
         R2 o = new R2(1, 2);
         Class<?> recordClass = R2.class;
         String fieldName = "i";
         Field f = recordClass.getDeclaredField(fieldName);
         assertTrue(f.trySetAccessible());
-        assertTrue(f.get(o) != null);
-        try {
-            f.set(o, null);
-            assertTrue(false, "should fail to set " + fieldName);
-        } catch (IllegalAccessException e) {
-        }
+        assertNotNull(f.get(o));
+        assertThrows(IllegalAccessException.class, () -> f.set(o, null));
     }
 }

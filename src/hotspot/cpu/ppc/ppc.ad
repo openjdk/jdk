@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+// Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2012, 2026 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -2234,6 +2234,12 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_FmaVD:
       return (SuperwordUseVSX && UseFMA);
 
+    case Op_MinF:
+    case Op_MaxF:
+    case Op_MinD:
+    case Op_MaxD:
+      return (PowerArchitecturePPC64 >= 9);
+
     case Op_Digit:
       return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isDigit);
     case Op_LowerCase:
@@ -3024,7 +3030,6 @@ encode %{
   %}
 
   enc_class postalloc_expand_encode_oop(iRegNdst dst, iRegPdst src, flagsReg crx) %{
-    // use isel instruction with Power 7
     cmpP_reg_imm16Node *n_compare  = new cmpP_reg_imm16Node();
     encodeP_subNode    *n_sub_base = new encodeP_subNode();
     encodeP_shiftNode  *n_shift    = new encodeP_shiftNode();
@@ -3099,7 +3104,6 @@ encode %{
     n_shift->_opnds[1] = op_src;
     n_shift->_bottom_type = _bottom_type;
 
-    // use isel instruction with Power 7
     decodeN_addNode *n_add_base = new decodeN_addNode();
     n_add_base->add_req(n_region, n_shift);
     n_add_base->_opnds[0] = op_dst;
@@ -6618,7 +6622,6 @@ instruct cond_sub_base(iRegNdst dst, flagsRegSrc crx, iRegPsrc src1) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Power 7 can use isel instruction
 instruct cond_set_0_oop(iRegNdst dst, flagsRegSrc crx, iRegPsrc src1) %{
   // The match rule is needed to make it a 'MachTypeNode'!
   match(Set dst (EncodeP (Binary crx src1)));
@@ -7293,7 +7296,6 @@ instruct cmovF_reg(cmpOp cmp, flagsRegSrc crx, regF dst, regF src) %{
   ins_variable_size_depending_on_alignment(true);
 
   format %{ "CMOVEF  $cmp, $crx, $dst, $src\n\t" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
   size(8);
   ins_encode %{
     Label done;
@@ -7313,7 +7315,6 @@ instruct cmovD_reg(cmpOp cmp, flagsRegSrc crx, regD dst, regD src) %{
   ins_variable_size_depending_on_alignment(true);
 
   format %{ "CMOVEF  $cmp, $crx, $dst, $src\n\t" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
   size(8);
   ins_encode %{
     Label done;
@@ -7322,6 +7323,70 @@ instruct cmovD_reg(cmpOp cmp, flagsRegSrc crx, regD dst, regD src) %{
     __ bc(cc_to_inverse_boint($cmp$$cmpcode), cc_to_biint($cmp$$cmpcode, $crx$$reg), done);
     __ fmr($dst$$FloatRegister, $src$$FloatRegister);
     __ bind(done);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmovF_cmpF(cmpOp cop, regF op1, regF op2, regF dst, regF false_result, regF true_result, regD tmp) %{
+  match(Set dst (CMoveF (Binary cop (CmpF op1 op2)) (Binary false_result true_result)));
+  predicate(PowerArchitecturePPC64 >= 9);
+  effect(TEMP tmp);
+  ins_cost(2*DEFAULT_COST);
+  format %{ "cmovF_cmpF  $dst = ($op1 $cop $op2) ? $true_result : $false_result\n\t" %}
+  size(8);
+  ins_encode %{
+    __ cmovF($cop$$cmpcode, $dst$$FloatRegister->to_vsr(),
+             $op1$$FloatRegister->to_vsr(), $op2$$FloatRegister->to_vsr(),
+             $true_result$$FloatRegister->to_vsr(), $false_result$$FloatRegister->to_vsr(),
+             $tmp$$FloatRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmovF_cmpD(cmpOp cop, regD op1, regD op2, regF dst, regF false_result, regF true_result, regD tmp) %{
+  match(Set dst (CMoveF (Binary cop (CmpD op1 op2)) (Binary false_result true_result)));
+  predicate(PowerArchitecturePPC64 >= 9);
+  effect(TEMP tmp);
+  ins_cost(2*DEFAULT_COST);
+  format %{ "cmovF_cmpD  $dst = ($op1 $cop $op2) ? $true_result : $false_result\n\t" %}
+  size(8);
+  ins_encode %{
+    __ cmovF($cop$$cmpcode, $dst$$FloatRegister->to_vsr(),
+             $op1$$FloatRegister->to_vsr(), $op2$$FloatRegister->to_vsr(),
+             $true_result$$FloatRegister->to_vsr(), $false_result$$FloatRegister->to_vsr(),
+             $tmp$$FloatRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmovD_cmpD(cmpOp cop, regD op1, regD op2, regD dst, regD false_result, regD true_result, regD tmp) %{
+  match(Set dst (CMoveD (Binary cop (CmpD op1 op2)) (Binary false_result true_result)));
+  predicate(PowerArchitecturePPC64 >= 9);
+  effect(TEMP tmp);
+  ins_cost(2*DEFAULT_COST);
+  format %{ "cmovD_cmpD  $dst = ($op1 $cop $op2) ? $true_result : $false_result\n\t" %}
+  size(8);
+  ins_encode %{
+    __ cmovF($cop$$cmpcode, $dst$$FloatRegister->to_vsr(),
+             $op1$$FloatRegister->to_vsr(), $op2$$FloatRegister->to_vsr(),
+             $true_result$$FloatRegister->to_vsr(), $false_result$$FloatRegister->to_vsr(),
+             $tmp$$FloatRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmovD_cmpF(cmpOp cop, regF op1, regF op2, regD dst, regD false_result, regD true_result, regD tmp) %{
+  match(Set dst (CMoveD (Binary cop (CmpF op1 op2)) (Binary false_result true_result)));
+  predicate(PowerArchitecturePPC64 >= 9);
+  effect(TEMP tmp);
+  ins_cost(2*DEFAULT_COST);
+  format %{ "cmovD_cmpF  $dst = ($op1 $cop $op2) ? $true_result : $false_result\n\t" %}
+  size(8);
+  ins_encode %{
+    __ cmovF($cop$$cmpcode, $dst$$FloatRegister->to_vsr(),
+             $op1$$FloatRegister->to_vsr(), $op2$$FloatRegister->to_vsr(),
+             $true_result$$FloatRegister->to_vsr(), $false_result$$FloatRegister->to_vsr(),
+             $tmp$$FloatRegister->to_vsr());
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -8492,7 +8557,6 @@ instruct cmovI_bne_negI_reg(iRegIdst dst, flagsRegSrc crx, iRegIsrc src1) %{
   ins_variable_size_depending_on_alignment(true);
 
   format %{ "CMOVE   $dst, neg($src1), $crx" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
   size(8);
   ins_encode %{
     Label done;
@@ -8551,7 +8615,6 @@ instruct cmovL_bne_negL_reg(iRegLdst dst, flagsRegSrc crx, iRegLsrc src1) %{
   ins_variable_size_depending_on_alignment(true);
 
   format %{ "CMOVE   $dst, neg($src1), $crx" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
   size(8);
   ins_encode %{
     Label done;
@@ -10262,7 +10325,6 @@ instruct cmovI_bso_stackSlotL(iRegIdst dst, flagsRegSrc crx, stackSlotL src) %{
   ins_variable_size_depending_on_alignment(true);
 
   format %{ "cmovI   $crx, $dst, $src" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
   size(8);
   ins_encode( enc_cmove_bso_stackSlotL(dst, crx, src) );
   ins_pipe(pipe_class_default);
@@ -10276,7 +10338,6 @@ instruct cmovI_bso_reg(iRegIdst dst, flagsRegSrc crx, regD src) %{
   ins_variable_size_depending_on_alignment(true);
 
   format %{ "cmovI   $crx, $dst, $src" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
   size(8);
   ins_encode( enc_cmove_bso_reg(dst, crx, src) );
   ins_pipe(pipe_class_default);
@@ -10439,7 +10500,6 @@ instruct cmovL_bso_stackSlotL(iRegLdst dst, flagsRegSrc crx, stackSlotL src) %{
   ins_variable_size_depending_on_alignment(true);
 
   format %{ "cmovL   $crx, $dst, $src" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
   size(8);
   ins_encode( enc_cmove_bso_stackSlotL(dst, crx, src) );
   ins_pipe(pipe_class_default);
@@ -10453,7 +10513,6 @@ instruct cmovL_bso_reg(iRegLdst dst, flagsRegSrc crx, regD src) %{
   ins_variable_size_depending_on_alignment(true);
 
   format %{ "cmovL   $crx, $dst, $src" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
   size(8);
   ins_encode( enc_cmove_bso_reg(dst, crx, src) );
   ins_pipe(pipe_class_default);
@@ -11080,7 +11139,6 @@ instruct cmov_bns_less(flagsReg crx) %{
   ins_variable_size_depending_on_alignment(true);
 
   format %{ "cmov    $crx" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
   size(12);
   ins_encode %{
     Label done;
@@ -12257,6 +12315,58 @@ instruct maxI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegC
   ins_encode %{
     __ cmpw(CR0, $src1$$Register, $src2$$Register);
     __ isel($dst$$Register, CR0, Assembler::greater, /*invert*/false, $src1$$Register, $src2$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct minF(regF dst, regF src1, regF src2) %{
+  match(Set dst (MinF src1 src2));
+  predicate(PowerArchitecturePPC64 >= 9);
+  ins_cost(DEFAULT_COST);
+
+  format %{ "MinF $dst, $src1, $src2" %}
+  size(4);
+  ins_encode %{
+    __ xsminjdp($dst$$FloatRegister->to_vsr(), $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct minD(regD dst, regD src1, regD src2) %{
+  match(Set dst (MinD src1 src2));
+  predicate(PowerArchitecturePPC64 >= 9);
+  ins_cost(DEFAULT_COST);
+
+  format %{ "MinD $dst, $src1, $src2" %}
+  size(4);
+  ins_encode %{
+    __ xsminjdp($dst$$FloatRegister->to_vsr(), $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct maxF(regF dst, regF src1, regF src2) %{
+  match(Set dst (MaxF src1 src2));
+  predicate(PowerArchitecturePPC64 >= 9);
+  ins_cost(DEFAULT_COST);
+
+  format %{ "MaxF $dst, $src1, $src2" %}
+  size(4);
+  ins_encode %{
+    __ xsmaxjdp($dst$$FloatRegister->to_vsr(), $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct maxD(regD dst, regD src1, regD src2) %{
+  match(Set dst (MaxD src1 src2));
+  predicate(PowerArchitecturePPC64 >= 9);
+  ins_cost(DEFAULT_COST);
+
+  format %{ "MaxD $dst, $src1, $src2" %}
+  size(4);
+  ins_encode %{
+    __ xsmaxjdp($dst$$FloatRegister->to_vsr(), $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr());
   %}
   ins_pipe(pipe_class_default);
 %}
