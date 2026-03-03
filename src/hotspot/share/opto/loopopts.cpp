@@ -4513,9 +4513,32 @@ public:
   ReassociateReductionChains(IdealLoopTree* loop, PhaseIdealLoop* phase) : _loop(loop), _phase(phase) {
   }
 
-  bool transform(Node* n, PhiNode* phi) {
-    bool is_associative = n->Opcode() == Op_MinL || n->Opcode() == Op_MaxL;
-    if (!is_associative) {
+  void reassociate_chains() {
+    Node* loop_head = _loop->head();
+    for (DUIterator_Fast imax, i = loop_head->fast_outs(imax); i < imax; i++) {
+      Node* loop_head_use = loop_head->fast_out(i);
+      if (loop_head_use->is_Phi()) {
+        PhiNode* phi = loop_head_use->as_Phi();
+        for (DUIterator j = phi->outs(); phi->has_out(j); j++) {
+          Node* n = phi->out(j);
+          if (try_reassociate_chain(n, phi)) {
+            --j;
+          }
+        }
+      }
+    }
+  }
+
+private:
+  IdealLoopTree* _loop;
+  PhaseIdealLoop* _phase;
+
+  static bool is_associative(Node* n) {
+    return n->Opcode() == Op_MinL || n->Opcode() == Op_MaxL;
+  }
+
+  bool try_reassociate_chain(Node* n, PhiNode* phi) {
+    if (!is_associative(n)) {
       return false;
     }
 
@@ -4558,7 +4581,7 @@ public:
       return false;
     }
 
-    Node* reassociated = reassociate_chain(chain_head, opcode, phi);
+    Node* reassociated = do_reassociate_chain(chain_head, opcode, phi);
 
     Node* new_chain_head = MinMaxNode::build_min_max_long(&_phase->igvn(), phi, reassociated, opcode == Op_MaxL);
     _phase->register_new_node(new_chain_head, _loop->head());
@@ -4568,11 +4591,7 @@ public:
     return true;
   }
 
-private:
-  IdealLoopTree* _loop;
-  PhaseIdealLoop* _phase;
-
-  Node* reassociate_chain(Node* node, int opcode, PhiNode* phi) {
+  Node* do_reassociate_chain(Node* node, int opcode, PhiNode* phi) {
     if (phi == node->in(1)) {
       return node->in(2);
     }
@@ -4584,11 +4603,11 @@ private:
     Node* left;
     Node* right;
     if (node->in(1)->Opcode() == opcode) {
-      left = reassociate_chain(node->in(1), opcode, phi);
+      left = do_reassociate_chain(node->in(1), opcode, phi);
       right = node->in(2);
     } else {
       left = node->in(1);
-      right = reassociate_chain(node->in(2), opcode, phi);
+      right = do_reassociate_chain(node->in(2), opcode, phi);
     }
 
     Node* reassoc = MinMaxNode::build_min_max_long(&_phase->igvn(), left, right, opcode == Op_MaxL);
@@ -4602,21 +4621,8 @@ void PhaseIdealLoop::reassociate_reduction_chains() {
   for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
     IdealLoopTree* loop = iter.current();
     if (loop->is_innermost()) {
-      Node* loop_head = loop->head();
       ReassociateReductionChains rrc(loop, this);
-
-      for (DUIterator_Fast imax, i = loop_head->fast_outs(imax); i < imax; i++) {
-        Node* loop_head_use = loop_head->fast_out(i);
-        if (loop_head_use->is_Phi()) {
-          PhiNode* phi = loop_head_use->as_Phi();
-          for (DUIterator j = phi->outs(); phi->has_out(j); j++) {
-            Node* n = phi->out(j);
-            if (rrc.transform(n, phi)) {
-              --j;
-            }
-          }
-        }
-      }
+      rrc.reassociate_chains();
     }
   }
 }
