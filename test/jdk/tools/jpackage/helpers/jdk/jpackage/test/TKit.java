@@ -1093,7 +1093,6 @@ public final class TKit {
             label = other.label;
             negate = other.negate;
             createException = other.createException;
-            anotherVerifier = other.anotherVerifier;
             value = other.value;
         }
 
@@ -1178,74 +1177,12 @@ public final class TKit {
                     }
                 }
             }
-
-            if (anotherVerifier != null) {
-                anotherVerifier.accept(lineIt);
-            }
-        }
-
-        public static TextStreamVerifier.Group group() {
-            return new TextStreamVerifier.Group();
-        }
-
-        public static final class Group {
-            public Group add(TextStreamVerifier verifier) {
-                if (verifier.anotherVerifier != null) {
-                    throw new IllegalArgumentException();
-                }
-                verifiers.add(verifier);
-                return this;
-            }
-
-            public Group add(Group other) {
-                verifiers.addAll(other.verifiers);
-                return this;
-            }
-
-            public Group mutate(Consumer<Group> mutator) {
-                mutator.accept(this);
-                return this;
-            }
-
-            public boolean isEmpty() {
-                return verifiers.isEmpty();
-            }
-
-            public Optional<Consumer<Iterator<String>>> tryCreate() {
-                if (isEmpty()) {
-                    return Optional.empty();
-                } else {
-                    return Optional.of(create());
-                }
-            }
-
-            public Consumer<Iterator<String>> create() {
-                if (verifiers.isEmpty()) {
-                    throw new IllegalStateException();
-                }
-
-                if (verifiers.size() == 1) {
-                    return verifiers.getFirst()::apply;
-                }
-
-                final var head = new TextStreamVerifier(verifiers.getFirst());
-                var prev = head;
-                for (var verifier : verifiers.subList(1, verifiers.size())) {
-                    verifier = new TextStreamVerifier(verifier);
-                    prev.anotherVerifier = verifier::apply;
-                    prev = verifier;
-                }
-                return head::apply;
-            }
-
-            private final List<TextStreamVerifier> verifiers = new ArrayList<>();
         }
 
         private BiPredicate<String, String> predicate;
         private String label;
         private boolean negate;
         private Supplier<RuntimeException> createException;
-        private Consumer<? super Iterator<String>> anotherVerifier;
         private final String value;
     }
 
@@ -1257,11 +1194,12 @@ public final class TKit {
         return new TextStreamVerifier(what);
     }
 
-    public static Consumer<Iterator<String>> assertEndOfTextStream() {
+    public static Consumer<Iterator<String>> assertEndOfTextStream(String label) {
+        Objects.requireNonNull(label);
         return it -> {
             var tail = new ArrayList<String>();
             it.forEachRemaining(tail::add);
-            assertStringListEquals(List.of(), tail, "Check the end of the output");
+            assertStringListEquals(List.of(), tail, String.format("Check the end of %s", label));
         };
     }
 
