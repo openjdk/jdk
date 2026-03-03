@@ -25,9 +25,24 @@
 
 package java.net;
 
+/**
+ * A checker that determines if an Authenticator can be modified.
+ * This class can be extended to override {@link AuthenticatorModifyAccessChecker#canModifyAuthenticator(Authenticator)}
+ * to implement custom access checking logics.
+ */
 public class AuthenticatorModifyAccessChecker {
+    /**
+     * Constructs a new AuthenticatorModifyAccessChecker.
+     */
     public AuthenticatorModifyAccessChecker() {
     }
+
+    /**
+     * Checks if the given Authenticator can be modified.
+     *
+     * @param a The Authenticator to check.
+     * @return true if the Authenticator can be modified, false otherwise.
+     */
     public boolean canModifyAuthenticator(Authenticator a) {
         return true;
     }
