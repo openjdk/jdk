@@ -4976,87 +4976,6 @@ bool PhaseIdealLoop::process_expensive_nodes() {
   return progress;
 }
 
-static Node* reassociate_chain(int add_opcode, Node* node, PhiNode* phi, Node* loop_head, PhaseIdealLoop* phase) {
-  if (phi == node->in(1)) {
-    return node->in(2);
-  }
-
-  if (phi == node->in(2)) {
-    return node->in(1);
-  }
-
-  Node* left;
-  Node* right;
-  if (node->in(1)->Opcode() == add_opcode) {
-    left = reassociate_chain(add_opcode, node->in(1), phi, loop_head, phase);
-    right = node->in(2);
-  } else {
-    left = node->in(1);
-    right = reassociate_chain(add_opcode, node->in(2), phi, loop_head, phase);
-  }
-
-  Node* reassoc = MinMaxNode::build_min_max_long(&phase->igvn(), left, right, add_opcode == Op_MaxL);
-  phase->register_new_node(reassoc, loop_head);
-  phase->C->copy_node_notes_to(reassoc, node);
-  return reassoc;
-}
-
-static bool try_reassociate_chain(Node* n, PhiNode* phi, IdealLoopTree* lpt, PhaseIdealLoop* phase) {
-  bool is_associative = n->Opcode() == Op_MinL || n->Opcode() == Op_MaxL;
-  if (!is_associative) {
-    return false;
-  }
-
-  Node* chain_head = nullptr;
-  Node* current = n;
-  int opcode = current->Opcode();
-
-  int chain_length = 1;
-  while (current != nullptr) {
-    if (current->outcnt() != 1) {
-      break;
-    }
-
-    Node* use = nullptr;
-    Node* out = current->unique_out();
-    if (out->Opcode() == opcode) {
-      use = out;
-    }
-
-    if (use != nullptr) {
-      if (!phase->ctrl_is_member(lpt, use)) {
-        // Only interested in commutative add nodes that are in use in the loop
-        return false;
-      }
-      if (use->in(1)->Opcode() == opcode && use->in(2)->Opcode() == opcode) {
-        // A chain to reassociate cannot be constructed
-        // when the chain can have multiple paths
-        return false;
-      }
-
-      chain_length++;
-      chain_head = use;
-    }
-
-    current = use;
-  }
-
-  if (chain_length < 2) {
-    // Only reassociate long enough chains
-    return false;
-  }
-
-  Node* loop_head = lpt->head();
-  Node* reassociated = reassociate_chain(opcode, chain_head, phi, loop_head, phase);
-
-  Node* new_chain_head = MinMaxNode::build_min_max_long(&phase->igvn(), phi, reassociated, opcode == Op_MaxL);
-  phase->register_new_node(new_chain_head, loop_head);
-  phase->C->copy_node_notes_to(new_chain_head, chain_head);
-  phase->igvn().replace_node(chain_head, new_chain_head);
-
-  return true;
-}
-
 //=============================================================================
 //----------------------------build_and_optimize-------------------------------
 // Create a PhaseLoop.  Build the ideal Loop tree.  Map each Ideal Node to
@@ -5434,26 +5353,7 @@ void PhaseIdealLoop::build_and_optimize() {
   }
 
   if (!C->major_progress()) {
-    for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
-      IdealLoopTree* lpt = iter.current();
-      if (lpt->is_innermost()) {
-        Node* loop_head = lpt->head();
-
-        // Look for loop head uses that are Phi
-        for (DUIterator_Fast imax, i = loop_head->fast_outs(imax); i < imax; i++) {
-          Node* loop_head_use = loop_head->fast_out(i);
-          if (loop_head_use->is_Phi()) {
-            PhiNode* phi = loop_head_use->as_Phi();
-            for (DUIterator j = phi->outs(); phi->has_out(j); j++) {
-              Node* n = phi->out(j);
-              if (try_reassociate_chain(n, phi, lpt, this)) {
-                --j;
-              }
-            }
-          }
-        }
-      }
-    }
+    reassociate_reduction_chains();
   }
 }
 

@@ -888,6 +888,7 @@ class PhaseIdealLoop : public PhaseTransform {
   friend class SuperWord;
   friend class ShenandoahBarrierC2Support;
   friend class AutoNodeBudget;
+  friend class ReassociateReductionChain;
 
   // Map loop membership for CFG nodes, and ctrl for non-CFG nodes.
   //
@@ -1546,6 +1547,8 @@ public:
 
   void eliminate_useless_zero_trip_guard();
   void eliminate_useless_multiversion_if();
+
+  void reassociate_reduction_chains();
 
  public:
   // Change the control input of expensive nodes to allow commoning by
