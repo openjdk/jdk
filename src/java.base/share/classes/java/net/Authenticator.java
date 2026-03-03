@@ -66,7 +66,7 @@ class Authenticator {
 
     // The system-wide authenticator object.  See setDefault().
     private static volatile Authenticator theAuthenticator;
-	private static AuthenticatorModifyAccessChecker modifyAccessChecker;
+    private static AuthenticatorModifyAccessChecker modifyAccessChecker;
 
     static {
         try {
