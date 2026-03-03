@@ -254,8 +254,8 @@ void DowncallLinker::StubGenerator::generate() {
     __ movw(c_rarg1, _captured_state_mask);
     __ rt_call(CAST_FROM_FN_PTR(address, DowncallLinker::capture_state_pre), tmp1);
 
-    __ block_comment("} load initial thread local");
     in_reg_spiller.generate_fill(_masm, in_spill_offset);
+    __ block_comment("} load initial thread local");
   }
 
   __ blr(as_Register(locs.get(StubLocations::TARGET_ADDRESS)));
