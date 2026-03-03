@@ -380,6 +380,48 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
   BLOCK_COMMENT("} ZBarrierSetAssembler::store_at");
 }
 
+// TODO: Check if to go with x86, aarch64 or ppc, currently this implementation is according to ppc
+// because BarrierSetAssembler::copy_load_at is not implemented on s390 as well as on ppc but 
+// implemented on x86 and aarch64
+/* array copy */
+//TODO: Check if these register allocations is correct or not
+const Register _load_bad_mask = Z_R5, _store_bad_mask = Z_R6, _store_good_mask = Z_R7;
+
+void ZBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm,
+                                              DecoratorSet decorators,
+                                              BasicType type,
+                                              Register src,
+                                              Register dst,
+                                              Register count) {
+  bool is_checkcast_copy = (decorators & ARRAYCOPY_CHECKCAST)    != 0,
+       dest_uninitialized = (decorators & IS_DEST_UNINITIALIZED) != 0;
+
+  if (!ZBarrierSet::barrier_needed(decorators, type) || is_checkcast_copy) {
+    return;
+  }
+
+  __ block_comment("arraycopy_prologue (zgc) {");
+
+  load_copy_masks(masm, _load_bad_mask, _store_bad_mask, _store_good_mask, dest_uninitialized);
+
+  __ block_comment("} arraycopy_prologue (zgc)");
+}
+
+void ZBarrierSetAssembler::load_copy_masks(MacroAssembler* masm,
+                                           Register load_bad_mask,
+                                           Register store_bad_mask,
+                                           Register store_good_mask,
+                                           bool dest_uninitialized) const {
+  __ z_la(load_bad_mask, Address(Z_thread, ZThreadLocalData::load_bad_mask_offset()));
+  __ z_la(store_good_mask, Address(Z_thread, ZThreadLocalData::store_good_mask_offset()));
+  if (dest_uninitialized) {
+    DEBUG_ONLY(  __ z_lgfi(store_bad_mask, -1) );
+  } else {
+    __ z_la(store_bad_mask, Address(Z_thread, ZThreadLocalData::store_bad_mask_offset()));
+  }
+}
+
+
 
 
 
