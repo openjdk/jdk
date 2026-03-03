@@ -147,13 +147,13 @@ public:
 
 // PLAB book-keeping.
 class PLABStats : public CHeapObj<mtGC> {
-protected:
-  const char* _description;   // Identifying string.
-
   Atomic<size_t> _allocated;          // Total allocated
   Atomic<size_t> _wasted;             // of which wasted (internal fragmentation)
   Atomic<size_t> _undo_wasted;        // of which wasted on undo (is not used for calculation of PLAB size)
   Atomic<size_t> _unused;             // Unused in last buffer
+
+protected:
+  const char* _description;   // Identifying string.
 
   virtual void reset() {
     _allocated.store_relaxed(0);
@@ -164,11 +164,11 @@ protected:
 
 public:
   PLABStats(const char* description) :
-    _description(description),
     _allocated(0),
     _wasted(0),
     _undo_wasted(0),
-    _unused(0)
+    _unused(0),
+    _description(description)
   { }
 
   virtual ~PLABStats() { }

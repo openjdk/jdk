@@ -29,7 +29,7 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.http2.Http2TestServer
- * @run testng/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
+ * @run junit/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
  *                     -Djdk.httpclient.quic.idleTimeout=100000
  *                     -Djdk.httpclient.keepalive.timeout.h3=100000
  *                     -Djdk.test.server.quic.idleTimeout=100000
@@ -55,7 +55,7 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.http2.Http2TestServer
- * @run testng/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
+ * @run junit/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
  *                     -Djdk.httpclient.quic.idleTimeout=100000
  *                     -Djdk.httpclient.keepalive.timeout.h3=100000
  *                     -Djdk.test.server.quic.idleTimeout=100000
@@ -81,7 +81,7 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.http2.Http2TestServer
- * @run testng/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
+ * @run junit/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
  *                     -Djdk.httpclient.quic.idleTimeout=100000
  *                     -Djdk.httpclient.keepalive.timeout.h3=100000
  *                     -Djdk.test.server.quic.idleTimeout=100000
@@ -106,7 +106,7 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.http2.Http2TestServer
- * @run testng/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
+ * @run junit/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
  *                     -Djdk.httpclient.quic.idleTimeout=100000
  *                     -Djdk.httpclient.keepalive.timeout.h3=100000
  *                     -Djdk.test.server.quic.idleTimeout=100000
@@ -167,13 +167,14 @@ import javax.net.ssl.SSLContext;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.internal.net.http.common.Utils;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.Assert;
-import org.testng.annotations.Test;
 
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpOption.H3_DISCOVERY;
 import static jdk.internal.net.http.Http3ClientProperties.MAX_STREAM_LIMIT_WAIT_TIMEOUT;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class H3MultipleConnectionsToSameHost implements HttpServerAdapters {
     static HttpTestServer httpsServer;
@@ -229,11 +230,11 @@ public class H3MultipleConnectionsToSameHost implements HttpServerAdapters {
     }
 
     public static void main(String[] args) throws Exception {
-        test();
+        new H3MultipleConnectionsToSameHost().test();
     }
 
     @Test
-    public static void test() throws Exception {
+    public void test() throws Exception {
         try {
             long prestart = System.nanoTime();
             initialize();
@@ -250,7 +251,7 @@ public class H3MultipleConnectionsToSameHost implements HttpServerAdapters {
                     .GET().build();
             long start = System.nanoTime();
             var resp = client.send(request, BodyHandlers.ofByteArrayConsumer(b-> {}));
-            Assert.assertEquals(resp.statusCode(), 200);
+            Assertions.assertEquals(200, resp.statusCode());
             long elapsed = System.nanoTime() - start;
             System.out.println("First request took: " + elapsed + " nanos (" + TimeUnit.NANOSECONDS.toMillis(elapsed) + " ms)");
             final int max = property("simpleget.requests", 50);
@@ -304,7 +305,7 @@ public class H3MultipleConnectionsToSameHost implements HttpServerAdapters {
 
                 }
             }
-            list.forEach((cf) -> Assert.assertEquals(cf.join().statusCode(), 200));
+            list.forEach((cf) -> Assertions.assertEquals(200, cf.join().statusCode()));
             client.close();
         } catch (Throwable tt) {
             System.err.println("tt caught");
