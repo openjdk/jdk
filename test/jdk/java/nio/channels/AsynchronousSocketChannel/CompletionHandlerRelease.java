@@ -48,8 +48,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 public class CompletionHandlerRelease {
     @Test
@@ -207,7 +207,7 @@ public class CompletionHandlerRelease {
         while ((r = queue.remove(20)) == null) {
             System.gc();
         }
-        assertEquals(ref, r);
+        assertSame(ref, r);
         assertNull(r.get());
     }
 }
