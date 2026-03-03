@@ -241,6 +241,10 @@ protected:
    */
   virtual jint initialize() = 0;
 
+  // Initialize serviceability support. This should prepare the implementation
+  // for accepting serviceability-related calls, like memory_managers(), memory_pools().
+  virtual void initialize_serviceability() = 0;
+
   // In many heaps, there will be a need to perform some initialization activities
   // after the Universe is fully formed, but before general heap allocation is allowed.
   // This is the correct place to place such initialization methods.
@@ -418,8 +422,6 @@ protected:
  private:
   // Generate any dumps preceding or following a full gc
   void full_gc_dump(GCTimer* timer, bool before);
-
-  virtual void initialize_serviceability() = 0;
 
   void print_relative_to_gc(GCWhen::Type when) const;
 

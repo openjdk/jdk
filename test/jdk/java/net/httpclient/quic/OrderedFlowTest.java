@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,24 +37,24 @@ import jdk.internal.net.http.quic.OrderedFlow;
 import jdk.internal.net.http.quic.frames.CryptoFrame;
 import jdk.internal.net.http.quic.frames.QuicFrame;
 import jdk.internal.net.http.quic.frames.StreamFrame;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertNotEquals;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-/**
+/*
  * @test
  * @summary tests the reordering logic implemented by OrderedFlow
  *          and its two concrete subclasses
  * @library /test/lib
- * @run testng OrderedFlowTest
- * @run testng/othervm -Dseed=-2680947227866359853 OrderedFlowTest
- * @run testng/othervm -Dseed=-273117134353023275 OrderedFlowTest
- * @run testng/othervm -Dseed=3649132517916066643 OrderedFlowTest
- * @run testng/othervm -Dseed=4568737726943220431 OrderedFlowTest
+ * @run junit OrderedFlowTest
+ * @run junit/othervm -Dseed=-2680947227866359853 OrderedFlowTest
+ * @run junit/othervm -Dseed=-273117134353023275 OrderedFlowTest
+ * @run junit/othervm -Dseed=3649132517916066643 OrderedFlowTest
+ * @run junit/othervm -Dseed=4568737726943220431 OrderedFlowTest
  */
 public class OrderedFlowTest {
 
@@ -135,13 +135,13 @@ public class OrderedFlowTest {
             """;
 
     interface FramesFactory<T extends QuicFrame> {
-        public T create(int offset, String payload, boolean fin);
-        public int length(T frame);
-        public long offset(T frame);
-        public String getPayload(T frame);
-        public OrderedFlow<T> flow();
-        public Class<T> frameType();
-        public Comparator<T> comparator();
+        T create(int offset, String payload, boolean fin);
+        int length(T frame);
+        long offset(T frame);
+        String getPayload(T frame);
+        OrderedFlow<T> flow();
+        Class<T> frameType();
+        Comparator<T> comparator();
     }
 
     static class StreamFrameFactory implements FramesFactory<StreamFrame> {
@@ -307,7 +307,7 @@ public class OrderedFlowTest {
     // not be buffered.
     static <T extends QuicFrame> TestData<T> reversed(TestData<T> data) {
         List<T> sorted = new ArrayList<>(data.frames());
-        Collections.sort(sorted, data.framesComparator().reversed());
+        sorted.sort(data.framesComparator().reversed());
         return new TestData<>(data.frameType(),data.flowSupplier(), data.payloadAccessor(),
                 data.framesComparator(), List.copyOf(sorted), data.expectedResult(),
                 data.duplicates(), true);
@@ -336,8 +336,7 @@ public class OrderedFlowTest {
         return List.copyOf(result);
     }
 
-    @DataProvider(name="CryptoFrame")
-    Object[][] generateCryptoFrames() {
+    static Object[][] generateCryptoFrames() {
         return generateData(new CryptoFrameFactory())
                 .stream()
                 .map(List::of)
@@ -345,8 +344,7 @@ public class OrderedFlowTest {
                 .toArray(Object[][]::new);
     }
 
-    @DataProvider(name="StreamFrame")
-    Object[][] generateStreanFrames() {
+    static Object[][] generateStreanFrames() {
         return generateData(new StreamFrameFactory())
                 .stream()
                 .map(List::of)
@@ -380,21 +378,23 @@ public class OrderedFlowTest {
                     "buffered data %s exceeds or equals payload size %s".formatted(buffered, size));
             while (received != null) {
                 var payload = testData.payloadAccessor.apply(received);
-                assertNotEquals(payload, "", "empty frames not expected: " + received);
+                assertNotEquals("", payload, "empty frames not expected: " + received);
                 result.append(payload);
                 received = flow.poll();
             }
         }
-        assertEquals(result.toString(), testData.expectedResult);
+        assertEquals(testData.expectedResult, result.toString());
     }
 
-    @Test(dataProvider = "CryptoFrame")
-    public void testCryptoFlow(TestData<CryptoFrame> testData) {
+    @ParameterizedTest
+    @MethodSource("generateCryptoFrames")
+    void testCryptoFlow(TestData<CryptoFrame> testData) {
         testOrderedFlow(testData, CryptoFrame::offset);
     }
 
-    @Test(dataProvider = "StreamFrame")
-    public void testStreamFlow(TestData<StreamFrame> testData) {
+    @ParameterizedTest
+    @MethodSource("generateStreanFrames")
+    void testStreamFlow(TestData<StreamFrame> testData) {
         testOrderedFlow(testData, StreamFrame::offset);
     }
 

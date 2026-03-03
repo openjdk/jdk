@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -442,11 +442,6 @@ public final class AWTAccessor {
         void setMostRecentFocusOwner(Window window, Component component);
 
         /**
-         * Returns current KFM of the specified AppContext.
-         */
-        KeyboardFocusManager getCurrentKeyboardFocusManager(AppContext ctx);
-
-        /**
          * Return the current focus cycle root
          */
         Container getCurrentFocusCycleRoot();
@@ -456,16 +451,6 @@ public final class AWTAccessor {
      * An accessor for the MenuComponent class.
      */
     public interface MenuComponentAccessor {
-        /**
-         * Returns the appContext of the menu component.
-         */
-        AppContext getAppContext(MenuComponent menuComp);
-
-        /**
-         * Sets the appContext of the menu component.
-         */
-        void setAppContext(MenuComponent menuComp, AppContext appContext);
-
         /**
          * Returns the peer of the menu component.
          */
