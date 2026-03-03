@@ -29,7 +29,7 @@
  * @key randomness
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  *        ReferenceTracker CancelRequestTest
- * @run testng/othervm -Djdk.internal.httpclient.debug=true
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true
  *                     -Djdk.httpclient.enableAllMethodRetry=true
  *                     CancelRequestTest
  */
@@ -38,15 +38,6 @@
 import jdk.internal.net.http.common.OperationTrackers.Tracker;
 import jdk.test.lib.RandomFactory;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.ITestContext;
-import org.testng.ITestResult;
-import org.testng.SkipException;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -61,7 +52,6 @@ import java.net.http.HttpOption.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -76,7 +66,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 
 import static java.lang.System.out;
@@ -85,10 +74,21 @@ import static java.net.http.HttpClient.Version.*;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertNotEquals;
-import static org.testng.Assert.assertTrue;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.extension.TestWatcher;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class CancelRequestTest implements HttpServerAdapters {
 
@@ -97,19 +97,19 @@ public class CancelRequestTest implements HttpServerAdapters {
             = new ConcurrentHashMap<>();
 
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
-    HttpTestServer httpTestServer;    // HTTP/1.1    [ 4 servers ]
-    HttpTestServer httpsTestServer;   // HTTPS/1.1
-    HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
-    HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
-    HttpTestServer h2h3TestServer;        // HTTP/3 ( h2 + h3 )
-    HttpTestServer h3TestServer;          // HTTP/3 ( h3 )
-    String httpURI;
-    String httpsURI;
-    String http2URI;
-    String https2URI;
-    String h2h3URI;
-    String h2h3Head;
-    String h3URI;
+    private static HttpTestServer httpTestServer;    // HTTP/1.1    [ 4 servers ]
+    private static HttpTestServer httpsTestServer;   // HTTPS/1.1
+    private static HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
+    private static HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
+    private static HttpTestServer h2h3TestServer;        // HTTP/3 ( h2 + h3 )
+    private static HttpTestServer h3TestServer;          // HTTP/3 ( h3 )
+    private static String httpURI;
+    private static String httpsURI;
+    private static String http2URI;
+    private static String https2URI;
+    private static String h2h3URI;
+    private static String h2h3Head;
+    private static String h3URI;
 
     static final long SERVER_LATENCY = 75;
     static final int MAX_CLIENT_DELAY = 75;
@@ -130,8 +130,8 @@ public class CancelRequestTest implements HttpServerAdapters {
         return String.format("[%d s, %d ms, %d ns] ", secs, mill, nan);
     }
 
-    final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
-    private volatile HttpClient sharedClient;
+    private static final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
+    private static volatile HttpClient sharedClient;
 
     static class TestExecutor implements Executor {
         final AtomicLong tasks = new AtomicLong();
@@ -157,38 +157,39 @@ public class CancelRequestTest implements HttpServerAdapters {
         }
     }
 
-    protected boolean stopAfterFirstFailure() {
+    private static boolean stopAfterFirstFailure() {
         return Boolean.getBoolean("jdk.internal.httpclient.debug");
     }
 
-    final AtomicReference<SkipException> skiptests = new AtomicReference<>();
-    void checkSkip() {
-        var skip = skiptests.get();
-        if (skip != null) throw skip;
-    }
-    static String name(ITestResult result) {
-        var params = result.getParameters();
-        return result.getName()
-                + (params == null ? "()" : Arrays.toString(result.getParameters()));
-    }
-
-    @BeforeMethod
-    void beforeMethod(ITestContext context) {
-        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
-            if (skiptests.get() == null) {
-                SkipException skip = new SkipException("some tests failed");
-                skip.setStackTrace(new StackTraceElement[0]);
-                skiptests.compareAndSet(null, skip);
+    static final class TestStopper implements TestWatcher, BeforeEachCallback {
+        final AtomicReference<String> failed = new AtomicReference<>();
+        TestStopper() { }
+        @Override
+        public void testFailed(ExtensionContext context, Throwable cause) {
+            if (stopAfterFirstFailure()) {
+                String msg = "Aborting due to: " + cause;
+                failed.compareAndSet(null, msg);
+                FAILURES.putIfAbsent(context.getDisplayName(), cause);
+                System.out.printf("%nTEST FAILED: %s%s%n\tAborting due to %s%n%n",
+                        now(), context.getDisplayName(), cause);
+                System.err.printf("%nTEST FAILED: %s%s%n\tAborting due to %s%n%n",
+                        now(), context.getDisplayName(), cause);
             }
+        }
+
+        @Override
+        public void beforeEach(ExtensionContext context) {
+            String msg = failed.get();
+            Assumptions.assumeTrue(msg == null, msg);
         }
     }
 
-    @AfterClass
-    static void printFailedTests(ITestContext context) {
+    @RegisterExtension
+    static final TestStopper stopper = new TestStopper();
+
+    @AfterAll
+    static void printFailedTests() {
         out.println("\n=========================");
-        var failed = context.getFailedTests().getAllResults().stream()
-                .collect(Collectors.toMap(CancelRequestTest::name, ITestResult::getThrowable));
-        FAILURES.putAll(failed);
         try {
             out.printf("%n%sCreated %d servers and %d clients%n",
                     now(), serverCount.get(), clientCount.get());
@@ -206,7 +207,7 @@ public class CancelRequestTest implements HttpServerAdapters {
         }
     }
 
-    private String[] uris() {
+    private static String[] uris() {
         return new String[] {
                 httpURI,
                 httpsURI,
@@ -217,8 +218,7 @@ public class CancelRequestTest implements HttpServerAdapters {
         };
     }
 
-    @DataProvider(name = "asyncurls")
-    public Object[][] asyncurls() {
+    public static Object[][] asyncurls() {
         String[] uris = uris();
         Object[][] result = new Object[uris.length * 2 * 3][];
         //Object[][] result = new Object[uris.length][];
@@ -238,8 +238,7 @@ public class CancelRequestTest implements HttpServerAdapters {
         return result;
     }
 
-    @DataProvider(name = "urls")
-    public Object[][] alltests() {
+    public static Object[][] alltests() {
         String[] uris = uris();
         Object[][] result = new Object[uris.length * 2][];
         //Object[][] result = new Object[uris.length][];
@@ -327,7 +326,7 @@ public class CancelRequestTest implements HttpServerAdapters {
                 .HEAD()
                 .build();
         var resp = client.send(request, BodyHandlers.discarding());
-        assertEquals(resp.statusCode(), 200);
+        assertEquals(200, resp.statusCode());
     }
 
     private static void releaseLatches() {
@@ -348,10 +347,10 @@ public class CancelRequestTest implements HttpServerAdapters {
         return latch;
     }
 
-    @Test(dataProvider = "asyncurls")
+    @ParameterizedTest
+    @MethodSource("asyncurls")
     public void testGetSendAsync(String uri, boolean sameClient, boolean mayInterruptIfRunning)
             throws Exception {
-        checkSkip();
         HttpClient client = null;
         uri = uri + "/get";
         out.printf("%n%s testGetSendAsync(%s, %b, %b)%n", now(), uri, sameClient, mayInterruptIfRunning);
@@ -386,7 +385,7 @@ public class CancelRequestTest implements HttpServerAdapters {
             out.println("cf2 after cancel: " + cf2);
             try {
                 String body = cf2.get().body();
-                assertEquals(body, String.join("", BODY.split("\\|")));
+                assertEquals(String.join("", BODY.split("\\|")), body);
                 throw new AssertionError("Expected CancellationException not received");
             } catch (ExecutionException x) {
                 out.println(now() + "Got expected exception: " + x);
@@ -409,7 +408,7 @@ public class CancelRequestTest implements HttpServerAdapters {
             // completed yet - so wait for it here...
             try {
                 String body = response.get().body();
-                assertEquals(body, String.join("", BODY.split("\\|")));
+                assertEquals(String.join("", BODY.split("\\|")), body);
                 if (mayInterruptIfRunning) {
                     // well actually - this could happen... In which case we'll need to
                     // increase the latency in the server handler...
@@ -448,10 +447,10 @@ public class CancelRequestTest implements HttpServerAdapters {
 
             assertTrue(response.isDone());
             assertFalse(response.isCancelled());
-            assertEquals(cf1.isCancelled(), hasCancellationException);
+            assertEquals(hasCancellationException, cf1.isCancelled());
             assertTrue(cf2.isDone());
             assertFalse(cf2.isCancelled());
-            assertEquals(latch.getCount(), 0);
+            assertEquals(0, latch.getCount());
 
             var error = TRACKER.check(tracker, 1000,
                     (t) -> t.getOutstandingOperations() > 0 || t.getOutstandingSubscribers() > 0,
@@ -464,10 +463,10 @@ public class CancelRequestTest implements HttpServerAdapters {
         if (!sameClient) client.close();
     }
 
-    @Test(dataProvider = "asyncurls")
+    @ParameterizedTest
+    @MethodSource("asyncurls")
     public void testPostSendAsync(String uri, boolean sameClient, boolean mayInterruptIfRunning)
             throws Exception {
-        checkSkip();
         uri = uri + "/post";
         HttpClient client = null;
         out.printf("%n%s testPostSendAsync(%s, %b, %b)%n", now(), uri, sameClient, mayInterruptIfRunning);
@@ -521,7 +520,7 @@ public class CancelRequestTest implements HttpServerAdapters {
             out.println("cf2 after cancel: " + cf2);
             try {
                 String body = cf2.get().body();
-                assertEquals(body, String.join("", BODY.split("\\|")));
+                assertEquals(String.join("", BODY.split("\\|")), body);
                 throw new AssertionError("Expected CancellationException not received");
             } catch (ExecutionException x) {
                 out.println(now() + "Got expected exception: " + x);
@@ -544,7 +543,7 @@ public class CancelRequestTest implements HttpServerAdapters {
             // completed yet - so wait for it here...
             try {
                 String body = response.get().body();
-                assertEquals(body, String.join("", BODY.split("\\|")));
+                assertEquals(String.join("", BODY.split("\\|")), body);
                 if (mayInterruptIfRunning) {
                     // well actually - this could happen... In which case we'll need to
                     // increase the latency in the server handler...
@@ -577,10 +576,10 @@ public class CancelRequestTest implements HttpServerAdapters {
 
             assertTrue(response.isDone());
             assertFalse(response.isCancelled());
-            assertEquals(cf1.isCancelled(), hasCancellationException);
+            assertEquals(hasCancellationException, cf1.isCancelled());
             assertTrue(cf2.isDone());
             assertFalse(cf2.isCancelled());
-            assertEquals(latch.getCount(), 0);
+            assertEquals(0, latch.getCount());
 
             var error = TRACKER.check(tracker, 1000,
                     (t) -> t.getOutstandingOperations() > 0 || t.getOutstandingSubscribers() > 0,
@@ -593,10 +592,10 @@ public class CancelRequestTest implements HttpServerAdapters {
         if (!sameClient) client.close();
     }
 
-    @Test(dataProvider = "urls")
+    @ParameterizedTest
+    @MethodSource("alltests")
     public void testPostInterrupt(String uri, boolean sameClient)
             throws Exception {
-        checkSkip();
         HttpClient client = null;
         out.printf("%n%s testPostInterrupt(%s, %b)%n", now(), uri, sameClient);
         for (int i=0; i< ITERATION_COUNT; i++) {
@@ -661,7 +660,7 @@ public class CancelRequestTest implements HttpServerAdapters {
             } else {
                 assert failed == null;
                 out.println(now() + req.uri() + ": got body: " + body);
-                assertEquals(body, String.join("", BODY.split("\\|")));
+                assertEquals(String.join("", BODY.split("\\|")), body);
             }
             out.println(now() + "next iteration");
 
@@ -678,8 +677,8 @@ public class CancelRequestTest implements HttpServerAdapters {
 
 
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         // HTTP/1.1
         HttpTestHandler h1_chunkHandler = new HTTPSlowHandler();
         httpTestServer = HttpTestServer.create(HTTP_1_1);
@@ -721,8 +720,8 @@ public class CancelRequestTest implements HttpServerAdapters {
         h3TestServer.start();
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         String sharedClientName =
                 sharedClient == null ? null : sharedClient.toString();
         sharedClient = null;

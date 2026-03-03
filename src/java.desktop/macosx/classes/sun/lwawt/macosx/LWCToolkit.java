@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,6 @@ import javax.swing.UIManager;
 
 import com.apple.laf.AquaMenuBarUI;
 import sun.awt.AWTAccessor;
-import sun.awt.AppContext;
 import sun.awt.CGraphicsDevice;
 import sun.awt.LightweightFrame;
 import sun.awt.PlatformGraphicsInfo;
@@ -700,10 +699,9 @@ public final class LWCToolkit extends LWToolkit {
                         },
                         true);
 
-        AppContext appContext = SunToolkit.targetToAppContext(component);
-        SunToolkit.postEvent(appContext, invocationEvent);
+        SunToolkit.postEvent(invocationEvent);
         // 3746956 - flush events from PostEventQueue to prevent them from getting stuck and causing a deadlock
-        SunToolkit.flushPendingEvents(appContext);
+        SunToolkit.flushPendingEvents();
         doAWTRunLoop(mediator, false);
 
         checkException(invocationEvent);
@@ -715,10 +713,9 @@ public final class LWCToolkit extends LWToolkit {
 
         InvocationEvent invocationEvent = new InvocationEvent(component, event);
 
-        AppContext appContext = SunToolkit.targetToAppContext(component);
-        SunToolkit.postEvent(SunToolkit.targetToAppContext(component), invocationEvent);
+        SunToolkit.postEvent(invocationEvent);
         // 3746956 - flush events from PostEventQueue to prevent them from getting stuck and causing a deadlock
-        SunToolkit.flushPendingEvents(appContext);
+        SunToolkit.flushPendingEvents();
 
         checkException(invocationEvent);
     }
@@ -930,7 +927,6 @@ public final class LWCToolkit extends LWToolkit {
     @Override
     public boolean isModalityTypeSupported(Dialog.ModalityType modalityType) {
         //TODO: FileDialog blocks excluded windows...
-        //TODO: Test: 2 file dialogs, separate AppContexts: a) Dialog 1 blocked, shouldn't be. Frame 4 blocked (shouldn't be).
         return (modalityType == null) ||
             (modalityType == Dialog.ModalityType.MODELESS) ||
             (modalityType == Dialog.ModalityType.DOCUMENT_MODAL) ||

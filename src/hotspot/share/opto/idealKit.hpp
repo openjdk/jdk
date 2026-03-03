@@ -224,6 +224,9 @@ class IdealKit: public StackObj {
              MemNode::MemOrd mo = MemNode::unordered,
              LoadNode::ControlDependency control_dependency = LoadNode::DependsOnlyOnTest);
 
+  // Load AOT runtime constant
+  Node* load_aot_const(Node* adr, const Type* t);
+
   // Return the new StoreXNode
   Node* store(Node* ctl,
               Node* adr,
