@@ -29,7 +29,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Properties;
-import java.util.stream.Collectors;
 
 import jdk.internal.vm.VMSupport;
 import jdk.jfr.Recording;
