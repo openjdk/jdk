@@ -261,10 +261,12 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
   }
 }
 
-// Scan the memory graph breadth first from a starting the node will up to an arraycopy. Given an element from the destination array,
-// check whether the element from the source array that was copied into the given destination element is modified after the
-// arraycopy. This assumes that the destination array is scalar replaceable but makes no assumption for the source.
-bool src_elem_modified_after_arraycopy(const ArrayCopyNode* ac, const Node* load, PhaseGVN* phase) {
+// Determine if there is an interfering store between a rematerialization load and an arraycopy that is in the process
+// of being elided. Starting from the given rematerialization load this method starts a BFS traversal upwards through
+// the memory graph towards the provided ArrayCopyNode. For every node encountered on the traversal, check that it is
+// independent from the provided rematerialization. Returns false if every node on the traversal is independent and
+// true otherwise.
+bool has_interfering_store(const ArrayCopyNode* ac, const Node* load, PhaseGVN* phase) {
   assert(ac != nullptr && load != nullptr && load->is_Mem(), "sanity");
   MemNode* load_mem_node = load->as_Mem();
   AccessAnalyzer acc(phase, load_mem_node);
@@ -277,7 +279,7 @@ bool src_elem_modified_after_arraycopy(const ArrayCopyNode* ac, const Node* load
     Node* mem = to_visit[worklist_idx];
 
     if (mem == ac || (mem->is_Proj() && mem->in(0)->is_ArrayCopy() && mem->in(0) == ac)) {
-      // Reached the target, so visit what is left.
+      // Reached the target, so visit what is left on the worklist.
       continue;
     }
 
@@ -367,7 +369,7 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, Node* sfpt, intpt
       res = ArrayCopyNode::load(bs, &_igvn, ctl, mergemem, adr, adr_type, type, bt);
       // ... and ensure that pinning the rematerialization load inside the uncommon path is safe.
       if (mem != ac->memory() && ctl->is_Proj() && ctl->as_Proj()->is_uncommon_trap_proj() && res != nullptr && res->is_Mem() &&
-          src_elem_modified_after_arraycopy(ac, res, &_igvn)) {
+          has_interfering_store(ac, res, &_igvn)) {
         // Not safe: use control and memory from the arraycopy to ensure correct memory state.
         return make_arraycopy_load(ac, sfpt, offset, ac->control(), ac->memory(), ft, ftype, alloc);
       }
