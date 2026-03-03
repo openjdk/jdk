@@ -2454,8 +2454,8 @@ Java HotSpot VM.
 
 [`-XX:InitialRAMPercentage=`]{#-XX_InitialRAMPercentage}*percent*
 :   Sets the initial amount of memory that the JVM will use for the Java heap
-    before applying ergonomics heuristics as a percentage of the maximum amount
-    determined as described in the `-XX:MaxRAM` option.
+    before applying ergonomics heuristics as a percentage of the available memory
+    to the JVM process.
 
     The following example shows how to set the percentage of the initial
     amount of memory used for the Java heap:
@@ -2575,9 +2575,8 @@ Java HotSpot VM.
 
 [`-XX:MaxRAMPercentage=`]{#-XX_MaxRAMPercentage}*percent*
 :   Sets the maximum amount of memory that the JVM may use for the Java heap
-    before applying ergonomics heuristics as a percentage of the maximum amount
-    determined as described in the `-XX:MaxRAM` option. The default value is 25
-    percent.
+    before applying ergonomics heuristics as a percentage of the available memory
+    to the JVM process. The default value is 25 percent.
 
     Specifying this option disables automatic use of compressed oops if
     the combined result of this and other options influencing the maximum amount
@@ -2591,9 +2590,9 @@ Java HotSpot VM.
 
 [`-XX:MinRAMPercentage=`]{#-XX_MinRAMPercentage}*percent*
 :   Sets the maximum amount of memory that the JVM may use for the Java heap
-    before applying ergonomics heuristics as a percentage of the maximum amount
-    determined as described in the `-XX:MaxRAM` option for small heaps. A small
-    heap is a heap of approximately 125 MB. The default value is 50 percent.
+    before applying ergonomics heuristics as a percentage of the available memory
+    to the JVM process for small heaps. A small heap is a heap of approximately
+    125 MB. The default value is 50 percent.
 
     The following example shows how to set the percentage of the maximum amount
     of memory used for the Java heap for small heaps:
@@ -2939,25 +2938,6 @@ they're used.
     (`-XX:+UseParallelGC` or `-XX:+UseG1GC`). Other collectors employing multiple
     threads always perform reference processing in parallel.
 
-[`-XX:MaxRAM=`]{#-XX_MaxRAM}*size*
-:   Sets the maximum amount of memory that the JVM may use for the Java heap
-    before applying ergonomics heuristics. The default value is the amount of
-    available memory to the JVM process.
-
-    The maximum amount of available memory to the JVM process is the minimum
-    of the machine's physical memory and any constraints set by the environment
-    (e.g. container).
-
-    Specifying this option disables automatic use of compressed oops if
-    the combined result of this and other options influencing the maximum amount
-    of memory is larger than the range of memory addressable by compressed oops.
-    See `-XX:UseCompressedOops` for further information about compressed oops.
-
-    The following example shows how to set the maximum amount of available
-    memory for sizing the Java heap to 2 GB:
-
-    >   `-XX:MaxRAM=2G`
-
 [`-XX:+AggressiveHeap`]{#-XX__AggressiveHeap}
 :   Enables Java heap optimization. This sets various parameters to be
     optimal for long-running jobs with intensive memory allocation, based on
@@ -2967,8 +2947,8 @@ they're used.
 [`-XX:+NeverActAsServerClassMachine`]{#-XX__NeverActAsServerClassMachine}
 :   Enable the "Client VM emulation" mode which only uses the C1 JIT compiler,
     a 32Mb CodeCache and the Serial GC. The maximum amount of memory that the
-    JVM may use (controlled by the `-XX:MaxRAM=n` flag) is set to 1GB by default.
-    The string "emulated-client" is added to the JVM version string.
+    JVM may use is set to 1GB by default. The string "emulated-client" is added
+    to the JVM version string.
 
     By default the flag is set to `true` only on Windows in 32-bit mode and
     `false` in all other cases.

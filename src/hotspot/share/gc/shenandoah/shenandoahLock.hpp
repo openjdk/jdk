@@ -31,7 +31,7 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/safepoint.hpp"
 
-class ShenandoahLock  {
+class ShenandoahLock {
 private:
   enum LockState { unlocked = 0, locked = 1 };
 
@@ -48,7 +48,7 @@ private:
 public:
   ShenandoahLock() : _state(unlocked), _owner(nullptr) {};
 
-  void lock(bool allow_block_for_safepoint) {
+  void lock(bool allow_block_for_safepoint = false) {
     assert(_owner.load_relaxed() != Thread::current(), "reentrant locking attempt, would deadlock");
 
     if ((allow_block_for_safepoint && SafepointSynchronize::is_synchronizing()) ||
@@ -83,34 +83,19 @@ public:
   }
 };
 
-class ShenandoahLocker : public StackObj {
-private:
-  ShenandoahLock* const _lock;
-public:
-  ShenandoahLocker(ShenandoahLock* lock, bool allow_block_for_safepoint = false) : _lock(lock) {
-    if (_lock != nullptr) {
-      _lock->lock(allow_block_for_safepoint);
-    }
-  }
-
-  ~ShenandoahLocker() {
-    if (_lock != nullptr) {
-      _lock->unlock();
-    }
-  }
-};
-
+// Simple lock using PlatformMonitor
 class ShenandoahSimpleLock {
 private:
   PlatformMonitor   _lock; // native lock
 public:
   ShenandoahSimpleLock();
-
-  virtual void lock();
-  virtual void unlock();
+  void lock(bool allow_block_for_safepoint = false);
+  void unlock();
 };
 
-class ShenandoahReentrantLock : public ShenandoahSimpleLock {
+// templated reentrant lock
+template<typename Lock>
+class ShenandoahReentrantLock : public Lock {
 private:
   Atomic<Thread*>       _owner;
   uint64_t              _count;
@@ -119,30 +104,25 @@ public:
   ShenandoahReentrantLock();
   ~ShenandoahReentrantLock();
 
-  virtual void lock();
-  virtual void unlock();
+  void lock(bool allow_block_for_safepoint = false);
+  void unlock();
 
   // If the lock already owned by this thread
   bool owned_by_self() const ;
 };
 
-class ShenandoahReentrantLocker : public StackObj {
-private:
-  ShenandoahReentrantLock* const _lock;
-
+// template based ShenandoahLocker
+template<typename Lock>
+class ShenandoahLocker : public StackObj {
+  Lock* const _lock;
 public:
-  ShenandoahReentrantLocker(ShenandoahReentrantLock* lock) :
-    _lock(lock) {
-    if (_lock != nullptr) {
-      _lock->lock();
-    }
+  ShenandoahLocker(Lock* lock, bool allow_block_for_safepoint = false) : _lock(lock) {
+    assert(_lock != nullptr, "Must not");
+    _lock->lock(allow_block_for_safepoint);
   }
 
-  ~ShenandoahReentrantLocker() {
-    if (_lock != nullptr) {
-      assert(_lock->owned_by_self(), "Must be owner");
-      _lock->unlock();
-    }
+  ~ShenandoahLocker() {
+    _lock->unlock();
   }
 };
 
