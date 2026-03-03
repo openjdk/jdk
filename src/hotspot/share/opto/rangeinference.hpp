@@ -416,7 +416,9 @@ public:
   // longs).
   template <class CTP>
   static CTP infer_lshift(CTP t1, int masked_shift) {
-    assert(masked_shift >= 0 && masked_shift < type_width<U<CTP>>(), "shift is out of range");
+    assert(masked_shift >= 0 &&
+        masked_shift < HotSpotNumerics::type_width<U<CTP>>(),
+        "shift is out of range");
 
     U<CTP> pattern = (U<CTP>(1) << masked_shift) - U<CTP>(1);
     U<CTP> known_one_bits = t1->_bits._ones << masked_shift;

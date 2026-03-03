@@ -190,15 +190,9 @@ public:
   // maximum value.
   template <typename T>
   static constexpr int type_width() {
-    static_assert(T(-1) > T(0), "type_width requires an unsigned type");
+    static_assert(!is_signed<T>(), "type_width requires an unsigned type");
     return type_width_impl(std::numeric_limits<T>::max());
   }
 };
-
-// Convenience free function that delegates to HotSpotNumerics::type_width.
-template <typename T>
-constexpr int type_width() {
-  return HotSpotNumerics::type_width<T>();
-}
 
 #endif // SHARE_UTILITIES_INTN_T_HPP
