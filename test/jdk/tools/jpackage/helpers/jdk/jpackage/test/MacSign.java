@@ -63,9 +63,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
+import jdk.jpackage.internal.util.MemoizingSupplier;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingSupplier;
@@ -280,7 +282,14 @@ public final class MacSign {
             return sb.toString();
         }
 
+        public static Builder build() {
+            return new Builder();
+        }
+
         public static final class Builder {
+
+            private Builder() {
+            }
 
             public Builder name(String v) {
                 keychainBuilder.name(v);
@@ -306,8 +315,8 @@ public final class MacSign {
                 return new KeychainWithCertsSpec(keychain, List.copyOf(certs));
             }
 
-            private Keychain.Builder keychainBuilder = new Keychain.Builder();
-            private List<CertificateRequest> certs = new ArrayList<>();
+            private final Keychain.Builder keychainBuilder = Keychain.build();
+            private final List<CertificateRequest> certs = new ArrayList<>();
         }
     }
 
@@ -326,7 +335,14 @@ public final class MacSign {
             }
         }
 
+        public static Builder build() {
+            return new Builder();
+        }
+
         public static final class Builder {
+
+            private Builder() {
+            }
 
             public Builder name(String v) {
                 name = v;
@@ -599,12 +615,7 @@ public final class MacSign {
 
         @Override
         public String toString() {
-            final var sb = new StringBuilder();
-            sb.append(frame("BEGIN " + label));
-            sb.append(ENCODER.encodeToString(data));
-            sb.append("\n");
-            sb.append(frame("END " + label));
-            return sb.toString();
+            return PemDataFormatter.format(label, data);
         }
 
         static PemData of(X509Certificate cert) {
@@ -619,12 +630,32 @@ public final class MacSign {
                 throw new UncheckedIOException(ex);
             }
         }
+    }
+
+    private final class PemDataFormatter {
+
+        static String format(String label, byte[] data) {
+            Objects.requireNonNull(label);
+            Objects.requireNonNull(data);
+
+            final var sb = new StringBuilder();
+            sb.append(frame("BEGIN " + label));
+            sb.append(ENCODER.encodeToString(data));
+            sb.append("\n");
+            sb.append(frame("END " + label));
+            return sb.toString();
+        }
 
         private static String frame(String str) {
             return String.format("-----%s-----\n", Objects.requireNonNull(str));
         }
 
         private static final Base64.Encoder ENCODER = Base64.getMimeEncoder(64, "\n".getBytes());
+    }
+
+    public static String formatX509Certificate(X509Certificate cert) {
+        Objects.requireNonNull(cert);
+        return PemDataFormatter.format("CERTIFICATE", toSupplier(cert::getEncoded).get());
     }
 
     public enum DigestAlgorithm {
@@ -773,7 +804,14 @@ public final class MacSign {
             return COMPARATOR.compare(this, o);
         }
 
+        public static Builder build() {
+            return new Builder();
+        }
+
         public static final class Builder {
+
+            private Builder() {
+            }
 
             public Builder userName(String v) {
                 userName = v;
@@ -1068,6 +1106,15 @@ public final class MacSign {
         return !missingKeychain && !missingCertificates && !invalidCertificates;
     }
 
+    /**
+     * Creates an empty keychain with unique name in the work directory of the current test.
+     */
+    public static Keychain createEmptyKeychain() {
+        return Keychain.build()
+                .name(TKit.createUniquePath(TKit.workDir().resolve("empty.keychain")).toAbsolutePath().toString())
+                .create().create();
+    }
+
     public static Keychain.UsageBuilder withKeychains(KeychainWithCertsSpec... keychains) {
         return withKeychains(Stream.of(keychains).map(KeychainWithCertsSpec::keychain).toArray(Keychain[]::new));
     }
@@ -1100,9 +1147,14 @@ public final class MacSign {
 
     public static void withKeychain(Consumer<ResolvedKeychain> consumer, Consumer<Keychain.UsageBuilder> mutator, ResolvedKeychain keychain) {
         Objects.requireNonNull(consumer);
-        withKeychains(() -> {
+        Objects.requireNonNull(mutator);
+        if (keychain.isMock()) {
             consumer.accept(keychain);
-        }, mutator, keychain.spec().keychain());
+        } else {
+            withKeychains(() -> {
+                consumer.accept(keychain);
+            }, mutator, keychain.spec().keychain());
+        }
     }
 
     public static void withKeychain(Consumer<ResolvedKeychain> consumer, ResolvedKeychain keychain) {
@@ -1111,7 +1163,15 @@ public final class MacSign {
 
     public static final class ResolvedKeychain {
         public ResolvedKeychain(KeychainWithCertsSpec spec) {
+            isMock = false;
             this.spec = Objects.requireNonNull(spec);
+            certMapSupplier = MemoizingSupplier.runOnce(() -> {
+                return MacSign.mapCertificateRequests(spec);
+            });
+        }
+
+        public static ResolvedKeychain createMock(String name, Map<CertificateRequest, X509Certificate> certs) {
+            return new ResolvedKeychain(name, certs);
         }
 
         public KeychainWithCertsSpec spec() {
@@ -1122,15 +1182,30 @@ public final class MacSign {
             return spec.keychain().name();
         }
 
-        public Map<CertificateRequest, X509Certificate> mapCertificateRequests() {
-            if (certMap == null) {
-                synchronized (this) {
-                    if (certMap == null) {
-                        certMap = MacSign.mapCertificateRequests(spec);
-                    }
-                }
+        public boolean isMock() {
+            return isMock;
+        }
+
+        public ResolvedKeychain toMock(Map<CertificateRequest, X509Certificate> signEnv) {
+            if (isMock) {
+                throw new UnsupportedOperationException("Already a mock");
             }
-            return certMap;
+
+            var comm = Comm.compare(Set.copyOf(spec.certificateRequests()), signEnv.keySet());
+            if (!comm.unique1().isEmpty()) {
+                throw new IllegalArgumentException(String.format(
+                        "Signing environment missing %s certificate request mappings in [%s] keychain",
+                        comm.unique1(), name()));
+            }
+
+            var certs = new HashMap<>(signEnv);
+            certs.keySet().retainAll(comm.common());
+
+            return createMock(name(), certs);
+        }
+
+        public Map<CertificateRequest, X509Certificate> mapCertificateRequests() {
+            return certMapSupplier.get();
         }
 
         public Function<CertificateRequest, X509Certificate> asCertificateResolver() {
@@ -1145,8 +1220,23 @@ public final class MacSign {
             };
         }
 
+        private ResolvedKeychain(String name, Map<CertificateRequest, X509Certificate> certs) {
+
+            var keychainBuilder = KeychainWithCertsSpec.build().name(Objects.requireNonNull(name));
+            certs.keySet().forEach(keychainBuilder::addCert);
+
+            var certsCopy = Map.copyOf(Objects.requireNonNull(certs));
+
+            isMock = true;
+            spec = keychainBuilder.create();
+            certMapSupplier = MemoizingSupplier.runOnce(() -> {
+                return certsCopy;
+            });
+        }
+
+        private final boolean isMock;
         private final KeychainWithCertsSpec spec;
-        private volatile Map<CertificateRequest, X509Certificate> certMap;
+        private final Supplier<Map<CertificateRequest, X509Certificate>> certMapSupplier;
     }
 
     private static Map<CertificateRequest, X509Certificate> mapCertificateRequests(KeychainWithCertsSpec spec) {

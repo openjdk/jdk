@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,22 +130,21 @@ inline JvmtiThreadState* JvmtiThreadState::state_for(JavaThread *thread, Handle 
   return state;
 }
 
-inline JavaThread* JvmtiThreadState::get_thread_or_saved() {
-  // Use _thread_saved if cthread is detached from JavaThread (_thread == null).
-  return (_thread == nullptr && !is_virtual()) ? _thread_saved : _thread;
-}
-
 inline void JvmtiThreadState::set_should_post_on_exceptions(bool val) {
-  get_thread_or_saved()->set_should_post_on_exceptions_flag(val ? JNI_TRUE : JNI_FALSE);
+  get_thread()->set_should_post_on_exceptions_flag(val ? JNI_TRUE : JNI_FALSE);
 }
 
 inline void JvmtiThreadState::unbind_from(JvmtiThreadState* state, JavaThread* thread) {
   if (state == nullptr) {
+    assert(!thread->is_interp_only_mode(), "sanity check");
     return;
   }
-  // Save thread's interp_only_mode.
-  state->_saved_interp_only_mode = thread->is_interp_only_mode();
-  state->set_thread(nullptr);  // Make sure stale _thread value is never used.
+  assert(thread->jvmti_thread_state() == state, "sanity check");
+  assert(state->get_thread() == thread, "sanity check");
+  assert(thread->is_interp_only_mode() == state->_saved_interp_only_mode, "sanity check");
+  if (state->is_virtual()) {    // clean _thread link for virtual threads only
+    state->set_thread(nullptr); // make sure stale _thread value is never used
+  }
 }
 
 inline void JvmtiThreadState::bind_to(JvmtiThreadState* state, JavaThread* thread) {
@@ -158,7 +157,7 @@ inline void JvmtiThreadState::bind_to(JvmtiThreadState* state, JavaThread* threa
   // Bind JavaThread to JvmtiThreadState.
   thread->set_jvmti_thread_state(state);
 
-  if (state != nullptr) {
+  if (state != nullptr && state->is_virtual()) {
     // Bind to JavaThread.
     state->set_thread(thread);
   }
