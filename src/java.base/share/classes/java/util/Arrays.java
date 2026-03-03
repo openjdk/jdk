@@ -4452,7 +4452,7 @@ public final class Arrays {
      * @param fromIndex the initial index of the range to be hashed, inclusive
      * @param toIndex the final index of the range to be hashed, exclusive
      * @return a content-based hash code for the specified range of the array,
-     *         or {@code 0} if {@code a} is {@code null} and the range is empty
+     *         or {@code 0} if either {@code a} is {@code null} or the range is empty
      * @throws ArrayIndexOutOfBoundsException if {@code fromIndex < 0} or
      *         {@code toIndex} is greater than the array length
      * @throws IllegalArgumentException if {@code fromIndex > toIndex}
