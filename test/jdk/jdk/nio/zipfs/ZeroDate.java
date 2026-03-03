@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ import static java.util.zip.ZipFile.CENTIM;
 import static java.util.zip.ZipFile.ENDHDR;
 import static java.util.zip.ZipFile.ENDOFF;
 import static java.util.zip.ZipFile.LOCTIM;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,10 +42,16 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Collections;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import jdk.test.lib.Utils;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /* @test
  * @bug 8184940 8186227 8188869
@@ -53,42 +60,54 @@ import jdk.test.lib.Utils;
  * @author Liam Miller-Cushon
  * @modules jdk.zipfs
  * @library /test/lib
+ * @run junit ZeroDate
  */
 public class ZeroDate {
 
-    public static void main(String[] args) throws Exception {
-        // create a zip file, and read it in as a byte array
-        Path path = Utils.createTempFile("bad", ".zip");
-        try {
-            try (OutputStream os = Files.newOutputStream(path);
-                 ZipOutputStream zos = new ZipOutputStream(os)) {
-                ZipEntry e = new ZipEntry("x");
-                zos.putNextEntry(e);
-                zos.write((int) 'x');
-            }
-            int len = (int) Files.size(path);
-            byte[] data = new byte[len];
-            try (InputStream is = Files.newInputStream(path)) {
-                is.read(data);
-            }
+    static Path path;
+    static byte[] data;
 
-            // year, month, day are zero
-            testDate(data.clone(), 0, LocalDate.of(1979, 11, 30).atStartOfDay());
-            // only year is zero
-            testDate(data.clone(), 0 << 25 | 4 << 21 | 5 << 16, LocalDate.of(1980, 4, 5).atStartOfDay());
-            // month is greater than 12
-            testDate(data.clone(), 0 << 25 | 13 << 21 | 1 << 16, LocalDate.of(1981, 1, 1).atStartOfDay());
-            // 30th of February
-            testDate(data.clone(), 0 << 25 | 2 << 21 | 30 << 16, LocalDate.of(1980, 3, 1).atStartOfDay());
-            // 30th of February, 24:60:60
-            testDate(data.clone(), 0 << 25 | 2 << 21 | 30 << 16 | 24 << 11 | 60 << 5 | 60 >> 1,
-                    LocalDateTime.of(1980, 3, 2, 1, 1, 0));
-        } finally {
-            Files.delete(path);
+    @BeforeAll
+    static void setup() throws IOException {
+        // create a zip file, and read it in as a byte array
+        path = Utils.createTempFile("bad", ".zip");
+        try (OutputStream os = Files.newOutputStream(path);
+             ZipOutputStream zos = new ZipOutputStream(os)) {
+            ZipEntry e = new ZipEntry("x");
+            zos.putNextEntry(e);
+            zos.write((int) 'x');
+        }
+        int len = (int) Files.size(path);
+        data = new byte[len];
+        try (InputStream is = Files.newInputStream(path)) {
+            is.read(data);
         }
     }
 
-    private static void testDate(byte[] data, int date, LocalDateTime expected) throws IOException {
+    @AfterAll
+    static void cleanup () throws IOException {
+        Files.delete(path);
+    }
+
+    static Stream<Arguments> dateData() {
+        return Stream.of(
+                // year, month, day are zero
+                Arguments.of(data.clone(), 0, LocalDate.of(1979, 11, 30).atStartOfDay()),
+                // only year is zero
+                Arguments.of(data.clone(), 0 << 25 | 4 << 21 | 5 << 16, LocalDate.of(1980, 4, 5).atStartOfDay()),
+                // month is greater than 12
+                Arguments.of(data.clone(), 0 << 25 | 13 << 21 | 1 << 16, LocalDate.of(1981, 1, 1).atStartOfDay()),
+                // 30th of February
+                Arguments.of(data.clone(), 0 << 25 | 2 << 21 | 30 << 16, LocalDate.of(1980, 3, 1).atStartOfDay()),
+                // 30th of February, 24:60:60
+                Arguments.of(data.clone(), 0 << 25 | 2 << 21 | 30 << 16 | 24 << 11 | 60 << 5 | 60 >> 1,
+                        LocalDateTime.of(1980, 3, 2, 1, 1, 0))
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("dateData")
+    void testDate(byte[] data, int date, LocalDateTime expected) throws IOException {
         // set the datetime
         int endpos = data.length - ENDHDR;
         int cenpos = u16(data, endpos + ENDOFF);
@@ -110,10 +129,8 @@ public class ZeroDate {
                             .toInstant();
             Instant expectedInstant =
                     expected.atZone(ZoneId.systemDefault()).toInstant();
-            if (!actualInstant.equals(expectedInstant)) {
-                throw new AssertionError(
-                        String.format("actual: %s, expected: %s", actualInstant, expectedInstant));
-            }
+            assertEquals(expectedInstant, actualInstant,
+                    String.format("actual: %s, expected: %s", actualInstant, expectedInstant));
         } finally {
             Files.delete(path);
         }
