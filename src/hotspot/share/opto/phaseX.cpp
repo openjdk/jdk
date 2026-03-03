@@ -2622,22 +2622,12 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   // ConvD2F::Ideal matches ConvD2F(SqrtD(ConvF2D(x))) => SqrtF(x).
   // Notify ConvD2F users of SqrtD when any input of the SqrtD changes.
   if (use_op == Op_SqrtD) {
-    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
-      Node* u = use->fast_out(i2);
-      if (u->Opcode() == Op_ConvD2F) {
-        worklist.push(u);
-      }
-    }
+    add_users_to_worklist_if(worklist, use, [](Node* u) { return u->Opcode() == Op_ConvD2F; });
   }
   // ConvF2HF::Ideal matches ConvF2HF(binopF(ConvHF2F(...))) => FP16BinOp(...).
   // Notify ConvF2HF users of float binary ops when any input changes.
   if (Float16NodeFactory::is_float32_binary_oper(use_op)) {
-    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
-      Node* u = use->fast_out(i2);
-      if (u->Opcode() == Op_ConvF2HF) {
-        worklist.push(u);
-      }
-    }
+    add_users_to_worklist_if(worklist, use, [](Node* u) { return u->Opcode() == Op_ConvF2HF; });
   }
   // If changed AddP inputs:
   // - check Stores for loop invariant, and
@@ -2931,6 +2921,10 @@ void PhaseCCP::dump_type_and_node(const Node* n, const Type* t) {
 }
 #endif
 
+bool PhaseCCP::not_bottom_type(Node* n) const {
+  return n->bottom_type() != type(n);
+}
+
 // We need to propagate the type change of 'n' to all its uses. Depending on the kind of node, additional nodes
 // (grandchildren or even further down) need to be revisited as their types could also be improved as a result
 // of the new type of 'n'. Push these nodes to the worklist.
@@ -2943,7 +2937,7 @@ void PhaseCCP::push_child_nodes_to_worklist(Unique_Node_List& worklist, Node* n)
 }
 
 void PhaseCCP::push_if_not_bottom_type(Unique_Node_List& worklist, Node* n) const {
-  if (n->bottom_type() != type(n)) {
+  if (not_bottom_type(n)) {
     worklist.push(n);
   }
 }
@@ -2967,7 +2961,7 @@ void PhaseCCP::push_more_uses(Unique_Node_List& worklist, Node* parent, const No
 void PhaseCCP::push_phis(Unique_Node_List& worklist, const Node* use) const {
   if (use->is_Region()) {
     add_users_to_worklist_if(worklist, use, [&](Node* u) {
-      return u->bottom_type() != type(u);
+      return not_bottom_type(u);
     });
   }
 }
@@ -2998,7 +2992,7 @@ void PhaseCCP::push_cmpu(Unique_Node_List& worklist, const Node* use) const {
     // Got a CmpU or CmpU3 which might need the new type information from node n.
     add_users_to_worklist_if(worklist, use, [&](Node* u) {
       uint op = u->Opcode();
-      return (op == Op_CmpU || op == Op_CmpU3) && u->bottom_type() != type(u);
+      return (op == Op_CmpU || op == Op_CmpU3) && not_bottom_type(u);
     });
   }
 }
@@ -3127,7 +3121,7 @@ void PhaseCCP::push_cast_ii(Unique_Node_List& worklist, const Node* parent, cons
   if (use->Opcode() == Op_CmpI && use->in(2) == parent) {
     Node* other_cmp_input = use->in(1);
     add_users_to_worklist_if(worklist, other_cmp_input, [&](Node* u) {
-      return u->is_CastII() && u->bottom_type() != type(u);
+      return u->is_CastII() && not_bottom_type(u);
     });
   }
 }
