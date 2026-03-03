@@ -2674,6 +2674,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
           IfNode *iff = new IfNode(ctrl, test, PROB_UNLIKELY_MAG(3), COUNT_UNKNOWN);
           Node *if_slow = transform_later(new IfTrueNode(iff)); // x <= 0
           Node *if_fast = transform_later(new IfFalseNode(iff)); // x > 0
+          transform_later(iff);
 
           // slow path: call pow(x, 0.5)
           // TODO: a lot repeated code with ModeDFNodes. Refactor?
@@ -2691,33 +2692,37 @@ bool PhaseMacroExpand::expand_macro_nodes() {
           Node *call_result = transform_later(new ProjNode(call, TypeFunc::Parms + 0));
 
           // fast path: sqrt(0.5)
-          Node *sqrt = transform_later(new SqrtDNode(C, if_fast, base));;
+          Node *sqrt = transform_later(new SqrtDNode(C, if_fast, base));
 
           // merge paths
           RegionNode *region = new RegionNode(3);
           region->init_req(1, call_ctrl); // slow path
           region->init_req(2, if_fast); // fast path
+          transform_later(region);
 
           PhiNode *phi = new PhiNode(region, Type::DOUBLE);
           phi->init_req(1, call_result); // slow: pow result
           phi->init_req(2, sqrt); // fast: sqrt result
+          transform_later(phi);
 
+          // TODO: do we even still have a change for split-if opto? For example, if we can't fold base to a constant
+          //       but knows it's always positive?
           C->set_has_split_ifs(true); // Has chance for split-if optimization
 
           // TODO: Instead of inserting new tuples, we could surgically replace outgoing edges to user node with _callprojs
-          // which one's better?
+          //       which one's better?
           TupleNode *tuple = TupleNode::make(
             pow_macro->tf()->range(),
-            region, // Control → RegionNode
-            C->top(), // I_O
-            C->top(), // Memory
-            C->top(), // FramePtr
-            C->top(), // ReturnAdr
-            phi, // Parms+0 → PhiNode (the double result)
-            C->top()); // Parms+1 → HALF padding
+            region,
+            C->top(),
+            C->top(),
+            C->top(),
+            C->top(),
+            phi,
+            C->top()); // double slot padding
+          transform_later(tuple);
 
           _igvn.replace_node(pow_macro, tuple);
-          transform_later(tuple);
           break;
         }
 

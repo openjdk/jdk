@@ -23,11 +23,10 @@
  */
 
 #include "mathnode.hpp"
-
-#include <math.h>
-
 #include "runtime.hpp"
 #include "runtime/stubRoutines.hpp"
+
+#include <math.h>
 
 PowDNode::PowDNode(Compile* C, Node* base, Node* exp)
     : CallLeafPureNode(

@@ -30,6 +30,7 @@
 #include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "jfr/support/jfrIntrinsics.hpp"
+#include "mathnode.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -42,8 +43,6 @@
 #include "opto/countbitsnode.hpp"
 #include "opto/idealKit.hpp"
 #include "opto/library_call.hpp"
-
-#include "mathnode.hpp"
 #include "opto/mathexactnode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/narrowptrnode.hpp"
