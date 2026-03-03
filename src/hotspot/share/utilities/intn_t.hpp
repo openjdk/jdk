@@ -164,22 +164,41 @@ inline unsigned count_leading_zeros(uintn_t<nbits> v) {
   return count_leading_zeros<unsigned int>(v._v & uintn_t<nbits>::_mask) - (32 - nbits);
 }
 
-template <typename T>
-constexpr int type_width_impl(T value) {
-  // Count the number of 1s in `value`.  We can't use population_count() from
-  // utilities/population_count.hpp, since it requires `std::is_integral`, which
-  // fails for `uintn_t<N>`.  Since this is a constexpr function, this function
-  // does not impose a runtime performance overhead.
-  return value == T(0) ? 0 : 1 + type_width_impl(value >> 1);
-}
+class HotSpotNumerics {
+private:
+  template <typename T>
+  static constexpr int type_width_impl(T value) {
+    // Count the number of 1s in `value`.  We can't use population_count() from
+    // utilities/population_count.hpp, since it requires `std::is_integral`, which
+    // fails for `uintn_t<N>`.  Since this is a constexpr function, this function
+    // does not impose a runtime performance overhead.
+    return value == T(0) ? 0 : 1 + type_width_impl(value >> 1);
+  }
 
+public:
+  // Returns true if T is a signed type.  We can't rely on std::is_signed
+  // because it returns false for intn_t<N>, which is not a standard integral
+  // type.  Instead, we check whether T(-1) is less than T(0).
+  template <typename T>
+  static constexpr bool is_signed() {
+    return T(-1) < T(0);
+  }
+
+  // Returns the bit width of the unsigned type T.  We can't use sizeof() on T,
+  // since sizeof(uintn_t<N>) returns the size of the underlying storage rather
+  // than the logical type width.  So we instead compute the number of 1s in the
+  // maximum value.
+  template <typename T>
+  static constexpr int type_width() {
+    static_assert(T(-1) > T(0), "type_width requires an unsigned type");
+    return type_width_impl(std::numeric_limits<T>::max());
+  }
+};
+
+// Convenience free function that delegates to HotSpotNumerics::type_width.
 template <typename T>
 constexpr int type_width() {
-  // We can't use `sizeof()` on `T`, since `sizeof(uintn_t<N>)` returns the size
-  // of the underlying storage rather than the logical type width.  So we
-  // instead compute the number of 1s in the maximum value.
-  static_assert(!std::is_signed<T>::value, "type_width requires an unsigned type");
-  return type_width_impl(std::numeric_limits<T>::max());
+  return HotSpotNumerics::type_width<T>();
 }
 
 #endif // SHARE_UTILITIES_INTN_T_HPP

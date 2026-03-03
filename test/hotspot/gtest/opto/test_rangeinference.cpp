@@ -642,6 +642,33 @@ static void test_lshift_correctness(const InputType& input, int shift) {
   }
 }
 
+// Test correctness for jint/jlong types by sampling values from the input range.
+template <class InputType>
+static void test_lshift_correctness_samples(const InputType& input, int shift) {
+  using U = std::remove_const_t<decltype(input->_ulo)>;
+  auto result = RangeInference::infer_lshift(input, shift);
+
+  constexpr size_t sample_count = 6;
+  U samples[sample_count] {U(input._lo), U(input._hi), input._ulo, input._uhi,
+                           input._ulo, input._ulo};
+
+  // Fill remaining slots with random values that are contained in input
+  constexpr size_t max_tries = 100;
+  constexpr size_t start_random_idx = 4;
+  for (size_t tries = 0, idx = start_random_idx; tries < max_tries && idx < sample_count; tries++) {
+    U n = uniform_random<U>();
+    if (input.contains(n)) {
+      samples[idx] = n;
+      idx++;
+    }
+  }
+
+  for (size_t i = 0; i < sample_count; i++) {
+    U r = lshift_op(samples[i], shift);
+    ASSERT_TRUE(result.contains(r));
+  }
+}
+
 // Test monotonicity: if input is a subset of super, then result is a subset of
 // infer_lshift(super, shift)
 template <class InputType>
@@ -652,6 +679,33 @@ static void test_lshift_monotonicity(const InputType& input, int shift) {
       ASSERT_TRUE(RangeInference::infer_lshift(super, shift).contains(result));
     }
   }
+}
+
+// Test monotonicity for jint/jlong types by constructing random supersets.
+template <class InputType>
+static void test_lshift_monotonicity_samples(const InputType& input, int shift) {
+  using S = std::remove_const_t<decltype(input->_lo)>;
+  using U = std::remove_const_t<decltype(input->_ulo)>;
+  auto result = RangeInference::infer_lshift(input, shift);
+
+  // The universe is a superset of all other sets
+  InputType universe = InputType{std::numeric_limits<S>::min(), std::numeric_limits<S>::max(), U(0), U(-1), {U(0), U(0)}};
+  ASSERT_TRUE(RangeInference::infer_lshift(universe, shift).contains(result));
+
+  auto random_superset = [](const InputType& in) {
+    S lo = MIN2(in->_lo, S(uniform_random<U>()));
+    S hi = MAX2(in->_hi, S(uniform_random<U>()));
+    U ulo = MIN2(in->_ulo, uniform_random<U>());
+    U uhi = MAX2(in->_uhi, uniform_random<U>());
+    U zeros = in->_bits._zeros & uniform_random<U>();
+    U ones = in->_bits._ones & uniform_random<U>();
+    InputType super = InputType::make(TypeIntPrototype<S, U>{{lo, hi}, {ulo, uhi}, {zeros, ones}}, 0);
+    assert(super.contains(in), "impossible");
+    return super;
+  };
+
+  InputType super = random_superset(input);
+  ASSERT_TRUE(RangeInference::infer_lshift(super, shift).contains(result));
 }
 
 template <class InputType>
@@ -666,8 +720,84 @@ static void test_lshift_for_type() {
   }
 }
 
+// Sample-based test for jint/jlong types
+template <class InputType>
+static void test_lshift_random() {
+  using S = std::remove_const_t<decltype(InputType::_lo)>;
+  using U = std::remove_const_t<decltype(InputType::_ulo)>;
+
+  constexpr size_t sample_count = 100;
+  InputType samples[sample_count];
+
+  // Fill with {0}
+  for (size_t i = 0; i < sample_count; i++) {
+    samples[i] = InputType::make(TypeIntPrototype<S, U>{{S(0), S(0)}, {U(0), U(0)}, {U(0), U(0)}}, 0);
+  }
+
+  // {1}
+  samples[1] = InputType::make(TypeIntPrototype<S, U>{{S(1), S(1)}, {U(1), U(1)}, {U(0), U(0)}}, 0);
+  // {-1}
+  samples[2] = InputType::make(TypeIntPrototype<S, U>{{S(-1), S(-1)}, {U(-1), U(-1)}, {U(0), U(0)}}, 0);
+  // {0, 1}
+  samples[3] = InputType::make(TypeIntPrototype<S, U>{{S(0), S(1)}, {U(0), U(1)}, {U(0), U(0)}}, 0);
+  // {-1, 0, 1}
+  samples[4] = InputType::make(TypeIntPrototype<S, U>{{S(-1), S(1)}, {U(0), U(-1)}, {U(0), U(0)}}, 0);
+  // {-1, 1}
+  samples[5] = InputType::make(TypeIntPrototype<S, U>{{S(-1), S(1)}, {U(1), U(-1)}, {U(0), U(0)}}, 0);
+  // {0, 1, 2}
+  samples[6] = InputType::make(TypeIntPrototype<S, U>{{S(0), S(2)}, {U(0), U(2)}, {U(0), U(0)}}, 0);
+  // {0, 2}
+  samples[7] = InputType::make(TypeIntPrototype<S, U>{{S(0), S(2)}, {U(0), U(2)}, {U(1), U(0)}}, 0);
+  // [min_signed, max_signed]
+  samples[8] = InputType::make(TypeIntPrototype<S, U>{{std::numeric_limits<S>::min(), std::numeric_limits<S>::max()}, {U(0), U(-1)}, {U(0), U(0)}}, 0);
+  // [0, max_signed]
+  samples[9] = InputType::make(TypeIntPrototype<S, U>{{S(0), std::numeric_limits<S>::max()}, {U(0), U(-1)}, {U(0), U(0)}}, 0);
+  // [min_signed, 0)
+  samples[10] = InputType::make(TypeIntPrototype<S, U>{{std::numeric_limits<S>::min(), S(-1)}, {U(0), U(-1)}, {U(0), U(0)}}, 0);
+
+  constexpr size_t max_tries = 1000;
+  constexpr size_t start_random_idx = 11;
+  for (size_t tries = 0, idx = start_random_idx; tries < max_tries && idx < sample_count; tries++) {
+    S signed_bound1 = S(uniform_random<U>());
+    S signed_bound2 = S(uniform_random<U>());
+    S lo = MIN2(signed_bound1, signed_bound2);
+    S hi = MAX2(signed_bound1, signed_bound2);
+
+    U unsigned_bound1 = uniform_random<U>();
+    U unsigned_bound2 = uniform_random<U>();
+    U ulo = MIN2(unsigned_bound1, unsigned_bound2);
+    U uhi = MAX2(unsigned_bound1, unsigned_bound2);
+
+    U zeros = uniform_random<U>();
+    U ones = uniform_random<U>();
+    U common = zeros & ones;
+    zeros = zeros ^ common;
+    ones = ones ^ common;
+
+    TypeIntPrototype<S, U> t{{lo, hi}, {ulo, uhi}, {zeros, ones}};
+    auto canonicalized_t = t.canonicalize_constraints();
+    if (canonicalized_t.empty()) {
+      continue;
+    }
+
+    samples[idx] = TypeIntMirror<S, U>{canonicalized_t._data._srange._lo, canonicalized_t._data._srange._hi,
+                                       canonicalized_t._data._urange._lo, canonicalized_t._data._urange._hi,
+                                       canonicalized_t._data._bits};
+    idx++;
+  }
+
+  for (size_t i = 0; i < sample_count; i++) {
+    for (int shift = 0; shift < type_width<U>(); shift++) {
+      test_lshift_correctness_samples(samples[i], shift);
+      test_lshift_monotonicity_samples(samples[i], shift);
+    }
+  }
+}
+
 TEST(opto, range_inference_lshift) {
   test_lshift_for_type<TypeIntMirror<intn_t<1>, uintn_t<1>>>();
   test_lshift_for_type<TypeIntMirror<intn_t<2>, uintn_t<2>>>();
   test_lshift_for_type<TypeIntMirror<intn_t<3>, uintn_t<3>>>();
+  test_lshift_random<TypeIntMirror<jint, juint>>();
+  test_lshift_random<TypeIntMirror<jlong, julong>>();
 }
