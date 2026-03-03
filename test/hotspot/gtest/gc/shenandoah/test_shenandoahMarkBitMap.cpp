@@ -165,7 +165,7 @@ public:
 
   static bool run_test() {
     ShenandoahHeap* heap = ShenandoahHeap::heap();
-    size_t test_heap_size = 32 * M;
+    size_t test_heap_size = MIN2(32 * M, heap->max_capacity());
     size_t heap_size_words = test_heap_size / HeapWordSize;
     HeapWord* my_heap_memory = heap->base();
     HeapWord* end_of_my_heap = my_heap_memory + heap_size_words;
