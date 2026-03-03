@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8171277 8206915
+ * @bug 8171277 8206915 8368841
  * @summary Test XDH key agreement
  * @library /test/lib
  * @run main TestXDH

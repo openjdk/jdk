@@ -88,10 +88,7 @@ public final class XDHPublicKeyImpl extends X509Key implements XECPublicKey {
             u_arr[0] &= mask;
         }
 
-        // RFC 7748 Section 5 requires the MSB of `u` to be zeroed for X25519
-        this.u = (params == XECParameters.X448) ?
-            new BigInteger(1, u_arr) :
-            new BigInteger(1, u_arr).clearBit(255);
+        this.u = new BigInteger(1, u_arr);
 
         checkLength(params);
     }

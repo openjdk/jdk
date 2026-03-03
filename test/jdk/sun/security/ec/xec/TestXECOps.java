@@ -33,6 +33,7 @@
 
 import sun.security.ec.*;
 
+import java.math.BigInteger;
 import java.security.spec.NamedParameterSpec;
 import java.util.*;
 import jdk.test.lib.Convert;
@@ -93,6 +94,7 @@ public class TestXECOps {
             XECParameters.get(RuntimeException::new, paramSpec);
         XECOperations ops = new XECOperations(settings);
 
+        // Test encodedPointMultiply(byte[] k, byte[] u)
         byte[] basePoint = Convert.byteToByteArray(settings.getBasePoint(),
             settings.getBytes());
         byte[] a = HexFormat.of().parseHex(a_str);
@@ -101,17 +103,28 @@ public class TestXECOps {
 
         byte[] a_copy = Arrays.copyOf(a, a.length);
         byte[] b_copy = Arrays.copyOf(b, b.length);
-        byte[] basePoint_copy = Arrays.copyOf(basePoint, basePoint.length);
 
         byte[] resultA = ops.encodedPointMultiply(b,
             ops.encodedPointMultiply(a, basePoint));
         byte[] resultB = ops.encodedPointMultiply(a_copy,
-            ops.encodedPointMultiply(b_copy, basePoint_copy));
+            ops.encodedPointMultiply(b_copy, basePoint));
         if (!Arrays.equals(resultA, expectedResult)) {
             throw new RuntimeException("fail");
         }
         if (!Arrays.equals(resultB, expectedResult)) {
             throw new RuntimeException("fail");
+        }
+
+        // Test encodedPointMultiply(byte[] k, BigInteger u)
+        reverse(basePoint);
+        BigInteger bp = new BigInteger(1, basePoint);
+        byte[] c = HexFormat.of().parseHex(a_str);
+        byte[] d = HexFormat.of().parseHex(b_str);
+
+        byte[] res0 = ops.encodedPointMultiply(d,
+            ops.encodedPointMultiply(c, bp));
+        if (!Arrays.equals(res0, expectedResult)) {
+            throw new RuntimeException("bigint fail");
         }
     }
 
@@ -130,6 +143,14 @@ public class TestXECOps {
 
         if (!Arrays.equals(u_out, u_out_expected)) {
             throw new RuntimeException("fail");
+        }
+    }
+
+    private static void reverse(byte[] array) {
+        for (int i = 0; i < array.length / 2; i++) {
+            byte temp = array[i];
+            array[i] = array[array.length - i - 1];
+            array[array.length - i - 1] = temp;
         }
     }
 }

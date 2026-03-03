@@ -89,7 +89,11 @@ public class XECOperations {
      */
     public byte[] encodedPointMultiply(byte[] k, BigInteger u) {
         pruneK(k);
-        ImmutableIntegerModuloP elemU = field.getElement(u);
+
+        ImmutableIntegerModuloP elemU = (params == XECParameters.X448) ?
+            field.getElement(u) :
+            field.getElement(u.clearBit(255));
+
         return pointMultiply(k, elemU).asByteArray(params.getBytes());
     }
 
