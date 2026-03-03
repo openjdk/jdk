@@ -1034,8 +1034,7 @@ public abstract class SunToolkit extends Toolkit
         return getSystemEventQueueImplPP();
     }
 
-    // Package private implementation
-    static EventQueue getSystemEventQueueImplPP() {
+    public static EventQueue getSystemEventQueueImplPP() {
         return getSystemEventQueueImplPP(AppContext.getAppContext());
     }
 
