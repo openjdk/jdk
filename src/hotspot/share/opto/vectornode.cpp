@@ -2033,6 +2033,9 @@ Node* VectorLongToMaskNode::Ideal(PhaseGVN* phase, bool can_reshape) {
          return nullptr;
        }
        src = src->in(1);
+       // TODO: fix the bug. No test has covered this yet and it seems to lead to wrong results.
+       //DEBUG_ONLY( this->dump_bfs(4,nullptr,""); )
+       //assert(false, "HUNTING");
      }
      const TypeVect* src_type = src->bottom_type()->is_vect();
      if (src_type->length() == vlen &&
