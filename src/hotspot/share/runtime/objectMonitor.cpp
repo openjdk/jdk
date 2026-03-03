@@ -594,7 +594,7 @@ void ObjectMonitor::enter_with_contention_mark(JavaThread* current, ObjectMonito
       ExitOnSuspend eos(this);
       {
         ThreadBlockInVMPreprocess<ExitOnSuspend> tbivs(current, eos, true /* allow_suspend */);
-        if (!try_enter_or_add_to_entry_list(current, &node)) {
+        if (!try_enter_fast(current, &node)) {
           enter_internal(current, &node, false /* reenter_path */);
         }
         current->set_current_pending_monitor(nullptr);
@@ -702,13 +702,28 @@ ObjectMonitor::TryLockResult ObjectMonitor::try_lock(JavaThread* current) {
   return first_own == own ? TryLockResult::HasOwner : TryLockResult::Interference;
 }
 
+// Push "current" onto the head of the _entry_list. Once on _entry_list,
+// current stays on-queue until it acquires the lock.
+void ObjectMonitor::add_to_entry_list(JavaThread* current, ObjectWaiter* node) {
+  node->_prev   = nullptr;
+  node->TState  = ObjectWaiter::TS_ENTER;
+
+  for (;;) {
+    ObjectWaiter* head = AtomicAccess::load(&_entry_list);
+    node->_next = head;
+    if (AtomicAccess::cmpxchg(&_entry_list, head, node) == head) {
+      return;
+    }
+  }
+}
+
 // Push "current" onto the head of the entry_list.
 // If the _entry_list was changed during our push operation, we try to
 // lock the monitor. Returns true if we locked the monitor, and false
 // if we added current to _entry_list. Once on _entry_list, current
 // stays on-queue until it acquires the lock.
-bool ObjectMonitor::add_to_entry_list(JavaThread* current, ObjectWaiter* node, bool do_try_lock) {
-  assert(do_try_lock ? node->TState == ObjectWaiter::TS_RUN : true, "");
+bool ObjectMonitor::try_lock_or_add_to_entry_list(JavaThread* current, ObjectWaiter* node) {
+  assert(node->TState == ObjectWaiter::TS_RUN, "");
   node->_prev   = nullptr;
   node->TState  = ObjectWaiter::TS_ENTER;
 
@@ -721,7 +736,7 @@ bool ObjectMonitor::add_to_entry_list(JavaThread* current, ObjectWaiter* node, b
 
     // Interference - the CAS failed because _entry_list changed.  Before
     // retrying the CAS retry taking the lock as it may now be free.
-    if (do_try_lock && try_lock(current) == TryLockResult::Success) {
+    if (try_lock(current) == TryLockResult::Success) {
       assert(!has_successor(current), "invariant");
       assert(has_owner(current), "invariant");
       node->TState = ObjectWaiter::TS_RUN;
@@ -925,7 +940,7 @@ const char* ObjectMonitor::is_busy_to_string(stringStream* ss) {
   return ss->base();
 }
 
-bool ObjectMonitor::try_enter_or_add_to_entry_list(JavaThread* current, ObjectWaiter* current_node) {
+bool ObjectMonitor::try_enter_fast(JavaThread* current, ObjectWaiter* current_node) {
   assert(current != nullptr, "invariant");
   assert(current->thread_state() == _thread_blocked, "invariant");
   assert(current_node != nullptr, "invariant");
@@ -968,7 +983,7 @@ bool ObjectMonitor::try_enter_or_add_to_entry_list(JavaThread* current, ObjectWa
 
   current->_ParkEvent->reset();
 
-  if (add_to_entry_list(current, current_node, true /* do_try_lock */)) {
+  if (try_lock_or_add_to_entry_list(current, current_node)) {
     return true; // We got the lock.
   }
 
@@ -978,7 +993,7 @@ bool ObjectMonitor::try_enter_or_add_to_entry_list(JavaThread* current, ObjectWa
   // itself onto _entry_list.  To close the race and avoid "stranding" and
   // progress-liveness failure the caller must resample-retry _owner before parking.
   // Note the Dekker/Lamport duality: ST _entry_list; MEMBAR; LD Owner.
-  // In this case the ST-MEMBAR is accomplished with CAS() in add_to_entry_list.
+  // In this case the ST-MEMBAR is accomplished with CAS() in try_lock_or_add_to_entry_list.
   return false;
 }
 
@@ -1122,7 +1137,7 @@ bool ObjectMonitor::vthread_monitor_enter(JavaThread* current, ObjectWaiter* wai
   // a fence that prevents reordering of the stores.
   inc_unmounted_vthreads();
 
-  if (add_to_entry_list(current, node, true /* do_try_lock */)) {
+  if (try_lock_or_add_to_entry_list(current, node)) {
     // We got the lock.
     if (waiter == nullptr) delete node;  // for Object.wait() don't delete yet
     dec_unmounted_vthreads();

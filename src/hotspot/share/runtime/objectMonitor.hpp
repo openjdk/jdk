@@ -388,12 +388,13 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   intx      complete_exit(JavaThread* current);
 
  private:
+  void      add_to_entry_list(JavaThread* current, ObjectWaiter* node);
   void      add_waiter(ObjectWaiter* waiter);
   bool      notify_internal(JavaThread* current);
   ObjectWaiter* dequeue_waiter();
   void      dequeue_specific_waiter(ObjectWaiter* waiter);
   void      enter_internal(JavaThread* current, ObjectWaiter* current_node, bool reenter_path);
-  bool      try_enter_or_add_to_entry_list(JavaThread* current, ObjectWaiter* current_node);
+  bool      try_enter_fast(JavaThread* current, ObjectWaiter* current_node);
   void      entry_list_build_dll(JavaThread* current);
   void      unlink_after_acquire(JavaThread* current, ObjectWaiter* current_node);
   ObjectWaiter* entry_list_tail(JavaThread* current);
@@ -406,7 +407,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   enum class TryLockResult { Interference = -1, HasOwner = 0, Success = 1 };
 
   bool           try_lock_with_contention_mark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark);
-  bool           add_to_entry_list(JavaThread* current, ObjectWaiter* node, bool do_try_lock = false);
+  bool           try_lock_or_add_to_entry_list(JavaThread* current, ObjectWaiter* node);
   TryLockResult  try_lock(JavaThread* current);
 
   bool      try_spin(JavaThread* current);
