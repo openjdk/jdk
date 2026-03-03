@@ -36,8 +36,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Class to parse the Applicable IR Rules emitted by the Test VM and creating {@link TestMethod} objects for each entry.
@@ -45,11 +43,6 @@ import java.util.regex.Pattern;
  * @see TestMethod
  */
 public class ApplicableIRRulesParser {
-
-    private static final boolean PRINT_APPLICABLE_IR_RULES = Boolean.parseBoolean(System.getProperty("PrintApplicableIRRules", "false"));
-    private static final Pattern APPLICABLE_IR_RULES_PATTERN =
-            Pattern.compile("(?<=" + ApplicableIRRulesPrinter.START + "\r?\n).*\\R([\\s\\S]*)(?=" + ApplicableIRRulesPrinter.END + ")");
-
     private final Map<String, TestMethod> testMethods;
     private final Class<?> testClass;
 
@@ -63,10 +56,6 @@ public class ApplicableIRRulesParser {
      * entry for each method that needs to be IR matched on.
      */
     public TestMethods parse(String applicableIRRules) {
-        if (TestFramework.VERBOSE || PRINT_APPLICABLE_IR_RULES) {
-            System.out.println("Read Applicable IR Rules from Test VM:");
-            System.out.println(applicableIRRules);
-        }
         createTestMethodMap(applicableIRRules, testClass);
         // We could have found format errors in @IR annotations. Report them now with an exception.
         TestFormat.throwIfAnyFailures();
@@ -105,15 +94,11 @@ public class ApplicableIRRulesParser {
      * Parse the Applicable IR Rules lines without header, explanation line and footer and return them in an array.
      */
     private String[] getApplicableIRRulesLines(String applicableIRRules) {
-        Matcher matcher = APPLICABLE_IR_RULES_PATTERN.matcher(applicableIRRules);
-        TestFramework.check(matcher.find(), "Did not find Applicable IR Rules in:" +
-                System.lineSeparator() + applicableIRRules);
-        String lines = matcher.group(1).trim();
-        if (lines.isEmpty()) {
+        if (applicableIRRules.isEmpty()) {
             // Nothing to IR match.
             return new String[0];
         }
-        return lines.split("\\R");
+        return applicableIRRules.split("\\R");
     }
 
     /**
@@ -148,7 +133,7 @@ public class ApplicableIRRulesParser {
     private void validateIRRuleIds(Method m, IR[] irAnnos, IRRuleIds irRuleIds) {
         TestFramework.check(irRuleIds != null, "Should find method name in validIrRulesMap for " + m);
         TestFramework.check(!irRuleIds.isEmpty(), "Did not find any rule indices for " + m);
-        TestFramework.check((irRuleIds.first() >= 1 || irRuleIds.first() == ApplicableIRRulesPrinter.NO_RULE_APPLIED)
+        TestFramework.check((irRuleIds.first() >= 1 || irRuleIds.first() == ApplicableIRRulesPrinter.NO_RULES)
                             && irRuleIds.last() <= irAnnos.length,
                             "Invalid IR rule index found in validIrRulesMap for " + m);
     }
@@ -157,6 +142,6 @@ public class ApplicableIRRulesParser {
      * Does the list of IR rules contain any applicable IR rules for the given conditions?
      */
     private boolean hasAnyApplicableIRRules(IRRuleIds irRuleIds) {
-        return irRuleIds.first() != ApplicableIRRulesPrinter.NO_RULE_APPLIED;
+        return irRuleIds.first() != ApplicableIRRulesPrinter.NO_RULES;
     }
 }
