@@ -24,16 +24,21 @@
  */
 package sun.security.provider;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InvalidObjectException;
+import java.io.Serial;
+import java.io.Serializable;
+import java.security.SecureRandom;
+import java.security.*;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Arrays;
+
 import sun.security.util.*;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.X509Key;
-
-import java.io.*;
-import java.security.*;
-import java.security.SecureRandom;
-import java.security.spec.*;
-import java.util.Arrays;
-import java.util.Objects;
 
 /**
  * Implementation of the Hierarchical Signature System using the
@@ -779,7 +784,7 @@ public final class HSS extends SignatureSpi {
                     break;
                 case LMSUtils.LMOTS_SHA256_N24_W1:
                     params = new LMOTSParams(
-                            lmotsType, 24, 1, 8, 100, "SHA-256", 32);
+                            lmotsType, 24, 1, 8, 200, "SHA-256", 32);
                     break;
                 case LMSUtils.LMOTS_SHA256_N24_W2:
                     params = new LMOTSParams(
@@ -795,7 +800,7 @@ public final class HSS extends SignatureSpi {
                     break;
                 case LMSUtils.LMOTS_SHAKE_N32_W1:
                     params = new LMOTSParams(
-                            lmotsType, 32, 1, 7, 256, "SHAKE256-512", 64);
+                            lmotsType, 32, 1, 7, 265, "SHAKE256-512", 64);
                     break;
                 case LMSUtils.LMOTS_SHAKE_N32_W2:
                     params = new LMOTSParams(
@@ -849,19 +854,16 @@ public final class HSS extends SignatureSpi {
             S[len + 1] = (byte) (sum & 0xff);
         }
 
-        void shakeDigestFixedLengthPreprocessed(
-                 SHA3.SHAKE256Hash shake256, byte[] input, int inLen,
-                 byte[] output, int outOffset, int outLen) {
-             shake256.implDigestFixedLengthPreprocessed(
-                     input, inLen, output, outOffset, outLen);
-         }
-
-        void shaDigestFixedLengthPreprocessed(
-                 SHA2.SHA256 sha256, byte[] input, int inLen,
-                 byte[] output, int outOffset, int outLen) {
-             sha256.implDigestFixedLengthPreprocessed(
-                     input, inLen, output, outOffset, outLen);
-         }
+        void digestFixedLengthPreprocessed(Object digest, byte[] input,
+                int inLen, byte[] output, int outOffset, int outLen) {
+            if (digest instanceof SHA3.SHAKE256Hash d) {
+                d.implDigestFixedLengthPreprocessed(
+                        input, inLen, output, outOffset, outLen);
+            } else if (digest instanceof SHA2.SHA256 d) {
+                d.implDigestFixedLengthPreprocessed(
+                        input, inLen, output, outOffset, outLen);
+            }
+        }
 
         byte[] lmotsPubKeyCandidate(
                 LMSignature lmSig, byte[] message, LMSPublicKey pKey)
@@ -901,13 +903,12 @@ public final class HSS extends SignatureSpi {
 
                 byte[] preZi = hashBuf.clone();
                 int hashLen = hashBuf.length;
-                SHA3.SHAKE256Hash shake256 = null;
-                SHA2.SHA256 sha256 = null;
 
+                Object digest;
                 if (hashAlgName.startsWith("SHAKE")) {
-                    shake256 = new SHA3.SHAKE256Hash();
+                    digest = new SHA3.SHAKE256Hash();
                 } else {
-                    sha256 = new SHA2.SHA256();
+                    digest = new SHA2.SHA256();
                 }
                 pKey.getI(preZi, 0);
                 lmSig.getQArr(preZi, 16);
@@ -926,25 +927,11 @@ public final class HSS extends SignatureSpi {
                     for (int j = a; j < twoPowWMinus1; j++) {
                         preZi[22] = (byte) j;
                         if (j < twoPowWMinus2) {
-                            if (hashAlgName.startsWith("SHAKE")) {
-                                shakeDigestFixedLengthPreprocessed(
-                                        Objects.requireNonNull(shake256),
-                                        preZi, hashLen, preZi, 23, n);
-                            } else {
-                                shaDigestFixedLengthPreprocessed(
-                                        Objects.requireNonNull(sha256),
-                                        preZi, hashLen, preZi, 23, n);
-                            }
+                            digestFixedLengthPreprocessed(digest, preZi,
+                                    hashLen, preZi, 23, n);
                         } else {
-                            if (hashAlgName.startsWith("SHAKE")) {
-                                shakeDigestFixedLengthPreprocessed(
-                                        Objects.requireNonNull(shake256),
-                                        preZi, hashLen, preCandidate, 22 + i * n, n);
-                            } else {
-                                shaDigestFixedLengthPreprocessed(
-                                        Objects.requireNonNull(sha256),
-                                        preZi, hashLen, preCandidate, 22 + i * n, n);
-                            }
+                            digestFixedLengthPreprocessed(digest, preZi,
+                                    hashLen, preCandidate, 22 + i * n, n);
                         }
                     }
                 }

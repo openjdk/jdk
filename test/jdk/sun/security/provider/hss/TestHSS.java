@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8298127 8347596
+ * @bug 8298127 8347596 8369917
  * @library /test/lib
  * @summary tests for HSS/LMS provider
  * @modules java.base/sun.security.util
