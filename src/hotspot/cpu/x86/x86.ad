@@ -4672,11 +4672,6 @@ frame
   // Compiled code's Frame Pointer
   frame_pointer(RSP);
 
-  // Interpreter stores its frame pointer in a register which is
-  // stored to the stack by I2CAdaptors.
-  // I2CAdaptors convert from interpreted java to compiled java.
-  interpreter_frame_pointer(RBP);
-
   // Stack alignment requirement
   stack_alignment(StackAlignmentInBytes); // Alignment size in bytes (128-bit -> 16 bytes)
 

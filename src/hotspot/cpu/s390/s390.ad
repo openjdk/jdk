@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2017, 2024 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -2600,13 +2600,6 @@ frame %{
   //
   // z/Architecture stack pointer
   frame_pointer(Z_R15); // Z_SP
-
-  // Interpreter stores its frame pointer in a register which is
-  // stored to the stack by I2CAdaptors. I2CAdaptors convert from
-  // interpreted java to compiled java.
-  //
-  // Z_state holds pointer to caller's cInterpreter.
-  interpreter_frame_pointer(Z_R7); // Z_state
 
   // Use alignment_in_bytes instead of log_2_of_alignment_in_bits.
   stack_alignment(frame::alignment_in_bytes);
