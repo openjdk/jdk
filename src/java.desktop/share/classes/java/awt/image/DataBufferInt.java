@@ -214,7 +214,7 @@ public final class DataBufferInt extends DataBuffer
      * @throws ArrayIndexOutOfBoundsException if the lengths of {@code dataArray} and {@code offsets} differ.
      * @throws NullPointerException if any bank of {@code dataArray} is {@code null}.
      * @throws IllegalArgumentException if the length of any bank of {@code dataArray}
-     *         is less than ({@code size} + offsets[bankIndex]).
+     *         is less than {@code (size + offsets[bankIndex])}.
      */
     public DataBufferInt(int[][] dataArray, int size, int[] offsets) {
         super(UNTRACKABLE, TYPE_INT, size, dataArray.length, offsets);

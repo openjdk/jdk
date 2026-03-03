@@ -183,7 +183,7 @@ public final class DataBufferFloat extends DataBuffer {
         Objects.requireNonNull(dataArray, "dataArray must not be null");
         checkNumBanks(dataArray.length);
         for (int b = 0; b < dataArray.length; b++) {
-            Objects.requireNonNull(dataArray, "bank must not be null");
+            Objects.requireNonNull(dataArray[b], "bank must not be null");
             checkBankSize(b, size, 0, dataArray[b].length);
         }
         bankdata = dataArray.clone();
@@ -214,7 +214,7 @@ public final class DataBufferFloat extends DataBuffer {
      * @throws ArrayIndexOutOfBoundsException if the lengths of {@code dataArray} and {@code offsets} differ.
      * @throws NullPointerException if any bank of {@code dataArray} is {@code null}.
      * @throws IllegalArgumentException if the length of any bank of {@code dataArray}
-     *         is less than ({@code size} + offsets[bankIndex]).
+     *         is less than {@code (size + offsets[bankIndex])}.
      */
     public DataBufferFloat(float[][] dataArray, int size, int[] offsets) {
         super(UNTRACKABLE, TYPE_FLOAT, size,dataArray.length, offsets);

@@ -185,7 +185,7 @@ public final class DataBufferByte extends DataBuffer
         Objects.requireNonNull(dataArray, "dataArray must not be null");
         checkNumBanks(dataArray.length);
         for (int b = 0; b < dataArray.length; b++) {
-            Objects.requireNonNull(dataArray, "bank must not be null");
+            Objects.requireNonNull(dataArray[b], "bank must not be null");
             checkBankSize(b, size, 0, dataArray[b].length);
         }
         bankdata = dataArray.clone();
@@ -217,7 +217,7 @@ public final class DataBufferByte extends DataBuffer
      * @throws ArrayIndexOutOfBoundsException if the lengths of {@code dataArray} and {@code offsets} differ.
      * @throws NullPointerException if any bank of {@code dataArray} is {@code null}.
      * @throws IllegalArgumentException if the length of any bank of {@code dataArray}
-     *         is less than ({@code size} + offsets[bankIndex]).
+     *         is less than {@code (size + offsets[bankIndex])}.
      */
     public DataBufferByte(byte[][] dataArray, int size, int[] offsets) {
         super(UNTRACKABLE, TYPE_BYTE, size, dataArray.length, offsets);
@@ -229,7 +229,7 @@ public final class DataBufferByte extends DataBuffer
             throw new ArrayIndexOutOfBoundsException("Must be an offsets entry for every bank");
         }
         for (int b = 0; b < dataArray.length; b++) {
-            Objects.requireNonNull(dataArray, "bank must not be null");
+            Objects.requireNonNull(dataArray[b], "bank must not be null");
             checkBankSize(b, size, offsets[b], dataArray[b].length);
         }
         bankdata = dataArray.clone();
