@@ -176,7 +176,10 @@ void ShenandoahOldGeneration::maybe_log_promotion_failure_stats() const {
     };
 
     AggregatePromotionFailuresClosure cl;
-    Threads::threads_do(&cl);
+    {
+      MutexLocker lock(Threads_lock);
+      Threads::threads_do(&cl);
+    }
     failed_count = cl.total_count();
     failed_words = cl.total_words();
 
