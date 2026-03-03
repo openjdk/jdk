@@ -317,7 +317,68 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
   }
 }
 
+void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
+                                    DecoratorSet decorators,
+                                    BasicType type,
+                                    Address dst,
+                                    Register src,
+                                    Register temp1,
+                                    Register temp2,
+                                    Register temp3) {
+  BLOCK_COMMENT("ZBarrierSetAssembler::store_at {");
 
+  bool dest_uninitialized = (decorators & IS_DEST_UNINITIALIZED) != 0;
+
+  if (is_reference_type(type)) {
+    assert_different_registers(src, temp1, dst.base(), dst.index());
+
+    if (dest_uninitialized) {
+      if (src == noreg) {
+        __ z_xgr(temp1, temp1);
+      } else {
+        __ z_lgr(src, temp1);
+      }
+      __ z_sllg(temp1, temp1, ZPointerLoadShift);
+      __ z_oy(temp1, Address(Z_thread, ZThreadLocalData::store_good_mask_offset()));
+    } else {
+      Label done;
+      Label medium;
+      Label medium_continuation;
+      Label slow;
+      Label slow_continuation;
+      store_barrier_fast(masm, dst, src, false, false, medium, medium_continuation);
+      __ z_br(done);
+      __ bind(medium);
+      store_barrier_medium(masm,
+                           dst,
+                           temp1,
+                           temp2,
+                           false /* is_native */,
+                           false /* is_atomic */,
+                           medium_continuation,
+                           slow,
+                           slow_continuation);
+
+      __ bind(slow);
+      {
+        // Call VM
+        ZRuntimeCallSpill rcs(masm, noreg);
+        __ z_la(Z_R2, dst);
+        __ MacroAssembler::call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr(), Z_R2);
+      }
+
+      __ z_br(slow_continuation);
+      __ bind(done);
+    }
+
+    // Store value
+    BarrierSetAssembler::store_at(masm, decorators, type, dst, temp1, noreg, noreg, noreg);
+  } else {
+    BarrierSetAssembler::store_at(masm, decorators, type, dst, src, noreg, noreg, noreg);
+  }
+
+  BLOCK_COMMENT("} ZBarrierSetAssembler::store_at");
+}
 
 
 
