@@ -82,8 +82,6 @@ class OopMapForCacheEntry: public GenerateOopMap {
                                            CellTypeState* vars,
                                            CellTypeState* stack,
                                            int stack_top);
-  virtual void fill_init_vars             (GrowableArray<intptr_t> *init_vars);
-
  public:
   OopMapForCacheEntry(const methodHandle& method, int bci, OopMapCacheEntry *entry);
 
@@ -115,11 +113,6 @@ bool OopMapForCacheEntry::compute_map(Thread* current) {
   }
   return true;
 }
-
-void OopMapForCacheEntry::fill_init_vars(GrowableArray<intptr_t> *init_vars) {
-  // Do nothing
-}
-
 
 void OopMapForCacheEntry::fill_stackmap_for_opcodes(BytecodeStream *bcs,
                                                     CellTypeState* vars,

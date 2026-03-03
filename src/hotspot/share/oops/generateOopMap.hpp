@@ -417,12 +417,6 @@ class GenerateOopMap {
 
   void  report_result                       ();
 
-  // Initvars
-  GrowableArray<intptr_t> * _init_vars;
-
-  void  initialize_vars                     ();
-  void  add_to_ref_init_set                 (int localNo);
-
   // Conflicts rewrite logic
   bool      _conflict;                      // True, if a conflict occurred during interpretation
   int       _nof_refval_conflicts;          // No. of conflicts that require rewrites
@@ -479,7 +473,6 @@ class GenerateOopMap {
 
   // Specialization methods. Intended use:
   // - fill_stackmap_for_opcodes is called once for each bytecode index in order (0...code_length-1)
-  // - fill_init_vars are called once with the result of the init_vars computation
   //
   // All these methods are used during a call to: compute_map. Note: Non of the return results are valid
   // after compute_map returns, since all values are allocated as resource objects.
@@ -487,12 +480,10 @@ class GenerateOopMap {
   // All virtual method must be implemented in subclasses
   virtual bool allow_rewrites             () const                        { return false; }
   virtual bool report_results             () const                        { return true;  }
-  virtual bool report_init_vars           () const                        { return true;  }
   virtual void fill_stackmap_for_opcodes  (BytecodeStream *bcs,
                                            CellTypeState* vars,
                                            CellTypeState* stack,
                                            int stackTop)                  { ShouldNotReachHere(); }
-  virtual void fill_init_vars             (GrowableArray<intptr_t> *init_vars) { ShouldNotReachHere();; }
 };
 
 //
@@ -502,16 +493,12 @@ class GenerateOopMap {
 class ResolveOopMapConflicts: public GenerateOopMap {
  private:
 
-  bool _must_clear_locals;
-
   virtual bool report_results() const     { return false; }
-  virtual bool report_init_vars() const   { return true;  }
   virtual bool allow_rewrites() const     { return true;  }
   virtual void fill_stackmap_for_opcodes  (BytecodeStream *bcs,
                                            CellTypeState* vars,
                                            CellTypeState* stack,
                                            int stack_top)                 {}
-  virtual void fill_init_vars             (GrowableArray<intptr_t> *init_vars) { _must_clear_locals = init_vars->length() > 0; }
 
 #ifndef PRODUCT
   // Statistics
@@ -521,10 +508,9 @@ class ResolveOopMapConflicts: public GenerateOopMap {
 #endif
 
  public:
-  ResolveOopMapConflicts(const methodHandle& method) : GenerateOopMap(method) { _must_clear_locals = false; };
+  ResolveOopMapConflicts(const methodHandle& method) : GenerateOopMap(method) { }
 
   methodHandle do_potential_rewrite(TRAPS);
-  bool must_clear_locals() const { return _must_clear_locals; }
 };
 
 
@@ -535,13 +521,11 @@ class GeneratePairingInfo: public GenerateOopMap {
  private:
 
   virtual bool report_results() const     { return false; }
-  virtual bool report_init_vars() const   { return false; }
   virtual bool allow_rewrites() const     { return false;  }
   virtual void fill_stackmap_for_opcodes  (BytecodeStream *bcs,
                                            CellTypeState* vars,
                                            CellTypeState* stack,
                                            int stack_top)                 {}
-  virtual void fill_init_vars             (GrowableArray<intptr_t> *init_vars) {}
  public:
   GeneratePairingInfo(const methodHandle& method) : GenerateOopMap(method)       {};
 
