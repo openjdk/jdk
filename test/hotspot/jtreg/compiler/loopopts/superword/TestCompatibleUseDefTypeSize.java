@@ -514,7 +514,7 @@ public class TestCompatibleUseDefTypeSize {
     // Narrowing
 
     @Test
-    @IR(applyIfCPUFeatureOr = { "avx", "true", "asimd", "true" },
+    @IR(applyIfCPUFeatureOr = { "avx", "true", "asimd", "true", "rvv", "true" },
         applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         counts = { IRNode.VECTOR_CAST_I2S, IRNode.VECTOR_SIZE + "min(max_int, max_short)", ">0" })
     public Object[] testIntToShort(int[] ints, short[] res) {
@@ -527,7 +527,7 @@ public class TestCompatibleUseDefTypeSize {
 
 
     @Test
-    @IR(applyIfCPUFeatureOr = { "avx", "true", "asimd", "true" },
+    @IR(applyIfCPUFeatureOr = { "avx", "true", "asimd", "true", "rvv", "true" },
         applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         counts = { IRNode.VECTOR_CAST_I2S, IRNode.VECTOR_SIZE + "min(max_int, max_char)", ">0" })
     public Object[] testIntToChar(int[] ints, char[] res) {
@@ -539,7 +539,7 @@ public class TestCompatibleUseDefTypeSize {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = { "avx", "true", "asimd", "true" },
+    @IR(applyIfCPUFeatureOr = { "avx", "true", "asimd", "true", "rvv", "true" },
         applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         counts = { IRNode.VECTOR_CAST_I2B, IRNode.VECTOR_SIZE + "min(max_int, max_byte)", ">0" })
     public Object[] testIntToByte(int[] ints, byte[] res) {
@@ -551,7 +551,7 @@ public class TestCompatibleUseDefTypeSize {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = { "avx", "true", "asimd", "true" },
+    @IR(applyIfCPUFeatureOr = { "avx", "true", "asimd", "true", "rvv", "true" },
         applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         counts = { IRNode.VECTOR_CAST_S2B, IRNode.VECTOR_SIZE + "min(max_short, max_byte)", ">0" })
     public Object[] testShortToByte(short[] shorts, byte[] res) {
@@ -575,7 +575,7 @@ public class TestCompatibleUseDefTypeSize {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = { "avx", "true", "asimd", "true" },
+    @IR(applyIfCPUFeatureOr = { "avx", "true", "asimd", "true", "rvv", "true" },
         applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         counts = { IRNode.VECTOR_CAST_L2S, IRNode.VECTOR_SIZE + "min(max_long, max_short)", ">0" })
     public Object[] testLongToShort(long[] longs, short[] res) {
@@ -587,7 +587,7 @@ public class TestCompatibleUseDefTypeSize {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = { "avx", "true", "asimd", "true" },
+    @IR(applyIfCPUFeatureOr = { "avx", "true", "asimd", "true", "rvv", "true" },
         applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         counts = { IRNode.VECTOR_CAST_L2S, IRNode.VECTOR_SIZE + "min(max_long, max_char)", ">0" })
     public Object[] testLongToChar(long[] longs, char[] res) {
@@ -599,7 +599,7 @@ public class TestCompatibleUseDefTypeSize {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = { "avx", "true", "asimd", "true" },
+    @IR(applyIfCPUFeatureOr = { "avx", "true", "asimd", "true", "rvv", "true" },
         applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         counts = { IRNode.VECTOR_CAST_L2I, IRNode.VECTOR_SIZE + "min(max_long, max_int)", ">0" })
     public Object[] testLongToInt(long[] longs, int[] res) {
@@ -611,7 +611,7 @@ public class TestCompatibleUseDefTypeSize {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = { "avx", "true", "asimd", "true" },
+    @IR(applyIfCPUFeatureOr = { "avx", "true", "asimd", "true", "rvv", "true" },
         applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         counts = { IRNode.STORE_VECTOR, ">0" })
     public Object[] testShortToChar(short[] shorts, char[] res) {
@@ -625,7 +625,7 @@ public class TestCompatibleUseDefTypeSize {
     // Widening
 
     @Test
-    @IR(applyIfCPUFeatureOr = { "avx", "true", "asimd", "true" },
+    @IR(applyIfCPUFeatureOr = { "avx", "true", "asimd", "true", "rvv", "true" },
         applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         counts = { IRNode.VECTOR_CAST_S2I, IRNode.VECTOR_SIZE + "min(max_short, max_int)", ">0" })
     public Object[] testShortToInt(short[] shorts, int[] res) {
@@ -637,7 +637,7 @@ public class TestCompatibleUseDefTypeSize {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = { "avx", "true", "asimd", "true" },
+    @IR(applyIfCPUFeatureOr = { "avx", "true", "asimd", "true", "rvv", "true" },
         applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         counts = { IRNode.VECTOR_CAST_B2I, IRNode.VECTOR_SIZE + "min(max_byte, max_int)", ">0" })
     public Object[] testByteToInt(byte[] bytes, int[] res) {
@@ -649,7 +649,7 @@ public class TestCompatibleUseDefTypeSize {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = { "avx", "true", "asimd", "true" },
+    @IR(applyIfCPUFeatureOr = { "avx", "true", "asimd", "true", "rvv", "true" },
         applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         counts = { IRNode.VECTOR_CAST_B2S, IRNode.VECTOR_SIZE + "min(max_byte, max_short)", ">0" })
     public Object[] testByteToShort(byte[] bytes, short[] res) {
@@ -661,7 +661,7 @@ public class TestCompatibleUseDefTypeSize {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = { "avx", "true", "asimd", "true" },
+    @IR(applyIfCPUFeatureOr = { "avx", "true", "asimd", "true", "rvv", "true" },
         applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         counts = { IRNode.VECTOR_CAST_B2S, IRNode.VECTOR_SIZE + "min(max_byte, max_char)", ">0" })
     public Object[] testByteToChar(byte[] bytes, char[] res) {
@@ -685,7 +685,7 @@ public class TestCompatibleUseDefTypeSize {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = { "avx", "true", "asimd", "true" },
+    @IR(applyIfCPUFeatureOr = { "avx", "true", "asimd", "true", "rvv", "true" },
         applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         counts = { IRNode.VECTOR_CAST_S2L, IRNode.VECTOR_SIZE + "min(max_short, max_long)", ">0" })
     public Object[] testShortToLong(short[] shorts, long[] res) {
@@ -697,7 +697,7 @@ public class TestCompatibleUseDefTypeSize {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = { "avx", "true", "asimd", "true" },
+    @IR(applyIfCPUFeatureOr = { "avx", "true", "asimd", "true", "rvv", "true" },
         applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
         counts = { IRNode.VECTOR_CAST_I2L, IRNode.VECTOR_SIZE + "min(max_int, max_long)", ">0" })
     public Object[] testIntToLong(int[] ints, long[] res) {
