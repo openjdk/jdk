@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,12 @@ else
   LIBSAPROC_LINK_TYPE := C
 endif
 
+ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, x86_64 aarch64), true+true)
+  LIBSAPROC_EXCLUDE_FILES :=
+else
+  LIBSAPROC_EXCLUDE_FILES := DwarfParser.cpp dwarf.cpp
+endif
+
 $(eval $(call SetupJdkLibrary, BUILD_LIBSAPROC, \
     NAME := saproc, \
     LINK_TYPE := $(LIBSAPROC_LINK_TYPE), \
@@ -70,6 +76,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBSAPROC, \
     CFLAGS := $(LIBSAPROC_CFLAGS), \
     CXXFLAGS := $(LIBSAPROC_CFLAGS) $(LIBSAPROC_CXXFLAGS), \
     EXTRA_SRC := $(LIBSAPROC_EXTRA_SRC), \
+    EXCLUDE_FILES := $(LIBSAPROC_EXCLUDE_FILES), \
     JDK_LIBS := java.base:libjava, \
     LIBS_linux := $(LIBDL), \
     LIBS_macosx := \
