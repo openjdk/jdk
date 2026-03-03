@@ -656,15 +656,15 @@ public class EqualsCompareTest {
                                        : b;
 
                                 boolean eq = bt.pairWiseEquals(as, bs);
-                                assertEquals(bt.equals(as, bs), eq);
-                                assertEquals(bt.equals(bs, as), eq);
+                                assertEquals(eq, bt.equals(as, bs));
+                                assertEquals(eq, bt.equals(bs, as));
                                 if (eq) {
-                                    assertEquals(bt.compare(as, bs), 0);
-                                    assertEquals(bt.compare(bs, as), 0);
+                                    assertEquals(0, bt.compare(as, bs));
+                                    assertEquals(0, bt.compare(bs, as));
 
                                     // If buffers are equal, there shall be no mismatch
-                                    assertEquals(bt.mismatch(as, bs), -1);
-                                    assertEquals(bt.mismatch(bs, as), -1);
+                                    assertEquals(-1, bt.mismatch(as, bs));
+                                    assertEquals(-1, bt.mismatch(bs, as));
                                 }
                                 else {
                                     int aCb = bt.compare(as, bs);
@@ -675,7 +675,7 @@ public class EqualsCompareTest {
                                     int aMs = bt.mismatch(as, bs);
                                     int bMs = bt.mismatch(bs, as);
                                     assertNotEquals(aMs, -1);
-                                    assertEquals(aMs, bMs);
+                                    assertEquals(bMs, aMs);
                                 }
                             }
                         }
@@ -699,8 +699,8 @@ public class EqualsCompareTest {
 
                                 int cMa = bt.mismatch(cs, as);
                                 int aMc = bt.mismatch(as, cs);
-                                assertEquals(cMa, aMc);
-                                assertEquals(cMa, i - aFrom);
+                                assertEquals(aMc, cMa);
+                                assertEquals(i - aFrom, cMa);
                             }
                         }
                     }
@@ -735,8 +735,8 @@ public class EqualsCompareTest {
         try (FileChannel fc = FileChannel.open(path, READ, DELETE_ON_CLOSE)) {
             MappedByteBuffer one = fc.map(FileChannel.MapMode.READ_ONLY, 0, bytes.length);
             ByteBuffer two = ByteBuffer.wrap(bytes);
-            assertEquals(one, two);
-            assertEquals(one.hashCode(), two.hashCode());
+            assertEquals(two, one);
+            assertEquals(two.hashCode(), one.hashCode());
         }
     }
 }

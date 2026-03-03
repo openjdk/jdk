@@ -134,7 +134,7 @@ public class Chars {
     public void testChars(String type, CharBuffer cb) {
         System.out.format("%s position=%d, limit=%d%n", type, cb.position(), cb.limit());
         int expected = intSum(cb);
-        assertEquals(cb.chars().sum(), expected);
-        assertEquals(cb.chars().parallel().sum(), expected);
+        assertEquals(expected, cb.chars().sum());
+        assertEquals(expected, cb.chars().parallel().sum());
     }
 }
