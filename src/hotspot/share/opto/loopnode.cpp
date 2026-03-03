@@ -5016,12 +5016,9 @@ static void try_reassociate_chain(Node* n, PhiNode* phi, IdealLoopTree* lpt, Pha
     }
 
     Node* use = nullptr;
-    for (DUIterator_Fast imax, i = current->fast_outs(imax); i < imax; i++) {
-      Node* n = current->fast_out(i);
-      if (n->Opcode() == opcode) {
-        use = n;
-        break;
-      }
+    Node* out = current->unique_out();
+    if (out->Opcode() == opcode) {
+      use = out;
     }
 
     if (use != nullptr) {
