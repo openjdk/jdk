@@ -207,7 +207,7 @@ public class CompletionHandlerRelease {
         while ((r = queue.remove(20)) == null) {
             System.gc();
         }
-        assertEquals(r, ref);
+        assertEquals(ref, r);
         assertNull(r.get());
     }
 }
