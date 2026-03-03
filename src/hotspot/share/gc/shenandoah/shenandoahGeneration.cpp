@@ -151,6 +151,10 @@ ShenandoahHeuristics* ShenandoahGeneration::initialize_heuristics(ShenandoahMode
   return _heuristics;
 }
 
+void ShenandoahGeneration::post_initialize_heuristics() {
+  _heuristics->post_initialize();
+}
+
 void ShenandoahGeneration::set_evacuation_reserve(size_t new_val) {
   shenandoah_assert_heaplocked();
   _evacuation_reserve = new_val;
@@ -357,8 +361,7 @@ void ShenandoahGeneration::cancel_marking() {
   set_concurrent_mark_in_progress(false);
 }
 
-ShenandoahGeneration::ShenandoahGeneration(ShenandoahGenerationType type,
-                                           uint max_workers) :
+ShenandoahGeneration::ShenandoahGeneration(ShenandoahGenerationType type, uint max_workers) :
   _type(type),
   _task_queues(new ShenandoahObjToScanQueueSet(max_workers)),
   _ref_processor(new ShenandoahReferenceProcessor(this, MAX2(max_workers, 1U))),
