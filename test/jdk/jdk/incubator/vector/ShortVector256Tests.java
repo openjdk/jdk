@@ -6959,7 +6959,7 @@ public class ShortVector256Tests extends AbstractVectorTest {
     static long ADDReduceLongMasked(short[] a, int idx, boolean[] mask) {
         short res = 0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            if(mask[i % SPECIES.length()]) {
+            if (mask[i % SPECIES.length()]) {
                 res = scalar_add(res, a[i]);
             }
         }

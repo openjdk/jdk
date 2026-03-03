@@ -161,7 +161,7 @@
     static long ADDReduceLongMasked($type$[] a, int idx, boolean[] mask) {
         $type$ res = 0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            if(mask[i % SPECIES.length()]) {
+            if (mask[i % SPECIES.length()]) {
                 res = scalar_add(res, a[i]);
             }
         }

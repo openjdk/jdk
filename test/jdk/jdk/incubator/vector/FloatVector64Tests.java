@@ -5418,7 +5418,7 @@ relativeError));
     static long ADDReduceLongMasked(float[] a, int idx, boolean[] mask) {
         float res = 0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            if(mask[i % SPECIES.length()]) {
+            if (mask[i % SPECIES.length()]) {
                 res = scalar_add(res, a[i]);
             }
         }

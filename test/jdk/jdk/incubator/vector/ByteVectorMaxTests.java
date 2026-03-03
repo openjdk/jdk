@@ -6985,7 +6985,7 @@ public class ByteVectorMaxTests extends AbstractVectorTest {
     static long ADDReduceLongMasked(byte[] a, int idx, boolean[] mask) {
         byte res = 0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            if(mask[i % SPECIES.length()]) {
+            if (mask[i % SPECIES.length()]) {
                 res = scalar_add(res, a[i]);
             }
         }
