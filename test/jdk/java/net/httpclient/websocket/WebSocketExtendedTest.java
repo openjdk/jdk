@@ -53,7 +53,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * possible fragmentation.
  */
 public class WebSocketExtendedTest {
-// * run testng/othervm
+// * run junit/othervm
 // *      -Djdk.httpclient.websocket.writeBufferSize=16
 // *      -Djdk.httpclient.sendBufferSize=32 WebSocketTextTest
 
