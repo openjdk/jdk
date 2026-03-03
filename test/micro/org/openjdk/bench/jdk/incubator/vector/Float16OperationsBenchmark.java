@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.openjdk.bench.java.lang;
+package org.openjdk.bench.jdk.incubator.vector;
 
 import java.util.stream.IntStream;
 import java.util.concurrent.TimeUnit;
