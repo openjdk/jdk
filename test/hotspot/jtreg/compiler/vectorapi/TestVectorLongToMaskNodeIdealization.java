@@ -48,13 +48,27 @@ public class TestVectorLongToMaskNodeIdealization {
     //              applyIfCPUFeatureAnd = {"avx2", "true", "avx512f", "false", "avx512vl", "false"})
     // TODO: IR rule
     public static Object test1() {
+        // There was a bug here with AVX2:
+        var ones = LongVector.broadcast(LongVector.SPECIES_256, 1);
+        var trues_L256 = ones.compare(VectorOperators.NE, 0);
+        // VectorMaskCmp #vectory<J,4>   -> (L-mask=0xF..F/0x0..0)
+
+        var trues_I128 = VectorMask.fromLong(IntVector.SPECIES_128, trues_L256.toLong());
+        // VectorStoreMask(L-mask to 0/1)
+        // VectorMaskToLong
+        // AndL(truncate)
+        // VectorLongToMask -> 0/1
+        // VectorLoadMask (0/1 to I-mask)
+        //
+        // TODO: transform
+
+        var zeros = IntVector.zero(IntVector.SPECIES_128);
+        var m1s = zeros.lanewise(VectorOperators.NOT, trues_I128);
+        // Blend, expects I-mask (0xF..F*0x0..0)
+        // TODO: how we got wrong result here
+
         int[] out = new int[64];
-        var v2 = LongVector.broadcast(LongVector.SPECIES_256, 1);
-        var v7 = v2.compare(VectorOperators.NE, 0).toLong();
-        var v8 = VectorMask.fromLong(IntVector.SPECIES_128, v7);
-        var v1 = IntVector.zero(IntVector.SPECIES_128);
-        var v9 = v1.lanewise(VectorOperators.NOT, v8);
-        v9.intoArray(out, 0);
+        m1s.intoArray(out, 0);
         return out;
     }
 
