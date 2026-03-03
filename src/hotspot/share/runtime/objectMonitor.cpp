@@ -1052,12 +1052,14 @@ void ObjectMonitor::enter_internal(JavaThread* current, ObjectWaiter* current_no
 
     // The lock is still contested.
 
-    // Assuming this is not a spurious wakeup we'll normally find _succ == current.
-    // We can defer clearing _succ until after the spin completes
-    // try_spin() must tolerate being called with _succ == current.
-    // Try yet another round of adaptive spinning.
-    if (try_spin(current)) {
-      break;
+    if (!reenter_path) {
+      // Assuming this is not a spurious wakeup we'll normally find _succ == current.
+      // We can defer clearing _succ until after the spin completes
+      // try_spin() must tolerate being called with _succ == current.
+      // Try yet another round of adaptive spinning.
+      if (try_spin(current)) {
+        break;
+      }
     }
 
     // We can find that we were unpark()ed and redesignated _succ while
