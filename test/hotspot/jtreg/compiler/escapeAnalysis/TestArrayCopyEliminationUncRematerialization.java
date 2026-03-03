@@ -134,7 +134,9 @@ public class TestArrayCopyEliminationUncRematerialization {
                          .map(pty -> new TestsPerType(pty).generate(config))
                          .collect(Collectors.toList()));
 
-        final Set<String> imports = Set.of("java.lang.invoke.MethodHandles",
+        final Set<String> imports = Set.of("java.lang.foreign.MemorySegment",
+                                           "java.lang.foreign.ValueLayout",
+                                           "java.lang.invoke.MethodHandles",
                                            "java.lang.invoke.VarHandle",
                                            "java.util.Arrays",
                                            "java.util.Random",
@@ -146,7 +148,11 @@ public class TestArrayCopyEliminationUncRematerialization {
     }
 
     record TestsPerType(PrimitiveType pty) {
-        private record TestTemplates(ZeroArgs store, ZeroArgs trap) {}
+        private record TestTemplates(ZeroArgs store, ZeroArgs trap, ZeroArgs prelude) {
+            TestTemplates(ZeroArgs store, ZeroArgs trap) {
+                this(store, trap, Template.make(() -> scope("")));
+            }
+        }
 
         TemplateToken generate(TestConfig config) {
             final String srcArray = "src" + pty.abbrev();
@@ -182,6 +188,9 @@ public class TestArrayCopyEliminationUncRematerialization {
                 let("type", pty),
                 """
                 static #type test#{testName}(#type[] src, boolean flag) {
+                    """,
+                    templates.prelude.asToken(),
+                    """
                     #type[] dst = new #type[COPY_LEN];
                     System.arraycopy(src, COPY_IDX, dst, 0, COPY_LEN);
                     """,
@@ -197,6 +206,9 @@ public class TestArrayCopyEliminationUncRematerialization {
                 let("type", pty),
                 """
                 static #type test#{testName}(#type[] src, int idx, boolean flag) {
+                    """,
+                    templates.prelude.asToken(),
+                    """
                     #type[] dst = new #type[COPY_LEN];
                     System.arraycopy(src, idx, dst, 0, COPY_LEN);
                     """,
@@ -210,7 +222,8 @@ public class TestArrayCopyEliminationUncRematerialization {
 
             // For methods with a constant offset into src, validate that only the necessary rematerialization nodes are
             // in the common path.
-            var testCaseConst = Template.make("testName", "loadCount", "tmp", (String testName, Integer loadCout, TestTemplates templates) -> scope(let("ptyShort", pty.abbrev()),
+            var testCaseConst = Template.make("testName", "loadCount", "tmp", (String testName, Integer loadCout, TestTemplates templates) -> scope(
+                let("ptyShort", pty.abbrev()),
                 runTestConst.asToken(testName),
                 """
                 @Test
@@ -220,13 +233,11 @@ public class TestArrayCopyEliminationUncRematerialization {
                 testMethodConst.asToken(testName, templates)
             ));
 
-            var testCaseConstX64Only = Template.make("testName", "loadCount", "tmp", (String testName, Integer loadCout, TestTemplates templates) -> scope(let("ptyShort", pty.abbrev()),
+            // Some test cases can not be reliably verified due to varying numbers of loads generated from run to run.
+            var testCaseConstNoVerify = Template.make("testName", "tmp", (String testName, TestTemplates templates) -> scope(
                 runTestConst.asToken(testName),
                 """
                 @Test
-                @IR(counts = { IRNode.LOAD_#{ptyShort}, "=#{loadCount}" },
-                    applyIf = { "TieredCompilation", "true" },
-                    applyIfPlatform = { "x64", "true" })
                 """,
                 testMethodConst.asToken(testName, templates)
             ));
@@ -337,6 +348,70 @@ public class TestArrayCopyEliminationUncRematerialization {
                 );
             });
 
+            var testMemorySegments = Template.make(() -> {
+                final String layout = String.format("JAVA_%s", pty.toString().toUpperCase());
+                var memorySegmentCreation = Template.make(() -> scope(
+                    """
+                    MemorySegment srcMS = MemorySegment.ofArray(src);
+                    """
+                ));
+                // Just write using a memory segment
+                var memorySegmentStoreConst = Template.make(() -> scope(
+                    let("layout", layout),
+                    """
+                    srcMS.setAtIndex(ValueLayout.#{layout}, WRITE_IDX, WRITE_VAL);
+                    """
+                ));
+                var memorySegmentStoreIdx = Template.make(() -> scope(
+                    let("layout", layout),
+                    """
+                    srcMS.setAtIndex(ValueLayout.#{layout}, RETURN_IDX + idx, WRITE_VAL);
+                    """
+                ));
+                // Write a single byte somewhere within the returned value.
+                var memorySegmentStoreSmallConst = Template.make(() -> scope(
+                    let("offset", RANDOM.nextInt(pty.byteSize())),
+                    let("byteSize", pty.byteSize()),
+                    """
+                    srcMS.set(ValueLayout.JAVA_BYTE, WRITE_IDX * #byteSize - #offset, (byte)-1);
+                    """
+                ));
+                var memorySegmentStoreSmallIdx = Template.make(() -> scope(
+                    let("offset", RANDOM.nextInt(pty.byteSize())),
+                    let("byteSize", pty.byteSize()),
+                    """
+                    srcMS.set(ValueLayout.JAVA_BYTE, (RETURN_IDX + idx) * #byteSize - #offset, (byte)-1);
+                    """
+                ));
+                // Write 8 bytes overlapping multiple array elements.
+                var memorySegmentStoreOverlappingConst = Template.make(() -> scope(
+                    let("offset", RANDOM.nextInt(pty.byteSize())),
+                    let("byteSize", pty.byteSize()),
+                    """
+                    srcMS.set(ValueLayout.JAVA_LONG_UNALIGNED, WRITE_IDX * #byteSize - #offset, -1);
+                    """
+                ));
+                var memorySegmentStoreOverlappingIdx = Template.make(() -> scope(
+                    let("offset", RANDOM.nextInt(pty.byteSize())),
+                    let("byteSize", pty.byteSize()),
+                    """
+                    srcMS.set(ValueLayout.JAVA_LONG_UNALIGNED, (RETURN_IDX + idx) * #byteSize - #offset, -1);
+                    """
+                ));
+                return scope(
+                    let("type", pty),
+                    // The number of loads differs run to run (probably due to the amount of inlining going on), so
+                    // we do not verify the number of loads in the uncommon path, even though only the polluted loads
+                    // end up in the common path for all const cases.
+                    testCaseConstNoVerify.asToken("MemorySegmentStoreConst" + pty.abbrev(), new TestTemplates(memorySegmentStoreConst, unstableTrap, memorySegmentCreation)),
+                    testCaseIdx.asToken("MemorySegmentStoreIdx" + pty.abbrev(), new TestTemplates(memorySegmentStoreIdx, unstableTrap, memorySegmentCreation)),
+                    testCaseConstNoVerify.asToken("MemorySegmentStoreSmallConst" + pty.abbrev(), new TestTemplates(memorySegmentStoreSmallConst, unstableTrap, memorySegmentCreation)),
+                    testCaseIdx.asToken("MemorySegmentStoreSmallIdx" + pty.abbrev(), new TestTemplates(memorySegmentStoreSmallIdx, unstableTrap, memorySegmentCreation)),
+                    testCaseConstNoVerify.asToken("MemorySegmentStoreOverlappingConst" + pty.abbrev(), new TestTemplates(memorySegmentStoreOverlappingConst, unstableTrap, memorySegmentCreation)),
+                    testCaseIdx.asToken("MemorySegmentStoreOverlappingIdx" + pty.abbrev(), new TestTemplates(memorySegmentStoreOverlappingIdx, unstableTrap, memorySegmentCreation))
+                );
+            });
+
             // C2 is not able to put any rematerialization load in the uncommon path for this test.
             // Thus, we do not check the number of loads.
             var testSwitch = Template.make(() -> {
@@ -411,11 +486,7 @@ public class TestArrayCopyEliminationUncRematerialization {
                 // the number of uncomon traps is sensitive to changes in the profile, which leads to a bimodal count
                 // of load nodes.
                 return scope(
-                    runTestConst.asToken("Const" + testName),
-                    """
-                    @Test
-                    """,
-                    testMethodConst.asToken("Const" + testName, new TestTemplates(arraycopyStoreConst, unstableTrap)),
+                    testCaseConstNoVerify.asToken("Const" + testName, new TestTemplates(arraycopyStoreConst, unstableTrap)),
                     testCaseIdx.asToken("Idx" + testName, new TestTemplates(arraycopyStoreIdx, unstableTrap))
                 );
             });
@@ -431,6 +502,7 @@ public class TestArrayCopyEliminationUncRematerialization {
                 List.of(testStore,
                         testStoreTrapLoop,
                         testAtomics,
+                        testMemorySegments,
                         testSwitch,
                         testArraycopy)
                     .stream()
