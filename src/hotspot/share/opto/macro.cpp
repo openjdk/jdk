@@ -550,7 +550,7 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, Node *sfpt_ctl, BasicType
 }
 
 // Check the possibility of scalar replacement.
-bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode *alloc, GrowableArray <SafePointNode *>* safepoints) {
+bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode *alloc, Unique_Node_List* safepoints) {
   //  Scan the uses of the allocation to check for anything that would
   //  prevent us from eliminating it.
   NOT_PRODUCT( const char* fail_eliminate = nullptr; )
@@ -636,7 +636,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
           NOT_PRODUCT(fail_eliminate = "null or TOP memory";)
           can_eliminate = false;
         } else if (!reduce_merge_precheck) {
-          safepoints->append_if_missing(sfpt);
+          safepoints->push(sfpt);
         }
       } else if (reduce_merge_precheck &&
                  (use->is_Phi() || use->is_EncodeP() ||
@@ -695,7 +695,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
   return can_eliminate;
 }
 
-void PhaseMacroExpand::undo_previous_scalarizations(GrowableArray <SafePointNode *> safepoints_done, AllocateNode* alloc) {
+void PhaseMacroExpand::undo_previous_scalarizations(Unique_Node_List& safepoints_done, AllocateNode* alloc) {
   Node* res = alloc->result_cast();
   int nfields = 0;
   assert(res == nullptr || res->is_CheckCastPP(), "unexpected AllocateNode result");
@@ -715,8 +715,8 @@ void PhaseMacroExpand::undo_previous_scalarizations(GrowableArray <SafePointNode
   }
 
   // rollback processed safepoints
-  while (safepoints_done.length() > 0) {
-    SafePointNode* sfpt_done = safepoints_done.pop();
+  while (safepoints_done.size() > 0) {
+    SafePointNode* sfpt_done = safepoints_done.pop()->as_SafePoint();
     // remove any extra entries we added to the safepoint
     uint last = sfpt_done->req() - 1;
     for (int k = 0;  k < nfields; k++) {
@@ -903,14 +903,14 @@ SafePointScalarObjectNode* PhaseMacroExpand::create_scalarized_object_descriptio
 }
 
 // Do scalar replacement.
-bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints) {
-  GrowableArray <SafePointNode *> safepoints_done;
+bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, Unique_Node_List& safepoints) {
+  Unique_Node_List safepoints_done;
   Node* res = alloc->result_cast();
   assert(res == nullptr || res->is_CheckCastPP(), "unexpected AllocateNode result");
 
   // Process the safepoint uses
-  while (safepoints.length() > 0) {
-    SafePointNode* sfpt = safepoints.pop();
+  while (safepoints.size() > 0) {
+    SafePointNode* sfpt = safepoints.pop()->as_SafePoint();
     SafePointScalarObjectNode* sobj = create_scalarized_object_description(alloc, sfpt);
 
     if (sobj == nullptr) {
@@ -925,7 +925,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
     _igvn._worklist.push(sfpt);
 
     // keep it for rollback
-    safepoints_done.append_if_missing(sfpt);
+    safepoints_done.push(sfpt);
   }
 
   return true;
@@ -1112,7 +1112,7 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
 
   alloc->extract_projections(&_callprojs, false /*separate_io_proj*/, false /*do_asserts*/);
 
-  GrowableArray <SafePointNode *> safepoints;
+  Unique_Node_List safepoints;
   if (!can_eliminate_allocation(&_igvn, alloc, &safepoints)) {
     return false;
   }
@@ -1122,7 +1122,7 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
     // We can only eliminate allocation if all debug info references
     // are already replaced with SafePointScalarObject because
     // we can't search for a fields value without instance_id.
-    if (safepoints.length() > 0) {
+    if (safepoints.size() > 0) {
       return false;
     }
   }

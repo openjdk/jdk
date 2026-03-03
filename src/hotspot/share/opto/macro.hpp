@@ -96,8 +96,8 @@ private:
 
   bool eliminate_boxing_node(CallStaticJavaNode *boxing);
   bool eliminate_allocate_node(AllocateNode *alloc);
-  void undo_previous_scalarizations(GrowableArray <SafePointNode *> safepoints_done, AllocateNode* alloc);
-  bool scalar_replacement(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints);
+  void undo_previous_scalarizations(Unique_Node_List& safepoints_done, AllocateNode* alloc);
+  bool scalar_replacement(AllocateNode *alloc, Unique_Node_List& safepoints);
   void process_users_of_allocation(CallNode *alloc);
 
   void eliminate_gc_barrier(Node *p2x);
@@ -205,7 +205,7 @@ public:
   void eliminate_opaque_looplimit_macro_nodes();
 
   SafePointScalarObjectNode* create_scalarized_object_description(AllocateNode *alloc, SafePointNode* sfpt);
-  static bool can_eliminate_allocation(PhaseIterGVN *igvn, AllocateNode *alloc, GrowableArray <SafePointNode *> *safepoints);
+  static bool can_eliminate_allocation(PhaseIterGVN *igvn, AllocateNode *alloc, Unique_Node_List* safepoints);
 
 
   PhaseIterGVN &igvn() const { return _igvn; }
