@@ -29,14 +29,13 @@
 
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
-#include "runtime/atomicAccess.hpp"
 
 jint ShenandoahEvacOOMCounter::load_acquire() {
-  return AtomicAccess::load_acquire(&_bits);
+  return _bits.load_acquire();
 }
 
 jint ShenandoahEvacOOMCounter::unmasked_count() {
-  return AtomicAccess::load_acquire(&_bits) & ~OOM_MARKER_MASK;
+  return _bits.load_acquire() & ~OOM_MARKER_MASK;
 }
 
 void ShenandoahEvacOOMHandler::enter_evacuation(Thread* thr) {

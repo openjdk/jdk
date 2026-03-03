@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,13 +248,61 @@ void CodeCache::initialize_heaps() {
     set_size_of_unset_code_heap(&non_nmethod, cache_size, profiled.size + non_profiled.size, non_nmethod_min_size);
   }
 
-  size_t total = non_nmethod.size + profiled.size + non_profiled.size;
-  if (total != cache_size && !cache_size_set) {
-    log_info(codecache)("ReservedCodeCache size %zuK changed to total segments size NonNMethod "
-                        "%zuK NonProfiled %zuK Profiled %zuK = %zuK",
-                        cache_size/K, non_nmethod.size/K, non_profiled.size/K, profiled.size/K, total/K);
-    // Adjust ReservedCodeCacheSize as necessary because it was not set explicitly
-    cache_size = total;
+  // Note: if large page support is enabled, min_size is at least the large
+  // page size. This ensures that the code cache is covered by large pages.
+  non_nmethod.size = align_up(non_nmethod.size, min_size);
+  profiled.size = align_up(profiled.size, min_size);
+  non_profiled.size = align_up(non_profiled.size, min_size);
+
+  size_t aligned_total = non_nmethod.size + profiled.size + non_profiled.size;
+  if (!cache_size_set) {
+    // If ReservedCodeCacheSize is explicitly set and exceeds CODE_CACHE_SIZE_LIMIT,
+    // it is rejected by flag validation elsewhere. Here we only handle the case
+    // where ReservedCodeCacheSize is not set explicitly, but the computed segmented
+    // sizes (after alignment) exceed the platform limit.
+    if (aligned_total > CODE_CACHE_SIZE_LIMIT) {
+      err_msg message("ReservedCodeCacheSize (%zuK), Max (%zuK)."
+                      "Segments: NonNMethod (%zuK), NonProfiled (%zuK), Profiled (%zuK).",
+                      aligned_total/K, CODE_CACHE_SIZE_LIMIT/K,
+                      non_nmethod.size/K, non_profiled.size/K, profiled.size/K);
+      vm_exit_during_initialization("Code cache size exceeds platform limit", message);
+    }
+    if (aligned_total != cache_size) {
+      log_info(codecache)("ReservedCodeCache size %zuK changed to total segments size NonNMethod "
+                          "%zuK NonProfiled %zuK Profiled %zuK = %zuK",
+                          cache_size/K, non_nmethod.size/K, non_profiled.size/K, profiled.size/K, aligned_total/K);
+      // Adjust ReservedCodeCacheSize as necessary because it was not set explicitly
+      cache_size = aligned_total;
+    }
+  } else {
+    check_min_size("reserved code cache", cache_size, min_cache_size);
+    // ReservedCodeCacheSize was set explicitly, so treat it as a hard cap.
+    // If alignment causes the total to exceed the cap, shrink unset heaps
+    // in min_size steps, never below their minimum sizes.
+    //
+    // A total smaller than cache_size typically happens when all segment sizes
+    // are explicitly set. In that case there is nothing to adjust, so we
+    // only validate the sizes.
+    if (aligned_total > cache_size) {
+      size_t delta = (aligned_total - cache_size) / min_size;
+      while (delta > 0) {
+        size_t start_delta = delta;
+        // Do not shrink the non-nmethod heap here: running out of non-nmethod space
+        // is more critical and may lead to unrecoverable VM errors.
+        if (non_profiled.enabled && !non_profiled.set && non_profiled.size > min_size) {
+          non_profiled.size -= min_size;
+          if (--delta == 0) break;
+        }
+        if (profiled.enabled && !profiled.set && profiled.size > min_size) {
+          profiled.size -= min_size;
+          delta--;
+        }
+        if (delta == start_delta) {
+          break;
+        }
+      }
+      aligned_total = non_nmethod.size + profiled.size + non_profiled.size;
+    }
   }
 
   log_debug(codecache)("Initializing code heaps ReservedCodeCache %zuK NonNMethod %zuK"
@@ -270,12 +318,9 @@ void CodeCache::initialize_heaps() {
   if (non_profiled.enabled) { // non_profiled.enabled is always ON for segmented code heap, leave it checked for clarity
     check_min_size("non-profiled code heap", non_profiled.size, min_size);
   }
-  if (cache_size_set) {
-    check_min_size("reserved code cache", cache_size, min_cache_size);
-  }
 
   // ReservedCodeCacheSize was set explicitly, so report an error and abort if it doesn't match the segment sizes
-  if (total != cache_size && cache_size_set) {
+  if (aligned_total != cache_size && cache_size_set) {
     err_msg message("NonNMethodCodeHeapSize (%zuK)", non_nmethod.size/K);
     if (profiled.enabled) {
       message.append(" + ProfiledCodeHeapSize (%zuK)", profiled.size/K);
@@ -283,8 +328,8 @@ void CodeCache::initialize_heaps() {
     if (non_profiled.enabled) {
       message.append(" + NonProfiledCodeHeapSize (%zuK)", non_profiled.size/K);
     }
-    message.append(" = %zuK", total/K);
-    message.append((total > cache_size) ? " is greater than " : " is less than ");
+    message.append(" = %zuK", aligned_total/K);
+    message.append((aligned_total > cache_size) ? " is greater than " : " is less than ");
     message.append("ReservedCodeCacheSize (%zuK).", cache_size/K);
 
     vm_exit_during_initialization("Invalid code heap sizes", message);
@@ -299,13 +344,6 @@ void CodeCache::initialize_heaps() {
                              PROPERFMTARGS(lg_ps), PROPERFMTARGS(ps));
     }
   }
-
-  // Note: if large page support is enabled, min_size is at least the large
-  // page size. This ensures that the code cache is covered by large pages.
-  non_nmethod.size = align_up(non_nmethod.size, min_size);
-  profiled.size = align_up(profiled.size, min_size);
-  non_profiled.size = align_up(non_profiled.size, min_size);
-  cache_size = non_nmethod.size + profiled.size + non_profiled.size;
 
   FLAG_SET_ERGO(NonNMethodCodeHeapSize, non_nmethod.size);
   FLAG_SET_ERGO(ProfiledCodeHeapSize, profiled.size);
@@ -1101,7 +1139,7 @@ size_t CodeCache::freelists_length() {
 void icache_init();
 
 void CodeCache::initialize() {
-  assert(CodeCacheSegmentSize >= (size_t)CodeEntryAlignment, "CodeCacheSegmentSize must be large enough to align entry points");
+  assert(CodeCacheSegmentSize >= CodeEntryAlignment, "CodeCacheSegmentSize must be large enough to align entry points");
 #ifdef COMPILER2
   assert(CodeCacheSegmentSize >= (size_t)OptoLoopAlignment,  "CodeCacheSegmentSize must be large enough to align inner loops");
 #endif

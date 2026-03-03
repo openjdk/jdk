@@ -1015,6 +1015,20 @@ public:
   virtual int Opcode() const;
 };
 
+// Vector unsigned min byte, short, int, long as a reduction
+class UMinReductionVNode : public ReductionNode {
+public:
+  UMinReductionVNode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  virtual int Opcode() const;
+};
+
+// Vector unsigned max byte, short, int, long as a reduction
+class UMaxReductionVNode : public ReductionNode {
+public:
+  UMaxReductionVNode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  virtual int Opcode() const;
+};
+
 // Vector compress
 class CompressVNode: public VectorNode {
  public:
@@ -1832,6 +1846,7 @@ class VectorCastNode : public VectorNode {
   static VectorNode* make(int vopc, Node* n1, BasicType bt, uint vlen);
   static int  opcode(int opc, BasicType bt, bool is_signed = true);
   static bool implemented(int opc, uint vlen, BasicType src_type, BasicType dst_type);
+  static bool is_supported_subword_cast(BasicType def_bt, BasicType use_bt, const uint pack_size);
 
   virtual Node* Identity(PhaseGVN* phase);
 };
