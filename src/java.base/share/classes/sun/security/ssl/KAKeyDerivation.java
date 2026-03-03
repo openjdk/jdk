@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package sun.security.ssl;
 
 import sun.security.util.RawKeySpec;
 
+import javax.crypto.DecapsulateException;
 import javax.crypto.KDF;
 import javax.crypto.KEM;
 import javax.crypto.KeyAgreement;
@@ -35,6 +36,7 @@ import javax.net.ssl.SSLHandshakeException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.Provider;
@@ -173,6 +175,9 @@ public class KAKeyDerivation implements SSLKeyDerivation {
                     "encapsulation");
         }
 
+        // All exceptions thrown during KEM encapsulation are mapped
+        // to TLS fatal alerts:
+        // illegal_parameter alert or internal_error alert.
         try {
             KeyFactory kf = (provider != null) ?
                     KeyFactory.getInstance(algorithmName, provider) :
@@ -189,8 +194,17 @@ public class KAKeyDerivation implements SSLKeyDerivation {
             SecretKey derived = deriveHandshakeSecret(algorithm, sharedSecret);
 
             return new KEM.Encapsulated(derived, enc.encapsulation(), null);
-        } catch (GeneralSecurityException gse) {
-            throw new SSLHandshakeException("Could not generate secret", gse);
+        } catch (IllegalArgumentException | InvalidKeyException e) {
+            // Peer validation failure
+            // ECDH all-zero shared secret (RFC 8446 section 7.4.2),
+            // ML-KEM encapsulation key check failure (FIPS-203 section 7.2)
+            throw context.conContext.fatal(Alert.ILLEGAL_PARAMETER, e);
+        } catch (GeneralSecurityException e) {
+            // Cryptographic failure,
+            // deriveHandshakeSecret failure.
+            throw context.conContext.fatal(Alert.INTERNAL_ERROR, e);
+        } catch (RuntimeException e) {
+            throw context.conContext.fatal(Alert.INTERNAL_ERROR, e);
         } finally {
             KeyUtil.destroySecretKeys(sharedSecret);
         }
@@ -208,13 +222,31 @@ public class KAKeyDerivation implements SSLKeyDerivation {
                 // Using KEM: called by the client after receiving the KEM
                 // ciphertext (keyshare) from the server in ServerHello.
                 // The client decapsulates it using its private key.
-                KEM kem = (provider != null)
-                        ? KEM.getInstance(algorithmName, provider)
-                        : KEM.getInstance(algorithmName);
-                var decapsulator = kem.newDecapsulator(localPrivateKey);
-                sharedSecret = decapsulator.decapsulate(
-                        keyshare, 0, decapsulator.secretSize(),
-                        "TlsPremasterSecret");
+
+                // All exceptions thrown during KEM decapsulation are mapped
+                // to TLS fatal alerts:
+                // illegal_parameter alert or internal_error alert.
+                try {
+                    KEM kem = (provider != null)
+                            ? KEM.getInstance(algorithmName, provider)
+                            : KEM.getInstance(algorithmName);
+                    var decapsulator = kem.newDecapsulator(localPrivateKey);
+                    sharedSecret = decapsulator.decapsulate(
+                            keyshare, 0, decapsulator.secretSize(),
+                            "TlsPremasterSecret");
+                } catch (IllegalArgumentException | InvalidKeyException e) {
+                    // Peer validation failure
+                    // ECDH all-zero secret, invalid peer public key
+                    throw context.conContext.fatal(Alert.ILLEGAL_PARAMETER, e);
+                } catch (DecapsulateException e) {
+                    // ML-KEM decapsulation failure
+                    throw context.conContext.fatal(Alert.INTERNAL_ERROR, e);
+                } catch (GeneralSecurityException e) {
+                    // cryptographic failure
+                    throw context.conContext.fatal(Alert.INTERNAL_ERROR, e);
+                } catch (RuntimeException e) {
+                    throw context.conContext.fatal(Alert.INTERNAL_ERROR, e);
+                }
             } else {
                 // Using traditional DH-style Key Agreement
                 KeyAgreement ka = KeyAgreement.getInstance(algorithmName);
@@ -225,6 +257,7 @@ public class KAKeyDerivation implements SSLKeyDerivation {
 
             return deriveHandshakeSecret(type, sharedSecret);
         } catch (GeneralSecurityException gse) {
+            // deriveHandshakeSecret() failure
             throw new SSLHandshakeException("Could not generate secret", gse);
         } finally {
             KeyUtil.destroySecretKeys(sharedSecret);
