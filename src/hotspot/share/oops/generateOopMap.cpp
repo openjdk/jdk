@@ -401,9 +401,7 @@ void GenerateOopMap::bb_mark_fct(GenerateOopMap *c, int bci, int *data) {
   if (c->is_bb_header(bci))
      return;
 
-  if (TraceNewOopMapGeneration) {
-     tty->print_cr("Basicblock#%d begins at: %d", c->_bb_count, bci);
-  }
+  log_debug(generateoopmap)( "Basicblock#%d begins at: %d", c->_bb_count, bci);
   c->set_bbmark_bit(bci);
   c->_bb_count++;
 }
@@ -918,10 +916,13 @@ void GenerateOopMap::do_interpretation()
   int i = 0;
   do {
 #ifndef PRODUCT
-    if (TraceNewOopMapGeneration) {
-      tty->print("\n\nIteration #%d of do_interpretation loop, method:\n", i);
-      method()->print_name(tty);
-      tty->print("\n\n");
+    const bool log = log_is_enabled(Trace, generateoopmap);
+    if (log) {
+      ResourceMark rm;
+      LogStream st(Log(generateoopmap)::trace());
+      st.print("\n\nIteration #%d of do_interpretation loop, method:\n", i);
+      method()->print_name(&st);
+      st.print("\n\n");
     }
 #endif
     _conflict = false;
@@ -1088,8 +1089,7 @@ void GenerateOopMap::initialize_vars() {
 
 void GenerateOopMap::add_to_ref_init_set(int localNo) {
 
-  if (TraceNewOopMapGeneration)
-    tty->print_cr("Added init vars: %d", localNo);
+  log_debug(generateoopmap)("Added init vars: %d", localNo);
 
   // Is it already in the set?
   if (_init_vars->contains(localNo) )
@@ -1288,13 +1288,13 @@ void GenerateOopMap::report_monitor_mismatch(const char *msg) {
 void GenerateOopMap::print_states(outputStream *os,
                                   CellTypeState* vec, int num) {
   for (int i = 0; i < num; i++) {
-    vec[i].print(tty);
+    vec[i].print(os);
   }
 }
 
 // Print the state values at the current bytecode.
-void GenerateOopMap::print_current_state(outputStream   *os,
-                                         BytecodeStream *currentBC,
+void GenerateOopMap::print_current_state(outputStream*   os,
+                                         BytecodeStream* currentBC,
                                          bool            detailed) {
   if (detailed) {
     os->print("     %4d vars     = ", currentBC->bci());
@@ -1346,8 +1346,11 @@ void GenerateOopMap::print_current_state(outputStream   *os,
 // Sets the current state to be the state after executing the
 // current instruction, starting in the current state.
 void GenerateOopMap::interp1(BytecodeStream *itr) {
-  if (TraceNewOopMapGeneration) {
-    print_current_state(tty, itr, TraceNewOopMapGenerationDetailed);
+  const bool log = log_is_enabled(Trace, generateoopmap);
+  if (log) {
+    ResourceMark rm;
+    LogStream st(Log(generateoopmap)::trace());
+    print_current_state(&st, itr, TraceNewOopMapGenerationDetailed);
   }
 
   // Should we report the results? Result is reported *before* the instruction at the current bci is executed.
@@ -2030,9 +2033,7 @@ void GenerateOopMap::ret_jump_targets_do(BytecodeStream *bcs, jmpFct_t jmpFct, i
     DEBUG_ONLY(BasicBlock* target_bb = &jsr_bb[1];)
     assert(target_bb  == get_basic_block_at(target_bci), "wrong calc. of successor basicblock");
     bool alive = jsr_bb->is_alive();
-    if (TraceNewOopMapGeneration) {
-      tty->print("pc = %d, ret -> %d alive: %s\n", bci, target_bci, alive ? "true" : "false");
-    }
+    log_debug(generateoopmap)("pc = %d, ret -> %d alive: %s\n", bci, target_bci, alive ? "true" : "false");
     if (alive) jmpFct(this, target_bci, data);
   }
 }
@@ -2066,13 +2067,6 @@ GenerateOopMap::GenerateOopMap(const methodHandle& method) {
   _method = method;
   _max_locals=0;
   _init_vars = nullptr;
-
-#ifndef PRODUCT
-  // If we are doing a detailed trace, include the regular trace information.
-  if (TraceNewOopMapGenerationDetailed) {
-    TraceNewOopMapGeneration = true;
-  }
-#endif
 }
 
 bool GenerateOopMap::compute_map(Thread* current) {
@@ -2103,16 +2097,17 @@ bool GenerateOopMap::compute_map(Thread* current) {
   _did_rewriting  = false;
   _did_relocation = false;
 
-  if (TraceNewOopMapGeneration) {
-    tty->print("Method name: %s\n", method()->name()->as_C_string());
-    if (Verbose) {
-      _method->print_codes();
-      tty->print_cr("Exception table:");
-      ExceptionTable excps(method());
-      for(int i = 0; i < excps.length(); i ++) {
-        tty->print_cr("[%d - %d] -> %d",
-                      excps.start_pc(i), excps.end_pc(i), excps.handler_pc(i));
-      }
+  const bool log = log_is_enabled(Debug, generateoopmap);
+  if (log) {
+    ResourceMark rm;
+    LogStream st(Log(generateoopmap)::debug());
+    st.print_cr("Method name: %s\n", method()->name()->as_C_string());
+    _method->print_codes_on(&st);
+    st.print_cr("Exception table:");
+    ExceptionTable excps(method());
+    for (int i = 0; i < excps.length(); i ++) {
+      st.print_cr("[%d - %d] -> %d",
+                  excps.start_pc(i), excps.end_pc(i), excps.handler_pc(i));
     }
   }
 
@@ -2181,7 +2176,7 @@ void GenerateOopMap::verify_error(const char *format, ...) {
 //
 void GenerateOopMap::report_result() {
 
-  if (TraceNewOopMapGeneration) tty->print_cr("Report result pass");
+  log_debug(generateoopmap)("Report result pass");
 
   // We now want to report the result of the parse
   _report_result = true;
@@ -2209,7 +2204,7 @@ void GenerateOopMap::report_result() {
 }
 
 void GenerateOopMap::result_for_basicblock(int bci) {
- if (TraceNewOopMapGeneration) tty->print_cr("Report result pass for basicblock");
+ log_debug(generateoopmap)("Report result pass for basicblock");
 
   // We now want to report the result of the parse
   _report_result = true;
@@ -2217,7 +2212,7 @@ void GenerateOopMap::result_for_basicblock(int bci) {
   // Find basicblock and report results
   BasicBlock* bb = get_basic_block_containing(bci);
   guarantee(bb != nullptr, "no basic block for bci");
-  assert(bb->is_reachable(), "getting result from unreachable basicblock");
+  assert(bb->is_reachable(), "getting result from unreachable basicblock %d", bci);
   bb->set_changed(true);
   interp_bb(bb);
 }
@@ -2519,9 +2514,7 @@ void GenerateOopMap::compute_ret_adr_at_TOS() {
         // TDT: should this be is_good_address() ?
         if (_stack_top > 0 && stack()[_stack_top-1].is_address()) {
           _ret_adr_tos->append(bcs.bci());
-          if (TraceNewOopMapGeneration) {
-            tty->print_cr("Ret_adr TOS at bci: %d", bcs.bci());
-          }
+          log_debug(generateoopmap)("Ret_adr TOS at bci: %d", bcs.bci());
         }
         interp1(&bcs);
       }

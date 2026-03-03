@@ -884,9 +884,6 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, VerifyDependencies, trueInDebug,                            \
           "Exercise and verify the compilation dependency mechanism")       \
                                                                             \
-  develop(bool, TraceNewOopMapGeneration, false,                            \
-          "Trace OopMapGeneration")                                         \
-                                                                            \
   develop(bool, TraceNewOopMapGenerationDetailed, false,                    \
           "Trace OopMapGeneration: print detailed cell states")             \
                                                                             \
