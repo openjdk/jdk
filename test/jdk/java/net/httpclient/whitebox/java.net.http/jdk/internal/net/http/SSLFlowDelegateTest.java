@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,10 +58,11 @@ import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.SSLFlowDelegate;
 import jdk.internal.net.http.common.SubscriberWrapper;
 import jdk.internal.net.http.common.Utils;
-import org.testng.Assert;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 // jtreg test definition for this test resides in SSLFlowDelegateTestDriver.java
 public class SSLFlowDelegateTest {
@@ -70,38 +71,38 @@ public class SSLFlowDelegateTest {
     private static final Random random = new Random();
     private static final byte DATA_BYTE = (byte) random.nextInt();
 
-    private ExecutorService executor;
-    private SSLParameters sslParams;
-    private SSLServerSocket sslServerSocket;
-    private SSLEngine clientEngine;
-    private CompletableFuture<Void> testCompletion;
+    private static ExecutorService executor;
+    private static SSLParameters sslParams;
+    private static SSLServerSocket sslServerSocket;
+    private static SSLEngine clientEngine;
+    private static CompletableFuture<Void> testCompletion;
 
-    @BeforeTest
-    public void beforeTest() throws Exception {
-        this.executor = Executors.newCachedThreadPool();
-        this.testCompletion = new CompletableFuture<>();
+    @BeforeAll
+    public static void beforeTest() throws Exception {
+        executor = Executors.newCachedThreadPool();
+        testCompletion = new CompletableFuture<>();
 
         final SSLParameters sp = new SSLParameters();
         sp.setApplicationProtocols(new String[]{ALPN});
-        this.sslParams = sp;
+        sslParams = sp;
 
         var sslContext = SimpleSSLContextWhiteboxAdapter.findSSLContext();
-        this.sslServerSocket = startServer(sslContext);
-        println(debugTag, "Server started at " + this.sslServerSocket.getInetAddress() + ":"
-                + this.sslServerSocket.getLocalPort());
+        sslServerSocket = startServer(sslContext);
+        println(debugTag, "Server started at " + sslServerSocket.getInetAddress() + ":"
+                + sslServerSocket.getLocalPort());
 
-        this.clientEngine = createClientEngine(sslContext);
+        clientEngine = createClientEngine(sslContext);
     }
 
-    @AfterTest
-    public void afterTest() throws Exception {
-        if (this.sslServerSocket != null) {
-            println(debugTag, "Closing server socket " + this.sslServerSocket);
-            this.sslServerSocket.close();
+    @AfterAll
+    public static void afterTest() throws Exception {
+        if (sslServerSocket != null) {
+            println(debugTag, "Closing server socket " + sslServerSocket);
+            sslServerSocket.close();
         }
-        if (this.executor != null) {
-            println(debugTag, "Shutting down the executor " + this.executor);
-            this.executor.shutdownNow();
+        if (executor != null) {
+            println(debugTag, "Shutting down the executor " + executor);
+            executor.shutdownNow();
         }
     }
 
@@ -117,30 +118,30 @@ public class SSLFlowDelegateTest {
         }
     }
 
-    private SSLServerSocket createSSLServerSocket(
+    private static SSLServerSocket createSSLServerSocket(
             final SSLContext ctx, final InetSocketAddress bindAddr) throws IOException {
         final SSLServerSocketFactory fac = ctx.getServerSocketFactory();
         final SSLServerSocket sslServerSocket = (SSLServerSocket) fac.createServerSocket();
         sslServerSocket.setReuseAddress(false);
-        sslServerSocket.setSSLParameters(this.sslParams);
+        sslServerSocket.setSSLParameters(sslParams);
         sslServerSocket.bind(bindAddr);
         return sslServerSocket;
     }
 
-    private SSLServerSocket startServer(final SSLContext ctx) throws Exception {
+    private static SSLServerSocket startServer(final SSLContext ctx) throws Exception {
         final SSLServerSocket sslServerSocket = createSSLServerSocket(ctx,
                 new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
         final Runnable serverResponsePusher = new ServerResponsePusher(sslServerSocket,
-                this.testCompletion);
+                testCompletion);
         final Thread serverThread = new Thread(serverResponsePusher, "serverResponsePusher");
         // start the thread which will accept() a socket connection and send data over it
         serverThread.start();
         return sslServerSocket;
     }
 
-    private SSLEngine createClientEngine(final SSLContext ctx) {
+    private static SSLEngine createClientEngine(final SSLContext ctx) {
         final SSLEngine clientEngine = ctx.createSSLEngine();
-        clientEngine.setSSLParameters(this.sslParams);
+        clientEngine.setSSLParameters(sslParams);
         clientEngine.setUseClientMode(true);
         return clientEngine;
     }
@@ -170,7 +171,7 @@ public class SSLFlowDelegateTest {
             // in various places in this test. If the "testCompletion" completes before
             // the "soleExpectedAppData" completes (typically due to some exception),
             // then we complete the "soleExpectedAppData" too.
-            this.testCompletion.whenComplete((r, t) -> {
+            testCompletion.whenComplete((r, t) -> {
                 if (soleExpectedAppData.isDone()) {
                     return;
                 }
@@ -221,7 +222,7 @@ public class SSLFlowDelegateTest {
             println(debugTag, "Waiting for handshake to complete");
             final String negotiatedALPN = sslFlowDelegate.alpn().join();
             println(debugTag, "handshake completed, with negotiated ALPN: " + negotiatedALPN);
-            Assert.assertEquals(negotiatedALPN, ALPN, "unexpected ALPN negotiated");
+            Assertions.assertEquals(ALPN, negotiatedALPN, "unexpected ALPN negotiated");
             try {
                 // now wait for the initial (and the only) chunk of application data to be
                 // received by the AppResponseReceiver
@@ -254,7 +255,7 @@ public class SSLFlowDelegateTest {
 
     private void failTest(final CompletionException ce) {
         final Throwable cause = ce.getCause();
-        Assert.fail(cause.getMessage() == null ? "test failed" : cause.getMessage(), cause);
+        Assertions.fail(cause.getMessage() == null ? "test failed" : cause.getMessage(), cause);
     }
 
     // uses reflection to get hold of the SSLFlowDelegate.reader.outputQ member field,
@@ -288,7 +289,7 @@ public class SSLFlowDelegateTest {
             }
             println(debugTag, "num unsolicited bytes so far = " + numUnsolicitated);
         }
-        Assert.assertEquals(numUnsolicitated, 0,
+        Assertions.assertEquals(0, numUnsolicitated,
                 "SSLFlowDelegate has accumulated " + numUnsolicitated + " unsolicited bytes");
     }
 
