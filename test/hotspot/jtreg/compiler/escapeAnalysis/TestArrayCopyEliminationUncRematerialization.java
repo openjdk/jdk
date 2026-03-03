@@ -412,6 +412,30 @@ public class TestArrayCopyEliminationUncRematerialization {
                 );
             });
 
+            // Test that storing to an array aliasing src produces the same result as storing to src itself.
+            var testAlias = Template.make(() -> {
+                var createAlias = Template.make(() -> scope(
+                    let ("type", pty),
+                    """
+                    #type[] alias = src;
+                    """
+                ));
+                var storeAliasConst = Template.make(() -> scope(
+                    """
+                    alias[WRITE_IDX] = WRITE_VAL;
+                    """
+                ));
+                var storeAliasIdx = Template.make(() -> scope(
+                    """
+                    alias[RETURN_IDX + idx] = WRITE_VAL;
+                    """
+                ));
+                return scope(
+                    testCaseConst.asToken("AliasStoreConst" + pty.abbrev(), 2 * config.copyLen - 1, new TestTemplates(storeAliasConst, unstableTrap, createAlias)),
+                    testCaseIdx.asToken("AliasStoreIdx" + pty.abbrev(), new TestTemplates(storeAliasIdx, unstableTrap, createAlias))
+                );
+            });
+
             // C2 is not able to put any rematerialization load in the uncommon path for this test.
             // Thus, we do not check the number of loads.
             var testSwitch = Template.make(() -> {
@@ -503,6 +527,7 @@ public class TestArrayCopyEliminationUncRematerialization {
                         testStoreTrapLoop,
                         testAtomics,
                         testMemorySegments,
+                        testAlias,
                         testSwitch,
                         testArraycopy)
                     .stream()
