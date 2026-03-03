@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -537,25 +537,31 @@ public class Navigation {
                 .add(inputText)
                 .add(inputReset);
         target.add(searchDiv);
-        target.add(HtmlTree.DIV(HtmlId.of("result-section"))
-                .add(HtmlTree.DIV(HtmlTree.DIV(Text.of("Search for ")))
-                        .add(HtmlTree.DIV(Text.of(" ")))
-                        .add(HtmlTree.DIV(Text.of("in ")))
-                        .add(HtmlTree.DIV(createModuleSelector())))
-                .add(HtmlTree.DIV(HtmlId.of("result-container")).addUnchecked(Text.EMPTY))
-                .add(HtmlTree.DIV(HtmlTree.DIV(links.createLink(pathToRoot.resolve(DocPaths.SEARCH_PAGE),
-                                contents.getContent("doclet.search.linkSearchPageLabel"))))
-                        .add(HtmlTree.DIV(links.createLink(pathToRoot.resolve(DocPaths.HELP_DOC).fragment("search"),
-                                Text.of("Search help"))))));
+        target.add(HtmlTree.DIV(HtmlIds.SEARCH_RESULT_SECTION)
+                .add(HtmlTree.DIV(HtmlStyles.searchForm)
+                        .add(HtmlTree.DIV(HtmlTree.LABEL(HtmlIds.SEARCH_INPUT.name(),
+                                contents.getContent("doclet.search.for"))))
+                        .add(HtmlTree.DIV(HtmlIds.SEARCH_INPUT_CONTAINER).addUnchecked(Text.EMPTY))
+                        .add(createModuleSelector()))
+                .add(HtmlTree.DIV(HtmlIds.SEARCH_RESULT_CONTAINER).addUnchecked(Text.EMPTY))
+                .add(HtmlTree.DIV(HtmlStyles.searchLinks)
+                        .add(HtmlTree.DIV(links.createLink(pathToRoot.resolve(DocPaths.SEARCH_PAGE),
+                                        contents.getContent("doclet.search.linkSearchPageLabel"))
+                                .setId(HtmlIds.SEARCH_PAGE_LINK)))
+                        .add(options.noHelp() || !options.helpFile().isEmpty()
+                                ? HtmlTree.DIV(Text.EMPTY).addUnchecked(Text.EMPTY)
+                                : HtmlTree.DIV(links.createLink(pathToRoot.resolve(DocPaths.HELP_DOC).fragment("search"),
+                                        Text.of("Search help"))))));
     }
 
     private Content createModuleSelector() {
-        if (!configuration.showModules) {
+        if (!configuration.showModules || configuration.modules.size() < 2) {
             return Text.EMPTY;
         }
-
+        var content = new ContentBuilder(HtmlTree.DIV(HtmlTree.LABEL(HtmlIds.SEARCH_MODULES.name(),
+                contents.getContent("doclet.search.in_modules"))));
         var select = HtmlTree.of(HtmlTag.SELECT)
-                .setId(HtmlId.of("search-modules"))
+                .setId(HtmlIds.SEARCH_MODULES)
                 .put(HtmlAttr.ARIA_LABEL, configuration.getDocResources().getText("doclet.selectModule"))
                 .add(HtmlTree.of(HtmlTag.OPTION)
                         .put(HtmlAttr.VALUE, "")
@@ -566,7 +572,7 @@ public class Navigation {
                     .put(HtmlAttr.VALUE, module.getQualifiedName().toString())
                     .add(Text.of(module.getQualifiedName().toString())));
         }
-        return select;
+        return content.add(HtmlTree.DIV(select));
     }
 
     /**

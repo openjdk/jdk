@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,14 +133,8 @@ public class DocPaths {
     /** The name of the syntax highlighting script file. */
     public static final DocPath HIGHLIGHT_JS = DocPath.create("highlight.js");
 
-    /** The name of the default jQuery directory. */
-    public static final DocPath JQUERY_DIR = DocPath.create("jquery");
-
-    /** The name of the default jQuery javascript file. */
-    public static final DocPath JQUERY_JS = DocPath.create("jquery-3.7.1.min.js");
-
-    /** The name of the default jQuery file for legal notices. */
-    public static final DocPath JQUERY_MD = DocPath.create("jquery.md");
+    /** The name of the dejavu file for legal notices. */
+    public static final DocPath DEJAVU_MD = DocPath.create("dejavufonts.md");
 
     /** The name of the directory for legal files. */
     public static final DocPath LEGAL = DocPath.create("legal");
@@ -335,9 +329,6 @@ public class DocPaths {
 
     /** The name of the template for the search javascript file. */
     public static final DocPath SEARCH_JS_TEMPLATE = DocPath.create("search.js.template");
-
-    /** The name of the search javascript file. */
-    public static final DocPath SEARCH_PAGE_JS = DocPath.create("search-page.js");
 
     /** The name of the file for the serialized form info. */
     public static final DocPath SERIALIZED_FORM = DocPath.create("serialized-form.html");
