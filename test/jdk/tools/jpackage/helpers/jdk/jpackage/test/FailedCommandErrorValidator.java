@@ -38,7 +38,7 @@ public final class FailedCommandErrorValidator {
         this.cmdlinePattern = Objects.requireNonNull(cmdlinePattern);
     }
 
-    public TKit.TextStreamVerifier.Group createGroup() {
+    public JPackageOutputValidator create() {
         var asPredicate = cmdlinePattern.asPredicate();
 
         var errorMessage = exitCode().map(v -> {
@@ -49,9 +49,9 @@ public final class FailedCommandErrorValidator {
 
         var errorMessageWithPrefix = JPackageCommand.makeError(errorMessage).getValue();
 
-        var group = TKit.TextStreamVerifier.group();
+        var validator = new JPackageOutputValidator().stderr();
 
-        group.add(TKit.assertTextStream(cmdlinePattern.pattern()).predicate(line -> {
+        validator.add(TKit.assertTextStream(cmdlinePattern.pattern()).predicate(line -> {
             if (line.startsWith(errorMessageWithPrefix)) {
                 line = line.substring(errorMessageWithPrefix.length());
                 return asPredicate.test(line);
@@ -60,28 +60,24 @@ public final class FailedCommandErrorValidator {
             }
         }));
 
-        group.add(TKit.assertTextStream(
-                JPackageStringBundle.MAIN.cannedFormattedString("message.failed-command-output-header").getValue()
-        ).predicate(String::equals));
+        validator.expectMatchingStrings(JPackageStringBundle.MAIN.cannedFormattedString("message.failed-command-output-header"));
 
-        outputVerifier().ifPresent(group::add);
+        outputValidator().ifPresent(validator::add);
 
-        return group;
+        return validator;
     }
 
     public void applyTo(JPackageCommand cmd) {
-        cmd.validateOutput(createGroup().create());
+        create().applyTo(cmd);
     }
 
-    public FailedCommandErrorValidator validator(TKit.TextStreamVerifier.Group v) {
+    public FailedCommandErrorValidator validator(JPackageOutputValidator v) {
         outputValidator = v;
         return this;
     }
 
     public FailedCommandErrorValidator validator(List<TKit.TextStreamVerifier> validators) {
-        var group = TKit.TextStreamVerifier.group();
-        validators.forEach(group::add);
-        return validator(group);
+        return validator(new JPackageOutputValidator().add(validators));
     }
 
     public FailedCommandErrorValidator validators(TKit.TextStreamVerifier... validators) {
@@ -105,11 +101,11 @@ public final class FailedCommandErrorValidator {
         return Optional.ofNullable(exitCode);
     }
 
-    private Optional<TKit.TextStreamVerifier.Group> outputVerifier() {
+    private Optional<JPackageOutputValidator> outputValidator() {
         return Optional.ofNullable(outputValidator);
     }
 
     private final Pattern cmdlinePattern;
-    private TKit.TextStreamVerifier.Group outputValidator;
+    private JPackageOutputValidator outputValidator;
     private Integer exitCode;
 }
