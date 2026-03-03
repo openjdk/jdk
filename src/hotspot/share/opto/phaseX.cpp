@@ -2730,12 +2730,7 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   // e.g., (x - y) + y -> x; x + (y - x) -> y.
   if (use_op == Op_SubI || use_op == Op_SubL) {
     const int add_op = (use_op == Op_SubI) ? Op_AddI : Op_AddL;
-    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
-      Node* u = use->fast_out(i2);
-      if (u->Opcode() == add_op) {
-        worklist.push(u);
-      }
-    }
+    add_users_to_worklist_if(worklist, use, [=](Node* u) { return u->Opcode() == add_op; });
   }
 }
 
