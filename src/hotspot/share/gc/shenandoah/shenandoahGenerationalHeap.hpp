@@ -109,6 +109,14 @@ public:
   void update_heap_references(ShenandoahGeneration* generation, bool concurrent) override;
   void final_update_refs_update_region_states() override;
 
+private:
+  const size_t _min_plab_size;
+  const size_t _max_plab_size;
+
+  static size_t calculate_min_plab();
+  static size_t calculate_max_plab();
+
+public:
   // ---------- Serviceability
   //
   void initialize_serviceability() override;
@@ -135,12 +143,6 @@ private:
 
   // Makes old regions parsable. This will also rebuild card offsets, which is necessary if classes were unloaded
   void coalesce_and_fill_old_regions(bool concurrent);
-
-  const size_t _min_plab_size;
-  const size_t _max_plab_size;
-
-  static size_t calculate_min_plab();
-  static size_t calculate_max_plab();
 
   ShenandoahRegulatorThread* _regulator_thread;
 
