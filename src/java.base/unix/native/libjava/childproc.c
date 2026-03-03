@@ -47,9 +47,11 @@ bool fdIsValid(int fd) {
 }
 bool fdIsPipe(int fd) {
     struct stat buf;
+    errno = 0;
     return fstat(fd, &buf) != -1 && S_ISFIFO(buf.st_mode);
 }
 bool fdIsCloexec(int fd) {
+    errno = 0;
     const int flags = fcntl(fd, F_GETFD);
     return flags != -1 && (flags & FD_CLOEXEC);
 }

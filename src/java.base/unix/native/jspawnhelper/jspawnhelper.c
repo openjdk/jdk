@@ -26,6 +26,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -49,10 +50,6 @@ extern int errno;
 #define ERR_MALLOC 1
 #define ERR_PIPE 2
 #define ERR_ARGS 3
-/* We reserve range between ERR_FD_SETUP and 255 for
- * file-descriptor errors. We may have no other way of
- * communicating those errors to the parent. */
-#define ERR_FD_SETUP 245
 
 #ifndef VERSION_STRING
 #error VERSION_STRING must be defined
@@ -146,15 +143,13 @@ void initChildStuff (int fdin, int fdout, ChildStuff *c) {
 #ifdef DEBUG
 static void checkIsValid(int fd) {
     if (!fdIsValid(fd)) {
-        printf("Invalid fd: %d (%s)\n", fd, strerror(errno));
-        exit(ERR_FD_SETUP + fd);
+        error(fd, errno);
     }
 }
 static void checkIsPipe(int fd) {
     checkIsValid(fd);
     if (!fdIsPipe(fd)) {
-        printf("Not a pipe? %d\n", fd);
-        exit(ERR_FD_SETUP + fd);
+        error(fd, errno);
     }
 }
 static void checkFileDescriptorSetup() {
