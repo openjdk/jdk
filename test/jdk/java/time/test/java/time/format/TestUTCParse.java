@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,13 +33,14 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.TextStyle;
 import java.time.temporal.TemporalQueries;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestUTCParse {
 
-    @DataProvider
     public Object[][] utcZoneIdStrings() {
         return new Object[][] {
             {"UTC"},
@@ -48,12 +49,13 @@ public class TestUTCParse {
         };
     }
 
-    @Test(dataProvider = "utcZoneIdStrings")
+    @ParameterizedTest
+    @MethodSource("utcZoneIdStrings")
     public void testUTCOffsetRoundTrip(String zidString) {
         var fmt = new DateTimeFormatterBuilder()
                 .appendZoneText(TextStyle.NARROW)
                 .toFormatter();
         var zid = ZoneId.of(zidString);
-        assertEquals(fmt.parse(zidString).query(TemporalQueries.zoneId()), zid);
+        assertEquals(zid, fmt.parse(zidString).query(TemporalQueries.zoneId()));
     }
 }

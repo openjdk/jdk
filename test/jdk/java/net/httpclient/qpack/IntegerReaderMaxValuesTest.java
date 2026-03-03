@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,13 @@
 import jdk.internal.net.http.qpack.QPackException;
 import jdk.internal.net.http.qpack.readers.IntegerReader;
 import jdk.internal.net.http.qpack.writers.IntegerWriter;
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.nio.ByteBuffer;
 import java.util.stream.IntStream;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /*
  * @test
@@ -39,11 +40,11 @@ import java.util.stream.IntStream;
  *          java.net.http/jdk.internal.net.http.qpack
  *          java.net.http/jdk.internal.net.http.qpack.readers
  *          java.net.http/jdk.internal.net.http.qpack.writers
- * @run testng/othervm -Djdk.internal.httpclient.qpack.log.level=INFO
+ * @run junit/othervm -Djdk.internal.httpclient.qpack.log.level=INFO
  *                     IntegerReaderMaxValuesTest
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class IntegerReaderMaxValuesTest {
-    @DataProvider
     public Object[][] nValues() {
         return IntStream.range(1, 8)
                 .boxed()
@@ -51,7 +52,8 @@ public class IntegerReaderMaxValuesTest {
                 .toArray(Object[][]::new);
     }
 
-    @Test(dataProvider = "nValues")
+    @ParameterizedTest
+    @MethodSource("nValues")
     public void maxIntegerWriteRead(int N) {
         IntegerWriter writer = new IntegerWriter();
         writer.configure(IntegerReader.QPACK_MAX_INTEGER_VALUE, N, 0);
@@ -62,23 +64,26 @@ public class IntegerReaderMaxValuesTest {
         buffer.flip();
         reader.read(buffer);
         long result = reader.get();
-        Assert.assertEquals(result, IntegerReader.QPACK_MAX_INTEGER_VALUE);
+        Assertions.assertEquals(IntegerReader.QPACK_MAX_INTEGER_VALUE, result);
     }
 
-    @Test(dataProvider = "nValues", expectedExceptions = QPackException.class)
+    @ParameterizedTest
+    @MethodSource("nValues")
     public void overflowInteger(int N) {
-        // Construct buffer with overflowed integer
-        ByteBuffer overflowBuffer = ByteBuffer.allocate(11);
+        Assertions.assertThrows(QPackException.class, () -> {
+            // Construct buffer with overflowed integer
+            ByteBuffer overflowBuffer = ByteBuffer.allocate(11);
 
-        overflowBuffer.put((byte) ((2 << (N - 1)) - 1));
-        for (int i = 0; i < 9; i++) {
-            overflowBuffer.put((byte) 128);
-        }
-        overflowBuffer.put((byte) 10);
-        overflowBuffer.flip();
-        // Read the buffer with IntegerReader
-        IntegerReader reader = new IntegerReader();
-        reader.configure(N);
-        reader.read(overflowBuffer);
+            overflowBuffer.put((byte) ((2 << (N - 1)) - 1));
+            for (int i = 0; i < 9; i++) {
+                overflowBuffer.put((byte) 128);
+            }
+            overflowBuffer.put((byte) 10);
+            overflowBuffer.flip();
+            // Read the buffer with IntegerReader
+            IntegerReader reader = new IntegerReader();
+            reader.configure(N);
+            reader.read(overflowBuffer);
+        });
     }
 }

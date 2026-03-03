@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8366691
+ * @bug 8366691 8375015
  * @summary Test JShell Completion API
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -67,7 +67,7 @@ import org.junit.jupiter.api.Test;
 
 public class CompletionAPITest extends KullaTesting {
 
-    private static final long TIMEOUT = 2_000;
+    private static final long TIMEOUT = 20_000;
 
     @Test
     public void testAPI() {
@@ -144,7 +144,7 @@ public class CompletionAPITest extends KullaTesting {
     }
 
     @Test
-    public void testDocumentation() {
+    public void testDocumentation() throws Exception {
         waitIndexingFinished();
 
         Path classes = prepareZip();
@@ -171,6 +171,7 @@ public class CompletionAPITest extends KullaTesting {
 
         while (clazz.get().get() != null && (System.currentTimeMillis() - start) < TIMEOUT) {
             System.gc();
+            Thread.sleep(100);
         }
 
         assertNull(clazz.get().get());

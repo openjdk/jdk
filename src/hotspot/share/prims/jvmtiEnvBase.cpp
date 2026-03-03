@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2491,7 +2491,7 @@ SetOrClearFramePopClosure::do_thread(Thread *target) {
     _result = JVMTI_ERROR_NO_MORE_FRAMES;
     return;
   }
-  assert(_state->get_thread_or_saved() == java_thread, "Must be");
+  assert(_state->get_thread() == java_thread, "Must be");
 
   RegisterMap reg_map(java_thread,
                       RegisterMap::UpdateMap::include,

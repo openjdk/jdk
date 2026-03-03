@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,11 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8173978
  * @build m3/* m4/* m5/* Unnamed Unnamed1
- * @run testng/othervm m3/jdk.test.ModuleAccessTest
+ * @run junit/othervm m3/jdk.test.ModuleAccessTest
  * @summary Basic test case for module access checks and Lookup.in and
  *          MethodHandles.privateLookupIn
  */

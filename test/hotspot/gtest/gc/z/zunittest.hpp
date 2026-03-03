@@ -28,6 +28,7 @@
 #include "gc/z/zArguments.hpp"
 #include "gc/z/zInitialize.hpp"
 #include "gc/z/zNUMA.hpp"
+#include "gc/z/zPhysicalMemoryManager.hpp"
 #include "gc/z/zRangeRegistry.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
 #include "gc/z/zVirtualMemoryManager.hpp"
@@ -69,6 +70,55 @@ public:
 };
 
 class ZTest : public testing::Test {
+public:
+  class ZPhysicalMemoryBackingMocker {
+    size_t                  _old_max;
+    ZPhysicalMemoryBacking* _backing;
+    bool                    _active;
+
+    static size_t set_max(size_t max_capacity) {
+      size_t old_max = ZBackingOffsetMax;
+
+      ZBackingOffsetMax = max_capacity;
+      ZBackingIndexMax = checked_cast<uint32_t>(ZBackingOffsetMax >> ZGranuleSizeShift);
+
+      return old_max;
+    }
+
+  public:
+    ZPhysicalMemoryBackingMocker()
+      : _old_max(0),
+        _backing(nullptr),
+        _active(false) {}
+
+    void SetUp(size_t max_capacity) {
+      GTEST_EXPECT_FALSE(_active) << "SetUp called twice without a TearDown";
+
+      _old_max = set_max(max_capacity);
+
+      char* const mem = (char*)os::malloc(sizeof(ZPhysicalMemoryBacking), mtTest);
+      _backing = new (mem) ZPhysicalMemoryBacking(ZGranuleSize);
+
+      _active = true;
+    }
+
+    void TearDown() {
+      GTEST_EXPECT_TRUE(_active) << "TearDown called without a preceding SetUp";
+
+      _active = false;
+
+      _backing->~ZPhysicalMemoryBacking();
+      os::free(_backing);
+      _backing = nullptr;
+
+      set_max(_old_max);
+    }
+
+    ZPhysicalMemoryBacking* operator()() {
+      return _backing;
+    }
+  };
+
 private:
   ZAddressOffsetLimitsSetter _zaddress_offset_max_setter;
   unsigned int _rand_seed;

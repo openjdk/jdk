@@ -160,7 +160,7 @@ public class TestVectorOperationsWithPartialSize {
         return result;
     }
 
-    private static long reduceLanes(long init, long[] arr, int vlen,binOpLong f) {
+    private static long reduceLanes(long init, long[] arr, int vlen, binOpLong f) {
         long result = init;
         for (int i = 0; i < vlen; i++) {
             result = f.apply(arr[i], result);
@@ -216,61 +216,30 @@ public class TestVectorOperationsWithPartialSize {
         return result;
     }
 
-    private static void verifyAddReductionFloat(float actual, float[] arr, int vlen) {
-        float expected = 0.0f;
-        for (int i = 0; i < vlen; i++) {
-            expected += arr[i];
-        }
-        // Floating point addition reduction ops may introduce rounding errors.
-        float ROUNDING_ERROR_FACTOR_ADD = 10.0f;
-        float tolerance = Math.ulp(expected) * ROUNDING_ERROR_FACTOR_ADD;
-        if (Math.abs(expected - actual) > tolerance) {
-            throw new RuntimeException(
-                "assertEqualsWithTolerance" +
-                ": expected " + expected + " but was " + actual +
-                " (tolerance: " + tolerance + ", diff: " + Math.abs(expected - actual) + ")"
-            );
-        }
-    }
-
-    private static void verifyAddReductionDouble(double actual, double[] arr, int vlen) {
-        double expected = 0.0;
-        for (int i = 0; i < vlen; i++) {
-            expected += arr[i];
-        }
-        // Floating point addition reduction ops may introduce rounding errors.
-        double ROUNDING_ERROR_FACTOR_ADD = 10.0;
-        double tolerance = Math.ulp(expected) * ROUNDING_ERROR_FACTOR_ADD;
-        if (Math.abs(expected - actual) > tolerance) {
-            throw new RuntimeException(
-                "assertEqualsWithTolerance" +
-                ": expected " + expected + " but was " + actual +
-                " (tolerance: " + tolerance + ", diff: " + Math.abs(expected - actual) + ")"
-            );
-        }
-    }
-
+    // Because the evaluation order of floating point reduction addition in the Vector
+    // API is not guaranteed, it is difficult to choose a single tolerance that reliably
+    // validates results for randomly generated floating‑point inputs. Given that there
+    // are already extensive jtreg tests under "test/jdk/jdk/incubator/vector" that verify
+    // the API’s numerical correctness, this test is instead focused solely on checking
+    // the generated IRs, and deliberately does not assert on the computed result.
     @Test
     @IR(counts = {IRNode.VECTOR_MASK_GEN, "1",
                   IRNode.ADD_REDUCTION_VF, "1"},
         applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", ">=32"})
     public float testAddReductionFloat() {
         FloatVector v = FloatVector.fromArray(FSPEC_128, fa, 0);
-        float result = v.reduceLanes(VectorOperators.ADD);
-        verifyAddReductionFloat(result, fa, FSPEC_128.length());
-        return result;
+        return v.reduceLanes(VectorOperators.ADD);
     }
 
-
+    // Same with above test for float type, this test does not validate the numerical
+    // result and focuses solely on checking the correctness of the generated IR.
     @Test
     @IR(counts = {IRNode.VECTOR_MASK_GEN, "1",
                   IRNode.ADD_REDUCTION_VD, "1"},
         applyIfCPUFeature = {"sve", "true"}, applyIf = {"MaxVectorSize", ">=32"})
     public double testAddReductionDouble() {
         DoubleVector v = DoubleVector.fromArray(DSPEC_128, da, 0);
-        double result = v.reduceLanes(VectorOperators.ADD);
-        verifyAddReductionDouble(result, da, DSPEC_128.length());
-        return result;
+        return v.reduceLanes(VectorOperators.ADD);
     }
 
     // ============== Reduction Tests - Logical ==============

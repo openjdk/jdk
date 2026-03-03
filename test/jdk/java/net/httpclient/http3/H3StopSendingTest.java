@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @summary Verifies that the client reacts correctly to the receipt of a STOP_SENDING frame.
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
- * @run testng/othervm/timeout=40  -Djdk.internal.httpclient.debug=true -Djdk.httpclient.HttpClient.log=trace,errors,headers
+ * @run junit/othervm/timeout=40  -Djdk.internal.httpclient.debug=true -Djdk.httpclient.HttpClient.log=trace,errors,headers
  *                              H3StopSendingTest
  */
 
@@ -35,9 +35,6 @@ import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestHandler;
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestServer;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.internal.net.http.http3.Http3Error;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -53,15 +50,19 @@ import java.util.concurrent.ExecutionException;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpOption.H3_DISCOVERY;
-import static org.testng.Assert.*;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class H3StopSendingTest {
 
-    HttpTestServer h3TestServer;
-    HttpRequest postRequestNoError, postRequestError;
-    HttpRequest postRequestNoErrorWithData, postRequestErrorWithData;
-    URI h3TestServerUriNoError, h3TestServerUriError;
-    SSLContext sslContext;
+    private static HttpTestServer h3TestServer;
+    private static HttpRequest postRequestNoError, postRequestError;
+    private static HttpRequest postRequestNoErrorWithData, postRequestErrorWithData;
+    private static URI h3TestServerUriNoError, h3TestServerUriError;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
 
     static final String TEST_ROOT_PATH = "/h3_stop_sending_test";
     static final String NO_ERROR_PATH = TEST_ROOT_PATH + "/no_error_path";
@@ -81,13 +82,13 @@ public class H3StopSendingTest {
             err.println(resp.headers());
             err.println(resp.body());
             err.println(resp.statusCode());
-            assertEquals(resp.statusCode(), 200);
+            assertEquals(200, resp.statusCode());
             resp = client.sendAsync(postRequestNoErrorWithData, HttpResponse.BodyHandlers.ofString()).get();
             err.println(resp.headers());
             err.println(resp.body());
             err.println(resp.statusCode());
-            assertEquals(resp.statusCode(), 200);
-            assertEquals(resp.body(), RESPONSE_MESSAGE.repeat(MESSAGE_REPEAT));
+            assertEquals(200, resp.statusCode());
+            assertEquals(RESPONSE_MESSAGE.repeat(MESSAGE_REPEAT), resp.body());
         }
     }
 
@@ -125,10 +126,9 @@ public class H3StopSendingTest {
         }
     }
 
-    @BeforeTest
-    public void setup() throws IOException {
+    @BeforeAll
+    public static void setup() throws IOException {
 
-        sslContext  = new SimpleSSLContext().get();
         h3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         h3TestServer.addHandler(new ServerRequestStopSendingHandler(), TEST_ROOT_PATH);
         h3TestServerUriError = URI.create("https://" + h3TestServer.serverAuthority() + ERROR_PATH);
@@ -163,8 +163,8 @@ public class H3StopSendingTest {
                 .build();
     }
 
-    @AfterTest
-    public void afterTest() {
+    @AfterAll
+    public static void afterTest() {
         h3TestServer.stop();
     }
 

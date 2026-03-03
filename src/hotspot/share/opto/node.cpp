@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, 2025, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1151,15 +1151,19 @@ const Type* Node::Value(PhaseGVN* phase) const {
 // 'Idealize' the graph rooted at this Node.
 //
 // In order to be efficient and flexible there are some subtle invariants
-// these Ideal calls need to hold.  Running with '-XX:VerifyIterativeGVN=1' checks
-// these invariants, although its too slow to have on by default.  If you are
-// hacking an Ideal call, be sure to test with '-XX:VerifyIterativeGVN=1'
+// these Ideal calls need to hold. Some of the flag bits for '-XX:VerifyIterativeGVN'
+// can help with validating these invariants, although they are too slow to have on by default:
+//    - '-XX:VerifyIterativeGVN=1' checks the def-use info
+//    - '-XX:VerifyIterativeGVN=100000' checks the return value
+// If you are hacking an Ideal call, be sure to use these.
 //
 // The Ideal call almost arbitrarily reshape the graph rooted at the 'this'
 // pointer.  If ANY change is made, it must return the root of the reshaped
 // graph - even if the root is the same Node.  Example: swapping the inputs
 // to an AddINode gives the same answer and same root, but you still have to
-// return the 'this' pointer instead of null.
+// return the 'this' pointer instead of null. If the node was already dead
+// before the Ideal call, this rule does not apply, and it is fine to return
+// nullptr even if modifications were made.
 //
 // You cannot return an OLD Node, except for the 'this' pointer.  Use the
 // Identity call to return an old Node; basically if Identity can find
@@ -1213,7 +1217,7 @@ bool Node::has_special_unique_user() const {
   if (this->is_Store()) {
     // Condition for back-to-back stores folding.
     return n->Opcode() == op && n->in(MemNode::Memory) == this;
-  } else if ((this->is_Load() || this->is_DecodeN() || this->is_Phi()) && n->Opcode() == Op_MemBarAcquire) {
+  } else if ((this->is_Load() || this->is_DecodeN() || this->is_Phi() || this->is_Con()) && n->Opcode() == Op_MemBarAcquire) {
     // Condition for removing an unused LoadNode or DecodeNNode from the MemBarAcquire precedence input
     return true;
   } else if (this->is_Load() && n->is_Move()) {
@@ -2879,21 +2883,24 @@ Node* Node::find_similar(int opc) {
         Node* use = def->fast_out(i);
         if (use != this &&
             use->Opcode() == opc &&
-            use->req() == req()) {
-          uint j;
-          for (j = 0; j < use->req(); j++) {
-            if (use->in(j) != in(j)) {
-              break;
-            }
-          }
-          if (j == use->req()) {
-            return use;
-          }
+            use->req() == req() &&
+            has_same_inputs_as(use)) {
+          return use;
         }
       }
     }
   }
   return nullptr;
+}
+
+bool Node::has_same_inputs_as(const Node* other) const {
+  assert(req() == other->req(), "should have same number of inputs");
+  for (uint j = 0; j < other->req(); j++) {
+    if (in(j) != other->in(j)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 Node* Node::unique_multiple_edges_out_or_null() const {

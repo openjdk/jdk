@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @summary Test for HttpsServer::create
  * @library /test/lib
  * @build jdk.test.lib.Platform jdk.test.lib.net.URIBuilder
- * @run testng/othervm HttpsServerTest
+ * @run junit/othervm HttpsServerTest
  */
 
 import java.io.IOException;
@@ -40,7 +40,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -52,12 +51,13 @@ import com.sun.net.httpserver.HttpsServer;
 import javax.net.ssl.SSLContext;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.assertThrows;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class HttpsServerTest {
 
@@ -67,18 +67,20 @@ public class HttpsServerTest {
     static final boolean ENABLE_LOGGING = true;
     static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
 
-    SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
 
-    @BeforeTest
-    public void setup() throws IOException {
+    static {
+        SSLContext.setDefault(sslContext);
+    }
+
+    @BeforeAll
+    public static void setup() throws IOException {
         if (ENABLE_LOGGING) {
             ConsoleHandler ch = new ConsoleHandler();
             LOGGER.setLevel(Level.ALL);
             ch.setLevel(Level.ALL);
             LOGGER.addHandler(ch);
         }
-        sslContext = new SimpleSSLContext().get();
-        SSLContext.setDefault(sslContext);
     }
 
     @Test
@@ -96,12 +98,12 @@ public class HttpsServerTest {
         final var s1 = HttpsServer.create(null, 0);
         assertNull(s1.getAddress());
         s1.bind((LOOPBACK_ADDR), 0);
-        assertEquals(s1.getAddress().getAddress(), LOOPBACK_ADDR.getAddress());
+        assertEquals(LOOPBACK_ADDR.getAddress(), s1.getAddress().getAddress());
 
         final var s2 = HttpsServer.create(null, 0, "/foo/", new Handler());
         assertNull(s2.getAddress());
         s2.bind(LOOPBACK_ADDR, 0);
-        assertEquals(s2.getAddress().getAddress(), LOOPBACK_ADDR.getAddress());
+        assertEquals(LOOPBACK_ADDR.getAddress(), s2.getAddress().getAddress());
         s2.removeContext("/foo/");  // throws if context doesn't exist
     }
 
@@ -118,11 +120,10 @@ public class HttpsServerTest {
                     .build();
             var request = HttpRequest.newBuilder(uri(server, "/test")).build();
             var response = client.send(request, BodyHandlers.ofString());
-            assertEquals(response.statusCode(), 200);
-            assertEquals(response.body(), "hello world");
-            assertEquals(response.headers().firstValue("content-length").get(),
-                    Integer.toString("hello world".length()));
-            assertEquals(response.statusCode(), filter.responseCode.get().intValue());
+            assertEquals(200, response.statusCode());
+            assertEquals("hello world", response.body());
+            assertEquals(                    Integer.toString("hello world".length()), response.headers().firstValue("content-length").get());
+            assertEquals(filter.responseCode.get().intValue(), response.statusCode());
         } finally {
             server.stop(0);
         }

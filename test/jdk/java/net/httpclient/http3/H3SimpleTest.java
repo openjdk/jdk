@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,15 +32,16 @@ import javax.net.ssl.SSLContext;
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpOption.H3_DISCOVERY;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 /*
  * @test
@@ -50,21 +51,21 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
- * @run testng/othervm
+ * @run junit/othervm
  *              -Djdk.internal.httpclient.debug=true
  *              -Djdk.httpclient.HttpClient.log=requests,responses,errors
  *              H3SimpleTest
- * @run testng/othervm
+ * @run junit/othervm
  *              -Djdk.internal.httpclient.debug=true
  *              -Djdk.httpclient.HttpClient.log=requests,responses,errors
  *              -Djava.net.preferIPv6Addresses=true
  *              H3SimpleTest
- * @run testng/othervm
+ * @run junit/othervm
  *              -Djdk.internal.httpclient.debug=true
  *              -Djdk.httpclient.HttpClient.log=requests,responses,errors
  *              -Djava.net.preferIPv4Stack=true
  *              H3SimpleTest
- * @run testng/othervm
+ * @run junit/othervm
  *              -Djdk.internal.httpclient.debug=true
  *              -Djdk.httpclient.HttpClient.log=requests,responses,errors
  *              -Djdk.internal.httpclient.quic.congestionController=reno
@@ -73,16 +74,12 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
 // -Djava.security.debug=all
 public class H3SimpleTest implements HttpServerAdapters {
 
-    private SSLContext sslContext;
-    private HttpTestServer h3Server;
-    private String requestURI;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
+    private static HttpTestServer h3Server;
+    private static String requestURI;
 
-    @BeforeClass
-    public void beforeClass() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null) {
-            throw new AssertionError("Unexpected null sslContext");
-        }
+    @BeforeAll
+    public static void beforeClass() throws Exception {
         // create an H3 only server
         h3Server = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         h3Server.addHandler((exchange) -> exchange.sendResponseHeaders(200, 0), "/hello");
@@ -91,8 +88,8 @@ public class H3SimpleTest implements HttpServerAdapters {
         requestURI = "https://" + h3Server.serverAuthority() + "/hello";
     }
 
-    @AfterClass
-    public void afterClass() throws Exception {
+    @AfterAll
+    public static void afterClass() throws Exception {
         if (h3Server != null) {
             System.out.println("Stopping server " + h3Server.getAddress());
             h3Server.stop();
@@ -117,18 +114,18 @@ public class H3SimpleTest implements HttpServerAdapters {
         final HttpRequest req1 = reqBuilder.copy().GET().build();
         System.out.println("Issuing request: " + req1);
         final HttpResponse<Void> resp1 = client.send(req1, BodyHandlers.discarding());
-        Assert.assertEquals(resp1.statusCode(), 200, "unexpected response code for GET request");
+        Assertions.assertEquals(200, resp1.statusCode(), "unexpected response code for GET request");
 
         // POST
         final HttpRequest req2 = reqBuilder.copy().POST(BodyPublishers.ofString("foo")).build();
         System.out.println("Issuing request: " + req2);
         final HttpResponse<Void> resp2 = client.send(req2, BodyHandlers.discarding());
-        Assert.assertEquals(resp2.statusCode(), 200, "unexpected response code for POST request");
+        Assertions.assertEquals(200, resp2.statusCode(), "unexpected response code for POST request");
 
         // HEAD
         final HttpRequest req3 = reqBuilder.copy().HEAD().build();
         System.out.println("Issuing request: " + req3);
         final HttpResponse<Void> resp3 = client.send(req3, BodyHandlers.discarding());
-        Assert.assertEquals(resp3.statusCode(), 200, "unexpected response code for HEAD request");
+        Assertions.assertEquals(200, resp3.statusCode(), "unexpected response code for HEAD request");
     }
 }
