@@ -2051,6 +2051,7 @@ char* GenerateOopMap::state_vec_to_string(CellTypeState* vec, int len) {
   return _state_vec_buf;
 }
 
+#ifndef PRODUCT
 void GenerateOopMap::print_time() {
   tty->print_cr ("Accumulated oopmap times:");
   tty->print_cr ("---------------------------");
@@ -2058,6 +2059,7 @@ void GenerateOopMap::print_time() {
   tty->print_cr ("  (%3.0f bytecodes per sec) ",
   (double)GenerateOopMap::_total_byte_count / GenerateOopMap::_total_oopmap_time.seconds());
 }
+#endif
 
 //
 //  ============ Main Entry Point ===========
@@ -2071,16 +2073,12 @@ GenerateOopMap::GenerateOopMap(const methodHandle& method) {
 
 bool GenerateOopMap::compute_map(Thread* current) {
 #ifndef PRODUCT
-  if (TimeOopMap2) {
-    method()->print_short_name(tty);
-    tty->print("  ");
-  }
   if (TimeOopMap) {
     _total_byte_count += method()->code_size();
+    TraceTime t_all(nullptr, &_total_oopmap_time, TimeOopMap);
   }
 #endif
-  TraceTime t_single("oopmap time", TimeOopMap2);
-  TraceTime t_all(nullptr, &_total_oopmap_time, TimeOopMap);
+  TraceTime t_single("oopmap time", TRACETIME_LOG(Debug, generateoopmap));
 
   // Initialize values
   _got_error      = false;
@@ -2224,9 +2222,7 @@ void GenerateOopMap::result_for_basicblock(int bci) {
 void GenerateOopMap::record_refval_conflict(int varNo) {
   assert(varNo>=0 && varNo< _max_locals, "index out of range");
 
-  if (TraceOopMapRewrites) {
-     tty->print("### Conflict detected (local no: %d)\n", varNo);
-  }
+  log_trace(generateoopmap)("### Conflict detected (local no: %d)\n", varNo);
 
   if (!_new_var_map) {
     _new_var_map = NEW_RESOURCE_ARRAY(int, _max_locals);
@@ -2265,10 +2261,13 @@ void GenerateOopMap::rewrite_refval_conflicts()
   // Tracing flag
   _did_rewriting = true;
 
-  if (TraceOopMapRewrites) {
-    tty->print_cr("ref/value conflict for method %s - bytecodes are getting rewritten", method()->name()->as_C_string());
-    method()->print();
-    method()->print_codes();
+  const bool log = log_is_enabled(Trace, generateoopmap);
+  if (log) {
+    ResourceMark rm;
+    LogStream st(Log(generateoopmap)::trace());
+    st.print_cr("ref/value conflict for method %s - bytecodes are getting rewritten", method()->name()->as_C_string());
+    method()->print_on(&st);
+    method()->print_codes_on(&st);
   }
 
   assert(_new_var_map!=nullptr, "nothing to rewrite");
@@ -2278,9 +2277,7 @@ void GenerateOopMap::rewrite_refval_conflicts()
   if (!_got_error) {
     for (int k = 0; k < _max_locals && !_got_error; k++) {
       if (_new_var_map[k] != k) {
-        if (TraceOopMapRewrites) {
-          tty->print_cr("Rewriting: %d -> %d", k, _new_var_map[k]);
-        }
+        log_trace(generateoopmap)("Rewriting: %d -> %d", k, _new_var_map[k]);
         rewrite_refval_conflict(k, _new_var_map[k]);
         if (_got_error) return;
         nof_conflicts++;
@@ -2331,22 +2328,16 @@ bool GenerateOopMap::rewrite_refval_conflict_inst(BytecodeStream *itr, int from,
   int bci = itr->bci();
 
   if (is_aload(itr, &index) && index == from) {
-    if (TraceOopMapRewrites) {
-      tty->print_cr("Rewriting aload at bci: %d", bci);
-    }
+    log_trace(generateoopmap)("Rewriting aload at bci: %d", bci);
     return rewrite_load_or_store(itr, Bytecodes::_aload, Bytecodes::_aload_0, to);
   }
 
   if (is_astore(itr, &index) && index == from) {
     if (!stack_top_holds_ret_addr(bci)) {
-      if (TraceOopMapRewrites) {
-        tty->print_cr("Rewriting astore at bci: %d", bci);
-      }
+      log_trace(generateoopmap)("Rewriting astore at bci: %d", bci);
       return rewrite_load_or_store(itr, Bytecodes::_astore, Bytecodes::_astore_0, to);
     } else {
-      if (TraceOopMapRewrites) {
-        tty->print_cr("Suppress rewriting of astore at bci: %d", bci);
-      }
+      log_trace(generateoopmap)("Suppress rewriting of astore at bci: %d", bci);
     }
   }
 
