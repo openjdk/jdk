@@ -205,8 +205,9 @@ public class BulkPutBuffer {
 
         Buffer create(int capacity) throws Throwable {
             Class<?> bufferType = typeToAttr.get(elementType).type;
-            if (bufferType == ByteBuffer.class ||
-                kind == BufferKind.DIRECT || kind == BufferKind.HEAP_VIEW) {
+            if (bufferType == ByteBuffer.class || kind == BufferKind.DIRECT ||
+                kind == BufferKind.HEAP_VIEW) {
+
                 int len = capacity*typeToAttr.get(elementType).bytes;
                 ByteBuffer bb = (ByteBuffer)allocBB.invoke(len);
                 byte[] bytes = new byte[len];

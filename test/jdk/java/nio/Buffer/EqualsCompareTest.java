@@ -453,80 +453,62 @@ public class EqualsCompareTest {
         }
     }
 
-    static List<Arguments> bufferTypes;
-
     public static Stream<Arguments> bufferTypesSource() {
-        if (bufferTypes == null) {
-            bufferTypes = List.of(
-                                  Arguments.of(new BufferType.Bytes(BufferKind.HEAP)),
-                                  Arguments.of(new BufferType.Bytes(BufferKind.DIRECT)),
-                                  Arguments.of(new BufferType.Chars(BufferKind.HEAP)),
-                                  Arguments.of(new BufferType.Chars(BufferKind.HEAP_VIEW)),
-                                  Arguments.of(new BufferType.Chars(BufferKind.DIRECT)),
-                                  Arguments.of(new BufferType.Shorts(BufferKind.HEAP)),
-                                  Arguments.of(new BufferType.Shorts(BufferKind.HEAP_VIEW)),
-                                  Arguments.of(new BufferType.Shorts(BufferKind.DIRECT)),
-                                  Arguments.of(new BufferType.Ints(BufferKind.HEAP)),
-                                  Arguments.of(new BufferType.Ints(BufferKind.HEAP_VIEW)),
-                                  Arguments.of(new BufferType.Ints(BufferKind.DIRECT)),
-                                  Arguments.of(new BufferType.Floats(BufferKind.HEAP)),
-                                  Arguments.of(new BufferType.Floats(BufferKind.HEAP_VIEW)),
-                                  Arguments.of(new BufferType.Floats(BufferKind.DIRECT)),
-                                  Arguments.of(new BufferType.Longs(BufferKind.HEAP)),
-                                  Arguments.of(new BufferType.Longs(BufferKind.HEAP_VIEW)),
-                                  Arguments.of(new BufferType.Longs(BufferKind.DIRECT)),
-                                  Arguments.of(new BufferType.Doubles(BufferKind.HEAP)),
-                                  Arguments.of(new BufferType.Doubles(BufferKind.HEAP_VIEW)),
-                                  Arguments.of(new BufferType.Doubles(BufferKind.DIRECT))
-                                  );
-        }
-        return bufferTypes.stream();
+        return List.of(Arguments.of(new BufferType.Bytes(BufferKind.HEAP)),
+                       Arguments.of(new BufferType.Bytes(BufferKind.DIRECT)),
+                       Arguments.of(new BufferType.Chars(BufferKind.HEAP)),
+                       Arguments.of(new BufferType.Chars(BufferKind.HEAP_VIEW)),
+                       Arguments.of(new BufferType.Chars(BufferKind.DIRECT)),
+                       Arguments.of(new BufferType.Shorts(BufferKind.HEAP)),
+                       Arguments.of(new BufferType.Shorts(BufferKind.HEAP_VIEW)),
+                       Arguments.of(new BufferType.Shorts(BufferKind.DIRECT)),
+                       Arguments.of(new BufferType.Ints(BufferKind.HEAP)),
+                       Arguments.of(new BufferType.Ints(BufferKind.HEAP_VIEW)),
+                       Arguments.of(new BufferType.Ints(BufferKind.DIRECT)),
+                       Arguments.of(new BufferType.Floats(BufferKind.HEAP)),
+                       Arguments.of(new BufferType.Floats(BufferKind.HEAP_VIEW)),
+                       Arguments.of(new BufferType.Floats(BufferKind.DIRECT)),
+                       Arguments.of(new BufferType.Longs(BufferKind.HEAP)),
+                       Arguments.of(new BufferType.Longs(BufferKind.HEAP_VIEW)),
+                       Arguments.of(new BufferType.Longs(BufferKind.DIRECT)),
+                       Arguments.of(new BufferType.Doubles(BufferKind.HEAP)),
+                       Arguments.of(new BufferType.Doubles(BufferKind.HEAP_VIEW)),
+                       Arguments.of(new BufferType.Doubles(BufferKind.DIRECT)))
+            .stream();
     }
 
-    static List<Arguments> floatbufferTypes;
-
     public static Stream<Arguments> floatBufferTypesSource() {
-        if (floatbufferTypes == null) {
             LongFunction<Object> bTof = rb -> Float.intBitsToFloat((int) rb);
             LongFunction<Object> bToD = Double::longBitsToDouble;
 
-            floatbufferTypes = List.of(
-                    // canonical and non-canonical NaNs
-                    // If conversion is a signalling NaN it may be subject to conversion to a
-                    // quiet NaN on some processors, even if a copy is performed
-                    // The tests assume that if conversion occurs it does not convert to the
-                    // canonical NaN
-                    Arguments.of(new BufferType.Floats(BufferKind.HEAP), 0x7fc00000L, 0x7f800001L, bTof),
-                    Arguments.of(new BufferType.Floats(BufferKind.HEAP_VIEW), 0x7fc00000L, 0x7f800001L, bTof),
-                    Arguments.of(new BufferType.Floats(BufferKind.DIRECT), 0x7fc00000L, 0x7f800001L, bTof),
-                    Arguments.of(new BufferType.Doubles(BufferKind.HEAP), 0x7ff8000000000000L, 0x7ff0000000000001L, bToD),
-                    Arguments.of(new BufferType.Doubles(BufferKind.HEAP_VIEW), 0x7ff8000000000000L, 0x7ff0000000000001L, bToD),
-                    Arguments.of(new BufferType.Doubles(BufferKind.DIRECT), 0x7ff8000000000000L, 0x7ff0000000000001L, bToD),
+            return List.of(
+                 // canonical and non-canonical NaNs
+                 // If conversion is a signalling NaN it may be subject to conversion to a
+                 // quiet NaN on some processors, even if a copy is performed
+                 // The tests assume that if conversion occurs it does not convert to the
+                 // canonical NaN
+                 Arguments.of(new BufferType.Floats(BufferKind.HEAP), 0x7fc00000L, 0x7f800001L, bTof),
+                 Arguments.of(new BufferType.Floats(BufferKind.HEAP_VIEW), 0x7fc00000L, 0x7f800001L, bTof),
+                 Arguments.of(new BufferType.Floats(BufferKind.DIRECT), 0x7fc00000L, 0x7f800001L, bTof),
+                 Arguments.of(new BufferType.Doubles(BufferKind.HEAP), 0x7ff8000000000000L, 0x7ff0000000000001L, bToD),
+                 Arguments.of(new BufferType.Doubles(BufferKind.HEAP_VIEW), 0x7ff8000000000000L, 0x7ff0000000000001L, bToD),
+                 Arguments.of(new BufferType.Doubles(BufferKind.DIRECT), 0x7ff8000000000000L, 0x7ff0000000000001L, bToD),
 
-                    // +0.0 and -0.0
-                    Arguments.of(new BufferType.Floats(BufferKind.HEAP), 0x0L, 0x80000000L, bTof),
-                    Arguments.of(new BufferType.Floats(BufferKind.HEAP_VIEW), 0x0L, 0x80000000L, bTof),
-                    Arguments.of(new BufferType.Floats(BufferKind.DIRECT), 0x0L, 0x80000000L, bTof),
-                    Arguments.of(new BufferType.Doubles(BufferKind.HEAP), 0x0L, 0x8000000000000000L, bToD),
-                    Arguments.of(new BufferType.Doubles(BufferKind.HEAP_VIEW), 0x0L, 0x8000000000000000L, bToD),
-                    Arguments.of(new BufferType.Doubles(BufferKind.DIRECT), 0x0L, 0x8000000000000000L, bToD)
-                                       );
-        }
-        return floatbufferTypes.stream();
+                 // +0.0 and -0.0
+                 Arguments.of(new BufferType.Floats(BufferKind.HEAP), 0x0L, 0x80000000L, bTof),
+                 Arguments.of(new BufferType.Floats(BufferKind.HEAP_VIEW), 0x0L, 0x80000000L, bTof),
+                 Arguments.of(new BufferType.Floats(BufferKind.DIRECT), 0x0L, 0x80000000L, bTof),
+                 Arguments.of(new BufferType.Doubles(BufferKind.HEAP), 0x0L, 0x8000000000000000L, bToD),
+                 Arguments.of(new BufferType.Doubles(BufferKind.HEAP_VIEW), 0x0L, 0x8000000000000000L, bToD),
+                 Arguments.of(new BufferType.Doubles(BufferKind.DIRECT), 0x0L, 0x8000000000000000L, bToD))
+        .stream();
     }
 
-
-    static List<Arguments> charBufferTypes;
-
     public static Stream<Arguments> charBufferTypesSource() {
-        if (charBufferTypes == null) {
-            charBufferTypes = List.of(
-                                      Arguments.of(new BufferType.Chars(BufferKind.HEAP)),
-                                      Arguments.of(new BufferType.Chars(BufferKind.HEAP_VIEW)),
-                                      Arguments.of(new BufferType.Chars(BufferKind.DIRECT))
-                                      );
-        }
-        return charBufferTypes.stream();
+        return  List.of(Arguments.of(new BufferType.Chars(BufferKind.HEAP)),
+                        Arguments.of(new BufferType.Chars(BufferKind.HEAP_VIEW)),
+                        Arguments.of(new BufferType.Chars(BufferKind.DIRECT)))
+            .stream();
     }
 
     // Tests all primitive buffers

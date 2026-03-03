@@ -44,6 +44,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class ReachabilityTest {
 
@@ -100,7 +101,7 @@ public class ReachabilityTest {
                 }
             }
         } catch (InterruptedException unexpected) {
-            throw new AssertionError("unexpected InterruptedException");
+            fail("unexpected InterruptedException");
         }
 
         // Some or all of the intermediate values must be GC'ed

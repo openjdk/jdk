@@ -132,7 +132,7 @@ public class Chars {
     @ParameterizedTest
     @MethodSource("createCharBuffers")
     public void testChars(String type, CharBuffer cb) {
-        System.out.format("%s position=%d, limit=%d%n", type, cb.position(), cb.limit());
+        System.err.format("%s position=%d, limit=%d%n", type, cb.position(), cb.limit());
         int expected = intSum(cb);
         assertEquals(expected, cb.chars().sum());
         assertEquals(expected, cb.chars().parallel().sum());
