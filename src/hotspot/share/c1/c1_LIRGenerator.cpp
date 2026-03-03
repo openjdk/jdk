@@ -898,6 +898,47 @@ LIR_Opr LIRGenerator::force_to_spill(LIR_Opr value, BasicType t) {
   return tmp;
 }
 
+#ifndef RANDOMIZED_PROFILE_CAPTURE
+
+void LIRGenerator::profile_branch(If* if_instr, If::Condition cond) {
+  if (if_instr->should_profile()) {
+    ciMethod* method = if_instr->profiled_method();
+    assert(method != nullptr, "method should be set if branch is profiled");
+    ciMethodData* md = method->method_data_or_null();
+    assert(md != nullptr, "Sanity");
+    ciProfileData* data = md->bci_to_data(if_instr->profiled_bci());
+    assert(data != nullptr, "must have profiling data");
+    assert(data->is_BranchData(), "need BranchData for two-way branches");
+    int taken_count_offset     = md->byte_offset_of_slot(data, BranchData::taken_offset());
+    int not_taken_count_offset = md->byte_offset_of_slot(data, BranchData::not_taken_offset());
+    if (if_instr->is_swapped()) {
+      int t = taken_count_offset;
+      taken_count_offset = not_taken_count_offset;
+      not_taken_count_offset = t;
+    }
+
+    LIR_Opr md_reg = new_register(T_METADATA);
+    __ metadata2reg(md->constant_encoding(), md_reg);
+
+    LIR_Opr data_offset_reg = new_pointer_register();
+    __ cmove(lir_cond(cond),
+             LIR_OprFact::intptrConst(taken_count_offset),
+             LIR_OprFact::intptrConst(not_taken_count_offset),
+             data_offset_reg, as_BasicType(if_instr->x()->type()));
+
+    // MDO cells are intptr_t, so the data_reg width is arch-dependent.
+    LIR_Opr data_reg = new_pointer_register();
+    LIR_Address* data_addr = new LIR_Address(md_reg, data_offset_reg, data_reg->type());
+    __ move(data_addr, data_reg);
+    // Use leal instead of add to avoid destroying condition codes on x86
+    LIR_Address* fake_incr_value = new LIR_Address(data_reg, DataLayout::counter_increment, T_INT);
+    __ leal(LIR_OprFact::address(fake_incr_value), data_reg);
+    __ move(data_reg, data_addr);
+  }
+}
+
+#else // RANDOMIZED_PROFILE_CAPTURE
+
 void LIRGenerator::profile_branch(If* if_instr, If::Condition cond) {
   if (if_instr->should_profile()) {
     ciMethod* method = if_instr->profiled_method();
@@ -931,6 +972,9 @@ void LIRGenerator::profile_branch(If* if_instr, If::Condition cond) {
     __ increment_counter(step, tmp, md_reg, md->constant_encoding(), data_offset_reg);
   }
 }
+
+#endif // RANDOMIZED_PROFILE_CAPTURE
+
 
 // Phi technique:
 // This is about passing live values from one basic block to the other.

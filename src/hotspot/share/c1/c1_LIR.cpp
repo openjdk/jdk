@@ -1076,12 +1076,14 @@ void LIR_OpAssert::emit_code(LIR_Assembler* masm) {
 #endif
 
 void LIR_OpIncrementCounter::emit_code(LIR_Assembler* masm) {
+#ifdef RANDOMIZED_PROFILE_CAPTURE
   masm->increment_profile_ctr
     (_step, _result, _freq_op,
      _md_reg, _md_op, _md_offset_op, _overflow_stub);
   if (overflow_stub()) {
     masm->append_code_stub(overflow_stub());
   }
+#endif
 }
 
 void LIR_OpProfileCall::emit_code(LIR_Assembler* masm) {
