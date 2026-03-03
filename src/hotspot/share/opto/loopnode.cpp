@@ -5004,7 +5004,7 @@ static Node* reassociate_chain(int add_opcode, Node* node, PhiNode* phi, Node* l
   return reassoc;
 }
 
-static bool try_reassociate_chain(Node* n, PhiNode* phi, IdealLoopTree* lpt, PhaseIdealLoop* phase) {
+static void try_reassociate_chain(Node* n, PhiNode* phi, IdealLoopTree* lpt, PhaseIdealLoop* phase) {
   Node* chain_head = nullptr;
   Node* current = n;
   int opcode = current->Opcode();
@@ -5019,12 +5019,12 @@ static bool try_reassociate_chain(Node* n, PhiNode* phi, IdealLoopTree* lpt, Pha
     if (use != nullptr) {
       if (!phase->ctrl_is_member(lpt, use)) {
         // Only interested in commutative add nodes that are in use in the loop
-        return false;
+        return;
       }
       if (use->in(1)->Opcode() == opcode && use->in(2)->Opcode() == opcode) {
         // A chain to reassociate cannot be constructed
         // when the chain can have multiple paths
-        return false;
+        return;
       }
 
       chain_length++;
@@ -5036,7 +5036,7 @@ static bool try_reassociate_chain(Node* n, PhiNode* phi, IdealLoopTree* lpt, Pha
 
   if (chain_length < 2) {
     // Only reassociate long enough chains
-    return false;
+    return;
   }
 
   Node* loop_head = lpt->head();
@@ -5045,7 +5045,6 @@ static bool try_reassociate_chain(Node* n, PhiNode* phi, IdealLoopTree* lpt, Pha
   Node* new_chain_head = MinMaxNode::build_min_max_long(&phase->igvn(), phi, reassociated, opcode == Op_MaxL);
   phase->register_new_node(new_chain_head, loop_head);
   phase->igvn().replace_node(chain_head, new_chain_head);
-  return true;
 }
 
 //=============================================================================
@@ -5435,13 +5434,17 @@ void PhaseIdealLoop::build_and_optimize() {
           Node* loop_head_use = loop_head->fast_out(i);
           if (loop_head_use->is_Phi()) {
             PhiNode* phi = loop_head_use->as_Phi();
-            for (DUIterator j = phi->outs(); phi->has_out(j); j++) {
-              Node* n = phi->out(j);
+            Unique_Node_List wq;
+            for (DUIterator_Fast jmax, j = phi->fast_outs(jmax); j < jmax; j++) {
+              Node* n = phi->fast_out(j);
               if (is_associative(n)) {
-                if (try_reassociate_chain(n, phi, lpt, this)) {
-                  --j;
-                }
+                wq.push(n);
               }
+            }
+            // Reassociating changes Phi nodes, so iteration and reassociation have to be separated
+            for (uint next = 0; next < wq.size(); ++next) {
+              Node* m = wq.at(next);
+              try_reassociate_chain(m, phi, lpt, this);
             }
           }
         }
