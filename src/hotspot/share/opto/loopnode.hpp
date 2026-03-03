@@ -888,7 +888,6 @@ class PhaseIdealLoop : public PhaseTransform {
   friend class SuperWord;
   friend class ShenandoahBarrierC2Support;
   friend class AutoNodeBudget;
-  friend class ReassociateReductionChain;
 
   // Map loop membership for CFG nodes, and ctrl for non-CFG nodes.
   //

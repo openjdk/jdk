@@ -4508,9 +4508,9 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
   return true;
 }
 
-class ReassociateReductionChain : public StackObj {
+class ReassociateReductionChains : public StackObj {
 public:
-  ReassociateReductionChain(IdealLoopTree* loop, PhaseIdealLoop* phase) : _loop(loop), _phase(phase) {
+  ReassociateReductionChains(IdealLoopTree* loop, PhaseIdealLoop* phase) : _loop(loop), _phase(phase) {
   }
 
   bool transform(Node* n, PhiNode* phi) {
@@ -4603,7 +4603,7 @@ void PhaseIdealLoop::reassociate_reduction_chains() {
     IdealLoopTree* loop = iter.current();
     if (loop->is_innermost()) {
       Node* loop_head = loop->head();
-      ReassociateReductionChain rr(loop, this);
+      ReassociateReductionChains rrc(loop, this);
 
       for (DUIterator_Fast imax, i = loop_head->fast_outs(imax); i < imax; i++) {
         Node* loop_head_use = loop_head->fast_out(i);
@@ -4611,7 +4611,7 @@ void PhaseIdealLoop::reassociate_reduction_chains() {
           PhiNode* phi = loop_head_use->as_Phi();
           for (DUIterator j = phi->outs(); phi->has_out(j); j++) {
             Node* n = phi->out(j);
-            if (rr.transform(n, phi)) {
+            if (rrc.transform(n, phi)) {
               --j;
             }
           }
