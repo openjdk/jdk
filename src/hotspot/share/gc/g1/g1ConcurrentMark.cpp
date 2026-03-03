@@ -898,7 +898,7 @@ public:
 };
 
 class G1PreConcurrentStartTask::NoteStartOfMarkTask : public G1AbstractSubTask {
-  
+
   class NoteStartOfMarkHRClosure : public G1HeapRegionClosure {
     G1ConcurrentMark* _cm;
 
