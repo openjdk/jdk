@@ -969,7 +969,7 @@ void PhaseIterGVN::init_verifyPhaseIterGVN() {
 #endif
 }
 
-void PhaseIterGVN::verify_PhaseIterGVN() {
+void PhaseIterGVN::verify_PhaseIterGVN(bool deep) {
 #ifdef ASSERT
   // Verify nodes with changed inputs.
   Unique_Node_List* modified_list = C->modified_nodes();
@@ -1002,7 +1002,7 @@ void PhaseIterGVN::verify_PhaseIterGVN() {
     }
   }
 
-  verify_optimize();
+  verify_optimize(deep);
 #endif
 }
 #endif /* PRODUCT */
@@ -1203,19 +1203,17 @@ void PhaseIterGVN::optimize(bool deep) {
   // Pull from worklist and transform the node.
   if (drain_worklist(loop_count)) return;
 
-  // In debug builds, always run deep_revisit before verify_PhaseIterGVN() below.
-  NOT_PRODUCT(deep = true;)
   if (deep && UseDeepIGVNRevisit) {
     deep_revisit(loop_count);
     if (C->failing()) return;
   }
 
-  NOT_PRODUCT(verify_PhaseIterGVN();)
+  NOT_PRODUCT(verify_PhaseIterGVN(deep);)
   C->print_method(PHASE_AFTER_ITER_GVN, 3);
 }
 
 #ifdef ASSERT
-void PhaseIterGVN::verify_optimize() {
+void PhaseIterGVN::verify_optimize(bool deep) {
   assert(_worklist.size() == 0, "igvn worklist must be empty before verify");
 
   // Verify deep revisit convergence: push deep-inspection nodes one more time and drain
@@ -1253,8 +1251,8 @@ void PhaseIterGVN::verify_optimize() {
         verify_Value_for(n);
       }
       if (is_verify_Ideal()) {
-        verify_Ideal_for(n, false);
-        verify_Ideal_for(n, true);
+        verify_Ideal_for(n, false, deep);
+        verify_Ideal_for(n, true, deep);
       }
       if (is_verify_Identity()) {
         verify_Identity_for(n);
@@ -1376,7 +1374,7 @@ void PhaseIterGVN::verify_Value_for(const Node* n, bool strict) {
 // Check that all Ideal optimizations that could be done were done.
 // Asserts if it found missed optimization opportunities or encountered unexpected changes, and
 //         returns normally otherwise (no missed optimization, or skipped verification).
-void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
+void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape, bool deep) {
   // First, we check a list of exceptions, where we skip verification,
   // because there are known cases where Ideal can optimize after IGVN.
   // Some may be expected and cannot be fixed, and others should be fixed.
@@ -1393,15 +1391,16 @@ void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     case Op_If:
     case Op_CountedLoopEnd:
     case Op_LongCountedLoopEnd:
-      // Ideal(can_reshape=true) is not a pure query for these nodes; it has two
-      // distinct destructive side-effects that make the BFS verify_Ideal_for loop unsafe:
-      // 1. split_if speculatively clones a compare node then destroys it, bumping
-      //     C->unique() even when Ideal returns nullptr, causing a false assertion.
-      // 2. search_identical -> dominated_by kills other If nodes mid-BFS, shortening
-      //     the dominator chain and enabling later Ifs (already at fixed point after
-      //     deep_revisit) to find new matches, causing a false "Missed Ideal" assertion.
-      // Convergence is instead verified via the drain-based check in verify_optimize().
-      return;
+      // Without deep_revisit these nodes may not have converged (their Ideal inspects distant
+      // inputs, e.g. RangeCheck scans ~999 nodes).
+      if (!deep) return;
+      // Ideal(can_reshape=true) has destructive side-effects, e.g. in split_if and dominated_by.
+      // These can create new nodes without adding them to the sea, these cause verification to trigger
+      // in combination with deep=true.
+      // When can_reshape == deep == true, convergence is verified via the drain-based check
+      // in verify_optimize().
+      if (can_reshape) return;
+      break;
 
     // RegionNode::Ideal does "Skip around the useless IF diamond".
     //   245  IfTrue  === 244
