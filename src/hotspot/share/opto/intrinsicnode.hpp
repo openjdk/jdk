@@ -41,6 +41,9 @@ class PartialSubtypeCheckNode : public Node {
   virtual int Opcode() const;
   virtual const Type* bottom_type() const { return TypeRawPtr::BOTTOM; }
   virtual uint ideal_reg() const { return Op_RegP; }
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 //------------------------------StrIntrinsic-------------------------------
@@ -78,13 +81,15 @@ class StrIntrinsicNode : public Node {
   Node(control, char_array_mem, s1, s2), _encoding(encoding) {
   }
 
-  virtual bool depends_only_on_test() const override { return false; }
   virtual const TypePtr* adr_type() const override = 0;
   virtual uint match_edge(uint idx) const override;
   virtual uint ideal_reg() const override { return Op_RegI; }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape) override;
   virtual const Type* Value(PhaseGVN* phase) const override;
   ArgEncoding encoding() const { return _encoding; }
+
+private:
+  virtual bool depends_only_on_test_impl() const override { return false; }
 };
 
 //------------------------------StrComp-------------------------------------
@@ -215,7 +220,6 @@ public:
   VectorizedHashCodeNode(Node* control, Node* ary_mem, const TypeAryPtr* in_adr_type, Node* arg1, Node* cnt1, Node* result, Node* basic_type)
     : Node(control, ary_mem, arg1, cnt1, result, basic_type), _in_adr_type(in_adr_type) {};
   virtual int Opcode() const override;
-  virtual bool depends_only_on_test() const override { return false; }
   virtual const Type* bottom_type() const override { return TypeInt::INT; }
   virtual uint match_edge(uint idx) const override;
   virtual uint ideal_reg() const override { return Op_RegI; }
@@ -229,6 +233,7 @@ private:
     return Node::cmp(n) && _in_adr_type == static_cast<const VectorizedHashCodeNode&>(n)._in_adr_type;
   }
   virtual const TypePtr* adr_type() const override { return _in_adr_type; }
+  virtual bool depends_only_on_test_impl() const override { return false; }
 };
 
 //------------------------------EncodeISOArray--------------------------------
@@ -244,7 +249,6 @@ public:
 
   bool is_ascii() { return _ascii; }
   virtual int Opcode() const override;
-  virtual bool depends_only_on_test() const override { return false; }
   virtual const Type* bottom_type() const override { return TypeInt::INT; }
   virtual uint match_edge(uint idx) const override;
   virtual uint ideal_reg() const override { return Op_RegI; }
@@ -259,6 +263,7 @@ private:
     return Node::cmp(n) && _ascii == e._ascii && _adr_type == e._adr_type;
   }
   virtual const TypePtr* adr_type() const override { return _adr_type; }
+  virtual bool depends_only_on_test_impl() const override { return false; }
 };
 
 //-------------------------------DigitNode----------------------------------------
@@ -268,6 +273,9 @@ public:
   virtual int Opcode() const;
   const Type* bottom_type() const { return TypeInt::BOOL; }
   virtual uint ideal_reg() const { return Op_RegI; }
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 //------------------------------LowerCaseNode------------------------------------
@@ -277,6 +285,9 @@ public:
   virtual int Opcode() const;
   const Type* bottom_type() const { return TypeInt::BOOL; }
   virtual uint ideal_reg() const { return Op_RegI; }
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 //------------------------------UpperCaseNode------------------------------------
@@ -286,6 +297,9 @@ public:
   virtual int Opcode() const;
   const Type* bottom_type() const { return TypeInt::BOOL; }
   virtual uint ideal_reg() const { return Op_RegI; }
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 //------------------------------WhitespaceCode-----------------------------------
@@ -295,6 +309,9 @@ public:
   virtual int Opcode() const;
   const Type* bottom_type() const { return TypeInt::BOOL; }
   virtual uint ideal_reg() const { return Op_RegI; }
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 //------------------------------CopySign-----------------------------------------
