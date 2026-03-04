@@ -36,7 +36,7 @@ public final class IntegerPolynomial25519 extends IntegerPolynomial {
     private static final long LIMB_MASK = -1L >>> (64 - BITS_PER_LIMB);
 
     public static final IntegerPolynomial25519 ONE =
-        new IntegerPolynomial25519();
+            new IntegerPolynomial25519();
 
     private IntegerPolynomial25519() {
         super(BITS_PER_LIMB, NUM_LIMBS, MAX_ADDS, MODULUS);
@@ -103,10 +103,71 @@ public final class IntegerPolynomial25519 extends IntegerPolynomial {
      */
     @Override
     protected void multByInt(long[] a, long b) {
-        long[] blimbs = new long[a.length];
+        long aa0 = a[0];
+        long aa1 = a[1];
+        long aa2 = a[2];
+        long aa3 = a[3];
+        long aa4 = a[4];
 
-        blimbs[0] = b;
-        mult(a, blimbs, a);
+        long bb0 = b;
+
+        final long shift1 = 64 - BITS_PER_LIMB;
+        final long shift2 = BITS_PER_LIMB;
+
+        long d0;      // low digit from multiplication
+        long dd0;     // high digit from multiplication
+        // multiplication result digits for each column
+        long c0, c1, c2, c3, c4, c5;
+
+        // Row 0 - multiply by aa0
+        d0 = aa0 * bb0;
+        dd0 = Math.multiplyHigh(aa0, bb0) << shift1 | (d0 >>> shift2);
+        d0 &= LIMB_MASK;
+
+        c0 = d0;
+        c1 = dd0;
+
+        // Row 1 - multiply by aa1
+        d0 = aa1 * bb0;
+        dd0 = Math.multiplyHigh(aa1, bb0) << shift1 | (d0 >>> shift2);
+        d0 &= LIMB_MASK;
+
+        c1 += d0;
+        c2 = dd0;
+
+        // Row 2 - multiply by aa2
+        d0 = aa2 * bb0;
+        dd0 = Math.multiplyHigh(aa2, bb0) << shift1 | (d0 >>> shift2);
+        d0 &= LIMB_MASK;
+
+        c2 += d0;
+        c3 = dd0;
+
+        // Row 3 - multiply by aa3
+        d0 = aa3 * bb0;
+        dd0 = Math.multiplyHigh(aa3, bb0) << shift1 | (d0 >>> shift2);
+        d0 &= LIMB_MASK;
+
+        c3 += d0;
+        c4 = dd0;
+
+        // Row 4 - multiply by aa4
+        d0 = aa4 * bb0;
+        dd0 = Math.multiplyHigh(aa4, bb0) << shift1 | (d0 >>> shift2);
+        d0 &= LIMB_MASK;
+
+        c4 += d0;
+        c5 = dd0;
+
+        // Perform pseudo-Mersenne reduction
+        a[0] = c0 + (19 * c5);
+
+        a[1] = c1;
+        a[2] = c2;
+        a[3] = c3;
+        a[4] = c4;
+
+        reduce(a);
     }
 
     /**
