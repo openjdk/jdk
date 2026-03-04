@@ -696,7 +696,6 @@ public class CDSTestUtils {
             System.out.println("[STDOUT]\n" + output.getStdout());
 
         if (output.getExitValue() != 0 && output.getStdout().contains("A fatal error has been detected")) {
-            System.out.println(getCrashMessage(output.getStdout()));
             throw new RuntimeException(getCrashMessage(output.getStdout()));
         }
         return output;
