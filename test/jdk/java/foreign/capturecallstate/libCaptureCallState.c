@@ -29,6 +29,10 @@ EXPORT void set_errno_V(int value) {
     errno = value;
 }
 
+EXPORT int noset_errno_V(int value) {
+    return 42;
+}
+
 EXPORT int set_errno_I(int value) {
     errno = value;
     return 42;
@@ -77,6 +81,15 @@ EXPORT struct SLLL set_errno_SLLL(int value) {
     s.z = 42;
     return s;
 }
+
+EXPORT struct SLLL noset_errno_SLLL(int value) {
+    struct SLLL s;
+    s.x = 42;
+    s.y = 42;
+    s.z = 42;
+    return s;
+}
+
 
 struct SD {
     double x;
