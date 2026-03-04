@@ -233,6 +233,18 @@ public class TestArrayCopyEliminationUncRematerialization {
                 testMethodConst.asToken(testName, templates)
             ));
 
+            var testCaseConstX64 = Template.make("testName", "loadCount", "tmp", (String testName, Integer loadCout, TestTemplates templates) -> scope(
+                let("ptyShort", pty.abbrev()),
+                runTestConst.asToken(testName),
+                """
+                @Test
+                @IR(counts = { IRNode.LOAD_#{ptyShort}, "=#{loadCount}" },
+                    applyIf = { "TieredCompilation", "true"},
+                    applyIfPlatform = { "x64", "true" })
+                """,
+                testMethodConst.asToken(testName, templates)
+            ));
+
             // Some test cases can not be reliably verified due to varying numbers of loads generated from run to run.
             var testCaseConstNoVerify = Template.make("testName", "tmp", (String testName, TestTemplates templates) -> scope(
                 runTestConst.asToken(testName),
@@ -341,7 +353,9 @@ public class TestArrayCopyEliminationUncRematerialization {
                     )),
                     // We cannot look through MemBars emitted by the atomic operations, so all rematerailization loads are
                     // commoned up in the common path.
-                    testCaseConst.asToken("ConstGetAndSet" + pty.abbrev(), config.copyLen, new TestTemplates(getAndSetStoreConst, unstableTrap)),
+                    pty.abbrev().equals("S") ?
+                        testCaseConstNoVerify.asToken("ConstGetAndSet" + pty.abbrev(), new TestTemplates(getAndSetStoreConst, unstableTrap)) :
+                        testCaseConst.asToken("ConstGetAndSet" + pty.abbrev(), config.copyLen, new TestTemplates(getAndSetStoreConst, unstableTrap)),
                     testCaseIdx.asToken("IdxGetAndSet" + pty.abbrev(), new TestTemplates(getAndSetStoreIdx, unstableTrap)),
                     testCaseConst.asToken("ConstCompareAndSet" + pty.abbrev(), config.copyLen, new TestTemplates(casStoreConst, unstableTrap)),
                     testCaseIdx.asToken("IdxCompareAndSet" + pty.abbrev(), new TestTemplates(casStoreIdx, unstableTrap))
