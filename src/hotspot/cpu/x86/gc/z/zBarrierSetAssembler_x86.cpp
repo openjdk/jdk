@@ -1434,16 +1434,17 @@ void ZBarrierSetAssembler::register_reloc_addresses(GrowableArray<address> &entr
   int formats[] = {
     ZBarrierRelocationFormatLoadBadAfterTest,
     ZBarrierRelocationFormatStoreBadAfterTest,
-    ZBarrierRelocationFormatStoreGoodAfterOr
+    ZBarrierRelocationFormatStoreGoodAfterOr,
+    -1
   };
   int format_idx = 0;
-  int format = formats[format_idx];
+  int format = formats[format_idx++];
   for (int i = begin; i < begin + count; i++) {
     address addr = entries.at(i);
     // reloc addresses occur in 3 groups terminated with a nullptr
     if (addr == nullptr) {
-      assert(((uint)format_idx) < (int)(sizeof(formats) / sizeof(formats[0])),
-             "unexpected reloc group count");
+      assert(format_idx < (int)(sizeof(formats) / sizeof(formats[0])),
+             "too many reloc groups");
       format = formats[format_idx++];
     } else {
       switch(format) {
@@ -1456,12 +1457,14 @@ void ZBarrierSetAssembler::register_reloc_addresses(GrowableArray<address> &entr
       case ZBarrierRelocationFormatStoreGoodAfterOr:
         _store_good_relocations.append(addr);
         break;
+      default:
+        ShouldNotReachHere();
+        break;
       }
       patch_barrier_relocation(addr, format, true);
     }
   }
-  assert(format_idx == (int)(sizeof(formats) / sizeof(formats[0])),
-         "not enough reloc groups %d - expecting %d", format_idx,  (int)(sizeof(formats) / sizeof(formats[0])));
+  assert(format == -1, "unterminated format list");
 }
 
 void ZBarrierSetAssembler::retrieve_reloc_addresses(address start, address end, GrowableArray<address> &entries) {
