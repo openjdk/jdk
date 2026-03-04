@@ -25,9 +25,12 @@
 #include "gc/shared/cardTable.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
+#include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahPLAB.hpp"
 #include "logging/log.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/javaThread.hpp"
+#include "utilities/copy.hpp"
 
 ShenandoahPLAB::ShenandoahPLAB() :
   _plab(nullptr),
