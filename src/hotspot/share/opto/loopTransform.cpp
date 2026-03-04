@@ -2741,14 +2741,14 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
   }
 
   // Need to find the main-loop zero-trip guard
-  Node *ctrl = cl->skip_assertion_predicates_with_halt();
-  Node *iffm = ctrl->in(0);
-  Node *opqzm = iffm->in(1)->in(1)->in(2);
+  Node* const zero_trip_guard_success_proj = cl->skip_assertion_predicates_with_halt();
+  Node* const zero_trip_guard = zero_trip_guard_success_proj->in(0);
+  Node* opqzm = zero_trip_guard->in(1)->in(1)->in(2);
   assert(opqzm->in(1) == main_limit, "do not understand situation");
 
   // Find the pre-loop limit; we will expand its iterations to
   // not ever trip low tests.
-  Node *p_f = iffm->in(0);
+  Node* p_f = zero_trip_guard->in(0);
   // pre loop may have been optimized out
   if (p_f->Opcode() != Op_IfFalse) {
     return;
@@ -2846,7 +2846,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
       // 'limit' maybe pinned below the zero trip test (probably from a
       // previous round of rce), in which case, it can't be used in the
       // zero trip test expression which must occur before the zero test's if.
-      if (is_dominator(ctrl, limit_ctrl)) {
+      if (is_dominator(zero_trip_guard_success_proj, limit_ctrl)) {
         continue;  // Don't rce this check but continue looking for other candidates.
       }
 
@@ -2867,7 +2867,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
 
       // As above for the 'limit', the 'offset' maybe pinned below the
       // zero trip test.
-      if (is_dominator(ctrl, offset_ctrl)) {
+      if (is_dominator(zero_trip_guard_success_proj, offset_ctrl)) {
         continue; // Don't rce this check but continue looking for other candidates.
       }
 
@@ -2902,16 +2902,15 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
       Node* int_limit = limit;
       limit = new ConvI2LNode(limit);
       register_new_node(limit, next_limit_ctrl);
+      Node* ctrl_target_for_data_rewire = zero_trip_guard_success_proj;
 
       // Adjust pre and main loop limits to guard the correct iteration set
       if (cmp->Opcode() == Op_CmpU) { // Unsigned compare is really 2 tests
-        if (b_test._test == BoolTest::lt) { // Range checks always use lt
+        if (b_test._test == BoolTest::lt) {
+          // Range checks always use lt
           // The underflow and overflow limits: 0 <= scale*I+offset < limit
           add_constraint(stride_con, lscale_con, offset, zero, limit, next_limit_ctrl, &pre_limit, &main_limit);
-          Node* init = cl->uncasted_init_trip(true);
 
-          Node* opaque_init = new OpaqueLoopInitNode(C, init);
-          register_new_node(opaque_init, loop_entry);
 
           InitializedAssertionPredicateCreator initialized_assertion_predicate_creator(this);
           if (abs_stride_is_one) {
@@ -2938,12 +2937,13 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
           TemplateAssertionPredicateCreator template_assertion_predicate_creator(cl, scale_con , int_offset, int_limit,
                                                                                  this);
           loop_entry = template_assertion_predicate_creator.create(loop_entry);
+          ctrl_target_for_data_rewire = loop_entry;
 
           // Initialized Assertion Predicate for the value of the initial main-loop.
+          Node* init = cl->uncasted_init_trip(true);
           loop_entry = initialized_assertion_predicate_creator.create(init, loop_entry, stride_con, scale_con,
                                                                       int_offset, int_limit,
                                                                       AssertionPredicateType::InitValue);
-
         } else {
           if (PrintOpto) {
             tty->print_cr("missed RCE opportunity");
@@ -2982,6 +2982,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
           continue;             // Unhandled case
         }
       }
+
       // Only update variable tracking control for new nodes if it's indeed a range check that can be eliminated (and
       // limits are updated)
       new_limit_ctrl = next_limit_ctrl;
@@ -2997,9 +2998,9 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
       for (DUIterator_Fast imax, i = dp->fast_outs(imax); i < imax; i++) {
         Node* cd = dp->fast_out(i); // Control-dependent node
         if (cd->is_Load() && cd->depends_only_on_test()) {   // Loads can now float around in the loop
-          // Allow the load to float around in the loop, or before it
-          // but NOT before the pre-loop.
-          _igvn.replace_input_of(cd, 0, ctrl); // ctrl, not null
+          // Allow the load to float around in the loop, or before it (either after Template Assertion Predicates
+          // or when absent after zero trip guard)
+          _igvn.replace_input_of(cd, 0, ctrl_target_for_data_rewire);
           --i;
           --imax;
         }
@@ -3069,7 +3070,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
   set_ctrl(opqzm, new_limit_ctrl);
   // Bool/Cmp nodes for zero trip guard should have been assigned control between the main and pre loop (because zero
   // trip guard depends on induction variable value out of pre loop) so shouldn't need to be adjusted
-  assert(is_dominator(new_limit_ctrl, get_ctrl(iffm->in(1)->in(1))), "control of cmp should be below control of updated input");
+  assert(is_dominator(new_limit_ctrl, get_ctrl(zero_trip_guard->in(1)->in(1))), "control of cmp should be below control of updated input");
 
   C->print_method(PHASE_AFTER_RANGE_CHECK_ELIMINATION, 4, cl);
 }

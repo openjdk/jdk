@@ -147,13 +147,25 @@
 /*
  * @test id=DataUpdateZGC
  * @key randomness
- * @bug 8288981 8350577 0360510
+ * @bug 8288981 8350577 8360510
  * @requires vm.compiler2.enabled
  * @requires vm.gc.Z
  * @run main/othervm -Xcomp -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:+AbortVMOnCompilationFailure -XX:+UseZGC
  *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:CompileCommand=dontinline,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-KillPathsReachableByDeadTypeNode
+ *                   compiler.predicates.assertion.TestAssertionPredicates DataUpdate
+ */
+
+/*
+ * @test id=DataUpdateRangeCheckElimination
+ * @key randomness
+ * @bug 8379125
+ * @requires vm.compiler2.enabled
+ * @requires vm.gc.Z
+ * @run main/othervm -Xcomp -XX:+UnlockDiagnosticVMOptions -XX:+IgnoreUnrecognizedVMOptions -XX:-UseLoopPredicate
+ *                   -XX:+StressGCM -XX:+UseZGC -XX:+AbortVMOnCompilationFailure -XX:-KillPathsReachableByDeadTypeNode
+ *                   -XX:CompileCommand=compileonly,compiler.predicates.assertion.TestAssertionPredicates::*
  *                   compiler.predicates.assertion.TestAssertionPredicates DataUpdate
  */
 
@@ -350,6 +362,7 @@ public class TestAssertionPredicates {
                     testDataUpdateUnroll();
                     testDataUpdatePeelingUnroll();
                     testPeelingThreeTimesDataUpdate();
+                    testRangeCheckEliminationPeelMainLoopDataUpdate();
                 }
             }
             case "CloneDown" -> {
@@ -1415,6 +1428,71 @@ public class TestAssertionPredicates {
             if (i > 1 && iFld2 == 2) {
                 return;
             }
+        }
+    }
+
+    // JDK-8379125
+    //-Xcomp -XX:CompileCommand=compileonly,Test*::test* -XX:+StressGCM -XX:-UseLoopPredicate -XX:+StressGCM -XX:+UseZGC
+    static void testRangeCheckEliminationPeelMainLoopDataUpdate() {
+        int zero = 34;
+        int x = 2;
+        for (; x < 4; x *= 2);
+        for (int i = 2; i < x; i++) {
+            zero = 0;
+        }
+
+        Foo[] fooArr;
+        int limit;
+        if (flagTrue) {
+            limit = 4;
+            fooArr = new Foo[30_000_001];
+        } else {
+            limit = 5;
+            fooArr = new Foo[40_000_001];
+        }
+
+        // Initialize to prevent null pointers.
+        for (int i = 0; i < limit; i++) {
+            fooArr[10_000_000 * i] = foo;
+        }
+
+
+        // 1) Pre-Main-Post loop created
+        for (int i = 0; i < limit; i++) {
+
+            if (i > 0) { // 4) In main-loop: Always true and folded because of executing pre-loop at least once -> i = [1..5]
+                int k = iFld + i * zero; // 5) Loop variant before CCP, after CCP: folded to k = iFld
+                if (k  == 40) { // 6) After CCP: Loop Invariant -> Triggers Loop Peeling of main loop
+                    return;
+                }
+            }
+
+            // 2) Range Check Elimination (there is no Loop Predication when run with -XX:-UseLoopPredicate):
+            //    - Removes this range check from main loop.
+            //    - Pins the previously pinned LoadP for the fooArr access to the zero-trip-guard of the main loop.
+            //    - Adds a Template Assertion Predicate for the eliminated range check.
+            // 3) Loop is unrolled once. We now have two LoadP for both fooArr accesses at the zero-trip-guard:
+            //    - LoadP 1: fooArr[i * 10^8]
+            //    - LoadP 2: fooArr[(i+1) * 10^8 = i * 10^8 + 10^8]
+            // 7) After peeling the main-loop, we have 4 Load nodes: Two for the peeled iteration and two for
+            //    the remaining loop. Both are pinned at the zero-trip-guard for the main-loop. Here is the bug:
+            //    We should actually update the 2 LoadP pins belonging to the remaining loop to only get executed
+            //    when the zero-trip-guard is true and we are actually enter the remaining loop but forget to do that!
+            //    - LoadP 1: fooArr[i * 10^8]
+            //    - LoadP 2: fooArr[(i+1) * 10^8 = i * 10^8 + 10^8]
+            //    - LoadP 3: fooArr[(i+2) * 10^8 = i * 10^8 + 2*10^8]
+            //    - LoadP 4: fooArr[(i+3) * 10^8 = i * 10^8 + 3*10^8]
+            // 8) During runtime, we have:
+            //    - flagTrue = true
+            //    - limit = 4
+            //    - fooArr = new Foo[30000001]
+            //    We enter the main-loop with i = 1. We execute the peeled iteration but we do not enter the remaining loop
+            //    because i = 3 and we only require one more iteration but the remaining loop ill perform two iterations.
+            //    So, the zero-trip-guard for the remaining loop fails.
+            //    But all LoadP nodes are pinned at the zero-trip-gaurd for the main-loop. When using -XX:+StressGCM, we could
+            //    schedule LoadP 4 before actually checking the zero-trip-guard and we crash with an out-of-bounds-access:
+            //    - LoadP 4: fooArr[(i+3) * 10^8 = i * 10^8 + 3*10^8 = 4*10^8 > 3*10^8 (max-index)] -> crash!
+            fooArr[i * 10_000_000].iFld += 34;
         }
     }
 
