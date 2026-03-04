@@ -25,6 +25,7 @@
 package jdk.jpackage.internal;
 
 import static java.util.stream.Collectors.toMap;
+import static jdk.jpackage.internal.cli.StandardOption.EXIT_AFTER_CONFIGURATION_PHASE;
 import static jdk.jpackage.internal.util.MemoizingSupplier.runOnce;
 
 import java.io.IOException;
@@ -129,6 +130,10 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
         Objects.requireNonNull(app);
         Objects.requireNonNull(pipelineBuilder);
 
+        if (EXIT_AFTER_CONFIGURATION_PHASE.getFrom(options)) {
+            return;
+        }
+
         final var outputDir = PathUtils.normalizedAbsolutePath(OptionUtils.outputDir(options).resolve(app.appImageDirName()));
 
         Log.verbose(I18N.getString("message.create-app-image"));
@@ -169,6 +174,10 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
         Objects.requireNonNull(createBuildEnv);
         Objects.requireNonNull(createPipelineBuilder);
         Objects.requireNonNull(pipelineBuilderMutatorFactory);
+
+        if (EXIT_AFTER_CONFIGURATION_PHASE.getFrom(options)) {
+            return;
+        }
 
         var pipelineBuilder = Objects.requireNonNull(createPipelineBuilder.apply(pkg));
 
