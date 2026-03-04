@@ -156,9 +156,7 @@ public final class Argon2Impl {
                 permuteP(blockR, i << 1, 16);
             }
 
-            dst.copy(tmp);
-            // result is Z xor R
-            dst.xor(blockR);
+            Block.xor(dst, tmp, blockR);
         }
 
         static Block nextAddresses(Block inBlock) {
@@ -187,10 +185,10 @@ public final class Argon2Impl {
             this.b = new Block[this.lanes][this.columns];
         }
 
-        void fillFirstTwoBlocks(byte[] h0Plus8Bytes) {
+        void fillFirstTwoColumns(byte[] h0Plus8Bytes) {
             // 3) Compute B[i][0] for i = [0...p-1]
             // B[i][0] = hash^(1024)(H_0 || LE32(0) || LE32(i))
-            i2bLittle4(0, h0Plus8Bytes, ARGON2_PREHASH_DIGEST_LENGTH);
+            // no need to set LE32(0) as that should be the value
             for (int k = 0; k < lanes; k++) {
                 i2bLittle4(k, h0Plus8Bytes, 68);
                 b[k][0] = new Block(vlHash(ARGON2_BLOCK_SIZE,
@@ -267,7 +265,7 @@ public final class Argon2Impl {
 
             if (pos.pass == 0 && pos.slice == 0) {
                 // adjust startingIdx as the first two blocks are generated
-                // in fillFirstTwoBlocks() already
+                // in fillFirstTwoColumns() already
                 startingIdx = 2;
                 if (independentAddr) {
                     addressBlock = nextAddresses(inBlock);
@@ -348,16 +346,16 @@ public final class Argon2Impl {
                     workers.shutdownNow();
                 }
             } catch (InterruptedException ie) {
-                throw new ProviderException("Argon2 operation interrupted", ie);
+                throw new ProviderException("Interrupted", ie);
             }
         }
 
         byte[] getFinalTag(int outLen) {
-            // 7) Compute the final block C - xor of the last columns
-            Block c = (Block) b[0][this.columns - 1].clone();
+            // 7) Compute the final block C, i.e. xor of the last column
+            Block c = b[0][this.columns - 1];
             byte[] cBytes = null;
             try {
-                // xor the last blocks
+                // xor the remaining blocks of the same column
                 for (int i = 1; i < this.lanes; i++) {
                     c.xor(b[i][this.columns - 1]);
                 }
@@ -366,8 +364,7 @@ public final class Argon2Impl {
                 // 8) Compute the output tag
                 return vlHash(outLen, cBytes);
             } finally {
-                // erase all buffers here
-                c.erase();
+                // erase all involved block here
                 if (cBytes != null) {
                     Arrays.fill(cBytes, (byte) 0);
                 }
@@ -408,6 +405,17 @@ public final class Argon2Impl {
     public static final int ARGON2_PREHASH_DIGEST_LENGTH = 64;
     public static final int ARGON2_PREHASH_SEED_LENGTH   = 72;
 
+    // implementation limits to deter DOS
+    private static final long MEMORY_MAX;
+    private static final int P_MAX;
+    static {
+        Runtime r = Runtime.getRuntime();
+        // memory limit = 1/4 of maximum amount of the jvm memory limit
+        MEMORY_MAX = r.maxMemory() >>> 12;
+        // parallelism limit = 16 * number of cores
+        P_MAX = r.availableProcessors() << 4;
+    }
+
     private static class Block {
         static final Block ZERO_BLK = new Block();
 
@@ -445,14 +453,12 @@ public final class Argon2Impl {
             b2lLittle(bytes, 0, value, 0, ARGON2_BLOCK_SIZE);
         }
 
-        public void copy(Block other) {
-            System.arraycopy(other.value, 0, value, 0, value.length);
-        }
-
+        @Override
         public Object clone() {
             return new Block(value);
         }
 
+        @Override
         public String toString() {
             String result = "";
             for (int i = 0; i < value.length; i++) {
@@ -461,27 +467,35 @@ public final class Argon2Impl {
             return result;
         }
 
-        public byte[] getBytes() {
+        byte[] getBytes() {
             byte[] out = new byte[ARGON2_BLOCK_SIZE];
             l2bLittle(value, 0, out, 0, ARGON2_BLOCK_SIZE);
             return out;
         }
 
-        public void erase() {
+        void erase() {
             Arrays.fill(value, 0L);
         }
 
-        public void xor(Block other) {
+        // xor this w/ 'other' and store the result in this
+        void xor(Block other) {
             for (int i = 0; i < ARGON2_QWORDS_IN_BLOCK; i++) {
                 value[i] = value[i] ^ other.value[i];
             }
         }
 
-        // create a new Block whose value equals src1 xor src2
+        // return a new block whose value equals to ('src1' xor 'src2')
         static Block xor(Block src1, Block src2) {
-            Block dst = (Block) src1.clone();
-            dst.xor(src2);
+            Block dst = new Block();
+            xor(dst, src1, src2);
             return dst;
+        }
+
+        // store ('src1' xor 'src2') into 'dst'
+        static void xor(Block dst, Block src1, Block src2) {
+            for (int i = 0; i < ARGON2_QWORDS_IN_BLOCK; i++) {
+                dst.value[i] = src1.value[i] ^ src2.value[i];
+            }
         }
     }
 
@@ -523,22 +537,32 @@ public final class Argon2Impl {
         this.type = type;
     }
 
+    private static int checkMax(int value, long max, String errMsg)
+            throws InvalidAlgorithmParameterException {
+        if (value > max) {
+            throw new InvalidAlgorithmParameterException(String.format(errMsg,
+                    value, max));
+        }
+        return value;
+    }
+
     public byte[] derive(Argon2ParameterSpec spec)
             throws InvalidAlgorithmParameterException {
         if (this.type != spec.type()) {
             throw new InvalidAlgorithmParameterException
-                    ("Invalid type, should be " + type + ", but got " +
+                    ("Invalid type, SunJCE only supports " + type + ", but got " +
                     spec.type());
         }
         if (spec.version() != Version.V13) {
             throw new InvalidAlgorithmParameterException
-                    ("Unsupported version, only supports V13, but got " +
+                    ("Unsupported version, SunJCE only supports V13, but got " +
                     spec.type());
         }
-
-        int parallelism = spec.parallelism();
+        int memory = checkMax(spec.memory(), MEMORY_MAX,
+                "Memory size %d exceeds SunJCE's maximum %d");
+        int parallelism = checkMax(spec.parallelism(), P_MAX,
+                "Parallelism value %d exceeds SunJCE's maximum %d");
         int tagLen = spec.tagLen();
-        int memory = spec.memory();
         int iterations = spec.iterations();
         byte[] msg = spec.msg();
         byte[] nonce = spec.nonce();
@@ -550,14 +574,14 @@ public final class Argon2Impl {
             // 1) Establish initial hash H_0
             // Allocate 72 bytes for storing initialHash(h0) since H_0 is
             // appended w/ additional 8 bytes for generating the first 2
-            // blocks in fillFirstTwoBlocks(...).
+            // blocks in fillFirstTwoColumns(...).
             h0Plus8Bytes = initialHash(parallelism, tagLen, memory,
                 iterations, Version.V13, type, msg, nonce, secret, ad);
 
             // 2) Allocate memory m' - stored inside Argon2Instance
             Argon2Instance instance = new Argon2Instance(type, parallelism,
                     memory, iterations);
-            instance.fillFirstTwoBlocks(h0Plus8Bytes);
+            instance.fillFirstTwoColumns(h0Plus8Bytes);
             instance.fillMemoryBlocks();
             return instance.getFinalTag(tagLen);
         } finally {
