@@ -1,6 +1,6 @@
 #!/bin/bash
 
-javac -d . ../../../../../../make/jdk/src/classes/build/tools/spp/Spp.java
+javac -d . ../../../jdk/src/classes/build/tools/spp/Spp.java
 
 in=DualPivotQuicksort.java.template
 out=DualPivotQuicksort.java

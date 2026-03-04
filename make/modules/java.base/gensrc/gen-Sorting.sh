@@ -1,6 +1,6 @@
 #!/bin/bash
 
-javac -d . ../../../../../make/jdk/src/classes/build/tools/spp/Spp.java
+javac -d . ../../../jdk/src/classes/build/tools/spp/Spp.java
 
 in=Sorting.java.template
 out=Sorting.java
