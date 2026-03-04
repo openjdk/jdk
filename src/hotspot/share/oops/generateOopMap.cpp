@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -391,6 +391,7 @@ void CellTypeState::print(outputStream *os) {
 //
 
 void GenerateOopMap::initialize_bb() {
+  _gc_points = 0;
   _bb_count  = 0;
   _bb_hdr_bits.reinitialize(method()->code_size());
 }
@@ -408,7 +409,7 @@ void GenerateOopMap::bb_mark_fct(GenerateOopMap *c, int bci, int *data) {
 }
 
 
-void GenerateOopMap::mark_bbheaders() {
+void GenerateOopMap::mark_bbheaders_and_count_gc_points() {
   initialize_bb();
 
   bool fellThrough = false;  // False to get first BB marked.
@@ -444,6 +445,9 @@ void GenerateOopMap::mark_bbheaders() {
       default:
         break;
     }
+
+    if (possible_gc_point(&bcs))
+      _gc_points++;
   }
 }
 
@@ -1047,6 +1051,9 @@ void GenerateOopMap::setup_method_entry_state() {
     // Initialize CellState type of arguments
     methodsig_to_effect(method()->signature(), method()->is_static(), vars());
 
+    // If some references must be pre-assigned to null, then set that up
+    initialize_vars();
+
     // This is the start state
     merge_state_into_bb(&_basic_blocks[0]);
 
@@ -1068,6 +1075,27 @@ void GenerateOopMap::update_basic_blocks(int bci, int delta,
     }
     _bb_hdr_bits.at_put(_basic_blocks[k]._bci, true);
   }
+}
+
+//
+// Initvars handling
+//
+
+void GenerateOopMap::initialize_vars() {
+  for (int k = 0; k < _init_vars->length(); k++)
+    _state[_init_vars->at(k)] = CellTypeState::make_slot_ref(k);
+}
+
+void GenerateOopMap::add_to_ref_init_set(int localNo) {
+
+  if (TraceNewOopMapGeneration)
+    tty->print_cr("Added init vars: %d", localNo);
+
+  // Is it already in the set?
+  if (_init_vars->contains(localNo) )
+    return;
+
+   _init_vars->append(localNo);
 }
 
 //
@@ -1644,6 +1672,7 @@ void GenerateOopMap::ppload(CellTypeState *out, int loc_no) {
         if (vcts.can_be_uninit()) {
           // It is a ref-uninit conflict (at least). If there are other
           // problems, we'll get them in the next round
+          add_to_ref_init_set(loc_no);
           vcts = out1;
         } else {
           // It wasn't a ref-uninit conflict. So must be a
@@ -2036,6 +2065,7 @@ GenerateOopMap::GenerateOopMap(const methodHandle& method) {
   // We have to initialize all variables here, that can be queried directly
   _method = method;
   _max_locals=0;
+  _init_vars = nullptr;
 
 #ifndef PRODUCT
   // If we are doing a detailed trace, include the regular trace information.
@@ -2065,6 +2095,7 @@ bool GenerateOopMap::compute_map(Thread* current) {
   _max_stack      = method()->max_stack();
   _has_exceptions = (method()->has_exception_handler());
   _nof_refval_conflicts = 0;
+  _init_vars      = new GrowableArray<intptr_t>(5);  // There are seldom more than 5 init_vars
   _report_result  = false;
   _report_result_for_send = false;
   _new_var_map    = nullptr;
@@ -2088,6 +2119,8 @@ bool GenerateOopMap::compute_map(Thread* current) {
   // if no code - do nothing
   // compiler needs info
   if (method()->code_size() == 0 || _max_locals + method()->max_stack() == 0) {
+    fill_stackmap_prolog(0);
+    fill_stackmap_epilog();
     return true;
   }
   // Step 1: Compute all jump targets and their return value
@@ -2096,7 +2129,7 @@ bool GenerateOopMap::compute_map(Thread* current) {
 
   // Step 2: Find all basic blocks and count GC points
   if (!_got_error)
-    mark_bbheaders();
+    mark_bbheaders_and_count_gc_points();
 
   // Step 3: Calculate stack maps
   if (!_got_error)
@@ -2153,6 +2186,9 @@ void GenerateOopMap::report_result() {
   // We now want to report the result of the parse
   _report_result = true;
 
+  // Prolog code
+  fill_stackmap_prolog(_gc_points);
+
    // Mark everything changed, then do one interpretation pass.
   for (int i = 0; i<_bb_count; i++) {
     if (_basic_blocks[i].is_reachable()) {
@@ -2160,6 +2196,14 @@ void GenerateOopMap::report_result() {
       interp_bb(&_basic_blocks[i]);
     }
   }
+
+  // Note: Since we are skipping dead-code when we are reporting results, then
+  // the no. of encountered gc-points might be fewer than the previously number
+  // we have counted. (dead-code is a pain - it should be removed before we get here)
+  fill_stackmap_epilog();
+
+  // Report initvars
+  fill_init_vars(_init_vars);
 
   _report_result = false;
 }
