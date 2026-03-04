@@ -21,6 +21,7 @@
  * questions.
  */
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -58,7 +59,7 @@ public class PathOpsTest {
         fs = FileSystems.newFileSystem(emptyJar);
     }
 
-    @BeforeAll
+    @AfterAll
     static void cleanup() throws IOException {
         fs.close();
     }
