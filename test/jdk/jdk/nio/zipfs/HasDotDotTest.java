@@ -151,7 +151,7 @@ public class HasDotDotTest {
                     }
                 }
                 Arrays.sort(EXPECTED_PATHS);
-                assertArrayEquals(entries, EXPECTED_PATHS);
+                assertArrayEquals(EXPECTED_PATHS, entries);
             }
         }
         Files.deleteIfExists(ZIPFILE);

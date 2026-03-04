@@ -240,7 +240,7 @@ public class ChannelTests extends ZipFsBaseTest {
             int bytesRead = sbc.read(buf);
             // Check to see if the expected bytes were read
             byte[] result = Arrays.copyOfRange(buf.array(), 0, bytesRead);
-            assertArrayEquals(result, THE_SLAMS.getBytes(UTF_8));
+            assertArrayEquals(THE_SLAMS.getBytes(UTF_8), result);
         }
         Files.deleteIfExists(zipFile);
     }
@@ -893,7 +893,7 @@ public class ChannelTests extends ZipFsBaseTest {
             int bytesRead = fc.read(buf);
             // Check to see if the expected bytes were read
             byte[] result = Arrays.copyOfRange(buf.array(), 0, bytesRead);
-            assertArrayEquals(result, THE_SLAMS.getBytes(UTF_8));
+            assertArrayEquals(THE_SLAMS.getBytes(UTF_8), result);
         }
         Files.deleteIfExists(zipFile);
     }
@@ -922,7 +922,7 @@ public class ChannelTests extends ZipFsBaseTest {
             int bytesRead = fc.read(buf, GRAND_SLAMS_HEADER.length());
             // Check to see if the expected bytes were read
             byte[] result = Arrays.copyOfRange(buf.array(), 0, bytesRead);
-            assertArrayEquals(result, GRAND_SLAMS.getBytes(UTF_8));
+            assertArrayEquals(GRAND_SLAMS.getBytes(UTF_8), result);
         }
         Files.deleteIfExists(zipFile);
     }
@@ -1011,7 +1011,7 @@ public class ChannelTests extends ZipFsBaseTest {
             bos.write(b.array());
         }
         // Check to see if the returned byte array is what is expected
-        assertArrayEquals(bos.toByteArray(), GRAND_SLAMS.getBytes(UTF_8));
+        assertArrayEquals(GRAND_SLAMS.getBytes(UTF_8), bos.toByteArray());
         Files.deleteIfExists(zipFile);
     }
 
