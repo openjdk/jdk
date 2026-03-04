@@ -34,7 +34,8 @@ class PowDNode : public CallLeafPureNode {
 public:
     PowDNode(Compile* C, Node* base, Node* exp);
     virtual int Opcode() const;
-    Node* Ideal(PhaseGVN* phase, bool can_reshape);
+    virtual const Type *Value(PhaseGVN *phase) const;
+    virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 
     Node* base() const { return in(TypeFunc::Parms + 0); }
     Node* exp() const  { return in(TypeFunc::Parms + 2); }

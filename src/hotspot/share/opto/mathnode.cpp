@@ -42,37 +42,49 @@ PowDNode::PowDNode(Compile* C, Node* base, Node* exp)
   init_req(TypeFunc::Parms + 3, C->top());  // double slot padding
 }
 
+const Type *PowDNode::Value(PhaseGVN *phase) const {
+  const Type* t_base = phase->type(base());
+  const Type* t_exp  = phase->type(exp());
+
+  if (t_base == Type::TOP || t_exp == Type::TOP) {
+    return Type::TOP;
+  }
+
+  // constant folding: both inputs are constants
+  const TypeD* base_con = t_base->isa_double_constant();
+  const TypeD* exp_con  = t_exp->isa_double_constant();
+  if (base_con == nullptr || exp_con == nullptr) {
+    return tf()->range();
+  }
+
+  // FIXME: is SharedRuntime::dpow(-0.0, 0.5) spec compliant?
+  const double result = SharedRuntime::dpow(base_con->getd(), exp_con->getd());
+
+  // We can't simply return a TypeD here, it must be a tuple type to be compatible with call nodes.
+  const Type** fields = TypeTuple::fields(2);
+  fields[TypeFunc::Parms + 0] = TypeD::make(result);
+  fields[TypeFunc::Parms + 1] = Type::HALF;
+  return TypeTuple::make(TypeFunc::Parms + 2, fields);
+}
+
 Node* PowDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (!can_reshape) {
     return nullptr;  // wait for igvn
   }
-  PhaseIterGVN* igvn = phase->is_IterGVN();
 
+  PhaseIterGVN* igvn = phase->is_IterGVN();
   Node* base = this->base();
   Node* exp  = this->exp();
-  const Type* t_base = phase->type(base);
+
   const Type* t_exp  = phase->type(exp);
-
-  if (t_base == Type::TOP || t_exp == Type::TOP) {
-    return phase->C->top();
-  }
-
-  // constant folding: both inputs are constants
-  // TODO: move to Value()
-  const TypeD* base_con = t_base->isa_double_constant();
   const TypeD* exp_con  = t_exp->isa_double_constant();
-  if (base_con != nullptr && exp_con != nullptr) {
-    // FIXME: is SharedRuntime::dpow(-0.0, 0.5) spec compliant?
-    double result = SharedRuntime::dpow(base_con->getd(), exp_con->getd());
-    return make_tuple_of_input_state_and_result(igvn, phase->makecon(TypeD::make(result)));
-  }
 
   // Special cases when only the exponent is known:
   if (exp_con != nullptr) {
     double e = exp_con->getd();
     // If the second argument is positive or negative zero, then the result is 1.0.
     // i.e., pow(x, +/-0.0D) => 1.0
-    if (e == -0.0 || e == +0.0) {
+    if (e == 0.0) { // true for both -0.0 and +0.0
       return make_tuple_of_input_state_and_result(igvn, phase->makecon(TypeD::ONE));
     }
 
@@ -95,10 +107,11 @@ Node* PowDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return make_tuple_of_input_state_and_result(igvn, mul);
     }
 
-    // If the second argument is 0.5, the strength reduce to saqure roots.
+    // If the second argument is 0.5, the strength reduce to sqaure roots.
     // i.e., pow(x, 0.5) => sqrt(x)
-    // This one is tricker because pow(-0.0, 0.5) => +0.0 but sqrt(-0.0) => -0.0, which rquires building a control flow
-    // diamond. We defer this to marcro expansion to give the base more chances to be constant folded.
+    // This one is trickier because pow(-0.0, 0.5) => +0.0 but sqrt(-0.0) => -0.0, which requires building a control
+    // flow diamond. We defer this to macro expansion to give the base more chances to be constant folded.
+    // See PhaseMacroExpand::expand_macro_nodes()
   }
 
   return CallLeafPureNode::Ideal(phase, can_reshape);

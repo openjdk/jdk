@@ -2684,6 +2684,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
           call->init_req(TypeFunc::Memory, C->top());
           call->init_req(TypeFunc::ReturnAdr, C->top());
           call->init_req(TypeFunc::FramePtr, C->top());
+          // TODO: we always have exactly two doule parms (4 slots)
           for (uint i = 0; i < pow_macro->tf()->domain()->cnt() - TypeFunc::Parms; i++) {
             call->init_req(TypeFunc::Parms + i, pow_macro->in(TypeFunc::Parms + i));
           }
@@ -2713,11 +2714,11 @@ bool PhaseMacroExpand::expand_macro_nodes() {
           //       which one's better?
           TupleNode *tuple = TupleNode::make(
             pow_macro->tf()->range(),
-            region,
-            C->top(),
-            C->top(),
-            C->top(),
-            C->top(),
+            region, // control
+            C->top(), // io
+            C->top(), // memory
+            C->top(), // frame_prt
+            C->top(), // return_aadr
             phi,
             C->top()); // double slot padding
           transform_later(tuple);
