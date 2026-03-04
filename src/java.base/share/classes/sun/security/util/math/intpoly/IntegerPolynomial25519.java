@@ -53,7 +53,7 @@ public final class IntegerPolynomial25519 extends IntegerPolynomial {
      * Carry from a range of limb positions.
      * Override for performance (unnesting).
      *
-     * @param limbs [in|out] the limbs for carry operation. 
+     * @param limbs [in|out] the limbs for carry operation.
      * @param start [in] the starting position of carry.
      * @param end [in] the ending position of carry.
      */
@@ -72,7 +72,7 @@ public final class IntegerPolynomial25519 extends IntegerPolynomial {
      * Carry operation for all limb positions.
      * Override for performance (unroll and unnesting).
      *
-     * @param limbs [in|out] the limbs for carry operation. 
+     * @param limbs [in|out] the limbs for carry operation.
      */
     @Override
     protected void carry(long[] limbs) {
