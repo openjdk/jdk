@@ -33,16 +33,12 @@ import java.nio.MappedByteBuffer;
 import java.nio.ReadOnlyBufferException;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import static java.nio.channels.FileChannel.MapMode.*;
 import static java.nio.file.StandardOpenOption.*;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -52,22 +48,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class ForceViews {
 
     static record Segment(int position, int length) {}
-
-    private static FileChannel fc;
-
-    @BeforeAll
-    public static void openChannel() throws IOException {
-        Path file = Path.of(".", "junk");
-        fc = FileChannel.open(file, CREATE_NEW, READ, WRITE, DELETE_ON_CLOSE);
-        ByteBuffer buf = ByteBuffer.wrap(new byte[1024]);
-        fc.write(buf);
-        fc.position(0);
-    }
-
-    @AfterAll
-    public static void closeChannel() throws IOException {
-        fc.close();
-    }
 
     public static Stream<Arguments> provider() throws IOException {
         BiFunction<MappedByteBuffer,Segment,MappedByteBuffer> absSlice =
@@ -80,40 +60,47 @@ public class ForceViews {
         BiFunction<MappedByteBuffer,Segment,MappedByteBuffer> compact =
             (m, s) -> { return m.compact(); };
 
-        return List.of
-            (Arguments.of("Absolute slice", fc, 256, 512, 128, 128, 32, 32, absSlice),
-             Arguments.of("Relative slice", fc, 256, 512, 0, 128, 32, 32, relSlice),
-             Arguments.of("Duplicate", fc, 256, 512, 0, 256, 32, 32, duplicate),
-             Arguments.of("Compact", fc, 256, 512, 0, 256, 32, 32, compact))
-            .stream();
+        return Stream.of
+            (Arguments.of("Absolute slice", 256, 512, 128, 128, 32, 32, absSlice),
+             Arguments.of("Relative slice", 256, 512, 0, 128, 32, 32, relSlice),
+             Arguments.of("Duplicate", 256, 512, 0, 256, 32, 32, duplicate),
+             Arguments.of("Compact", 256, 512, 0, 256, 32, 32, compact));
     }
 
     @ParameterizedTest(autoCloseArguments=false)
     @MethodSource("provider")
-    public void test(String tst, FileChannel fc, int mapPosition, int mapLength,
-        int sliceIndex, int sliceLength, int regionOffset, int regionLength,
-        BiFunction<MappedByteBuffer,Segment,MappedByteBuffer> f)
+    public void test(String tst, int mapPosition, int mapLength,
+                     int sliceIndex, int sliceLength, int regionOffset,
+                     int regionLength,
+                     BiFunction<MappedByteBuffer,Segment,MappedByteBuffer> f)
         throws Exception {
-        MappedByteBuffer mbb = fc.map(READ_WRITE, mapPosition, mapLength);
-        mbb = f.apply(mbb, new Segment(sliceIndex, sliceLength));
-        for (int i = regionOffset; i < regionOffset + regionLength; i++) {
-            mbb.put(i, (byte)i);
-        }
-        mbb.force(regionOffset, regionOffset + regionLength);
 
-        int fcPos = mapPosition + sliceIndex + regionOffset;
-        int mbbPos = regionOffset;
-        int length = regionLength;
+        Path file = Path.of(".", "junk");
+        try (FileChannel fc = FileChannel.open(file, CREATE_NEW, READ, WRITE, DELETE_ON_CLOSE)) {
+            fc.write(ByteBuffer.wrap(new byte[1024]));
+            fc.position(0);
 
-        ByteBuffer buf = ByteBuffer.allocate(length);
-        fc.position(fcPos);
-        fc.read(buf);
-        for (int i = 0; i < length; i++) {
-            int fcVal = buf.get(i);
-            int mbbVal = mbb.get(mbbPos + i);
-            int val = regionOffset + i;
-            assertEquals(val, fcVal);
-            assertEquals(val, mbbVal);
+            MappedByteBuffer mbb = fc.map(READ_WRITE, mapPosition, mapLength);
+            mbb = f.apply(mbb, new Segment(sliceIndex, sliceLength));
+            for (int i = regionOffset; i < regionOffset + regionLength; i++) {
+                mbb.put(i, (byte)i);
+            }
+            mbb.force(regionOffset, regionOffset + regionLength);
+
+            int fcPos = mapPosition + sliceIndex + regionOffset;
+            int mbbPos = regionOffset;
+            int length = regionLength;
+
+            ByteBuffer buf = ByteBuffer.allocate(length);
+            fc.position(fcPos);
+            fc.read(buf);
+            for (int i = 0; i < length; i++) {
+                int fcVal = buf.get(i);
+                int mbbVal = mbb.get(mbbPos + i);
+                int val = regionOffset + i;
+                assertEquals(val, fcVal);
+                assertEquals(val, mbbVal);
+            }
         }
     }
 }

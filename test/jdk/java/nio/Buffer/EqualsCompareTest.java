@@ -39,7 +39,6 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -454,35 +453,35 @@ public class EqualsCompareTest {
     }
 
     public static Stream<Arguments> bufferTypesSource() {
-        return List.of(Arguments.of(new BufferType.Bytes(BufferKind.HEAP)),
-                       Arguments.of(new BufferType.Bytes(BufferKind.DIRECT)),
-                       Arguments.of(new BufferType.Chars(BufferKind.HEAP)),
-                       Arguments.of(new BufferType.Chars(BufferKind.HEAP_VIEW)),
-                       Arguments.of(new BufferType.Chars(BufferKind.DIRECT)),
-                       Arguments.of(new BufferType.Shorts(BufferKind.HEAP)),
-                       Arguments.of(new BufferType.Shorts(BufferKind.HEAP_VIEW)),
-                       Arguments.of(new BufferType.Shorts(BufferKind.DIRECT)),
-                       Arguments.of(new BufferType.Ints(BufferKind.HEAP)),
-                       Arguments.of(new BufferType.Ints(BufferKind.HEAP_VIEW)),
-                       Arguments.of(new BufferType.Ints(BufferKind.DIRECT)),
-                       Arguments.of(new BufferType.Floats(BufferKind.HEAP)),
-                       Arguments.of(new BufferType.Floats(BufferKind.HEAP_VIEW)),
-                       Arguments.of(new BufferType.Floats(BufferKind.DIRECT)),
-                       Arguments.of(new BufferType.Longs(BufferKind.HEAP)),
-                       Arguments.of(new BufferType.Longs(BufferKind.HEAP_VIEW)),
-                       Arguments.of(new BufferType.Longs(BufferKind.DIRECT)),
-                       Arguments.of(new BufferType.Doubles(BufferKind.HEAP)),
-                       Arguments.of(new BufferType.Doubles(BufferKind.HEAP_VIEW)),
-                       Arguments.of(new BufferType.Doubles(BufferKind.DIRECT)))
-            .stream();
+        return Stream.of
+            (Arguments.of(new BufferType.Bytes(BufferKind.HEAP)),
+             Arguments.of(new BufferType.Bytes(BufferKind.DIRECT)),
+             Arguments.of(new BufferType.Chars(BufferKind.HEAP)),
+             Arguments.of(new BufferType.Chars(BufferKind.HEAP_VIEW)),
+             Arguments.of(new BufferType.Chars(BufferKind.DIRECT)),
+             Arguments.of(new BufferType.Shorts(BufferKind.HEAP)),
+             Arguments.of(new BufferType.Shorts(BufferKind.HEAP_VIEW)),
+             Arguments.of(new BufferType.Shorts(BufferKind.DIRECT)),
+             Arguments.of(new BufferType.Ints(BufferKind.HEAP)),
+             Arguments.of(new BufferType.Ints(BufferKind.HEAP_VIEW)),
+             Arguments.of(new BufferType.Ints(BufferKind.DIRECT)),
+             Arguments.of(new BufferType.Floats(BufferKind.HEAP)),
+             Arguments.of(new BufferType.Floats(BufferKind.HEAP_VIEW)),
+             Arguments.of(new BufferType.Floats(BufferKind.DIRECT)),
+             Arguments.of(new BufferType.Longs(BufferKind.HEAP)),
+             Arguments.of(new BufferType.Longs(BufferKind.HEAP_VIEW)),
+             Arguments.of(new BufferType.Longs(BufferKind.DIRECT)),
+             Arguments.of(new BufferType.Doubles(BufferKind.HEAP)),
+             Arguments.of(new BufferType.Doubles(BufferKind.HEAP_VIEW)),
+             Arguments.of(new BufferType.Doubles(BufferKind.DIRECT)));
     }
 
     public static Stream<Arguments> floatBufferTypesSource() {
             LongFunction<Object> bTof = rb -> Float.intBitsToFloat((int) rb);
             LongFunction<Object> bToD = Double::longBitsToDouble;
 
-            return List.of(
-                 // canonical and non-canonical NaNs
+            return Stream.of
+                (// canonical and non-canonical NaNs
                  // If conversion is a signalling NaN it may be subject to conversion to a
                  // quiet NaN on some processors, even if a copy is performed
                  // The tests assume that if conversion occurs it does not convert to the
@@ -500,15 +499,14 @@ public class EqualsCompareTest {
                  Arguments.of(new BufferType.Floats(BufferKind.DIRECT), 0x0L, 0x80000000L, bTof),
                  Arguments.of(new BufferType.Doubles(BufferKind.HEAP), 0x0L, 0x8000000000000000L, bToD),
                  Arguments.of(new BufferType.Doubles(BufferKind.HEAP_VIEW), 0x0L, 0x8000000000000000L, bToD),
-                 Arguments.of(new BufferType.Doubles(BufferKind.DIRECT), 0x0L, 0x8000000000000000L, bToD))
-        .stream();
+                 Arguments.of(new BufferType.Doubles(BufferKind.DIRECT), 0x0L, 0x8000000000000000L, bToD));
     }
 
     public static Stream<Arguments> charBufferTypesSource() {
-        return List.of(Arguments.of(new BufferType.Chars(BufferKind.HEAP)),
-                       Arguments.of(new BufferType.Chars(BufferKind.HEAP_VIEW)),
-                       Arguments.of(new BufferType.Chars(BufferKind.DIRECT)))
-            .stream();
+        return Stream.of
+            (Arguments.of(new BufferType.Chars(BufferKind.HEAP)),
+             Arguments.of(new BufferType.Chars(BufferKind.HEAP_VIEW)),
+             Arguments.of(new BufferType.Chars(BufferKind.DIRECT)));
     }
 
     // Tests all primitive buffers
