@@ -308,7 +308,7 @@ public:
 
   inline void increase_available(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
   inline void decrease_available(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
-  inline size_t get_available(ShenandoahFreeSetPartitionId which_partition);
+  inline size_t get_available(ShenandoahFreeSetPartitionId which_partition) const;
 
   inline void increase_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
   inline void decrease_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
@@ -347,25 +347,7 @@ public:
     return _used[int(which_partition)];
   }
 
-  inline size_t available_in(ShenandoahFreeSetPartitionId which_partition) const {
-    assert (which_partition < NumPartitions, "selected free set must be valid");
-    shenandoah_assert_heaplocked();
-    assert(_available[int(which_partition)] == _capacity[int(which_partition)] - _used[int(which_partition)],
-           "Expect available (%zu) equals capacity (%zu) - used (%zu) for partition %s",
-           _available[int(which_partition)], _capacity[int(which_partition)], _used[int(which_partition)],
-           partition_membership_name(idx_t(which_partition)));
-    return _available[int(which_partition)];
-  }
-
-  // Return available_in assuming caller does not hold the heap lock but does hold the rebuild_lock.
-  // The returned value may be "slightly stale" because we do not assure that every fetch of this value
-  // sees the most recent update of this value.  Requiring the caller to hold the rebuild_lock assures
-  // that we don't see "bogus" values that are "worse than stale".  During rebuild of the freeset, the
-  // value of _available is not reliable.
-  inline size_t available_in_locked_for_rebuild(ShenandoahFreeSetPartitionId which_partition) const {
-    assert (which_partition < NumPartitions, "selected free set must be valid");
-    return _available[int(which_partition)];
-  }
+  size_t available_in(ShenandoahFreeSetPartitionId which_partition) const;
 
   // Returns bytes of humongous waste
   inline size_t humongous_waste(ShenandoahFreeSetPartitionId which_partition) const {
@@ -763,11 +745,8 @@ public:
 
   inline size_t available() {
     ShenandoahHeapUsageAccountingLocker locker(usage_accounting_lock());
-    return _partitions.available_in_locked_for_rebuild(ShenandoahFreeSetPartitionId::Mutator);
+    return _partitions.available_in(ShenandoahFreeSetPartitionId::Mutator);
   }
-  inline size_t available_holding_lock() const
-                                  { return _partitions.available_in(ShenandoahFreeSetPartitionId::Mutator); }
-
   inline size_t total_humongous_waste() const      { return _total_humongous_waste; }
   inline size_t humongous_waste_in_mutator() const {
     return _partitions.humongous_waste(ShenandoahFreeSetPartitionId::Mutator);

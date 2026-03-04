@@ -505,10 +505,19 @@ void ShenandoahRegionPartitions::decrease_available(ShenandoahFreeSetPartitionId
   _available[int(which_partition)] -= bytes;
 }
 
-size_t ShenandoahRegionPartitions::get_available(ShenandoahFreeSetPartitionId which_partition) {
+size_t ShenandoahRegionPartitions::get_available(ShenandoahFreeSetPartitionId which_partition) const {
   assert (which_partition < NumPartitions, "Partition must be valid");
   assert(_free_set->usage_accounting_lock()->owned_by_self(), "Must own usage accounting lock");
-  return _available[int(which_partition)];;
+  assert(_available[int(which_partition)] == _capacity[int(which_partition)] - _used[int(which_partition)],
+       "Expect available (%zu) equals capacity (%zu) - used (%zu) for partition %s",
+       _available[int(which_partition)], _capacity[int(which_partition)], _used[int(which_partition)],
+       partition_membership_name(idx_t(which_partition)));
+
+  return _available[int(which_partition)];
+}
+
+inline size_t ShenandoahRegionPartitions::available_in(ShenandoahFreeSetPartitionId which_partition) const {
+  return get_available(which_partition);
 }
 
 void ShenandoahRegionPartitions::increase_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions) {
