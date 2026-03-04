@@ -26,25 +26,17 @@
 package sun.security.util.math.intpoly;
 
 import java.math.BigInteger;
-import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 public final class IntegerPolynomial25519 extends IntegerPolynomial {
     private static final int BITS_PER_LIMB = 51;
     private static final int NUM_LIMBS = 5;
-    private static final int MAX_ADDS = 0;
+    private static final int MAX_ADDS = 1;
     public static final BigInteger MODULUS = evaluateModulus();
     private static final long CARRY_ADD = 1L << (BITS_PER_LIMB - 1);
     private static final long LIMB_MASK = -1L >>> (64 - BITS_PER_LIMB);
 
-    private static final long[] one = new long[] {
-        0x0000000000000001L, 0x0000000000000000L, 0x0000000000000000L,
-        0x0000000000000000L, 0x0000000000000000L };
-    private static final long[] zero = new long[] {
-        0x0000000000000000L, 0x0000000000000000L, 0x0000000000000000L,
-        0x0000000000000000L, 0x0000000000000000L };
-
     public static final IntegerPolynomial25519 ONE =
-            new IntegerPolynomial25519();
+        new IntegerPolynomial25519();
 
     private IntegerPolynomial25519() {
         super(BITS_PER_LIMB, NUM_LIMBS, MAX_ADDS, MODULUS);
@@ -53,20 +45,18 @@ public final class IntegerPolynomial25519 extends IntegerPolynomial {
     private static BigInteger evaluateModulus() {
         BigInteger result = BigInteger.valueOf(2).pow(255);
         result = result.subtract(BigInteger.valueOf(19));
+
         return result;
     }
 
-    @Override
-    public ImmutableElement get0() {
-        return new ImmutableElement(zero, 0);
-    }
-
-    @Override
-    public ImmutableElement get1() {
-        return new ImmutableElement(one, 0);
-    }
-
-    // Overriden for performance (unnesting)
+    /**
+     * Carry from a range of limb positions.
+     * Override for performance (unnesting).
+     *
+     * @param limbs [in|out] the limbs for carry operation. 
+     * @param start [in] the starting position of carry.
+     * @param end [in] the ending position of carry.
+     */
     @Override
     protected void carry(long[] limbs, int start, int end) {
         long carry;
@@ -78,10 +68,14 @@ public final class IntegerPolynomial25519 extends IntegerPolynomial {
         }
     }
 
-    // Overriden for performance (unroll and unnesting)
+    /**
+     * Carry operation for all limb positions.
+     * Override for performance (unroll and unnesting).
+     *
+     * @param limbs [in|out] the limbs for carry operation. 
+     */
     @Override
     protected void carry(long[] limbs) {
-        //carry(limbs, 0, limbs.length - 1);
         long carry = (limbs[0] + CARRY_ADD) >> BITS_PER_LIMB;
         limbs[0] -= carry << BITS_PER_LIMB;
         limbs[1] += carry;
@@ -99,18 +93,27 @@ public final class IntegerPolynomial25519 extends IntegerPolynomial {
         limbs[4] += carry;
     }
 
-    // Superclass assumes that limb primitive radix > (bits per limb * 2)
+    /**
+     * Multiply limbs by scalar value.
+     * Superclass assumes that limb primitive radix > (bits per limb * 2)
+     *
+     * @param a [in|out] the limbs to multiply a carry operation. 'a' is
+     * assumed to be reduced.
+     * @param b [in] the scalar value to be muliplied with the limbs.
+     */
     @Override
     protected void multByInt(long[] a, long b) {
         long[] blimbs = new long[a.length];
 
         blimbs[0] = b;
         mult(a, blimbs, a);
-        reduce(a);
     }
 
-    // Overriden for performance (unroll and unnesting)
-    @Override
+    /**
+     * Carry in all positions and reduce high order limb.
+     *
+     * @param limbs [in|out] the limbs to carry and reduce.
+     */
     protected void reduce(long[] limbs) {
         long carry = (limbs[3] + CARRY_ADD) >> BITS_PER_LIMB;
         limbs[3] -= carry << BITS_PER_LIMB;
@@ -138,12 +141,23 @@ public final class IntegerPolynomial25519 extends IntegerPolynomial {
         limbs[4] += carry;
     }
 
-    @Override
+    /**
+     * Reduces digit 'v' at limb position 'i' to a lower limb.
+     *
+     * @param limbs [in|out] the limbs to reduce in.
+     * @param v [in] the digit to reduce to the lower limb.
+     * @param i [in] the limbs to reduce from.
+     */
     protected void reduceIn(long[] limbs, long v, int i) {
         limbs[i - NUM_LIMBS] += 19 * v;
     }
 
-    @Override
+    /**
+     * Carry from high order limb and reduce to the lower order limb.  Assumed
+     * to be called two times to propagate the carries.
+     *
+     * @param limbs [in|out] the limbs to fully carry and reduce.
+     */
     protected void finalCarryReduceLast(long[] limbs) {
         long carry = limbs[4] >> BITS_PER_LIMB;
 
@@ -151,7 +165,15 @@ public final class IntegerPolynomial25519 extends IntegerPolynomial {
         limbs[0] += 19 * carry;
     }
 
-    @Override
+    /**
+     * Multiply two limbs using a high/low digit technique that allows for
+     * larger limb sizes.  It is assumed that both limbs have already been
+     * reduced.
+     *
+     * @param a [in] the limb operand to multiply.
+     * @param b [in] the limb operand to multiply.
+     * @param r [out] the product of the limbs operands that is fully reduced.
+     */
     protected void mult(long[] a, long[] b, long[] r) {
         long aa0 = a[0];
         long aa1 = a[1];
@@ -323,8 +345,126 @@ public final class IntegerPolynomial25519 extends IntegerPolynomial {
         reduce(r);
     }
 
-    @Override
+    /**
+     * Takes a single limb and squares it using a high/low digit technique that
+     * allows for larger limb sizes.  It is assumed that the limb input has
+     * already been reduced.
+     *
+     * @param a [in] the limb operand to square.
+     * @param r [out] the resulting square of the limb which is fully reduced.
+     */
     protected void square(long[] a, long[] r) {
-        mult(a, a, r);
+        long aa0 = a[0];
+        long aa1 = a[1];
+        long aa2 = a[2];
+        long aa3 = a[3];
+        long aa4 = a[4];
+
+        final long shift1 = 64 - BITS_PER_LIMB;
+        final long shift2 = BITS_PER_LIMB;
+
+        long d0, d1, d2, d3, d4;      // low digits from multiplication
+        long dd0, dd1, dd2, dd3, dd4; // high digits from multiplication
+        // multiplication result digits for each column
+        long c0, c1, c2, c3, c4, c5, c6, c7, c8, c9;
+
+        // Row 0 - multiply by aa0
+        d0 = aa0 * aa0;
+        dd0 = Math.multiplyHigh(aa0, aa0) << shift1 | (d0 >>> shift2);
+        d0 &= LIMB_MASK;
+
+        d1 = aa0 * aa1;
+        dd1 = Math.multiplyHigh(aa0, aa1) << shift1 | (d1 >>> shift2);
+        d1 &= LIMB_MASK;
+
+        d2 = aa0 * aa2;
+        dd2 = Math.multiplyHigh(aa0, aa2) << shift1 | (d2 >>> shift2);
+        d2 &= LIMB_MASK;
+
+        d3 = aa0 * aa3;
+        dd3 = Math.multiplyHigh(aa0, aa3) << shift1 | (d3 >>> shift2);
+        d3 &= LIMB_MASK;
+
+        d4 = aa0 * aa4;
+        dd4 = Math.multiplyHigh(aa0, aa4) << shift1 | (d4 >>> shift2);
+        d4 &= LIMB_MASK;
+
+        c0 = d0;
+        c1 = (d1 << 1) + dd0;
+        c2 = (d2 + dd1) << 1;
+        c3 = (d3 + dd2) << 1;
+        c4 = (d4 + dd3) << 1;
+        c5 = dd4 << 1;
+
+        // Row 1 - multiply by aa1
+        d1 = aa1 * aa1;
+        dd1 = Math.multiplyHigh(aa1, aa1) << shift1 | (d1 >>> shift2);
+        d1 &= LIMB_MASK;
+
+        d2 = aa1 * aa2;
+        dd2 = Math.multiplyHigh(aa1, aa2) << shift1 | (d2 >>> shift2);
+        d2 &= LIMB_MASK;
+
+        d3 = aa1 * aa3;
+        dd3 = Math.multiplyHigh(aa1, aa3) << shift1 | (d3 >>> shift2);
+        d3 &= LIMB_MASK;
+
+        d4 = aa1 * aa4;
+        dd4 = Math.multiplyHigh(aa1, aa4) << shift1 | (d4 >>> shift2);
+        d4 &= LIMB_MASK;
+
+        c2 += d1;
+        c3 += (d2 << 1) + dd1;
+        c4 += (d3 + dd2) << 1;
+        c5 += (d4 + dd3) << 1;
+        c6 = dd4 << 1;
+
+        // Row 2 - multiply by aa2
+        d2 = aa2 * aa2;
+        dd2 = Math.multiplyHigh(aa2, aa2) << shift1 | (d2 >>> shift2);
+        d2 &= LIMB_MASK;
+
+        d3 = aa2 * aa3;
+        dd3 = Math.multiplyHigh(aa2, aa3) << shift1 | (d3 >>> shift2);
+        d3 &= LIMB_MASK;
+
+        d4 = aa2 * aa4;
+        dd4 = Math.multiplyHigh(aa2, aa4) << shift1 | (d4 >>> shift2);
+        d4 &= LIMB_MASK;
+
+        c4 += d2;
+        c5 += (d3 << 1) + dd2;
+        c6 += (d4 + dd3) << 1;
+        c7 = dd4 << 1;
+
+        // Row 3 - multiply by aa3
+        d3 = aa3 * aa3;
+        dd3 = Math.multiplyHigh(aa3, aa3) << shift1 | (d3 >>> shift2);
+        d3 &= LIMB_MASK;
+
+        d4 = aa3 * aa4;
+        dd4 = Math.multiplyHigh(aa3, aa4) << shift1 | (d4 >>> shift2);
+        d4 &= LIMB_MASK;
+
+        c6 += d3;
+        c7 += (d4 << 1) + dd3;
+        c8 = dd4 << 1;
+
+        // Row 4 - multiply by aa4
+        d4 = aa4 * aa4;
+        dd4 = Math.multiplyHigh(aa4, aa4) << shift1 | (d4 >>> shift2);
+        d4 &= LIMB_MASK;
+
+        c8 += d4;
+        c9 = dd4;
+
+        // Perform pseudo-Mersenne reduction
+        r[0] = c0 + (19 * c5);
+        r[1] = c1 + (19 * c6);
+        r[2] = c2 + (19 * c7);
+        r[3] = c3 + (19 * c8);
+        r[4] = c4 + (19 * c9);
+
+        reduce(r);
     }
 }
