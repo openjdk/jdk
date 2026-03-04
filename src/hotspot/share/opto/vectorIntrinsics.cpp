@@ -42,7 +42,7 @@ static bool check_vbox(const TypeInstPtr* vbox_type) {
   ciInstanceKlass* ik = vbox_type->instance_klass();
   assert(is_vector(ik), "not a vector");
 
-  ciField* fd1 = ik->get_field_by_name(ciSymbols::ETYPE_name(), ciSymbols::class_signature(), /* is_static */ true);
+  ciField* fd1 = ik->get_field_by_name(ciSymbols::CTYPE_name(), ciSymbols::class_signature(), /* is_static */ true);
   assert(fd1 != nullptr, "element type info is missing");
 
   ciConstant val1 = fd1->constant_value();
@@ -301,9 +301,9 @@ static bool is_primitive_lane_type(VectorSupport::LaneType laneType) {
   return laneType >= VectorSupport::LT_FLOAT && laneType <= VectorSupport::LT_LONG;
 }
 
-static BasicType get_vector_primitive_lane_type(VectorSupport::LaneType lane_type) {
-  assert(is_primitive_lane_type(lane_type), "");
-  switch (lane_type) {
+static BasicType get_vector_primitive_lane_type(VectorSupport::LaneType lanetype) {
+  assert(is_primitive_lane_type(lanetype), "");
+  switch (lanetype) {
     case VectorSupport::LaneType::LT_FLOAT: return T_FLOAT;
     case VectorSupport::LaneType::LT_DOUBLE: return T_DOUBLE;
     case VectorSupport::LaneType::LT_LONG: return T_LONG;

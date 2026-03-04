@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import static jdk.jpackage.internal.cli.StandardOption.PREDEFINED_APP_IMAGE;
 import static jdk.jpackage.internal.cli.StandardOption.PREDEFINED_RUNTIME_IMAGE;
 
 import java.nio.file.Path;
+import java.util.Objects;
 import jdk.jpackage.internal.cli.Options;
 import jdk.jpackage.internal.cli.StandardBundlingOperation;
 
@@ -50,5 +51,9 @@ final class OptionUtils {
 
     static StandardBundlingOperation bundlingOperation(Options options) {
         return StandardBundlingOperation.valueOf(BUNDLING_OPERATION_DESCRIPTOR.getFrom(options)).orElseThrow();
+    }
+
+    static boolean isBundlingOperation(Options options, StandardBundlingOperation op) {
+        return bundlingOperation(options).equals(Objects.requireNonNull(op));
     }
 }

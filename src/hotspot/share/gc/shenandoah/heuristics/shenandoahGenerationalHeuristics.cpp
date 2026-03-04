@@ -51,6 +51,12 @@ static int compare_by_aged_live(AgedRegionData a, AgedRegionData b) {
   return 0;
 }
 
+void ShenandoahGenerationalHeuristics::post_initialize() {
+  ShenandoahHeuristics::post_initialize();
+  _free_set = ShenandoahHeap::heap()->free_set();
+  compute_headroom_adjustment();
+}
+
 inline void assert_no_in_place_promotions() {
 #ifdef ASSERT
   class ShenandoahNoInPlacePromotions : public ShenandoahHeapRegionClosure {

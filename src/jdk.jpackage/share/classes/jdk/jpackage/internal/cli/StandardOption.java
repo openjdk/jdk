@@ -109,7 +109,7 @@ public final class StandardOption {
 
     public static final OptionValue<Boolean> VERBOSE = auxilaryOption("verbose").create();
 
-    public static final OptionValue<BundleType> TYPE = option("type", BundleType.class).addAliases("t")
+    static final OptionValue<BundleType> TYPE = option("type", BundleType.class).addAliases("t")
             .scope(StandardBundlingOperation.values()).inScope(NOT_BUILDING_APP_IMAGE)
             .converterExceptionFactory(ERROR_WITH_VALUE).converterExceptionFormatString("ERR_InvalidInstallerType")
             .converter(str -> {
@@ -248,7 +248,10 @@ public final class StandardOption {
                             .validatorExceptionFormatString("error.parameter-not-mac-bundle")
                             .validator(StandardValidator.IS_VALID_MAC_BUNDLE)
                             .createValidator().orElseThrow();
-                    b.validator(Validator.and(directoryValidator, macBundleValidator));
+                    // Use "lazy and" validator composition.
+                    // If the value of the option is not a directory, we want only one error reported, not two:
+                    // one that the value is not a directory and another that it is not a valid macOS bundle.
+                    b.validator(Validator.andLazy(directoryValidator, macBundleValidator));
                 }
             }))
             .create();
@@ -430,6 +433,12 @@ public final class StandardOption {
     public static final OptionValue<Path> SOURCE_PROPERY_FILE = OptionValue.create();
 
     public static final OptionValue<BundlingOperationDescriptor> BUNDLING_OPERATION_DESCRIPTOR = OptionValue.create();
+
+    /**
+     * Debug option telling bundler to exit after the configuration phase is over,
+     * without running the packaging phase.
+     */
+    public static final OptionValue<Boolean> EXIT_AFTER_CONFIGURATION_PHASE = OptionValue.<Boolean>build().defaultValue(false).create();
 
     /**
      * Returns options configuring a launcher.

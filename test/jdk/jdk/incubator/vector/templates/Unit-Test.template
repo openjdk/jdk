@@ -14,7 +14,7 @@
 
                 // Check results as part of computation.
                 for (int j = 0; j < SPECIES.length(); j++) {
-                    Assert.assertEquals(mv.laneIsSet(j), test[[TEST]](a[i + j]));
+                    assertEquals(mv.laneIsSet(j), test[[TEST]](a[i + j]));
                 }
             }
         }
@@ -34,7 +34,7 @@
 
                 // Check results as part of computation.
                 for (int j = 0; j < SPECIES.length(); j++) {
-                    Assert.assertEquals(mv.laneIsSet(j),  vmask.laneIsSet(j) && test[[TEST]](a[i + j]));
+                    assertEquals(mv.laneIsSet(j),  vmask.laneIsSet(j) && test[[TEST]](a[i + j]));
                 }
             }
         }

@@ -25,6 +25,7 @@
 #include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassInitializer.hpp"
 #include "cds/aotClassLocation.hpp"
+#include "cds/aotCompressedPointers.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotMappedHeapLoader.hpp"
 #include "cds/aotMappedHeapWriter.hpp"
@@ -244,6 +245,28 @@ void HeapShared::reset_archived_object_states(TRAPS) {
                          CHECK);
   Handle boot_loader(THREAD, result.get_oop());
   reset_states(boot_loader(), CHECK);
+}
+
+void HeapShared::ensure_determinism(TRAPS) {
+  TempNewSymbol class_name = SymbolTable::new_symbol("jdk/internal/util/WeakReferenceKey");
+  TempNewSymbol method_name = SymbolTable::new_symbol("ensureDeterministicAOTCache");
+
+  Klass* weak_ref_key_class = SystemDictionary::resolve_or_fail(class_name, true, CHECK);
+  precond(weak_ref_key_class != nullptr);
+
+  log_debug(aot)("Calling WeakReferenceKey::ensureDeterministicAOTCache(Object.class)");
+  JavaValue result(T_BOOLEAN);
+  JavaCalls::call_static(&result,
+                         weak_ref_key_class,
+                         method_name,
+                         vmSymbols::void_boolean_signature(),
+                         CHECK);
+  assert(result.get_jboolean() == false, "sanity");
+}
+
+void HeapShared::prepare_for_archiving(TRAPS) {
+  reset_archived_object_states(CHECK);
+  ensure_determinism(CHECK);
 }
 
 HeapShared::ArchivedObjectCache* HeapShared::_archived_object_cache = nullptr;
@@ -1148,8 +1171,7 @@ public:
       ArchivedKlassSubGraphInfoRecord* record = HeapShared::archive_subgraph_info(&info);
       Klass* buffered_k = ArchiveBuilder::get_buffered_klass(klass);
       unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary((address)buffered_k);
-      u4 delta = ArchiveBuilder::current()->any_to_offset_u4(record);
-      _writer->add(hash, delta);
+      _writer->add(hash, AOTCompressedPointers::encode_not_null(record));
     }
     return true; // keep on iterating
   }

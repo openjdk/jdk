@@ -24,10 +24,9 @@
 
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1HeapRegion.inline.hpp"
+#include "gc/g1/g1RegionToSpaceMapper.hpp"
+#include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "logging/log.hpp"
-#include "oops/oop.inline.hpp"
-#include "runtime/java.hpp"
 #include "runtime/os.hpp"
 
 size_t G1BlockOffsetTable::compute_size(size_t mem_region_words) {
@@ -50,6 +49,12 @@ G1BlockOffsetTable::G1BlockOffsetTable(MemRegion heap, G1RegionToSpaceMapper* st
 void G1BlockOffsetTable::set_offset_array(Atomic<uint8_t>* addr, uint8_t offset) {
   check_address(addr, "Block offset table address out of range");
   addr->store_relaxed(offset);
+}
+
+static void check_offset(size_t offset, const char* msg) {
+  assert(offset < CardTable::card_size_in_words(),
+         "%s - offset: %zu, N_words: %u",
+         msg, offset, CardTable::card_size_in_words());
 }
 
 void G1BlockOffsetTable::set_offset_array(Atomic<uint8_t>* addr, HeapWord* high, HeapWord* low) {

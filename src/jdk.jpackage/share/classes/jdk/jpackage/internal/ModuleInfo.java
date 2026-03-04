@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
-import jdk.internal.util.OperatingSystem;
 
 record ModuleInfo(String name, Optional<String> version, Optional<String> mainClass, Optional<URI> location) {
 
@@ -61,17 +60,7 @@ record ModuleInfo(String name, Optional<String> version, Optional<String> mainCl
         // is linked in the runtime by simply analysing the data
         // of `release` file.
 
-        final Path releaseFile;
-        if (!OperatingSystem.isMacOS()) {
-            releaseFile = cookedRuntime.resolve("release");
-        } else {
-            // On Mac `cookedRuntime` can be runtime root or runtime home.
-            Path runtimeHome = cookedRuntime.resolve("Contents/Home");
-            if (!Files.isDirectory(runtimeHome)) {
-                runtimeHome = cookedRuntime;
-            }
-            releaseFile = runtimeHome.resolve("release");
-        }
+        final Path releaseFile = cookedRuntime.resolve("release");
 
         try (Reader reader = Files.newBufferedReader(releaseFile)) {
             Properties props = new Properties();
