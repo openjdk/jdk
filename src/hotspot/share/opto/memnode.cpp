@@ -921,7 +921,7 @@ uint8_t MemNode::barrier_data(const Node* n) {
 //=============================================================================
 // Should LoadNode::Ideal() attempt to remove control edges?
 bool LoadNode::can_remove_control() const {
-  return depends_only_on_test();
+  return !has_pinned_control_dependency();
 }
 uint LoadNode::size_of() const { return sizeof(*this); }
 bool LoadNode::cmp(const Node &n) const {

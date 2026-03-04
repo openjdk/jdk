@@ -206,6 +206,7 @@ private:
   // this field.
   const MemOrd _mo;
 #ifdef ASSERT
+  // Was the Range Check removed because it was proven always successful?
   bool _rc_constant_folded;
 #endif
 
