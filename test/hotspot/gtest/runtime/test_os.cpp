@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -506,6 +506,7 @@ static inline bool can_reserve_executable_memory(void) {
 #define PRINT_MAPPINGS(s) { tty->print_cr("%s", s); os::print_memory_mappings((char*)p, total_range_len, tty); tty->cr(); }
 //#define PRINT_MAPPINGS
 
+#ifndef _AIX
 // Release a range allocated with reserve_multiple carefully, to not trip mapping
 // asserts on Windows in os::release_memory()
 static void carefully_release_multiple(address start, int num_stripes, size_t stripe_len) {
@@ -515,7 +516,6 @@ static void carefully_release_multiple(address start, int num_stripes, size_t st
   }
 }
 
-#ifndef _AIX // JDK-8257041
 // Reserve an area consisting of multiple mappings
 //  (from multiple calls to os::reserve_memory)
 static address reserve_multiple(int num_stripes, size_t stripe_len) {

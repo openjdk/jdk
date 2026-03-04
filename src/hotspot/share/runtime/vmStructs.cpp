@@ -408,6 +408,8 @@
   volatile_nonstatic_field(ClassLoaderData,    _klasses,                                      Klass*)                                \
   nonstatic_field(ClassLoaderData,             _has_class_mirror_holder,                      bool)                                  \
                                                                                                                                      \
+  static_field(ClassLoaderData,                _the_null_class_loader_data,                   ClassLoaderData*)                      \
+                                                                                                                                     \
   volatile_static_field(ClassLoaderDataGraph, _head,                                          ClassLoaderData*)                      \
                                                                                                                                      \
   /**********/                                                                                                                       \
@@ -1287,6 +1289,12 @@
                                                                           \
   VM_INT_CONSTANTS_GC(declare_constant,                                   \
                       declare_constant_with_value)                        \
+                                                                          \
+  /*****************/                                                     \
+  /* CDS constants */                                                     \
+  /*****************/                                                     \
+                                                                          \
+  CDS_ONLY(declare_constant(AOTCompressedPointers::MetadataOffsetShift))  \
                                                                           \
   /******************/                                                    \
   /* Useful globals */                                                    \
