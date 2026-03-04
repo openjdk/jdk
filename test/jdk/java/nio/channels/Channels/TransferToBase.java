@@ -88,7 +88,7 @@ class TransferToBase {
             long reported = in.transferTo(out);
             int count = inBytes.length - posIn;
 
-            assertEquals(reported, count, format("reported %d bytes but should report %d", reported, count));
+            assertEquals(count, reported);
 
             byte[] outBytes = recorder.get().get();
             assertTrue(Arrays.equals(inBytes, posIn, posIn + count, outBytes, posOut, posOut + count),
@@ -238,11 +238,11 @@ class TransferToBase {
 
                     // compare reported transferred bytes, must be 3 GB
                     // less the value of the initial position
-                    assertEquals(count, BYTES_WRITTEN - initPos);
+                    assertEquals(BYTES_WRITTEN - initPos, count);
                 }
 
                 // compare content of both files, failing if different
-                assertEquals(Files.mismatch(sourceFile, targetFile), -1);
+                assertEquals(-1, Files.mismatch(sourceFile, targetFile));
 
             } finally {
                  Files.delete(targetFile);

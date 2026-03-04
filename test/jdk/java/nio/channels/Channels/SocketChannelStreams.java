@@ -80,7 +80,7 @@ public class SocketChannelStreams {
         withConnection((sc, peer) -> {
             write(peer, 99);
             int n = Channels.newInputStream(sc).read();
-            assertEquals(n, 99);
+            assertEquals(99, n);
         });
     }
 
@@ -92,7 +92,7 @@ public class SocketChannelStreams {
         withConnection((sc, peer) -> {
             scheduleWrite(peer, 99, 1000);
             int n = Channels.newInputStream(sc).read();
-            assertEquals(n, 99);
+            assertEquals(99, n);
         });
     }
 
@@ -104,7 +104,7 @@ public class SocketChannelStreams {
         withConnection((sc, peer) -> {
             peer.close();
             int n = Channels.newInputStream(sc).read();
-            assertEquals(n, -1);
+            assertEquals(-1, n);
         });
     }
 
@@ -116,7 +116,7 @@ public class SocketChannelStreams {
         withConnection((sc, peer) -> {
             scheduleClose(peer, 1000);
             int n = Channels.newInputStream(sc).read();
-            assertEquals(n, -1);
+            assertEquals(-1, n);
         });
     }
 
@@ -202,7 +202,7 @@ public class SocketChannelStreams {
             OutputStream out = Channels.newOutputStream(sc);
             out.write(99);
             int n = read(peer);
-            assertEquals(n, 99);
+            assertEquals(99, n);
         });
     }
 

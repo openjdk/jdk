@@ -242,7 +242,7 @@ public class ReadXBytes {
     }
 
     // Provides a stream of lengths
-    public static Stream<Arguments> lengthProvider() throws IOException {
+    public static Stream<Arguments> fileLengths() throws IOException {
         List<Arguments> list = new ArrayList<Arguments>();
         list.add(Arguments.of(1 + RAND.nextInt(1)));
         list.add(Arguments.of(1 + RAND.nextInt(Byte.MAX_VALUE)));
@@ -254,7 +254,7 @@ public class ReadXBytes {
 
     // Verifies readAllBytes() accuracy for random lengths and initial positions
     @ParameterizedTest
-    @MethodSource("lengthProvider")
+    @MethodSource("fileLengths")
     public void readAllBytes(int len) throws IOException {
         dataTest(len, (length) -> createFileWithRandomContent(length),
             (length, cis, fis) -> {
@@ -342,7 +342,7 @@ public class ReadXBytes {
 
     // Verifies readNBytes() accuracy for random lengths and initial positions
     @ParameterizedTest
-    @MethodSource("lengthProvider")
+    @MethodSource("fileLengths")
     public void readNBytes(int len) throws IOException {
         dataTest(len, (length) -> createFileWithRandomContent(length),
             (length, cis, fis) -> {
