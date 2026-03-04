@@ -86,6 +86,7 @@
 #include "nmt/memTracker.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "prims/jvmtiTagMap.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -201,9 +202,9 @@ jint ShenandoahHeap::initialize() {
   assert(num_min_regions <= _num_regions, "sanity");
   _minimum_size = num_min_regions * reg_size_bytes;
 
-  _soft_max_size = clamp(SoftMaxHeapSize, min_capacity(), max_capacity());
+  _soft_max_size.store_relaxed(clamp(SoftMaxHeapSize, min_capacity(), max_capacity()));
 
-  _committed = _initial_size;
+  _committed.store_relaxed(_initial_size);
 
   size_t heap_page_size   = UseLargePages ? os::large_page_size() : os::vm_page_size();
   size_t bitmap_page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
@@ -434,7 +435,7 @@ jint ShenandoahHeap::initialize() {
     }
 
     _free_set = new ShenandoahFreeSet(this, _num_regions);
-    post_initialize_heuristics();
+    initialize_generations();
 
     // We are initializing free set.  We ignore cset region tallies.
     size_t young_trashed_regions, old_trashed_regions, first_old, last_old, num_old;
@@ -491,16 +492,17 @@ jint ShenandoahHeap::initialize() {
   _phase_timings = new ShenandoahPhaseTimings(max_workers());
   ShenandoahCodeRoots::initialize();
 
+  // Initialization of controller makes use of variables established by initialize_heuristics.
   initialize_controller();
 
+  // Certain initialization of heuristics must be deferred until after controller is initialized.
+  post_initialize_heuristics();
+  start_idle_span();
   if (ShenandoahUncommit) {
     _uncommit_thread = new ShenandoahUncommitThread(this);
   }
-
   print_init_logger();
-
   FullGCForwarding::initialize(_heap_region);
-
   return JNI_OK;
 }
 
@@ -542,10 +544,6 @@ void ShenandoahHeap::initialize_mode() {
 void ShenandoahHeap::initialize_heuristics() {
   _global_generation = new ShenandoahGlobalGeneration(mode()->is_generational(), max_workers());
   _global_generation->initialize_heuristics(mode());
-}
-
-void ShenandoahHeap::post_initialize_heuristics() {
-  _global_generation->post_initialize(this);
 }
 
 #ifdef _MSC_VER
@@ -689,6 +687,11 @@ public:
   }
 };
 
+void ShenandoahHeap::initialize_generations() {
+  _global_generation->post_initialize(this);
+}
+
+// We do not call this explicitly  It is called by Hotspot infrastructure.
 void ShenandoahHeap::post_initialize() {
   CollectedHeap::post_initialize();
 
@@ -716,6 +719,10 @@ void ShenandoahHeap::post_initialize() {
   JFR_ONLY(ShenandoahJFRSupport::register_jfr_type_serializers();)
 }
 
+void ShenandoahHeap::post_initialize_heuristics() {
+  _global_generation->post_initialize_heuristics();
+}
+
 ShenandoahHeuristics* ShenandoahHeap::heuristics() {
   return _global_generation->heuristics();
 }
@@ -725,17 +732,17 @@ size_t ShenandoahHeap::used() const {
 }
 
 size_t ShenandoahHeap::committed() const {
-  return AtomicAccess::load(&_committed);
+  return _committed.load_relaxed();
 }
 
 void ShenandoahHeap::increase_committed(size_t bytes) {
   shenandoah_assert_heaplocked_or_safepoint();
-  _committed += bytes;
+  _committed.fetch_then_add(bytes, memory_order_relaxed);
 }
 
 void ShenandoahHeap::decrease_committed(size_t bytes) {
   shenandoah_assert_heaplocked_or_safepoint();
-  _committed -= bytes;
+  _committed.fetch_then_sub(bytes, memory_order_relaxed);
 }
 
 size_t ShenandoahHeap::capacity() const {
@@ -747,7 +754,7 @@ size_t ShenandoahHeap::max_capacity() const {
 }
 
 size_t ShenandoahHeap::soft_max_capacity() const {
-  size_t v = AtomicAccess::load(&_soft_max_size);
+  size_t v = _soft_max_size.load_relaxed();
   assert(min_capacity() <= v && v <= max_capacity(),
          "Should be in bounds: %zu <= %zu <= %zu",
          min_capacity(), v, max_capacity());
@@ -758,7 +765,8 @@ void ShenandoahHeap::set_soft_max_capacity(size_t v) {
   assert(min_capacity() <= v && v <= max_capacity(),
          "Should be in bounds: %zu <= %zu <= %zu",
          min_capacity(), v, max_capacity());
-  AtomicAccess::store(&_soft_max_size, v);
+  _soft_max_size.store_relaxed(v);
+  heuristics()->compute_headroom_adjustment();
 }
 
 size_t ShenandoahHeap::min_capacity() const {
@@ -832,6 +840,10 @@ void ShenandoahHeap::notify_heap_changed() {
   // update costs on slow path.
   monitoring_support()->notify_heap_changed();
   _heap_changed.try_set();
+}
+
+void ShenandoahHeap::start_idle_span() {
+  heuristics()->start_idle_span();
 }
 
 void ShenandoahHeap::set_forced_counters_update(bool value) {
@@ -1895,7 +1907,7 @@ private:
   size_t const _stride;
 
   shenandoah_padding(0);
-  volatile size_t _index;
+  Atomic<size_t> _index;
   shenandoah_padding(1);
 
 public:
@@ -1908,8 +1920,8 @@ public:
     size_t stride = _stride;
 
     size_t max = _heap->num_regions();
-    while (AtomicAccess::load(&_index) < max) {
-      size_t cur = AtomicAccess::fetch_then_add(&_index, stride, memory_order_relaxed);
+    while (_index.load_relaxed() < max) {
+      size_t cur = _index.fetch_then_add(stride, memory_order_relaxed);
       size_t start = cur;
       size_t end = MIN2(cur + stride, max);
       if (start >= max) break;
@@ -2663,11 +2675,11 @@ ShenandoahRegionIterator::ShenandoahRegionIterator(ShenandoahHeap* heap) :
   _index(0) {}
 
 void ShenandoahRegionIterator::reset() {
-  _index = 0;
+  _index.store_relaxed(0);
 }
 
 bool ShenandoahRegionIterator::has_next() const {
-  return _index < _heap->num_regions();
+  return _index.load_relaxed() < _heap->num_regions();
 }
 
 ShenandoahLiveData* ShenandoahHeap::get_liveness_cache(uint worker_id) {
@@ -2792,4 +2804,14 @@ void ShenandoahHeap::log_heap_status(const char* msg) const {
   } else {
     global_generation()->log_status(msg);
   }
+}
+
+ShenandoahHeapLocker::ShenandoahHeapLocker(ShenandoahHeapLock* lock, bool allow_block_for_safepoint) : _lock(lock) {
+#ifdef ASSERT
+  ShenandoahFreeSet* free_set = ShenandoahHeap::heap()->free_set();
+  // free_set is nullptr only at pre-initialized state
+  assert(free_set == nullptr || !free_set->rebuild_lock()->owned_by_self(), "Dead lock, can't acquire heap lock while holding free-set rebuild lock");
+  assert(_lock != nullptr, "Must not");
+#endif
+  _lock->lock(allow_block_for_safepoint);
 }

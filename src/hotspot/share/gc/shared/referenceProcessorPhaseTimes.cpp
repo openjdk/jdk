@@ -152,7 +152,15 @@ RefProcTotalPhaseTimesTracker::~RefProcTotalPhaseTimesTracker() {
 }
 
 ReferenceProcessorPhaseTimes::ReferenceProcessorPhaseTimes(GCTimer* gc_timer, uint max_gc_threads) :
-  _processing_is_mt(false), _gc_timer(gc_timer) {
+  _sub_phases_worker_time_sec{},
+  _balance_queues_time_ms{},
+  _soft_weak_final_refs_phase_worker_time_sec(nullptr),
+  _total_time_ms(0.0),
+   _ref_dropped{},
+  _ref_discovered{},
+  _processing_is_mt(false),
+  _gc_timer(gc_timer) {
+
   assert(gc_timer != nullptr, "pre-condition");
   for (uint i = 0; i < ReferenceProcessor::RefSubPhaseMax; i++) {
     _sub_phases_worker_time_sec[i] = new WorkerDataArray<double>(nullptr, SubPhasesParWorkTitle[i], max_gc_threads);

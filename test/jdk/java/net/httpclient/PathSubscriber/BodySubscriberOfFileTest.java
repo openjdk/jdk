@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,15 +35,11 @@
  *        jdk.httpclient.test.lib.http2.OutgoingPushPromise
  *        jdk.httpclient.test.lib.http2.Queue jdk.test.lib.net.SimpleSSLContext
  *        jdk.test.lib.Platform jdk.test.lib.util.FileUtils
- * @run testng/othervm BodySubscriberOfFileTest
+ * @run junit/othervm BodySubscriberOfFileTest
  */
 
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.util.FileUtils;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -58,7 +54,10 @@ import java.net.http.HttpResponse.BodySubscribers;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.Flow;
 import java.util.stream.IntStream;
@@ -70,26 +69,32 @@ import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpOption.H3_DISCOVERY;
-import static org.testng.Assert.assertEquals;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class BodySubscriberOfFileTest implements HttpServerAdapters {
     static final String MSG = "msg";
 
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
-    HttpTestServer httpTestServer;    // HTTP/1.1      [ 5 servers ]
-    HttpTestServer httpsTestServer;   // HTTPS/1.1
-    HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
-    HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
-    HttpTestServer http3TestServer;   // HTTP/3 ( h3  )
-    String httpURI;
-    String httpsURI;
-    String http2URI;
-    String https2URI;
-    String http3URI;
+    private static HttpTestServer httpTestServer;    // HTTP/1.1      [ 5 servers ]
+    private static HttpTestServer httpsTestServer;   // HTTPS/1.1
+    private static HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
+    private static HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
+    private static HttpTestServer http3TestServer;   // HTTP/3 ( h3  )
+    private static String httpURI;
+    private static String httpsURI;
+    private static String http2URI;
+    private static String https2URI;
+    private static String http3URI;
 
-    FileSystem zipFs;
-    Path defaultFsPath;
-    Path zipFsPath;
+    private static FileSystem zipFs;
+    private static Path defaultFsPath;
+    private static Path zipFsPath;
 
     // Default file system set-up
 
@@ -101,8 +106,7 @@ public class BodySubscriberOfFileTest implements HttpServerAdapters {
         return file;
     }
 
-    @DataProvider(name = "defaultFsData")
-    public Object[][] defaultFsData() {
+    public static Object[][] defaultFsData() {
         return new Object[][]{
                 {  http3URI,   defaultFsPath,  MSG,  true   },
                 {  http3URI,   defaultFsPath,  MSG,  false  },
@@ -118,7 +122,8 @@ public class BodySubscriberOfFileTest implements HttpServerAdapters {
         };
     }
 
-    @Test(dataProvider = "defaultFsData")
+    @ParameterizedTest
+    @MethodSource("defaultFsData")
     public void testDefaultFs(String uriString,
                               Path path,
                               String expectedMsg,
@@ -143,8 +148,7 @@ public class BodySubscriberOfFileTest implements HttpServerAdapters {
         return file;
     }
 
-    @DataProvider(name = "zipFsData")
-    public Object[][] zipFsData() {
+    public static Object[][] zipFsData() {
         return new Object[][]{
                 {  http3URI,   zipFsPath,  MSG,  true   },
                 {  http3URI,   zipFsPath,  MSG,  false  },
@@ -160,7 +164,8 @@ public class BodySubscriberOfFileTest implements HttpServerAdapters {
         };
     }
 
-    @Test(dataProvider = "zipFsData")
+    @ParameterizedTest
+    @MethodSource("zipFsData")
     public void testZipFs(String uriString,
                           Path path,
                           String expectedMsg,
@@ -209,8 +214,8 @@ public class BodySubscriberOfFileTest implements HttpServerAdapters {
             String msg = Files.readString(path, StandardCharsets.UTF_8);
             out.printf("Resp code: %s\n", resp.statusCode());
             out.printf("Msg written to %s: %s\n", resp.body(), msg);
-            assertEquals(resp.statusCode(), 200);
-            assertEquals(msg, expectedMsg);
+            assertEquals(200, resp.statusCode());
+            assertEquals(expectedMsg, msg);
             if (!sameClient) {
                 client.close();
             }
@@ -240,12 +245,12 @@ public class BodySubscriberOfFileTest implements HttpServerAdapters {
         });
         subscriber.onNext(buffers);
         subscriber.onComplete();
-        buffers.forEach(b -> assertEquals(b.remaining(), 0) );
+        buffers.forEach(b -> assertEquals(0, b.remaining()) );
         assertEquals(expectedSize, Files.size(defaultFsPath));
     }
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         defaultFsPath = defaultFsFile();
         zipFs = newZipFs();
         zipFsPath = zipFsFile(zipFs);
@@ -277,8 +282,8 @@ public class BodySubscriberOfFileTest implements HttpServerAdapters {
         http3TestServer.start();
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         if (Files.exists(zipFsPath))
             FileUtils.deleteFileTreeWithRetry(zipFsPath);
         if (Files.exists(defaultFsPath))

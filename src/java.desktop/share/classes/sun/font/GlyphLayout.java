@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.WeakHashMap;
 
 import static java.lang.Character.*;
 
@@ -87,7 +87,6 @@ public final class GlyphLayout {
     // cached glyph layout data for reuse
     private static volatile GlyphLayout cache;  // reusable
 
-    private LayoutEngineFactory _lef;  // set when get is called, unset when done is called
     private TextRecord _textRecord;    // the text we're working on, used by iterators
     private ScriptRun _scriptRuns;     // iterator over script runs
     private FontRunIterator _fontRuns; // iterator over physical fonts in a composite
@@ -100,91 +99,10 @@ public final class GlyphLayout {
     private int _typo_flags;
     private int _offset;
 
-    public static final class LayoutEngineKey {
-        private Font2D font;
-        private int script;
-        private int lang;
-
-        LayoutEngineKey() {
-        }
-
-        LayoutEngineKey(Font2D font, int script, int lang) {
-            init(font, script, lang);
-        }
-
-        void init(Font2D font, int script, int lang) {
-            this.font = font;
-            this.script = script;
-            this.lang = lang;
-        }
-
-        LayoutEngineKey copy() {
-            return new LayoutEngineKey(font, script, lang);
-        }
-
-        Font2D font() {
-            return font;
-        }
-
-        int script() {
-            return script;
-        }
-
-        int lang() {
-            return lang;
-        }
-
-        public boolean equals(Object rhs) {
-            if (this == rhs) return true;
-            if (rhs == null) return false;
-            try {
-                LayoutEngineKey that = (LayoutEngineKey)rhs;
-                return this.script == that.script &&
-                       this.lang == that.lang &&
-                       this.font.equals(that.font);
-            }
-            catch (ClassCastException e) {
-                return false;
-            }
-        }
-
-        public int hashCode() {
-            return script ^ lang ^ font.hashCode();
-        }
-    }
-
-    public static interface LayoutEngineFactory {
-        /**
-         * Given a font, script, and language, determine a layout engine to use.
-         */
-        public LayoutEngine getEngine(Font2D font, int script, int lang);
-
-        /**
-         * Given a key, determine a layout engine to use.
-         */
-        public LayoutEngine getEngine(LayoutEngineKey key);
-    }
-
-    public static interface LayoutEngine {
-        /**
-         * Given a strike descriptor, text, rtl flag, and starting point, append information about
-         * glyphs, positions, and character indices to the glyphvector data, and advance the point.
-         *
-         * If the GVData does not have room for the glyphs, throws an IndexOutOfBoundsException and
-         * leave pt and the gvdata unchanged.
-         */
-        public void layout(FontStrikeDesc sd, float[] mat, float ptSize, int gmask,
-                           int baseIndex, TextRecord text, int typo_flags, Point2D.Float pt, GVData data);
-    }
-
     /**
-     * Return a new instance of GlyphLayout, using the provided layout engine factory.
-     * If null, the system layout engine factory will be used.
+     * Return a possibly recycled instance of GlyphLayout
      */
-    public static GlyphLayout get(LayoutEngineFactory lef) {
-        if (lef == null) {
-            lef = SunLayoutEngine.instance();
-        }
+    public static GlyphLayout get() {
         GlyphLayout result = null;
         synchronized(GlyphLayout.class) {
             if (cache != null) {
@@ -195,7 +113,6 @@ public final class GlyphLayout {
         if (result == null) {
             result = new GlyphLayout();
         }
-        result._lef = lef;
         return result;
     }
 
@@ -204,23 +121,16 @@ public final class GlyphLayout {
      * of GlyphLayout objects.
      */
     public static void done(GlyphLayout gl) {
-        gl._lef = null;
         cache = gl; // object reference assignment is thread safe, it says here...
     }
 
     private static final class SDCache {
-        public Font key_font;
-        public FontRenderContext key_frc;
-
         public AffineTransform dtx;
         public AffineTransform gtx;
         public Point2D.Float delta;
         public FontStrikeDesc sd;
 
         private SDCache(Font font, FontRenderContext frc) {
-            key_font = font;
-            key_frc = frc;
-
             // !!! add getVectorTransform and hasVectorTransform to frc?  then
             // we could just skip this work...
 
@@ -261,7 +171,7 @@ public final class GlyphLayout {
         private static final Point2D.Float ZERO_DELTA = new Point2D.Float();
 
         private static
-            SoftReference<ConcurrentHashMap<SDKey, SDCache>> cacheRef;
+            SoftReference<WeakHashMap<SDKey, SDCache>> cacheRef;
 
         private static final class SDKey {
             private final Font font;
@@ -316,7 +226,7 @@ public final class GlyphLayout {
             }
 
             SDKey key = new SDKey(font, frc); // garbage, yuck...
-            ConcurrentHashMap<SDKey, SDCache> cache = null;
+            WeakHashMap<SDKey, SDCache> cache = null;
             SDCache res = null;
             if (cacheRef != null) {
                 cache = cacheRef.get();
@@ -327,13 +237,17 @@ public final class GlyphLayout {
             if (res == null) {
                 res = new SDCache(font, frc);
                 if (cache == null) {
-                    cache = new ConcurrentHashMap<SDKey, SDCache>(10);
+                    cache = new WeakHashMap<SDKey, SDCache>(10);
                     cacheRef = new
-                       SoftReference<ConcurrentHashMap<SDKey, SDCache>>(cache);
-                } else if (cache.size() >= 512) {
-                    cache.clear();
+                       SoftReference<WeakHashMap<SDKey, SDCache>>(cache);
+                } else if (cache.size() >= 128) {
+                    synchronized (SDCache.class) {
+                        cache.clear();
+                    }
                 }
-                cache.put(key, res);
+                synchronized (SDCache.class) {
+                    cache.put(key, res);
+                }
             }
             return res;
         }
@@ -398,8 +312,6 @@ public final class GlyphLayout {
             }
         }
 
-        int lang = -1; // default for now
-
         Font2D font2D = FontUtilities.getFont2D(font);
         if (font2D instanceof FontSubstitution) {
             font2D = ((FontSubstitution)font2D).getCompositeFont2D();
@@ -426,7 +338,7 @@ public final class GlyphLayout {
                     }
                     int gmask = _fontRuns.getGlyphMask();
                     int pos = _fontRuns.getPos();
-                    nextEngineRecord(start, pos, script, lang, pfont, gmask);
+                    nextEngineRecord(start, pos, script, pfont, gmask);
                     start = pos;
                 }
             }
@@ -435,7 +347,7 @@ public final class GlyphLayout {
             while (_scriptRuns.next()) {
                 int limit = _scriptRuns.getScriptLimit();
                 int script = _scriptRuns.getScriptCode();
-                nextEngineRecord(start, limit, script, lang, font2D, 0);
+                nextEngineRecord(start, limit, script, font2D, 0);
                 start = limit;
             }
         }
@@ -508,7 +420,7 @@ public final class GlyphLayout {
         this._gvdata.init(capacity);
     }
 
-    private void nextEngineRecord(int start, int limit, int script, int lang, Font2D font, int gmask) {
+    private void nextEngineRecord(int start, int limit, int script, Font2D font, int gmask) {
         EngineRecord er = null;
         if (_ercount == _erecords.size()) {
             er = new EngineRecord();
@@ -516,7 +428,7 @@ public final class GlyphLayout {
         } else {
             er = _erecords.get(_ercount);
         }
-        er.init(start, limit, font, script, lang, gmask);
+        er.init(start, limit, font, script, gmask);
         ++_ercount;
     }
 
@@ -627,18 +539,18 @@ public final class GlyphLayout {
         private int limit;
         private int gmask;
         private int eflags;
-        private LayoutEngineKey key;
-        private LayoutEngine engine;
+        private Font2D font;
+        private int script;
 
         EngineRecord() {
-            key = new LayoutEngineKey();
         }
 
-        void init(int start, int limit, Font2D font, int script, int lang, int gmask) {
+        void init(int start, int limit, Font2D font, int script, int gmask) {
             this.start = start;
             this.limit = limit;
+            this.font = font;
+            this.script = script;
             this.gmask = gmask;
-            this.key.init(font, script, lang);
             this.eflags = 0;
 
             // only request canonical substitution if we have combining marks
@@ -659,14 +571,12 @@ public final class GlyphLayout {
                     break;
                 }
             }
-
-            this.engine = _lef.getEngine(key); // flags?
         }
 
         void layout() {
             _textRecord.start = start;
             _textRecord.limit = limit;
-            engine.layout(_sd, _mat, ptSize, gmask, start - _offset, _textRecord,
+            SunLayoutEngine.layout(font, script, _sd, _mat, ptSize, gmask, start - _offset, _textRecord,
                           _typo_flags | eflags, _pt, _gvdata);
         }
     }

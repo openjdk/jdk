@@ -24,10 +24,9 @@
 
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1HeapRegion.inline.hpp"
+#include "gc/g1/g1RegionToSpaceMapper.hpp"
+#include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "logging/log.hpp"
-#include "oops/oop.inline.hpp"
-#include "runtime/java.hpp"
 #include "runtime/os.hpp"
 
 size_t G1BlockOffsetTable::compute_size(size_t mem_region_words) {
@@ -52,6 +51,12 @@ void G1BlockOffsetTable::set_offset_array(Atomic<uint8_t>* addr, uint8_t offset)
   addr->store_relaxed(offset);
 }
 
+static void check_offset(size_t offset, const char* msg) {
+  assert(offset < CardTable::card_size_in_words(),
+         "%s - offset: %zu, N_words: %u",
+         msg, offset, CardTable::card_size_in_words());
+}
+
 void G1BlockOffsetTable::set_offset_array(Atomic<uint8_t>* addr, HeapWord* high, HeapWord* low) {
   assert(high >= low, "addresses out of order");
   size_t offset = pointer_delta(high, low);
@@ -68,8 +73,8 @@ void G1BlockOffsetTable::set_offset_array(Atomic<uint8_t>* left, Atomic<uint8_t>
 
 #ifdef ASSERT
 void G1BlockOffsetTable::check_address(Atomic<uint8_t>* addr, const char* msg) const {
-  Atomic<uint8_t>* start_addr = const_cast<Atomic<uint8_t>*>(_offset_base + (uintptr_t(_reserved.start()) >> CardTable::card_shift()));
-  Atomic<uint8_t>* end_addr = const_cast<Atomic<uint8_t>*>(_offset_base + (uintptr_t(_reserved.end()) >> CardTable::card_shift()));
+  Atomic<uint8_t>* start_addr = _offset_base + (uintptr_t(_reserved.start()) >> CardTable::card_shift());
+  Atomic<uint8_t>* end_addr = _offset_base + (uintptr_t(_reserved.end()) >> CardTable::card_shift());
   assert(addr >= start_addr && addr <= end_addr,
          "%s - offset address: " PTR_FORMAT ", start address: " PTR_FORMAT ", end address: " PTR_FORMAT,
          msg, (p2i(addr)), (p2i(start_addr)), (p2i(end_addr)));
