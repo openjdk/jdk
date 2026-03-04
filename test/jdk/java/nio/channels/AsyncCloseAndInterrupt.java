@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@
  * @summary Comprehensive test of asynchronous closing and interruption
  * @author Mark Reinhold
  */
+
+import jdk.test.lib.net.IPSupport;
 
 import java.io.*;
 import java.net.*;
@@ -715,7 +717,7 @@ public class AsyncCloseAndInterrupt {
     }
 
     public static void main(String[] args) throws Exception {
-
+        IPSupport.printPlatformSupport(System.out);
         wildcardAddress = new InetSocketAddress(InetAddress.getLocalHost(), 0);
         initAcceptor();
         if (!TestUtil.onWindows())
