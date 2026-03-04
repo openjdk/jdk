@@ -1051,10 +1051,6 @@ public class ShortVector64Tests extends AbstractVectorTest {
         }
     }
 
-    static short genValue(int i) {
-        return (short) i;
-    }
-
 
     static void assertArraysEquals(int[] r, short[] a, int offs) {
         int i = 0;
@@ -1096,17 +1092,17 @@ public class ShortVector64Tests extends AbstractVectorTest {
     }
 
     static final List<IntFunction<short[]>> SHORT_GENERATORS = List.of(
-            withToString("Short[-i * 5]", (int s) -> {
+            withToString("short[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> genValue(-i * 5));
+                            i -> (short)(-i * 5));
             }),
-            withToString("Short[i * 5]", (int s) -> {
+            withToString("short[i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> genValue(i * 5));
+                            i -> (short)(i * 5));
             }),
-            withToString("Short[i + 1]", (int s) -> {
+            withToString("short[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (((short)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
+                            i -> (((short)(i + 1) == 0) ? 1 : (short)(i + 1)));
             }),
             withToString("short[cornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
@@ -5510,7 +5506,7 @@ public class ShortVector64Tests extends AbstractVectorTest {
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                assertEquals(mv.laneIsSet(j), mask[j] && (lt(a[i + j],(short)((long)b[i]))));
+                assertEquals(mv.laneIsSet(j), mask[j] && (lt(a[i + j], (short)((long)b[i]))));
             }
         }
     }
@@ -5582,7 +5578,7 @@ public class ShortVector64Tests extends AbstractVectorTest {
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                assertEquals(mv.laneIsSet(j), mask[j] && (eq(a[i + j],(short)((long)b[i]))));
+                assertEquals(mv.laneIsSet(j), mask[j] && (eq(a[i + j], (short)((long)b[i]))));
             }
         }
     }

@@ -224,7 +224,8 @@ public class FloatVector256Tests extends AbstractVectorTest {
         try {
             assertEquals(rc, fa.apply(a, mask), Math.abs(rc * relativeError));
             for (; i < a.length; i += SPECIES.length()) {
-                assertEquals(r[i], f.apply(a, i, mask), Math.abs(r[i] * relativeError));
+                assertEquals(r[i], f.apply(a, i, mask), Math.abs(r[i] *
+relativeError));
             }
         } catch (AssertionError e) {
             assertEquals(rc, fa.apply(a, mask), Math.abs(rc * relativeError), "Final result is incorrect!");
@@ -1136,10 +1137,6 @@ public class FloatVector256Tests extends AbstractVectorTest {
         }
     }
 
-    static float genValue(int i) {
-        return (float) i;
-    }
-
     static int intCornerCaseValue(int i) {
         switch(i % 5) {
             case 0:
@@ -1156,19 +1153,19 @@ public class FloatVector256Tests extends AbstractVectorTest {
     }
 
     static final List<IntFunction<float[]>> INT_FLOAT_GENERATORS = List.of(
-            withToString("Float[-i * 5]", (int s) -> {
+            withToString("float[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> genValue(-i * 5));
+                            i -> (float)(-i * 5));
             }),
-            withToString("Float[i * 5]", (int s) -> {
+            withToString("float[i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> genValue(i * 5));
+                            i -> (float)(i * 5));
             }),
-            withToString("Float[i + 1]", (int s) -> {
+            withToString("float[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (((float)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
+                            i -> (((float)(i + 1) == 0) ? 1 : (float)(i + 1)));
             }),
-            withToString("Float[intCornerCaseValue(i)]", (int s) -> {
+            withToString("float[intCornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> (float)intCornerCaseValue(i));
             })
@@ -1200,26 +1197,22 @@ public class FloatVector256Tests extends AbstractVectorTest {
         }
     }
 
-    static float genValue(long i) {
-        return (float) i;
-    }
-
     static final List<IntFunction<float[]>> LONG_FLOAT_GENERATORS = List.of(
-            withToString("Float[-i * 5]", (int s) -> {
+            withToString("float[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> genValue(-i * 5));
+                            i -> (float)(-i * 5));
             }),
-            withToString("Float[i * 5]", (int s) -> {
+            withToString("float[i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> genValue(i * 5));
+                            i -> (float)(i * 5));
             }),
-            withToString("Float[i + 1]", (int s) -> {
+            withToString("float[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (((float)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
+                            i -> (((float)(i + 1) == 0) ? 1 : (float)(i + 1)));
             }),
-            withToString("Float[cornerCaseValue(i)]", (int s) -> {
+            withToString("float[cornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (float)genValue(longCornerCaseValue(i)));
+                            i -> (float)longCornerCaseValue(i));
             })
     );
 
@@ -1247,29 +1240,29 @@ public class FloatVector256Tests extends AbstractVectorTest {
     }
 
     static int bits(float e) {
-        return Float.floatToIntBits(e);
+        return  Float.floatToIntBits(e);
     }
 
     static final List<IntFunction<float[]>> FLOAT_GENERATORS = List.of(
-            withToString("Float[-i * 5]", (int s) -> {
+            withToString("float[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> genValue(-i * 5));
+                            i -> (float)(-i * 5));
             }),
-            withToString("Float[i * 5]", (int s) -> {
+            withToString("float[i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> genValue(i * 5));
+                            i -> (float)(i * 5));
             }),
-            withToString("Float[i + 1]", (int s) -> {
+            withToString("float[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (((float)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
+                            i -> (((float)(i + 1) == 0) ? 1 : (float)(i + 1)));
             }),
             withToString("float[0.01 + (i / (i + 1))]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> ((float)0.01 + ((float)i / (i + 1))));
+                            i -> (float)0.01 + ((float)i / (i + 1)));
             }),
             withToString("float[i -> i % 17 == 0 ? cornerCaseValue(i) : 0.01 + (i / (i + 1))]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (i % 17 == 0) ? cornerCaseValue(i) : ((float)0.01 + ((float)i / (i + 1))));
+                            i -> i % 17 == 0 ? cornerCaseValue(i) : (float)0.01 + ((float)i / (i + 1)));
             }),
             withToString("float[cornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
@@ -3740,7 +3733,7 @@ public class FloatVector256Tests extends AbstractVectorTest {
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                assertEquals(mv.laneIsSet(j), mask[j] && (lt(a[i + j],(float)((long)b[i]))));
+                assertEquals(mv.laneIsSet(j), mask[j] && (lt(a[i + j], (float)((long)b[i]))));
             }
         }
     }
@@ -3812,7 +3805,7 @@ public class FloatVector256Tests extends AbstractVectorTest {
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                assertEquals(mv.laneIsSet(j), mask[j] && (eq(a[i + j],(float)((long)b[i]))));
+                assertEquals(mv.laneIsSet(j), mask[j] && (eq(a[i + j], (float)((long)b[i]))));
             }
         }
     }

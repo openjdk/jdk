@@ -303,21 +303,39 @@ public class $vectorteststype$ extends AbstractVectorTest {
 #end[FP]
     }
 #if[FP]
+#if[FP16]
 
     static void assertReductionArraysEquals($type$[] r, $type$ rc, $type$[] a,
                                             FReductionOp f, FReductionAllOp fa,
                                             $type$ relativeErrorFactor) {
         int i = 0;
         try {
-            assertEquals(rc, fa.apply(a), {#if[FP16]?float16ToRawShortBits(Float16.multiply(Float16.ulp(shortBitsToFloat16(rc)), shortBitsToFloat16(relativeErrorFactor))):Math.ulp(rc) * relativeErrorFactor});
+            assertEquals(rc, fa.apply(a), float16ToRawShortBits(Float16.multiply(Float16.ulp(shortBitsToFloat16(rc)), shortBitsToFloat16(relativeErrorFactor))));
             for (; i < a.length; i += SPECIES.length()) {
-                assertEquals(r[i], f.apply(a, i), {#if[FP16]?float16ToRawShortBits(Float16.multiply(Float16.ulp(shortBitsToFloat16(r[i])), shortBitsToFloat16(relativeErrorFactor))):Math.ulp(r[i]) * relativeErrorFactor});
+                assertEquals(r[i], f.apply(a, i), float16ToRawShortBits(Float16.multiply(Float16.ulp(shortBitsToFloat16(r[i])), shortBitsToFloat16(relativeErrorFactor))));
             }
         } catch (AssertionError e) {
-            assertEquals(rc, fa.apply(a), {#if[FP16]?float16ToRawShortBits(Float16.multiply(Float16.ulp(shortBitsToFloat16(rc)), shortBitsToFloat16(relativeErrorFactor))):Math.ulp(rc) * relativeErrorFactor}, "Final result is incorrect!");
-            assertEquals(r[i], f.apply(a, i), {#if[FP16]?float16ToRawShortBits(Float16.multiply(Float16.ulp(shortBitsToFloat16(r[i])), shortBitsToFloat16(relativeErrorFactor))):Math.ulp(r[i]) * relativeErrorFactor}, "at index #" + i);
+            assertEquals(rc, fa.apply(a), float16ToRawShortBits(Float16.multiply(Float16.ulp(shortBitsToFloat16(rc)), shortBitsToFloat16(relativeErrorFactor))), "Final result is incorrect!");
+            assertEquals(r[i], f.apply(a, i), float16ToRawShortBits(Float16.multiply(Float16.ulp(shortBitsToFloat16(r[i])), shortBitsToFloat16(relativeErrorFactor))), "at index #" + i);
         }
     }
+#else[FP16]
+
+    static void assertReductionArraysEquals($type$[] r, $type$ rc, $type$[] a,
+                                            FReductionOp f, FReductionAllOp fa,
+                                            $type$ relativeErrorFactor) {
+        int i = 0;
+        try {
+            assertEquals(rc, fa.apply(a), Math.ulp(rc) * relativeErrorFactor);
+            for (; i < a.length; i += SPECIES.length()) {
+                assertEquals(r[i], f.apply(a, i), Math.ulp(r[i]) * relativeErrorFactor);
+            }
+        } catch (AssertionError e) {
+            assertEquals(rc, fa.apply(a), Math.ulp(rc) * relativeErrorFactor, "Final result is incorrect!");
+            assertEquals(r[i], f.apply(a, i), Math.ulp(r[i]) * relativeErrorFactor, "at index #" + i);
+        }
+    }
+#end[FP16]
 #end[FP]
 
     interface FReductionMaskedOp {
@@ -346,21 +364,40 @@ public class $vectorteststype$ extends AbstractVectorTest {
 #end[FP]
     }
 #if[FP]
+#if[FP16]
 
     static void assertReductionArraysEqualsMasked($type$[] r, $type$ rc, $type$[] a, boolean[] mask,
                                             FReductionMaskedOp f, FReductionAllMaskedOp fa,
                                             $type$ relativeError) {
         int i = 0;
         try {
-            assertEquals(rc, fa.apply(a, mask), {#if[FP16]?float16ToRawShortBits(Float16.abs(Float16.multiply(shortBitsToFloat16(rc), shortBitsToFloat16(relativeError)))):Math.abs(rc * relativeError)});
+            assertEquals(rc, fa.apply(a, mask), float16ToRawShortBits(Float16.abs(Float16.multiply(shortBitsToFloat16(rc), shortBitsToFloat16(relativeError)))));
             for (; i < a.length; i += SPECIES.length()) {
-                assertEquals(r[i], f.apply(a, i, mask), {#if[FP16]?float16ToRawShortBits(Float16.abs(Float16.multiply(shortBitsToFloat16(r[i]), shortBitsToFloat16(relativeError)))):Math.abs(r[i] * relativeError)});
+                assertEquals(r[i], f.apply(a, i, mask), float16ToRawShortBits(Float16.abs(Float16.multiply(shortBitsToFloat16(r[i]), shortBitsToFloat16(relativeError)))));
             }
         } catch (AssertionError e) {
-            assertEquals(rc, fa.apply(a, mask), {#if[FP16]?float16ToRawShortBits(Float16.abs(Float16.multiply(shortBitsToFloat16(rc), shortBitsToFloat16(relativeError)))):Math.abs(rc * relativeError)}, "Final result is incorrect!");
-            assertEquals(r[i], f.apply(a, i, mask), {#if[FP16]?float16ToRawShortBits(Float16.abs(Float16.multiply(shortBitsToFloat16(r[i]), shortBitsToFloat16(relativeError)))):Math.abs(r[i] * relativeError)}, "at index #" + i);
+            assertEquals(rc, fa.apply(a, mask), float16ToRawShortBits(Float16.abs(Float16.multiply(shortBitsToFloat16(rc), shortBitsToFloat16(relativeError)))), "Final result is incorrect!");
+            assertEquals(r[i], f.apply(a, i, mask), float16ToRawShortBits(Float16.abs(Float16.multiply(shortBitsToFloat16(r[i]), shortBitsToFloat16(relativeError)))), "at index #" + i);
         }
     }
+#else[FP16]
+
+    static void assertReductionArraysEqualsMasked($type$[] r, $type$ rc, $type$[] a, boolean[] mask,
+                                            FReductionMaskedOp f, FReductionAllMaskedOp fa,
+                                            $type$ relativeError) {
+        int i = 0;
+        try {
+            assertEquals(rc, fa.apply(a, mask), Math.abs(rc * relativeError));
+            for (; i < a.length; i += SPECIES.length()) {
+                assertEquals(r[i], f.apply(a, i, mask), Math.abs(r[i] *
+relativeError));
+            }
+        } catch (AssertionError e) {
+            assertEquals(rc, fa.apply(a, mask), Math.abs(rc * relativeError), "Final result is incorrect!");
+            assertEquals(r[i], f.apply(a, i, mask), Math.abs(r[i] * relativeError), "at index #" + i);
+        }
+    }
+#end[FP16]
 #end[FP]
 
 #if[!Long]
@@ -1292,14 +1329,6 @@ public class $vectorteststype$ extends AbstractVectorTest {
         }
     }
 
-    static $type$ genValue(int i) {
-#if[FP16]
-        return float16ToRawShortBits(Float16.valueOf(i));
-#else[FP16]
-        return ($type$) i;
-#end[FP16]
-    }
-
 #if[!Int]
 #if[!byteOrShort]
 #if[!FP16]
@@ -1319,26 +1348,45 @@ public class $vectorteststype$ extends AbstractVectorTest {
     }
 #end[!FP16]
 
+#if[FP16]
+    static $type$ convToFloat16(int i) {
+        return float16ToRawShortBits(Float16.valueOf(i));
+    }
+
     static final List<IntFunction<$type$[]>> INT_$TYPE$_GENERATORS = List.of(
-            withToString("$Wideboxtype$[-i * 5]", (int s) -> {
+            withToString("float16[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> genValue(-i * 5));
+                            i -> convToFloat16(-i * 5));
             }),
-            withToString("$Wideboxtype$[i * 5]", (int s) -> {
+            withToString("float16[i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> genValue(i * 5));
+                            i -> convToFloat16(i * 5));
             }),
-            withToString("$Wideboxtype$[i + 1]", (int s) -> {
+            withToString("float16[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> ((($type$)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
-#if[!FP16]
-            }),
-            withToString("$Wideboxtype$[intCornerCaseValue(i)]", (int s) -> {
-                return fill(s * BUFFER_REPS,
-                            i -> ($type$)intCornerCaseValue(i));
-#end[!FP16]
+                            i -> ((($type$)(i + 1) == 0) ? convToFloat16(1) : convToFloat16(i + 1)));
             })
     );
+#else[FP16]
+    static final List<IntFunction<$type$[]>> INT_$TYPE$_GENERATORS = List.of(
+            withToString("$type$[-i * 5]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)(-i * 5));
+            }),
+            withToString("$type$[i * 5]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)(i * 5));
+            }),
+            withToString("$type$[i + 1]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ((($type$)(i + 1) == 0) ? 1 : ($type$)(i + 1)));
+            }),
+            withToString("$type$[intCornerCaseValue(i)]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)intCornerCaseValue(i));
+            })
+    );
+#end[FP16]
 #end[!byteOrShort]
 #end[!Int]
 
@@ -1376,34 +1424,45 @@ public class $vectorteststype$ extends AbstractVectorTest {
     }
 #end[!FP16]
 
-    static $type$ genValue(long i) {
 #if[FP16]
+    static $type$ convToFloat16(long i) {
         return float16ToRawShortBits(Float16.valueOf(i));
-#else[FP16]
-        return ($type$) i;
-#end[FP16]
     }
 
     static final List<IntFunction<$type$[]>> LONG_$TYPE$_GENERATORS = List.of(
-            withToString("$Wideboxtype$[-i * 5]", (int s) -> {
+            withToString("float16[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> genValue(-i * 5));
+                            i -> convToFloat16(-i * 5));
             }),
-            withToString("$Wideboxtype$[i * 5]", (int s) -> {
+            withToString("float16[i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> genValue(i * 5));
+                            i -> convToFloat16(i * 5));
             }),
-            withToString("$Wideboxtype$[i + 1]", (int s) -> {
+            withToString("float16[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> ((($type$)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
-#if[!FP16]
-            }),
-            withToString("$Wideboxtype$[cornerCaseValue(i)]", (int s) -> {
-                return fill(s * BUFFER_REPS,
-                            i -> ($type$)genValue(longCornerCaseValue(i)));
-#end[!FP16]
+                            i -> ((($type$)(i + 1) == 0) ? convToFloat16(1) : convToFloat16(i + 1)));
             })
     );
+#else[FP16]
+    static final List<IntFunction<$type$[]>> LONG_$TYPE$_GENERATORS = List.of(
+            withToString("$type$[-i * 5]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)(-i * 5));
+            }),
+            withToString("$type$[i * 5]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)(i * 5));
+            }),
+            withToString("$type$[i + 1]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ((($type$)(i + 1) == 0) ? 1 : ($type$)(i + 1)));
+            }),
+            withToString("$type$[cornerCaseValue(i)]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)longCornerCaseValue(i));
+            })
+    );
+#end[FP16]
 #end[FP]
 #end[!Long]
 
@@ -1452,53 +1511,71 @@ public class $vectorteststype$ extends AbstractVectorTest {
     }
 #end[!Double]
 
-    static $bitstype$ bits($type$ e) {
 #if[FP16]
+    static $bitstype$ bits($type$ e) {
         return e;
-#else[FP16]
-        return {#if[FP]?$Wideboxtype$.$type$To$Bitstype$Bits(e): e};
-#end[FP16]
     }
 
     static final List<IntFunction<$type$[]>> $TYPE$_GENERATORS = List.of(
-            withToString("$Wideboxtype$[-i * 5]", (int s) -> {
+            withToString("float16[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> genValue(-i * 5));
+                            i -> convToFloat16(-i * 5));
             }),
-            withToString("$Wideboxtype$[i * 5]", (int s) -> {
+            withToString("float16[i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> genValue(i * 5));
+                            i -> convToFloat16(i * 5));
             }),
-            withToString("$Wideboxtype$[i + 1]", (int s) -> {
+            withToString("float16[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> ((($type$)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
+                            i -> ((($type$)(i + 1) == 0) ? convToFloat16(1) : convToFloat16(i + 1)));
             }),
-#if[FP]
-#if[FP16]
-            withToString("$Wideboxtype$[0.01 + (i / (i + 1))]", (int s) -> {
+            withToString("float16[0.01 + (i / (i + 1))]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> Float.floatToFloat16((0.01f + ((float)i / (i + 1)))));
             }),
-            withToString("$Wideboxtype$[i -> i % 17 == 0 ? cornerCaseValue(i) : 0.01f + (i / (i + 1))]", (int s) -> {
+            withToString("float16[i -> i % 17 == 0 ? cornerCaseValue(i) : 0.01f + (i / (i + 1))]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> (i % 17 == 0) ? cornerCaseValue(i) : Float.floatToFloat16((0.01f + ((float)i / (i + 1)))));
             }),
+            withToString("float16[cornerCaseValue(i)]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> cornerCaseValue(i));
+            })
+    );
 #else[FP16]
+    static $bitstype$ bits($type$ e) {
+        return  {#if[FP]?$Wideboxtype$.$type$To$Bitstype$Bits(e):e};
+    }
+
+    static final List<IntFunction<$type$[]>> $TYPE$_GENERATORS = List.of(
+            withToString("$type$[-i * 5]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)(-i * 5));
+            }),
+            withToString("$type$[i * 5]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)(i * 5));
+            }),
+            withToString("$type$[i + 1]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ((($type$)(i + 1) == 0) ? 1 : ($type$)(i + 1)));
+            }),
+#if[FP]
             withToString("$type$[0.01 + (i / (i + 1))]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (($type$)0.01 + (($type$)i / (i + 1))));
+                            i -> ($type$)0.01 + (($type$)i / (i + 1)));
             }),
             withToString("$type$[i -> i % 17 == 0 ? cornerCaseValue(i) : 0.01 + (i / (i + 1))]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (i % 17 == 0) ? cornerCaseValue(i) : (($type$)0.01 + (($type$)i / (i + 1))));
+                            i -> i % 17 == 0 ? cornerCaseValue(i) : ($type$)0.01 + (($type$)i / (i + 1)));
             }),
-#end[FP16]
 #end[FP]
             withToString("$type$[cornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> cornerCaseValue(i));
             })
     );
+#end[FP16]
 
 #if[!FP]
     static final List<IntFunction<$type$[]>> $TYPE$_SATURATING_GENERATORS = List.of(

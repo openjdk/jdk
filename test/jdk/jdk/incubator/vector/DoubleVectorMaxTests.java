@@ -224,7 +224,8 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
         try {
             assertEquals(rc, fa.apply(a, mask), Math.abs(rc * relativeError));
             for (; i < a.length; i += SPECIES.length()) {
-                assertEquals(r[i], f.apply(a, i, mask), Math.abs(r[i] * relativeError));
+                assertEquals(r[i], f.apply(a, i, mask), Math.abs(r[i] *
+relativeError));
             }
         } catch (AssertionError e) {
             assertEquals(rc, fa.apply(a, mask), Math.abs(rc * relativeError), "Final result is incorrect!");
@@ -1136,10 +1137,6 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
         }
     }
 
-    static double genValue(int i) {
-        return (double) i;
-    }
-
     static int intCornerCaseValue(int i) {
         switch(i % 5) {
             case 0:
@@ -1156,19 +1153,19 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
     }
 
     static final List<IntFunction<double[]>> INT_DOUBLE_GENERATORS = List.of(
-            withToString("Double[-i * 5]", (int s) -> {
+            withToString("double[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> genValue(-i * 5));
+                            i -> (double)(-i * 5));
             }),
-            withToString("Double[i * 5]", (int s) -> {
+            withToString("double[i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> genValue(i * 5));
+                            i -> (double)(i * 5));
             }),
-            withToString("Double[i + 1]", (int s) -> {
+            withToString("double[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (((double)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
+                            i -> (((double)(i + 1) == 0) ? 1 : (double)(i + 1)));
             }),
-            withToString("Double[intCornerCaseValue(i)]", (int s) -> {
+            withToString("double[intCornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> (double)intCornerCaseValue(i));
             })
@@ -1200,26 +1197,22 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
         }
     }
 
-    static double genValue(long i) {
-        return (double) i;
-    }
-
     static final List<IntFunction<double[]>> LONG_DOUBLE_GENERATORS = List.of(
-            withToString("Double[-i * 5]", (int s) -> {
+            withToString("double[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> genValue(-i * 5));
+                            i -> (double)(-i * 5));
             }),
-            withToString("Double[i * 5]", (int s) -> {
+            withToString("double[i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> genValue(i * 5));
+                            i -> (double)(i * 5));
             }),
-            withToString("Double[i + 1]", (int s) -> {
+            withToString("double[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (((double)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
+                            i -> (((double)(i + 1) == 0) ? 1 : (double)(i + 1)));
             }),
-            withToString("Double[cornerCaseValue(i)]", (int s) -> {
+            withToString("double[cornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (double)genValue(longCornerCaseValue(i)));
+                            i -> (double)longCornerCaseValue(i));
             })
     );
 
@@ -1236,29 +1229,29 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
     }
 
     static long bits(double e) {
-        return Double.doubleToLongBits(e);
+        return  Double.doubleToLongBits(e);
     }
 
     static final List<IntFunction<double[]>> DOUBLE_GENERATORS = List.of(
-            withToString("Double[-i * 5]", (int s) -> {
+            withToString("double[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> genValue(-i * 5));
+                            i -> (double)(-i * 5));
             }),
-            withToString("Double[i * 5]", (int s) -> {
+            withToString("double[i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> genValue(i * 5));
+                            i -> (double)(i * 5));
             }),
-            withToString("Double[i + 1]", (int s) -> {
+            withToString("double[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (((double)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
+                            i -> (((double)(i + 1) == 0) ? 1 : (double)(i + 1)));
             }),
             withToString("double[0.01 + (i / (i + 1))]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> ((double)0.01 + ((double)i / (i + 1))));
+                            i -> (double)0.01 + ((double)i / (i + 1)));
             }),
             withToString("double[i -> i % 17 == 0 ? cornerCaseValue(i) : 0.01 + (i / (i + 1))]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (i % 17 == 0) ? cornerCaseValue(i) : ((double)0.01 + ((double)i / (i + 1))));
+                            i -> i % 17 == 0 ? cornerCaseValue(i) : (double)0.01 + ((double)i / (i + 1)));
             }),
             withToString("double[cornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
@@ -3729,7 +3722,7 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                assertEquals(mv.laneIsSet(j), mask[j] && (lt(a[i + j],(double)((long)b[i]))));
+                assertEquals(mv.laneIsSet(j), mask[j] && (lt(a[i + j], (double)((long)b[i]))));
             }
         }
     }
@@ -3801,7 +3794,7 @@ public class DoubleVectorMaxTests extends AbstractVectorTest {
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                assertEquals(mv.laneIsSet(j), mask[j] && (eq(a[i + j],(double)((long)b[i]))));
+                assertEquals(mv.laneIsSet(j), mask[j] && (eq(a[i + j], (double)((long)b[i]))));
             }
         }
     }

@@ -766,7 +766,7 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
     @ForceInline
     final
     Float16Vector unaryMathOp(VectorOperators.Unary op) {
-        return VectorMathLibrary.unaryMathOp(op, opCode(op), species(), Float16Vector::unaryOperations,
+        return VectorMathLibrary.unaryMathOp(op, opCode(op), vspecies(), Float16Vector::unaryOperations,
                                              this);
     }
 
@@ -893,7 +893,7 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
     @ForceInline
     final
     Float16Vector binaryMathOp(VectorOperators.Binary op, Float16Vector that) {
-        return VectorMathLibrary.binaryMathOp(op, opCode(op), species(), Float16Vector::binaryOperations,
+        return VectorMathLibrary.binaryMathOp(op, opCode(op), vspecies(), Float16Vector::binaryOperations,
                                               this, that);
     }
 

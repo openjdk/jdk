@@ -1057,10 +1057,6 @@ public class IntVectorMaxTests extends AbstractVectorTest {
         }
     }
 
-    static int genValue(int i) {
-        return (int) i;
-    }
-
 
     static void assertArraysEquals(int[] r, int[] a, int offs) {
         int i = 0;
@@ -1102,17 +1098,17 @@ public class IntVectorMaxTests extends AbstractVectorTest {
     }
 
     static final List<IntFunction<int[]>> INT_GENERATORS = List.of(
-            withToString("Integer[-i * 5]", (int s) -> {
+            withToString("int[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> genValue(-i * 5));
+                            i -> (int)(-i * 5));
             }),
-            withToString("Integer[i * 5]", (int s) -> {
+            withToString("int[i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> genValue(i * 5));
+                            i -> (int)(i * 5));
             }),
-            withToString("Integer[i + 1]", (int s) -> {
+            withToString("int[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (((int)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
+                            i -> (((int)(i + 1) == 0) ? 1 : (int)(i + 1)));
             }),
             withToString("int[cornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
@@ -5564,7 +5560,7 @@ public class IntVectorMaxTests extends AbstractVectorTest {
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                assertEquals(mv.laneIsSet(j), mask[j] && (lt(a[i + j],(int)((long)b[i]))));
+                assertEquals(mv.laneIsSet(j), mask[j] && (lt(a[i + j], (int)((long)b[i]))));
             }
         }
     }
@@ -5636,7 +5632,7 @@ public class IntVectorMaxTests extends AbstractVectorTest {
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                assertEquals(mv.laneIsSet(j), mask[j] && (eq(a[i + j],(int)((long)b[i]))));
+                assertEquals(mv.laneIsSet(j), mask[j] && (eq(a[i + j], (int)((long)b[i]))));
             }
         }
     }

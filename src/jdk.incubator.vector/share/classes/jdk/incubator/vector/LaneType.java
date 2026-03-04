@@ -176,14 +176,14 @@ enum LaneType {
     // don't optimize properly; see JDK-8161245
 
     static final int
-        SK_FLOAT     = 1,
-        SK_DOUBLE    = 2,
-        SK_BYTE      = 3,
-        SK_SHORT     = 4,
-        SK_INT       = 5,
-        SK_LONG      = 6,
-        SK_FLOAT16   = 7,
-        SK_LIMIT     = 8;
+        SK_FLOAT    = 1,
+        SK_DOUBLE   = 2,
+        SK_BYTE     = 3,
+        SK_SHORT    = 4,
+        SK_INT      = 5,
+        SK_LONG     = 6,
+        SK_FLOAT16  = 7,
+        SK_LIMIT    = 8;
 
     /*package-private*/
     @ForceInline

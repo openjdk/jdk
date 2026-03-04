@@ -1008,10 +1008,6 @@ public class LongVectorMaxTests extends AbstractVectorTest {
         }
     }
 
-    static long genValue(int i) {
-        return (long) i;
-    }
-
     static int intCornerCaseValue(int i) {
         switch(i % 5) {
             case 0:
@@ -1028,19 +1024,19 @@ public class LongVectorMaxTests extends AbstractVectorTest {
     }
 
     static final List<IntFunction<long[]>> INT_LONG_GENERATORS = List.of(
-            withToString("Long[-i * 5]", (int s) -> {
+            withToString("long[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> genValue(-i * 5));
+                            i -> (long)(-i * 5));
             }),
-            withToString("Long[i * 5]", (int s) -> {
+            withToString("long[i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> genValue(i * 5));
+                            i -> (long)(i * 5));
             }),
-            withToString("Long[i + 1]", (int s) -> {
+            withToString("long[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (((long)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
+                            i -> (((long)(i + 1) == 0) ? 1 : (long)(i + 1)));
             }),
-            withToString("Long[intCornerCaseValue(i)]", (int s) -> {
+            withToString("long[intCornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> (long)intCornerCaseValue(i));
             })
@@ -1086,17 +1082,17 @@ public class LongVectorMaxTests extends AbstractVectorTest {
     }
 
     static final List<IntFunction<long[]>> LONG_GENERATORS = List.of(
-            withToString("Long[-i * 5]", (int s) -> {
+            withToString("long[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> genValue(-i * 5));
+                            i -> (long)(-i * 5));
             }),
-            withToString("Long[i * 5]", (int s) -> {
+            withToString("long[i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> genValue(i * 5));
+                            i -> (long)(i * 5));
             }),
-            withToString("Long[i + 1]", (int s) -> {
+            withToString("long[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (((long)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
+                            i -> (((long)(i + 1) == 0) ? 1 : (long)(i + 1)));
             }),
             withToString("long[cornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,

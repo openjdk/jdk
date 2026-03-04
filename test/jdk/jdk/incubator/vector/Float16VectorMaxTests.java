@@ -1152,23 +1152,23 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
         }
     }
 
-    static short genValue(int i) {
+
+    static short convToFloat16(int i) {
         return float16ToRawShortBits(Float16.valueOf(i));
     }
 
-
     static final List<IntFunction<short[]>> INT_FLOAT16_GENERATORS = List.of(
-            withToString("Float16[-i * 5]", (int s) -> {
+            withToString("float16[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> genValue(-i * 5));
+                            i -> convToFloat16(-i * 5));
             }),
-            withToString("Float16[i * 5]", (int s) -> {
+            withToString("float16[i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> genValue(i * 5));
+                            i -> convToFloat16(i * 5));
             }),
-            withToString("Float16[i + 1]", (int s) -> {
+            withToString("float16[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (((short)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
+                            i -> (((short)(i + 1) == 0) ? convToFloat16(1) : convToFloat16(i + 1)));
             })
     );
 
@@ -1184,22 +1184,22 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
     }
 
 
-    static short genValue(long i) {
+    static short convToFloat16(long i) {
         return float16ToRawShortBits(Float16.valueOf(i));
     }
 
     static final List<IntFunction<short[]>> LONG_FLOAT16_GENERATORS = List.of(
-            withToString("Float16[-i * 5]", (int s) -> {
+            withToString("float16[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> genValue(-i * 5));
+                            i -> convToFloat16(-i * 5));
             }),
-            withToString("Float16[i * 5]", (int s) -> {
+            withToString("float16[i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> genValue(i * 5));
+                            i -> convToFloat16(i * 5));
             }),
-            withToString("Float16[i + 1]", (int s) -> {
+            withToString("float16[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (((short)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
+                            i -> (((short)(i + 1) == 0) ? convToFloat16(1) : convToFloat16(i + 1)));
             })
     );
 
@@ -1231,27 +1231,27 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
     }
 
     static final List<IntFunction<short[]>> FLOAT16_GENERATORS = List.of(
-            withToString("Float16[-i * 5]", (int s) -> {
+            withToString("float16[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> genValue(-i * 5));
+                            i -> convToFloat16(-i * 5));
             }),
-            withToString("Float16[i * 5]", (int s) -> {
+            withToString("float16[i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> genValue(i * 5));
+                            i -> convToFloat16(i * 5));
             }),
-            withToString("Float16[i + 1]", (int s) -> {
+            withToString("float16[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (((short)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
+                            i -> (((short)(i + 1) == 0) ? convToFloat16(1) : convToFloat16(i + 1)));
             }),
-            withToString("Float16[0.01 + (i / (i + 1))]", (int s) -> {
+            withToString("float16[0.01 + (i / (i + 1))]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> Float.floatToFloat16((0.01f + ((float)i / (i + 1)))));
             }),
-            withToString("Float16[i -> i % 17 == 0 ? cornerCaseValue(i) : 0.01f + (i / (i + 1))]", (int s) -> {
+            withToString("float16[i -> i % 17 == 0 ? cornerCaseValue(i) : 0.01f + (i / (i + 1))]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> (i % 17 == 0) ? cornerCaseValue(i) : Float.floatToFloat16((0.01f + ((float)i / (i + 1)))));
             }),
-            withToString("short[cornerCaseValue(i)]", (int s) -> {
+            withToString("float16[cornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> cornerCaseValue(i));
             })
@@ -3757,7 +3757,7 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                assertEquals(mv.laneIsSet(j), mask[j] && (lt(a[i + j],float16ToRawShortBits(Float16.valueOf(shortBitsToFloat16(b[i]).longValue())))));
+                assertEquals(mv.laneIsSet(j), mask[j] && (lt(a[i + j], float16ToRawShortBits(Float16.valueOf(shortBitsToFloat16(b[i]).longValue())))));
             }
         }
     }
@@ -3829,7 +3829,7 @@ public class Float16VectorMaxTests extends AbstractVectorTest {
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                assertEquals(mv.laneIsSet(j), mask[j] && (eq(a[i + j],float16ToRawShortBits(Float16.valueOf(shortBitsToFloat16(b[i]).longValue())))));
+                assertEquals(mv.laneIsSet(j), mask[j] && (eq(a[i + j], float16ToRawShortBits(Float16.valueOf(shortBitsToFloat16(b[i]).longValue())))));
             }
         }
     }
