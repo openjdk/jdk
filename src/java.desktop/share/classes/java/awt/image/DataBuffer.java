@@ -542,6 +542,9 @@ public abstract class DataBuffer {
     }
 
     final void checkIndex(int i) {
+        if (i < 0) {
+            throw new ArrayIndexOutOfBoundsException("Index cannot be negative : " + i);
+        }
         if ((i + offset) >= size) {
             throw new ArrayIndexOutOfBoundsException("Invalid index (offset+i) is " +
                 "(" + offset + " + " + i + ") which is too large for size : " + size);
@@ -549,6 +552,9 @@ public abstract class DataBuffer {
     }
 
     final void checkIndex(int bank, int i) {
+        if (i < 0) {
+            throw new ArrayIndexOutOfBoundsException("Index cannot be negative : " + i);
+        }
         if ((i + offsets[bank]) >= size) {
             throw new ArrayIndexOutOfBoundsException("Invalid index (bankOffset+i) is " +
                 "(" + offsets[bank] + " + " + i + ") which is too large for size : " + size);
