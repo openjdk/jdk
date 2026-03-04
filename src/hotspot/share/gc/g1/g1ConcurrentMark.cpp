@@ -898,9 +898,26 @@ public:
 };
 
 class G1PreConcurrentStartTask::NoteStartOfMarkTask : public G1AbstractSubTask {
+
+  class NoteStartOfMarkHRClosure : public G1HeapRegionClosure {
+    G1ConcurrentMark* _cm;
+
+  public:
+    NoteStartOfMarkHRClosure() : G1HeapRegionClosure(), _cm(G1CollectedHeap::heap()->concurrent_mark()) { }
+
+    bool do_heap_region(G1HeapRegion* r) override {
+      if (r->is_old_or_humongous() && !r->is_collection_set_candidate() && !r->in_collection_set()) {
+        _cm->update_top_at_mark_start(r);
+      } else {
+        _cm->reset_top_at_mark_start(r);
+      }
+      return false;
+    }
+  } _region_cl;
+
   G1HeapRegionClaimer _claimer;
 public:
-  NoteStartOfMarkTask() : G1AbstractSubTask(G1GCPhaseTimes::NoteStartOfMark), _claimer(0) { }
+  NoteStartOfMarkTask() : G1AbstractSubTask(G1GCPhaseTimes::NoteStartOfMark), _region_cl(), _claimer(0) { }
 
   double worker_cost() const override {
     // The work done per region is very small, therefore we choose this magic number to cap the number
@@ -909,38 +926,18 @@ public:
     return _claimer.n_regions() / regions_per_thread;
   }
 
-  void set_max_workers(uint max_workers) override;
-  void do_work(uint worker_id) override;
+  void set_max_workers(uint max_workers) override {
+    _claimer.set_n_workers(max_workers);
+  }
+
+  void do_work(uint worker_id) override {
+    G1CollectedHeap::heap()->heap_region_par_iterate_from_worker_offset(&_region_cl, &_claimer, worker_id);
+  }
 };
 
 void G1PreConcurrentStartTask::ResetMarkingStateTask::do_work(uint worker_id) {
   // Reset marking state.
   _cm->reset();
-}
-
-class NoteStartOfMarkHRClosure : public G1HeapRegionClosure {
-  G1ConcurrentMark* _cm;
-
-public:
-  NoteStartOfMarkHRClosure() : G1HeapRegionClosure(), _cm(G1CollectedHeap::heap()->concurrent_mark()) { }
-
-  bool do_heap_region(G1HeapRegion* r) override {
-    if (r->is_old_or_humongous() && !r->is_collection_set_candidate() && !r->in_collection_set()) {
-      _cm->update_top_at_mark_start(r);
-    } else {
-      _cm->reset_top_at_mark_start(r);
-    }
-    return false;
-  }
-};
-
-void G1PreConcurrentStartTask::NoteStartOfMarkTask::do_work(uint worker_id) {
-  NoteStartOfMarkHRClosure start_cl;
-  G1CollectedHeap::heap()->heap_region_par_iterate_from_worker_offset(&start_cl, &_claimer, worker_id);
-}
-
-void G1PreConcurrentStartTask::NoteStartOfMarkTask::set_max_workers(uint max_workers) {
-  _claimer.set_n_workers(max_workers);
 }
 
 G1PreConcurrentStartTask::G1PreConcurrentStartTask(GCCause::Cause cause, G1ConcurrentMark* cm) :
@@ -961,7 +958,6 @@ void G1ConcurrentMark::pre_concurrent_start(GCCause::Cause cause) {
 
   _gc_tracer_cm->set_gc_cause(cause);
 }
-
 
 void G1ConcurrentMark::post_concurrent_mark_start() {
   // Start Concurrent Marking weak-reference discovery.
