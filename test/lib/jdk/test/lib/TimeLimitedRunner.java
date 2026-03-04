@@ -59,7 +59,7 @@ public class TimeLimitedRunner implements Callable<Void> {
     }
 
     /**
-     * Runs @{linkplan target} while it returns true and timeout isn't exceeded
+     * Runs {@linkplain #target} while it returns true and timeout isn't exceeded
      */
     @Override
     public Void call() throws Exception {
