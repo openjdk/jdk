@@ -65,8 +65,8 @@ import jdk.test.lib.net.SimpleSSLContext;
 
 import static java.net.http.HttpClient.Version.HTTP_2;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class SimpleGet implements HttpServerAdapters {
     static HttpTestServer httpsServer;
@@ -133,7 +133,7 @@ public class SimpleGet implements HttpServerAdapters {
                     .GET().build();
             long start = System.nanoTime();
             var resp = client.send(request, BodyHandlers.ofByteArrayConsumer(b -> {}));
-            Assertions.assertEquals(200, resp.statusCode());
+            assertEquals(200, resp.statusCode());
             long elapsed = System.nanoTime() - start;
             System.out.println("Stat: First request took: " + elapsed + " nanos (" + TimeUnit.NANOSECONDS.toMillis(elapsed) + " ms)");
             final int max = property("simpleget.requests", 50);
@@ -164,7 +164,7 @@ public class SimpleGet implements HttpServerAdapters {
                             + connections.size() + " connections");
                 }
             }
-            list.forEach((cf) -> Assertions.assertEquals(200, cf.join().statusCode()));
+            list.forEach((cf) -> assertEquals(200, cf.join().statusCode()));
         } catch (Throwable tt) {
             System.err.println("tt caught");
             tt.printStackTrace();
