@@ -813,9 +813,9 @@ public sealed interface Linker permits AbstractLinker {
         }
 
         /**
-         * {@return a linker option used to save portions of the execution state
-         *          immediately after calling a foreign function associated with a
-         *          downcall method handle, before it can be overwritten by the Java
+         * {@return a linker option used to load or save portions of the execution
+         *          state immediately before or after calling a foreign function associated
+         *          with a downcall method handle, before it can be overwritten by the Java
          *          runtime, or read through conventional means}
          * <p>
          * Execution state is captured by a downcall method handle on invocation, by
@@ -826,12 +826,16 @@ public sealed interface Linker permits AbstractLinker {
          * parameter, the <em>capture state segment</em>, represents the native segment
          * into which the captured state is written.
          * <p>
+         * It is possible to write execution state before a downcall. When the method
+         * handle is invoked, the contents of the <em>capture state segment</em> is
+         * copied into the foreign function's execution state.
+         * <p>
          * The capture state segment must have size and alignment compatible with the
          * layout returned by {@linkplain #captureStateLayout}. This layout is a struct
          * layout which has a named field for each captured value.
          * <p>
-         * Captured state can be retrieved from the capture state segment by constructing
-         * var handles from the {@linkplain #captureStateLayout capture state layout}.
+         * Captured state can be set or retrieved from the capture state segment by
+         * constructing var handles from the {@linkplain #captureStateLayout capture state layout}.
          * <p>
          * The following example demonstrates the use of this linker option:
          * {@snippet lang = "java":
@@ -843,6 +847,7 @@ public sealed interface Linker permits AbstractLinker {
          * VarHandle errnoHandle = capturedStateLayout.varHandle(PathElement.groupElement("errno"));
          * try (Arena arena = Arena.ofConfined()) {
          *     MemorySegment capturedState = arena.allocate(capturedStateLayout);
+         *     errnoHandle.set(capturedState, 0L, 0); // set errno to 0
          *     handle.invoke(capturedState);
          *     int errno = (int) errnoHandle.get(capturedState, 0L);
          *     // use errno
