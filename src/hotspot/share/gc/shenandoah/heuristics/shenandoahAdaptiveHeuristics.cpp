@@ -739,7 +739,7 @@ size_t ShenandoahAdaptiveHeuristics::accelerated_consumption(double& acceleratio
       if (i > 0) {
         // first sample not included in weighted average because it has no weight.
         double sample_weight = x_array[i] - x_array[i-1];
-        weighted_y_sum = y_array[i] * sample_weight;
+        weighted_y_sum += y_array[i] * sample_weight;
         total_weight += sample_weight;
       }
       y_sum += y_array[i];
