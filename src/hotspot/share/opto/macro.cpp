@@ -1878,7 +1878,7 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       uint distance = 0;
 
       for ( intx i = 0; i < lines; i++ ) {
-        prefetch_adr = new AddPNode( old_pf_wm, new_pf_wmt,
+        prefetch_adr = new AddPNode( top(), new_pf_wmt,
                                             _igvn.MakeConX(distance) );
         transform_later(prefetch_adr);
         prefetch = new PrefetchAllocationNode( i_o, prefetch_adr );
@@ -1910,7 +1910,7 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       uint distance = AllocatePrefetchDistance;
 
       // Next cache address.
-      Node *cache_adr = new AddPNode(old_eden_top, old_eden_top,
+      Node *cache_adr = new AddPNode(top(), old_eden_top,
                                      _igvn.MakeConX(step_size + distance));
       transform_later(cache_adr);
       cache_adr = new CastP2XNode(needgc_false, cache_adr);
@@ -1931,7 +1931,7 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       Node *prefetch_adr;
       distance = step_size;
       for ( intx i = 1; i < lines; i++ ) {
-        prefetch_adr = new AddPNode( cache_adr, cache_adr,
+        prefetch_adr = new AddPNode( top(), cache_adr,
                                             _igvn.MakeConX(distance) );
         transform_later(prefetch_adr);
         prefetch = new PrefetchAllocationNode( contended_phi_rawmem, prefetch_adr );
