@@ -42,7 +42,6 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.util.stream.Collectors.toList;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.*;
@@ -455,7 +454,7 @@ public class Http1HeaderParserTest {
     @ParameterizedTest
     @MethodSource("errors")
     public void errors(String respString) throws ProtocolException {
-        Assertions.assertThrows(ProtocolException.class, () -> {
+        assertThrows(ProtocolException.class, () -> {
             byte[] bytes = respString.getBytes(US_ASCII);
             Http1HeaderParser decoder = new Http1HeaderParser();
             ByteBuffer b = ByteBuffer.wrap(bytes);

@@ -27,12 +27,12 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class DemandTest {
 
@@ -85,7 +85,7 @@ public class DemandTest {
 
     @Test
     public void test07() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             Demand d = new Demand();
             d.increase(0);
         });
@@ -93,7 +93,7 @@ public class DemandTest {
 
     @Test
     public void test08() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             Demand d = new Demand();
             d.increase(-1);
         });
@@ -101,7 +101,7 @@ public class DemandTest {
 
     @Test
     public void test09() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             Demand d = new Demand();
             d.increase(10);
             d.decreaseAndGet(0);
@@ -110,7 +110,7 @@ public class DemandTest {
 
     @Test
     public void test10() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             Demand d = new Demand();
             d.increase(13);
             d.decreaseAndGet(-3);

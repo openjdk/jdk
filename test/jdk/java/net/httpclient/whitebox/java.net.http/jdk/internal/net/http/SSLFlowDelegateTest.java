@@ -60,9 +60,9 @@ import jdk.internal.net.http.common.SubscriberWrapper;
 import jdk.internal.net.http.common.Utils;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 // jtreg test definition for this test resides in SSLFlowDelegateTestDriver.java
 public class SSLFlowDelegateTest {
@@ -222,7 +222,7 @@ public class SSLFlowDelegateTest {
             println(debugTag, "Waiting for handshake to complete");
             final String negotiatedALPN = sslFlowDelegate.alpn().join();
             println(debugTag, "handshake completed, with negotiated ALPN: " + negotiatedALPN);
-            Assertions.assertEquals(ALPN, negotiatedALPN, "unexpected ALPN negotiated");
+            assertEquals(ALPN, negotiatedALPN, "unexpected ALPN negotiated");
             try {
                 // now wait for the initial (and the only) chunk of application data to be
                 // received by the AppResponseReceiver
@@ -255,7 +255,7 @@ public class SSLFlowDelegateTest {
 
     private void failTest(final CompletionException ce) {
         final Throwable cause = ce.getCause();
-        Assertions.fail(cause.getMessage() == null ? "test failed" : cause.getMessage(), cause);
+        fail(cause.getMessage() == null ? "test failed" : cause.getMessage(), cause);
     }
 
     // uses reflection to get hold of the SSLFlowDelegate.reader.outputQ member field,
@@ -289,7 +289,7 @@ public class SSLFlowDelegateTest {
             }
             println(debugTag, "num unsolicited bytes so far = " + numUnsolicitated);
         }
-        Assertions.assertEquals(0, numUnsolicitated,
+        assertEquals(0, numUnsolicitated,
                 "SSLFlowDelegate has accumulated " + numUnsolicitated + " unsolicited bytes");
     }
 
