@@ -47,7 +47,7 @@ import jdk.test.lib.Utils;
  * @requires vm.debug == true & vm.compiler2.enabled & (vm.opt.AbortVMOnCompilationFailure == "null" | !vm.opt.AbortVMOnCompilationFailure)
  * @summary Additional crashes revealed by diagnostic code run during VerifyIterativeGVN
  * @library /test/lib /
- * @run main/othervm compiler.debug.TestStressBailout -XX:VerifyIterativeGVN=1111
+ * @run main compiler.debug.TestStressBailout -XX:VerifyIterativeGVN=1111
  */
 
 public class TestStressBailout {
