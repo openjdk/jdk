@@ -26,7 +26,7 @@
  * @key headful
  * @bug 5100806
  * @summary TextArea.select(0,0) does not de-select the selected text properly
- * @run main/othervm -Djava.awt.headless=false CorrectTextComponentSelectionTest
+ * @run main CorrectTextComponentSelectionTest
  */
 
 import java.awt.BorderLayout;
