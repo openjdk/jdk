@@ -45,7 +45,6 @@ public class RawCountsConstraint implements RawConstraint {
     private final RawIRNode rawIRNode;
     private final int constraintIndex;
     private final Comparison<Integer> comparison;
-    private static final int MAX_COUNT_FOR_BITVECTOR = 63;
 
     public RawCountsConstraint(RawIRNode rawIRNode, Comparison<Integer> comparison, int constraintIndex) {
         this.rawIRNode = rawIRNode;
@@ -112,22 +111,11 @@ public class RawCountsConstraint implements RawConstraint {
         return "=".equals(comparison.getComparator());
     }
 
-    public long toBitVector() {
-        int value = comparison.getGivenValue();
-        if (value > MAX_COUNT_FOR_BITVECTOR) {
-            System.out.println("WARNING: count value " + comparison.getComparator() +
-                               value + "\" exceeds " + MAX_COUNT_FOR_BITVECTOR +
-                               "; incompatible constraint detection is disabled for this node.");
-            return -1L;
-        }
+    public String comparator() {
+        return comparison.getComparator();
+    }
 
-        return switch (comparison.getComparator()) {
-            case "="  -> 1L << value;
-            case "<"  -> (1L << value) - 1;
-            case "<=" -> (1L << (value + 1)) - 1;
-            case ">"  -> -1L << (value + 1);
-            case ">=" -> -1L << value;
-            default   -> -1L;
-        };
+    public int givenValue() {
+        return comparison.getGivenValue();
     }
 }
