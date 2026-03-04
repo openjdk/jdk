@@ -46,6 +46,7 @@ private:
 public:
   PrintProperties(IdealGraphPrinter* printer) : _printer(printer) {}
   void print_node_properties(Node* node);
+  void print_node_details(Node* node);
   void print_lrg_properties(const LRG& lrg, const char* buffer);
   void print_property(int flag, const char* name);
   void print_property(int flag, const char* name, const char* val);
@@ -116,7 +117,9 @@ void PrintProperties::print_node_properties(Node* node) {
       print_property(true, "old_node_idx", old->_idx);
     }
   }
+}
 
+void PrintProperties::print_node_details(Node* node) {
   print_alias_properties(node);
 
   print_escape_properties(node);
@@ -700,6 +703,8 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
 
     assert(s2.size() < sizeof(buffer), "size in range");
     print_prop("dump_spec", buffer);
+
+    print_node.print_node_details(node);
 
     const char *short_name = "short_name";
     if (strcmp(node->Name(), "Parm") == 0 && node->as_Proj()->_con >= TypeFunc::Parms) {
