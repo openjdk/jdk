@@ -185,7 +185,7 @@ public class JarExtractTest {
     }
 
     /**
-     * Extracts a jar to various normalized paths (i.e. no {@code .} or @{code ..} in the path components),
+     * Extracts a jar to various normalized paths (i.e. no {@code .} or {@code ..} in the path components),
      * using the -C/--dir option and then verifies that the extracted content is at the expected locations
      * with the correct content
      */
