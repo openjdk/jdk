@@ -41,9 +41,13 @@ private:
 public:
   // Helper methods roughly modeled after GraphKit:
   Node* basic_plus_adr(Node* base, int offset) {
+    assert(base != Compile::current()->top(),
+           "Unexpected base == top - use off-heap variant instead");
     return (offset == 0) ? base : basic_plus_adr(base, MakeConX(offset));
   }
   Node* basic_plus_adr(Node* base, Node* ptr, int offset) {
+    assert(base != Compile::current()->top(),
+           "Unexpected base == top - use off-heap variant instead");
     return (offset == 0) ? ptr : basic_plus_adr(base, ptr, MakeConX(offset));
   }
   Node* basic_plus_adr(Node* base, Node* offset) {

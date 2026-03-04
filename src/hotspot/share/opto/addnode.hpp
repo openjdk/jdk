@@ -246,6 +246,8 @@ public:
                                      intptr_t& offset);
 
   static AddPNode* make_with_base(Node* base, Node* ptr, Node* offset) {
+    assert(base != Compile::current()->top(),
+           "Unexpected base == top - use off-heap variant instead");
     return new AddPNode(base, ptr, offset);
   }
 
@@ -254,7 +256,7 @@ public:
   }
 
   static AddPNode* make_off_heap(Node* ptr, Node* offset) {
-    return make_with_base(Compile::current()->top(), ptr, offset);
+    return new AddPNode(Compile::current()->top(), ptr, offset);
   }
 
   // Collect the AddP offset values into the elements array, giving up
