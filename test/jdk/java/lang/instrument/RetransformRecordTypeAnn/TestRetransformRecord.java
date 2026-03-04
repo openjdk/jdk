@@ -32,7 +32,8 @@
  * @modules java.compiler
  *          java.instrument
  * @compile ../NamedBuffer.java
- * @run driver RunAsmTools altered/MyRecord.jcod altered
+ * @compile altered/MyRecord.jcod
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller MyRecord
  * @compile MyRecord.java
  * @run main RedefineClassHelper
  * @run main/othervm -javaagent:redefineagent.jar -Xlog:redefine*=debug TestRetransformRecord
@@ -57,7 +58,7 @@ public class TestRetransformRecord {
 
     public static void main(String[] args) throws Exception {
         MyRecord.parse("foo");
-        File clsfile = new File(DEST + "/altered/MyRecord.class");
+        File clsfile = new File("MyRecord.class");
         byte[] buf = null;
         try (FileInputStream str = new FileInputStream(clsfile)) {
             buf = NamedBuffer.loadBufferFromStream(str);

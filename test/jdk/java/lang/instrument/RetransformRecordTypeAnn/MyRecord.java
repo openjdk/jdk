@@ -41,7 +41,7 @@ public record MyRecord(@MyTypeUseAnnotation String filter) {
 @interface MyTypeAnnotation {
 }
 
-@Target({ ElementType.TYPE_USE })
+@Target({ElementType.TYPE_USE})
 @Retention(RetentionPolicy.RUNTIME)
 @interface MyTypeUseAnnotation {
 }
