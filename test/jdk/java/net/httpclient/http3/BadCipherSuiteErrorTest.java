@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8157105
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.HttpServerAdapters
- * @run testng/othervm/timeout=60 -Djavax.net.debug=ssl -Djdk.httpclient.HttpClient.log=all BadCipherSuiteErrorTest
+ * @run junit/othervm/timeout=60 -Djavax.net.debug=ssl -Djdk.httpclient.HttpClient.log=all BadCipherSuiteErrorTest
  * @summary check exception thrown when bad TLS parameters selected
  */
 
@@ -49,7 +49,7 @@ import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpOption.H3_DISCOVERY;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * When selecting an unacceptable cipher suite the TLS handshake will fail.

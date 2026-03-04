@@ -54,6 +54,8 @@ final class LongVectorMax extends LongVector {
 
     static final int VLENGTH = VSPECIES.laneCount(); // used by the JVM
 
+    static final Class<Long> CTYPE = long.class; // carrier type used by the JVM
+
     static final Class<Long> ETYPE = long.class; // used by the JVM
 
     LongVectorMax(long[] v) {
@@ -91,6 +93,9 @@ final class LongVectorMax extends LongVector {
     @ForceInline
     @Override
     public final Class<Long> elementType() { return long.class; }
+
+    @ForceInline
+    final Class<Long> carrierType() { return CTYPE; }
 
     @ForceInline
     @Override
@@ -556,7 +561,8 @@ final class LongVectorMax extends LongVector {
 
     static final class LongMaskMax extends AbstractMask<Long> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Long> ETYPE = long.class; // used by the JVM
+
+        static final Class<Long> CTYPE = long.class; // used by the JVM
 
         LongMaskMax(boolean[] bits) {
             this(bits, 0);
@@ -788,7 +794,8 @@ final class LongVectorMax extends LongVector {
 
     static final class LongShuffleMax extends AbstractShuffle<Long> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Long> ETYPE = long.class; // used by the JVM
+
+        static final Class<Long> CTYPE = long.class; // used by the JVM
 
         LongShuffleMax(long[] indices) {
             super(indices);

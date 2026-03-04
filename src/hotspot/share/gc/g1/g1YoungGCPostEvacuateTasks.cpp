@@ -24,6 +24,7 @@
 
 
 #include "compiler/oopMap.hpp"
+#include "cppstdlib/new.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1CardTableEntryClosure.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
@@ -814,9 +815,7 @@ public:
   void set_max_workers(uint max_workers) override {
     _active_workers = max_workers;
     _worker_stats = NEW_C_HEAP_ARRAY(FreeCSetStats, max_workers, mtGC);
-    for (uint worker = 0; worker < _active_workers; worker++) {
-      ::new (&_worker_stats[worker]) FreeCSetStats();
-    }
+    ::new (_worker_stats) FreeCSetStats[_active_workers]{};
     _claimer.set_n_workers(_active_workers);
   }
 
