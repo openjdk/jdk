@@ -27,7 +27,7 @@
  * @library ..
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
- * @run testng/timeout=300 Transfer
+ * @run junit/timeout=300 Transfer
  * @key randomness
  */
 
@@ -54,8 +54,9 @@ import java.util.concurrent.TimeUnit;
 
 import jdk.test.lib.RandomFactory;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class Transfer {
 
@@ -168,7 +169,7 @@ public class Transfer {
         CharSequence csq = "Reality is greater than the sum of its parts.";
         Files.writeString(source.toPath(), csq);
         final long length = csq.length();
-        Assert.assertEquals(source.length(), length);
+        assertEquals(length, source.length());
 
         File target = File.createTempFile("before", "after");
         target.deleteOnExit();
@@ -183,7 +184,7 @@ public class Transfer {
             long n = chSource.transferTo(length, 16385, chTarget);
 
             // At the end of the input so no bytes should be transferred
-            Assert.assertEquals(n, 0);
+            assertEquals(0, n);
         }
     }
 

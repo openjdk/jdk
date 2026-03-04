@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @bug 6253145
  * @summary Test FileChannel.transferTo with file positions up to 8GB
  * @build FileChannelUtils
- * @run testng/timeout=300 TransferTo6GBFile
+ * @run junit/timeout=300 TransferTo6GBFile
  */
 
 import java.io.IOException;
@@ -40,7 +40,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import static java.nio.file.StandardOpenOption.*;
 
