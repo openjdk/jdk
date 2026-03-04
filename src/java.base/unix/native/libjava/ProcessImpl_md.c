@@ -627,7 +627,8 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
      * Note that posix_spawn_file_actions_addinherit_np(3) on MacOS does not reliably prevent
      * this problem; only the dup-twice-trick does.
      * Also note that this problem does not seem to affect stdin, stdout and stderr, so we only
-     * need to care about the other pipes. */
+     * need to care about the other pipes.
+     */
     child_fail = dup(child_fail);
     child_childenv = dup(child_childenv);
 #endif
@@ -754,7 +755,8 @@ static int pipeSafely(int fd[2]) {
      * process to hang (see e.g. JDK-8377907).
      * We use pipe2(2), if we have it. If we don't, we use pipe(2) + fcntl(2) immediately.
      * The latter is still racy and can therefore still cause hangs as described in JDK-8377907,
-     * but at least the dangerous time window is as short as we can make it. */
+     * but at least the dangerous time window is as short as we can make it.
+     */
     int rc = -1;
 #ifdef HAVE_PIPE2
     rc = pipe2(fd, O_CLOEXEC);

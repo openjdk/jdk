@@ -29,7 +29,7 @@ import java.io.*;
  * @summary Check that we don't accumulate leaked FDs in the parent process
  * @requires os.family == "linux"
  * @library /test/lib
- * @run main/othervm -Djdk.lang.Process.launchMechanism=fork FDLeaks
+ * @run main/othervm -Djdk.lang.Process.launchMechanism=fork NonPipelineLeaksFD
  */
 
 /*
@@ -37,7 +37,7 @@ import java.io.*;
  * @summary Check that we don't accumulate leaked FDs in the parent process
  * @requires os.family == "linux"
  * @library /test/lib
- * @run main/othervm -Djdk.lang.Process.launchMechanism=vfork FDLeaks
+ * @run main/othervm -Djdk.lang.Process.launchMechanism=vfork NonPipelineLeaksFD
  */
 
 /*
@@ -45,15 +45,21 @@ import java.io.*;
  * @summary Check that we don't accumulate leaked FDs in the parent process
  * @requires os.family == "linux"
  * @library /test/lib
- * @run main/othervm -Djdk.lang.Process.launchMechanism=posix_spawn FDLeaks
+ * @run main/othervm -Djdk.lang.Process.launchMechanism=posix_spawn NonPipelineLeaksFD
  */
 
-public class FDLeaks {
+public class NonPipelineLeaksFD {
 
     final static int repeatCount = 50;
 
+    // Similar to PilelineLeaksFD, but where PilelineLeaksFD checks that the parent process
+    // does not leak file descriptors when invoking a pipeline, here we check that we don't
+    // leak FDs when executing simple (non-pipelined) programs but we test a wider span of
+    // redirection modes in both successful and failing variants.
+
     // How this works:
-    // We execute a mix of failing and succeeding process spawns with various
+    //
+    // We execute a mix of failing and succeeding child process starts with various
     // flavors of IO redirections many times; we observe the open file descriptors
     // before and afterwards. Test fails if we have significantly more file descriptors
     // open afterwards than before.
@@ -156,12 +162,12 @@ public class FDLeaks {
         System.out.println("jdk.lang.Process.launchMechanism=" +
                 System.getProperty("jdk.lang.Process.launchMechanism"));
         int c1 = countNumberOfOpenFileDescriptors();
-        doTestNTimesAndCountFDs(FDLeaks::runPosWithPipes, "runPosWithPipes");
-        doTestNTimesAndCountFDs(FDLeaks::runPosWithInheritIO, "runPosWithInheritIO");
-        doTestNTimesAndCountFDs(FDLeaks::runPosWithRedirectToFile, "runPosWithRedirectToFile");
-        doTestNTimesAndCountFDs(FDLeaks::runNegWithPipes, "runNegWithPipes");
-        doTestNTimesAndCountFDs(FDLeaks::runNegWithInheritIO, "runNegWithInheritIO");
-        doTestNTimesAndCountFDs(FDLeaks::runNegWithRedirectToFile, "runNegWithRedirectToFile");
+        doTestNTimesAndCountFDs(NonPipelineLeaksFD::runPosWithPipes, "runPosWithPipes");
+        doTestNTimesAndCountFDs(NonPipelineLeaksFD::runPosWithInheritIO, "runPosWithInheritIO");
+        doTestNTimesAndCountFDs(NonPipelineLeaksFD::runPosWithRedirectToFile, "runPosWithRedirectToFile");
+        doTestNTimesAndCountFDs(NonPipelineLeaksFD::runNegWithPipes, "runNegWithPipes");
+        doTestNTimesAndCountFDs(NonPipelineLeaksFD::runNegWithInheritIO, "runNegWithInheritIO");
+        doTestNTimesAndCountFDs(NonPipelineLeaksFD::runNegWithRedirectToFile, "runNegWithRedirectToFile");
         int c2 = countNumberOfOpenFileDescriptors();
 
         System.out.printf("All tests: %d->%d", c1, c2);
