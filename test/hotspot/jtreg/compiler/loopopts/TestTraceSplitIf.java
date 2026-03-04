@@ -45,6 +45,7 @@ public class TestTraceSplitIf {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         output.shouldHaveExitValue(0);
+        output.shouldContain("Merging Identical Ifs");
         output.shouldContain("Split-If");
     }
 

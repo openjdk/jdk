@@ -30,7 +30,6 @@
 #include "opto/node.hpp"
 #include "opto/opaquenode.hpp"
 #include "opto/predicates.hpp"
-#include "utilities/ostream.hpp"
 
 //------------------------------split_thru_region------------------------------
 // Split Node 'n' through merge point.
@@ -192,7 +191,7 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
 bool PhaseIdealLoop::clone_cmp_loadklass_down(Node* n, const Node* blk1, const Node* blk2) {
   if (n->Opcode() == Op_AddP && at_relevant_ctrl(n, blk1, blk2)) {
     if (TraceSplitIf) {
-      tty->print_cr("  Cloning down: %d %s", n->_idx, n->Name());
+      tty->print_cr("  Cloning down (LoadKlass): %d %s", n->_idx, n->Name());
     }
     Node_List cmp_nodes;
     uint old = C->unique();
@@ -311,7 +310,7 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
 
       // Must clone down
       if (TraceSplitIf) {
-        tty->print_cr("  Cloning down: %d %s", n->_idx, n->Name());
+        tty->print_cr("  Cloning down (Cmp): %d %s", n->_idx, n->Name());
       }
       if (!n->is_FastLock()) {
         // Clone down any block-local BoolNode uses of this CmpNode
@@ -414,7 +413,7 @@ void PhaseIdealLoop::clone_template_assertion_expression_down(Node* node) {
   }
 
   if (TraceSplitIf) {
-    tty->print_cr("  Cloning down: %d %s", node->_idx, node->Name());
+    tty->print_cr("  Cloning down (Template Assertion): %d %s", node->_idx, node->Name());
   }
 
   TemplateAssertionExpressionNode template_assertion_expression_node(node);
