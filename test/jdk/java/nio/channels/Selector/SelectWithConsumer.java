@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,12 @@
 /* @test
  * @summary Unit test for Selector.select/selectNow(Consumer)
  * @bug 8199433 8208780
- * @run testng SelectWithConsumer
+ * @run junit SelectWithConsumer
  */
 
 /* @test
  * @requires (os.family == "windows")
- * @run testng/othervm -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.WindowsSelectorProvider SelectWithConsumer
+ * @run junit/othervm -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.WindowsSelectorProvider SelectWithConsumer
  */
 
 import java.io.Closeable;
@@ -49,11 +49,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import static java.util.concurrent.TimeUnit.*;
 
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Test;
 
-@Test
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 public class SelectWithConsumer {
 
     /**
@@ -81,46 +86,47 @@ public class SelectWithConsumer {
         // select(Consumer)
         notifiedOps.set(0);
         int n = sel.select(k -> {
-            assertTrue(Thread.currentThread() == callerThread);
-            assertTrue(k == key);
+            assertSame(callerThread, Thread.currentThread());
+            assertEquals(key, k);
             int readyOps = key.readyOps();
-            assertTrue((readyOps & interestOps) != 0);
-            assertTrue((readyOps & notifiedOps.get()) == 0);
+            assertNotEquals(0, readyOps & interestOps);
+            assertEquals(0, readyOps & notifiedOps.get());
             notifiedOps.set(notifiedOps.get() | readyOps);
         });
         assertTrue((n == 1) ^ (expectedOps == 0));
-        assertTrue(notifiedOps.get() == expectedOps);
+        assertEquals(expectedOps, notifiedOps.get());
 
         // select(Consumer, timeout)
         notifiedOps.set(0);
         n = sel.select(k -> {
-            assertTrue(Thread.currentThread() == callerThread);
-            assertTrue(k == key);
+            assertSame(callerThread, Thread.currentThread());
+            assertEquals(key, k);
             int readyOps = key.readyOps();
-            assertTrue((readyOps & interestOps) != 0);
-            assertTrue((readyOps & notifiedOps.get()) == 0);
+            assertNotEquals(0, readyOps & interestOps);
+            assertEquals(0, readyOps & notifiedOps.get());
             notifiedOps.set(notifiedOps.get() | readyOps);
         }, 1000);
         assertTrue((n == 1) ^ (expectedOps == 0));
-        assertTrue(notifiedOps.get() == expectedOps);
+        assertEquals(expectedOps, notifiedOps.get());
 
         // selectNow(Consumer)
         notifiedOps.set(0);
         n = sel.selectNow(k -> {
-            assertTrue(Thread.currentThread() == callerThread);
-            assertTrue(k == key);
+            assertSame(callerThread, Thread.currentThread());
+            assertEquals(key, k);
             int readyOps = key.readyOps();
-            assertTrue((readyOps & interestOps) != 0);
-            assertTrue((readyOps & notifiedOps.get()) == 0);
+            assertNotEquals(0, readyOps & interestOps);
+            assertEquals(0, readyOps & notifiedOps.get());
             notifiedOps.set(notifiedOps.get() | readyOps);
         });
         assertTrue((n == 1) ^ (expectedOps == 0));
-        assertTrue(notifiedOps.get() == expectedOps);
+        assertEquals(expectedOps, notifiedOps.get());
     }
 
     /**
      * Test that an action is performed when a channel is ready for reading.
      */
+    @Test
     public void testReadable() throws Exception {
         Pipe p = Pipe.open();
         try (Selector sel = Selector.open()) {
@@ -142,6 +148,7 @@ public class SelectWithConsumer {
     /**
      * Test that an action is performed when a channel is ready for writing.
      */
+    @Test
     public void testWritable() throws Exception {
         Pipe p = Pipe.open();
         try (Selector sel = Selector.open()) {
@@ -161,6 +168,7 @@ public class SelectWithConsumer {
      * Test that an action is performed when a channel is ready for both
      * reading and writing.
      */
+    @Test
     public void testReadableAndWriteable() throws Exception {
         ServerSocketChannel ssc = null;
         SocketChannel sc = null;
@@ -188,6 +196,7 @@ public class SelectWithConsumer {
     /**
      * Test that the action is called for two selected channels
      */
+    @Test
     public void testTwoChannels() throws Exception {
         Pipe p = Pipe.open();
         try (Selector sel = Selector.open()) {
@@ -217,8 +226,8 @@ public class SelectWithConsumer {
                 assertTrue(k == key1 || k == key2);
                 counter.incrementAndGet();
             });
-            assertTrue(n == 2);
-            assertTrue(counter.get() == 2);
+            assertEquals(2, n);
+            assertEquals(2, counter.get());
 
             // select(Consumer, timeout)
             counter.set(0);
@@ -226,8 +235,8 @@ public class SelectWithConsumer {
                 assertTrue(k == key1 || k == key2);
                 counter.incrementAndGet();
             }, 1000);
-            assertTrue(n == 2);
-            assertTrue(counter.get() == 2);
+            assertEquals(2, n);
+            assertEquals(2, counter.get());
 
             // selectNow(Consumer)
             counter.set(0);
@@ -235,8 +244,8 @@ public class SelectWithConsumer {
                 assertTrue(k == key1 || k == key2);
                 counter.incrementAndGet();
             });
-            assertTrue(n == 2);
-            assertTrue(counter.get() == 2);
+            assertEquals(2, n);
+            assertEquals(2, counter.get());
         } finally {
             closePipe(p);
         }
@@ -245,6 +254,7 @@ public class SelectWithConsumer {
     /**
      * Test calling select twice, the action should be invoked each time
      */
+    @Test
     public void testRepeatedSelect1() throws Exception {
         Pipe p = Pipe.open();
         try (Selector sel = Selector.open()) {
@@ -269,6 +279,7 @@ public class SelectWithConsumer {
      * Test calling select twice. An I/O operation is performed after the
      * first select so the channel will not be selected by the second select.
      */
+    @Test
     public void testRepeatedSelect2() throws Exception {
         Pipe p = Pipe.open();
         try (Selector sel = Selector.open()) {
@@ -301,6 +312,7 @@ public class SelectWithConsumer {
     /**
      * Test timeout
      */
+    @Test
     public void testTimeout() throws Exception {
         Pipe p = Pipe.open();
         try (Selector sel = Selector.open()) {
@@ -311,7 +323,7 @@ public class SelectWithConsumer {
             long start = millisTime();
             int n = sel.select(k -> assertTrue(false), 1000L);
             expectDuration(start, 500, Long.MAX_VALUE);
-            assertTrue(n == 0);
+            assertEquals(0, n);
         } finally {
             closePipe(p);
         }
@@ -320,12 +332,13 @@ public class SelectWithConsumer {
     /**
      * Test wakeup prior to select
      */
+    @Test
     public void testWakeupBeforeSelect() throws Exception {
         // select(Consumer)
         try (Selector sel = Selector.open()) {
             sel.wakeup();
             int n = sel.select(k -> assertTrue(false));
-            assertTrue(n == 0);
+            assertEquals(0, n);
         }
 
         // select(Consumer, timeout)
@@ -334,19 +347,20 @@ public class SelectWithConsumer {
             long start = millisTime();
             int n = sel.select(k -> assertTrue(false), 60*1000);
             expectDuration(start, 0, 20_000);
-            assertTrue(n == 0);
+            assertEquals(0, n);
         }
     }
 
     /**
      * Test wakeup during select
      */
+    @Test
     public void testWakeupDuringSelect() throws Exception {
         // select(Consumer)
         try (Selector sel = Selector.open()) {
             scheduleWakeup(sel, 1, SECONDS);
             int n = sel.select(k -> assertTrue(false));
-            assertTrue(n == 0);
+            assertEquals(0, n);
         }
 
         // select(Consumer, timeout)
@@ -355,19 +369,20 @@ public class SelectWithConsumer {
             long start = millisTime();
             int n = sel.select(k -> assertTrue(false), 60*1000);
             expectDuration(start, 0, 20_000);
-            assertTrue(n == 0);
+            assertEquals(0, n);
         }
     }
 
     /**
      * Test invoking select with interrupted status set
      */
+    @Test
     public void testInterruptBeforeSelect() throws Exception {
         // select(Consumer)
         try (Selector sel = Selector.open()) {
             Thread.currentThread().interrupt();
             int n = sel.select(k -> assertTrue(false));
-            assertTrue(n == 0);
+            assertEquals(0, n);
             assertTrue(Thread.currentThread().isInterrupted());
             assertTrue(sel.isOpen());
         } finally {
@@ -380,7 +395,7 @@ public class SelectWithConsumer {
             long start = millisTime();
             int n = sel.select(k -> assertTrue(false), 60*1000);
             expectDuration(start, 0, 20_000);
-            assertTrue(n == 0);
+            assertEquals(0, n);
             assertTrue(Thread.currentThread().isInterrupted());
             assertTrue(sel.isOpen());
         } finally {
@@ -391,12 +406,13 @@ public class SelectWithConsumer {
     /**
      * Test interrupt thread during select
      */
+    @Test
     public void testInterruptDuringSelect() throws Exception {
         // select(Consumer)
         try (Selector sel = Selector.open()) {
             scheduleInterrupt(Thread.currentThread(), 1, SECONDS);
             int n = sel.select(k -> assertTrue(false));
-            assertTrue(n == 0);
+            assertEquals(0, n);
             assertTrue(Thread.currentThread().isInterrupted());
             assertTrue(sel.isOpen());
         } finally {
@@ -407,7 +423,7 @@ public class SelectWithConsumer {
         try (Selector sel = Selector.open()) {
             scheduleInterrupt(Thread.currentThread(), 1, SECONDS);
             int n = sel.select(k -> assertTrue(false), 60*1000);
-            assertTrue(n == 0);
+            assertEquals(0, n);
             assertTrue(Thread.currentThread().isInterrupted());
             assertTrue(sel.isOpen());
         } finally {
@@ -418,34 +434,38 @@ public class SelectWithConsumer {
     /**
      * Test invoking select on a closed selector
      */
-    @Test(expectedExceptions = ClosedSelectorException.class)
+    @Test
     public void testClosedSelector1() throws Exception {
         Selector sel = Selector.open();
         sel.close();
-        sel.select(k -> assertTrue(false));
+        assertThrows(ClosedSelectorException.class,
+                     () -> sel.select(k -> assertTrue(false)));
     }
-    @Test(expectedExceptions = ClosedSelectorException.class)
+    @Test
     public void testClosedSelector2() throws Exception {
         Selector sel = Selector.open();
         sel.close();
-        sel.select(k -> assertTrue(false), 1000);
+        assertThrows(ClosedSelectorException.class,
+                     () -> sel.select(k -> assertTrue(false), 1000));
     }
-    @Test(expectedExceptions = ClosedSelectorException.class)
+    @Test
     public void testClosedSelector3() throws Exception {
         Selector sel = Selector.open();
         sel.close();
-        sel.selectNow(k -> assertTrue(false));
+        assertThrows(ClosedSelectorException.class,
+                     () -> sel.selectNow(k -> assertTrue(false)));
     }
 
     /**
      * Test closing selector while in a selection operation
      */
+    @Test
     public void testCloseDuringSelect() throws Exception {
         // select(Consumer)
         try (Selector sel = Selector.open()) {
             scheduleClose(sel, 3, SECONDS);
             int n = sel.select(k -> assertTrue(false));
-            assertTrue(n == 0);
+            assertEquals(0, n);
             assertFalse(sel.isOpen());
         }
 
@@ -458,7 +478,7 @@ public class SelectWithConsumer {
             long after = System.nanoTime();
             long selectDuration = (after - start) / 1000000;
             long scheduleDuration = (start - before) / 1000000;
-            assertTrue(n == 0);
+            assertEquals(0, n);
             assertTrue(selectDuration > 2000 && selectDuration < 10*1000,
                     "select took " + selectDuration + " ms schedule took " +
                     scheduleDuration + " ms");
@@ -469,7 +489,7 @@ public class SelectWithConsumer {
     /**
      * Test action closing selector
      */
-    @Test(expectedExceptions = ClosedSelectorException.class)
+    @Test
     public void testActionClosingSelector() throws Exception {
         Pipe p = Pipe.open();
         try (Selector sel = Selector.open()) {
@@ -482,12 +502,14 @@ public class SelectWithConsumer {
             sink.write(messageBuffer());
 
             // should relay ClosedSelectorException
-            sel.select(k -> {
-                assertTrue(k == key);
-                try {
-                    sel.close();
-                } catch (IOException ioe) { }
-            });
+            assertThrows(ClosedSelectorException.class,
+                () -> sel.select(k -> {
+                    assertTrue(k == key);
+                    try {
+                        sel.close();
+                    } catch (IOException ioe) { }
+                })
+            );
         } finally {
             closePipe(p);
         }
@@ -497,6 +519,7 @@ public class SelectWithConsumer {
      * Test that the action is invoked while synchronized on the selector and
      * its selected-key set.
      */
+    @Test
     public void testLocks() throws Exception {
         Pipe p = Pipe.open();
         try (Selector sel = Selector.open()) {
@@ -510,7 +533,7 @@ public class SelectWithConsumer {
 
             // select(Consumer)
             sel.select(k -> {
-                assertTrue(k == key);
+                assertEquals(key, k);
                 assertTrue(Thread.holdsLock(sel));
                 assertFalse(Thread.holdsLock(sel.keys()));
                 assertTrue(Thread.holdsLock(sel.selectedKeys()));
@@ -518,7 +541,7 @@ public class SelectWithConsumer {
 
             // select(Consumer, timeout)
             sel.select(k -> {
-                assertTrue(k == key);
+                assertEquals(key, k);
                 assertTrue(Thread.holdsLock(sel));
                 assertFalse(Thread.holdsLock(sel.keys()));
                 assertTrue(Thread.holdsLock(sel.selectedKeys()));
@@ -526,7 +549,7 @@ public class SelectWithConsumer {
 
             // selectNow(Consumer)
             sel.selectNow(k -> {
-                assertTrue(k == key);
+                assertEquals(key, k);
                 assertTrue(Thread.holdsLock(sel));
                 assertFalse(Thread.holdsLock(sel.keys()));
                 assertTrue(Thread.holdsLock(sel.selectedKeys()));
@@ -540,6 +563,7 @@ public class SelectWithConsumer {
      * Test that selection operations remove cancelled keys from the selector's
      * key and selected-key sets.
      */
+    @Test
     public void testCancel() throws Exception {
         Pipe p = Pipe.open();
         try (Selector sel = Selector.open()) {
@@ -569,7 +593,7 @@ public class SelectWithConsumer {
             // cancel key1
             key1.cancel();
             int n = sel.selectNow(k -> assertTrue(k == key2));
-            assertTrue(n == 1);
+            assertEquals(1, n);
             assertFalse(sel.keys().contains(key1));
             assertTrue(sel.keys().contains(key2));
             assertFalse(sel.selectedKeys().contains(key1));
@@ -578,7 +602,7 @@ public class SelectWithConsumer {
             // cancel key2
             key2.cancel();
             n = sel.selectNow(k -> assertTrue(false));
-            assertTrue(n == 0);
+            assertEquals(0, n);
             assertFalse(sel.keys().contains(key1));
             assertFalse(sel.keys().contains(key2));
             assertFalse(sel.selectedKeys().contains(key1));
@@ -591,6 +615,7 @@ public class SelectWithConsumer {
     /**
      * Test an action invoking select()
      */
+    @Test
     public void testReentrantSelect1() throws Exception {
         Pipe p = Pipe.open();
         try (Selector sel = Selector.open()) {
@@ -611,7 +636,7 @@ public class SelectWithConsumer {
                 } catch (IllegalStateException expected) {
                 }
             });
-            assertTrue(n == 1);
+            assertEquals(1, n);
         } finally {
             closePipe(p);
         }
@@ -620,6 +645,7 @@ public class SelectWithConsumer {
     /**
      * Test an action invoking selectNow()
      */
+    @Test
     public void testReentrantSelect2() throws Exception {
         Pipe p = Pipe.open();
         try (Selector sel = Selector.open()) {
@@ -640,7 +666,7 @@ public class SelectWithConsumer {
                 } catch (IllegalStateException expected) {
                 }
             });
-            assertTrue(n == 1);
+            assertEquals(1, n);
         } finally {
             closePipe(p);
         }
@@ -649,6 +675,7 @@ public class SelectWithConsumer {
     /**
      * Test an action invoking select(Consumer)
      */
+    @Test
     public void testReentrantSelect3() throws Exception {
         Pipe p = Pipe.open();
         try (Selector sel = Selector.open()) {
@@ -669,7 +696,7 @@ public class SelectWithConsumer {
                 } catch (IllegalStateException expected) {
                 }
             });
-            assertTrue(n == 1);
+            assertEquals(1, n);
         } finally {
             closePipe(p);
         }
@@ -678,42 +705,46 @@ public class SelectWithConsumer {
     /**
      * Negative timeout
      */
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testNegativeTimeout() throws Exception {
         try (Selector sel = Selector.open()) {
-            sel.select(k -> { }, -1L);
+            assertThrows(IllegalArgumentException.class,
+                         () -> sel.select(k -> { }, -1L));
         }
     }
 
     /**
      * Null action
      */
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void testNull1() throws Exception {
         try (Selector sel = Selector.open()) {
-            sel.select(null);
+            assertThrows(NullPointerException.class,
+                         () -> sel.select(null));
         }
     }
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void testNull2() throws Exception {
         try (Selector sel = Selector.open()) {
-            sel.select(null, 1000);
+            assertThrows(NullPointerException.class,
+                         () -> sel.select(null, 1000));
         }
     }
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void testNull3() throws Exception {
         try (Selector sel = Selector.open()) {
-            sel.selectNow(null);
+            assertThrows(NullPointerException.class,
+                         () -> sel.selectNow(null));
         }
     }
 
 
     // -- support methods ---
 
-    private final ScheduledExecutorService POOL = Executors.newScheduledThreadPool(1);
+    private static final ScheduledExecutorService POOL = Executors.newScheduledThreadPool(1);
 
-    @AfterTest
-    void shutdownThreadPool() {
+    @AfterAll
+    static void shutdownThreadPool() {
         POOL.shutdown();
     }
 
