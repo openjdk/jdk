@@ -2693,12 +2693,7 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   // VectorMaskToLongNode::Ideal_MaskAll looks through VectorStoreMask
   // to fold constant masks.
   if (use_op == Op_VectorStoreMask) {
-    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
-      Node* u = use->fast_out(i2);
-      if (u->Opcode() == Op_VectorMaskToLong) {
-        worklist.push(u);
-      }
-    }
+    add_users_to_worklist_if(worklist, use, [](Node* u) { return u->Opcode() == Op_VectorMaskToLong; });
   }
 
   // From CastX2PNode::Ideal
