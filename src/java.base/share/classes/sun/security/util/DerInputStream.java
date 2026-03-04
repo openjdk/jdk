@@ -28,6 +28,7 @@ package sun.security.util;
 import java.io.InputStream;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Optional;
@@ -193,12 +194,24 @@ public class DerInputStream {
         return getDerValue().getTime();
     }
 
+    public Instant getInstant() throws IOException {
+        return getDerValue().getInstant();
+    }
+
     public Date getUTCTime() throws IOException {
         return getDerValue().getUTCTime();
     }
 
+    public Instant getUTCInstant() throws IOException {
+        return getDerValue().getUTCInstant();
+    }
+
     public Date getGeneralizedTime() throws IOException {
         return getDerValue().getGeneralizedTime();
+    }
+
+    public Instant getGeneralizedInstant() throws IOException {
+        return getDerValue().getGeneralizedInstant();
     }
 
     // Read a series of DerValue objects which is the sub-elements

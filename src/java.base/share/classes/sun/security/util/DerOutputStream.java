@@ -29,6 +29,7 @@ import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.Comparator;
@@ -510,6 +511,16 @@ public final class DerOutputStream
     }
 
     /**
+     * Marshals a DER UTC time/date value.
+     *
+     * <P>YYMMDDhhmmss{Z|+hhmm|-hhmm} ... emits only using Zulu time
+     * and with seconds (even if seconds=0) as per RFC 5280.
+     */
+    public DerOutputStream putUTCInstant(Instant d) {
+        return putUTCTime(Date.from(d));
+    }
+
+    /**
      * Marshals a DER Generalized Time/date value.
      *
      * <P>YYYYMMDDhhmmss{Z|+hhmm|-hhmm} ... emits only using Zulu time
@@ -517,6 +528,16 @@ public final class DerOutputStream
      */
     public DerOutputStream putGeneralizedTime(Date d) {
         return putTime(d, DerValue.tag_GeneralizedTime);
+    }
+
+    /**
+     * Marshals a DER Generalized Time/date value.
+     *
+     * <P>YYYYMMDDhhmmss{Z|+hhmm|-hhmm} ... emits only using Zulu time
+     * and with seconds (even if seconds=0) as per RFC 5280.
+     */
+    public DerOutputStream putGeneralizedInstant(Instant d) {
+        return putGeneralizedTime(Date.from(d));
     }
 
     /**
