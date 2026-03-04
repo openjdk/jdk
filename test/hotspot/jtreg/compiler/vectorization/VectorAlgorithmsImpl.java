@@ -692,12 +692,11 @@ public class VectorAlgorithmsImpl {
     }
 
     public static Object filterI_VectorAPI_v1(int[] a, int[] r, int threshold) {
-        var thresholds = IntVector.broadcast(SPECIES_I, threshold);
         int j = 0;
         int i = 0;
         for (; i < SPECIES_I.loopBound(a.length); i += SPECIES_I.length()) {
             IntVector v = IntVector.fromArray(SPECIES_I, a, i);
-            var mask = v.compare(VectorOperators.GE, thresholds);
+            var mask = v.compare(VectorOperators.GE, threshold);
             v = v.compress(mask);
             int trueCount = mask.trueCount();
             var prefixMask = mask.compress();
@@ -720,20 +719,17 @@ public class VectorAlgorithmsImpl {
     //       masked stores, we struggle to deal with the loop-carried dependency of j.
     //       But we can still use dynamic uniformity to enable some vectorized performance.
     public static Object filterI_VectorAPI_v2_l2(int[] a, int[] r, int threshold) {
-        var thresholds = IntVector.broadcast(SPECIES_I64, threshold);
         int j = 0;
         int i = 0;
         for (; i < SPECIES_I64.loopBound(a.length); i += SPECIES_I64.length()) {
             IntVector v = IntVector.fromArray(SPECIES_I64, a, i);
-            var mask = v.compare(VectorOperators.GE, thresholds);
+            var mask = v.compare(VectorOperators.GE, threshold);
             if (mask.allTrue()) {
                 v.intoArray(r, j);
                 j += 2;
             } else if (mask.anyTrue()) {
-                int v0 = v.lane(0);
-                int v1 = v.lane(1);
-                if (v0 >= threshold) { r[j++] = v0; }
-                if (v1 >= threshold) { r[j++] = v1; }
+                if (mask.laneIsSet(0)) { r[j++] = v.lane(0); }
+                if (mask.laneIsSet(1)) { r[j++] = v.lane(1); }
             } else {
                 // nothing
             }
@@ -750,24 +746,19 @@ public class VectorAlgorithmsImpl {
     }
 
     public static Object filterI_VectorAPI_v2_l4(int[] a, int[] r, int threshold) {
-        var thresholds = IntVector.broadcast(SPECIES_I128, threshold);
         int j = 0;
         int i = 0;
         for (; i < SPECIES_I128.loopBound(a.length); i += SPECIES_I128.length()) {
             IntVector v = IntVector.fromArray(SPECIES_I128, a, i);
-            var mask = v.compare(VectorOperators.GE, thresholds);
+            var mask = v.compare(VectorOperators.GE, threshold);
             if (mask.allTrue()) {
                 v.intoArray(r, j);
                 j += 4;
             } else if (mask.anyTrue()) {
-                int v0 = v.lane(0);
-                int v1 = v.lane(1);
-                int v2 = v.lane(2);
-                int v3 = v.lane(3);
-                if (v0 >= threshold) { r[j++] = v0; }
-                if (v1 >= threshold) { r[j++] = v1; }
-                if (v2 >= threshold) { r[j++] = v2; }
-                if (v3 >= threshold) { r[j++] = v3; }
+                if (mask.laneIsSet(0)) { r[j++] = v.lane(0); }
+                if (mask.laneIsSet(1)) { r[j++] = v.lane(1); }
+                if (mask.laneIsSet(2)) { r[j++] = v.lane(2); }
+                if (mask.laneIsSet(3)) { r[j++] = v.lane(3); }
             } else {
                 // nothing
             }
@@ -784,32 +775,23 @@ public class VectorAlgorithmsImpl {
     }
 
     public static Object filterI_VectorAPI_v2_l8(int[] a, int[] r, int threshold) {
-        var thresholds = IntVector.broadcast(SPECIES_I256, threshold);
         int j = 0;
         int i = 0;
         for (; i < SPECIES_I256.loopBound(a.length); i += SPECIES_I256.length()) {
             IntVector v = IntVector.fromArray(SPECIES_I256, a, i);
-            var mask = v.compare(VectorOperators.GE, thresholds);
+            var mask = v.compare(VectorOperators.GE, threshold);
             if (mask.allTrue()) {
                 v.intoArray(r, j);
                 j += 8;
             } else if (mask.anyTrue()) {
-                int v0 = v.lane(0);
-                int v1 = v.lane(1);
-                int v2 = v.lane(2);
-                int v3 = v.lane(3);
-                int v4 = v.lane(4);
-                int v5 = v.lane(5);
-                int v6 = v.lane(6);
-                int v7 = v.lane(7);
-                if (v0 >= threshold) { r[j++] = v0; }
-                if (v1 >= threshold) { r[j++] = v1; }
-                if (v2 >= threshold) { r[j++] = v2; }
-                if (v3 >= threshold) { r[j++] = v3; }
-                if (v4 >= threshold) { r[j++] = v4; }
-                if (v5 >= threshold) { r[j++] = v5; }
-                if (v6 >= threshold) { r[j++] = v6; }
-                if (v7 >= threshold) { r[j++] = v7; }
+                if (mask.laneIsSet(0)) { r[j++] = v.lane(0); }
+                if (mask.laneIsSet(1)) { r[j++] = v.lane(1); }
+                if (mask.laneIsSet(2)) { r[j++] = v.lane(2); }
+                if (mask.laneIsSet(3)) { r[j++] = v.lane(3); }
+                if (mask.laneIsSet(4)) { r[j++] = v.lane(4); }
+                if (mask.laneIsSet(5)) { r[j++] = v.lane(5); }
+                if (mask.laneIsSet(6)) { r[j++] = v.lane(6); }
+                if (mask.laneIsSet(7)) { r[j++] = v.lane(7); }
             } else {
                 // nothing
             }
