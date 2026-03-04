@@ -551,7 +551,7 @@ public class Navigation {
                         .add(options.noHelp() || !options.helpFile().isEmpty()
                                 ? HtmlTree.DIV(Text.EMPTY).addUnchecked(Text.EMPTY)
                                 : HtmlTree.DIV(links.createLink(pathToRoot.resolve(DocPaths.HELP_DOC).fragment("search"),
-                                        Text.of("Search help"))))));
+                                    contents.getContent("doclet.search.linkSearchHelpLabel"))))));
     }
 
     private Content createModuleSelector() {

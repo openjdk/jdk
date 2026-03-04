@@ -447,14 +447,12 @@ document.addEventListener("DOMContentLoaded", function(e) {
             e.preventDefault();
         } else if (e.key === "Escape") {
             closeThemePanel();
-            if (expanded) {
+            var filter = getVisibleFilterInput(false);
+            if (e.target === filter) {
+                resetInput(filter, e, true);
+            } else if (expanded) {
                 collapse();
                 e.preventDefault();
-            } else {
-                var filter = getVisibleFilterInput(false);
-                if (filter && filter.value) {
-                    resetInput(filterInput, e, true);
-                }
             }
         }
     });
