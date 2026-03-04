@@ -620,7 +620,6 @@ class StubGenerator: public StubCodeGenerator {
     // Stack is unaligned, maintain double word alignment by pushing
     // odd number of regs.
     __ push(RegisterSet(temp_result) | RegisterSet(temp_lo, temp_hi));
-
     __ ldr(addr, Address(SP, 12));
 
     // atomic_cas64 returns previous value in temp_lo, temp_hi

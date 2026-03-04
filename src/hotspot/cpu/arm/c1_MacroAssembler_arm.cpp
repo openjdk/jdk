@@ -260,7 +260,7 @@ void C1_MacroAssembler::step_random(Register state, Register temp, Register data
   //   // plenty good enough for what we need.
   //   crc32h(state, state, data);
   // } else
-    {
+  {
     /* LCG from glibc. */
     mov_slow(temp, 1103515245);
     mul(state, state, temp);

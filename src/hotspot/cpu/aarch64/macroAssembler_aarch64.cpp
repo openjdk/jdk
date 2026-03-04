@@ -2125,7 +2125,7 @@ Address MacroAssembler::argument_address(RegisterOrConstant arg_slot,
 // counter updates are not atomic.
 //
 void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_offset,
-                                           addptr_32_insn_t inc) {
+                                           increment_mdo_insn_t inc) {
   assert_different_registers(recv, mdp, rscratch1, rscratch2);
 
   int base_receiver_offset   = in_bytes(ReceiverTypeData::receiver_offset(0));

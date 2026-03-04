@@ -53,6 +53,7 @@ friend class ArrayCopyStub;
   void type_profile_helper(Register mdo, ciMethodData *md,
                            ciProfileData *data, Register recv);
   void add_debug_info_for_branch(address adr, CodeEmitInfo* info);
+
   void casw(Register addr, Register newval, Register cmpval);
   void casl(Register addr, Register newval, Register cmpval);
 

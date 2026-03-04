@@ -275,20 +275,18 @@ void C1_MacroAssembler::step_random(Register state, Register temp) {
   // One of these will be the best for a particular CPU.
 
   /* Algorithm "xor" from p. 4 of Marsaglia, "Xorshift RNGs" */
-  if (getenv("APH_USE_XORSHIFT")) {
-    movl(temp, state);
-    sall(temp, 13);
-    xorl(state, temp);
-    movl(temp, state);
-    shrl(temp, 7);
-    xorl(state, temp);
-    movl(temp, state);
-    sall(temp, 5);
-    xorl(state, temp);
-    return;
-  }
 
-  if (!getenv("APH_USE_LCG") && VM_Version::supports_sse4_2()) {
+  // movl(temp, state);
+  // sall(temp, 13);
+  // xorl(state, temp);
+  // movl(temp, state);
+  // shrl(temp, 7);
+  // xorl(state, temp);
+  // movl(temp, state);
+  // sall(temp, 5);
+  // xorl(state, temp);
+
+  if (VM_Version::supports_sse4_2()) {
     /* CRC used as a psuedo-random-number generator */
     // In effect, the CRC instruction is being used here for its
     // linear feedback shift register. It's unbeatably fast, and
