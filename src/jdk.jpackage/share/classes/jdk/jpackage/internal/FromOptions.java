@@ -49,6 +49,7 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -149,6 +150,13 @@ final class FromOptions {
             ApplicationLayout appLayout, RuntimeLayout runtimeLayout,
             Optional<RuntimeLayout> predefinedRuntimeLayout) {
 
+        Objects.requireNonNull(options);
+        Objects.requireNonNull(launcherCtor);
+        Objects.requireNonNull(launcherOverrideCtor);
+        Objects.requireNonNull(appLayout);
+        Objects.requireNonNull(runtimeLayout);
+        Objects.requireNonNull(predefinedRuntimeLayout);
+
         final var appBuilder = new ApplicationBuilder();
 
         final var isRuntimeInstaller = isRuntimeInstaller(options);
@@ -185,7 +193,15 @@ final class FromOptions {
         } else {
             appBuilder.appImageLayout(appLayout);
 
-            final var launchers = createLaunchers(options, launcherCtor);
+            // Adjust the value of the PREDEFINED_RUNTIME_IMAGE option to make it reference
+            // a directory with the standard Java runtime structure.
+            final var launcherOptions = predefinedRuntimeDirectory.filter(v -> {
+                return !predefinedRuntimeImage.get().equals(v);
+            }).map(v -> {
+                return Options.of(Map.of(PREDEFINED_RUNTIME_IMAGE, v)).copyWithParent(options);
+            }).orElse(options);
+
+            final var launchers = createLaunchers(launcherOptions, launcherCtor);
 
             if (PREDEFINED_APP_IMAGE.containsIn(options)) {
                 appBuilder.launchers(launchers);

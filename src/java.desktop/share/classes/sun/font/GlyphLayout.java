@@ -76,7 +76,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.WeakHashMap;
 
 import static java.lang.Character.*;
 
@@ -125,18 +125,12 @@ public final class GlyphLayout {
     }
 
     private static final class SDCache {
-        public Font key_font;
-        public FontRenderContext key_frc;
-
         public AffineTransform dtx;
         public AffineTransform gtx;
         public Point2D.Float delta;
         public FontStrikeDesc sd;
 
         private SDCache(Font font, FontRenderContext frc) {
-            key_font = font;
-            key_frc = frc;
-
             // !!! add getVectorTransform and hasVectorTransform to frc?  then
             // we could just skip this work...
 
@@ -177,7 +171,7 @@ public final class GlyphLayout {
         private static final Point2D.Float ZERO_DELTA = new Point2D.Float();
 
         private static
-            SoftReference<ConcurrentHashMap<SDKey, SDCache>> cacheRef;
+            SoftReference<WeakHashMap<SDKey, SDCache>> cacheRef;
 
         private static final class SDKey {
             private final Font font;
@@ -232,7 +226,7 @@ public final class GlyphLayout {
             }
 
             SDKey key = new SDKey(font, frc); // garbage, yuck...
-            ConcurrentHashMap<SDKey, SDCache> cache = null;
+            WeakHashMap<SDKey, SDCache> cache = null;
             SDCache res = null;
             if (cacheRef != null) {
                 cache = cacheRef.get();
@@ -243,13 +237,17 @@ public final class GlyphLayout {
             if (res == null) {
                 res = new SDCache(font, frc);
                 if (cache == null) {
-                    cache = new ConcurrentHashMap<SDKey, SDCache>(10);
+                    cache = new WeakHashMap<SDKey, SDCache>(10);
                     cacheRef = new
-                       SoftReference<ConcurrentHashMap<SDKey, SDCache>>(cache);
-                } else if (cache.size() >= 512) {
-                    cache.clear();
+                       SoftReference<WeakHashMap<SDKey, SDCache>>(cache);
+                } else if (cache.size() >= 128) {
+                    synchronized (SDCache.class) {
+                        cache.clear();
+                    }
                 }
-                cache.put(key, res);
+                synchronized (SDCache.class) {
+                    cache.put(key, res);
+                }
             }
             return res;
         }

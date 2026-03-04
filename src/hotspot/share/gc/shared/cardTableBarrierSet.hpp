@@ -103,6 +103,10 @@ public:
 
   virtual void print_on(outputStream* st) const;
 
+  // The AOT code cache manager needs to know the region grain size
+  // shift for some barrier sets.
+  virtual uint grain_shift() { return 0; }
+
   template <DecoratorSet decorators, typename BarrierSetT = CardTableBarrierSet>
   class AccessBarrier: public BarrierSet::AccessBarrier<decorators, BarrierSetT> {
     typedef BarrierSet::AccessBarrier<decorators, BarrierSetT> Raw;

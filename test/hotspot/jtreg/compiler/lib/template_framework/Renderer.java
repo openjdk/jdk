@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -414,7 +414,38 @@ final class Renderer {
     }
 
     /**
+     * Finds the index where the next replacement pattern after {@code start} begins while skipping
+     * over "$$" and "##".
+     *
+     * @param s     string to search for replacements
+     * @param start index from which to start searching
+     * @return the index of the beginning of the next replacement pattern or the length of {@code s}
+     */
+    private int findNextReplacement(final String s, final int start) {
+        int next = start;
+        for (int potentialStart = start; potentialStart < s.length() && s.charAt(next) == s.charAt(potentialStart); potentialStart = next + 1) {
+            // If this is not the first iteration, we have found a doubled up "$" or "#" and need to skip
+            // over the second instance.
+            if (potentialStart != start) {
+                potentialStart += 1;
+            }
+            // Find the next "$" or "#", after the potential start.
+            int dollar  = s.indexOf("$", potentialStart);
+            int hashtag = s.indexOf("#", potentialStart);
+            // If the character was not found, we want to have the rest of the
+            // String s, so instead of "-1" take the end/length of the String.
+            dollar  = (dollar == -1)  ? s.length() : dollar;
+            hashtag = (hashtag == -1) ? s.length() : hashtag;
+            // Take the first one.
+            next = Math.min(dollar, hashtag);
+        }
+
+        return next;
+    }
+
+    /**
      * We split a {@link String} by "#" and "$", and then look at each part.
+     * However, we escape "##" to "#" and "$$" to "$".
      * Example:
      *
      *  s:    "abcdefghijklmnop #name abcdefgh${var_name} 12345#{name2}_con $field_name something"
@@ -428,16 +459,19 @@ final class Renderer {
         int start = 0;
         boolean startIsAfterDollar = false;
         do {
-            // Find the next "$" or "#", after start.
-            int dollar  = s.indexOf("$", start);
-            int hashtag = s.indexOf("#", start);
-            // If the character was not found, we want to have the rest of the
-            // String s, so instead of "-1" take the end/length of the String.
-            dollar  = (dollar == -1)  ? s.length() : dollar;
-            hashtag = (hashtag == -1) ? s.length() : hashtag;
-            // Take the first one.
-            int next = Math.min(dollar, hashtag);
+            int next = findNextReplacement(s, start);
+
+            // Detect most zero sized replacement patterns, i.e. "$#" or "#$", for better error reporting.
+            if (next < s.length() - 2 && ((s.charAt(next) == '$' && s.charAt(next + 1) == '#') ||
+                (s.charAt(next) == '#' && s.charAt(next + 1) == '$'))) {
+                String pattern = s.substring(next, next + 2);
+                throw new RendererException("Found zero sized replacement pattern '" + pattern + "'.");
+            }
+
             String part = s.substring(start, next);
+            // Escape doubled up replacement characters.
+            part = part.replace("##", "#");
+            part = part.replace("$$", "$");
 
             if (count == 0) {
                 // First part has no "#" or "$" before it.
@@ -452,8 +486,8 @@ final class Renderer {
                 // terminate now.
                 return;
             }
-            start = next + 1; // skip over the "#" or "$"
-            startIsAfterDollar = next == dollar; // remember which character we just split with
+            start = next + 1;
+            startIsAfterDollar = s.charAt(next) == '$'; // remember which character we just split with
             count++;
         } while (true);
     }
