@@ -2583,6 +2583,7 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
 
 void os::print_open_file_descriptors(outputStream* st) {
 #ifdef __APPLE__
+  pid_t my_pid;
   const int MAX_SAFE_FDS = 1024;
   struct proc_fdinfo fds[MAX_SAFE_FDS];
   // get the process PID for proc_pidinfo calls
@@ -2611,6 +2612,7 @@ void os::print_open_file_descriptors(outputStream* st) {
 
 void os::Bsd::print_open_file_descriptors(outputStream* st, char* buf, size_t buflen) {
 #ifdef __APPLE__
+  pid_t my_pid;
   // ensure the scratch buffer is big enough for at least one FD info struct
   if (buflen < sizeof(struct proc_fdinfo)) {
       st->print_cr("Open File Descriptors: unknown");
