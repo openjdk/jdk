@@ -116,7 +116,7 @@
 // requirements. Don't change it for fun, it might backfire.
 // -----------------------------------------------------------------------------
 
-ObjectMonitorTable::Table* volatile ObjectMonitorTable::_curr;
+Atomic<ObjectMonitorTable::Table*> ObjectMonitorTable::_curr;
 
 class ObjectMonitorTable::Table : public CHeapObj<mtObjectMonitor> {
   friend class ObjectMonitorTable;
@@ -512,12 +512,12 @@ public:
 };
 
 void ObjectMonitorTable::create() {
-  _curr = new Table(128, nullptr);
+  _curr.store_relaxed(new Table(128, nullptr));
 }
 
 ObjectMonitor* ObjectMonitorTable::monitor_get(Thread* current, oop obj) {
   const intptr_t hash = obj->mark().hash();
-  Table* curr = AtomicAccess::load_acquire(&_curr);
+  Table* curr = _curr.load_acquire();
   ObjectMonitor* monitor = curr->get(obj, hash);
   return monitor;
 }
@@ -525,7 +525,7 @@ ObjectMonitor* ObjectMonitorTable::monitor_get(Thread* current, oop obj) {
 // Returns a new table to try inserting into.
 ObjectMonitorTable::Table* ObjectMonitorTable::grow_table(Table* curr) {
   Table* result;
-  Table* new_table = AtomicAccess::load_acquire(&_curr);
+  Table* new_table = _curr.load_acquire();
   if (new_table != curr) {
     // Table changed; no need to try further
     return new_table;
@@ -536,14 +536,14 @@ ObjectMonitorTable::Table* ObjectMonitorTable::grow_table(Table* curr) {
     // attempt to allocate the new table.
     MonitorLocker ml(MonitorDeflation_lock, Mutex::_no_safepoint_check_flag);
 
-    new_table = AtomicAccess::load_acquire(&_curr);
+    new_table = _curr.load_acquire();
     if (new_table != curr) {
       // Table changed; no need to try further
       return new_table;
     }
 
     new_table = new Table(curr->capacity() << 1, curr);
-    result = AtomicAccess::cmpxchg(&_curr, curr, new_table, memory_order_acq_rel);
+    result = _curr.compare_exchange(curr, new_table, memory_order_acq_rel);
     if (result == curr) {
       log_info(monitorinflation)("Growing object monitor table (capacity: %zu)",
                                  new_table->capacity());
@@ -564,7 +564,7 @@ ObjectMonitorTable::Table* ObjectMonitorTable::grow_table(Table* curr) {
 
 ObjectMonitor* ObjectMonitorTable::monitor_put_get(Thread* current, ObjectMonitor* monitor, oop obj) {
   const intptr_t hash = obj->mark().hash();
-  Table* curr = AtomicAccess::load_acquire(&_curr);
+  Table* curr =  _curr.load_acquire();
 
   for (;;) {
     // Curr is the latest table and is reasonably loaded.
@@ -584,7 +584,7 @@ void ObjectMonitorTable::remove_monitor_entry(Thread* current, ObjectMonitor* mo
     return;
   }
   const intptr_t hash = obj->mark().hash();
-  Table* curr = AtomicAccess::load_acquire(&_curr);
+  Table* curr =  _curr.load_acquire();
   curr->remove(obj, curr->as_entry(monitor), hash);
   assert(monitor_get(current, obj) != monitor, "should have been removed");
 }
@@ -619,13 +619,13 @@ void ObjectMonitorTable::rebuild(GrowableArray<Table*>* delete_list) {
     // given the growing threshold of 12.5%, it is impossible for the
     // tables to reach a load factor above 50%. Which is more than
     // enough to guarantee the function of this concurrent hash table.
-    Table* curr = AtomicAccess::load_acquire(&_curr);
+    Table* curr =  _curr.load_acquire();
     size_t need_to_accomodate = curr->total_items();
     size_t new_capacity = curr->should_grow(need_to_accomodate)
       ? curr->capacity() << 1
       : curr->capacity();
     new_table = new Table(new_capacity, curr);
-    Table* result = AtomicAccess::cmpxchg(&_curr, curr, new_table, memory_order_acq_rel);
+    Table* result = _curr.compare_exchange(curr, new_table, memory_order_acq_rel);
     if (result != curr) {
       // Somebody else racingly started rehashing. Delete the
       // new_table and treat somebody else's table as the new one.
@@ -652,7 +652,7 @@ void ObjectMonitorTable::destroy(GrowableArray<Table*>* delete_list) {
 }
 
 address ObjectMonitorTable::current_table_address() {
-  return (address)(&_curr);
+  return reinterpret_cast<address>(&_curr) + _curr.value_offset_in_bytes();
 }
 
 ByteSize ObjectMonitorTable::table_capacity_mask_offset() {
