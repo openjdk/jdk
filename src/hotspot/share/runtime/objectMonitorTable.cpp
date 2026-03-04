@@ -123,7 +123,7 @@ class ObjectMonitorTable::Table : public CHeapObj<mtObjectMonitor> {
 
   DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
   const size_t _capacity_mask;       // One less than its power-of-two capacity
-  Table* volatile _prev;             // Set while rehashing
+  Atomic<Table*> _prev;              // Set while rehashing
   Entry volatile* _buckets;          // The payload
   DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(_capacity_mask) + sizeof(_prev) + sizeof(_buckets));
   Atomic<size_t> _items_count;
@@ -194,7 +194,7 @@ public:
   }
 
   Table* prev() {
-    return AtomicAccess::load(&_prev);
+    return _prev.load_relaxed();
   }
 
   size_t capacity() {
@@ -211,7 +211,7 @@ public:
 
   size_t total_items() {
     size_t current_items = _items_count.load_relaxed();
-    Table* prev = AtomicAccess::load(&_prev);
+    Table* prev = _prev.load_relaxed();
     if (prev != nullptr) {
       return prev->total_items() + current_items;
     }
@@ -220,7 +220,7 @@ public:
 
   ObjectMonitor* get(oop obj, intptr_t hash) {
     // Acquire tombstones and relocations in case prev transitioned to null
-    Table* prev = AtomicAccess::load_acquire(&_prev);
+    Table* prev = _prev.load_acquire();
     if (prev != nullptr) {
       ObjectMonitor* result = prev->get(obj, hash);
       if (result != nullptr) {
@@ -256,7 +256,7 @@ public:
 
   ObjectMonitor* prepare_insert(oop obj, intptr_t hash) {
     // Acquire any tomb stones and relocations if prev transitioned to null.
-    Table* prev = AtomicAccess::load_acquire(&_prev);
+    Table* prev = _prev.load_acquire();
     if (prev != nullptr) {
       ObjectMonitor* result = prev->prepare_insert(obj, hash);
       if (result != nullptr) {
@@ -299,7 +299,7 @@ public:
 
   ObjectMonitor* get_set(oop obj, Entry new_monitor, intptr_t hash) {
     // Acquire any tombstones and relocations if prev transitioned to null.
-    Table* prev = AtomicAccess::load_acquire(&_prev);
+    Table* prev = _prev.load_acquire();
     if (prev != nullptr) {
       // Sprinkle tombstones in previous tables to force concurrent inserters
       // to the latest table. We only really want to try inserting in the
@@ -394,8 +394,8 @@ public:
     // still not being a monitor, instead of flickering back to being there.
     // Only the deflation thread rebuilds and unlinks tables, so we do not need
     // any concurrency safe prev read below.
-    if (_prev != nullptr) {
-      _prev->remove(obj, old_monitor, hash);
+    if (_prev.load_relaxed() != nullptr) {
+      _prev.load_relaxed()->remove(obj, old_monitor, hash);
     }
   }
 
@@ -458,7 +458,7 @@ public:
   }
 
   void rebuild() {
-    Table* prev = _prev;
+    Table* prev = _prev.load_relaxed();
     if (prev == nullptr) {
       // Base case for recursion - no previous version.
       return;
@@ -507,7 +507,7 @@ public:
     }
 
     // Unlink this table, releasing the tombstones and relocations.
-    AtomicAccess::release_store(&_prev, (Table*)nullptr);
+    _prev.release_store(nullptr);
   }
 };
 
