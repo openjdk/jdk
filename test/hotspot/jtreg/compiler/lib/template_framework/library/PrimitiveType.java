@@ -78,12 +78,15 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
                 return pt.kind == kind;
             }
             if (pt.kind == Kind.CHAR || kind == Kind.CHAR) {
-                // Char does not have a subtype, but .
-                // The following is correct for the subtype relation to floats, since chars are 16 bits wide and floats 32 bits or more.
+                // Char does not have a subtype, but it is itself a subtype of any primitive type with
+                // a larger byte size. The following is correct for the subtype relation to floats,
+                // since chars are 16 bits wide and floats 32 bits or more.
                 return pt.kind == kind || (pt.byteSize() > this.byteSize() && this.kind != Kind.BYTE);
             }
-            return (pt.isFloating() && !this.isFloating()) ||  // Due to float >: long, all integers are subtypes of floating point types.
-                   (pt.isFloating() == this.isFloating() && pt.byteSize() >= this.byteSize()); // Generally, narrower types are subtypes of wider types.
+            // Due to float >: long, all integers are subtypes of floating point types.
+            return (pt.isFloating() && !this.isFloating()) ||
+                   // Generally, narrower types are subtypes of wider types.
+                   (pt.isFloating() == this.isFloating() && pt.byteSize() >= this.byteSize());
         }
 
         return false;
