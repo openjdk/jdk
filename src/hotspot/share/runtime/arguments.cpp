@@ -536,9 +536,6 @@ static SpecialFlag const special_jvm_flags[] = {
 #ifdef _LP64
   { "UseCompressedClassPointers",   JDK_Version::jdk(25),  JDK_Version::jdk(27), JDK_Version::undefined() },
 #endif
-  { "ParallelRefProcEnabled",       JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "ParallelRefProcBalancingEnabled", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "MaxRAM",                       JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "AggressiveHeap",               JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "NeverActAsServerClassMachine", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "AlwaysActAsServerClassMachine", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
@@ -553,6 +550,9 @@ static SpecialFlag const special_jvm_flags[] = {
 #endif
 
   { "PSChunkLargeArrays",           JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
+  { "ParallelRefProcEnabled",       JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
+  { "ParallelRefProcBalancingEnabled", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
+  { "MaxRAM",                       JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
@@ -1510,25 +1510,19 @@ void Arguments::set_heap_size() {
   // Check if the user has configured any limit on the amount of RAM we may use.
   bool has_ram_limit = !FLAG_IS_DEFAULT(MaxRAMPercentage) ||
                        !FLAG_IS_DEFAULT(MinRAMPercentage) ||
-                       !FLAG_IS_DEFAULT(InitialRAMPercentage) ||
-                       !FLAG_IS_DEFAULT(MaxRAM);
+                       !FLAG_IS_DEFAULT(InitialRAMPercentage);
 
-  if (FLAG_IS_DEFAULT(MaxRAM)) {
-    if (CompilerConfig::should_set_client_emulation_mode_flags()) {
-      // Limit the available memory if client emulation mode is enabled.
-      FLAG_SET_ERGO(MaxRAM, 1ULL*G);
-    } else {
-      // Use the available physical memory on the system.
-      FLAG_SET_ERGO(MaxRAM, os::physical_memory());
-    }
-  }
+  // Limit the available memory if client emulation mode is enabled.
+  const size_t avail_mem = CompilerConfig::should_set_client_emulation_mode_flags()
+      ? 1ULL*G
+      : os::physical_memory();
 
   // If the maximum heap size has not been set with -Xmx, then set it as
   // fraction of the size of physical memory, respecting the maximum and
   // minimum sizes of the heap.
   if (FLAG_IS_DEFAULT(MaxHeapSize)) {
-    uint64_t min_memory = (uint64_t)(((double)MaxRAM * MinRAMPercentage) / 100);
-    uint64_t max_memory = (uint64_t)(((double)MaxRAM * MaxRAMPercentage) / 100);
+    uint64_t min_memory = (uint64_t)(((double)avail_mem * MinRAMPercentage) / 100);
+    uint64_t max_memory = (uint64_t)(((double)avail_mem * MaxRAMPercentage) / 100);
 
     const size_t reasonable_min = clamp_by_size_t_max(min_memory);
     size_t reasonable_max = clamp_by_size_t_max(max_memory);
@@ -1615,7 +1609,7 @@ void Arguments::set_heap_size() {
     reasonable_minimum = limit_heap_by_allocatable_memory(reasonable_minimum);
 
     if (InitialHeapSize == 0) {
-      uint64_t initial_memory = (uint64_t)(((double)MaxRAM * InitialRAMPercentage) / 100);
+      uint64_t initial_memory = (uint64_t)(((double)avail_mem * InitialRAMPercentage) / 100);
       size_t reasonable_initial = clamp_by_size_t_max(initial_memory);
       reasonable_initial = limit_heap_by_allocatable_memory(reasonable_initial);
 

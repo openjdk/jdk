@@ -50,7 +50,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.Globals;
-import jdk.jpackage.internal.MockUtils;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.ExecutableAttributesWithCapturedOutput;
 import jdk.jpackage.internal.model.JPackageException;
@@ -67,6 +66,7 @@ import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.mock.CommandActionSpecs;
 import jdk.jpackage.test.mock.Script;
 import jdk.jpackage.test.mock.VerbatimCommandMock;
+import jdk.jpackage.test.stdmock.JPackageMockUtils;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -124,9 +124,8 @@ public class MainTest extends JUnitAdapter {
         var jpackageToolProviderMock = new ToolProvider() {
             @Override
             public int run(PrintWriter out, PrintWriter err, String... args) {
-                var globalsMutator = MockUtils.buildJPackage().script(script).createGlobalsMutator();
-                return Globals.main(() -> {
-                    globalsMutator.accept(Globals.instance());
+               return Globals.main(() -> {
+                   JPackageMockUtils.buildJPackage().script(script).applyToGlobals();
 
                     var result = ExecutionResult.create(args);
 
@@ -462,7 +461,11 @@ public class MainTest extends JUnitAdapter {
             var stdout = new StringWriter();
             var stderr = new StringWriter();
 
-            var exitCode = Main.run(new PrintWriter(stdout), new PrintWriter(stderr), args);
+            var os = OperatingSystem.current();
+            var exitCode = Main.run(os, () -> {
+                CliBundlingEnvironment bundlingEnv = JPackageMockUtils.createBundlingEnvironment(os);
+                return bundlingEnv;
+            }, new PrintWriter(stdout), new PrintWriter(stderr), args);
 
             return new ExecutionResult(lines(stdout.toString()), lines(stderr.toString()), exitCode);
         }
