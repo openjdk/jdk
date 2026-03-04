@@ -417,6 +417,12 @@ class GenerateOopMap {
 
   void  report_result                       ();
 
+  // Initvars
+  GrowableArray<intptr_t> * _init_vars;
+
+  void  initialize_vars                     ();
+  void  add_to_ref_init_set                 (int localNo);
+
   // Conflicts rewrite logic
   bool      _conflict;                      // True, if a conflict occurred during interpretation
   int       _nof_refval_conflicts;          // No. of conflicts that require rewrites
@@ -480,6 +486,7 @@ class GenerateOopMap {
   // All virtual method must be implemented in subclasses
   virtual bool allow_rewrites             () const                        { return false; }
   virtual bool report_results             () const                        { return true;  }
+  virtual bool report_init_vars           () const                        { return true;  }
   virtual void fill_stackmap_for_opcodes  (BytecodeStream *bcs,
                                            CellTypeState* vars,
                                            CellTypeState* stack,
@@ -494,6 +501,7 @@ class ResolveOopMapConflicts: public GenerateOopMap {
  private:
 
   virtual bool report_results() const     { return false; }
+  virtual bool report_init_vars() const   { return true;  }
   virtual bool allow_rewrites() const     { return true;  }
   virtual void fill_stackmap_for_opcodes  (BytecodeStream *bcs,
                                            CellTypeState* vars,
@@ -509,7 +517,6 @@ class ResolveOopMapConflicts: public GenerateOopMap {
 
  public:
   ResolveOopMapConflicts(const methodHandle& method) : GenerateOopMap(method) { }
-
   methodHandle do_potential_rewrite(TRAPS);
 };
 
@@ -521,6 +528,7 @@ class GeneratePairingInfo: public GenerateOopMap {
  private:
 
   virtual bool report_results() const     { return false; }
+  virtual bool report_init_vars() const   { return false; }
   virtual bool allow_rewrites() const     { return false;  }
   virtual void fill_stackmap_for_opcodes  (BytecodeStream *bcs,
                                            CellTypeState* vars,

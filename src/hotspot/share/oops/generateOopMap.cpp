@@ -1047,6 +1047,9 @@ void GenerateOopMap::setup_method_entry_state() {
     // Initialize CellState type of arguments
     methodsig_to_effect(method()->signature(), method()->is_static(), vars());
 
+    // If some references must be pre-assigned to null, then set that up
+    initialize_vars();
+
     // This is the start state
     merge_state_into_bb(&_basic_blocks[0]);
 
@@ -1068,6 +1071,27 @@ void GenerateOopMap::update_basic_blocks(int bci, int delta,
     }
     _bb_hdr_bits.at_put(_basic_blocks[k]._bci, true);
   }
+}
+
+//
+// Initvars handling
+//
+
+void GenerateOopMap::initialize_vars() {
+  for (int k = 0; k < _init_vars->length(); k++)
+    _state[_init_vars->at(k)] = CellTypeState::make_slot_ref(k);
+}
+
+void GenerateOopMap::add_to_ref_init_set(int localNo) {
+
+  if (TraceNewOopMapGeneration)
+    tty->print_cr("Added init vars: %d", localNo);
+
+  // Is it already in the set?
+  if (_init_vars->contains(localNo) )
+    return;
+
+   _init_vars->append(localNo);
 }
 
 //
@@ -1644,6 +1668,7 @@ void GenerateOopMap::ppload(CellTypeState *out, int loc_no) {
         if (vcts.can_be_uninit()) {
           // It is a ref-uninit conflict (at least). If there are other
           // problems, we'll get them in the next round
+          add_to_ref_init_set(loc_no);
           vcts = out1;
         } else {
           // It wasn't a ref-uninit conflict. So must be a
@@ -2036,6 +2061,7 @@ GenerateOopMap::GenerateOopMap(const methodHandle& method) {
   // We have to initialize all variables here, that can be queried directly
   _method = method;
   _max_locals=0;
+  _init_vars = nullptr;
 
 #ifndef PRODUCT
   // If we are doing a detailed trace, include the regular trace information.
@@ -2065,6 +2091,7 @@ bool GenerateOopMap::compute_map(Thread* current) {
   _max_stack      = method()->max_stack();
   _has_exceptions = (method()->has_exception_handler());
   _nof_refval_conflicts = 0;
+  _init_vars      = new GrowableArray<intptr_t>(5);  // There are seldom more than 5 init_vars
   _report_result  = false;
   _report_result_for_send = false;
   _new_var_map    = nullptr;
