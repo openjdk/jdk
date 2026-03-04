@@ -29,6 +29,7 @@ package com.sun.tools.javac.comp;
 import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Attribute.TypeCompound;
+import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.TypeVar;
 import com.sun.tools.javac.jvm.Target;
@@ -47,6 +48,8 @@ import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
 import static com.sun.tools.javac.code.TypeTag.VOID;
 import static com.sun.tools.javac.comp.CompileStates.CompileState;
 import com.sun.tools.javac.tree.JCTree.JCBreak;
+
+import javax.lang.model.type.TypeKind;
 
 /** This pass translates Generic Java to conventional Java.
  *
@@ -106,9 +109,7 @@ public class TransTypes extends TreeTranslator {
         if (!types.isSameType(tree.type, target)) {
             if (!resolve.isAccessible(env, target.tsym))
                 resolve.logAccessErrorInternal(env, tree, target);
-            tree = explicitCastTP != null && types.isSameType(target, explicitCastTP) ?
-                    tree :
-                    make.TypeCast(make.Type(target), tree).setType(target);
+            tree = make.TypeCast(make.Type(target), tree).setType(target);
         }
         make.pos = oldpos;
         return tree;
@@ -439,29 +440,16 @@ public class TransTypes extends TreeTranslator {
     /** Visitor argument: proto-type.
      */
     private Type pt;
-    /** we use this type to indicate that "upstream" there is an explicit cast to this type,
-     *  this way we can avoid generating redundant type casts. Redundant casts are not
-     *  innocuous as they can trump user provided ones and affect the offset
-     *  calculation of type annotations applied to the user provided type cast.
-     */
-    private Type explicitCastTP;
 
     /** Visitor method: perform a type translation on tree.
      */
     public <T extends JCTree> T translate(T tree, Type pt) {
-        return translate(tree, pt, pt == explicitCastTP ? explicitCastTP : null);
-    }
-
-    public <T extends JCTree> T translate(T tree, Type pt, Type castTP) {
         Type prevPt = this.pt;
-        Type prevCastPT = this.explicitCastTP;
         try {
             this.pt = pt;
-            this.explicitCastTP = castTP;
             return translate(tree);
         } finally {
             this.pt = prevPt;
-            this.explicitCastTP = prevCastPT;
         }
     }
 
@@ -1049,9 +1037,7 @@ public class TransTypes extends TreeTranslator {
         tree.clazz = translate(tree.clazz, null);
         Type originalTarget = tree.type;
         tree.type = erasure(tree.type);
-        JCExpression newExpression = tree.clazz.hasTag(Tag.ANNOTATED_TYPE) ?
-                translate(tree.expr, tree.type, tree.type) :
-                translate(tree.expr, tree.type);
+        JCExpression newExpression = translate(tree.expr, tree.type);
         if (newExpression != tree.expr) {
             JCTypeCast typeCast = newExpression.hasTag(Tag.TYPECAST)
                 ? (JCTypeCast) newExpression
