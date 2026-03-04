@@ -262,7 +262,7 @@ public:
   bool can_split_through_phi_base(PhaseGVN *phase);
 
   // Split instance field load through Phi.
-  Node* split_through_phi(PhaseGVN *phase, bool ignore_missing_instance_id = false);
+  Node* split_through_phi(PhaseGVN *phase, bool called_from_ea = false);
 
   // Recover original value from boxed values
   Node *eliminate_autobox(PhaseIterGVN *igvn);
@@ -295,6 +295,8 @@ public:
 
   // Check if the load's memory input is a Phi node with the same control.
   bool is_instance_field_load_with_local_phi(Node* ctrl);
+
+  bool same_vector_load_inputs(Node* use);
 
   Node* convert_to_unsigned_load(PhaseGVN& gvn);
   Node* convert_to_signed_load(PhaseGVN& gvn);

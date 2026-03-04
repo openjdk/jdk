@@ -1333,6 +1333,16 @@ bool LoadNode::is_instance_field_load_with_local_phi(Node* ctrl) {
   return false;
 }
 
+bool LoadNode::same_vector_load_inputs(Node* use) {
+  assert(req() == Address + 1 || Opcode() == Op_LoadVectorGather || Opcode() == Op_LoadVectorGatherMasked, "only has an effect with vector loads");
+  for (uint i = Address + 1; i < req(); i++) {
+    if (in(i) != use->in(i)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 //------------------------------Identity---------------------------------------
 // Loads are identity if previous store is to same address
 Node* LoadNode::Identity(PhaseGVN* phase) {
@@ -1398,18 +1408,9 @@ Node* LoadNode::Identity(PhaseGVN* phase) {
           use->in(0) != nullptr &&
           use->in(0) != in(0) &&
           use->in(Address) == in(Address) &&
+          same_vector_load_inputs(use) &&
           phase->is_dominator(use->in(0), in(0))) {
-        bool skip = false;
-        for (uint i = Address + 1; i < req() && !skip; i++) {
-          if (in(i) != use->in(i)) {
-            skip = true;
-          }
-        }
-        if (!skip) {
-          return use;
-        } else {
-          assert(Opcode() == Op_LoadVectorGather || Opcode() == Op_LoadVectorGatherMasked, "");
-        }
+        return use;
       }
     }
   }
@@ -1692,7 +1693,7 @@ bool LoadNode::can_split_through_phi_base(PhaseGVN* phase) {
 
 //------------------------------split_through_phi------------------------------
 // Split instance or boxed field load through Phi.
-Node* LoadNode::split_through_phi(PhaseGVN* phase, bool ignore_missing_instance_id) {
+Node* LoadNode::split_through_phi(PhaseGVN* phase, bool called_from_ea) {
   if (req() > 3) {
     assert(is_LoadVector() && Opcode() != Op_LoadVector, "load has too many inputs");
     // LoadVector subclasses such as LoadVectorMasked have extra inputs that the logic below doesn't take into account
@@ -1703,7 +1704,7 @@ Node* LoadNode::split_through_phi(PhaseGVN* phase, bool ignore_missing_instance_
   const TypeOopPtr *t_oop = phase->type(address)->isa_oopptr();
 
   assert((t_oop != nullptr) &&
-         (ignore_missing_instance_id ||
+         (called_from_ea ||
           t_oop->is_known_instance_field() ||
           t_oop->is_ptr_to_boxed_value()), "invalid conditions");
 
@@ -1716,7 +1717,7 @@ Node* LoadNode::split_through_phi(PhaseGVN* phase, bool ignore_missing_instance_
                            phase->type(base)->higher_equal(TypePtr::NOTNULL);
 
   if (!((mem->is_Phi() || base_is_phi) &&
-        (ignore_missing_instance_id || load_boxed_values || t_oop->is_known_instance_field()))) {
+        (called_from_ea || load_boxed_values || t_oop->is_known_instance_field()))) {
     return nullptr; // Neither memory or base are Phi
   }
 
@@ -1761,11 +1762,11 @@ Node* LoadNode::split_through_phi(PhaseGVN* phase, bool ignore_missing_instance_
   }
 
   // Split through Phi (see original code in loopopts.cpp).
-  assert(ignore_missing_instance_id || C->have_alias_type(t_oop), "instance should have alias type");
+  assert(called_from_ea || C->have_alias_type(t_oop), "instance should have alias type");
 
   // Do nothing here if Identity will find a value
   // (to avoid infinite chain of value phis generation).
-  if (this != Identity(phase)/* && !ignore_missing_instance_id*/) {
+  if (!called_from_ea && this != Identity(phase)) {
     return nullptr;
   }
 
@@ -1819,7 +1820,7 @@ Node* LoadNode::split_through_phi(PhaseGVN* phase, bool ignore_missing_instance_
     int this_offset = t_oop->offset();
     int this_iid = t_oop->is_known_instance_field() ? t_oop->instance_id() : base->_idx;
     phi = new PhiNode(region, this_type, nullptr, mem->_idx, this_iid, this_index, this_offset);
-  } else if (ignore_missing_instance_id) {
+  } else if (called_from_ea) {
     phi = new PhiNode(region, this_type, nullptr, mem->_idx);
   } else {
     return nullptr;

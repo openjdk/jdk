@@ -1821,6 +1821,7 @@ Node* IfProjNode::Identity(PhaseGVN* phase) {
 }
 
 Node* IfProjNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  // The range check constant folds: mark array loads that depend on this range check
  if (can_reshape && in(0)->is_RangeCheck()) {
    PhaseIterGVN* igvn = phase->is_IterGVN();
    const TypeTuple *t = phase->type(in(0))->is_tuple();

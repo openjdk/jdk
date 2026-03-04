@@ -1123,7 +1123,7 @@ void ConnectionGraph::updates_after_load_split(Node* data_phi, Node* previous_lo
 void ConnectionGraph::reduce_phi_on_field_access(Node* previous_addp, GrowableArray<Node *>  &alloc_worklist) {
   // We'll pass this to 'split_through_phi' so that it'll do the split even
   // though the load doesn't have an unique instance type.
-  bool ignore_missing_instance_id = true;
+  bool called_from_ea = true;
 
   // All AddPs are present in the connection graph
   FieldNode* fn = ptnode_adr(previous_addp->_idx)->as_Field();
@@ -1132,7 +1132,7 @@ void ConnectionGraph::reduce_phi_on_field_access(Node* previous_addp, GrowableAr
   for (int k = previous_addp->outcnt()-1; k >= 0;) {
     Node* previous_load = previous_addp->raw_out(k);
     if (previous_load->is_Load()) {
-      Node* data_phi = previous_load->as_Load()->split_through_phi(_igvn, ignore_missing_instance_id);
+      Node* data_phi = previous_load->as_Load()->split_through_phi(_igvn, called_from_ea);
 
       // Takes care of updating CG and split_unique_types worklists due to cloned
       // AddP->Load.
