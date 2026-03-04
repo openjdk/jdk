@@ -36,7 +36,7 @@ import java.util.Random;
  * @summary test the long typed parallel iv replacing transformation for int counted loop
  * @library /test/lib /
  * @requires vm.compiler2.enabled
- * @run driver/timeout=480  compiler.loopopts.parallel_iv.TestParallelIvInIntCountedLoop
+ * @run compiler.loopopts.parallel_iv.TestParallelIvInIntCountedLoop
  */
 public class TestParallelIvInIntCountedLoop {
     private static final Random RNG = Utils.getRandomInstance();

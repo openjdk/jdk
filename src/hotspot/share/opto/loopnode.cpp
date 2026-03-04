@@ -2068,6 +2068,14 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*& loop, BasicType iv
     return false;
   }
 
+  #ifndef PRODUCT
+  if ( StressCountedLoop ) {
+      if ((C->random() % 2) == 0) {
+          return false;
+    }
+  }
+  #endif
+
   assert(x->Opcode() == Op_Loop || x->Opcode() == Op_LongCountedLoop, "regular loops only");
   C->print_method(PHASE_BEFORE_CLOOPS, 3, x);
 
@@ -4545,13 +4553,6 @@ void IdealLoopTree::remove_safepoints(PhaseIdealLoop* phase, bool keep_one) {
 //------------------------------counted_loop-----------------------------------
 // Convert to counted loops where possible
 void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
-  #ifndef PRODUCT
-  if ( StressCountedLoop ) {
-      if((phase->C->random() % 2) == 0) {
-          return;
-    }
-  }
-  #endif
 
   // For grins, set the inner-loop flag here
   if (!_child) {
@@ -4577,7 +4578,9 @@ void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
              phase->is_counted_loop(_head, loop, T_LONG)) {
     remove_safepoints(phase, true);
   } else {
-    assert(!_head->is_Loop() || !_head->as_Loop()->is_loop_nest_inner_loop(), "transformation to counted loop should not fail");
+    if (!StressCountedLoop) {
+      assert(!_head->is_Loop() || !_head->as_Loop()->is_loop_nest_inner_loop(), "transformation to counted loop should not fail");
+    }
     if (_parent != nullptr && !_irreducible) {
       // Not a counted loop. Keep one safepoint.
       bool keep_one_sfpt = true;
