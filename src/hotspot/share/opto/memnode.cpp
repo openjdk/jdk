@@ -1334,7 +1334,8 @@ bool LoadNode::is_instance_field_load_with_local_phi(Node* ctrl) {
 }
 
 bool LoadNode::same_vector_load_inputs(Node* use) {
-  assert(req() == Address + 1 || Opcode() == Op_LoadVectorGather || Opcode() == Op_LoadVectorGatherMasked, "only has an effect with vector loads");
+  assert(req() == Address + 1 || Opcode() == Op_LoadVectorMasked || Opcode() == Op_LoadVectorGather ||
+         Opcode() == Op_LoadVectorGatherMasked, "only has an effect with vector loads");
   for (uint i = Address + 1; i < req(); i++) {
     if (in(i) != use->in(i)) {
       return false;
