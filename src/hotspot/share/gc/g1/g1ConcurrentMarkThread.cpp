@@ -252,6 +252,8 @@ bool G1ConcurrentMarkThread::phase_cleanup() {
 }
 
 bool G1ConcurrentMarkThread::phase_clear_bitmap_for_next_mark() {
+  assert(G1CollectedHeap::heap()->collector_state()->clear_bitmap_in_progress(), "must be");
+
   ConcurrentGCBreakpoints::at("AFTER CLEANUP STARTED");
   G1ConcPhaseTimer p(_cm, "Concurrent Cleanup for Next Mark");
   _cm->cleanup_for_next_mark();
