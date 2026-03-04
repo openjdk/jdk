@@ -176,43 +176,73 @@ public class TestExpression {
         Expression e5 = Expression.make(myTypeA, "[", myTypeB, "]");
 
         Expression e1e2 = e1.nestRandomly(List.of(e2), Nesting.SUBTYPE);
+        Expression e1e2Exact = e1.nestRandomly(List.of(e2), Nesting.EXACT);
         Expression e1ex = e1.nestRandomly(List.of(e3, e2, e3), Nesting.SUBTYPE);
+        Expression e1exExact = e1.nestRandomly(List.of(e3, e2, e3), Nesting.EXACT);
         Expression e1e4 = e1.nestRandomly(List.of(e3, e4, e3), Nesting.SUBTYPE);
+        Expression e1e4Exact = e1.nestRandomly(List.of(e3, e4, e3), Nesting.EXACT);
         Expression e1ey = e1.nestRandomly(List.of(e3, e3), Nesting.SUBTYPE);
+        Expression e1eyExact = e1.nestRandomly(List.of(e3, e3), Nesting.EXACT);
 
         // 5-deep nesting of e1
         Expression deep1 = Expression.nestRandomly(myTypeA, List.of(e1, e3), 5, Nesting.SUBTYPE);
+        Expression deep1Exact = Expression.nestRandomly(myTypeA, List.of(e1, e3), 5, Nesting.EXACT);
         // Alternating pattern
         Expression deep2 = Expression.nestRandomly(myTypeA, List.of(e5, e3), 5, Nesting.SUBTYPE);
+        Expression deep2Exact = Expression.nestRandomly(myTypeA, List.of(e5, e3), 5, Nesting.SUBTYPE);
 
         var template = Template.make(() -> scope(
             "xx", e1e2.toString(), "yy\n",
+            "xx", e1e2Exact.toString(), "yy\n",
             "xx", e1ex.toString(), "yy\n",
+            "xx", e1exExact.toString(), "yy\n",
             "xx", e1e4.toString(), "yy\n",
+            "xx", e1e4Exact.toString(), "yy\n",
             "xx", e1ey.toString(), "yy\n",
+            "xx", e1eyExact.toString(), "yy\n",
             "xx", deep1.toString(), "yy\n",
+            "xx", deep1Exact.toString(), "yy\n",
             "xx", deep2.toString(), "yy\n",
+            "xx", deep2Exact.toString(), "yy\n",
             "xx", e1e2.asToken(List.of("a")), "yy\n",
+            "xx", e1e2Exact.asToken(List.of("a")), "yy\n",
             "xx", e1ex.asToken(List.of("a")), "yy\n",
+            "xx", e1exExact.asToken(List.of("a")), "yy\n",
             "xx", e1e4.asToken(List.of("a")), "yy\n",
+            "xx", e1e4Exact.asToken(List.of("a")), "yy\n",
             "xx", e1ey.asToken(List.of("a")), "yy\n",
+            "xx", e1eyExact.asToken(List.of("a")), "yy\n",
             "xx", deep1.asToken(List.of("a")), "yy\n",
-            "xx", deep2.asToken(List.of("a")), "yy\n"
+            "xx", deep1Exact.asToken(List.of("a")), "yy\n",
+            "xx", deep2.asToken(List.of("a")), "yy\n",
+            "xx", deep2Exact.asToken(List.of("a")), "yy\n"
         ));
 
         String expected =
             """
             xxExpression["[(", MyTypeA, ")]"]yy
             xxExpression["[(", MyTypeA, ")]"]yy
+            xxExpression["[(", MyTypeA, ")]"]yy
+            xxExpression["[(", MyTypeA, ")]"]yy
             xxExpression["[<", MyTypeA, ">]"]yy
             xxExpression["[", MyTypeA, "]"]yy
+            xxExpression["[", MyTypeA, "]"]yy
+            xxExpression["[", MyTypeA, "]"]yy
+            xxExpression["[[[[[", MyTypeA, "]]]]]"]yy
             xxExpression["[[[[[", MyTypeA, "]]]]]"]yy
             xxExpression["[{[{[", MyTypeB, "]}]}]"]yy
+            xxExpression["[{[{[", MyTypeB, "]}]}]"]yy
+            xx[(a)]yy
+            xx[(a)]yy
             xx[(a)]yy
             xx[(a)]yy
             xx[<a>]yy
             xx[a]yy
+            xx[a]yy
+            xx[a]yy
             xx[[[[[a]]]]]yy
+            xx[[[[[a]]]]]yy
+            xx[{[{[a]}]}]yy
             xx[{[{[a]}]}]yy
             """;
         String code = template.render();
