@@ -121,7 +121,7 @@ public:
   size_t get_promoted_expended() const;
 
   // Aggregate and log promotion failure stats if logging is enabled
-  void maybe_log_promotion_failure_stats() const;
+  void maybe_log_promotion_failure_stats(bool concurrent) const;
 
   // Test if there is enough memory reserved for this promotion
   bool can_promote(size_t requested_bytes) const {

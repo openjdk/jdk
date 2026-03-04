@@ -985,7 +985,7 @@ void ShenandoahGenerationalHeap::complete_degenerated_cycle() {
     coalesce_and_fill_old_regions(false);
   }
 
-  old_generation()->maybe_log_promotion_failure_stats();
+  old_generation()->maybe_log_promotion_failure_stats(false);
 }
 
 void ShenandoahGenerationalHeap::complete_concurrent_cycle() {
@@ -1000,7 +1000,7 @@ void ShenandoahGenerationalHeap::complete_concurrent_cycle() {
     entry_global_coalesce_and_fill();
   }
 
-  old_generation()->maybe_log_promotion_failure_stats();
+  old_generation()->maybe_log_promotion_failure_stats(true);
 }
 
 void ShenandoahGenerationalHeap::entry_global_coalesce_and_fill() {

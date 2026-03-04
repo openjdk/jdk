@@ -149,7 +149,7 @@ void ShenandoahOldGeneration::reset_promoted_expended() {
   _promoted_expended.store_relaxed(0);
 }
 
-void ShenandoahOldGeneration::maybe_log_promotion_failure_stats() const {
+void ShenandoahOldGeneration::maybe_log_promotion_failure_stats(bool concurrent) const {
   typedef LogTarget(Info, gc, cset) cset_info;
   if (cset_info::is_enabled()) {
     size_t failed_count = 0;
@@ -176,10 +176,13 @@ void ShenandoahOldGeneration::maybe_log_promotion_failure_stats() const {
     };
 
     AggregatePromotionFailuresClosure cl;
-    {
+    if (concurrent) {
       MutexLocker lock(Threads_lock);
       Threads::threads_do(&cl);
+    } else {
+      Threads::threads_do(&cl);
     }
+
     failed_count = cl.total_count();
     failed_words = cl.total_words();
 
