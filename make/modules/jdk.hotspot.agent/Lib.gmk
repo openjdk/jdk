@@ -55,9 +55,9 @@ else
   LIBSAPROC_LINK_TYPE := C
 endif
 
-ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, x86_64 aarch64), true+true)
-  LIBSAPROC_EXCLUDE_FILES :=
-else
+# DWARF related sources would be included on supported platforms only.
+LIBSAPROC_EXCLUDE_FILES :=
+ifneq ($(call And, $(call isTargetOs, linux) $(call isTargetCpu, x86_64 aarch64)), true)
   LIBSAPROC_EXCLUDE_FILES := DwarfParser.cpp dwarf.cpp
 endif
 
