@@ -23,6 +23,7 @@
 
 import static jdk.internal.util.OperatingSystem.LINUX;
 import static jdk.internal.util.OperatingSystem.MACOS;
+import static jdk.jpackage.test.JPackageCommand.DEFAULT_VERSION;
 import static jdk.jpackage.test.TKit.assertFalse;
 import static jdk.jpackage.test.TKit.assertTrue;
 
@@ -81,7 +82,16 @@ public class RuntimePackageTest {
 
     @Test
     public static void test() {
-        init().run();
+        init()
+        .addInitializer(cmd -> {
+            // JDK-8357404 enables jpackage to pick a version from the "release" file
+            // of the predefined runtime when bundling the runtime package.
+            // This makes the output of this test dependent on the version of the running JDK
+            // and will be an inconvenience for SQE testing.
+            // Explicitly specify the package version to fulfill expectations of SQE.
+            cmd.setArgumentValue("--app-version", DEFAULT_VERSION);
+        })
+        .run();
     }
 
     @Test(ifOS = MACOS)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import static jdk.jpackage.internal.cli.StandardOption.WIN_UPGRADE_UUID;
 import static jdk.jpackage.internal.model.StandardPackageType.WIN_MSI;
 
 import jdk.jpackage.internal.cli.Options;
+import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.WinApplication;
 import jdk.jpackage.internal.model.WinExePackage;
@@ -72,6 +73,8 @@ final class WinFromOptions {
         }, APPLICATION_LAYOUT);
 
         appBuilder.launchers().map(WinPackagingPipeline::normalizeShortcuts).ifPresent(appBuilder::launchers);
+
+        appBuilder.derivedVersionNormalizer(WinFromOptions::normalizeVersion);
 
         return WinApplication.create(appBuilder.create());
     }
@@ -111,5 +114,12 @@ final class WinFromOptions {
         ICON.ifPresentIn(options, pkgBuilder::icon);
 
         return pkgBuilder.create();
+    }
+
+    private static String normalizeVersion(String version) {
+        // Windows requires between 2 and 4 components version string.
+        // When reading from release file it can be 1 or 3 or maybe more.
+        // One component will be normalized to 2 and more then 4 will be trim to 4.
+        return DottedVersion.lazy(version).trim(4).pad(2).toComponentsString();
     }
 }

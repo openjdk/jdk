@@ -27,6 +27,7 @@ package jdk.jpackage.internal;
 import static jdk.jpackage.internal.FromOptions.buildApplicationBuilder;
 import static jdk.jpackage.internal.FromOptions.createPackageBuilder;
 import static jdk.jpackage.internal.LinuxPackagingPipeline.APPLICATION_LAYOUT;
+import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_LINUX_RPM;
 import static jdk.jpackage.internal.cli.StandardOption.LINUX_APP_CATEGORY;
 import static jdk.jpackage.internal.cli.StandardOption.LINUX_DEB_MAINTAINER_EMAIL;
 import static jdk.jpackage.internal.cli.StandardOption.LINUX_MENU_GROUP;
@@ -39,6 +40,7 @@ import static jdk.jpackage.internal.model.StandardPackageType.LINUX_DEB;
 import static jdk.jpackage.internal.model.StandardPackageType.LINUX_RPM;
 
 import jdk.jpackage.internal.cli.Options;
+import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.LinuxApplication;
 import jdk.jpackage.internal.model.LinuxDebPackage;
@@ -66,6 +68,10 @@ final class LinuxFromOptions {
         }, APPLICATION_LAYOUT);
 
         appBuilder.launchers().map(LinuxPackagingPipeline::normalizeShortcuts).ifPresent(appBuilder::launchers);
+
+        if (OptionUtils.bundlingOperation(options) == CREATE_LINUX_RPM) {
+            appBuilder.derivedVersionNormalizer(LinuxFromOptions::normalizeRpmVersion);
+        }
 
         return LinuxApplication.create(appBuilder.create());
     }
@@ -118,4 +124,15 @@ final class LinuxFromOptions {
         return pkgBuilder;
     }
 
+    private static String normalizeRpmVersion(String version) {
+        // RPM does not support "-" symbol in version. In some case
+        // we might have "-" from "release" file version.
+        // Normalize version if it has "-" symbols. All other supported version
+        // formats by "release" file should be supported by RPM.
+        if (version.contains("-")) {
+            return DottedVersion.lazy(version).toComponentsString();
+        }
+
+        return version;
+    }
 }
