@@ -1007,17 +1007,16 @@ void ObjectMonitor::enter_internal(JavaThread* current, ObjectWaiter* current_no
   // to do a timed-park instead to alleviate some deadlock cases where one
   // of them is picked as the successor but cannot run due to having run out
   // of carriers. This can happen, for example, if this is a pinned virtual
-  // thread currently loading or initializining a class, and all other carriers
+  // thread currently loading or initializiing a class, and all other carriers
   // have a pinned vthread waiting for said class to be loaded/initialized.
   // Read counter *after* adding this thread to the _entry_list. Adding to
   // _entry_list uses Atomic::cmpxchg() which already provides a fence that
-  // prevents this load from floating up previous store.
+  // prevents this load from floating up past a previous store.
   // Note that we can have false positives where timed-park is not necessary.
   bool do_timed_park = has_unmounted_vthreads();
   jlong recheck_interval = 1;
 
   for (;;) {
-
     ObjectWaiter::TStates v = current_node->TState;
     guarantee(v == ObjectWaiter::TS_ENTER, "invariant");
 
@@ -1046,6 +1045,9 @@ void ObjectMonitor::enter_internal(JavaThread* current, ObjectWaiter* current_no
       current->_ParkEvent->park();
     }
 
+    // Try again, but just so we distinguish between futile wakeups and
+    // successful wakeups.  The following test isn't algorithmically
+    // necessary, but it helps us maintain sensible statistics.
     if (try_lock(current) == TryLockResult::Success) {
       break;
     }
@@ -1054,7 +1056,7 @@ void ObjectMonitor::enter_internal(JavaThread* current, ObjectWaiter* current_no
 
     if (!reenter_path) {
       // Assuming this is not a spurious wakeup we'll normally find _succ == current.
-      // We can defer clearing _succ until after the spin completes
+      // We can defer clearing _succ until after the spin completes and
       // try_spin() must tolerate being called with _succ == current.
       // Try yet another round of adaptive spinning.
       if (try_spin(current)) {
@@ -1068,7 +1070,9 @@ void ObjectMonitor::enter_internal(JavaThread* current, ObjectWaiter* current_no
     // just spin again.  This pattern can repeat, leaving _succ to simply
     // spin on a CPU.
 
-    if (has_successor(current)) clear_successor();
+    if (has_successor(current)) {
+      clear_successor();
+    }
 
     // Invariant: after clearing _succ a thread *must* retry _owner before parking.
     OrderAccess::fence();
@@ -1091,17 +1095,17 @@ void ObjectMonitor::enter_internal(JavaThread* current, ObjectWaiter* current_no
   // We've acquired ownership with CAS().
   // CAS is serializing -- it has MEMBAR/FENCE-equivalent semantics.
   // But since the CAS() this thread may have also stored into _succ
-  // or entry_list.  These meta-data updates must be visible __before
+  // or entry_list. These meta-data updates must be visible __before
   // this thread subsequently drops the lock.
   // Consider what could occur if we didn't enforce this constraint --
   // STs to monitor meta-data and user-data could reorder with (become
   // visible after) the ST in exit that drops ownership of the lock.
   // Some other thread could then acquire the lock, but observe inconsistent
-  // or old monitor meta-data and heap data.  That violates the JMM.
+  // or old monitor meta-data and heap data. That violates the JMM.
   // To that end, the exit() operation must have at least STST|LDST
-  // "release" barrier semantics.  Specifically, there must be at least a
+  // "release" barrier semantics. Specifically, there must be at least a
   // STST|LDST barrier in exit() before the ST of null into _owner that drops
-  // the lock.   The barrier ensures that changes to monitor meta-data and data
+  // the lock. The barrier ensures that changes to monitor meta-data and data
   // protected by the lock will be visible before we release the lock, and
   // therefore before some other thread (CPU) has a chance to acquire the lock.
   // See also: http://gee.cs.oswego.edu/dl/jmm/cookbook.html.
@@ -1110,7 +1114,6 @@ void ObjectMonitor::enter_internal(JavaThread* current, ObjectWaiter* current_no
   // the ST of null into _owner in the *subsequent* (following) corresponding
   // monitorexit.
 
-  assert(!has_successor(current), "invariant");
   if (reenter_path) {
     current_node->TState = ObjectWaiter::TS_RUN;
     OrderAccess::fence();      // see comments above
