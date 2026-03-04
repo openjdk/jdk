@@ -4508,6 +4508,15 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
   return true;
 }
 
+// Reassociates latency-bound reduction loop chains for long Min/Max that have a shape like this:
+// OP(A, OP(B, OP(C, Phi)))
+// To become the following by shifting the Phi node to the front and shifting the rest of inputs:
+// OP(Phi, OP(A, OP(B, C)))
+// This transformation reduces latency thanks to an increase CPU-level parallel processing.
+// This increased parallelism can produce register pressure as a side effect.
+// This is why the optimization currently only applies to specific AddNode subclasses
+// that can particularly suffer in certain scenarios, e.g. long Min/Max.
+// Any attempt to expand this to other AddNode types should take this into consideration.
 class ReassociateReductionChains : public StackObj {
 public:
   ReassociateReductionChains(IdealLoopTree* loop, PhaseIdealLoop* phase) : _loop(loop), _phase(phase) {
