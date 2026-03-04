@@ -609,7 +609,7 @@ public class SinglePixelPackedSampleModel extends SampleModel
 
     /**
      * {@inheritDoc}
-     * @throws NullPointerException if {@code iArray} or {code data} is {@code null}.
+     * @throws NullPointerException if {@code iArray} or {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or if {@code iArray} is too small to hold the input.
      */

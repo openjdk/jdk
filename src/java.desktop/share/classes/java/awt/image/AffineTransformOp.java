@@ -187,7 +187,7 @@ public class AffineTransformOp implements BufferedImageOp, RasterOp {
      * are not necessarily the same as the coordinates of the
      * {@code BufferedImage} returned by this method.  If the
      * application provides a {@code dst} that is always returned.
-     * If {@code dst} is {@code null} and a destination {code BufferedImage}
+     * If {@code dst} is {@code null} and a destination {@code BufferedImage}
      * with the transformed dimensions cannot be created, the {@code src}
      * dimensions will be substituted.
      *
@@ -327,7 +327,7 @@ public class AffineTransformOp implements BufferedImageOp, RasterOp {
      * are not necessarily the same as the coordinates of the
      * {@code WritableRaster} returned by this method.  If the
      * application provides a {@code dst} that is always returned.
-     * If {@code dst} is {@code null} and a destination {code Raster}
+     * If {@code dst} is {@code null} and a destination {@code Raster}
      * with the transformed dimensions cannot be created, the {@code src}
      * dimensions will be substituted.
      * <p>
