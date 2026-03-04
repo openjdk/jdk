@@ -1805,6 +1805,10 @@ class VectorMaskCastNode : public VectorNode {
   VectorMaskCastNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {
     const TypeVect* in_vt = in->bottom_type()->is_vect();
     assert(in_vt->length() == vt->length(), "vector length must match");
+    assert((in_vt->element_basic_type() == T_BOOLEAN) == (vt->element_basic_type() == T_BOOLEAN),
+           "Cast from/to BVectMask not allowed, use VectorLoadMask/VectorStoreMask instead");
+    assert((in_vt->isa_vectmask() == nullptr) == (vt->isa_vectmask() == nullptr),
+           "Both BVectMask, or both NVectMask, or both PVectMask");
   }
   Node* Identity(PhaseGVN* phase);
   virtual int Opcode() const;
