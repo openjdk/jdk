@@ -46,12 +46,11 @@ import jdk.test.lib.jfr.Events;
  * @comment Marked as flagless until JDK-8344015 is fixed
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal.test
- * @run main/othervm/timeout=960 -XX:-UseTLAB jdk.jfr.event.oldobject.TestObjectDescription
+ * @run main/othervm/timeout=960 -XX:TLABSize=2k jdk.jfr.event.oldobject.TestObjectDescription
  */
 public class TestObjectDescription {
 
     private static final int OBJECT_DESCRIPTION_MAX_SIZE = 100;
-    private static final int OBJECT_COUNT = 200;
     private static final String CLASS_NAME = TestClassLoader.class.getName() + "$TestClass";
     public static List<?> leaks;
 
@@ -89,8 +88,8 @@ public class TestObjectDescription {
 
     private static void testThreadName() throws Exception {
         assertObjectDescription(() -> {
-            List<MyThread> threads = new ArrayList<>(OBJECT_COUNT);
-            for (int i = 0; i < OBJECT_COUNT; i++) {
+            List<MyThread> threads = new ArrayList<>(OldObjects.MIN_SIZE);
+            for (int i = 0; i < OldObjects.MIN_SIZE; i++) {
                 threads.add(new MyThread());
             }
             return threads;
@@ -99,8 +98,8 @@ public class TestObjectDescription {
 
     private static void testThreadGroupName() throws Exception {
         assertObjectDescription(() -> {
-            List<MyThreadGroup> groups = new ArrayList<>(OBJECT_COUNT);
-            for (int i = 0; i < OBJECT_COUNT; i++) {
+            List<MyThreadGroup> groups = new ArrayList<>(OldObjects.MIN_SIZE);
+            for (int i = 0; i < OldObjects.MIN_SIZE; i++) {
                 groups.add(new MyThreadGroup("My Thread Group"));
             }
             return groups;
@@ -110,9 +109,10 @@ public class TestObjectDescription {
     private static void testClassName() throws Exception {
         assertObjectDescription(() -> {
             TestClassLoader testClassLoader = new TestClassLoader();
-            List<Object> classObjects = new ArrayList<>();
-            for (Class<?> clazz : testClassLoader.loadClasses(20)) {
-                for (int i = 0; i < 10; i++) {
+            List<Object> classObjects = new ArrayList<>(OldObjects.MIN_SIZE);
+            for (Class<?> clazz : testClassLoader.loadClasses(OldObjects.MIN_SIZE / 20)) {
+                // Allocate array to trigger sampling code path for interpreter / c1
+                for (int i = 0; i < 20; i++) {
                     Object classArray = Array.newInstance(clazz, 20);
                     Array.set(classArray, i, clazz.newInstance());
                     classObjects.add(classArray);
@@ -124,8 +124,8 @@ public class TestObjectDescription {
 
     private static void testSize() throws Exception {
         assertObjectDescription(() -> {
-            List<Object> arrayLists = new ArrayList<>(OBJECT_COUNT);
-            for (int i = 0; i < OBJECT_COUNT; i++) {
+            List<Object> arrayLists = new ArrayList<>(OldObjects.MIN_SIZE);
+            for (int i = 0; i < OldObjects.MIN_SIZE; i++) {
                 List<Object> arrayList = new ArrayList<>();
                 arrayList.add(new Object());
                 arrayList.add(new Object());
@@ -144,7 +144,7 @@ public class TestObjectDescription {
             }
             String threadName = sb.toString();
             List<Thread> threads = new ArrayList<>();
-            for (int i = 0; i < OBJECT_COUNT; i++) {
+            for (int i = 0; i < OldObjects.MIN_SIZE; i++) {
                 threads.add(new Thread(threadName));
             }
             return threads;
