@@ -70,6 +70,7 @@ JNI_COCOA_ENTER(env);
     dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(NSEC_PER_SEC)); // 1 second timeout
 
     // Asynchronous call to openURL
+    dispatch_retain(semaphore);
     [[NSWorkspace sharedWorkspace] openURLs:urls
                                     withApplicationAtURL:appURI
                                     configuration:configuration
@@ -78,6 +79,7 @@ JNI_COCOA_ENTER(env);
             status = (OSStatus) error.code;
         }
         dispatch_semaphore_signal(semaphore);
+        dispatch_release(semaphore);
     }];
 
     dispatch_semaphore_wait(semaphore, timeout);
@@ -147,6 +149,7 @@ JNI_COCOA_ENTER(env);
     dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(NSEC_PER_SEC)); // 1 second timeout
 
     // Asynchronous call - openURLs:withApplicationAtURL
+    dispatch_retain(semaphore);
     [[NSWorkspace sharedWorkspace] openURLs:urls
                                    withApplicationAtURL:appURI
                                    configuration:configuration
@@ -155,6 +158,7 @@ JNI_COCOA_ENTER(env);
             status = (OSStatus) error.code;
         }
         dispatch_semaphore_signal(semaphore);
+        dispatch_release(semaphore);
     }];
 
     dispatch_semaphore_wait(semaphore, timeout);
