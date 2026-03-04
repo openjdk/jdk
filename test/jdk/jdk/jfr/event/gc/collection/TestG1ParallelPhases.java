@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,8 +20,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.jfr.event.gc.collection;
 
+import static java.lang.System.gc;
+import static java.lang.Thread.sleep;
 import static java.util.Set.of;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -34,29 +37,34 @@ import static jdk.test.whitebox.WhiteBox.getWhiteBox;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
 import gc.testlibrary.g1.MixedGCProvoker;
 import jdk.jfr.Recording;
+import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
+import jdk.test.whitebox.WhiteBox;
 
 /**
- * @test @requires vm.flagless
- * @requires vm.hasJF
+ * @test
+ * @requires vm.flagless
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk /test/hotspot/jtreg
  * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller
- * jdk.test.whitebox.WhiteBox
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+AlwaysTenure -Xms20M
- * -Xmx20M -Xlog:gc=debug,gc+heap*=debug,gc+ergo*=debug,gc+start=debug
- * -XX:G1MixedGCLiveThresholdPercent=100 -XX:G1HeapWastePercent=0
- * -XX:G1HeapRegionSize=1m -XX:+UseG1GC -XX:+UseStringDeduplication
- * -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- * jdk.jfr.event.gc.collection.TestG1ParallelPhases
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+AlwaysTenure
+ *      -Xms20M -Xmx20M -Xlog:gc=debug,gc+heap*=debug,gc+ergo*=debug,gc+start=debug
+ *      -XX:G1MixedGCLiveThresholdPercent=100 -XX:G1HeapWastePercent=0 -XX:G1HeapRegionSize=1m
+ *      -XX:+UseG1GC -XX:+UseStringDeduplication
+ *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      jdk.jfr.event.gc.collection.TestG1ParallelPhases
  */
-public class TestG1ParallelPhases {
 
+public class TestG1ParallelPhases {
     public static List<WeakReference<byte[]>> weakRefs;
 
     public static void main(String[] args) throws IOException {
@@ -66,70 +74,70 @@ public class TestG1ParallelPhases {
 
         // create more weak garbage than can fit in this heap (-Xmx20m), will force collection of weak references
         weakRefs = range(1, 30)
-                .mapToObj(n -> new WeakReference<>(new byte[1_000_000]))
-                .collect(toList()); // force evaluation of lazy stream (all weak refs must be created)
+            .mapToObj(n -> new WeakReference<>(new byte[1_000_000]))
+            .collect(toList()); // force evaluation of lazy stream (all weak refs must be created)
 
         final var MEG = 1024 * 1024;
         MixedGCProvoker.allocateAndProvokeMixedGC(MEG);
         recording.stop();
 
         Set<String> usedPhases = fromRecording(recording).stream()
-                .map(e -> e.getValue("name").toString())
-                .collect(toSet());
+            .map(e -> e.getValue("name").toString())
+            .collect(toSet());
 
         Set<String> allPhases = of(
-                "ExtRootScan",
-                "ThreadRoots",
-                "VM Global",
-                "JNI Global",
-                "Thread OopStorage",
-                "ThreadService OopStorage",
-                "JVMTI OopStorage",
-                "CLDGRoots",
-                "CMRefRoots",
-                "MergeER",
-                "MergeRS",
-                "ScanHR",
-                "CodeRoots",
-                "ObjCopy",
-                "Termination",
-                "RecalculateUsed",
-                "ResizeTLABs",
-                "FreeCSet",
-                "UpdateDerivedPointers",
-                "EagerlyReclaimHumongousObjects",
-                "ResetPartialArrayStateManager",
-                "ClearPendingCards",
-                "MergePSS",
-                "NonYoungFreeCSet",
-                "YoungFreeCSet",
-                "RebuildFreeList",
-                "SampleCandidates",
-                "ResetMarkingState",
-                "NoteStartOfMark",
-                "RetireTLABs"
+            "ExtRootScan",
+            "ThreadRoots",
+            "VM Global",
+            "JNI Global",
+            "Thread OopStorage",
+            "ThreadService OopStorage",
+            "JVMTI OopStorage",
+            "CLDGRoots",
+            "CMRefRoots",
+            "MergeER",
+            "MergeRS",
+            "ScanHR",
+            "CodeRoots",
+            "ObjCopy",
+            "Termination",
+            "RecalculateUsed",
+            "ResizeTLABs",
+            "FreeCSet",
+            "UpdateDerivedPointers",
+            "EagerlyReclaimHumongousObjects",
+            "ResetPartialArrayStateManager",
+            "ClearPendingCards",
+            "MergePSS",
+            "NonYoungFreeCSet",
+            "YoungFreeCSet",
+            "RebuildFreeList",
+            "SampleCandidates",
+            "ResetMarkingState",
+            "NoteStartOfMark",
+            "RetireTLABs"
         );
 
         // Some GC phases may or may not occur depending on environment. Filter them out
         // since we can not reliably guarantee that they occur (or not).
         Set<String> optPhases = of(
-                // Does not always occur
-                "SweepRT",
-                // The following phases only occur on evacuation failure.
-                "RestoreEvacuationFailedRegions",
-                "RemoveSelfForwards",
-                "RestorePreservedMarks",
-                "ProcessEvacuationFailedRegions",
-                // Generally optional phases.
-                "OptScanHR",
-                "OptMergeRS",
-                "OptCodeRoots",
-                "OptObjCopy"
+            // Does not always occur
+            "SweepRT",
+            // The following phases only occur on evacuation failure.
+            "RestoreEvacuationFailedRegions",
+            "RemoveSelfForwards",
+            "RestorePreservedMarks",
+            "ProcessEvacuationFailedRegions",
+            // Generally optional phases.
+            "OptScanHR",
+            "OptMergeRS",
+            "OptCodeRoots",
+            "OptObjCopy"
         );
         usedPhases.removeAll(optPhases);
 
         assertTrue(usedPhases.equals(allPhases), "Compare events expected and received"
-                + ", Not found phases: " + allPhases.stream().filter(p -> !usedPhases.contains(p)).collect(joining(", "))
-                + ", Not expected phases: " + usedPhases.stream().filter(p -> !allPhases.contains(p)).collect(joining(", ")));
+            + ", Not found phases: " + allPhases.stream().filter(p -> !usedPhases.contains(p)).collect(joining(", "))
+            + ", Not expected phases: " + usedPhases.stream().filter(p -> !allPhases.contains(p)).collect(joining(", ")));
     }
 }
