@@ -2584,26 +2584,38 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
 void os::print_open_file_descriptors(outputStream* st) {
 #ifdef __APPLE__
   pid_t my_pid;
-  const int MAX_SAFE_FDS = 1024;
-  struct proc_fdinfo fds[MAX_SAFE_FDS];
+  struct proc_fdinfo* fds;
+  struct proc_bsdinfo bsdinfo;
+
   // get the process PID for proc_pidinfo calls
   kern_return_t kres = pid_for_task(mach_task_self(), &my_pid);
   if (kres != KERN_SUCCESS) {
     st->print_cr("Open File Descriptors: unknown");
     return;
   }
-  int res = proc_pidinfo(my_pid, PROC_PIDLISTFDS, 0, fds, MAX_SAFE_FDS * sizeof(struct proc_fdinfo));
+
+  // get the maximum number of file descriptors
+  int res = proc_pidinfo(my_pid, PROC_PIDTBSDINFO, 0, &bsdinfo, PROC_PIDTBSDINFO_SIZE);
   if (res <= 0) {
     st->print_cr("Open File Descriptors: unknown");
     return;
   }
-
-  // print lower bound if FD count exceeds buffer size
-  int nfiles = res / sizeof(struct proc_fdinfo);
-  if (nfiles >= MAX_SAFE_FDS) {
-    st->print_cr("Open File Descriptors: > 1024");
+  // allocate memory to hold the fd information
+  size_t fds_size = bsdinfo.pbi_nfiles * sizeof(struct proc_fdinfo);
+  fds = (struct proc_fdinfo*)os::malloc(fds_size, mtInternal);  if (fds == NULL) {
+    st->print_cr("Open File Descriptors: unknown");
     return;
   }
+  // obtain the list of open files
+  res = proc_pidinfo(my_pid, PROC_PIDLISTFDS, 0, fds, fds_size);
+  if (res <= 0) {
+    os::free(fds);
+    st->print_cr("Open File Descriptors: unknown");
+    return;
+  }
+
+  int nfiles = res / sizeof(struct proc_fdinfo);
+  os::free(fds);
   st->print_cr("Open File Descriptors: %d", nfiles);
 #else
   st->print_cr("Open File Descriptors: unknown");
@@ -2613,6 +2625,7 @@ void os::print_open_file_descriptors(outputStream* st) {
 void os::Bsd::print_open_file_descriptors(outputStream* st, char* buf, size_t buflen) {
 #ifdef __APPLE__
   pid_t my_pid;
+
   // ensure the scratch buffer is big enough for at least one FD info struct
   if (buflen < sizeof(struct proc_fdinfo)) {
       st->print_cr("Open File Descriptors: unknown");
@@ -2623,9 +2636,9 @@ void os::Bsd::print_open_file_descriptors(outputStream* st, char* buf, size_t bu
       st->print_cr("Open File Descriptors: unknown");
       return;
   }
-  // get the total number of FDs we can fit in our buffer
   size_t max_fds = buflen / sizeof(struct proc_fdinfo);
   struct proc_fdinfo* fds = reinterpret_cast<struct proc_fdinfo*>(buf);
+
   // fill our buffer with FD info, up to the available buffer size
   int res = proc_pidinfo(my_pid, PROC_PIDLISTFDS, 0, fds, max_fds * sizeof(struct proc_fdinfo));
   if (res <= 0) {
@@ -2633,6 +2646,7 @@ void os::Bsd::print_open_file_descriptors(outputStream* st, char* buf, size_t bu
       return;
   }
 
+  // print lower threshold if count exceeds buffer size
   int nfiles = res / sizeof(struct proc_fdinfo);
   if ((size_t)nfiles >= max_fds) {
       st->print_cr("Open File Descriptors: >%zu", max_fds);
