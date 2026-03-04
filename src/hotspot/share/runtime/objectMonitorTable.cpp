@@ -126,7 +126,7 @@ class ObjectMonitorTable::Table : public CHeapObj<mtObjectMonitor> {
   Table* volatile _prev;             // Set while rehashing
   Entry volatile* _buckets;          // The payload
   DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(_capacity_mask) + sizeof(_prev) + sizeof(_buckets));
-  volatile size_t _items_count;
+  Atomic<size_t> _items_count;
   DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(_items_count));
 
   static Entry as_entry(ObjectMonitor* monitor) {
@@ -155,11 +155,11 @@ class ObjectMonitorTable::Table : public CHeapObj<mtObjectMonitor> {
   // Make sure we leave space for previous versions to relocate too.
   bool try_inc_items_count() {
     for (;;) {
-      size_t population = AtomicAccess::load(&_items_count);
+      size_t population = _items_count.load_relaxed();
       if (should_grow(population)) {
         return false;
       }
-      if (AtomicAccess::cmpxchg(&_items_count, population, population + 1, memory_order_relaxed) == population) {
+      if (_items_count.compare_set(population, population + 1)) {
         return true;
       }
     }
@@ -170,11 +170,11 @@ class ObjectMonitorTable::Table : public CHeapObj<mtObjectMonitor> {
   }
 
   void inc_items_count() {
-    AtomicAccess::inc(&_items_count, memory_order_relaxed);
+    _items_count.add_then_fetch(1u, memory_order_relaxed);
   }
 
   void dec_items_count() {
-    AtomicAccess::dec(&_items_count, memory_order_relaxed);
+    _items_count.sub_then_fetch(1u, memory_order_relaxed);
   }
 
 public:
@@ -206,11 +206,11 @@ public:
   }
 
   bool should_grow() {
-    return should_grow(AtomicAccess::load(&_items_count));
+    return should_grow(_items_count.load_relaxed());
   }
 
   size_t total_items() {
-    size_t current_items = AtomicAccess::load(&_items_count);
+    size_t current_items = _items_count.load_relaxed();
     Table* prev = AtomicAccess::load(&_prev);
     if (prev != nullptr) {
       return prev->total_items() + current_items;
