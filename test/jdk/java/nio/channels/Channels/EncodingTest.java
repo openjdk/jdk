@@ -34,8 +34,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.MalformedInputException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.params.ParameterizedTest;
@@ -90,16 +88,16 @@ public class EncodingTest {
      * Writes and reads with the same encoding
      */
     public static Stream<Arguments> writeAndRead() {
-        List<Arguments> list = new ArrayList<Arguments>();
-        list.add(Arguments.of(testFile, StandardCharsets.ISO_8859_1.name(), null,
-                              StandardCharsets.ISO_8859_1.name(), StandardCharsets.ISO_8859_1));
-        list.add(Arguments.of(testFile, null, StandardCharsets.ISO_8859_1,
-                              StandardCharsets.ISO_8859_1.name(), StandardCharsets.ISO_8859_1));
-        list.add(Arguments.of(testFile, StandardCharsets.UTF_8.name(), null,
-                              StandardCharsets.UTF_8.name(), StandardCharsets.UTF_8));
-        list.add(Arguments.of(testFile, null, StandardCharsets.UTF_8,
-                              StandardCharsets.UTF_8.name(), StandardCharsets.UTF_8));
-        return list.stream();
+        return Stream.of
+            (Arguments.of(testFile, StandardCharsets.ISO_8859_1.name(), null,
+                          StandardCharsets.ISO_8859_1.name(), StandardCharsets.ISO_8859_1),
+             Arguments.of(testFile, null, StandardCharsets.ISO_8859_1,
+                          StandardCharsets.ISO_8859_1.name(), StandardCharsets.ISO_8859_1),
+             Arguments.of(testFile, StandardCharsets.UTF_8.name(), null,
+                          StandardCharsets.UTF_8.name(), StandardCharsets.UTF_8),
+             Arguments.of(testFile, null, StandardCharsets.UTF_8,
+                          StandardCharsets.UTF_8.name(), StandardCharsets.UTF_8)
+             );
     }
 
     /*
@@ -107,12 +105,12 @@ public class EncodingTest {
      * Writes the data in ISO8859 and reads with UTF8, expects MalformedInputException
      */
     public static Stream<Arguments> illegalInput() {
-        List<Arguments> list = new ArrayList<Arguments>();
-        list.add(Arguments.of(testIllegalInput, StandardCharsets.ISO_8859_1.name(), null, StandardCharsets.UTF_8.name(), null));
-        list.add(Arguments.of(testIllegalInput, StandardCharsets.ISO_8859_1.name(), null, null, StandardCharsets.UTF_8));
-        list.add(Arguments.of(testIllegalInput, null, StandardCharsets.ISO_8859_1, StandardCharsets.UTF_8.name(), null));
-        list.add(Arguments.of(testIllegalInput, null, StandardCharsets.ISO_8859_1, null, StandardCharsets.UTF_8));
-        return list.stream();
+        return Stream.of
+            (Arguments.of(testIllegalInput, StandardCharsets.ISO_8859_1.name(), null, StandardCharsets.UTF_8.name(), null),
+             Arguments.of(testIllegalInput, StandardCharsets.ISO_8859_1.name(), null, null, StandardCharsets.UTF_8),
+             Arguments.of(testIllegalInput, null, StandardCharsets.ISO_8859_1, StandardCharsets.UTF_8.name(), null),
+             Arguments.of(testIllegalInput, null, StandardCharsets.ISO_8859_1, null, StandardCharsets.UTF_8)
+             );
     }
 
     /*
@@ -120,10 +118,10 @@ public class EncodingTest {
      * Attemps to write some malformed chars, expects MalformedInputException
      */
     public static Stream<Arguments> illegalOutput() {
-        List<Arguments> list = new ArrayList<Arguments>();
-        list.add(Arguments.of(testIllegalOutput, StandardCharsets.UTF_8.name(), null));
-        list.add(Arguments.of(testIllegalOutput, null, StandardCharsets.UTF_8));
-        return list.stream();
+        return Stream.of
+            (Arguments.of(testIllegalOutput, StandardCharsets.UTF_8.name(), null),
+             Arguments.of(testIllegalOutput, null, StandardCharsets.UTF_8)
+             );
     }
 
     /**

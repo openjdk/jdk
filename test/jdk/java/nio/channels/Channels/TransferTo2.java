@@ -25,8 +25,6 @@ import java.io.OutputStream;
 import java.io.IOException;
 import java.nio.channels.Channels;
 import java.nio.channels.Pipe;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.params.ParameterizedTest;
@@ -51,21 +49,20 @@ public class TransferTo2 extends TransferToBase {
      * to be tested.
      */
     public static Stream<Arguments> streamCombinations() {
-        return List.of
+        return Stream.of
             (// tests FileChannel.transferFrom(SelectableChannelOutput) optimized case
              Arguments.of(selectableChannelInput(), fileChannelOutput()),
 
-            // tests FileChannel.transferFrom(ReadableByteChannelInput) optimized case
-             Arguments.of(readableByteChannelInput(), fileChannelOutput()))
-            .stream();
+             // tests FileChannel.transferFrom(ReadableByteChannelInput) optimized case
+             Arguments.of(readableByteChannelInput(), fileChannelOutput()));
     }
 
     /*
      * Input streams to be tested.
      */
     public static Stream<Arguments> inputStreamProviders() {
-        return List.of(Arguments.of(selectableChannelInput()),
-                       Arguments.of(readableByteChannelInput())).stream();
+        return Stream.of(Arguments.of(selectableChannelInput()),
+                         Arguments.of(readableByteChannelInput()));
     }
 
     /*

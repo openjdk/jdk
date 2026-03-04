@@ -34,8 +34,6 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -65,7 +63,7 @@ public class TransferTo extends TransferToBase {
      * to be tested.
      */
     public static Stream<Arguments> streamCombinations() {
-        return List.of
+        return Stream.of
             (// tests FileChannel.transferTo(FileChannel) optimized case
              Arguments.of(fileChannelInput(), fileChannelOutput()),
 
@@ -78,16 +76,15 @@ public class TransferTo extends TransferToBase {
              Arguments.of(fileChannelInput(), writableByteChannelOutput()),
 
              // tests InputStream.transferTo(OutputStream) default case
-             Arguments.of(readableByteChannelInput(), defaultOutput()))
-            .stream();
+             Arguments.of(readableByteChannelInput(), defaultOutput()));
     }
 
     /*
      * Input streams to be tested.
      */
     public static Stream<Arguments> inputStreamProviders() {
-        return List.of(Arguments.of(fileChannelInput()),
-                       Arguments.of(readableByteChannelInput())).stream();
+        return Stream.of(Arguments.of(fileChannelInput()),
+                         Arguments.of(readableByteChannelInput()));
     }
 
     /*

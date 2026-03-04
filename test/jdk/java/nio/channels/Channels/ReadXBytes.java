@@ -46,10 +46,9 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.stream.Stream;
+import java.util.stream.IntStream;
 import jdk.internal.util.ArraysSupport;
 
 import static java.nio.file.StandardOpenOption.*;
@@ -242,14 +241,13 @@ public class ReadXBytes {
     }
 
     // Provides a stream of lengths
-    public static Stream<Arguments> fileLengths() throws IOException {
-        List<Arguments> list = new ArrayList<Arguments>();
-        list.add(Arguments.of(1 + RAND.nextInt(1)));
-        list.add(Arguments.of(1 + RAND.nextInt(Byte.MAX_VALUE)));
-        list.add(Arguments.of(1 + RAND.nextInt(Short.MAX_VALUE)));
-        list.add(Arguments.of(1 + RAND.nextInt(1_000_000)));
-        list.add(Arguments.of(1 + RAND.nextInt(BIG_LENGTH)));
-        return list.stream();
+    public static IntStream fileLengths() throws IOException {
+        return IntStream.of
+            (1 + RAND.nextInt(1),
+             1 + RAND.nextInt(Byte.MAX_VALUE),
+             1 + RAND.nextInt(Short.MAX_VALUE),
+             1 + RAND.nextInt(1_000_000),
+             1 + RAND.nextInt(BIG_LENGTH));
     }
 
     // Verifies readAllBytes() accuracy for random lengths and initial positions
