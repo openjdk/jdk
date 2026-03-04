@@ -894,8 +894,7 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       break;
     }
 
-    case lir_increment_counter:
-    {
+    case lir_increment_counter: {
       LIR_OpIncrementCounter* opr = op->as_OpIncrementCounter();
       assert(opr != nullptr, "must be");
 
