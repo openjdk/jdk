@@ -448,7 +448,7 @@ mapPlatformToJavaTimezone(const char *java_home_dir, const char *tz) {
     if (javatz == NULL) {
         temp_tz = strchr(tz, ',');
         tz_len = (temp_tz == NULL) ? strlen(tz) : temp_tz - tz;
-	free((void *) tz_buf);
+        free((void *) tz_buf);
         tz_buf = (char *)malloc(tz_len + 1);
         memcpy(tz_buf, tz, tz_len);
         tz_buf[tz_len] = '\0';
