@@ -700,12 +700,12 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
 
   Node* mem = in(MemNode::Memory); // start searching here...
   int cnt = 50;                    // Cycle limiter
-  for (;;) {
+  for (;; cnt--) {
     // While we can dance past unrelated stores...
     if (phase->type(mem) == Type::TOP) {
       // Encounter a dead node
       return phase->C->top();
-    } else if (--cnt < 0) {
+    } else if (cnt <= 0) {
       // Caught in cycle or a complicated dance?
       return nullptr;
     } else if (mem->is_Phi()) {
@@ -791,7 +791,7 @@ AccessAnalyzer::AccessAnalyzer(PhaseValues* phase, MemNode* n)
 // Decide whether the memory accessed by '_n' and 'other' may overlap. This function may be used
 // when we want to walk the memory graph to fold a load, or when we want to hoist a load above a
 // loop when there are no stores that may overlap with the load inside the loop.
-AccessAnalyzer::AccessIndependence AccessAnalyzer::detect_access_independence(Node* other) {
+AccessAnalyzer::AccessIndependence AccessAnalyzer::detect_access_independence(Node* other) const {
   assert(_phase->type(other) == Type::MEMORY, "must be a memory node %s", other->Name());
   assert(!other->is_Phi(), "caller must handle Phi");
 
@@ -827,8 +827,8 @@ AccessAnalyzer::AccessIndependence AccessAnalyzer::detect_access_independence(No
       return {false, other};
     }
 
-    // If it is provable that the memory accessed by mem does not overlap the memory accessed by
-    // _n, we may walk past mem.
+    // If it is provable that the memory accessed by 'other' does not overlap the memory accessed
+    // by '_n', we may walk past 'other'.
     // For raw accesses, 2 accesses are independent if they have the same base and the offsets
     // say that they do not overlap.
     // For heap accesses, 2 accesses are independent if either the bases are provably different
@@ -838,9 +838,9 @@ AccessAnalyzer::AccessIndependence AccessAnalyzer::detect_access_independence(No
       return {false, nullptr};
     }
 
-    // If the offsets say that the accesses do not overlap, then it is provable that mem and _n do
-    // not overlap. For example, a LoadI from Object+8 is independent from a StoreL into Object+12,
-    // no matter what the bases are.
+    // If the offsets say that the accesses do not overlap, then it is provable that 'other' and
+    // '_n' do not overlap. For example, a LoadI from Object+8 is independent from a StoreL into
+    // Object+12, no matter what the bases are.
     if (st_offset != _offset && st_offset != Type::OffsetBot) {
       const int MAX_STORE = MAX2(BytesPerLong, (int)MaxVectorSize);
       assert(other->as_Store()->memory_size() <= MAX_STORE, "");
