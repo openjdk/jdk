@@ -40,6 +40,8 @@
 
 #ifndef HEADLESS
 
+#include <X11/Xresource.h>
+
 extern LockFunc       OGLSD_Lock;
 extern GetRasInfoFunc OGLSD_GetRasInfo;
 extern UnlockFunc     OGLSD_Unlock;
