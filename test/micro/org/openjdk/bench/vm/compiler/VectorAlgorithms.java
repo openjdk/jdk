@@ -242,27 +242,27 @@ public class VectorAlgorithms {
         // Every invocation should have a different value for e, so that
         // we don't get branch-prediction that is too good. And also so
         // That the length of the resulting data is more evenly distributed.
-        return VectorAlgorithmsImpl.filterI_loop(d.aI, d.rI1, d.eI_filterI);
+        return VectorAlgorithmsImpl.filterI_loop(d.aI_filterI, d.rI1, d.eI_filterI);
     }
 
     @Benchmark
     public Object filterI_VectorAPI_v1() {
-        return VectorAlgorithmsImpl.filterI_VectorAPI_v1(d.aI, d.rI1, d.eI_filterI);
+        return VectorAlgorithmsImpl.filterI_VectorAPI_v1(d.aI_filterI, d.rI1, d.eI_filterI);
     }
 
     @Benchmark
     public Object filterI_VectorAPI_v2_l2() {
-        return VectorAlgorithmsImpl.filterI_VectorAPI_v2_l2(d.aI, d.rI1, d.eI_filterI);
+        return VectorAlgorithmsImpl.filterI_VectorAPI_v2_l2(d.aI_filterI, d.rI1, d.eI_filterI);
     }
 
     @Benchmark
     public Object filterI_VectorAPI_v2_l4() {
-        return VectorAlgorithmsImpl.filterI_VectorAPI_v2_l4(d.aI, d.rI1, d.eI_filterI);
+        return VectorAlgorithmsImpl.filterI_VectorAPI_v2_l4(d.aI_filterI, d.rI1, d.eI_filterI);
     }
 
     @Benchmark
     public Object filterI_VectorAPI_v2_l8() {
-        return VectorAlgorithmsImpl.filterI_VectorAPI_v2_l8(d.aI, d.rI1, d.eI_filterI);
+        return VectorAlgorithmsImpl.filterI_VectorAPI_v2_l8(d.aI_filterI, d.rI1, d.eI_filterI);
     }
 
     @Benchmark

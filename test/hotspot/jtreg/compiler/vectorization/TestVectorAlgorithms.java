@@ -79,6 +79,12 @@ public class TestVectorAlgorithms {
 
     VectorAlgorithmsImpl.Data d;
 
+    // We should test with a wide range of probabilities, to ensure correctness,
+    // and also to ensure we get all branches compiled, so IR matching compiles
+    // also for branches that require a very extreme probability.
+    private static final float[] BRANCH_PROBABILITIES = new float[] {0f, 0.1f, 0.3f, 0.5f, 0.7f, 0.9f, 1f};
+    private static int branch_probabilities_idx = 0;
+
     public static void main(String[] args) {
         TestFramework framework = new TestFramework();
         framework.addFlags("--add-modules=jdk.incubator.vector",
@@ -141,11 +147,11 @@ public class TestVectorAlgorithms {
         testGroups.get("reverseI").put("reverseI_VectorAPI", i -> { return reverseI_VectorAPI(d.aI, d.rI2); });
 
         testGroups.put("filterI", new HashMap<String,TestFunction>());
-        testGroups.get("filterI").put("filterI_loop",            i -> { return filterI_loop(d.aI, d.rI1, d.eI_filterI); });
-        testGroups.get("filterI").put("filterI_VectorAPI_v1",    i -> { return filterI_VectorAPI_v1(d.aI, d.rI2, d.eI_filterI); });
-        testGroups.get("filterI").put("filterI_VectorAPI_v2_l2", i -> { return filterI_VectorAPI_v2_l2(d.aI, d.rI3, d.eI_filterI); });
-        testGroups.get("filterI").put("filterI_VectorAPI_v2_l4", i -> { return filterI_VectorAPI_v2_l4(d.aI, d.rI4, d.eI_filterI); });
-        testGroups.get("filterI").put("filterI_VectorAPI_v2_l8", i -> { return filterI_VectorAPI_v2_l8(d.aI, d.rI5, d.eI_filterI); });
+        testGroups.get("filterI").put("filterI_loop",            i -> { return filterI_loop(d.aI_filterI, d.rI1, d.eI_filterI); });
+        testGroups.get("filterI").put("filterI_VectorAPI_v1",    i -> { return filterI_VectorAPI_v1(d.aI_filterI, d.rI2, d.eI_filterI); });
+        testGroups.get("filterI").put("filterI_VectorAPI_v2_l2", i -> { return filterI_VectorAPI_v2_l2(d.aI_filterI, d.rI3, d.eI_filterI); });
+        testGroups.get("filterI").put("filterI_VectorAPI_v2_l4", i -> { return filterI_VectorAPI_v2_l4(d.aI_filterI, d.rI4, d.eI_filterI); });
+        testGroups.get("filterI").put("filterI_VectorAPI_v2_l8", i -> { return filterI_VectorAPI_v2_l8(d.aI_filterI, d.rI5, d.eI_filterI); });
 
         testGroups.put("reduceAddIFieldsX4", new HashMap<String,TestFunction>());
         testGroups.get("reduceAddIFieldsX4").put("reduceAddIFieldsX4_loop",      i -> { return reduceAddIFieldsX4_loop(d.oopsX4, d.memX4); });
@@ -223,7 +229,8 @@ public class TestVectorAlgorithms {
             int size = 100_000 + RANDOM.nextInt(10_000);
             int seed = RANDOM.nextInt();
             int numXObjects = 10_000;
-            float branchProbability = RANDOM.nextFloat(0.3f, 0.7f);
+            branch_probabilities_idx = (branch_probabilities_idx + 1) % BRANCH_PROBABILITIES.length;
+            float branchProbability = BRANCH_PROBABILITIES[branch_probabilities_idx];
             d = new VectorAlgorithmsImpl.Data(size, seed, numXObjects, branchProbability);
 
             // Run all tests
