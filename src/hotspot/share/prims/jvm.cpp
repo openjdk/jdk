@@ -3641,7 +3641,9 @@ JVM_ENTRY(jobjectArray, JVM_GetVmArguments(JNIEnv *env))
 
   int index = 0;
   for (int j = 0; j < num_flags; j++, index++) {
-    Handle h = java_lang_String::create_from_platform_dependent_str(vm_flags[j], CHECK_NULL);
+    stringStream prefixed;
+    prefixed.print("-XX:%s", vm_flags[j]);
+    Handle h = java_lang_String::create_from_platform_dependent_str(prefixed.base(), CHECK_NULL);
     result_h->obj_at_put(index, h());
   }
   for (int i = 0; i < num_args; i++, index++) {

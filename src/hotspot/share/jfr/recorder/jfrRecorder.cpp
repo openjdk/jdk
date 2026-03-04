@@ -102,6 +102,9 @@ bool JfrRecorder::on_create_vm_1() {
     if (!create_checkpoint_manager()) {
       return false;
     }
+    if (!JfrSymbolTable::create()) {
+      return false;
+    }
   }
 
   // fast time initialization
@@ -316,10 +319,7 @@ bool JfrRecorder::create_components() {
   if (!create_thread_group_manager()) {
     return false;
   }
-  if (!create_symbol_table()) {
-    return false;
-  }
-  return true;
+  return create_symbol_table();
 }
 
 // subsystems
@@ -418,7 +418,13 @@ bool JfrRecorder::create_thread_group_manager() {
 }
 
 bool JfrRecorder::create_symbol_table() {
-  return JfrSymbolTable::create();
+  return !is_started_on_commandline() ? JfrSymbolTable::create() : true;
+}
+
+void JfrRecorder::destroy_symbol_table() {
+  if (!is_started_on_commandline()) {
+    JfrSymbolTable::destroy();
+  }
 }
 
 void JfrRecorder::destroy_components() {
@@ -461,7 +467,7 @@ void JfrRecorder::destroy_components() {
   }
   JfrEventThrottler::destroy();
   JfrThreadGroupManager::destroy();
-  JfrSymbolTable::destroy();
+  destroy_symbol_table();
 }
 
 bool JfrRecorder::create_recorder_thread() {

@@ -1281,7 +1281,7 @@ public class TypeAnnotations {
                     separateAnnotationsKinds(tree, tree.vartype, tree.sym.type, tree.sym, pos);
                 }
             } else if (tree.sym.getKind() == ElementKind.LOCAL_VARIABLE) {
-                if (sigOnly) {
+                if (sigOnly && !tree.declaredUsingVar()) {
                     if (contextTree instanceof JCTry t && t.resources.contains(tree)) {
                         final TypeAnnotationPosition pos =
                             TypeAnnotationPosition.resourceVariable(currentLambda,

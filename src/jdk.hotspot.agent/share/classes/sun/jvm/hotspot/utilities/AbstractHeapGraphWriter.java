@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,6 +121,9 @@ public abstract class AbstractHeapGraphWriter implements HeapGraphWriter {
                 // write JNI global handles
                 writeGlobalJNIHandles();
 
+                // write classes in null class loader data
+                writeStickyClasses();
+
         } catch (RuntimeException re) {
             handleRuntimeException(re);
         }
@@ -166,6 +169,9 @@ public abstract class AbstractHeapGraphWriter implements HeapGraphWriter {
                 handleRuntimeException(re);
             }
         }
+    }
+
+    protected void writeStickyClasses() throws IOException {
     }
 
     protected void writeGlobalJNIHandle(Address handleAddr) throws IOException {
