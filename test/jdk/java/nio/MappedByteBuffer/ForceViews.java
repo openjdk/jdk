@@ -47,7 +47,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ForceViews {
 
@@ -112,9 +112,8 @@ public class ForceViews {
             int fcVal = buf.get(i);
             int mbbVal = mbb.get(mbbPos + i);
             int val = regionOffset + i;
-            assertTrue(fcVal == val && mbbVal == val,
-                       String.format("%s: i %d, fcVal %d, mbbVal %d, val %d",
-                                     tst, i, fcVal, mbbVal, val));
+            assertEquals(val, fcVal);
+            assertEquals(val, mbbVal);
         }
     }
 }

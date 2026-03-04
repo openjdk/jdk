@@ -505,9 +505,9 @@ public class EqualsCompareTest {
     }
 
     public static Stream<Arguments> charBufferTypesSource() {
-        return  List.of(Arguments.of(new BufferType.Chars(BufferKind.HEAP)),
-                        Arguments.of(new BufferType.Chars(BufferKind.HEAP_VIEW)),
-                        Arguments.of(new BufferType.Chars(BufferKind.DIRECT)))
+        return List.of(Arguments.of(new BufferType.Chars(BufferKind.HEAP)),
+                       Arguments.of(new BufferType.Chars(BufferKind.HEAP_VIEW)),
+                       Arguments.of(new BufferType.Chars(BufferKind.DIRECT)))
             .stream();
     }
 
@@ -652,11 +652,11 @@ public class EqualsCompareTest {
                                     int aCb = bt.compare(as, bs);
                                     int bCa = bt.compare(bs, as);
                                     int v = Integer.signum(aCb) * Integer.signum(bCa);
-                                    assertTrue(v == -1);
+                                    assertEquals(-1, v);
 
                                     int aMs = bt.mismatch(as, bs);
                                     int bMs = bt.mismatch(bs, as);
-                                    assertNotEquals(aMs, -1);
+                                    assertNotEquals(-1, aMs);
                                     assertEquals(bMs, aMs);
                                 }
                             }
@@ -677,7 +677,7 @@ public class EqualsCompareTest {
                                 int cCa = bt.compare(cs, as);
                                 int aCc = bt.compare(as, cs);
                                 int v = Integer.signum(cCa) * Integer.signum(aCc);
-                                assertTrue(v == -1);
+                                assertEquals(-1, v);
 
                                 int cMa = bt.mismatch(cs, as);
                                 int aMc = bt.mismatch(as, cs);
