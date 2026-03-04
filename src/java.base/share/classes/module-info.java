@@ -135,7 +135,6 @@ module java.base {
     exports javax.security.auth.x500;
     exports javax.security.cert;
 
-
     // additional qualified exports may be inserted at build time
     // see make/gensrc/GenModuleInfo.gmk
 
@@ -147,11 +146,14 @@ module java.base {
         java.security.sasl;
     exports jdk.internal to
         jdk.incubator.vector;
-    // Note: all modules in the exported list participate in preview  features
+    // Note: all modules in the exported list participate in preview features
     // and therefore if they use preview features they do not need to be
     // compiled with "--enable-preview".
     // It is recommended for any modules that do participate that their
-    // module declaration be annotated with jdk.internal.javac.ParticipatesInPreview
+    // module declaration be annotated with jdk.internal.javac.ParticipatesInPreview.
+    // If a module uses only reflective preview APIs, instead of participating,
+    // it should declare in its Java.gmk:
+    // DISABLED_WARNINGS_java += preview  # Uses reflective preview APIs
     exports jdk.internal.javac to
         java.compiler,
         jdk.compiler;
