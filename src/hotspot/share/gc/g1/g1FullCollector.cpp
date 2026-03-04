@@ -23,6 +23,7 @@
  */
 
 #include "classfile/classLoaderDataGraph.hpp"
+#include "cppstdlib/new.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCAdjustTask.hpp"
@@ -110,7 +111,7 @@ uint G1FullCollector::calc_active_workers() {
 G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
                                  bool clear_soft_refs,
                                  bool do_maximal_compaction,
-                                 G1FullGCTracer* tracer) :
+                                 GCTracer* tracer) :
     _heap(heap),
     _scope(heap->monitoring_support(), clear_soft_refs, do_maximal_compaction, tracer),
     _num_workers(calc_active_workers()),
@@ -134,11 +135,12 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
   _compaction_points = NEW_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _num_workers, mtGC);
 
   _live_stats = NEW_C_HEAP_ARRAY(G1RegionMarkStats, _heap->max_num_regions(), mtGC);
-  _compaction_tops = NEW_C_HEAP_ARRAY(Atomic<HeapWord*>, _heap->max_num_regions(), mtGC);
   for (uint j = 0; j < heap->max_num_regions(); j++) {
     _live_stats[j].clear();
-    ::new (&_compaction_tops[j]) Atomic<HeapWord*>{};
   }
+
+  _compaction_tops = NEW_C_HEAP_ARRAY(Atomic<HeapWord*>, _heap->max_num_regions(), mtGC);
+  ::new (_compaction_tops) Atomic<HeapWord*>[heap->max_num_regions()]{};
 
   _partial_array_state_manager = new PartialArrayStateManager(_num_workers);
 
@@ -276,6 +278,21 @@ void G1FullCollector::before_marking_update_attribute_table(G1HeapRegion* hr) {
 class G1FullGCRefProcProxyTask : public RefProcProxyTask {
   G1FullCollector& _collector;
 
+  // G1 Full GC specific closure for handling discovered fields. Do NOT need any
+  // barriers as Full GC discards all this information anyway.
+  class G1FullGCDiscoveredFieldClosure : public EnqueueDiscoveredFieldClosure {
+    G1CollectedHeap* _g1h;
+
+  public:
+    G1FullGCDiscoveredFieldClosure() : _g1h(G1CollectedHeap::heap()) { }
+
+    void enqueue(HeapWord* discovered_field_addr, oop value) override {
+      assert(_g1h->is_in(discovered_field_addr), PTR_FORMAT " is not in heap ", p2i(discovered_field_addr));
+      // Store the value and done.
+      RawAccess<>::oop_store(discovered_field_addr, value);
+    }
+  };
+
 public:
   G1FullGCRefProcProxyTask(G1FullCollector &collector, uint max_workers)
     : RefProcProxyTask("G1FullGCRefProcProxyTask", max_workers),
@@ -286,7 +303,7 @@ public:
     G1IsAliveClosure is_alive(&_collector);
     uint index = (_tm == RefProcThreadModel::Single) ? 0 : worker_id;
     G1FullKeepAliveClosure keep_alive(_collector.marker(index));
-    BarrierEnqueueDiscoveredFieldClosure enqueue;
+    G1FullGCDiscoveredFieldClosure enqueue;
     G1MarkStackClosure* complete_marking = _collector.marker(index)->stack_closure();
     _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &enqueue, complete_marking);
   }

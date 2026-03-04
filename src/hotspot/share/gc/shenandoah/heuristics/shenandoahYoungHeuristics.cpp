@@ -37,7 +37,7 @@ ShenandoahYoungHeuristics::ShenandoahYoungHeuristics(ShenandoahYoungGeneration* 
 }
 
 
-size_t ShenandoahYoungHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
+void ShenandoahYoungHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
                                                                       RegionData* data, size_t size,
                                                                       size_t actual_free) {
   // See comments in ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata():
@@ -52,7 +52,7 @@ size_t ShenandoahYoungHeuristics::choose_collection_set_from_regiondata(Shenando
   bool need_to_finalize_mixed = heap->old_generation()->heuristics()->prime_collection_set(cset);
 
   // Better select garbage-first regions
-  QuickSort::sort<RegionData>(data, (int) size, compare_by_garbage);
+  QuickSort::sort<RegionData>(data, size, compare_by_garbage);
 
   size_t cur_young_garbage = add_preselected_regions_to_collection_set(cset, data, size);
 
@@ -62,12 +62,10 @@ size_t ShenandoahYoungHeuristics::choose_collection_set_from_regiondata(Shenando
   // enough consolidated garbage to make effective use of young-gen evacuation reserve.  If there is still
   // young-gen reserve available following selection of the young-gen collection set, see if we can use
   // this memory to expand the old-gen evacuation collection set.
-  size_t add_regions_to_old;
-  need_to_finalize_mixed |= heap->old_generation()->heuristics()->top_off_collection_set(add_regions_to_old);
+  need_to_finalize_mixed |= heap->old_generation()->heuristics()->top_off_collection_set(_add_regions_to_old);
   if (need_to_finalize_mixed) {
     heap->old_generation()->heuristics()->finalize_mixed_evacs();
   }
-  return add_regions_to_old;
 }
 
 void ShenandoahYoungHeuristics::choose_young_collection_set(ShenandoahCollectionSet* cset,
@@ -139,6 +137,7 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
 
   // inherited triggers have already decided to start a cycle, so no further evaluation is required
   if (ShenandoahAdaptiveHeuristics::should_start_gc()) {
+    // ShenandoahAdaptiveHeuristics::should_start_gc() has already accepted trigger, or declined it.
     return true;
   }
 
@@ -180,7 +179,7 @@ size_t ShenandoahYoungHeuristics::bytes_of_allocation_runway_before_gc_trigger(s
   size_t capacity = _space_info->max_capacity();
   size_t usage = _space_info->used();
   size_t available = (capacity > usage)? capacity - usage: 0;
-  size_t allocated = _space_info->bytes_allocated_since_gc_start();
+  size_t allocated = _free_set->get_bytes_allocated_since_gc_start();
 
   size_t available_young_collected = ShenandoahHeap::heap()->collection_set()->get_young_available_bytes_collected();
   size_t anticipated_available =

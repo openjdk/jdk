@@ -47,7 +47,7 @@
 #include "utilities/events.hpp"
 
 ShenandoahGenerationalControlThread::ShenandoahGenerationalControlThread() :
-  _control_lock(Mutex::nosafepoint - 2, "ShenandoahGCRequest_lock", true),
+  _control_lock(CONTROL_LOCK_RANK, "ShenandoahGCRequest_lock", true),
   _requested_gc_cause(GCCause::_no_gc),
   _requested_generation(nullptr),
   _gc_mode(none),
@@ -622,10 +622,11 @@ void ShenandoahGenerationalControlThread::service_stw_full_cycle(GCCause::Cause 
 
 void ShenandoahGenerationalControlThread::service_stw_degenerated_cycle(const ShenandoahGCRequest& request) {
   assert(_degen_point != ShenandoahGC::_degenerated_unset, "Degenerated point should be set");
+  request.generation->heuristics()->record_degenerated_cycle_start(ShenandoahGC::ShenandoahDegenPoint::_degenerated_outside_cycle
+                                                                  == _degen_point);
   _heap->increment_total_collections(false);
 
   ShenandoahGCSession session(request.cause, request.generation);
-
   ShenandoahDegenGC gc(_degen_point, request.generation);
   gc.collect(request.cause);
   _degen_point = ShenandoahGC::_degenerated_unset;

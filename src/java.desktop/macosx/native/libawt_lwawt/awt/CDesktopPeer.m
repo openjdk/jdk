@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,6 +120,7 @@ JNI_COCOA_ENTER(env);
         if (appURI == nil
             || [[urlToOpen absoluteString] containsString:[appURI absoluteString]]
             || [[defaultTerminalApp absoluteString] containsString:[appURI absoluteString]]) {
+            [urlToOpen release];
             return -1;
         }
         // Additionally set forPrinting=TRUE for print
@@ -129,6 +130,7 @@ JNI_COCOA_ENTER(env);
     } else if (action == sun_lwawt_macosx_CDesktopPeer_EDIT) {
         if (appURI == nil
             || [[urlToOpen absoluteString] containsString:[appURI absoluteString]]) {
+            [urlToOpen release];
             return -1;
         }
         // for EDIT: if (defaultApp = TerminalApp) then set appURI = DefaultTextEditor
@@ -156,6 +158,7 @@ JNI_COCOA_ENTER(env);
 
     dispatch_semaphore_wait(semaphore, timeout);
 
+    [urlToOpen release];
 JNI_COCOA_EXIT(env);
     return status;
 }

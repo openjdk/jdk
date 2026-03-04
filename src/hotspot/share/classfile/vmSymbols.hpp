@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,7 @@ class SerializeClosure;
   template(jdk_internal_vm_vector_VectorMask,         "jdk/internal/vm/vector/VectorSupport$VectorMask")    \
   template(jdk_internal_vm_vector_VectorShuffle,      "jdk/internal/vm/vector/VectorSupport$VectorShuffle") \
   template(payload_name,                              "payload")                                            \
+  template(CTYPE_name,                                "CTYPE")                                              \
   template(ETYPE_name,                                "ETYPE")                                              \
   template(VLENGTH_name,                              "VLENGTH")                                            \
                                                                                                   \
@@ -748,8 +749,6 @@ class SerializeClosure;
   template(jdk_internal_vm_ThreadLock,             "jdk/internal/vm/ThreadSnapshot$ThreadLock")                   \
   template(jdk_internal_vm_ThreadLock_signature,   "Ljdk/internal/vm/ThreadSnapshot$ThreadLock;")                 \
   template(jdk_internal_vm_ThreadLock_array,       "[Ljdk/internal/vm/ThreadSnapshot$ThreadLock;")                \
-  template(java_lang_StackTraceElement_of_name,    "of")                                                          \
-  template(java_lang_StackTraceElement_of_signature, "([Ljava/lang/StackTraceElement;)[Ljava/lang/StackTraceElement;") \
                                                                                                                   \
   /* jcmd Thread.vthread_scheduler and Thread.vthread_pollers */                                                  \
   template(jdk_internal_vm_JcmdVThreadCommands,    "jdk/internal/vm/JcmdVThreadCommands")                         \
