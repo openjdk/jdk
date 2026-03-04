@@ -31,6 +31,7 @@
 #include "runtime/thread.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/trimNativeHeap.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // -----------------------------------------------------------------------------
@@ -124,7 +125,7 @@ class ObjectMonitorTable::Table : public CHeapObj<mtObjectMonitor> {
   DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
   const size_t _capacity_mask;       // One less than its power-of-two capacity
   Atomic<Table*> _prev;              // Set while rehashing
-  Entry volatile* _buckets;          // The payload
+  Atomic<Entry>* _buckets;           // The payload
   DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(_capacity_mask) + sizeof(_prev) + sizeof(_buckets));
   Atomic<size_t> _items_count;
   DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(_items_count));
@@ -181,16 +182,16 @@ public:
   Table(size_t capacity, Table* prev)
     : _capacity_mask(capacity - 1),
       _prev(prev),
-      _buckets(NEW_C_HEAP_ARRAY(Entry, capacity, mtObjectMonitor)),
+      _buckets(NEW_C_HEAP_ARRAY(Atomic<Entry>, capacity, mtObjectMonitor)),
       _items_count(0)
   {
     for (size_t i = 0; i < capacity; ++i) {
-      _buckets[i] = empty();
+      ::new (_buckets + i) Atomic<Entry>(empty());
     }
   }
 
   ~Table() {
-    FREE_C_HEAP_ARRAY(Entry, _buckets);
+    FREE_C_HEAP_ARRAY(Atomic<Entry>, _buckets);
   }
 
   Table* prev() {
@@ -232,8 +233,8 @@ public:
     size_t index = start_index;
 
     for (;;) {
-      Entry volatile* bucket = _buckets + index;
-      Entry entry = AtomicAccess::load_acquire(bucket);
+      Atomic<Entry>& bucket = _buckets[index];
+      Entry entry = bucket.load_acquire();
 
       if (entry == tombstone() || entry == empty()) {
         // Not found
@@ -268,13 +269,13 @@ public:
     size_t index = start_index;
 
     for (;;) {
-      Entry volatile* bucket = _buckets + index;
-      Entry entry = AtomicAccess::load_acquire(bucket);
+      Atomic<Entry>& bucket = _buckets[index];
+      Entry entry = bucket.load_acquire();
 
       if (entry == empty()) {
         // Found an empty slot to install the new monitor in.
         // To avoid concurrent inserts succeeding, place a tomb stone here.
-        Entry result = AtomicAccess::cmpxchg(bucket, entry, tombstone(), memory_order_relaxed);
+        Entry result = bucket.compare_exchange(entry, tombstone(), memory_order_relaxed);
         if (result == entry) {
           // Success! Nobody will try to insert here again, except reinsert from rehashing.
           return nullptr;
@@ -314,14 +315,14 @@ public:
     size_t index = start_index;
 
     for (;;) {
-      Entry volatile* bucket = _buckets + index;
-      Entry entry = AtomicAccess::load_acquire(bucket);
+      Atomic<Entry>& bucket = _buckets[index];
+      Entry entry = bucket.load_acquire();
 
       if (entry == empty()) {
         // Empty slot to install the new monitor
         if (try_inc_items_count()) {
           // Succeeding in claiming an item.
-          Entry result = AtomicAccess::cmpxchg(bucket, entry, new_monitor, memory_order_acq_rel);
+          Entry result = bucket.compare_exchange(entry, new_monitor, memory_order_acq_rel);
           if (result == entry) {
             // Success - already incremented.
             return as_monitor(new_monitor);
@@ -333,7 +334,7 @@ public:
         } else {
           // Out of allowance; leaving place for rehashing to succeed.
           // To avoid concurrent inserts succeeding, place a tombstone here.
-          Entry result = AtomicAccess::cmpxchg(bucket, entry, tombstone(), memory_order_acq_rel);
+          Entry result = bucket.compare_exchange(entry, tombstone(), memory_order_acq_rel);
           if (result == entry) {
             // Success; nobody will try to insert here again, except reinsert from rehashing.
             return nullptr;
@@ -365,8 +366,8 @@ public:
     size_t index = start_index;
 
     for (;;) {
-      Entry volatile* bucket = _buckets + index;
-      Entry entry = AtomicAccess::load_acquire(bucket);
+      Atomic<Entry>& bucket = _buckets[index];
+      Entry entry = bucket.load_acquire();
 
       if (entry == empty()) {
         // The monitor does not exist in this table.
@@ -380,8 +381,8 @@ public:
 
       if (entry == old_monitor) {
         // Found matching entry; remove it
-        Entry result = AtomicAccess::cmpxchg(bucket, entry, removed(), memory_order_relaxed);
-        assert(result == entry, "should not fail");
+        [[maybe_unused]] bool result = bucket.compare_set(entry, removed(), memory_order_relaxed);
+        assert(result, "should not fail");
         break;
       }
 
@@ -406,12 +407,12 @@ public:
     size_t index = start_index;
 
     for (;;) {
-      Entry volatile* bucket = _buckets + index;
-      Entry entry = AtomicAccess::load_acquire(bucket);
+      Atomic<Entry>& bucket = _buckets[index];
+      Entry entry = bucket.load_acquire();
 
       if (entry == empty()) {
         // Empty slot to install the new monitor.
-        Entry result = AtomicAccess::cmpxchg(bucket, entry, new_monitor, memory_order_acq_rel);
+        Entry result = bucket.compare_exchange(entry, new_monitor, memory_order_acq_rel);
         if (result == entry) {
           // Success - unconditionally increment.
           inc_items_count();
@@ -425,7 +426,7 @@ public:
       if (entry == tombstone()) {
         // A concurrent inserter did not get enough allowance in the table.
         // But reinsert always succeeds - we will take the spot.
-        Entry result = AtomicAccess::cmpxchg(bucket, entry, new_monitor, memory_order_acq_rel);
+        Entry result = bucket.compare_exchange(entry, new_monitor, memory_order_acq_rel);
         if (result == entry) {
           // Success - unconditionally increment.
           inc_items_count();
@@ -438,7 +439,7 @@ public:
 
       if (entry == removed()) {
         // A removed entry can be flipped back with reinsertion.
-        Entry result = AtomicAccess::cmpxchg(bucket, entry, new_monitor, memory_order_release);
+        Entry result = bucket.compare_exchange(entry, new_monitor, memory_order_release);
         if (result == entry) {
           // Success - but don't increment; the initial entry did that for us.
           return;
@@ -476,12 +477,12 @@ public:
         ThreadBlockInVM tbivm(current);
       }
 
-      Entry volatile* bucket = prev->_buckets + index;
-      Entry entry = AtomicAccess::load_acquire(bucket);
+      Atomic<Entry>& bucket = prev->_buckets[index];
+      Entry entry = bucket.load_acquire();
 
       if (entry == empty()) {
         // Empty slot; put a tombstone there.
-        Entry result = AtomicAccess::cmpxchg(bucket, entry, tombstone(), memory_order_acq_rel);
+        Entry result = bucket.compare_exchange(entry, tombstone(), memory_order_acq_rel);
         if (result == empty()) {
           // Success; move to next entry.
           continue;
@@ -660,5 +661,9 @@ ByteSize ObjectMonitorTable::table_capacity_mask_offset() {
 }
 
 ByteSize ObjectMonitorTable::table_buckets_offset() {
+  // Assumptions made from the emitted code about the layout.
+  STATIC_ASSERT(sizeof(Atomic<Entry>) == sizeof(Entry*));
+  STATIC_ASSERT(Atomic<Entry>::value_offset_in_bytes() == 0);
+
   return byte_offset_of(Table, _buckets);
 }
