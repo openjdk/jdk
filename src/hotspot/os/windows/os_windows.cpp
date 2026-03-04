@@ -3281,11 +3281,10 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
     // Do manual alignment
     aligned_base = align_up(extra_base, alignment);
 
-    bool rc = (file_desc != -1) ? os::unmap_memory(extra_base, extra_size) :
-                                  os::release_memory(extra_base, extra_size);
-    assert(rc, "release failed");
-    if (!rc) {
-      return nullptr;
+    if (file_desc != -1) {
+      os::unmap_memory(extra_base, extra_size);
+    } else {
+      os::release_memory(extra_base, extra_size);
     }
 
     // Attempt to map, into the just vacated space, the slightly smaller aligned area.
@@ -3518,11 +3517,6 @@ char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_
   return reserve_large_pages(bytes, addr, exec);
 }
 
-bool os::pd_release_memory_special(char* base, size_t bytes) {
-  assert(base != nullptr, "Sanity check");
-  return pd_release_memory(base, bytes);
-}
-
 static void warn_fail_commit_memory(char* addr, size_t bytes, bool exec) {
   int err = os::get_last_error();
   char buf[256];
@@ -3681,8 +3675,8 @@ bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
   return os::commit_memory(addr, size, !ExecMem);
 }
 
-bool os::remove_stack_guard_pages(char* addr, size_t size) {
-  return os::uncommit_memory(addr, size);
+void os::remove_stack_guard_pages(char* addr, size_t size) {
+  os::uncommit_memory(addr, size);
 }
 
 static bool protect_pages_individually(char* addr, size_t bytes, unsigned int p, DWORD *old_status) {

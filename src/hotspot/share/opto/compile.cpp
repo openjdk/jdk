@@ -1369,72 +1369,37 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
               cast_to_ptr_type(ptr)->
               with_offset(offset);
     }
-  } else if (ta) {
-    // For arrays indexed by constant indices, we flatten the alias
-    // space to include all of the array body.  Only the header, klass
-    // and array length can be accessed un-aliased.
-    if( offset != Type::OffsetBot ) {
-      if( ta->const_oop() ) { // MethodData* or Method*
-        offset = Type::OffsetBot;   // Flatten constant access into array body
-        tj = ta = ta->
-                remove_speculative()->
-                cast_to_ptr_type(ptr)->
-                cast_to_exactness(false)->
-                with_offset(offset);
-      } else if( offset == arrayOopDesc::length_offset_in_bytes() ) {
-        // range is OK as-is.
-        tj = ta = TypeAryPtr::RANGE;
-      } else if( offset == oopDesc::klass_offset_in_bytes() ) {
-        tj = TypeInstPtr::KLASS; // all klass loads look alike
-        ta = TypeAryPtr::RANGE; // generic ignored junk
-        ptr = TypePtr::BotPTR;
-      } else if( offset == oopDesc::mark_offset_in_bytes() ) {
-        tj = TypeInstPtr::MARK;
-        ta = TypeAryPtr::RANGE; // generic ignored junk
-        ptr = TypePtr::BotPTR;
-      } else {                  // Random constant offset into array body
-        offset = Type::OffsetBot;   // Flatten constant access into array body
-        tj = ta = ta->
-                remove_speculative()->
-                cast_to_ptr_type(ptr)->
-                cast_to_exactness(false)->
-                with_offset(offset);
-      }
+  } else if (ta != nullptr) {
+    // Common slices
+    if (offset == arrayOopDesc::length_offset_in_bytes()) {
+      return TypeAryPtr::RANGE;
+    } else if (offset == oopDesc::klass_offset_in_bytes()) {
+      return TypeInstPtr::KLASS;
+    } else if (offset == oopDesc::mark_offset_in_bytes()) {
+      return TypeInstPtr::MARK;
     }
-    // Arrays of fixed size alias with arrays of unknown size.
-    if (ta->size() != TypeInt::POS) {
-      const TypeAry *tary = TypeAry::make(ta->elem(), TypeInt::POS);
-      tj = ta = ta->
-              remove_speculative()->
-              cast_to_ptr_type(ptr)->
-              with_ary(tary)->
-              cast_to_exactness(false);
+
+    // Remove size and stability
+    const TypeAry* normalized_ary = TypeAry::make(ta->elem(), TypeInt::POS, false);
+    // Remove ptr, const_oop, and offset
+    if (ta->elem() == Type::BOTTOM) {
+      // Bottom array (meet of int[] and byte[] for example), accesses to it will be done with
+      // Unsafe. This should alias with all arrays. For now just leave it as it is (this is
+      // incorrect, see JDK-8331133).
+      tj = ta = TypeAryPtr::make(TypePtr::BotPTR, nullptr, normalized_ary, nullptr, false, Type::OffsetBot);
+    } else if (ta->elem()->make_oopptr() != nullptr) {
+      // Object arrays, all of them share the same slice
+      const TypeAry* tary = TypeAry::make(TypeInstPtr::BOTTOM, TypeInt::POS, false);
+      tj = ta = TypeAryPtr::make(TypePtr::BotPTR, nullptr, tary, nullptr, false, Type::OffsetBot);
+    } else {
+      // Primitive arrays
+      tj = ta = TypeAryPtr::make(TypePtr::BotPTR, nullptr, normalized_ary, ta->exact_klass(), true, Type::OffsetBot);
     }
-    // Arrays of known objects become arrays of unknown objects.
-    if (ta->elem()->isa_narrowoop() && ta->elem() != TypeNarrowOop::BOTTOM) {
-      const TypeAry *tary = TypeAry::make(TypeNarrowOop::BOTTOM, ta->size());
-      tj = ta = TypeAryPtr::make(ptr,ta->const_oop(),tary,nullptr,false,offset);
-    }
-    if (ta->elem()->isa_oopptr() && ta->elem() != TypeInstPtr::BOTTOM) {
-      const TypeAry *tary = TypeAry::make(TypeInstPtr::BOTTOM, ta->size());
-      tj = ta = TypeAryPtr::make(ptr,ta->const_oop(),tary,nullptr,false,offset);
-    }
+
     // Arrays of bytes and of booleans both use 'bastore' and 'baload' so
     // cannot be distinguished by bytecode alone.
     if (ta->elem() == TypeInt::BOOL) {
-      const TypeAry *tary = TypeAry::make(TypeInt::BYTE, ta->size());
-      ciKlass* aklass = ciTypeArrayKlass::make(T_BYTE);
-      tj = ta = TypeAryPtr::make(ptr,ta->const_oop(),tary,aklass,false,offset);
-    }
-    // During the 2nd round of IterGVN, NotNull castings are removed.
-    // Make sure the Bottom and NotNull variants alias the same.
-    // Also, make sure exact and non-exact variants alias the same.
-    if (ptr == TypePtr::NotNull || ta->klass_is_exact() || ta->speculative() != nullptr) {
-      tj = ta = ta->
-              remove_speculative()->
-              cast_to_ptr_type(TypePtr::BotPTR)->
-              cast_to_exactness(false)->
-              with_offset(offset);
+      tj = ta = TypeAryPtr::BYTES;
     }
   }
 
@@ -2171,12 +2136,31 @@ void Compile::inline_incrementally_cleanup(PhaseIterGVN& igvn) {
   print_method(PHASE_INCREMENTAL_INLINE_CLEANUP, 3);
 }
 
+template<typename E>
+static void shuffle_array(Compile& C, GrowableArray<E>& array) {
+  if (array.length() < 2) {
+    return;
+  }
+  for (uint i = array.length() - 1; i >= 1; i--) {
+    uint j = C.random() % (i + 1);
+    swap(array.at(i), array.at(j));
+  }
+}
+
+void Compile::shuffle_late_inlines() {
+  shuffle_array(*C, _late_inlines);
+}
+
 // Perform incremental inlining until bound on number of live nodes is reached
 void Compile::inline_incrementally(PhaseIterGVN& igvn) {
   TracePhase tp(_t_incrInline);
 
   set_inlining_incrementally(true);
   uint low_live_nodes = 0;
+
+  if (StressIncrementalInlining) {
+    shuffle_late_inlines();
+  }
 
   while (_late_inlines.length() > 0) {
     if (live_nodes() > (uint)LiveNodeCountInliningCutoff) {
@@ -2249,6 +2233,10 @@ void Compile::process_late_inline_calls_no_inline(PhaseIterGVN& igvn) {
   assert(inlining_incrementally() == false, "not allowed");
   assert(_modified_nodes == nullptr, "not allowed");
   assert(_late_inlines.length() > 0, "sanity");
+
+  if (StressIncrementalInlining) {
+    shuffle_late_inlines();
+  }
 
   while (_late_inlines.length() > 0) {
     igvn_worklist()->ensure_empty(); // should be done with igvn
@@ -3789,6 +3777,8 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_MulReductionVD:
   case Op_MinReductionV:
   case Op_MaxReductionV:
+  case Op_UMinReductionV:
+  case Op_UMaxReductionV:
   case Op_AndReductionV:
   case Op_OrReductionV:
   case Op_XorReductionV:
@@ -5141,13 +5131,7 @@ void CloneMap::dump(node_idx_t key, outputStream* st) const {
 }
 
 void Compile::shuffle_macro_nodes() {
-  if (_macro_nodes.length() < 2) {
-    return;
-  }
-  for (uint i = _macro_nodes.length() - 1; i >= 1; i--) {
-    uint j = C->random() % (i + 1);
-    swap(_macro_nodes.at(i), _macro_nodes.at(j));
-  }
+  shuffle_array(*C, _macro_nodes);
 }
 
 // Move Allocate nodes to the start of the list

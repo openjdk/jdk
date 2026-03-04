@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.io.ObjectStreamException;
 import java.io.Serial;
 
 import sun.awt.AWTAccessor;
-import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 
 /**
@@ -326,21 +325,14 @@ public class FocusEvent extends ComponentEvent {
      * FOCUS_GAINED event, this is the Component that lost focus. For a
      * FOCUS_LOST event, this is the Component that gained focus. If this
      * focus change occurs with a native application, with a Java application
-     * in a different VM or context, or with no other Component, then null is
+     * in a different VM, or with no other Component, then null is
      * returned.
      *
      * @return the other Component involved in the focus change, or null
      * @since 1.4
      */
     public Component getOppositeComponent() {
-        if (opposite == null) {
-            return null;
-        }
-
-        return (SunToolkit.targetToAppContext(opposite) ==
-                AppContext.getAppContext())
-                ? opposite
-                : null;
+        return opposite;
     }
 
     /**

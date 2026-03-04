@@ -41,6 +41,8 @@ import java.util.zip.ZipFile;
  *      ML_DSA_Impls.version might be modified
  * @library /test/lib
  * @modules java.base/sun.security.provider
+ *          java.base/sun.security.util
+ *          java.base/com.sun.crypto.provider
  * @run main/othervm/timeout=480 Launcher
  */
 
@@ -50,6 +52,8 @@ import java.util.zip.ZipFile;
  * @summary Test verifying the intrinsic implementation.
  * @library /test/lib
  * @modules java.base/sun.security.provider
+ *          java.base/sun.security.util
+ *          java.base/com.sun.crypto.provider
  * @run main/othervm/timeout=480 -Xcomp Launcher
  */
 
