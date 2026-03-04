@@ -2441,7 +2441,7 @@ size_t os::PageSizes::next_smaller(size_t page_size) const {
   assert(is_power_of_2(page_size), "page_size must be a power of 2: 0x%zx", page_size);
   size_t v2 = _v & (page_size - 1);
   if (v2 == 0) {
-    return 0;
+    return OSInfo::InvalidPageSize;
   }
   return round_down_power_of_2(v2);
 }
@@ -2449,12 +2449,12 @@ size_t os::PageSizes::next_smaller(size_t page_size) const {
 size_t os::PageSizes::next_larger(size_t page_size) const {
   assert(is_power_of_2(page_size), "page_size must be a power of 2: 0x%zx", page_size);
   if (page_size == max_power_of_2<size_t>()) { // Shift by 32/64 would be UB
-    return 0;
+    return OSInfo::InvalidPageSize;
   }
   // Remove current and smaller page sizes
   size_t v2 = _v & ~(page_size + (page_size - 1));
   if (v2 == 0) {
-    return 0;
+    return OSInfo::InvalidPageSize;
   }
   return (size_t)1 << count_trailing_zeros(v2);
 }

@@ -3138,20 +3138,20 @@ size_t os::win32::large_page_init_decide_size() {
 
   if (!os::win32::request_lock_memory_privilege()) {
     WARN("JVM cannot use large page memory because it does not have enough privilege to lock pages in memory.");
-    return 0;
+    return OSInfo::InvalidPageSize;
   }
 
   size_t size = GetLargePageMinimum();
   if (size == 0) {
     WARN("Large page is not supported by the processor.");
-    return 0;
+    return OSInfo::InvalidPageSize;
   }
 
 #if defined(AMD64)
   if (!EnableAllLargePageSizesForWindows) {
     if (size > 4 * M || LargePageSizeInBytes > 4 * M) {
       WARN("JVM cannot use large pages bigger than 4mb.");
-      return 0;
+      return OSInfo::InvalidPageSize;
     }
   }
 #endif
