@@ -525,6 +525,8 @@ CodeBlob* CodeCache::next_blob(CodeHeap* heap, CodeBlob* cb) {
   return (CodeBlob*)heap->next(cb);
 }
 
+bool CodeCache::_non_nmethod_overflow = false;
+
 /**
  * Do not seize the CodeCache lock here--if the caller has not
  * already done so, we are going to lose bigtime, since the code
@@ -539,6 +541,13 @@ CodeBlob* CodeCache::allocate(uint size, CodeBlobType code_blob_type, bool handl
     return nullptr;
   }
   CodeBlob* cb = nullptr;
+
+  // Test-only: force fallback solution,
+  //            place stubs in MethodNonProfiled to provoke >128MB distances to non-profiled nmethods.
+  if (code_blob_type == CodeBlobType::NonNMethod) {
+    code_blob_type = CodeBlobType::MethodNonProfiled;
+    _non_nmethod_overflow = true;
+  }
 
   // Get CodeHeap for the given CodeBlobType
   CodeHeap* heap = get_code_heap(code_blob_type);
@@ -559,6 +568,7 @@ CodeBlob* CodeCache::allocate(uint size, CodeBlobType code_blob_type, bool handl
         CodeBlobType type = code_blob_type;
         switch (type) {
         case CodeBlobType::NonNMethod:
+          _non_nmethod_overflow = true;
           type = CodeBlobType::MethodNonProfiled;
           break;
         case CodeBlobType::MethodNonProfiled:
@@ -1175,6 +1185,10 @@ void CodeCache::initialize() {
   // This is used on Windows 64 bit platforms to register
   // Structured Exception Handlers for our generated code.
   os::register_code_area((char*)low_bound(), (char*)high_bound());
+
+  // Test-only: allocate a large MethodNonProfiled blob at the segment start to push subsequent
+  //            non-profiled nmethods far from nmethods/stubs in MethodProfiled/NonNMethod segments.
+  CodeBlob* bigone = CodeCache::allocate(40*M, CodeBlobType::MethodNonProfiled);
 }
 
 void codeCache_init() {
