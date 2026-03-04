@@ -4445,8 +4445,8 @@ public final class Arrays {
      * method on a {@link List} containing a sequence of {@link Byte}
      * instances representing the elements of the specified range in the same
      * order. If {@code a} is {@code null}, this method treats the array as
-     * having length {@code 0} for range checking and returns {@code 0} only
-     * for the empty range {@code [0,0)}.
+     * having length {@code 0} for range checking.
+     * This method returns {@code 0} if either {@code a} is null or the range is empty {@code [0,0)}.
      *
      * @param a the array from which to compute the range hash code
      * @param fromIndex the initial index of the range to be hashed, inclusive
