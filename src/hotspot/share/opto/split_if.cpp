@@ -601,6 +601,7 @@ void PhaseIdealLoop::handle_use( Node *use, Node *def, small_cache *cache, Node 
 // Found an If getting its condition-code input from a Phi in the same block.
 // Split thru the Region.
 void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, RegionNode** new_true_region) {
+
   C->set_major_progress();
   RegionNode *region = iff->in(0)->as_Region();
   Node *region_dom = idom(region);
