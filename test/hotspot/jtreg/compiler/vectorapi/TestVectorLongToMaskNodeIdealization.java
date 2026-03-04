@@ -51,21 +51,37 @@ public class TestVectorLongToMaskNodeIdealization {
         // There was a bug here with AVX2:
         var ones = LongVector.broadcast(LongVector.SPECIES_256, 1);
         var trues_L256 = ones.compare(VectorOperators.NE, 0);
-        // VectorMaskCmp #vectory<J,4>   -> (L-mask=0xF..F/0x0..0)
+        // VectorMaskCmp #vectory<J,4>   -> (L-mask=0x0..0/0xF..F)
 
         var trues_I128 = VectorMask.fromLong(IntVector.SPECIES_128, trues_L256.toLong());
         // VectorStoreMask(L-mask to 0/1)
         // VectorMaskToLong
         // AndL(truncate)
         // VectorLongToMask -> 0/1
-        // VectorLoadMask (0/1 to I-mask)
         //
-        // TODO: transform
+        // VectorLongToMaskNode::Ideal transforms this into:
+        // VectorMaskCmp #vectory<J,4>   -> (L-mask=0x0..0/0xF..F)
+        // VectorMaskCastNode -> (L-mask=0x0..0/0xF..F to 0/1)
+        //   But VectorMaskCastNode is not made for such mask conversion to boolean mask,
+        //   and so it wrongly produces a 0x00/0xFF byte mask, instead of bytes 0x00/01.
+        //   See: vector_mask_cast
+        //
+        // The correct transformation would have been to:
+        // VectorMaskCmp #vectory<J,4>   -> (L-mask=0x0..0/0xF..F)
+        // VectorStoreMask(L-mask to 0/1, i.e. 0x00/0x01 bytes)
 
         var zeros = IntVector.zero(IntVector.SPECIES_128);
         var m1s = zeros.lanewise(VectorOperators.NOT, trues_I128);
-        // Blend, expects I-mask (0xF..F*0x0..0)
-        // TODO: how we got wrong result here
+        // The rest of the code is:
+        // VectorLoadMask (0/1 to I-mask=0x0..0/0xF..F)
+        //   It expects x=0x00/0x01 bytes, and does a subtraction 0-x to get values 0x00/0xFF
+        //   that are then widened to int-length.
+        //   But if it instead gets 0x00/0xFF, the subtraction produces 0x00/0x01 values, which
+        //   are widened to int 0x0..0/0..01 values.
+        //   See: load_vector_mask
+        // Blend, which expects I-mask (0x0..0/0xF..F)
+        //   It looks at the 7th (uppermost) bit of every byte to determine which byte is taken.
+        //   If it instead gets the 0x0..0/0x0..01 mask, it interprets both as "false".
 
         int[] out = new int[64];
         m1s.intoArray(out, 0);
