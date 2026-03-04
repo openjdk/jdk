@@ -30,9 +30,22 @@
  */
 
 import java.math.BigInteger;
-import java.security.*;
-import java.security.spec.*;
-import javax.crypto.*;
+import java.security.InvalidKeyException;
+import java.security.InvalidParameterException;
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PublicKey;
+import java.security.PrivateKey;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
+import java.security.spec.NamedParameterSpec;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
+import java.security.spec.XECPublicKeySpec;
+import java.security.spec.XECPrivateKeySpec;
+import javax.crypto.KeyAgreement;
 import java.util.Arrays;
 import java.util.HexFormat;
 

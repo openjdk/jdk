@@ -31,8 +31,8 @@
  * @run main TestXECOps
  */
 
-import sun.security.ec.*;
-
+import sun.security.ec.XECOperations;
+import sun.security.ec.XECParameters;
 import java.math.BigInteger;
 import java.security.spec.NamedParameterSpec;
 import java.util.*;
