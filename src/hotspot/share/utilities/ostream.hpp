@@ -312,7 +312,7 @@ class fileStream : public outputStream {
     fclose(_file);
     _need_close = false;
   }
-  jlong fileSize();
+  int64_t fileSize();
   void flush();
 };
 

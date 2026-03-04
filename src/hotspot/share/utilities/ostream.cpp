@@ -612,10 +612,10 @@ void fileStream::write(const char* s, size_t len) {
 }
 
 #if defined(_WINDOWS)
-jlong fileStream::fileSize() {
-  jlong size = -1;
+int64_t fileStream::fileSize() {
+  int64_t size = -1;
   if (_file != nullptr) {
-    jlong pos = _ftelli64(_file);
+    int64_t pos = _ftelli64(_file);
     if (pos < 0) return pos;
     if (_fseeki64(_file, 0, SEEK_END) == 0) {
       size = _ftelli64(_file);
@@ -625,10 +625,10 @@ jlong fileStream::fileSize() {
   return size;
 }
 #else
-jlong fileStream::fileSize() {
-  jlong size = -1;
+int64_t fileStream::fileSize() {
+  int64_t size = -1;
   if (_file != nullptr) {
-    jlong pos = ::ftell(_file);
+    int64_t pos = ::ftell(_file);
     if (pos < 0) return pos;
     if (::fseek(_file, 0, SEEK_END) == 0) {
       size = ::ftell(_file);
