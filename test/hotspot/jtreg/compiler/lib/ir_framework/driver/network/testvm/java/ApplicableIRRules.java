@@ -27,7 +27,7 @@ import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.driver.irmatching.IRMatcher;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -44,7 +44,7 @@ public class ApplicableIRRules implements JavaMessage {
     private final Map<String, IRRuleIds> methods;
 
     public ApplicableIRRules() {
-        this.methods = new HashMap<>();
+        this.methods = new LinkedHashMap<>();
     }
 
     public void add(String method, IRRuleIds irRuleIds) {

@@ -23,6 +23,7 @@
 
 package compiler.lib.ir_framework.driver.irmatching.parser;
 
+import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.driver.irmatching.Matchable;
 import compiler.lib.ir_framework.driver.irmatching.NonIRTestClass;
 import compiler.lib.ir_framework.driver.irmatching.TestClass;
@@ -63,6 +64,7 @@ public class TestClassParser {
         }
         ApplicableIRRulesParser applicableIRRulesParser = new ApplicableIRRulesParser(testClass);
         TestMethods testMethods = applicableIRRulesParser.parse(testVmData.applicableIRRules());
+        TestFramework.check(testMethods.hasTestMethods(), "must have at least one");
         HotSpotPidFileParser hotSpotPidFileParser = new HotSpotPidFileParser(testClass.getName(), testMethods);
         LoggedMethods loggedMethods = hotSpotPidFileParser.parse(testVmData.hotspotPidFileName());
         return createTestClass(testMethods, loggedMethods, testVmData.vmInfo());
