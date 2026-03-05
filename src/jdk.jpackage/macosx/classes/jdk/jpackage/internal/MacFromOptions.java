@@ -198,7 +198,7 @@ final class MacFromOptions {
         }
     }
 
-    private static ApplicationWithDetails createMacApplicationInternal(Options options) {
+    private static ApplicationBuilder createApplicationBuilder(Options options) {
 
         final var predefinedRuntimeLayout = PREDEFINED_RUNTIME_IMAGE.findIn(options)
                 .map(MacPackage::guessRuntimeLayout);
@@ -236,12 +236,30 @@ final class MacFromOptions {
 
         final var app = superAppBuilder.create();
 
-        final var appBuilder = new MacApplicationBuilder(app);
+        return superAppBuilder;
+    }
 
-        PREDEFINED_APP_IMAGE.findIn(options)
-                .map(MacBundle::new)
-                .map(MacBundle::infoPlistFile)
-                .ifPresent(appBuilder::externalInfoPlistFile);
+    private static ApplicationWithDetails createMacApplicationInternal(Options options) {
+
+        final var appBuilder = new MacApplicationBuilder(createApplicationBuilder(options));
+
+        if (OptionUtils.isRuntimeInstaller(options)) {
+            // Predefined runtime image, if specified, can be a macOS bundle or regular directory.
+            // Notify application builder with the path to the plist file in the predefined runtime image only if the file exists.
+            // If it doesn't, jpackage should keep going.
+            PREDEFINED_RUNTIME_IMAGE.findIn(options)
+                    .flatMap(MacBundle::fromPath)
+                    .map(MacBundle::infoPlistFile)
+                    .ifPresent(appBuilder::externalInfoPlistFile);
+        } else {
+            // Predefined app image, if specified, should always be a valid macOS bundle.
+            // Notify application builder with the path to the plist file in the predefined app image without checking if the file exists.
+            // If it doesn't, the builder should throw and jpackage should exit with error.
+            PREDEFINED_APP_IMAGE.findIn(options)
+                    .map(MacBundle::new)
+                    .map(MacBundle::infoPlistFile)
+                    .ifPresent(appBuilder::externalInfoPlistFile);
+        }
 
         ICON.ifPresentIn(options, appBuilder::icon);
         MAC_BUNDLE_NAME.ifPresentIn(options, appBuilder::bundleName);
@@ -252,7 +270,7 @@ final class MacFromOptions {
         final boolean appStore;
 
         if (PREDEFINED_APP_IMAGE.containsIn(options)) {
-            final var appImageFileOptions = superAppBuilder.externalApplication().orElseThrow().extra();
+            final var appImageFileOptions = appBuilder.externalApplication().orElseThrow().extra();
             appStore = MAC_APP_STORE.getFrom(appImageFileOptions);
         } else {
             appStore = MAC_APP_STORE.getFrom(options);
@@ -295,7 +313,7 @@ final class MacFromOptions {
                 signingBuilder.entitlementsResourceName("sandbox.plist");
             }
 
-            app.mainLauncher().flatMap(Launcher::startupInfo).ifPresentOrElse(
+            appBuilder.launchers().map(ApplicationLaunchers::mainLauncher).flatMap(Launcher::startupInfo).ifPresentOrElse(
                 signingBuilder::signingIdentifierPrefix,
                 () -> {
                     // Runtime installer does not have the main launcher, use
@@ -310,7 +328,7 @@ final class MacFromOptions {
             appBuilder.signingBuilder(signingBuilder);
         }
 
-        return new ApplicationWithDetails(appBuilder.create(), superAppBuilder.externalApplication());
+        return new ApplicationWithDetails(appBuilder.create(), appBuilder.externalApplication());
     }
 
     private static MacPackageBuilder createMacPackageBuilder(Options options, ApplicationWithDetails app, PackageType type) {
