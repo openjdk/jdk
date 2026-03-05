@@ -250,7 +250,7 @@ class FieldLayoutBuilder : public ResourceObj {
 
   void build_layout();
   void compute_regular_layout();
-  void insert_contended_padding(LayoutRawBlock* slot);
+  LayoutRawBlock* insert_contended_padding(LayoutRawBlock* slot);
 
  private:
   void prologue();
