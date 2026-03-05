@@ -55,13 +55,11 @@ class DragRecognitionSupport {
     /**
      * Returns the DragRecognitionSupport instance.
      */
-    private static DragRecognitionSupport getDragRecognitionSupport() {
-        synchronized(DragRecognitionSupport.class) {
-            if (support == null) {
-                support = new DragRecognitionSupport();
-            }
-            return support;
+    private static synchronized DragRecognitionSupport getDragRecognitionSupport() {
+        if (support == null) {
+            support = new DragRecognitionSupport();
         }
+        return support;
     }
 
     /**
