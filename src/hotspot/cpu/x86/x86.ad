@@ -3346,7 +3346,10 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
       if (UseAVX == 0) {
         return false;
       }
-      if (bt == T_LONG && (UseAVX < 3 || (size_in_bits != 512 && !VM_Version::supports_avx512vl()))) {
+      if (bt == T_LONG && UseAVX < 3) {
+        return false;
+      }
+      if (UseAVX > 2 && !VM_Version::supports_avx512vl()) {
         return false;
       }
       break;
