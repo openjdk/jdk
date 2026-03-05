@@ -3534,13 +3534,8 @@ public abstract class JComponent extends Container implements Serializable,
         private static final Object keyCodesKey =
             JComponent.KeyboardState.class;
 
-        // Get the array of key codes
-        static IntVector getKeyCodeArray() {
-            return intVector;
-        }
-
         static void registerKeyPressed(int keyCode) {
-            IntVector kca = getKeyCodeArray();
+            IntVector kca = intVector;
             int count = kca.size();
             int i;
             for(i=0;i<count;i++) {
@@ -3553,7 +3548,7 @@ public abstract class JComponent extends Container implements Serializable,
         }
 
         static void registerKeyReleased(int keyCode) {
-            IntVector kca = getKeyCodeArray();
+            IntVector kca = intVector;
             int count = kca.size();
             int i;
             for(i=0;i<count;i++) {
@@ -3565,7 +3560,7 @@ public abstract class JComponent extends Container implements Serializable,
         }
 
         static boolean keyIsPressed(int keyCode) {
-            IntVector kca = getKeyCodeArray();
+            IntVector kca = intVector;
             int count = kca.size();
             int i;
             for(i=0;i<count;i++) {
