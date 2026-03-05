@@ -77,10 +77,13 @@ void ResolvedFieldEntry::assert_is_valid() const {
          "field offset out of range %d >= %d", field_offset(), instanceOopDesc::base_offset_in_bytes());
   assert(as_BasicType((TosState)tos_state()) != T_ILLEGAL, "tos_state is ILLEGAL");
   assert(_flags < (1 << (max_flag_shift + 1)), "flags are too large %d", _flags);
-  assert((get_code() == 0 || get_code() == Bytecodes::_getstatic || get_code() == Bytecodes::_getfield),
-         "invalid get bytecode %d", get_code());
-  assert((put_code() == 0 || put_code() == Bytecodes::_putstatic || put_code() == Bytecodes::_putfield),
-          "invalid put bytecode %d", put_code());
+
+  // Read each bytecode once.
+  volatile Bytecodes::Code g = (Bytecodes::Code)get_code();
+  assert(g == 0 || g == Bytecodes::_getstatic || g == Bytecodes::_getfield, "invalid get bytecode %d", g);
+
+  volatile Bytecodes::Code p = (Bytecodes::Code)put_code();
+  assert(p == 0 || p == Bytecodes::_putstatic || p == Bytecodes::_putfield, "invalid put bytecode %d", p);
 }
 #endif
 
