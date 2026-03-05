@@ -2022,6 +2022,7 @@ Node* VectorLongToMaskNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
   // Pattern:      src -> VectorMaskToLong -> AndL(mask) -> VectorLongToMask
   // Replace with: src -> VectorMaskCast
+  //   The cast is needed if there are different mask types, and can be folded otherwise.
   if (in(1)->Opcode() == Op_AndL &&
       in(1)->in(1)->Opcode() == Op_VectorMaskToLong &&
       in(1)->in(2)->bottom_type()->isa_long() &&
@@ -2029,8 +2030,9 @@ Node* VectorLongToMaskNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       in(1)->in(2)->bottom_type()->is_long()->get_con() == ((1LL << vlen) - 1)) {
     Node* src = in(1)->in(1)->in(1);
     const TypeVect* src_type = src->bottom_type()->is_vect();
-    if (src_type->length() == vlen) {
-      // If the mask types already match, the cast will be removed later.
+    if (src_type->length() == vlen &&
+        ((src_type->isa_vectmask() == nullptr && is_mask == nullptr) ||
+         (src_type->isa_vectmask() && is_mask))) {
       return new VectorMaskCastNode(src, dst_type);
     }
   }
