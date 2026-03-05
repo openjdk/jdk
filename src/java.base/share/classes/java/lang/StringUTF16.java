@@ -68,14 +68,26 @@ final class StringUTF16 {
     // Check the size of a UTF16-coded string
     // Throw an exception if out of range
     static int newBytesLength(int len) {
-        if (len < 0) {
+        checkBytesLength(len);
+        return len << 1;
+    }
+
+    /**
+     * Checks if the provided length is a valid UTF-16 string byte array length.
+     *
+     * @param length a UTF-16 string byte array length
+     *
+     * @throws NegativeArraySizeException if {@code length < 0}
+     * @throws OutOfMemoryError if {@code length > (Integer.MAX_VALUE / 2)}
+     */
+    private static void checkBytesLength(int length) {
+        if (length < 0) {
             throw new NegativeArraySizeException();
         }
-        if (len >= MAX_LENGTH) {
-            throw new OutOfMemoryError("UTF16 String size is " + len +
-                                       ", should be less than " + MAX_LENGTH);
+        if (length >= MAX_LENGTH) {
+            throw new OutOfMemoryError("UTF16 String size is " + length +
+                    ", should be less than " + MAX_LENGTH);
         }
-        return len << 1;
     }
 
     /**
@@ -192,14 +204,27 @@ final class StringUTF16 {
     }
 
     /**
-     * {@return an encoded byte[] for the UTF16 characters in char[]}
-     * No checking is done on the characters, some may or may not be latin1.
-     * @param value a char array
-     * @param off an offset
-     * @param len a length
+     * {@return a UTF-16 string byte array produced by encoding the characters
+     * in the provided character array sub-range}
+     *
+     * @param value a character array to encode
+     * @param off the index of the character to start encoding from
+     * @param len the number of characters to encode
+     *
+     * @throws NegativeArraySizeException if {@code len < 0}
+     * @throws NullPointerException if {@code value} is null
+     * @throws OutOfMemoryError if {@code len > (Integer.MAX_VALUE / 2)}
+     * @throws StringIndexOutOfBoundsException if the sub-range is out of bounds
      */
-    @IntrinsicCandidate
     static byte[] toBytes(char[] value, int off, int len) {
+        checkBytesLength(len);
+        String.checkBoundsOffCount(off, len, value.length);     // Implicit null check on `value`
+        return toBytes0(value, off, len);
+    }
+
+    // vmIntrinsics::_toBytesStringU
+    @IntrinsicCandidate
+    private static byte[] toBytes0(char[] value, int off, int len) {
         byte[] val = newBytesFor(len);
         for (int i = 0; i < len; i++) {
             putChar(val, i, value[off]);

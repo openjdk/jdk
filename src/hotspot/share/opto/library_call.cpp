@@ -1562,12 +1562,14 @@ bool LibraryCallKit::inline_string_copy(bool compress) {
 #endif //_LP64
 
 //------------------------inline_string_toBytesU--------------------------
-// public static byte[] StringUTF16.toBytes(char[] value, int off, int len)
+// public static byte[] StringUTF16.toBytes0(char[] value, int off, int len)
 bool LibraryCallKit::inline_string_toBytesU() {
   if (too_many_traps(Deoptimization::Reason_intrinsic)) {
     return false;
   }
+
   // Get the arguments.
+  assert(callee()->signature()->size() == 3, "character array encoder requires 3 arguments");
   Node* value     = argument(0);
   Node* offset    = argument(1);
   Node* length    = argument(2);
@@ -1579,28 +1581,14 @@ bool LibraryCallKit::inline_string_toBytesU() {
   { PreserveReexecuteState preexecs(this);
     jvms()->set_should_reexecute(true);
 
-    // Check if a null path was taken unconditionally.
-    value = null_check(value);
-
-    RegionNode* bailout = new RegionNode(1);
-    record_for_igvn(bailout);
-
-    // Range checks
-    generate_negative_guard(offset, bailout);
-    generate_negative_guard(length, bailout);
-    generate_limit_guard(offset, length, load_array_length(value), bailout);
-    // Make sure that resulting byte[] length does not overflow Integer.MAX_VALUE
-    generate_limit_guard(length, intcon(0), intcon(max_jint/2), bailout);
-
-    if (bailout->req() > 1) {
-      PreserveJVMState pjvms(this);
-      set_control(_gvn.transform(bailout));
-      uncommon_trap(Deoptimization::Reason_intrinsic,
-                    Deoptimization::Action_maybe_recompile);
-    }
-    if (stopped()) {
-      return true;
-    }
+    value = must_be_not_null(value, true);
+    EXIT_ON_BAILOUT(bailout, true, {
+      generate_negative_guard(offset, bailout, nullptr, true);
+      generate_negative_guard(length, bailout, nullptr, true);
+      generate_limit_guard(offset, length, load_array_length(value), bailout, true);
+      // Make sure that resulting byte[] length does not overflow Integer.MAX_VALUE
+      generate_limit_guard(length, intcon(0), intcon(max_jint/2), bailout, true);
+    })
 
     Node* size = _gvn.transform(new LShiftINode(length, intcon(1)));
     Node* klass_node = makecon(TypeKlassPtr::make(ciTypeArrayKlass::make(T_BYTE)));
