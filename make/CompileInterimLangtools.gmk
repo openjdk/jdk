@@ -68,7 +68,7 @@ java.compiler.interim_EXTRA_FILES := \
 TARGETS += $(BUILDTOOLS_OUTPUTDIR)/gensrc/java.compiler.interim/javax/tools/ToolProvider.java
 
 ################################################################################
-# Create a hybrid PreviewFeature.java and NoPreview.java that combines constants
+# Create a hybrid PreviewFeature.java that combines constants
 # from the current sources, as those can be used in javac APIs,  and from the
 # bootstrap JDK, as those can be used from bootstrap JDK classfiles.
 
