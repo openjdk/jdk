@@ -32,7 +32,6 @@ import jdk.test.lib.Utils;
 
 import javax.crypto.spec.Argon2ParameterSpec;
 import static javax.crypto.spec.Argon2ParameterSpec.Builder;
-import static javax.crypto.spec.Argon2ParameterSpec.Type;
 
 public class InvalidArgs {
 
@@ -41,10 +40,7 @@ public class InvalidArgs {
     public static void main(String[] args) throws Exception {
         Class iaeCls = IllegalArgumentException.class;
 
-        Utils.runAndCheckException(()->Argon2ParameterSpec.newBuilder
-                ((Type)null), iaeCls);
-
-        Builder b = Argon2ParameterSpec.newBuilder(Type.ARGON2ID);
+        Builder b = Argon2ParameterSpec.newBuilder();
         Utils.runAndCheckException(()->b.nonce(null), iaeCls);
         Utils.runAndCheckException(()->b.nonce(B0), iaeCls);
         Utils.runAndCheckException(()->b.parallelism(-1), iaeCls);
@@ -66,7 +62,7 @@ public class InvalidArgs {
         Utils.runAndCheckException(()->b.ad(null), iaeCls);
 
         byte[] b8 = new byte[8];
-        Builder b2 = Argon2ParameterSpec.newBuilder(Type.ARGON2ID).nonce(b8)
+        Builder b2 = Argon2ParameterSpec.newBuilder().nonce(b8)
                .parallelism(2).memoryKiB(32).tagLen(8).iterations(5);
         Utils.runAndCheckException(()->b2.build(null), iaeCls);
         System.out.println(b2.build("12345678".getBytes()));

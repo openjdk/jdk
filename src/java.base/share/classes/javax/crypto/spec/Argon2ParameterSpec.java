@@ -35,7 +35,7 @@ import sun.security.util.PBEUtil;
  * and Proof-of-Work Applications as specified in
  * <a href="http://tools.ietf.org/html/rfc9106">RFC 9106</a>.
  *
- * <p> The parameters consist of {@code type}, {@code version}, {@code nonce},
+ * <p> The parameters consist of {@code version}, {@code nonce},
  * {@code parallelism}, {@code tagLen}, {@code memory}, {@code iterations} and
  * optional {@code secret} and {@code ad} bytes.
  *
@@ -46,37 +46,6 @@ import sun.security.util.PBEUtil;
  * @since 27
  */
 public final class Argon2ParameterSpec implements AlgorithmParameterSpec {
-
-    /**
-     * Type of Argon2 algorithms
-     */
-    public enum Type {
-        /**
-         * Argon2d
-         */
-        ARGON2D(0),
-        /**
-         * Argon2i
-         */
-        ARGON2I(1),
-        /**
-         * Argon2id
-         */
-        ARGON2ID(2);
-
-        int value;
-
-        Type(int value) {
-            this.value = value;
-        }
-
-        /**
-         * {@return 0 for ARGON2D, 1 for ARGON2I, 2 for Argon2ID}
-         */
-        public int value() {
-            return value;
-        }
-    };
 
     /**
      * Version of Argon2 implementations
@@ -139,7 +108,6 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec {
         private static int MP_MAX = 30; // java integer max 2^31 - 1
         private static int TAGLEN_MIN = 4;
 
-        private Type type;
         private Version ver = Version.V13; // defaults to the official version
         private byte[] nonce;
         private int p;
@@ -189,10 +157,7 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec {
             return 32 - Integer.numberOfLeadingZeros(n - 1);
         }
 
-        // create a Builder w/ the specified {@code type}
-        private Builder(Type type) {
-            checkNonNull(type, "type");
-            this.type = type;
+        private Builder() {
         }
 
         /**
@@ -363,15 +328,12 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec {
     };
 
     /**
-     * Creates an {@code Argon2ParameterSpec} builder using the specified
-     * Type {@code t}.
+     * Creates an {@code Argon2ParameterSpec} builder.
      *
-     * @param t the type of Argon2 algorithm
      * @return a new Argon2ParameterSpec builder
-     * @throws IllegalArgumentException if the {@code t} is null.
      */
-    public static Builder newBuilder(Type t) {
-        return new Builder(t);
+    public static Builder newBuilder() {
+        return new Builder();
     }
 
     private static final byte[] B0 = new byte[0];
@@ -380,8 +342,6 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec {
      * Argon2 inputs parameters
      */
 
-    // Argon2i, Argon2d, or Argon2id
-    private final Type type;
     // version, i.e. V10 or V13 (official)
     private final Version ver;
     // message, e.g. password for Password Hashing applications, len >= 0
@@ -414,7 +374,6 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec {
      */
     private Argon2ParameterSpec(Builder builder, byte[] msg) {
         // values are already validated by Builder
-        this.type = builder.type;
         this.ver = builder.ver;
         this.msg = msg.clone();
         this.nonce = builder.nonce.clone();
@@ -424,13 +383,6 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec {
         this.t = builder.t;
         this.k = builder.k.clone();
         this.x = builder.x.clone();
-    }
-
-    /**
-     * {@return the type of Argon2 algorithm}
-     */
-    public Type type() {
-        return type;
     }
 
     /**
@@ -501,10 +453,9 @@ public final class Argon2ParameterSpec implements AlgorithmParameterSpec {
      * {@return a String representation of the parameter set}
      */
     public String toString() {
-        String s = String.format("%s %s nonce=%s parallelism=%d tagLen=%d memory=%d iterations=%d",
-                type.name(), ver.name(), Debug.toString(nonce),
-                p, tagLen, memory, t);
-        // skip msg/password and secret k due to their sensitivity
+        String s = String.format("%s nonce=%s parallelism=%d tagLen=%d memory=%d iterations=%d",
+                ver.name(), Debug.toString(nonce), p, tagLen, memory, t);
+        // skip msg, secret, and ad due to their potential sensitivity
         return s;
     }
 

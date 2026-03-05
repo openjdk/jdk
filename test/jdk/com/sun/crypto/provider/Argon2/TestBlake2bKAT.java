@@ -22,6 +22,7 @@
  */
 import java.util.Arrays;
 import java.util.HexFormat;
+import java.util.Locale;
 import com.sun.crypto.provider.Blake2b;
 
 /**
@@ -87,7 +88,7 @@ public class TestBlake2bKAT {
     public static void test(int outLenBits, byte[] in, String outHex) {
         System.out.println("test Blake2b-" + outLenBits);
         int digestLen = outLenBits >>> 3;
-        byte[] expOut = formatter.parseHex(outHex.toLowerCase());
+        byte[] expOut = formatter.parseHex(outHex.toLowerCase(Locale.ENGLISH));
         in = (in == null ? new byte[0] : in);
         System.out.println("=> inLen = " + in.length);
 

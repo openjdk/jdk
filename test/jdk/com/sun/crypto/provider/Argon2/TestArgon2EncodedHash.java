@@ -20,15 +20,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import java.util.Arrays;
-import java.util.HexFormat;
-import javax.crypto.SecretKey;
+import java.util.Locale;
 import javax.crypto.KDF;
 import javax.crypto.spec.Argon2ParameterSpec;
-import static javax.crypto.spec.Argon2ParameterSpec.Type;
 import com.sun.crypto.provider.Argon2Impl;
 import com.sun.crypto.provider.Argon2DerivedKey;
 import sun.security.util.Argon2Util;
+import static sun.security.util.Argon2Util.Argon2Info;
 
 /**
  * @test
@@ -38,9 +36,23 @@ import sun.security.util.Argon2Util;
  */
 public class TestArgon2EncodedHash {
 
-    record TestVector(String encodedStr, String inStr) {
+    static class TestVector {
+        final String encodedStr;
+        final byte[] msg;
+        Argon2Info info;
+
+        TestVector(String encodedStr, String inStr) {
+            this.encodedStr = encodedStr;
+            this.msg = inStr.getBytes();
+            this.info = Argon2Util.decodeHash(encodedStr);
+        }
+
+        public String type() {
+            return info.algo().toUpperCase(Locale.ENGLISH);
+        }
+
         public Argon2ParameterSpec getParameters() {
-            return Argon2Util.decodeHash(encodedStr).build(inStr.getBytes());
+            return info.builder().build(msg);
         }
     }
 
@@ -51,21 +63,21 @@ public class TestArgon2EncodedHash {
     };
 
     private static void run(TestVector tv) throws Exception {
-        String expected = tv.encodedStr();
+        String expected = tv.encodedStr;
         System.out.println("Testing " + expected);
         Argon2ParameterSpec params = tv.getParameters();
         System.out.println("params = " + params);
-        Type type = params.type();
-        Argon2Impl res = new Argon2Impl(type);
+        String algo = tv.type();
+        Argon2Impl res = new Argon2Impl(algo);
         byte[] bytes = res.derive(params);
-        String encoded2 =
-                new Argon2DerivedKey(params, bytes, "Generic").toString();
+        String encoded2 = new Argon2DerivedKey(algo, params, bytes,
+                "Generic").toString();
         if (!expected.equals(encoded2)) {
             throw new RuntimeException("Failed! got " + encoded2);
         }
 
-        if (type == Type.ARGON2ID) {
-            KDF kdf = KDF.getInstance(type.name());
+        if (algo.equals("ARGON2ID")) {
+            KDF kdf = KDF.getInstance(algo);
             encoded2 = kdf.deriveKey("Generic", params).toString();
             if (!expected.equals(encoded2)) {
                 throw new RuntimeException("Failed! got " + encoded2);

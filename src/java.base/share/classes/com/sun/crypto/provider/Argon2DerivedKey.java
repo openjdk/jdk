@@ -65,10 +65,11 @@ public final class Argon2DerivedKey implements SecretKey {
      * @exception InvalidKeyException if less than 8 bytes are available for
      * the key.
      */
-    public Argon2DerivedKey(Argon2ParameterSpec spec, byte[] key, String algo) {
+    public Argon2DerivedKey(String type, Argon2ParameterSpec spec,
+            byte[] key, String algo) {
         this.key = key; // known internal bytes; no need to clone
         this.algo = algo;
-        this.encodedHash = Argon2Util.encodeHash(spec, key);
+        this.encodedHash = Argon2Util.encodeHash(type, spec, key);
         final byte[] k = this.key;
         CleanerFactory.cleaner().register(this,
                 () -> Arrays.fill(k, (byte)0x00));

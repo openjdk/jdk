@@ -27,7 +27,6 @@ package com.sun.crypto.provider;
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
 import javax.crypto.spec.Argon2ParameterSpec;
-import static javax.crypto.spec.Argon2ParameterSpec.Type;
 import static javax.crypto.spec.Argon2ParameterSpec.Version;
 import javax.crypto.KDFParameters;
 import javax.crypto.KDFSpi;
@@ -42,6 +41,8 @@ import static sun.security.provider.ByteArrayAccess.*;
  * @since 27
  */
 public final class Argon2ID extends KDFSpi {
+
+    private static final String TYPE = "ARGON2ID";
 
     private final Argon2Impl impl;
 
@@ -66,7 +67,7 @@ public final class Argon2ID extends KDFSpi {
             throw new InvalidAlgorithmParameterException
                     ("only null params accepted");
         }
-        impl = new Argon2Impl(Type.ARGON2ID);
+        impl = new Argon2Impl(TYPE);
     }
 
     @Override
@@ -78,7 +79,7 @@ public final class Argon2ID extends KDFSpi {
         // derivationSpec
         Argon2ParameterSpec spec = check(derivationSpec);
         byte[] keyBytes = impl.derive(spec);
-        return new Argon2DerivedKey(spec, keyBytes, alg);
+        return new Argon2DerivedKey(TYPE, spec, keyBytes, alg);
     }
 
     @Override

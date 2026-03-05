@@ -28,7 +28,6 @@ package sun.security.util;
 import java.util.Base64;
 import java.util.Locale;
 import javax.crypto.spec.Argon2ParameterSpec;
-import javax.crypto.spec.Argon2ParameterSpec.Type;
 import javax.crypto.spec.Argon2ParameterSpec.Version;
 
 /*
@@ -119,27 +118,32 @@ public final class Argon2Util {
         }
     }
 
+    // Used by Argon2 regression tests which uses PHC string input
+    public record Argon2Info(String algo, Argon2ParameterSpec.Builder builder) {
+    }
+
     // Used by both javax.crypto.spec.Argon2ParameterSpec and
     // com.sun.crypto.provider.Argon2DerivedKey
-    public static String encodeHash(Argon2ParameterSpec spec, byte[] tag) {
+    public static String encodeHash(String algo, Argon2ParameterSpec spec,
+            byte[] tag) {
         String params = encodeParams(spec.memory(), spec.iterations(),
                 spec.parallelism(), spec.secret(), spec.ad());
         if (tag != null) {
             return String.format("$%s$v=%d$%s$%s$%s",
-                spec.type().name().toLowerCase(Locale.ROOT),
+                algo.toLowerCase(Locale.ENGLISH),
                 spec.version().value(), params,
                 enc.encodeToString(spec.nonce()),
                 enc.encodeToString(tag));
         } else { // special case for Argon2ParameterSpec.toString()
             return String.format("$%s$v=%d$%s$%s",
-                spec.type().name().toLowerCase(Locale.ROOT),
+                algo.toLowerCase(Locale.ENGLISH),
                 spec.version().value(), params,
                 enc.encodeToString(spec.nonce()));
         }
     }
 
     // Used by javax.crypto.spec.Argon2ParameterSpec.Builder
-    public static Argon2ParameterSpec.Builder decodeHash(String str)
+    public static Argon2Info decodeHash(String str)
             throws IllegalArgumentException {
         // parse the encoded hash: $type[$version][$params][$salt[$hash]]
         String[] values = str.split("\\$");
@@ -153,9 +157,8 @@ public final class Argon2Util {
         }
 
         // parse type
-        Type type = Type.valueOf(values[1].toUpperCase());
-        Argon2ParameterSpec.Builder builder =
-                Argon2ParameterSpec.newBuilder(type);
+        String algo = values[1];
+        Argon2ParameterSpec.Builder builder = Argon2ParameterSpec.newBuilder();
         int idx = 1;
         while (++idx < values.length) {
             switch (idx) {
@@ -191,6 +194,6 @@ public final class Argon2Util {
                 }
             }
         }
-        return builder;
+        return new Argon2Info(algo, builder);
     }
 }

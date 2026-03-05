@@ -23,15 +23,14 @@
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.HexFormat;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.NoSuchAlgorithmException;
+import java.util.Locale;
 import javax.crypto.spec.Argon2ParameterSpec;
 import javax.crypto.KDF;
 import javax.crypto.SecretKey;
-import static javax.crypto.spec.Argon2ParameterSpec.Type;
 import static javax.crypto.spec.Argon2ParameterSpec.Builder;
 import com.sun.crypto.provider.Argon2Impl;
 import sun.security.util.Argon2Util;
+import static sun.security.util.Argon2Util.Argon2Info;
 
 /**
  * @test
@@ -49,10 +48,10 @@ public class TestArgon2KAT {
         return res;
     }
 
-    private static Argon2ParameterSpec genParams(Type type, byte[] msg,
+    private static Argon2ParameterSpec genParams(byte[] msg,
             byte[] salt, int parallelism, int memory, int iteration,
             byte[] secret, byte[] ad, int tagLen) {
-        Builder b = Argon2ParameterSpec.newBuilder(type).nonce(salt)
+        Builder b = Argon2ParameterSpec.newBuilder().nonce(salt)
                 .parallelism(parallelism).memoryKiB(memory)
                 .iterations(iteration).tagLen(tagLen);
         if (secret != null && secret.length > 0) {
@@ -77,19 +76,19 @@ public class TestArgon2KAT {
         }
     }
 
-    private static void run(Argon2ParameterSpec spec, String expected)
-            throws Exception {
-        System.out.println("test against: " + spec);
-        Type t = spec.type();
-        switch (t) {
-            case ARGON2I:
-            case ARGON2D:
-                byte[] res = new Argon2Impl(t).derive(spec);
+    private static void run(String algo, Argon2ParameterSpec spec,
+            String expected) throws Exception {
+        System.out.println("test against: " + algo + " w/ " +  spec);
+        switch (algo) {
+            case "ARGON2I":
+            case "ARGON2D":
+                byte[] res = new Argon2Impl(algo).derive(spec);
                 checkOutputs(expected, res);
                 break;
-            case ARGON2ID:
-                byte[] res1 = new Argon2Impl(t).derive(spec);
-                SecretKey res2 = KDF.getInstance(t.name()).deriveKey("Generic", spec);
+            case "ARGON2ID":
+                byte[] res1 = new Argon2Impl(algo).derive(spec);
+                SecretKey res2 = KDF.getInstance(algo).deriveKey("Generic",
+                        spec);
                 try {
                     checkOutputs(expected, res1, res2.getEncoded());
                 } catch (RuntimeException re) {
@@ -97,6 +96,7 @@ public class TestArgon2KAT {
                     throw re;
                 }
                 break;
+            default: throw new RuntimeException("Unsupported algo: " + algo);
         }
     }
 
@@ -104,21 +104,19 @@ public class TestArgon2KAT {
     private static void runPHC(String expected, byte[] msg)
             throws Exception {
         System.out.println("test against: " + expected);
-        Argon2ParameterSpec spec = Argon2Util.decodeHash(expected).build(msg);
-        Type t = spec.type();
-        switch (t) {
-            case ARGON2ID:
-                SecretKey res = KDF.getInstance(t.name()).deriveKey("Generic", spec);
-                String actual = res.toString();
-                if (!actual.equalsIgnoreCase(expected)) {
-                    System.out.println("Expected: " + expected);
-                    System.out.println("Actual:   " + actual);
-                    throw new RuntimeException("PHC diff check failed!");
-                }
-                break;
-            case ARGON2I:
-            case ARGON2D:
-                throw new RuntimeException("Unsupported type");
+        Argon2Info info = Argon2Util.decodeHash(expected);
+
+        String algo = info.algo().toUpperCase(Locale.ENGLISH);
+        if (!algo.equals("ARGON2ID")) {
+            throw new RuntimeException("Only supports Argon2id: " + algo);
+        }
+        Argon2ParameterSpec spec = info.builder().build(msg);
+        SecretKey res = KDF.getInstance(algo).deriveKey("Generic", spec);
+        String actual = res.toString();
+        if (!actual.equalsIgnoreCase(expected)) {
+            System.out.println("Expected: " + expected);
+            System.out.println("Actual:   " + actual);
+            throw new RuntimeException("PHC diff check failed!");
         }
     }
 
@@ -132,23 +130,23 @@ public class TestArgon2KAT {
         byte[] secret = genData(8, (byte) 3);
         byte[] ad = genData(12, (byte) 4);
 
-        Argon2ParameterSpec kdfParams = genParams(Type.ARGON2D,
-                passwd, salt, parallelism, mKiB, passes, secret, ad, tagLen);
+        Argon2ParameterSpec kdfParams = genParams(passwd, salt, parallelism,
+                mKiB, passes, secret, ad, tagLen);
         String expected = "512b391b6f1162975371d30919734294" +
                 "f868e3be3984f3c1a13a4db9fabe4acb";
-        run(kdfParams, expected);
+        run("ARGON2D", kdfParams, expected);
 
-        kdfParams = genParams(Type.ARGON2I, passwd, salt, parallelism, mKiB,
-                passes, secret, ad, tagLen);
+        kdfParams = genParams(passwd, salt, parallelism, mKiB, passes, secret,
+                ad, tagLen);
         expected = "c814d9d1dc7f37aa13f0d77f2494bda1" +
                 "c8de6b016dd388d29952a4c4672b6ce8";
-        run(kdfParams, expected);
+        run("ARGON2I", kdfParams, expected);
 
-        kdfParams = genParams(Type.ARGON2ID, passwd, salt, parallelism, mKiB,
-                passes, secret, ad, tagLen);
+        kdfParams = genParams(passwd, salt, parallelism, mKiB, passes, secret,
+                ad, tagLen);
         expected = "0d640df58d78766c08c037a34a8b53c9d0" +
                 "1ef0452d75b65eb52520e96b01e659";
-        run(kdfParams, expected);
+        run("ARGON2ID", kdfParams, expected);
     }
 
     private static void selfTest() throws Exception {
@@ -160,23 +158,23 @@ public class TestArgon2KAT {
         byte[] testpwd = "pasword".getBytes();
         byte[] testsalt = "somesalt".getBytes();
 
-        Argon2ParameterSpec kdfParams = genParams(Type.ARGON2I, testpwd,
-            testsalt, parallelism, memory, iterations, null, null, tagLen);
+        Argon2ParameterSpec kdfParams = genParams(testpwd, testsalt,
+                parallelism, memory, iterations, null, null, tagLen);
         String expected =
             "957fc0727d83f4060bb0f1071eb590a19a8c448fc0209497ee4f54ca241f3c90";
-        run(kdfParams, expected);
+        run("ARGON2I", kdfParams, expected);
 
-        kdfParams = genParams(Type.ARGON2D, testpwd,
-            testsalt, parallelism, memory, iterations, null, null, tagLen);
+        kdfParams = genParams(testpwd, testsalt, parallelism, memory,
+                iterations, null, null, tagLen);
         expected =
             "0b3f09e7b8d036e58ccd08f08cb6babf7e5e2463c26bcf2a9e4ea70d747c4098";
-        run(kdfParams, expected);
+        run("ARGON2D", kdfParams, expected);
 
-        kdfParams = genParams(Type.ARGON2ID, testpwd,
-            testsalt, parallelism, memory, iterations, null, null, tagLen);
+        kdfParams = genParams(testpwd, testsalt, parallelism, memory,
+                iterations, null, null, tagLen);
         expected =
             "f55535bfe948710051424c7424b11ba9a13a50239b0459f56ca695ea14bc195e";
-        run(kdfParams, expected);
+        run("ARGON2ID", kdfParams, expected);
 
         Base64.Decoder dec = Base64.getDecoder();
 
@@ -185,11 +183,11 @@ public class TestArgon2KAT {
         testpwd = "hunter2".getBytes();
         testsalt = dec.decode("gZiV/M1gPc22ElAH/Jh1Hw");
         byte[] secret = "pepper".getBytes();
-        kdfParams = genParams(Type.ARGON2ID, testpwd,
-            testsalt, parallelism, memory, iterations, secret, null, tagLen);
+        kdfParams = genParams(testpwd, testsalt, parallelism, memory,
+                iterations, secret, null, tagLen);
         expected =
             "0963ab928a3ba09050fe2ca1eee2742ced9a2c47eb1f04d6965480c53d33467a";
-        run(kdfParams, expected);
+        run("ARGON2ID", kdfParams, expected);
     }
 
     private static void selfTest2() throws Exception {

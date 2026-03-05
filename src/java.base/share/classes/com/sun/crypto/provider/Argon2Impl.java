@@ -33,7 +33,6 @@ import java.util.concurrent.TimeUnit;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.ProviderException;
 import javax.crypto.spec.Argon2ParameterSpec;
-import static javax.crypto.spec.Argon2ParameterSpec.Type;
 import static javax.crypto.spec.Argon2ParameterSpec.Version;
 import static sun.security.provider.ByteArrayAccess.*;
 
@@ -44,6 +43,37 @@ import static sun.security.provider.ByteArrayAccess.*;
  * @since 27
  */
 public final class Argon2Impl {
+
+    /**
+     * Type of Argon2 algorithms
+     */
+    private enum Type {
+        /**
+         * Argon2d
+         */
+        ARGON2D(0),
+        /**
+         * Argon2i
+         */
+        ARGON2I(1),
+        /**
+         * Argon2id
+         */
+        ARGON2ID(2);
+
+        int value;
+
+        Type(int value) {
+            this.value = value;
+        }
+
+        /**
+         * {@return 0 for ARGON2D, 1 for ARGON2I, 2 for Argon2ID}
+         */
+        public int value() {
+            return value;
+        }
+    };
 
     private static final class Argon2Instance {
         // Variable-length hash function H' built upon Blake2b as defined in
@@ -533,8 +563,8 @@ public final class Argon2Impl {
         return h0Plus8Bytes;
     }
 
-    public Argon2Impl(Type type) {
-        this.type = type;
+    public Argon2Impl(String algoUpper) {
+        this.type = Type.valueOf(algoUpper);
     }
 
     private static int checkMax(int value, long max, String errMsg)
@@ -548,11 +578,6 @@ public final class Argon2Impl {
 
     public byte[] derive(Argon2ParameterSpec spec)
             throws InvalidAlgorithmParameterException {
-        if (this.type != spec.type()) {
-            throw new InvalidAlgorithmParameterException
-                    ("Invalid type, SunJCE only supports " + type + ", but got " +
-                    spec.type());
-        }
         if (spec.version() != Version.V13) {
             throw new InvalidAlgorithmParameterException
                     ("Unsupported version, SunJCE only supports V13, but got " +
