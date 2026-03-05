@@ -278,7 +278,6 @@ public final class SwitchBootstraps {
      *               in any combination
      * @return a {@code CallSite} returning the first matching element as described above
      *
-     * @throws NullPointerException     if any argument is {@code null}, unless noted otherwise
      * @throws IllegalArgumentException if any element in the labels array is null
      * @throws IllegalArgumentException if any element in the labels array is an empty {@code String}
      * @throws IllegalArgumentException if the invocation type is not a method type
