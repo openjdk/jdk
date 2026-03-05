@@ -162,9 +162,7 @@ public final class SwitchBootstraps {
      * the length of the {@code labels} array (inclusive),
      * both  or an {@link IndexOutOfBoundsException} is thrown.
      *
-     * @param lookup Represents a lookup context with the accessibility
-     *               privileges of the caller.  When used with {@code invokedynamic},
-     *               this is stacked automatically by the VM.
+     * @param lookup the lookup context of the caller
      * @param invocationName unused, {@code null} is permitted
      * @param invocationType The invocation type of the {@code CallSite} with two parameters,
      *                       a reference type, an {@code int}, and {@code int} as a return type.
@@ -272,9 +270,7 @@ public final class SwitchBootstraps {
      * @apiNote It is permissible for the {@code labels} array to contain {@code String}
      * values that do not represent any enum constants at runtime.
      *
-     * @param lookup Represents a lookup context with the accessibility
-     *               privileges of the caller. When used with {@code invokedynamic},
-     *               this is stacked automatically by the VM.
+     * @param lookup the lookup context of the caller
      * @param invocationName unused, {@code null} is permitted
      * @param invocationType The invocation type of the {@code CallSite} with two parameters,
      *                       an enum type, an {@code int}, and {@code int} as a return type.

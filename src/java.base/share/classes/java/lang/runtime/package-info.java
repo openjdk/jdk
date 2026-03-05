@@ -31,10 +31,10 @@
  * <li>Methods and constructors in this package throw a {@link
  *     NullPointerException} when they are called with {@code null} or an array
  *     that contains {@code null} as an argument.
- * <li>Bootstrap methods in this package throw an {@link
- *     IllegalArgumentException} when they are called with a {@link Lookup} that
- *     does not have {@linkplain Lookup#hasFullPrivilegeAccess() full privilege
- *     access}.
+ * <li>{@linkplain java.lang.invoke##bsm Bootstrap methods} in this package
+ *     throw an {@link IllegalArgumentException} when they are called with a
+ *     {@link Lookup Lookup} that does not have {@linkplain
+ *     Lookup#hasFullPrivilegeAccess() full privilege access}.
  * </ul>
  *
  * @since 14

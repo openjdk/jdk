@@ -479,12 +479,7 @@ public final class ObjectMethods {
      * {@link java.lang.Record#toString()}.
      *
      *
-     * @param lookup Represents a lookup context with the accessibility
-     *               privileges of the caller.  Specifically, the lookup context
-     *               must have {@linkplain MethodHandles.Lookup#hasFullPrivilegeAccess()
-     *               full privilege access}.
-     *               When used with {@code invokedynamic}, this is stacked
-     *               automatically by the VM.
+     * @param lookup       the lookup context of the caller
      * @param methodName   the name of the method to generate, which must be one of
      *                     {@code "equals"}, {@code "hashCode"}, or {@code "toString"}
      * @param type         a {@link MethodType} corresponding the descriptor type
