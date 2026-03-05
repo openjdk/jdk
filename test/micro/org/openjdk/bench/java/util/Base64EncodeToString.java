@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,11 +20,36 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package org.openjdk.micro.bench.java.util;
 
-/*
- * @test
- * @bug 8207960
- * @modules java.net.http/jdk.internal.net.http
- * @summary Non-negative WINDOW_UPDATE increments may leave the stream window size negative
- * @run junit/othervm java.net.http/jdk.internal.net.http.WindowControllerTest
- */
+import org.openjdk.jmh.annotations.*;
+
+import java.util.Base64;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+
+@State(Scope.Benchmark)
+@Warmup(iterations = 5, time = 2)
+@Measurement(iterations = 5, time = 2)
+@Fork(value = 2)
+@OutputTimeUnit(TimeUnit.MILLISECONDS)
+public class Base64EncodeToString {
+
+    private byte[] input;
+
+    @Param({"10", "100", "1000", "10000"})
+    private int inputSize;
+
+    @Setup
+    public void setup() {
+        Random r = new Random(1123);
+        input = new byte[inputSize];
+        r.nextBytes(input);
+    }
+
+    @Benchmark
+    public String testEncodeToString() {
+        return Base64.getEncoder().encodeToString(input);
+    }
+}
+

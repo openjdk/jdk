@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,12 +20,25 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/*
- * @test
- * @bug 8207960
- * @modules java.net.http/jdk.internal.net.http
- * @summary Non-negative WINDOW_UPDATE increments may leave the stream window size negative
- * @run junit/othervm java.net.http/jdk.internal.net.http.WindowControllerTest
- */
+#include "runtime/vm_version.hpp"
+
+#include <unistd.h>
+
+int VM_Version::get_dcache_line_size() {
+  // This should work on all modern linux versions:
+  int size = sysconf(_SC_LEVEL1_DCACHE_LINESIZE);
+  // It may fail with very old linux / glibc versions. We use DEFAULT_CACHE_LINE_SIZE in this case.
+  // That is the correct value for all currently supported processors.
+  return (size <= 0) ? DEFAULT_CACHE_LINE_SIZE : size;
+}
+
+int VM_Version::get_icache_line_size() {
+  // This should work on all modern linux versions:
+  int size = sysconf(_SC_LEVEL1_ICACHE_LINESIZE);
+  // It may fail with very old linux / glibc versions. We use DEFAULT_CACHE_LINE_SIZE in this case.
+  // That is the correct value for all currently supported processors.
+  return (size <= 0) ? DEFAULT_CACHE_LINE_SIZE : size;
+}

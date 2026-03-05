@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,12 +20,17 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/*
- * @test
- * @bug 8207960
- * @modules java.net.http/jdk.internal.net.http
- * @summary Non-negative WINDOW_UPDATE increments may leave the stream window size negative
- * @run junit/othervm java.net.http/jdk.internal.net.http.WindowControllerTest
- */
+#include "runtime/vm_version.hpp"
+
+#include <sys/systemcfg.h>
+
+int VM_Version::get_dcache_line_size() {
+  return _system_configuration.dcache_line;
+}
+
+int VM_Version::get_icache_line_size() {
+  return _system_configuration.icache_line;
+}
