@@ -179,7 +179,6 @@ public final class DataBufferInt extends DataBuffer
     public DataBufferInt(int[][] dataArray, int size) {
         super(UNTRACKABLE, TYPE_INT, size, dataArray.length);
         checkSize(size);
-        Objects.requireNonNull(dataArray, "dataArray must not be null");
         checkNumBanks(dataArray.length);
         for (int b = 0; b < dataArray.length; b++) {
             Objects.requireNonNull(dataArray[b], "bank must not be null");
@@ -219,7 +218,6 @@ public final class DataBufferInt extends DataBuffer
     public DataBufferInt(int[][] dataArray, int size, int[] offsets) {
         super(UNTRACKABLE, TYPE_INT, size, dataArray.length, offsets);
         checkSize(size);
-        Objects.requireNonNull(dataArray, "dataArray must not be null");
         checkNumBanks(dataArray.length);
         Objects.requireNonNull(offsets, "offsets must not be null");
         if (dataArray.length != offsets.length) {
