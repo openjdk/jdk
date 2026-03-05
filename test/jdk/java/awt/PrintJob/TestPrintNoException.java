@@ -21,53 +21,50 @@
  * questions.
  */
 
-import java.awt.Button;
 import java.awt.Frame;
+import java.awt.JobAttributes;
 import java.awt.PrintJob;
+import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.event.KeyEvent;
 
 /*
  * @test
  * @bug 8378417
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
+ * @key headful printer
  * @summary Verifies No Exception is thrown when Printing "All" pages
- * @run main/manual TestPrintNoException
+ * @run main TestPrintNoException
  */
 
 public class TestPrintNoException {
 
     public static void main(String[] args) throws Exception {
-        String INSTRUCTIONS = """
-                Press 'Print' button from the test UI.
-
-                The test will bring up a print dialog.
-                Select a printer with "All" pages selected and proceed.
-
-                The test will fail automatically if the bug exists.
-                Note: There's no need to verify the actual print output.""";
-
-        PassFailJFrame.builder()
-                .instructions(INSTRUCTIONS)
-                .columns(40)
-                .testUI(TestPrintNoException::createUI)
-                .logArea(8)
-                .build()
-                .awaitAndCheck();
-    }
-
-    private static Frame createUI() {
-        Frame frame = new Frame("Exception");
-        Button b = new Button("Print");
-        b.addActionListener((e) -> {
-            PrintJob pj = frame.getToolkit().getPrintJob(frame, "ResolutionTest", null);
-            PassFailJFrame.log("Printing code started.");
-            if (pj != null) {
-                pj.end();
-            }
-            PassFailJFrame.log("Printing code finished.");
+        Robot robot = new Robot();
+        Thread t = new Thread (() -> {
+            robot.delay(5000);
+            robot.keyPress(KeyEvent.VK_ENTER);
+            robot.keyRelease(KeyEvent.VK_ENTER);
+            robot.waitForIdle();
         });
-        frame.add(b);
-        frame.setSize(50, 100);
-        return frame;
+        Toolkit tk = Toolkit.getDefaultToolkit();
+        PrintJob pj = null;
+
+        int[][] pageRange = new int[][]{new int[]{1,1}};
+        JobAttributes ja = new JobAttributes(1,
+                java.awt.JobAttributes.DefaultSelectionType.ALL,
+                JobAttributes.DestinationType.PRINTER, JobAttributes.DialogType.NATIVE,
+                null, Integer.MAX_VALUE, 1,
+                JobAttributes.MultipleDocumentHandlingType.SEPARATE_DOCUMENTS_UNCOLLATED_COPIES,
+                 pageRange, "", JobAttributes.SidesType.ONE_SIDED);
+
+        Frame testFrame = new Frame("print");
+        try {
+            if (tk != null) {
+                t.start();
+                pj = tk.getPrintJob(testFrame, null, ja, null);
+            }
+        } finally {
+            testFrame.dispose();
+        }
     }
 }
