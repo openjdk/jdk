@@ -78,8 +78,6 @@ $(BUILDTOOLS_OUTPUTDIR)/gensrc/java.base.interim/jdk/internal/javac/PreviewFeatu
 	$(JAVA) $(TOPDIR)/make/langtools/tools/previewfeature/SetupPreviewFeature.java \
             $(TOPDIR)/src/java.base/share/classes/jdk/internal/javac/PreviewFeature.java \
             $@
-	$(call LogInfo, Generated $@)
-	$(CAT) <$@
 
 
 TARGETS += $(BUILDTOOLS_OUTPUTDIR)/gensrc/java.base.interim/jdk/internal/javac/PreviewFeature.java
@@ -127,7 +125,8 @@ define SetupInterimModule
   $1_DEPS_INTERIM := $$(addsuffix .interim, $$(filter \
       $$(INTERIM_LANGTOOLS_BASE_MODULES), $$(call FindTransitiveDepsForModule, $1)))
 
-  $$(BUILD_$1.interim): $$(foreach d, $$($1_DEPS_INTERIM), $$(BUILD_$$d)) $(COPY_PREVIEW_FEATURES)
+  $$(BUILD_$1.interim): $$(foreach d, $$($1_DEPS_INTERIM), $$(BUILD_$$d)) \
+      $(BUILDTOOLS_OUTPUTDIR)/gensrc/java.base.interim/jdk/internal/javac/PreviewFeature.java
 
   TARGETS += $$(BUILD_$1.interim)
 endef
