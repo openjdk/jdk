@@ -1280,6 +1280,14 @@ public:
   virtual int Opcode() const;
 };
 
+// A full barrier blocks all loads and stores from moving across it
+class MemBarFullNode : public MemBarNode {
+public:
+  MemBarFullNode(Compile* C, int alias_idx, Node* precedent)
+    : MemBarNode(C, alias_idx, precedent) {}
+  virtual int Opcode() const;
+};
+
 // Ordering within the same CPU.  Used to order unsafe memory references
 // inside the compiler when we lack alias info.  Not needed "outside" the
 // compiler because the CPU does all the ordering for us.

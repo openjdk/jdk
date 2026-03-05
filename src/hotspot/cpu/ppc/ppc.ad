@@ -7217,6 +7217,18 @@ instruct membar_volatile() %{
 //  ins_pipe(pipe_class_default);
 //%}
 
+instruct membar_full() %{
+  match(MemBarFull);
+  ins_cost(4*MEMORY_REF_COST);
+
+  format %{ "MEMBAR-full" %}
+  size(4);
+  ins_encode %{
+    __ fence();
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct membar_CPUOrder() %{
   match(MemBarCPUOrder);
   ins_cost(0);

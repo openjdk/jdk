@@ -8065,6 +8065,19 @@ instruct membar_volatile() %{
   ins_pipe(pipe_serial);
 %}
 
+instruct membar_full() %{
+  match(MemBarFull);
+  ins_cost(VOLATILE_REF_COST*100);
+
+  format %{ "membar_full" %}
+  ins_encode %{
+    __ block_comment("membar_full");
+    __ membar(Assembler::AnyAny);
+  %}
+
+  ins_pipe(pipe_serial);
+%}
+
 // ============================================================================
 // Cast/Convert Instructions
 

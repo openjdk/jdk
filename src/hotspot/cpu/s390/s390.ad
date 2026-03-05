@@ -5270,6 +5270,15 @@ instruct unnecessary_membar_volatile() %{
   ins_pipe(pipe_class_dummy);
 %}
 
+instruct membar_full() %{
+  match(MemBarFull);
+  ins_cost(4 * MEMORY_REF_COST);
+  size(2);
+  format %{ "MEMBAR-full" %}
+  ins_encode %{ __ z_fence(); %}
+  ins_pipe(pipe_class_dummy);
+%}
+
 instruct membar_CPUOrder() %{
   match(MemBarCPUOrder);
   ins_cost(0);

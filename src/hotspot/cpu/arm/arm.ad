@@ -4468,6 +4468,18 @@ instruct unnecessary_membar_volatile() %{
   ins_pipe(empty);
 %}
 
+instruct membar_full() %{
+  match(MemBarFull);
+  ins_cost(4*MEMORY_REF_COST);
+
+  size(4);
+  format %{ "MEMBAR-full" %}
+  ins_encode %{
+    __ membar(MacroAssembler::StoreLoad, noreg);
+  %}
+  ins_pipe(long_memory_op);
+%}
+
 //----------Register Move Instructions-----------------------------------------
 
 // Cast Index to Pointer for unsafe natives

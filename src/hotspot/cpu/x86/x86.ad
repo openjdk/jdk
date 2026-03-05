@@ -8879,6 +8879,21 @@ instruct unnecessary_membar_volatile()
   ins_pipe(empty);
 %}
 
+instruct membar_full(rFlagsReg cr) %{
+  match(MemBarFull);
+  effect(KILL cr);
+  ins_cost(400);
+
+  format %{
+    $$template
+    $$emit$$"lock addl [rsp + #0], 0\t! membar_full"
+  %}
+  ins_encode %{
+    __ membar(Assembler::StoreLoad);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct membar_storestore() %{
   match(MemBarStoreStore);
   match(StoreStoreFence);

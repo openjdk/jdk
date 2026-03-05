@@ -8198,6 +8198,22 @@ instruct unnecessary_membar_volatile_rvtso() %{
   ins_pipe(real_empty);
 %}
 
+instruct membar_full_rvtso() %{
+  predicate(UseZtso);
+  match(MemBarFull);
+  ins_cost(VOLATILE_REF_COST);
+
+  format %{ "#@membar_full_rvtso\n\t"
+            "fence a, a"%}
+
+  ins_encode %{
+    __ block_comment("membar_full_rvtso");
+    __ membar(MacroAssembler::AnyAny);
+  %}
+
+  ins_pipe(pipe_slow);
+%}
+
 // RVWMO
 
 instruct membar_aqcuire_rvwmo() %{
@@ -8289,6 +8305,22 @@ instruct unnecessary_membar_volatile_rvwmo() %{
     __ block_comment("unnecessary_membar_volatile_rvwmo");
   %}
   ins_pipe(real_empty);
+%}
+
+instruct membar_full_rvwmo() %{
+  predicate(!UseZtso);
+  match(MemBarFull);
+  ins_cost(VOLATILE_REF_COST);
+
+  format %{ "#@membar_full_rvwmo\n\t"
+            "fence a, a"%}
+
+  ins_encode %{
+    __ block_comment("membar_full_rvwmo");
+    __ membar(MacroAssembler::AnyAny);
+  %}
+
+  ins_pipe(pipe_serial);
 %}
 
 instruct spin_wait() %{
