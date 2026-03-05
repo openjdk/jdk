@@ -2672,7 +2672,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
           Node *test = transform_later(new BoolNode(cmp, BoolTest::le));
 
           IfNode *iff = new IfNode(ctrl, test, PROB_UNLIKELY_MAG(3), COUNT_UNKNOWN);
-          Node *if_slow = transform_later(new IfTrueNode(iff)); // x <= 0
+          Node *if_slow = transform_later(new IfTrueNode(iff));  // x <= 0
           Node *if_fast = transform_later(new IfFalseNode(iff)); // x > 0
           transform_later(iff);
 

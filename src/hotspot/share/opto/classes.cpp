@@ -36,7 +36,6 @@
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
 #include "opto/mathexactnode.hpp"
-#include "opto/mathnode.hpp"
 #include "opto/memnode.hpp"
 #include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"

@@ -30,7 +30,6 @@
 #include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "jfr/support/jfrIntrinsics.hpp"
-#include "mathnode.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"

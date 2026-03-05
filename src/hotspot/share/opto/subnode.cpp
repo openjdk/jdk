@@ -45,6 +45,8 @@
 // Optimization - Graph Style
 
 #include "math.h"
+#include "runtime.hpp"
+#include "runtime/stubRoutines.hpp"
 
 //=============================================================================
 //------------------------------Identity---------------------------------------
@@ -2061,4 +2063,110 @@ Node* ReverseLNode::Identity(PhaseGVN* phase) {
     return in(1)->in(1);
   }
   return this;
+}
+
+PowDNode::PowDNode(Compile* C, Node* base, Node* exp)
+    : CallLeafPureNode(
+        OptoRuntime::Math_DD_D_Type(),
+        StubRoutines::dpow() != nullptr ? StubRoutines::dpow() : CAST_FROM_FN_PTR(address, SharedRuntime::dpow),
+        "pow") {
+  add_flag(Flag_is_macro);
+  C->add_macro_node(this);
+
+  init_req(TypeFunc::Parms + 0, base);
+  init_req(TypeFunc::Parms + 1, C->top());  // double slot padding
+  init_req(TypeFunc::Parms + 2, exp);
+  init_req(TypeFunc::Parms + 3, C->top());  // double slot padding
+}
+
+const Type *PowDNode::Value(PhaseGVN *phase) const {
+  const Type* t_base = phase->type(base());
+  const Type* t_exp  = phase->type(exp());
+
+  if (t_base == Type::TOP || t_exp == Type::TOP) {
+    return Type::TOP;
+  }
+
+  // constant folding: both inputs are constants
+  const TypeD* base_con = t_base->isa_double_constant();
+  const TypeD* exp_con  = t_exp->isa_double_constant();
+  if (base_con == nullptr || exp_con == nullptr) {
+    return tf()->range();
+  }
+
+  // FIXME: is SharedRuntime::dpow(-0.0, 0.5) spec compliant?
+  const double result = SharedRuntime::dpow(base_con->getd(), exp_con->getd());
+
+  // We can't simply return a TypeD here, it must be a tuple type to be compatible with call nodes.
+  const Type** fields = TypeTuple::fields(2);
+  fields[TypeFunc::Parms + 0] = TypeD::make(result);
+  fields[TypeFunc::Parms + 1] = Type::HALF;
+  return TypeTuple::make(TypeFunc::Parms + 2, fields);
+}
+
+Node* PowDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (!can_reshape) {
+    return nullptr;  // wait for igvn
+  }
+
+  PhaseIterGVN* igvn = phase->is_IterGVN();
+  Node* base = this->base();
+  Node* exp  = this->exp();
+
+  const Type* t_exp  = phase->type(exp);
+  const TypeD* exp_con  = t_exp->isa_double_constant();
+
+  // Special cases when only the exponent is known:
+  if (exp_con != nullptr) {
+    double e = exp_con->getd();
+    // If the second argument is positive or negative zero, then the result is 1.0.
+    // i.e., pow(x, +/-0.0D) => 1.0
+    if (e == 0.0) { // true for both -0.0 and +0.0
+      return make_tuple_of_input_state_and_result(igvn, phase->makecon(TypeD::ONE));
+    }
+
+    // If the second argument is 1.0, then the result is the same as the first argument.
+    // i.e., pow(x, 1.0) => x
+    if (e == 1.0) {
+      return make_tuple_of_input_state_and_result(igvn, base);
+    }
+
+    // If the second argument is NaN, then the result is NaN.
+    // i.e., pow(x, NaN) => NaN
+    if (isnan(e)) {
+      return make_tuple_of_input_state_and_result(igvn, phase->makecon(TypeD::make(NAN)));
+    }
+
+    // If the second argument is 2.0, then strength reduce to multiplications.
+    // i.e., pow(x, 2.0) => x * x
+    if (e == 2.0) {
+      Node* mul = igvn->transform(new MulDNode(base, base));
+      return make_tuple_of_input_state_and_result(igvn, mul);
+    }
+
+    // If the second argument is 0.5, the strength reduce to sqaure roots.
+    // i.e., pow(x, 0.5) => sqrt(x)
+    // This one is trickier because pow(-0.0, 0.5) => +0.0 but sqrt(-0.0) => -0.0, which requires building a control
+    // flow diamond. We defer this to macro expansion to give the base more chances to be constant folded.
+    // See PhaseMacroExpand::expand_macro_nodes()
+  }
+
+  return CallLeafPureNode::Ideal(phase, can_reshape);
+}
+
+// We can't simply have Ideal() returning a Con or MulNode since the users are still expecting a Call node, but we could
+// produce a tuple that follows the same pattern so users can still get control, io, memory, etc..
+TupleNode* PowDNode::make_tuple_of_input_state_and_result(PhaseIterGVN* phase, Node* result) const {
+  Compile* C = phase->C;
+  C->remove_macro_node(const_cast<PowDNode*>(this));
+  TupleNode* tuple = TupleNode::make(
+      tf()->range(),
+      in(TypeFunc::Control),
+      in(TypeFunc::I_O),
+      in(TypeFunc::Memory),
+      in(TypeFunc::FramePtr),
+      in(TypeFunc::ReturnAdr),
+      result,
+      C->top());  // double slot padding
+  return tuple;
 }
