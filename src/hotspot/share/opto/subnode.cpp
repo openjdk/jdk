@@ -2144,7 +2144,7 @@ Node* PowDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return make_tuple_of_input_state_and_result(igvn, mul);
     }
 
-    // If the second argument is 0.5, the strength reduce to sqaure roots.
+    // If the second argument is 0.5, the strength reduce to square roots.
     // i.e., pow(x, 0.5) => sqrt(x)
     // This one is trickier because pow(-0.0, 0.5) => +0.0 but sqrt(-0.0) => -0.0, which requires building a control
     // flow diamond. We defer this to macro expansion to give the base more chances to be constant folded.

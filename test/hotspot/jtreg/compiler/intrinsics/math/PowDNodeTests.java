@@ -83,6 +83,15 @@ public class PowDNodeTests {
         return Math.pow(b, 1.0);
     }
 
+    // Test 3: pow(b, 0.0) -> 1.0
+    @Test
+    @IR(failOn = {IRNode.POW_D})
+    @IR(counts = {IRNode.CON_D, "1"})
+    @Arguments(values = {Argument.RANDOM_EACH})
+    public static double expNaN(double b) {
+        return Math.pow(b, Double.NaN);
+    }
+
     // Test 5: pow(b, 2.0) -> b * b
     // More tests in TestPow2Opt.java
     @Test
@@ -159,6 +168,8 @@ public class PowDNodeTests {
     }
 
     private static void assertEQWithinOneUlp(double expected, double observed) {
+        if (Double.isNaN(expected) && Double.isNaN(observed)) return;
+
         // Math.pow() requires result must be within 1 ulp of the respective magnitude
         double ulp = Math.max(Math.ulp(expected), Math.ulp(Math.ulp(observed)));
         if (Math.abs(expected - observed) > ulp) {
@@ -175,11 +186,12 @@ public class PowDNodeTests {
 
         double BE = StrictMath.pow(B, E);
         assertEQWithinOneUlp(BE, constantStaticFolding());
+        assertEQWithinOneUlp(BE, lateBaseConstant());
         assertEQWithinOneUlp(BE, lateExpConstant());
         assertEQWithinOneUlp(BE, lateBothConstant());
 
         double[] values = {
-                Double.NEGATIVE_INFINITY, -42.0d, -1.0d, -0.0d, +0.0d, 0.5d, 2.0d, 123, Double.POSITIVE_INFINITY, Double.NaN,
+                Double.NEGATIVE_INFINITY, -42.0d, -0.0d, +0.0d, 0.5d, 1.0d, 2.0d, 123, Double.POSITIVE_INFINITY, Double.NaN,
                 // some sufficiently large magnitudes
                 (double) RNG.nextLong(Integer.MAX_VALUE, Long.MAX_VALUE), // >=  2^31
                 (double) RNG.nextLong(Long.MIN_VALUE, Integer.MIN_VALUE), // <= -2^31
@@ -190,6 +202,8 @@ public class PowDNodeTests {
             Asserts.assertEQ(1.0d, expZero(b));
             Asserts.assertEQ(b, expOne(b));
             Asserts.assertEQ(b * b, expTwo(b));
+
+            assertEQWithinOneUlp(Double.NaN, expNaN(b));
 
             // Runtime calls, so make sure the result is within 1 ulp
             assertEQWithinOneUlp(StrictMath.pow(b, 0.5d), expDot5(b));
