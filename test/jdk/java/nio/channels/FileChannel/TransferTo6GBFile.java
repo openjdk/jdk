@@ -46,6 +46,7 @@ import static java.nio.file.StandardOpenOption.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TransferTo6GBFile {
 
@@ -129,7 +130,7 @@ public class TransferTo6GBFile {
                     long nread = 0;
                     while (nread < count) {
                         int n = source.read(readbuf);
-                        assertFalse(n < 0, "Premature EOF!");
+                        assertTrue(n >= 0, "Premature EOF!");
                         nread += n;
                     }
 

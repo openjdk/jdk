@@ -60,6 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class Transfer {
 
@@ -131,7 +132,7 @@ public class Transfer {
             int totalWritten = 0;
             while (totalWritten < size + 10) {
                 int written = sink.write(outgoingdata);
-                assertFalse(written < 0, "Write failed");
+                assertTrue(written >= 0, "Write failed");
                 totalWritten += written;
             }
 
