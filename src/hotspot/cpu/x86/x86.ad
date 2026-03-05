@@ -3349,7 +3349,7 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
       if (bt == T_LONG && UseAVX < 3) {
         return false;
       }
-      if (UseAVX > 2 && !VM_Version::supports_avx512vl()) {
+      if (UseAVX > 2 && size_in_bits == 512 && !VM_Version::supports_avx512vl()) {
         return false;
       }
       break;
@@ -19381,6 +19381,8 @@ instruct reductionL(rRegL dst, rRegL src1, legVec src2, legVec vtmp1, legVec vtm
   match(Set dst (XorReductionV  src1 src2));
   match(Set dst (MinReductionV  src1 src2));
   match(Set dst (MaxReductionV  src1 src2));
+  match(Set dst (UMinReductionV  src1 src2));
+  match(Set dst (UMaxReductionV  src1 src2));
   effect(TEMP vtmp1, TEMP vtmp2);
   format %{ "vector_reduction_long $dst,$src1,$src2 ; using $vtmp1, $vtmp2 as TEMP" %}
   ins_encode %{
@@ -19400,18 +19402,6 @@ instruct reductionL_avx512dq(rRegL dst, rRegL src1, vec src2, vec vtmp1, vec vtm
   match(Set dst (XorReductionV  src1 src2));
   match(Set dst (MinReductionV  src1 src2));
   match(Set dst (MaxReductionV  src1 src2));
-  effect(TEMP vtmp1, TEMP vtmp2);
-  format %{ "vector_reduction_long $dst,$src1,$src2 ; using $vtmp1, $vtmp2 as TEMP" %}
-  ins_encode %{
-    int opcode = this->ideal_Opcode();
-    int vlen = Matcher::vector_length(this, $src2);
-    __ reduceL(opcode, vlen, $dst$$Register, $src1$$Register, $src2$$XMMRegister, $vtmp1$$XMMRegister, $vtmp2$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct umin_max_reductionL(rRegL dst, rRegL src1, vec src2, vec vtmp1, vec vtmp2) %{
-  predicate(Matcher::vector_element_basic_type(n->in(2)) == T_LONG);
   match(Set dst (UMinReductionV  src1 src2));
   match(Set dst (UMaxReductionV  src1 src2));
   effect(TEMP vtmp1, TEMP vtmp2);

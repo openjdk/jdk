@@ -1722,8 +1722,7 @@ void C2_MacroAssembler::reduce_operation_128(BasicType typ, int opcode, XMMRegis
         case T_BYTE:        vpminub(dst, dst, src, Assembler::AVX_128bit); break;
         case T_SHORT:       vpminuw(dst, dst, src, Assembler::AVX_128bit); break;
         case T_INT:         vpminud(dst, dst, src, Assembler::AVX_128bit); break;
-        case T_LONG:        assert(UseAVX > 2, "required");
-                            evpminuq(dst, k0, dst, src, true, Assembler::AVX_128bit); break;
+        case T_LONG:        evpminuq(dst, k0, dst, src, true, Assembler::AVX_128bit); break;
         default:            assert(false, "wrong type");
       }
       break;
@@ -1732,8 +1731,7 @@ void C2_MacroAssembler::reduce_operation_128(BasicType typ, int opcode, XMMRegis
         case T_BYTE:        vpmaxub(dst, dst, src, Assembler::AVX_128bit); break;
         case T_SHORT:       vpmaxuw(dst, dst, src, Assembler::AVX_128bit); break;
         case T_INT:         vpmaxud(dst, dst, src, Assembler::AVX_128bit); break;
-        case T_LONG:        assert(UseAVX > 2, "required");
-                            evpmaxuq(dst, k0, dst, src, true, Assembler::AVX_128bit); break;
+        case T_LONG:        evpmaxuq(dst, k0, dst, src, true, Assembler::AVX_128bit); break;
         default:            assert(false, "wrong type");
       }
       break;
@@ -1805,8 +1803,7 @@ void C2_MacroAssembler::reduce_operation_256(BasicType typ, int opcode, XMMRegis
         case T_BYTE:        vpminub(dst, src1, src2, vector_len); break;
         case T_SHORT:       vpminuw(dst, src1, src2, vector_len); break;
         case T_INT:         vpminud(dst, src1, src2, vector_len); break;
-        case T_LONG:        assert(UseAVX > 2, "required");
-                            evpminuq(dst, k0, src1, src2, true, vector_len); break;
+        case T_LONG:        evpminuq(dst, k0, src1, src2, true, vector_len); break;
         default:            assert(false, "wrong type");
       }
       break;
@@ -1815,8 +1812,7 @@ void C2_MacroAssembler::reduce_operation_256(BasicType typ, int opcode, XMMRegis
         case T_BYTE:        vpmaxub(dst, src1, src2, vector_len); break;
         case T_SHORT:       vpmaxuw(dst, src1, src2, vector_len); break;
         case T_INT:         vpmaxud(dst, src1, src2, vector_len); break;
-        case T_LONG:        assert(UseAVX > 2, "required");
-                            evpmaxuq(dst, k0, src1, src2, true, vector_len); break;
+        case T_LONG:        evpmaxuq(dst, k0, src1, src2, true, vector_len); break;
         default:            assert(false, "wrong type");
       }
       break;
