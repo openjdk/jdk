@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,6 +220,9 @@ public class DESKeySpec implements java.security.spec.KeySpec {
         throws InvalidKeyException {
         if (key == null) {
             throw new InvalidKeyException("null key");
+        }
+        if (offset < 0) {
+            throw new InvalidKeyException("invalid offset");
         }
         if (key.length - offset < DES_KEY_LEN) {
             throw new InvalidKeyException("Wrong key size");
