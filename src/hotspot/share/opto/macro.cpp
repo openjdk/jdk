@@ -2656,19 +2656,20 @@ bool PhaseMacroExpand::expand_macro_nodes() {
     default:
       switch (n->Opcode()) {
       case Op_PowD: {
-        CallNode *pow_macro = n->as_Call();
+        CallLeafPureNode *pow_macro = n->as_CallLeafPure();
         Node *exp = pow_macro->in(TypeFunc::Parms + 2);
         const TypeD *exp_type = _igvn.type(exp)->isa_double_constant();
 
+        // Strength reduction: pow(x, 0.5) => sqrt(x) if x > 0
         if (exp_type != nullptr && exp_type->getd() == 0.5 && Matcher::match_rule_supported(Op_SqrtD)) {
           Node *ctrl = pow_macro->in(TypeFunc::Control);
           Node *base = pow_macro->in(TypeFunc::Parms + 0);
           Node *zero = _igvn.zerocon(T_DOUBLE);
 
-          Node *cmp = transform_later(new CmpDNode(base, zero));
           // According to the API specs, pow(-0.0, 0.5) = 0.0 and sqrt(-0.0) = -0.0.
           // So pow(-0.0, 0.5) shouldn't be replaced with sqrt(-0.0).
           // -0.0/+0.0 are both excluded since floating-point comparison doesn't distinguish -0.0 from +0.0.
+          Node *cmp = transform_later(new CmpDNode(base, zero));
           Node *test = transform_later(new BoolNode(cmp, BoolTest::le));
 
           IfNode *iff = new IfNode(ctrl, test, PROB_UNLIKELY_MAG(3), COUNT_UNKNOWN);
@@ -2677,18 +2678,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
           transform_later(iff);
 
           // slow path: call pow(x, 0.5)
-          // TODO: a lot repeated code with ModeDFNodes. Refactor?
-          CallNode *call = new CallLeafPureNode(pow_macro->tf(), pow_macro->entry_point(), pow_macro->_name);
-          call->init_req(TypeFunc::Control, if_slow);
-          call->init_req(TypeFunc::I_O, C->top());
-          call->init_req(TypeFunc::Memory, C->top());
-          call->init_req(TypeFunc::ReturnAdr, C->top());
-          call->init_req(TypeFunc::FramePtr, C->top());
-          // TODO: we always have exactly two doule parms (4 slots)
-          for (uint i = 0; i < pow_macro->tf()->domain()->cnt() - TypeFunc::Parms; i++) {
-            call->init_req(TypeFunc::Parms + i, pow_macro->in(TypeFunc::Parms + i));
-          }
-          transform_later(call);
+          CallNode *call = expand_call_leaf_pure_macro_node(pow_macro, if_slow);
           Node *call_ctrl = transform_later(new ProjNode(call, TypeFunc::Control));
           Node *call_result = transform_later(new ProjNode(call, TypeFunc::Parms + 0));
 
@@ -2698,20 +2688,20 @@ bool PhaseMacroExpand::expand_macro_nodes() {
           // merge paths
           RegionNode *region = new RegionNode(3);
           region->init_req(1, call_ctrl); // slow path
-          region->init_req(2, if_fast); // fast path
+          region->init_req(2, if_fast);   // fast path
           transform_later(region);
 
           PhiNode *phi = new PhiNode(region, Type::DOUBLE);
-          phi->init_req(1, call_result); // slow: pow result
-          phi->init_req(2, sqrt); // fast: sqrt result
+          phi->init_req(1, call_result); // slow: pow() result
+          phi->init_req(2, sqrt);        // fast: sqrt() result
           transform_later(phi);
 
           // TODO: do we even still have a change for split-if opto? For example, if we can't fold base to a constant
           //       but knows it's always positive?
           C->set_has_split_ifs(true); // Has chance for split-if optimization
 
-          // TODO: Instead of inserting new tuples, we could surgically replace outgoing edges to user node with _callprojs
-          //       which one's better?
+          // TODO: Instead of inserting new tuples, we could surgically replace outgoing edges to user node with
+          //       _callprojs which one's better? The tuple will be optimization away anyway.
           TupleNode *tuple = TupleNode::make(
             pow_macro->tf()->range(),
             region, // control
@@ -2732,18 +2722,8 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       }
       case Op_ModD:
       case Op_ModF: {
-        CallNode* mod_macro = n->as_Call();
-        CallNode* call = new CallLeafPureNode(mod_macro->tf(), mod_macro->entry_point(), mod_macro->_name);
-        call->init_req(TypeFunc::Control, mod_macro->in(TypeFunc::Control));
-        call->init_req(TypeFunc::I_O, C->top());
-        call->init_req(TypeFunc::Memory, C->top());
-        call->init_req(TypeFunc::ReturnAdr, C->top());
-        call->init_req(TypeFunc::FramePtr, C->top());
-        for (unsigned int i = 0; i < mod_macro->tf()->domain()->cnt() - TypeFunc::Parms; i++) {
-          call->init_req(TypeFunc::Parms + i, mod_macro->in(TypeFunc::Parms + i));
-        }
-        _igvn.replace_node(mod_macro, call);
-        transform_later(call);
+        CallNode* call = expand_call_leaf_pure_macro_node(n->as_CallLeafPure());
+        _igvn.replace_node(n, call);
         break;
       }
       default:
@@ -2807,6 +2787,24 @@ bool PhaseMacroExpand::expand_macro_nodes() {
 
   _igvn.set_delay_transform(false);
   return false;
+}
+
+CallNode* PhaseMacroExpand::expand_call_leaf_pure_macro_node(CallLeafNode* call_macro, Node* control) {
+  if (control == nullptr) {
+    control = call_macro->in(TypeFunc::Control);
+  }
+
+  CallNode* call = new CallLeafPureNode(call_macro->tf(), call_macro->entry_point(), call_macro->_name);
+  call->init_req(TypeFunc::Control, control);
+  call->init_req(TypeFunc::I_O, C->top());
+  call->init_req(TypeFunc::Memory, C->top());
+  call->init_req(TypeFunc::ReturnAdr, C->top());
+  call->init_req(TypeFunc::FramePtr, C->top());
+  for (unsigned int i = 0; i < call_macro->tf()->domain()->cnt() - TypeFunc::Parms; i++) {
+    call->init_req(TypeFunc::Parms + i, call_macro->in(TypeFunc::Parms + i));
+  }
+  transform_later(call);
+  return call;
 }
 
 #ifndef PRODUCT
