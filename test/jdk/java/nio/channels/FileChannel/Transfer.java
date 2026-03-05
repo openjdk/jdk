@@ -92,7 +92,6 @@ public class Transfer {
         assertNotEquals(oldSourcePosition, sourceChannel.position(),
                         "Source position didn't change");
 
-        if (sinkChannel.position() != oldSinkPosition)
         assertEquals(oldSinkPosition, sinkChannel.position(),
                      "Sink position changed");
 
