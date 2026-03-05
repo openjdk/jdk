@@ -234,6 +234,9 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
 class C2AccessFence: public StackObj {
   C2Access& _access;
   Node* _leading_membar;
+  JVMState* _jvms;
+  SafePointNode* _old_map;
+  int _sp;
 
 public:
   C2AccessFence(C2Access& access) :
@@ -242,6 +245,9 @@ public:
     if (access.is_parse_access()) {
       C2ParseAccess& parse_access = static_cast<C2ParseAccess&>(access);
       kit = parse_access.kit();
+      _jvms = kit->jvms();
+      _old_map = kit->clone_map();
+      _sp = kit->sp();
     }
     DecoratorSet decorators = access.decorators();
 
@@ -305,6 +311,15 @@ public:
     if (_access.is_parse_access()) {
       C2ParseAccess& parse_access = static_cast<C2ParseAccess&>(_access);
       kit = parse_access.kit();
+
+      if (_access.raw_access() != nullptr && _access.raw_access()->is_Con()) {
+        // The access was folded to a constant. Reset the state to get rid
+        // of the now unused fences.
+        kit->set_jvms(_jvms);
+        kit->set_map(_old_map);
+        kit->set_sp(_sp);
+        return;
+      }
     }
     DecoratorSet decorators = _access.decorators();
 
