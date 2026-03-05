@@ -34,7 +34,7 @@ class ThreadIdTableConfig;
 class ThreadIdTable : public AllStatic {
   friend class ThreadIdTableConfig;
 
-  static bool _is_initialized;
+  static volatile bool _is_initialized;
   static volatile bool _has_work;
 
 public:

@@ -1141,7 +1141,7 @@ JVM_ENTRY(jint, jmm_GetThreadInfo(JNIEnv *env, jlongArray ids, jint maxDepth, jo
     for (int i = 0; i < num_threads; i++) {
       jlong tid = ids_ah->long_at(i);
       JavaThread* jt = dump_result.t_list()->find_JavaThread_from_java_tid(tid);
-      if (jt == nullptr) { //  || !dump_result.t_list()->includes(jt)) {
+      if (jt == nullptr) {
         // if the thread does not exist or now it is terminated,
         // create dummy snapshot
         dump_result.add_thread_snapshot();

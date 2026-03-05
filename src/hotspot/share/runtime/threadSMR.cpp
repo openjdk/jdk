@@ -726,12 +726,11 @@ JavaThread* ThreadsList::find_JavaThread_from_java_tid(jlong java_tid) const {
         }
       }
     }
-  } 
-/**  
-  else if (!thread->is_exiting()) {
+  } else if (includes(thread)) {
+    // The thread is protected by this list
     return thread;
   }
-    */
+
   return nullptr;
 }
 

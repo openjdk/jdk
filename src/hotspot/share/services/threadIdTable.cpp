@@ -44,7 +44,7 @@ static ThreadIdTableHash* volatile _local_table = nullptr;
 static volatile size_t _current_size = 0;
 static volatile size_t _items_count = 0;
 
-bool ThreadIdTable::_is_initialized = false;
+volatile bool ThreadIdTable::_is_initialized = false;
 volatile bool ThreadIdTable::_has_work = false;
 
 class ThreadIdTableEntry : public CHeapObj<mtInternal> {
@@ -79,12 +79,7 @@ class ThreadIdTableConfig : public AllStatic {
 };
 
 bool ThreadIdTable::is_initialized() {
-  if (Threads_lock->owned_by_self()) {
-    return _is_initialized;
-  } else {
-    MutexLocker ml(Threads_lock);
-    return _is_initialized;
-  }
+  return AtomicAccess::load_acquire(&_is_initialized);
 }
 
 // Lazily creates the table and populates it with the given
@@ -92,21 +87,29 @@ bool ThreadIdTable::is_initialized() {
 void ThreadIdTable::lazy_initialize(const ThreadsList *threads) {
   // Must be inside the lock to ensure that we don't add a thread to the table
   // that has just passed the removal point in Threads::remove().
-  MutexLocker ml(Threads_lock);
-  if (!_is_initialized) {
-    create_table(threads->length());
-    _is_initialized = true;
+  if (!is_initialized()) {
+    {
+      // There is no obvious benefit in allowing the thread table
+      // to be concurrently populated during initialization.
+      MutexLocker ml(ThreadIdTableCreate_lock);
+      if (_is_initialized) {
+        return;
+      }
+      create_table(threads->length());
+      AtomicAccess::release_store(&_is_initialized, true);
+    }
     
-    ThreadsListSetter setter;
-    setter.set();
-    ThreadsList* thread_list = setter.list();
-
     for (uint i = 0; i < threads->length(); i++) {
       JavaThread* thread = threads->thread_at(i);
       oop tobj = thread->threadObj();
-      if (tobj != nullptr && thread_list->includes(thread)) {
-        jlong java_tid = java_lang_Thread::thread_id(tobj);
-        add_thread(java_tid, thread);
+      if (tobj != nullptr) {
+        MutexLocker ml(Threads_lock);
+        if (!thread->is_exiting()) {
+          jlong java_tid = java_lang_Thread::thread_id(tobj);
+          // Must be inside the lock to ensure that we don't add a thread to the table
+          // that has just passed the removal point in Threads::remove().
+          add_thread(java_tid, thread);
+        }
       }
     }
   }
