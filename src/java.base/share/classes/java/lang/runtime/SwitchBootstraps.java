@@ -172,7 +172,6 @@ public final class SwitchBootstraps {
      *               and {@code Class} and {@code EnumDesc} instances, in any combination
      * @return a {@code CallSite} returning the first matching element as described above
      *
-     * @throws NullPointerException     if any argument is {@code null}, unless noted otherwise
      * @throws IllegalArgumentException if any element in the labels array is null
      * @throws IllegalArgumentException if the invocation type is not a method type of first parameter of a reference type,
      *                                  second parameter of type {@code int} and with {@code int} as its return type
@@ -191,6 +190,9 @@ public final class SwitchBootstraps {
         requireNonNull(lookup);
         requireNonNull(invocationType);
         requireNonNull(labels);
+
+        if (!lookup.hasFullPrivilegeAccess())
+            throw new IllegalArgumentException("Unprivileged lookup ".concat(lookup.toString()));
 
         Class<?> selectorType = invocationType.parameterType(0);
         if (invocationType.parameterCount() != 2
@@ -299,6 +301,9 @@ public final class SwitchBootstraps {
         requireNonNull(lookup);
         requireNonNull(invocationType);
         requireNonNull(labels);
+
+        if (!lookup.hasFullPrivilegeAccess())
+            throw new IllegalArgumentException("Unprivileged lookup ".concat(lookup.toString()));
 
         if (invocationType.parameterCount() != 2
             || (!invocationType.returnType().equals(int.class))

@@ -479,12 +479,12 @@ public final class ObjectMethods {
      * {@link java.lang.Record#toString()}.
      *
      *
-     * @param lookup       Every bootstrap method is expected to have a {@code lookup}
-     *                     which usually represents a lookup context with the
-     *                     accessibility privileges of the caller. This is because
-     *                     {@code invokedynamic} call sites always provide a {@code lookup}
-     *                     to the corresponding bootstrap method, but this method just
-     *                     ignores the {@code lookup} parameter
+     * @param lookup Represents a lookup context with the accessibility
+     *               privileges of the caller.  Specifically, the lookup context
+     *               must have {@linkplain MethodHandles.Lookup#hasFullPrivilegeAccess()
+     *               full privilege access}.
+     *               When used with {@code invokedynamic}, this is stacked
+     *               automatically by the VM.
      * @param methodName   the name of the method to generate, which must be one of
      *                     {@code "equals"}, {@code "hashCode"}, or {@code "toString"}
      * @param type         a {@link MethodType} corresponding the descriptor type
@@ -503,8 +503,6 @@ public final class ObjectMethods {
      *                     if invoked by a condy
      * @throws IllegalArgumentException if the bootstrap arguments are invalid
      *                                  or inconsistent
-     * @throws NullPointerException if any argument is {@code null} or if any element
-     *                              in the {@code getters} array is {@code null}
      * @throws Throwable if any exception is thrown during call site construction
      */
     public static Object bootstrap(MethodHandles.Lookup lookup, String methodName, TypeDescriptor type,
@@ -517,6 +515,9 @@ public final class ObjectMethods {
         requireNonNull(recordClass);
         requireNonNull(names);
         List<MethodHandle> getterList = List.of(getters); // deep null check
+
+        if (!lookup.hasFullPrivilegeAccess())
+            throw new IllegalArgumentException("Unprivileged lookup ".concat(lookup.toString()));
 
         MethodType methodType;
         if (type instanceof MethodType mt)
