@@ -239,15 +239,19 @@ class DependencyFinder {
             return targets;
 
         // skip checking filter.matches
-        for (Dependency d : finder.findDependencies(cf)) {
-            if (filter.accepts(d)) {
-                targets.add(d.getTarget());
-                archive.addClass(d.getOrigin(), d.getTarget());
-            } else {
-                // ensure that the parsed class is added the archive
-                archive.addClass(d.getOrigin());
+        try {
+            for (Dependency d : finder.findDependencies(cf)) {
+                if (filter.accepts(d)) {
+                    targets.add(d.getTarget());
+                    archive.addClass(d.getOrigin(), d.getTarget());
+                } else {
+                    // ensure that the parsed class is added the archive
+                    archive.addClass(d.getOrigin());
+                }
+                parsedClasses.putIfAbsent(d.getOrigin(), archive);
             }
-            parsedClasses.putIfAbsent(d.getOrigin(), archive);
+        } catch (Dependencies.ClassFileError e) {
+            archive.reader().skipEntry(e, name);
         }
         return targets;
     }
