@@ -128,7 +128,7 @@ public class TestVectorLongToMaskNodeIdealization {
                   IRNode.VECTOR_STORE_MASK,                     "> 0", // Not yet optimized away
                   IRNode.VECTOR_LONG_TO_MASK,                   "= 0", // Optimized away
                   IRNode.VECTOR_MASK_TO_LONG,                   "= 0", // Optimized away
-                  IRNode.VECTOR_MASK_CAST,                      "> 0", // Not yet optimized away
+                  IRNode.VECTOR_MASK_CAST,                      "> 0", // Not yet optimized away: Cast Z->Z
                   IRNode.VECTOR_BLEND_I,  IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.XOR_VI,          IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR,                          "> 0"},
