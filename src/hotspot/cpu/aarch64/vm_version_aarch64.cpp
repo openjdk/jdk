@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2020, Red Hat Inc. All rights reserved.
  * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -365,16 +365,28 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA256Intrinsics, false);
   }
 
-  if (UseSHA && VM_Version::supports_sha3()) {
-    // Auto-enable UseSHA3Intrinsics on hardware with performance benefit.
-    // Note that the evaluation of UseSHA3Intrinsics shows better performance
+  if (UseSHA) {
+    // No need to check VM_Version::supports_sha3(), since a fallback GPR intrinsic implementation is provided.
+    if (FLAG_IS_DEFAULT(UseSHA3Intrinsics)) {
+      FLAG_SET_DEFAULT(UseSHA3Intrinsics, true);
+    }
+  } else if (UseSHA3Intrinsics) {
+    // Matches the documented and tested behavior: the -UseSHA option disables all SHA intrinsics.
+    warning("UseSHA3Intrinsics requires that UseSHA is enabled.");
+    FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
+  }
+
+  if (UseSHA3Intrinsics && VM_Version::supports_sha3()) {
+    // Auto-enable UseSIMDForSHA3Intrinsic on hardware with performance benefit.
+    // Note that the evaluation of SHA3 extension Intrinsics shows better performance
     // on Apple and Qualcomm silicon but worse performance on Neoverse V1 and N2.
     if (_cpu == CPU_APPLE || _cpu == CPU_QUALCOMM) {  // Apple or Qualcomm silicon
-      if (FLAG_IS_DEFAULT(UseSHA3Intrinsics)) {
-        FLAG_SET_DEFAULT(UseSHA3Intrinsics, true);
+      if (FLAG_IS_DEFAULT(UseSIMDForSHA3Intrinsic)) {
+        FLAG_SET_DEFAULT(UseSIMDForSHA3Intrinsic, true);
       }
     }
-  } else if (UseSHA3Intrinsics && UseSIMDForSHA3Intrinsic) {
+  }
+  if (UseSHA3Intrinsics && UseSIMDForSHA3Intrinsic && !VM_Version::supports_sha3()) {
     warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
   }
@@ -446,7 +458,9 @@ void VM_Version::initialize() {
       FLAG_SET_DEFAULT(BlockZeroingLowLimit, 4 * VM_Version::zva_length());
     }
   } else if (UseBlockZeroing) {
-    warning("DC ZVA is not available on this CPU");
+    if (!FLAG_IS_DEFAULT(UseBlockZeroing)) {
+      warning("DC ZVA is not available on this CPU");
+    }
     FLAG_SET_DEFAULT(UseBlockZeroing, false);
   }
 
@@ -664,14 +678,50 @@ void VM_Version::initialize() {
 void VM_Version::insert_features_names(uint64_t features, stringStream& ss) {
   int i = 0;
   ss.join([&]() {
-    while (i < MAX_CPU_FEATURES) {
-      if (supports_feature((VM_Version::Feature_Flag)i)) {
-        return _features_names[i++];
+    const char* str = nullptr;
+    while ((i < MAX_CPU_FEATURES) && (str == nullptr)) {
+      if (supports_feature(features, (VM_Version::Feature_Flag)i)) {
+        str = _features_names[i];
       }
       i += 1;
     }
-    return (const char*)nullptr;
+    return str;
   }, ", ");
+}
+
+void VM_Version::get_cpu_features_name(void* features_buffer, stringStream& ss) {
+  uint64_t features = *(uint64_t*)features_buffer;
+  insert_features_names(features, ss);
+}
+
+void VM_Version::get_missing_features_name(void* features_set1, void* features_set2, stringStream& ss) {
+  uint64_t vm_features_set1 = *(uint64_t*)features_set1;
+  uint64_t vm_features_set2 = *(uint64_t*)features_set2;
+  int i = 0;
+  ss.join([&]() {
+    const char* str = nullptr;
+    while ((i < MAX_CPU_FEATURES) && (str == nullptr)) {
+      Feature_Flag flag = (Feature_Flag)i;
+      if (supports_feature(vm_features_set1, flag) && !supports_feature(vm_features_set2, flag)) {
+        str = _features_names[i];
+      }
+      i += 1;
+    }
+    return str;
+  }, ", ");
+}
+
+int VM_Version::cpu_features_size() {
+  return sizeof(_features);
+}
+
+void VM_Version::store_cpu_features(void* buf) {
+  *(uint64_t*)buf = _features;
+}
+
+bool VM_Version::supports_features(void* features_buffer) {
+  uint64_t features_to_test = *(uint64_t*)features_buffer;
+  return (_features & features_to_test) == features_to_test;
 }
 
 #if defined(LINUX)

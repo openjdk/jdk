@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -55,6 +55,9 @@ protected:
   static int _max_supported_sve_vector_length;
   static bool _rop_protection;
   static uintptr_t _pac_mask;
+  // When _prefer_sve_merging_mode_cpy is true, `cpy (imm, zeroing)` is
+  // implemented as `movi; cpy(imm, merging)`.
+  static constexpr bool _prefer_sve_merging_mode_cpy = true;
 
   static SpinWait _spin_wait;
 
@@ -184,6 +187,9 @@ public:
   static bool supports_feature(Feature_Flag flag) {
     return (_features & BIT_MASK(flag)) != 0;
   }
+  static bool supports_feature(uint64_t features, Feature_Flag flag) {
+    return (features & BIT_MASK(flag)) != 0;
+  }
 
   static int cpu_family()                     { return _cpu; }
   static int cpu_model()                      { return _model; }
@@ -204,7 +210,7 @@ public:
     return false;
   }
 
-  static bool is_zva_enabled() { return 0 <= _zva_length; }
+  static bool is_zva_enabled() { return 0 < _zva_length; }
   static int zva_length() {
     assert(is_zva_enabled(), "ZVA not available");
     return _zva_length;
@@ -239,11 +245,27 @@ public:
 
   static bool use_rop_protection() { return _rop_protection; }
 
+  static bool prefer_sve_merging_mode_cpy() { return _prefer_sve_merging_mode_cpy; }
+
   // For common 64/128-bit unpredicated vector operations, we may prefer
   // emitting NEON instructions rather than the corresponding SVE instructions.
   static bool use_neon_for_vector(int vector_length_in_bytes) {
     return vector_length_in_bytes <= 16;
   }
+
+  static void get_cpu_features_name(void* features_buffer, stringStream& ss);
+
+  // Returns names of features present in features_set1 but not in features_set2
+  static void get_missing_features_name(void* features_set1, void* features_set2, stringStream& ss);
+
+  // Returns number of bytes required to store cpu features representation
+  static int cpu_features_size();
+
+  // Stores cpu features representation in the provided buffer. This representation is arch dependent.
+  // Size of the buffer must be same as returned by cpu_features_size()
+  static void store_cpu_features(void* buf);
+
+  static bool supports_features(void* features_to_test);
 };
 
 #endif // CPU_AARCH64_VM_VERSION_AARCH64_HPP

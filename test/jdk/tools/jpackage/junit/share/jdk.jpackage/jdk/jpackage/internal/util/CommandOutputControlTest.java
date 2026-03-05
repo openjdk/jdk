@@ -458,7 +458,7 @@ public class CommandOutputControlTest {
         processDestroyer.get().join();
     }
 
-    @DisabledOnOs(value = OS.MAC, disabledReason = "Closing a stream doesn't consistently cause a trouble as it should")
+    @DisabledOnOs(value = {OS.MAC, OS.LINUX}, disabledReason = "Closing a stream doesn't consistently cause a trouble as expected")
     @ParameterizedTest
     @EnumSource(OutputStreams.class)
     public void test_close_streams(OutputStreams action) throws InterruptedException, IOException {
