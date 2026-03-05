@@ -41,6 +41,9 @@ public class TestVectorLongToMaskNodeIdealization {
     static final long[] ONES_L = new long[64];
     static { Arrays.fill(ONES_L, 1); }
 
+    static final boolean[] TRUES = new boolean[64];
+    static { Arrays.fill(TRUES, true); }
+
     public static void main(String[] args) {
         TestFramework testFramework = new TestFramework();
         testFramework.setDefaultWarmup(10000)
@@ -51,6 +54,7 @@ public class TestVectorLongToMaskNodeIdealization {
     // -------------------------------------------------------------------------------------
     @Test
     @IR(counts = {IRNode.REPLICATE_L,     IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.REPLICATE_I,     IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.VECTOR_MASK_CMP,                       "> 0",
                   IRNode.VECTOR_LOAD_MASK,                      "> 0", // Not yet optimized away
                   IRNode.VECTOR_STORE_MASK,                     "> 0", // Not yet optimized away
@@ -62,6 +66,7 @@ public class TestVectorLongToMaskNodeIdealization {
                   IRNode.STORE_VECTOR,                          "> 0"},
                   applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(counts = {IRNode.REPLICATE_L,     IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.REPLICATE_I,     IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.VECTOR_MASK_CMP,                       "> 0",
                   IRNode.VECTOR_LOAD_MASK,                      "= 0", // Optimized away
                   IRNode.VECTOR_STORE_MASK,                     "= 0", // Optimized away
@@ -123,6 +128,8 @@ public class TestVectorLongToMaskNodeIdealization {
     // -------------------------------------------------------------------------------------
     @Test
     @IR(counts = {IRNode.REPLICATE_L,     IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.REPLICATE_I,     IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.LOAD_VECTOR_L,   IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.VECTOR_MASK_CMP,                       "> 0",
                   IRNode.VECTOR_LOAD_MASK,                      "> 0", // Not yet optimized away
                   IRNode.VECTOR_STORE_MASK,                     "> 0", // Not yet optimized away
@@ -134,6 +141,8 @@ public class TestVectorLongToMaskNodeIdealization {
                   IRNode.STORE_VECTOR,                          "> 0"},
                   applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
     @IR(counts = {IRNode.REPLICATE_L,     IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.REPLICATE_I,     IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.LOAD_VECTOR_L,   IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.VECTOR_MASK_CMP,                       "> 0",
                   IRNode.VECTOR_LOAD_MASK,                      "= 0", // Optimized away
                   IRNode.VECTOR_STORE_MASK,                     "= 0", // Optimized away
@@ -166,6 +175,56 @@ public class TestVectorLongToMaskNodeIdealization {
     @Check(test = "test1b")
     public static void check_test1b(Object out) {
         Verify.checkEQ(GOLD_TEST1B, out);
+    }
+    // -------------------------------------------------------------------------------------
+    @Test
+    @IR(counts = {IRNode.REPLICATE_L,     IRNode.VECTOR_SIZE_4, "= 0",
+                  IRNode.REPLICATE_I,     IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.LOAD_VECTOR_Z,   IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.VECTOR_MASK_CMP,                       "= 0",
+                  IRNode.VECTOR_LOAD_MASK,                      "> 0",
+                  IRNode.VECTOR_STORE_MASK,                     "= 0",
+                  IRNode.VECTOR_LONG_TO_MASK,                   "= 0", // Optimized away
+                  IRNode.VECTOR_MASK_TO_LONG,                   "= 0", // Optimized away
+                  IRNode.VECTOR_MASK_CAST,                      "> 0",
+                  IRNode.VECTOR_BLEND_I,  IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.XOR_VI,          IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR,                          "> 0"},
+                  applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
+    @IR(counts = {IRNode.REPLICATE_L,     IRNode.VECTOR_SIZE_4, "= 0",
+                  IRNode.REPLICATE_I,     IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.LOAD_VECTOR_Z,   IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.VECTOR_MASK_CMP,                       "= 0",
+                  IRNode.VECTOR_LOAD_MASK,                      "> 0",
+                  IRNode.VECTOR_STORE_MASK,                     "= 0",
+                  IRNode.VECTOR_LONG_TO_MASK,                   "= 0", // Optimized away
+                  IRNode.VECTOR_MASK_TO_LONG,                   "= 0", // Optimized away
+                  IRNode.VECTOR_MASK_CAST,                      "> 0",
+                  IRNode.VECTOR_BLEND_I,                        "= 0", // Not needed
+                  IRNode.XOR_VI,          IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR,                          "> 0"},
+                  applyIfCPUFeature = {"avx512", "true"})
+    // And now let's try a case where we load the mask from boolean array, so we don't
+    // have the VectorStoreMask before the VectorMaskToLong.
+    public static Object test1c() {
+        // Load true mask from array directly.
+        var trues_L256 = VectorMask.fromArray(LongVector.SPECIES_256, TRUES, 0);
+
+        var trues_I128 = VectorMask.fromLong(IntVector.SPECIES_128, trues_L256.toLong());
+
+        var zeros = IntVector.zero(IntVector.SPECIES_128);
+        var m1s = zeros.lanewise(VectorOperators.NOT, trues_I128);
+
+        int[] out = new int[64];
+        m1s.intoArray(out, 0);
+        return out;
+    }
+
+    static final Object GOLD_TEST1C = test1c();
+
+    @Check(test = "test1c")
+    public static void check_test1c(Object out) {
+        Verify.checkEQ(GOLD_TEST1C, out);
     }
     // -------------------------------------------------------------------------------------
 }
