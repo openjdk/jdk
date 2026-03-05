@@ -2155,8 +2155,8 @@ class CountedLoopConverter : public StackObj {
   const TypeInt* filtered_type_from_dominators(Node* val, Node* val_ctrl);
 
   void insert_loop_limit_check_predicate(const ParsePredicateSuccessProj* loop_limit_check_parse_proj, Node* bol) const;
-  void insert_stride_overflow_limit_check(Node* init_control, jlong stride_con) const;
-  void insert_init_trip_limit_check(Node* init_control, jlong stride_con) const;
+  void insert_stride_overflow_limit_check() const;
+  void insert_init_trip_limit_check() const;
   bool has_dominating_loop_limit_check(Node* init_trip, Node* limit, jlong stride_con, BasicType iv_bt,
                                        Node* loop_entry) const;
 
