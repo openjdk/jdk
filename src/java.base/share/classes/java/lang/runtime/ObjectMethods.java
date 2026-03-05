@@ -479,7 +479,7 @@ public final class ObjectMethods {
      * {@link java.lang.Record#toString()}.
      *
      *
-     * @param lookup       the lookup context of the caller
+     * @param lookup       the full-privilege lookup context of the caller
      * @param methodName   the name of the method to generate, which must be one of
      *                     {@code "equals"}, {@code "hashCode"}, or {@code "toString"}
      * @param type         a {@link MethodType} corresponding the descriptor type
