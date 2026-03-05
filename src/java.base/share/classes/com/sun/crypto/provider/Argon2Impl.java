@@ -556,7 +556,7 @@ public final class Argon2Impl {
         if (spec.version() != Version.V13) {
             throw new InvalidAlgorithmParameterException
                     ("Unsupported version, SunJCE only supports V13, but got " +
-                    spec.type());
+                    spec.version());
         }
         int memory = checkMax(spec.memory(), MEMORY_MAX,
                 "Memory size %d exceeds SunJCE's maximum %d");
