@@ -1531,7 +1531,7 @@ private:
   // Moves
 
   void mov64(Register dst, int64_t imm64);
-  void mov64(Register dst, int64_t imm64, relocInfo::relocType rtype, int format);
+  void mov64(Register dst, int64_t imm64, relocInfo::relocType rtype, int format = 0);
 
   void movb(Address dst, Register src);
   void movb(Address dst, int imm8);
