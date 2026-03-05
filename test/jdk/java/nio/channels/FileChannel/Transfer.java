@@ -57,6 +57,9 @@ import jdk.test.lib.RandomFactory;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class Transfer {
 
@@ -84,25 +87,23 @@ public class Transfer {
         long oldSourcePosition = sourceChannel.position();
 
         long bytesWritten = sinkChannel.transferFrom(sourceChannel, 0, 10);
-        if (bytesWritten != 10)
-            throw new RuntimeException("Transfer failed");
+        assertEquals(10, bytesWritten, "Transfer failed");
 
-        if (sourceChannel.position() == oldSourcePosition)
-            throw new RuntimeException("Source position didn't change");
+        assertNotEquals(oldSourcePosition, sourceChannel.position(),
+                        "Source position didn't change");
 
         if (sinkChannel.position() != oldSinkPosition)
-            throw new RuntimeException("Sink position changed");
+        assertEquals(oldSinkPosition, sinkChannel.position(),
+                     "Sink position changed");
 
-        if (sinkChannel.size() != 10)
-            throw new RuntimeException("Unexpected sink size");
+        assertEquals(10, sinkChannel.size(), "Unexpected sink size");
 
         bytesWritten = sinkChannel.transferFrom(sourceChannel, 1000, 10);
 
-        if (bytesWritten > 10)
-            throw new RuntimeException("Wrote too many bytes");
+        assertFalse(bytesWritten > 10, "Wrote too many bytes");
 
-        if (sinkChannel.size() != 1000 + bytesWritten)
-            throw new RuntimeException("Unexpected sink size");
+        assertEquals(1000 + bytesWritten, sinkChannel.size(),
+                     "Unexpected sink size");
 
         sourceChannel.close();
         sinkChannel.close();
@@ -131,8 +132,7 @@ public class Transfer {
             int totalWritten = 0;
             while (totalWritten < size + 10) {
                 int written = sink.write(outgoingdata);
-                if (written < 0)
-                    throw new Exception("Write failed");
+                assertFalse(written < 0, "Write failed");
                 totalWritten += written;
             }
 
@@ -144,14 +144,11 @@ public class Transfer {
 
             long bytesWritten = fc.transferFrom(source, 0, size);
             fc.force(true);
-            if (bytesWritten != size)
-                throw new RuntimeException("Transfer failed");
+            assertEquals(size, bytesWritten, "Transfer failed");
 
-            if (fc.position() != oldPosition)
-                throw new RuntimeException("Position changed");
+            assertEquals(oldPosition, fc.position(), "Position changed");
 
-            if (fc.size() != size)
-                throw new RuntimeException("Unexpected sink size "+ fc.size());
+            assertEquals(size, fc.size(), "Unexpected sink size "+ fc.size());
 
             fc.close();
             sink.close();
@@ -252,8 +249,7 @@ public class Transfer {
 
         fc1.transferTo(0, srcData.length + 1, fc2);
 
-        if (fc2.size() > 4)
-            throw new Exception("xferTest03 failed");
+        assertFalse(fc2.size() > 4, "xferTest03 failed");
 
         fc1.close();
         fc2.close();
@@ -274,9 +270,7 @@ public class Transfer {
         while ((c = r.read()) != -1)
             sb.append((char)c);
         String contents = sb.toString();
-        if (! contents.equals(expected))
-            throw new Exception("expected: " + expected
-                                + ", got: " + contents);
+        assertEquals(expected, contents);
         r.close();
     }
 
@@ -302,8 +296,7 @@ public class Transfer {
             new RandomAccessFile(sink, "rw").getChannel();
         long n = sinkChannel.transferFrom(sourceChannel, 0L,
                                           sourceChannel.size()); // overflow
-        if (n != remaining)
-            throw new Exception("n == " + n + ", remaining == " + remaining);
+        assertEquals(remaining, n);
 
         sinkChannel.close();
         sourceChannel.close();
@@ -364,9 +357,8 @@ public class Transfer {
         FileChannel fc1 = new FileOutputStream(source).getChannel();
         FileChannel fc2 = new RandomAccessFile(target, "rw").getChannel();
         try {
-            fc2.transferFrom(fc1, 0L, 0);
-            throw new RuntimeException("NonReadableChannelException expected");
-        } catch (NonReadableChannelException expected) {
+            assertThrows(NonReadableChannelException.class,
+                         () -> fc2.transferFrom(fc1, 0L, 0));
         } finally {
             fc1.close();
             fc2.close();

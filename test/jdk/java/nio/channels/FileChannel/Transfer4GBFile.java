@@ -42,6 +42,8 @@ import org.junit.jupiter.api.Test;
 
 import static java.nio.file.StandardOpenOption.*;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class Transfer4GBFile {
 
     private static PrintStream err = System.err;
@@ -71,10 +73,8 @@ public class Transfer4GBFile {
 
             long bytesWritten = sourceChannel.transferTo(testSize - 40, 10,
                     sinkChannel);
-            if (bytesWritten != 10) {
-                throw new RuntimeException("Transfer test 4 failed " +
-                        bytesWritten);
-            }
+            assertEquals(10, bytesWritten,
+                         "Transfer test 4 failed " + bytesWritten);
         }
 
         Files.delete(source);
@@ -112,10 +112,8 @@ public class Transfer4GBFile {
              FileChannel sinkChannel = FileChannel.open(sink, WRITE)) {
             long bytesWritten = sinkChannel.transferFrom(sourceChannel,
                     testSize - 40, 10);
-            if (bytesWritten != 10) {
-                throw new RuntimeException("Transfer test 5 failed " +
-                        bytesWritten);
-            }
+            assertEquals(10, bytesWritten,
+                         "Transfer test 5 failed " + bytesWritten);
         }
 
         Files.delete(source);

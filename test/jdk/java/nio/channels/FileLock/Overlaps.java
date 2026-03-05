@@ -67,7 +67,7 @@ public class Overlaps {
 
     public static Stream<Arguments> ranges() {
         return Stream.of(
-            Arguments.of(POS, SIZE, -1,-1, FALSE),
+            Arguments.of(POS, SIZE, -1, -1, FALSE),
             Arguments.of(POS, SIZE, 0, -1, FALSE),
             Arguments.of(POS, SIZE, POS - 1, -1, FALSE),
             Arguments.of(POS, SIZE, POS + SIZE/2, -1, FALSE),

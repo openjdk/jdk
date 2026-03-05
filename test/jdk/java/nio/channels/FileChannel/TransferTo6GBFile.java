@@ -44,6 +44,9 @@ import org.junit.jupiter.api.Test;
 
 import static java.nio.file.StandardOpenOption.*;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
 public class TransferTo6GBFile {
 
     private static PrintStream err = System.err;
@@ -126,16 +129,14 @@ public class TransferTo6GBFile {
                     long nread = 0;
                     while (nread < count) {
                         int n = source.read(readbuf);
-                        if (n < 0)
-                            throw new RuntimeException("Premature EOF!");
+                        assertFalse(n < 0, "Premature EOF!");
                         nread += n;
                     }
 
                     // check reply from echo server
                     readbuf.flip();
                     sendbuf.flip();
-                    if (!readbuf.equals(sendbuf))
-                        throw new RuntimeException("Echoed bytes do not match!");
+                    assertEquals(sendbuf, readbuf, "Echoed bytes do not match!");
                     readbuf.clear();
                     sendbuf.clear();
                 }
