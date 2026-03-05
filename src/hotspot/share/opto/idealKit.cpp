@@ -360,6 +360,17 @@ Node* IdealKit::load(Node* ctl,
   return transform(ld);
 }
 
+// Load AOT runtime constant
+Node* IdealKit::load_aot_const(Node* adr, const Type* t) {
+  BasicType bt = t->basic_type();
+  const TypePtr* adr_type = nullptr; // debug-mode-only argument
+  DEBUG_ONLY(adr_type = C->get_adr_type(Compile::AliasIdxRaw));
+  Node* ctl = (Node*)C->root(); // Raw memory access needs control
+  Node* ld = LoadNode::make(_gvn, ctl, C->immutable_memory(), adr, adr_type, t, bt, MemNode::unordered,
+                            LoadNode::DependsOnlyOnTest, false, false, false, false, 0);
+  return transform(ld);
+}
+
 Node* IdealKit::store(Node* ctl, Node* adr, Node *val, BasicType bt,
                       int adr_idx,
                       MemNode::MemOrd mo, bool require_atomic_access,

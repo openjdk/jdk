@@ -43,7 +43,6 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -384,7 +383,7 @@ size_t ShenandoahHeapRegion::get_plab_allocs() const {
 
 void ShenandoahHeapRegion::set_live_data(size_t s) {
   assert(Thread::current()->is_VM_thread(), "by VM thread");
-  _live_data = (s >> LogHeapWordSize);
+  _live_data.store_relaxed(s >> LogHeapWordSize);
 }
 
 void ShenandoahHeapRegion::print_on(outputStream* st) const {
@@ -435,7 +434,7 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
   st->print("|TAMS " SHR_PTR_FORMAT,
             p2i(ShenandoahHeap::heap()->marking_context()->top_at_mark_start(const_cast<ShenandoahHeapRegion*>(this))));
   st->print("|UWM " SHR_PTR_FORMAT,
-            p2i(_update_watermark));
+            p2i(_update_watermark.load_relaxed()));
   st->print("|U %5zu%1s", byte_size_in_proper_unit(used()),                proper_unit_for_byte_size(used()));
   st->print("|T %5zu%1s", byte_size_in_proper_unit(get_tlab_allocs()),     proper_unit_for_byte_size(get_tlab_allocs()));
   st->print("|G %5zu%1s", byte_size_in_proper_unit(get_gclab_allocs()),    proper_unit_for_byte_size(get_gclab_allocs()));
@@ -817,11 +816,7 @@ void ShenandoahHeapRegion::do_commit() {
 void ShenandoahHeapRegion::do_uncommit() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (!heap->is_heap_region_special()) {
-    bool success = os::uncommit_memory((char *) bottom(), RegionSizeBytes);
-    if (!success) {
-      log_warning(gc)("Region uncommit failed: " PTR_FORMAT " (%zu bytes)", p2i(bottom()), RegionSizeBytes);
-      assert(false, "Region uncommit should always succeed");
-    }
+    os::uncommit_memory((char *) bottom(), RegionSizeBytes);
   }
   if (!heap->is_bitmap_region_special()) {
     heap->uncommit_bitmap_slice(this);
@@ -839,20 +834,20 @@ void ShenandoahHeapRegion::set_state(RegionState to) {
     evt.set_to(to);
     evt.commit();
   }
-  AtomicAccess::store(&_state, to);
+  _state.store_relaxed(to);
 }
 
 void ShenandoahHeapRegion::record_pin() {
-  AtomicAccess::add(&_critical_pins, (size_t)1);
+  _critical_pins.add_then_fetch((size_t)1);
 }
 
 void ShenandoahHeapRegion::record_unpin() {
   assert(pin_count() > 0, "Region %zu should have non-zero pins", index());
-  AtomicAccess::sub(&_critical_pins, (size_t)1);
+  _critical_pins.sub_then_fetch((size_t)1);
 }
 
 size_t ShenandoahHeapRegion::pin_count() const {
-  return AtomicAccess::load(&_critical_pins);
+  return _critical_pins.load_relaxed();
 }
 
 void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation) {
@@ -864,7 +859,7 @@ void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation
     log_debug(gc)("Setting affiliation of Region %zu from %s to %s, top: " PTR_FORMAT ", TAMS: " PTR_FORMAT
                   ", watermark: " PTR_FORMAT ", top_bitmap: " PTR_FORMAT,
                   index(), shenandoah_affiliation_name(region_affiliation), shenandoah_affiliation_name(new_affiliation),
-                  p2i(top()), p2i(ctx->top_at_mark_start(this)), p2i(_update_watermark), p2i(ctx->top_bitmap(this)));
+                  p2i(top()), p2i(ctx->top_at_mark_start(this)), p2i(_update_watermark.load_relaxed()), p2i(ctx->top_bitmap(this)));
   }
 
 #ifdef ASSERT

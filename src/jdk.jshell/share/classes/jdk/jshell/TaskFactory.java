@@ -819,9 +819,9 @@ class TaskFactory {
         }
 
         @Override
-        public JavacParser newParser(CharSequence input, boolean keepDocComments, boolean keepEndPos, boolean keepLineMap, boolean parseModuleInfo) {
+        public JavacParser newParser(CharSequence input, boolean keepDocComments, boolean keepLineMap, boolean parseModuleInfo) {
             com.sun.tools.javac.parser.Lexer lexer = scannerFactory.newScanner(input, keepDocComments);
-            return new JavacParser(this, lexer, keepDocComments, keepLineMap, keepEndPos, parseModuleInfo) {
+            return new JavacParser(this, lexer, keepDocComments, keepLineMap, parseModuleInfo) {
                 @Override
                 public JCExpression parseType(boolean allowVar, com.sun.tools.javac.util.List<JCTree.JCAnnotation> annotations) {
                     int pos = token.pos;
