@@ -150,8 +150,8 @@ void ShenandoahOldGeneration::reset_promoted_expended() {
 }
 
 void ShenandoahOldGeneration::maybe_log_promotion_failure_stats(bool concurrent) const {
-  typedef LogTarget(Info, gc, plab) plab_info;
-  if (plab_info::is_enabled()) {
+  LogTarget(Info, gc, plab) plab_info;
+  if (plab_info.is_enabled()) {
     size_t failed_count = 0;
     size_t failed_words = 0;
 
@@ -186,9 +186,10 @@ void ShenandoahOldGeneration::maybe_log_promotion_failure_stats(bool concurrent)
     failed_count = cl.total_count();
     failed_words = cl.total_words();
 
-    log_info(gc, cset)("Cycle complete, promotions reserved: %zu, promotions expended: %zu, failed count: %zu, failed bytes: %zu",
-                       get_promoted_reserve(), get_promoted_expended(),
-                       failed_count, failed_words * HeapWordSize);
+    LogStream ls(plab_info);
+    ls.print_cr("Cycle complete, promotions reserved: %zu, promotions expended: %zu, failed count: %zu, failed bytes: %zu",
+                get_promoted_reserve(), get_promoted_expended(),
+                failed_count, failed_words * HeapWordSize);
   }
 }
 
@@ -624,8 +625,8 @@ void ShenandoahOldGeneration::handle_failed_evacuation() {
 }
 
 void ShenandoahOldGeneration::handle_failed_promotion(Thread* thread, size_t size) const {
-  typedef LogTarget(Info, gc, plab) plab_info;
-  if (plab_info::is_enabled()) {
+  LogTarget(Info, gc, plab) plab_info;
+  if (plab_info.is_enabled()) {
     ShenandoahPLAB* plab = ShenandoahThreadLocalData::shenandoah_plab(thread);
     if (plab != nullptr) {
       plab->record_promotion_failure(size);
@@ -635,10 +636,9 @@ void ShenandoahOldGeneration::handle_failed_promotion(Thread* thread, size_t siz
     }
   }
 
-  typedef LogTarget(Debug, gc, plab) plab_debug;
-  if (plab_debug::is_enabled()) {
-    plab_debug lt;
-    LogStream ls(lt);
+  LogTarget(Debug, gc, plab) plab_debug;
+  if (plab_debug.is_enabled()) {
+    LogStream ls(plab_debug);
     log_failed_promotion(ls, thread, size);
   }
 }
