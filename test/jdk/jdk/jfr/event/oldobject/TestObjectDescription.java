@@ -87,7 +87,7 @@ public class TestObjectDescription {
     }
 
     private static void testThreadName() throws Exception {
-        assertObjectDescription(() -> {
+        asseertObjectDescription(() -> {
             List<MyThread> threads = new ArrayList<>(OldObjects.MIN_SIZE);
             for (int i = 0; i < OldObjects.MIN_SIZE; i++) {
                 threads.add(new MyThread());
@@ -97,7 +97,7 @@ public class TestObjectDescription {
     }
 
     private static void testThreadGroupName() throws Exception {
-        assertObjectDescription(() -> {
+        asseertObjectDescription(() -> {
             List<MyThreadGroup> groups = new ArrayList<>(OldObjects.MIN_SIZE);
             for (int i = 0; i < OldObjects.MIN_SIZE; i++) {
                 groups.add(new MyThreadGroup("My Thread Group"));
@@ -107,7 +107,7 @@ public class TestObjectDescription {
     }
 
     private static void testClassName() throws Exception {
-        assertObjectDescription(() -> {
+        asseertObjectDescription(() -> {
             TestClassLoader testClassLoader = new TestClassLoader();
             List<Object> classObjects = new ArrayList<>(OldObjects.MIN_SIZE);
             for (Class<?> clazz : testClassLoader.loadClasses(OldObjects.MIN_SIZE / 20)) {
@@ -123,7 +123,7 @@ public class TestObjectDescription {
     }
 
     private static void testSize() throws Exception {
-        assertObjectDescription(() -> {
+        asseertObjectDescription(() -> {
             List<Object> arrayLists = new ArrayList<>(OldObjects.MIN_SIZE);
             for (int i = 0; i < OldObjects.MIN_SIZE; i++) {
                 List<Object> arrayList = new ArrayList<>();
@@ -137,7 +137,7 @@ public class TestObjectDescription {
     }
 
     private static void testEllipsis() throws Exception {
-        assertObjectDescription(() -> {
+        asseertObjectDescription(() -> {
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < 2 * OBJECT_DESCRIPTION_MAX_SIZE; i++) {
                 sb.append("x");
@@ -151,7 +151,7 @@ public class TestObjectDescription {
         }, "xxx...");
     }
 
-    private static void assertObjectDescription(Callable<List<?>> callable, String text) throws Exception {
+    private static void asseertObjectDescription(Callable<List<?>> callable, String text) throws Exception {
         int iteration = 1;
         while (true) {
             try (Recording recording = new Recording()) {
