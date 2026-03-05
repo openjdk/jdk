@@ -579,7 +579,7 @@ address StubGenerator::generate_disjoint_copy_avx3_masked(StubId stub_id, addres
   // when MaxVectorSize == 64 So we may expect 0, 3 or 6 extras.
   int handlers_count = (MaxVectorSize == 64 ? 2 : 1);
   int expected_entry_count = (entry != nullptr ? 2 : 1);
-  int expected_extra_count = 3 * (add_handlers ? handlers_count : 0); // 0/1/2 x UMAM {start,end,handler}
+  int expected_extra_count = (add_handlers ? handlers_count : 0) * UnsafeMemoryAccess::COLUMN_COUNT; // 0/1/2 x UMAM {start,end,handler}
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == expected_entry_count, "sanity check");
   GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
@@ -657,7 +657,7 @@ address StubGenerator::generate_disjoint_copy_avx3_masked(StubId stub_id, addres
     int threshold[]        = { 4096,    2048,     1024,    512};
 
     // UnsafeMemoryAccess page error: continue after unsafe access
-    UnsafeMemoryAccessMark umam(this, !is_oop && !aligned, true);
+    UnsafeMemoryAccessMark umam(this, add_handlers, true);
     // 'from', 'to' and 'count' are now valid
 
     // temp1 holds remaining count and temp4 holds running count used to compute
@@ -826,7 +826,7 @@ address StubGenerator::generate_disjoint_copy_avx3_masked(StubId stub_id, addres
 
   if (MaxVectorSize == 64) {
     __ BIND(L_copy_large);
-      UnsafeMemoryAccessMark umam(this, !is_oop && !aligned, false, ucme_exit_pc);
+      UnsafeMemoryAccessMark umam(this, add_handlers, false, ucme_exit_pc);
       arraycopy_avx3_large(to, from, temp1, temp2, temp3, temp4, count, xmm1, xmm2, xmm3, xmm4, shift);
     __ jmp(L_finish);
   }
@@ -968,7 +968,7 @@ address StubGenerator::generate_conjoint_copy_avx3_masked(StubId stub_id, addres
   bool add_relocs = UseZGC && is_oop;
   bool add_extras = add_handlers || add_relocs;
   int expected_entry_count = (entry != nullptr ? 2 : 1);
-  int expected_handler_count = 3 * (add_handlers ? 1 : 0); // 0/1 x UMAM {start,end,handler}
+  int expected_handler_count = (add_handlers ? 1 : 0) * UnsafeMemoryAccess::COLUMN_COUNT; // 0/1 x UMAM {start,end,handler}
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == expected_entry_count, "sanity check");
   GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
@@ -1493,7 +1493,7 @@ address StubGenerator::generate_disjoint_byte_copy(address* entry) {
   GrowableArray<address> entries;
   GrowableArray<address> extras;
   int expected_entry_count = (entry != nullptr ? 2 : 1);
-  int expected_handler_count = (2 * 3); // 2 x UMAM {start,end,handler}
+  int expected_handler_count = (2 * UnsafeMemoryAccess::COLUMN_COUNT); // 2 x UMAM {start,end,handler}
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == expected_entry_count, "sanity check");
   GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
@@ -1643,7 +1643,7 @@ address StubGenerator::generate_conjoint_byte_copy(address nooverlap_target, add
   GrowableArray<address> entries;
   GrowableArray<address> extras;
   int expected_entry_count = (entry != nullptr ? 2 : 1);
-  int expected_handler_count = (2 * 3); // 2 x UMAM {start,end,handler}
+  int expected_handler_count = (2 * UnsafeMemoryAccess::COLUMN_COUNT); // 2 x UMAM {start,end,handler}
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == expected_entry_count, "sanity check");
   GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
@@ -1787,7 +1787,7 @@ address StubGenerator::generate_disjoint_short_copy(address *entry) {
   GrowableArray<address> entries;
   GrowableArray<address> extras;
   int expected_entry_count = (entry != nullptr ? 2 : 1);
-  int expected_handler_count = (2 * 3); // 2 x UMAM {start,end,handler}
+  int expected_handler_count = (2 * UnsafeMemoryAccess::COLUMN_COUNT); // 2 x UMAM {start,end,handler}
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == expected_entry_count, "sanity check");
   GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
@@ -1997,7 +1997,7 @@ address StubGenerator::generate_conjoint_short_copy(address nooverlap_target, ad
   GrowableArray<address> entries;
   GrowableArray<address> extras;
   int expected_entry_count = (entry != nullptr ? 2 : 1);
-  int expected_handler_count = (2 * 3); // 2 x UMAM {start,end,handler}
+  int expected_handler_count = (2 * UnsafeMemoryAccess::COLUMN_COUNT); // 2 x UMAM {start,end,handler}
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == expected_entry_count, "sanity check");
   GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
@@ -2158,7 +2158,7 @@ address StubGenerator::generate_disjoint_int_oop_copy(StubId stub_id, address* e
   bool add_relocs = UseZGC && is_oop;
   bool add_extras = add_handlers || add_relocs;
   int expected_entry_count = (entry != nullptr ? 2 : 1);
-  int expected_handler_count = 3 * (add_handlers ? 2 : 0); // 0/2 x UMAM {start,end,handler}
+  int expected_handler_count = (add_handlers ? 2 : 0) * UnsafeMemoryAccess::COLUMN_COUNT; // 0/2 x UMAM {start,end,handler}
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == expected_entry_count, "sanity check");
   GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
@@ -2340,7 +2340,7 @@ address StubGenerator::generate_conjoint_int_oop_copy(StubId stub_id, address no
   GrowableArray<address> entries;
   GrowableArray<address> extras;
   int expected_entry_count = (entry != nullptr ? 2 : 1);
-  int expected_handler_count = 3 * (add_handlers ? 2 : 0); // 0/2 x UMAM {start,end,handler}
+  int expected_handler_count = (add_handlers ? 2 : 0) * UnsafeMemoryAccess::COLUMN_COUNT; // 0/2 x UMAM {start,end,handler}
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == expected_entry_count, "sanity check");
   GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
@@ -2523,7 +2523,7 @@ address StubGenerator::generate_disjoint_long_oop_copy(StubId stub_id, address *
   GrowableArray<address> entries;
   GrowableArray<address> extras;
   int expected_entry_count = (entry != nullptr ? 2 : 1);
-  int expected_handler_count = 3 * (add_handlers ? 2 : 0); // 0/2 x UMAM {start,end,handler}
+  int expected_handler_count = (add_handlers ? 2 : 0) * UnsafeMemoryAccess::COLUMN_COUNT; // 0/2 x UMAM {start,end,handler}
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == expected_entry_count, "sanity check");
   GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
@@ -2706,7 +2706,7 @@ address StubGenerator::generate_conjoint_long_oop_copy(StubId stub_id, address n
   GrowableArray<address> entries;
   GrowableArray<address> extras;
   int expected_entry_count = (entry != nullptr ? 2 : 1);
-  int expected_handler_count = 3 * (add_handlers ? 2 : 0); // 0/2 x UMAM {start,end,handler}
+  int expected_handler_count = (add_handlers ? 2 : 0) * UnsafeMemoryAccess::COLUMN_COUNT; // 0/2 x UMAM {start,end,handler}
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == expected_entry_count, "sanity check");
   GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
@@ -3285,9 +3285,9 @@ address StubGenerator::generate_unsafe_setmemory(address unsafe_byte_fill) {
   StubId stub_id = StubId::stubgen_unsafe_setmemory_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  // we expect one set of extra unsafememory access handler entries
+  // we expect three set of extra unsafememory access handler entries
   GrowableArray<address> extras;
-  int expected_handler_count = 3 * 3;
+  int expected_handler_count = 3 * UnsafeMemoryAccess::COLUMN_COUNT;
   address start = load_archive_data(stub_id, nullptr, &extras);
   if (start != nullptr) {
     assert(extras.length() == expected_handler_count,

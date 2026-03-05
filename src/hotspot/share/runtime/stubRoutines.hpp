@@ -112,6 +112,8 @@ class UnsafeMemoryAccess : public CHeapObj<mtCode> {
   address _end_pc;
   address _error_exit_pc;
  public:
+  // each table entry requires 3 addresses
+  static const int COLUMN_COUNT = 3;
   static address           _common_exit_stub_pc;
   static UnsafeMemoryAccess* _table;
   static int               _table_length;

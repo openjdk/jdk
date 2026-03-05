@@ -1849,7 +1849,7 @@ class StubGenerator: public StubCodeGenerator {
     assert(nopush_entry != nullptr, "all disjoint copy stubs export a nopush entry");
 
     bool add_extras = !is_oop && (!aligned || sizeof(jlong) == size);
-    int extra_count = ((add_extras ? 1 : 0) * 3);
+    int extra_count = ((add_extras ? 1 : 0) * UnsafeMemoryAccess::COLUMN_COUNT);
     GrowableArray<address> entries;
     GrowableArray<address> extras;
     GrowableArray<address> *extras_ptr = (extra_count > 0 ? &extras : nullptr);
@@ -2044,7 +2044,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // We need to protect memory accesses in certain cases
     bool add_extras = !is_oop && (!aligned || sizeof(jlong) == size);
-    int extra_count = ((add_extras ? 1 : 0) * 3);
+    int extra_count = ((add_extras ? 1 : 0) * UnsafeMemoryAccess::COLUMN_COUNT);
     GrowableArray<address> entries;
     GrowableArray<address> extras;
     GrowableArray<address> *entries_ptr = (nopush_entry != nullptr ? &entries : nullptr);
@@ -2975,7 +2975,7 @@ class StubGenerator: public StubCodeGenerator {
     assert(entry_count == 1, "sanity check");
     // we expect one set of extra unsafememory access handler entries
     GrowableArray<address> extras;
-    int extra_count = 3;
+    int extra_count =  1 * UnsafeMemoryAccess::COLUMN_COUNT;
     address start = load_archive_data(stub_id, nullptr, &extras);
     if (start != nullptr) {
       assert(extras.length() == extra_count,
