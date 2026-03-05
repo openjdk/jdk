@@ -1,0 +1,132 @@
+<!doctype html>
+<!--
+ Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.  Oracle designates this
+ particular file as subject to the "Classpath" exception as provided
+ by Oracle in the LICENSE file that accompanied this code.
+
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ or visit www.oracle.com if you need additional information or have any
+ questions.
+-->
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>The javax.net.debug system property</title>
+    <style>
+        #debug {
+         border: 1px solid black;
+         border-collapse: collapse;
+         margin: 0 auto;
+        }
+        #debug caption {
+          font-weight: bold;
+          font-size: smaller;
+        }
+        #debug, #debug th, #debug td {
+         border: 1px solid black;
+         padding: 2px .5em;
+        }
+        #debug tbody th {
+         font-weight: normal;
+         text-align:left;
+        }
+    </style>
+</head>
+<body LANG="en-US" DIR="LTR">
+<h1><B>{@systemProperty javax.net.debug}</B></h1>
+<p> To monitor SSL/TLS activity, you can set the <code>javax.net.debug</code>
+    system property, which determines what trace messages are printed during
+    execution.
+</p>
+
+<p> If the <code>javax.net.debug</code> property is not defined, debug logging
+    is disabled. If it is defined as empty, the debug logger is
+    <code>System.getLogger("javax.net.ssl")</code>, and applications can
+    customize and configure it using external logging mechanisms. If it is
+    defined and non-empty, a private debug logger that writes to
+    <code>System.err</code> is used.
+</p>
+
+<p>The following table lists the <code>javax.net.debug</code> options:</p>
+
+<table id="debug">
+    <caption><b>SSL/TLS Debug Options</b></caption>
+    <thead>
+    <tr>
+        <th scope="col">Option</th>
+        <th scope="col">Description</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <th scope="row"><code>all</code></th>
+        <td>Turn on all debugging</td>
+    </tr>
+    <tr>
+        <th scope="row"><code>ssl</code></th>
+        <td>Turn on SSL debugging. If specified by itself, all non-widening
+            filters are enabled. If specified with additional filter options,
+            general SSL debug messages are produced plus just the selected
+            categories. The following filters can be used with
+            <code>ssl</code>:
+            <ul>
+                <li><code><b>defaultctx</b></code>: Print default SSL
+                    initialization</li>
+                <li><code><b>handshake</b></code>: Print each handshake
+                    message. The following sub-option can be used with
+                    <code>handshake</code>:
+                    <ul>
+                        <li><code><b>verbose</b></code>: Verbose handshake
+                            message printing</li>
+                    </ul>
+                </li>
+                <li><code><b>keymanager</b></code>: Print key manager
+                    tracing</li>
+                <li><code><b>record</b></code>: Enable per-record tracing.
+                    The following sub-options can be used with
+                    <code>record</code>:
+                    <ul>
+                        <li><code><b>packet</b></code>: Print raw SSL/TLS
+                            packets</li>
+                        <li><code><b>plaintext</b></code>: Hex dump of record
+                            plaintext</li>
+                    </ul>
+                </li>
+                <li><code><b>respmgr</b></code>: Print OCSP response
+                    tracing</li>
+                <li><code><b>session</b></code>: Print session activity</li>
+                <li><code><b>sessioncache</b></code>: Print session cache
+                    tracing</li>
+                <li><code><b>sslctx</b></code>: Print SSLContext tracing</li>
+                <li><code><b>trustmanager</b></code>: Print trust manager
+                    tracing</li>
+            </ul>
+        </td>
+    </tr>
+    <tr>
+        <th scope="row"><code>expand</code></th>
+        <td>Use expanded (less compact) output format</td>
+    </tr>
+    <tr>
+        <th scope="row"><code>help</code></th>
+        <td>Print help message and exit</td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>
