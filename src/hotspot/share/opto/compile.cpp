@@ -2525,7 +2525,9 @@ void Compile::Optimize() {
 
   process_for_post_loop_opts_igvn(igvn);
 
-  if (failing())  return;
+  if (failing()) {
+    return;
+  }
 
   process_for_merge_stores_igvn(igvn);
 
