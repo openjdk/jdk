@@ -234,13 +234,11 @@ public class KAKeyDerivation implements SSLKeyDerivation {
                     sharedSecret = decapsulator.decapsulate(
                             keyshare, 0, decapsulator.secretSize(),
                             "TlsPremasterSecret");
-                } catch (IllegalArgumentException | InvalidKeyException e) {
+                } catch (IllegalArgumentException | InvalidKeyException |
+                        DecapsulateException e) {
                     // Peer validation failure
-                    // ECDH all-zero secret, invalid peer public key
+                    // ECDH all-zero shared secret (RFC 8446 section 7.4.2)
                     throw context.conContext.fatal(Alert.ILLEGAL_PARAMETER, e);
-                } catch (DecapsulateException e) {
-                    // ML-KEM decapsulation failure
-                    throw context.conContext.fatal(Alert.INTERNAL_ERROR, e);
                 } catch (GeneralSecurityException e) {
                     // cryptographic failure
                     throw context.conContext.fatal(Alert.INTERNAL_ERROR, e);

@@ -104,7 +104,7 @@ public class DHasKEM implements KEMSpi {
 
             } catch (IllegalArgumentException e) {
                 // ECDH validation failure
-                // all-zero shared secret, or invalid range for sub().
+                // all-zero shared secret
                 throw e;
             } catch (InvalidKeyException e) {
                 // Invalid peer public key
@@ -131,20 +131,19 @@ public class DHasKEM implements KEMSpi {
         public SecretKey engineDecapsulate(byte[] encapsulation, int from,
                 int to, String algorithm) throws DecapsulateException {
             if (encapsulation.length != params.publicKeyLen) {
-                throw new IllegalArgumentException(
-                        "incorrect encapsulation size");
+                throw new DecapsulateException("incorrect encapsulation size");
             }
             try {
                 PublicKey pkE = params.DeserializePublicKey(encapsulation);
                 SecretKey dh = params.DH(algorithm, skR, pkE);
                 return sub(dh, from, to);
+
             } catch (IllegalArgumentException e) {
                 // ECDH validation failure
-                // all-zero shared secret, or invalid range
+                // all-zero shared secret
                 throw e;
             } catch (IOException | InvalidKeyException e) {
-                throw new IllegalArgumentException("Invalid peer public key",
-                        e);
+                throw new DecapsulateException("Cannot decapsulate", e);
             } catch (Exception e) {
                 throw new ProviderException("internal error", e);
             }
