@@ -160,7 +160,7 @@ class ObjectMonitorTable::Table : public CHeapObj<mtObjectMonitor> {
       if (should_grow(population)) {
         return false;
       }
-      if (_items_count.compare_set(population, population + 1)) {
+      if (_items_count.compare_set(population, population + 1, memory_order_relaxed)) {
         return true;
       }
     }
