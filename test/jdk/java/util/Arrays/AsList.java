@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8155600
  * @summary Tests for Arrays.asList()
- * @run testng AsList
+ * @run junit AsList
  */
 
 import java.util.Arrays;
@@ -33,18 +33,21 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.stream.IntStream;
 
-import org.testng.annotations.Test;
-import org.testng.annotations.DataProvider;
-import static org.testng.Assert.assertSame;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class AsList {
     /*
      * Iterator contract test
      */
-    @Test(dataProvider = "Arrays")
+    @ParameterizedTest
+    @MethodSource("arrays")
     public void testIterator(Object[] array) {
         Iterator<Object> itr = Arrays.asList(array).iterator();
         for (int i = 0; i < array.length; i++) {
@@ -70,7 +73,6 @@ public class AsList {
         }
     }
 
-    @DataProvider(name = "Arrays")
     public static Object[][] arrays() {
         Object[][] arrays = {
             { new Object[] { } },

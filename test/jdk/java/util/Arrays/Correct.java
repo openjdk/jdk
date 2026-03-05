@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,21 @@
  * @test
  * @bug 4726380 8037097
  * @summary Check that different sorts give equivalent results.
- * @run testng Correct
+ * @run junit Correct
  * @key randomness
  */
 
 import java.util.*;
 
-import org.testng.annotations.Test;
-import org.testng.annotations.DataProvider;
-import static org.testng.Assert.fail;
-import static org.testng.Assert.assertEquals;
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class Correct {
 
     static final Random rnd = new Random();
@@ -50,11 +54,12 @@ public class Correct {
             Integer[] array2 = Arrays.copyOf(array1, array1.length);
             Arrays.sort(array1, array1.length/3, array1.length/2);
             stupidSort(array2, array2.length/3, array2.length/2);
-            assertEquals(array1, array2, "Arrays did not match. size=" + size);
+            Assertions.assertArrayEquals(array2, array1, "Arrays did not match. size=" + size);
         }
     }
 
-    @Test(dataProvider = "Comparators")
+    @ParameterizedTest
+    @MethodSource("comparators")
     public void testComparatorSort(Comparator<Integer> comparator) {
         for (int i=0; i<ITERATIONS; i++) {
             int size = rnd.nextInt(TEST_SIZE) + 1;
@@ -62,7 +67,7 @@ public class Correct {
             Integer[] array2 = Arrays.copyOf(array1, array1.length);
             Arrays.sort(array1, array1.length/3, array1.length/2, comparator);
             stupidSort(array2, array2.length/3, array2.length/2, comparator);
-            assertEquals(array1, array2, "Arrays did not match. size=" + size);
+            Assertions.assertArrayEquals(array2, array1, "Arrays did not match. size=" + size);
         }
     }
 
@@ -118,7 +123,6 @@ public class Correct {
         x[b] = t;
     }
 
-    @DataProvider(name = "Comparators", parallel = true)
     public static Iterator<Object[]> comparators() {
         Object[][] comparators = new Object[][] {
             new Object[] { Comparator.naturalOrder() },

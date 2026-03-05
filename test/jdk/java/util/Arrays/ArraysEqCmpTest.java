@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,9 @@
  * @test
  * @bug 8033148 8141409
  * @summary tests for array equals and compare
- * @run testng ArraysEqCmpTest
+ * @run junit ArraysEqCmpTest
 */
 
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -46,6 +43,13 @@ import java.util.function.BiFunction;
 import java.util.function.LongFunction;
 import java.util.stream.IntStream;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ArraysEqCmpTest {
 
     // Maximum width in bits
@@ -588,7 +592,6 @@ public class ArraysEqCmpTest {
 
     static Object[][] arrayTypes;
 
-    @DataProvider
     public static Object[][] arrayTypesProvider() {
         if (arrayTypes == null) {
             arrayTypes = new Object[][]{
@@ -613,7 +616,6 @@ public class ArraysEqCmpTest {
 
     static Object[][] floatArrayTypes;
 
-    @DataProvider
     public static Object[][] floatArrayTypesProvider() {
         if (floatArrayTypes == null) {
             LongFunction<Object> bTof = rb -> Float.intBitsToFloat((int) rb);
@@ -629,7 +631,6 @@ public class ArraysEqCmpTest {
 
     static Object[][] objectArrayTypes;
 
-    @DataProvider
     public static Object[][] objectArrayTypesProvider() {
         if (objectArrayTypes == null) {
             LongFunction<Object> bTof = rb -> Float.intBitsToFloat((int) rb);
@@ -646,7 +647,6 @@ public class ArraysEqCmpTest {
 
     static Object[][] signedUnsignedArrayTypes;
 
-    @DataProvider
     public static Object[][] signedUnsignedArrayTypes() {
         if (signedUnsignedArrayTypes == null) {
             signedUnsignedArrayTypes = new Object[][]{
@@ -661,7 +661,8 @@ public class ArraysEqCmpTest {
 
     // Equality and comparison tests
 
-    @Test(dataProvider = "arrayTypesProvider")
+    @ParameterizedTest
+    @MethodSource("arrayTypesProvider")
     public void testArray(ArrayType<?> arrayType) {
         BiFunction<ArrayType<?>, Integer, Object> constructor = (at, s) -> {
             Object a = at.construct(s);
@@ -677,7 +678,8 @@ public class ArraysEqCmpTest {
         testArrayType(arrayType, constructor, cloner);
     }
 
-    @Test(dataProvider = "floatArrayTypesProvider")
+    @ParameterizedTest
+    @MethodSource("floatArrayTypesProvider")
     public void testPrimitiveFloatArray(
             ArrayType<?> arrayType,
             long canonicalNanRawBits, long nonCanonicalNanRawBits,
@@ -722,7 +724,8 @@ public class ArraysEqCmpTest {
         testArrayType(arrayType, canonicalNaNs, halfNonCanonicalNaNs);
     }
 
-    @Test(dataProvider = "objectArrayTypesProvider")
+    @ParameterizedTest
+    @MethodSource("objectArrayTypesProvider")
     public void testNullElementsInObjectArray(ArrayType<?> arrayType) {
         BiFunction<ArrayType<?>, Object, Object> cloner = ArrayType::copyOf;
 
@@ -752,11 +755,12 @@ public class ArraysEqCmpTest {
 
         Integer[] a = new Integer[]{null, 0};
         Integer[] b = new Integer[]{0, 0};
-        Assert.assertTrue(Arrays.compare(a, b) < 0);
-        Assert.assertTrue(Arrays.compare(b, a) > 0);
+        Assertions.assertTrue(Arrays.compare(a, b) < 0);
+        Assertions.assertTrue(Arrays.compare(b, a) > 0);
     }
 
-    @Test(dataProvider = "objectArrayTypesProvider")
+    @ParameterizedTest
+    @MethodSource("objectArrayTypesProvider")
     public void testSameRefElementsInObjectArray(ArrayType<?> arrayType) {
         BiFunction<ArrayType<?>, Object, Object> cloner = ArrayType::copyOf;
 
@@ -796,7 +800,8 @@ public class ArraysEqCmpTest {
                       cloner);
     }
 
-    @Test(dataProvider = "signedUnsignedArrayTypes")
+    @ParameterizedTest
+    @MethodSource("signedUnsignedArrayTypes")
     public void testSignedUnsignedArray(ArrayType<?> sat, ArrayType<?> uat) {
         BiFunction<ArrayType<?>, Integer, Object> constructor = (at, s) -> {
             Object a = at.construct(s);
@@ -824,8 +829,8 @@ public class ArraysEqCmpTest {
                             int sc = sat.compare(ac, aFrom, aTo, a, aFrom, aTo);
                             int uc = uat.compare(ac, aFrom, aTo, a, aFrom, aTo);
 
-                            Assert.assertTrue(sc < 0);
-                            Assert.assertTrue(uc > 0);
+                            Assertions.assertTrue(sc < 0);
+                            Assertions.assertTrue(uc > 0);
                         }
                     }
                 }
@@ -854,31 +859,31 @@ public class ArraysEqCmpTest {
                             Object bnr = at.copyOf(b, bFrom, bTo);
 
                             boolean eq = isEqual(at, a, aFrom, aTo, b, bFrom, bTo);
-                            Assert.assertEquals(at.equals(a, aFrom, aTo, b, bFrom, bTo), eq);
-                            Assert.assertEquals(at.equals(b, bFrom, bTo, a, aFrom, aTo), eq);
-                            Assert.assertEquals(at.equals(anr, bnr), eq);
-                            Assert.assertEquals(at.equals(bnr, anr), eq);
+                            Assertions.assertEquals(eq, at.equals(a, aFrom, aTo, b, bFrom, bTo));
+                            Assertions.assertEquals(eq, at.equals(b, bFrom, bTo, a, aFrom, aTo));
+                            Assertions.assertEquals(eq, at.equals(anr, bnr));
+                            Assertions.assertEquals(eq, at.equals(bnr, anr));
                             if (eq) {
-                                Assert.assertEquals(at.compare(a, aFrom, aTo, b, bFrom, bTo), 0);
-                                Assert.assertEquals(at.compare(b, bFrom, bTo, a, aFrom, aTo), 0);
-                                Assert.assertEquals(at.compare(anr, bnr), 0);
-                                Assert.assertEquals(at.compare(bnr, anr), 0);
+                                Assertions.assertEquals(0, at.compare(a, aFrom, aTo, b, bFrom, bTo));
+                                Assertions.assertEquals(0, at.compare(b, bFrom, bTo, a, aFrom, aTo));
+                                Assertions.assertEquals(0, at.compare(anr, bnr));
+                                Assertions.assertEquals(0, at.compare(bnr, anr));
 
-                                Assert.assertEquals(at.mismatch(a, aFrom, aTo, b, bFrom, bTo), -1);
-                                Assert.assertEquals(at.mismatch(b, bFrom, bTo, a, aFrom, aTo), -1);
-                                Assert.assertEquals(at.mismatch(anr, bnr), -1);
-                                Assert.assertEquals(at.mismatch(bnr, anr), -1);
+                                Assertions.assertEquals(-1, at.mismatch(a, aFrom, aTo, b, bFrom, bTo));
+                                Assertions.assertEquals(-1, at.mismatch(b, bFrom, bTo, a, aFrom, aTo));
+                                Assertions.assertEquals(-1, at.mismatch(anr, bnr));
+                                Assertions.assertEquals(-1, at.mismatch(bnr, anr));
                             }
                             else {
                                 int aCb = at.compare(a, aFrom, aTo, b, bFrom, bTo);
                                 int bCa = at.compare(b, bFrom, bTo, a, aFrom, aTo);
                                 int v = Integer.signum(aCb) * Integer.signum(bCa);
-                                Assert.assertTrue(v == -1);
+                                Assertions.assertTrue(v == -1);
 
                                 int anrCbnr = at.compare(anr, bnr);
                                 int bnrCanr = at.compare(bnr, anr);
-                                Assert.assertEquals(anrCbnr, aCb);
-                                Assert.assertEquals(bnrCanr, bCa);
+                                Assertions.assertEquals(aCb, anrCbnr);
+                                Assertions.assertEquals(bCa, bnrCanr);
 
 
                                 int aMb = at.mismatch(a, aFrom, aTo, b, bFrom, bTo);
@@ -886,18 +891,18 @@ public class ArraysEqCmpTest {
                                 int anrMbnr = at.mismatch(anr, bnr);
                                 int bnrManr = at.mismatch(bnr, anr);
 
-                                Assert.assertNotEquals(aMb, -1);
-                                Assert.assertEquals(aMb, bMa);
-                                Assert.assertNotEquals(anrMbnr, -1);
-                                Assert.assertEquals(anrMbnr, bnrManr);
-                                Assert.assertEquals(aMb, anrMbnr);
-                                Assert.assertEquals(bMa, bnrManr);
+                                Assertions.assertNotEquals(-1, aMb);
+                                Assertions.assertEquals(bMa, aMb);
+                                Assertions.assertNotEquals(-1, anrMbnr);
+                                Assertions.assertEquals(bnrManr, anrMbnr);
+                                Assertions.assertEquals(anrMbnr, aMb);
+                                Assertions.assertEquals(bnrManr, bMa);
 
                                 // Common or proper prefix
-                                Assert.assertTrue(at.equals(a, aFrom, aFrom + aMb, b, bFrom, bFrom + aMb));
+                                Assertions.assertTrue(at.equals(a, aFrom, aFrom + aMb, b, bFrom, bFrom + aMb));
                                 if (aMb < Math.min(aLength, bLength)) {
                                     // Common prefix
-                                    Assert.assertFalse(isEqual(at, a, aFrom + aMb, b, bFrom + aMb));
+                                    Assertions.assertFalse(isEqual(at, a, aFrom + aMb, b, bFrom + aMb));
                                 }
                             }
                         }
@@ -912,29 +917,29 @@ public class ArraysEqCmpTest {
                             Object acnr = at.copyOf(ac, aFrom, aTo);
                             Object anr = at.copyOf(a, aFrom, aTo);
 
-                            Assert.assertFalse(at.equals(ac, aFrom, aTo, a, aFrom, aTo));
-                            Assert.assertFalse(at.equals(acnr, anr));
+                            Assertions.assertFalse(at.equals(ac, aFrom, aTo, a, aFrom, aTo));
+                            Assertions.assertFalse(at.equals(acnr, anr));
 
                             int acCa = at.compare(ac, aFrom, aTo, a, aFrom, aTo);
                             int aCac = at.compare(a, aFrom, aTo, ac, aFrom, aTo);
                             int v = Integer.signum(acCa) * Integer.signum(aCac);
-                            Assert.assertTrue(v == -1);
+                            Assertions.assertTrue(v == -1);
 
                             int acnrCanr = at.compare(acnr, anr);
                             int anrCacnr = at.compare(anr, acnr);
-                            Assert.assertEquals(acnrCanr, acCa);
-                            Assert.assertEquals(anrCacnr, aCac);
+                            Assertions.assertEquals(acCa, acnrCanr);
+                            Assertions.assertEquals(aCac, anrCacnr);
 
 
                             int acMa = at.mismatch(ac, aFrom, aTo, a, aFrom, aTo);
                             int aMac = at.mismatch(a, aFrom, aTo, ac, aFrom, aTo);
-                            Assert.assertEquals(acMa, aMac);
-                            Assert.assertEquals(acMa, i - aFrom);
+                            Assertions.assertEquals(aMac, acMa);
+                            Assertions.assertEquals(i - aFrom, acMa);
 
                             int acnrManr = at.mismatch(acnr, anr);
                             int anrMacnr = at.mismatch(anr, acnr);
-                            Assert.assertEquals(acnrManr, anrMacnr);
-                            Assert.assertEquals(acnrManr, i - aFrom);
+                            Assertions.assertEquals(anrMacnr, acnrManr);
+                            Assertions.assertEquals(i - aFrom, acnrManr);
                         }
                     }
                 }
@@ -986,24 +991,26 @@ public class ArraysEqCmpTest {
 
     // Null array reference tests
 
-    @Test(dataProvider = "arrayTypesProvider")
+    @ParameterizedTest
+    @MethodSource("arrayTypesProvider")
     public void testNullArrayRefs(ArrayType<?> arrayType) {
         Object n = null;
         Object a = arrayType.construct(0);
 
-        Assert.assertTrue(arrayType.equals(n, n));
-        Assert.assertFalse(arrayType.equals(n, a));
-        Assert.assertFalse(arrayType.equals(a, n));
+        Assertions.assertTrue(arrayType.equals(n, n));
+        Assertions.assertFalse(arrayType.equals(n, a));
+        Assertions.assertFalse(arrayType.equals(a, n));
 
-        Assert.assertEquals(arrayType.compare(n, n), 0);
-        Assert.assertTrue(arrayType.compare(n, a) < 0);
-        Assert.assertTrue(arrayType.compare(a, n) > 0);
+        Assertions.assertEquals(0, arrayType.compare(n, n));
+        Assertions.assertTrue(arrayType.compare(n, a) < 0);
+        Assertions.assertTrue(arrayType.compare(a, n) > 0);
     }
 
 
     // Exception throwing tests
 
-    @Test(dataProvider = "arrayTypesProvider")
+    @ParameterizedTest
+    @MethodSource("arrayTypesProvider")
     public void testNPEs(ArrayType<?> arrayType) {
         Object[] values = new Object[]{null, arrayType.construct(0)};
 
@@ -1046,7 +1053,8 @@ public class ArraysEqCmpTest {
         }
     }
 
-    @Test(dataProvider = "arrayTypesProvider")
+    @ParameterizedTest
+    @MethodSource("arrayTypesProvider")
     public void testIAEs(ArrayType<?> arrayType) {
         List<Integer> values = Arrays.asList(0, 1);
 
@@ -1065,7 +1073,8 @@ public class ArraysEqCmpTest {
         }
     }
 
-    @Test(dataProvider = "arrayTypesProvider")
+    @ParameterizedTest
+    @MethodSource("arrayTypesProvider")
     public void testAIOBEs(ArrayType<?> arrayType) {
         List<Integer> froms = Arrays.asList(-1, 0);
 
@@ -1110,7 +1119,7 @@ public class ArraysEqCmpTest {
         catch (Throwable t) {
             caught = t;
         }
-        Assert.assertNotNull(caught);
-        Assert.assertTrue(expected.isInstance(caught));
+        Assertions.assertNotNull(caught);
+        Assertions.assertTrue(expected.isInstance(caught));
     }
 }
