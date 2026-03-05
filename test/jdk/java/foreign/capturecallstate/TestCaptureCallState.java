@@ -103,7 +103,7 @@ public class TestCaptureCallState extends NativeTestHelper {
             if (testCase.expectTestValue()) {
                 assertEquals(savedErrno, testValue);
             } else {
-                assertNotEquals(savedErrno, testValue);
+                assertEquals(savedErrno, prevValue);
             }
         }
     }
