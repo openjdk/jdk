@@ -150,8 +150,8 @@ void ShenandoahOldGeneration::reset_promoted_expended() {
 }
 
 void ShenandoahOldGeneration::maybe_log_promotion_failure_stats(bool concurrent) const {
-  typedef LogTarget(Info, gc, cset) cset_info;
-  if (cset_info::is_enabled()) {
+  typedef LogTarget(Info, gc, plab) plab_info;
+  if (plab_info::is_enabled()) {
     size_t failed_count = 0;
     size_t failed_words = 0;
 
@@ -623,10 +623,16 @@ void ShenandoahOldGeneration::handle_failed_evacuation() {
   }
 }
 
-void ShenandoahOldGeneration::handle_failed_promotion(Thread* thread, size_t size) {
-  typedef LogTarget(Info, gc, cset) cset_info;
-  if (cset_info::is_enabled()) {
-    ShenandoahThreadLocalData::shenandoah_plab(thread)->record_promotion_failure(size);
+void ShenandoahOldGeneration::handle_failed_promotion(Thread* thread, size_t size) const {
+  typedef LogTarget(Info, gc, plab) plab_info;
+  if (plab_info::is_enabled()) {
+    ShenandoahPLAB* plab = ShenandoahThreadLocalData::shenandoah_plab(thread);
+    if (plab != nullptr) {
+      plab->record_promotion_failure(size);
+    } else {
+      ResourceMark for_thread_name;
+      log_debug(gc, plab)("Thread: %s has no plab", thread->name());
+    }
   }
 
   typedef LogTarget(Debug, gc, plab) plab_debug;

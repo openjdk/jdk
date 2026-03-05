@@ -169,7 +169,7 @@ public:
   void handle_failed_evacuation();
 
   // Increment promotion failure counters, optionally log a more detailed message
-  void handle_failed_promotion(Thread* thread, size_t size);
+  void handle_failed_promotion(Thread* thread, size_t size) const;
   void log_failed_promotion(LogStream& ls, Thread* thread, size_t size) const;
 
   // A successful evacuation re-dirties the cards and registers the object with the remembered set
