@@ -136,8 +136,7 @@ public class UpdateReadyOps {
             assertTrue(sel.selectedKeys().contains(key));
             assertTrue(key.isReadable());
             assertTrue(key.isWritable());
-            assertEquals(SelectionKey.OP_READ|SelectionKey.OP_WRITE,
-                         key.readyOps());
+            assertEquals(SelectionKey.OP_READ|SelectionKey.OP_WRITE, key.readyOps());
 
             // select again, should be no updates
             updated = sel.select();

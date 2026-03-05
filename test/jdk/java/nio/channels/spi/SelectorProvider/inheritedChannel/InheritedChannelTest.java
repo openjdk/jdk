@@ -71,8 +71,8 @@ public class InheritedChannelTest {
             (Arguments.of( "UnixDomainChannelTest", List.of(UnixDomainChannelTest.class.getName())),
              Arguments.of( "UnixSocketTest", List.of(UnixSocketTest.class.getName())),
              Arguments.of( "StateTest", List.of(StateTest.class.getName(), "-Dtest.classes="+TEST_CLASSES)),
-             Arguments.of( "EchoTest",  List.of(EchoTest.class.getName())),
-             Arguments.of( "CheckIPv6Test",  List.of(CheckIPv6Test.class.getName())),
+             Arguments.of( "EchoTest", List.of(EchoTest.class.getName())),
+             Arguments.of( "CheckIPv6Test", List.of(CheckIPv6Test.class.getName())),
              Arguments.of( "CloseTest", List.of(CloseTest.class.getName())));
     }
 

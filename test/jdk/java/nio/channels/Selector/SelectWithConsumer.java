@@ -87,7 +87,7 @@ public class SelectWithConsumer {
         notifiedOps.set(0);
         int n = sel.select(k -> {
             assertSame(callerThread, Thread.currentThread());
-            assertEquals(key, k);
+            assertSame(key, k);
             int readyOps = key.readyOps();
             assertNotEquals(0, readyOps & interestOps);
             assertEquals(0, readyOps & notifiedOps.get());
@@ -100,7 +100,7 @@ public class SelectWithConsumer {
         notifiedOps.set(0);
         n = sel.select(k -> {
             assertSame(callerThread, Thread.currentThread());
-            assertEquals(key, k);
+            assertSame(key, k);
             int readyOps = key.readyOps();
             assertNotEquals(0, readyOps & interestOps);
             assertEquals(0, readyOps & notifiedOps.get());
@@ -113,7 +113,7 @@ public class SelectWithConsumer {
         notifiedOps.set(0);
         n = sel.selectNow(k -> {
             assertSame(callerThread, Thread.currentThread());
-            assertEquals(key, k);
+            assertSame(key, k);
             int readyOps = key.readyOps();
             assertNotEquals(0, readyOps & interestOps);
             assertEquals(0, readyOps & notifiedOps.get());
@@ -533,7 +533,7 @@ public class SelectWithConsumer {
 
             // select(Consumer)
             sel.select(k -> {
-                assertEquals(key, k);
+                assertSame(key, k);
                 assertTrue(Thread.holdsLock(sel));
                 assertFalse(Thread.holdsLock(sel.keys()));
                 assertTrue(Thread.holdsLock(sel.selectedKeys()));
@@ -541,7 +541,7 @@ public class SelectWithConsumer {
 
             // select(Consumer, timeout)
             sel.select(k -> {
-                assertEquals(key, k);
+                assertSame(key, k);
                 assertTrue(Thread.holdsLock(sel));
                 assertFalse(Thread.holdsLock(sel.keys()));
                 assertTrue(Thread.holdsLock(sel.selectedKeys()));
@@ -549,7 +549,7 @@ public class SelectWithConsumer {
 
             // selectNow(Consumer)
             sel.selectNow(k -> {
-                assertEquals(key, k);
+                assertSame(key, k);
                 assertTrue(Thread.holdsLock(sel));
                 assertFalse(Thread.holdsLock(sel.keys()));
                 assertTrue(Thread.holdsLock(sel.selectedKeys()));
