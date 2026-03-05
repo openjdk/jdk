@@ -138,10 +138,21 @@ public class TestXECOps {
         NamedParameterSpec paramSpec = new NamedParameterSpec(opName);
         XECParameters settings =
             XECParameters.get(RuntimeException::new, paramSpec);
-        XECOperations ops = new XECOperations(settings);
-        byte[] u_out = ops.encodedPointMultiply(k_in, u_in);
 
-        if (!Arrays.equals(u_out, u_out_expected)) {
+        // Test encodedPointMultiply(byte[] k, byte[] u)
+        XECOperations ops = new XECOperations(settings);
+        byte[] res0 = ops.encodedPointMultiply(k_in, u_in);
+
+        if (!Arrays.equals(res0, u_out_expected)) {
+            throw new RuntimeException("fail");
+        }
+
+        // Test encodedPointMultiply(byte[] k, BigInteger u)
+        reverse(u_in);
+        BigInteger u = new BigInteger(1, u_in);
+        byte[] res1 = ops.encodedPointMultiply(k_in, u);
+
+        if (!Arrays.equals(res1, u_out_expected)) {
             throw new RuntimeException("fail");
         }
     }
