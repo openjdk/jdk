@@ -23,6 +23,7 @@
 
 package compiler.vectorapi;
 
+import java.util.Arrays;
 import compiler.lib.ir_framework.*;
 import compiler.lib.verify.Verify;
 import jdk.incubator.vector.*;
@@ -36,6 +37,10 @@ import jdk.incubator.vector.*;
  * @run driver ${test.main.class}
  */
 public class TestVectorLongToMaskNodeIdealization {
+
+    static final long[] ONES_L = new long[64];
+    static { Arrays.fill(ONES_L, 1); }
+
     public static void main(String[] args) {
         TestFramework testFramework = new TestFramework();
         testFramework.setDefaultWarmup(10000)
@@ -114,6 +119,53 @@ public class TestVectorLongToMaskNodeIdealization {
     @Check(test = "test1")
     public static void check_test1(Object out) {
         Verify.checkEQ(GOLD_TEST1, out);
+    }
+    // -------------------------------------------------------------------------------------
+    @Test
+    @IR(counts = {IRNode.REPLICATE_L,     IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.VECTOR_MASK_CMP,                       "> 0",
+                  IRNode.VECTOR_LOAD_MASK,                      "> 0", // Not yet optimized away
+                  IRNode.VECTOR_STORE_MASK,                     "> 0", // Not yet optimized away
+                  IRNode.VECTOR_LONG_TO_MASK,                   "= 0", // Optimized away
+                  IRNode.VECTOR_MASK_TO_LONG,                   "= 0", // Optimized away
+                  IRNode.VECTOR_MASK_CAST,                      "> 0", // Not yet optimized away
+                  IRNode.VECTOR_BLEND_I,  IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.XOR_VI,          IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR,                          "> 0"},
+                  applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
+    @IR(counts = {IRNode.REPLICATE_L,     IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.VECTOR_MASK_CMP,                       "> 0",
+                  IRNode.VECTOR_LOAD_MASK,                      "= 0", // Optimized away
+                  IRNode.VECTOR_STORE_MASK,                     "= 0", // Optimized away
+                  IRNode.VECTOR_LONG_TO_MASK,                   "= 0", // Optimized away
+                  IRNode.VECTOR_MASK_TO_LONG,                   "= 0", // Optimized away
+                  IRNode.VECTOR_MASK_CAST,                      "> 0", // Cast I->J
+                  IRNode.VECTOR_BLEND_I,                        "= 0", // Not needed
+                  IRNode.XOR_VI,          IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR,                          "> 0"},
+                  applyIfCPUFeature = {"avx512", "true"})
+    // The original reproducer test1 could eventually constant-fold the comparison
+    // with zero and trues. So let's make sure we load the data from a mutable array.
+    public static Object test1b() {
+        // load instead of broadcast:
+        var ones = LongVector.fromArray(LongVector.SPECIES_256, ONES_L, 0);
+        var trues_L256 = ones.compare(VectorOperators.NE, 0);
+
+        var trues_I128 = VectorMask.fromLong(IntVector.SPECIES_128, trues_L256.toLong());
+
+        var zeros = IntVector.zero(IntVector.SPECIES_128);
+        var m1s = zeros.lanewise(VectorOperators.NOT, trues_I128);
+
+        int[] out = new int[64];
+        m1s.intoArray(out, 0);
+        return out;
+    }
+
+    static final Object GOLD_TEST1B = test1b();
+
+    @Check(test = "test1b")
+    public static void check_test1b(Object out) {
+        Verify.checkEQ(GOLD_TEST1B, out);
     }
     // -------------------------------------------------------------------------------------
 }
