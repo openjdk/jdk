@@ -109,7 +109,7 @@ public class H3MemoryHandlingTest implements HttpServerAdapters {
                         "00ffffffffffffffff"); // data, 2^62 - 1 bytes
         byte[] kilo = new byte[1024];
         final CompletableFuture<Boolean> serverAllWritesDone = new CompletableFuture<>();
-        server.addHandler((c,s)-> {
+        server.setHandler((c, s)-> {
             // verify that the connection stays open
             completeUponTermination(c, errorCF);
             try (OutputStream outputStream = s.outputStream()) {
@@ -154,7 +154,7 @@ public class H3MemoryHandlingTest implements HttpServerAdapters {
         byte[] kilo = new byte[1024];
         CountDownLatch writerBlocked = new CountDownLatch(1);
 
-        server.addHandler((c,s)-> {
+        server.setHandler((c, s)-> {
             // verify that the connection stays open
             completeUponTermination(c, errorCF);
             QuicBidiStream qs = s.underlyingBidiStream();
