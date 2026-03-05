@@ -273,7 +273,7 @@ void ShenandoahAdaptiveHeuristics::add_gc_time(double timestamp, double gc_time)
 }
 
 double ShenandoahAdaptiveHeuristics::predict_gc_time(double timestamp_at_start) {
-  return _gc_time_m * timestamp_at_start + _gc_time_b + _gc_time_sd * _margin_of_error_sd;;
+  return _gc_time_m * timestamp_at_start + _gc_time_b + _gc_time_sd * _margin_of_error_sd;
 }
 
 void ShenandoahAdaptiveHeuristics::add_rate_to_acceleration_history(double timestamp, double rate) {
