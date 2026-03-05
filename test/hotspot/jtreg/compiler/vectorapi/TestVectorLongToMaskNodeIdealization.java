@@ -37,16 +37,37 @@ import jdk.incubator.vector.*;
  */
 public class TestVectorLongToMaskNodeIdealization {
     public static void main(String[] args) {
-        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector");
+        TestFramework testFramework = new TestFramework();
+        testFramework.setDefaultWarmup(10000)
+                     .addFlags("--add-modules=jdk.incubator.vector")
+                     .start();
     }
 
     // -------------------------------------------------------------------------------------
     @Test
-    //@IR(counts = {IRNode.URSHIFT_VL, IRNode.VECTOR_SIZE_2, "1",
-    //              IRNode.LSHIFT_VL, IRNode.VECTOR_SIZE_2, "1",
-    //              IRNode.OR_VL, IRNode.VECTOR_SIZE_2, "1"},
-    //              applyIfCPUFeatureAnd = {"avx2", "true", "avx512f", "false", "avx512vl", "false"})
-    // TODO: IR rule
+    @IR(counts = {IRNode.REPLICATE_L,     IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.VECTOR_MASK_CMP,                       "> 0",
+                  IRNode.VECTOR_LOAD_MASK,                      "> 0", // Not yet optimized away
+                  IRNode.VECTOR_STORE_MASK,                     "> 0", // Not yet optimized away
+                  IRNode.VECTOR_LONG_TO_MASK,                   "= 0", // Optimized away
+                  IRNode.VECTOR_MASK_TO_LONG,                   "= 0", // Optimized away
+                  IRNode.VECTOR_MASK_CAST,                      "> 0", // Not yet optimized away
+                  IRNode.VECTOR_BLEND_I,  IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.XOR_VI,          IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR,                          "> 0"},
+                  applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
+    @IR(counts = {IRNode.REPLICATE_L,     IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.VECTOR_MASK_CMP,                       "> 0",
+                  IRNode.VECTOR_LOAD_MASK,                      "= 0", // Optimized away
+                  IRNode.VECTOR_STORE_MASK,                     "= 0", // Optimized away
+                  IRNode.VECTOR_LONG_TO_MASK,                   "= 0", // Optimized away
+                  IRNode.VECTOR_MASK_TO_LONG,                   "= 0", // Optimized away
+                  IRNode.VECTOR_MASK_CAST,                      "> 0", // Cast I->J
+                  IRNode.VECTOR_BLEND_I,                        "= 0", // Not needed
+                  IRNode.XOR_VI,          IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR,                          "> 0"},
+                  applyIfCPUFeature = {"avx512", "true"})
+    // This is the original reproducer for JDK-8378968, which failed on AVX2 with a wrong result.
     public static Object test1() {
         // There was a bug here with AVX2:
         var ones = LongVector.broadcast(LongVector.SPECIES_256, 1);
