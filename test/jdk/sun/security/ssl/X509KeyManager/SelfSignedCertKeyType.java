@@ -23,22 +23,18 @@
 
 import static jdk.test.lib.Asserts.assertEquals;
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
-import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.X509ExtendedKeyManager;
-import javax.net.ssl.X509KeyManager;
 import jdk.test.lib.security.CertificateBuilder;
 
 /*
@@ -64,8 +60,7 @@ public class SelfSignedCertKeyType {
             throw new RuntimeException("Wrong number of arguments");
         }
 
-        X509ExtendedKeyManager km =
-                (X509ExtendedKeyManager) getKeyManager(args[0]);
+        X509ExtendedKeyManager km = getKeyManager(args[0]);
 
         String serverAlias = km.chooseServerAlias(KEY_TYPE, null, null);
         String engineServerAlias = km.chooseEngineServerAlias(
@@ -87,7 +82,7 @@ public class SelfSignedCertKeyType {
     }
 
     // Returns a KeyManager with a single self-signed certificate.
-    private static X509KeyManager getKeyManager(String kmAlg)
+    private static X509ExtendedKeyManager getKeyManager(String kmAlg)
             throws Exception {
         KeyPair caKeys = KeyPairGenerator.getInstance(KEY_ALG)
                 .generateKeyPair();
@@ -111,33 +106,24 @@ public class SelfSignedCertKeyType {
         KeyManagerFactory kmf = KeyManagerFactory.getInstance(kmAlg);
         kmf.init(ks, passphrase);
 
-        return (X509KeyManager) kmf.getKeyManagers()[0];
+        return (X509ExtendedKeyManager) kmf.getKeyManagers()[0];
     }
-
-    // Certificate-building helper methods.
 
     private static X509Certificate createTrustedCert(KeyPair caKeys)
             throws Exception {
-        return customCertificateBuilder(
-                caKeys.getPublic(), caKeys.getPublic())
-                .addBasicConstraintsExt(true, true, 1)
-                .build(null, caKeys.getPrivate(), CERT_SIG_ALG);
-    }
-
-    private static CertificateBuilder customCertificateBuilder(
-            PublicKey publicKey, PublicKey caKey)
-            throws CertificateException, IOException {
         return new CertificateBuilder()
                 .setSubjectName("O=CA-Org, L=Some-City, ST=Some-State, C=US")
-                .setPublicKey(publicKey)
+                .setPublicKey(caKeys.getPublic())
                 .setNotBefore(
                         Date.from(Instant.now().minus(1, ChronoUnit.HOURS)))
                 .setNotAfter(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
                 .setSerialNumber(BigInteger.valueOf(
                         new SecureRandom().nextLong(1000000) + 1))
-                .addSubjectKeyIdExt(publicKey)
-                .addAuthorityKeyIdExt(caKey)
+                .addSubjectKeyIdExt(caKeys.getPublic())
+                .addAuthorityKeyIdExt(caKeys.getPublic())
                 .addKeyUsageExt(new boolean[]{
-                        true, true, true, true, true, true, true});
+                        true, true, true, true, true, true, true})
+                .addBasicConstraintsExt(true, true, 1)
+                .build(null, caKeys.getPrivate(), CERT_SIG_ALG);
     }
 }
