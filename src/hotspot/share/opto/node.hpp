@@ -873,6 +873,7 @@ protected:
     assert(fl <= max_flags(), "invalid node flag");
     _flags |= fl;
   }
+public:
   void clear_flag(uint fl) {
     assert(fl <= max_flags(), "invalid node flag");
     _flags &= ~fl;

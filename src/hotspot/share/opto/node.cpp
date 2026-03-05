@@ -2966,6 +2966,10 @@ bool Node::is_dead_loop_safe() const {
   if (is_Proj() && in(0) == nullptr)  {
     return true;
   }
+  if (is_Proj() && in(0)->is_CallStaticJava() && in(0)->as_CallStaticJava()->is_late_inlined_call()) {
+    assert((_flags & (Flag_is_dead_loop_safe | Flag_is_Con)) == 0, "");
+  }
+
   if ((_flags & (Flag_is_dead_loop_safe | Flag_is_Con)) != 0) {
     if (!is_Proj()) {
       return true;
