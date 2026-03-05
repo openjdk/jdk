@@ -1282,6 +1282,7 @@ public class ForkJoinPool extends AbstractExecutorService
             int s = top, b = base, m, cap, room; ForkJoinTask<?>[] a;
             if ((a = array) != null && (cap = a.length) > 0 && // else disabled
                 task != null) {
+                int pk = task.noUserHelp() + 1;             // prev slot offset
                 if ((room = (m = cap - 1) - (s - b)) >= 0) {
                     top = s + 1;
                     long pos = slotOffset(m & s);
@@ -1296,7 +1297,7 @@ public class ForkJoinPool extends AbstractExecutorService
                     unlockPhase();
                 if (room < 0)
                     throw new RejectedExecutionException("Queue capacity exceeded");
-                if ((room == 0 || U.getReferenceAcquire(a, slotOffset(m & (s - 1))) == null) &&
+                if ((room == 0 || U.getReferenceAcquire(a, slotOffset(m & (s - pk))) == null) &&
                     pool != null)
                     pool.signalWork();   // may have appeared empty
             }
@@ -2011,8 +2012,9 @@ public class ForkJoinPool extends AbstractExecutorService
                                 w.nsteals = ++nsteals;
                                 w.source = src = j;       // volatile
                                 rescan = true;
+                                int nh = t.noUserHelp();
                                 if (propagate =
-                                    (prevSrc != src || (j & 1) == 0) &&
+                                    (prevSrc != src || nh == 0) &&
                                     U.getReferenceAcquire(
                                         a, slotOffset(nb & m)) != null)
                                     signalWork();
