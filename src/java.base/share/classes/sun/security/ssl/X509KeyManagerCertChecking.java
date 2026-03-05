@@ -512,7 +512,7 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
                         chain[1].getPublicKey().getAlgorithm());
             } else {
                 // Check the signature algorithm of the certificate itself.
-                // Look for the "withRSA" in "SHA1withRSA", etc.
+                // Look for the "withEC" in "SHA256withECDSA", etc.
                 X509Certificate issuer = (X509Certificate) chain[0];
                 String sigAlgName =
                         issuer.getSigAlgName().toUpperCase(Locale.ENGLISH);
