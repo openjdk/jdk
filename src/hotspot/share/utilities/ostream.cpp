@@ -611,33 +611,18 @@ void fileStream::write(const char* s, size_t len) {
   }
 }
 
-#if defined(_WINDOWS)
 int64_t fileStream::fileSize() {
   int64_t size = -1;
   if (_file != nullptr) {
-    int64_t pos = _ftelli64(_file);
+    int64_t pos = os::ftell(_file);
     if (pos < 0) return pos;
-    if (_fseeki64(_file, 0, SEEK_END) == 0) {
-      size = _ftelli64(_file);
+    if (os::fseek(_file, 0, SEEK_END) == 0) {
+      size = os::ftell(_file);
     }
-    _fseeki64(_file, pos, SEEK_SET);
+    os::fseek(_file, pos, SEEK_SET);
   }
   return size;
 }
-#else
-int64_t fileStream::fileSize() {
-  int64_t size = -1;
-  if (_file != nullptr) {
-    int64_t pos = ::ftell(_file);
-    if (pos < 0) return pos;
-    if (::fseek(_file, 0, SEEK_END) == 0) {
-      size = ::ftell(_file);
-    }
-    ::fseek(_file, pos, SEEK_SET);
-  }
-  return size;
-}
-#endif
 
 fileStream::~fileStream() {
   if (_file != nullptr) {
