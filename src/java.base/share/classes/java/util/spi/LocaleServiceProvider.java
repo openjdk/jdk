@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,6 +191,17 @@ import java.util.Locale;
  *     <td>CLDR 45</td></tr>
  * <tr><th scope="row" style="text-align:left">JDK 22</th>
  *     <td>CLDR 44</td></tr>
+ * </tbody>
+ * </table>
+ * <details>
+ * <summary>Show older JDK releases</summary>
+ * <table class="striped">
+ * <caption style="display:none">JDK releases and supported CLDR versions</caption>
+ * <thead>
+ * <tr><th scope="col">JDK release</th>
+ *     <th scope="col">CLDR version</th></tr>
+ * </thead>
+ * <tbody>
  * <tr><th scope="row" style="text-align:left">JDK 21</th>
  *     <td>CLDR 43</td></tr>
  * <tr><th scope="row" style="text-align:left">JDK 20</th>
@@ -221,6 +232,7 @@ import java.util.Locale;
  *     <td>CLDR 21.0.1</td></tr>
  * </tbody>
  * </table>
+ * </details>
  *
  * @since        1.6
  */

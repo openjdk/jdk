@@ -86,6 +86,17 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  *     <td>Unicode 15.0</td></tr>
  * <tr><th scope="row" style="text-align:left">Java SE 19</th>
  *     <td>Unicode 14.0</td></tr>
+ * </tbody>
+ * </table>
+ * <details>
+ * <summary>Show older Java releases</summary>
+ * <table class="striped">
+ * <caption style="display:none">Shows Java releases and supported Unicode versions</caption>
+ * <thead>
+ * <tr><th scope="col">Java release</th>
+ *     <th scope="col">Unicode version</th></tr>
+ * </thead>
+ * <tbody>
  * <tr><th scope="row" style="text-align:left">Java SE 15</th>
  *     <td>Unicode 13.0</td></tr>
  * <tr><th scope="row" style="text-align:left">Java SE 13</th>
@@ -110,6 +121,7 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  *     <td>Unicode 1.1.5</td></tr>
  * </tbody>
  * </table>
+ * </details>
  * Variations from these base Unicode versions, such as recognized appendixes,
  * are documented elsewhere.
  * <h2><a id="unicode">Unicode Character Representations</a></h2>
