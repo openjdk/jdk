@@ -228,6 +228,7 @@ void ThreadIdTable::do_concurrent_work(JavaThread* jt) {
 }
 
 JavaThread* ThreadIdTable::add_thread(jlong tid, JavaThread* java_thread) {
+  assert(Threads_lock->owned_by_self(), "Must hold Threads_lock");
   assert(is_initialized(), "Thread table is not initialized");
   Thread* thread = Thread::current();
   ThreadIdTableLookup lookup(tid);
