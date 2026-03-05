@@ -25,10 +25,10 @@
   * @test
   * @key headful
   * @bug 8267961
-  * @summary Verify JInternalFrame.getNormalBounds() 
+  * @summary Verify JInternalFrame.getNormalBounds()
   *          returns getBounds() value in non-maximized state
-  * @run main TestNonMaximizedNormalBounds 
- */
+  * @run main TestNonMaximizedNormalBounds
+  */
 
 import java.awt.Rectangle;
 import javax.swing.JDesktopPane;
@@ -68,6 +68,6 @@ public class TestNonMaximizedNormalBounds {
         if (!normalBounds.equals(bounds)) {
             System.out.println("normalBounds " + normalBounds + " getBounds " + bounds);
             throw new RuntimeException("normalBounds not equal to getBounds in non-maximized state");
-        } 
+        }
     }
 }
