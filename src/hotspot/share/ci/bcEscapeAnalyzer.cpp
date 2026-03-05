@@ -1078,14 +1078,14 @@ void BCEscapeAnalyzer::merge_block_states(StateInfo *blockstates, ciBlock *dest,
 }
 
 void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
-  int numblocks = _methodBlocks->num_blocks();
-  int stkSize   = _method->max_stack();
-  int numLocals = _method->max_locals();
+  uint numblocks = checked_cast<uint>(_methodBlocks->num_blocks());
+  uint stkSize   = checked_cast<uint>(_method->max_stack());
+  uint numLocals = checked_cast<uint>(_method->max_locals());
   StateInfo state;
 
-  int64_t datacount = (int64_t)(numblocks + 1) * (stkSize + numLocals);
+  uint64_t datacount = (uint64_t)(numblocks + 1) * (stkSize + numLocals);
   // bail out conservatively on overflow
-  if ((uint64_t)datacount > SIZE_MAX / sizeof(ArgumentMap)) {
+  if (datacount > SIZE_MAX / sizeof(ArgumentMap)) {
     _conservative = true;
     return;
   }
@@ -1100,7 +1100,7 @@ void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
   dp += stkSize;
   state._initialized = false;
   state._max_stack = stkSize;
-  for (int i = 0; i < numblocks; i++) {
+  for (uint i = 0; i < numblocks; i++) {
     blockstates[i]._vars = dp;
     dp += numLocals;
     blockstates[i]._stack = dp;
@@ -1175,7 +1175,7 @@ void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
       DEBUG_ONLY(int handler_count = 0;)
       int blk_start = blk->start_bci();
       int blk_end = blk->limit_bci();
-      for (int i = 0; i < numblocks; i++) {
+      for (uint i = 0; i < numblocks; i++) {
         ciBlock *b = _methodBlocks->block(i);
         if (b->is_handler()) {
           int ex_start = b->ex_start_bci();
