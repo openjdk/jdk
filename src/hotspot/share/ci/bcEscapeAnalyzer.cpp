@@ -1083,16 +1083,17 @@ void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
   uint numLocals = checked_cast<uint>(_method->max_locals());
   StateInfo state;
 
-  uint64_t datacount = (uint64_t)(numblocks + 1) * (stkSize + numLocals);
+  uint64_t datacount64 = (uint64_t)(numblocks + 1) * (stkSize + numLocals);
   // bail out conservatively on overflow
-  if (datacount > SIZE_MAX / sizeof(ArgumentMap)) {
+  if (datacount64 > SIZE_MAX / sizeof(ArgumentMap)) {
     _conservative = true;
     return;
   }
-  size_t datasize = (size_t)datacount * sizeof(ArgumentMap);
+  size_t datacount = (size_t)datacount64;
+  size_t datasize = datacount * sizeof(ArgumentMap);
   StateInfo *blockstates = (StateInfo *) arena->Amalloc(numblocks * sizeof(StateInfo));
   ArgumentMap *statedata  = (ArgumentMap *) arena->Amalloc(datasize);
-  for (size_t i = 0; i < (size_t)datacount; i++) ::new ((void*)&statedata[i]) ArgumentMap();
+  for (size_t i = 0; i < datacount; i++) ::new ((void*)&statedata[i]) ArgumentMap();
   ArgumentMap *dp = statedata;
   state._vars = dp;
   dp += numLocals;
