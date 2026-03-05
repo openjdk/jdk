@@ -115,7 +115,7 @@ public class VectorAlgorithmsImpl {
 
             int filterI_range = 1000_000;
             aI_filterI = new int[size];
-            Arrays.setAll(aI, i -> random.nextInt(filterI_range));
+            Arrays.setAll(aI_filterI, i -> random.nextInt(filterI_range));
             eI_filterI = (int)(filterI_range * (1.0f - branchProbability));
 
             // X4 oop setup.
