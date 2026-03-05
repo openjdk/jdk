@@ -45,10 +45,13 @@ public class TestVectorLongToMaskNodeIdealization {
     static { Arrays.fill(TRUES, true); }
 
     public static void main(String[] args) {
+        // Run some tests directly first.
         TestFramework testFramework = new TestFramework();
         testFramework.setDefaultWarmup(10000)
                      .addFlags("--add-modules=jdk.incubator.vector")
                      .start();
+
+
     }
 
     // -------------------------------------------------------------------------------------
@@ -186,7 +189,7 @@ public class TestVectorLongToMaskNodeIdealization {
                   IRNode.VECTOR_STORE_MASK,                     "= 0",
                   IRNode.VECTOR_LONG_TO_MASK,                   "= 0", // Optimized away
                   IRNode.VECTOR_MASK_TO_LONG,                   "= 0", // Optimized away
-                  IRNode.VECTOR_MASK_CAST,                      "> 0",
+                  IRNode.VECTOR_MASK_CAST,                      "> 0", // Not yet optimized Z->Z
                   IRNode.VECTOR_BLEND_I,  IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.XOR_VI,          IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR,                          "> 0"},
@@ -199,7 +202,7 @@ public class TestVectorLongToMaskNodeIdealization {
                   IRNode.VECTOR_STORE_MASK,                     "= 0",
                   IRNode.VECTOR_LONG_TO_MASK,                   "= 0", // Optimized away
                   IRNode.VECTOR_MASK_TO_LONG,                   "= 0", // Optimized away
-                  IRNode.VECTOR_MASK_CAST,                      "> 0",
+                  IRNode.VECTOR_MASK_CAST,                      "> 0", // Cast I->J
                   IRNode.VECTOR_BLEND_I,                        "= 0", // Not needed
                   IRNode.XOR_VI,          IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR,                          "> 0"},
