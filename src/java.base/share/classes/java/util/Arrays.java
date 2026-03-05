@@ -4445,14 +4445,15 @@ public final class Arrays {
      * method on a {@link List} containing a sequence of {@link Byte}
      * instances representing the elements of the specified range in the same
      * order. If {@code a} is {@code null}, this method treats the array as
-     * having length {@code 0} for range checking.
-     * This method returns {@code 0} if either {@code a} is null or the range is empty {@code [0,0)}.
+     * having length 0 for range checking.
+     * This method returns 0 if either {@code a} is {@code null} or the range
+     * is empty.
      *
      * @param a the array from which to compute the range hash code
      * @param fromIndex the initial index of the range to be hashed, inclusive
      * @param toIndex the final index of the range to be hashed, exclusive
      * @return a content-based hash code for the specified range of the array,
-     *         or {@code 0} if either {@code a} is {@code null} or the range is empty
+     *         or 0 if either {@code a} is {@code null} or the range is empty
      * @throws ArrayIndexOutOfBoundsException if {@code fromIndex < 0} or
      *         {@code toIndex} is greater than the array length
      * @throws IllegalArgumentException if {@code fromIndex > toIndex}
