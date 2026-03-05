@@ -26,13 +26,13 @@ package compiler.vectorapi;
 
 import compiler.lib.ir_framework.*;
 import jdk.incubator.vector.*;
+import jtreg.SkippedException;
 
 /**
  * @test
- * @bug 8378312
- * @requires (os.arch == "amd64" & (os.family == "linux" | os.family =="windows")) | ((os.arch == "riscv64" | os.arch == "aarch64") & os.family == "linux") | (os.arch == "aarch64" & os.family == "mac")
+ * @bug 8378312 8378902
  * @library /test/lib /
- * @summary VectorAPI: libraryUnaryOp and libraryBinaryOp should be intrinsified. This test would be run on x64 on Linux and Windows (SVML) and ARM and RISC-V on Linux and macOS (SLEEF).
+ * @summary VectorAPI: libraryUnaryOp and libraryBinaryOp should be intrinsified. This test would be run on SVML/SLEEF supported platforms only.
  * @modules jdk.incubator.vector
  *
  * @run driver compiler.vectorapi.TestVectorLibraryUnaryOpAndBinaryOp
@@ -54,7 +54,24 @@ public class TestVectorLibraryUnaryOpAndBinaryOp {
         vec.lanewise(VectorOperators.HYPOT, 1.0f);
     }
 
+    private static void checkVectorMathLib() {
+        try {
+            // Check jsvml first
+            System.loadLibrary("jsvml");
+        } catch (UnsatisfiedLinkError _) {
+            try {
+                // Check sleef if jsvml not found
+                System.loadLibrary("sleef");
+            } catch (UnsatisfiedLinkError _) {
+                // This test is run on unsupported platform - should be skipped
+                throw new SkippedException("SVML / SLEEF not found");
+            }
+        }
+    }
+
     public static void main(String[] args) {
+        checkVectorMathLib();
+
         TestFramework testFramework = new TestFramework();
         testFramework.addFlags("--add-modules=jdk.incubator.vector")
                      .start();
