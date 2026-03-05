@@ -190,17 +190,16 @@ public class EncodingTest {
         throws Exception {
         try (FileOutputStream fos = new FileOutputStream(fileName);
              WritableByteChannel wbc = (WritableByteChannel) fos.getChannel();) {
-            assertThrows(MalformedInputException.class,
-                         () -> {
-                             try (Writer writer = csn != null ?
-                                  Channels.newWriter(wbc, csn) :
-                                  Channels.newWriter(wbc, charset)) {
-                                 for (int i = 0; i < ITERATIONS; i++) {
-                                     writer.write(illChars);
-                                 }
-                                 writer.flush();
-                             }
-                         });
+            Charset cs = (csn != null) ? Charset.forName(csn) : charset;
+            Writer writer = Channels.newWriter(wbc, cs);
+            assertThrows(MalformedInputException.class, () -> {
+                try (writer) {
+                    for (int i = 0; i < ITERATIONS; i++) {
+                        writer.write(illChars);
+                    }
+                    writer.flush();
+                }
+            });
         }
     }
 
