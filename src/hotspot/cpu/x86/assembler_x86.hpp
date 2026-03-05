@@ -2328,6 +2328,12 @@ private:
   void tzcntq(Register dst, Address src);
   void etzcntq(Register dst, Address src, bool no_flags);
 
+  // Unordered Compare Scalar Half-Precision Floating-Point Values and set EFLAGS
+  void vucomish(XMMRegister dst, Address src);
+  void vucomish(XMMRegister dst, XMMRegister src);
+  void vucomxsh(XMMRegister dst, Address src);
+  void vucomxsh(XMMRegister dst, XMMRegister src);
+
   // Unordered Compare Scalar Double-Precision Floating-Point Values and set EFLAGS
   void ucomisd(XMMRegister dst, Address src);
   void ucomisd(XMMRegister dst, XMMRegister src);

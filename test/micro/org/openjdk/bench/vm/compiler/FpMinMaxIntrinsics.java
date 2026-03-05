@@ -45,8 +45,8 @@ public class FpMinMaxIntrinsics {
     private Random r = new Random();
 
     private static int stride = 1;
-    private static float accf;
-    private static double accd;
+    private static float f_acc;
+    private static double d_acc;
 
     @Setup
     public void init() {
@@ -113,11 +113,11 @@ public class FpMinMaxIntrinsics {
     }
 
     @Benchmark
-    public float fMinReduce() {
-        float result = Float.MAX_VALUE;
+    public double dMaxReduce() {
+        double result = Double.MIN_VALUE;
 
         for (int i = 0; i < COUNT; i++)
-            result = Math.min(result, floats[i]);
+            result = Math.max(result, doubles[i]);
 
         return result;
     }
@@ -133,11 +133,31 @@ public class FpMinMaxIntrinsics {
     }
 
     @Benchmark
-    public float fMinReducePartiallyUnrolled() {
+    public float fMaxReduce() {
+        float result = Float.MIN_VALUE;
+
+        for (int i = 0; i < COUNT; i++)
+            result = Math.max(result, floats[i]);
+
+        return result;
+    }
+
+    @Benchmark
+    public float fMinReduce() {
         float result = Float.MAX_VALUE;
+
+        for (int i = 0; i < COUNT; i++)
+            result = Math.min(result, floats[i]);
+
+        return result;
+    }
+
+    @Benchmark
+    public double dMaxReducePartiallyUnrolled() {
+        double result = Double.MIN_VALUE;
         for (int i = 0; i < COUNT / 2; i++) {
-            result = Math.min(result, floats[2*i]);
-            result = Math.min(result, floats[2*i + 1]);
+            result = Math.max(result, doubles[2*i]);
+            result = Math.max(result, doubles[2*i + 1]);
         }
         return result;
     }
@@ -153,10 +173,30 @@ public class FpMinMaxIntrinsics {
     }
 
     @Benchmark
-    public float fMinReduceNonCounted() {
+    public float fMaxReducePartiallyUnrolled() {
+        float result = Float.MIN_VALUE;
+        for (int i = 0; i < COUNT / 2; i++) {
+            result = Math.max(result, floats[2*i]);
+            result = Math.max(result, floats[2*i + 1]);
+        }
+        return result;
+    }
+
+    @Benchmark
+    public float fMinReducePartiallyUnrolled() {
         float result = Float.MAX_VALUE;
+        for (int i = 0; i < COUNT / 2; i++) {
+            result = Math.min(result, floats[2*i]);
+            result = Math.min(result, floats[2*i + 1]);
+        }
+        return result;
+    }
+
+    @Benchmark
+    public double dMaxReduceNonCounted() {
+        double result = Double.MIN_VALUE;
         for (int i = 0; i < COUNT; i += stride)
-            result = Math.min(result, floats[i]);
+            result = Math.max(result, doubles[i]);
         return result;
     }
 
@@ -169,27 +209,59 @@ public class FpMinMaxIntrinsics {
     }
 
     @Benchmark
-    public float fMinReduceGlobalAccumulator() {
-        accf = Float.MAX_VALUE;
+    public float fMaxReduceNonCounted() {
+        float result = Float.MIN_VALUE;
         for (int i = 0; i < COUNT; i += stride)
-            accf = Math.min(accf, floats[i]);
-        return accf;
+            result = Math.max(result, floats[i]);
+        return result;
+    }
+
+    @Benchmark
+    public float fMinReduceNonCounted() {
+        float result = Float.MAX_VALUE;
+        for (int i = 0; i < COUNT; i += stride)
+            result = Math.min(result, floats[i]);
+        return result;
+    }
+
+    @Benchmark
+    public double dMaxReduceGlobalAccumulator() {
+        d_acc = Double.MIN_VALUE;
+        for (int i = 0; i < COUNT; i += stride)
+            d_acc = Math.max(d_acc, doubles[i]);
+        return d_acc;
     }
 
     @Benchmark
     public double dMinReduceGlobalAccumulator() {
-        accd = Double.MAX_VALUE;
+        d_acc = Double.MAX_VALUE;
         for (int i = 0; i < COUNT; i += stride)
-            accd = Math.min(accd, doubles[i]);
-        return accd;
+            d_acc = Math.min(d_acc, doubles[i]);
+        return d_acc;
     }
 
     @Benchmark
-    public float fMinReduceInOuterLoop() {
-        float result = Float.MAX_VALUE;
+    public float fMaxReduceGlobalAccumulator() {
+        f_acc = Float.MIN_VALUE;
+        for (int i = 0; i < COUNT; i += stride)
+            f_acc = Math.max(f_acc, floats[i]);
+        return f_acc;
+    }
+
+    @Benchmark
+    public float fMinReduceGlobalAccumulator() {
+        f_acc = Float.MAX_VALUE;
+        for (int i = 0; i < COUNT; i += stride)
+            f_acc = Math.min(f_acc, floats[i]);
+        return f_acc;
+    }
+
+    @Benchmark
+    public double dMaxReduceInOuterLoop() {
+        double result = Double.MIN_VALUE;
         int count = 0;
         for (int i = 0; i < COUNT; i++) {
-            result = Math.min(result, floats[i]);
+            result = Math.max(result, doubles[i]);
             for (int j = 0; j < 10; j += stride) {
                 count++;
             }
@@ -203,6 +275,32 @@ public class FpMinMaxIntrinsics {
         int count = 0;
         for (int i = 0; i < COUNT; i++) {
             result = Math.min(result, doubles[i]);
+            for (int j = 0; j < 10; j += stride) {
+                count++;
+            }
+        }
+        return result + count;
+    }
+
+    @Benchmark
+    public float fMaxReduceInOuterLoop() {
+        float result = Float.MIN_VALUE;
+        int count = 0;
+        for (int i = 0; i < COUNT; i++) {
+            result = Math.max(result, floats[i]);
+            for (int j = 0; j < 10; j += stride) {
+                count++;
+            }
+        }
+        return result + count;
+    }
+
+    @Benchmark
+    public float fMinReduceInOuterLoop() {
+        float result = Float.MAX_VALUE;
+        int count = 0;
+        for (int i = 0; i < COUNT; i++) {
+            result = Math.min(result, floats[i]);
             for (int j = 0; j < 10; j += stride) {
                 count++;
             }
