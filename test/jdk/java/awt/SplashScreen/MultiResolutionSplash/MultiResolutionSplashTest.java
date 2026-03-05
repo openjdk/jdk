@@ -87,11 +87,17 @@ public class MultiResolutionSplashTest {
         final double scaleFactor = getScreenScaleFactor();
 
         final Robot robot = new Robot();
+        // Allow time for the splash screen to show
+        robot.delay(100);
 
         BufferedImage splashCapture = robot.createScreenCapture(splashBounds);
         String captureFileName = "splashscreen-%1.2f-%s.png"
                                  .formatted(scaleFactor, test.name1x);
         saveImageNoError(splashCapture, new File(captureFileName));
+
+        // Close the splash screen; this gives time for it to be fully removed
+        splashScreen.close();
+        robot.waitForIdle();
 
         if (splashBounds.width != IMAGE_WIDTH) {
             throw new RuntimeException(
