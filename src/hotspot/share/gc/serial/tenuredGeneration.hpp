@@ -25,10 +25,10 @@
 #ifndef SHARE_GC_SERIAL_TENUREDGENERATION_HPP
 #define SHARE_GC_SERIAL_TENUREDGENERATION_HPP
 
-#include "gc/serial/cSpaceCounters.hpp"
 #include "gc/serial/generation.hpp"
 #include "gc/serial/serialBlockOffsetTable.hpp"
 #include "gc/shared/generationCounters.hpp"
+#include "gc/shared/hSpaceCounters.hpp"
 #include "gc/shared/space.hpp"
 #include "utilities/macros.hpp"
 
@@ -68,7 +68,7 @@ class TenuredGeneration: public Generation {
   ContiguousSpace*    _the_space;       // Actual space holding objects
 
   GenerationCounters* _gen_counters;
-  CSpaceCounters*     _space_counters;
+  HSpaceCounters*     _space_counters;
 
   // Avg amount promoted; used for avoiding promotion undo
   // This class does not update deviations if the sample is zero.

@@ -330,9 +330,9 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
 
   _gc_counters = new CollectorCounters("Serial full collection pauses", 1);
 
-  _space_counters = new CSpaceCounters(gen_name, 0,
+  _space_counters = new HSpaceCounters(_gen_counters->name_space(), gen_name, 0,
                                        _virtual_space.reserved_size(),
-                                       _the_space, _gen_counters);
+                                       _the_space->capacity());
 }
 
 void TenuredGeneration::gc_prologue() {
@@ -367,7 +367,7 @@ void TenuredGeneration::update_promote_stats() {
 
 void TenuredGeneration::update_counters() {
   if (UsePerfData) {
-    _space_counters->update_all();
+    _space_counters->update_all(_the_space->capacity(), _the_space->used());
     _gen_counters->update_capacity(_virtual_space.committed_size());
   }
 }

@@ -25,20 +25,19 @@
 #ifndef SHARE_GC_SERIAL_DEFNEWGENERATION_HPP
 #define SHARE_GC_SERIAL_DEFNEWGENERATION_HPP
 
-#include "gc/serial/cSpaceCounters.hpp"
 #include "gc/serial/generation.hpp"
 #include "gc/serial/tenuredGeneration.hpp"
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/generationCounters.hpp"
+#include "gc/shared/hSpaceCounters.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "utilities/align.hpp"
 #include "utilities/stack.hpp"
 
 class ContiguousSpace;
-class CSpaceCounters;
 class OldGenScanClosure;
 class YoungGenScanClosure;
 class DefNewTracer;
@@ -102,9 +101,9 @@ class DefNewGeneration: public Generation {
 
   // Performance Counters
   GenerationCounters*  _gen_counters;
-  CSpaceCounters*      _eden_counters;
-  CSpaceCounters*      _from_counters;
-  CSpaceCounters*      _to_counters;
+  HSpaceCounters*      _eden_counters;
+  HSpaceCounters*      _from_counters;
+  HSpaceCounters*      _to_counters;
 
   // sizing information
   size_t               _max_eden_size;

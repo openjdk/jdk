@@ -248,12 +248,12 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
       min_size, max_size, _virtual_space.committed_size());
   _gc_counters = new CollectorCounters(policy, 0);
 
-  _eden_counters = new CSpaceCounters("eden", 0, _max_eden_size, _eden_space,
-                                      _gen_counters);
-  _from_counters = new CSpaceCounters("s0", 1, _max_survivor_size, _from_space,
-                                      _gen_counters);
-  _to_counters = new CSpaceCounters("s1", 2, _max_survivor_size, _to_space,
-                                    _gen_counters);
+  _eden_counters = new HSpaceCounters(_gen_counters->name_space(), "eden", 0,
+                                      _max_eden_size, _eden_space->capacity());
+  _from_counters = new HSpaceCounters(_gen_counters->name_space(), "s0", 1,
+                                      _max_survivor_size, _from_space->capacity());
+  _to_counters = new HSpaceCounters(_gen_counters->name_space(), "s1", 2,
+                                    _max_survivor_size, _to_space->capacity());
 
   update_counters();
   _old_gen = nullptr;
@@ -319,7 +319,7 @@ void DefNewGeneration::swap_spaces() {
   _to_space          = s;
 
   if (UsePerfData) {
-    CSpaceCounters* c = _from_counters;
+    HSpaceCounters* c = _from_counters;
     _from_counters = _to_counters;
     _to_counters = c;
   }
@@ -821,9 +821,9 @@ void DefNewGeneration::gc_epilogue() {
 
 void DefNewGeneration::update_counters() {
   if (UsePerfData) {
-    _eden_counters->update_all();
-    _from_counters->update_all();
-    _to_counters->update_all();
+    _eden_counters->update_all(_eden_space->capacity(), _eden_space->used());
+    _from_counters->update_all(_from_space->capacity(), _from_space->used());
+    _to_counters->update_all(_to_space->capacity(), _to_space->used());
     _gen_counters->update_capacity(_virtual_space.committed_size());
   }
 }
