@@ -34,13 +34,13 @@ class ThreadIdTableConfig;
 class ThreadIdTable : public AllStatic {
   friend class ThreadIdTableConfig;
 
-  static volatile bool _is_initialized;
+  static bool _is_initialized;
   static volatile bool _has_work;
 
 public:
   // Initialization
   static void lazy_initialize(const ThreadsList* threads);
-  static bool is_initialized() { return _is_initialized; }
+  static bool is_initialized();
 
   // Lookup and list management
   static JavaThread* find_thread_by_tid(jlong tid);

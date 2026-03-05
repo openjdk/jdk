@@ -726,9 +726,12 @@ JavaThread* ThreadsList::find_JavaThread_from_java_tid(jlong java_tid) const {
         }
       }
     }
-  } else if (!thread->is_exiting()) {
+  } 
+/**  
+  else if (!thread->is_exiting()) {
     return thread;
   }
+    */
   return nullptr;
 }
 
@@ -883,10 +886,6 @@ void ThreadsSMRSupport::add_thread(JavaThread *thread){
 
   ThreadsList *old_list = xchg_java_thread_list(new_list);
   free_list(old_list);
-  if (ThreadIdTable::is_initialized()) {
-    jlong tid = SharedRuntime::get_java_tid(thread);
-    ThreadIdTable::add_thread(tid, thread);
-  }
 }
 
 // set_delete_notify() and clear_delete_notify() are called
