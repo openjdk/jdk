@@ -677,6 +677,7 @@ class PhaseCCP : public PhaseIterGVN {
   Node* fetch_next_node(Unique_Node_List& worklist);
   static void dump_type_and_node(const Node* n, const Type* t) PRODUCT_RETURN;
 
+  bool not_bottom_type(Node* n) const;
   void push_child_nodes_to_worklist(Unique_Node_List& worklist, Node* n) const;
   void push_if_not_bottom_type(Unique_Node_List& worklist, Node* n) const;
   void push_more_uses(Unique_Node_List& worklist, Node* parent, const Node* use) const;
