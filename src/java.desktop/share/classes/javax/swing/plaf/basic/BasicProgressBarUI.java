@@ -884,15 +884,6 @@ public class BasicProgressBarUI extends ProgressBarUI {
      */
     private void paintString(Graphics g, int x, int y, int width, int height,
                              int fillStart, int amountFull, Insets b) {
-        boolean isPrinting = SwingUtilities2.isPrinting(g);
-        if (!(g instanceof Graphics2D) && !isPrinting) {
-            return;
-        }
-
-        Graphics g2d = null;
-        if (g instanceof Graphics2D) {
-            g2d = (Graphics2D) g;
-        }
         String progressString = progressBar.getString();
         g.setFont(progressBar.getFont());
         Point renderLocation = getStringPlacement(g, progressString,
