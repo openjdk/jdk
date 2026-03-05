@@ -152,8 +152,8 @@ import static jdk.internal.util.Exceptions.formatMsg;
  * escaped prior to calling URL, and also to decode any escaped fields,
  * that are returned from URL. Furthermore, because URL has no knowledge
  * of URL escaping, it does not recognise equivalence between the encoded
- * or decoded form of the same URL. For example, the two URLs:<br>
- * <pre>    http://foo.com/hello world/ and http://foo.com/hello%20world</pre>
+ * or decoded form of the same URL. For example, the two URLs:
+ * {@code http://foo.com/hello%20world} and {@code http://foo.com/hello world/}
  * would be considered not equal to each other.
  * <p>
  * Note, the {@link java.net.URI} class does perform escaping of its
