@@ -86,7 +86,12 @@ public class RuntimePackageTest {
 
     @Test(ifOS = MACOS)
     public static void testFromBundle() {
-        init(MacHelper::createRuntimeBundle).run();
+        init(() -> {
+            return MacHelper.buildRuntimeBundle().mutator(cmd -> {
+                // Set custom version in the Info.plist file of the predefined runtime bundle.
+                cmd.addArguments("--app-version", "17.52");
+            }).create();
+        }).run();
     }
 
     @Test(ifOS = LINUX)

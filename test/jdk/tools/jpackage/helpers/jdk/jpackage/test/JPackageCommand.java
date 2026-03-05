@@ -60,6 +60,7 @@ import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import jdk.jpackage.internal.util.MacBundle;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingFunction;
@@ -245,7 +246,18 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     public String version() {
         return PropertyFinder.findAppProperty(this,
-                PropertyFinder.cmdlineOptionWithValue("--app-version"),
+                PropertyFinder.cmdlineOptionWithValue("--app-version").or(cmd -> {
+                    if (cmd.isRuntime() && PackageType.MAC.contains(cmd.packageType())) {
+                        // This is a macOS runtime bundle.
+                        var predefinedRuntimeBundle = MacBundle.fromPath(Path.of(cmd.getArgumentValue("--runtime-image")));
+                        if (predefinedRuntimeBundle.isPresent()) {
+                            // This is a macOS runtime bundle created from the predefined runtime bundle (not a predefined runtime directory).
+                            // The version of this bundle should be copied from the Info.plist file of the predefined runtime bundle.
+                            return MacHelper.readPList(predefinedRuntimeBundle.get().infoPlistFile()).findValue("CFBundleVersion");
+                        }
+                    }
+                    return Optional.empty();
+                }),
                 PropertyFinder.appImageFile(appImageFile -> {
                     return appImageFile.version();
                 })
