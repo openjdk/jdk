@@ -24,19 +24,41 @@
 package compiler.vectorapi;
 
 import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.Random;
+
+import jdk.test.lib.Utils;
+
 import compiler.lib.ir_framework.*;
 import compiler.lib.verify.Verify;
 import jdk.incubator.vector.*;
+import compiler.lib.compile_framework.CompileFramework;
+
+import compiler.lib.template_framework.Template;
+import compiler.lib.template_framework.TemplateToken;
+import compiler.lib.template_framework.library.TestFrameworkClass;
+import compiler.lib.template_framework.library.PrimitiveType;
+import compiler.lib.template_framework.library.CodeGenerationDataNameType;
+import static compiler.lib.template_framework.Template.scope;
+import static compiler.lib.template_framework.Template.let;
 
 /*
  * @test
  * @bug 8277997 8378968
+ * @key randomness
  * @summary Testing some optimizations in VectorLongToMaskNode::Ideal
+ *          For now: VectorMask.fromLong(.., mask.toLong())
  * @modules jdk.incubator.vector
  * @library /test/lib /
+ * @compile ../../compiler/lib/ir_framework/TestFramework.java
+ * @compile ../../compiler/lib/generators/Generators.java
+ * @compile ../../compiler/lib/verify/Verify.java
  * @run driver ${test.main.class}
  */
 public class TestVectorLongToMaskNodeIdealization {
+    private static final Random RANDOM = Utils.getRandomInstance();
 
     static final long[] ONES_L = new long[64];
     static { Arrays.fill(ONES_L, 1); }
@@ -51,7 +73,15 @@ public class TestVectorLongToMaskNodeIdealization {
                      .addFlags("--add-modules=jdk.incubator.vector")
                      .start();
 
-
+        // Then also generate some random examples.
+        CompileFramework comp = new CompileFramework();
+        comp.addJavaSourceCode("compiler.vectorapi.templated.Templated", generate(comp));
+        comp.compile("--add-modules=jdk.incubator.vector");
+        comp.invoke("compiler.vectorapi.templated.Templated", "main", new Object[] {new String[] {
+            "--add-modules=jdk.incubator.vector",
+            "--add-opens", "jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED",
+            "--add-opens", "java.base/java.lang=ALL-UNNAMED"
+        }});
     }
 
     // -------------------------------------------------------------------------------------
@@ -230,4 +260,160 @@ public class TestVectorLongToMaskNodeIdealization {
         Verify.checkEQ(GOLD_TEST1C, out);
     }
     // -------------------------------------------------------------------------------------
+
+    // TODO: we can refactor this away once JDK-8369699 is integrated.
+    record VectorType(PrimitiveType elementType, int length) {
+        String typeName() {
+            return switch(elementType.name()) {
+                case "byte"   -> "ByteVector";
+                case "short"  -> "ShortVector";
+                case "int"    -> "IntVector";
+                case "long"   -> "LongVector";
+                case "float"  -> "FloatVector";
+                case "double" -> "DoubleVector";
+                default       -> throw new UnsupportedOperationException("Not supported: " + elementType.name());
+            };
+        }
+
+        String speciesName() {
+            return typeName() + ".SPECIES_" + bitSize();
+        }
+
+        int bitSize() {
+            return elementType.byteSize() * length() * 8;
+        }
+    }
+
+    public static final List<VectorType> VECTOR_TYPES = List.of(
+        new VectorType(CodeGenerationDataNameType.bytes(), 8),
+        new VectorType(CodeGenerationDataNameType.bytes(), 16),
+        new VectorType(CodeGenerationDataNameType.bytes(), 32),
+        new VectorType(CodeGenerationDataNameType.bytes(), 64),
+        new VectorType(CodeGenerationDataNameType.shorts(), 4),
+        new VectorType(CodeGenerationDataNameType.shorts(), 8),
+        new VectorType(CodeGenerationDataNameType.shorts(), 16),
+        new VectorType(CodeGenerationDataNameType.shorts(), 32),
+        new VectorType(CodeGenerationDataNameType.ints(), 2),
+        new VectorType(CodeGenerationDataNameType.ints(), 4),
+        new VectorType(CodeGenerationDataNameType.ints(), 8),
+        new VectorType(CodeGenerationDataNameType.ints(), 16),
+        new VectorType(CodeGenerationDataNameType.longs(), 1),
+        new VectorType(CodeGenerationDataNameType.longs(), 2),
+        new VectorType(CodeGenerationDataNameType.longs(), 4),
+        new VectorType(CodeGenerationDataNameType.longs(), 8),
+        new VectorType(CodeGenerationDataNameType.floats(), 2),
+        new VectorType(CodeGenerationDataNameType.floats(), 4),
+        new VectorType(CodeGenerationDataNameType.floats(), 8),
+        new VectorType(CodeGenerationDataNameType.floats(), 16),
+        new VectorType(CodeGenerationDataNameType.doubles(), 1),
+        new VectorType(CodeGenerationDataNameType.doubles(), 2),
+        new VectorType(CodeGenerationDataNameType.doubles(), 4),
+        new VectorType(CodeGenerationDataNameType.doubles(), 8)
+    );
+
+    private static String generate(CompileFramework comp) {
+        // Create a list to collect all tests.
+        List<TemplateToken> tests = new ArrayList<>();
+
+        var testTemplate = Template.make("t1", "t2", (VectorType t1, VectorType t2) -> scope(
+            let("e1", t1.elementType()),
+            let("e2", t2.elementType()),
+            let("V1", t1.typeName()),
+            let("V2", t2.typeName()),
+            let("S1", t1.speciesName()),
+            let("S2", t2.speciesName()),
+            """
+            // ------------ $test -------------
+            @Test
+            @Warmup(10_000)
+            """,
+            // Now let's generate some IR rules
+            // Note: length=64 leads the AndL mask to be all-ones, and fold away immediately.
+            //       We could eventually extend the optimization to handle that.
+            //
+            // AVX512: expect vectorization in length range [4..64]
+            //         2-element masks are currently not properly intrinsified.
+            (t1.length() >= 4 && t2.length() >= 4)
+            ?(  (t1.length() == t2.length && t1.length() != 64)
+                ?   """
+                    @IR(counts = {IRNode.VECTOR_LONG_TO_MASK, "= 0",  // Optimized away
+                                  IRNode.VECTOR_MASK_TO_LONG, "= 0"}, // Optimized away
+                        applyIfCPUFeature = {"avx512", "true"})
+                    """
+                :   """
+                    @IR(counts = {IRNode.VECTOR_LONG_TO_MASK, "> 0",  // Cannot optimize
+                                  IRNode.VECTOR_MASK_TO_LONG, "> 0"}, // Cannot optimize
+                        applyIfCPUFeature = {"avx512", "true"})
+                    """)
+            :(   """
+                 // AVX512: at least one vector length not in range [4..64] -> no IR rule.
+                 """),
+            // AVX2: expect vectorization if: length >= 2 and bitSize <= 256
+            (t1.bitSize() <= 256 && t2.bitSize() <= 256 && t1.length() >= 2 && t2.length() >= 2)
+            ?(  (t1.length() == t2.length)
+                ?   """
+                    @IR(counts = {IRNode.VECTOR_LONG_TO_MASK, "= 0",  // Optimized away
+                                  IRNode.VECTOR_MASK_TO_LONG, "= 0"}, // Optimized away
+                        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
+                    """
+                :   """
+                    @IR(counts = {IRNode.VECTOR_LONG_TO_MASK, "> 0",  // Cannot optimize
+                                  IRNode.VECTOR_MASK_TO_LONG, "> 0"}, // Cannot optimize
+                        applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
+                    """)
+            :(   """
+                 // AVX2: at least one vector length not: length >= 2 and bitSize <= 256 -> no IR rule.
+                 """),
+            """
+            public static Object $test() {
+                var inputs = #V1.fromArray(#S1, $INPUT, 0);
+                var mask1 = inputs.compare(VectorOperators.GT, 0);
+
+                var mask2 = VectorMask.fromLong(#S2, mask1.toLong());
+
+                var zeros = #V2.zero(#S2);
+                var m1s   = #V2.broadcast(#S2, -1);
+                var res = zeros.blend(m1s, mask2);
+
+                #e2[] out = new #e2[64];
+                res.intoArray(out, 0);
+                return out;
+            }
+
+            public static #e1[] $INPUT = new #e1[64];
+            """,
+            "static { for (int i = 0; i < $INPUT.length; i++) { $INPUT[i] = ",  t1.elementType().callLibraryRNG(), "; } }",
+            """
+            public static Object $GOLD = $test();
+
+            @Check(test = "$test")
+            public static void $check(Object val) {
+                Verify.checkEQ($GOLD, val);
+            }
+            """
+        ));
+
+        tests.add(PrimitiveType.generateLibraryRNG());
+
+        for (int i = 0; i < 100; i++) {
+            VectorType t1 = VECTOR_TYPES.get(RANDOM.nextInt(VECTOR_TYPES.size()));
+            VectorType t2 = VECTOR_TYPES.get(RANDOM.nextInt(VECTOR_TYPES.size()));
+            tests.add(testTemplate.asToken(t1, t2));
+        }
+
+        // Create the test class, which runs all testTemplateTokens.
+        return TestFrameworkClass.render(
+            // package and class name.
+            "compiler.vectorapi.templated", "Templated",
+            // List of imports.
+            Set.of("compiler.lib.verify.*",
+                   "java.util.Random",
+                   "jdk.test.lib.Utils",
+                   "compiler.lib.generators.*",
+                   "jdk.incubator.vector.*"),
+            // classpath, so the Test VM has access to the compiled class files.
+            comp.getEscapedClassPathOfCompiledClasses(),
+            // The list of tests.
+            tests);
+    }
 }
