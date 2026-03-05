@@ -381,7 +381,7 @@ public:
 
       if (entry == old_monitor) {
         // Found matching entry; remove it
-        [[maybe_unused]] bool result = bucket.compare_set(entry, removed(), memory_order_relaxed);
+        bool result = bucket.compare_set(entry, removed(), memory_order_relaxed);
         assert(result, "should not fail");
         break;
       }
