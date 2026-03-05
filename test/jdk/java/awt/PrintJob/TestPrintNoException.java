@@ -24,8 +24,6 @@
 import java.awt.Button;
 import java.awt.Frame;
 import java.awt.PrintJob;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 /*
  * @test
@@ -44,9 +42,8 @@ public class TestPrintNoException {
 
                 The test will bring up a print dialog.
                 Select a printer with "All" pages selected and proceed.
-                Verify that no exception message is displayed in the logarea.
 
-                If no exception is thrown, press Pass else Fail.
+                The test will fail automatically if the bug exists.
                 Note: There's no need to verify the actual print output.""";
 
         PassFailJFrame.builder()
@@ -61,20 +58,13 @@ public class TestPrintNoException {
     private static Frame createUI() {
         Frame frame = new Frame("Exception");
         Button b = new Button("Print");
-        b.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    PrintJob pj = frame.getToolkit().getPrintJob(frame, "ResolutionTest", null);
-                    PassFailJFrame.log("Printing code started.");
-                    if (pj != null) {
-                        pj.end();
-                    }
-                } catch (Exception ex) {
-                    PassFailJFrame.log(ex.toString());
-                    return;
-                }
-                PassFailJFrame.log("Printing code finished.");
+        b.addActionListener((e) -> {
+            PrintJob pj = frame.getToolkit().getPrintJob(frame, "ResolutionTest", null);
+            PassFailJFrame.log("Printing code started.");
+            if (pj != null) {
+                pj.end();
             }
+            PassFailJFrame.log("Printing code finished.");
         });
         frame.add(b);
         frame.setSize(50, 100);
