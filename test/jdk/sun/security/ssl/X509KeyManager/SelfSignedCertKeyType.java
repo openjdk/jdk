@@ -44,8 +44,8 @@ import jdk.test.lib.security.CertificateBuilder;
  * @modules java.base/sun.security.x509
  *          java.base/sun.security.util
  * @library /test/lib
- * @run main/othervm SelfSignedCertKeyType SunX509
- * @run main/othervm SelfSignedCertKeyType PKIX
+ * @run main SelfSignedCertKeyType SunX509
+ * @run main SelfSignedCertKeyType PKIX
  */
 
 public class SelfSignedCertKeyType {
