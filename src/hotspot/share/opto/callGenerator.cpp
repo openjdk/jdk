@@ -159,9 +159,6 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
     call->set_override_symbolic_info(true);
   }
   _call_node = call;  // Save the call node in case we need it later
-  if (is_late_inline()) {
-    _call_node->set_late_inlined_call(true);
-  }
   if (!is_static) {
     // Make an explicit receiver null_check as part of this call.
     // Since we share a map with the caller, his JVMS gets adjusted.
@@ -177,7 +174,7 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
   kit.set_edges_for_java_call(call, false, _separate_io_proj);
   Node* ret = kit.set_results_for_java_call(call, _separate_io_proj);
   if (is_late_inline()) {
-    ret->clear_flag(Node::Flag_is_dead_loop_safe);
+    ret->mark_not_dead_loop_safe();
   }
   kit.push_node(method()->return_type()->basic_type(), ret);
   return kit.transfer_exceptions_into_jvms();
