@@ -22,6 +22,7 @@
  */
 
 import static jdk.test.lib.Asserts.assertEquals;
+import static jdk.test.lib.Asserts.assertNotNull;
 
 import java.math.BigInteger;
 import java.security.KeyPair;
@@ -70,10 +71,11 @@ public class SelfSignedCertKeyType {
         String engineClientAlias = km.chooseEngineClientAlias(
                 new String[]{KEY_TYPE}, null, null);
 
-        assertEquals(CERT_ALIAS, normalizeAlias(serverAlias));
-        assertEquals(CERT_ALIAS, normalizeAlias(engineServerAlias));
-        assertEquals(CERT_ALIAS, normalizeAlias(clientAlias));
-        assertEquals(CERT_ALIAS, normalizeAlias(engineClientAlias));
+        for (String alias : new String[]{serverAlias,
+                engineServerAlias, clientAlias, engineClientAlias}) {
+            assertNotNull(alias);
+            assertEquals(CERT_ALIAS, normalizeAlias(alias));
+        }
     }
 
     // PKIX KeyManager adds a cache prefix to an alias.
