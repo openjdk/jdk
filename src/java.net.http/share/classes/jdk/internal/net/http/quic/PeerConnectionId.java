@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,8 +72,13 @@ public final class PeerConnectionId extends QuicConnectionId {
     }
 
     private static ByteBuffer cloneBuffer(ByteBuffer src) {
+        // we make a copy of the bytes and create a new
+        // ByteBuffer here because we do not want to retain
+        // the memory that was allocated for the original
+        // ByteBuffer, which could ba a slice of a larger
+        // buffer, such as the whole datagram payload.
         final byte[] idBytes = new byte[src.remaining()];
-        src.get(idBytes);
+        src.get(src.position(), idBytes);
         return ByteBuffer.wrap(idBytes);
     }
 
