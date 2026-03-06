@@ -554,9 +554,9 @@ void StubGenerator::poly1305_process_blocks_avx512(
     const Register r0, const Register r1, const Register c1)
 {
   Label L_process256Loop, L_process256LoopDone;
-  const Register t0 = r13;
-  const Register t1 = r14;
-  const Register t2 = r15;
+  const Register t0 = UseAPX ? r17 : r13;
+  const Register t1 = UseAPX ? r18 : r14;
+  const Register t2 = UseAPX ? r19 : r15;
   const Register mulql = rax;
   const Register mulqh = rdx;
 
@@ -921,10 +921,12 @@ address StubGenerator::generate_poly1305_processBlocks() {
   __ push_ppx(rsi);
   __ push_ppx(rdi);
   #endif
-  __ push_ppx(r12);
-  __ push_ppx(r13);
-  __ push_ppx(r14);
-  __ push_ppx(r15);
+  if (!UseAPX) {
+    __ push_ppx(r12);
+    __ push_ppx(r13);
+    __ push_ppx(r14);
+    __ push_ppx(r15);
+  }
 
   // Register Map
   const Register input        = rdi; // msg
@@ -936,11 +938,11 @@ address StubGenerator::generate_poly1305_processBlocks() {
   const Register a1 = r9;   // [in/out] accumulator bits 127..64
   const Register a2 = r10;  // [in/out] accumulator bits 195..128
   const Register r0 = r11;  // R constant bits 63..0
-  const Register r1 = r12;  // R constant bits 127..64
+  const Register r1 = UseAPX ? r16 : r12;  // R constant bits 127..64
   const Register c1 = r8;   // 5*R (upper limb only)
-  const Register t0 = r13;
-  const Register t1 = r14;
-  const Register t2 = r15;
+  const Register t0 = UseAPX ? r17 : r13;
+  const Register t1 = UseAPX ? r18 : r14;
+  const Register t2 = UseAPX ? r19 : r15;
   const Register mulql = rax;
   const Register mulqh = rdx;
 
@@ -1016,10 +1018,12 @@ address StubGenerator::generate_poly1305_processBlocks() {
   // Write output
   poly1305_limbs_out(a0, a1, a2, accumulator, t0, t1);
 
-  __ pop_ppx(r15);
-  __ pop_ppx(r14);
-  __ pop_ppx(r13);
-  __ pop_ppx(r12);
+  if (!UseAPX) {
+    __ pop_ppx(r15);
+    __ pop_ppx(r14);
+    __ pop_ppx(r13);
+    __ pop_ppx(r12);
+  }
   #ifdef _WIN64
   __ pop_ppx(rdi);
   __ pop_ppx(rsi);

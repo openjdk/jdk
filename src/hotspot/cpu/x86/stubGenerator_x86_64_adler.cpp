@@ -82,9 +82,9 @@ address StubGenerator::generate_updateBytesAdler32() {
   const Register data = r9;
   const Register size = r10;
   const Register s = r11;
-  const Register a_d = r12; //r12d
+  const Register a_d = UseAPX ? r16 : r12; //r12d
   const Register b_d = r8; //r8d
-  const Register end = r13;
+  const Register end = UseAPX ? r17 : r13;
 
   assert_different_registers(c_rarg0, c_rarg1, c_rarg2, data, size);
   assert_different_registers(init_d, data, size, s, a_d, b_d, end, rax);
@@ -115,8 +115,10 @@ address StubGenerator::generate_updateBytesAdler32() {
 
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
-  __ movq(xtmp3, r12);
-  __ movq(xtmp4, r13);
+  if (!UseAPX) {
+    __ movq(xtmp3, r12);
+    __ movq(xtmp4, r13);
+  }
   __ movq(xtmp5, r14);
 
   __ vmovdqu(yshuf0, ExternalAddress((address)ADLER32_SHUF0_TABLE), r14 /*rscratch*/);
@@ -327,8 +329,10 @@ address StubGenerator::generate_updateBytesAdler32() {
   __ bind(END);
 
   __ movq(r14, xtmp5);
-  __ movq(r13, xtmp4);
-  __ movq(r12, xtmp3);
+  if (!UseAPX) {
+    __ movq(r13, xtmp4);
+    __ movq(r12, xtmp3);
+  }
 
   __ vzeroupper();
   __ leave();

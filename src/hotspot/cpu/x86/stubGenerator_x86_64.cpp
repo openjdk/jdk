@@ -1409,7 +1409,7 @@ address StubGenerator::generate_md5_implCompress(StubId stub_id) {
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
-  const Register buf_param = r15;
+  const Register buf_param = UseAPX ? r16 : r15;
   const Address state_param(rsp, 0 * wordSize);
   const Address ofs_param  (rsp, 1 * wordSize    );
   const Address limit_param(rsp, 1 * wordSize + 4);
@@ -1418,8 +1418,10 @@ address StubGenerator::generate_md5_implCompress(StubId stub_id) {
   __ push_ppx(rbx);
   __ push_ppx(rdi);
   __ push_ppx(rsi);
-  __ push_ppx(r15);
-  __ subptr(rsp, 2 * wordSize);
+  if (!UseAPX) {
+    __ push_ppx(r15);
+  }
+    __ subptr(rsp, 2 * wordSize);
 
   __ movptr(buf_param, c_rarg0);
   __ movptr(state_param, c_rarg1);
@@ -1430,7 +1432,9 @@ address StubGenerator::generate_md5_implCompress(StubId stub_id) {
   __ fast_md5(buf_param, state_param, ofs_param, limit_param, multi_block);
 
   __ addptr(rsp, 2 * wordSize);
-  __ pop_ppx(r15);
+   if (!UseAPX) {
+    __ pop_ppx(r15);
+  }
   __ pop_ppx(rsi);
   __ pop_ppx(rdi);
   __ pop_ppx(rbx);
@@ -1774,10 +1778,12 @@ address StubGenerator::generate_base64_encodeBlock()
   __ enter();
 
   // Save callee-saved registers before using them
-  __ push_ppx(r12);
-  __ push_ppx(r13);
-  __ push_ppx(r14);
-  __ push_ppx(r15);
+   __ push_ppx(r12);
+  if (!UseAPX) {
+    __ push_ppx(r13);
+    __ push_ppx(r14);
+    __ push_ppx(r15);
+  }
 
   // arguments
   const Register source = c_rarg0;       // Source Array
@@ -1797,8 +1803,9 @@ address StubGenerator::generate_base64_encodeBlock()
   __ movl(isURL, isURL_mem);
 #endif
 
-  const Register length = r14;
-  const Register encode_table = r13;
+  const Register length = UseAPX ? r16 : r14;
+  const Register tmp_r13 = UseAPX ? r17 : r13;
+  const Register tmp_r15 = UseAPX ? r18 : r15;
   Label L_process3, L_exit, L_processdata, L_vbmiLoop, L_not512, L_32byteLoop;
 
   // calculate length from offsets
@@ -1810,6 +1817,7 @@ address StubGenerator::generate_base64_encodeBlock()
   // output bytes. We read 64 input bytes and ignore the last 16, so be
   // sure not to read past the end of the input buffer.
   if (VM_Version::supports_avx512_vbmi()) {
+    const Register encode_table = tmp_r13;
     __ cmpl(length, 64); // Do not overrun input buffer.
     __ jcc(Assembler::below, L_not512);
 
@@ -1819,7 +1827,7 @@ address StubGenerator::generate_base64_encodeBlock()
     __ shrl(isURL, 6); // restore isURL
 
     __ mov64(rax, 0x3036242a1016040aull); // Shifts
-    __ evmovdquq(xmm3, ExternalAddress(StubRoutines::x86::base64_shuffle_addr()), Assembler::AVX_512bit, r15);
+    __ evmovdquq(xmm3, ExternalAddress(StubRoutines::x86::base64_shuffle_addr()), Assembler::AVX_512bit, tmp_r15);
     __ evmovdquq(xmm2, Address(encode_table, 0), Assembler::AVX_512bit);
     __ evpbroadcastq(xmm1, rax, Assembler::AVX_512bit);
 
@@ -2011,9 +2019,9 @@ address StubGenerator::generate_base64_encodeBlock()
 
     // Load the proper lookup table
     __ lea(r11, ExternalAddress(StubRoutines::x86::base64_avx2_lut_addr()));
-    __ movl(r15, isURL);
-    __ shll(r15, 5);
-    __ vmovdqu(xmm2, Address(r11, r15));
+    __ movl(tmp_r15, isURL);
+    __ shll(tmp_r15, 5);
+    __ vmovdqu(xmm2, Address(r11, tmp_r15));
 
     // Shuffle the offsets based on the range calculation done
     // above. This allows us to add the correct offset to the
@@ -2072,16 +2080,16 @@ address StubGenerator::generate_base64_encodeBlock()
 
   // Load the encoding table based on isURL
   __ lea(r11, ExternalAddress(StubRoutines::x86::base64_encoding_table_addr()));
-  __ movl(r15, isURL);
-  __ shll(r15, 6);
-  __ addptr(r11, r15);
+  __ movl(tmp_r15, isURL);
+  __ shll(tmp_r15, 6);
+  __ addptr(r11, tmp_r15);
 
   __ BIND(L_processdata);
 
   // Load 3 bytes
-  __ load_unsigned_byte(r15, Address(source, start_offset));
+  __ load_unsigned_byte(tmp_r15, Address(source, start_offset));
   __ load_unsigned_byte(r10, Address(source, start_offset, Address::times_1, 1));
-  __ load_unsigned_byte(r13, Address(source, start_offset, Address::times_1, 2));
+  __ load_unsigned_byte(tmp_r13, Address(source, start_offset, Address::times_1, 2));
 
   // Build a 32-bit word with bytes 1, 2, 0, 1
   __ movl(rax, r10);
@@ -2090,27 +2098,27 @@ address StubGenerator::generate_base64_encodeBlock()
 
   __ subl(length, 3);
 
-  __ shll(r15, 8);
-  __ shll(r13, 16);
-  __ orl(rax, r15);
+  __ shll(tmp_r15, 8);
+  __ shll(tmp_r13, 16);
+  __ orl(rax, tmp_r15);
 
   __ addl(start_offset, 3);
 
-  __ orl(rax, r13);
+  __ orl(rax, tmp_r13);
   // At this point, rax contains | byte1 | byte2 | byte0 | byte1
   // r13 has byte2 << 16 - need low-order 6 bits to translate.
   // This translated byte is the fourth output byte.
-  __ shrl(r13, 16);
-  __ andl(r13, 0x3f);
+  __ shrl(tmp_r13, 16);
+  __ andl(tmp_r13, 0x3f);
 
   // The high-order 6 bits of r15 (byte0) is translated.
   // The translated byte is the first output byte.
-  __ shrl(r15, 10);
+  __ shrl(tmp_r15, 10);
 
-  __ load_unsigned_byte(r13, Address(r11, r13));
-  __ load_unsigned_byte(r15, Address(r11, r15));
+  __ load_unsigned_byte(tmp_r13, Address(r11, tmp_r13));
+  __ load_unsigned_byte(tmp_r15, Address(r11, tmp_r15));
 
-  __ movb(Address(dest, dp, Address::times_1, 3), r13);
+  __ movb(Address(dest, dp, Address::times_1, 3), tmp_r13);
 
   // Extract high-order 4 bits of byte1 and low-order 2 bits of byte0.
   // This translated byte is the second output byte.
@@ -2118,7 +2126,7 @@ address StubGenerator::generate_base64_encodeBlock()
   __ movl(r10, rax);
   __ andl(rax, 0x3f);
 
-  __ movb(Address(dest, dp, Address::times_1, 0), r15);
+  __ movb(Address(dest, dp, Address::times_1, 0), tmp_r15);
 
   __ load_unsigned_byte(rax, Address(r11, rax));
 
@@ -2137,9 +2145,11 @@ address StubGenerator::generate_base64_encodeBlock()
   __ jcc(Assembler::aboveEqual, L_processdata);
 
   __ BIND(L_exit);
-  __ pop_ppx(r15);
-  __ pop_ppx(r14);
-  __ pop_ppx(r13);
+  if (!UseAPX) {
+    __ pop_ppx(r15);
+    __ pop_ppx(r14);
+    __ pop_ppx(r13);
+  }
   __ pop_ppx(r12);
   __ leave();
   __ ret(0);
@@ -2475,9 +2485,11 @@ address StubGenerator::generate_base64_decodeBlock() {
 
   // Save callee-saved registers before using them
   __ push_ppx(r12);
-  __ push_ppx(r13);
-  __ push_ppx(r14);
-  __ push_ppx(r15);
+  if (!UseAPX) {
+    __ push_ppx(r13);
+    __ push_ppx(r14);
+    __ push_ppx(r15);
+  }
   __ push_ppx(rbx);
 
   // arguments
@@ -2529,9 +2541,9 @@ address StubGenerator::generate_base64_decodeBlock() {
 
   const XMMRegister pack24bits = xmm4;
 
-  const Register length = r14;
-  const Register output_size = r13;
-  const Register output_mask = r15;
+  const Register length = UseAPX ? r16 : r14;
+  const Register tmp_r13 = UseAPX ? r17 : r13;
+  const Register tmp_r15 = UseAPX ? r18 : r15;
   const KRegister input_mask = k1;
 
   const XMMRegister input_initial_valid_b64 = xmm0;
@@ -2551,6 +2563,8 @@ address StubGenerator::generate_base64_decodeBlock() {
   // If AVX512 VBMI not supported, just compile non-AVX code
   if(VM_Version::supports_avx512_vbmi() &&
      VM_Version::supports_avx512bw()) {
+    const Register output_size = tmp_r13;
+    const Register output_mask = tmp_r15;
     __ cmpl(length, 31);     // 32-bytes is break-even for AVX-512
     __ jcc(Assembler::lessEqual, L_lastChunk);
 
@@ -2561,25 +2575,25 @@ address StubGenerator::generate_base64_decodeBlock() {
     __ cmpl(isURL, 0);
     __ jcc(Assembler::notZero, L_loadURL);
 
-    __ evmovdquq(lookup_lo, ExternalAddress(StubRoutines::x86::base64_vbmi_lookup_lo_addr()), Assembler::AVX_512bit, r13);
-    __ evmovdquq(lookup_hi, ExternalAddress(StubRoutines::x86::base64_vbmi_lookup_hi_addr()), Assembler::AVX_512bit, r13);
+    __ evmovdquq(lookup_lo, ExternalAddress(StubRoutines::x86::base64_vbmi_lookup_lo_addr()), Assembler::AVX_512bit, tmp_r13);
+    __ evmovdquq(lookup_hi, ExternalAddress(StubRoutines::x86::base64_vbmi_lookup_hi_addr()), Assembler::AVX_512bit, tmp_r13);
 
     __ BIND(L_continue);
 
-    __ movl(r15, 0x01400140);
-    __ evpbroadcastd(pack16_op, r15, Assembler::AVX_512bit);
+    __ movl(tmp_r15, 0x01400140);
+    __ evpbroadcastd(pack16_op, tmp_r15, Assembler::AVX_512bit);
 
-    __ movl(r15, 0x00011000);
-    __ evpbroadcastd(pack32_op, r15, Assembler::AVX_512bit);
+    __ movl(tmp_r15, 0x00011000);
+    __ evpbroadcastd(pack32_op, tmp_r15, Assembler::AVX_512bit);
 
     __ cmpl(length, 0xff);
     __ jcc(Assembler::lessEqual, L_process64);
 
     // load masks required for decoding data
     __ BIND(L_processdata);
-    __ evmovdquq(join01, ExternalAddress(StubRoutines::x86::base64_vbmi_join_0_1_addr()), Assembler::AVX_512bit,r13);
-    __ evmovdquq(join12, ExternalAddress(StubRoutines::x86::base64_vbmi_join_1_2_addr()), Assembler::AVX_512bit, r13);
-    __ evmovdquq(join23, ExternalAddress(StubRoutines::x86::base64_vbmi_join_2_3_addr()), Assembler::AVX_512bit, r13);
+    __ evmovdquq(join01, ExternalAddress(StubRoutines::x86::base64_vbmi_join_0_1_addr()), Assembler::AVX_512bit,tmp_r13);
+    __ evmovdquq(join12, ExternalAddress(StubRoutines::x86::base64_vbmi_join_1_2_addr()), Assembler::AVX_512bit, tmp_r13);
+    __ evmovdquq(join23, ExternalAddress(StubRoutines::x86::base64_vbmi_join_2_3_addr()), Assembler::AVX_512bit, tmp_r13);
 
     __ align32();
     __ BIND(L_process256);
@@ -2658,7 +2672,7 @@ address StubGenerator::generate_base64_decodeBlock() {
 
     __ BIND(L_process64);
 
-    __ evmovdquq(pack24bits, ExternalAddress(StubRoutines::x86::base64_vbmi_pack_vec_addr()), Assembler::AVX_512bit, r13);
+    __ evmovdquq(pack24bits, ExternalAddress(StubRoutines::x86::base64_vbmi_pack_vec_addr()), Assembler::AVX_512bit, tmp_r13);
 
     __ cmpl(length, 63);
     __ jcc(Assembler::lessEqual, L_finalBit);
@@ -2736,8 +2750,8 @@ address StubGenerator::generate_base64_decodeBlock() {
     __ evpbroadcastd(invalid_b64, rax, Assembler::AVX_512bit);
 
     // input_mask is in k1
-    // output_size is in r13
-    // output_mask is in r15
+    // output_size is in r13 (or r17 with APX)
+    // output_mask is in r15 (or r18 with APX)
     // zmm0 - free
     // zmm1 - 0x00011000
     // zmm2 - 0x01400140
@@ -2781,16 +2795,18 @@ address StubGenerator::generate_base64_decodeBlock() {
     __ subptr(dest, rax);      // Number of bytes converted
     __ movptr(rax, dest);
     __ pop_ppx(rbx);
-    __ pop_ppx(r15);
-    __ pop_ppx(r14);
-    __ pop_ppx(r13);
+    if (!UseAPX) {
+      __ pop_ppx(r15);
+      __ pop_ppx(r14);
+      __ pop_ppx(r13);
+    }
     __ pop_ppx(r12);
     __ leave();
     __ ret(0);
 
     __ BIND(L_loadURL);
-    __ evmovdquq(lookup_lo, ExternalAddress(StubRoutines::x86::base64_vbmi_lookup_lo_url_addr()), Assembler::AVX_512bit, r13);
-    __ evmovdquq(lookup_hi, ExternalAddress(StubRoutines::x86::base64_vbmi_lookup_hi_url_addr()), Assembler::AVX_512bit, r13);
+    __ evmovdquq(lookup_lo, ExternalAddress(StubRoutines::x86::base64_vbmi_lookup_lo_url_addr()), Assembler::AVX_512bit, tmp_r13);
+    __ evmovdquq(lookup_hi, ExternalAddress(StubRoutines::x86::base64_vbmi_lookup_hi_url_addr()), Assembler::AVX_512bit, tmp_r13);
     __ jmp(L_continue);
 
     __ BIND(L_padding);
@@ -2824,20 +2840,20 @@ address StubGenerator::generate_base64_decodeBlock() {
     // Encoding and Decoding using AVX2 Instructions".  URL modifications added.
 
     // Set up constants
-    __ lea(r13, ExternalAddress(StubRoutines::x86::base64_AVX2_decode_tables_addr()));
-    __ vpbroadcastd(xmm4, Address(r13, isURL, Address::times_1), Assembler::AVX_256bit);  // 2F or 5F
-    __ vpbroadcastd(xmm10, Address(r13, isURL, Address::times_1, 0x08), Assembler::AVX_256bit);  // -1 or -4
-    __ vmovdqu(xmm12, Address(r13, 0x10));  // permute
-    __ vmovdqu(xmm13, Address(r13, 0x30)); // shuffle
-    __ vpbroadcastd(xmm7, Address(r13, 0x50), Assembler::AVX_256bit);  // merge
-    __ vpbroadcastd(xmm6, Address(r13, 0x54), Assembler::AVX_256bit);  // merge mult
+    __ lea(tmp_r13, ExternalAddress(StubRoutines::x86::base64_AVX2_decode_tables_addr()));
+    __ vpbroadcastd(xmm4, Address(tmp_r13, isURL, Address::times_1), Assembler::AVX_256bit);  // 2F or 5F
+    __ vpbroadcastd(xmm10, Address(tmp_r13, isURL, Address::times_1, 0x08), Assembler::AVX_256bit);  // -1 or -4
+    __ vmovdqu(xmm12, Address(tmp_r13, 0x10));  // permute
+    __ vmovdqu(xmm13, Address(tmp_r13, 0x30)); // shuffle
+    __ vpbroadcastd(xmm7, Address(tmp_r13, 0x50), Assembler::AVX_256bit);  // merge
+    __ vpbroadcastd(xmm6, Address(tmp_r13, 0x54), Assembler::AVX_256bit);  // merge mult
 
-    __ lea(r13, ExternalAddress(StubRoutines::x86::base64_AVX2_decode_LUT_tables_addr()));
+    __ lea(tmp_r13, ExternalAddress(StubRoutines::x86::base64_AVX2_decode_LUT_tables_addr()));
     __ shll(isURL, 4);
-    __ vmovdqu(xmm11, Address(r13, isURL, Address::times_1, 0x00));  // lut_lo
-    __ vmovdqu(xmm8, Address(r13, isURL, Address::times_1, 0x20)); // lut_roll
+    __ vmovdqu(xmm11, Address(tmp_r13, isURL, Address::times_1, 0x00));  // lut_lo
+    __ vmovdqu(xmm8, Address(tmp_r13, isURL, Address::times_1, 0x20)); // lut_roll
     __ shrl(isURL, 6);  // restore isURL
-    __ vmovdqu(xmm9, Address(r13, 0x80));  // lut_hi
+    __ vmovdqu(xmm9, Address(tmp_r13, 0x80));  // lut_hi
     __ jmp(L_enterLoop);
 
     __ align32();
@@ -2916,8 +2932,8 @@ address StubGenerator::generate_base64_decodeBlock() {
 
   const Register decode_table = r11;
   const Register out_byte_count = rbx;
-  const Register byte1 = r13;
-  const Register byte2 = r15;
+  const Register byte1 = tmp_r13;    // r13 or r17 with APX
+  const Register byte2 = tmp_r15;    // r15 or r18 with APX
   const Register byte3 = WIN64_ONLY(r8) NOT_WIN64(rdx);
   const Register byte4 = WIN64_ONLY(r10) NOT_WIN64(r9);
 
@@ -2975,9 +2991,11 @@ address StubGenerator::generate_base64_decodeBlock() {
   __ subptr(dest, rax);                      // Number of bytes converted
   __ movptr(rax, dest);
   __ pop_ppx(rbx);
-  __ pop_ppx(r15);
-  __ pop_ppx(r14);
-  __ pop_ppx(r13);
+  if (!UseAPX) {
+    __ pop_ppx(r15);
+    __ pop_ppx(r14);
+    __ pop_ppx(r13);
+  }
   __ pop_ppx(r12);
   __ leave();
   __ ret(0);
