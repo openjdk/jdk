@@ -401,7 +401,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
                          ListBuffer<JavaFileObject> resultList) throws IOException {
             try {
                 JRTIndex.Entry e = getJRTIndex().getEntry(subdirectory);
-                if (symbolFileEnabled && e.ctSym.hidden)
+                if (symbolFileEnabled && e.ctProperties.hidden)
                     return;
                 for (Path file: e.files.values()) {
                     if (fileKinds.contains(getKind(file))) {
@@ -425,7 +425,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         @Override
         public JavaFileObject getFileObject(Path userPath, RelativeFile name) throws IOException {
             JRTIndex.Entry e = getJRTIndex().getEntry(name.dirname());
-            if (symbolFileEnabled && e.ctSym.hidden)
+            if (symbolFileEnabled && e.ctProperties.hidden)
                 return null;
             Path p = e.files.get(name.basename());
             if (p != null) {
@@ -457,6 +457,18 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     }
 
     private JRTIndex jrtIndex;
+
+    /**
+     * {@return Accessor for additional class properties.}
+     */
+    public static LegacyCtPropertiesAccess getLegacyCtPropertiesInfo(JavaFileManager fm) {
+        if (fm instanceof JavacFileManager jfm && jfm.isDefaultBootClassPath() &&
+            jfm.isSymbolFileEnabled() && JRTIndex.isAvailable()) {
+            return jfm.getJRTIndex();
+        } else {
+            return LegacyCtPropertiesAccess.NOOP;
+        }
+    }
 
     private final class DirectoryContainer implements Container {
         private final Path directory;
