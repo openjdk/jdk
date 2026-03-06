@@ -74,7 +74,7 @@ private:
   size_t select_aged_regions(ShenandoahInPlacePromotionPlanner& in_place_promotions, const size_t old_promotion_reserve);
 
   // Filter and sort remaining regions before adding to collection set.
-  void filter_regions(ShenandoahInPlacePromotionPlanner& in_place_promotions, ShenandoahCollectionSet* collection_set);
+  void filter_regions(ShenandoahCollectionSet* collection_set);
 
   // Adjust evacuation budgets after choosing collection set.  The argument regions_to_xfer
   // represents regions to be transferred to old based on decisions made in top_off_collection_set()

@@ -94,9 +94,12 @@ void ShenandoahInPlacePromotionPlanner::prepare(ShenandoahHeapRegion* r) {
   }
 
   if (r->is_humongous()) {
-    // Nothing else to do for humongous, we just update the stats and move on. The humongous regions
-    // themselves will be discovered and promoted by gc workers during evacuation.
-    _pip_humongous_stats.update(r);
+    if (const oop obj = cast_to_oop(r->bottom()); !obj->is_typeArray()) {
+      // Nothing else to do for humongous, we just update the stats and move on. The humongous regions
+      // themselves will be discovered and promoted by gc workers during evacuation. Note that humongous
+      // primitive arrays are not promoted, so we do not upinclude the
+      _pip_humongous_stats.update(r);
+    }
     return;
   }
 

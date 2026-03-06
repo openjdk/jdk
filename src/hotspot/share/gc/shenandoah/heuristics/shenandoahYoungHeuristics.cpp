@@ -90,7 +90,10 @@ void ShenandoahYoungHeuristics::choose_young_collection_set(ShenandoahCollection
 
   for (size_t idx = 0; idx < size; idx++) {
     ShenandoahHeapRegion* r = data[idx].get_region();
-    assert(!cset->is_in(r), "Region %zu should not already be in the collection set", idx);
+    if (cset->is_in(r)) {
+      assert(heap->is_tenurable(r), "Region %zu already in the collection set must be tenurable", idx);
+      continue;
+    }
 
     // Note that we do not add tenurable regions if they were not pre-selected.  They were not selected
     // because there is insufficient room in old-gen to hold their to-be-promoted live objects or because

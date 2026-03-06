@@ -127,7 +127,11 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
   size_t cur_garbage = cur_young_garbage;
   for (size_t idx = 0; idx < size; idx++) {
     ShenandoahHeapRegion* r = data[idx].get_region();
-    assert(!cset->is_in(r->index()), "Region (%zu) should not be in the collection set", r->index());
+    if (cset->is_in(r)) {
+      assert(heap->is_tenurable(r), "Region %zu already in the collection set must be tenurable", idx);
+      continue;
+    }
+
     bool add_region = false;
     size_t region_garbage = r->garbage();
     size_t new_garbage = cur_garbage + region_garbage;
