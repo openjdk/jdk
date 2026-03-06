@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package sun.management;
 
+import java.io.Serial;
 import java.lang.management.MemoryUsage;
 import java.lang.management.MemoryNotificationInfo;
 import java.lang.management.MonitorInfo;
@@ -779,6 +780,7 @@ public abstract class MappedMXBeanType {
         public boolean isValue(Object o) {
             return false;
         }
+        @Serial
         private static final long serialVersionUID = -3413063475064374490L;
     }
     private static final OpenType<?> inProgress;

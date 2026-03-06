@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package javax.management.openmbean;
 
+import java.io.Serial;
+
 /**
  * This runtime exception is thrown to indicate that the <i>open type</i> of an <i>open data</i> value
  * is not the one expected.
@@ -34,6 +36,7 @@ package javax.management.openmbean;
  */
 public class InvalidOpenTypeException extends IllegalArgumentException {
 
+    @Serial
     private static final long serialVersionUID = -2837312755412327534L;
 
     /** An InvalidOpenTypeException with no detail message.  */

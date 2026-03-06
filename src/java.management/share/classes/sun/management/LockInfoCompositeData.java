@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package sun.management;
 
+import java.io.Serial;
 import java.lang.management.LockInfo;
 import java.util.Map;
 import javax.management.openmbean.CompositeType;
@@ -108,5 +109,6 @@ public class LockInfoCompositeData extends LazyCompositeData {
         return new LockInfo(className, identityHashCode);
     }
 
+    @Serial
     private static final long serialVersionUID = -6374759159749014052L;
 }

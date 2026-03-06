@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ package javax.management.openmbean;
 
 // java import
 //
+import java.io.Serial;
 import java.util.Arrays;
 
 import javax.management.Descriptor;
@@ -47,7 +48,8 @@ public class OpenMBeanConstructorInfoSupport
     implements OpenMBeanConstructorInfo {
 
     /* Serial version */
-    static final long serialVersionUID = -4400441579007477003L;
+    @Serial
+    private static final long serialVersionUID = -4400441579007477003L;
 
 
     // As this instance is immutable,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 
 package javax.management.openmbean;
 
+import java.io.Serial;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.Collections;
@@ -42,7 +43,8 @@ import java.util.Iterator;
 public class CompositeType extends OpenType<CompositeData> {
 
     /* Serial version */
-    static final long serialVersionUID = -5366242454346948798L;
+    @Serial
+    private static final long serialVersionUID = -5366242454346948798L;
 
     /**
      * @serial Sorted mapping of the item names to their descriptions

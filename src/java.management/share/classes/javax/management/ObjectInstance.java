@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package javax.management;
 
 // java import
+import java.io.Serial;
 import java.io.Serializable;
 
 // RI import
@@ -43,6 +44,7 @@ public class ObjectInstance implements Serializable   {
 
 
     /* Serial version */
+    @Serial
     private static final long serialVersionUID = -4099952623687795850L;
 
     /**

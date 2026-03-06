@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package javax.management;
 
 import com.sun.jmx.mbeanserver.Util;
 import java.io.InvalidObjectException;
+import java.io.Serial;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -39,6 +40,7 @@ import java.util.TreeMap;
  * @since 1.6
  */
 public class ImmutableDescriptor implements Descriptor {
+    @Serial
     private static final long serialVersionUID = 8853308591080540165L;
 
     /**
@@ -132,6 +134,7 @@ public class ImmutableDescriptor implements Descriptor {
      *
      * @throws InvalidObjectException if the read object has invalid fields.
      */
+    @Serial
     private Object readResolve() throws InvalidObjectException {
 
         boolean bad = false;

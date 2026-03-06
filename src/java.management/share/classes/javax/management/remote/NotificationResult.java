@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package javax.management.remote;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -58,6 +59,7 @@ import java.io.Serializable;
  */
 public class NotificationResult implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1191800228721395279L;
 
     /**
@@ -131,6 +133,7 @@ public class NotificationResult implements Serializable {
             getTargetedNotifications().length;
     }
 
+    @Serial
     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
         ois.defaultReadObject();
         try {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package sun.management;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.*;
 import javax.management.openmbean.ArrayType;
@@ -112,6 +113,7 @@ public abstract class LazyCompositeData
      * only requires JMX 1.2 classes but not any implementation
      * specific class.
      */
+    @Serial
     protected Object writeReplace() throws java.io.ObjectStreamException {
         return compositeData();
     }
@@ -228,5 +230,6 @@ public abstract class LazyCompositeData
         return true;
     }
 
+    @Serial
     private static final long serialVersionUID = -2190411934472666714L;
 }

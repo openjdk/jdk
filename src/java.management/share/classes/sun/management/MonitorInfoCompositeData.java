@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package sun.management;
 
+import java.io.Serial;
 import java.lang.management.MonitorInfo;
 import java.util.HashMap;
 import java.util.Map;
@@ -153,5 +154,6 @@ public class MonitorInfoCompositeData extends LazyCompositeData {
         }
     }
 
+    @Serial
     private static final long serialVersionUID = -5825215591822908529L;
 }

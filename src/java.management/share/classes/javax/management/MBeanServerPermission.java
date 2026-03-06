@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package javax.management;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 import java.security.BasicPermission;
 import java.security.Permission;
 import java.security.PermissionCollection;
@@ -76,6 +77,7 @@ import java.util.StringTokenizer;
  */
 @Deprecated(since="25", forRemoval=true)
 public class MBeanServerPermission extends BasicPermission {
+    @Serial
     private static final long serialVersionUID = -5661980843569388590L;
 
     private static final int
@@ -171,6 +173,7 @@ public class MBeanServerPermission extends BasicPermission {
         this.mask = impliedMask(mask);
     }
 
+    @Serial
     private void readObject(ObjectInputStream in)
             throws IOException, ClassNotFoundException {
         in.defaultReadObject();
@@ -346,6 +349,7 @@ class MBeanServerPermissionCollection extends PermissionCollection {
         have been added.  */
     private MBeanServerPermission collectionPermission;
 
+    @Serial
     private static final long serialVersionUID = -5661980843569388590L;
 
     public synchronized void add(Permission permission) {

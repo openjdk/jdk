@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package javax.management;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -61,7 +62,8 @@ import java.util.Objects;
 public class MBeanNotificationInfo extends MBeanFeatureInfo implements Cloneable {
 
     /* Serial version */
-    static final long serialVersionUID = -3888371564530107064L;
+    @Serial
+    private static final long serialVersionUID = -3888371564530107064L;
 
     private static final String[] NO_TYPES = new String[0];
 
@@ -207,6 +209,7 @@ public class MBeanNotificationInfo extends MBeanFeatureInfo implements Cloneable
         return hash;
     }
 
+    @Serial
     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField gf = ois.readFields();
         String[] t = (String[])gf.get("types", null);

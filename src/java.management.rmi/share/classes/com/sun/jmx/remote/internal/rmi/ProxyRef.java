@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.jmx.remote.internal.rmi;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.io.Serial;
 import java.lang.reflect.Method;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -37,6 +38,7 @@ import java.rmi.server.RemoteRef;
 
 @SuppressWarnings("serial") // Externalizable class w/o no-arg c'tor
 public class ProxyRef implements RemoteRef {
+    @Serial
     private static final long serialVersionUID = -6503061366316814723L;
 
     public ProxyRef(RemoteRef ref) {

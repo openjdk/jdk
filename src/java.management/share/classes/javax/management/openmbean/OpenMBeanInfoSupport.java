@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 
 package javax.management.openmbean;
 
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Objects;
@@ -54,7 +55,8 @@ public class OpenMBeanInfoSupport
     implements OpenMBeanInfo {
 
     /* Serial version */
-    static final long serialVersionUID = 4349395935420511492L;
+    @Serial
+    private static final long serialVersionUID = 4349395935420511492L;
 
     // As this instance is immutable, these two values
     // need only be calculated once.

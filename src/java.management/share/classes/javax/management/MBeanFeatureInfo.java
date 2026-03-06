@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package javax.management;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.io.StreamCorruptedException;
 import java.util.Objects;
@@ -45,7 +46,8 @@ public class MBeanFeatureInfo implements Serializable, DescriptorRead {
 
 
     /* Serial version */
-    static final long serialVersionUID = 3952882688968447265L;
+    @Serial
+    private static final long serialVersionUID = 3952882688968447265L;
 
     /**
      * The name of the feature.  It is recommended that subclasses call
@@ -183,6 +185,7 @@ public class MBeanFeatureInfo implements Serializable, DescriptorRead {
      *
      * @since 1.6
      */
+    @Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
         out.defaultWriteObject();
 
@@ -231,6 +234,7 @@ public class MBeanFeatureInfo implements Serializable, DescriptorRead {
      *
      * @since 1.6
      */
+    @Serial
     private void readObject(ObjectInputStream in)
         throws IOException, ClassNotFoundException {
 

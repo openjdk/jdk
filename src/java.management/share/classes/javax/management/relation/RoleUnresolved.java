@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
+import java.io.Serial;
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -51,11 +52,13 @@ import javax.management.ObjectName;
  */
 public class RoleUnresolved implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = -48350262537070138L;
     /** @serialField roleName String Role name
      *  @serialField roleValue List Role value ({@link List} of {@link ObjectName} objects)
      *  @serialField problemType int Problem type
      */
+    @Serial
     private static final ObjectStreamField[] serialPersistentFields =
     {
       new ObjectStreamField("roleName", String.class),
@@ -254,6 +257,7 @@ public class RoleUnresolved implements Serializable {
     /**
      * Deserializes a {@link RoleUnresolved} from an {@link ObjectInputStream}.
      */
+    @Serial
     private void readObject(ObjectInputStream in)
             throws IOException, ClassNotFoundException {
       in.defaultReadObject();
@@ -263,6 +267,7 @@ public class RoleUnresolved implements Serializable {
     /**
      * Serializes a {@link RoleUnresolved} to an {@link ObjectOutputStream}.
      */
+    @Serial
     private void writeObject(ObjectOutputStream out)
             throws IOException {
       out.defaultWriteObject();
