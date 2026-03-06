@@ -187,6 +187,13 @@ static void print_bug_submit_message(outputStream *out, Thread *thread) {
 }
 
 static bool stack_has_headroom(size_t headroom) {
+
+#ifndef _WINDOWS
+  if (UseAltSigStacks) { // For simplicity.
+    return true;
+  }
+#endif
+
   size_t stack_size = 0;
   address stack_base = nullptr;
   os::current_stack_base_and_size(&stack_base, &stack_size);
@@ -1632,6 +1639,12 @@ int VMError::prepare_log_file(const char* pattern, const char* default_pattern, 
 void VMError::report_and_die(Thread* thread, unsigned int sig, address pc, const void* siginfo,
                              const void* context, const char* detail_fmt, ...)
 {
+  if (ExecutingUnitTests) {
+    // See TEST_VM_CRASH_SIGNAL gtest macro
+    char tmp[64];
+    fprintf(stderr, "signaled: %s", os::exception_name(sig, tmp, sizeof(tmp)));
+  }
+
   va_list detail_args;
   va_start(detail_args, detail_fmt);
   report_and_die(sig, nullptr, detail_fmt, detail_args, thread, pc, siginfo, context, nullptr, 0, 0);
@@ -1648,12 +1661,6 @@ void VMError::report_and_die(Thread* thread, const void* context, const char* fi
 
 void VMError::report_and_die(Thread* thread, unsigned int sig, address pc, const void* siginfo, const void* context)
 {
-  if (ExecutingUnitTests) {
-    // See TEST_VM_CRASH_SIGNAL gtest macro
-    char tmp[64];
-    fprintf(stderr, "signaled: %s", os::exception_name(sig, tmp, sizeof(tmp)));
-  }
-
   report_and_die(thread, sig, pc, siginfo, context, "%s", "");
 }
 
@@ -2163,6 +2170,20 @@ static void ALWAYSINLINE crash_with_segfault() {
 
 } // end: crash_with_segfault
 
+PRAGMA_DIAG_PUSH
+PRAGMA_INFINITE_RECURSION_IGNORED
+// crash with sigsegv at non-null address.
+static int NOINLINE crash_with_stack_overflow(int i) {
+  int j = os::random() + i;
+  j += crash_with_stack_overflow(i);
+  j += os::random();
+  if (j == 0) {
+    return 0;
+  }
+  return j;
+} // end: crash_with_segfault
+PRAGMA_DIAG_POP
+
 // crash in a controlled way:
 // 1  - assert
 // 2  - guarantee
@@ -2209,6 +2230,11 @@ void VMError::controlled_crash(int how) {
       void* const p = os::malloc(4096, mtTest);
       os::free(p);
       os::free(p);
+    }
+    case 19: {
+      // Trigger a native stack overflow
+      int i = MAX2(os::random(), 1000 * 1000);
+      crash_with_stack_overflow(i);
     }
     default:
       // If another number is given, give a generic crash.

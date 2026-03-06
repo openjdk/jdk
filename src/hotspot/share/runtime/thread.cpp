@@ -136,6 +136,8 @@ Thread::Thread(MemTag mem_tag) {
   }
 
   MACOS_AARCH64_ONLY(DEBUG_ONLY(_wx_init = false));
+
+  _altsigstack = nullptr;
 }
 
 #ifdef ASSERT
