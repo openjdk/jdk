@@ -240,10 +240,8 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   if (is_strong) {
     __ tbz(rscratch2, ShenandoahHeap::HAS_FORWARDED_BITPOS, heap_stable);
   } else {
-    Label lrb;
-    __ tbnz(rscratch2, ShenandoahHeap::WEAK_ROOTS_BITPOS, lrb);
-    __ tbz(rscratch2, ShenandoahHeap::HAS_FORWARDED_BITPOS, heap_stable);
-    __ bind(lrb);
+    __ andr(rscratch2, rscratch2, ShenandoahHeap::HAS_FORWARDED | ShenandoahHeap::WEAK_ROOTS);
+    __ cbz(rscratch2, heap_stable);
   }
 
   // use r1 for load address

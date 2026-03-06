@@ -310,23 +310,28 @@ public:
 // Important invariant: when GC state is zero, the heap is stable, and no barriers
 // are required.
 //
+// IMPORTANT: The order of bits is carefully chosen to enable efficient code generation
+// on aarch64. HAS_FORWARDED and WEAK_ROOTS are adjacent (bits 0-1) so their combined
+// mask (3) can be encoded as an immediate operand. Reordering these bits may break
+// barrier codegen optimizations on aarch64. See JDK-8353067.
+//
 public:
   enum GCStateBitPos {
     // Heap has forwarded objects: needs LRB barriers.
     HAS_FORWARDED_BITPOS   = 0,
 
+    // Heap is under weak-reference/roots processing: needs weak-LRB barriers.
+    WEAK_ROOTS_BITPOS  = 1,
+
     // Heap is under marking: needs SATB barriers.
     // For generational mode, it means either young or old marking, or both.
-    MARKING_BITPOS    = 1,
+    MARKING_BITPOS    = 2,
 
     // Heap is under evacuation: needs LRB barriers. (Set together with HAS_FORWARDED)
-    EVACUATION_BITPOS = 2,
+    EVACUATION_BITPOS = 3,
 
     // Heap is under updating: needs no additional barriers.
-    UPDATE_REFS_BITPOS = 3,
-
-    // Heap is under weak-reference/roots processing: needs weak-LRB barriers.
-    WEAK_ROOTS_BITPOS  = 4,
+    UPDATE_REFS_BITPOS = 4,
 
     // Young regions are under marking, need SATB barriers.
     YOUNG_MARKING_BITPOS = 5,
