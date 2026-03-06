@@ -164,6 +164,11 @@ public:
   int position() const            { return _position; }
 };
 
+
+struct JcmdOptions {
+  bool timestamp; // a timestamp was requsted with "-t" flag
+};
+
 // The DCmdParser class can be used to create an argument parser for a
 // diagnostic command. It is not mandatory to use it to parse arguments.
 // The DCmdParser parses a CmdLine instance according to the parameters that
