@@ -1283,6 +1283,7 @@ bool              JvmtiExport::_can_pop_frame                             = fals
 bool              JvmtiExport::_can_force_early_return                    = false;
 bool              JvmtiExport::_can_support_virtual_threads               = false;
 bool              JvmtiExport::_can_get_owned_monitor_info                = false;
+bool              JvmtiExport::_can_request_stack_trace                   = false;
 
 bool              JvmtiExport::_early_vmstart_recorded                    = false;
 
