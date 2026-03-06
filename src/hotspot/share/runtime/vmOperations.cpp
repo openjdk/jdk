@@ -53,6 +53,7 @@
 #include "services/threadService.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/ticks.hpp"
+#include "utilities/linkedlist.hpp"
 
 #define VM_OP_NAME_INITIALIZE(name) #name,
 
