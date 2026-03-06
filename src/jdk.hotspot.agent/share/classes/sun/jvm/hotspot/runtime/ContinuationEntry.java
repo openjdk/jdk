@@ -28,6 +28,7 @@ package sun.jvm.hotspot.runtime;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.runtime.aarch64.*;
 import sun.jvm.hotspot.runtime.amd64.*;
+import sun.jvm.hotspot.runtime.riscv64.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
 
@@ -52,6 +53,7 @@ public abstract class ContinuationEntry extends VMObject {
         return switch (VM.getVM().getDebugger().getCPU()) {
             case "amd64"   -> VMObjectFactory.newObject(AMD64ContinuationEntry.class, addr);
             case "aarch64" -> VMObjectFactory.newObject(AARCH64ContinuationEntry.class, addr);
+            case "riscv64" -> VMObjectFactory.newObject(RISCV64ContinuationEntry.class, addr);
             default -> throw new UnsupportedPlatformException("Continuation is not yet implemented.");
         };
     }
