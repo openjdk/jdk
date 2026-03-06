@@ -23,6 +23,13 @@
 
 package catalog;
 
+import org.junit.jupiter.api.Test;
+
+import javax.xml.catalog.CatalogException;
+import javax.xml.catalog.CatalogFeatures;
+import javax.xml.catalog.CatalogFeatures.Feature;
+import javax.xml.catalog.CatalogResolver;
+
 import static catalog.CatalogTestUtils.CATALOG_SYSTEM;
 import static catalog.CatalogTestUtils.CATALOG_URI;
 import static catalog.CatalogTestUtils.RESOLVE_CONTINUE;
@@ -33,19 +40,13 @@ import static catalog.CatalogTestUtils.catalogUriResolver;
 import static catalog.ResolutionChecker.checkSysIdResolution;
 import static catalog.ResolutionChecker.checkUriResolution;
 import static javax.xml.catalog.CatalogFeatures.builder;
-
-import javax.xml.catalog.CatalogException;
-import javax.xml.catalog.CatalogFeatures;
-import javax.xml.catalog.CatalogFeatures.Feature;
-import javax.xml.catalog.CatalogResolver;
-
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm catalog.ResolveFeatureTest
+ * @run junit/othervm catalog.ResolveFeatureTest
  * @summary This case tests how does resolve feature affect the catalog
  *          resolution.
  */
@@ -55,20 +56,24 @@ public class ResolveFeatureTest {
      * For strict external identifier resolution, if no match is found,
      * it should throw CatalogException.
      */
-    @Test(expectedExceptions = CatalogException.class)
+    @Test
     public void testStrictResolutionOnEntityResolver() {
-        createEntityResolver(RESOLVE_STRICT).resolveEntity(null,
-                "http://remote/dtd/alice/docAliceDummy.dtd");
+        CatalogResolver resolver = createEntityResolver(RESOLVE_STRICT);
+        assertThrows(
+                CatalogException.class,
+                () -> resolver.resolveEntity(null, "http://remote/dtd/alice/docAliceDummy.dtd"));
     }
 
     /*
      * For strict URI reference resolution, if no match is found,
      * it should throw CatalogException.
      */
-    @Test(expectedExceptions = CatalogException.class)
+    @Test
     public void testStrictResolutionOnUriResolver() {
-        createUriResolver(RESOLVE_STRICT).resolve(
-                "http://remote/dtd/alice/docAliceDummy.dtd", null);
+        CatalogResolver resolver = createUriResolver(RESOLVE_STRICT);
+        assertThrows(
+                CatalogException.class,
+                () -> resolver.resolve("http://remote/dtd/alice/docAliceDummy.dtd", null));
     }
 
     /*
@@ -115,15 +120,15 @@ public class ResolveFeatureTest {
                 "http://remote/dtd/carl/docCarlDummy.dtd", null);
     }
 
-    private CatalogResolver createEntityResolver(String resolve) {
+    private static CatalogResolver createEntityResolver(String resolve) {
         return catalogResolver(createFeature(resolve), CATALOG_SYSTEM);
     }
 
-    private CatalogResolver createUriResolver(String resolve) {
+    private static CatalogResolver createUriResolver(String resolve) {
         return catalogUriResolver(createFeature(resolve), CATALOG_URI);
     }
 
-    private CatalogFeatures createFeature(String resolve) {
+    private static CatalogFeatures createFeature(String resolve) {
         return builder().with(Feature.RESOLVE, resolve).build();
     }
 }
