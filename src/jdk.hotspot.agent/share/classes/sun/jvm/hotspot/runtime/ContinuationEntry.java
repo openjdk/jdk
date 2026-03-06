@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2025, NTT DATA.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,14 @@
 package sun.jvm.hotspot.runtime;
 
 import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.runtime.*;
+import sun.jvm.hotspot.runtime.amd64.*;
 import sun.jvm.hotspot.types.*;
+import sun.jvm.hotspot.utilities.*;
 
 
-public class ContinuationEntry extends VMObject {
+public abstract class ContinuationEntry extends VMObject {
     private static long size;
+    private static AddressField parentField;
     private static Address returnPC;
 
     static {
@@ -41,11 +43,25 @@ public class ContinuationEntry extends VMObject {
     private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
         Type type = db.lookupType("ContinuationEntry");
         size = type.getSize();
+        parentField = type.getAddressField("_parent");
         returnPC = type.getAddressField("_return_pc").getValue();
+    }
+
+    public static ContinuationEntry create(Address addr) {
+        String cpu = VM.getVM().getDebugger().getCPU();
+        if (cpu.equals("amd64")) {
+            return VMObjectFactory.newObject(AMD64ContinuationEntry.class, addr);
+        } else {
+            throw new UnsupportedPlatformException("Continuation is not yet implemented.");
+        }
     }
 
     public ContinuationEntry(Address addr) {
         super(addr);
+    }
+
+    public ContinuationEntry getParent() {
+        return VMObjectFactory.newObject(ContinuationEntry.class, parentField.getValue(addr));
     }
 
     public Address getEntryPC() {
@@ -59,5 +75,7 @@ public class ContinuationEntry extends VMObject {
     public Address getEntryFP(){
         return this.getAddress().addOffsetTo(size);
     }
+
+    public abstract Frame toFrame();
 
 }

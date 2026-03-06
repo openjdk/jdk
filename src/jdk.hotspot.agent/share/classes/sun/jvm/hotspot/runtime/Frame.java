@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,6 +140,10 @@ public abstract class Frame implements Cloneable {
   public abstract Address getSP();
   public abstract Address getID();
   public abstract Address getFP();
+
+  public void setSP(Address newSP) {
+    throw new UnsupportedPlatformException("Continuation is not yet implemented.");
+  }
 
   /** testers -- platform dependent */
   public abstract boolean equals(Object arg);
