@@ -91,7 +91,7 @@ import java.util.Arrays;
  *
  * Other lane-wise operations, such as the {@code min} operator, are defined as a
  * partially serviced (not a full-service) named operation, where a corresponding
- * method on {@code Vector} and/or a subclass provide some but all possible
+ * method on {@code Vector} and/or a subclass provide some but not all possible
  * overloadings and overrides (commonly the unmasked variant with scalar-broadcast
  * overloadings).
  *
@@ -385,7 +385,7 @@ import java.util.Arrays;
  * int part = ...;  // 0 or 1
  * VectorShape VSHAPE = a.shape();
  * double[] arlogical = new double[VLENGTH];
- * for (int i = 0; i < limit; i++) {
+ * for (int i = 0; i < a.length(); i++) {
  *     int e = a.lane(i);
  *     arlogical[i] = (double) e;
  * }
