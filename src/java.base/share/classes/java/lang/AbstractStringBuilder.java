@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -527,6 +527,19 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
             return endIndex - beginIndex;
         }
         return StringUTF16.codePointCountSB(value, beginIndex, endIndex);
+    }
+
+    /**
+     * @since 27
+     */
+    public int codePointCount() {
+        byte coder = this.coder;
+        int count = this.count;
+        byte[] value = this.value;
+        if (isLatin1(coder)) {
+            return count;
+        }
+        return StringUTF16.codePointCountSB(value, 0, count);
     }
 
     /**

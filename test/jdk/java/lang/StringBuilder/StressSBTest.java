@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -279,6 +279,7 @@ public class StressSBTest {
                 case "charAt(StringBuilder,int)char" -> sb.charAt(5);
                 case "codePointAt(StringBuilder,int)int" -> sb.codePointAt(4);
                 case "codePointBefore(StringBuilder,int)int" -> sb.codePointBefore(3);
+                case "codePointCount(StringBuilder)int" -> sb.codePointCount();
                 case "codePointCount(StringBuilder,int,int)int" -> sb.codePointCount(3, 9);
                 case "offsetByCodePoints(StringBuilder,int,int)int" -> sb.offsetByCodePoints(3, 7);
                 case "lastIndexOf(StringBuilder,String,int)int" -> sb.lastIndexOf("A", 45);
