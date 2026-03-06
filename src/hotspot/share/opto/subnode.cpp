@@ -1912,6 +1912,31 @@ bool BoolNode::is_counted_loop_exit_test() {
   return false;
 }
 
+template<typename IntegerType>
+static const IntegerType* integral_abs_value(const IntegerType* t) {
+  typedef typename IntegerType::NativeUType NativeUType;
+
+  // Find the absolute value of a type, resulting in a range that fits inside the unsigned range [0, signed_max+1].
+  // The possible values of a TypeInteger is described with the following range in the signed domain:
+  // smin----------lo=======uhi--------0--------ulo===========hi----------smax
+
+  // To find the absolute value of the range, we find the closer (min) value of uhi and ulo to 0, and the further (max)
+  // value of lo and hi from 0. In the unsigned domain, the resulting range looks like this:
+  // 0-----------min(|ulo|,|uhi|)================max(|lo|,|hi|)-----------umax
+
+  // When the input range's hi and lo are both positive or negative, lo == ulo and hi == uhi:
+  // smin------------------------------0-------lo===========hi------------smax (Positive)
+  // smin--------lo===========hi-------0----------------------------------smax (Negative)
+
+  // For these ranges, the result in the unsigned domain is simply [min(|lo|, |hi|), max(|lo|, |hi|)]:
+  // 0-----------min(|lo|,|hi|)==================max(|lo|,|hi|)-----------umax
+
+  NativeUType umin = MIN2<NativeUType>(g_uabs(t->_ulo), g_uabs(t->_uhi));
+  NativeUType umax = MAX2<NativeUType>(g_uabs(t->_lo), g_uabs(t->_hi));
+
+  return IntegerType::make_unsigned(umin, umax, t->_widen);
+}
+
 //=============================================================================
 //------------------------------Value------------------------------------------
 const Type* AbsNode::Value(PhaseGVN* phase) const {
@@ -1921,17 +1946,13 @@ const Type* AbsNode::Value(PhaseGVN* phase) const {
   switch (t1->base()) {
   case Type::Int: {
     const TypeInt* ti = t1->is_int();
-    if (ti->is_con()) {
-      return TypeInt::make(g_uabs(ti->get_con()));
-    }
-    break;
+
+    return integral_abs_value(ti);
   }
   case Type::Long: {
     const TypeLong* tl = t1->is_long();
-    if (tl->is_con()) {
-      return TypeLong::make(g_uabs(tl->get_con()));
-    }
-    break;
+
+    return integral_abs_value(tl);
   }
   case Type::FloatCon:
     return TypeF::make(abs(t1->getf()));

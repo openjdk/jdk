@@ -1799,6 +1799,12 @@ const TypeInt* TypeInt::make(jint lo, jint hi, int widen) {
   return make_or_top(TypeIntPrototype<jint, juint>{{lo, hi}, {0, max_juint}, {0, 0}}, widen)->is_int();
 }
 
+const TypeInt* TypeInt::make_unsigned(juint ulo, juint uhi, int widen) {
+  assert(ulo <= uhi, "must be legal bounds");
+  // By creating the TypeInt with the full signed range and the given unsigned range, the signed bounds are inferred from the unsigned bounds.
+  return make_or_top(TypeIntPrototype<jint, juint>{{min_jint, max_jint}, {ulo, uhi}, {0, 0}}, widen)->is_int();
+}
+
 const Type* TypeInt::make_or_top(const TypeIntPrototype<jint, juint>& t, int widen) {
   return make_or_top(t, widen, false);
 }
@@ -1932,6 +1938,12 @@ const TypeLong* TypeLong::make(jlong con) {
 const TypeLong* TypeLong::make(jlong lo, jlong hi, int widen) {
   assert(lo <= hi, "must be legal bounds");
   return make_or_top(TypeIntPrototype<jlong, julong>{{lo, hi}, {0, max_julong}, {0, 0}}, widen)->is_long();
+}
+
+const TypeLong* TypeLong::make_unsigned(julong ulo, julong uhi, int widen) {
+  assert(ulo <= uhi, "must be legal bounds");
+  // By creating the TypeLong with the full signed range and the given unsigned range, the signed bounds are inferred from the unsigned bounds.
+  return make_or_top(TypeIntPrototype<jlong, julong>{{min_jlong, max_jlong}, {ulo, uhi}, {0, 0}}, widen)->is_long();
 }
 
 const Type* TypeLong::make_or_top(const TypeIntPrototype<jlong, julong>& t, int widen) {

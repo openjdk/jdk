@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +25,42 @@
 package compiler.c2.irTests;
 
 import jdk.test.lib.Asserts;
+import compiler.lib.generators.*;
 import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8276673 8280089
+ * @bug 8276673 8280089 8349563
  * @summary Test abs nodes optimization in C2.
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
+ * @key randomness
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestIRAbs
  */
 
 public class TestIRAbs {
+    private static final RestrictableGenerator<Integer> INTS = Generators.G.ints();
+    private static final RestrictableGenerator<Long> LONGS = Generators.G.longs();
+
+    private static final IntRange INT_RANGE = IntRange.generate(INTS);
+    private static final LongRange LONG_RANGE = LongRange.generate(LONGS);
+
+    private static final int INT_1 = INTS.next();
+    private static final int INT_2 = INTS.next();
+    private static final int INT_3 = INTS.next();
+    private static final int INT_4 = INTS.next();
+    private static final int INT_5 = INTS.next();
+    private static final int INT_6 = INTS.next();
+    private static final int INT_7 = INTS.next();
+    private static final int INT_8 = INTS.next();
+
+    private static final long LONG_1 = LONGS.next();
+    private static final long LONG_2 = LONGS.next();
+    private static final long LONG_3 = LONGS.next();
+    private static final long LONG_4 = LONGS.next();
+    private static final long LONG_5 = LONGS.next();
+    private static final long LONG_6 = LONGS.next();
+    private static final long LONG_7 = LONGS.next();
+    private static final long LONG_8 = LONGS.next();
 
     public static char [] cspecial = {
         0, 42, 128, 256, 1024, 4096, 65535
@@ -103,7 +128,7 @@ public class TestIRAbs {
     }
 
     @Test
-    @IR(failOn = {IRNode.ABS_I, IRNode.ABS_L, IRNode.ABS_F, IRNode.ABS_D})
+    @IR(failOn = {IRNode.ABS_I, IRNode.ABS_L, IRNode.ABS_F, IRNode.ABS_D}, applyIfPlatform = { "64-bit", "true" })
     public void testAbsConstant() {
         // Test abs(constant) optimization for int
         Asserts.assertEquals(Integer.MAX_VALUE, Math.abs(Integer.MAX_VALUE));
@@ -160,14 +185,14 @@ public class TestIRAbs {
     }
 
     @Test
-    @IR(counts = {IRNode.ABS_L, "1"})
+    @IR(counts = {IRNode.ABS_L, "1"}, applyIfPlatform = { "64-bit", "true" })
     public long testLong0(long x) {
         return Math.abs(Math.abs(x)); // transformed to Math.abs(x)
     }
 
     @Test
-    @IR(failOn = {IRNode.SUB_L})
-    @IR(counts = {IRNode.ABS_L, "1"})
+    @IR(failOn = {IRNode.SUB_L}, applyIfPlatform = { "64-bit", "true" })
+    @IR(counts = {IRNode.ABS_L, "1"}, applyIfPlatform = { "64-bit", "true" })
     public long testLong1(long x) {
         return Math.abs(0 - x); // transformed to Math.abs(x)
     }
@@ -229,4 +254,224 @@ public class TestIRAbs {
             Asserts.assertEquals(cspecial[i], (char) Math.abs(cspecial[i]));
         }
     }
- }
+
+    @Run(test = {"testIntRange1", "testIntRange2", "testIntRange3", "testIntRange4", "testIntRangeFolding"})
+    public void checkIntRanges(RunInfo info) {
+        for (int i : ispecial) {
+            checkIntRange(i);
+        }
+
+        for (int j = 0; j < 20; j++) {
+            int i = INTS.next();
+            checkIntRange(i);
+        }
+    }
+
+    @DontCompile
+    public void checkIntRange(int i) {
+        Asserts.assertEquals(Math.abs((i & 7) - 4) > 4, testIntRange1(i));
+        Asserts.assertEquals(Math.abs((i & 7) - 4) < 0, testIntRange2(i));
+        Asserts.assertEquals(Math.abs(-((i & 7) + 2)) < 2, testIntRange3(i));
+        Asserts.assertEquals(Math.abs(-((i & 7) + 2)) > 9, testIntRange4(i));
+        Asserts.assertEquals(testIntRangeFoldingInterpreter(i), testIntRangeFolding(i));
+    }
+
+    @Run(test = {"testLongRange1", "testLongRange2", "testLongRange3", "testLongRange4", "testLongRangeFolding"})
+    public void checkLongRanges(RunInfo info) {
+        for (long l : lspecial) {
+          checkLongRange(l);
+        }
+
+        for (int j = 0; j < 20; j++) {
+            long l = LONGS.next();
+            checkLongRange(l);
+        }
+    }
+
+    @DontCompile
+    public void checkLongRange(long l) {
+        Asserts.assertEquals(Math.abs((l & 7) - 4) > 4, testLongRange1(l));
+        Asserts.assertEquals(Math.abs((l & 7) - 4) < 0, testLongRange2(l));
+        Asserts.assertEquals(Math.abs(-((l & 7) + 2)) < 2, testLongRange3(l));
+        Asserts.assertEquals(Math.abs(-((l & 7) + 2)) > 9, testLongRange4(l));
+        Asserts.assertEquals(testLongRangeFoldingInterpreter(l), testLongRangeFolding(l));
+    }
+
+    // Int ranges
+
+    @Test
+    @IR(failOn = { IRNode.ABS_I })
+    public boolean testIntRange1(int in) {
+        // [-4, 3] => [0, 4]
+        return Math.abs((in & 7) - 4) > 4;
+    }
+
+    @Test
+    @IR(failOn = { IRNode.ABS_I })
+    public boolean testIntRange2(int in) {
+        // [-4, 3] => [0, 4]
+        return Math.abs((in & 7) - 4) < 0;
+    }
+
+    @Test
+    @IR(failOn = { IRNode.ABS_I })
+    public boolean testIntRange3(int in) {
+        // [-9, -2] => [2, 9]
+        return Math.abs(-((in & 7) + 2)) < 2;
+    }
+
+    @Test
+    @IR(failOn = { IRNode.ABS_I })
+    public boolean testIntRange4(int in) {
+        // [-9, -2] => [2, 9]
+        return Math.abs(-((in & 7) + 2)) > 9;
+    }
+
+    @Test
+    public int testIntRangeFolding(int in) {
+        int c = INT_RANGE.clamp(in);
+        int v = Math.abs(c);
+
+        int sum = 0;
+        if (v > INT_1) { sum += 1; }
+        if (v > INT_2) { sum += 2; }
+        if (v > INT_3) { sum += 4; }
+        if (v > INT_4) { sum += 8; }
+        if (v > INT_5) { sum += 16; }
+        if (v > INT_6) { sum += 32; }
+        if (v > INT_7) { sum += 64; }
+        if (v > INT_8) { sum += 128; }
+
+        return sum;
+    }
+
+    @DontCompile
+    public int testIntRangeFoldingInterpreter(int in) {
+        int c = INT_RANGE.clamp(in);
+        int v = Math.abs(c);
+
+        int sum = 0;
+        if (v > INT_1) { sum += 1; }
+        if (v > INT_2) { sum += 2; }
+        if (v > INT_3) { sum += 4; }
+        if (v > INT_4) { sum += 8; }
+        if (v > INT_5) { sum += 16; }
+        if (v > INT_6) { sum += 32; }
+        if (v > INT_7) { sum += 64; }
+        if (v > INT_8) { sum += 128; }
+
+        return sum;
+    }
+
+    // Long ranges
+
+    @Test
+    @IR(failOn = { IRNode.ABS_L }, applyIfPlatform = { "64-bit", "true" })
+    public boolean testLongRange1(long in) {
+        // [-4, 3] => [0, 4]
+        return Math.abs((in & 7) - 4) > 4;
+    }
+
+    @Test
+    @IR(failOn = { IRNode.ABS_L }, applyIfPlatform = { "64-bit", "true" })
+    public boolean testLongRange2(long in) {
+        // [-4, 3] => [0, 4]
+        return Math.abs((in & 7) - 4) < 0;
+    }
+
+    @Test
+    @IR(failOn = { IRNode.ABS_L }, applyIfPlatform = { "64-bit", "true" })
+    public boolean testLongRange3(long in) {
+        // [-9, -2] => [2, 9]
+        return Math.abs(-((in & 7) + 2)) < 2;
+    }
+
+    @Test
+    @IR(failOn = { IRNode.ABS_L }, applyIfPlatform = { "64-bit", "true" })
+    public boolean testLongRange4(long in) {
+        // [-9, -2] => [2, 9]
+        return Math.abs(-((in & 7) + 2)) > 9;
+    }
+
+    @Test
+    public int testLongRangeFolding(long in) {
+        long c = LONG_RANGE.clamp(in);
+        long v = Math.abs(c);
+
+        int sum = 0;
+        if (v > LONG_1) { sum += 1; }
+        if (v > LONG_2) { sum += 2; }
+        if (v > LONG_3) { sum += 4; }
+        if (v > LONG_4) { sum += 8; }
+        if (v > LONG_5) { sum += 16; }
+        if (v > LONG_6) { sum += 32; }
+        if (v > LONG_7) { sum += 64; }
+        if (v > LONG_8) { sum += 128; }
+
+        return sum;
+    }
+
+    @DontCompile
+    public int testLongRangeFoldingInterpreter(long in) {
+        long c = LONG_RANGE.clamp(in);
+        long v = Math.abs(c);
+
+        int sum = 0;
+        if (v > LONG_1) { sum += 1; }
+        if (v > LONG_2) { sum += 2; }
+        if (v > LONG_3) { sum += 4; }
+        if (v > LONG_4) { sum += 8; }
+        if (v > LONG_5) { sum += 16; }
+        if (v > LONG_6) { sum += 32; }
+        if (v > LONG_7) { sum += 64; }
+        if (v > LONG_8) { sum += 128; }
+
+        return sum;
+    }
+
+    record IntRange(int lo, int hi) {
+        IntRange {
+            if (lo > hi) {
+                throw new IllegalArgumentException("lo > hi");
+            }
+        }
+
+        int clamp(int v) {
+            return Math.min(hi, Math.max(v, lo));
+        }
+
+        static IntRange generate(Generator<Integer> g) {
+            var a = g.next();
+            var b = g.next();
+            if (a > b) {
+                var tmp = a;
+                a = b;
+                b = tmp;
+            }
+            return new IntRange(a, b);
+        }
+    }
+
+    record LongRange(long lo, long hi) {
+        LongRange {
+            if (lo > hi) {
+                throw new IllegalArgumentException("lo > hi");
+            }
+        }
+
+        long clamp(long v) {
+            return Math.min(hi, Math.max(v, lo));
+        }
+
+        static LongRange generate(Generator<Long> g) {
+            var a = g.next();
+            var b = g.next();
+            if (a > b) {
+                var tmp = a;
+                a = b;
+                b = tmp;
+            }
+            return new LongRange(a, b);
+        }
+    }
+}
