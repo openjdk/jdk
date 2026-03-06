@@ -126,7 +126,7 @@ public class VersionNegotiationTest {
                 .availableVersions(new QuicVersion[]{version})
                 .sslContext(sslContext)
                 .build();
-        server.addHandler(new ExceptionThrowingHandler());
+        server.setHandler(new ExceptionThrowingHandler());
         server.start();
         System.out.println("Quic server with version " + version + " started at " + server.getAddress());
         return server;

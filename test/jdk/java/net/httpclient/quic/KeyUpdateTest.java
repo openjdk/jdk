@@ -102,7 +102,7 @@ public class KeyUpdateTest {
                 .sslContext(sslContext)
                 .build();
         // add a handler which deals with incoming connections
-        server.addHandler(handler);
+        server.setHandler(handler);
         server.start();
         System.out.println("Server started at " + server.getAddress());
     }

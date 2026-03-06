@@ -73,7 +73,7 @@ public class QuicRequestResponseTest {
                 .sslContext(sslContext)
                 .build();
         // add a handler which deals with incoming connections
-        server.addHandler(new EchoHandler(HELLO_MSG.length));
+        server.setHandler(new EchoHandler(HELLO_MSG.length));
         server.start();
         System.out.println("Server started at " + server.getAddress());
     }
