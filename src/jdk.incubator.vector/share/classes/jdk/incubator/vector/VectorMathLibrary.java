@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -283,7 +283,7 @@ import static jdk.internal.vm.vector.Utils.debug;
     @ForceInline
     /*package-private*/ static
     <E, V extends Vector<E>>
-    V unaryMathOp(Unary op, int opc, VectorSpecies<E> vspecies,
+    V unaryMathOp(Unary op, int opc, AbstractSpecies<E> vspecies,
                   IntFunction<VectorSupport.UnaryOperation<V,?>> implSupplier,
                   V v) {
         var entry = lookup(op, opc, vspecies, implSupplier);
@@ -293,7 +293,7 @@ import static jdk.internal.vm.vector.Utils.debug;
             @SuppressWarnings({"unchecked"})
             Class<V> vt = (Class<V>)vspecies.vectorType();
             return VectorSupport.libraryUnaryOp(
-                    entry.entry.address(), vt, vspecies.elementType(), vspecies.length(), entry.name,
+                    entry.entry.address(), vt, vspecies.laneTypeOrdinal(), vspecies.length(), entry.name,
                     v,
                     entry.impl);
         } else {
@@ -304,7 +304,7 @@ import static jdk.internal.vm.vector.Utils.debug;
     @ForceInline
     /*package-private*/ static
     <E, V extends Vector<E>>
-    V binaryMathOp(Binary op, int opc, VectorSpecies<E> vspecies,
+    V binaryMathOp(Binary op, int opc, AbstractSpecies<E> vspecies,
                    IntFunction<VectorSupport.BinaryOperation<V,?>> implSupplier,
                    V v1, V v2) {
         var entry = lookup(op, opc, vspecies, implSupplier);
@@ -314,7 +314,7 @@ import static jdk.internal.vm.vector.Utils.debug;
             @SuppressWarnings({"unchecked"})
             Class<V> vt = (Class<V>)vspecies.vectorType();
             return VectorSupport.libraryBinaryOp(
-                    entry.entry.address(), vt, vspecies.elementType(), vspecies.length(), entry.name,
+                    entry.entry.address(), vt, vspecies.laneTypeOrdinal(), vspecies.length(), entry.name,
                     v1, v2,
                     entry.impl);
         } else {

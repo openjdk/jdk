@@ -21,16 +21,14 @@
  * questions.
  */
 
-//
-// Please run in othervm mode.  SunJSSE does not support dynamic system
-// properties, no way to re-use system properties in samevm/agentvm mode.
-//
-
 /*
  * @test
  * @bug 8268965
  * @summary Socket reset issue for TLS socket close
- * @run main/othervm -Djdk.net.usePlainSocketImpl=true SSLSocketReset
+ * @comment The test uses SSLContext.getDefault(), so we use othervm to prevent
+ *          usage of unexpected default SSLContext that might be set by some
+ *          other test
+ * @run main/othervm SSLSocketReset
  */
 
 import javax.net.ssl.*;

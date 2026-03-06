@@ -51,7 +51,6 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import jdk.internal.util.Architecture;
-import jdk.internal.util.OSVersion;
 import jdk.jpackage.internal.PackagingPipeline.PackageTaskID;
 import jdk.jpackage.internal.PackagingPipeline.TaskID;
 import jdk.jpackage.internal.model.MacPkgPackage;
@@ -509,11 +508,6 @@ record MacPkgPackager(BuildEnv env, MacPkgPackage pkg, Optional<Services> servic
 
         // maybe sign
         if (pkg.sign()) {
-            if (OSVersion.current().compareTo(new OSVersion(10, 12)) >= 0) {
-                // we need this for OS X 10.12+
-                Log.verbose(I18N.getString("message.signing.pkg"));
-            }
-
             final var pkgSigningConfig = pkg.signingConfig().orElseThrow();
 
             commandLine.add("--sign");

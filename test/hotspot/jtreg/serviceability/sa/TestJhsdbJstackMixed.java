@@ -37,7 +37,9 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @test
  * @key randomness
  * @bug 8208091 8374469 8377710
- * @requires (os.family == "linux" | os.family == "windows") & (vm.hasSA)
+ * @requires vm.hasSA
+ * @requires vm.gc != "Z"
+ * @requires (os.family == "linux" | os.family == "windows")
  * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run driver TestJhsdbJstackMixed

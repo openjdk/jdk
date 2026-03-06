@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -450,7 +450,7 @@ public final class CInputMethod extends InputMethodAdapter {
                                                       aString.length(),
                                                       theCaret,
                                                       theCaret);
-        LWCToolkit.postEvent(LWCToolkit.targetToAppContext(fAwtFocussedComponent), event);
+        LWCToolkit.postEvent(event);
         fCurrentText = null;
         fCurrentTextAsString = null;
         fCurrentTextLength = 0;
@@ -563,7 +563,7 @@ public final class CInputMethod extends InputMethodAdapter {
                                                       0,
                                                       theCaret,
                                                       visiblePosition);
-        LWCToolkit.postEvent(LWCToolkit.targetToAppContext(fAwtFocussedComponent), event);
+        LWCToolkit.postEvent(event);
 
         if (pressAndHold) selectNextGlyph();
     }
@@ -583,7 +583,7 @@ public final class CInputMethod extends InputMethodAdapter {
                                                       fCurrentTextLength,
                                                       theCaret,
                                                       visiblePosition);
-        LWCToolkit.postEvent(LWCToolkit.targetToAppContext(fAwtFocussedComponent), event);
+        LWCToolkit.postEvent(event);
         fCurrentText = null;
         fCurrentTextAsString = null;
         fCurrentTextLength = 0;
