@@ -3219,7 +3219,7 @@ bool Matcher::match_rule_supported(int opcode) {
       break;
     case Op_CompressBits:
     case Op_ExpandBits:
-      if (!VM_Version::supports_bmi2()) {
+      if (!VM_Version::supports_fast_bmi2()) {
         return false;
       }
       break;

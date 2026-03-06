@@ -454,7 +454,8 @@ protected:
     decl(AVX512_FP16,       avx512_fp16,       62) /* AVX512 FP16 ISA support*/ \
     decl(AVX10_1,           avx10_1,           63) /* AVX10 512 bit vector ISA Version 1 support*/ \
     decl(AVX10_2,           avx10_2,           64) /* AVX10 512 bit vector ISA Version 2 support*/ \
-    decl(HYBRID,            hybrid,            65) /* Hybrid architecture */
+    decl(HYBRID,            hybrid,            65) /* Hybrid architecture */ \
+    decl(FAST_BMI2,         fast_bmi2,         66) /* Native Hardware support for PEXT/PDEP BMI2 instructions */
 
 #define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = (bit),
     CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
@@ -726,6 +727,7 @@ private:
   }
 
   static bool compute_has_intel_jcc_erratum();
+  static bool compute_fast_bmi2();
 
   static bool os_supports_avx_vectors();
   static bool os_supports_apx_egprs();
@@ -913,6 +915,7 @@ public:
   static bool supports_hv()           { return _features.supports_feature(CPU_HV); }
   static bool supports_serialize()    { return _features.supports_feature(CPU_SERIALIZE); }
   static bool supports_hybrid()       { return _features.supports_feature(CPU_HYBRID); }
+  static bool supports_fast_bmi2()    { return _features.supports_feature(CPU_FAST_BMI2); }
   static bool supports_f16c()         { return _features.supports_feature(CPU_F16C); }
   static bool supports_pku()          { return _features.supports_feature(CPU_PKU); }
   static bool supports_ospke()        { return _features.supports_feature(CPU_OSPKE); }
