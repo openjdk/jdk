@@ -845,7 +845,7 @@ import java.util.Arrays;
  * only changes shapes in a method documented as shape-changing, and
  * the user must supply the new shape explicitly.)
  *
- * In a nutshell, we would prefer to keep both {@code VSHAPE} and
+ * <p> In a nutshell, we would prefer to keep both {@code VSHAPE} and
  * {@code VLENGTH} constant in a block of vector code, but size
  * changes sometimes require messy compromises.  Here are some
  * definitions to help navigate the complexity of such compromises:
@@ -892,7 +892,8 @@ import java.util.Arrays;
  *
  * </li><li>We must perform <em>insertion</em> (with <em>padding</em>)
  * when the output container {@code Y} is larger than the logical
- * result.  By convention, in this API, padding is always zero bits.
+ * result {@code f(X)}.  By convention, in this API, padding is always
+ * zero bits.
  * (This makes it easy to assemble larger results with {@code XOR}.)
  * The insertion position in {@code Y} is always an integral multiple
  * of the bit-size of the logical result {@code f(X)}.
@@ -977,8 +978,9 @@ import java.util.Arrays;
  * <p> It is also possible to combine logical expansion with
  * shape expansion, or logical contraction with shape contraction,
  * with opposing effects on truncation or padding.  If the
- * opposing effects are balanced {@code MO=MS=1}, then padding and selection
- * can be avoided completely.  For example, on a platform which
+ * opposing effects are balanced ({@code MO=MS=1} and {#code MP=ML}),
+ * then we speak of an <em>in-place operation</em>, and padding and
+ * selection can be avoided completely.  For example, on a platform which
  * supports both 64-bit and 128-bit shapes, a 64-bit vector
  * of floats could be converted to a 128-bit vector of doubles,
  * where the logical expansion ratio {@code ML=2} is exactly matched
@@ -1011,7 +1013,7 @@ import java.util.Arrays;
  * {@code int} parameter called {@code part}, or the "part number".
  * The part number must be in the range {@code [0..MS-1]}.
  * The part number selects one
- * of {@code MP} contiguous disjoint equally-sized blocks of lanes
+ * of {@code MS} contiguous disjoint equally-sized blocks of lanes
  * from the logical result and completely fills the physical output
  * with this block of lanes.
  *
@@ -1021,7 +1023,7 @@ import java.util.Arrays;
  * the origin of the block, {@code R}, is {@code part*L}.
  *
  * <p> A similar convention applies to any vector method that might
- * require padding ({@code MO>1}, {@code ML<MP}).
+ * require insertion, i.e. padding ({@code MO>1}, {@code ML<MP}).
  * Such a method also accepts an extra part number
  * parameter (again called {@code part}) which steers the logical
  * output lanes into one of {@code MO} contiguous disjoint equally-sized
@@ -1030,17 +1032,19 @@ import java.util.Arrays;
  *
  * <p> Specifically, the data is steered into the lanes numbered in the
  * range {@code [R..R+L-1]}, where {@code L} is the {@code VLENGTH} of
- * the logical result vector, and the inserted position of the block, {@code R},
- * is a multiple of {@code L} selected by the part number,
- * specifically {@code R=|part|*L}, where {@code |part|<MO}.
+ * the logical result vector, and the inserted position of the block,
+ * {@code R}, is {@code R=|part|*L}, where {@code part} must be in
+ * range {@code [-(MO-1)..0]}.
  *
- * <p> In the case of output padding, the part number must be in the
- * non-positive range {@code [-(MO-1)..0]}.  This convention is adopted
+ * <p> This convention of positive part numbers for selection
+ * ({@code [0..MS-1]}) and non-positive part numbers for insertion
+ * ({@code [-(MO-1)..0]}) is adopted
  * because some methods can perform both expansions and contractions,
  * in a data-dependent manner, and the extra sign on the part number
  * serves as an error check.  If a vector method takes a part number and
  * a invocation of it requires neither insertion (with padding) nor selection,
  * the {@code part} parameter must be exactly zero.
+ *
  * <p>
  * Part numbers outside the allowed ranges will elicit an indexing
  * exception, with a message reporting which part numbers were legal.
@@ -1051,8 +1055,8 @@ import java.util.Arrays;
  * often a desirable default, so a part number of zero is safe
  * in all cases and useful in most cases.
  *
- * <p> Non-zero part numbers arise only on a machine with few shapes,
- * and in order to keep those shapes full of data even when lane sizes
+ * <p> Non-zero part numbers arise, for example, on a machine with few
+ * shapes. In order to keep those shapes full of data even when lane sizes
  * change, insertion (with padding) or selection operations are necessary.
  *
  * <p> The various resizing operations of this API contract or expand
@@ -1061,18 +1065,18 @@ import java.util.Arrays;
  *
  * <li>
  * {@link Vector#convert(VectorOperators.Conversion,int) Vector.convert()}
- * has a logical result containing all the input elements, possibly
- * expanded or contracted to the conversion output type.
- * Thus, a conversion will have an {@code ML} value other than 1 when the
- * {@linkplain #elementSize() element size} of its output is
- * different from the element size of the input.
- * Since there is no shape change, {@code MO=1/ML}, {@code MS=ML}, and {@code MP=1}.
- * If the element sizes of input and output are the same ({@code ML=1}),
- * then {@code convert()} is an in-place operation.
+ * has a logical result containing all the lane-wise converted elements.
+ * The logical expansion ratio {@code ML} of the vector corresponds to
+ * the expansion ratio of the individual elements.
+ * Since there is no shape change {@code MP=1}, {@code MO=1/ML}, and {@code MS=ML}.
+ * If the {@linkplain #elementSize() element sizes} of input and output
+ * are the same ({@code ML=1}), then {@code convert()} is an in-place operation.
+ * If the element sizes of the output are larger, we have selection.
+ * If the element sizes of the output are smaller, we have insertion.
  *
  * <li>
  * {@link Vector#convertShape(VectorOperators.Conversion,VectorSpecies,int) Vector.convertShape()}
- * again has a logical result containing all the input elements,
+ * again has a logical result containing all the converted input elements,
  * with a logical result size change measured by {@code ML}.
  * The shape can change as well, so the ratio {@code MP} need not be unity.
  * In any case, the net output expansion ratio {@code MO=MP/ML}
