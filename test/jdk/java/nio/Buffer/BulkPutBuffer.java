@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,18 +41,22 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.stream.Stream;
 
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
  * @bug 8219014 8245121
  * @summary Ensure that a bulk put of a buffer into another is correct.
  * @compile BulkPutBuffer.java
- * @run testng/othervm BulkPutBuffer
+ * @run junit/othervm BulkPutBuffer
  */
 public class BulkPutBuffer {
     static final long SEED = System.nanoTime();
@@ -195,95 +199,64 @@ public class BulkPutBuffer {
                 nextType = lookup.findVirtual(MyRandom.class,
                      "next" + name, MethodType.methodType(elementType));
             } catch (IllegalAccessException | NoSuchMethodException e) {
-                throw new AssertionError(e);
+                throw new RuntimeException(e);
             }
         }
 
         Buffer create(int capacity) throws Throwable {
-
             Class<?> bufferType = typeToAttr.get(elementType).type;
+            if (bufferType == ByteBuffer.class || kind == BufferKind.DIRECT ||
+                kind == BufferKind.HEAP_VIEW) {
 
-            try {
-                if (bufferType == ByteBuffer.class ||
-                    kind == BufferKind.DIRECT || kind == BufferKind.HEAP_VIEW) {
-                    int len = capacity*typeToAttr.get(elementType).bytes;
-                    ByteBuffer bb = (ByteBuffer)allocBB.invoke(len);
-                    byte[] bytes = new byte[len];
-                    RND.nextBytes(bytes);
-                    bb.put(0, bytes);
-                    if (bufferType == ByteBuffer.class) {
-                        return (Buffer)bb;
-                    } else {
-                        bb.order(order);
-                        return (Buffer)asTypeBuffer.invoke(bb);
-                    }
-                } else if (bufferType == CharBuffer.class &&
-                    kind == BufferKind.STRING) {
-                    char[] array = new char[capacity];
-                    for (int i = 0; i < capacity; i++) {
-                        array[i] = RND.nextChar();
-                    }
-                    return CharBuffer.wrap(new String(array));
+                int len = capacity*typeToAttr.get(elementType).bytes;
+                ByteBuffer bb = (ByteBuffer)allocBB.invoke(len);
+                byte[] bytes = new byte[len];
+                RND.nextBytes(bytes);
+                bb.put(0, bytes);
+                if (bufferType == ByteBuffer.class) {
+                    return (Buffer)bb;
                 } else {
-                    Buffer buf = (Buffer)alloc.invoke(capacity);
-                    for (int i = 0; i < capacity; i++) {
-                        putAbs.invoke(buf, i, nextType.invoke(RND));
-                    }
-                    return buf;
+                    bb.order(order);
+                    return (Buffer)asTypeBuffer.invoke(bb);
                 }
-            } catch (Exception e) {
-                throw new AssertionError(e);
+            } else if (bufferType == CharBuffer.class &&
+                       kind == BufferKind.STRING) {
+                char[] array = new char[capacity];
+                for (int i = 0; i < capacity; i++) {
+                    array[i] = RND.nextChar();
+                }
+                return CharBuffer.wrap(new String(array));
+            } else {
+                Buffer buf = (Buffer)alloc.invoke(capacity);
+                for (int i = 0; i < capacity; i++) {
+                    putAbs.invoke(buf, i, nextType.invoke(RND));
+                }
+                return buf;
             }
         }
 
         void copy(Buffer src, int srcOff, Buffer dst, int dstOff, int length)
             throws Throwable {
-            try {
-                for (int i = 0; i < length; i++) {
-                    putAbs.invoke(dst, dstOff + i, getAbs.invoke(src, srcOff + i));
-                }
-            } catch (ReadOnlyBufferException ro) {
-                throw ro;
-            } catch (Exception e) {
-                throw new AssertionError(e);
+            for (int i = 0; i < length; i++) {
+                putAbs.invoke(dst, dstOff + i, getAbs.invoke(src, srcOff + i));
             }
         }
 
         Buffer asReadOnlyBuffer(Buffer buf) throws Throwable {
-            try {
-                return (Buffer)asReadOnlyBuffer.invoke(buf);
-            } catch (Exception e) {
-                throw new AssertionError(e);
-            }
+            return (Buffer)asReadOnlyBuffer.invoke(buf);
         }
 
         void put(Buffer src, int srcOff, Buffer dst, int dstOff, int length)
             throws Throwable {
-            try {
-                putBufAbs.invoke(dst, dstOff, src, srcOff, length);
-            } catch (ReadOnlyBufferException ro) {
-                throw ro;
-            } catch (Exception e) {
-                throw new AssertionError(e);
-            }
+            putBufAbs.invoke(dst, dstOff, src, srcOff, length);
         }
 
         void put(Buffer src, Buffer dst) throws Throwable {
-            try {
-                putBufRel.invoke(dst, src);
-            } catch (ReadOnlyBufferException ro) {
-                throw ro;
-            } catch (Exception e) {
-                throw new AssertionError(e);
-            }
+            putBufRel.invoke(dst, src);
         }
 
         boolean equals(Buffer src, Buffer dst) throws Throwable {
-            try {
-                return Boolean.class.cast(equals.invoke(dst, src));
-            } catch (Exception e) {
-                throw new AssertionError(e);
-            }
+            return Boolean.class.cast(equals.invoke(dst, src));
         }
     }
 
@@ -297,68 +270,58 @@ public class BulkPutBuffer {
         return proxies;
     }
 
-    @DataProvider
-    static Object[][] proxies() {
-        ArrayList<Object[]> args = new ArrayList<>();
+    static Stream<Arguments> proxies() {
+        List<Arguments> args = new ArrayList<Arguments>();
         for (Class<?> type : typeToAttr.keySet()) {
+
             List<BufferProxy> proxies = getProxies(type);
             for (BufferProxy proxy : proxies) {
-                args.add(new Object[] {proxy});
+                args.add(Arguments.of(proxy));
             }
         }
-        return args.toArray(Object[][]::new);
+        return args.stream();
     }
 
-    @DataProvider
-    static Object[][] proxyPairs() {
-        List<Object[]> args = new ArrayList<>();
+    static Stream<Arguments> proxyPairs() {
+        List<Arguments> args = new ArrayList<Arguments>();
         for (Class<?> type : typeToAttr.keySet()) {
             List<BufferProxy> proxies = getProxies(type);
             for (BufferProxy proxy1 : proxies) {
                 for (BufferProxy proxy2 : proxies) {
-                    args.add(new Object[] {proxy1, proxy2});
+                    args.add(Arguments.of(proxy1, proxy2));
                 }
             }
         }
-        return args.toArray(Object[][]::new);
+        return args.stream();
     }
 
-    private static void expectThrows(Class<?> exClass, Assert.ThrowingRunnable r) {
-        try {
-            r.run();
-        } catch(Throwable e) {
-            if (e.getClass() != exClass && e.getCause().getClass() != exClass) {
-                throw new RuntimeException("Expected " + exClass +
-                "; got " + e.getCause().getClass(), e);
-            }
-        }
-    }
-
-    @Test(dataProvider = "proxies")
-    public static void testExceptions(BufferProxy bp) throws Throwable {
+    @ParameterizedTest
+    @MethodSource("proxies")
+    public void testExceptions(BufferProxy bp) throws Throwable {
         int cap = 27;
         Buffer buf = bp.create(cap);
 
-        expectThrows(IndexOutOfBoundsException.class,
+        assertThrows(IndexOutOfBoundsException.class,
             () -> bp.put(buf, -1, buf, 0, 1));
-        expectThrows(IndexOutOfBoundsException.class,
+        assertThrows(IndexOutOfBoundsException.class,
             () -> bp.put(buf, 0, buf, -1, 1));
-        expectThrows(IndexOutOfBoundsException.class,
+        assertThrows(IndexOutOfBoundsException.class,
             () -> bp.put(buf, 1, buf, 0, cap));
-        expectThrows(IndexOutOfBoundsException.class,
+        assertThrows(IndexOutOfBoundsException.class,
             () -> bp.put(buf, 0, buf, 1, cap));
-        expectThrows(IndexOutOfBoundsException.class,
+        assertThrows(IndexOutOfBoundsException.class,
             () -> bp.put(buf, 0, buf, 0, cap + 1));
-        expectThrows(IndexOutOfBoundsException.class,
+        assertThrows(IndexOutOfBoundsException.class,
             () -> bp.put(buf, 0, buf, 0, Integer.MAX_VALUE));
 
         Buffer rob = buf.isReadOnly() ? buf : bp.asReadOnlyBuffer(buf);
-        expectThrows(ReadOnlyBufferException.class,
+        assertThrows(ReadOnlyBufferException.class,
             () -> bp.put(buf, 0, rob, 0, cap));
     }
 
-    @Test(dataProvider = "proxies")
-    public static void testSelf(BufferProxy bp) throws Throwable {
+    @ParameterizedTest
+    @MethodSource("proxies")
+    public void testSelf(BufferProxy bp) throws Throwable {
         for (int i = 0; i < ITERATIONS; i++) {
             int cap = RND.nextInt(MAX_CAPACITY);
             Buffer buf = bp.create(cap);
@@ -371,7 +334,7 @@ public class BulkPutBuffer {
 
             Buffer lowerCopy = bp.create(lowerLength);
             if (lowerCopy.isReadOnly()) {
-                Assert.expectThrows(ReadOnlyBufferException.class,
+                assertThrows(ReadOnlyBufferException.class,
                     () -> bp.copy(lower, 0, lowerCopy, 0, lowerLength));
                 break;
             }
@@ -385,7 +348,7 @@ public class BulkPutBuffer {
             bp.put(lower, middle);
             middle.flip();
 
-            Assert.assertTrue(bp.equals(lowerCopy, middle),
+            assertTrue(bp.equals(lowerCopy, middle),
                 String.format("%d %s %d %d %d %d%n", SEED,
                     buf.getClass().getName(), cap,
                     lowerOffset, lowerLength, middleOffset));
@@ -395,15 +358,16 @@ public class BulkPutBuffer {
 
             bp.put(buf, lowerOffset, buf, middleOffset, lowerLength);
 
-            Assert.assertTrue(bp.equals(lowerCopy, middle),
+            assertTrue(bp.equals(lowerCopy, middle),
                 String.format("%d %s %d %d %d %d%n", SEED,
                     buf.getClass().getName(), cap,
                     lowerOffset, lowerLength, middleOffset));
         }
     }
 
-    @Test(dataProvider = "proxyPairs")
-    public static void testPairs(BufferProxy bp, BufferProxy sbp) throws Throwable {
+    @ParameterizedTest
+    @MethodSource("proxyPairs")
+    public void testPairs(BufferProxy bp, BufferProxy sbp) throws Throwable {
         for (int i = 0; i < ITERATIONS; i++) {
             int cap = Math.max(4, RND.nextInt(MAX_CAPACITY));
             int cap2 = cap/2;
@@ -426,7 +390,7 @@ public class BulkPutBuffer {
             src.limit(slim);
 
             if (buf.isReadOnly()) {
-                Assert.expectThrows(ReadOnlyBufferException.class,
+                assertThrows(ReadOnlyBufferException.class,
                     () -> bp.put(src, buf));
                 break;
             }
@@ -438,7 +402,7 @@ public class BulkPutBuffer {
             buf.reset();
             src.reset();
 
-            Assert.assertTrue(bp.equals(src, buf),
+            assertTrue(bp.equals(src, buf),
                 String.format("%d %s %d %d %d %s %d %d %d%n", SEED,
                     buf.getClass().getName(), cap, pos, lim,
                     src.getClass().getName(), scap, spos, slim));
@@ -452,7 +416,7 @@ public class BulkPutBuffer {
             buf.position(pos);
             buf.limit(lim);
 
-            Assert.assertTrue(bp.equals(src, buf),
+            assertTrue(bp.equals(src, buf),
                 String.format("%d %s %d %d %d %s %d %d %d%n", SEED,
                     buf.getClass().getName(), cap, pos, lim,
                     src.getClass().getName(), scap, spos, slim));
