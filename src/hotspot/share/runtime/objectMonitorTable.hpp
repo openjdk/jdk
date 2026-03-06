@@ -61,11 +61,11 @@ public:
   } SpecialPointerValues;
 
   static void create();
-  static ObjectMonitor* monitor_get(Thread* current, oop obj);
-  static ObjectMonitor* monitor_put_get(Thread* current, ObjectMonitor* monitor, oop obj);
+  static ObjectMonitor* monitor_get(oop obj);
+  static ObjectMonitor* monitor_put_get(ObjectMonitor* monitor, oop obj);
   static void rebuild(GrowableArray<Table*>* delete_list);
   static void destroy(GrowableArray<Table*>* delete_list);
-  static void remove_monitor_entry(Thread* current, ObjectMonitor* monitor);
+  static void remove_monitor_entry(ObjectMonitor* monitor);
 
   // Compiler support
   static address current_table_address();
