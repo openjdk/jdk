@@ -437,6 +437,17 @@ ol.sub-nav-list a.current-selection {
     left:-9999px;
     overflow:hidden;
 }
+.skip-nav:focus-within {
+    left: 0;
+    top: 0;
+    overflow: visible;
+    z-index: 1000;
+}
+.skip-nav a {
+    padding: 8px 12px;
+    background: #ffffff;
+    display: inline-block;
+}
 /*
  * Styles for page header.
  */
