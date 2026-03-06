@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -607,7 +607,7 @@ public:
   virtual SafePointNode* outer_safepoint() const;
   CountedLoopNode* inner_counted_loop() const { return unique_ctrl_out()->as_CountedLoop(); }
   CountedLoopEndNode* inner_counted_loop_end() const { return  inner_counted_loop()->loopexit(); }
-  IfFalseNode* inner_loop_exit() const { return inner_counted_loop_end()->proj_out(false)->as_IfFalse(); }
+  IfFalseNode* inner_loop_exit() const { return inner_counted_loop_end()->false_proj(); }
 
   void adjust_strip_mined_loop(PhaseIterGVN* igvn);
 
@@ -669,21 +669,7 @@ public:
   Node_List* _required_safept;  // A inner loop cannot delete these safepts;
   bool  _allow_optimizations;   // Allow loop optimizations
 
-  IdealLoopTree( PhaseIdealLoop* phase, Node *head, Node *tail )
-    : _parent(nullptr), _next(nullptr), _child(nullptr),
-      _head(head), _tail(tail),
-      _phase(phase),
-      _local_loop_unroll_limit(0), _local_loop_unroll_factor(0),
-      _body(Compile::current()->comp_arena()),
-      _nest(0), _irreducible(0), _has_call(0), _has_sfpt(0), _rce_candidate(0),
-      _has_range_checks(0), _has_range_checks_computed(0),
-      _safepts(nullptr),
-      _required_safept(nullptr),
-      _allow_optimizations(true)
-  {
-    precond(_head != nullptr);
-    precond(_tail != nullptr);
-  }
+  IdealLoopTree(PhaseIdealLoop* phase, Node* head, Node* tail);
 
   // Is 'l' a member of 'this'?
   bool is_member(const IdealLoopTree *l) const; // Test for nested membership
@@ -889,6 +875,8 @@ class PhaseIdealLoop : public PhaseTransform {
   friend class ShenandoahBarrierC2Support;
   friend class AutoNodeBudget;
 
+  Arena _arena; // For data whose lifetime is a single pass of loop optimizations
+
   // Map loop membership for CFG nodes, and ctrl for non-CFG nodes.
   //
   // Exception: dead CFG nodes may instead have a ctrl/idom forwarding
@@ -1048,6 +1036,8 @@ private:
 public:
 
   PhaseIterGVN &igvn() const { return _igvn; }
+
+  Arena* arena() { return &_arena; };
 
   bool has_node(const Node* n) const {
     guarantee(n != nullptr, "No Node.");
@@ -1223,7 +1213,8 @@ private:
   // Compute the Ideal Node to Loop mapping
   PhaseIdealLoop(PhaseIterGVN& igvn, LoopOptsMode mode) :
     PhaseTransform(Ideal_Loop),
-    _loop_or_ctrl(igvn.C->comp_arena()),
+    _arena(mtCompiler, Arena::Tag::tag_idealloop),
+    _loop_or_ctrl(&_arena),
     _igvn(igvn),
     _verify_me(nullptr),
     _verify_only(false),
@@ -1238,7 +1229,8 @@ private:
   // or only verify that the graph is valid if verify_me is null.
   PhaseIdealLoop(PhaseIterGVN& igvn, const PhaseIdealLoop* verify_me = nullptr) :
     PhaseTransform(Ideal_Loop),
-    _loop_or_ctrl(igvn.C->comp_arena()),
+    _arena(mtCompiler, Arena::Tag::tag_idealloop),
+    _loop_or_ctrl(&_arena),
     _igvn(igvn),
     _verify_me(verify_me),
     _verify_only(verify_me == nullptr),
@@ -1368,6 +1360,9 @@ public:
 #endif
   void add_parse_predicate(Deoptimization::DeoptReason reason, Node* inner_head, IdealLoopTree* loop, SafePointNode* sfpt);
   SafePointNode* find_safepoint(Node* back_control, Node* x, IdealLoopTree* loop);
+
+  void add_parse_predicates(IdealLoopTree* outer_ilt, LoopNode* inner_head, SafePointNode* cloned_sfpt);
+
   IdealLoopTree* insert_outer_loop(IdealLoopTree* loop, LoopNode* outer_l, Node* outer_ift);
   IdealLoopTree* create_outer_strip_mined_loop(Node* init_control,
                                                IdealLoopTree* loop, float cl_prob, float le_fcnt,
@@ -1376,7 +1371,7 @@ public:
   Node* exact_limit( IdealLoopTree *loop );
 
   // Return a post-walked LoopNode
-  IdealLoopTree *get_loop( Node *n ) const {
+  IdealLoopTree* get_loop(const Node* n) const {
     // Dead nodes have no loop, so return the top level loop instead
     if (!has_node(n))  return _ltree_root;
     assert(!has_ctrl(n), "");
@@ -1386,8 +1381,14 @@ public:
   IdealLoopTree* ltree_root() const { return _ltree_root; }
 
   // Is 'n' a (nested) member of 'loop'?
-  int is_member( const IdealLoopTree *loop, Node *n ) const {
-    return loop->is_member(get_loop(n)); }
+  bool is_member(const IdealLoopTree* loop, const Node* n) const {
+    return loop->is_member(get_loop(n));
+  }
+
+  // is the control for 'n' a (nested) member of 'loop'?
+  bool ctrl_is_member(const IdealLoopTree* loop, const Node* n) {
+    return is_member(loop, get_ctrl(n));
+  }
 
   // This is the basic building block of the loop optimizations.  It clones an
   // entire loop body.  It makes an old_new loop body mapping; with this
@@ -1675,8 +1676,8 @@ public:
   Node *has_local_phi_input( Node *n );
   // Mark an IfNode as being dominated by a prior test,
   // without actually altering the CFG (and hence IDOM info).
-  void dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip = false, bool pin_array_access_nodes = false);
-  void rewire_safe_outputs_to_dominator(Node* source, Node* dominator, bool pin_array_access_nodes);
+  void dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip = false, bool prev_dom_not_imply_this = false);
+  void rewire_safe_outputs_to_dominator(Node* source, Node* dominator, bool dominator_not_imply_source);
 
   // Split Node 'n' through merge point
   RegionNode* split_thru_region(Node* n, RegionNode* region);
@@ -1959,9 +1960,11 @@ public:
 
   bool can_move_to_inner_loop(Node* n, LoopNode* n_loop, Node* x);
 
-  void pin_array_access_nodes_dependent_on(Node* ctrl);
+  void pin_nodes_dependent_on(Node* ctrl, bool old_iff_is_rangecheck);
 
   Node* ensure_node_and_inputs_are_above_pre_end(CountedLoopEndNode* pre_end, Node* node);
+
+  Node* new_assertion_predicate_opaque_init(Node* entry_control, Node* init, Node* int_zero);
 
   bool try_make_short_running_loop(IdealLoopTree* loop, jint stride_con, const Node_List& range_checks, const uint iters_limit);
 

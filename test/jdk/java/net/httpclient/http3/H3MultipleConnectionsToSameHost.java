@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,16 @@
 
 /*
  * @test id=with-continuations
- * @bug 8087112
+ * @bug 8087112 8372409
  * @requires os.family != "windows" | ( os.name != "Windows 10" & os.name != "Windows Server 2016"
  *                                      & os.name != "Windows Server 2019" )
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.http2.Http2TestServer
- * @run testng/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
+ * @run junit/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
+ *                     -Djdk.httpclient.quic.idleTimeout=100000
+ *                     -Djdk.httpclient.keepalive.timeout.h3=100000
+ *                     -Djdk.test.server.quic.idleTimeout=100000
  *                     -Djdk.httpclient.quic.minPtoBackoffTime=60
  *                     -Djdk.httpclient.quic.maxPtoBackoffTime=90
  *                     -Djdk.httpclient.quic.maxPtoBackoff=10
@@ -37,7 +40,7 @@
  *                     -Djdk.internal.httpclient.quic.poller.usePlatformThreads=false
  *                     -Djdk.httpclient.quic.maxEndpoints=-1
  *                     -Djdk.httpclient.http3.maxStreamLimitTimeout=0
- *                     -Djdk.httpclient.quic.maxBidiStreams=2
+ *                     -Djdk.internal.httpclient.quic.maxBidiStreams=2
  *                     -Djdk.httpclient.retryOnStreamlimit=50
  *                     -Djdk.httpclient.HttpClient.log=errors,http3,quic:retransmit
  *                     -Dsimpleget.requests=100
@@ -46,13 +49,16 @@
  */
 /*
  * @test id=without-continuations
- * @bug 8087112
+ * @bug 8087112 8372409
  * @requires os.family == "windows" & ( os.name == "Windows 10" | os.name == "Windows Server 2016"
  *                                     | os.name == "Windows Server 2019" )
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.http2.Http2TestServer
- * @run testng/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
+ * @run junit/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
+ *                     -Djdk.httpclient.quic.idleTimeout=100000
+ *                     -Djdk.httpclient.keepalive.timeout.h3=100000
+ *                     -Djdk.test.server.quic.idleTimeout=100000
  *                     -Djdk.httpclient.quic.minPtoBackoffTime=45
  *                     -Djdk.httpclient.quic.maxPtoBackoffTime=60
  *                     -Djdk.httpclient.quic.maxPtoBackoff=9
@@ -61,7 +67,7 @@
  *                     -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations
  *                     -Djdk.httpclient.quic.maxEndpoints=-1
  *                     -Djdk.httpclient.http3.maxStreamLimitTimeout=0
- *                     -Djdk.httpclient.quic.maxBidiStreams=2
+ *                     -Djdk.internal.httpclient.quic.maxBidiStreams=2
  *                     -Djdk.httpclient.retryOnStreamlimit=50
  *                     -Djdk.httpclient.HttpClient.log=errors,http3,quic:retransmit
  *                     -Dsimpleget.requests=100
@@ -71,21 +77,21 @@
  */
 /*
  * @test id=useNioSelector
- * @bug 8087112
+ * @bug 8087112 8372409
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.http2.Http2TestServer
- * @run testng/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
- *                     -Djdk.httpclient.quic.idleTimeout=120
- *                     -Djdk.httpclient.keepalive.timeout.h3=120
- *                     -Djdk.test.server.quic.idleTimeout=90
+ * @run junit/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
+ *                     -Djdk.httpclient.quic.idleTimeout=100000
+ *                     -Djdk.httpclient.keepalive.timeout.h3=100000
+ *                     -Djdk.test.server.quic.idleTimeout=100000
  *                     -Djdk.httpclient.quic.minPtoBackoffTime=60
  *                     -Djdk.httpclient.quic.maxPtoBackoffTime=120
  *                     -Djdk.httpclient.quic.maxPtoBackoff=9
  *                     -Djdk.internal.httpclient.quic.useNioSelector=true
  *                     -Djdk.httpclient.http3.maxStreamLimitTimeout=0
  *                     -Djdk.httpclient.quic.maxEndpoints=1
- *                     -Djdk.httpclient.quic.maxBidiStreams=2
+ *                     -Djdk.internal.httpclient.quic.maxBidiStreams=2
  *                     -Djdk.httpclient.retryOnStreamlimit=50
  *                     -Djdk.httpclient.HttpClient.log=errors,http3,quic:hs:retransmit
  *                     -Dsimpleget.requests=100
@@ -93,6 +99,31 @@
  * @summary Send 100 large concurrent requests, with connections whose max stream
  *          limit is artificially low, in order to cause concurrent connections
  *          to the same host to be created, with non-blocking IO and selector
+ */
+/*
+ * @test id=reno-cc
+ * @bug 8087112 8372409
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext
+ *        jdk.httpclient.test.lib.http2.Http2TestServer
+ * @run junit/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError
+ *                     -Djdk.httpclient.quic.idleTimeout=100000
+ *                     -Djdk.httpclient.keepalive.timeout.h3=100000
+ *                     -Djdk.test.server.quic.idleTimeout=100000
+ *                     -Djdk.httpclient.quic.minPtoBackoffTime=60
+ *                     -Djdk.httpclient.quic.maxPtoBackoffTime=120
+ *                     -Djdk.httpclient.quic.maxPtoBackoff=9
+ *                     -Djdk.httpclient.http3.maxStreamLimitTimeout=0
+ *                     -Djdk.httpclient.quic.maxEndpoints=1
+ *                     -Djdk.internal.httpclient.quic.maxBidiStreams=2
+ *                     -Djdk.httpclient.retryOnStreamlimit=50
+ *                     -Djdk.httpclient.HttpClient.log=errors,http3,quic:hs:retransmit
+ *                     -Dsimpleget.requests=100
+ *                     -Djdk.internal.httpclient.quic.congestionController=reno
+ *                     H3MultipleConnectionsToSameHost
+ * @summary Send 100 large concurrent requests, with connections whose max stream
+ *          limit is artificially low, in order to cause concurrent connections
+ *          to the same host to be created, with Reno congestion controller
  */
 
 // Interesting additional settings for debugging and manual testing:
@@ -136,18 +167,19 @@ import javax.net.ssl.SSLContext;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.internal.net.http.common.Utils;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.Assert;
-import org.testng.annotations.Test;
 
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpOption.H3_DISCOVERY;
 import static jdk.internal.net.http.Http3ClientProperties.MAX_STREAM_LIMIT_WAIT_TIMEOUT;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 public class H3MultipleConnectionsToSameHost implements HttpServerAdapters {
     static HttpTestServer httpsServer;
     static HttpClient client = null;
-    static SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     static String httpsURIString;
     static ExecutorService serverExec =
             Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
@@ -155,8 +187,6 @@ public class H3MultipleConnectionsToSameHost implements HttpServerAdapters {
 
     static void initialize() throws Exception {
         try {
-            SimpleSSLContext sslct = new SimpleSSLContext();
-            sslContext = sslct.get();
             client = getClient();
 
             httpsServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext, serverExec);
@@ -173,9 +203,6 @@ public class H3MultipleConnectionsToSameHost implements HttpServerAdapters {
     }
 
     private static void warmup() throws Exception {
-        SimpleSSLContext sslct = new SimpleSSLContext();
-        var sslContext = sslct.get();
-
         // warmup server
         try (var client2 = createClient(sslContext, Executors.newVirtualThreadPerTaskExecutor())) {
             HttpRequest request = HttpRequest.newBuilder(URI.create(httpsURIString))
@@ -203,18 +230,18 @@ public class H3MultipleConnectionsToSameHost implements HttpServerAdapters {
     }
 
     public static void main(String[] args) throws Exception {
-        test();
+        new H3MultipleConnectionsToSameHost().test();
     }
 
     @Test
-    public static void test() throws Exception {
+    public void test() throws Exception {
         try {
             long prestart = System.nanoTime();
             initialize();
             long done = System.nanoTime();
             System.out.println("Initialization and warmup took "+ TimeUnit.NANOSECONDS.toMillis(done-prestart)+" millis");
             // Thread.sleep(30000);
-            int maxBidiStreams = Utils.getIntegerNetProperty("jdk.httpclient.quic.maxBidiStreams", 100);
+            int maxBidiStreams = Utils.getIntegerNetProperty("jdk.internal.httpclient.quic.maxBidiStreams", 100);
             long timeout = MAX_STREAM_LIMIT_WAIT_TIMEOUT;
 
             Set<String> connections = new ConcurrentSkipListSet<>();
@@ -224,7 +251,7 @@ public class H3MultipleConnectionsToSameHost implements HttpServerAdapters {
                     .GET().build();
             long start = System.nanoTime();
             var resp = client.send(request, BodyHandlers.ofByteArrayConsumer(b-> {}));
-            Assert.assertEquals(resp.statusCode(), 200);
+            Assertions.assertEquals(200, resp.statusCode());
             long elapsed = System.nanoTime() - start;
             System.out.println("First request took: " + elapsed + " nanos (" + TimeUnit.NANOSECONDS.toMillis(elapsed) + " ms)");
             final int max = property("simpleget.requests", 50);
@@ -278,7 +305,7 @@ public class H3MultipleConnectionsToSameHost implements HttpServerAdapters {
 
                 }
             }
-            list.forEach((cf) -> Assert.assertEquals(cf.join().statusCode(), 200));
+            list.forEach((cf) -> Assertions.assertEquals(200, cf.join().statusCode()));
             client.close();
         } catch (Throwable tt) {
             System.err.println("tt caught");

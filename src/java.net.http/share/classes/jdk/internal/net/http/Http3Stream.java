@@ -31,7 +31,6 @@ import java.net.ProtocolException;
 import java.net.http.HttpHeaders;
 import java.nio.ByteBuffer;
 import java.util.List;
-import java.util.OptionalLong;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -58,6 +57,8 @@ import jdk.internal.net.http.quic.streams.QuicStreamReader;
 
 import static jdk.internal.net.http.Exchange.MAX_NON_FINAL_RESPONSES;
 import static jdk.internal.net.http.RedirectFilter.HTTP_NOT_MODIFIED;
+import static jdk.internal.net.http.common.Utils.readContentLength;
+import static jdk.internal.net.http.common.Utils.readStatusCode;
 
 /**
  * A common super class for the HTTP/3 request/response stream ({@link Http3ExchangeImpl}
@@ -606,23 +607,17 @@ sealed abstract class Http3Stream<T> extends ExchangeImpl<T> permits Http3Exchan
          }
 
          int responseCode;
-         boolean finalResponse = false;
          try {
-             responseCode = (int) responseHeaders
-                     .firstValueAsLong(":status")
-                     .orElseThrow(() -> new IOException("no statuscode in response"));
-         } catch (IOException | NumberFormatException exception) {
+             responseCode = readStatusCode(responseHeaders, "");
+         } catch (ProtocolException pe) {
              // RFC-9114: 4.1.2.  Malformed Requests and Responses:
              //  "Malformed requests or responses that are
              //   detected MUST be treated as a stream error of type H3_MESSAGE_ERROR"
-             cancelImpl(exception, Http3Error.H3_MESSAGE_ERROR);
-             return;
-         }
-         if (responseCode < 100 || responseCode > 999) {
-             cancelImpl(new IOException("Unexpected :status header value"), Http3Error.H3_MESSAGE_ERROR);
+             cancelImpl(pe, Http3Error.H3_MESSAGE_ERROR);
              return;
          }
 
+         boolean finalResponse = false;
          if (responseCode >= 200) {
              responseState = ResponseState.PERMIT_TRAILER;
              finalResponse = true;
@@ -653,23 +648,21 @@ sealed abstract class Http3Stream<T> extends ExchangeImpl<T> permits Http3Exchan
                      responseHeaders);
          }
 
-         try {
-             OptionalLong cl = responseHeaders.firstValueAsLong("content-length");
-             if (finalResponse && cl.isPresent()) {
-                 long cll = cl.getAsLong();
-                 if (cll < 0) {
-                     cancelImpl(new IOException("Invalid content-length value "+cll), Http3Error.H3_MESSAGE_ERROR);
-                     return;
-                 }
-                 if (!(exchange.request().method().equalsIgnoreCase("HEAD") || responseCode == HTTP_NOT_MODIFIED)) {
-                     // HEAD response and 304 response might have a content-length header,
-                     // but it carries no meaning
-                     contentLength = cll;
-                 }
+         if (finalResponse) {
+             long cl;
+             try {
+                 cl = readContentLength(responseHeaders, "", -1);
+             } catch (ProtocolException pe) {
+                 cancelImpl(pe, Http3Error.H3_MESSAGE_ERROR);
+                 return;
              }
-         } catch (NumberFormatException nfe) {
-             cancelImpl(nfe, Http3Error.H3_MESSAGE_ERROR);
-             return;
+             if (cl != -1 &&
+                     !(exchange.request().method().equalsIgnoreCase("HEAD") ||
+                             responseCode == HTTP_NOT_MODIFIED)) {
+                 // HEAD response and 304 response might have a content-length header,
+                 // but it carries no meaning
+                 contentLength = cl;
+             }
          }
 
          if (Log.headers() || debug.on()) {

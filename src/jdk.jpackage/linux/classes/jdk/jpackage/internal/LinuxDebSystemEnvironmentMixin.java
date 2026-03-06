@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.Result;
 
-public interface LinuxDebSystemEnvironmentMixin {
+interface LinuxDebSystemEnvironmentMixin {
     Path dpkg();
     Path dpkgdeb();
     Path fakeroot();
@@ -40,6 +40,9 @@ public interface LinuxDebSystemEnvironmentMixin {
     static Result<LinuxDebSystemEnvironmentMixin> create() {
         final var errors = Stream.of(Internal.TOOL_DPKG_DEB, Internal.TOOL_DPKG, Internal.TOOL_FAKEROOT)
                 .map(ToolValidator::new)
+                .map(v -> {
+                    return v.setCommandLine("--version");
+                })
                 .map(ToolValidator::validate)
                 .filter(Objects::nonNull)
                 .toList();

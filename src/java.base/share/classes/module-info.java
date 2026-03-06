@@ -135,7 +135,6 @@ module java.base {
     exports javax.security.auth.x500;
     exports javax.security.cert;
 
-
     // additional qualified exports may be inserted at build time
     // see make/gensrc/GenModuleInfo.gmk
 
@@ -147,11 +146,11 @@ module java.base {
         java.security.sasl;
     exports jdk.internal to
         jdk.incubator.vector;
-    // Note: all modules in the exported list participate in preview  features
-    // and therefore if they use preview features they do not need to be
-    // compiled with "--enable-preview".
+    // Note: all modules in the exported list participate in preview features,
+    // normal or reflective.  They do not need to be compiled with "--enable-preview"
+    // to use preview features and do not need to suppress "preview" warnings.
     // It is recommended for any modules that do participate that their
-    // module declaration be annotated with jdk.internal.javac.ParticipatesInPreview
+    // module declaration be annotated with jdk.internal.javac.ParticipatesInPreview.
     exports jdk.internal.javac to
         java.compiler,
         jdk.compiler;
@@ -262,7 +261,6 @@ module java.base {
         jdk.jfr;
     exports jdk.internal.util to
         java.desktop,
-        java.net.http,
         java.prefs,
         java.security.jgss,
         java.smartcardio,
@@ -275,7 +273,8 @@ module java.base {
         jdk.httpserver,
         jdk.jlink,
         jdk.jpackage,
-        jdk.net;
+        jdk.net,
+        jdk.security.auth;
     exports sun.net to
         java.net.http,
         jdk.naming.dns;

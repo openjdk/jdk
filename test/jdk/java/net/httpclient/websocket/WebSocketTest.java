@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,14 @@
 
 /*
  * @test
- * @bug 8217429
+ * @bug 8217429 8208693
+ * @library ../access
  * @build DummyWebSocketServer
- * @run testng/othervm
+ *        java.net.http/jdk.internal.net.http.HttpClientTimerAccess
+ * @run junit/othervm
  *       WebSocketTest
  */
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.net.Authenticator;
@@ -40,6 +40,7 @@ import java.net.http.WebSocket;
 import java.net.http.WebSocketHandshakeException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -48,6 +49,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
@@ -58,9 +60,14 @@ import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.newBuilder;
 import static java.net.http.WebSocket.NORMAL_CLOSURE;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertThrows;
-import static org.testng.Assert.fail;
+import static jdk.internal.net.http.HttpClientTimerAccess.assertNoResponseTimerEventRegistrations;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class WebSocketTest {
 
@@ -143,6 +150,45 @@ public class WebSocketTest {
         }
     }
 
+    /**
+     * Verifies that the internally issued request to establish the WebSocket
+     * connection does not leave any response timers registered at the client
+     * after the WebSocket handshake.
+     */
+    @Test
+    public void responseTimerCleanUp() throws Exception {
+        try (var server = new DummyWebSocketServer()) {
+            server.open();
+            try (var client = newBuilder().proxy(NO_PROXY).build()) {
+                var connectionEstablished = new CountDownLatch(1);
+                var webSocketListener = new WebSocket.Listener() {
+
+                    @Override
+                    public void onOpen(WebSocket webSocket) {
+                        connectionEstablished.countDown();
+                    }
+
+                };
+                var webSocket = client
+                        .newWebSocketBuilder()
+                        // Explicitly configure a timeout to get a response
+                        // timer event get registered at the client. The query
+                        // should succeed without timing out.
+                        .connectTimeout(Duration.ofMinutes(2))
+                        .buildAsync(server.getURI(), webSocketListener)
+                        .join();
+                try {
+                    connectionEstablished.await();
+                    // We expect the response timer event to get evicted once
+                    // the WebSocket handshake headers are received.
+                    assertNoResponseTimerEventRegistrations(client);
+                } finally {
+                    webSocket.abort();
+                }
+            }
+        }
+    }
+
     @Test
     public void partialBinaryThenText() throws IOException {
         try (var server = new DummyWebSocketServer()) {
@@ -220,8 +266,7 @@ public class WebSocketTest {
         }
     }
 
-    @DataProvider(name = "sequence")
-    public Object[][] data1() {
+    public static Object[][] data1() {
         int[] CLOSE = {
                 0x81, 0x00, // ""
                 0x82, 0x00, // []
@@ -248,7 +293,8 @@ public class WebSocketTest {
         };
     }
 
-    @Test(dataProvider = "sequence")
+    @ParameterizedTest
+    @MethodSource("data1")
     public void listenerSequentialOrder(int[] binary, long requestSize)
             throws IOException
     {
@@ -426,8 +472,7 @@ public class WebSocketTest {
             @Override public String toString() { return "AUTH_SERVER_WITH_CANNED_DATA"; }
         };
 
-    @DataProvider(name = "servers")
-    public Object[][] servers() {
+    public static Object[][] servers() {
         return new Object[][] {
             { SERVER_WITH_CANNED_DATA },
             { AUTH_SERVER_WITH_CANNED_DATA },
@@ -463,7 +508,8 @@ public class WebSocketTest {
         return "%s and %s %s".formatted(actual, expected, message);
     }
 
-    @Test(dataProvider = "servers")
+    @ParameterizedTest
+    @MethodSource("servers")
     public void simpleAggregatingBinaryMessages
             (Function<int[],DummyWebSocketServer> serverSupplier)
         throws IOException
@@ -556,14 +602,15 @@ public class WebSocketTest {
                     .join();
             try {
                 List<byte[]> a = actual.join();
-                assertEquals(ofBytes(a), ofBytes(expected), diagnose(a, expected));
+                assertEquals(ofBytes(expected), ofBytes(a), diagnose(a, expected));
             } finally {
                 webSocket.abort();
             }
         }
     }
 
-    @Test(dataProvider = "servers")
+    @ParameterizedTest
+    @MethodSource("servers")
     public void simpleAggregatingTextMessages
             (Function<int[],DummyWebSocketServer> serverSupplier)
         throws IOException
@@ -639,7 +686,7 @@ public class WebSocketTest {
                     .join();
             try {
                 List<String> a = actual.join();
-                assertEquals(a, expected);
+                assertEquals(expected, a);
             } finally {
                 webSocket.abort();
             }
@@ -650,7 +697,8 @@ public class WebSocketTest {
      * Exercises the scenario where requests for more messages are made prior to
      * completing the returned CompletionStage instances.
      */
-    @Test(dataProvider = "servers")
+    @ParameterizedTest
+    @MethodSource("servers")
     public void aggregatingTextMessages
         (Function<int[],DummyWebSocketServer> serverSupplier)
         throws IOException
@@ -740,7 +788,7 @@ public class WebSocketTest {
                     .join();
             try {
                 List<String> a = actual.join();
-                assertEquals(a, expected);
+                assertEquals(expected, a);
             } finally {
                 webSocket.abort();
             }
@@ -809,7 +857,7 @@ public class WebSocketTest {
             } catch (CompletionException expected) {
                 WebSocketHandshakeException e = (WebSocketHandshakeException)expected.getCause();
                 HttpResponse<?> response = e.getResponse();
-                assertEquals(response.statusCode(), 401);
+                assertEquals(401, response.statusCode());
             }
         }
     }

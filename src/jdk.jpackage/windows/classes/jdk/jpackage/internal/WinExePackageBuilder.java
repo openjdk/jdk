@@ -27,7 +27,6 @@ package jdk.jpackage.internal;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
-import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.WinExePackage;
 import jdk.jpackage.internal.model.WinMsiPackage;
 
@@ -37,11 +36,8 @@ final class WinExePackageBuilder {
         this.pkg = Objects.requireNonNull(pkg);
     }
 
-    WinExePackage create() throws ConfigException {
-        if (icon != null) {
-            LauncherBuilder.validateIcon(icon);
-        }
-        return WinExePackage.create(pkg, Optional.ofNullable(icon));
+    WinExePackage create() {
+        return WinExePackage.create(pkg, Optional.ofNullable(icon).map(LauncherBuilder::validateIcon));
     }
 
     WinExePackageBuilder icon(Path v) {

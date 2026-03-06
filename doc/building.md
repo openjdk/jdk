@@ -352,6 +352,11 @@ on some strategies to deal with this.
 It is recommended that you use at least macOS 14 and Xcode 15.4, but
 earlier versions may also work.
 
+Starting with Xcode 26, introduced in macOS 26, the Metal toolchain no longer
+comes bundled with Xcode, so it needs to be installed separately. This can
+either be done via the Xcode's Settings/Components UI, or in the command line
+calling `xcodebuild -downloadComponent metalToolchain`.
+
 The standard macOS environment contains the basic tooling needed to build, but
 for external libraries a package manager is recommended. The JDK uses
 [homebrew](https://brew.sh/) in the examples, but feel free to use whatever
@@ -468,7 +473,7 @@ available for this update.
 The minimum accepted version is Visual Studio 2019 version 16.8. (Note that
 this version is often presented as "MSVC 14.28", and reported by cl.exe as
 19.28.) Older versions will not be accepted by `configure` and will not work.
-The maximum accepted version of Visual Studio is 2022.
+The maximum accepted version of Visual Studio is 2026.
 
 If you have multiple versions of Visual Studio installed, `configure` will by
 default pick the latest. You can request a specific version to be used by
@@ -1173,10 +1178,8 @@ Note that alsa is needed even if you only want to build a headless JDK.
 
 #### X11
 
-You will need X11 libraries suitable for your *target* system. In most cases,
-using Debian's pre-built libraries work fine.
-
-Note that X11 is needed even if you only want to build a headless JDK.
+When not building a headless JDK, you will need X11 libraries suitable for your
+*target* system. In most cases, using Debian's pre-built libraries work fine.
 
 * Go to [Debian Package Search](https://www.debian.org/distrib/packages),
   search for the following packages for your *target* system, and download them

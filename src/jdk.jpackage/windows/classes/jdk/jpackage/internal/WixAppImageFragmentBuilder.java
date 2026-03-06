@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import static jdk.jpackage.internal.util.CollectionUtils.toCollection;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -140,16 +139,6 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             packageFile.save(ApplicationLayout.build().setAll(getConfigRoot()).create());
         }
         super.addFilesToConfigRoot();
-    }
-
-    @Override
-    List<String> getLoggableWixFeatures() {
-        if (isWithWix36Features()) {
-            return List.of(MessageFormat.format(I18N.getString("message.use-wix36-features"),
-                    getWixVersion()));
-        } else {
-            return List.of();
-        }
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@
  *          java.net.http/jdk.internal.net.http.qpack.writers
  *          java.security.jgss
  * @modules java.base/jdk.internal.util
- * @run testng/othervm/timeout=60 -Djavax.net.debug=ssl -Djdk.httpclient.HttpClient.log=all ErrorTest
+ * @run junit/othervm/timeout=60 -Djavax.net.debug=ssl -Djdk.httpclient.HttpClient.log=all ErrorTest
  * @summary check exception thrown when bad TLS parameters selected
  */
 
@@ -60,20 +60,21 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
-import jdk.httpclient.test.lib.http2.Http2EchoHandler;
 
 import jdk.test.lib.net.SimpleSSLContext;
 import static java.net.http.HttpClient.Version.HTTP_2;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * When selecting an unacceptable cipher suite the TLS handshake will fail.
  * But, the exception that was thrown was not being returned up to application
  * causing hang problems
  */
-public class ErrorTest {
+public class ErrorTest implements HttpServerAdapters {
 
     static final String[] CIPHER_SUITES = new String[]{ "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384" };
 
@@ -82,7 +83,7 @@ public class ErrorTest {
     //@Test(timeOut=5000)
     @Test
     public void test() throws Exception {
-        SSLContext sslContext = (new SimpleSSLContext()).get();
+        SSLContext sslContext = SimpleSSLContext.findSSLContext();
         ExecutorService exec = Executors.newCachedThreadPool();
         HttpClient client = HttpClient.newBuilder()
                                       .executor(exec)
@@ -91,16 +92,17 @@ public class ErrorTest {
                                       .version(HTTP_2)
                                       .build();
 
-        Http2TestServer httpsServer = null;
+        HttpTestServer httpsServer = null;
         try {
-            SSLContext serverContext = (new SimpleSSLContext()).get();
+            SSLContext serverContext = SimpleSSLContext.findSSLContext();
             SSLParameters p = serverContext.getSupportedSSLParameters();
             p.setApplicationProtocols(new String[]{"h2"});
-            httpsServer = new Http2TestServer(true,
+            Http2TestServer httpsServerImpl = new Http2TestServer(true,
                                               0,
                                               exec,
                                               serverContext);
-            httpsServer.addHandler(new Http2EchoHandler(), "/");
+            httpsServer = HttpTestServer.of(httpsServerImpl);
+            httpsServer.addHandler(new HttpTestFileEchoHandler(), "/");
             int httpsPort = httpsServer.getAddress().getPort();
             String httpsURIString = "https://localhost:" + httpsPort + "/bar/";
 

@@ -118,8 +118,5 @@ ThreadTotalCPUTimeClosure::~ThreadTotalCPUTimeClosure() {
 }
 
 void ThreadTotalCPUTimeClosure::do_thread(Thread* thread) {
-  // The default code path (fast_thread_cpu_time()) asserts that
-  // pthread_getcpuclockid() and clock_gettime() must return 0. Thus caller
-  // must ensure the thread exists and has not terminated.
   _total += os::thread_cpu_time(thread);
 }

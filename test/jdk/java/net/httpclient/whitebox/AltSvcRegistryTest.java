@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@ import jdk.internal.net.http.AltServicesRegistry;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -45,6 +43,10 @@ import java.util.concurrent.Executors;
 
 import static jdk.internal.net.http.AltServicesRegistry.AltService;
 import static java.net.http.HttpResponse.BodyHandlers.ofString;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Test;
 
 /*
  * @test
@@ -73,7 +75,7 @@ import static java.net.http.HttpResponse.BodyHandlers.ofString;
  *          java.base/sun.net.www
  *          java.base/sun.net
  *          java.base/jdk.internal.util
- * @run testng/othervm
+ * @run junit/othervm
  *                    -Dtest.requiresHost=true
  *                   -Djdk.httpclient.HttpClient.log=headers
  *                   -Djdk.internal.httpclient.disableHostnameVerification
@@ -81,17 +83,15 @@ import static java.net.http.HttpResponse.BodyHandlers.ofString;
  *                    AltSvcRegistryTest
  */
 
-
 public class AltSvcRegistryTest implements HttpServerAdapters {
 
     static HttpTestServer https2Server;
     static String https2URI;
     static HttpClient client;
-    static SSLContext server;
+    private static final SSLContext server = SimpleSSLContext.findSSLContext();
 
-    @BeforeTest
-    public void setUp() throws Exception {
-        server = SimpleSSLContext.getContext("TLS");
+    @BeforeAll
+    public static void setUp() throws Exception {
         getRegistry();
         final ExecutorService executor = Executors.newCachedThreadPool();
         https2Server = HttpServerAdapters.HttpTestServer.of(
@@ -99,8 +99,12 @@ public class AltSvcRegistryTest implements HttpServerAdapters {
         https2Server.addHandler(new AltSvcRegistryTestHandler("https", https2Server), "/");
         https2Server.start();
         https2URI = "https://" + https2Server.serverAuthority() + "/";
+    }
 
-
+    @AfterAll
+    public static void tearDown() {
+        if (client != null) client.close();
+        if (https2Server != null) https2Server.stop();
     }
 
     static AltServicesRegistry getRegistry() {

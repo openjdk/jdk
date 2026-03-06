@@ -43,8 +43,8 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import jdk.internal.lang.CaseFolding;
 import jdk.internal.util.ArraysSupport;
-import jdk.internal.util.regex.CaseFolding;
 import jdk.internal.util.regex.Grapheme;
 
 /**

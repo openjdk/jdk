@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,6 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.List;
-import java.util.Random;
-import java.util.StringTokenizer;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -47,10 +45,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.net.ssl.*;
 import jdk.internal.net.http.common.Utils;
-import org.testng.annotations.Test;
 import jdk.internal.net.http.common.SSLFlowDelegate;
 
-@Test
+import org.junit.jupiter.api.Test;
+
 public class FlowTest extends AbstractRandomTest {
 
     private final SubmissionPublisher<List<ByteBuffer>> srcPublisher;
@@ -76,7 +74,7 @@ public class FlowTest extends AbstractRandomTest {
         executor = Executors.newCachedThreadPool();
         srcPublisher = new SubmissionPublisher<>(executor, 20,
                                                  this::handlePublisherException);
-        SSLContext ctx = (new SimpleSSLContext()).get();
+        SSLContext ctx = SimpleSSLContextWhiteboxAdapter.findSSLContext();
         SSLEngine engineClient = ctx.createSSLEngine();
         SSLParameters params = ctx.getSupportedSSLParameters();
         params.setApplicationProtocols(new String[]{"proto1", "proto2"}); // server will choose proto2
@@ -241,7 +239,7 @@ public class FlowTest extends AbstractRandomTest {
         private void clientReader() {
             try {
                 InputStream is = clientSock.getInputStream();
-                final int bufsize = FlowTest.randomRange(512, 16 * 1024);
+                final int bufsize = AbstractRandomTest.randomRange(512, 16 * 1024);
                 println("clientReader: bufsize = " + bufsize);
                 while (true) {
                     byte[] buf = new byte[bufsize];
@@ -315,8 +313,8 @@ public class FlowTest extends AbstractRandomTest {
         private final AtomicInteger loopCount = new AtomicInteger();
 
         public String monitor() {
-            return "serverLoopback: loopcount = " + loopCount.toString()
-                    + " clientRead: count = " + readCount.toString();
+            return "serverLoopback: loopcount = " + loopCount.get()
+                    + " clientRead: count = " + readCount.get();
         }
 
         // thread2
@@ -324,7 +322,7 @@ public class FlowTest extends AbstractRandomTest {
             try {
                 InputStream is = serverSock.getInputStream();
                 OutputStream os = serverSock.getOutputStream();
-                final int bufsize = FlowTest.randomRange(512, 16 * 1024);
+                final int bufsize = AbstractRandomTest.randomRange(512, 16 * 1024);
                 println("serverLoopback: bufsize = " + bufsize);
                 byte[] bb = new byte[bufsize];
                 while (true) {

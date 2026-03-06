@@ -30,9 +30,11 @@
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/gcLocker.hpp"
+#include "gc/shared/hSpaceCounters.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "utilities/align.hpp"
 
@@ -112,19 +114,30 @@ void PSOldGen::initialize_performance_counters() {
   const char* perf_data_name = "old";
   _gen_counters = new GenerationCounters(perf_data_name, 1, 1, min_gen_size(),
                                          max_gen_size(), virtual_space()->committed_size());
-  _space_counters = new SpaceCounters(perf_data_name, 0,
-                                      virtual_space()->reserved_size(),
-                                      _object_space, _gen_counters);
+  _space_counters = new HSpaceCounters(_gen_counters->name_space(),
+                                       perf_data_name,
+                                       0,
+                                       virtual_space()->reserved_size(),
+                                       _object_space->capacity_in_bytes());
 }
 
 HeapWord* PSOldGen::expand_and_allocate(size_t word_size) {
+#ifdef ASSERT
   assert(Heap_lock->is_locked(), "precondition");
+  if (is_init_completed()) {
+    assert(SafepointSynchronize::is_at_safepoint(), "precondition");
+    assert(Thread::current()->is_VM_thread(), "precondition");
+  } else {
+    assert(Thread::current()->is_Java_thread(), "precondition");
+    assert(Heap_lock->owned_by_self(), "precondition");
+  }
+#endif
 
-  if (object_space()->needs_expand(word_size)) {
+  if (pointer_delta(object_space()->end(), object_space()->top()) < word_size) {
     expand(word_size*HeapWordSize);
   }
 
-  // Reuse the CAS API even though this is VM thread in safepoint. This method
+  // Reuse the CAS API even though this is in a critical section. This method
   // is not invoked repeatedly, so the CAS overhead should be negligible.
   return cas_allocate_noexpand(word_size);
 }
@@ -168,7 +181,7 @@ bool PSOldGen::expand_for_allocate(size_t word_size) {
     // true until we expand, since we have the lock.  Other threads may take
     // the space we need before we can allocate it, regardless of whether we
     // expand.  That's okay, we'll just try expanding again.
-    if (object_space()->needs_expand(word_size)) {
+    if (pointer_delta(object_space()->end(), object_space()->top()) < word_size) {
       result = expand(word_size*HeapWordSize);
     }
   }
@@ -192,10 +205,21 @@ void PSOldGen::try_expand_till_size(size_t target_capacity_bytes) {
 
 bool PSOldGen::expand(size_t bytes) {
 #ifdef ASSERT
-  if (!Thread::current()->is_VM_thread()) {
-    assert_lock_strong(PSOldGenExpand_lock);
+  //  During startup (is_init_completed() == false), expansion can occur for
+  //    1. java-threads invoking heap-allocation (using Heap_lock)
+  //    2. CDS construction by a single thread (using PSOldGenExpand_lock but not needed)
+  //
+  //  After startup (is_init_completed() == true), expansion can occur for
+  //    1. GC workers for promoting to old-gen (using PSOldGenExpand_lock)
+  //    2. VM thread to satisfy the pending allocation
+  //    Both cases are inside safepoint pause, but are never overlapping.
+  //
+  if (is_init_completed()) {
+    assert(SafepointSynchronize::is_at_safepoint(), "precondition");
+    assert(Thread::current()->is_VM_thread() || PSOldGenExpand_lock->owned_by_self(), "precondition");
+  } else {
+    assert(Heap_lock->owned_by_self() || PSOldGenExpand_lock->owned_by_self(), "precondition");
   }
-  assert_locked_or_safepoint(Heap_lock);
   assert(bytes > 0, "precondition");
 #endif
   const size_t remaining_bytes = virtual_space()->uncommitted_size();
@@ -245,7 +269,7 @@ bool PSOldGen::expand_by(size_t bytes) {
     }
     post_resize();
     if (UsePerfData) {
-      _space_counters->update_capacity();
+      _space_counters->update_capacity(_object_space->capacity_in_bytes());
       _gen_counters->update_capacity(_virtual_space->committed_size());
     }
   }
@@ -373,7 +397,7 @@ void PSOldGen::print_on(outputStream* st) const {
 
 void PSOldGen::update_counters() {
   if (UsePerfData) {
-    _space_counters->update_all();
+    _space_counters->update_all(_object_space->capacity_in_bytes(), _object_space->used_in_bytes());
     _gen_counters->update_capacity(_virtual_space->committed_size());
   }
 }

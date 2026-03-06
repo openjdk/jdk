@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -310,8 +310,8 @@ public abstract class UCharacterIterator
      * @return copy of this iterator
      * @stable ICU 2.4
      */
-    public Object clone() throws CloneNotSupportedException{
-        return super.clone();
+    public UCharacterIterator clone() throws CloneNotSupportedException{
+        return (UCharacterIterator) super.clone();
     }
 
 }

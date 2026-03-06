@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,9 +190,8 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
   // effect (sic!) for external_name(), but instead of doing that, we opt to
   // explicitly push the hashcode in here. This is signify the following block
   // is IMPORTANT:
-  if (klass->java_mirror() != nullptr) {
-    klass->java_mirror()->identity_hash();
-  }
+  assert(klass->java_mirror() != nullptr, "must be");
+  klass->java_mirror()->identity_hash();
 
   if (!is_eligible_for_verification(klass, should_verify_class)) {
     return true;
@@ -620,9 +619,6 @@ TypeOrigin ClassVerifier::ref_ctx(const char* sig) {
 
 void ClassVerifier::verify_class(TRAPS) {
   log_info(verification)("Verifying class %s with new format", _klass->external_name());
-
-  // Either verifying both local and remote classes or just remote classes.
-  assert(BytecodeVerificationRemote, "Should not be here");
 
   Array<Method*>* methods = _klass->methods();
   int num_methods = methods->length();

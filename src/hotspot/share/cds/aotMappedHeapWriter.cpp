@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  *
  */
 
-#include "cds/aotMappedHeapLoader.hpp"
+#include "cds/aotMappedHeap.hpp"
 #include "cds/aotMappedHeapWriter.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
 #include "cds/cdsConfig.hpp"
@@ -55,7 +55,7 @@
 
 GrowableArrayCHeap<u1, mtClassShared>* AOTMappedHeapWriter::_buffer = nullptr;
 
-// The following are offsets from buffer_bottom()
+bool AOTMappedHeapWriter::_is_writing_deterministic_heap = false;
 size_t AOTMappedHeapWriter::_buffer_used;
 
 // Heap root segments
@@ -74,7 +74,7 @@ AOTMappedHeapWriter::_buffer_offset_to_source_obj_table = nullptr;
 DumpedInternedStrings *AOTMappedHeapWriter::_dumped_interned_strings = nullptr;
 
 typedef HashTable<
-      size_t,    // offset of a filler from ArchiveHeapWriter::buffer_bottom()
+      size_t,    // offset of a filler from AOTMappedHeapWriter::buffer_bottom()
       size_t,    // size of this filler (in bytes)
       127,       // prime number
       AnyObj::C_HEAP,
@@ -86,9 +86,9 @@ void AOTMappedHeapWriter::init() {
   if (CDSConfig::is_dumping_heap()) {
     Universe::heap()->collect(GCCause::_java_lang_system_gc);
 
-    _buffer_offset_to_source_obj_table = new BufferOffsetToSourceObjectTable(/*size (prime)*/36137, /*max size*/1 * M);
+    _buffer_offset_to_source_obj_table = new (mtClassShared) BufferOffsetToSourceObjectTable(/*size (prime)*/36137, /*max size*/1 * M);
     _dumped_interned_strings = new (mtClass)DumpedInternedStrings(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE);
-    _fillers = new FillersTable();
+    _fillers = new (mtClassShared) FillersTable();
     _requested_bottom = nullptr;
     _requested_top = nullptr;
 
@@ -96,6 +96,45 @@ void AOTMappedHeapWriter::init() {
     _source_objs = new GrowableArrayCHeap<oop, mtClassShared>(10000);
 
     guarantee(MIN_GC_REGION_ALIGNMENT <= G1HeapRegion::min_region_size_in_words() * HeapWordSize, "must be");
+
+    if (CDSConfig::old_cds_flags_used()) {
+      // With the old CDS workflow, we can guatantee determninistic output: given
+      // the same classlist file, we can generate the same static CDS archive.
+      // To ensure determinism, we always use the same compressed oop encoding
+      // (zero-based, no shift). See set_requested_address_range().
+      _is_writing_deterministic_heap = true;
+    } else {
+      // Determninistic output is not supported by the new AOT workflow, so
+      // we don't force the (zero-based, no shift) encoding. This way, it is more
+      // likely that we can avoid oop relocation in the production run.
+      _is_writing_deterministic_heap = false;
+    }
+  }
+}
+
+// For AOTMappedHeapWriter::narrow_oop_{mode, base, shift}(), see comments
+// in AOTMappedHeapWriter::set_requested_address_range(),
+CompressedOops::Mode AOTMappedHeapWriter::narrow_oop_mode() {
+  if (is_writing_deterministic_heap()) {
+    return CompressedOops::UnscaledNarrowOop;
+  } else {
+    return CompressedOops::mode();
+  }
+}
+
+address AOTMappedHeapWriter::narrow_oop_base() {
+  if (is_writing_deterministic_heap()) {
+    return nullptr;
+  } else {
+    return CompressedOops::base();
+  }
+}
+
+int AOTMappedHeapWriter::narrow_oop_shift() {
+  if (is_writing_deterministic_heap()) {
+    return 0;
+  } else {
+    return CompressedOops::shift();
   }
 }
 
@@ -112,11 +151,11 @@ void AOTMappedHeapWriter::add_source_obj(oop src_obj) {
 }
 
 void AOTMappedHeapWriter::write(GrowableArrayCHeap<oop, mtClassShared>* roots,
-                                ArchiveMappedHeapInfo* heap_info) {
+                                AOTMappedHeapInfo* heap_info) {
   assert(CDSConfig::is_dumping_heap(), "sanity");
   allocate_buffer();
   copy_source_objs_to_buffer(roots);
-  set_requested_address(heap_info);
+  set_requested_address_range(heap_info);
   relocate_embedded_oops(roots, heap_info);
 }
 
@@ -536,14 +575,55 @@ size_t AOTMappedHeapWriter::copy_one_source_obj_to_buffer(oop src_obj) {
   return buffered_obj_offset;
 }
 
-void AOTMappedHeapWriter::set_requested_address(ArchiveMappedHeapInfo* info) {
+// Set the range [_requested_bottom, _requested_top), the requested address range of all
+// the archived heap objects in the production run.
+//
+// (1) UseCompressedOops == true && !is_writing_deterministic_heap()
+//
+//     The archived objects are stored using the COOPS encoding of the assembly phase.
+//     We pick a range within the heap used by the assembly phase.
+//
+//     In the production run, if different COOPS encodings are used:
+//         - The heap contents needs to be relocated.
+//
+// (2) UseCompressedOops == true && is_writing_deterministic_heap()
+//
+//     We always use zero-based, zero-shift encoding. _requested_top is aligned to 0x10000000.
+//
+// (3) UseCompressedOops == false:
+//
+//     In the production run, the heap range is usually picked (randomly) by the OS, so we
+//     will almost always need to perform relocation, regardless of how we pick the requested
+//     address range.
+//
+//     So we just hard code it to NOCOOPS_REQUESTED_BASE.
+//
+void AOTMappedHeapWriter::set_requested_address_range(AOTMappedHeapInfo* info) {
   assert(!info->is_used(), "only set once");
 
   size_t heap_region_byte_size = _buffer_used;
   assert(heap_region_byte_size > 0, "must archived at least one object!");
 
   if (UseCompressedOops) {
-    if (UseG1GC) {
+    if (is_writing_deterministic_heap()) {
+      // Pick a heap range so that requested addresses can be encoded with zero-base/no shift.
+      // We align the requested bottom to at least 1 MB: if the production run uses G1 with a small
+      // heap (e.g., -Xmx256m), it's likely that we can map the archived objects at the
+      // requested location to avoid relocation.
+      //
+      // For other collectors or larger heaps, relocation is unavoidable, but is usually
+      // quite cheap. If you really want to avoid relocation, use the AOT workflow instead.
+      address heap_end = (address)0x100000000;
+      size_t alignment = MAX2(MIN_GC_REGION_ALIGNMENT, 1024 * 1024);
+      if (align_up(heap_region_byte_size, alignment) >= (size_t)heap_end) {
+        log_error(aot, heap)("cached heap space is too large: %zu bytes", heap_region_byte_size);
+        AOTMetaspace::unrecoverable_writing_error();
+      }
+      _requested_bottom = align_down(heap_end - heap_region_byte_size, alignment);
+    } else if (UseG1GC) {
+      // For G1, pick the range at the top of the current heap. If the exact same heap sizes
+      // are used in the production run, it's likely that we can map the archived objects
+      // at the requested location to avoid relocation.
       address heap_end = (address)G1CollectedHeap::heap()->reserved().end();
       log_info(aot, heap)("Heap end = %p", heap_end);
       _requested_bottom = align_down(heap_end - heap_region_byte_size, G1HeapRegion::GrainBytes);
@@ -612,7 +692,14 @@ oop AOTMappedHeapWriter::load_oop_from_buffer(narrowOop* buffered_addr) {
 
 template <typename T> void AOTMappedHeapWriter::relocate_field_in_buffer(T* field_addr_in_buffer, oop source_referent, CHeapBitMap* oopmap) {
   oop request_referent = source_obj_to_requested_obj(source_referent);
-  store_requested_oop_in_buffer<T>(field_addr_in_buffer, request_referent);
+  if (UseCompressedOops && is_writing_deterministic_heap()) {
+    // We use zero-based, 0-shift encoding, so the narrowOop is just the lower
+    // 32 bits of request_referent
+    intptr_t addr = cast_from_oop<intptr_t>(request_referent);
+    *((narrowOop*)field_addr_in_buffer) = CompressedOops::narrow_oop_cast(addr);
+  } else {
+    store_requested_oop_in_buffer<T>(field_addr_in_buffer, request_referent);
+  }
   if (request_referent != nullptr) {
     mark_oop_pointer<T>(field_addr_in_buffer, oopmap);
   }
@@ -705,7 +792,7 @@ static void log_bitmap_usage(const char* which, BitMap* bitmap, size_t total_bit
 
 // Update all oop fields embedded in the buffered objects
 void AOTMappedHeapWriter::relocate_embedded_oops(GrowableArrayCHeap<oop, mtClassShared>* roots,
-                                                      ArchiveMappedHeapInfo* heap_info) {
+                                                      AOTMappedHeapInfo* heap_info) {
   size_t oopmap_unit = (UseCompressedOops ? sizeof(narrowOop) : sizeof(oop));
   size_t heap_region_byte_size = _buffer_used;
   heap_info->oopmap()->resize(heap_region_byte_size   / oopmap_unit);
@@ -775,7 +862,7 @@ void AOTMappedHeapWriter::mark_native_pointers(oop orig_obj) {
   });
 }
 
-void AOTMappedHeapWriter::compute_ptrmap(ArchiveMappedHeapInfo* heap_info) {
+void AOTMappedHeapWriter::compute_ptrmap(AOTMappedHeapInfo* heap_info) {
   int num_non_null_ptrs = 0;
   Metadata** bottom = (Metadata**) _requested_bottom;
   Metadata** top = (Metadata**) _requested_top; // exclusive
@@ -822,40 +909,23 @@ void AOTMappedHeapWriter::compute_ptrmap(ArchiveMappedHeapInfo* heap_info) {
                       num_non_null_ptrs, size_t(heap_info->ptrmap()->size()));
 }
 
-AOTMapLogger::OopDataIterator* AOTMappedHeapWriter::oop_iterator(ArchiveMappedHeapInfo* heap_info) {
-  class MappedWriterOopIterator : public AOTMapLogger::OopDataIterator {
-  private:
-    address _current;
-    address _next;
-
-    address _buffer_start;
-    address _buffer_end;
-    uint64_t _buffer_start_narrow_oop;
-    intptr_t _buffer_to_requested_delta;
-    int _requested_shift;
-
-    size_t _num_root_segments;
-    size_t _num_obj_arrays_logged;
-
+AOTMapLogger::OopDataIterator* AOTMappedHeapWriter::oop_iterator(AOTMappedHeapInfo* heap_info) {
+  class MappedWriterOopIterator : public AOTMappedHeapOopIterator {
   public:
     MappedWriterOopIterator(address buffer_start,
                             address buffer_end,
-                            uint64_t buffer_start_narrow_oop,
-                            intptr_t buffer_to_requested_delta,
+                            address requested_base,
+                            address requested_start,
                             int requested_shift,
-                            size_t num_root_segments)
-      : _current(nullptr),
-        _next(buffer_start),
-        _buffer_start(buffer_start),
-        _buffer_end(buffer_end),
-        _buffer_start_narrow_oop(buffer_start_narrow_oop),
-        _buffer_to_requested_delta(buffer_to_requested_delta),
-        _requested_shift(requested_shift),
-        _num_root_segments(num_root_segments),
-        _num_obj_arrays_logged(0) {
-    }
+                            size_t num_root_segments) :
+      AOTMappedHeapOopIterator(buffer_start,
+                               buffer_end,
+                               requested_base,
+                               requested_start,
+                               requested_shift,
+                               num_root_segments) {}
 
-    AOTMapLogger::OopData capture(address buffered_addr) {
+    AOTMapLogger::OopData capture(address buffered_addr) override {
       oopDesc* raw_oop = (oopDesc*)buffered_addr;
       size_t size = size_of_buffered_oop(buffered_addr);
       address requested_addr = buffered_addr_to_requested_addr(buffered_addr);
@@ -873,65 +943,20 @@ AOTMapLogger::OopDataIterator* AOTMappedHeapWriter::oop_iterator(ArchiveMappedHe
                size,
                false };
     }
-
-    bool has_next() override {
-      return _next < _buffer_end;
-    }
-
-    AOTMapLogger::OopData next() override {
-      _current = _next;
-      AOTMapLogger::OopData result = capture(_current);
-      if (result._klass->is_objArray_klass()) {
-        result._is_root_segment = _num_obj_arrays_logged++ < _num_root_segments;
-      }
-      _next = _current + result._size * BytesPerWord;
-      return result;
-    }
-
-    AOTMapLogger::OopData obj_at(narrowOop* addr) override {
-      uint64_t n = (uint64_t)(*addr);
-      if (n == 0) {
-        return null_data();
-      } else {
-        precond(n >= _buffer_start_narrow_oop);
-        address buffer_addr = _buffer_start + ((n - _buffer_start_narrow_oop) << _requested_shift);
-        return capture(buffer_addr);
-      }
-    }
-
-    AOTMapLogger::OopData obj_at(oop* addr) override {
-      address requested_value = cast_from_oop<address>(*addr);
-      if (requested_value == nullptr) {
-        return null_data();
-      } else {
-        address buffer_addr = requested_value - _buffer_to_requested_delta;
-        return capture(buffer_addr);
-      }
-    }
-
-    GrowableArrayCHeap<AOTMapLogger::OopData, mtClass>* roots() override {
-      return new GrowableArrayCHeap<AOTMapLogger::OopData, mtClass>();
-    }
   };
 
   MemRegion r = heap_info->buffer_region();
   address buffer_start = address(r.start());
   address buffer_end = address(r.end());
 
-  address requested_base = UseCompressedOops ? (address)CompressedOops::base() : (address)AOTMappedHeapWriter::NOCOOPS_REQUESTED_BASE;
-  address requested_start = UseCompressedOops ? buffered_addr_to_requested_addr(buffer_start) : requested_base;
-  int requested_shift =  CompressedOops::shift();
-  intptr_t buffer_to_requested_delta = requested_start - buffer_start;
-  uint64_t buffer_start_narrow_oop = 0xdeadbeed;
-  if (UseCompressedOops) {
-    buffer_start_narrow_oop = (uint64_t)(pointer_delta(requested_start, requested_base, 1)) >> requested_shift;
-    assert(buffer_start_narrow_oop < 0xffffffff, "sanity");
-  }
+  address requested_base = UseCompressedOops ? AOTMappedHeapWriter::narrow_oop_base() : (address)AOTMappedHeapWriter::NOCOOPS_REQUESTED_BASE;
+  address requested_start = UseCompressedOops ? AOTMappedHeapWriter::buffered_addr_to_requested_addr(buffer_start) : requested_base;
+  int requested_shift = AOTMappedHeapWriter::narrow_oop_shift();
 
   return new MappedWriterOopIterator(buffer_start,
                                      buffer_end,
-                                     buffer_start_narrow_oop,
-                                     buffer_to_requested_delta,
+                                     requested_base,
+                                     requested_start,
                                      requested_shift,
                                      heap_info->root_segments().count());
 }

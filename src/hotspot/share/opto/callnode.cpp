@@ -1031,6 +1031,15 @@ bool CallNode::is_call_to_arraycopystub() const {
   return false;
 }
 
+bool CallNode::is_call_to_multianewarray_stub() const {
+  if (_name != nullptr &&
+      strstr(_name, "multianewarray") != nullptr &&
+      strstr(_name, "C2 runtime") != nullptr) {
+    return true;
+  }
+  return false;
+}
+
 //=============================================================================
 uint CallJavaNode::size_of() const { return sizeof(*this); }
 bool CallJavaNode::cmp( const Node &n ) const {
@@ -1145,7 +1154,6 @@ Node* CallStaticJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         assert(callee->has_member_arg(), "wrong type of call?");
         if (in(TypeFunc::Parms + callee->arg_size() - 1)->Opcode() == Op_ConP) {
           register_for_late_inline();
-          phase->C->inc_number_of_mh_late_inlines();
         }
       }
     } else {
@@ -1729,11 +1737,11 @@ void AllocateNode::compute_MemBar_redundancy(ciMethod* initializer)
     _is_allocation_MemBar_redundant = true;
   }
 }
-Node *AllocateNode::make_ideal_mark(PhaseGVN *phase, Node* obj, Node* control, Node* mem) {
+Node *AllocateNode::make_ideal_mark(PhaseGVN* phase, Node* control, Node* mem) {
   Node* mark_node = nullptr;
   if (UseCompactObjectHeaders) {
     Node* klass_node = in(AllocateNode::KlassNode);
-    Node* proto_adr = phase->transform(new AddPNode(klass_node, klass_node, phase->MakeConX(in_bytes(Klass::prototype_header_offset()))));
+    Node* proto_adr = phase->transform(new AddPNode(phase->C->top(), klass_node, phase->MakeConX(in_bytes(Klass::prototype_header_offset()))));
     mark_node = LoadNode::make(*phase, control, mem, proto_adr, TypeRawPtr::BOTTOM, TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
   } else {
     // For now only enable fast locking for non-array types

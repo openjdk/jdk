@@ -36,7 +36,7 @@
   do {                                                                      \
     if (FLAG_IS_DEFAULT(name) && (name)) {                                  \
       log_info(gc)("Heuristics ergonomically sets -XX:-" #name);            \
-      FLAG_SET_DEFAULT(name, false);                                        \
+      FLAG_SET_ERGO(name, false);                                           \
     }                                                                       \
   } while (0)
 
@@ -44,7 +44,7 @@
   do {                                                                      \
     if (FLAG_IS_DEFAULT(name) && !(name)) {                                 \
       log_info(gc)("Heuristics ergonomically sets -XX:+" #name);            \
-      FLAG_SET_DEFAULT(name, true);                                         \
+      FLAG_SET_ERGO(name, true);                                            \
     }                                                                       \
   } while (0)
 
@@ -52,7 +52,7 @@
   do {                                                                      \
     if (FLAG_IS_DEFAULT(name)) {                                            \
       log_info(gc)("Heuristics ergonomically sets -XX:" #name "=" #value);  \
-      FLAG_SET_DEFAULT(name, value);                                        \
+      FLAG_SET_ERGO(name, value);                                           \
     }                                                                       \
   } while (0)
 
@@ -78,6 +78,10 @@ class ShenandoahHeuristics : public CHeapObj<mtGC> {
   };
 #endif
 
+private:
+  double _most_recent_trigger_evaluation_time;
+  double _most_recent_planned_sleep_interval;
+
 protected:
   static const uint Moving_Average_Samples = 10; // Number of samples to store in moving averages
 
@@ -85,14 +89,13 @@ protected:
   size_t _declined_trigger_count;         // This counts how many times since previous GC finished that this
                                           //  heuristic has answered false to should_start_gc().
   size_t _most_recent_declined_trigger_count;
-                                       ;  // This represents the value of _declined_trigger_count as captured at the
+                                          // This represents the value of _declined_trigger_count as captured at the
                                           //  moment the most recent GC effort was triggered.  In case the most recent
                                           //  concurrent GC effort degenerates, the value of this variable allows us to
                                           //  differentiate between degeneration because heuristic was overly optimistic
                                           //  in delaying the trigger vs. degeneration for other reasons (such as the
                                           //  most recent GC triggered "immediately" after previous GC finished, but the
                                           //  free headroom has already been depleted).
-
   class RegionData {
     private:
     ShenandoahHeapRegion* _region;
@@ -103,6 +106,7 @@ protected:
 #ifdef ASSERT
     UnionTag _union_tag;
 #endif
+
     public:
 
     inline void clear() {
@@ -123,6 +127,13 @@ protected:
 
     inline void set_region_and_livedata(ShenandoahHeapRegion* region, size_t live) {
       _region = region;
+      _region_union._live_data = live;
+#ifdef ASSERT
+      _union_tag = is_live_data;
+#endif
+    }
+
+    inline void update_livedata(size_t live) {
       _region_union._live_data = live;
 #ifdef ASSERT
       _union_tag = is_live_data;
@@ -164,6 +175,7 @@ protected:
 
   size_t _guaranteed_gc_interval;
 
+  double _precursor_cycle_start;
   double _cycle_start;
   double _last_cycle_end;
 
@@ -176,11 +188,12 @@ protected:
 
   static int compare_by_garbage(RegionData a, RegionData b);
 
+  // This is a helper function to choose_collection_set()
   virtual void choose_collection_set_from_regiondata(ShenandoahCollectionSet* set,
                                                      RegionData* data, size_t data_size,
                                                      size_t free) = 0;
 
-  void adjust_penalty(intx step);
+  virtual void adjust_penalty(intx step);
 
   inline void accept_trigger() {
     _most_recent_declined_trigger_count = _declined_trigger_count;
@@ -190,6 +203,14 @@ protected:
 
   inline void decline_trigger() {
     _declined_trigger_count++;
+  }
+
+  inline double get_most_recent_wake_time() const {
+    return _most_recent_trigger_evaluation_time;
+  }
+
+  inline double get_planned_sleep_interval() const {
+    return _most_recent_planned_sleep_interval;
   }
 
 public:
@@ -204,9 +225,21 @@ public:
     _guaranteed_gc_interval = guaranteed_gc_interval;
   }
 
+  virtual void start_idle_span();
+  virtual void compute_headroom_adjustment() {
+    // Default implementation does nothing.
+  }
+
   virtual void record_cycle_start();
 
+  void record_degenerated_cycle_start(bool out_of_cycle);
+
   virtual void record_cycle_end();
+
+  void update_should_start_query_times(double now, double planned_sleep_interval) {
+    _most_recent_trigger_evaluation_time = now;
+    _most_recent_planned_sleep_interval = planned_sleep_interval;
+  }
 
   virtual bool should_start_gc();
 
@@ -218,7 +251,7 @@ public:
 
   virtual void record_success_concurrent();
 
-  virtual void record_success_degenerated();
+  virtual void record_degenerated();
 
   virtual void record_success_full();
 
@@ -226,6 +259,8 @@ public:
 
   virtual void record_requested_gc();
 
+  // Choose the collection set, returning the number of regions that need to be transferred to the old reserve from the young
+  // reserve in order to effectively evacuate the chosen collection set.  In non-generational mode, the return value is 0.
   virtual void choose_collection_set(ShenandoahCollectionSet* collection_set);
 
   virtual bool can_unload_classes();
@@ -238,8 +273,10 @@ public:
   virtual bool is_diagnostic() = 0;
   virtual bool is_experimental() = 0;
   virtual void initialize();
+  virtual void post_initialize();
 
   double elapsed_cycle_time() const;
+  double elapsed_degenerated_cycle_time() const;
 
   virtual size_t force_alloc_rate_sample(size_t bytes_allocated) {
     // do nothing

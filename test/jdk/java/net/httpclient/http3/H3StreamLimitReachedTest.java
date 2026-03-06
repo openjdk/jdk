@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,27 +23,63 @@
 
 /*
  * @test id=with-default-wait
+ * @summary this test verifies that the correct connection is
+ *          used when a request is retried on a new connection
+ *          due to stream limit reached.
+ *          The maxBidiStreams limit is artificially set to 1.
+ *          This configuration uses the default wait for a stream
+ *          to become available before retrying.
+ *          Different configurations are tested if possible,
+ *          with both HTTP/3 only and HTTP/2 HTTP/3 with altsvc.
+ *          In one case the HTTP/3 only server will be listening
+ *          on the same port as the HTTP/2 server, with the
+ *          HTTP/2 server advertising an AltService on a different
+ *          port. In another case the AltService will be on the
+ *          same port as the HTTP/2 server and the HTTP/3 server
+ *          will be on a different port. In all case, the test
+ *          verifies that the right connection is picked up
+ *          for the retry.
+ * @bug 8372951
+ * @comment this test also tests bug 8372951
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer
  *        jdk.test.lib.Asserts
  *        jdk.test.lib.Utils
  *        jdk.test.lib.net.SimpleSSLContext
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors,http3,quic:control
+ * @run junit/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors,http3,quic:control
  *                     -Djdk.internal.httpclient.debug=false
- *                     -Djdk.httpclient.quic.maxBidiStreams=1
+ *                     -Djdk.internal.httpclient.quic.maxBidiStreams=1
  *                     H3StreamLimitReachedTest
  */
 
 /*
  * @test id=with-no-wait
+ * @summary this test verifies that the correct connection is
+ *          used when a request is retried on a new connection
+ *          due to stream limit reached.
+ *          The maxBidiStreams limit is artificially set to 1.
+ *          This configuration retries immediately on a new
+ *          connection when no stream is available.
+ *          Different configurations are tested if possible,
+ *          with both HTTP/3 only and HTTP/2 HTTP/3 with altsvc.
+ *          In one case the HTTP/3 only server will be listening
+ *          on the same port as the HTTP/2 server, with the
+ *          HTTP/2 server advertising an AltService on a different
+ *          port. In another case the AltService will be on the
+ *          same port as the HTTP/2 server and the HTTP/3 server
+ *          will be on a different port. In all case, the test
+ *          verifies that the right connection is picked up
+ *          for the retry.
+ * @bug 8372951
+ * @comment this test also tests bug 8372951
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer
  *        jdk.test.lib.Asserts
  *        jdk.test.lib.Utils
  *        jdk.test.lib.net.SimpleSSLContext
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors,http3,quic:control
+ * @run junit/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors,http3,quic:control
  *                     -Djdk.internal.httpclient.debug=false
- *                     -Djdk.httpclient.quic.maxBidiStreams=1
+ *                     -Djdk.internal.httpclient.quic.maxBidiStreams=1
  *                     -Djdk.httpclient.http3.maxStreamLimitTimeout=0
  *                     -Djdk.httpclient.retryOnStreamlimit=9
  *                     H3StreamLimitReachedTest
@@ -78,7 +114,6 @@ import jdk.httpclient.test.lib.http2.Http2TestExchange;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.httpclient.test.lib.http3.Http3TestServer;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.Test;
 
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
@@ -89,17 +124,19 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static jdk.test.lib.Asserts.assertEquals;
 import static jdk.test.lib.Asserts.assertNotEquals;
 import static jdk.test.lib.Asserts.assertTrue;
-import static org.testng.Assert.assertFalse;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import org.junit.jupiter.api.Test;
 
 public class H3StreamLimitReachedTest implements HttpServerAdapters {
 
-    private static final String CLASS_NAME = H3ConnectionPoolTest.class.getSimpleName();
+    private static final String CLASS_NAME = H3StreamLimitReachedTest.class.getSimpleName();
 
     static int altsvcPort, https2Port, http3Port;
     static Http3TestServer http3OnlyServer;
     static Http2TestServer https2AltSvcServer;
     static volatile HttpClient client = null;
-    static SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     static volatile String http3OnlyURIString, https2URIString, http3AltSvcURIString, http3DirectURIString;
 
     static void initialize(boolean samePort) throws Exception {
@@ -113,8 +150,6 @@ public class H3StreamLimitReachedTest implements HttpServerAdapters {
         System.out.println("\nConfiguring for advertised AltSvc on "
                 + (samePort ? "same port" : "ephemeral port"));
         try {
-            SimpleSSLContext sslct = new SimpleSSLContext();
-            sslContext = sslct.get();
             client = null;
             client = getClient();
 
@@ -295,7 +330,7 @@ public class H3StreamLimitReachedTest implements HttpServerAdapters {
     }
 
     @Test
-    public static void testH3Only() throws Exception {
+    public void testH3Only() throws Exception {
         System.out.println("\nTesting HTTP/3 only");
         initialize(true);
         try (HttpClient client = getClient()) {
@@ -368,12 +403,12 @@ public class H3StreamLimitReachedTest implements HttpServerAdapters {
     }
 
     @Test
-    public static void testH2H3WithTwoAltSVC() throws Exception {
+    public void testH2H3WithTwoAltSVC() throws Exception {
         testH2H3(false);
     }
 
     @Test
-    public static void testH2H3WithAltSVCOnSamePort() throws Exception {
+    public void testH2H3WithAltSVCOnSamePort() throws Exception {
         testH2H3(true);
     }
 
@@ -593,12 +628,12 @@ public class H3StreamLimitReachedTest implements HttpServerAdapters {
     }
 
     @Test
-    public static void testParallelH2H3WithTwoAltSVC() throws Exception {
+    public void testParallelH2H3WithTwoAltSVC() throws Exception {
         testH2H3Concurrent(false);
     }
 
     @Test
-    public static void testParallelH2H3WithAltSVCOnSamePort() throws Exception {
+    public void testParallelH2H3WithAltSVCOnSamePort() throws Exception {
         testH2H3Concurrent(true);
     }
 

@@ -30,6 +30,7 @@
 #include "cppstdlib/type_traits.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/align.hpp"
 #include "utilities/count_trailing_zeros.hpp"
@@ -42,8 +43,8 @@ class OopStorage::ActiveArray {
   friend class OopStorage::TestAccess;
 
   size_t _size;
-  volatile size_t _block_count;
-  mutable volatile int _refcount;
+  Atomic<size_t> _block_count;
+  mutable Atomic<int> _refcount;
   // Block* _blocks[1];            // Pseudo flexible array member.
 
   ActiveArray(size_t size);
@@ -104,7 +105,7 @@ inline OopStorage::Block** OopStorage::ActiveArray::block_ptr(size_t index) {
 }
 
 inline OopStorage::Block* OopStorage::ActiveArray::at(size_t index) const {
-  assert(index < _block_count, "precondition");
+  assert(index < _block_count.load_relaxed(), "precondition");
   return *block_ptr(index);
 }
 
@@ -135,16 +136,16 @@ class OopStorage::Block /* No base class, to avoid messing up alignment. */ {
   oop _data[BitsPerWord];
   static const unsigned _data_pos = 0; // Position of _data.
 
-  volatile uintx _allocated_bitmask; // One bit per _data element.
+  Atomic<uintx> _allocated_bitmask; // One bit per _data element.
   intptr_t _owner_address;
   void* _memory;              // Unaligned storage containing block.
   size_t _active_index;
   AllocationListEntry _allocation_list_entry;
-  Block* volatile _deferred_updates_next;
-  volatile uintx _release_refcount;
+  Atomic<Block*> _deferred_updates_next;
+  Atomic<uintx> _release_refcount;
 
   Block(const OopStorage* owner, void* memory);
-  ~Block();
+  ~Block() NOT_DEBUG(= default);
 
   void check_index(unsigned index) const;
   unsigned get_index(const oop* ptr) const;
@@ -322,7 +323,7 @@ inline const oop* OopStorage::Block::get_pointer(unsigned index) const {
 }
 
 inline uintx OopStorage::Block::allocated_bitmask() const {
-  return _allocated_bitmask;
+  return _allocated_bitmask.load_relaxed();
 }
 
 inline uintx OopStorage::Block::bitmask_for_index(unsigned index) const {
@@ -366,7 +367,7 @@ inline bool OopStorage::iterate_impl(F f, Storage* storage) {
   // Propagate const/non-const iteration to the block layer, by using
   // const or non-const blocks as corresponding to Storage.
   using BlockPtr = std::conditional_t<std::is_const<Storage>::value, const Block*, Block*>;
-  ActiveArray* blocks = storage->_active_array;
+  ActiveArray* blocks = storage->_active_array.load_relaxed();
   size_t limit = blocks->block_count();
   for (size_t i = 0; i < limit; ++i) {
     BlockPtr block = blocks->at(i);

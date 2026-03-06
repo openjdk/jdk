@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,19 +24,28 @@
 /* @test
  * @bug 8200530
  * @summary Test Attributes newline
+ * @run junit TestAttrsNL
  */
 
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import java.io.IOException;
 import java.util.jar.Manifest;
 import java.util.jar.Attributes;
 import java.util.jar.Attributes.Name;
 import java.io.ByteArrayInputStream;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestAttrsNL {
 
-    public static void main(String[] args) throws Throwable {
+    static Stream<Arguments> newLineAttributesTest() throws IOException {
 
         String manifestStr =
             "Manifest-Version: 1.0\r\n" +
@@ -68,16 +77,16 @@ public class TestAttrsNL {
                 new Name("key44"), "value44"
         );
 
-        test(new Manifest(new ByteArrayInputStream(manifestStr.getBytes(UTF_8))),
-             mainAttrsExped, attrsExped);
+        var normal = Arguments.of(new Manifest(new ByteArrayInputStream(manifestStr.getBytes(UTF_8))),
+                mainAttrsExped, attrsExped);
 
-        test(new Manifest(new ByteArrayInputStream(
-                    manifestStr.replaceAll("\r\n", "\r").getBytes(UTF_8))),
-             mainAttrsExped, attrsExped);
+        var carriage = Arguments.of(new Manifest(new ByteArrayInputStream(
+                        manifestStr.replaceAll("\r\n", "\r").getBytes(UTF_8))),
+                mainAttrsExped, attrsExped);
 
-        test(new Manifest(new ByteArrayInputStream(
-                    manifestStr.replaceAll("\r\n", "\n").getBytes(UTF_8))),
-             mainAttrsExped, attrsExped);
+        var newLine = Arguments.of(new Manifest(new ByteArrayInputStream(
+                        manifestStr.replaceAll("\r\n", "\n").getBytes(UTF_8))),
+                mainAttrsExped, attrsExped);
 
         // mixed
         manifestStr =
@@ -93,31 +102,33 @@ public class TestAttrsNL {
             "key22: value22\n END\r\n" +
             "key33: value33\r \n" +
             "key44: value44\n";
-        test(new Manifest(new ByteArrayInputStream(manifestStr.getBytes(UTF_8))),
+        var mixed = Arguments.of(new Manifest(new ByteArrayInputStream(manifestStr.getBytes(UTF_8))),
              mainAttrsExped, attrsExped);
 
-
+        return Stream.of(normal, carriage, newLine, mixed);
     }
 
-    private static void test(Manifest m,
+    @ParameterizedTest
+    @MethodSource
+    void newLineAttributesTest(Manifest m,
                              Map<Name, String> mainAttrsExped,
                              Map<Name, String> attrsExped) {
         Attributes mainAttrs = m.getMainAttributes();
         mainAttrsExped.forEach( (k, v) -> {
-            if (!mainAttrs.containsKey(k) || !mainAttrs.get(k).equals(v)) {
-                System.out.printf(" containsKey(%s) : %b%n", k, mainAttrs.containsKey(k));
-                System.out.printf("         get(%s) : %s%n", k, mainAttrs.get(k));
-                throw new RuntimeException("expected attr: k=<" + k + ">, v=<" + v + ">");
-            }
+            var expectedMsg = "expected attr: k=<" + k + ">, v=<" + v + ">";
+            assertTrue(mainAttrs.containsKey(k),
+                    " containsKey(%s) : %b%n%s".formatted(k, mainAttrs.containsKey(k), expectedMsg));
+            assertEquals(v, mainAttrs.get(k),
+                    "         get(%s) : %s%n%s".formatted(k, mainAttrs.get(k), expectedMsg));
         });
 
         Attributes attrs = m.getAttributes("Hello");
         attrs.forEach( (k, v) -> {
-            if (!attrs.containsKey(k) || !attrs.get(k).equals(v)) {
-                System.out.printf(" containsKey(%s) : %b%n", k, attrs.containsKey(k));
-                System.out.printf("         get(%s) : %s%n", k, attrs.get(k));
-                throw new RuntimeException("expected attr: k=<" + k + ">, v=<" + v + ">");
-            }
+            var expectedMsg = "expected attr: k=<" + k + ">, v=<" + v + ">";
+            assertTrue(attrs.containsKey(k),
+                    " containsKey(%s) : %b%n%s".formatted(k, attrs.containsKey(k), expectedMsg));
+            assertEquals(v, attrs.get(k),
+                    "         get(%s) : %s%n%s".formatted(k, attrs.get(k), expectedMsg));
         });
     }
 }

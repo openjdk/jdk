@@ -58,6 +58,7 @@ import java.math.BigDecimal;
 import java.io.*;
 import java.math.BigInteger;
 
+import org.junit.jupiter.api.Assumptions;
 import sun.util.resources.LocaleData;
 
 import org.junit.jupiter.api.Test;
@@ -109,10 +110,8 @@ public class NumberRegression {
     @Test
     public void Test4088161 (){
         Locale locale = Locale.getDefault();
-        if (!TestUtils.usesAsciiDigits(locale)) {
-            System.out.println("Skipping this test because locale is " + locale);
-            return;
-        }
+        Assumptions.assumeTrue(TestUtils.usesAsciiDigits(locale),
+                locale + " does not use ASCII digits");
 
         DecimalFormat df = new DecimalFormat();
         double d = 100;

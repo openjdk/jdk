@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomicAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/macros.hpp"
 
 void PreservedMarks::restore() {
@@ -52,15 +52,6 @@ void PreservedMarks::adjust_during_full_gc() {
   while (!iter.is_empty()) {
     PreservedMark* elem = iter.next_addr();
     adjust_preserved_mark(elem);
-  }
-}
-
-void PreservedMarks::restore_and_increment(volatile size_t* const total_size_addr) {
-  const size_t stack_size = size();
-  restore();
-  // Only do the atomic add if the size is > 0.
-  if (stack_size > 0) {
-    AtomicAccess::add(total_size_addr, stack_size);
   }
 }
 
@@ -93,7 +84,7 @@ void PreservedMarksSet::init(uint num) {
 class RestorePreservedMarksTask : public WorkerTask {
   PreservedMarksSet* const _preserved_marks_set;
   SequentialSubTasksDone _sub_tasks;
-  volatile size_t _total_size;
+  Atomic<size_t> _total_size;
 #ifdef ASSERT
   size_t _total_size_before;
 #endif // ASSERT
@@ -102,7 +93,12 @@ public:
   void work(uint worker_id) override {
     uint task_id = 0;
     while (_sub_tasks.try_claim_task(task_id)) {
-      _preserved_marks_set->get(task_id)->restore_and_increment(&_total_size);
+      PreservedMarks* next = _preserved_marks_set->get(task_id);
+      size_t num_restored = next->size();
+      next->restore();
+      if (num_restored > 0) {
+        _total_size.add_then_fetch(num_restored);
+      }
     }
   }
 
@@ -121,9 +117,11 @@ public:
   }
 
   ~RestorePreservedMarksTask() {
-    assert(_total_size == _total_size_before, "total_size = %zu before = %zu", _total_size, _total_size_before);
-    size_t mem_size = _total_size * (sizeof(oop) + sizeof(markWord));
-    log_trace(gc)("Restored %zu marks, occupying %zu %s", _total_size,
+    size_t local_total_size = _total_size.load_relaxed();
+
+    assert(local_total_size == _total_size_before, "total_size = %zu before = %zu", local_total_size, _total_size_before);
+    size_t mem_size = local_total_size * (sizeof(oop) + sizeof(markWord));
+    log_trace(gc)("Restored %zu marks, occupying %zu %s", local_total_size,
                                                           byte_size_in_proper_unit(mem_size),
                                                           proper_unit_for_byte_size(mem_size));
   }

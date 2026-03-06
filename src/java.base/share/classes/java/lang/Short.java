@@ -26,6 +26,7 @@
 package java.lang;
 
 import jdk.internal.misc.CDS;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 
@@ -34,7 +35,6 @@ import java.lang.constant.DynamicConstantDesc;
 import java.util.Optional;
 
 import static java.lang.constant.ConstantDescs.BSM_EXPLICIT_CAST;
-import static java.lang.constant.ConstantDescs.CD_int;
 import static java.lang.constant.ConstantDescs.CD_short;
 import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
 
@@ -230,6 +230,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
         return Optional.of(DynamicConstantDesc.ofNamed(BSM_EXPLICIT_CAST, DEFAULT_NAME, CD_short, intValue()));
     }
 
+    @AOTSafeClassInitializer
     private static final class ShortCache {
         private ShortCache() {}
 

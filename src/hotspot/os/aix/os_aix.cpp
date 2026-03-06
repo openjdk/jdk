@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,12 +122,6 @@
 extern "C"
 int mread_real_time(timebasestruct_t *t, size_t size_of_timebasestruct_t);
 
-#if !defined(_AIXVERSION_610)
-extern "C" int getthrds64(pid_t, struct thrdentry64*, int, tid64_t*, int);
-extern "C" int getprocs64(procentry64*, int, fdsinfo*, int, pid_t*, int);
-extern "C" int getargs(procsinfo*, int, char*, int);
-#endif
-
 #define MAX_PATH (2 * K)
 
 // for multipage initialization error analysis (in 'g_multipage_error')
@@ -216,7 +210,7 @@ static address g_brk_at_startup = nullptr;
 // shmctl(). Different shared memory regions can have different page
 // sizes.
 //
-// More information can be found at AIBM info center:
+// More information can be found at IBM info center:
 //   http://publib.boulder.ibm.com/infocenter/aix/v6r1/index.jsp?topic=/com.ibm.aix.prftungd/doc/prftungd/multiple_page_size_app_support.htm
 //
 static struct {
@@ -258,7 +252,15 @@ bool os::free_memory(physical_memory_size_type& value) {
   return Aix::available_memory(value);
 }
 
+bool os::Machine::free_memory(physical_memory_size_type& value) {
+  return Aix::available_memory(value);
+}
+
 bool os::available_memory(physical_memory_size_type& value) {
+  return Aix::available_memory(value);
+}
+
+bool os::Machine::available_memory(physical_memory_size_type& value) {
   return Aix::available_memory(value);
 }
 
@@ -273,6 +275,10 @@ bool os::Aix::available_memory(physical_memory_size_type& value) {
 }
 
 bool os::total_swap_space(physical_memory_size_type& value) {
+  return Machine::total_swap_space(value);
+}
+
+bool os::Machine::total_swap_space(physical_memory_size_type& value) {
   perfstat_memory_total_t memory_info;
   if (libperfstat::perfstat_memory_total(nullptr, &memory_info, sizeof(perfstat_memory_total_t), 1) == -1) {
     return false;
@@ -282,6 +288,10 @@ bool os::total_swap_space(physical_memory_size_type& value) {
 }
 
 bool os::free_swap_space(physical_memory_size_type& value) {
+  return Machine::free_swap_space(value);
+}
+
+bool os::Machine::free_swap_space(physical_memory_size_type& value) {
   perfstat_memory_total_t memory_info;
   if (libperfstat::perfstat_memory_total(nullptr, &memory_info, sizeof(perfstat_memory_total_t), 1) == -1) {
     return false;
@@ -291,6 +301,10 @@ bool os::free_swap_space(physical_memory_size_type& value) {
 }
 
 physical_memory_size_type os::physical_memory() {
+  return Aix::physical_memory();
+}
+
+physical_memory_size_type os::Machine::physical_memory() {
   return Aix::physical_memory();
 }
 
@@ -683,7 +697,7 @@ static void *thread_native_entry(Thread *thread) {
   log_info(os, thread)("Thread finished (tid: %zu, kernel thread id: %zu).",
     os::current_thread_id(), (uintx) kernel_thread_id);
 
-  return 0;
+  return nullptr;
 }
 
 bool os::create_thread(Thread* thread, ThreadType thr_type,
@@ -1037,6 +1051,8 @@ static void* dll_load_library(const char *filename, int *eno, char *ebuf, int eb
   if (flen > 0 && filename[flen - 1] == ')') {
     dflags |= RTLD_MEMBER;
   }
+
+  Events::log_dll_message(nullptr, "Attempting to load shared library %s", filename);
 
   void* result;
   const char* error_report = nullptr;
@@ -1731,10 +1747,9 @@ bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
   return true;
 }
 
-bool os::remove_stack_guard_pages(char* addr, size_t size) {
+void os::remove_stack_guard_pages(char* addr, size_t size) {
   // Do not call this; no need to commit stack pages on AIX.
   ShouldNotReachHere();
-  return true;
 }
 
 void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
@@ -1745,6 +1760,9 @@ void os::pd_disclaim_memory(char *addr, size_t bytes) {
 
 size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
   return page_size;
+}
+
+void os::numa_set_thread_affinity(Thread *thread, int node) {
 }
 
 void os::numa_make_global(char *addr, size_t bytes) {
@@ -1932,11 +1950,6 @@ char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_
   return nullptr;
 }
 
-bool os::pd_release_memory_special(char* base, size_t bytes) {
-  fatal("os::release_memory_special should not be called on AIX.");
-  return false;
-}
-
 size_t os::large_page_size() {
   return _large_page_size;
 }
@@ -2118,46 +2131,12 @@ void os::init(void) {
   // 64k          no              --- AIX 5.2 ? ---
   // 64k          yes                                              64k                             new systems and standard java loader (we set datapsize=64k when linking)
 
-  // We explicitly leave no option to change page size, because only upgrading would work,
-  // not downgrading (if stack page size is 64k you cannot pretend its 4k).
-
-  if (g_multipage_support.datapsize == 4*K) {
-    // datapsize = 4K. Data segment, thread stacks are 4K paged.
-    if (g_multipage_support.can_use_64K_pages || g_multipage_support.can_use_64K_mmap_pages) {
-      // .. but we are able to use 64K pages dynamically.
-      // This would be typical for java launchers which are not linked
-      // with datapsize=64K (like, any other launcher but our own).
-      //
-      // In this case it would be smart to allocate the java heap with 64K
-      // to get the performance benefit, and to fake 64k pages for the
-      // data segment (when dealing with thread stacks).
-      //
-      // However, leave a possibility to downgrade to 4K, using
-      // -XX:-Use64KPages.
-      if (Use64KPages) {
-        trcVerbose("64K page mode (faked for data segment)");
-        set_page_size(64*K);
-      } else {
-        trcVerbose("4K page mode (Use64KPages=off)");
-        set_page_size(4*K);
-      }
-    } else {
-      // .. and not able to allocate 64k pages dynamically. Here, just
-      // fall back to 4K paged mode and use mmap for everything.
-      trcVerbose("4K page mode");
-      set_page_size(4*K);
-      FLAG_SET_ERGO(Use64KPages, false);
-    }
-  } else {
-    // datapsize = 64k. Data segment, thread stacks are 64k paged.
-    // This normally means that we can allocate 64k pages dynamically.
-    // (There is one special case where this may be false: EXTSHM=on.
-    // but we decided to not support that mode).
-    assert0(g_multipage_support.can_use_64K_pages || g_multipage_support.can_use_64K_mmap_pages);
-    set_page_size(64*K);
-    trcVerbose("64K page mode");
-    FLAG_SET_ERGO(Use64KPages, true);
-  }
+  // datapsize = 64k. Data segment, thread stacks are 64k paged.
+  // This normally means that we can allocate 64k pages dynamically.
+  // (There is one special case where this may be false: EXTSHM=on.
+  // but we decided to not support that mode).
+  assert0(g_multipage_support.can_use_64K_pages || g_multipage_support.can_use_64K_mmap_pages);
+  set_page_size(64*K);
 
   // For now UseLargePages is just ignored.
   FLAG_SET_ERGO(UseLargePages, false);
@@ -2259,6 +2238,10 @@ int os::active_processor_count() {
     return ActiveProcessorCount;
   }
 
+  return Machine::active_processor_count();
+}
+
+int os::Machine::active_processor_count() {
   int online_cpus = ::sysconf(_SC_NPROCESSORS_ONLN);
   assert(online_cpus > 0 && online_cpus <= processor_count(), "sanity check");
   return online_cpus;
@@ -2328,8 +2311,8 @@ int os::open(const char *path, int oflag, int mode) {
 
     if (ret != -1) {
       if ((st_mode & S_IFMT) == S_IFDIR) {
-        errno = EISDIR;
         ::close(fd);
+        errno = EISDIR;
         return -1;
       }
     } else {
@@ -2536,23 +2519,18 @@ void os::Aix::initialize_os_info() {
     assert(minor > 0, "invalid OS release");
     _os_version = (major << 24) | (minor << 16);
     char ver_str[20] = {0};
-    const char* name_str = "unknown OS";
 
-    if (strcmp(uts.sysname, "AIX") == 0) {
-      // We run on AIX. We do not support versions older than AIX 7.1.
-      // Determine detailed AIX version: Version, Release, Modification, Fix Level.
-      odmWrapper::determine_os_kernel_version(&_os_version);
-      if (os_version_short() < 0x0701) {
-        log_warning(os)("AIX releases older than AIX 7.1 are not supported.");
-        assert(false, "AIX release too old.");
-      }
-      name_str = "AIX";
-      jio_snprintf(ver_str, sizeof(ver_str), "%u.%u.%u.%u",
-                   major, minor, (_os_version >> 8) & 0xFF, _os_version & 0xFF);
-    } else {
-      assert(false, "%s", name_str);
+    // We do not support versions older than AIX 7.2 TL 5.
+    // Determine detailed AIX version: Version, Release, Modification, Fix Level.
+    odmWrapper::determine_os_kernel_version(&_os_version);
+    if (_os_version < 0x07020500) {
+      log_warning(os)("AIX releases older than AIX 7.2 TL 5 are not supported.");
+      assert(false, "AIX release too old.");
     }
-    log_info(os)("We run on %s %s", name_str, ver_str);
+
+    jio_snprintf(ver_str, sizeof(ver_str), "%u.%u.%u.%u",
+                 major, minor, (_os_version >> 8) & 0xFF, _os_version & 0xFF);
+    log_info(os)("We run on AIX %s", ver_str);
   }
 
   guarantee(_os_version, "Could not determine AIX release");

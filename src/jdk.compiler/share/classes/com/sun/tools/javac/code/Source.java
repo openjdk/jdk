@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,6 +158,11 @@ public enum Source {
       * 26, tbd
       */
     JDK26("26"),
+
+    /**
+      * 27, tbd
+      */
+    JDK27("27"),
     ; // Reduce code churn when appending new constants
 
     private static final Context.Key<Source> sourceKey = new Context.Key<>();
@@ -210,6 +215,7 @@ public enum Source {
 
     public Target requiredTarget() {
         return switch(this) {
+        case JDK27  -> Target.JDK1_27;
         case JDK26  -> Target.JDK1_26;
         case JDK25  -> Target.JDK1_25;
         case JDK24  -> Target.JDK1_24;
@@ -266,6 +272,7 @@ public enum Source {
         CASE_NULL(JDK21, Fragments.FeatureCaseNull, DiagKind.NORMAL),
         PATTERN_SWITCH(JDK21, Fragments.FeaturePatternSwitch, DiagKind.PLURAL),
         REDUNDANT_STRICTFP(JDK17),
+        TYPE_ANNOTATIONS_ON_VAR_LAMBDA_PARAMETER(MIN, JDK19),
         UNCONDITIONAL_PATTERN_IN_INSTANCEOF(JDK21, Fragments.FeatureUnconditionalPatternsInInstanceof, DiagKind.PLURAL),
         RECORD_PATTERNS(JDK21, Fragments.FeatureDeconstructionPatterns, DiagKind.PLURAL),
         IMPLICIT_CLASSES(JDK25, Fragments.FeatureImplicitClasses, DiagKind.PLURAL),
@@ -366,6 +373,7 @@ public enum Source {
         case JDK24  -> RELEASE_24;
         case JDK25  -> RELEASE_25;
         case JDK26  -> RELEASE_26;
+        case JDK27  -> RELEASE_27;
         default     -> null;
         };
     }

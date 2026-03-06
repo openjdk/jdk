@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package com.sun.tools.javac.comp;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.ToIntBiFunction;
@@ -167,6 +166,7 @@ public class Check {
         allowModules = Feature.MODULES.allowedInSource(source);
         allowRecords = Feature.RECORDS.allowedInSource(source);
         allowSealed = Feature.SEALED_CLASSES.allowedInSource(source);
+        allowPrimitivePatterns = preview.isEnabled() && Feature.PRIMITIVE_PATTERNS.allowedInSource(source);
     }
 
     /** Character for synthetic names
@@ -189,6 +189,10 @@ public class Check {
     /** Are sealed classes allowed
      */
     private final boolean allowSealed;
+
+    /** Are primitive patterns allowed
+     */
+    private final boolean allowPrimitivePatterns;
 
     /** Whether to force suppression of deprecation and preview warnings.
      *  This happens when attributing import statements for JDK 9+.
@@ -3540,7 +3544,10 @@ public class Check {
                 if (s.kind == PCK)
                     applicableTargets.add(names.PACKAGE);
             } else if (target == names.TYPE_USE) {
-                if (s.kind == VAR && s.owner.kind == MTH && s.type.hasTag(NONE)) {
+                if (s.kind == VAR &&
+                    (s.flags() & Flags.VAR_VARIABLE) != 0 &&
+                    (!Feature.TYPE_ANNOTATIONS_ON_VAR_LAMBDA_PARAMETER.allowedInSource(source) ||
+                     ((s.flags() & Flags.LAMBDA_PARAMETER) == 0))) {
                     //cannot type annotate implicitly typed locals
                     continue;
                 } else if (s.kind == TYP || s.kind == VAR ||
@@ -4037,6 +4044,37 @@ public class Check {
             if (opc == ByteCodes.idiv || opc == ByteCodes.imod
                 || opc == ByteCodes.ldiv || opc == ByteCodes.lmod) {
                 log.warning(pos, LintWarnings.DivZero);
+            }
+        }
+    }
+
+    /**
+     *  Check for bit shifts using an out-of-range bit count.
+     *  @param pos           Position for error reporting.
+     *  @param operator      The operator for the expression
+     *  @param operand       The right hand operand for the expression
+     */
+    void checkOutOfRangeShift(final DiagnosticPosition pos, Symbol operator, Type operand) {
+        if (operand.constValue() instanceof Number shiftAmount) {
+            Type targetType;
+            int maximumShift;
+            switch (((OperatorSymbol)operator).opcode) {
+            case ByteCodes.ishl, ByteCodes.ishr, ByteCodes.iushr, ByteCodes.ishll, ByteCodes.ishrl, ByteCodes.iushrl -> {
+                targetType = syms.intType;
+                maximumShift = 0x1f;
+            }
+            case ByteCodes.lshl, ByteCodes.lshr, ByteCodes.lushr, ByteCodes.lshll, ByteCodes.lshrl, ByteCodes.lushrl -> {
+                targetType = syms.longType;
+                maximumShift = 0x3f;
+            }
+            default -> {
+                return;
+            }
+            }
+            long specifiedShift = shiftAmount.longValue();
+            if (specifiedShift > maximumShift || specifiedShift < -maximumShift) {
+                int actualShift = (int)specifiedShift & (maximumShift - 1);
+                log.warning(pos, LintWarnings.BitShiftOutOfRange(targetType, specifiedShift, actualShift));
             }
         }
     }
@@ -4733,21 +4771,26 @@ public class Check {
                     JCCase testCase = caseAndLabel.fst;
                     JCCaseLabel testCaseLabel = caseAndLabel.snd;
                     Type testType = labelType(testCaseLabel);
+
+                    // an unconditional pattern cannot be followed by any other label
+                    if (allowPrimitivePatterns && unconditionalCaseLabel == testCaseLabel && unconditionalCaseLabel != label) {
+                        log.error(label.pos(), Errors.PatternDominated);
+                        continue;
+                    }
+
                     boolean dominated = false;
-                    if (types.isUnconditionallyExact(currentType, testType) &&
-                        !currentType.hasTag(ERROR) && !testType.hasTag(ERROR)) {
-                        //the current label is potentially dominated by the existing (test) label, check:
-                        if (label instanceof JCConstantCaseLabel) {
-                            dominated |= !(testCaseLabel instanceof JCConstantCaseLabel) &&
+                    if (!currentType.hasTag(ERROR) && !testType.hasTag(ERROR)) {
+                        // the current label is potentially dominated by the existing (test) label, check:
+                        if (types.isUnconditionallyExactCombined(currentType, testType) &&
+                                label instanceof JCConstantCaseLabel) {
+                            dominated = !(testCaseLabel instanceof JCConstantCaseLabel) &&
                                          TreeInfo.unguardedCase(testCase);
                         } else if (label instanceof JCPatternCaseLabel patternCL &&
                                    testCaseLabel instanceof JCPatternCaseLabel testPatternCaseLabel &&
                                    (testCase.equals(c) || TreeInfo.unguardedCase(testCase))) {
-                            dominated = patternDominated(testPatternCaseLabel.pat,
-                                                         patternCL.pat);
+                            dominated = patternDominated(testPatternCaseLabel.pat, patternCL.pat);
                         }
                     }
-
                     if (dominated) {
                         log.error(label.pos(), Errors.PatternDominated);
                     }
@@ -4767,7 +4810,7 @@ public class Check {
         private boolean patternDominated(JCPattern existingPattern, JCPattern currentPattern) {
             Type existingPatternType = types.erasure(existingPattern.type);
             Type currentPatternType = types.erasure(currentPattern.type);
-            if (!types.isUnconditionallyExact(currentPatternType, existingPatternType)) {
+            if (!types.isUnconditionallyExactTypeBased(currentPatternType, existingPatternType)) {
                 return false;
             }
             if (currentPattern instanceof JCBindingPattern ||
@@ -5592,8 +5635,8 @@ public class Check {
             }
             case JCVariableDecl variableDecl -> {
                 if (variableDecl.vartype != null &&
-                        (variableDecl.sym.flags_field & RECORD) == 0 ||
-                        (variableDecl.sym.flags_field & ~(Flags.PARAMETER | RECORD | GENERATED_MEMBER)) != 0) {
+                        ((variableDecl.sym.flags_field & RECORD) == 0 ||
+                         (variableDecl.sym.flags_field & ~(Flags.PARAMETER | RECORD | GENERATED_MEMBER)) != 0)) {
                     /* we don't want to warn twice so if this variable is a compiler generated parameter of
                      * a canonical record constructor, we don't want to issue a warning as we will warn the
                      * corresponding compiler generated private record field anyways

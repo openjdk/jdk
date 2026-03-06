@@ -1,0 +1,6 @@
+// This filter shows only the nodes that are present in the escape analysis
+// connection graph. This can be used to approximate the connection graph inside
+// IGV.
+// This filter is only relevant during the escape analysis phases.
+
+remove(not(hasProperty("ea_node")));

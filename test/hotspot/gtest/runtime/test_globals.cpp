@@ -58,7 +58,7 @@ TEST_VM(FlagGuard, size_t_flag) {
 }
 
 TEST_VM(FlagGuard, uint64_t_flag) {
-  TEST_FLAG(MaxRAM, uint64_t, 1337);
+  TEST_FLAG(ErrorLogTimeout, uint64_t, 1337);
 }
 
 TEST_VM(FlagGuard, double_flag) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -366,28 +366,30 @@ static size_t target_heap_capacity(size_t used_bytes, uintx free_ratio) {
 }
 
 size_t G1HeapSizingPolicy::full_collection_resize_amount(bool& expand, size_t allocation_word_size) {
-  // If the full collection was triggered by an allocation failure, we should account
-  // for the bytes required for this allocation under used_after_gc. This prevents
-  // unnecessary shrinking that would be followed by an expand call to satisfy the
-  // allocation.
-  size_t allocation_bytes = allocation_word_size * HeapWordSize;
-  if (_g1h->is_humongous(allocation_word_size)) {
-    // Humongous objects are allocated in entire regions, we must calculate
-    // required space in terms of full regions, not just the object size.
-    allocation_bytes = G1HeapRegion::align_up_to_region_byte_size(allocation_bytes);
+  // User-requested Full GCs introduce GC load unrelated to heap size; reset CPU
+  // usage tracking so heap resizing heuristics are driven only by GC pressure.
+  if (GCCause::is_user_requested_gc(_g1h->gc_cause())) {
+    reset_cpu_usage_tracking_data();
   }
 
+  const size_t capacity_after_gc = _g1h->capacity();
   // Capacity, free and used after the GC counted as full regions to
   // include the waste in the following calculations.
-  const size_t capacity_after_gc = _g1h->capacity();
-  const size_t used_after_gc = capacity_after_gc + allocation_bytes -
-                               _g1h->unused_committed_regions_in_bytes() -
-                               // Discount space used by current Eden to establish a
-                               // situation during Remark similar to at the end of full
-                               // GC where eden is empty. During Remark there can be an
-                               // arbitrary number of eden regions which would skew the
-                               // results.
-                               _g1h->eden_regions_count() * G1HeapRegion::GrainBytes;
+  const size_t current_used_after_gc = capacity_after_gc -
+                                       _g1h->unused_committed_regions_in_bytes() -
+                                       // Discount space used by current Eden to establish a
+                                       // situation during Remark similar to at the end of full
+                                       // GC where eden is empty. During Remark there can be an
+                                       // arbitrary number of eden regions which would skew the
+                                       // results.
+                                       _g1h->eden_regions_count() * G1HeapRegion::GrainBytes;
+
+  // Add pending allocation;
+  const size_t used_after_gc = current_used_after_gc +
+                               // If the full collection was triggered by an allocation failure,
+                               // account that allocation too. Otherwise we could shrink and then
+                               // expand immediately to satisfy the allocation.
+                               _g1h->allocation_used_bytes(allocation_word_size);
 
   size_t minimum_desired_capacity = target_heap_capacity(used_after_gc, MinHeapFreeRatio);
   size_t maximum_desired_capacity = target_heap_capacity(used_after_gc, MaxHeapFreeRatio);

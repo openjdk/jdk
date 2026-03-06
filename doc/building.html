@@ -541,6 +541,11 @@ href="#apple-xcode">Apple Xcode</a> on some strategies to deal with
 this.</p>
 <p>It is recommended that you use at least macOS 14 and Xcode 15.4, but
 earlier versions may also work.</p>
+<p>Starting with Xcode 26, introduced in macOS 26, the Metal toolchain
+no longer comes bundled with Xcode, so it needs to be installed
+separately. This can either be done via the Xcode's Settings/Components
+UI, or in the command line calling
+<code>xcodebuild -downloadComponent metalToolchain</code>.</p>
 <p>The standard macOS environment contains the basic tooling needed to
 build, but for external libraries a package manager is recommended. The
 JDK uses <a href="https://brew.sh/">homebrew</a> in the examples, but
@@ -668,7 +673,7 @@ update.</p>
 (Note that this version is often presented as "MSVC 14.28", and reported
 by cl.exe as 19.28.) Older versions will not be accepted by
 <code>configure</code> and will not work. The maximum accepted version
-of Visual Studio is 2022.</p>
+of Visual Studio is 2026.</p>
 <p>If you have multiple versions of Visual Studio installed,
 <code>configure</code> will by default pick the latest. You can request
 a specific version to be used by setting
@@ -1380,10 +1385,9 @@ dpkg-deb -x /tmp/libasound2-dev_1.0.25-4_armhf.deb .</code></pre></li>
 can specify it by <code>--with-alsa</code>.</p></li>
 </ul>
 <h4 id="x11-1">X11</h4>
-<p>You will need X11 libraries suitable for your <em>target</em> system.
-In most cases, using Debian's pre-built libraries work fine.</p>
-<p>Note that X11 is needed even if you only want to build a headless
-JDK.</p>
+<p>When not building a headless JDK, you will need X11 libraries
+suitable for your <em>target</em> system. In most cases, using Debian's
+pre-built libraries work fine.</p>
 <ul>
 <li><p>Go to <a href="https://www.debian.org/distrib/packages">Debian
 Package Search</a>, search for the following packages for your

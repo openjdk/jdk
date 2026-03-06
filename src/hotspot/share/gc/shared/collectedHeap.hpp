@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,6 +96,8 @@ class CollectedHeap : public CHeapObj<mtGC> {
   friend class MemAllocator;
 
  private:
+  static bool _is_shutting_down;
+
   GCHeapLog*      _heap_log;
   GCMetaspaceLog* _metaspace_log;
 
@@ -209,10 +211,9 @@ protected:
   // Default implementation does nothing.
   virtual void print_tracing_info() const = 0;
 
+ public:
   // Stop any onging concurrent work and prepare for exit.
   virtual void stop() = 0;
-
- public:
 
   static inline size_t filler_array_max_size() {
     return _filler_array_max_size;
@@ -240,19 +241,18 @@ protected:
    */
   virtual jint initialize() = 0;
 
+  // Initialize serviceability support. This should prepare the implementation
+  // for accepting serviceability-related calls, like memory_managers(), memory_pools().
+  virtual void initialize_serviceability() = 0;
+
   // In many heaps, there will be a need to perform some initialization activities
   // after the Universe is fully formed, but before general heap allocation is allowed.
   // This is the correct place to place such initialization methods.
   virtual void post_initialize();
 
-  bool is_shutting_down() const;
+  static bool is_shutting_down();
 
-  // If the VM is shutting down, we may have skipped VM_CollectForAllocation.
-  // In this case, stall the allocation request briefly in the hope that
-  // the VM shutdown completes before the allocation request returns.
-  void stall_for_vm_shutdown();
-
-  void before_exit();
+  void initiate_shutdown();
 
   // Stop and resume concurrent GC threads interfering with safepoint operations
   virtual void safepoint_synchronize_begin() {}
@@ -289,7 +289,7 @@ protected:
   DEBUG_ONLY(bool is_in_or_null(const void* p) const { return p == nullptr || is_in(p); })
 
   void set_gc_cause(GCCause::Cause v);
-  GCCause::Cause gc_cause() { return _gc_cause; }
+  GCCause::Cause gc_cause() const { return _gc_cause; }
 
   oop obj_allocate(Klass* klass, size_t size, TRAPS);
   virtual oop array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS);
@@ -312,6 +312,8 @@ protected:
   static void fill_with_object(HeapWord* start, HeapWord* end, bool zap = true) {
     fill_with_object(start, pointer_delta(end, start), zap);
   }
+
+  inline static bool is_filler_object(oop obj);
 
   virtual void fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap);
   static size_t min_dummy_object_size() {
@@ -353,9 +355,7 @@ protected:
   // collection or expansion activity.
   virtual size_t unsafe_max_tlab_alloc() const = 0;
 
-  // Perform a collection of the heap; intended for use in implementing
-  // "System.gc".  This probably implies as full a collection as the
-  // "CollectedHeap" supports.
+  // Perform a collection of the heap of a type depending on the given cause.
   virtual void collect(GCCause::Cause cause) = 0;
 
   // Perform a full collection
@@ -422,8 +422,6 @@ protected:
  private:
   // Generate any dumps preceding or following a full gc
   void full_gc_dump(GCTimer* timer, bool before);
-
-  virtual void initialize_serviceability() = 0;
 
   void print_relative_to_gc(GCWhen::Type when) const;
 

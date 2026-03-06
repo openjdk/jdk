@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,17 +174,29 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     public static final int SMALLEST_MAXIMUM_DATAGRAM_SIZE =
             QuicClient.SMALLEST_MAXIMUM_DATAGRAM_SIZE;
 
+    // The default value for the Quic maxInitialTimeout, in seconds. Will be clamped to [1, Integer.MAX_vALUE]
     public static final int DEFAULT_MAX_INITIAL_TIMEOUT = Math.clamp(
             Utils.getIntegerProperty("jdk.httpclient.quic.maxInitialTimeout", 30),
             1, Integer.MAX_VALUE);
+    // The default value for the initial_max_data transport parameter that a QuicConnectionImpl
+    // will send to its peer, if no value is provided by the higher level protocol.
     public static final long DEFAULT_INITIAL_MAX_DATA = Math.clamp(
             Utils.getLongProperty("jdk.httpclient.quic.maxInitialData", 15 << 20),
             0, 1L << 60);
+    // The default value for the initial_max_stream_data_bidi_local, initial_max_stream_data_bidi_remote,
+    // and initial_max_stream_data_uni transport parameters that a QuicConnectionImpl
+    // will send to its peer, if no value is provided by the higher level protocol.
     public static final long DEFAULT_INITIAL_STREAM_MAX_DATA = Math.clamp(
             Utils.getIntegerProperty("jdk.httpclient.quic.maxStreamInitialData", 6 << 20),
             0, 1L << 60);
+    // The default value for the initial_max_streams_bidi transport parameter that a QuicConnectionImpl
+    // will send to its peer, if no value is provided by the higher level protocol.
+    // The Http3ClientImpl typically provides a value of 0, so this property has no effect
+    // on QuicConnectionImpl instances created on behalf of the HTTP/3 client
     public static final int DEFAULT_MAX_BIDI_STREAMS =
-            Utils.getIntegerProperty("jdk.httpclient.quic.maxBidiStreams", 100);
+            Utils.getIntegerProperty("jdk.internal.httpclient.quic.maxBidiStreams", 100);
+    // The default value for the initial_max_streams_uni transport parameter that a QuicConnectionImpl
+    // will send to its peer, if no value is provided by the higher level protocol.
     public static final int DEFAULT_MAX_UNI_STREAMS =
             Utils.getIntegerProperty("jdk.httpclient.quic.maxUniStreams", 100);
     public static final boolean USE_DIRECT_BUFFER_POOL = Utils.getBooleanProperty(
@@ -334,7 +346,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         this.connectionId = this.endpoint.idFactory().newConnectionId();
         this.logTag = logTagFormat.formatted(labelId);
         this.dbgTag = dbgTag(quicInstance, logTag);
-        this.congestionController = new QuicRenoCongestionController(dbgTag, rttEstimator);
+        this.congestionController = createCongestionController(dbgTag, rttEstimator);
         this.originalVersion = this.quicVersion = firstFlightVersion == null
                 ? QuicVersion.firstFlightVersion(quicInstance.getAvailableVersions())
                 : firstFlightVersion;
@@ -364,6 +376,16 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 ? new QuicTransportParameters()
                 : quicInstance.getTransportParameters();
         if (debug.on()) debug.log("Quic Connection Created");
+    }
+
+    private static QuicCongestionController createCongestionController
+            (String dbgTag, QuicRttEstimator rttEstimator) {
+        String algo = System.getProperty("jdk.internal.httpclient.quic.congestionController", "cubic");
+        if (algo.equalsIgnoreCase("reno")) {
+            return new QuicRenoCongestionController(dbgTag, rttEstimator);
+        } else {
+            return new QuicCubicCongestionController(dbgTag, rttEstimator);
+        }
     }
 
     @Override
@@ -681,7 +703,9 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             return;
         }
         if (debug.on()) {
-            debug.log("scheduleForDecryption: %d bytes", received);
+            debug.log("scheduleForDecryption: %s bytes [idbytes: %s(%s,%s)]",
+                    received, datagram.destConnId().getClass().getSimpleName(),
+                    datagram.destConnId().position(), datagram.destConnId().limit());
         }
         endpoint.buffer(received);
         incoming.add(datagram);
@@ -1224,7 +1248,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             final PacketSpace space = packetSpace(PacketNumberSpace.APPLICATION);
             final int maxDatagramSize = getMaxDatagramSize();
             final QuicConnectionId peerConnectionId = peerConnectionId();
-            final int dstIdLength = peerConnectionId().length();
+            final int dstIdLength = peerConnectionId.length();
             if (!canSend()) {
                 return false;
             }
@@ -1725,6 +1749,11 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         return localConnIdManager.connectionIds();
     }
 
+    @Override
+    public List<byte[]> activeResetTokens() {
+        return peerConnIdManager.activeResetTokens();
+    }
+
     LocalConnIdManager localConnectionIdManager() {
         return localConnIdManager;
     }
@@ -1820,6 +1849,10 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                                     header.destinationId().toHexString(),
                                     Utils.asHexString(destConnId));
                         }
+                        assert packetIndex > 1 :
+                                "first long packet CID does not match itself %s(%s,%s)"
+                                        .formatted(destConnId.getClass().getSimpleName(),
+                                                destConnId.position(), destConnId.limit());
                         return;
                     }
                     var peekedVersion = header.version();
@@ -1891,6 +1924,10 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                                             " wrong connection id (%s vs %s)",
                                     packetIndex, Utils.asHexString(cid), Utils.asHexString(destConnId));
                         }
+                        assert packetIndex > 1 : "first short packet CID does not match itself %s(%s,%s)"
+                                        .formatted(destConnId.getClass().getSimpleName(),
+                                                destConnId.position(), destConnId.limit());
+
                         return;
                     }
 
@@ -1906,6 +1943,9 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         } catch (Throwable t) {
             if (debug.on()) {
                 debug.log("Failed to process incoming packet", t);
+            }
+            if (t instanceof AssertionError) {
+                this.terminator.terminate(TerminationCause.forException(t));
             }
         }
     }
@@ -1977,7 +2017,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             case NONE -> throw new InternalError("Unrecognized packet type");
         }
         // packet has been processed successfully - connection isn't idle (RFC-9000, section 10.1)
-        this.terminator.keepAlive();
+        this.terminator.markActive();
         if (packetSpace != null) {
             packetSpace.packetReceived(
                     packetType,
@@ -2431,7 +2471,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 }
                 return;
             }
-            final QuicConnectionId currentPeerConnId = this.peerConnIdManager.getPeerConnId();
+            final QuicConnectionId currentPeerConnId = peerConnectionId();
             if (rt.sourceId().equals(currentPeerConnId)) {
                 if (debug.on()) {
                     debug.log("Invalid retry, same connection ID");
@@ -2789,7 +2829,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 // a CONNECTION_CLOSE frame is being sent to the peer when the local
                 // connection state is in DRAINING. This implies that the local endpoint
                 // is responding to an incoming CONNECTION_CLOSE frame from the peer.
-                // we remove the connection from the endpoint for such cases.
+                // we switch this connection to one that does not respond to incoming packets.
                 endpoint.pushClosedDatagram(this, peerAddress(), datagram);
             } else if (stateHandle.isMarked(QuicConnectionState.CLOSING)) {
                 // a CONNECTION_CLOSE frame is being sent to the peer when the local
@@ -2809,7 +2849,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         // RFC-9000, section 10.1: An endpoint also restarts its idle timer when sending
         // an ack-eliciting packet ...
         if (packet.isAckEliciting()) {
-            this.terminator.keepAlive();
+            this.terminator.markActive();
         }
     }
 

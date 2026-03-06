@@ -56,17 +56,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class EmptyAuthenticate {
 
-    private static final SSLContext SSL_CONTEXT = createSslContext();
+    private static final SSLContext SSL_CONTEXT = SimpleSSLContext.findSSLContext();
 
     private static final String WWW_AUTH_HEADER_NAME = "WWW-Authenticate";
-
-    private static SSLContext createSslContext() {
-        try {
-            return new SimpleSSLContext().get();
-        } catch (IOException exception) {
-            throw new RuntimeException(exception);
-        }
-    }
 
     @ParameterizedTest
     @MethodSource("args")

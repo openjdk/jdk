@@ -166,12 +166,15 @@ final class VarHandles {
     static Field getFieldFromReceiverAndOffset(Class<?> receiverType,
                                                long offset,
                                                Class<?> fieldType) {
-        for (Field f : receiverType.getDeclaredFields()) {
-            if (Modifier.isStatic(f.getModifiers())) continue;
+        // The receiver may be a referenced class different from the declaring class
+        for (var declaringClass = receiverType; declaringClass != null; declaringClass = declaringClass.getSuperclass()) {
+            for (Field f : declaringClass.getDeclaredFields()) {
+                if (Modifier.isStatic(f.getModifiers())) continue;
 
-            if (offset == UNSAFE.objectFieldOffset(f)) {
-                assert f.getType() == fieldType;
-                return f;
+                if (offset == UNSAFE.objectFieldOffset(f)) {
+                    assert f.getType() == fieldType;
+                    return f;
+                }
             }
         }
         throw new InternalError("Field not found at offset");

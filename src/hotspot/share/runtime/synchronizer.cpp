@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@
 #include "runtime/lockStack.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.inline.hpp"
+#include "runtime/objectMonitorTable.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
@@ -349,7 +350,7 @@ bool ObjectSynchronizer::quick_notify(oopDesc* obj, JavaThread* current, bool al
   }
 
   if (mark.has_monitor()) {
-    ObjectMonitor* const mon = read_monitor(current, obj, mark);
+    ObjectMonitor* const mon = read_monitor(obj, mark);
     if (mon == nullptr) {
       // Racing with inflation/deflation go slow path
       return false;
@@ -484,7 +485,7 @@ ObjectLocker::ObjectLocker(Handle obj, TRAPS) : _thread(THREAD), _obj(obj),
       // otherwise just force other vthreads to preempt in case they try
       // to acquire this monitor.
       _skip_exit = !_thread->preemption_cancelled();
-      ObjectSynchronizer::read_monitor(_thread, _obj())->set_object_strong();
+      ObjectSynchronizer::read_monitor(_obj())->set_object_strong();
       _thread->set_pending_preempted_exception();
 
     }
@@ -501,7 +502,7 @@ void ObjectLocker::wait_uninterruptibly(TRAPS) {
   ObjectSynchronizer::waitUninterruptibly(_obj, 0, _thread);
   if (_thread->preempting()) {
     _skip_exit = true;
-    ObjectSynchronizer::read_monitor(_thread, _obj())->set_object_strong();
+    ObjectSynchronizer::read_monitor(_obj())->set_object_strong();
     _thread->set_pending_preempted_exception();
   }
 }
@@ -748,7 +749,7 @@ bool ObjectSynchronizer::current_thread_holds_lock(JavaThread* current,
   }
 
   while (mark.has_monitor()) {
-    ObjectMonitor* monitor = read_monitor(current, obj, mark);
+    ObjectMonitor* monitor = read_monitor(obj, mark);
     if (monitor != nullptr) {
       return monitor->is_entered(current) != 0;
     }
@@ -777,7 +778,7 @@ JavaThread* ObjectSynchronizer::get_lock_owner(ThreadsList * t_list, Handle h_ob
   }
 
   while (mark.has_monitor()) {
-    ObjectMonitor* monitor = read_monitor(Thread::current(), obj, mark);
+    ObjectMonitor* monitor = read_monitor(obj, mark);
     if (monitor != nullptr) {
       return Threads::owning_thread_from_monitor(t_list, monitor);
     }
@@ -1194,13 +1195,10 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
     GrowableArray<ObjectMonitor*> delete_list((int)deflated_count);
     unlinked_count = _in_use_list.unlink_deflated(deflated_count, &delete_list, &safepointer);
 
-#ifdef ASSERT
+    GrowableArray<ObjectMonitorTable::Table*> table_delete_list;
     if (UseObjectMonitorTable) {
-      for (ObjectMonitor* monitor : delete_list) {
-        assert(!ObjectSynchronizer::contains_monitor(current, monitor), "Should have been removed");
-      }
+      ObjectMonitorTable::rebuild(&table_delete_list);
     }
-#endif
 
     log.before_handshake(unlinked_count);
 
@@ -1221,6 +1219,9 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
 
     // Delete the unlinked ObjectMonitors.
     deleted_count = delete_monitors(&delete_list, &safepointer);
+    if (UseObjectMonitorTable) {
+      ObjectMonitorTable::destroy(&table_delete_list);
+    }
     assert(unlinked_count == deleted_count, "must be");
   }
 
@@ -1424,7 +1425,7 @@ void ObjectSynchronizer::chk_in_use_entry(ObjectMonitor* n, outputStream* out,
     return;
   }
 
-  ObjectMonitor* const obj_mon = read_monitor(Thread::current(), obj, mark);
+  ObjectMonitor* const obj_mon = read_monitor(obj, mark);
   if (n != obj_mon) {
     out->print_cr("ERROR: monitor=" INTPTR_FORMAT ": in-use monitor's "
                   "object does not refer to the same monitor: obj="
@@ -1470,293 +1471,8 @@ void ObjectSynchronizer::log_in_use_monitor_details(outputStream* out, bool log_
   out->flush();
 }
 
-// -----------------------------------------------------------------------------
-// ConcurrentHashTable storing links from objects to ObjectMonitors
-class ObjectMonitorTable : AllStatic {
-  struct Config {
-    using Value = ObjectMonitor*;
-    static uintx get_hash(Value const& value, bool* is_dead) {
-      return (uintx)value->hash();
-    }
-    static void* allocate_node(void* context, size_t size, Value const& value) {
-      ObjectMonitorTable::inc_items_count();
-      return AllocateHeap(size, mtObjectMonitor);
-    };
-    static void free_node(void* context, void* memory, Value const& value) {
-      ObjectMonitorTable::dec_items_count();
-      FreeHeap(memory);
-    }
-  };
-  using ConcurrentTable = ConcurrentHashTable<Config, mtObjectMonitor>;
-
-  static ConcurrentTable* _table;
-  static volatile size_t _items_count;
-  static size_t _table_size;
-  static volatile bool _resize;
-
-  class Lookup : public StackObj {
-    oop _obj;
-
-   public:
-    explicit Lookup(oop obj) : _obj(obj) {}
-
-    uintx get_hash() const {
-      uintx hash = _obj->mark().hash();
-      assert(hash != 0, "should have a hash");
-      return hash;
-    }
-
-    bool equals(ObjectMonitor** value) {
-      assert(*value != nullptr, "must be");
-      return (*value)->object_refers_to(_obj);
-    }
-
-    bool is_dead(ObjectMonitor** value) {
-      assert(*value != nullptr, "must be");
-      return false;
-    }
-  };
-
-  class LookupMonitor : public StackObj {
-    ObjectMonitor* _monitor;
-
-   public:
-    explicit LookupMonitor(ObjectMonitor* monitor) : _monitor(monitor) {}
-
-    uintx get_hash() const {
-      return _monitor->hash();
-    }
-
-    bool equals(ObjectMonitor** value) {
-      return (*value) == _monitor;
-    }
-
-    bool is_dead(ObjectMonitor** value) {
-      assert(*value != nullptr, "must be");
-      return (*value)->object_is_dead();
-    }
-  };
-
-  static void inc_items_count() {
-    AtomicAccess::inc(&_items_count, memory_order_relaxed);
-  }
-
-  static void dec_items_count() {
-    AtomicAccess::dec(&_items_count, memory_order_relaxed);
-  }
-
-  static double get_load_factor() {
-    size_t count = AtomicAccess::load(&_items_count);
-    return (double)count / (double)_table_size;
-  }
-
-  static size_t table_size(Thread* current = Thread::current()) {
-    return ((size_t)1) << _table->get_size_log2(current);
-  }
-
-  static size_t max_log_size() {
-    // TODO[OMTable]: Evaluate the max size.
-    // TODO[OMTable]: Need to fix init order to use Universe::heap()->max_capacity();
-    //                Using MaxHeapSize directly this early may be wrong, and there
-    //                are definitely rounding errors (alignment).
-    const size_t max_capacity = MaxHeapSize;
-    const size_t min_object_size = CollectedHeap::min_dummy_object_size() * HeapWordSize;
-    const size_t max_objects = max_capacity / MAX2(MinObjAlignmentInBytes, checked_cast<int>(min_object_size));
-    const size_t log_max_objects = log2i_graceful(max_objects);
-
-    return MAX2(MIN2<size_t>(SIZE_BIG_LOG2, log_max_objects), min_log_size());
-  }
-
-  static size_t min_log_size() {
-    // ~= log(AvgMonitorsPerThreadEstimate default)
-    return 10;
-  }
-
-  template<typename V>
-  static size_t clamp_log_size(V log_size) {
-    return MAX2(MIN2(log_size, checked_cast<V>(max_log_size())), checked_cast<V>(min_log_size()));
-  }
-
-  static size_t initial_log_size() {
-    const size_t estimate = log2i(MAX2(os::processor_count(), 1)) + log2i(MAX2(AvgMonitorsPerThreadEstimate, size_t(1)));
-    return clamp_log_size(estimate);
-  }
-
-  static size_t grow_hint () {
-    return ConcurrentTable::DEFAULT_GROW_HINT;
-  }
-
- public:
-  static void create() {
-    _table = new ConcurrentTable(initial_log_size(), max_log_size(), grow_hint());
-    _items_count = 0;
-    _table_size = table_size();
-    _resize = false;
-  }
-
-  static void verify_monitor_get_result(oop obj, ObjectMonitor* monitor) {
-#ifdef ASSERT
-    if (SafepointSynchronize::is_at_safepoint()) {
-      bool has_monitor = obj->mark().has_monitor();
-      assert(has_monitor == (monitor != nullptr),
-          "Inconsistency between markWord and ObjectMonitorTable has_monitor: %s monitor: " PTR_FORMAT,
-          BOOL_TO_STR(has_monitor), p2i(monitor));
-    }
-#endif
-  }
-
-  static ObjectMonitor* monitor_get(Thread* current, oop obj) {
-    ObjectMonitor* result = nullptr;
-    Lookup lookup_f(obj);
-    auto found_f = [&](ObjectMonitor** found) {
-      assert((*found)->object_peek() == obj, "must be");
-      result = *found;
-    };
-    _table->get(current, lookup_f, found_f);
-    verify_monitor_get_result(obj, result);
-    return result;
-  }
-
-  static void try_notify_grow() {
-    if (!_table->is_max_size_reached() && !AtomicAccess::load(&_resize)) {
-      AtomicAccess::store(&_resize, true);
-      if (Service_lock->try_lock()) {
-        Service_lock->notify();
-        Service_lock->unlock();
-      }
-    }
-  }
-
-  static bool should_shrink() {
-    // Not implemented;
-    return false;
-  }
-
-  static constexpr double GROW_LOAD_FACTOR = 0.75;
-
-  static bool should_grow() {
-    return get_load_factor() > GROW_LOAD_FACTOR && !_table->is_max_size_reached();
-  }
-
-  static bool should_resize() {
-    return should_grow() || should_shrink() || AtomicAccess::load(&_resize);
-  }
-
-  template<typename Task, typename... Args>
-  static bool run_task(JavaThread* current, Task& task, const char* task_name, Args&... args) {
-    if (task.prepare(current)) {
-      log_trace(monitortable)("Started to %s", task_name);
-      TraceTime timer(task_name, TRACETIME_LOG(Debug, monitortable, perf));
-      while (task.do_task(current, args...)) {
-        task.pause(current);
-        {
-          ThreadBlockInVM tbivm(current);
-        }
-        task.cont(current);
-      }
-      task.done(current);
-      return true;
-    }
-    return false;
-  }
-
-  static bool grow(JavaThread* current) {
-    ConcurrentTable::GrowTask grow_task(_table);
-    if (run_task(current, grow_task, "Grow")) {
-      _table_size = table_size(current);
-      log_info(monitortable)("Grown to size: %zu", _table_size);
-      return true;
-    }
-    return false;
-  }
-
-  static bool clean(JavaThread* current) {
-    ConcurrentTable::BulkDeleteTask clean_task(_table);
-    auto is_dead = [&](ObjectMonitor** monitor) {
-      return (*monitor)->object_is_dead();
-    };
-    auto do_nothing = [&](ObjectMonitor** monitor) {};
-    NativeHeapTrimmer::SuspendMark sm("ObjectMonitorTable");
-    return run_task(current, clean_task, "Clean", is_dead, do_nothing);
-  }
-
-  static bool resize(JavaThread* current) {
-    LogTarget(Info, monitortable) lt;
-    bool success = false;
-
-    if (should_grow()) {
-      lt.print("Start growing with load factor %f", get_load_factor());
-      success = grow(current);
-    } else {
-      if (!_table->is_max_size_reached() && AtomicAccess::load(&_resize)) {
-        lt.print("WARNING: Getting resize hints with load factor %f", get_load_factor());
-      }
-      lt.print("Start cleaning with load factor %f", get_load_factor());
-      success = clean(current);
-    }
-
-    AtomicAccess::store(&_resize, false);
-
-    return success;
-  }
-
-  static ObjectMonitor* monitor_put_get(Thread* current, ObjectMonitor* monitor, oop obj) {
-    // Enter the monitor into the concurrent hashtable.
-    ObjectMonitor* result = monitor;
-    Lookup lookup_f(obj);
-    auto found_f = [&](ObjectMonitor** found) {
-      assert((*found)->object_peek() == obj, "must be");
-      result = *found;
-    };
-    bool grow;
-    _table->insert_get(current, lookup_f, monitor, found_f, &grow);
-    verify_monitor_get_result(obj, result);
-    if (grow) {
-      try_notify_grow();
-    }
-    return result;
-  }
-
-  static bool remove_monitor_entry(Thread* current, ObjectMonitor* monitor) {
-    LookupMonitor lookup_f(monitor);
-    return _table->remove(current, lookup_f);
-  }
-
-  static bool contains_monitor(Thread* current, ObjectMonitor* monitor) {
-    LookupMonitor lookup_f(monitor);
-    bool result = false;
-    auto found_f = [&](ObjectMonitor** found) {
-      result = true;
-    };
-    _table->get(current, lookup_f, found_f);
-    return result;
-  }
-
-  static void print_on(outputStream* st) {
-    auto printer = [&] (ObjectMonitor** entry) {
-       ObjectMonitor* om = *entry;
-       oop obj = om->object_peek();
-       st->print("monitor=" PTR_FORMAT ", ", p2i(om));
-       st->print("object=" PTR_FORMAT, p2i(obj));
-       assert(obj->mark().hash() == om->hash(), "hash must match");
-       st->cr();
-       return true;
-    };
-    if (SafepointSynchronize::is_at_safepoint()) {
-      _table->do_safepoint_scan(printer);
-    } else {
-      _table->do_scan(Thread::current(), printer);
-    }
-  }
-};
-
-ObjectMonitorTable::ConcurrentTable* ObjectMonitorTable::_table = nullptr;
-volatile size_t ObjectMonitorTable::_items_count = 0;
-size_t ObjectMonitorTable::_table_size = 0;
-volatile bool ObjectMonitorTable::_resize = false;
-
-ObjectMonitor* ObjectSynchronizer::get_or_insert_monitor_from_table(oop object, JavaThread* current, bool* inserted) {
-  ObjectMonitor* monitor = get_monitor_from_table(current, object);
+ObjectMonitor* ObjectSynchronizer::get_or_insert_monitor_from_table(oop object, bool* inserted) {
+  ObjectMonitor* monitor = get_monitor_from_table(object);
   if (monitor != nullptr) {
     *inserted = false;
     return monitor;
@@ -1766,7 +1482,7 @@ ObjectMonitor* ObjectSynchronizer::get_or_insert_monitor_from_table(oop object, 
   alloced_monitor->set_anonymous_owner();
 
   // Try insert monitor
-  monitor = add_monitor(current, alloced_monitor, object);
+  monitor = add_monitor(alloced_monitor, object);
 
   *inserted = alloced_monitor == monitor;
   if (!*inserted) {
@@ -1806,7 +1522,7 @@ ObjectMonitor* ObjectSynchronizer::get_or_insert_monitor(oop object, JavaThread*
   EventJavaMonitorInflate event;
 
   bool inserted;
-  ObjectMonitor* monitor = get_or_insert_monitor_from_table(object, current, &inserted);
+  ObjectMonitor* monitor = get_or_insert_monitor_from_table(object, &inserted);
 
   if (inserted) {
     log_inflate(current, object, cause);
@@ -1822,7 +1538,7 @@ ObjectMonitor* ObjectSynchronizer::get_or_insert_monitor(oop object, JavaThread*
 }
 
 // Add the hashcode to the monitor to match the object and put it in the hashtable.
-ObjectMonitor* ObjectSynchronizer::add_monitor(JavaThread* current, ObjectMonitor* monitor, oop obj) {
+ObjectMonitor* ObjectSynchronizer::add_monitor(ObjectMonitor* monitor, oop obj) {
   assert(UseObjectMonitorTable, "must be");
   assert(obj == monitor->object(), "must be");
 
@@ -1830,14 +1546,14 @@ ObjectMonitor* ObjectSynchronizer::add_monitor(JavaThread* current, ObjectMonito
   assert(hash != 0, "must be set when claiming the object monitor");
   monitor->set_hash(hash);
 
-  return ObjectMonitorTable::monitor_put_get(current, monitor, obj);
+  return ObjectMonitorTable::monitor_put_get(monitor, obj);
 }
 
-bool ObjectSynchronizer::remove_monitor(Thread* current, ObjectMonitor* monitor, oop obj) {
+void ObjectSynchronizer::remove_monitor(ObjectMonitor* monitor, oop obj) {
   assert(UseObjectMonitorTable, "must be");
   assert(monitor->object_peek() == obj, "must be, cleared objects are removed by is_dead");
 
-  return ObjectMonitorTable::remove_monitor_entry(current, monitor);
+  ObjectMonitorTable::remove_monitor_entry(monitor);
 }
 
 void ObjectSynchronizer::deflate_mark_word(oop obj) {
@@ -1857,20 +1573,6 @@ void ObjectSynchronizer::create_om_table() {
     return;
   }
   ObjectMonitorTable::create();
-}
-
-bool ObjectSynchronizer::needs_resize() {
-  if (!UseObjectMonitorTable) {
-    return false;
-  }
-  return ObjectMonitorTable::should_resize();
-}
-
-bool ObjectSynchronizer::resize_table(JavaThread* current) {
-  if (!UseObjectMonitorTable) {
-    return true;
-  }
-  return ObjectMonitorTable::resize(current);
 }
 
 class ObjectSynchronizer::LockStackInflateContendedLocks : private OopClosure {
@@ -2019,7 +1721,7 @@ bool ObjectSynchronizer::fast_lock_spin_enter(oop obj, LockStack& lock_stack, Ja
       return true;
     } else if (observed_deflation) {
       // Spin while monitor is being deflated.
-      ObjectMonitor* monitor = ObjectSynchronizer::read_monitor(current, obj, mark);
+      ObjectMonitor* monitor = ObjectSynchronizer::read_monitor(obj, mark);
       return monitor == nullptr || monitor->is_being_async_deflated();
     }
     // Else stop spinning.
@@ -2179,7 +1881,7 @@ void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) 
   if (UseObjectMonitorTable) {
     monitor = read_caches(current, lock, object);
     if (monitor == nullptr) {
-      monitor = get_monitor_from_table(current, object);
+      monitor = get_monitor_from_table(object);
     }
   } else {
     monitor = ObjectSynchronizer::read_monitor(mark);
@@ -2223,7 +1925,7 @@ ObjectMonitor* ObjectSynchronizer::inflate_locked_or_imse(oop obj, ObjectSynchro
     }
 
     assert(mark.has_monitor(), "must be");
-    ObjectMonitor* monitor = ObjectSynchronizer::read_monitor(current, obj, mark);
+    ObjectMonitor* monitor = ObjectSynchronizer::read_monitor(obj, mark);
     if (monitor != nullptr) {
       if (monitor->has_anonymous_owner()) {
         LockStack& lock_stack = current->lock_stack();
@@ -2385,7 +2087,7 @@ ObjectMonitor* ObjectSynchronizer::inflate_fast_locked_object(oop object, Object
     // contains a deflating monitor it must be anonymously owned.
     if (monitor->has_anonymous_owner()) {
       // The monitor must be anonymously owned if it was added
-      assert(monitor == get_monitor_from_table(current, object), "The monitor must be found");
+      assert(monitor == get_monitor_from_table(object), "The monitor must be found");
       // New fresh monitor
       break;
     }
@@ -2577,39 +2279,31 @@ ObjectMonitor* ObjectSynchronizer::inflate_and_enter(oop object, BasicLock* lock
   return monitor;
 }
 
-void ObjectSynchronizer::deflate_monitor(Thread* current, oop obj, ObjectMonitor* monitor) {
+void ObjectSynchronizer::deflate_monitor(oop obj, ObjectMonitor* monitor) {
   if (obj != nullptr) {
     deflate_mark_word(obj);
-  }
-  bool removed = remove_monitor(current, monitor, obj);
-  if (obj != nullptr) {
-    assert(removed, "Should have removed the entry if obj was alive");
+    remove_monitor(monitor, obj);
   }
 }
 
-ObjectMonitor* ObjectSynchronizer::get_monitor_from_table(Thread* current, oop obj) {
+ObjectMonitor* ObjectSynchronizer::get_monitor_from_table(oop obj) {
   assert(UseObjectMonitorTable, "must be");
-  return ObjectMonitorTable::monitor_get(current, obj);
-}
-
-bool ObjectSynchronizer::contains_monitor(Thread* current, ObjectMonitor* monitor) {
-  assert(UseObjectMonitorTable, "must be");
-  return ObjectMonitorTable::contains_monitor(current, monitor);
+  return ObjectMonitorTable::monitor_get(obj);
 }
 
 ObjectMonitor* ObjectSynchronizer::read_monitor(markWord mark) {
   return mark.monitor();
 }
 
-ObjectMonitor* ObjectSynchronizer::read_monitor(Thread* current, oop obj) {
-  return ObjectSynchronizer::read_monitor(current, obj, obj->mark());
+ObjectMonitor* ObjectSynchronizer::read_monitor(oop obj) {
+  return ObjectSynchronizer::read_monitor(obj, obj->mark());
 }
 
-ObjectMonitor* ObjectSynchronizer::read_monitor(Thread* current, oop obj, markWord mark) {
+ObjectMonitor* ObjectSynchronizer::read_monitor(oop obj, markWord mark) {
   if (!UseObjectMonitorTable) {
     return read_monitor(mark);
   } else {
-    return ObjectSynchronizer::get_monitor_from_table(current, obj);
+    return ObjectSynchronizer::get_monitor_from_table(obj);
   }
 }
 

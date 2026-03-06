@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,11 @@
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
+#include "ci/ciUtilities.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "code/aotCodeCache.hpp"
 #include "code/codeCache.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/gcConfig.hpp"
 #include "logging/logStream.hpp"
 #include "memory/memoryReserver.hpp"
@@ -53,6 +55,7 @@
 #endif
 #if INCLUDE_G1GC
 #include "gc/g1/g1BarrierSetRuntime.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #endif
 #if INCLUDE_SHENANDOAHGC
 #include "gc/shenandoah/shenandoahRuntime.hpp"
@@ -258,6 +261,9 @@ void AOTCodeCache::init2() {
     return;
   }
 
+  // initialize aot runtime constants as appropriate to this runtime
+  AOTRuntimeConstants::initialize_from_runtime();
+
   // initialize the table of external routines so we can save
   // generated code blobs that reference them
   AOTCodeAddressTable* table = opened_cache->_table;
@@ -399,7 +405,7 @@ AOTCodeCache::~AOTCodeCache() {
   }
 }
 
-void AOTCodeCache::Config::record() {
+void AOTCodeCache::Config::record(uint cpu_features_offset) {
   _flags = 0;
 #ifdef ASSERT
   _flags |= debugVM;
@@ -430,9 +436,50 @@ void AOTCodeCache::Config::record() {
   _compressedKlassShift  = CompressedKlassPointers::shift();
   _contendedPaddingWidth = ContendedPaddingWidth;
   _gc                    = (uint)Universe::heap()->kind();
+  _cpu_features_offset   = cpu_features_offset;
 }
 
-bool AOTCodeCache::Config::verify() const {
+bool AOTCodeCache::Config::verify_cpu_features(AOTCodeCache* cache) const {
+  LogStreamHandle(Debug, aot, codecache, init) log;
+  uint offset = _cpu_features_offset;
+  uint cpu_features_size = *(uint *)cache->addr(offset);
+  assert(cpu_features_size == (uint)VM_Version::cpu_features_size(), "must be");
+  offset += sizeof(uint);
+
+  void* cached_cpu_features_buffer = (void *)cache->addr(offset);
+  if (log.is_enabled()) {
+    ResourceMark rm; // required for stringStream::as_string()
+    stringStream ss;
+    VM_Version::get_cpu_features_name(cached_cpu_features_buffer, ss);
+    log.print_cr("CPU features recorded in AOTCodeCache: %s", ss.as_string());
+  }
+
+  if (VM_Version::supports_features(cached_cpu_features_buffer)) {
+    if (log.is_enabled()) {
+      ResourceMark rm; // required for stringStream::as_string()
+      stringStream ss;
+      char* runtime_cpu_features = NEW_RESOURCE_ARRAY(char, VM_Version::cpu_features_size());
+      VM_Version::store_cpu_features(runtime_cpu_features);
+      VM_Version::get_missing_features_name(runtime_cpu_features, cached_cpu_features_buffer, ss);
+      if (!ss.is_empty()) {
+        log.print_cr("Additional runtime CPU features: %s", ss.as_string());
+      }
+    }
+  } else {
+    if (log.is_enabled()) {
+      ResourceMark rm; // required for stringStream::as_string()
+      stringStream ss;
+      char* runtime_cpu_features = NEW_RESOURCE_ARRAY(char, VM_Version::cpu_features_size());
+      VM_Version::store_cpu_features(runtime_cpu_features);
+      VM_Version::get_missing_features_name(cached_cpu_features_buffer, runtime_cpu_features, ss);
+      log.print_cr("AOT Code Cache disabled: required cpu features are missing: %s", ss.as_string());
+    }
+    return false;
+  }
+  return true;
+}
+
+bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
   // First checks affect all cached AOT code
 #ifdef ASSERT
   if ((_flags & debugVM) == 0) {
@@ -478,6 +525,9 @@ bool AOTCodeCache::Config::verify() const {
     AOTStubCaching = false;
   }
 
+  if (!verify_cpu_features(cache)) {
+    return false;
+  }
   return true;
 }
 
@@ -679,6 +729,17 @@ extern "C" {
   }
 }
 
+void AOTCodeCache::store_cpu_features(char*& buffer, uint buffer_size) {
+  uint* size_ptr = (uint *)buffer;
+  *size_ptr = buffer_size;
+  buffer += sizeof(uint);
+
+  VM_Version::store_cpu_features(buffer);
+  log_debug(aot, codecache, exit)("CPU features recorded in AOTCodeCache: %s", VM_Version::features_string());
+  buffer += buffer_size;
+  buffer = align_up(buffer, DATA_ALIGNMENT);
+}
+
 bool AOTCodeCache::finish_write() {
   if (!align_write()) {
     return false;
@@ -698,22 +759,31 @@ bool AOTCodeCache::finish_write() {
 
   uint store_count = _store_entries_cnt;
   if (store_count > 0) {
-    uint header_size = (uint)align_up(sizeof(AOTCodeCache::Header),  DATA_ALIGNMENT);
+    uint header_size = (uint)align_up(sizeof(AOTCodeCache::Header), DATA_ALIGNMENT);
     uint code_count = store_count;
     uint search_count = code_count * 2;
     uint search_size = search_count * sizeof(uint);
     uint entries_size = (uint)align_up(code_count * sizeof(AOTCodeEntry), DATA_ALIGNMENT); // In bytes
     // _write_position includes size of code and strings
     uint code_alignment = code_count * DATA_ALIGNMENT; // We align_up code size when storing it.
-    uint total_size = header_size + _write_position + code_alignment + search_size + entries_size;
+    uint cpu_features_size = VM_Version::cpu_features_size();
+    uint total_cpu_features_size = sizeof(uint) + cpu_features_size; // sizeof(uint) to store cpu_features_size
+    uint total_size = header_size + _write_position + code_alignment + search_size + entries_size +
+                      align_up(total_cpu_features_size, DATA_ALIGNMENT);
     assert(total_size < max_aot_code_size(), "AOT Code size (" UINT32_FORMAT " bytes) is greater than AOTCodeMaxSize(" UINT32_FORMAT " bytes).", total_size, max_aot_code_size());
 
-    // Create ordered search table for entries [id, index];
-    uint* search = NEW_C_HEAP_ARRAY(uint, search_count, mtCode);
     // Allocate in AOT Cache buffer
     char* buffer = (char *)AOTCacheAccess::allocate_aot_code_region(total_size + DATA_ALIGNMENT);
     char* start = align_up(buffer, DATA_ALIGNMENT);
     char* current = start + header_size; // Skip header
+
+    uint cpu_features_offset = current - start;
+    store_cpu_features(current, cpu_features_size);
+    assert(is_aligned(current, DATA_ALIGNMENT), "sanity check");
+    assert(current < start + total_size, "sanity check");
+
+    // Create ordered search table for entries [id, index];
+    uint* search = NEW_C_HEAP_ARRAY(uint, search_count, mtCode);
 
     AOTCodeEntry* entries_address = _store_entries; // Pointer to latest entry
     uint adapters_count = 0;
@@ -790,7 +860,7 @@ bool AOTCodeCache::finish_write() {
     header->init(size, (uint)strings_count, strings_offset,
                  entries_count, new_entries_offset,
                  adapters_count, shared_blobs_count,
-                 C1_blobs_count, C2_blobs_count);
+                 C1_blobs_count, C2_blobs_count, cpu_features_offset);
 
     log_info(aot, codecache, exit)("Wrote %d AOT code entries to AOT Code Cache", entries_count);
   }
@@ -1346,18 +1416,16 @@ void AOTCodeAddressTable::init_extrs() {
     SET_ADDRESS(_extrs, OptoRuntime::multianewarray4_C);
     SET_ADDRESS(_extrs, OptoRuntime::multianewarray5_C);
     SET_ADDRESS(_extrs, OptoRuntime::multianewarrayN_C);
-#if INCLUDE_JVMTI
-    SET_ADDRESS(_extrs, SharedRuntime::notify_jvmti_vthread_start);
-    SET_ADDRESS(_extrs, SharedRuntime::notify_jvmti_vthread_end);
-    SET_ADDRESS(_extrs, SharedRuntime::notify_jvmti_vthread_mount);
-    SET_ADDRESS(_extrs, SharedRuntime::notify_jvmti_vthread_unmount);
-#endif
     SET_ADDRESS(_extrs, OptoRuntime::complete_monitor_locking_C);
     SET_ADDRESS(_extrs, OptoRuntime::monitor_notify_C);
     SET_ADDRESS(_extrs, OptoRuntime::monitor_notifyAll_C);
     SET_ADDRESS(_extrs, OptoRuntime::rethrow_C);
     SET_ADDRESS(_extrs, OptoRuntime::slow_arraycopy_C);
     SET_ADDRESS(_extrs, OptoRuntime::register_finalizer_C);
+    SET_ADDRESS(_extrs, OptoRuntime::vthread_end_first_transition_C);
+    SET_ADDRESS(_extrs, OptoRuntime::vthread_start_final_transition_C);
+    SET_ADDRESS(_extrs, OptoRuntime::vthread_start_transition_C);
+    SET_ADDRESS(_extrs, OptoRuntime::vthread_end_transition_C);
 #if defined(AARCH64)
     SET_ADDRESS(_extrs, JavaThread::verify_cross_modify_fence_failure);
 #endif // AARCH64
@@ -1373,6 +1441,7 @@ void AOTCodeAddressTable::init_extrs() {
   SET_ADDRESS(_extrs, ShenandoahRuntime::load_reference_barrier_phantom_narrow);
 #endif
 #if INCLUDE_ZGC
+  SET_ADDRESS(_extrs, ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr());
   SET_ADDRESS(_extrs, ZBarrierSetRuntime::load_barrier_on_phantom_oop_field_preloaded_addr());
 #if defined(AMD64)
   SET_ADDRESS(_extrs, &ZPointerLoadShift);
@@ -1383,6 +1452,12 @@ void AOTCodeAddressTable::init_extrs() {
   SET_ADDRESS(_extrs, MacroAssembler::debug64);
 #endif
 #endif // ZERO
+
+  // addresses of fields in AOT runtime constants area
+  address* p = AOTRuntimeConstants::field_addresses_list();
+  while (*p != nullptr) {
+    SET_ADDRESS(_extrs, *p++);
+  }
 
   _extrs_complete = true;
   log_debug(aot, codecache, init)("External addresses recorded");
@@ -1666,6 +1741,11 @@ int AOTCodeAddressTable::id_for_address(address addr, RelocIterator reloc, CodeB
   if (addr == (address)-1) { // Static call stub has jump to itself
     return id;
   }
+  // Check card_table_base address first since it can point to any address
+  BarrierSet* bs = BarrierSet::barrier_set();
+  bool is_const_card_table_base = !UseG1GC && !UseShenandoahGC && bs->is_a(BarrierSet::CardTableBarrierSet);
+  guarantee(!is_const_card_table_base || addr != ci_card_table_address_const(), "sanity");
+
   // Seach for C string
   id = id_for_C_string(addr);
   if (id >= 0) {
@@ -1733,6 +1813,44 @@ int AOTCodeAddressTable::id_for_address(address addr, RelocIterator reloc, CodeB
     }
   }
   return id;
+}
+
+AOTRuntimeConstants AOTRuntimeConstants::_aot_runtime_constants;
+
+void AOTRuntimeConstants::initialize_from_runtime() {
+  BarrierSet* bs = BarrierSet::barrier_set();
+  address card_table_base = nullptr;
+  uint grain_shift = 0;
+#if INCLUDE_G1GC
+  if (bs->is_a(BarrierSet::G1BarrierSet)) {
+    grain_shift = G1HeapRegion::LogOfHRGrainBytes;
+  } else
+#endif
+#if INCLUDE_SHENANDOAHGC
+  if (bs->is_a(BarrierSet::ShenandoahBarrierSet)) {
+    grain_shift = 0;
+  } else
+#endif
+  if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
+    CardTable::CardValue* base = ci_card_table_address_const();
+    assert(base != nullptr, "unexpected byte_map_base");
+    card_table_base = base;
+    CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
+    grain_shift = ctbs->grain_shift();
+  }
+  _aot_runtime_constants._card_table_base = card_table_base;
+  _aot_runtime_constants._grain_shift = grain_shift;
+}
+
+address AOTRuntimeConstants::_field_addresses_list[] = {
+  ((address)&_aot_runtime_constants._card_table_base),
+  ((address)&_aot_runtime_constants._grain_shift),
+  nullptr
+};
+
+address AOTRuntimeConstants::card_table_base_address() {
+  assert(UseSerialGC || UseParallelGC, "Only these GCs have constant card table base");
+  return (address)&_aot_runtime_constants._card_table_base;
 }
 
 // This is called after initialize() but before init2()

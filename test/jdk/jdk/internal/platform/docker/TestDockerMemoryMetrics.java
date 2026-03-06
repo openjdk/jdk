@@ -45,9 +45,8 @@ public class TestDockerMemoryMetrics {
     private static final String imageName = Common.imageName("metrics-memory");
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker()) {
-            return;
-        }
+        DockerTestUtils.checkCanTestDocker();
+        DockerTestUtils.checkCanUseResourceLimits();
 
         // These tests create a docker image and run this image with
         // varying docker memory options.  The arguments passed to the docker
@@ -82,9 +81,7 @@ public class TestDockerMemoryMetrics {
             testMemorySoftLimit("500m","200m");
 
         } finally {
-            if (!DockerTestUtils.RETAIN_IMAGE_AFTER_TEST) {
-                DockerTestUtils.removeDockerImage(imageName);
-            }
+            DockerTestUtils.removeDockerImage(imageName);
         }
     }
 

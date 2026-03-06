@@ -128,9 +128,6 @@ class Universe: AllStatic {
   static bool _module_initialized;                    // true after call_initPhase2 called
   static bool _fully_initialized;                     // true after universe_init and initialize_vtables called
 
-  // Shutdown
-  static volatile bool _is_shutting_down;
-
   // the array of preallocated errors with backtraces
   static objArrayOop  preallocated_out_of_memory_errors();
 
@@ -327,8 +324,6 @@ class Universe: AllStatic {
   static bool is_bootstrapping()                      { return _bootstrapping; }
   static bool is_module_initialized()                 { return _module_initialized; }
   static bool is_fully_initialized()                  { return _fully_initialized; }
-
-  static bool is_shutting_down()                  { return  AtomicAccess::load_acquire(&_is_shutting_down); }
 
   static bool        on_page_boundary(void* addr);
   static bool        should_fill_in_stack_trace(Handle throwable);

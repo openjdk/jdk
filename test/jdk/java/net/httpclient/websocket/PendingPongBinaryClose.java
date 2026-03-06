@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @build DummyWebSocketServer
- * @run testng/othervm
+ * @run junit/othervm
  *      -Djdk.httpclient.sendBufferSize=8192
  *       PendingPongBinaryClose
  */
@@ -33,13 +33,14 @@
 // *      -Djdk.internal.httpclient.debug=true
 // *      -Djdk.internal.httpclient.websocket.debug=true
 
-import org.testng.annotations.Test;
-
 import java.net.http.WebSocket;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class PendingPongBinaryClose extends PendingOperations {
 
@@ -47,7 +48,8 @@ public class PendingPongBinaryClose extends PendingOperations {
     CompletableFuture<WebSocket> cfPong;
     CompletableFuture<WebSocket> cfClose;
 
-    @Test(dataProvider = "booleans")
+    @ParameterizedTest
+    @MethodSource("booleans")
     public void pendingPongBinaryClose(boolean last) throws Exception {
         repeatable( () -> {
             server = Support.notReadingServer();
