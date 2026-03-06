@@ -109,4 +109,20 @@ public final class HexDigits {
                 ? (short) (v - ((v & 0b0100_0000_0100_0000) >> 1))
                 : v;
     }
+
+    /// Prints an unsigned 4-byte number into 8 hexadecimal digits in an ASCII character buffer.
+    /// The buffer is represented as a big-endian 8 byte integer.
+    ///
+    /// Input:  0xA__B__C__D__E__F__0__1
+    /// Output: 0x61_62_63_64_65_66_30_31
+    public static long hex8Be(int i) {
+        // Expand each 4-bit group into 8 bits, spreading them out in the long value: 0xAABBCCDD -> 0xA0A0B0B0C0C0D0D
+        long x = Long.expand(i, 0x0F0F_0F0F_0F0F_0F0FL);
+
+        long m = (x + 0x0606_0606_0606_0606L) & 0x1010_1010_1010_1010L;
+
+        return ((m << 1) + (m >> 1) - (m >> 4))
+                + 0x3030_3030_3030_3030L // Add ASCII '0' base to all digits
+                + x;                     // Add original values
+    }
 }
