@@ -2566,10 +2566,6 @@ void os::Aix::scan_environment() {
   p = ::getenv("AIXTHREAD_GUARDPAGES");
   trcVerbose("AIXTHREAD_GUARDPAGES=%s.", p ? p : "<unset>");
 
-  p = ::getenv("EXTSHM");
-  if (p != nullptr) {
-    vm_exit_during_initialization("EXTSHM is ON. Please remove EXTSHM from your environment.");
-  }
 } // end: os::Aix::scan_environment()
 
 void os::Aix::initialize_libperfstat() {
