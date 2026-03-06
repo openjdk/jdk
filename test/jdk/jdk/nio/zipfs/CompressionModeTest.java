@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-import org.testng.annotations.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,22 +31,27 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.SecureRandom;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import static java.lang.String.format;
 import static java.util.stream.Collectors.joining;
-import static org.testng.Assert.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * @test
  * @bug 8231093
  * @summary Test Zip FS compressionMethod property
  * @modules jdk.zipfs
- * @run testng CompressionModeTest
+ * @run junit CompressionModeTest
  */
 public class CompressionModeTest {
 
@@ -77,7 +81,8 @@ public class CompressionModeTest {
      * @throws Exception If an error occurs during the creation, verification or
      *                   deletion of the ZIP file
      */
-    @Test(dataProvider = "validCompressionMethods", enabled = true)
+    @ParameterizedTest
+    @MethodSource("validCompressionMethods")
     public void testValidCompressionMehods(Map<String, String> env,
                                            int compression) throws Exception {
 
@@ -99,7 +104,8 @@ public class CompressionModeTest {
      * @throws Exception if an error occurs other than the expected
      * IllegalArgumentException
      */
-    @Test(dataProvider = "invalidCompressionMethod")
+    @ParameterizedTest
+    @MethodSource("invalidCompressionMethod")
     public void testInvalidCompressionMethod(Map<String, String> env) throws Exception {
         System.out.printf("ZIP FS Map = %s%n ", formatMap(env));
         Path zipfile = generatePath(HERE, "test", ".zip");
@@ -131,44 +137,42 @@ public class CompressionModeTest {
     }
 
     /**
-     * DataProvider used to validate that you can create a ZIP file with and
+     * MethodSource used to validate that you can create a ZIP file with and
      * without compression.
      */
-    @DataProvider(name = "validCompressionMethods")
-    private Object[][] validCompressionMethods() {
-        return new Object[][]{
-                {Map.of("create", "true"), ZipEntry.DEFLATED},
-                {Map.of("create", "true", "noCompression", "true"),
-                        ZipEntry.STORED},
-                {Map.of("create", "true", "noCompression", "false"),
-                        ZipEntry.DEFLATED},
-                {Map.of("create", "true", "compressionMethod", "STORED"),
-                        ZipEntry.STORED},
-                {Map.of("create", "true", "compressionMethod", "DEFLATED"),
-                        ZipEntry.DEFLATED},
-                {Map.of("create", "true", "compressionMethod", "stored"),
-                        ZipEntry.STORED},
-                {Map.of("create", "true", "compressionMethod", "deflated"),
-                        ZipEntry.DEFLATED}
-        };
+    private static Stream<Arguments> validCompressionMethods() {
+        return Stream.of(
+                Arguments.of(Map.of("create", "true"), ZipEntry.DEFLATED),
+                Arguments.of(Map.of("create", "true", "noCompression", "true"),
+                        ZipEntry.STORED),
+                Arguments.of(Map.of("create", "true", "noCompression", "false"),
+                        ZipEntry.DEFLATED),
+                Arguments.of(Map.of("create", "true", "compressionMethod", "STORED"),
+                        ZipEntry.STORED),
+                Arguments.of(Map.of("create", "true", "compressionMethod", "DEFLATED"),
+                        ZipEntry.DEFLATED),
+                Arguments.of(Map.of("create", "true", "compressionMethod", "stored"),
+                        ZipEntry.STORED),
+                Arguments.of(Map.of("create", "true", "compressionMethod", "deflated"),
+                        ZipEntry.DEFLATED)
+        );
     }
 
     /**
-     * DataProvider used to validate that an IllegalArgumentException is thrown
+     * MethodSource used to validate that an IllegalArgumentException is thrown
      * for an invalid value for the compressionMethod property.
      */
-    @DataProvider(name = "invalidCompressionMethod")
-    private Object[][] invalidCompressionMethod() {
+    private static Stream<Arguments> invalidCompressionMethod() {
         HashMap<String, String> map = new HashMap<>();
         map.put("create", "true");
         map.put("compressionMethod", null);
-        return new Object[][]{
-                {map},
-                {Map.of("create", "true", "compressionMethod", "")},
-                {Map.of("create", "true", "compressionMethod",
-                        Integer.parseInt("5"))},
-                {Map.of("create", "true", "compressionMethod", "invalid")}
-        };
+        return Stream.of(
+                Arguments.of(map),
+                Arguments.of(Map.of("create", "true", "compressionMethod", "")),
+                Arguments.of(Map.of("create", "true", "compressionMethod",
+                        Integer.parseInt("5"))),
+                Arguments.of(Map.of("create", "true", "compressionMethod", "invalid"))
+        );
     }
 
     /**
@@ -186,16 +190,16 @@ public class CompressionModeTest {
         // check entries with ZIP API
         try (ZipFile zf = new ZipFile(zipfile.toFile())) {
             // check entry count
-            assertEquals(entries, zf.size());
+            assertEquals(zf.size(), entries);
 
             // check compression method and content of each entry
             for (int i = start; i < entries; i++) {
                 ZipEntry ze = zf.getEntry("Entry-" + i);
                 assertNotNull(ze);
-                assertEquals(method, ze.getMethod());
+                assertEquals(ze.getMethod(), method);
                 try (InputStream is = zf.getInputStream(ze)) {
                     byte[] bytes = is.readAllBytes();
-                    assertTrue(Arrays.equals(bytes, ZIP_FILE_ENTRY));
+                    assertArrayEquals(ZIP_FILE_ENTRY, bytes);
                 }
             }
         }
@@ -209,13 +213,13 @@ public class CompressionModeTest {
                             path.getFileName() != null &&
                             path.getFileName().toString().equals("META-INF")))
                     .count();
-            assertEquals(entries, count);
+            assertEquals(count, entries);
 
             // check content of each entry
             for (int i = start; i < entries; i++) {
                 Path file = fs.getPath("Entry-" + i);
                 byte[] bytes = Files.readAllBytes(file);
-                assertTrue(Arrays.equals(bytes, ZIP_FILE_ENTRY));
+                assertArrayEquals(ZIP_FILE_ENTRY, bytes);
             }
         }
     }

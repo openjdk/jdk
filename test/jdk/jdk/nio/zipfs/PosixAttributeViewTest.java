@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,12 @@
  * questions.
  *
  */
-package test;
 
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import util.ZipFsBaseTest;
 
 import java.io.IOException;
@@ -36,13 +36,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.util.Map;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 
-/**
+/*
  * @test
  * @bug 8273935
  * @summary Validate that Files.getFileAttributeView will not throw an
  * Exception when the attribute view PosixFileAttributeView is not available
+ * @run junit PosixAttributeViewTest
  */
 public class PosixAttributeViewTest extends ZipFsBaseTest {
     public static final String ZIP_ENTRY = "Entry-0";
@@ -52,8 +54,8 @@ public class PosixAttributeViewTest extends ZipFsBaseTest {
      * Create initial Zip File
      * @throws IOException if an error occurs
      */
-    @BeforeTest
-    public void setup() throws IOException {
+    @BeforeAll
+    public static void setup() throws IOException {
         Files.deleteIfExists(ZIP_FILE);
         Entry entry = Entry.of(ZIP_ENTRY, ZipEntry.DEFLATED,
                 "Tennis Anyone");
@@ -64,22 +66,21 @@ public class PosixAttributeViewTest extends ZipFsBaseTest {
      * Remove Zip File used by Test
      * @throws IOException if an error occurs
      */
-    @AfterTest
-    public void cleanup() throws IOException {
+    @AfterAll
+    public static void cleanup() throws IOException {
         Files.deleteIfExists(ZIP_FILE);
     }
 
     /**
-     * DataProvider used to specify the Map indicating whether Posix
+     * MethodSource used to specify the Map indicating whether Posix
      * file attributes have been enabled
      * @return  map of the Zip FS properties to configure
      */
-    @DataProvider
-    protected Object[][] zipfsMap() {
-        return new Object[][]{
-                {Map.of()},
-                {Map.of("enablePosixFileAttributes", "true")}
-        };
+    protected static Stream<Arguments> zipfsMap() {
+        return Stream.of(
+                Arguments.of(Map.of()),
+                Arguments.of(Map.of("enablePosixFileAttributes", "true"))
+        );
     }
 
     /**
@@ -89,7 +90,8 @@ public class PosixAttributeViewTest extends ZipFsBaseTest {
      * @param env map of the Zip FS properties to configure
      * @throws Exception if an error occurs
      */
-    @Test(dataProvider = "zipfsMap")
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void testPosixAttributeView(Map<String, String> env) throws Exception {
         try (FileSystem fs = FileSystems.newFileSystem(ZIP_FILE, env)) {
             Path entry = fs.getPath(ZIP_ENTRY);

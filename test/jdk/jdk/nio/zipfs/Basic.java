@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  */
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.net.URISyntaxException;
 import java.nio.file.AccessMode;
 import java.nio.file.ClosedFileSystemException;
 import java.nio.file.FileStore;
@@ -29,7 +34,6 @@ import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.PathMatcher;
 import java.nio.file.ProviderMismatchException;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
@@ -37,54 +41,73 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.spi.FileSystemProvider;
 import java.net.URI;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Map;
+
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
-/**
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/*
  * @test
  * @bug 8038500 8040059 8150366 8150496 8147539 8290047
  * @summary Basic test for zip provider
- *
  * @modules jdk.zipfs
- * @run main Basic
+ * @run junit Basic
  */
-
 public class Basic {
-    public static void main(String[] args) throws Exception {
-        // Test: zip should be returned in provider list
-        boolean found = false;
-        for (FileSystemProvider provider: FileSystemProvider.installedProviders()) {
-            if (provider.getScheme().equalsIgnoreCase("jar")) {
-                found = true;
-                break;
-            }
-        }
-        if (!found)
-            throw new RuntimeException("'jar' provider not installed");
 
-        // create JAR file for test
-        Path jarFile = Utils.createJarFile("basic.jar",
+    Path jarFile;
+    FileSystem fs;
+    URI uri;
+
+    @BeforeEach
+    void setup() throws IOException, URISyntaxException {
+        jarFile = Utils.createJarFile("basic.jar",
                 "META-INF/services/java.nio.file.spi.FileSystemProvider");
+        uri = new URI("jar", jarFile.toUri().toString(), null);
+        fs = FileSystems.newFileSystem(uri, Map.of());
+    }
 
+    @Test
+    void providerListTest() {
+        // Test: zip should be returned in provider list
+        assertTrue(FileSystemProvider.installedProviders().stream()
+                .anyMatch(p -> p.getScheme().equalsIgnoreCase("jar")),
+                "'jar' provider not installed");
+    }
+
+    // Note that this test is testing behavior that is set in the
+    // @BeforeEach method.
+    @Test
+    void newFileSystemTest() throws IOException {
+        // To test `newFileSystem`, close the shared FileSystem
+        fs.close();
         // Test: FileSystems#newFileSystem(Path)
-        Map<String,?> env = Collections.emptyMap();
         FileSystems.newFileSystem(jarFile).close();
-
         // Test: FileSystems#newFileSystem(URI)
-        URI uri = new URI("jar", jarFile.toUri().toString(), null);
-        FileSystem fs = FileSystems.newFileSystem(uri, env, null);
+        FileSystems.newFileSystem(uri, Map.of()).close();
+    }
 
+    @Test
+    void toUriTest() {
         // Test: exercise toUri method
         String expected = uri.toString() + "!/foo";
         String actual = fs.getPath("/foo").toUri().toString();
-        if (!actual.equals(expected)) {
-            throw new RuntimeException("toUri returned '" + actual +
+        assertEquals(expected, actual, "toUri returned '" + actual +
                 "', expected '" + expected + "'");
-        }
+    }
 
+    @Test
+    void directoryIteratorTest() throws IOException {
         // Test: exercise directory iterator and retrieval of basic attributes
         Files.walkFileTree(fs.getPath("/"), new FileTreePrinter());
+    }
 
+    @Test
+    void copyFileTest() throws IOException {
         // Test: copy file from zip file to current (scratch) directory
         Path source = fs.getPath("/META-INF/services/java.nio.file.spi.FileSystemProvider");
         if (Files.exists(source)) {
@@ -93,46 +116,50 @@ public class Basic {
             try {
                 long s1 = Files.readAttributes(source, BasicFileAttributes.class).size();
                 long s2 = Files.readAttributes(target, BasicFileAttributes.class).size();
-                if (s2 != s1)
-                    throw new RuntimeException("target size != source size");
+                assertEquals(s1, s2, "target size != source size");
             } finally {
                 Files.delete(target);
             }
         }
+    }
 
+    @Test
+    void fileStoreTest() throws IOException {
         // Test: FileStore
         FileStore store = Files.getFileStore(fs.getPath("/"));
-        if (!store.supportsFileAttributeView("basic"))
-            throw new RuntimeException("BasicFileAttributeView should be supported");
+        assertTrue(store.supportsFileAttributeView("basic"),
+                "BasicFileAttributeView should be supported");
+    }
 
+    @Test
+    void watchRegisterNPETest() {
         // Test: watch register should throw PME
-        try {
-            fs.getPath("/")
-              .register(FileSystems.getDefault().newWatchService(), ENTRY_CREATE);
-            throw new RuntimeException("watch service is not supported");
-        } catch (ProviderMismatchException x) { }
+        assertThrows(ProviderMismatchException.class, () -> fs.getPath("/")
+                .register(FileSystems.getDefault().newWatchService(), ENTRY_CREATE),
+                "watch service is not supported");
+    }
 
+    @Test
+    void pathMatcherIAETest() {
         // Test: IllegalArgumentException
-        try {
-            PathMatcher pm = fs.getPathMatcher(":glob");
-            throw new RuntimeException("IllegalArgumentException not thrown");
-        } catch (IllegalArgumentException iae) {
-        }
-        try {
-            PathMatcher pm = fs.getPathMatcher("glob:");
-        } catch (IllegalArgumentException iae) {
-            iae.printStackTrace();
-            throw new RuntimeException("Unexpected IllegalArgumentException");
-        }
+        assertThrows(IllegalArgumentException.class, () -> fs.getPathMatcher(":glob"),
+                "IllegalArgumentException not thrown");
+        assertDoesNotThrow(() -> fs.getPathMatcher("glob:"),
+                "Unexpected IllegalArgumentException");
+    }
 
+    @Test
+    void closedFileSystemTest() throws IOException {
         // Test: ClosedFileSystemException
         fs.close();
-        if (fs.isOpen())
-            throw new RuntimeException("FileSystem should be closed");
-        try {
-            fs.provider().checkAccess(fs.getPath("/missing"), AccessMode.READ);
-        } catch (ClosedFileSystemException x) { }
+        assertFalse(fs.isOpen(), "FileSystem should be closed");
+        assertThrows(ClosedFileSystemException.class,
+                () -> fs.provider().checkAccess(fs.getPath("/missing"), AccessMode.READ));
+    }
 
+    @AfterEach
+    void cleanup() throws IOException {
+        fs.close();
         Files.deleteIfExists(jarFile);
     }
 
