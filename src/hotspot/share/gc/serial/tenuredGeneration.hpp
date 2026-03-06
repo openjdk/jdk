@@ -28,12 +28,12 @@
 #include "gc/serial/generation.hpp"
 #include "gc/serial/serialBlockOffsetTable.hpp"
 #include "gc/shared/generationCounters.hpp"
-#include "gc/shared/hSpaceCounters.hpp"
 #include "gc/shared/space.hpp"
 #include "utilities/macros.hpp"
 
 class CardTableRS;
 class ContiguousSpace;
+class HSpaceCounters;
 
 // TenuredGeneration models the heap containing old (promoted/tenured) objects
 // contained in a single contiguous space. This generation is covered by a card

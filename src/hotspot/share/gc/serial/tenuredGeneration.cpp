@@ -32,6 +32,7 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/genArguments.hpp"
+#include "gc/shared/hSpaceCounters.hpp"
 #include "gc/shared/space.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "logging/log.hpp"
