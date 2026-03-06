@@ -69,10 +69,8 @@ public class TestSafepointEvents {
             SortedMap<Long, Set<String>> safepointIds = new TreeMap<>();
             for (RecordedEvent event : Events.fromRecording(recording)) {
                 Long safepointId = event.getValue("safepointId");
-                if (!safepointIds.containsKey(safepointId)) {
-                    safepointIds.put(safepointId, new HashSet<>());
-                }
-                safepointIds.get(safepointId).add(event.getEventType().getName());
+                String eventName = event.getEventType().getName();
+                safepointIds.computeIfAbsent(safepointId, k -> new HashSet<>()).add(eventName);
             }
 
             // Select the first set that is complete.
