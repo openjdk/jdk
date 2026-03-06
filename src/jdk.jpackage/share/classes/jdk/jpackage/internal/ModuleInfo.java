@@ -80,7 +80,7 @@ record ModuleInfo(String name, Optional<String> version, Optional<String> mainCl
                 return Optional.empty();
             }
         } catch (IOException|IllegalArgumentException ex) {
-            Log.verbose(ex);
+            Log.trace(ex, "Failed to read modules from [%s]", releaseFile);
             return Optional.empty();
         }
 

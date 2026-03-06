@@ -81,7 +81,8 @@ public sealed interface OptionValue<T> extends WithOptionIdentifier {
     }
 
     static final class Builder<T> {
-        OptionValue<T> create() {
+
+        public OptionValue<T> create() {
             if (conv != null) {
                 return conv.create(Optional.ofNullable(defaultValue));
             } else {
@@ -92,7 +93,7 @@ public sealed interface OptionValue<T> extends WithOptionIdentifier {
             }
         }
 
-        Builder<T> defaultValue(T v) {
+        public Builder<T> defaultValue(T v) {
             defaultValue = v;
             return this;
         }
@@ -103,19 +104,19 @@ public sealed interface OptionValue<T> extends WithOptionIdentifier {
             return this;
         }
 
-        Builder<T> id(OptionIdentifier v) {
+        public Builder<T> id(OptionIdentifier v) {
             id = v;
             conv = null;
             return this;
         }
 
-        <U> Builder<T> from(OptionValue<U> base, Function<U, T> conv) {
+        public <U> Builder<T> from(OptionValue<U> base, Function<U, T> conv) {
             id(null).spec(null);
             this.conv = new Conv<>(base, conv);
             return this;
         }
 
-        <U> Builder<U> to(Function<T, U> conv) {
+        public <U> Builder<U> to(Function<T, U> conv) {
             return OptionValue.<U>build().from(create(), conv);
         }
 

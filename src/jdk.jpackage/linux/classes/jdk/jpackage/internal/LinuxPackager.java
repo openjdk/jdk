@@ -24,9 +24,10 @@
  */
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.LinuxSystemEnvironment.isWithRequiredPackagesSearch;
+
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -47,7 +48,7 @@ abstract class LinuxPackager<T extends LinuxPackage> implements Consumer<Packagi
         this.env = Objects.requireNonNull(env);
         this.pkg = Objects.requireNonNull(pkg);
         this.outputDir = Objects.requireNonNull(outputDir);
-        this.withRequiredPackagesLookup = sysEnv.soLookupAvailable() && sysEnv.nativePackageType().equals(pkg.type());
+        this.withRequiredPackagesLookup = isWithRequiredPackagesSearch(sysEnv, pkg);
 
         customActions = List.of(
                 DesktopIntegration.create(env, pkg),
@@ -135,19 +136,21 @@ abstract class LinuxPackager<T extends LinuxPackage> implements Consumer<Packagi
         final List<String> neededLibPackages;
         if (withRequiredPackagesLookup) {
             neededLibPackages = findRequiredPackages();
+            Log.trace("Runtime image requires: %s", neededLibPackages);
         } else {
-            neededLibPackages = Collections.emptyList();
-            Log.info(I18N.getString("warning.foreign-app-image"));
+            neededLibPackages = Collections.emptyList();;
         }
+
+        Log.trace("Features of the package require: %s", caPackages);
 
         // Merge all package lists together.
         // Filter out empty names, sort and remove duplicates.
-        Stream.of(caPackages, neededLibPackages)
+        requiredPackages = Stream.of(caPackages, neededLibPackages)
                 .flatMap(List::stream)
                 .filter(Predicate.not(String::isEmpty))
-                .sorted().distinct().forEach(requiredPackages::add);
+                .sorted().distinct().toList();
 
-        Log.verbose(String.format("Required packages: %s", requiredPackages));
+        Log.trace("Required packages: %s", requiredPackages);
     }
 
     private List<String> findRequiredPackages() throws IOException {
@@ -160,16 +163,16 @@ abstract class LinuxPackager<T extends LinuxPackage> implements Consumer<Packagi
         final List<? extends Exception> errors;
         try {
             errors = findErrorsInOutputPackage();
-        } catch (Exception ex) {
+        } catch (IOException ex) {
             // Ignore error as it is not critical. Just report it.
-            Log.verbose(ex);
+            Log.trace(ex);
             return;
         }
 
         for (var ex : errors) {
-            Log.verbose(ex.getLocalizedMessage());
+            Log.progressWarning(ex);
             if (ex instanceof ConfigException cfgEx) {
-                Log.verbose(cfgEx.getAdvice());
+                Log.progress(cfgEx.getAdvice());
             }
         }
     }
@@ -178,6 +181,6 @@ abstract class LinuxPackager<T extends LinuxPackage> implements Consumer<Packagi
     protected final T pkg;
     protected final Path outputDir;
     private final boolean withRequiredPackagesLookup;
-    private final List<String> requiredPackages = new ArrayList<>();
+    private List<String> requiredPackages;
     private final List<ShellCustomAction> customActions;
 }

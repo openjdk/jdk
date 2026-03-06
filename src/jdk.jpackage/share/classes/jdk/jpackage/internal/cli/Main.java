@@ -28,6 +28,7 @@ package jdk.jpackage.internal.cli;
 import static jdk.jpackage.internal.cli.StandardOption.HELP;
 import static jdk.jpackage.internal.cli.StandardOption.VERBOSE;
 import static jdk.jpackage.internal.cli.StandardOption.VERSION;
+import static jdk.jpackage.internal.log.StandardLogger.ERROR_LOGGER;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -49,13 +50,15 @@ import java.util.spi.ToolProvider;
 import jdk.internal.opt.CommandLine;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.Globals;
-import jdk.jpackage.internal.Log;
+import jdk.jpackage.internal.cli.JOptSimpleOptionsBuilder.ConvertedOptionsBuilder;
+import jdk.jpackage.internal.log.ErrorLogger;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.ExecutableAttributesWithCapturedOutput;
 import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.SelfContainedException;
 import jdk.jpackage.internal.util.CommandOutputControl.UnexpectedExitCodeException;
 import jdk.jpackage.internal.util.CommandOutputControl.UnexpectedResultException;
+import jdk.jpackage.internal.util.SetBuilder;
 import jdk.jpackage.internal.util.Slot;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 
@@ -139,12 +142,10 @@ public final class Main {
         Objects.requireNonNull(out);
         Objects.requireNonNull(err);
 
-        Globals.instance().loggerOutputStreams(out, err);
+        Globals.instance().logEnv(LogConfigParser.quiet().out(out).err(err).create());
 
         final var runner = new Runner(t -> {
-            new ErrorReporter(_ -> {
-                t.printStackTrace(err);
-            }, Log::fatalError, Log.isVerbose()).reportError(t);
+            Globals.instance().logger(ERROR_LOGGER).reportError(t);
         });
 
         try {
@@ -170,7 +171,7 @@ public final class Main {
             final var parseResult = Utils.buildParser(os, bundlingEnv).create().apply(mappedArgs.get());
 
             return runner.run(() -> {
-                final var parsedOptionsBuilder = parseResult.orElseThrow();
+                var parsedOptionsBuilder = parseResult.orElseThrow();
 
                 final var options = parsedOptionsBuilder.create();
 
@@ -190,8 +191,31 @@ public final class Main {
                     return List.of();
                 }
 
+                var skippedOptions = new ArrayList<OptionIdentifier>();
+
                 if (VERBOSE.containsIn(options)) {
-                    Globals.instance().loggerVerbose();
+                    // The "--verbose" option is on the command line.
+                    // Pick this option from the command line and parse its string value.
+                    // This will delay parsing of the rest of the command line
+                    // until the configuration of the logging is complete.
+                    parsedOptionsBuilder.copyWithExcludes(
+                            SetBuilder.<Option>build()
+                                    .add(StandardOption.options())
+                                    .remove(VERBOSE.getOption())
+                                    .create().stream().map(WithOptionIdentifier::id).toList()
+                    ).convertedOptions().map(ConvertedOptionsBuilder::create).map(VERBOSE::getFrom).value().ifPresent(logEnvBuilder -> {
+                        skippedOptions.add(VERBOSE.id());
+                        Globals.instance().logEnv(logEnvBuilder.out(out).err(err).create());
+                    });
+                } else if ("true".equals(System.getenv("JPACKAGE_DEBUG"))) {
+                    // There is no "--verbose" option on the command line,
+                    // but the "JPACKAGE_DEBUG" environment variable is set to "true".
+                    // Enable the default verbose output.
+                    Globals.instance().logEnv(LogConfigParser.defaultVerbose().out(out).err(err).create());
+                }
+
+                if (!skippedOptions.isEmpty()) {
+                    parsedOptionsBuilder = parsedOptionsBuilder.copyWithExcludes(skippedOptions);
                 }
 
                 final var optionsProcessor = new OptionsProcessor(parsedOptionsBuilder, os, bundlingEnv);
@@ -234,17 +258,22 @@ public final class Main {
      * Always print the messages for exceptions of any type.
      */
 
-    record ErrorReporter(Consumer<Throwable> stackTracePrinter, Consumer<String> messagePrinter, boolean verbose) {
-        ErrorReporter {
+    public record ErrorReporter(
+            Consumer<Throwable> stackTracePrinter,
+            Consumer<String> messagePrinter,
+            boolean alwaysPrintStackTrace,
+            boolean printCommandOutput) implements ErrorLogger {
+
+        public ErrorReporter {
             Objects.requireNonNull(stackTracePrinter);
             Objects.requireNonNull(messagePrinter);
         }
 
-        ErrorReporter(Consumer<Throwable> stackTracePrinter, Consumer<String> messagePrinter) {
-            this(stackTracePrinter, messagePrinter, true);
+        public ErrorReporter(Consumer<Throwable> stackTracePrinter, Consumer<String> messagePrinter) {
+            this(stackTracePrinter, messagePrinter, true, false);
         }
 
-        void reportError(Throwable t) {
+        public void reportError(Throwable t) {
 
             var unfoldedExceptions = new ArrayList<Exception>();
             ExceptionBox.visitUnboxedExceptionsRecursively(t, unfoldedExceptions::add);
@@ -267,7 +296,7 @@ public final class Main {
             var commandOutput = ((ExecutableAttributesWithCapturedOutput)result.execAttrs()).printableOutput();
             var printableCommandLine = result.execAttrs().printableCommandLine();
 
-            if (verbose) {
+            if (alwaysPrintStackTrace) {
                 stackTracePrinter.accept(ex);
             }
 
@@ -281,16 +310,18 @@ public final class Main {
             }
 
             messagePrinter.accept(I18N.format("message.error-header", msg));
-            messagePrinter.accept(I18N.format("message.failed-command-output-header"));
-            try (var lines = new BufferedReader(new StringReader(commandOutput)).lines()) {
-                lines.forEach(messagePrinter);
+            if (printCommandOutput) {
+                messagePrinter.accept(I18N.format("message.failed-command-output-header"));
+                try (var lines = new BufferedReader(new StringReader(commandOutput)).lines()) {
+                    lines.forEach(messagePrinter);
+                }
             }
         }
 
         private void printError(Throwable t, Optional<String> advice) {
             var isSelfContained = isSelfContained(t);
 
-            if (!isSelfContained || verbose) {
+            if (!isSelfContained || alwaysPrintStackTrace) {
                 stackTracePrinter.accept(t);
             }
 

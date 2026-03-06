@@ -257,7 +257,7 @@ final class OverridableResource {
     private boolean useExternal(ResourceConsumer dest) throws IOException {
         boolean used = externalPath != null && Files.exists(externalPath);
         if (used && dest != null) {
-            Log.verbose(I18N.format("message.using-custom-resource-from-file",
+            Log.useResource(I18N.format("message.using-custom-resource-from-file",
                     getPrintableCategory(),
                     externalPath.toAbsolutePath().normalize()));
 
@@ -284,7 +284,7 @@ final class OverridableResource {
                 final Path logResourceName = Optional.ofNullable(logPublicName).orElse(
                         resourceName).normalize();
 
-                Log.verbose(I18N.format("message.using-custom-resource",
+                Log.useResource(I18N.format("message.using-custom-resource",
                         getPrintableCategory(), logResourceName));
 
                 try (InputStream in = Files.newInputStream(customResource)) {
@@ -304,7 +304,7 @@ final class OverridableResource {
                     .orElseGet(() -> {
                         return resourceName(dest);
                     });
-            Log.verbose(I18N.format("message.using-default-resource",
+            Log.useResource(I18N.format("message.using-default-resource",
                     defaultName, getPrintableCategory(), resourceName));
 
             try (InputStream in = defaultResourceGetter.apply(defaultName)) {
@@ -321,7 +321,7 @@ final class OverridableResource {
                     .orElseGet(() -> {
                         return resourceName(dest);
                     });
-            Log.verbose(I18N.format("message.no-default-resource",
+            Log.useResource(I18N.format("message.no-default-resource",
                     getPrintableCategory(), resourceName));
         }
     }
