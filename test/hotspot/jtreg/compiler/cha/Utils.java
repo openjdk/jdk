@@ -158,6 +158,11 @@ public class Utils {
             prevNM = curNM; // update nmethod info
         }
 
+
+        public void resetCompiledState() {
+            prevNM = null;
+        }
+
         @Override
         public void call(T i) {
             try {

@@ -3458,6 +3458,22 @@ bool TypeInterfaces::has_non_array_interface() const {
   return !TypeAryPtr::_array_interfaces->contains(this);
 }
 
+// Look for a leaf interface with unique implementor under context class. Report one of possibly many.
+ciInstanceKlass* TypeInterfaces::has_unique_implementor(ciInstanceKlass* context) const {
+  assert(context->is_interface(), "not an interface");
+  ciInstanceKlass* candidate = nullptr;
+  for (int i = 0; i < _interfaces.length(); i++) {
+    ciInstanceKlass* intf = _interfaces.at(i);
+    if (intf->is_subtype_of(context) && (intf->unique_implementor() != nullptr)) {
+      if (candidate == nullptr || intf->is_subtype_of(candidate)) {
+        assert(candidate == nullptr || (candidate->unique_implementor() != nullptr), "not a candidate");
+        candidate = intf;
+      }
+    }
+  }
+  return candidate;
+}
+
 //------------------------------TypeOopPtr-------------------------------------
 TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, const TypeInterfaces* interfaces, bool xk, ciObject* o, int offset,
                        int instance_id, const TypePtr* speculative, int inline_depth)
@@ -4565,6 +4581,19 @@ const TypeKlassPtr* TypeInstPtr::as_klass_type(bool try_for_exact) const {
     }
   }
   return TypeInstKlassPtr::make(xk ? TypePtr::Constant : TypePtr::NotNull, klass(), _interfaces, 0);
+}
+
+// Does the type represent an interface instance?
+bool TypeInstPtr::is_interface() const {
+  return (instance_klass() == ciEnv::current()->Object_klass()) && !_interfaces->empty();
+}
+
+// For an interface instance reports one of most specific superinterfaces with a unique implementor.
+ciInstanceKlass* TypeInstPtr::has_unique_implementor(ciInstanceKlass* context_intf) const {
+  if (is_interface() && context_intf->is_interface()) {
+    return _interfaces->has_unique_implementor(context_intf);
+  }
+  return nullptr;
 }
 
 template <class T1, class T2> bool TypePtr::is_meet_subtype_of_helper_for_instance(const T1* this_one, const T2* other, bool this_xk, bool other_xk) {
