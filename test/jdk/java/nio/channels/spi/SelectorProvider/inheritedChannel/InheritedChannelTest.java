@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
  *        UnixSocketTest StateTest StateTestService EchoTest EchoService
  *        UnixDomainChannelTest CloseTest Launcher Util
  *        CheckIPv6Test CheckIPv6Service
- * @run testng/othervm/native InheritedChannelTest
+ * @run junit/othervm/native InheritedChannelTest
  * @key intermittent
  */
 
@@ -45,14 +45,16 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Platform;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static java.util.Arrays.asList;
 
@@ -64,19 +66,18 @@ public class InheritedChannelTest {
     private static final Path libraryPath
             = Paths.get(System.getProperty("java.library.path"));
 
-    @DataProvider
-    public Object[][] testCases() {
-        return new Object[][] {
-            { "UnixDomainChannelTest", List.of(UnixDomainChannelTest.class.getName())},
-            { "UnixSocketTest", List.of(UnixSocketTest.class.getName())},
-            { "StateTest", List.of(StateTest.class.getName(), "-Dtest.classes="+TEST_CLASSES)},
-            { "EchoTest",  List.of(EchoTest.class.getName())  },
-            { "CheckIPv6Test",  List.of(CheckIPv6Test.class.getName())  },
-            { "CloseTest", List.of(CloseTest.class.getName()) },
-        };
+    public static Stream<Arguments> testCases() {
+        return Stream.of
+            (Arguments.of( "UnixDomainChannelTest", List.of(UnixDomainChannelTest.class.getName())),
+             Arguments.of( "UnixSocketTest", List.of(UnixSocketTest.class.getName())),
+             Arguments.of( "StateTest", List.of(StateTest.class.getName(), "-Dtest.classes="+TEST_CLASSES)),
+             Arguments.of( "EchoTest", List.of(EchoTest.class.getName())),
+             Arguments.of( "CheckIPv6Test", List.of(CheckIPv6Test.class.getName())),
+             Arguments.of( "CloseTest", List.of(CloseTest.class.getName())));
     }
 
-    @Test(dataProvider = "testCases")
+    @ParameterizedTest
+    @MethodSource("testCases")
     public void test(String desc, List<String> opts) throws Throwable {
         String pathVar = Platform.sharedLibraryPathVariableName();
         System.out.println(pathVar + "=" + libraryPath);
