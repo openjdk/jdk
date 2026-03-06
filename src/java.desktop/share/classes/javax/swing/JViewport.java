@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -774,8 +774,9 @@ public class JViewport extends JComponent implements Accessible
                 if (backingStoreImage instanceof BackingStoreMultiResolutionImage) {
                     BackingStoreMultiResolutionImage mrImage
                             = (BackingStoreMultiResolutionImage) backingStoreImage;
-                    recreateBackingStoreImage = (mrImage.scaledWidth != scaledWidth
-                            || mrImage.scaledHeight != scaledHeight);
+                    recreateBackingStoreImage =
+                            (mrImage.getScaledWidth() != scaledWidth ||
+                            mrImage.getScaledHeight() != scaledHeight);
                 } else {
                     recreateBackingStoreImage = (width != scaledWidth
                             || height != scaledHeight);
@@ -872,62 +873,6 @@ public class JViewport extends JComponent implements Accessible
         return new BackingStoreMultiResolutionImage(width, height,
                 scaledWidth, scaledHeight, rvImage);
     }
-
-    static class BackingStoreMultiResolutionImage
-            extends AbstractMultiResolutionImage {
-
-        private final int width;
-        private final int height;
-        private final int scaledWidth;
-        private final int scaledHeight;
-        private final Image rvImage;
-
-        public BackingStoreMultiResolutionImage(int width, int height,
-                int scaledWidth, int scaledHeight, Image rvImage) {
-            this.width = width;
-            this.height = height;
-            this.scaledWidth = scaledWidth;
-            this.scaledHeight = scaledHeight;
-            this.rvImage = rvImage;
-        }
-
-        @Override
-        public int getWidth(ImageObserver observer) {
-            return width;
-        }
-
-        @Override
-        public int getHeight(ImageObserver observer) {
-            return height;
-        }
-
-        @Override
-        protected Image getBaseImage() {
-            return rvImage;
-        }
-
-        @Override
-        public Graphics getGraphics() {
-            Graphics graphics = rvImage.getGraphics();
-            if (graphics instanceof Graphics2D) {
-                double sx = (double) scaledWidth / width;
-                double sy = (double) scaledHeight / height;
-                ((Graphics2D) graphics).scale(sx, sy);
-            }
-            return graphics;
-        }
-
-        @Override
-        public Image getResolutionVariant(double w, double h) {
-            return rvImage;
-        }
-
-        @Override
-        public java.util.List<Image> getResolutionVariants() {
-            return Collections.unmodifiableList(Arrays.asList(rvImage));
-        }
-    }
-
 
     /**
      * Sets the bounds of this viewport.  If the viewport's width

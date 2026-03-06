@@ -27,6 +27,8 @@ package javax.swing;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BaseMultiResolutionImage;
+import java.awt.image.BufferedImage;
 import java.awt.image.VolatileImage;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -1053,7 +1055,7 @@ public class RepaintManager
         Image result = doubleBuffer.image;
 
         if (doubleBuffer.image == null) {
-            result = c.createImage(width , height);
+            result = createImage(c, width, height);
             doubleBuffer.size = new Dimension(width, height);
             if (c instanceof JComponent) {
                 ((JComponent)c).setCreatedDoubleBuffer(true);
@@ -1065,6 +1067,42 @@ public class RepaintManager
             // (indirectly through the Image) by stashing the image.
         }
         return result;
+    }
+
+    /**
+     * Return a BackingStoreMultiResolutionImage that can be used to paint a
+     * Component.
+     * <p>
+     * For example: if a Component is 100x100 pixels on a high-resolution
+     * (200%) monitor, then this return a MultiResolutionImage that is
+     * backed by a 200x200 pixel BufferedImage.
+     * </p>
+     */
+    private BackingStoreMultiResolutionImage createImage(
+            Component c, int virtualWidth, int virtualHeight) {
+        GraphicsConfiguration gc = c.getGraphicsConfiguration();
+        int scaledWidth, scaledHeight;
+        AffineTransform at = gc == null ? new AffineTransform() : gc.getDefaultTransform();
+        if ( (at.getType() == AffineTransform.TYPE_GENERAL_SCALE ||
+                at.getType() == AffineTransform.TYPE_UNIFORM_SCALE ||
+                at.getType() == AffineTransform.TYPE_IDENTITY) &&
+                at.getScaleX() > 0 && at.getScaleY() > 0) {
+            scaledWidth = Math.round((float) at.getScaleX() * virtualWidth);
+            scaledHeight = Math.round((float) at.getScaleY() * virtualHeight);
+
+            // this is extremely unlikely, but since these dimensions are used
+            // to construct a BufferedImage: they cannot be zero or else an
+            // exception is thrown.
+            scaledWidth = Math.max(1, scaledWidth);
+            scaledHeight = Math.max(1, scaledHeight);
+        } else {
+            // this is unexpected. Let's fail gracefully by acting like
+            // we're on a 100% resolution monitor.
+            scaledWidth = virtualWidth;
+            scaledHeight = virtualHeight;
+        }
+        Image img = c.createImage(scaledWidth, scaledHeight);
+        return new BackingStoreMultiResolutionImage(virtualWidth, virtualHeight, scaledWidth, scaledHeight, img);
     }
 
 
