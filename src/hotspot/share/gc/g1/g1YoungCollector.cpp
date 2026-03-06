@@ -391,7 +391,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
       if (!obj->is_typeArray()) {
         // All regions that were allocated before marking have a TAMS != bottom.
         bool allocated_before_mark_start = region->bottom() != _g1h->concurrent_mark()->top_at_mark_start(region);
-        bool mark_in_progress = _g1h->collector_state()->mark_in_progress();
+        bool mark_in_progress = _g1h->collector_state()->is_in_marking();
 
         if (allocated_before_mark_start && mark_in_progress) {
           return false;
