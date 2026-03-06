@@ -34,10 +34,13 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing.RawFailOn;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawConstraint;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawCountsConstraint;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw.RawFailOnConstraint;
 import compiler.lib.ir_framework.driver.irmatching.parser.VMInfo;
 import compiler.lib.ir_framework.shared.TestFormat;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * This class creates a list of {@link CompilePhaseIRRule} for each specified compile phase in {@link IR#phase()} of an
@@ -59,6 +62,7 @@ public class CompilePhaseIRRuleBuilder {
         this.compilation = compilation;
         this.rawFailOnConstraints = new RawFailOn(irAnno.failOn()).createRawConstraints();
         this.rawCountsConstraints = new RawCounts(irAnno.counts()).createRawConstraints();
+        validateConstraints();
     }
 
     public SortedSet<CompilePhaseIRRuleMatchable> build(VMInfo vmInfo) {
@@ -73,6 +77,52 @@ public class CompilePhaseIRRuleBuilder {
             }
         }
         return compilePhaseIRRules;
+    }
+
+    private void validateConstraints() {
+        Set<String> failOnNodes = rawFailOnConstraints.stream()
+            .map(constraint -> ((RawFailOnConstraint) constraint).nodeIdentifier())
+            .collect(Collectors.toSet());
+
+        Set<String> nodesSeen = new HashSet<>();
+        Set<String> nodesWithEquality = new HashSet<>();
+        Map<String, CountInterval> nodeIntervals = new HashMap<>();
+
+        for (RawConstraint constraint : rawCountsConstraints) {
+            RawCountsConstraint countsConstraint = (RawCountsConstraint) constraint;
+            String nodeId = countsConstraint.nodeIdentifier();
+            if (countsConstraint.isEqualityConstraint()) {
+                nodesWithEquality.add(nodeId);
+            }
+
+            // This constraint is valid if the node ID was either never
+            // mentioned until now or if it was mentioned but never with an
+            // equality constraint.
+            boolean seenBefore = !nodesSeen.add(nodeId);
+            boolean valid = !seenBefore || !nodesWithEquality.contains(nodeId);
+            TestFormat.checkNoReport(valid,
+                "Redundant constraints: node \"" + nodeId + "\" has an " +
+                "equality constraint that already fully specifies the " +
+                "expected count; additional constraints are not allowed");
+
+            // Narrow the interval for this node with the current constraint.
+            CountInterval interval = nodeIntervals.computeIfAbsent(nodeId,
+                k -> new CountInterval());
+            interval.narrow(countsConstraint.comparator(), countsConstraint.givenValue());
+            TestFormat.checkNoReport(!interval.isEmpty(),
+                "Incompatible constraints: node \"" + nodeId + "\" has " +
+                "`counts` constraints that cannot be satisfied");
+
+            // Check if the node is in the fail list and it is also expected
+            // non-zero times.  failOn is equivalent to "= 0", so narrow the
+            // interval to [0, 0] and check for emptiness.
+            if (failOnNodes.contains(nodeId)) {
+                boolean isZero = interval.lo() == 0 && interval.hi() == 0;
+                TestFormat.checkNoReport(isZero,
+                    "Incompatible constraints: node \"" + nodeId + "\" is in " +
+                    "`failOn` but `counts` requires it to appear");
+            }
+        }
     }
 
     private void createCompilePhaseIRRulesForDefault(VMInfo vmInfo) {

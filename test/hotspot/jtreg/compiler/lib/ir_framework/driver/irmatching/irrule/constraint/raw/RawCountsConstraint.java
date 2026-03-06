@@ -102,4 +102,20 @@ public class RawCountsConstraint implements RawConstraint {
             return Constraint.createSuccess();
         }
     }
+
+    public String nodeIdentifier() {
+        return rawIRNode.nodeIdentifier();
+    }
+
+    public boolean isEqualityConstraint() {
+        return "=".equals(comparison.getComparator());
+    }
+
+    public String comparator() {
+        return comparison.getComparator();
+    }
+
+    public int givenValue() {
+        return comparison.getGivenValue();
+    }
 }
