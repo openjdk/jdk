@@ -1129,7 +1129,7 @@ bool LibraryCallKit::inline_array_equals(StrIntrinsicNode::ArgEnc ae) {
   Node* arg2 = argument(1);
 
   const TypeAryPtr* mtype = (ae == StrIntrinsicNode::UU) ? TypeAryPtr::CHARS : TypeAryPtr::BYTES;
-  set_result(_gvn.transform(new AryEqNode(control(), memory(mtype), arg1, arg2, ae)));
+  set_result(_gvn.transform(new AryEqNode(control(), memory(mtype), mtype, arg1, arg2, ae)));
   clear_upper_avx();
 
   return true;
@@ -6236,11 +6236,14 @@ bool LibraryCallKit::inline_encodeISOArray(bool ascii) {
   // 'src_start' points to src array + scaled offset
   // 'dst_start' points to dst array + scaled offset
 
-  const TypeAryPtr* mtype = TypeAryPtr::BYTES;
-  Node* enc = new EncodeISOArrayNode(control(), memory(mtype), src_start, dst_start, length, ascii);
+  // See GraphKit::compress_string
+  const TypePtr* adr_type;
+  Node* mem = capture_memory(adr_type, src_type, dst_type);
+  Node* enc = new EncodeISOArrayNode(control(), mem, adr_type, src_start, dst_start, length, ascii);
   enc = _gvn.transform(enc);
   Node* res_mem = _gvn.transform(new SCMemProjNode(enc));
-  set_memory(res_mem, mtype);
+  memory_effect(res_mem, src_type, dst_type);
+
   set_result(enc);
   clear_upper_avx();
 
@@ -6719,7 +6722,8 @@ bool LibraryCallKit::inline_vectorizedHashCode() {
   // Resolve address of first element
   Node* array_start = array_element_address(array, offset, bt);
 
-  set_result(_gvn.transform(new VectorizedHashCodeNode(control(), memory(TypeAryPtr::get_array_body_type(bt)),
+  const TypeAryPtr* in_adr_type = TypeAryPtr::get_array_body_type(bt);
+  set_result(_gvn.transform(new VectorizedHashCodeNode(control(), memory(in_adr_type), in_adr_type,
     array_start, length, initialValue, basic_type)));
   clear_upper_avx();
 
