@@ -65,7 +65,7 @@ public abstract class ContinuationEntry extends VMObject {
     }
 
     public ContinuationEntry getParent() {
-        return VMObjectFactory.newObject(ContinuationEntry.class, parentField.getValue(addr));
+        return create(parentField.getValue(addr));
     }
 
     public Address getEntryPC() {
