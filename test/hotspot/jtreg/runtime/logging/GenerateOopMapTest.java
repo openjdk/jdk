@@ -33,6 +33,7 @@
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -42,7 +43,7 @@ public class GenerateOopMapTest {
 
     static String infoPattern = "[generateoopmap]";
     static String debugPattern = "[generateoopmap] Basicblock#0 begins at:";
-    static String tracePattern = "[trace][generateoopmap]        5  vars = 'r'      stack = 'v'   monitors = ''  	ifne";
+    static String tracePattern = "[trace][generateoopmap]        5  vars = 'r'      stack = 'v'   monitors = ''  \tifne";
     static String traceDetailPattern = "[generateoopmap]         0 vars     = ( r  |slot0)    invokestatic()V";
 
     static void match(String logFileName, String pattern, boolean shouldContain) throws Exception {
