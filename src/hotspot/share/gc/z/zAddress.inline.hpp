@@ -148,18 +148,18 @@ inline bool operator>=(offset_type first, offset_type##_end second) {           
 
 inline uintptr_t untype(zoffset offset) {
   const uintptr_t value = static_cast<uintptr_t>(offset);
-  assert(value < ZAddressOffsetMax, "Offset out of bounds (" PTR_FORMAT " < " PTR_FORMAT ")", value, ZAddressOffsetMax);
+  assert(value < ZAddressOffsetUpperLimit, "Offset out of bounds (" PTR_FORMAT " < " PTR_FORMAT ")", value, ZAddressOffsetUpperLimit);
   return value;
 }
 
 inline uintptr_t untype(zoffset_end offset) {
   const uintptr_t value = static_cast<uintptr_t>(offset);
-  assert(value <= ZAddressOffsetMax, "Offset out of bounds (" PTR_FORMAT " <= " PTR_FORMAT ")", value, ZAddressOffsetMax);
+  assert(value <= ZAddressOffsetUpperLimit, "Offset out of bounds (" PTR_FORMAT " <= " PTR_FORMAT ")", value, ZAddressOffsetUpperLimit);
   return value;
 }
 
 inline zoffset to_zoffset(uintptr_t value) {
-  assert(value < ZAddressOffsetMax, "Value out of bounds (" PTR_FORMAT " < " PTR_FORMAT ")", value, ZAddressOffsetMax);
+  assert(value < ZAddressOffsetUpperLimit, "Value out of bounds (" PTR_FORMAT " < " PTR_FORMAT ")", value, ZAddressOffsetUpperLimit);
   return zoffset(value);
 }
 
@@ -170,7 +170,7 @@ inline zoffset to_zoffset(zoffset_end offset) {
 
 inline bool to_zoffset_end(zoffset_end* result, zoffset_end start, size_t size) {
   const uintptr_t value = untype(start) + size;
-  if (value <= ZAddressOffsetMax) {
+  if (value <= ZAddressOffsetUpperLimit) {
     *result = zoffset_end(value);
     return true;
   }
@@ -179,13 +179,13 @@ inline bool to_zoffset_end(zoffset_end* result, zoffset_end start, size_t size) 
 
 inline zoffset_end to_zoffset_end(zoffset start, size_t size) {
   const uintptr_t value = untype(start) + size;
-  assert(value <= ZAddressOffsetMax, "Overflow start: " PTR_FORMAT " size: " PTR_FORMAT " value: " PTR_FORMAT,
-                                     untype(start), size, value);
+  assert(value <= ZAddressOffsetUpperLimit, "Overflow start: " PTR_FORMAT " size: " PTR_FORMAT " value: " PTR_FORMAT,
+                                            untype(start), size, value);
   return zoffset_end(value);
 }
 
 inline zoffset_end to_zoffset_end(uintptr_t value) {
-  assert(value <= ZAddressOffsetMax, "Value out of bounds (" PTR_FORMAT " <= " PTR_FORMAT ")", value, ZAddressOffsetMax);
+  assert(value <= ZAddressOffsetUpperLimit, "Value out of bounds (" PTR_FORMAT " <= " PTR_FORMAT ")", value, ZAddressOffsetUpperLimit);
   return zoffset_end(value);
 }
 
@@ -453,7 +453,7 @@ inline bool is_valid(zaddress addr, bool assert_on_failure = false) {
     return false;
   }
 
-  if (value >= (ZAddressHeapBase + ZAddressOffsetMax)) {
+  if (value >= (ZAddressHeapBase + ZAddressOffsetUpperLimit)) {
     // Must not point outside of the heap's virtual address range
     report_is_valid_failure("Address outside of the heap");
     return false;

@@ -47,7 +47,7 @@ public:
   ZHeap*                       _old_heap;
   ZGenerationOld*              _old_old;
   ZGenerationYoung*            _old_young;
-  ZAddressReserver             _zaddress_reserver;
+  ZTestAddressReserver         _zaddress_reserver;
   ZPhysicalMemoryBackingMocker _physical_backing;
   zoffset                      _page_offset;
 
