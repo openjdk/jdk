@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
 
 
     @Override
-    public Output inherit(Element dst, Element src, DocTree tag, boolean isFirstSentence) {
+    public Output inherit(ExecutableElement dst, ExecutableElement src, DocTree tag, boolean isFirstSentence) {
         CommentHelper ch = utils.getCommentHelper(dst);
         var path = ch.getDocTreePath(tag);
         messages.warning(path, "doclet.inheritDocWithinInappropriateTag");

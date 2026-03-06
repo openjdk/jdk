@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -868,6 +868,50 @@ public abstract class DCTree implements DocTree {
         @Override @DefinedBy(Api.COMPILER_TREE)
         public List<? extends DocTree> getDescription() {
             return description;
+        }
+    }
+
+    public static class DCNote extends DCInlineTag<DCNote> implements NoteTree {
+        public final String tagName;
+        public final List<? extends DocTree> attributes;
+        public final List<DCTree> body;
+        public final boolean isInline;
+
+        public DCNote(String tagName, List<DCTree> attributes, List<DCTree> body, boolean isInline) {
+            this.tagName = tagName;
+            this.attributes = attributes;
+            this.body = body;
+            this.isInline = isInline;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public String getTagName() {
+            return tagName;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public Kind getKind() {
+            return Kind.NOTE;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
+            return v.visitNote(this, d);
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public List<? extends DocTree> getAttributes() {
+            return attributes;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public List<? extends DocTree> getBody() {
+            return body;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public boolean isInline() {
+            return isInline;
         }
     }
 

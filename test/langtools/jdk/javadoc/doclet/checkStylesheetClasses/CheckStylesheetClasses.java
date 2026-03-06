@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,6 +142,9 @@ public class CheckStylesheetClasses {
                 "ui-state-active", "ui-menu", "ui-menu-item-wrapper", "ui-static-link",
                 "search-result-desc", "search-result-label", "search-result-link", "selected",
                 "sort-asc", "sort-desc", "two-column-search-results", "visible");
+
+        // used for note tags
+        removeAll(styleSheetNames, "note-tag-important", "note-tag-critical");
 
         // very JDK specific
         styleSheetNames.remove("module-graph");

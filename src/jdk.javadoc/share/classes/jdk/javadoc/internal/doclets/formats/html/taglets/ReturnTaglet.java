@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,15 +64,11 @@ public class ReturnTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     @Override
-    public Output inherit(Element dst, Element src, DocTree tag, boolean isFirstSentence) {
+    public Output inherit(ExecutableElement dst, ExecutableElement src, DocTree tag, boolean isFirstSentence) {
         try {
             var docFinder = utils.docFinder();
-            Optional<Documentation> r;
-            if (src == null) {
-                r = docFinder.find((ExecutableElement) dst, m -> DocFinder.Result.fromOptional(extract(utils, m))).toOptional();
-            } else {
-                r = docFinder.search((ExecutableElement) src, m -> DocFinder.Result.fromOptional(extract(utils, m))).toOptional();
-            }
+            Optional<Documentation> r = docFinder.searchInherited(dst, src,
+                    m -> DocFinder.Result.fromOptional(extract(utils, m))).toOptional();
             return r.map(result -> new Output(result.returnTree, result.method, result.returnTree.getDescription(), true))
                     .orElseGet(() -> new Output(null, null, List.of(), true));
         } catch (DocFinder.NoOverriddenMethodFound e) {

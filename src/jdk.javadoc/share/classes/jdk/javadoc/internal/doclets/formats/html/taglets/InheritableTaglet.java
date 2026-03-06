@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ package jdk.javadoc.internal.doclets.formats.html.taglets;
 import java.util.List;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
 
 import com.sun.source.doctree.DocTree;
 
@@ -51,7 +52,7 @@ public interface InheritableTaglet {
      * In the future, this could be reworked using some other mechanism,
      * such as throwing an exception.
      */
-    Output inherit(Element dst, Element src, DocTree tag, boolean isFirstSentence);
+    Output inherit(ExecutableElement dst, ExecutableElement src, DocTree tag, boolean isFirstSentence);
 
     record Output(DocTree holderTag,
                   Element holder,

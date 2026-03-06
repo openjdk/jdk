@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,6 +160,14 @@ public interface DocTree {
          * representing an {@code @literal} tag.
          */
         LITERAL("literal"),
+
+        /**
+         * Used for instances of {@link NoteTree}
+         * representing an {@code @note} tag.
+         *
+         * @since 27
+         */
+        NOTE("note"),
 
         /**
          * Used for instances of {@link RawTextTree}
