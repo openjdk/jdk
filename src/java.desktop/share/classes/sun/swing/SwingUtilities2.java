@@ -1434,15 +1434,6 @@ public class SwingUtilities2 {
         }
     }
 
-    /**
-    * checks if the system clipboard can be accessed.
-    * This is true in a headful environment, false in a headless one
-    *
-    */
-   public static boolean canAccessSystemClipboard() {
-       return !GraphicsEnvironment.isHeadless();
-   }
-
     public static String displayPropertiesToCSS(Font font, Color fg) {
         StringBuilder rule = new StringBuilder("body {");
         if (font != null) {
