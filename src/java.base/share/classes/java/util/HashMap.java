@@ -493,6 +493,17 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         putMapEntries(m, false);
     }
 
+    private void putMapEntries(HashMap<? extends K, ? extends V> src, boolean evict) {
+        if (src.table != null) {
+            for (Node<? extends K, ? extends V> node : src.table) {
+                while (node != null) {
+                    putVal(node.hash, node.key, node.value, false, evict);
+                    node = node.next;
+                }
+            }
+        }
+    }
+
     /**
      * Implements Map.putAll and Map constructor.
      *
@@ -501,6 +512,11 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * true (relayed to method afterNodeInsertion).
      */
     final void putMapEntries(Map<? extends K, ? extends V> m, boolean evict) {
+        if (m.getClass() == Collections.UnmodifiableMap.class) {
+            @SuppressWarnings("unchecked")
+            Map<? extends K, ? extends V> unwrapped = ((Collections.UnmodifiableMap<K, V>) m).m;
+            m = unwrapped;
+        }
         int s = m.size();
         if (s > 0) {
             if (table == null) { // pre-size
@@ -517,6 +533,11 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                     resize();
             }
 
+            if (m.getClass() == HashMap.class) {
+                HashMap<? extends K, ? extends V> hashMap = (HashMap<? extends K, ? extends V>) m;
+                putMapEntries(hashMap, evict);
+                return;
+            }
             for (Map.Entry<? extends K, ? extends V> e : m.entrySet()) {
                 K key = e.getKey();
                 V value = e.getValue();
