@@ -424,11 +424,10 @@
     while ( cur )
     {
       FT_ListNode  next = cur->next;
-      void*        data = cur->data;
 
 
       if ( destroy )
-        destroy( memory, data, user );
+        destroy( memory, cur->data, user );
 
       FT_FREE( cur );
       cur = next;

@@ -2217,6 +2217,10 @@
       exec = size->context;
 
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL
+      /* reset backward compatibility; note that */
+      /* the CVT program always runs without it  */
+      exec->backward_compatibility = 0;
+
       if ( driver->interpreter_version == TT_INTERPRETER_VERSION_40 )
       {
         grayscale = FALSE;
@@ -2253,9 +2257,7 @@
           return error;
       }
 
-      error = TT_Load_Context( exec, face, size );
-      if ( error )
-        return error;
+      TT_Load_Context( exec, face, size );
 
       /* check whether the cvt program has disabled hinting */
       if ( size->GS.instruct_control & 1 )
@@ -2283,8 +2285,7 @@
            mode != FT_RENDER_MODE_MONO                              &&
            !FT_IS_TRICKY( glyph->face )                             )
         exec->backward_compatibility = ( size->GS.instruct_control & 4 ) ^ 4;
-      else
-        exec->backward_compatibility = 0;
+
 #endif /* TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL */
 
       loader->exec = exec;
