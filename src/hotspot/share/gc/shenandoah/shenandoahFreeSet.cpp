@@ -244,7 +244,7 @@ inline bool ShenandoahFreeSet::has_alloc_capacity(ShenandoahHeapRegion *r) const
 void ShenandoahFreeSet::resize_old_collector_capacity(size_t regions) {
   shenandoah_assert_heaplocked();
   size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
-  size_t original_old_regions = _partitions.get_capacity(ShenandoahFreeSetPartitionId::OldCollector) / region_size_bytes;
+  size_t original_old_regions = _partitions.capacity_of(ShenandoahFreeSetPartitionId::OldCollector) / region_size_bytes;
   size_t unaffiliated_mutator_regions = _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::Mutator);
   size_t unaffiliated_collector_regions = _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::Collector);
   size_t unaffiliated_old_collector_regions = _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::OldCollector);
@@ -503,21 +503,6 @@ void ShenandoahRegionPartitions::decrease_available(ShenandoahFreeSetPartitionId
   assert (which_partition < NumPartitions, "Partition must be valid");
   assert(_available[int(which_partition)] >= bytes, "Cannot remove more available bytes than are present");
   _available[int(which_partition)] -= bytes;
-}
-
-size_t ShenandoahRegionPartitions::get_available(ShenandoahFreeSetPartitionId which_partition) const {
-  assert (which_partition < NumPartitions, "Partition must be valid");
-  assert(_free_set->usage_accounting_lock()->owned_by_self(), "Must own usage accounting lock");
-  assert(_available[int(which_partition)] == _capacity[int(which_partition)] - _used[int(which_partition)],
-       "Expect available (%zu) equals capacity (%zu) - used (%zu) for partition %s",
-       _available[int(which_partition)], _capacity[int(which_partition)], _used[int(which_partition)],
-       partition_membership_name(idx_t(which_partition)));
-
-  return _available[int(which_partition)];
-}
-
-inline size_t ShenandoahRegionPartitions::available_in(ShenandoahFreeSetPartitionId which_partition) const {
-  return get_available(which_partition);
 }
 
 void ShenandoahRegionPartitions::increase_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions) {
@@ -1260,8 +1245,8 @@ void ShenandoahFreeSet::move_unaffiliated_regions_from_collector_to_old_collecto
   ShenandoahHeapUsageAccountingLocker locker(usage_accounting_lock());
   size_t region_size_bytes =  ShenandoahHeapRegion::region_size_bytes();
 
-  size_t old_capacity = _partitions.get_capacity(ShenandoahFreeSetPartitionId::OldCollector);
-  size_t collector_capacity = _partitions.get_capacity(ShenandoahFreeSetPartitionId::Collector);
+  size_t old_capacity = _partitions.capacity_of(ShenandoahFreeSetPartitionId::OldCollector);
+  size_t collector_capacity = _partitions.capacity_of(ShenandoahFreeSetPartitionId::Collector);
   if (count > 0) {
     size_t ucount = count;
     size_t bytes_moved = ucount * region_size_bytes;
