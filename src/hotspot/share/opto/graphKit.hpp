@@ -876,6 +876,29 @@ class GraphKit : public Phase {
   Node* box_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool deoptimize_on_exception = false);
   Node* unbox_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem);
   Node* vector_shift_count(Node* cnt, int shift_op, BasicType bt, int num_elem);
+
+  // Helper class to support reverting to a previous parsing state.
+  // When an intrinsic makes changes before bailing out, it's necessary to restore the graph
+  // as it was. See JDK-8359344 for what can happen wrong. It's also not always possible to
+  // bailout before making changes because the bailing out decision might depend on new nodes
+  // (their types, for instance).
+  //
+  // So, if an intrinsic might cause this situation, one must start by saving the state in a
+  // SavedState by constructing it, and the state will be restored on destruction. If the
+  // intrinsic is not bailing out, one need to call discard to prevent restoring the old state.
+  class SavedState :public StackObj {
+    GraphKit* _kit;
+    int _sp;
+    JVMState* _jvms;
+    SafePointNode* _map;
+    Unique_Node_List _ctrl_succ;
+    bool _discarded;
+
+  public:
+    SavedState(GraphKit*);
+    ~SavedState();
+    void discard();
+  };
 };
 
 // Helper class to support building of control flow branches. Upon

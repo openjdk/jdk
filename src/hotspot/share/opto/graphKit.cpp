@@ -670,6 +670,48 @@ ciInstance* GraphKit::builtin_throw_exception(Deoptimization::DeoptReason reason
   }
 }
 
+GraphKit::SavedState::SavedState(GraphKit* kit) :
+  _kit(kit),
+  _sp(kit->sp()),
+  _jvms(kit->jvms()),
+  _map(kit->clone_map()),
+  _discarded(false)
+{
+  for (DUIterator_Fast imax, i = kit->control()->fast_outs(imax); i < imax; i++) {
+    Node* out = kit->control()->fast_out(i);
+    if (out->is_CFG()) {
+      _ctrl_succ.push(out);
+    }
+  }
+}
+
+GraphKit::SavedState::~SavedState() {
+  if (_discarded) {
+    _kit->destruct_map_clone(_map);
+    return;
+  }
+  _kit->jvms()->set_map(_map);
+  _kit->jvms()->set_sp(_sp);
+  _map->set_jvms(_kit->jvms());
+  _kit->set_map(_map);
+  _kit->set_sp(_sp);
+  for (DUIterator_Fast imax, i = _kit->control()->fast_outs(imax); i < imax; i++) {
+    Node* out = _kit->control()->fast_out(i);
+    if (out->is_CFG() && out->in(0) == _kit->control() && out != _kit->map() && !_ctrl_succ.member(out)) {
+      _kit->_gvn.hash_delete(out);
+      out->set_req(0, _kit->C->top());
+      _kit->C->record_for_igvn(out);
+      --i; --imax;
+      _kit->_gvn.hash_find_insert(out);
+    }
+  }
+}
+
+void GraphKit::SavedState::discard() {
+  _discarded = true;
+}
+
+
 //----------------------------PreserveJVMState---------------------------------
 PreserveJVMState::PreserveJVMState(GraphKit* kit, bool clone_map) {
   DEBUG_ONLY(kit->verify_map());
@@ -1678,13 +1720,22 @@ Node* GraphKit::access_load_at(Node* obj,   // containing obj
     return top(); // Dead path ?
   }
 
+  SavedState old_state(this);
   C2AccessValuePtr addr(adr, adr_type);
   C2ParseAccess access(this, decorators | C2_READ_ACCESS, bt, obj, addr);
+  Node* load;
   if (access.is_raw()) {
-    return _barrier_set->BarrierSetC2::load_at(access, val_type);
+    load = _barrier_set->BarrierSetC2::load_at(access, val_type);
   } else {
-    return _barrier_set->load_at(access, val_type);
+    load = _barrier_set->load_at(access, val_type);
   }
+
+  // Restore the previous state only if the load got folded to a constant
+  // and we can discard any barriers that might have been added.
+  if (!(load != nullptr && load->is_Con())) {
+    old_state.discard();
+  }
+  return load;
 }
 
 Node* GraphKit::access_load(Node* adr,   // actual address to load val at
@@ -1695,13 +1746,22 @@ Node* GraphKit::access_load(Node* adr,   // actual address to load val at
     return top(); // Dead path ?
   }
 
+  SavedState old_state(this);
   C2AccessValuePtr addr(adr, adr->bottom_type()->is_ptr());
   C2ParseAccess access(this, decorators | C2_READ_ACCESS, bt, nullptr, addr);
+  Node* load;
   if (access.is_raw()) {
-    return _barrier_set->BarrierSetC2::load_at(access, val_type);
+    load = _barrier_set->BarrierSetC2::load_at(access, val_type);
   } else {
-    return _barrier_set->load_at(access, val_type);
+    load = _barrier_set->load_at(access, val_type);
   }
+
+  // Restore the previous state only if the load got folded to a constant
+  // and we can discard any barriers that might have been added.
+  if (!(load != nullptr && load->is_Con())) {
+    old_state.discard();
+  }
+  return load;
 }
 
 Node* GraphKit::access_atomic_cmpxchg_val_at(Node* obj,
