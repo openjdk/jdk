@@ -60,7 +60,7 @@ public:
 // is not needed, it is preferred over HdrSeq.
 class BinaryMagnitudeSeq : public CHeapObj<mtGC> {
 private:
-  Atomic<size_t>  _sum;
+  Atomic<size_t> _sum;
   size_t* _mags;
 
 public:
