@@ -67,7 +67,7 @@ final class StringUTF16 {
 
     // Check the size of a UTF16-coded string
     // Throw an exception if out of range
-    static int newBytesLength(int len) {
+    private static int newBytesLength(int len) {
         checkBytesLength(len);
         return len << 1;
     }
@@ -781,7 +781,7 @@ final class StringUTF16 {
         return -StringLatin1.compareToCI_UTF16(other, value);
     }
 
-    public static int compareToFC_Latin1(byte[] value, byte[] other) {
+    static int compareToFC_Latin1(byte[] value, byte[] other) {
         return -StringLatin1.compareToFC_UTF16(other, value);
     }
 
@@ -829,7 +829,7 @@ final class StringUTF16 {
         return 0;
     }
 
-    public static int compareToFC(byte[] value, byte[] other) {
+    static int compareToFC(byte[] value, byte[] other) {
         int tlast = length(value);
         int olast = length(other);
         int lim = Math.min(tlast, olast);
@@ -2030,13 +2030,13 @@ final class StringUTF16 {
         }
     }
 
-    static final int MAX_LENGTH = Integer.MAX_VALUE >> 1;
+    private static final int MAX_LENGTH = Integer.MAX_VALUE >> 1;
 
-    static void checkIndex(int off, byte[] val) {
+    private static void checkIndex(int off, byte[] val) {
         String.checkIndex(off, length(val));
     }
 
-    static void checkOffset(int off, byte[] val) {
+    private static void checkOffset(int off, byte[] val) {
         String.checkOffset(off, length(val));
     }
 
