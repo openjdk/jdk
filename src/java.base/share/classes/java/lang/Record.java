@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,10 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.lang;
+
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 
 /**
  * This is the common base class of all Java language record classes.
@@ -87,6 +90,7 @@ package java.lang;
  * @jls 8.10 Record Classes
  * @since 16
  */
+@AOTSafeClassInitializer
 public abstract class Record {
     /**
      * Constructor for record classes to call.
