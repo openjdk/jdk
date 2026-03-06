@@ -4491,6 +4491,7 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     set_ctrl(add, cl);
 
     _igvn.replace_node( phi2, add );
+    C->record_optimization_event(OptEvent_ParallelInductionVars);
     // Sometimes an induction variable is unused
     if (add->outcnt() == 0) {
       _igvn.remove_dead_node(add);
@@ -5341,6 +5342,9 @@ void PhaseIdealLoop::build_and_optimize() {
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
       IdealLoopTree* lpt = iter.current();
       AutoVectorizeStatus status = auto_vectorize(lpt, vshared);
+      if (status == AutoVectorizeStatus::Success) {
+        C->record_optimization_event(OptEvent_AutoVectorization);
+      }
 
       if (status == AutoVectorizeStatus::TriedAndFailed) {
         // We tried vectorization, but failed. From now on only unroll the loop.

@@ -110,6 +110,36 @@ enum LoopOptsMode {
   LoopOptsVerify
 };
 
+enum OptimizationEvent {
+  OptEvent_LoopUnrolling = 0,
+  OptEvent_LoopPeeling,
+  OptEvent_ParallelInductionVars,
+  OptEvent_SplitIf,
+  OptEvent_LoopUnswitching,
+  OptEvent_ConditionalExpressionElimination,
+  OptEvent_FunctionInlining,
+  OptEvent_Deoptimization,
+  OptEvent_EscapeAnalysis,
+  OptEvent_EliminateLocks,
+  OptEvent_LockCoarsening,
+  OptEvent_ConditionalConstantPropagation,
+  OptEvent_EliminateAutobox,
+  OptEvent_BlockElimination,
+  OptEvent_NullCheckElimination,
+  OptEvent_RangeCheckElimination,
+  OptEvent_OptimizePtrCompare,
+  OptEvent_MergeStores,
+  OptEvent_LoopPredication,
+  OptEvent_AutoVectorization,
+  OptEvent_PartialPeeling,
+  OptEvent_IterGVNIteration,
+  OptEvent_LoopIterationSplit,
+  OptEvent_ReassociateInvariants,
+  OptEvent_LoopIntrinsification,
+  OptEvent_Peephole,
+  OptEvent_Count
+};
+
 // The type of all node counts and indexes.
 // It must hold at least 16 bits, but must also be fast to load and store.
 // This type, if less than 32 bits, could limit the number of possible nodes.
@@ -390,6 +420,9 @@ class Compile : public Phase {
   GrowableArray<UnstableIfTrap*> _unstable_if_traps;        // List of ifnodes after IGVN
   GrowableArray<Node_List*> _coarsened_locks;   // List of coarsened Lock and Unlock nodes
   ConnectionGraph*      _congraph;
+#ifndef PRODUCT
+  int                   _optimization_counters[OptEvent_Count];
+#endif
 #ifndef PRODUCT
   IdealGraphPrinter*    _igv_printer;
   static IdealGraphPrinter* _debug_file_printer;
@@ -892,6 +925,9 @@ public:
                                                   _recent_alloc_ctl = ctl;
                                                   _recent_alloc_obj = obj;
                                            }
+
+  void         record_optimization_event(OptimizationEvent event) PRODUCT_RETURN;
+
   void         record_dead_node(uint idx)  { if (_dead_node_list.test_set(idx)) return;
                                              _dead_node_count++;
                                            }

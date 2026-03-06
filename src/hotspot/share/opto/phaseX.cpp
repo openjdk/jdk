@@ -1090,6 +1090,9 @@ void PhaseIterGVN::optimize() {
       remove_dead_node(n);
     }
     loop_count++;
+#ifndef PRODUCT
+    C->record_optimization_event(OptEvent_IterGVNIteration);
+#endif
   }
   NOT_PRODUCT(verify_PhaseIterGVN();)
   C->print_method(PHASE_AFTER_ITER_GVN, 3);
@@ -3242,6 +3245,7 @@ Node *PhaseCCP::transform_once( Node *n ) {
     if( !n->is_Con() ) {
       if( t != Type::TOP ) {
         nn = makecon(t);        // ConNode::make(t);
+        C->record_optimization_event(OptEvent_ConditionalConstantPropagation);
         NOT_PRODUCT( inc_constants(); )
       } else if( n->is_Region() ) { // Unreachable region
         // Note: nn == C->top()
@@ -3380,6 +3384,7 @@ void PhasePeephole::do_transform() {
               tty->print_cr("peephole number: %d", result);
             }
             inc_peepholes();
+            C->record_optimization_event(OptEvent_Peephole);
 #endif
             // Set progress, start again
             progress = true;
