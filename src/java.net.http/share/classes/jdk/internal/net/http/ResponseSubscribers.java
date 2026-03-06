@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,6 +110,7 @@ public class ResponseSubscribers {
         private Flow.Subscription subscription;
         private final CompletableFuture<Void> result = new MinimalFuture<>();
         private final AtomicBoolean subscribed = new AtomicBoolean();
+        private final AtomicBoolean done = new AtomicBoolean();
 
         public ConsumerSubscriber(Consumer<Optional<byte[]>> consumer) {
             this.consumer = Objects.requireNonNull(consumer);
@@ -134,24 +135,46 @@ public class ResponseSubscribers {
         @Override
         public void onNext(List<ByteBuffer> items) {
             Objects.requireNonNull(items);
-            for (ByteBuffer item : items) {
-                byte[] buf = new byte[item.remaining()];
-                item.get(buf);
-                consumer.accept(Optional.of(buf));
+            if (done.get()) return;
+            try {
+                for (ByteBuffer item : items) {
+                    byte[] buf = new byte[item.remaining()];
+                    item.get(buf);
+                    consumer.accept(Optional.of(buf));
+                }
+            } catch (Throwable t) {
+                if (done.compareAndSet(false, true)) {
+                    Flow.Subscription s = subscription;
+                    if (s != null) s.cancel();
+                    result.completeExceptionally(t);
+                }
+                return;
             }
-            subscription.request(1);
+            Flow.Subscription s = subscription;
+            if (s != null && !done.get()) {
+                s.request(1);
+            }
         }
 
         @Override
         public void onError(Throwable throwable) {
             Objects.requireNonNull(throwable);
-            result.completeExceptionally(throwable);
+            if (done.compareAndSet(false, true)) {
+                result.completeExceptionally(throwable);
+            }
         }
 
         @Override
         public void onComplete() {
-            consumer.accept(Optional.empty());
-            result.complete(null);
+            if (!done.compareAndSet(false, true)) return;
+            try {
+                consumer.accept(Optional.empty());
+                result.complete(null);
+            } catch (Throwable t) {
+                Flow.Subscription s = subscription;
+                if (s != null) s.cancel();
+                result.completeExceptionally(t);
+            }
         }
 
     }
@@ -213,6 +236,7 @@ public class ResponseSubscribers {
                 close();
                 subscription.cancel();
                 result.completeExceptionally(ex);
+                return;
             }
             subscription.request(1);
         }
@@ -293,9 +317,10 @@ public class ResponseSubscribers {
         public void onComplete() {
             try {
                 result.complete(finisher.apply(join(received)));
+            } catch (Throwable t) {
+                result.completeExceptionally(t);
+            } finally {
                 received.clear();
-            } catch (IllegalArgumentException e) {
-                result.completeExceptionally(e);
             }
         }
 
