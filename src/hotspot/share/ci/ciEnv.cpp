@@ -1056,7 +1056,13 @@ void ciEnv::register_method(ciMethod* target,
       return;
     }
 
-    assert(offsets->value(CodeOffsets::Deopt) != -1, "must have deopt entry");
+    if (AlwaysEmitDeoptStubCode
+        || frame_words >= DeoptimizationBlob::UNPACK_SUBENTRY_COUNT
+        || compiler->type() == compiler_jvmci) {
+      assert(offsets->value(CodeOffsets::Deopt) != -1, "must have deopt entry");
+    } else {
+      assert(offsets->value(CodeOffsets::Deopt) == -1, "must not have a deopt entry");
+    }
 
     assert(compiler->type() == compiler_c2 ||
            offsets->value(CodeOffsets::Exceptions) != -1, "must have exception entry");

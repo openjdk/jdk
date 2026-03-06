@@ -22,12 +22,23 @@
  */
 
 /*
- * @test
+ * @test id=default
  * @bug 8067144
  * @summary -XX:+TraceDeoptimization tries to print realloc'ed objects even when there are none
  *
  * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+TraceDeoptimization
+ *                   compiler.uncommontrap.TraceDeoptimizationNoRealloc
+ */
+
+/*
+ * @test id=with-deopt-stub-code
+ * @summary -XX:+TraceDeoptimization tries to print realloc'ed objects even when there are none
+ *
+ * @requires os.arch=="aarch64"
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+TraceDeoptimization
+ *                   -XX:+AlwaysEmitDeoptStubCode
  *                   compiler.uncommontrap.TraceDeoptimizationNoRealloc
  */
 

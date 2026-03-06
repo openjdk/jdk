@@ -23,7 +23,7 @@
 
 
 /*
- * @test DeoptimizeMultipleOSRTest
+ * @test id=DeoptimizeMultipleOSRTest
  * @bug 8061817
  * @summary testing of WB::deoptimizeMethod()
  * @library /test/lib /
@@ -35,6 +35,24 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -XX:CompileCommand=compileonly,compiler.whitebox.DeoptimizeMultipleOSRTest::triggerOSR
+ *                   compiler.whitebox.DeoptimizeMultipleOSRTest
+ */
+
+/*
+ * @test id=DeoptimizeMultipleOSRTest-with-deopt-stub-code
+ * @summary testing of WB::deoptimizeMethod()
+ * @library /test/lib /
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ *
+ * @requires vm.opt.DeoptimizeALot != true
+ * @requires os.arch=="aarch64"
+ *
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -XX:+AlwaysEmitDeoptStubCode
  *                   -XX:CompileCommand=compileonly,compiler.whitebox.DeoptimizeMultipleOSRTest::triggerOSR
  *                   compiler.whitebox.DeoptimizeMultipleOSRTest
  */

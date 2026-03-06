@@ -284,7 +284,7 @@ void Compilation::emit_lir() {
 }
 
 
-void Compilation::emit_code_epilog(LIR_Assembler* assembler) {
+void Compilation::emit_code_epilog(LIR_Assembler* assembler, int frame_size_in_bytes) {
   CHECK_BAILOUT();
 
   CodeOffsets* code_offsets = assembler->offsets();
@@ -306,9 +306,13 @@ void Compilation::emit_code_epilog(LIR_Assembler* assembler) {
   code_offsets->set_value(CodeOffsets::Exceptions, assembler->emit_exception_handler());
   CHECK_BAILOUT();
 
-  // Generate code for deopt handler.
-  code_offsets->set_value(CodeOffsets::Deopt, assembler->emit_deopt_handler());
-  CHECK_BAILOUT();
+  assert (frame_size_in_bytes == align_up(frame_size_in_bytes, 1u << LogBytesPerWord), "required to be aligned to words");
+  if (AlwaysEmitDeoptStubCode
+      || (frame_size_in_bytes >> LogBytesPerWord) >= DeoptimizationBlob::UNPACK_SUBENTRY_COUNT) {
+    // Generate code for deopt handler.
+    code_offsets->set_value(CodeOffsets::Deopt, assembler->emit_deopt_handler());
+    CHECK_BAILOUT();
+  }
 
   // Emit the handler to remove the activation from the stack and
   // dispatch to the caller.
@@ -334,6 +338,8 @@ bool Compilation::setup_code_buffer(CodeBuffer* code, int call_stub_estimate) {
 
 
 int Compilation::emit_code_body() {
+  int frame_size_in_bytes = in_bytes(frame_map()->framesize_in_bytes());
+
   // emit code
   if (!setup_code_buffer(code(), allocator()->num_calls())) {
     BAILOUT_("size requested greater than avail code buffer size", 0);
@@ -348,7 +354,7 @@ int Compilation::emit_code_body() {
   lir_asm.emit_code(hir()->code());
   CHECK_BAILOUT_(0);
 
-  emit_code_epilog(&lir_asm);
+  emit_code_epilog(&lir_asm, frame_size_in_bytes);
   CHECK_BAILOUT_(0);
 
   generate_exception_handler_table();
@@ -360,7 +366,7 @@ int Compilation::emit_code_body() {
 #endif /* PRODUCT */
 
   _immediate_oops_patched = lir_asm.nr_immediate_oops_patched();
-  return frame_map()->framesize();
+  return frame_size_in_bytes;
 }
 
 
@@ -410,17 +416,16 @@ int Compilation::compile_java_method() {
   }
 }
 
-void Compilation::install_code(int frame_size) {
-  // frame_size is in 32-bit words so adjust it intptr_t words
-  assert(frame_size == frame_map()->framesize(), "must match");
-  assert(in_bytes(frame_map()->framesize_in_bytes()) % sizeof(intptr_t) == 0, "must be at least pointer aligned");
+void Compilation::install_code(ByteSize frame_size) {
+  assert(frame_size == frame_map()->framesize_in_bytes(), "must match");
+  assert(in_bytes(frame_size) % sizeof(intptr_t) == 0, "must be at least pointer aligned");
   _env->register_method(
     method(),
     osr_bci(),
     &_offsets,
     in_bytes(_frame_map->sp_offset_for_orig_pc()),
     code(),
-    in_bytes(frame_map()->framesize_in_bytes()) / sizeof(intptr_t),
+    in_bytes(frame_size) / sizeof(intptr_t),
     debug_info_recorder()->_oopmaps,
     exception_handler_table(),
     implicit_exception_table(),
@@ -468,7 +473,7 @@ void Compilation::compile_method() {
 #endif
 
   // compile method
-  int frame_size = compile_java_method();
+  ByteSize frame_size = in_ByteSize(compile_java_method());
 
   // bailout if method couldn't be compiled
   // Note: make sure we mark the method as not compilable!
