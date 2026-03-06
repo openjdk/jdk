@@ -34,16 +34,17 @@ import java.util.Random;
  * @summary Verify that URShift{I,L}Node::Ideal optimizes ((x << C) + y) >>> C
  *          regardless of Add input order, i.e. it is commutative w.r.t. the addition.
  * @library /test/lib /
- * @run driver ${test.main.class}
- * @run driver ${test.main.class} -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
- *              -XX:VerifyIterativeGVN=1110 -Xbatch -XX:CompileCommand=compileonly,${test.main.class}::*
+ * @run main ${test.main.class}
  */
 public class MissedURShiftIAddILShiftIdeal {
 
     private static final Random RANDOM = Utils.getRandomInstance();
 
     public static void main(String[] args) {
-        TestFramework.run();
+        var framework = new TestFramework();
+        framework.addScenarios(new Scenario(0));
+        framework.addScenarios(new Scenario(1, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:VerifyIterativeGVN=1110"));
+        framework.start();
     }
 
     @Run(test = {"testI", "testICommuted", "testIComputedY",
