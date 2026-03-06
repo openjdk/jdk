@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,8 +61,8 @@ public class TestCDSVMCrash {
             CDSTestUtils.executeAndLog(pb, "cds_vm_crash");
             throw new Error("Expected VM to crash");
         } catch(RuntimeException e) {
-            if (!e.getMessage().equals("Hotspot crashed")) {
-                throw new Error("Expected message: Hotspot crashed");
+            if (!e.getMessage().contains("A fatal error has been detected")) {
+                throw new Error("Expected message: A fatal error has been detected");
             }
         }
         System.out.println("PASSED");
