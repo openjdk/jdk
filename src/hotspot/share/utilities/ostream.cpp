@@ -611,15 +611,15 @@ void fileStream::write(const char* s, size_t len) {
   }
 }
 
-long fileStream::fileSize() {
-  long size = -1;
+int64_t fileStream::fileSize() {
+  int64_t size = -1;
   if (_file != nullptr) {
-    long pos = ::ftell(_file);
+    int64_t pos = os::ftell(_file);
     if (pos < 0) return pos;
-    if (::fseek(_file, 0, SEEK_END) == 0) {
-      size = ::ftell(_file);
+    if (os::fseek(_file, 0, SEEK_END) == 0) {
+      size = os::ftell(_file);
     }
-    ::fseek(_file, pos, SEEK_SET);
+    os::fseek(_file, pos, SEEK_SET);
   }
   return size;
 }
