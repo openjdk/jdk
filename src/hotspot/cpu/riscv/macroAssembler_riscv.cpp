@@ -5342,10 +5342,17 @@ void  MacroAssembler::set_narrow_klass(Register dst, Klass* k) {
   int index = oop_recorder()->find_index(k);
 
   narrowKlass nk = CompressedKlassPointers::encode(k);
+
+  bool needs_zext = ((int32_t)nk & 0x80000000) != 0;
+
   relocate(metadata_Relocation::spec(index), [&] {
     li32(dst, nk);
   });
-  zext(dst, dst, 32);
+
+  if (needs_zext) {
+    zext(dst, dst, 32);
+  }
+
 }
 
 address MacroAssembler::reloc_call(Address entry, Register tmp) {
