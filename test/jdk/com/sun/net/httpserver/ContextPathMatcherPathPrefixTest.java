@@ -23,21 +23,30 @@
 
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.URI;
+import java.net.Socket;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 
 import org.junit.jupiter.api.AfterAll;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -89,29 +98,88 @@ public class ContextPathMatcherPathPrefixTest {
 
     @Test
     void testContextPathAtRoot() throws Exception {
+        // Repeating all cases with both known (GET) and unknown (DOH) request methods to stress both paths
         try (var infra = new Infra("/")) {
-            infra.expect(200, "/foo", "/foo/", "/foo/bar", "/foobar");
+            // 200
+            infra.expect(200, "GET /foo");
+            infra.expect(200, "GET /foo/");
+            infra.expect(200, "GET /foo/bar");
+            infra.expect(200, "GET /foobar");
+            infra.expect(200, "DOH /foo");
+            infra.expect(200, "DOH /foo/");
+            infra.expect(200, "DOH /foo/bar");
+            infra.expect(200, "DOH /foobar");
+            // 404
+            infra.expect(404, "GET foo");
+            infra.expect(404, "GET *");
+            infra.expect(404, "GET ");
+            infra.expect(404, "DOH foo");
+            infra.expect(404, "DOH *");
+            infra.expect(404, "DOH ");
+            // 400
+            infra.expect(400, "GET");
+            infra.expect(400, "DOH");
         }
     }
 
     @Test
     void testContextPathAtSubDir() throws Exception {
+        // Repeating all cases with both known (GET) and unknown (DOH) request methods to stress both paths
         try (var infra = new Infra("/foo")) {
-            infra.expect(200, "/foo", "/foo/", "/foo/bar");
-            infra.expect(404, "/foobar");
+            // 200
+            infra.expect(200, "GET /foo");
+            infra.expect(200, "GET /foo/");
+            infra.expect(200, "GET /foo/bar");
+            infra.expect(200, "DOH /foo");
+            infra.expect(200, "DOH /foo/");
+            infra.expect(200, "DOH /foo/bar");
+            // 404
+            infra.expect(404, "GET /foobar"); // Differs from string prefix matching!
+            infra.expect(404, "GET foo");
+            infra.expect(404, "GET *");
+            infra.expect(404, "GET ");
+            infra.expect(404, "DOH /foobar"); // Differs from string prefix matching!
+            infra.expect(404, "DOH foo");
+            infra.expect(404, "DOH *");
+            infra.expect(404, "DOH ");
+            // 400
+            infra.expect(400, "GET");
+            infra.expect(400, "DOH");
         }
     }
 
     @Test
     void testContextPathAtSubDirWithTrailingSlash() throws Exception {
+        // Repeating all cases with both known (GET) and unknown (DOH) request methods to stress both paths
         try (var infra = new Infra("/foo/")) {
-            infra.expect(200, "/foo/", "/foo/bar");
-            infra.expect(404, "/foo", "/foobar");
+            // 200
+            infra.expect(200, "GET /foo/");
+            infra.expect(200, "GET /foo/bar");
+            infra.expect(200, "DOH /foo/");
+            infra.expect(200, "DOH /foo/bar");
+            // 404
+            infra.expect(404, "GET /foo");
+            infra.expect(404, "GET /foobar");
+            infra.expect(404, "GET foo");
+            infra.expect(404, "GET *");
+            infra.expect(404, "GET ");
+            infra.expect(404, "DOH /foo");
+            infra.expect(404, "DOH /foobar");
+            infra.expect(404, "DOH foo");
+            infra.expect(404, "DOH *");
+            infra.expect(404, "DOH ");
+            // 400
+            infra.expect(400, "GET");
+            infra.expect(400, "DOH");
         }
     }
 
     protected static final class Infra implements AutoCloseable {
 
+        /** Charset used for network and file I/O. */
+        private static final Charset CHARSET = StandardCharsets.US_ASCII;
+
+        /** Socket address the server will bind to. */
         private static final InetSocketAddress LO_SA_0 =
                 new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
 
@@ -128,20 +196,49 @@ public class ContextPathMatcherPathPrefixTest {
             this.contextPath = contextPath;
         }
 
-        protected void expect(int statusCode, String... requestPaths) throws Exception {
-            for (String requestPath : requestPaths) {
-                var requestURI = URI.create("http://%s:%s%s".formatted(
-                        server.getAddress().getHostString(),
-                        server.getAddress().getPort(),
-                        requestPath));
-                var request = HttpRequest.newBuilder(requestURI).build();
-                var response = CLIENT.send(request, HttpResponse.BodyHandlers.discarding());
-                assertEquals(
-                        statusCode, response.statusCode(),
-                        "unexpected status code " + Map.of(
-                                "contextPath", contextPath,
-                                "requestPath", requestPath));
+        protected void expect(int statusCode, String requestLinePrefix) {
+            try {
+                expect0(statusCode, requestLinePrefix);
+            } catch (Throwable exception) {
+                var extendedMessage = exception.getMessage() + " " + Map.of(
+                        "contextPath", contextPath,
+                        "requestLinePrefix", requestLinePrefix);
+                var extendedException = new RuntimeException(extendedMessage);
+                extendedException.setStackTrace(exception.getStackTrace());
+                throw extendedException;
             }
+        }
+
+        private void expect0(int statusCode, String requestLinePrefix) throws IOException {
+
+            // Connect to the server
+            try (Socket socket = new Socket()) {
+                socket.connect(server.getAddress());
+
+                // Obtain the I/O streams
+                try (OutputStream outputStream = socket.getOutputStream();
+                     InputStream inputStream = socket.getInputStream();
+                     BufferedReader inputReader = new BufferedReader(new InputStreamReader(inputStream, CHARSET))) {
+
+                    // Write the request
+                    byte[] requestBytes = String
+                            // `Connection: close` is required for `BufferedReader::readLine` to work.
+                            .format("%s HTTP/1.1\r\nConnection: close\r\n\r\n", requestLinePrefix)
+                            .getBytes(CHARSET);
+                    outputStream.write(requestBytes);
+                    outputStream.flush();
+
+                    // Read the response status code
+                    String statusLine = inputReader.readLine();
+                    assertNotNull(statusLine, "Unexpected EOF while reading status line");
+                    Matcher statusLineMatcher = Pattern.compile("^HTTP/1\\.1 (\\d+) .+$").matcher(statusLine);
+                    assertTrue(statusLineMatcher.matches(), "Couldn't match status line: \"" + statusLine + "\"");
+                    assertEquals(statusCode, Integer.parseInt(statusLineMatcher.group(1)));
+
+                }
+
+            }
+
         }
 
         @Override
