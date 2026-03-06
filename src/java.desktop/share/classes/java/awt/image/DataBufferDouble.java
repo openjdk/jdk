@@ -257,6 +257,7 @@ public final class DataBufferDouble extends DataBuffer {
      * @throws ArrayIndexOutOfBoundsException if {@code bank} is not a valid bank index.
      */
     public double[] getData(int bank) {
+        checkBank(bank);
         theTrackable.setUntrackable();
         return bankdata[bank];
     }

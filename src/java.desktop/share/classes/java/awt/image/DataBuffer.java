@@ -541,59 +541,72 @@ public abstract class DataBuffer {
         });
     }
 
+    final void checkBank(int bank) {
+        if (bank < 0 || bank >= banks) {
+            throw new ArrayIndexOutOfBoundsException("Bank index out of range " + bank);
+        }
+    }
+
     final void checkIndex(int i) {
-        if (i < 0) {
+        if ((i < 0) || ((offset + i) < i)) {
             throw new ArrayIndexOutOfBoundsException("Index cannot be negative : " + i);
         }
-        if ((i + offset) >= size) {
+        if (i >= size) {
             throw new ArrayIndexOutOfBoundsException("Invalid index (offset+i) is " +
                 "(" + offset + " + " + i + ") which is too large for size : " + size);
         }
     }
 
     final void checkIndex(int bank, int i) {
-        if (i < 0) {
+        if ((i < 0) || ((offsets[bank] + i) < i)) {
             throw new ArrayIndexOutOfBoundsException("Index cannot be negative : " + i);
         }
-        if ((i + offsets[bank]) >= size) {
+        // Don't need to include bank offset here since all constructors validated
+        // the offset for each bank against the size.
+        if (i >= size) {
             throw new ArrayIndexOutOfBoundsException("Invalid index (bankOffset+i) is " +
                 "(" + offsets[bank] + " + " + i + ") which is too large for size : " + size);
         }
     }
 
     // Checks used by subclass constructors.
-    static final void checkSize(int size) {
+    static void checkSize(int size) {
         if (size <= 0) {
             throw new IllegalArgumentException("Size must be > 0");
         }
     }
 
-    static final void checkNumBanks(int numBanks) {
+    static void checkNumBanks(int numBanks) {
         if (numBanks <= 0) {
             throw new IllegalArgumentException("Must have at least one bank");
         }
     }
 
-    static final void checkArraySize(int size, int arrayLen) {
-        if (size <= 0 || size > arrayLen) {
+    static void checkArraySize(int size, int arrayLen) {
+        if ((size <= 0) || (size > arrayLen)) {
             throw new IllegalArgumentException("Bad size : " + size);
         }
     }
 
-    static final void checkArraySize(int size, int offset, int arrayLen) {
-        if (size <= 0 || (size + offset) > arrayLen ||
-            (offset > 0) && ((size + offset) < size)) {
-            throw new IllegalArgumentException("Bad size/offset. Size = " + size +
-                " offset = " + offset + " bank length = " + arrayLen);
+    private static boolean checkSizeAndOffset(int size, int offset, int arrayLen) {
+        return
+            (size <= 0) ||
+            ((offset + size) <= 0) ||
+            ((offset + size) > arrayLen) ||
+            ((offset > 0) && ((offset + size ) < size));
+    }
+
+    static void checkArraySize(int size, int offset, int arrayLen) {
+        if (checkSizeAndOffset(size, offset, arrayLen)) {
+            throw new IllegalArgumentException("Bad size/offset." +
+                " Size = " + size + ", offset = " + offset + ", array length = " + arrayLen);
         }
     }
 
-    static final void checkBankSize(int bank, int size, int offset, int arrayLen) {
-        if ((arrayLen < (size + offset)) ||
-             ((offset > 0) && ((size + offset) < size))) {
-            throw new IllegalArgumentException("Bank too small for size + offset." +
-                " Bank index = " + bank + " bank length = " + arrayLen +
-                " size = " + size + " bank offset = " + offset);
+    static void checkBankSize(int bankIndex, int size, int offset, int arrayLen) {
+        if (checkSizeAndOffset(size, offset, arrayLen)) {
+            throw new IllegalArgumentException("Bad size/offset for bank " + bankIndex + "." +
+                " Size = " + size + ", offset = " + offset + ", array length = " + arrayLen);
         }
     }
 }

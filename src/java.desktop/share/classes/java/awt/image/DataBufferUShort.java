@@ -263,6 +263,7 @@ public final class DataBufferUShort extends DataBuffer
      * @throws ArrayIndexOutOfBoundsException if {@code bank} is not a valid bank index.
      */
     public short[] getData(int bank) {
+        checkBank(bank);
         theTrackable.setUntrackable();
         return bankdata[bank];
     }

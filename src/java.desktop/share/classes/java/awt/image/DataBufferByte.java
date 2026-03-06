@@ -262,6 +262,7 @@ public final class DataBufferByte extends DataBuffer
      * @throws ArrayIndexOutOfBoundsException if {@code bank} is not a valid bank index.
      */
     public byte[] getData(int bank) {
+        checkBank(bank);
         theTrackable.setUntrackable();
         return bankdata[bank];
     }
