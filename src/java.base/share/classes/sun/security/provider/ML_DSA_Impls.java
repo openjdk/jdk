@@ -27,11 +27,15 @@ package sun.security.provider;
 
 import sun.security.jca.JCAUtil;
 import sun.security.pkcs.NamedPKCS8Key;
+import sun.security.util.DerOutputStream;
 import sun.security.util.KeyChoices;
+import sun.security.util.KnownOIDs;
+import sun.security.util.ObjectIdentifier;
 import sun.security.x509.NamedX509Key;
 
 import java.security.*;
 import java.security.SecureRandom;
+import java.security.spec.AlgorithmParameterSpec;
 import java.util.Arrays;
 
 public class ML_DSA_Impls {
@@ -54,17 +58,6 @@ public class ML_DSA_Impls {
                 npk.getParams().getName(),
                 dsa.pkEncode(dsa.privKeyToPubKey(dsa.skDecode(npk.getExpanded()))));
     }
-
-    public enum Version {
-        DRAFT, FINAL
-    }
-
-    // This implementation works in FIPS 204 final. If for some reason
-    // (for example, interop with an old version, or running an old test),
-    // set the version to an older one. The following VM option is required:
-    //
-    // --add-exports java.base/sun.security.provider=ALL-UNNAMED
-    public static Version version = Version.FINAL;
 
     static int name2int(String pname) {
         if (pname.endsWith("44")) {
@@ -192,47 +185,94 @@ public class ML_DSA_Impls {
         }
     }
 
-    public sealed static class SIG extends NamedSignature permits SIG2, SIG3, SIG5 {
+    public sealed static class SIG extends NamedSignature
+            permits SIG2, SIG3, SIG5 {
+
+        private boolean isInternal = false;
+        private boolean isDeterministic = false;
+        private boolean useExternalMu = false;
+
         public SIG() {
             super("ML-DSA", new KF());
         }
+
         public SIG(String pname) {
             super("ML-DSA", new KF(pname));
         }
 
         @Override
-        protected byte[] implSign(String pname, byte[] skBytes,
-                                  Object sk2, byte[] msg, SecureRandom sr) {
-            var size = name2int(pname);
-            var r = sr != null ? sr : JCAUtil.getDefSecureRandom();
-            byte[] rnd = new byte[32];
-            r.nextBytes(rnd);
-            var mlDsa = new ML_DSA(size);
-            if (version == Version.FINAL) {
-                // FIPS 204 Algorithm 2 ML-DSA.Sign prepend {0, len(ctx)}
-                // to message before passing it to Sign_internal.
-                var m = new byte[msg.length + 2];
-                System.arraycopy(msg, 0, m, 2, msg.length); // len(ctx) = 0
-                msg = m;
+        protected void engineSetParameter(AlgorithmParameterSpec params)
+                throws InvalidAlgorithmParameterException {
+            super.engineSetParameter(params);
+            isInternal = isDeterministic = useExternalMu = false;
+            for (var f : sps.features()) {
+                switch (f) {
+                    case "internal" -> isInternal = true;
+                    case "deterministic" -> isDeterministic = true;
+                    case "externalMu" -> useExternalMu = true;
+                    default -> throw new InvalidAlgorithmParameterException(
+                            "Unknown feature: " + f);
+                }
             }
-            ML_DSA.ML_DSA_Signature sig = mlDsa.signInternal(msg, rnd, skBytes);
+            if (!isInternal && useExternalMu) {
+                throw new InvalidAlgorithmParameterException(
+                        "externalMu requires internal");
+            }
+        }
+
+        private byte[] m(byte[] msg) {
+            if (isInternal) {
+                return msg;
+            }
+            var ctxLen = sps.context() != null ? sps.context().length : 0;
+            var oid = new byte[0];
+            if (sps.preHash() != null) {
+                oid = new DerOutputStream().putOID(ObjectIdentifier.of(
+                        KnownOIDs.findMatch(sps.preHash()))).toByteArray();
+            }
+            var m = new byte[msg.length + 2 + ctxLen + oid.length];
+            m[0] = sps.preHash() != null ? (byte)1 : (byte)0;
+            m[1] = (byte) ctxLen;
+            if (ctxLen > 0) {
+                System.arraycopy(sps.context(), 0, m, 2, ctxLen);
+            }
+            if (oid.length > 0) {
+                System.arraycopy(oid, 0, m, ctxLen + 2, oid.length);
+            }
+            System.arraycopy(msg, 0, m, ctxLen + 2 + oid.length, msg.length);
+            return m;
+        }
+
+        @Override
+        protected byte[] implSign(String pname, byte[] skBytes, Object sk2,
+                byte[] msg, SecureRandom sr) throws SignatureException {
+            byte[] rnd = new byte[32];
+            if (!isDeterministic) {
+                var r = sr != null ? sr : JCAUtil.getDefSecureRandom();
+                r.nextBytes(rnd);
+            }
+            if (useExternalMu && msg.length != 64) {
+                throw new SignatureException(
+                        "input must be 64 bytes in externalMu mode");
+            }
+            var size = name2int(pname);
+            var mlDsa = new ML_DSA(size);
+            ML_DSA.ML_DSA_Signature sig = mlDsa.signInternal(
+                    useExternalMu, m(msg), rnd, skBytes);
             return mlDsa.sigEncode(sig);
         }
 
         @Override
         protected boolean implVerify(String pname, byte[] pkBytes,
-                                     Object pk2, byte[] msg, byte[] sigBytes)
+                Object pk2, byte[] msg, byte[] sigBytes)
                 throws SignatureException {
+            if (useExternalMu && msg.length != 64) {
+                throw new SignatureException(
+                        "input must be 64 bytes in externalMu mode");
+            }
             var size = name2int(pname);
             var mlDsa = new ML_DSA(size);
-            if (version == Version.FINAL) {
-                // FIPS 204 Algorithm 3 ML-DSA.Verify prepend {0, len(ctx)}
-                // to message before passing it to Verify_internal.
-                var m = new byte[msg.length + 2];
-                System.arraycopy(msg, 0, m, 2, msg.length); // len(ctx) = 0
-                msg = m;
-            }
-            return mlDsa.verifyInternal(pkBytes, msg, sigBytes);
+            return mlDsa.verifyInternal(pkBytes, useExternalMu, m(msg), sigBytes);
         }
 
         @Override
