@@ -477,6 +477,12 @@ struct lib_info *find_lib_by_address(struct ps_prochandle* ph, uintptr_t pc) {
   return NULL;
 }
 
+#ifdef __aarch64__
+bool pac_enabled(struct ps_prochandle* ph) {
+  return ph->pac_enabled;
+}
+#endif
+
 //--------------------------------------------------------------------------
 // proc service functions
 

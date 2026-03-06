@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,6 +118,10 @@ const char* symbol_for_pc(struct ps_prochandle* ph, uintptr_t addr, uintptr_t* p
 struct ps_prochandle* get_proc_handle(JNIEnv* env, jobject this_obj);
 
 void throw_new_debugger_exception(JNIEnv* env, const char* errMsg);
+
+#ifdef __aarch64__
+bool pac_enabled(struct ps_prochandle* ph);
+#endif
 
 #ifdef __cplusplus
 }

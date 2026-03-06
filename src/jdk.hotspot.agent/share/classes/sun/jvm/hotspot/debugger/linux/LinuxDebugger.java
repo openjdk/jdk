@@ -33,12 +33,17 @@ import sun.jvm.hotspot.debugger.cdbg.*;
     by the architecture-specific subpackages. */
 
 public interface LinuxDebugger extends JVMDebugger {
-  // SIGHANDLER_NAMES holds the name of signal handler.
-  public static final List<String> SIGHANDLER_NAMES = List.of(
+  // SIGTRAMP_NAMES holds the name of signal trampoline.
+  public static final List<String> SIGTRAMP_NAMES = List.of(
     // For AMD64
     //   - sysdeps/unix/sysv/linux/x86_64/libc_sigaction.c in glibc
     //   - gdb/amd64-linux-tdep.c in GDB
-    "__restore_rt"
+    "__restore_rt",
+
+    // For AArch64
+    //   - arch/arm64/kernel/vdso/vdso.lds.S in Linux kernel
+    "__kernel_rt_sigreturn",
+    "VDSO_sigtramp"
   );
 
   public String       addressValueToString(long address) throws DebuggerException;
