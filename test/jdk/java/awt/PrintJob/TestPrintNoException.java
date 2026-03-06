@@ -46,22 +46,23 @@ public class TestPrintNoException {
             robot.keyRelease(KeyEvent.VK_ENTER);
             robot.waitForIdle();
         });
-        Toolkit tk = Toolkit.getDefaultToolkit();
-        PrintJob pj = null;
 
         int[][] pageRange = new int[][]{new int[]{1,1}};
         JobAttributes ja = new JobAttributes(1,
                 java.awt.JobAttributes.DefaultSelectionType.ALL,
-                JobAttributes.DestinationType.PRINTER, JobAttributes.DialogType.NATIVE,
+                JobAttributes.DestinationType.PRINTER,
+                JobAttributes.DialogType.NATIVE,
                 null, Integer.MAX_VALUE, 1,
                 JobAttributes.MultipleDocumentHandlingType.SEPARATE_DOCUMENTS_UNCOLLATED_COPIES,
-                 pageRange, "", JobAttributes.SidesType.ONE_SIDED);
+                pageRange, "", JobAttributes.SidesType.ONE_SIDED);
 
         Frame testFrame = new Frame("print");
         try {
-            if (tk != null) {
-                t.start();
-                pj = tk.getPrintJob(testFrame, null, ja, null);
+            t.start();
+            PrintJob pj = Toolkit.getDefaultToolkit().getPrintJob(testFrame,
+                                                             null, ja, null);
+            if (pj != null) {
+                pj.end();
             }
         } finally {
             testFrame.dispose();
