@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,6 +90,7 @@ ciConstant ciArray::element_value_impl(BasicType elembt,
 // Current value of an element.
 // Returns T_ILLEGAL if there is no element at the given index.
 ciConstant ciArray::element_value(int index) {
+  assert(index >= 0, "out-of-bounds index: %d", index);
   BasicType elembt = element_basic_type();
   ciConstant value = check_constant_value_cache(index, elembt);
   if (value.is_valid()) {

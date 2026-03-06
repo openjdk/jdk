@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -434,6 +434,21 @@ intptr_t oopDesc::identity_hash() {
     return mrk.hash();
   } else {
     return slow_identity_hash();
+  }
+}
+
+// Returns the identity hash if it is present (doesn't compute it).
+intptr_t oopDesc::fast_identity_hash_or_no_hash() {
+  // Note: The mark must be read into local variable to avoid concurrent updates.
+  markWord mrk = mark_acquire();
+  assert(!mrk.is_marked(), "should never be marked");
+  // Fast case: if the object is unlocked and the hash value is set, no locking is needed to read it.
+  // If UseObjectMonitorTable is set, the hash can simply be installed in the
+  // object header, since the monitor isn't in the object header.
+  if (UseObjectMonitorTable || !mrk.has_monitor()) {
+    return mrk.hash();
+  } else {
+    return markWord::no_hash;
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -313,6 +313,9 @@ class oopDesc {
   inline intptr_t identity_hash();
   intptr_t slow_identity_hash();
   inline bool fast_no_hash_check();
+
+  // identity hash; returns the identity hash key if it is present (doesn't compute it)
+  inline intptr_t fast_identity_hash_or_no_hash();
 
   // marks are forwarded to stack when object is locked
   inline bool     has_displaced_mark() const;

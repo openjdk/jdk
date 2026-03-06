@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,16 +63,18 @@ private:
   class ConstantValue {
     private:
       ciConstant _value;
-      int _off;
+      int _key;
 
     public:
-      ConstantValue() : _value(ciConstant()), _off(0) { }
-      ConstantValue(int off, ciConstant value) : _value(value), _off(off) { }
+      ConstantValue() : _value(ciConstant()), _key(0) { }
+      ConstantValue(int key, ciConstant value) : _value(value), _key(key) { }
 
-      int off() const { return _off; }
+      int key() const { return _key; }
       ciConstant value() const { return _value; }
   };
 
+  // The reserved key for identity hash code
+  static constexpr int IdentityHashKey = -1;
   GrowableArray<ConstantValue>* _constant_values = nullptr;
 
 protected:
@@ -113,8 +115,9 @@ public:
   jobject constant_encoding();
 
   // Access to the constant value cache
-  ciConstant check_constant_value_cache(int off, BasicType bt);
-  void add_to_constant_value_cache(int off, ciConstant val);
+  // Key must be nonnegative. Negative keys are reserved.
+  ciConstant check_constant_value_cache(int key, BasicType bt);
+  void add_to_constant_value_cache(int key, ciConstant val);
 
   virtual bool is_object() const            { return true; }
 
@@ -182,6 +185,8 @@ public:
     assert(is_type_array(), "bad cast");
     return (ciTypeArray*)this;
   }
+
+  ciConstant identity_hash();
 
   // Print debugging output about this ciObject.
   void print(outputStream* st);
