@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -318,9 +319,8 @@ public class TestMemorySession {
         assertEquals(sessionImpl.isCloseableBy(otherThread), isCloseableByOther);
     }
 
-    /**
-     * Test that a thread failing to acquire a scope will not observe it as alive afterwards.
-     */
+
+    // Test that a thread failing to acquire a scope will not observe it as alive afterwards.
     @Test
     public void testAcquireCloseRace() throws InterruptedException {
         int iteration = 1000;
@@ -362,8 +362,9 @@ public class TestMemorySession {
             for (int i = 0; i < iteration;) {
                 MemorySessionImpl scope = scopes[i];
                 while (true) {
+                    int ticket = 0;
                     try {
-                        scope.acquire0();
+                        ticket = scope.acquire0();
                     } catch (IllegalStateException e) {
                         // The scope has been closed, proceed to the next iteration
                         if (scope.isAlive()) {
@@ -372,7 +373,7 @@ public class TestMemorySession {
                         break;
                     }
                     // Release and try again
-                    scope.release0();
+                    scope.release0(ticket);
                 }
                 // Proceed to the next iteration
                 i = lock.getAndAdd(1) + 1;
@@ -384,6 +385,159 @@ public class TestMemorySession {
         t1.join();
         t2.join();
         assertFalse(result[0]);
+    }
+
+    @Test
+    public void testTickets() {
+        Arena arena = Arena.ofShared();
+        var sessionImpl = ((MemorySessionImpl) arena.scope());
+        int ticket = sessionImpl.acquire0();
+
+        assertFalse(sessionImpl.isCloseable());
+
+        sessionImpl.release0(ticket);
+        assertTrue(sessionImpl.isCloseable());
+        assertThrows(IllegalStateException.class, () -> sessionImpl.release0(ticket));
+
+        sessionImpl.close();
+        assertThrows(IllegalStateException.class, () -> sessionImpl.acquire0());
+        assertTrue(sessionImpl.isCloseable());
+    }
+
+    @Test
+    public void testTicketsCrossThreads() throws InterruptedException {
+        Arena arena = Arena.ofShared();
+        var sessionImpl = ((MemorySessionImpl) arena.scope());
+        int[] tickets = new int[N_THREADS];
+        Thread[] threads = new Thread[N_THREADS];
+
+        for (int counter = 0; counter < N_THREADS; counter++) {
+            threads[counter] = new Thread(new AcquireWork(counter, sessionImpl, tickets));
+            threads[counter].start();
+        }
+
+        for (int i = 0; i < N_THREADS; i++) {
+            threads[i].join();
+        }
+
+        assertFalse(sessionImpl.isCloseable());
+
+        try {
+            for (int i = 0; i < N_THREADS; i++) {
+                sessionImpl.release0(tickets[i]);
+            }
+        } catch (IllegalStateException e) {
+            fail();
+        }
+
+        assertTrue(sessionImpl.isCloseable());
+
+        try {
+            sessionImpl.close();
+        } catch (IllegalStateException e) {
+            fail();
+        }
+    }
+
+    static class AcquireWork implements Runnable {
+        int counter;
+        MemorySessionImpl sessionImpl;
+        int tickets[];
+
+        AcquireWork(int counter, MemorySessionImpl sessionImpl, int[] tickets) {
+            this.counter = counter;
+            this.sessionImpl = sessionImpl;
+            this.tickets = tickets;
+        }
+
+        public void run() {
+            tickets[counter] = sessionImpl.acquire0();
+            assertFalse(sessionImpl.isCloseable());
+        }
+    }
+
+    // Check that a scope is either closed and an acquire fails, or the
+    // close fails and the acquire and release are successful.
+    @Test
+    public void testAcquireReleaseCloseRace() throws InterruptedException {
+        boolean acquireLose = false;
+        boolean closeLose = false;
+
+        while (true) {
+            boolean closeLost = false;
+
+            Arena arena = Arena.ofShared();
+            MemorySessionImpl sessionImpl = ((MemorySessionImpl) arena.scope());
+
+            int nthreads = 4;
+            AcquireReleaseLoop[] arls = new AcquireReleaseLoop[nthreads];
+            Thread[] threads = new Thread[nthreads];
+
+            for (int i = 0; i < nthreads; i++) {
+                arls[i] = new AcquireReleaseLoop(sessionImpl);
+                threads[i] = new Thread(arls[i]);
+                threads[i].start();
+            }
+            Thread.sleep(100);
+
+            try {
+                sessionImpl.close();
+                assertFalse(sessionImpl.isAlive());
+            } catch (IllegalStateException e) {
+                assertTrue(sessionImpl.isAlive());
+                closeLost = true;
+            }
+
+            closeLose |= closeLost;
+            for (int i = 0; i < nthreads; i++) {
+                arls[i].loop = false;
+                threads[i].join();
+
+                // Both cannot fail simultaneously.
+                if (arls[i].acquireLose) {
+                    assertFalse(closeLost);
+                } else if (closeLost) {
+                    assertFalse(arls[i].acquireLose);
+                }
+
+                acquireLose |= arls[i].acquireLose;
+            }
+
+            if (acquireLose && closeLose) {
+                break;
+            }
+        }
+    }
+
+    static class AcquireReleaseLoop implements Runnable {
+        MemorySessionImpl sessionImpl;
+        boolean acquireLose;
+        volatile boolean loop = true;
+        String message = null;
+
+        AcquireReleaseLoop(MemorySessionImpl sessionImpl) {
+            this.sessionImpl = sessionImpl;
+        }
+
+        public void run() {
+            while (loop) {
+                int ticket = 0;
+                try {
+                    ticket = sessionImpl.acquire0();
+                } catch (IllegalStateException e) {
+                    assertFalse(sessionImpl.isAlive());
+                    acquireLose = true;
+                    break;
+                }
+
+                try {
+                    sessionImpl.release0(ticket);
+                } catch (IllegalStateException e) {
+                    fail();
+                    break;
+                }
+            }
+        }
     }
 
     private void waitSomeTime() {
@@ -412,8 +566,8 @@ public class TestMemorySession {
 
     private void keepAlive(Arena child, Arena parent) {
         MemorySessionImpl parentImpl = MemorySessionImpl.toMemorySession(parent);
-        parentImpl.acquire0();
-        addCloseAction(child, parentImpl::release0);
+        final int ticket = parentImpl.acquire0();
+        addCloseAction(child, () -> {parentImpl.release0(ticket); });
     }
 
     private void addCloseAction(Arena session, Runnable action) {
