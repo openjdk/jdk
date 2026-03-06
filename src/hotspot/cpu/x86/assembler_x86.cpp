@@ -15485,20 +15485,14 @@ void Assembler::leaq(Register dst, Address src) {
   emit_operand(dst, src, 0);
 }
 
-void Assembler::mov64(Register dst, int64_t imm64) {
-  if (is_uimm32(imm64)) {
-    movl(dst, (int32_t) imm64);
-  } else if (is_simm32(imm64)) {
-    movq(dst, (int32_t) imm64);
-  } else {
-    InstructionMark im(this);
-    int encode = prefixq_and_encode(dst->encoding());
-    emit_int8(0xB8 | encode);
-    emit_int64(imm64);
-  }
+void Assembler::movabs(Register dst, int64_t imm64) {
+  InstructionMark im(this);
+  int encode = prefixq_and_encode(dst->encoding());
+  emit_int8(0xB8 | encode);
+  emit_int64(imm64);
 }
 
-void Assembler::mov64(Register dst, int64_t imm64, relocInfo::relocType rtype, int format) {
+void Assembler::movabs(Register dst, int64_t imm64, relocInfo::relocType rtype, int format) {
   InstructionMark im(this);
   int encode = prefixq_and_encode(dst->encoding());
   emit_int8(0xB8 | encode);
