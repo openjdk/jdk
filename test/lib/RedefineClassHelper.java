@@ -107,7 +107,7 @@ public class RedefineClassHelper {
      * Main method to be invoked before test to create the redefineagent.jar
      */
     public static void main(String[] args) throws Exception {
-        String manifest = "Premain-Class: RedefineClassHelper\nCan-Redefine-Classes: true\n";
+        String manifest = "Premain-Class: RedefineClassHelper\nCan-Redefine-Classes: true\nCan-Retransform-Classes: true\n";
         ClassFileInstaller.writeJar("redefineagent.jar", ClassFileInstaller.Manifest.fromString(manifest), "RedefineClassHelper");
     }
 }
