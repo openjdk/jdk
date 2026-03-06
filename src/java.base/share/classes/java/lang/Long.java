@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -514,46 +515,17 @@ public final class Long extends Number
      */
     public static long parseLong(String s, int radix)
                 throws NumberFormatException {
+        if (radix == 10) {
+            return parseLong(s);
+        }
+        return parseLong0(s, radix);
+    }
+
+    private static long parseLong0(String s, int radix) {
         if (s == null) {
-            throw new NumberFormatException("Cannot parse null string");
+            throw NumberFormatException.nullInput();
         }
-
-        if (radix < Character.MIN_RADIX) {
-            throw new NumberFormatException(String.format(
-                "radix %s less than Character.MIN_RADIX", radix));
-        }
-
-        if (radix > Character.MAX_RADIX) {
-            throw new NumberFormatException(String.format(
-                "radix %s greater than Character.MAX_RADIX", radix));
-        }
-
-        int len = s.length();
-        if (len == 0) {
-            throw NumberFormatException.forInputString("", radix);
-        }
-        int digit = ~0xFF;
-        int i = 0;
-        char firstChar = s.charAt(i++);
-        if (firstChar != '-' && firstChar != '+') {
-            digit = digit(firstChar, radix);
-        }
-        if (digit >= 0 || digit == ~0xFF && len > 1) {
-            long limit = firstChar != '-' ? MIN_VALUE + 1 : MIN_VALUE;
-            long multmin = limit / radix;
-            long result = -(digit & 0xFF);
-            boolean inRange = true;
-            /* Accumulating negatively avoids surprises near MAX_VALUE */
-            while (i < len && (digit = digit(s.charAt(i++), radix)) >= 0
-                    && (inRange = result > multmin
-                        || result == multmin && digit <= (int) (radix * multmin - limit))) {
-                result = radix * result - digit;
-            }
-            if (inRange && i == len && digit >= 0) {
-                return firstChar != '-' ? -result : result;
-            }
-        }
-        throw NumberFormatException.forInputString(s, radix);
+        return parseLong(s, 0, s.length(), radix);
     }
 
     /**
@@ -657,7 +629,44 @@ public final class Long extends Number
      *             parsable {@code long}.
      */
     public static long parseLong(String s) throws NumberFormatException {
-        return parseLong(s, 10);
+        int len;
+        byte[] value;
+        if (s == null || (len = (value = s.value()).length) == 0 || !s.isLatin1()) {
+            return parseLong0(s, 10);
+        }
+        /* Accumulating negatively avoids surprises near MAX_VALUE */
+        int fc = value[0];
+        long result = Integer.isDigitLatin1(fc)
+                ? '0' - fc
+                : len != 1 && (fc == '-' || fc == '+')
+                ? 0
+                : 1;  // or any value > 0
+        int i = 1;
+        int d;
+        // Inline digit2 logic to avoid method call and lookup table
+        while (i + 1 < len) {
+            byte c0 = value[i];
+            byte c1 = value[i + 1];
+            // Check if both characters are digits (0-9)
+            if (c0 < '0' || c0 > '9' || c1 < '0' || c1 > '9') break;
+            if (result < MIN_VALUE / 100 || result > 0) break;
+            // Calculate two-digit value inline without lookup table
+            d = (c0 - '0') * 10 + (c1 - '0');
+            result = result * 100 - d;  // overflow from d => result > 0
+            i += 2;
+        }
+        if (i < len
+                && (d = value[i] - '0') >= 0 && d <= 9
+                && result >= MIN_VALUE / 10 && result <= 0) {
+            result = result * 10 - d;  // overflow from d => result > 0
+            i += 1;
+        }
+        if (i == len
+                & result <= 0
+                & (MIN_VALUE < result || fc == '-')) {
+            return fc == '-' ? result : -result;
+        }
+        throw NumberFormatException.forInputString(s);
     }
 
     /**
