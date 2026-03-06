@@ -199,13 +199,19 @@ void JVMCICompiler::print_timers() {
   _hosted_code_installs.print_on(tty, "       Install Code:   ");
 }
 
-bool JVMCICompiler::is_intrinsic_supported(const methodHandle& method) {
-  vmIntrinsics::ID id = method->intrinsic_id();
+bool JVMCICompiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
   JavaThread* thread = JavaThread::current();
   JVMCIEnv jvmciEnv(thread, __FILE__, __LINE__);
   JVMCIRuntime* runtime = JVMCI::compiler_runtime(thread, false);
   return runtime->is_intrinsic_supported(&jvmciEnv, (jint) id);
+}
+
+bool JVMCICompiler::is_intrinsic_supported(vmIntrinsics::ID id,
+                                           vmIntrinsics::MemoryOrder mo,
+                                           BasicType bt,
+                                           vmIntrinsics::BitsOperation op) {
+  return is_intrinsic_supported(id);
 }
 
 void JVMCICompiler::CodeInstallStats::print_on(outputStream* st, const char* prefix) const {

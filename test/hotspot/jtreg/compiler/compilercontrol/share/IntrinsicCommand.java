@@ -35,7 +35,7 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 
 public class IntrinsicCommand extends AbstractTestBase {
-    public static String[] VALID_INTRINSIC_SAMPLES = {"+_fabs", "-_maxF", "+_newArray", "-_isDigit", "+_putInt"};
+    public static String[] VALID_INTRINSIC_SAMPLES = {"+_fabs", "-_maxF", "+_newArray", "-_isDigit", "+_loadFence"};
     public static String[] INVALID_INTRINSIC_SAMPLES = {"+fabs", "-maxF"};
 
     public static class IntrinsicId {
