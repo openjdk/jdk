@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,17 @@
  * @bug 8023878
  * @summary Test that the right kind of exception is thrown from the type
  *          annotation reflection code.
- * @run testng BadCPIndex
+ * @run junit BadCPIndex
  */
 
 import java.lang.annotation.*;
 import java.util.Base64;
 import java.util.function.Function;
 
-import org.testng.annotations.Test;
-import org.testng.annotations.DataProvider;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class BadCPIndex {
     private static final  MyLoader loader = new MyLoader(BadCPIndex.class.getClassLoader());
@@ -57,21 +59,13 @@ public class BadCPIndex {
         { new Case("BadCPIndex$E", encodedBrokenE, Class::getAnnotatedSuperclass) },
     };
 
-    @DataProvider
     public static Object[][] data() { return cases; }
 
-    @Test(dataProvider="data")
-    public static void testOpThrowsAFE(Case testCase) {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void testOpThrowsAFE(Case testCase) {
         Class<?> c = loader.defineClass(testCase.name, Base64.getDecoder().decode(testCase.encoding));
-        try {
-            System.out.println("Testing: " + c);
-            testCase.trigger.apply(c);
-            throw new RuntimeException("Expecting AnnotationFormatError here");
-        } catch (AnnotationFormatError e) {
-            ; //ok
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        assertThrows(AnnotationFormatError.class, () -> testCase.trigger.apply(c), "Testing " + c);
     }
 
     private static class MyLoader extends ClassLoader {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,8 @@
  * @summary Test that a call to getType() on an AnnotatedType returned from an
  *          Executable.getAnnotated* returns the same type as the corresponding
  *          Executable.getGeneric* call.
- * @run testng TestExecutableGetAnnotatedType
+ * @run junit TestExecutableGetAnnotatedType
  */
-
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.lang.annotation.*;
 import java.lang.reflect.*;
@@ -40,57 +37,69 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class TestExecutableGetAnnotatedType {
-    @Test(dataProvider = "genericExecutableData")
+    @ParameterizedTest
+    @MethodSource("genericExecutableData")
     public void testGenericMethodExceptions(Executable e) throws Exception {
         testExceptions(e);
     }
 
-    @Test(dataProvider = "executableData")
+    @ParameterizedTest
+    @MethodSource("executableData")
     public void testMethodExceptions(Executable e) throws Exception {
         testExceptions(e);
     }
 
-    @Test(dataProvider = "genericExecutableData")
+    @ParameterizedTest
+    @MethodSource("genericExecutableData")
     public void testGenericMethodParameterTypes(Executable e) throws Exception {
         testMethodParameters(e);
     }
 
-    @Test(dataProvider = "executableData")
+    @ParameterizedTest
+    @MethodSource("executableData")
     public void testMethodParameterTypes(Executable e) throws Exception {
         testMethodParameters(e);
     }
 
-    @Test(dataProvider = "genericExecutableData")
+    @ParameterizedTest
+    @MethodSource("genericExecutableData")
     public void testGenericParameterTypes(Executable e) throws Exception {
         testParameters(e.getParameters());
     }
 
-    @Test(dataProvider = "executableData")
+    @ParameterizedTest
+    @MethodSource("executableData")
     public void testParameterTypes(Executable e) throws Exception {
         testParameters(e.getParameters());
     }
 
-    @Test(dataProvider = "genericMethodData")
+    @ParameterizedTest
+    @MethodSource("genericMethodData")
     public void testGenericReceiverType(Executable e) throws Exception {
         testParameterizedReceiverType0(e);
     }
 
-    @Test(dataProvider = "methodData")
+    @ParameterizedTest
+    @MethodSource("methodData")
     public void testReceiverType(Executable e) throws Exception {
         testReceiverType0(e);
     }
 
-    @Test(dataProvider = "genericMethodData")
+    @ParameterizedTest
+    @MethodSource("genericMethodData")
     public void testGenericMethodReturnType(Object o) throws Exception {
         // testng gets confused if the param to this method has type Method
         Method m = (Method)o;
         testReturnType(m);
     }
 
-    @Test(dataProvider = "methodData")
+    @ParameterizedTest
+    @MethodSource("methodData")
     public void testMethodReturnType(Object o) throws Exception {
         // testng gets confused if the param to this method has type Method
         Method m = (Method)o;
@@ -100,7 +109,7 @@ public class TestExecutableGetAnnotatedType {
     private void testExceptions(Executable e) {
         Type[] ts = e.getGenericExceptionTypes();
         AnnotatedType[] ats = e.getAnnotatedExceptionTypes();
-        assertEquals(ts.length, ats.length);
+        assertEquals(ats.length, ts.length);
 
         for (int i = 0; i < ts.length; i++) {
             Type t = ts[i];
@@ -112,7 +121,7 @@ public class TestExecutableGetAnnotatedType {
     private void testMethodParameters(Executable e) {
         Type[] ts = e.getGenericParameterTypes();
         AnnotatedType[] ats = e.getAnnotatedParameterTypes();
-        assertEquals(ts.length, ats.length);
+        assertEquals(ats.length, ts.length);
 
         for (int i = 0; i < ts.length; i++) {
             Type t = ts[i];
@@ -151,20 +160,17 @@ public class TestExecutableGetAnnotatedType {
         assertSame(at.getType(), t, m.toString() + ": T: " + t + ", AT: " + at + ", AT.getType(): " + at.getType() + "\n");
     }
 
-    @DataProvider
-    public Object[][] methodData() throws Exception {
+    public static Object[][] methodData() throws Exception {
         return filterData(Arrays.stream(Methods1.class.getMethods()), Methods1.class)
             .toArray(new Object[0][0]);
     }
 
-    @DataProvider
-    public Object[][] genericMethodData()  throws Exception {
+    public static Object[][] genericMethodData() throws Exception {
         return filterData(Arrays.stream(GenericMethods1.class.getMethods()), GenericMethods1.class)
             .toArray(new Object[0][0]);
     }
 
-    @DataProvider
-    public Object[][] executableData() throws Exception {
+    public static Object[][] executableData() throws Exception {
     @SuppressWarnings("raw")
         List l = filterData(Arrays.stream(Methods1.class.getMethods()), Methods1.class);
         l.addAll(filterData(Arrays.stream(Methods1.class.getConstructors()), Methods1.class));
@@ -172,8 +178,7 @@ public class TestExecutableGetAnnotatedType {
         return ((List<Object[][]>)l).toArray(new Object[0][0]);
     }
 
-    @DataProvider
-    public Object[][] genericExecutableData() throws Exception {
+    public static Object[][] genericExecutableData() throws Exception {
     @SuppressWarnings("raw")
         List l = filterData(Arrays.stream(GenericMethods1.class.getMethods()), GenericMethods1.class);
         l.addAll(filterData(Arrays.stream(GenericMethods1.class.getConstructors()), GenericMethods1.class));
@@ -181,7 +186,7 @@ public class TestExecutableGetAnnotatedType {
         return ((List<Object[][]>)l).toArray(new Object[0][0]);
     }
 
-    private List<?> filterData(Stream<? extends Executable> l, Class<?> c) {
+    private static List<?> filterData(Stream<? extends Executable> l, Class<?> c) {
         return l.filter(m -> (m.getDeclaringClass() == c)) // remove object methods
             .map(m -> { Object[] o = new Object[1]; o[0] = m; return o; })
             .collect(Collectors.toList());
