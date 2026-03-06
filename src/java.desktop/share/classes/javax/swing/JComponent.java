@@ -3531,8 +3531,6 @@ public abstract class JComponent extends Container implements Serializable,
     private static final IntVector intVector = new IntVector();
     @SuppressWarnings("serial")
     static class KeyboardState implements Serializable {
-        private static final Object keyCodesKey =
-            JComponent.KeyboardState.class;
 
         static void registerKeyPressed(int keyCode) {
             IntVector kca = intVector;
