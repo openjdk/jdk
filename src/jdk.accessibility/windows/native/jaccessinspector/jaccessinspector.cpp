@@ -831,7 +831,7 @@ INT_PTR CALLBACK jaccessinspectorDialogProc( HWND hWnd, UINT message,
     RECT dialogBoxRect;
     LONG lT;
     HMENU menu;
-    DWORD lastError = 0;
+    [[maybe_unused]] DWORD lastError = 0;
 
     switch (message) {
 
