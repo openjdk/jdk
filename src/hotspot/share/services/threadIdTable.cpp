@@ -23,7 +23,6 @@
 */
 
 #include "classfile/javaClasses.inline.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/threadSMR.hpp"
@@ -77,10 +76,6 @@ class ThreadIdTableConfig : public AllStatic {
       ThreadIdTable::item_removed();
     }
 };
-
-bool ThreadIdTable::is_initialized() {
-  return AtomicAccess::load_acquire(&_is_initialized);
-}
 
 // Lazily creates the table and populates it with the given
 // thread list
