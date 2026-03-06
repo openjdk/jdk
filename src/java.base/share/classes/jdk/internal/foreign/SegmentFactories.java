@@ -52,6 +52,10 @@ public class SegmentFactories {
     // 64-bit platforms and 8 bytes on 32-bit platforms.
     private static final long MAX_MALLOC_ALIGN = Unsafe.ADDRESS_SIZE == 4 ? 8 : 16;
 
+    // The largest known value for default allocation alignment.
+    // Matches de facto ABI guarantees on most supported platforms (e.g. 16-byte alignment on x86_64 and AArch64)
+    private static final long MIN_NATIVE_ALIGN = 16;
+
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     // Unsafe native segment factories. These are used by the implementation code, to skip the sanity checks
@@ -187,6 +191,10 @@ public class SegmentFactories {
         ensureInitialized();
         Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
         sessionImpl.checkValidState();
+
+        // Enforce minimum ABI-safe native alignment
+        byteAlignment = Math.max(byteAlignment, MIN_NATIVE_ALIGN);
+
         if (VM.isDirectMemoryPageAligned()) {
             byteAlignment = Math.max(byteAlignment, AbstractMemorySegmentImpl.NIO_ACCESS.pageSize());
         }
