@@ -37,7 +37,6 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
@@ -604,25 +603,6 @@ public final class TKit {
 
     public static boolean isSkippedException(Throwable t) {
         return JtregSkippedExceptionClass.INSTANCE.isInstance(t);
-    }
-
-    public static Path createRelativePathCopy(final Path file) {
-        Path fileCopy = ThrowingSupplier.toSupplier(() -> {
-            Path localPath = createTempFile(file.getFileName());
-            Files.copy(file, localPath, StandardCopyOption.REPLACE_EXISTING);
-            return localPath;
-        }).get().toAbsolutePath().normalize();
-
-        final Path basePath = Path.of(".").toAbsolutePath().normalize();
-        try {
-            return basePath.relativize(fileCopy);
-        } catch (IllegalArgumentException ex) {
-            // May happen on Windows: java.lang.IllegalArgumentException: 'other' has different root
-            trace(String.format("Failed to relativize [%s] at [%s]", fileCopy,
-                    basePath));
-            printStackTrace(ex);
-        }
-        return file;
     }
 
     public static void waitForFileCreated(Path fileToWaitFor,
