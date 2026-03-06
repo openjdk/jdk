@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @summary Basic sanity checks for WebSocket URI from the Builder
  * @compile ../DummyWebSocketServer.java ../../ProxyServer.java
- * @run testng/othervm WSSanityTest
+ * @run junit/othervm WSSanityTest
  */
 
 import java.io.IOException;
@@ -38,20 +38,21 @@ import java.net.URI;
 import java.util.List;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class WSSanityTest {
 
-    URI wsURI;
-    DummyWebSocketServer webSocketServer;
-    InetSocketAddress proxyAddress;
+    private static URI wsURI;
+    private static DummyWebSocketServer webSocketServer;
+    private static InetSocketAddress proxyAddress;
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         ProxyServer proxyServer = new ProxyServer(0, true);
         proxyAddress = new InetSocketAddress(InetAddress.getLoopbackAddress(),
                                              proxyServer.getPort());
@@ -63,8 +64,8 @@ public class WSSanityTest {
         System.out.println("DummyWebSocketServer: " + wsURI);
     }
 
-    @AfterTest
-    public void teardown() {
+    @AfterAll
+    public static void teardown() {
         webSocketServer.close();
     }
 
@@ -75,8 +76,7 @@ public class WSSanityTest {
         T run() throws Exception;
     }
 
-    @DataProvider(name = "passingScenarios")
-    public Object[][] passingScenarios() {
+    public static Object[][] passingScenarios() {
         HttpClient noProxyClient = HttpClient.newHttpClient();
         return new Object[][]{
             { (ExceptionAction<?>)() -> {
@@ -146,14 +146,15 @@ public class WSSanityTest {
                  HttpClient client = HttpClient.newBuilder().proxy(ps).build();
                  client.newWebSocketBuilder()
                        .buildAsync(wsURI, noOpListener).get().abort();
-                 assertEquals(ps.count(), 1);  // ps.select only invoked once
+                 assertEquals(1, ps.count());  // ps.select only invoked once
                  return null; },
               "7" },
 
         };
     }
 
-    @Test(dataProvider = "passingScenarios")
+    @ParameterizedTest
+    @MethodSource("passingScenarios")
     public void testScenarios(ExceptionAction<?> action, String dataProviderId)
         throws Exception
     {

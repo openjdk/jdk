@@ -495,8 +495,8 @@ gen_shift_cst_op  "ROR" "ROR_scalar(a, CONST_SHIFT)" "BITWISE"
 gen_shift_cst_op  "ROL" "ROL_scalar(a, CONST_SHIFT)" "BITWISE"
 
 # Binary operation with one memory operand
-gen_binary_alu_mem_op "MIN+min+withMask", "scalar_max(a, b)"
-gen_binary_alu_mem_op "MAX+max+withMask", "scalar_min(a, b)"
+gen_binary_alu_mem_op "MIN+min+withMask", "scalar_min(a, b)"
+gen_binary_alu_mem_op "MAX+max+withMask", "scalar_max(a, b)"
 
 # Masked reductions.
 gen_binary_op_no_masked "MIN+min" "scalar_min(a, b)"
