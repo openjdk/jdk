@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,18 +41,31 @@ private:
 public:
   // Helper methods roughly modeled after GraphKit:
   Node* basic_plus_adr(Node* base, int offset) {
-    return (offset == 0)? base: basic_plus_adr(base, MakeConX(offset));
+    assert(base != Compile::current()->top(),
+           "Unexpected base == top - use off-heap variant instead");
+    return (offset == 0) ? base : basic_plus_adr(base, MakeConX(offset));
   }
   Node* basic_plus_adr(Node* base, Node* ptr, int offset) {
-    return (offset == 0)? ptr: basic_plus_adr(base, ptr, MakeConX(offset));
+    assert(base != Compile::current()->top(),
+           "Unexpected base == top - use off-heap variant instead");
+    return (offset == 0) ? ptr : basic_plus_adr(base, ptr, MakeConX(offset));
   }
   Node* basic_plus_adr(Node* base, Node* offset) {
     return basic_plus_adr(base, base, offset);
   }
   Node* basic_plus_adr(Node* base, Node* ptr, Node* offset) {
-    Node* adr = new AddPNode(base, ptr, offset);
+    Node* adr = AddPNode::make_with_base(base, ptr, offset);
     return transform_later(adr);
   }
+
+  Node* off_heap_plus_addr(Node* ptr, int offset) {
+    return (offset == 0) ? ptr : off_heap_plus_addr(ptr, MakeConX(offset));
+  }
+
+  Node* off_heap_plus_addr(Node* ptr, Node* offset) {
+    return transform_later(AddPNode::make_off_heap(ptr, offset));
+  }
+
   Node* transform_later(Node* n) {
     // equivalent to _gvn.transform in GraphKit, Ideal, etc.
     _igvn.register_new_node_with_optimizer(n);

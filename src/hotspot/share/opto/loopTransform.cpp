@@ -3969,7 +3969,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
     index = new LShiftXNode(index, shift->in(2));
     _igvn.register_new_node_with_optimizer(index);
   }
-  Node* from = new AddPNode(base, base, index);
+  Node* from = AddPNode::make_with_base(base, index);
   _igvn.register_new_node_with_optimizer(from);
   // For normal array fills, C2 uses two AddP nodes for array element
   // addressing. But for array fills with Unsafe call, there's only one
@@ -3977,7 +3977,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   assert(offset != nullptr || C->has_unsafe_access(),
          "Only array fills with unsafe have no extra offset");
   if (offset != nullptr) {
-    from = new AddPNode(base, from, offset);
+    from = AddPNode::make_with_base(base, from, offset);
     _igvn.register_new_node_with_optimizer(from);
   }
   // Compute the number of elements to copy
