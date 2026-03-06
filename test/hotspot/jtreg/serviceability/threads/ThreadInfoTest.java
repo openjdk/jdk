@@ -58,8 +58,8 @@ public class ThreadInfoTest {
         startThreads(ids, NUM_THREADS);
 
         new MyGetThreadInfoThread(ids).start();
-        new MyReplacerThread(ids).start(); 
-        new MyBusyThread().start(); 
+        new MyReplacerThread(ids).start();
+        new MyBusyThread().start();
         for (int index = 0; index < ITERATIONS; index++) {
             do {
                 if (count == 0) {
@@ -232,7 +232,7 @@ public class ThreadInfoTest {
                 if (i % 1000 == 0) {
                   list = new ArrayList<Object>();
                 }
-                byte [] junk = new byte[1024*104*10]; 
+                byte [] junk = new byte[1024*104*10];
                 list.add(junk);
                 goSleep(10);
                 i++;
