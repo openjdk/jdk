@@ -88,7 +88,7 @@ all dependent classes.
 
 The following options are available:
 
-`--class-path` *path*
+[`--class-path`]{#option--class-path} *path*
 :   Provides a search path for resolution of dependent classes.
 
     *path* can be a search path that consists of one or more directories
@@ -107,7 +107,7 @@ The following options are available:
 
         >   `--class-path \some\directory;\another\different\dir`
 
-`--for-removal`
+[`--for-removal`]{#option--for-removal}
 :   Limits scanning or listing to APIs that are deprecated for removal. Can't
     be used with a release value of 6, 7, or 8.
 
@@ -117,11 +117,11 @@ The following options are available:
 `--help` or `-h`
 :   Prints out a full help message.
 
-`--list` or `-l`
+[`--list`]{#option--list} or `-l`
 :   Prints the set of deprecated APIs. No scanning is done, so no directory,
     jar, or class arguments should be provided.
 
-`--release` `6`\|`7`\|`8`\|`9`
+[`--release`]{#option--release} `6`\|`7`\|`8`\|`9`
 :   Specifies the Java SE release that provides the set of deprecated APIs for
     scanning.
 

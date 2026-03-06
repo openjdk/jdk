@@ -93,18 +93,18 @@ use, save them to a file.
 
 ## Options for jshell
 
-`--add-exports` *module*/*package*
+[`--add-exports`]{#option--add-exports} *module*/*package*
 :   Specifies a package to be considered as exported from its defining module.
 
-`--add-modules` *module*\[`,`*module*...\]
+[`--add-modules`]{#option--add-modules} *module*\[`,`*module*...\]
 :   Specifies the root modules to resolve in addition to the initial module.
 
-`-C`*flag*
+[`-C`]{#option-C}*flag*
 :   passes *flag* to the Java compiler inside JShell. For example, `-C-Xlint`
     enables all the recommended lint warnings, and `-C--release=<N>` compiles
     for Java SE N, as if --release N was specified.
 
-`--class-path` *path*
+[`--class-path`]{#option--class-path} *path*
 :   Specifies the directories and archives that are searched to locate class
     files. This option overrides the path in the `CLASSPATH` environment
     variable. If the environment variable isn't set and this option isn't used,
@@ -112,15 +112,15 @@ use, save them to a file.
     (:) to separate items in the path. For Windows, use a semicolon (;) to
     separate items.
 
-`--enable-preview`
+[`--enable-preview`]{#option--enable-preview}
 :   Allows code to depend on the preview features of this release.
 
-`--execution` *specification*
+[`--execution`]{#option--execution} *specification*
 :   Specifies an alternate execution engine, where *specification* is an
     ExecutionControl spec. See the documentation of the package jdk.jshell.spi
     for the syntax of the spec.
 
-`--feedback` *mode*
+[`--feedback`]{#option--feedback} *mode*
 :   Sets the initial level of feedback provided in response to what's entered.
     The initial level can be overridden within a session by using the
     `/set feedback` *mode* command. The default is `normal`.
@@ -161,12 +161,12 @@ use, save them to a file.
     code snippets. To specify flags that affect the execution of code snippets,
     use `-R`*flag*. Alternatively, use `-J`*flag* with `--execution local`.
 
-`--module-path` *modulepath*
+[`--module-path`]{#option--module-path} *modulepath*
 :   Specifies where to find application modules. For Linux and macOS, use a
     colon (:) to separate items in the path. For Windows, use a semicolon (;)
     to separate items.
 
-`--no-startup`
+[`--no-startup`]{#option--no-startup}
 :   Prevents startup scripts from running when JShell starts. Use this option
     to run only the scripts entered on the command line when JShell is started,
     or to start JShell without any preloaded information if no scripts are
@@ -176,7 +176,7 @@ use, save them to a file.
 :   Sets the feedback mode to `concise`, which is the same as entering
     `--feedback concise`.
 
-`-R`*flag*
+[`-R`]{#option-R}*flag*
 :   passes *flag* to the runtime system only when code snippets are executed.
     For example, `-R-Dfoo=bar` means that execution of the snippet
     `System.getProperty("foo")` will return `"bar"`.
@@ -185,10 +185,10 @@ use, save them to a file.
 :   Sets the feedback mode to `silent`, which is the same as entering
     `--feedback silent`.
 
-`--show-version`
+[`--show-version`]{#option--show-version}
 :   Prints version information and enters the tool.
 
-`--startup` *file*
+[`--startup`]{#option--startup} *file*
 :   Overrides the default startup script for this session. The script can
     contain any valid code snippets or commands.
 
