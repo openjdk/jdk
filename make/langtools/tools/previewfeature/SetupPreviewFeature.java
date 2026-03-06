@@ -77,12 +77,16 @@ public class SetupPreviewFeature {
             var target = Paths.get(args[1]);
             Files.createDirectories(target.getParent());
             try (var out = Files.newBufferedWriter(target)) {
-                out.write(sourceCode.substring(0, insertPosition) +
-                          constantsToAdd.stream()
-                                        .collect(Collectors.joining(", ",
-                                                                    "/*compatibility constants:*/ ",
-                                                                    ",\n")) +
-                          sourceCode.substring(insertPosition));
+                if (constantsToAdd.isEmpty()) {
+                    out.write(sourceCode);
+                } else {
+                    out.write(sourceCode, 0, insertPosition);
+                    out.write(constantsToAdd.stream()
+                                            .collect(Collectors.joining(", ",
+                                                                        "/*compatibility constants:*/ ",
+                                                                        ",\n")));
+                    out.write(sourceCode, insertPosition, sourceCode.length() - insertPosition);
+                }
             }
         }
     }
