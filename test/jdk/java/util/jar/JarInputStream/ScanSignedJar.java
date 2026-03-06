@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,18 @@
  * @test
  * @bug 6284489
  * @summary Confirm that JarEntry.getCertificates identifies signed entries.
+ * @run junit ScanSignedJar
  */
 
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
 import java.net.URL;
 import java.security.CodeSigner;
 import java.security.cert.Certificate;
 import java.util.jar.*;
+
+import static org.junit.jupiter.api.Assertions.fail;
 
 /*
  * Confirm that the signed entries in a JAR file are identified correctly
@@ -43,13 +49,13 @@ import java.util.jar.*;
 public class ScanSignedJar {
 
     private static final String JAR_LOCATION =
-        "file:" +
-        System.getProperty("test.src", ".") +
-        System.getProperty("file.separator") +
-        "signed.jar";
+            "file:" +
+                    System.getProperty("test.src", ".") +
+                    System.getProperty("file.separator") +
+                    "signed.jar";
 
-    public static void main(String[] args) throws Exception {
-
+    @Test
+    void signedJarTest() throws IOException {
         System.out.println("Opening " + JAR_LOCATION + "...");
         JarInputStream inStream =
             new JarInputStream(new URL(JAR_LOCATION).openStream(), true);
@@ -71,7 +77,7 @@ public class ScanSignedJar {
                 System.out.println("[unsigned]\t" + name + "\t(" + size +
                     " bytes)");
                 if (name.equals("Count.class")) {
-                    throw new Exception("Count.class should be signed");
+                    fail("Count.class should be signed");
                 }
             } else if (signers != null && certificates != null) {
                 System.out.println("[" + signers.length +
@@ -80,7 +86,7 @@ public class ScanSignedJar {
             } else {
                 System.out.println("[*ERROR*]\t" + name + "\t(" + size +
                     " bytes)");
-                throw new Exception("Cannot determine whether the entry is " +
+                fail("Cannot determine whether the entry is " +
                     "signed or unsigned (signers[] doesn't match certs[]).");
             }
         }

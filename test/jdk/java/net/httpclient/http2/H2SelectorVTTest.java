@@ -38,7 +38,7 @@ import jdk.test.lib.net.SimpleSSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_2;
@@ -166,21 +166,21 @@ class H2SelectorVTTest implements HttpServerAdapters {
             final HttpRequest req1 = reqBuilder.copy().GET().build();
             System.out.println("\nIssuing request: " + req1);
             final HttpResponse<?> resp1 = client.send(req1, BodyHandlers.ofString());
-            Assertions.assertEquals(200, resp1.statusCode(), "unexpected response code for GET request");
+            assertEquals(200, resp1.statusCode(), "unexpected response code for GET request");
             assertSelectorThread(client);
 
             // POST
             final HttpRequest req2 = reqBuilder.copy().POST(BodyPublishers.ofString("foo")).build();
             System.out.println("\nIssuing request: " + req2);
             final HttpResponse<?> resp2 = client.send(req2, BodyHandlers.ofString());
-            Assertions.assertEquals(200, resp2.statusCode(), "unexpected response code for POST request");
+            assertEquals(200, resp2.statusCode(), "unexpected response code for POST request");
             assertSelectorThread(client);
 
             // HEAD
             final HttpRequest req3 = reqBuilder.copy().HEAD().build();
             System.out.println("\nIssuing request: " + req3);
             final HttpResponse<?> resp3 = client.send(req3, BodyHandlers.ofString());
-            Assertions.assertEquals(200, resp3.statusCode(), "unexpected response code for HEAD request");
+            assertEquals(200, resp3.statusCode(), "unexpected response code for HEAD request");
             assertSelectorThread(client);
         }
     }
@@ -219,6 +219,6 @@ class H2SelectorVTTest implements HttpServerAdapters {
             msg = "%s not found in %s".formatted(name, threads);
             System.out.printf("%s: %s%n", status, msg);
         }
-        Assertions.assertEquals(!isTCPSelectorThreadVirtual(), found, msg);
+        assertEquals(!isTCPSelectorThreadVirtual(), found, msg);
     }
 }

@@ -888,7 +888,6 @@ public:
   virtual ~RunnerGSInserterThread(){}
 
   void premain() {
-    volatile bool timeout = false;
     _start = START;
     _range = RANGE;
     CHTTestThread* tt[GSTEST_THREAD_COUNT];

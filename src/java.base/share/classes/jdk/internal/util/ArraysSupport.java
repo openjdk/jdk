@@ -478,7 +478,7 @@ public class ArraysSupport {
     // Bytes
 
     /**
-     * Find the index of a mismatch between two arrays.
+     * Find the smallest index of a mismatch between two arrays.
      *
      * <p>This method does not perform bounds checks. It is the responsibility
      * of the caller to perform such bounds checks before calling this method.
@@ -486,9 +486,9 @@ public class ArraysSupport {
      * @param a the first array to be tested for a mismatch
      * @param b the second array to be tested for a mismatch
      * @param length the number of bytes from each array to check
-     * @return the index of a mismatch between the two arrays, otherwise -1 if
-     * no mismatch.  The index will be within the range of (inclusive) 0 to
-     * (exclusive) the smaller of the two array lengths.
+     * @return the smallest index of a mismatch between the two arrays,
+     * otherwise -1 if no mismatch.  The index will be within the range of
+     * (inclusive) 0 to (exclusive) the smaller of the two array lengths.
      */
     public static int mismatch(byte[] a,
                                byte[] b,
@@ -520,8 +520,8 @@ public class ArraysSupport {
     }
 
     /**
-     * Find the relative index of a mismatch between two arrays starting from
-     * given indexes.
+     * Find the smallest relative index of a mismatch between two arrays
+     * starting from given indexes.
      *
      * <p>This method does not perform bounds checks. It is the responsibility
      * of the caller to perform such bounds checks before calling this method.
@@ -533,7 +533,7 @@ public class ArraysSupport {
      * @param bFromIndex the index of the first element (inclusive) in the
      * second array to be compared
      * @param length the number of bytes from each array to check
-     * @return the relative index of a mismatch between the two arrays,
+     * @return the smallest relative index of a mismatch between the two arrays,
      * otherwise -1 if no mismatch.  The index will be within the range of
      * (inclusive) 0 to (exclusive) the smaller of the two array bounds.
      */

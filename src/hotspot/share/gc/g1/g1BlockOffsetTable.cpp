@@ -73,8 +73,8 @@ void G1BlockOffsetTable::set_offset_array(Atomic<uint8_t>* left, Atomic<uint8_t>
 
 #ifdef ASSERT
 void G1BlockOffsetTable::check_address(Atomic<uint8_t>* addr, const char* msg) const {
-  Atomic<uint8_t>* start_addr = const_cast<Atomic<uint8_t>*>(_offset_base + (uintptr_t(_reserved.start()) >> CardTable::card_shift()));
-  Atomic<uint8_t>* end_addr = const_cast<Atomic<uint8_t>*>(_offset_base + (uintptr_t(_reserved.end()) >> CardTable::card_shift()));
+  Atomic<uint8_t>* start_addr = _offset_base + (uintptr_t(_reserved.start()) >> CardTable::card_shift());
+  Atomic<uint8_t>* end_addr = _offset_base + (uintptr_t(_reserved.end()) >> CardTable::card_shift());
   assert(addr >= start_addr && addr <= end_addr,
          "%s - offset address: " PTR_FORMAT ", start address: " PTR_FORMAT ", end address: " PTR_FORMAT,
          msg, (p2i(addr)), (p2i(start_addr)), (p2i(end_addr)));

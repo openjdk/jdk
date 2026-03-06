@@ -578,6 +578,11 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
       TOOLCHAIN_CFLAGS_JDK_CONLY="-fno-strict-aliasing" # technically NOT for CXX
     fi
 
+    if test "x$ENABLE_LINKTIME_GC" = xtrue; then
+      TOOLCHAIN_CFLAGS_JDK="$TOOLCHAIN_CFLAGS_JDK -ffunction-sections -fdata-sections"
+      TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -ffunction-sections -fdata-sections"
+    fi
+
     if test "x$OPENJDK_TARGET_OS" = xaix; then
       TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -ffunction-sections -ftls-model -fno-math-errno"
       TOOLCHAIN_CFLAGS_JDK="-ffunction-sections -fsigned-char"

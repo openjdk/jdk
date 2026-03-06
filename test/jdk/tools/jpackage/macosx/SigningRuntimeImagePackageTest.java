@@ -200,7 +200,7 @@ public class SigningRuntimeImagePackageTest {
         // This way we can test if jpackage keeps or replaces the signature of
         // the predefined runtime bundle when backing it in the pkg or dmg installer.
         return new SignKeyOptionWithKeychain(
-                SignKeyOption.Type.SIGN_KEY_USER_SHORT_NAME,
+                SignKeyOption.Type.SIGN_KEY_IDENTITY_APP_IMAGE,
                 SigningBase.StandardCertificateRequest.CODESIGN_ACME_TECH_LTD,
                 SigningBase.StandardKeychain.MAIN.keychain());
     }

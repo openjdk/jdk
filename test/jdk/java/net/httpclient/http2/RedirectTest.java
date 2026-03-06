@@ -30,7 +30,7 @@
  *        jdk.httpclient.test.lib.http2.Http2RedirectHandler
  *        jdk.test.lib.Asserts
  *        jdk.test.lib.net.SimpleSSLContext
- * @run testng/othervm
+ * @run junit/othervm
  *      -Djdk.httpclient.HttpClient.log=frames,ssl,requests,responses,errors
  *      -Djdk.internal.httpclient.debug=true
  *      RedirectTest
@@ -52,8 +52,9 @@ import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.httpclient.test.lib.http2.Http2TestExchange;
 import jdk.httpclient.test.lib.http2.Http2RedirectHandler;
-import org.testng.annotations.Test;
 import static java.net.http.HttpClient.Version.HTTP_2;
+
+import org.junit.jupiter.api.Test;
 
 public class RedirectTest implements HttpServerAdapters {
     static int httpPort;
@@ -135,7 +136,7 @@ public class RedirectTest implements HttpServerAdapters {
     }
 
     @Test
-    public static void test() throws Exception {
+    public void test() throws Exception {
         try {
             initialize();
             simpleTest();

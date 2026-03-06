@@ -55,6 +55,9 @@ protected:
   static int _max_supported_sve_vector_length;
   static bool _rop_protection;
   static uintptr_t _pac_mask;
+  // When _prefer_sve_merging_mode_cpy is true, `cpy (imm, zeroing)` is
+  // implemented as `movi; cpy(imm, merging)`.
+  static constexpr bool _prefer_sve_merging_mode_cpy = true;
 
   static SpinWait _spin_wait;
 
@@ -241,6 +244,8 @@ public:
   static void initialize_cpu_information(void);
 
   static bool use_rop_protection() { return _rop_protection; }
+
+  static bool prefer_sve_merging_mode_cpy() { return _prefer_sve_merging_mode_cpy; }
 
   // For common 64/128-bit unpredicated vector operations, we may prefer
   // emitting NEON instructions rather than the corresponding SVE instructions.

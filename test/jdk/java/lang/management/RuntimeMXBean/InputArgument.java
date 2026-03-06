@@ -69,7 +69,7 @@
  *
  * @run driver InputArgument generateFlagsFile
  * @run main/othervm -XX:+UseFastJNIAccessors -XX:Flags=InputArgument.flags InputArgument
- * -XX:+UseFastJNIAccessors -XX:-UseG1GC -XX:+UseParallelGC -XX:MaxHeapSize=100M
+ * -XX:+UseFastJNIAccessors -XX:+PrintWarnings -XX:-PrintCommandLineFlags -XX:ErrorLogTimeout=100
  */
 
 import java.lang.management.*;
@@ -116,6 +116,6 @@ public class InputArgument {
     private static void generateFlagsFile() throws Exception {
         // 3 types of flag; both boolean cases and 1 numeric
         Files.writeString(Paths.get("", "InputArgument.flags"),
-            String.format("-UseG1GC%n+UseParallelGC%nMaxHeapSize=100M%n"));
+            String.format("+PrintWarnings%n-PrintCommandLineFlags%nErrorLogTimeout=100%n"));
     }
 }

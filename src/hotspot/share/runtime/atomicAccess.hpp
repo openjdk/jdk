@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_RUNTIME_ATOMICACCESS_HPP
 
 #include "cppstdlib/type_traits.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
 #include "runtime/orderAccess.hpp"
@@ -829,7 +829,7 @@ class AtomicAccess::PlatformBitops
 {};
 
 template <ScopedFenceType T>
-class ScopedFenceGeneral: public StackObj {
+class ScopedFenceGeneral {
  public:
   void prefix() {}
   void postfix() {}

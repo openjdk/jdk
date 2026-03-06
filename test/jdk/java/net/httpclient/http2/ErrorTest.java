@@ -45,7 +45,7 @@
  *          java.net.http/jdk.internal.net.http.qpack.writers
  *          java.security.jgss
  * @modules java.base/jdk.internal.util
- * @run testng/othervm/timeout=60 -Djavax.net.debug=ssl -Djdk.httpclient.HttpClient.log=all ErrorTest
+ * @run junit/othervm/timeout=60 -Djavax.net.debug=ssl -Djdk.httpclient.HttpClient.log=all ErrorTest
  * @summary check exception thrown when bad TLS parameters selected
  */
 
@@ -67,7 +67,7 @@ import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.test.lib.net.SimpleSSLContext;
 import static java.net.http.HttpClient.Version.HTTP_2;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * When selecting an unacceptable cipher suite the TLS handshake will fail.

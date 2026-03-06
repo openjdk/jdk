@@ -102,10 +102,7 @@ public class InstallDirTest {
         .forTypes(PackageType.LINUX)
         .addInitializer(cmd -> {
             cmd.addArguments("--install-dir", installDir);
-            cmd.saveConsoleOutput(true);
-        })
-        .addBundleVerifier((cmd, result) -> {
-            cmd.validateErr(JPackageCommand.makeError("error.invalid-install-dir"));
+            cmd.validateErr(JPackageCommand.makeError("error.invalid-install-dir", installDir));
         })
         .run();
     }

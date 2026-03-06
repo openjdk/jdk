@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,22 +24,27 @@
 /* @test
  * @bug 7023056
  * @summary NPE from sun.security.util.ManifestEntryVerifier.verify during Maven build
+ * @run junit MevNPE
  */
+import org.junit.jupiter.api.Test;
+
 import java.io.*;
 import java.util.jar.*;
 
 public class MevNPE {
-    public static void main(String[] args) throws Exception {
+
+    @Test
+    void noNpeTest() throws IOException {
         File f = new File(System.getProperty("test.src", "."), "Signed.jar");
         try (JarFile jf = new JarFile(f, true)) {
             try (InputStream s1 = jf.getInputStream(
                     jf.getJarEntry(JarFile.MANIFEST_NAME))) {
                 s1.read(new byte[10000]);
-            };
+            }
             try (InputStream s2 = jf.getInputStream(
                     jf.getJarEntry(JarFile.MANIFEST_NAME))) {
                 s2.read(new byte[10000]);
-            };
+            }
         }
     }
 }

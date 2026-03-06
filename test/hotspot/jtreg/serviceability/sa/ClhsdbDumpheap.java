@@ -43,6 +43,7 @@ import jtreg.SkippedException;
  * @bug 8240989
  * @summary Test clhsdb dumpheap command
  * @requires vm.hasSA
+ * @requires vm.gc != "Z"
  * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @requires vm.compMode != "Xcomp"
  * @comment Running this test with -Xcomp is slow and therefore tends to cause

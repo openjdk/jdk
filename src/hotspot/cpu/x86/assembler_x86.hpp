@@ -1965,6 +1965,7 @@ private:
   void pmovsxbq(XMMRegister dst, XMMRegister src);
   void pmovsxbw(XMMRegister dst, XMMRegister src);
   void pmovsxwd(XMMRegister dst, XMMRegister src);
+  void pmovzxwd(XMMRegister dst, XMMRegister src);
   void vpmovsxbd(XMMRegister dst, XMMRegister src, int vector_len);
   void vpmovsxbq(XMMRegister dst, XMMRegister src, int vector_len);
   void vpmovsxbw(XMMRegister dst, XMMRegister src, int vector_len);

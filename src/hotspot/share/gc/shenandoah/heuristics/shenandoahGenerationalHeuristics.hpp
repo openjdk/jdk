@@ -49,6 +49,8 @@ public:
 
   void choose_collection_set(ShenandoahCollectionSet* collection_set) override;
 
+  virtual void post_initialize() override;
+
 private:
   // Compute evacuation budgets prior to choosing collection set.
   void compute_evacuation_budgets(ShenandoahHeap* const heap);

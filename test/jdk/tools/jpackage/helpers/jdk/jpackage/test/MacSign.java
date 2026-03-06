@@ -67,6 +67,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
+import jdk.internal.util.OSVersion;
 import jdk.jpackage.internal.util.MemoizingSupplier;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
@@ -233,7 +234,7 @@ import jdk.jpackage.internal.util.function.ThrowingSupplier;
  * An untrusted certificate can NOT be used with /usr/bin/codesign. Use
  *
  * <pre>
- * /usr/bin/security security add-trusted-cert -k foo.keychain cert.pem
+ * /usr/bin/security add-trusted-cert -k foo.keychain cert.pem
  * </pre>
  *
  * command to add trusted certificate from "cert.pem" file to "foo.keychain"
@@ -440,7 +441,21 @@ public final class MacSign {
         }
 
         Keychain unlock() {
-            createExecutor("unlock-keychain").execute();
+            var exec = createExecutor("unlock-keychain");
+
+            exec.execute();
+
+            if (UnlockKeychainWithOsascript.VALUE) {
+                exec = Executor.of("osascript")
+                        .addArguments(SIGN_UTILS_SCRIPT.toString(), "run-shell-script")
+                        .addArgument(Stream.concat(
+                                            Stream.of(exec.getExecutable().orElseThrow().toString()),
+                                            exec.getAllArguments().stream()
+                                    ).collect(joining(" ")));
+
+                exec.execute();
+            }
+
             return this;
         }
 
@@ -576,29 +591,43 @@ public final class MacSign {
         }
 
         private static CertificateStats create(KeychainWithCertsSpec spec) {
-            final var allCertificates = spec.keychain().findCertificates();
             final List<ResolvedCertificateRequest> allResolvedCertificateRequests = new ArrayList<>();
             final Map<X509Certificate, Exception> unmappedCertificates = new HashMap<>();
 
-            withTempDirectory(workDir -> {
-                for (final var cert : allCertificates) {
-                    ResolvedCertificateRequest resolvedCertificateRequest;
-                    try {
-                        resolvedCertificateRequest = new ResolvedCertificateRequest(cert);
-                    } catch (RuntimeException ex) {
-                        unmappedCertificates.put(cert, ExceptionBox.unbox(ex));
-                        continue;
-                    }
+            final Runnable workload = () -> {
+                final var allCertificates = spec.keychain().findCertificates();
+                withTempDirectory(workDir -> {
+                    for (final var cert : allCertificates) {
+                        ResolvedCertificateRequest resolvedCertificateRequest;
+                        try {
+                            resolvedCertificateRequest = new ResolvedCertificateRequest(cert);
+                        } catch (RuntimeException ex) {
+                            unmappedCertificates.put(cert, ExceptionBox.unbox(ex));
+                            continue;
+                        }
 
-                    if (spec.certificateRequests().stream().anyMatch(resolvedCertificateRequest.installed()::match)) {
-                        final var certFile = workDir.resolve(CertificateHash.of(cert).toString() + ".pem");
-                        final var verifyStatus = verifyCertificate(resolvedCertificateRequest, spec.keychain(), certFile);
-                        resolvedCertificateRequest = resolvedCertificateRequest.copyVerified(verifyStatus);
-                    }
+                        if (spec.certificateRequests().stream().anyMatch(resolvedCertificateRequest.installed()::match)) {
+                            final var certFile = workDir.resolve(CertificateHash.of(cert).toString() + ".pem");
+                            final var verifyStatus = verifyCertificate(resolvedCertificateRequest, spec.keychain(), certFile);
+                            resolvedCertificateRequest = resolvedCertificateRequest.copyVerified(verifyStatus);
+                        }
 
-                    allResolvedCertificateRequests.add(resolvedCertificateRequest);
-                }
-            });
+                        allResolvedCertificateRequests.add(resolvedCertificateRequest);
+                    }
+                });
+            };
+
+            // Starting from some macOS version, it is no longer necessary to have the keychain
+            // in the list of keychains when running the "/usr/bin/security verify-cert ..." command to verify its certificate(s).
+            // The exact version when they relaxed this constraint is unknown, but it is still required on Catalina 10.15.7.
+            // On Catalina, if the keychain is not in the list of keychains, "/usr/bin/security verify-cert ..." command
+            // executed on the certificates of this keychain returns "untrusted" result.
+            if (OSVersion.current().compareTo(new OSVersion(10, 16)) < 0) {
+                // macOS Catalina or older
+                withKeychains(spec).addToSearchList().run(workload);
+            } else {
+                workload.run();
+            }
 
             return new CertificateStats(allResolvedCertificateRequests,
                     List.copyOf(spec.certificateRequests()), unmappedCertificates);
@@ -1272,7 +1301,11 @@ public final class MacSign {
         for (final var quite : List.of(true, false)) {
             result = security("verify-cert", "-L", "-n",
                     quite ? "-q" : "-v",
-                    "-c", certFile.normalize().toString(),
+                    // Use "-r" option to verify the certificate against itself.
+                    // "-c" option works on newer macOS versions, but on older ones (at least on Catalina 10.15.7),
+                    // in case there are two self-signed certificates with the same name in the given keychain,
+                    // it links them in the certificate list and fails verification.
+                    "-r", certFile.normalize().toString(),
                     "-k", keychain.name(),
                     "-p", resolvedCertificateRequest.installed().type().verifyPolicy()).saveOutput(!quite).executeWithoutExitCodeCheck();
             if (result.getExitCode() == 0) {
@@ -1463,4 +1496,10 @@ public final class MacSign {
     // faketime is not a standard macOS command.
     // One way to get it is with Homebrew.
     private static final Path FAKETIME = Path.of(Optional.ofNullable(TKit.getConfigProperty("faketime")).orElse("/usr/local/bin/faketime"));
+
+    // Run the "/usr/bin/system unlock-keychain" command in Terminal.app if
+    // the current process runs in an SSH session and the OS version is macOS Catalina or older.
+    private static final class UnlockKeychainWithOsascript {
+        static final boolean VALUE = System.getenv("SSH_CONNECTION") != null && OSVersion.current().compareTo(new OSVersion(10, 16)) < 0;
+    }
 }

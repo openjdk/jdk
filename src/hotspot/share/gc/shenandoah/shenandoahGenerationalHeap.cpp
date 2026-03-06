@@ -90,9 +90,21 @@ ShenandoahGenerationalHeap::ShenandoahGenerationalHeap(ShenandoahCollectorPolicy
   assert(is_aligned(_max_plab_size, CardTable::card_size_in_words()), "max_plab_size must be aligned");
 }
 
+void ShenandoahGenerationalHeap::initialize_generations() {
+  ShenandoahHeap::initialize_generations();
+  _young_generation->post_initialize(this);
+  _old_generation->post_initialize(this);
+}
+
 void ShenandoahGenerationalHeap::post_initialize() {
   ShenandoahHeap::post_initialize();
   _age_census = new ShenandoahAgeCensus();
+}
+
+void ShenandoahGenerationalHeap::post_initialize_heuristics() {
+  ShenandoahHeap::post_initialize_heuristics();
+  _young_generation->post_initialize_heuristics();
+  _old_generation->post_initialize_heuristics();
 }
 
 void ShenandoahGenerationalHeap::print_init_logger() const {
@@ -108,12 +120,6 @@ void ShenandoahGenerationalHeap::initialize_heuristics() {
   _old_generation = new ShenandoahOldGeneration(max_workers());
   _young_generation->initialize_heuristics(mode());
   _old_generation->initialize_heuristics(mode());
-}
-
-void ShenandoahGenerationalHeap::post_initialize_heuristics() {
-  ShenandoahHeap::post_initialize_heuristics();
-  _young_generation->post_initialize(this);
-  _old_generation->post_initialize(this);
 }
 
 void ShenandoahGenerationalHeap::initialize_serviceability() {
@@ -150,6 +156,10 @@ void ShenandoahGenerationalHeap::gc_threads_do(ThreadClosure* tcl) const {
 void ShenandoahGenerationalHeap::stop() {
   ShenandoahHeap::stop();
   regulator_thread()->stop();
+}
+
+void ShenandoahGenerationalHeap::start_idle_span() {
+  young_generation()->heuristics()->start_idle_span();
 }
 
 bool ShenandoahGenerationalHeap::requires_barriers(stackChunkOop obj) const {

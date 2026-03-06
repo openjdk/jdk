@@ -564,6 +564,9 @@ public:
   const Type* bottom_type() const { return Type::HALF_FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
   virtual const Type* Value(PhaseGVN* phase) const;
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 

@@ -36,7 +36,6 @@ import java.util.Optional;
 
 import static java.lang.constant.ConstantDescs.BSM_EXPLICIT_CAST;
 import static java.lang.constant.ConstantDescs.CD_byte;
-import static java.lang.constant.ConstantDescs.CD_int;
 import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
 
 /**

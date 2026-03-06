@@ -40,6 +40,9 @@ interface LinuxDebSystemEnvironmentMixin {
     static Result<LinuxDebSystemEnvironmentMixin> create() {
         final var errors = Stream.of(Internal.TOOL_DPKG_DEB, Internal.TOOL_DPKG, Internal.TOOL_FAKEROOT)
                 .map(ToolValidator::new)
+                .map(v -> {
+                    return v.setCommandLine("--version");
+                })
                 .map(ToolValidator::validate)
                 .filter(Objects::nonNull)
                 .toList();

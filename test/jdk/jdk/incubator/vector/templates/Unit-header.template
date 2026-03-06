@@ -1943,6 +1943,214 @@ relativeError));
     static boolean ge($type$ a, $type$ b) {
         return a >= b;
     }
+
+    static $type$ firstNonZero($type$ a, $type$ b) {
+        return $Wideboxtype$.compare(a, ($type$) 0) != 0 ? a : b;
+    }
+
+#if[BITWISE]
+    static $type$ scalar_or($type$ a, $type$ b) {
+        return ($type$)(a | b);
+    }
+
+    static $type$ scalar_and($type$ a, $type$ b) {
+        return ($type$)(a & b);
+    }
+
+    static $type$ scalar_xor($type$ a, $type$ b) {
+        return ($type$)(a ^ b);
+    }
+#end[BITWISE];
+
+    static $type$ scalar_add($type$ a, $type$ b) {
+        return ($type$)(a + b);
+    }
+
+    static $type$ scalar_sub($type$ a, $type$ b) {
+        return ($type$)(a - b);
+    }
+
+    static $type$ scalar_mul($type$ a, $type$ b) {
+        return ($type$)(a * b);
+    }
+
+    static $type$ scalar_min($type$ a, $type$ b) {
+        return ($type$)(Math.min(a, b));
+    }
+
+    static $type$ scalar_max($type$ a, $type$ b) {
+        return ($type$)(Math.max(a, b));
+    }
+
+    static $type$ scalar_div($type$ a, $type$ b) {
+        return ($type$)(a / b);
+    }
+
+    static $type$ scalar_fma($type$ a, $type$ b, $type$ c) {
+        return ($type$)(Math.fma(a, b, c));
+    }
+
+    static $type$ scalar_abs($type$ a) {
+        return ($type$)(Math.abs(a));
+    }
+
+    static $type$ scalar_neg($type$ a) {
+        return (($type$)-a);
+    }
+
+#if[!BITWISE]
+    static $type$ scalar_sin($type$ a) {
+        return ($type$)Math.sin((double)a);
+    }
+
+    static $type$ scalar_exp($type$ a) {
+        return ($type$)Math.exp((double)a);
+    }
+
+    static $type$ scalar_log1p($type$ a) {
+        return ($type$)Math.log1p((double)a);
+    }
+
+    static $type$ scalar_log($type$ a) {
+        return ($type$)Math.log((double)a);
+    }
+
+    static $type$ scalar_log10($type$ a) {
+        return ($type$)Math.log10((double)a);
+    }
+
+    static $type$ scalar_expm1($type$ a) {
+        return ($type$)Math.expm1((double)a);
+    }
+
+    static $type$ scalar_cos($type$ a) {
+        return ($type$)Math.cos((double)a);
+    }
+
+    static $type$ scalar_tan($type$ a) {
+        return ($type$)Math.tan((double)a);
+    }
+
+    static $type$ scalar_sinh($type$ a) {
+        return ($type$)Math.sinh((double)a);
+    }
+
+    static $type$ scalar_cosh($type$ a) {
+        return ($type$)Math.cosh((double)a);
+    }
+
+    static $type$ scalar_tanh($type$ a) {
+        return ($type$)Math.tanh((double)a);
+    }
+
+    static $type$ scalar_asin($type$ a) {
+        return ($type$)Math.asin((double)a);
+    }
+
+    static $type$ scalar_acos($type$ a) {
+        return ($type$)Math.acos((double)a);
+    }
+
+    static $type$ scalar_atan($type$ a) {
+        return ($type$)Math.atan((double)a);
+    }
+
+    static $type$ scalar_cbrt($type$ a) {
+        return ($type$)Math.cbrt((double)a);
+    }
+
+    static $type$ scalar_sqrt($type$ a) {
+        return ($type$)Math.sqrt((double)a);
+    }
+
+    static $type$ scalar_hypot($type$ a, $type$ b) {
+        return ($type$)Math.hypot((double)a, (double)b);
+    }
+
+    static $type$ scalar_pow($type$ a, $type$ b) {
+        return ($type$)Math.pow((double)a, (double)b);
+    }
+
+    static $type$ scalar_atan2($type$ a, $type$ b) {
+        return ($type$)Math.atan2((double)a, (double)b);
+    }
+
+    static $type$ strict_scalar_sin($type$ a) {
+        return ($type$)StrictMath.sin((double)a);
+    }
+
+    static $type$ strict_scalar_exp($type$ a) {
+        return ($type$)StrictMath.exp((double)a);
+    }
+
+    static $type$ strict_scalar_log1p($type$ a) {
+        return ($type$)StrictMath.log1p((double)a);
+    }
+
+    static $type$ strict_scalar_log($type$ a) {
+        return ($type$)StrictMath.log((double)a);
+    }
+
+    static $type$ strict_scalar_log10($type$ a) {
+        return ($type$)StrictMath.log10((double)a);
+    }
+
+    static $type$ strict_scalar_expm1($type$ a) {
+        return ($type$)StrictMath.expm1((double)a);
+    }
+
+    static $type$ strict_scalar_cos($type$ a) {
+        return ($type$)StrictMath.cos((double)a);
+    }
+
+    static $type$ strict_scalar_tan($type$ a) {
+        return ($type$)StrictMath.tan((double)a);
+    }
+
+    static $type$ strict_scalar_sinh($type$ a) {
+        return ($type$)StrictMath.sinh((double)a);
+    }
+
+    static $type$ strict_scalar_cosh($type$ a) {
+        return ($type$)StrictMath.cosh((double)a);
+    }
+
+    static $type$ strict_scalar_tanh($type$ a) {
+        return ($type$)StrictMath.tanh((double)a);
+    }
+
+    static $type$ strict_scalar_asin($type$ a) {
+        return ($type$)StrictMath.asin((double)a);
+    }
+
+    static $type$ strict_scalar_acos($type$ a) {
+        return ($type$)StrictMath.acos((double)a);
+    }
+
+    static $type$ strict_scalar_atan($type$ a) {
+        return ($type$)StrictMath.atan((double)a);
+    }
+
+    static $type$ strict_scalar_cbrt($type$ a) {
+        return ($type$)StrictMath.cbrt((double)a);
+    }
+
+    static $type$ strict_scalar_sqrt($type$ a) {
+        return ($type$)StrictMath.sqrt((double)a);
+    }
+
+    static $type$ strict_scalar_hypot($type$ a, $type$ b) {
+        return ($type$)StrictMath.hypot((double)a, (double)b);
+    }
+
+    static $type$ strict_scalar_pow($type$ a, $type$ b) {
+        return ($type$)StrictMath.pow((double)a, (double)b);
+    }
+
+    static $type$ strict_scalar_atan2($type$ a, $type$ b) {
+        return ($type$)StrictMath.atan2((double)a, (double)b);
+    }
+#end[!BITWISE]
 #if[!FP]
 
     static boolean ult($type$ a, $type$ b) {
@@ -1962,9 +2170,17 @@ relativeError));
     }
 #end[!FP]
 
-    static $type$ firstNonZero($type$ a, $type$ b) {
-        return $Boxtype$.compare(a, ($type$) 0) != 0 ? a : b;
+#if[FP]
+    static boolean isNaN($type$ a) {
+        return $Wideboxtype$.isNaN(a);
     }
+    static boolean isFinite($type$ a) {
+        return $Wideboxtype$.isFinite(a);
+    }
+    static boolean isInfinite($type$ a) {
+        return $Wideboxtype$.isInfinite(a);
+    }
+#end[FP]
 
     @Test
     static void smokeTest1() {

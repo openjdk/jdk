@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,9 @@
 #include "utilities/ostream.hpp"
 #include "unittest.hpp"
 
-// Test the default level for each tagset
-TEST_VM(LogTagSet, defaults) {
+// Test the default level for each tagset, runs in other VM to ensure no other
+// test have changed a LogTagSet.
+TEST_OTHER_VM(LogTagSet, defaults) {
   for (LogTagSet* ts = LogTagSet::first(); ts != nullptr; ts = ts->next()) {
     char buf[256];
     ts->label(buf, sizeof(buf));

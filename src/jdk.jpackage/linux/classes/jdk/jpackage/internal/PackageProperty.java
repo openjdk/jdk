@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,52 +25,61 @@
 
 package jdk.jpackage.internal;
 
-import java.text.MessageFormat;
+import java.util.Objects;
+import java.util.Optional;
 import jdk.jpackage.internal.model.ConfigException;
 
-final class PackageProperty {
-    /**
-     * Constructor
-     *
-     * @param name property name
-     * @param expectedValue expected property value
-     * @param substString substitution string to be placed in resource file to
-     * be replaced with the expected property value by jpackage at package build
-     * time
-     * @param customResource name of custom resource from resource directory in
-     * which this package property can be set
-     */
-    PackageProperty(String name, String expectedValue, String substString,
-            String customResource) {
-        this.name = name;
-        this.expectedValue = expectedValue;
-        this.substString = substString;
-        this.customResource = customResource;
+/**
+ * Linux package property.
+ *
+ * @param name             the property name (e.g.: "Architecture", "Version")
+ * @param expectedValue    the expected value of the property
+ * @param subtrituteString the substitute string in the jpackage resource if
+ *                         applicable (e.g.: "APPLICATION_PACKAGE",
+ *                         "APPLICATION_VERSION")
+ * @param resourceName     the name of the custom resource file from the
+ *                         resource directory in which this package property can
+ *                         be set
+ */
+record PackageProperty(String name, String expectedValue, Optional<String> subtrituteString, String customResource) {
+
+    PackageProperty {
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(expectedValue);
+        Objects.requireNonNull(subtrituteString);
+        Objects.requireNonNull(customResource);
+    }
+
+    PackageProperty(String name, String expectedValue, String subtrituteString, String resourceName) {
+        this(name, expectedValue, Optional.of(subtrituteString), resourceName);
+    }
+
+    PackageProperty(String name, String expectedValue, String resourceName) {
+        this(name, expectedValue, Optional.empty(), resourceName);
+    }
+
+    private String formatErrorMessage(String actualValue) {
+        Objects.requireNonNull(actualValue);
+        return I18N.format("error.unexpected-package-property",
+                name, expectedValue, actualValue, customResource);
+    }
+
+    private String formatAdvice(String actualValue) {
+        Objects.requireNonNull(actualValue);
+        return subtrituteString.map(ss -> {
+            return I18N.format("error.unexpected-package-property.advice", ss, actualValue, name, customResource);
+        }).orElseGet(() -> {
+            return I18N.format("error.unexpected-default-package-property.advice", name, customResource);
+        });
     }
 
     ConfigException verifyValue(String actualValue) {
+        Objects.requireNonNull(actualValue);
+
         if (expectedValue.equals(actualValue)) {
             return null;
         }
 
-        final String advice;
-        if (substString != null) {
-            advice = MessageFormat.format(I18N.getString(
-                    "error.unexpected-package-property.advice"), substString,
-                    actualValue, name, customResource);
-        } else {
-            advice = MessageFormat.format(I18N.getString(
-                    "error.unexpected-default-package-property.advice"), name,
-                    customResource);
-        }
-
-        return new ConfigException(MessageFormat.format(I18N.getString(
-                "error.unexpected-package-property"), name,
-                expectedValue, actualValue, customResource, substString), advice);
+        return new ConfigException(formatErrorMessage(actualValue), formatAdvice(actualValue));
     }
-
-    final String name;
-    private final String expectedValue;
-    private final String substString;
-    private final String customResource;
 }

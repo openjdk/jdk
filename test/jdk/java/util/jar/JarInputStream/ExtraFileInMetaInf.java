@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,16 +27,24 @@
  * @summary JarInputStream doesn't provide certificates for some file under META-INF
  * @modules java.base/sun.security.tools.keytool
  *          jdk.jartool/sun.security.tools.jarsigner
+ * @run junit ExtraFileInMetaInf
  */
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.util.jar.*;
 import java.io.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-public class ExtraFileInMetaInf {
-    public static void main(String args[]) throws Exception {
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
+public class ExtraFileInMetaInf {
+
+    @BeforeAll
+    static void setup() throws Exception {
         // Create a zip file with 2 entries
         try (ZipOutputStream zos =
                      new ZipOutputStream(new FileOutputStream("x.jar"))) {
@@ -44,7 +52,6 @@ public class ExtraFileInMetaInf {
             zos.write(new byte[10]);
             zos.putNextEntry(new ZipEntry("x"));
             zos.write(new byte[10]);
-            zos.close();
         }
 
         // Sign it
@@ -54,7 +61,10 @@ public class ExtraFileInMetaInf {
                         "-keyalg rsa -alias a -dname CN=A -genkeypair").split(" "));
         sun.security.tools.jarsigner.Main.main(
                 "-keystore ks -storepass changeit x.jar a".split(" "));
+    }
 
+    @Test
+    void checkSignedTest() throws IOException {
         // Check if the entries are signed
         try (JarInputStream jis =
                      new JarInputStream(new FileInputStream("x.jar"))) {
@@ -63,9 +73,7 @@ public class ExtraFileInMetaInf {
                 String name = je.toString();
                 if (name.equals("META-INF/SUB/file") || name.equals("x")) {
                     while (jis.read(new byte[1000]) >= 0);
-                    if (je.getCertificates() == null) {
-                        throw new Exception(name + " not signed");
-                    }
+                    assertNotNull(je.getCertificates(), name + " not signed");
                 }
             }
         }

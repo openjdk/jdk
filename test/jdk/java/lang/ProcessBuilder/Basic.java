@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@
  * @summary Basic tests for Process and Environment Variable code
  * @modules java.base/java.lang:open
  *          java.base/java.io:open
- * @requires !vm.musl
  * @requires vm.flagless
  * @library /test/lib
  * @run main/othervm/native/timeout=360 Basic
@@ -46,7 +45,7 @@
  * @modules java.base/java.lang:open
  *          java.base/java.io:open
  *          java.base/jdk.internal.misc
- * @requires (os.family == "linux" & !vm.musl)
+ * @requires (os.family == "linux")
  * @library /test/lib
  * @run main/othervm/timeout=300 -Djdk.lang.Process.launchMechanism=posix_spawn Basic
  */

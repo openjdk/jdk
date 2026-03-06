@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ mlib_s32 mlib_ImageConvVersion(mlib_s32 m,
                                mlib_s32 scale,
                                mlib_type type)
 {
-  mlib_d64 dscale = 1.0 / (1 << scale); /* 16 < scale <= 31 */
+  mlib_d64 dscale = 1.0 / (((mlib_s64)1) << scale); /* 16 < scale <= 31 */
 
   if (type == MLIB_BYTE) {
     if ((m * n * dscale * 32768.0) > MAX_U8)
