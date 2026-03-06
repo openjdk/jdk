@@ -420,8 +420,9 @@ static struct symtab* build_symtab_internal(int fd, const char *filename, bool t
         // skip non-object and non-function symbols, but STT_NOTYPE is allowed for
         // signal trampoline.
         int st_type = ELF_ST_TYPE(syms->st_info);
-        if (st_type != STT_FUNC && st_type != STT_OBJECT &&
-            st_type != STT_NOTYPE && st_type != STT_NOTYPE) {
+        if (st_type != STT_FUNC &&
+            st_type != STT_OBJECT &&
+            st_type != STT_NOTYPE) {
            continue;
         }
         // skip empty strings and undefined symbols
