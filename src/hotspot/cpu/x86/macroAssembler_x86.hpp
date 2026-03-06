@@ -2072,6 +2072,9 @@ public:
   void restore_legacy_gprs();
   void load_aotrc_address(Register reg, address a);
   void setcc(Assembler::Condition comparison, Register dst);
+
+  void imullq(BasicType bt, Register dst, Register src, int32_t imm);
+  void lealq(BasicType bt, Register dst, Address src);
 };
 
 #endif // CPU_X86_MACROASSEMBLER_X86_HPP
