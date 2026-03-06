@@ -64,14 +64,17 @@ HeapRootSegments AOTMappedHeapWriter::_heap_root_segments;
 address AOTMappedHeapWriter::_requested_bottom;
 address AOTMappedHeapWriter::_requested_top;
 
+static size_t _num_strings = 0;
+static size_t _string_bytes = 0;
+static size_t _num_packages = 0;
+static size_t _num_protection_domains = 0;
+
 GrowableArrayCHeap<AOTMappedHeapWriter::NativePointerInfo, mtClassShared>* AOTMappedHeapWriter::_native_pointers;
 GrowableArrayCHeap<oop, mtClassShared>* AOTMappedHeapWriter::_source_objs;
 GrowableArrayCHeap<AOTMappedHeapWriter::HeapObjOrder, mtClassShared>* AOTMappedHeapWriter::_source_objs_order;
 
 AOTMappedHeapWriter::BufferOffsetToSourceObjectTable*
 AOTMappedHeapWriter::_buffer_offset_to_source_obj_table = nullptr;
-
-DumpedInternedStrings *AOTMappedHeapWriter::_dumped_interned_strings = nullptr;
 
 typedef HashTable<
       size_t,    // offset of a filler from AOTMappedHeapWriter::buffer_bottom()
@@ -87,7 +90,6 @@ void AOTMappedHeapWriter::init() {
     Universe::heap()->collect(GCCause::_java_lang_system_gc);
 
     _buffer_offset_to_source_obj_table = new (mtClassShared) BufferOffsetToSourceObjectTable(/*size (prime)*/36137, /*max size*/1 * M);
-    _dumped_interned_strings = new (mtClass)DumpedInternedStrings(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE);
     _fillers = new (mtClassShared) FillersTable();
     _requested_bottom = nullptr;
     _requested_top = nullptr;
@@ -141,9 +143,6 @@ int AOTMappedHeapWriter::narrow_oop_shift() {
 void AOTMappedHeapWriter::delete_tables_with_raw_oops() {
   delete _source_objs;
   _source_objs = nullptr;
-
-  delete _dumped_interned_strings;
-  _dumped_interned_strings = nullptr;
 }
 
 void AOTMappedHeapWriter::add_source_obj(oop src_obj) {
@@ -179,25 +178,6 @@ bool AOTMappedHeapWriter::is_too_large_to_archive(size_t size) {
   } else {
     return false;
   }
-}
-
-// Keep track of the contents of the archived interned string table. This table
-// is used only by CDSHeapVerifier.
-void AOTMappedHeapWriter::add_to_dumped_interned_strings(oop string) {
-  assert_at_safepoint(); // DumpedInternedStrings uses raw oops
-  assert(!is_string_too_large_to_archive(string), "must be");
-  bool created;
-  _dumped_interned_strings->put_if_absent(string, true, &created);
-  if (created) {
-    // Prevent string deduplication from changing the value field to
-    // something not in the archive.
-    java_lang_String::set_deduplication_forbidden(string);
-    _dumped_interned_strings->maybe_grow();
-  }
-}
-
-bool AOTMappedHeapWriter::is_dumped_interned_string(oop o) {
-  return _dumped_interned_strings->get(o) != nullptr;
 }
 
 // Various lookup functions between source_obj, buffered_obj and requested_obj
@@ -430,6 +410,7 @@ void AOTMappedHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtC
     assert(info != nullptr, "must be");
     size_t buffer_offset = copy_one_source_obj_to_buffer(src_obj);
     info->set_buffer_offset(buffer_offset);
+    assert(buffer_offset <= 0x7fffffff, "sanity");
 
     OopHandle handle(Universe::vm_global(), src_obj);
     _buffer_offset_to_source_obj_table->put_when_absent(buffer_offset, handle);
@@ -442,6 +423,9 @@ void AOTMappedHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtC
 
   log_info(aot)("Size of heap region = %zu bytes, %d objects, %d roots, %d native ptrs",
                 _buffer_used, _source_objs->length() + 1, roots->length(), _num_native_ptrs);
+  log_info(aot)("   strings            = %8zu (%zu bytes)", _num_strings, _string_bytes);
+  log_info(aot)("   packages           = %8zu", _num_packages);
+  log_info(aot)("   protection domains = %8zu", _num_protection_domains);
 }
 
 size_t AOTMappedHeapWriter::filler_array_byte_size(int length) {
@@ -530,7 +514,25 @@ void update_buffered_object_field(address buffered_obj, int field_offset, T valu
   *field_addr = value;
 }
 
+void AOTMappedHeapWriter::update_stats(oop src_obj) {
+  if (java_lang_String::is_instance(src_obj)) {
+    _num_strings ++;
+    _string_bytes += src_obj->size() * HeapWordSize;
+    _string_bytes += java_lang_String::value(src_obj)->size() * HeapWordSize;
+  } else {
+    Klass* k = src_obj->klass();
+    Symbol* name = k->name();
+    if (name->equals("java/lang/NamedPackage") || name->equals("java/lang/Package")) {
+      _num_packages ++;
+    } else if (name->equals("java/security/ProtectionDomain")) {
+      _num_protection_domains ++;
+    }
+  }
+}
+
 size_t AOTMappedHeapWriter::copy_one_source_obj_to_buffer(oop src_obj) {
+  update_stats(src_obj);
+
   assert(!is_too_large_to_archive(src_obj), "already checked");
   size_t byte_size = src_obj->size() * HeapWordSize;
   assert(byte_size > 0, "no zero-size objects");
