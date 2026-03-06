@@ -80,8 +80,6 @@ class ThreadIdTableConfig : public AllStatic {
 // Lazily creates the table and populates it with the given
 // thread list
 void ThreadIdTable::lazy_initialize(const ThreadsList *threads) {
-  // Must be inside the lock to ensure that we don't add a thread to the table
-  // that has just passed the removal point in Threads::remove().
   if (!is_initialized()) {
     {
       // There is no obvious benefit in allowing the thread table
