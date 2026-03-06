@@ -60,7 +60,7 @@ void ShenandoahYoungHeuristics::choose_collection_set_from_regiondata(Shenandoah
   // enough consolidated garbage to make effective use of young-gen evacuation reserve.  If there is still
   // young-gen reserve available following selection of the young-gen collection set, see if we can use
   // this memory to expand the old-gen evacuation collection set.
-  need_to_finalize_mixed |= heap->old_generation()->heuristics()->top_off_collection_set(_add_regions_to_old);
+  need_to_finalize_mixed |= heap->old_generation()->heuristics()->top_off_collection_set(cset, _add_regions_to_old);
   if (need_to_finalize_mixed) {
     heap->old_generation()->heuristics()->finalize_mixed_evacs();
   }

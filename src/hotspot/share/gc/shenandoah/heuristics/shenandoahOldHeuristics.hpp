@@ -106,7 +106,6 @@ private:
   // when client code invokes prime_collection_set().  They are consulted, and sometimes modified, when client code
   // calls top_off_collection_set() to possibly expand the number of old-gen regions in a mixed evacuation cset, and by
   // finalize_mixed_evacs(), which prepares the way for mixed evacuations to begin.
-  ShenandoahCollectionSet* _mixed_evac_cset;
   size_t _evacuated_old_bytes;
   size_t _collected_old_bytes;
   size_t _included_old_regions;
@@ -163,7 +162,7 @@ private:
   // a conservative old evacuation budget, and the second time with a larger more aggressive old evacuation budget.  Returns
   // true iff we need to finalize mixed evacs.  (If no regions are added to the collection set, there is no need to finalize
   // mixed evacuations.)
-  bool add_old_regions_to_cset();
+  bool add_old_regions_to_cset(ShenandoahCollectionSet* collection_set);
 
 public:
   explicit ShenandoahOldHeuristics(ShenandoahOldGeneration* generation, ShenandoahGenerationalHeap* gen_heap);
@@ -180,7 +179,7 @@ public:
   // evacuation candidate regions into the collection set as will fit within this excess repurposed reserved.
   // Returns true iff we need to finalize mixed evacs.  Upon return, the var parameter regions_to_xfer holds the
   // number of regions to transfer from young to old.
-  bool top_off_collection_set(size_t &add_regions_to_old);
+  bool top_off_collection_set(ShenandoahCollectionSet* collection_set, size_t &add_regions_to_old);
 
   // Having added all eligible mixed-evacuation candidates to the collection set, this function updates the total count
   // of how much old-gen memory remains to be evacuated and adjusts the representation of old-gen regions that remain to
