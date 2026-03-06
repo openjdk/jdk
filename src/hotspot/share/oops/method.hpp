@@ -78,6 +78,7 @@ class Method : public Metadata {
   AdapterHandlerEntry* _adapter;
   int               _vtable_index;               // vtable index of this method (see VtableIndexFlag)
   AccessFlags       _access_flags;               // Access flags
+  int               _number_of_parameters;
   MethodFlags       _flags;
 
   u2                _intrinsic_id;               // vmSymbols::intrinsic_id (0 == _none)
@@ -269,6 +270,7 @@ class Method : public Metadata {
   inline int interpreter_throwout_count() const;
 
   u2 size_of_parameters() const { return constMethod()->size_of_parameters(); }
+  u2 number_of_parameters() const;
 
   bool has_stackmap_table() const {
     return constMethod()->has_stackmap_table();
