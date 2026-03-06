@@ -701,62 +701,63 @@ static bool no_side_effect_since_safepoint(Compile* C, Node* x, Node* mem, Merge
 }
 
 SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, Node* x, IdealLoopTree* loop) {
+  if (!back_control->in(0)->is_If()) {
+    assert(StressDuplicateBackedge, "");
+    return nullptr;
+  }
   IfNode* exit_test = back_control->in(0)->as_If();
   SafePointNode* safepoint = nullptr;
-  if (exit_test->in(0)->is_SafePoint() && exit_test->in(0)->outcnt() == 1) {
-    safepoint = exit_test->in(0)->as_SafePoint();
-  } else {
-    Node* c = back_control;
-    while (c != x && c->Opcode() != Op_SafePoint) {
-      c = idom(c);
-    }
+  Node* c = back_control;
+  while (c != x && c->Opcode() != Op_SafePoint) {
+    c = idom(c);
+  }
 
-    if (c->Opcode() == Op_SafePoint) {
-      safepoint = c->as_SafePoint();
-    }
+  if (c->Opcode() == Op_SafePoint) {
+    safepoint = c->as_SafePoint();
+  }
 
-    if (safepoint == nullptr) {
-      return nullptr;
-    }
+  if (safepoint == nullptr) {
+    return nullptr;
+  }
 
-    Node* mem = safepoint->in(TypeFunc::Memory);
+  Node* mem = safepoint->in(TypeFunc::Memory);
 
-    // We can only use that safepoint if there's no side effect between the backedge and the safepoint.
+  // We can only use that safepoint if there's no side effect between the backedge and the safepoint.
 
-    // mm is the memory state at the safepoint (when it's a MergeMem)
-    // no_side_effect_since_safepoint() goes over the memory state at the backedge. It resets the mm input for each
-    // component of the memory state it encounters so it points to the base memory. Once no_side_effect_since_safepoint()
-    // is done, if no side effect after the safepoint was found, mm should transform to the base memory: the states at
-    // the backedge and safepoint are the same so all components of the memory state at the safepoint should have been
-    // reset.
-    MergeMemNode* mm = nullptr;
+  // mm is the memory state at the safepoint (when it's a MergeMem)
+  // no_side_effect_since_safepoint() goes over the memory state at the backedge. It resets the mm input for each
+  // component of the memory state it encounters so it points to the base memory. Once no_side_effect_since_safepoint()
+  // is done, if no side effect after the safepoint was found, mm should transform to the base memory: the states at
+  // the backedge and safepoint are the same so all components of the memory state at the safepoint should have been
+  // reset.
+  MergeMemNode* mm = nullptr;
 #ifdef ASSERT
-    if (mem->is_MergeMem()) {
-      mm = mem->clone()->as_MergeMem();
-      _igvn._worklist.push(mm);
-      for (MergeMemStream mms(mem->as_MergeMem()); mms.next_non_empty(); ) {
-        // Loop invariant memory state won't be reset by no_side_effect_since_safepoint(). Do it here.
-        // Escape Analysis can add state to mm that it doesn't add to the backedge memory Phis, breaking verification
-        // code that relies on mm. Clear that extra state here.
-        if (mms.alias_idx() != Compile::AliasIdxBot &&
-            (loop != get_loop(ctrl_or_self(mms.memory())) ||
-             (mms.adr_type()->isa_oop_ptr() && mms.adr_type()->is_known_instance()))) {
-          mm->set_memory_at(mms.alias_idx(), mem->as_MergeMem()->base_memory());
-        }
+  if (mem->is_MergeMem()) {
+    mm = mem->clone()->as_MergeMem();
+    _igvn._worklist.push(mm);
+    for (MergeMemStream mms(mem->as_MergeMem()); mms.next_non_empty();) {
+      // Loop invariant memory state won't be reset by no_side_effect_since_safepoint(). Do it here.
+      // Escape Analysis can add state to mm that it doesn't add to the backedge memory Phis, breaking verification
+      // code that relies on mm. Clear that extra state here.
+      if (mms.alias_idx() != Compile::AliasIdxBot &&
+          (loop != get_loop(ctrl_or_self(mms.memory())) ||
+           (mms.adr_type()->isa_oop_ptr() && mms.adr_type()->is_known_instance()))) {
+        mm->set_memory_at(mms.alias_idx(), mem->as_MergeMem()->base_memory());
       }
     }
-#endif
-    if (!no_side_effect_since_safepoint(C, x, mem, mm, this)) {
-      safepoint = nullptr;
-    } else {
-      assert(mm == nullptr|| _igvn.transform(mm) == mem->as_MergeMem()->base_memory(), "all memory state should have been processed");
-    }
-#ifdef ASSERT
-    if (mm != nullptr) {
-      _igvn.remove_dead_node(mm);
-    }
-#endif
   }
+#endif
+  if (!no_side_effect_since_safepoint(C, x, mem, mm, this)) {
+    safepoint = nullptr;
+  } else {
+    assert(mm == nullptr|| _igvn.transform(mm) == mem->as_MergeMem()->base_memory(),
+           "all memory state should have been processed");
+  }
+#ifdef ASSERT
+  if (mm != nullptr) {
+    _igvn.remove_dead_node(mm);
+  }
+#endif
   return safepoint;
 }
 
