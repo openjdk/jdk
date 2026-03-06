@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,6 +199,12 @@ public final class DateTimeFormatterBuilder {
      * The index of the last variable width value parser.
      */
     private int valueParserIndex = -1;
+
+    /**
+     * Flag indicating whether this builder only uses ChronoField instances.
+     * This is used to optimize the storage of parsed field values in the Parsed class.
+     */
+    private boolean onlyChronoField = true;
 
     /**
      * Gets the formatting pattern for date and time styles for a locale and chronology.
@@ -2371,9 +2377,33 @@ public final class DateTimeFormatterBuilder {
             active.padNextWidth = 0;
             active.padNextChar = 0;
         }
+
+        // Update the onlyChronoField flag if the printer/parser uses non-ChronoField instances
+        checkField(pp);
         active.printerParsers.add(pp);
         active.valueParserIndex = -1;
         return active.printerParsers.size() - 1;
+    }
+
+    /**
+     * Update the onlyChronoField flag if the printer/parser uses non-ChronoField instances
+     * @param pp the printer-parser
+     */
+    private void checkField(DateTimePrinterParser pp) {
+        TemporalField field;
+        if (pp instanceof NumberPrinterParser npp) {
+            field = npp.field;
+        } else if (pp instanceof TextPrinterParser tpp) {
+            field = tpp.field;
+        } else if (pp instanceof DefaultValueParser dvp) {
+            field = dvp.field;
+        } else {
+            return;
+        }
+
+        if (!(field instanceof ChronoField)) {
+            active.onlyChronoField = false;
+        }
     }
 
     //-----------------------------------------------------------------------
@@ -2443,7 +2473,7 @@ public final class DateTimeFormatterBuilder {
         }
         CompositePrinterParser pp = new CompositePrinterParser(printerParsers, false);
         return new DateTimeFormatter(pp, locale, DecimalStyle.STANDARD,
-                resolverStyle, null, chrono, null);
+                resolverStyle, null, chrono, null, onlyChronoField);
     }
 
     //-----------------------------------------------------------------------
