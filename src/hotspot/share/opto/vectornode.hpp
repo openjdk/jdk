@@ -1798,8 +1798,14 @@ class VectorStoreMaskNode : public VectorNode {
   static VectorStoreMaskNode* make(PhaseGVN& gvn, Node* in, BasicType in_type, uint num_elem);
 };
 
-// Lane-wise type cast a vector mask to the given vector type. The vector length
-// of the input and output must be the same.
+// Lane-wise type cast a vector mask to the given vector type.
+// The vector length of the input and output must be the same.
+// We can only cast between:
+// - BVectMask and BVectMask (0x00/0x01)
+// - NVectMask and NVectMask (0x0..0/0xF..F of different bit lengths)
+// - PVectMask and PVectMask (specialized predicate/mask registers)
+// Casting N/PVectMask <-> BVectMask needs to be done by
+// VectorStoreMask and VectorLoadMask.
 class VectorMaskCastNode : public VectorNode {
  public:
   VectorMaskCastNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {
