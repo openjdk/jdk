@@ -1269,8 +1269,8 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
   if (mdo != nullptr) {
     mdo->init();
     ResourceMark rm(THREAD);
-    int arg_count = mdo->method()->number_of_parameters();
-    for (int i = 0; i < arg_count; i++) {
+    int arg_size = mdo->method()->size_of_parameters();
+    for (int i = 0; i < arg_size; i++) {
       mdo->set_arg_modified(i, 0);
     }
     mdo->clean_method_data(/*always_clean*/true);

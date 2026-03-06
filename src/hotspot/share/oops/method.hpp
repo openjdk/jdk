@@ -78,6 +78,7 @@ class Method : public Metadata {
   AdapterHandlerEntry* _adapter;
   int               _vtable_index;               // vtable index of this method (see VtableIndexFlag)
   AccessFlags       _access_flags;               // Access flags
+  int               _number_of_parameters;
   MethodFlags       _flags;
 
   u2                _intrinsic_id;               // vmSymbols::intrinsic_id (0 == _none)

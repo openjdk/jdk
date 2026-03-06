@@ -730,6 +730,9 @@ int Method::extra_stack_words() {
 }
 
 u2 Method::number_of_parameters() const {
+  if (_number_of_parameters != 0) {
+    return _number_of_parameters;
+  }
   u2 count = 0;
   for (SignatureStream ss(signature()); !ss.at_return_type(); ss.next()) {
     count++;

@@ -667,8 +667,8 @@ void MultiBranchData::print_data_on(outputStream* st, const char* extra) const {
 
 void ArgInfoData::print_data_on(outputStream* st, const char* extra) const {
   print_shared(st, "ArgInfoData", extra);
-  int nargs = number_of_args();
-  for (int i = 0; i < nargs; i++) {
+  int args_size = size_of_args();
+  for (int i = 0; i < args_size; i++) {
     st->print("  0x%x", arg_modified(i));
   }
   st->cr();
