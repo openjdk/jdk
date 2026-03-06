@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,11 +122,13 @@ public final class VarHandleGuardMethodGenerator {
                         if (direct && handle.vform.methodType_table[ad.type] == ad.symbolicMethodTypeErased) {
                             <RESULT_ERASED>MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);<RETURN_ERASED>
                         } else {
-                            MethodHandle mh = handle.getMethodHandle(ad.mode);
-                            <RETURN>mh.asType(ad.symbolicMethodTypeInvoker).invokeBasic(<LINK_TO_INVOKER_ARGS>);
+                            <RETURN>ad.adaptedMethodHandle(handle).invokeBasic(<LINK_TO_INVOKER_ARGS>);
                         }
                     }""";
 
+    // The void bypass is necessary if a (name + return-dropping type) combination has multiple call sites, each
+    // having its own constant VarHandle. In that case, the AccessMode::adaptedMethodHandle adaption mechanism
+    // does not work due to multiple VarHandles, but this bypass still enables constant folding.
     static final String GUARD_METHOD_TEMPLATE_V =
             """
                     @ForceInline
@@ -139,8 +141,7 @@ public final class VarHandleGuardMethodGenerator {
                         } else if (direct && handle.vform.getMethodType_V(ad.type) == ad.symbolicMethodTypeErased) {
                             MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);
                         } else {
-                            MethodHandle mh = handle.getMethodHandle(ad.mode);
-                            mh.asType(ad.symbolicMethodTypeInvoker).invokeBasic(<LINK_TO_INVOKER_ARGS>);
+                            ad.adaptedMethodHandle(handle).invokeBasic(<LINK_TO_INVOKER_ARGS>);
                         }
                     }""";
 
