@@ -496,7 +496,10 @@ public:
   // first two private routines for loading 32 bit or 64 bit constants
 private:
 
-  void mov_immediate64(Register dst, uint64_t imm64);
+  template<bool count_only>
+  int mov_immediate64(Register dst, uint64_t imm64);
+  int mov_immediate64_insts_count(Register dst, uint64_t imm64);
+  int mov_immediate64(Register dst, uint64_t imm64);
   void mov_immediate32(Register dst, uint32_t imm32);
 
   int push(unsigned int bitset, Register stack);

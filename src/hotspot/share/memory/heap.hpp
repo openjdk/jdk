@@ -44,6 +44,8 @@ class HeapBlock {
     bool      _used;                             // Used bit
   };
 
+  static constexpr size_t minimum_alignment() { return 16; }
+
  protected:
   union {
     Header _header;
@@ -174,7 +176,7 @@ class CodeHeap : public CHeapObj<mtCode> {
 
   void* find_start(void* p)     const;   // returns the block containing p or null
   CodeBlob* find_blob(void* start) const;
-  static size_t header_size()         { return sizeof(HeapBlock); } // returns the header size for each heap block
+  static constexpr size_t header_size() { return sizeof(HeapBlock); } // returns the header size for each heap block
 
   size_t segment_size()         const { return _segment_size; }  // for CodeHeapState
   HeapBlock* first_block() const;                                // for CodeHeapState

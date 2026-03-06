@@ -168,7 +168,7 @@ void Address::lea(MacroAssembler *as, Register r) const {
     offset >>= 2;
     starti;
     f(0, 31), f(offset_lo, 30, 29), f(0b10000, 28, 24), sf(offset, 23, 5);
-    rf(Rd, 0);
+    zrf(Rd, 0);
   }
 
   void Assembler::_adrp(Register Rd, address adr) {
@@ -348,6 +348,16 @@ void Assembler::wrap_label(Label &L,
 
 void Assembler::wrap_label(Register r, Label &L,
                                  compare_and_branch_insn insn) {
+  if (L.is_bound()) {
+    (this->*insn)(r, target(L));
+  } else {
+    L.add_patch_at(code(), locator());
+    (this->*insn)(r, pc());
+  }
+}
+
+void Assembler::wrap_label(FloatRegister r, Label &L,
+                           fp_memory_access_insn insn) {
   if (L.is_bound()) {
     (this->*insn)(r, target(L));
   } else {
