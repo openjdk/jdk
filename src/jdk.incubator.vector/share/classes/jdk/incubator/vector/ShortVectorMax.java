@@ -92,7 +92,7 @@ final class ShortVectorMax extends ShortVector {
 
     @ForceInline
     @Override
-    public final Class<Short> elementType() { return short.class; }
+    public final Class<Short> elementType() { return ETYPE; }
 
     @ForceInline
     final Class<Short> carrierType() { return CTYPE; }

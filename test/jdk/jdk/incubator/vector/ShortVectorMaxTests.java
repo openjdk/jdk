@@ -1721,9 +1721,14 @@ public class ShortVectorMaxTests extends AbstractVectorTest {
         assertEquals(asIntegral.species(), SPECIES);
     }
 
-    @Test(expectedExceptions = UnsupportedOperationException.class)
+    @Test
     void viewAsFloatingLanesTest() {
-        SPECIES.zero().viewAsFloatingLanes();
+        Vector<?> asFloating = SPECIES.zero().viewAsFloatingLanes();
+        VectorSpecies<?> asFloatingSpecies = asFloating.species();
+        Assert.assertNotEquals(asFloatingSpecies.elementType(), SPECIES.elementType());
+        assertEquals(asFloatingSpecies.vectorShape(), SPECIES.vectorShape());
+        assertEquals(asFloatingSpecies.length(), SPECIES.length());
+        assertEquals(asFloating.viewAsIntegralLanes().species(), SPECIES);
     }
 
     @Test

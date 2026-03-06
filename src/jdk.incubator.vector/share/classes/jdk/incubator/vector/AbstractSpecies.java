@@ -432,14 +432,21 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
         Object ia = Array.newInstance(carrierType(), laneCount);
         assert(ia.getClass() == laneType.arrayType);
         checkValue(laneCount-1);  // worst case
-        for (int i = 0; i < laneCount; i++) {
-            if ((byte)i == i)
-                Array.setByte(ia, i, (byte)i);
-            else if ((short)i == i)
-                Array.setShort(ia, i, (short)i);
-            else
-                Array.setInt(ia, i, i);
-            assert(Array.getDouble(ia, i) == i);
+        if (elementType() == Float16.class) {
+            for (int i = 0; i < laneCount; i++) {
+                Array.setShort(ia, i, Float.floatToFloat16((float)i));
+                assert(Float16.shortBitsToFloat16(Array.getShort(ia, i)).intValue() == i);
+            }
+        } else {
+            for (int i = 0; i < laneCount; i++) {
+                if ((byte)i == i)
+                    Array.setByte(ia, i, (byte)i);
+                else if ((short)i == i)
+                    Array.setShort(ia, i, (short)i);
+                else
+                    Array.setInt(ia, i, i);
+                assert(Array.getDouble(ia, i) == i);
+            }
         }
         return ia;
     }
@@ -637,6 +644,8 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
             s = IntVector.species(shape); break;
         case LaneType.SK_LONG:
             s = LongVector.species(shape); break;
+        case LaneType.SK_FLOAT16:
+            s = Float16Vector.species(shape); break;
         }
         if (s == null) {
             // NOTE: The result of this method is guaranteed to be

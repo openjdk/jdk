@@ -92,7 +92,7 @@ final class DoubleVectorMax extends DoubleVector {
 
     @ForceInline
     @Override
-    public final Class<Double> elementType() { return double.class; }
+    public final Class<Double> elementType() { return ETYPE; }
 
     @ForceInline
     final Class<Double> carrierType() { return CTYPE; }

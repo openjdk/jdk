@@ -53,19 +53,29 @@ typeprefix=
 globalArgs=""
 #globalArgs="$globalArgs -KextraOverrides"
 
-for type in byte short int long float double
+for type in byte short int long float double float16
 do
   Type="$(tr '[:lower:]' '[:upper:]' <<< ${type:0:1})${type:1}"
   TYPE="$(tr '[:lower:]' '[:upper:]' <<< ${type})"
+
+  case $type in
+    float16)
+       type=short
+       TYPE=SHORT
+       ;;
+  esac
+
   args=$globalArgs
   args="$args -K$type -Dtype=$type -DType=$Type -DTYPE=$TYPE"
 
   Boxtype=$Type
   Wideboxtype=$Boxtype
+  ElemLayout=$Type
 
   kind=BITWISE
 
   bitstype=$type
+  maskbitstype=$type
   Bitstype=$Type
   Boxbitstype=$Boxtype
 
@@ -74,23 +84,29 @@ do
   Boxfptype=$Boxtype
   carriertype=$type
   Carriertype=$Type
+  elemtype=$type
+  FPtype=$type
+  fallbacktype=$type
 
-  case $type in
-    byte)
+  case $Type in
+    Byte)
       Wideboxtype=Integer
       sizeInBytes=1
       laneType=LT_BYTE
       lanebitsType=LT_BYTE
       args="$args -KbyteOrShort"
       ;;
-    short)
+    Short)
+      fptype=Float16
+      Fptype=Float16
+      Boxfptype=Float16
       Wideboxtype=Integer
       sizeInBytes=2
       laneType=LT_SHORT
       lanebitsType=LT_SHORT
       args="$args -KbyteOrShort"
       ;;
-    int)
+    Int)
       Boxtype=Integer
       Carriertype=Integer
       Wideboxtype=Integer
@@ -103,7 +119,7 @@ do
       lanebitsType=LT_INT
       args="$args -KintOrLong -KintOrFP -KintOrFloat"
       ;;
-    long)
+    Long)
       fptype=double
       Fptype=Double
       Boxfptype=Double
@@ -112,33 +128,56 @@ do
       lanebitsType=LT_LONG
       args="$args -KintOrLong -KlongOrDouble"
       ;;
-    float)
+    Float)
       kind=FP
       bitstype=int
+      maskbitstype=int
       Bitstype=Int
       Boxbitstype=Integer
       sizeInBytes=4
       laneType=LT_FLOAT
       lanebitsType=LT_INT
       args="$args -KintOrFP -KintOrFloat"
+      FPtype=FP32
       ;;
-    double)
+    Double)
       kind=FP
       bitstype=long
+      maskbitstype=long
       Bitstype=Long
       Boxbitstype=Long
       sizeInBytes=8
       laneType=LT_DOUBLE
       lanebitsType=LT_LONG
       args="$args -KintOrFP -KlongOrDouble"
+      FPtype=FP64
+      ;;
+    Float16)
+      kind=FP
+      bitstype=short
+      maskbitstype=short
+      Bitstype=Short
+      Boxbitstype=Short
+      sizeInBytes=2
+      carriertype=short
+      Carriertype=Short
+      FPtype=FP16
+      Boxtype=Float16
+      elemtype=Float16
+      ElemLayout=Short
+      laneType=LT_FLOAT16
+      lanebitsType=LT_SHORT
+      fallbacktype=float
+      args="$args -KbyteOrShort -KshortOrFP -KshortOrFloat16"
       ;;
   esac
 
-  args="$args -K$kind -DlaneType=$laneType -DlanebitsType=$lanebitsType -DBoxtype=$Boxtype -DWideboxtype=$Wideboxtype"
-  args="$args -Dbitstype=$bitstype -DBitstype=$Bitstype -DBoxbitstype=$Boxbitstype"
+
+  args="$args -K$FPtype -K$kind -DlaneType=$laneType -DlanebitsType=$lanebitsType -Dfallbacktype=$fallbacktype -DBoxtype=$Boxtype -DWideboxtype=$Wideboxtype"
+  args="$args -DElemLayout=$ElemLayout -Dbitstype=$bitstype -Dmaskbitstype=$maskbitstype -DBitstype=$Bitstype -DBoxbitstype=$Boxbitstype"
   args="$args -Dfptype=$fptype -DFptype=$Fptype -DBoxfptype=$Boxfptype"
   args="$args -DsizeInBytes=$sizeInBytes"
-  args="$args -Dcarriertype=$carriertype -DCarriertype=$Carriertype"
+  args="$args -Dcarriertype=$carriertype -Delemtype=$elemtype -DCarriertype=$Carriertype"
 
   abstractvectortype=${typeprefix}${Type}Vector
   abstractbitsvectortype=${typeprefix}Vector${Bitstype}

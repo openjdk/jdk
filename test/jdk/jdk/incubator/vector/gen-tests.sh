@@ -52,11 +52,11 @@ Log false "$compilation\n"
 Log true "done\n"
 
 # For each type
-for type in byte short int long float double
+for type in byte short int long float double float16
 do
   Type="$(tr '[:lower:]' '[:upper:]' <<< ${type:0:1})${type:1}"
   TYPE="$(tr '[:lower:]' '[:upper:]' <<< ${type})"
-  args="-K$type -Dtype=$type -DType=$Type -DTYPE=$TYPE"
+  args="-K$type -DType=$Type -DTYPE=$TYPE"
 
   Boxtype=$Type
   Wideboxtype=$Boxtype
@@ -118,9 +118,21 @@ do
       MaxValue=POSITIVE_INFINITY
       MinValue=NEGATIVE_INFINITY
       ;;
+    float16)
+      kind=FP
+      fpkind=FP16
+      bitstype=short
+      type=short
+      Bitstype=Short
+      Boxbitstype=Short
+      Wideboxtype=Float16
+      MaxValue=POSITIVE_INFINITY
+      MinValue=NEGATIVE_INFINITY
+      Type=Float16
+      ;;
   esac
 
-  args="$args -K$kind -K$fpkind -K$Type -DBoxtype=$Boxtype -DWideboxtype=$Wideboxtype -DMaxValue=$MaxValue -DMinValue=$MinValue"
+  args="$args -Dtype=$type -K$kind -K$fpkind -K$Type -DBoxtype=$Boxtype -DWideboxtype=$Wideboxtype -DMaxValue=$MaxValue -DMinValue=$MinValue"
   args="$args -Dbitstype=$bitstype -DBitstype=$Bitstype -DBoxbitstype=$Boxbitstype"
   args="$args -Dfptype=$fptype -DFptype=$Fptype -DBoxfptype=$Boxfptype"
 
