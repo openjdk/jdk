@@ -70,7 +70,7 @@ public class DirectoryStreamTests {
      * Create the JAR files used by the tests
      */
     @BeforeAll
-    public static void setUp()  throws Exception {
+    public static void setUp() throws Exception {
         emptyJarFile = Paths.get("emptyDir.jar");
         try (FileSystem zipfs = ZIPFS_PROVIDER.newFileSystem(emptyJarFile, ZIPFS_MAP)) {
 
@@ -334,7 +334,7 @@ public class DirectoryStreamTests {
         return Stream.of(
                 Arguments.of("META-INF", "META-INF/services"),
                 Arguments.of("/META-INF", "/META-INF/services"),
-                Arguments.of("/META-INF/../META-INF","/META-INF/../META-INF/services" ),
+                Arguments.of("/META-INF/../META-INF", "/META-INF/../META-INF/services" ),
                 Arguments.of("./META-INF", "./META-INF/services"),
                 Arguments.of("", "META-INF"),
                 Arguments.of("/", "/META-INF"),

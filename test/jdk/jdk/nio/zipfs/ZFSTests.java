@@ -74,7 +74,7 @@ public class ZFSTests {
         }
         AtomicInteger cnt = new AtomicInteger();
         int max = 3;
-        try (FileSystem fs = FileSystems.newFileSystem(uri, Collections.emptyMap())) {
+        try (FileSystem fs = FileSystems.newFileSystem(uri, Map.of())) {
             Files.walkFileTree(fs.getRootDirectories().iterator().next(),
                                 new SimpleFileVisitor<Path>() {
 
@@ -117,7 +117,7 @@ public class ZFSTests {
                 zos.write("/fooo/bar".getBytes());
             }
 
-            try (FileSystem fs = FileSystems.newFileSystem(uri, Collections.emptyMap())) {
+            try (FileSystem fs = FileSystems.newFileSystem(uri, Map.of())) {
                 Files.walkFileTree(fs.getRootDirectories().iterator().next(),
                                     new SimpleFileVisitor<Path>() {
                     @Override
@@ -149,7 +149,7 @@ public class ZFSTests {
             files.add("/foo");
             files.add("/bar");
             files.add("/fooo/bar");
-            try (FileSystem fs = FileSystems.newFileSystem(uri, Collections.emptyMap())) {
+            try (FileSystem fs = FileSystems.newFileSystem(uri, Map.of())) {
                     Files.walk(fs.getPath("/")).forEach( p -> {
                         if (Files.isDirectory(p)) {
                             dirs.remove(p.toString());

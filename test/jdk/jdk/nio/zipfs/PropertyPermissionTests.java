@@ -58,7 +58,7 @@ public class PropertyPermissionTests {
      * Create the JAR files used by the tests
      */
     @BeforeAll
-    public static void setUp()  throws Exception {
+    public static void setUp() throws Exception {
         jarFile = Utils.createJarFile("basic.jar",
                 "META-INF/services/java.nio.file.spi.FileSystemProvider");
     }

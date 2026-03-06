@@ -41,7 +41,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.spi.FileSystemProvider;
 import java.net.URI;
 import java.io.IOException;
-import java.util.Collections;
+import java.util.Map;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -68,7 +68,7 @@ public class Basic {
         jarFile = Utils.createJarFile("basic.jar",
                 "META-INF/services/java.nio.file.spi.FileSystemProvider");
         uri = new URI("jar", jarFile.toUri().toString(), null);
-        fs = FileSystems.newFileSystem(uri, Collections.emptyMap(), null);
+        fs = FileSystems.newFileSystem(uri, Map.of());
     }
 
     @Test
@@ -88,7 +88,7 @@ public class Basic {
         // Test: FileSystems#newFileSystem(Path)
         FileSystems.newFileSystem(jarFile).close();
         // Test: FileSystems#newFileSystem(URI)
-        FileSystems.newFileSystem(uri, Collections.emptyMap(), null).close();
+        FileSystems.newFileSystem(uri, Map.of()).close();
     }
 
     @Test
@@ -159,9 +159,7 @@ public class Basic {
 
     @AfterEach
     void cleanup() throws IOException {
-        if (fs.isOpen()) {
-            fs.close();
-        }
+        fs.close();
         Files.deleteIfExists(jarFile);
     }
 

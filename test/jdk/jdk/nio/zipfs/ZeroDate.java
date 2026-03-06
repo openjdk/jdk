@@ -41,7 +41,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Collections;
+import java.util.Map;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -121,7 +121,7 @@ public class ZeroDate {
             os.write(data);
         }
         URI uri = URI.create("jar:" + path.toUri());
-        try (FileSystem fs = FileSystems.newFileSystem(uri, Collections.emptyMap())) {
+        try (FileSystem fs = FileSystems.newFileSystem(uri, Map.of())) {
             Path entry = fs.getPath("x");
             Instant actualInstant =
                     Files.readAttributes(entry, BasicFileAttributes.class)

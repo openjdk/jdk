@@ -107,7 +107,7 @@ public class ZipFSTester {
                 "dir1/foo",
                 "dir2/bar",
                 "dir1/dir3/fooo");
-        fs = newZipFileSystem(jarFile, Collections.emptyMap());
+        fs = newZipFileSystem(jarFile, Map.of());
     }
 
     @AfterAll
@@ -517,7 +517,7 @@ public class ZipFSTester {
                    zos.closeEntry();
                 }
             }
-            try (var zfs = newZipFileSystem(zpath, Collections.emptyMap())) {
+            try (var zfs = newZipFileSystem(zpath, Map.of())) {
                 for (Object[] e : entries) {
                     Path path = zfs.getPath((String)e[0]);
                     byte[] bytes = (byte[])e[2];
@@ -536,7 +536,7 @@ public class ZipFSTester {
                     }
                 }
             }
-            try (var zfs = newZipFileSystem(zpath, Collections.emptyMap())) {
+            try (var zfs = newZipFileSystem(zpath, Map.of())) {
                 for (Object[] e : entries) {
                     checkRead(zfs.getPath((String)e[0]), (byte[])e[2]);
                 }
@@ -549,7 +549,7 @@ public class ZipFSTester {
                     Files.write(zfs.getPath((String)e[0]), (byte[])e[2]);
                 }
             }
-            try (var zfs = newZipFileSystem(zpath, Collections.emptyMap())) {
+            try (var zfs = newZipFileSystem(zpath, Map.of())) {
                 for (Object[] e : entries) {
                     checkRead(zfs.getPath((String)e[0]), (byte[])e[2]);
                 }
@@ -566,7 +566,7 @@ public class ZipFSTester {
                     }
                 }
             }
-            try (var zfs = newZipFileSystem(zpath, Collections.emptyMap())) {
+            try (var zfs = newZipFileSystem(zpath, Map.of())) {
                 for (Object[] e : entries) {
                     checkRead(zfs.getPath((String)e[0]), (byte[])e[2]);
                 }
@@ -840,7 +840,7 @@ public class ZipFSTester {
                 int nDst = 0;
                 while (nDst < nSrc) {
                     int n = isDst.read(bufDst, nDst, nSrc - nDst);
-                    assertNotEquals(-1,  n, "checking <%s> vs <%s>...%n".formatted(
+                    assertNotEquals(-1, n, "checking <%s> vs <%s>...%n".formatted(
                                           src.toString(), dst.toString()));
                     nDst += n;
                 }
@@ -1028,7 +1028,7 @@ public class ZipFSTester {
      * @see 8299864
      */
     @Test
-    void testFileStoreNullArgs()  {
+    void testFileStoreNullArgs() {
         // file system containing at least one ZipFileStore
         FileStore store = fs.getFileStores().iterator().next();
 
