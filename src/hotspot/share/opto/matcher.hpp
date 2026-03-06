@@ -221,12 +221,12 @@ public:
   // Convert a machine register to a machine register type, so-as to
   // properly match spill code.
   const int *_register_save_type;
+  #ifdef ASSERT
   // Maps from machine register to boolean; true if machine register can
   // be holding a call argument in some signature.
   static bool can_be_java_arg( int reg );
-  // Maps from machine register to boolean; true if machine register holds
-  // a spillable argument.
-  static bool is_spillable_arg( int reg );
+  #endif
+
   // Number of integer live ranges that constitute high register pressure
   static uint int_pressure_limit();
   // Number of float live ranges that constitute high register pressure
@@ -442,9 +442,6 @@ public:
 
   // The Method-klass-holder may be passed in the inline_cache_reg
   // and then expanded into the inline_cache_reg and a method_ptr register
-
-  // Interpreter's Frame Pointer Register
-  static OptoReg::Name  interpreter_frame_pointer_reg();
 
   // Java-Native calling convention
   // (what you use when intercalling between Java and C++ code)
