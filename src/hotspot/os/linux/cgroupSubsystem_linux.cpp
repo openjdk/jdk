@@ -28,7 +28,6 @@
 #include "cgroupV2Subsystem_linux.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
-#include "os_linux.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -605,6 +604,11 @@ void CgroupSubsystemFactory::cleanup(CgroupInfo* cg_infos) {
   }
 }
 
+void CgroupSubsystem::adjust_controllers(physical_memory_size_type upper_mem_bound, int upper_cpu_bound) {
+  CgroupUtil::adjust_controller(memory_controller()->controller(), upper_mem_bound);
+  CgroupUtil::adjust_controller(cpu_controller()->controller(), upper_cpu_bound);
+}
+
 /* active_processor_count
  *
  * Calculate an appropriate number of active processors for the
@@ -631,7 +635,7 @@ void CgroupSubsystemFactory::cleanup(CgroupInfo* cg_infos) {
  * return:
  *    true if there were no errors. false otherwise.
  */
-bool CgroupSubsystem::active_processor_count(double& value) {
+bool CgroupSubsystem::active_processor_count(int (*cpu_bound_func)(), double& value) {
   // We use a cache with a timeout to avoid performing expensive
   // computations in the event this function is called frequently.
   // [See 8227006].
@@ -643,7 +647,7 @@ bool CgroupSubsystem::active_processor_count(double& value) {
     return true;
   }
 
-  int cpu_count = os::Linux::active_processor_count();
+  int cpu_count = cpu_bound_func();
   double result = -1;
   if (!CgroupUtil::processor_count(contrl->controller(), cpu_count, result)) {
     return false;
