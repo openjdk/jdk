@@ -361,13 +361,6 @@ public final class AWTAccessor {
          * Accessor for InputEvent.getButtonDownMasks()
          */
         int[] getButtonDownMasks();
-
-        /*
-         * Accessor for InputEvent.canAccessSystemClipboard field
-         */
-        boolean canAccessSystemClipboard(InputEvent event);
-        void setCanAccessSystemClipboard(InputEvent event,
-                boolean canAccessSystemClipboard);
     }
 
     /**
@@ -451,16 +444,6 @@ public final class AWTAccessor {
      * An accessor for the MenuComponent class.
      */
     public interface MenuComponentAccessor {
-        /**
-         * Returns the appContext of the menu component.
-         */
-        AppContext getAppContext(MenuComponent menuComp);
-
-        /**
-         * Sets the appContext of the menu component.
-         */
-        void setAppContext(MenuComponent menuComp, AppContext appContext);
-
         /**
          * Returns the peer of the menu component.
          */

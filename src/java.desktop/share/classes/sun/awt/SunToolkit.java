@@ -333,9 +333,6 @@ public abstract class SunToolkit extends Toolkit
         if (target instanceof Component) {
             AWTAccessor.getComponentAccessor().
                 setAppContext((Component)target, context);
-        } else if (target instanceof MenuComponent) {
-            AWTAccessor.getMenuComponentAccessor().
-                setAppContext((MenuComponent)target, context);
         } else {
             return false;
         }
@@ -351,8 +348,7 @@ public abstract class SunToolkit extends Toolkit
             return AWTAccessor.getComponentAccessor().
                        getAppContext((Component)target);
         } else if (target instanceof MenuComponent) {
-            return AWTAccessor.getMenuComponentAccessor().
-                       getAppContext((MenuComponent)target);
+            return AppContext.getAppContext();
         } else {
             return null;
         }
@@ -1038,8 +1034,7 @@ public abstract class SunToolkit extends Toolkit
         return getSystemEventQueueImplPP();
     }
 
-    // Package private implementation
-    static EventQueue getSystemEventQueueImplPP() {
+    public static EventQueue getSystemEventQueueImplPP() {
         return getSystemEventQueueImplPP(AppContext.getAppContext());
     }
 

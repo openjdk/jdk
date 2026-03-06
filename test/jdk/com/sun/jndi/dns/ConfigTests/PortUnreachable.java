@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import javax.naming.directory.InitialDirContext;
  * @requires os.family != "aix"
  * @library ../lib/
  * @modules java.base/sun.security.util
- * @run main/othervm -Djdk.net.usePlainDatagramSocketImpl=false PortUnreachable
+ * @run main PortUnreachable
  */
 
 public class PortUnreachable extends DNSTestBase {

@@ -104,7 +104,7 @@ final class LinuxDebPackager extends LinuxPackager<LinuxDebPackage> {
         List<String> cmdline = new ArrayList<>(List.of(
                 sysEnv.dpkgdeb().toString(), "-f", outputPackageFile().toString()));
 
-        properties.forEach(property -> cmdline.add(property.name));
+        properties.forEach(property -> cmdline.add(property.name()));
 
         Map<String, String> actualValues = Executor.of(cmdline)
                 .saveOutput(true)
@@ -116,7 +116,7 @@ final class LinuxDebPackager extends LinuxPackager<LinuxDebPackage> {
                                 components -> components[1]));
 
         for (var property : properties) {
-            Optional.ofNullable(property.verifyValue(actualValues.get(property.name))).ifPresent(errors::add);
+            Optional.ofNullable(property.verifyValue(actualValues.get(property.name()))).ifPresent(errors::add);
         }
 
         return errors;

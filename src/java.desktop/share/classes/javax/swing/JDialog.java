@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,13 +101,6 @@ public class JDialog extends Dialog implements WindowConstants,
                                                RootPaneContainer,
                                TransferHandler.HasGetTransferHandler
 {
-    /**
-     * Key into the AppContext, used to check if should provide decorations
-     * by default.
-     */
-    private static final Object defaultLookAndFeelDecoratedKey =
-            new StringBuffer("JDialog.defaultLookAndFeelDecorated");
-
     private int defaultCloseOperation = HIDE_ON_CLOSE;
 
     /**
@@ -1119,6 +1112,8 @@ public class JDialog extends Dialog implements WindowConstants,
         }
     }
 
+    private static boolean defaultLAFDecorated;
+
     /**
      * Provides a hint as to whether or not newly created {@code JDialog}s
      * should have their Window decorations (such as borders, widgets to
@@ -1144,11 +1139,7 @@ public class JDialog extends Dialog implements WindowConstants,
      * @since 1.4
      */
     public static void setDefaultLookAndFeelDecorated(boolean defaultLookAndFeelDecorated) {
-        if (defaultLookAndFeelDecorated) {
-            SwingUtilities.appContextPut(defaultLookAndFeelDecoratedKey, Boolean.TRUE);
-        } else {
-            SwingUtilities.appContextPut(defaultLookAndFeelDecoratedKey, Boolean.FALSE);
-        }
+        defaultLAFDecorated = defaultLookAndFeelDecorated;
     }
 
     /**
@@ -1160,12 +1151,7 @@ public class JDialog extends Dialog implements WindowConstants,
      * @since 1.4
      */
     public static boolean isDefaultLookAndFeelDecorated() {
-        Boolean defaultLookAndFeelDecorated =
-            (Boolean) SwingUtilities.appContextGet(defaultLookAndFeelDecoratedKey);
-        if (defaultLookAndFeelDecorated == null) {
-            defaultLookAndFeelDecorated = Boolean.FALSE;
-        }
-        return defaultLookAndFeelDecorated.booleanValue();
+        return defaultLAFDecorated;
     }
 
     /**

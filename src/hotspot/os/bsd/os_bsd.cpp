@@ -1885,11 +1885,6 @@ char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_
   return nullptr;
 }
 
-bool os::pd_release_memory_special(char* base, size_t bytes) {
-  fatal("os::release_memory_special should not be called on BSD.");
-  return false;
-}
-
 size_t os::large_page_size() {
   return _large_page_size;
 }

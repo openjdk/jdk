@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -478,7 +478,7 @@ public class ArraysSupport {
     // Bytes
 
     /**
-     * Find the index of a mismatch between two arrays.
+     * Find the smallest index of a mismatch between two arrays.
      *
      * <p>This method does not perform bounds checks. It is the responsibility
      * of the caller to perform such bounds checks before calling this method.
@@ -486,9 +486,9 @@ public class ArraysSupport {
      * @param a the first array to be tested for a mismatch
      * @param b the second array to be tested for a mismatch
      * @param length the number of bytes from each array to check
-     * @return the index of a mismatch between the two arrays, otherwise -1 if
-     * no mismatch.  The index will be within the range of (inclusive) 0 to
-     * (exclusive) the smaller of the two array lengths.
+     * @return the smallest index of a mismatch between the two arrays,
+     * otherwise -1 if no mismatch.  The index will be within the range of
+     * (inclusive) 0 to (exclusive) the smaller of the two array lengths.
      */
     public static int mismatch(byte[] a,
                                byte[] b,
@@ -520,8 +520,8 @@ public class ArraysSupport {
     }
 
     /**
-     * Find the relative index of a mismatch between two arrays starting from
-     * given indexes.
+     * Find the smallest relative index of a mismatch between two arrays
+     * starting from given indexes.
      *
      * <p>This method does not perform bounds checks. It is the responsibility
      * of the caller to perform such bounds checks before calling this method.
@@ -533,7 +533,7 @@ public class ArraysSupport {
      * @param bFromIndex the index of the first element (inclusive) in the
      * second array to be compared
      * @param length the number of bytes from each array to check
-     * @return the relative index of a mismatch between the two arrays,
+     * @return the smallest relative index of a mismatch between the two arrays,
      * otherwise -1 if no mismatch.  The index will be within the range of
      * (inclusive) 0 to (exclusive) the smaller of the two array bounds.
      */
@@ -599,8 +599,8 @@ public class ArraysSupport {
         if (length > 3) {
             if (a[aFromIndex] != b[bFromIndex])
                 return 0;
-            long aOffset = Unsafe.ARRAY_CHAR_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_CHAR_INDEX_SCALE);
-            long bOffset = Unsafe.ARRAY_CHAR_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_CHAR_INDEX_SCALE);
+            long aOffset = Unsafe.ARRAY_CHAR_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_CHAR_INDEX_SCALE);
+            long bOffset = Unsafe.ARRAY_CHAR_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_CHAR_INDEX_SCALE);
             i = vectorizedMismatch(
                     a, aOffset,
                     b, bOffset,
@@ -648,8 +648,8 @@ public class ArraysSupport {
         if (length > 3) {
             if (a[aFromIndex] != b[bFromIndex])
                 return 0;
-            long aOffset = Unsafe.ARRAY_SHORT_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_SHORT_INDEX_SCALE);
-            long bOffset = Unsafe.ARRAY_SHORT_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_SHORT_INDEX_SCALE);
+            long aOffset = Unsafe.ARRAY_SHORT_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_SHORT_INDEX_SCALE);
+            long bOffset = Unsafe.ARRAY_SHORT_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_SHORT_INDEX_SCALE);
             i = vectorizedMismatch(
                     a, aOffset,
                     b, bOffset,
@@ -697,8 +697,8 @@ public class ArraysSupport {
         if (length > 1) {
             if (a[aFromIndex] != b[bFromIndex])
                 return 0;
-            long aOffset = Unsafe.ARRAY_INT_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_INT_INDEX_SCALE);
-            long bOffset = Unsafe.ARRAY_INT_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_INT_INDEX_SCALE);
+            long aOffset = Unsafe.ARRAY_INT_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_INT_INDEX_SCALE);
+            long bOffset = Unsafe.ARRAY_INT_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_INT_INDEX_SCALE);
             i = vectorizedMismatch(
                     a, aOffset,
                     b, bOffset,
@@ -729,8 +729,8 @@ public class ArraysSupport {
         int i = 0;
         if (length > 1) {
             if (Float.floatToRawIntBits(a[aFromIndex]) == Float.floatToRawIntBits(b[bFromIndex])) {
-                long aOffset = Unsafe.ARRAY_FLOAT_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_FLOAT_INDEX_SCALE);
-                long bOffset = Unsafe.ARRAY_FLOAT_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_FLOAT_INDEX_SCALE);
+                long aOffset = Unsafe.ARRAY_FLOAT_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_FLOAT_INDEX_SCALE);
+                long bOffset = Unsafe.ARRAY_FLOAT_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_FLOAT_INDEX_SCALE);
                 i = vectorizedMismatch(
                         a, aOffset,
                         b, bOffset,
@@ -787,8 +787,8 @@ public class ArraysSupport {
         }
         if (a[aFromIndex] != b[bFromIndex])
             return 0;
-        long aOffset = Unsafe.ARRAY_LONG_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_LONG_INDEX_SCALE);
-        long bOffset = Unsafe.ARRAY_LONG_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_LONG_INDEX_SCALE);
+        long aOffset = Unsafe.ARRAY_LONG_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_LONG_INDEX_SCALE);
+        long bOffset = Unsafe.ARRAY_LONG_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_LONG_INDEX_SCALE);
         int i = vectorizedMismatch(
                 a, aOffset,
                 b, bOffset,
@@ -813,8 +813,8 @@ public class ArraysSupport {
         }
         int i = 0;
         if (Double.doubleToRawLongBits(a[aFromIndex]) == Double.doubleToRawLongBits(b[bFromIndex])) {
-            long aOffset = Unsafe.ARRAY_DOUBLE_BASE_OFFSET + (aFromIndex << LOG2_ARRAY_DOUBLE_INDEX_SCALE);
-            long bOffset = Unsafe.ARRAY_DOUBLE_BASE_OFFSET + (bFromIndex << LOG2_ARRAY_DOUBLE_INDEX_SCALE);
+            long aOffset = Unsafe.ARRAY_DOUBLE_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_DOUBLE_INDEX_SCALE);
+            long bOffset = Unsafe.ARRAY_DOUBLE_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_DOUBLE_INDEX_SCALE);
             i = vectorizedMismatch(
                     a, aOffset,
                     b, bOffset,

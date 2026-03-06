@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package sun.awt.X11;
 import java.awt.*;
 import java.awt.peer.SystemTrayPeer;
 import sun.awt.SunToolkit;
-import sun.awt.AppContext;
 import sun.awt.AWTAccessor;
 import sun.awt.UNIXToolkit;
 import sun.util.logging.PlatformLogger;
@@ -183,7 +182,7 @@ public final class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListene
                         .firePropertyChange(target, propertyName, oldValue, newValue);
                 }
             };
-        invokeOnEachAppContext(runnable);
+        SunToolkit.invokeLater(runnable);
     }
 
     private void createTrayPeers() {
@@ -198,7 +197,7 @@ public final class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListene
                     }
                 }
             };
-        invokeOnEachAppContext(runnable);
+        SunToolkit.invokeLater(runnable);
     }
 
     private void removeTrayPeers() {
@@ -210,13 +209,6 @@ public final class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListene
                     }
                 }
             };
-        invokeOnEachAppContext(runnable);
+        SunToolkit.invokeLater(runnable);
     }
-
-    private void invokeOnEachAppContext(Runnable runnable) {
-        for (AppContext appContext : AppContext.getAppContexts()) {
-            SunToolkit.invokeLaterOnAppContext(appContext, runnable);
-        }
-    }
-
 }

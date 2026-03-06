@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.common.TestServerConfigurator
- * @run testng/othervm
+ * @run junit/othervm
  *      -Djdk.internal.httpclient.debug=true
  *      ConcurrentResponses
  */
@@ -75,29 +75,30 @@ import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.httpclient.test.lib.http2.Http2TestExchange;
 import jdk.httpclient.test.lib.http2.Http2Handler;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.net.http.HttpResponse.BodyHandlers.discarding;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.fail;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class ConcurrentResponses {
 
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
-    HttpServer httpTestServer;         // HTTP/1.1    [ 4 servers ]
-    HttpsServer httpsTestServer;       // HTTPS/1.1
-    Http2TestServer http2TestServer;   // HTTP/2 ( h2c )
-    Http2TestServer https2TestServer;  // HTTP/2 ( h2  )
-    HttpTestServer https3TestServer;
-    String httpFixedURI, httpsFixedURI, httpChunkedURI, httpsChunkedURI;
-    String http2FixedURI, https2FixedURI, http2VariableURI, https2VariableURI;
-    String https3FixedURI, https3VariableURI;
+    private static HttpServer httpTestServer;         // HTTP/1.1    [ 4 servers ]
+    private static HttpsServer httpsTestServer;       // HTTPS/1.1
+    private static Http2TestServer http2TestServer;   // HTTP/2 ( h2c )
+    private static Http2TestServer https2TestServer;  // HTTP/2 ( h2  )
+    private static HttpTestServer https3TestServer;
+    private static String httpFixedURI, httpsFixedURI, httpChunkedURI, httpsChunkedURI;
+    private static String http2FixedURI, https2FixedURI, http2VariableURI, https2VariableURI;
+    private static String https3FixedURI, https3VariableURI;
 
     static final int CONCURRENT_REQUESTS = 13;
     static final AtomicInteger IDS = new AtomicInteger();
@@ -131,7 +132,7 @@ public class ConcurrentResponses {
      */
     static final <T> CompletionStage<HttpResponse<T>>
     assert200ResponseCode(HttpResponse<T> response) {
-        assertEquals(response.statusCode(), 200);
+        assertEquals(200, response.statusCode());
         return CompletableFuture.completedFuture(response);
     }
 
@@ -141,12 +142,11 @@ public class ConcurrentResponses {
      */
     static final <T> CompletionStage<HttpResponse<T>>
     assertbody(HttpResponse<T> response, T body) {
-        assertEquals(response.body(), body);
+        assertEquals(body, response.body());
         return CompletableFuture.completedFuture(response);
     }
 
-    @DataProvider(name = "uris")
-    public Object[][] variants() {
+    public static Object[][] variants() {
         return new Object[][]{
                 { httpFixedURI },
                 { httpsFixedURI },
@@ -164,7 +164,8 @@ public class ConcurrentResponses {
 
     // The ofString implementation accumulates data, below a certain threshold
     // into the byte buffers it is given.
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testAsString(String uri) throws Exception {
         int id = IDS.getAndIncrement();
         ExecutorService virtualExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
@@ -204,7 +205,8 @@ public class ConcurrentResponses {
 
     // The custom subscriber aggressively attacks any area, between the limit
     // and the capacity, in the byte buffers it is given, by writing 'X' into it.
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testWithCustomSubscriber(String uri) throws Exception {
         int id = IDS.getAndIncrement();
         ExecutorService virtualExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
@@ -301,8 +303,8 @@ public class ConcurrentResponses {
                 + server.getAddress().getPort();
     }
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         httpTestServer = HttpServer.create(sa, 0);
         httpTestServer.createContext("/http1/fixed", new Http1FixedHandler());
@@ -342,8 +344,8 @@ public class ConcurrentResponses {
         https3TestServer.start();
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         httpTestServer.stop(0);
         httpsTestServer.stop(0);
         http2TestServer.stop();
