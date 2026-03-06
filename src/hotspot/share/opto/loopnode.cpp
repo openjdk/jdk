@@ -4177,6 +4177,8 @@ void IdealLoopTree::allpaths_check_safepts(VectorSet &visited, Node_List &stack)
       // Terminate this path: guaranteed safepoint found.
       // Boxing CallStaticJava calls are excluded as they may lack a safepoint on the fast path. This is
       // not done via CallStaticJavaNode::guaranteed_safepoint() as that also controls PcDesc emission.
+      // In the future, guaranteed_safepoint() should be reworked to correctly handle boxing methods
+      // to avoid this additional check.
     } else if (n->Opcode() == Op_SafePoint) {
       if (_phase->get_loop(n) != this) {
         if (_required_safept == nullptr) _required_safept = new Node_List();
@@ -4274,6 +4276,10 @@ void IdealLoopTree::check_safepts(VectorSet &visited, Node_List &stack) {
     if (!_irreducible) {
       // Scan the dom-path nodes from tail to head
       for (Node* n = tail(); n != _head; n = _phase->idom(n)) {
+        // Boxing CallStaticJava calls are excluded as they may lack a safepoint on the fast path. This is
+        // not done via CallStaticJavaNode::guaranteed_safepoint() as that also controls PcDesc emission.
+        // In the future, guaranteed_safepoint() should be reworked to correctly handle boxing methods
+        // to avoid this additional check.
         if (n->is_Call() && n->as_Call()->guaranteed_safepoint()
             && !(n->is_CallStaticJava() && n->as_CallStaticJava()->is_boxing_method())) {
           has_call = true;
@@ -4576,10 +4582,6 @@ void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
     remove_safepoints(phase, true);
   } else {
     assert(!_head->is_Loop() || !_head->as_Loop()->is_loop_nest_inner_loop(), "transformation to counted loop should not fail");
-    // Clear the flag so downstream code doesn't expect a counted loop that will never materialize.
-    if (_head->is_Loop() && _head->as_Loop()->is_loop_nest_inner_loop()) {
-      _head->as_Loop()->clear_loop_nest_inner_loop();
-    }
     if (_parent != nullptr && !_irreducible) {
       // Not a counted loop. Keep one safepoint.
       bool keep_one_sfpt = true;

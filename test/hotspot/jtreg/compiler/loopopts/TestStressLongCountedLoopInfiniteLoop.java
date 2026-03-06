@@ -26,6 +26,7 @@
  * @test
  * @bug 8378005
  * @summary assert in proj_out when StressLongCountedLoop converts infinite loop to long counted loop nest
+ * @run main ${test.main.class}
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:StressLongCountedLoop=1
  *                   -XX:CompileCommand=compileonly,${test.main.class}::test ${test.main.class}
  */
