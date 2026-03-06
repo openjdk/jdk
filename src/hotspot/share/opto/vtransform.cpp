@@ -1512,7 +1512,7 @@ VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& appl
     }
   }
 
-  LoadVectorNode* vn = LoadVectorNode::make(sopc, ctrl, mem, adr, _adr_type, vlen, bt, _control_dependency);
+  LoadVectorNode* vn = LoadVectorNode::make(sopc, ctrl, mem, adr, _adr_type, vlen, bt, _control_dependency, _rc_constant_folded);
   DEBUG_ONLY( if (VerifyAlignVector) { vn->set_must_verify_alignment(); } )
   register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, vn->vect_type());

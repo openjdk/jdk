@@ -247,7 +247,7 @@ void PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode
   const TypeVect * vt = TypeVect::make(type, lane_count);
   Node* mm = (*mem)->memory_at(C->get_alias_index(src_adr_type));
   Node* masked_load = new LoadVectorMaskedNode(inline_block, mm, src_start,
-                                               src_adr_type, vt, mask_gen);
+                                               src_adr_type, vt, mask_gen, LoadNode::UnknownControl);
   transform_later(masked_load);
 
   mm = (*mem)->memory_at(C->get_alias_index(adr_type));
@@ -1017,7 +1017,7 @@ bool PhaseMacroExpand::generate_block_arraycopy(Node** ctrl, MergeMemNode** mem,
       bool is_mismatched = (basic_elem_type != T_INT);
       Node* sval = transform_later(
           LoadNode::make(_igvn, *ctrl, (*mem)->memory_at(s_alias_idx), sptr, s_adr_type,
-                         TypeInt::INT, T_INT, MemNode::unordered, LoadNode::DependsOnlyOnTest,
+                         TypeInt::INT, T_INT, MemNode::unordered, LoadNode::UnknownControl,
                          false /*require_atomic_access*/, false /*unaligned*/, is_mismatched));
       Node* st = transform_later(
           StoreNode::make(_igvn, *ctrl, (*mem)->memory_at(d_alias_idx), dptr, adr_type,

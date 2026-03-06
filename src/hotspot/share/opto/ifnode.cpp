@@ -1820,6 +1820,28 @@ Node* IfProjNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
+Node* IfProjNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  // The range check constant folds: mark array loads that depend on this range check
+ if (can_reshape && in(0)->is_RangeCheck()) {
+   PhaseIterGVN* igvn = phase->is_IterGVN();
+   const TypeTuple *t = phase->type(in(0))->is_tuple();
+   if (always_taken(t)) {
+     for (DUIterator i = outs(); has_out(i); i++) {
+       Node* u = out(i);
+       if (u->is_Load()) {
+         LoadNode* ld = u->as_Load()->with_rc_constant_folded();
+         if (ld != nullptr) {
+           igvn->replace_node(u, phase->transform(ld));
+           --i;
+         }
+       }
+     }
+   }
+ }
+  return nullptr;
+}
+
+
 bool IfNode::is_zero_trip_guard() const {
   if (in(1)->is_Bool() && in(1)->in(1)->is_Cmp()) {
     return in(1)->in(1)->in(1)->Opcode() == Op_OpaqueZeroTripGuard;

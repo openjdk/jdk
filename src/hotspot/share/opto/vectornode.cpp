@@ -1112,9 +1112,10 @@ PackNode* PackNode::binary_tree_pack(int lo, int hi) {
 LoadVectorNode* LoadVectorNode::make(int opc, Node* ctl, Node* mem,
                                      Node* adr, const TypePtr* atyp,
                                      uint vlen, BasicType bt,
-                                     ControlDependency control_dependency) {
+                                     ControlDependency control_dependency,
+                                     bool rc_constant_folded) {
   const TypeVect* vt = TypeVect::make(bt, vlen);
-  return new LoadVectorNode(ctl, mem, adr, atyp, vt, control_dependency);
+  return new LoadVectorNode(ctl, mem, adr, atyp, vt, control_dependency, rc_constant_folded);
 }
 
 Node* LoadVectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {

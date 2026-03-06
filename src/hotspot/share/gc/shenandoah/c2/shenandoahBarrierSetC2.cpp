@@ -228,7 +228,7 @@ void ShenandoahBarrierSetC2::satb_write_barrier_pre(GraphKit* kit,
     if (do_load) {
       // load original value
       // alias_idx correct??
-      pre_val = __ load(__ ctrl(), adr, val_type, bt, alias_idx);
+      pre_val = __ load(__ ctrl(), adr, val_type, bt, alias_idx, false, MemNode::unordered, LoadNode::UnknownControl);
     }
 
     // if (pre_val != nullptr)

@@ -2087,6 +2087,28 @@ void PhaseIterGVN::verify_node_invariants_for(const Node* n) {
       assert(false, "Broken node invariant for %s", n->Name());
     }
   }
+  if (n->is_Load()) {
+    const TypePtr* adr_t = type(n->in(MemNode::Address))->is_ptr();
+    if (adr_t->isa_aryptr()) {
+      LoadNode* load = n->as_Load();
+      if (!(load->Opcode() == Op_LoadKlass ||
+            load->Opcode() == Op_LoadNKlass ||
+            load->Opcode() == Op_LoadRange ||
+            (load->Opcode() == Op_LoadX && adr_t->offset() == 0) || // mark word
+            load->in(0) == nullptr ||
+            (load->in(0)->is_Proj() && load->in(0)->in(0)->is_RangeCheck()) ||
+            !n->depends_only_on_test() ||
+            load->rc_constant_folded())) {
+        stringStream ss; // Print as a block without tty lock.
+        ss.cr();
+        ss.print_cr("Array load should depend on range check:");
+        n->dump_bfs(2, nullptr, "", &ss);
+        tty->print_cr("%s", ss.as_string());
+
+        assert(false, "Broken node invariant for %s", n->Name());
+      }
+    }
+  }
 }
 #endif
 

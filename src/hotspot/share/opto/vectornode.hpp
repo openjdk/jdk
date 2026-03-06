@@ -1066,8 +1066,8 @@ class LoadVectorNode : public LoadNode {
  private:
   DEBUG_ONLY( bool _must_verify_alignment = false; );
  public:
-  LoadVectorNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, ControlDependency control_dependency = LoadNode::DependsOnlyOnTest)
-    : LoadNode(c, mem, adr, at, vt, MemNode::unordered, control_dependency) {
+  LoadVectorNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, ControlDependency control_dependency = LoadNode::DependsOnlyOnTest, bool rc_constant_folded = false)
+    : LoadNode(c, mem, adr, at, vt, MemNode::unordered, control_dependency, rc_constant_folded) {
     init_class_id(Class_LoadVector);
     set_mismatched_access();
   }
@@ -1087,7 +1087,8 @@ class LoadVectorNode : public LoadNode {
   static LoadVectorNode* make(int opc, Node* ctl, Node* mem,
                               Node* adr, const TypePtr* atyp,
                               uint vlen, BasicType bt,
-                              ControlDependency control_dependency = LoadNode::DependsOnlyOnTest);
+                              ControlDependency control_dependency = LoadNode::DependsOnlyOnTest,
+                              bool rc_constant_folded = false);
   uint element_size(void) { return type2aelembytes(vect_type()->element_basic_type()); }
 
   // Needed for proper cloning.
@@ -1105,8 +1106,8 @@ class LoadVectorNode : public LoadNode {
 // Load Vector from memory via index map
 class LoadVectorGatherNode : public LoadVectorNode {
  public:
-  LoadVectorGatherNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices)
-    : LoadVectorNode(c, mem, adr, at, vt) {
+  LoadVectorGatherNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, ControlDependency control_dependency = LoadNode::DependsOnlyOnTest)
+    : LoadVectorNode(c, mem, adr, at, vt, control_dependency) {
     init_class_id(Class_LoadVectorGather);
     add_req(indices);
     DEBUG_ONLY(bool is_subword = is_subword_type(vt->element_basic_type()));
@@ -1229,8 +1230,8 @@ class LoadVectorMaskedNode : public LoadVectorNode {
 // Load Vector from memory via index map under the influence of a predicate register(mask).
 class LoadVectorGatherMaskedNode : public LoadVectorNode {
  public:
-  LoadVectorGatherMaskedNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, Node* mask)
-    : LoadVectorNode(c, mem, adr, at, vt) {
+  LoadVectorGatherMaskedNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, Node* mask, ControlDependency control_dependency = LoadNode::DependsOnlyOnTest)
+    : LoadVectorNode(c, mem, adr, at, vt, control_dependency) {
     init_class_id(Class_LoadVectorGatherMasked);
     add_req(indices);
     add_req(mask);
