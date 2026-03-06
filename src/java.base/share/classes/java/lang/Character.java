@@ -67,9 +67,13 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * Character information is based on the Unicode Standard, version 17.0.
  * <p>
  * The Java platform has supported different versions of the Unicode
- * Standard over time. Upgrades to newer versions of the Unicode Standard
- * occurred in the following Java releases, each indicating the new version:
+ * Standard over time. The following table lists the version of Unicode used
+ * in each Java release. Unless otherwise specified, all update releases in a
+ * given Java release family use the same Unicode version.
  * <table class="striped">
+ * <!-- The expanded table should include the current Java release, followed
+ * by the older LTS releases. Other releases should be listed in the details
+ * section -->
  * <caption style="display:none">Shows Java releases and supported Unicode versions</caption>
  * <thead>
  * <tr><th scope="col">Java release</th>
@@ -78,37 +82,56 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * <tbody>
  * <tr><th scope="row" style="text-align:left">Java SE 26</th>
  *     <td>Unicode 17.0</td></tr>
+ * <tr><th scope="row" style="text-align:left">Java SE 25</th>
+ *     <td>Unicode 16.0</td></tr>
+ * <tr><th scope="row" style="text-align:left">Java SE 21</th>
+ *     <td>Unicode 15.0</td></tr>
+ * <tr><th scope="row" style="text-align:left">Java SE 17</th>
+ *     <td>Unicode 13.0</td></tr>
+ * <tr><th scope="row" style="text-align:left">Java SE 11</th>
+ *     <td>Unicode 10.0</td></tr>
+ * <tr><th scope="row" style="text-align:left">Java SE 8</th>
+ *     <td>Unicode 6.2</td></tr>
+ * </tbody>
+ * </table>
+ * <details>
+ * <summary>Show other Java releases</summary>
+ * <p>Java releases prior to Java SE 8 are listed only if they upgraded the
+ * Unicode version</p>
+ * <table class="striped">
+ * <caption style="display:none">Shows other Java releases and supported Unicode
+ * versions</caption>
+ * <thead>
+ * <tr><th scope="col">Java release</th>
+ *     <th scope="col">Unicode version</th></tr>
+ * </thead>
+ * <tbody>
  * <tr><th scope="row" style="text-align:left">Java SE 24</th>
  *     <td>Unicode 16.0</td></tr>
+ * <tr><th scope="row" style="text-align:left">Java SE 23</th>
+ *     <td>Unicode 15.1</td></tr>
  * <tr><th scope="row" style="text-align:left">Java SE 22</th>
  *     <td>Unicode 15.1</td></tr>
  * <tr><th scope="row" style="text-align:left">Java SE 20</th>
  *     <td>Unicode 15.0</td></tr>
  * <tr><th scope="row" style="text-align:left">Java SE 19</th>
  *     <td>Unicode 14.0</td></tr>
- * </tbody>
- * </table>
- * <details>
- * <summary>Show older Java releases</summary>
- * <table class="striped">
- * <caption style="display:none">Shows Java releases and supported Unicode versions</caption>
- * <thead>
- * <tr><th scope="col">Java release</th>
- *     <th scope="col">Unicode version</th></tr>
- * </thead>
- * <tbody>
+ * <tr><th scope="row" style="text-align:left">Java SE 18</th>
+ *     <td>Unicode 13.0</td></tr>
+ * <tr><th scope="row" style="text-align:left">Java SE 16</th>
+ *     <td>Unicode 13.0</td></tr>
  * <tr><th scope="row" style="text-align:left">Java SE 15</th>
  *     <td>Unicode 13.0</td></tr>
+ * <tr><th scope="row" style="text-align:left">Java SE 14</th>
+ *     <td>Unicode 12.1</td></tr>
  * <tr><th scope="row" style="text-align:left">Java SE 13</th>
  *     <td>Unicode 12.1</td></tr>
  * <tr><th scope="row" style="text-align:left">Java SE 12</th>
  *     <td>Unicode 11.0</td></tr>
- * <tr><th scope="row" style="text-align:left">Java SE 11</th>
- *     <td>Unicode 10.0</td></tr>
+ * <tr><th scope="row" style="text-align:left">Java SE 10</th>
+ *     <td>Unicode 8.0</td></tr>
  * <tr><th scope="row" style="text-align:left">Java SE 9</th>
  *     <td>Unicode 8.0</td></tr>
- * <tr><th scope="row" style="text-align:left">Java SE 8</th>
- *     <td>Unicode 6.2</td></tr>
  * <tr><th scope="row" style="text-align:left">Java SE 7</th>
  *     <td>Unicode 6.0</td></tr>
  * <tr><th scope="row" style="text-align:left">Java SE 5.0</th>
@@ -122,6 +145,7 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * </tbody>
  * </table>
  * </details>
+ * <p>
  * Variations from these base Unicode versions, such as recognized appendixes,
  * are documented elsewhere.
  * <h2><a id="unicode">Unicode Character Representations</a></h2>
