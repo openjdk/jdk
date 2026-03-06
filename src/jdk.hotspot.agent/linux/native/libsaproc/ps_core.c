@@ -648,7 +648,7 @@ static int handle_vdso(struct ps_prochandle* ph, char* lib_name, size_t lib_name
   // Check vDSO binary first (for referring debuginfo if possible).
   lib_fd = handle_vdso_internal(ph, "vdso64.so", lib_name, lib_name_len);
   if (lib_fd == -1) {
-    // Try agein with vdso.so
+    // Try again with vdso.so
     lib_fd = handle_vdso_internal(ph, "vdso.so", lib_name, lib_name_len);
   }
   if (lib_fd == -1) {
