@@ -327,12 +327,15 @@ public class TestVectorLongToMaskNodeIdealization {
             @Test
             @Warmup(10_000)
             """,
-            // Now let's generate some IR rules
-            // Note: length=64 leads the AndL mask to be all-ones, and fold away immediately.
+            // Now let's generate some IR rules.
+            // General Idea: if the lengths match, we can optimize. If the don't match, it is
+            //               a truncation/zero extension, and we don't optimize.
+            //
+            // TODO: length=64 leads the AndL mask to be all-ones, and fold away immediately.
             //       We could eventually extend the optimization to handle that.
             //
             // AVX512: expect vectorization in length range [4..64]
-            //         2-element masks are currently not properly intrinsified.
+            //         TODO: 2-element masks are currently not properly intrinsified, see JDK-8378589.
             (t1.length() >= 4 && t2.length() >= 4)
             ?(  (t1.length() == t2.length && t1.length() != 64)
                 ?   """
@@ -348,8 +351,9 @@ public class TestVectorLongToMaskNodeIdealization {
             :(   """
                  // AVX512: at least one vector length not in range [4..64] -> no IR rule.
                  """),
-            // AVX2: expect vectorization if: length >= 2 and bitSize <= 256
-            (t1.bitSize() <= 256 && t2.bitSize() <= 256 && t1.length() >= 2 && t2.length() >= 2)
+            // AVX2: expect vectorization if: length >= 4 and bitSize <= 256
+            //       TODO: 2-element masks are currently not properly intrinsified, see JDK-8378589.
+            (t1.bitSize() <= 256 && t2.bitSize() <= 256 && t1.length() >= 4 && t2.length() >= 4)
             ?(  (t1.length() == t2.length)
                 ?   """
                     @IR(counts = {IRNode.VECTOR_LONG_TO_MASK, "= 0",  // Optimized away
@@ -362,7 +366,7 @@ public class TestVectorLongToMaskNodeIdealization {
                         applyIfCPUFeatureAnd = {"avx2", "true", "avx512", "false"})
                     """)
             :(   """
-                 // AVX2: at least one vector length not: length >= 2 and bitSize <= 256 -> no IR rule.
+                 // AVX2: at least one vector length not: length >= 4 and bitSize <= 256 -> no IR rule.
                  """),
             """
             public static Object $test() {
@@ -395,7 +399,8 @@ public class TestVectorLongToMaskNodeIdealization {
 
         tests.add(PrimitiveType.generateLibraryRNG());
 
-        for (int i = 0; i < 100; i++) {
+        // It would take a bit long to cover all 20*20=400 combinations, but we can sample some:
+        for (int i = 0; i < 20; i++) {
             VectorType t1 = VECTOR_TYPES.get(RANDOM.nextInt(VECTOR_TYPES.size()));
             VectorType t2 = VECTOR_TYPES.get(RANDOM.nextInt(VECTOR_TYPES.size()));
             tests.add(testTemplate.asToken(t1, t2));
