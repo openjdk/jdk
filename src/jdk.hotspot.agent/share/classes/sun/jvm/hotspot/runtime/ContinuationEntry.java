@@ -26,6 +26,7 @@
 package sun.jvm.hotspot.runtime;
 
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.runtime.aarch64.*;
 import sun.jvm.hotspot.runtime.amd64.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
@@ -48,12 +49,11 @@ public abstract class ContinuationEntry extends VMObject {
     }
 
     public static ContinuationEntry create(Address addr) {
-        String cpu = VM.getVM().getDebugger().getCPU();
-        if (cpu.equals("amd64")) {
-            return VMObjectFactory.newObject(AMD64ContinuationEntry.class, addr);
-        } else {
-            throw new UnsupportedPlatformException("Continuation is not yet implemented.");
-        }
+        return switch (VM.getVM().getDebugger().getCPU()) {
+            case "amd64"   -> VMObjectFactory.newObject(AMD64ContinuationEntry.class, addr);
+            case "aarch64" -> VMObjectFactory.newObject(AARCH64ContinuationEntry.class, addr);
+            default -> throw new UnsupportedPlatformException("Continuation is not yet implemented.");
+        };
     }
 
     public ContinuationEntry(Address addr) {
