@@ -55,9 +55,8 @@
 # include <pthread_np.h> /* For pthread_attr_get_np */
 #endif
 
-address os::current_stack_pointer() {
-  address dummy = (address) &dummy;
-  return dummy;
+NOINLINE address os::current_stack_pointer() {
+  return static_cast<address>(__builtin_dwarf_cfa());
 }
 
 frame os::get_sender_for_C_frame(frame* fr) {
