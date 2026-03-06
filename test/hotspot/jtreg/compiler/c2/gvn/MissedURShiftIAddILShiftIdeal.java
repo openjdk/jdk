@@ -35,7 +35,7 @@ import java.util.Random;
  * @summary Verify that URShift{I,L}Node::Ideal optimizes ((x << C) + y) >>> C
  *          regardless of Add input order, i.e. it is commutative w.r.t. the addition.
  * @library /test/lib /
- * @run main ${test.main.class}
+ * @run driver ${test.main.class}
  */
 public class MissedURShiftIAddILShiftIdeal {
 
