@@ -1756,7 +1756,7 @@ address StubGenerator::generate_fill(StubId stub_id) {
   {
     // Add set memory mark to protect against unsafe accesses faulting
     UnsafeMemoryAccessMark umam(this, ((t == T_BYTE) && !aligned), true);
-    __ generate_fill(t, aligned, to, value, r11, rax, xmm0);
+    __ generate_fill(t, aligned, to, value, r11, rax, r10, xmm0);
   }
 
   __ vzeroupper();
