@@ -57,20 +57,21 @@ class HandshakeOperation : public CHeapObj<mtThread> {
   int32_t             _pending_threads;
   JavaThread*         _target;
   Thread*             _requester;
-
+  bool                _is_suspendthread; // HACK
   // Must use AsyncHandshakeOperation when using AsyncHandshakeClosure.
   HandshakeOperation(AsyncHandshakeClosure* cl, JavaThread* target, Thread* requester) :
     _handshake_cl(cl),
     _pending_threads(1),
     _target(target),
-    _requester(requester) {}
+    _requester(requester),
+    _is_suspendthread(false) { assert(cl != nullptr, "null closure"); }
 
  public:
   HandshakeOperation(HandshakeClosure* cl, JavaThread* target, Thread* requester) :
     _handshake_cl(cl),
     _pending_threads(1),
     _target(target),
-    _requester(requester) {}
+    _requester(requester) { assert(cl != nullptr, "null closure"); }
   virtual ~HandshakeOperation() {}
   void prepare(JavaThread* current_target, Thread* executing_thread);
   void do_handshake(JavaThread* thread);
@@ -81,10 +82,12 @@ class HandshakeOperation : public CHeapObj<mtThread> {
   }
   void add_target_count(int count) { AtomicAccess::add(&_pending_threads, count); }
   int32_t pending_threads()        { return AtomicAccess::load(&_pending_threads); }
-  const char* name()               { return _handshake_cl->name(); }
+  const char* name()               { return _handshake_cl != nullptr ? _handshake_cl->name() : "unknown"; }
   bool is_async()                  { return _handshake_cl->is_async(); }
   bool is_suspend()                { return _handshake_cl->is_suspend(); }
   bool is_async_exception()        { return _handshake_cl->is_async_exception(); }
+  bool is_suspendthread()          { return _is_suspendthread; }
+  void set_suspendthread()         { _is_suspendthread = true; }
 };
 
 class AsyncHandshakeOperation : public HandshakeOperation {
@@ -493,6 +496,7 @@ HandshakeState::HandshakeState(JavaThread* target) :
   _queue(),
   _lock(Monitor::nosafepoint, "HandshakeState_lock"),
   _active_handshaker(),
+  _pending_suspend_count(0),
   _async_exceptions_blocked(false) {
 }
 
@@ -501,12 +505,17 @@ HandshakeState::~HandshakeState() {
     HandshakeOperation* op = _queue.pop(all_ops_filter);
     guarantee(op->is_async(), "Only async operations may still be present on queue");
     delete op;
+    guarantee(_pending_suspend_count == 0, "unbalanced suspend count tracking: %d", _pending_suspend_count);
   }
 }
 
 void HandshakeState::add_operation(HandshakeOperation* op) {
   // Adds are done lock free and so is arming.
   _queue.push(op);
+  if (strcmp(op->name(), "SuspendThread") == 0) {
+    _pending_suspend_count++;
+    op->set_suspendthread();
+  }
   SafepointMechanism::arm_local_poll_release(_handshakee);
 }
 
@@ -582,6 +591,9 @@ void HandshakeState::remove_op(HandshakeOperation* op) {
   MatchOp mo(op);
   HandshakeOperation* ret = _queue.pop(mo);
   assert(ret == op, "Popped op must match requested op");
+  if (op->is_suspendthread()) {
+    _pending_suspend_count--;
+  }
 };
 
 bool HandshakeState::process_by_self(bool allow_suspend, bool check_async_exception) {
@@ -643,7 +655,12 @@ bool HandshakeState::possibly_can_process_handshake() {
   }
   switch (_handshakee->thread_state()) {
   case _thread_in_native:
-    // native threads are safe if they have no java stack or have walkable stack
+    // Native threads are not safe for suspension whilst executing in a
+    // critical JNI region.
+    if (_handshakee->in_critical_atomic() && _pending_suspend_count > 0) {
+      return false;
+    }
+    // Otherwise native threads are safe if they have no java stack or have walkable stack
     return !_handshakee->has_last_Java_frame() || _handshakee->frame_anchor()->walkable();
 
   case _thread_blocked:

@@ -46,7 +46,7 @@ class ThreadsListHandle;
 class HandshakeClosure : public ThreadClosure, public CHeapObj<mtThread> {
   const char* const _name;
  public:
-  HandshakeClosure(const char* name) : _name(name) {}
+  HandshakeClosure(const char* name) : _name(name) { assert(name != nullptr, "must have a name!");}
   virtual ~HandshakeClosure()                      {}
   const char* name() const                         { return _name; }
   virtual bool is_async()                          { return false; }
@@ -99,7 +99,8 @@ class HandshakeState {
   Monitor _lock;
   // Set to the thread executing the handshake operation.
   Thread* volatile _active_handshaker;
-
+  // Track pending suspend operations so they can be deferred when in a JNI critical region
+  int _pending_suspend_count;
   bool claim_handshake();
   bool possibly_can_process_handshake();
   bool can_process_handshake();
