@@ -292,7 +292,10 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore, jmethodID jm_
         if (searchResult == noErr) {
             // Get the cert from the identity, then generate a chain.
             SecCertificateRef certificate;
-            SecIdentityCopyCertificate(theIdentity, &certificate);
+            OSStatus res = SecIdentityCopyCertificate(theIdentity, &certificate);
+            if (res != errSecSuccess) {
+                goto errOut;
+            }
 
             // *** Should do something with this error...
             err = completeCertChain(theIdentity, NULL, TRUE, &certChain);
@@ -302,18 +305,21 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore, jmethodID jm_
             // Make a java array of certificate data from the chain.
             jclass byteArrayClass = (*env)->FindClass(env, "[B");
             if (byteArrayClass == NULL) {
+                CFRelease(certificate);
                 goto errOut;
             }
             jobjectArray javaCertArray = (*env)->NewObjectArray(env, certCount, byteArrayClass, NULL);
             // Cleanup first then check for a NULL return code
             (*env)->DeleteLocalRef(env, byteArrayClass);
             if (javaCertArray == NULL) {
+                CFRelease(certificate);
                 goto errOut;
             }
 
             // And, make an array of the certificate refs.
             jlongArray certRefArray = (*env)->NewLongArray(env, certCount);
             if (certRefArray == NULL) {
+                CFRelease(certificate);
                 goto errOut;
             }
 
@@ -342,10 +348,14 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore, jmethodID jm_
             // Get the private key.  When needed we'll export the data from it later.
             SecKeyRef privateKeyRef;
             err = SecIdentityCopyPrivateKey(theIdentity, &privateKeyRef);
+            if (err != errSecSuccess) {
+                goto errOut;
+            }
 
             // Find the label.  It's a 'blob', but we interpret as characters.
             jstring alias = getLabelFromItem(env, (SecKeychainItemRef)certificate);
             if (alias == NULL) {
+                CFRelease(privateKeyRef);
                 goto errOut;
             }
 
