@@ -8036,6 +8036,21 @@ instruct membar_release_lock() %{
   ins_pipe(pipe_serial);
 %}
 
+instruct membar_storeload() %{
+  match(MemBarStoreLoad);
+  ins_cost(VOLATILE_REF_COST*100);
+
+  format %{ "MEMBAR-store-load\n\t"
+            "dmb ish" %}
+
+  ins_encode %{
+    __ block_comment("membar_storeload");
+    __ membar(Assembler::StoreLoad);
+  %}
+
+  ins_pipe(pipe_serial);
+%}
+
 instruct unnecessary_membar_volatile() %{
   predicate(unnecessary_volatile(n));
   match(MemBarVolatile);

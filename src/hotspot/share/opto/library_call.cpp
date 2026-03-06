@@ -3070,7 +3070,7 @@ bool LibraryCallKit::inline_native_vthread_start_transition(address funcAddr, co
   Node* vt_addr = basic_plus_adr(vt_oop, java_lang_Thread::is_in_vthread_transition_offset());
   access_store_at(nullptr, jt_addr, _gvn.type(jt_addr)->is_ptr(), ideal.ConI(1), TypeInt::BOOL, T_BOOLEAN, IN_NATIVE | MO_UNORDERED);
   access_store_at(nullptr, vt_addr, _gvn.type(vt_addr)->is_ptr(), ideal.ConI(1), TypeInt::BOOL, T_BOOLEAN, IN_NATIVE | MO_UNORDERED);
-  insert_mem_bar(Op_MemBarFull);
+  insert_mem_bar(Op_MemBarStoreLoad);
   ideal.sync_kit(this);
 
   Node* global_disable_addr = makecon(TypeRawPtr::make((address)MountUnmountDisabler::global_vthread_transition_disable_count_address()));

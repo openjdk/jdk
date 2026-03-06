@@ -989,7 +989,6 @@ static void match_alias_type(Compile* C, Node* n, Node* m) {
     case Op_VectorizedHashCode:
     case Op_CountPositives:
     case Op_MemBarVolatile:
-    case Op_MemBarFull:
     case Op_MemBarCPUOrder: // %%% these ideals should have narrower adr_type?
     case Op_StrInflatedCopy:
     case Op_StrCompressedCopy:
