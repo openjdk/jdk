@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CodingErrorAction;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import jdk.internal.util.ArraysSupport;
@@ -256,7 +255,7 @@ class ZipCoder {
             try {
                 // Copy subrange for exclusive use by the string being created
                 byte[] bytes = Arrays.copyOfRange(ba, off, off + length);
-                return JLA.uncheckedNewStringOrThrow(bytes, StandardCharsets.UTF_8);
+                return JLA.uncheckedNewStringOrThrow(bytes, UTF_8.INSTANCE);
             } catch (CharacterCodingException cce) {
                 throw new IllegalArgumentException(cce);
             }
