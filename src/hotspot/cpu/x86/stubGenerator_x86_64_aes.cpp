@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2019, 2025, Intel Corporation. All rights reserved.
+* Copyright (c) 2019, 2026, Intel Corporation. All rights reserved.
 *
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
@@ -1401,24 +1401,30 @@ address StubGenerator::generate_cipherBlockChaining_encryptAESCrypt() {
   return start;
 }
 
-// This is a version of ECB/AES Encrypt which does 4 blocks in a loop at a time
-// to hide instruction latency
+// This is a version of ECB/AES Encrypt/Decrypt which does 4 blocks in a loop
+// at a time to hide instruction latency.
+//
+// For encryption (is_encrypt=true):
+//   pxor key[0], aesenc key[1..rounds-1], aesenclast key[rounds]
+// For decryption (is_encrypt=false):
+//   pxor key[1], aesdec key[2..rounds], aesdeclast key[0]
 //
 // Arguments:
 //
 // Inputs:
 //   c_rarg0   - source byte array address
 //   c_rarg1   - destination byte array address
-//   c_rarg2   - sessionKe (key) in little endian int array
+//   c_rarg2   - session key (Ke/Kd) in little endian int array
 //   c_rarg3   - input length (must be multiple of blocksize 16)
 //
 // Output:
 //   rax       - input length
 //
-address StubGenerator::generate_electronicCodeBook_encryptAESCrypt_Parallel() {
+address StubGenerator::generate_electronicCodeBook_AESCrypt_Parallel(bool is_encrypt) {
   assert(UseAES, "need AES instructions and misaligned SSE support");
   __ align(CodeEntryAlignment);
-  StubId stub_id = StubId::stubgen_electronicCodeBook_encryptAESCrypt_id;
+  StubId stub_id = is_encrypt ? StubId::stubgen_electronicCodeBook_encryptAESCrypt_id
+                              : StubId::stubgen_electronicCodeBook_decryptAESCrypt_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -1435,9 +1441,13 @@ address StubGenerator::generate_electronicCodeBook_encryptAESCrypt_Parallel() {
   const XMMRegister xmm_result3       = xmm3;
   const XMMRegister xmm_key_shuf_mask = xmm4;
   const XMMRegister xmm_key_tmp       = xmm5;
+  // keys 0-9 pre-loaded into xmm6-xmm15
+  const int XMM_REG_NUM_KEY_FIRST = 6;
+  const int XMM_REG_NUM_KEY_LAST  = 15;
+  const XMMRegister xmm_key_first = as_XMMRegister(XMM_REG_NUM_KEY_FIRST);
 
-  // Number of AES rounds for 128/192/256-bit keys (k=0/1/2)
-  const int rounds[3] = {10, 12, 14};
+  // for key_128, key_192, key_256
+  const int ROUNDS[3] = {10, 12, 14};
 
   Label L_exit;
   Label L_loop4[3], L_single[3], L_done[3];
@@ -1458,44 +1468,61 @@ __ opc(xmm_result3, reg);
 #define DoOne(opc, reg)            \
 __ opc(xmm_result0, reg);
 
-  __ enter();
+  __ enter(); // required for proper stackwalking of RuntimeStub frame
   __ push(len_reg); // save original length for return value
   __ push(rbx);
 
   __ movl(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
 
   __ movdqu(xmm_key_shuf_mask, ExternalAddress(key_shuffle_mask_addr()), r10 /*rscratch*/);
+  // load up xmm regs 6 thru 15 with keys 0x00 - 0x90
+  for (int rnum = XMM_REG_NUM_KEY_FIRST, offset = 0x00; rnum <= XMM_REG_NUM_KEY_LAST; rnum++, offset += 0x10) {
+    load_key(as_XMMRegister(rnum), key, offset, xmm_key_shuf_mask);
+  }
   __ xorptr(pos, pos);
 
-  // Dispatch to the correct key-length path:
-  //   keylen==44 -> 128-bit (k=0)
-  //   keylen==52 -> 192-bit (k=1)
-  //   keylen==60 -> 256-bit (k=2)
+  // key length could be only {11, 13, 15} * 4 = {44, 52, 60}
   __ cmpl(keylen, 52);
   __ jcc(Assembler::equal, L_loop4[1]);
   __ cmpl(keylen, 60);
   __ jcc(Assembler::equal, L_loop4[2]);
 
-  // k==0: 128-bit (10 rounds), k==1: 192-bit (12 rounds), k==2: 256-bit (14 rounds)
+  // k == 0: generate code for key_128
+  // k == 1: generate code for key_192
+  // k == 2: generate code for key_256
   for (int k = 0; k < 3; ++k) {
+    __ align(OptoLoopAlignment);
     __ BIND(L_loop4[k]);
     __ cmpptr(len_reg, 4 * AESBlockSize);
     __ jcc(Assembler::less, L_single[k]);
 
-    __ align(OptoLoopAlignment);
     __ movdqu(xmm_result0, Address(from, pos, Address::times_1, 0 * AESBlockSize));
     __ movdqu(xmm_result1, Address(from, pos, Address::times_1, 1 * AESBlockSize));
     __ movdqu(xmm_result2, Address(from, pos, Address::times_1, 2 * AESBlockSize));
     __ movdqu(xmm_result3, Address(from, pos, Address::times_1, 3 * AESBlockSize));
 
-    load_key(xmm_key_tmp, key, 0x00, xmm_key_shuf_mask);
-    DoFour(pxor, xmm_key_tmp);
-    for (int i = 1; i < rounds[k]; i++) {
-      load_key(xmm_key_tmp, key, i * 0x10, xmm_key_shuf_mask);
-      DoFour(aesenc, xmm_key_tmp);
+    if (is_encrypt) {
+      DoFour(pxor, xmm_key_first);
+      for (int rnum = 1; rnum < 10; rnum++) {
+        DoFour(aesenc, as_XMMRegister(rnum + XMM_REG_NUM_KEY_FIRST));
+      }
+      for (int i = 10; i < ROUNDS[k]; i++) {
+        load_key(xmm_key_tmp, key, i * 0x10, xmm_key_shuf_mask);
+        DoFour(aesenc, xmm_key_tmp);
+      }
+      load_key(xmm_key_tmp, key, ROUNDS[k] * 0x10, xmm_key_shuf_mask);
+      DoFour(aesenclast, xmm_key_tmp);
+    } else {
+      DoFour(pxor, as_XMMRegister(1 + XMM_REG_NUM_KEY_FIRST));
+      for (int rnum = 2; rnum < 10; rnum++) {
+        DoFour(aesdec, as_XMMRegister(rnum + XMM_REG_NUM_KEY_FIRST));
+      }
+      for (int i = 10; i <= ROUNDS[k]; i++) {
+        load_key(xmm_key_tmp, key, i * 0x10, xmm_key_shuf_mask);
+        DoFour(aesdec, xmm_key_tmp);
+      }
+      DoFour(aesdeclast, xmm_key_first);
     }
-    load_key(xmm_key_tmp, key, rounds[k] * 0x10, xmm_key_shuf_mask);
-    DoFour(aesenclast, xmm_key_tmp);
 
     __ movdqu(Address(to, pos, Address::times_1, 0 * AESBlockSize), xmm_result0);
     __ movdqu(Address(to, pos, Address::times_1, 1 * AESBlockSize), xmm_result1);
@@ -1506,21 +1533,35 @@ __ opc(xmm_result0, reg);
     __ subptr(len_reg, 4 * AESBlockSize);
     __ jmp(L_loop4[k]);
 
+    __ align(OptoLoopAlignment);
     __ BIND(L_single[k]);
     __ cmpptr(len_reg, AESBlockSize);
     __ jcc(Assembler::less, L_done[k]);
 
-    __ align(OptoLoopAlignment);
     __ movdqu(xmm_result0, Address(from, pos, Address::times_1, 0));
 
-    load_key(xmm_key_tmp, key, 0x00, xmm_key_shuf_mask);
-    DoOne(pxor, xmm_key_tmp);
-    for (int i = 1; i < rounds[k]; i++) {
-      load_key(xmm_key_tmp, key, i * 0x10, xmm_key_shuf_mask);
-      DoOne(aesenc, xmm_key_tmp);
+    if (is_encrypt) {
+      DoOne(pxor, xmm_key_first);
+      for (int rnum = 1; rnum < 10; rnum++) {
+        DoOne(aesenc, as_XMMRegister(rnum + XMM_REG_NUM_KEY_FIRST));
+      }
+      for (int i = 10; i < ROUNDS[k]; i++) {
+        load_key(xmm_key_tmp, key, i * 0x10, xmm_key_shuf_mask);
+        DoOne(aesenc, xmm_key_tmp);
+      }
+      load_key(xmm_key_tmp, key, ROUNDS[k] * 0x10, xmm_key_shuf_mask);
+      DoOne(aesenclast, xmm_key_tmp);
+    } else {
+      DoOne(pxor, as_XMMRegister(1 + XMM_REG_NUM_KEY_FIRST));
+      for (int rnum = 2; rnum < 10; rnum++) {
+        DoOne(aesdec, as_XMMRegister(rnum + XMM_REG_NUM_KEY_FIRST));
+      }
+      for (int i = 10; i <= ROUNDS[k]; i++) {
+        load_key(xmm_key_tmp, key, i * 0x10, xmm_key_shuf_mask);
+        DoOne(aesdec, xmm_key_tmp);
+      }
+      DoOne(aesdeclast, xmm_key_first);
     }
-    load_key(xmm_key_tmp, key, rounds[k] * 0x10, xmm_key_shuf_mask);
-    DoOne(aesenclast, xmm_key_tmp);
 
     __ movdqu(Address(to, pos, Address::times_1, 0), xmm_result0);
     __ addptr(pos, AESBlockSize);
@@ -1529,12 +1570,12 @@ __ opc(xmm_result0, reg);
 
     __ BIND(L_done[k]);
     if (k < 2) __ jmp(L_exit);
-  }
+  } //for key_128/192/256
 
   __ BIND(L_exit);
   __ pop(rbx);
   __ pop(rax);
-  __ leave();
+  __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 
   return start;
@@ -1543,146 +1584,12 @@ __ opc(xmm_result0, reg);
 #undef DoOne
 }
 
-// This is a version of ECB/AES Decrypt which does 4 blocks in a loop at a time
-// to hide instruction latency
-//
-// Arguments:
-//
-// Inputs:
-//   c_rarg0   - source byte array address
-//   c_rarg1   - destination byte array address
-//   c_rarg2   - sessionKd (key) in little endian int array
-//   c_rarg3   - input length (must be multiple of blocksize 16)
-//
-// Output:
-//   rax       - input length
-//
+address StubGenerator::generate_electronicCodeBook_encryptAESCrypt_Parallel() {
+  return generate_electronicCodeBook_AESCrypt_Parallel(true);
+}
+
 address StubGenerator::generate_electronicCodeBook_decryptAESCrypt_Parallel() {
-  assert(UseAES, "need AES instructions and misaligned SSE support");
-  __ align(CodeEntryAlignment);
-  StubId stub_id = StubId::stubgen_electronicCodeBook_decryptAESCrypt_id;
-  StubCodeMark mark(this, stub_id);
-  address start = __ pc();
-
-  const Register from    = c_rarg0;  // source array address
-  const Register to      = c_rarg1;  // destination array address
-  const Register key     = c_rarg2;  // key array address
-  const Register len_reg = c_rarg3;  // src len (must be multiple of blocksize 16)
-  const Register pos     = rax;
-  const Register keylen  = rbx;
-
-  const XMMRegister xmm_result0       = xmm0;
-  const XMMRegister xmm_result1       = xmm1;
-  const XMMRegister xmm_result2       = xmm2;
-  const XMMRegister xmm_result3       = xmm3;
-  const XMMRegister xmm_key_shuf_mask = xmm4;
-  const XMMRegister xmm_key_tmp       = xmm5;
-
-  // Number of AES rounds for 128/192/256-bit keys (k=0/1/2)
-  const int rounds[3] = {10, 12, 14};
-
-  Label L_exit;
-  Label L_loop4[3], L_single[3], L_done[3];
-
-#ifdef DoFour
-#undef DoFour
-#endif
-#ifdef DoOne
-#undef DoOne
-#endif
-
-#define DoFour(opc, reg)           \
-__ opc(xmm_result0, reg);         \
-__ opc(xmm_result1, reg);         \
-__ opc(xmm_result2, reg);         \
-__ opc(xmm_result3, reg);
-
-#define DoOne(opc, reg)            \
-__ opc(xmm_result0, reg);
-
-  __ enter();
-  __ push(len_reg); // save original length for return value
-  __ push(rbx);
-
-  __ movl(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
-
-  __ movdqu(xmm_key_shuf_mask, ExternalAddress(key_shuffle_mask_addr()), r10 /*rscratch*/);
-  __ xorptr(pos, pos);
-
-  // Dispatch to the correct key-length path:
-  //   keylen==44 -> 128-bit (k=0)
-  //   keylen==52 -> 192-bit (k=1)
-  //   keylen==60 -> 256-bit (k=2)
-  __ cmpl(keylen, 52);
-  __ jcc(Assembler::equal, L_loop4[1]);
-  __ cmpl(keylen, 60);
-  __ jcc(Assembler::equal, L_loop4[2]);
-
-  // k==0: 128-bit (10 rounds), k==1: 192-bit (12 rounds), k==2: 256-bit (14 rounds)
-  for (int k = 0; k < 3; ++k) {
-    __ BIND(L_loop4[k]);
-    __ cmpptr(len_reg, 4 * AESBlockSize);
-    __ jcc(Assembler::less, L_single[k]);
-
-    __ align(OptoLoopAlignment);
-    __ movdqu(xmm_result0, Address(from, pos, Address::times_1, 0 * AESBlockSize));
-    __ movdqu(xmm_result1, Address(from, pos, Address::times_1, 1 * AESBlockSize));
-    __ movdqu(xmm_result2, Address(from, pos, Address::times_1, 2 * AESBlockSize));
-    __ movdqu(xmm_result3, Address(from, pos, Address::times_1, 3 * AESBlockSize));
-
-    load_key(xmm_key_tmp, key, 0x10, xmm_key_shuf_mask);
-    DoFour(pxor, xmm_key_tmp);
-    for (int i = 2; i <= rounds[k]; i++) {
-      load_key(xmm_key_tmp, key, i * 0x10, xmm_key_shuf_mask);
-      DoFour(aesdec, xmm_key_tmp);
-    }
-    load_key(xmm_key_tmp, key, 0x00, xmm_key_shuf_mask);
-    DoFour(aesdeclast, xmm_key_tmp);
-
-    __ movdqu(Address(to, pos, Address::times_1, 0 * AESBlockSize), xmm_result0);
-    __ movdqu(Address(to, pos, Address::times_1, 1 * AESBlockSize), xmm_result1);
-    __ movdqu(Address(to, pos, Address::times_1, 2 * AESBlockSize), xmm_result2);
-    __ movdqu(Address(to, pos, Address::times_1, 3 * AESBlockSize), xmm_result3);
-
-    __ addptr(pos, 4 * AESBlockSize);
-    __ subptr(len_reg, 4 * AESBlockSize);
-    __ jmp(L_loop4[k]);
-
-    __ BIND(L_single[k]);
-    __ cmpptr(len_reg, AESBlockSize);
-    __ jcc(Assembler::less, L_done[k]);
-
-    __ align(OptoLoopAlignment);
-    __ movdqu(xmm_result0, Address(from, pos, Address::times_1, 0));
-
-    load_key(xmm_key_tmp, key, 0x10, xmm_key_shuf_mask);
-    DoOne(pxor, xmm_key_tmp);
-    for (int i = 2; i <= rounds[k]; i++) {
-      load_key(xmm_key_tmp, key, i * 0x10, xmm_key_shuf_mask);
-      DoOne(aesdec, xmm_key_tmp);
-    }
-    load_key(xmm_key_tmp, key, 0x00, xmm_key_shuf_mask);
-    DoOne(aesdeclast, xmm_key_tmp);
-
-    __ movdqu(Address(to, pos, Address::times_1, 0), xmm_result0);
-    __ addptr(pos, AESBlockSize);
-    __ subptr(len_reg, AESBlockSize);
-    __ jmp(L_single[k]);
-
-    __ BIND(L_done[k]);
-    if (k < 2) __ jmp(L_exit);
-  }
-
-  __ BIND(L_exit);
-  __ pop(rbx);
-  __ pop(rax);
-  __ leave();
-  __ ret(0);
-
-  return start;
-
-#undef DoFour
-#undef DoOne
+  return generate_electronicCodeBook_AESCrypt_Parallel(false);
 }
 
 // This is a version of CBC/AES Decrypt which does 4 blocks in a loop at a time
