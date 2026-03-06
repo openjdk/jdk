@@ -62,7 +62,7 @@ public class TestCDSVMCrash {
             throw new Error("Expected VM to crash");
         } catch(RuntimeException e) {
             if (!e.getMessage().contains("A fatal error has been detected")) {
-                throw new Error("Expected message: Hotspot crashed");
+                throw new Error("Expected message: A fatal error has been detected");
             }
         }
         System.out.println("PASSED");
