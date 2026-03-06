@@ -913,7 +913,9 @@ import java.util.Arrays;
  * happens, the logical and output expansion ratios are also identical
  * ({@code ML=MP}).  The logical result is simply copied into the
  * physical output with no truncation or padding.  An in-place
- * lanewise operation leaves {@code VLENGTH} unchanged.
+ * lanewise operation leaves {@code VLENGTH} unchanged. An in-place
+ * operation does not have to be shape-invariant, as the input shape
+ * may differ from the logical and output shape.
  *
  * </li><li>The <em>output expansion ratio</em> {@code MO} is the net
  * bit-size ratio {@code MP/ML=|Y|/|f(X)|}, measuring the size of the
@@ -1131,6 +1133,8 @@ import java.util.Arrays;
  * value {@code -MO} is the exclusive <em>lower</em> limit.
  *
  * <p>Here are some examples of expansions and contractions:
+ *
+ * TODO: consider reshaping?
  *
  * <table id="expansion-examples" class="striped" style="text-align:right;">
  * <caption>expansion and contraction examples</caption>
@@ -3641,40 +3645,37 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * element type {@code F}, reinterpreting the bytes of this
      * vector without performing any value conversions.
      *
-     * <p> Depending on the selected species, this operation may
-     * either <a href="Vector.html#expansion">expand or contract</a>
-     * its logical result, in which case a non-zero {@code part}
-     * number can further control the selection and steering of the
-     * logical result into the physical output vector.
-     *
-     * <p>
-     * The underlying bits of this vector are copied to the resulting
-     * vector without modification, but those bits, before copying,
-     * may be truncated if this vector's bit-size is greater than
-     * desired vector's bit size, or filled with zero bits if this
-     * vector's bit-size is less than desired vector's bit-size.
+     * <p> Has a logical result which is simply the bitwise image
+     * of the input, regardless of lane types and lane boundaries.
+     * If the input and output shapes are the same this is an
+     * in-place operation, and the output has the same underlying
+     * bits as the input, and {@code part=0}.
+     * But if the shape is changed, this leads to
+     * <a href="Vector.html#expansion">selection or insertion</a>,
+     * which can be steered by the part number.
      *
      * <p> If the old and new species have different shape, this is a
      * <em>shape-changing</em> operation, and may have special
      * implementation costs.
      *
      * <p> The method behaves as if this vector is stored into a byte
-     * array using little-endian byte ordering and then the desired vector is loaded from the same byte
-     * array using the same ordering.
+     * array using little-endian byte ordering and then the desired
+     * vector is loaded from the same byte array using the same ordering.
      *
      * <p> The following pseudocode illustrates the behavior:
      * <pre>{@code
      * int domSize = this.byteSize();
      * int ranSize = species.vectorByteSize();
-     * int M = (domSize > ranSize ? domSize / ranSize : ranSize / domSize);
-     * assert Math.abs(part) < M;
-     * assert (part == 0) || (part > 0) == (domSize > ranSize);
      * MemorySegment ms = MemorySegment.ofArray(new byte[Math.max(domSize, ranSize)]);
-     * if (domSize > ranSize) {  // logical expansion => selection
+     * if (domSize > ranSize) {  // selection (output shape smaller)
+     *     int MS = domSize / ranSize;
+     *     assert 0 <= part && part < MS
      *     this.intoMemorySegment(ms, 0, ByteOrder.native());
      *     int origin = part * ranSize;
      *     return species.fromMemorySegment(ms, origin, ByteOrder.native());
-     * } else {  // size-invariant or logical contraction => insertion
+     * } else {  // in-place (shape-invariant) or insertion (output shape larger)
+     *     int MO = ranSize / domSize
+     *     assert (-MO) < part && part <= 0
      *     int origin = (-part) * domSize;
      *     this.intoMemorySegment(ms, origin, ByteOrder.native());
      *     return species.fromMemorySegment(ms, 0, ByteOrder.native());
@@ -3691,7 +3692,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      *
      * @param species the desired vector species
      * @param part the <a href="Vector.html#expansion">part number</a>
-     *        of the result, or zero if neither expanding nor contracting
+     *        of the result (zero if the operation is shape-invariant)
      * @param <F> the boxed element type of the species
      * @return a vector transformed, by shape and element type, from this vector
      * @see Vector#convertShape(VectorOperators.Conversion,VectorSpecies,int)
