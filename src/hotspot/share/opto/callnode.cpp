@@ -1045,7 +1045,8 @@ uint CallJavaNode::size_of() const { return sizeof(*this); }
 bool CallJavaNode::cmp( const Node &n ) const {
   CallJavaNode &call = (CallJavaNode&)n;
   return CallNode::cmp(call) && _method == call._method &&
-         _override_symbolic_info == call._override_symbolic_info;
+         _override_symbolic_info == call._override_symbolic_info &&
+         _implicit_exception_init == call._implicit_exception_init;
 }
 
 void CallJavaNode::copy_call_debug_info(PhaseIterGVN* phase, SafePointNode* sfpt) {
@@ -1089,8 +1090,8 @@ void CallJavaNode::copy_call_debug_info(PhaseIterGVN* phase, SafePointNode* sfpt
 
 #ifdef ASSERT
 bool CallJavaNode::validate_symbolic_info() const {
-  if (method() == nullptr) {
-    return true; // call into runtime or uncommon trap
+  if (method() == nullptr || _implicit_exception_init) {
+    return true; // call into runtime or uncommon trap or implicit exception <init>
   }
   ciMethod* symbolic_info = jvms()->method()->get_method_at_bci(jvms()->bci());
   ciMethod* callee = method();
@@ -1105,6 +1106,7 @@ bool CallJavaNode::validate_symbolic_info() const {
 #ifndef PRODUCT
 void CallJavaNode::dump_spec(outputStream* st) const {
   if( _method ) _method->print_short_name(st);
+  if (_implicit_exception_init) st->print(" (implicit_exception_init)");
   CallNode::dump_spec(st);
 }
 

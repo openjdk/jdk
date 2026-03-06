@@ -779,6 +779,7 @@ protected:
   ciMethod* _method;               // Method being direct called
   bool    _optimized_virtual;
   bool    _override_symbolic_info; // Override symbolic call site info from bytecode
+  bool    _implicit_exception_init; // Call is <init> for an implicitly created exception
   bool    _arg_escape;             // ArgEscape in parameter list
 public:
   CallJavaNode(const TypeFunc* tf , address addr, ciMethod* method)
@@ -786,20 +787,23 @@ public:
       _method(method),
       _optimized_virtual(false),
       _override_symbolic_info(false),
+      _implicit_exception_init(false),
       _arg_escape(false)
   {
     init_class_id(Class_CallJava);
   }
 
   virtual int   Opcode() const;
-  ciMethod* method() const                 { return _method; }
-  void  set_method(ciMethod *m)            { _method = m; }
-  void  set_optimized_virtual(bool f)      { _optimized_virtual = f; }
-  bool  is_optimized_virtual() const       { return _optimized_virtual; }
-  void  set_override_symbolic_info(bool f) { _override_symbolic_info = f; }
-  bool  override_symbolic_info() const     { return _override_symbolic_info; }
-  void  set_arg_escape(bool f)             { _arg_escape = f; }
-  bool  arg_escape() const                 { return _arg_escape; }
+  ciMethod* method() const                  { return _method; }
+  void  set_method(ciMethod *m)             { _method = m; }
+  void  set_optimized_virtual(bool f)       { _optimized_virtual = f; }
+  bool  is_optimized_virtual() const        { return _optimized_virtual; }
+  void  set_override_symbolic_info(bool f)  { _override_symbolic_info = f; }
+  bool  override_symbolic_info() const      { return _override_symbolic_info; }
+  void  set_implicit_exception_init(bool f) { _implicit_exception_init = f; }
+  bool  implicit_exception_init() const     { return _implicit_exception_init; }
+  void  set_arg_escape(bool f)              { _arg_escape = f; }
+  bool  arg_escape() const                  { return _arg_escape; }
   void copy_call_debug_info(PhaseIterGVN* phase, SafePointNode *sfpt);
   void register_for_late_inline();
 

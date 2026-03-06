@@ -1217,6 +1217,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
       mcall_java->_method = method;
       mcall_java->_optimized_virtual = call_java->is_optimized_virtual();
       mcall_java->_override_symbolic_info = call_java->override_symbolic_info();
+      mcall_java->_implicit_exception_init = call_java->implicit_exception_init();
       mcall_java->_arg_escape = call_java->arg_escape();
       if( mcall_java->is_MachCallStaticJava() )
         mcall_java->as_MachCallStaticJava()->_name =

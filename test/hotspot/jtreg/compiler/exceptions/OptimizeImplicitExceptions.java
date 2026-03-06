@@ -23,8 +23,9 @@
 
  /*
  * @test
- * @bug 8275908
- * @summary Record null_check traps for calls and array_check traps in the interpreter
+ * @bug 8275908 8273563
+ * @summary Record null_check traps for calls and array_check traps in the interpreter,
+ *          OptimizeImplicitExceptions: allocate implicit exceptions in compiled code
  *
  * @requires vm.compiler2.enabled & vm.compMode != "Xcomp"
  * @requires vm.opt.DeoptimizeALot != true
@@ -70,7 +71,8 @@ public class OptimizeImplicitExceptions {
     // They will be set up in 'setFlags(TestMode testMode)' before a new test run starts.
     public enum TestMode {
         OMIT_STACKTRACES_IN_FASTTHROW,
-        STACKTRACES_IN_FASTTHROW
+        STACKTRACES_IN_FASTTHROW,
+        STACKTRACES_IN_FASTTHROW_OPTIMIZED
     }
 
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
@@ -124,13 +126,19 @@ public class OptimizeImplicitExceptions {
     private static void setFlags(TestMode testMode) {
         if (testMode == TestMode.OMIT_STACKTRACES_IN_FASTTHROW) {
             WB.setBooleanVMFlag("OmitStackTraceInFastThrow", true);
-        } else {
+            WB.setBooleanVMFlag("OptimizeImplicitExceptions", false);
+        } else if (testMode == TestMode.STACKTRACES_IN_FASTTHROW) {
             WB.setBooleanVMFlag("OmitStackTraceInFastThrow", false);
+            WB.setBooleanVMFlag("OptimizeImplicitExceptions", false);
+        } else if (testMode == TestMode.STACKTRACES_IN_FASTTHROW_OPTIMIZED) {
+            WB.setBooleanVMFlag("OmitStackTraceInFastThrow", false);
+            WB.setBooleanVMFlag("OptimizeImplicitExceptions", true);
         }
 
         System.out.println("==========================================================");
         System.out.println("testMode=" + testMode +
-                           " OmitStackTraceInFastThrow=" + WB.getBooleanVMFlag("OmitStackTraceInFastThrow"));
+                           " OmitStackTraceInFastThrow=" + WB.getBooleanVMFlag("OmitStackTraceInFastThrow") +
+                           " OptimizeImplicitExceptions=" + WB.getBooleanVMFlag("OptimizeImplicitExceptions"));
         System.out.println("==========================================================");
     }
 
@@ -175,10 +183,22 @@ public class OptimizeImplicitExceptions {
             // '-XX:+OmitStackTraceInFastThrow' never has message because it is using a global singleton exception.
             Asserts.assertNull(ex.getMessage(), "Optimized exceptions have no message.");
         } else if (testMode == TestMode.STACKTRACES_IN_FASTTHROW) {
-            // We always deoptimize for '-XX:-OmitStackTraceInFastThrow
+            // We always deoptimize for '-XX:-OmitStackTraceInFastThrow -XX:-OptimizeImplicitExceptions'
             Asserts.assertEQ(oldDeoptCount + invocations, deoptCount, "Wrong number of deoptimizations.");
             Asserts.assertEQ(oldDeoptCountReason.get(impExcp.getReason()) + invocations, deoptCountReason, "Wrong number of deoptimizations.");
             Asserts.assertNotNull(ex.getMessage(), "Exceptions thrown in the interpreter should have a message.");
+        } else if (testMode == TestMode.STACKTRACES_IN_FASTTHROW_OPTIMIZED) {
+            // No deoptimizations for '-XX:-OmitStackTraceInFastThrow -XX:+OptimizeImplicitExceptions'
+            // The optimization allocates exceptions inline in compiled code, avoiding deoptimization.
+            Asserts.assertEQ(oldDeoptCount, deoptCount, "Wrong number of deoptimizations.");
+            Asserts.assertEQ(oldDeoptCountReason.get(impExcp.getReason()), deoptCountReason, "Wrong number of deoptimizations.");
+            // NullPointerExceptions have a message due to JEP 358 (Helpful NullPointerExceptions).
+            if (impExcp == ImplicitException.NULL_POINTER_EXCEPTION || impExcp == ImplicitException.INVOKE_NULL_POINTER_EXCEPTION) {
+                Asserts.assertNotNull(ex.getMessage(), "NullPointerExceptions should have a message (JEP 358).");
+            } else {
+                // Non-NPE implicit exceptions allocated inline have no message (no-arg constructor).
+                Asserts.assertNull(ex.getMessage(), "Optimized non-NPE exceptions have no message.");
+            }
         } else {
             Asserts.fail("Unknown test mode.");
         }

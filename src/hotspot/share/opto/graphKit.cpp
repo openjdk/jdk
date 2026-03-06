@@ -580,7 +580,48 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason,
 
       add_exception_state(make_exception_state(ex_node));
       return;
-    } else if (builtin_throw_too_many_traps(reason, ex_obj)) {
+    } else if (OptimizeImplicitExceptions) {
+      ciInstanceKlass* ex_ciInstKlass = env()->exception_instanceKlass_for_reason(reason);
+      ciMethod* init = (ex_ciInstKlass != nullptr)
+          ? ex_ciInstKlass->find_method(ciSymbol::make("<init>"), ciSymbol::make("()V"))
+          : nullptr;
+      if (init != nullptr) {
+        if (env()->jvmti_can_post_on_exceptions()) {
+          // check if we must post exception events, take uncommon trap if so
+          uncommon_trap_if_should_post_on_exceptions(reason, true /*must_throw*/);
+          // here if should_post_on_exceptions is false
+          // continue on with the normal codegen
+        }
+
+        const TypeKlassPtr* ex_type = TypeKlassPtr::make(ex_ciInstKlass);
+        kill_dead_locals();
+        Node* ex_node = new_instance(makecon(ex_type), nullptr, nullptr, true);
+        set_argument(0, ex_node);
+
+        // The following code is modeled after DirectCallGenerator::generate().
+        // We can't use that code directly because it assumes at various places
+        // that we're at an invoke bytecode which is in general not the case
+        // for implicit exceptions.
+
+        GraphKit kit(sync_jvms());
+        address target = SharedRuntime::get_resolve_opt_virtual_call_stub();
+
+        CallStaticJavaNode* call = new CallStaticJavaNode(kit.C, TypeFunc::make(init), target, init);
+        call->set_optimized_virtual(true);
+        call->set_implicit_exception_init(true);
+        kit.set_arguments_for_java_call(call);
+        kit.set_edges_for_java_call(call, false, false);
+        Node* ret = kit.set_results_for_java_call(call, false);
+        kit.push_node(init->return_type()->basic_type(), ret);
+        JVMState* new_jvms = kit.transfer_exceptions_into_jvms();
+
+        add_exception_states_from(new_jvms);
+        set_jvms(new_jvms);
+        add_exception_state(make_exception_state(ex_node));
+        return;
+      }
+    }
+    if (builtin_throw_too_many_traps(reason, ex_obj)) {
       // We cannot afford to take too many traps here. Suffer in the interpreter instead.
       assert(allow_too_many_traps, "not allowed");
       if (C->log() != nullptr) {
@@ -594,11 +635,6 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason,
       return;
     }
   }
-
-  // %%% Maybe add entry to OptoRuntime which directly throws the exc.?
-  // It won't be much cheaper than bailing to the interp., since we'll
-  // have to pass up all the debug-info, and the runtime will have to
-  // create the stack trace.
 
   // Usual case:  Bail to interpreter.
   // Reserve the right to recompile if we haven't seen anything yet.
