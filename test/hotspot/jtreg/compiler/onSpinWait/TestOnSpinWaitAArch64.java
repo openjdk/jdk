@@ -22,7 +22,7 @@
  */
 
 /**
- * @test TestOnSpinWaitAArch64
+ * @test id=TestOnSpinWaitAArch64
  * @summary Checks that java.lang.Thread.onSpinWait is intrinsified with instructions specified with '-XX:OnSpinWaitInst' and '-XX:OnSpinWaitInstCount'
  * @bug 8186670
  * @library /test/lib
@@ -41,6 +41,22 @@
  * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 sb 1
  */
 
+/**
+ * @test id=TestOnSpinWaitAArch64-wfet
+ * @summary Checks that java.lang.Thread.onSpinWait is intrinsified when -XX:OnSpinWaitInst=wfet is used
+ * @bug 8366441
+ * @library /test/lib
+ *
+ * @requires vm.flagless
+ * @requires (os.arch=="aarch64" & os.family=="linux")
+ * @requires vm.debug
+ *
+ * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 wfet 1 1
+ * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c2 wfet 1 1000
+ * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 wfet 1 1
+ * @run driver compiler.onSpinWait.TestOnSpinWaitAArch64 c1 wfet 1 1000
+ */
+
 package compiler.onSpinWait;
 
 import java.util.Arrays;
@@ -56,6 +72,7 @@ public class TestOnSpinWaitAArch64 {
         String compiler = args[0];
         String spinWaitInst = args[1];
         String spinWaitInstCount = args[2];
+        String spinWaitDelay = (args.length >= 4 ? args[3] : "");
         ArrayList<String> command = new ArrayList<String>();
         command.add("-XX:+IgnoreUnrecognizedVMOptions");
         command.add("-showversion");
@@ -70,8 +87,14 @@ public class TestOnSpinWaitAArch64 {
             throw new RuntimeException("Unknown compiler: " + compiler);
         }
         command.add("-Xbatch");
+        if ("wfet".equals(spinWaitInst)) {
+          command.add("-XX:+UnlockExperimentalVMOptions");
+        }
         command.add("-XX:OnSpinWaitInst=" + spinWaitInst);
         command.add("-XX:OnSpinWaitInstCount=" + spinWaitInstCount);
+        if (!spinWaitDelay.isEmpty()) {
+          command.add("-XX:OnSpinWaitDelay=" + spinWaitDelay);
+        }
         command.add("-XX:CompileCommand=compileonly," + Launcher.class.getName() + "::" + "test");
         command.add("-XX:CompileCommand=print," + Launcher.class.getName() + "::" + "test");
         command.add(Launcher.class.getName());
@@ -82,6 +105,14 @@ public class TestOnSpinWaitAArch64 {
 
         if ("sb".equals(spinWaitInst) && analyzer.contains("CPU does not support SB")) {
             System.out.println("Skipping the test. The current CPU does not support SB instruction.");
+            return;
+        }
+
+        if ("wfet".equals(spinWaitInst) &&
+            (analyzer.contains("the CPU does not support the SB instruction") ||
+             analyzer.contains("the CPU does not support the FEAT_ECV") ||
+             analyzer.contains("the CPU does not support the WFET instruction"))) {
+            System.out.println("Skipping the test. The CPU does not support SB or WFET instruction, or FEAT_ECV.");
             return;
         }
 
@@ -101,6 +132,9 @@ public class TestOnSpinWaitAArch64 {
           return "3f2003d5";
       } else if ("sb".equals(spinWaitInst)) {
           return "ff3003d5";
+      } else if ("wfet".equals(spinWaitInst)) {
+          // This assumes rscratch1 is r8.
+          return "081003d5";
       } else {
           throw new RuntimeException("Unknown spin wait instruction: " + spinWaitInst);
       }
@@ -166,7 +200,7 @@ public class TestOnSpinWaitAArch64 {
             // When code is disassembled, we have one instruction per line.
             // Otherwise, there can be multiple hex instructions separated by '|'.
             foundCount += (int)Arrays.stream(line.split("\\|"))
-                                     .takeWhile(i -> i.startsWith(expectedInst))
+                                     .filter(i -> i.startsWith(expectedInst))
                                      .count();
         }
 
