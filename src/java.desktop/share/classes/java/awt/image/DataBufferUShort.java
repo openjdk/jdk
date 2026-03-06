@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 
 package java.awt.image;
 
+import java.util.Objects;
 import static sun.java2d.StateTrackable.State.STABLE;
 import static sun.java2d.StateTrackable.State.UNTRACKABLE;
 
@@ -71,9 +72,14 @@ public final class DataBufferUShort extends DataBuffer
      * specified size.
      *
      * @param size The size of the {@code DataBuffer}.
+     * @throws IllegalArgumentException if {@code size} is less than or equal to zero.
      */
     public DataBufferUShort(int size) {
         super(STABLE, TYPE_USHORT, size);
+        checkSize(size);
+        if (size <= 0) {
+            throw new IllegalArgumentException("Size must be > 0");
+        }
         data = new short[size];
         bankdata = new short[1][];
         bankdata[0] = data;
@@ -85,9 +91,13 @@ public final class DataBufferUShort extends DataBuffer
      *
      * @param size The size of the banks in the {@code DataBuffer}.
      * @param numBanks The number of banks in the {@code DataBuffer}.
-    */
+     * @throws IllegalArgumentException if {@code size} is less than or equal to zero,
+     *         or {@code numBanks} is less than one.
+     */
     public DataBufferUShort(int size, int numBanks) {
         super(STABLE, TYPE_USHORT, size, numBanks);
+        checkSize(size);
+        checkNumBanks(numBanks);
         bankdata = new short[numBanks][];
         for (int i= 0; i < numBanks; i++) {
             bankdata[i] = new short[size];
@@ -109,12 +119,14 @@ public final class DataBufferUShort extends DataBuffer
      *
      * @param dataArray The unsigned-short array for the {@code DataBuffer}.
      * @param size The size of the {@code DataBuffer} bank.
+     * @throws NullPointerException if {@code dataArray} is {@code null}.
+     * @throws IllegalArgumentException if {@code size} is less than or equal to zero,
+     *         or greater than the length of {@code dataArray}.
      */
     public DataBufferUShort(short[] dataArray, int size) {
         super(UNTRACKABLE, TYPE_USHORT, size);
-        if (dataArray == null) {
-            throw new NullPointerException("dataArray is null");
-        }
+        Objects.requireNonNull(dataArray, "dataArray must not be null");
+        checkArraySize(size, dataArray.length);
         data = dataArray;
         bankdata = new short[1][];
         bankdata[0] = data;
@@ -135,16 +147,14 @@ public final class DataBufferUShort extends DataBuffer
      * @param dataArray The unsigned-short array for the {@code DataBuffer}.
      * @param size The size of the {@code DataBuffer} bank.
      * @param offset The offset into the {@code dataArray}.
+     * @throws NullPointerException if {@code dataArray} is {@code null}.
+     * @throws IllegalArgumentException if {@code size} is less than or equal to zero,
+     *         or {@code (offset + size)} is greater than the length of {@code dataArray}.
      */
     public DataBufferUShort(short[] dataArray, int size, int offset) {
         super(UNTRACKABLE, TYPE_USHORT, size, 1, offset);
-        if (dataArray == null) {
-            throw new NullPointerException("dataArray is null");
-        }
-        if ((size+offset) > dataArray.length) {
-            throw new IllegalArgumentException("Length of dataArray is less "+
-                                               " than size+offset.");
-        }
+        Objects.requireNonNull(dataArray, "dataArray must not be null");
+        checkArraySize(size, offset, dataArray.length);
         data = dataArray;
         bankdata = new short[1][];
         bankdata[0] = data;
@@ -163,18 +173,21 @@ public final class DataBufferUShort extends DataBuffer
      *
      * @param dataArray The unsigned-short arrays for the {@code DataBuffer}.
      * @param size The size of the banks in the {@code DataBuffer}.
+     * @throws NullPointerException if {@code dataArray} is {@code null}.
+     * @throws IllegalArgumentException if {@code size} is less than or equal to zero.
+     * @throws IllegalArgumentException if {@code dataArray} does not have at least one bank.
+     * @throws NullPointerException if any bank of {@code dataArray} is {@code null}.
+     * @throws IllegalArgumentException if the length of any bank of {@code dataArray}
+     *         is less than {@code size}.
      */
     public DataBufferUShort(short[][] dataArray, int size) {
         super(UNTRACKABLE, TYPE_USHORT, size, dataArray.length);
-        if (dataArray == null) {
-            throw new NullPointerException("dataArray is null");
+        checkSize(size);
+        checkNumBanks(dataArray.length);
+        for (int b = 0; b < dataArray.length; b++) {
+            Objects.requireNonNull(dataArray[b], "bank must not be null");
+            checkBankSize(b, size, 0, dataArray[b].length);
         }
-        for (int i=0; i < dataArray.length; i++) {
-            if (dataArray[i] == null) {
-                throw new NullPointerException("dataArray["+i+"] is null");
-            }
-        }
-
         bankdata = dataArray.clone();
         data = bankdata[0];
     }
@@ -197,22 +210,26 @@ public final class DataBufferUShort extends DataBuffer
      * @param dataArray The unsigned-short arrays for the {@code DataBuffer}.
      * @param size The size of the banks in the {@code DataBuffer}.
      * @param offsets The offsets into each array.
+     * @throws IllegalArgumentException if {@code size} is less than or equal to zero.
+     * @throws NullPointerException if {@code dataArray} is {@code null}.
+     * @throws IllegalArgumentException if {@code dataArray} does not have at least one bank.
+     * @throws NullPointerException if {@code offsets} is {@code null}.
+     * @throws ArrayIndexOutOfBoundsException if the lengths of {@code dataArray} and {@code offsets} differ.
+     * @throws NullPointerException if any bank of {@code dataArray} is {@code null}.
+     * @throws IllegalArgumentException if the length of any bank of {@code dataArray}
+     *         is less than {@code (size + offsets[bankIndex])}.
      */
     public DataBufferUShort(short[][] dataArray, int size, int[] offsets) {
         super(UNTRACKABLE, TYPE_USHORT, size, dataArray.length, offsets);
-        if (dataArray == null) {
-            throw new NullPointerException("dataArray is null");
+        checkSize(size);
+        checkNumBanks(dataArray.length);
+        Objects.requireNonNull(offsets, "offsets must not be null");
+        if (dataArray.length != offsets.length) {
+            throw new ArrayIndexOutOfBoundsException("Must be an offsets entry for every bank");
         }
-        for (int i=0; i < dataArray.length; i++) {
-            if (dataArray[i] == null) {
-                throw new NullPointerException("dataArray["+i+"] is null");
-            }
-            if ((size+offsets[i]) > dataArray[i].length) {
-                throw new IllegalArgumentException("Length of dataArray["+i+
-                                                   "] is less than size+"+
-                                                   "offsets["+i+"].");
-            }
-
+        for (int b = 0; b < dataArray.length; b++) {
+            Objects.requireNonNull(dataArray[b], "bank must not be null");
+            checkBankSize(b, size, offsets[b], dataArray[b].length);
         }
         bankdata = dataArray.clone();
         data = bankdata[0];
@@ -243,8 +260,10 @@ public final class DataBufferUShort extends DataBuffer
      *
      * @param bank The bank whose data array you want to get.
      * @return The data array for the specified bank.
+     * @throws ArrayIndexOutOfBoundsException if {@code bank} is not a valid bank index.
      */
     public short[] getData(int bank) {
+        checkBank(bank);
         theTrackable.setUntrackable();
         return bankdata[bank];
     }
@@ -269,10 +288,12 @@ public final class DataBufferUShort extends DataBuffer
      *
      * @param i The data array element you want to get.
      * @return The requested data array element as an integer.
+     * @throws ArrayIndexOutOfBoundsException if {@code (i + getOffset())} is not a valid index.
      * @see #setElem(int, int)
      * @see #setElem(int, int, int)
      */
     public int getElem(int i) {
+        checkIndex(i);
         return data[i+offset]&0xffff;
     }
 
@@ -282,10 +303,13 @@ public final class DataBufferUShort extends DataBuffer
      * @param bank The bank from which you want to get a data array element.
      * @param i The data array element you want to get.
      * @return The requested data array element as an integer.
+     * @throws ArrayIndexOutOfBoundsException if {@code bank} is not a valid bank index,
+     *         or {@code (i + getOffsets()[bank])} is not a valid index into the bank.
      * @see #setElem(int, int)
      * @see #setElem(int, int, int)
      */
     public int getElem(int bank, int i) {
+        checkIndex(bank, i);
         return bankdata[bank][i+offsets[bank]]&0xffff;
     }
 
@@ -295,10 +319,12 @@ public final class DataBufferUShort extends DataBuffer
      *
      * @param i The data array element you want to set.
      * @param val The integer value to which you want to set the data array element.
+     * @throws ArrayIndexOutOfBoundsException if {@code (i + getOffset())} is not a valid index.
      * @see #getElem(int)
      * @see #getElem(int, int)
      */
     public void setElem(int i, int val) {
+        checkIndex(i);
         data[i+offset] = (short)(val&0xffff);
         theTrackable.markDirty();
     }
@@ -309,10 +335,13 @@ public final class DataBufferUShort extends DataBuffer
      * @param bank The bank in which you want to set the data array element.
      * @param i The data array element you want to set.
      * @param val The integer value to which you want to set the specified data array element.
+     * @throws ArrayIndexOutOfBoundsException if {@code bank} is not a valid bank index,
+     *         or {@code (i + getOffsets()[bank])} is not a valid index into the bank.
      * @see #getElem(int)
      * @see #getElem(int, int)
      */
     public void setElem(int bank, int i, int val) {
+        checkIndex(bank, i);
         bankdata[bank][i+offsets[bank]] = (short)(val&0xffff);
         theTrackable.markDirty();
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -539,5 +539,74 @@ public abstract class DataBuffer {
                 db.theTrackable = trackable;
             }
         });
+    }
+
+    final void checkBank(int bank) {
+        if (bank < 0 || bank >= banks) {
+            throw new ArrayIndexOutOfBoundsException("Bank index out of range " + bank);
+        }
+    }
+
+    final void checkIndex(int i) {
+        if ((i < 0) || ((offset + i) < i)) {
+            throw new ArrayIndexOutOfBoundsException("Index cannot be negative : " + i);
+        }
+        if (i >= size) {
+            throw new ArrayIndexOutOfBoundsException("Invalid index (offset+i) is " +
+                "(" + offset + " + " + i + ") which is too large for size : " + size);
+        }
+    }
+
+    final void checkIndex(int bank, int i) {
+        if ((i < 0) || ((offsets[bank] + i) < i)) {
+            throw new ArrayIndexOutOfBoundsException("Index cannot be negative : " + i);
+        }
+        // Don't need to include bank offset here since all constructors validated
+        // the offset for each bank against the size.
+        if (i >= size) {
+            throw new ArrayIndexOutOfBoundsException("Invalid index (bankOffset+i) is " +
+                "(" + offsets[bank] + " + " + i + ") which is too large for size : " + size);
+        }
+    }
+
+    // Checks used by subclass constructors.
+    static void checkSize(int size) {
+        if (size <= 0) {
+            throw new IllegalArgumentException("Size must be > 0");
+        }
+    }
+
+    static void checkNumBanks(int numBanks) {
+        if (numBanks <= 0) {
+            throw new IllegalArgumentException("Must have at least one bank");
+        }
+    }
+
+    static void checkArraySize(int size, int arrayLen) {
+        if ((size <= 0) || (size > arrayLen)) {
+            throw new IllegalArgumentException("Bad size : " + size);
+        }
+    }
+
+    private static boolean checkSizeAndOffset(int size, int offset, int arrayLen) {
+        return
+            (size <= 0) ||
+            ((offset + size) <= 0) ||
+            ((offset + size) > arrayLen) ||
+            ((offset > 0) && ((offset + size ) < size));
+    }
+
+    static void checkArraySize(int size, int offset, int arrayLen) {
+        if (checkSizeAndOffset(size, offset, arrayLen)) {
+            throw new IllegalArgumentException("Bad size/offset." +
+                " Size = " + size + ", offset = " + offset + ", array length = " + arrayLen);
+        }
+    }
+
+    static void checkBankSize(int bankIndex, int size, int offset, int arrayLen) {
+        if (checkSizeAndOffset(size, offset, arrayLen)) {
+            throw new IllegalArgumentException("Bad size/offset for bank " + bankIndex + "." +
+                " Size = " + size + ", offset = " + offset + ", array length = " + arrayLen);
+        }
     }
 }
