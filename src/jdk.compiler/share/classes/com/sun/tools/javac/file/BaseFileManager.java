@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -519,7 +519,7 @@ public abstract class BaseFileManager implements JavaFileManager {
     synchronized void newOutputToPath(Path path) throws IOException {
 
         // Is output file clash detection enabled?
-        if (!lint.isEnabled(LintCategory.OUTPUT_FILE_CLASH))
+        if (!lint.isActive(LintCategory.OUTPUT_FILE_CLASH))
             return;
 
         // Get the "canonical" version of the file's path; we are assuming
