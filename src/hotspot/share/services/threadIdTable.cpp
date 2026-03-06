@@ -91,7 +91,7 @@ void ThreadIdTable::lazy_initialize(const ThreadsList *threads) {
       create_table(threads->length());
       AtomicAccess::release_store(&_is_initialized, true);
     }
-    
+
     for (uint i = 0; i < threads->length(); i++) {
       JavaThread* thread = threads->thread_at(i);
       oop tobj = thread->threadObj();

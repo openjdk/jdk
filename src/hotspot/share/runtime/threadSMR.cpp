@@ -730,7 +730,6 @@ JavaThread* ThreadsList::find_JavaThread_from_java_tid(jlong java_tid) const {
     // The thread is protected by this list
     return thread;
   }
-
   return nullptr;
 }
 
