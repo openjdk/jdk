@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8378740
- * @summary Verify warnings are properly suppress in the combination of
+ * @summary Verify warnings are properly suppressed for the combination of
  *          annotation processing and implicit compilation
  * @library /tools/lib
  * @modules
@@ -54,7 +54,7 @@ import toolbox.ToolBox;
 
 public class APImplicitClassesWarnings {
 
-    ToolBox tb = new ToolBox();
+    final ToolBox tb = new ToolBox();
     Path base;
 
     @Test
@@ -109,6 +109,7 @@ public class APImplicitClassesWarnings {
         Path src = base.resolve("src");
         Path classes = base.resolve("classes");
         tb.writeJavaFiles(src,
+                          //note the added @SuppressWarnings("removal"):
                           """
                           package test;
 
