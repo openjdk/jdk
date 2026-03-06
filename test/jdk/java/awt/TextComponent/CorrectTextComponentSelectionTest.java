@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /*
  * @test
+ * @key headful
  * @bug 5100806
  * @summary TextArea.select(0,0) does not de-select the selected text properly
- * @key headful
  * @run main CorrectTextComponentSelectionTest
  */
 
@@ -38,7 +38,6 @@ import java.awt.Robot;
 import java.awt.TextArea;
 import java.awt.TextComponent;
 import java.awt.TextField;
-import java.lang.reflect.InvocationTargetException;
 
 public class CorrectTextComponentSelectionTest {
     static TextField tf = new TextField("TextField");
@@ -51,9 +50,7 @@ public class CorrectTextComponentSelectionTest {
     public static void main(String[] args) throws Exception {
         try {
             r = new Robot();
-            EventQueue.invokeAndWait(() -> {
-                initialize();
-            });
+            EventQueue.invokeAndWait(() -> initialize());
             r.waitForIdle();
             r.delay(1000);
 
@@ -119,18 +116,17 @@ public class CorrectTextComponentSelectionTest {
 
         r.waitForIdle();
         r.delay(100);
-        EventQueue.invokeAndWait(() -> {
-            loc = tc.getLocationOnScreen();
-        });
+        EventQueue.invokeAndWait(() -> loc = tc.getLocationOnScreen());
         r.waitForIdle();
         r.delay(100);
 
-        EventQueue.invokeAndWait(() -> {
-            color_center = r.getPixelColor(loc.x + tc.getWidth() / 2, loc.y + tc.getHeight() / 2);
-        });
+        EventQueue.invokeAndWait(() -> color_center =
+                r.getPixelColor(loc.x + tc.getWidth() / 2,
+                        loc.y + tc.getHeight() / 2));
 
-        System.out.println("Color of the text component (CENTER) =" + color_center);
-        System.out.println("White color=" + Color.WHITE);
+        System.out.println("Color of the text component (CENTER) = "
+                + color_center);
+        System.out.println("White color= " + Color.WHITE);
 
         if (color_center.getRGB() != Color.WHITE.getRGB()) {
             throw new RuntimeException("Test Failed");
