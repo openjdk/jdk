@@ -1645,7 +1645,7 @@ bool LibraryCallKit::inline_string_toBytesU() {
 }
 
 //------------------------inline_string_getCharsU--------------------------
-// public void StringUTF16.getChars(byte[] src, int srcBegin, int srcEnd, char dst[], int dstBegin)
+// public void StringUTF16.getChars0(byte[] src, int srcBegin, int srcEnd, char dst[], int dstBegin)
 bool LibraryCallKit::inline_string_getCharsU() {
   if (too_many_traps(Deoptimization::Reason_intrinsic)) {
     return false;
@@ -1663,8 +1663,8 @@ bool LibraryCallKit::inline_string_getCharsU() {
   AllocateArrayNode* alloc = tightly_coupled_allocation(dst);
 
   // Check if a null path was taken unconditionally.
-  src = null_check(src);
-  dst = null_check(dst);
+  src = must_be_not_null(src, true);
+  dst = must_be_not_null(dst, true);
   if (stopped()) {
     return true;
   }
@@ -1674,9 +1674,9 @@ bool LibraryCallKit::inline_string_getCharsU() {
   src_begin = _gvn.transform(new LShiftINode(src_begin, intcon(1)));
 
   // Range checks
-  EXIT_ON_BAILOUT(bailout, false, {
-    generate_string_range_check(src, src_begin, length, true, false, bailout);
-    generate_string_range_check(dst, dst_begin, length, false, false, bailout);
+  EXIT_ON_BAILOUT(bailout, true, {
+    generate_string_range_check(src, src_begin, length, true, true, bailout);
+    generate_string_range_check(dst, dst_begin, length, false, true, bailout);
   })
 
   // Calculate starting addresses.

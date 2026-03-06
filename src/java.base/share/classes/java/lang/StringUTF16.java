@@ -539,12 +539,28 @@ final class StringUTF16 {
         return result;
     }
 
-    @IntrinsicCandidate
+    /**
+     * Copies the specified sub-range of characters from a UTF-16 string byte
+     * array to the specified character array sub-range.
+     *
+     * @param value the source UTF-16 string byte array to copy from
+     * @param srcBegin the index (inclusive) of the first character in the source sub-range
+     * @param srcEnd the index (exclusive) of the last character in the source sub-range
+     * @param dst the target character array to copy to
+     * @param dstBegin the index (inclusive) of the first character in the target sub-range
+     *
+     * @throws NullPointerException if {@code value} or {@code dst} is null
+     * @throws StringIndexOutOfBoundsException if the sub-ranges are out of bounds
+     */
     static void getChars(byte[] value, int srcBegin, int srcEnd, char[] dst, int dstBegin) {
-        // We need a range check here because 'getChar' has no checks
-        if (srcBegin < srcEnd) {
-            String.checkBoundsOffCount(srcBegin, srcEnd - srcBegin, length(value));
-        }
+        checkBoundsBeginEnd(srcBegin, srcEnd, value);                           // Implicit null check on `value` via `checkBoundsBeginEnd()`
+        String.checkBoundsOffCount(dstBegin, srcEnd - srcBegin, dst.length);    // Implicit null check on `dst`
+        getChars0(value, srcBegin, srcEnd, dst, dstBegin);
+    }
+
+    // vmIntrinsics::_getCharsStringU
+    @IntrinsicCandidate
+    private static void getChars0(byte[] value, int srcBegin, int srcEnd, char[] dst, int dstBegin) {
         for (int i = srcBegin; i < srcEnd; i++) {
             dst[dstBegin++] = getChar(value, i);
         }
