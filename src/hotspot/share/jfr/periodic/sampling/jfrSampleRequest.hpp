@@ -60,18 +60,27 @@ struct JfrSampleRequest {
   void* _sample_pc;
   void* _sample_bcp;
   JfrTicks _sample_ticks;
+  address* _native_pcs;        // Points to an array (in JfrCPUTimeSampleRequest) or is nullptr
+  int _native_frame_count;     // Number of native frames captured
+  bool _native_truncated;      // True if native stack was truncated due to max frame limit
 
   JfrSampleRequest() :
     _sample_sp(nullptr),
     _sample_pc(nullptr),
     _sample_bcp(nullptr),
-    _sample_ticks() {}
+    _sample_ticks(),
+    _native_pcs(nullptr),
+    _native_frame_count(0),
+    _native_truncated(false) {}
 
   JfrSampleRequest(const JfrTicks& ticks) :
     _sample_sp(nullptr),
     _sample_pc(nullptr),
     _sample_bcp(nullptr),
-    _sample_ticks(ticks) {}
+    _sample_ticks(ticks),
+    _native_pcs(nullptr),
+    _native_frame_count(0),
+    _native_truncated(false) {}
 };
 
 typedef GrowableArrayCHeap<JfrSampleRequest, mtTracing> JfrSampleRequestQueue;

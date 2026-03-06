@@ -992,6 +992,7 @@
     description="Snapshot of a threads state from the CPU time sampler, both threads executing native and Java code are included. The throttle setting can be either an upper bound for the event emission rate, e.g. 100/s, or the cpu-time period, e.g. 10ms, with s, ms, us and ns supported as time units."
     throttle="true" thread="false" experimental="true" startTime="false">
     <Field type="StackTrace" name="stackTrace" label="Stack Trace" />
+    <Field type="NativeStackTrace" name="nativeStackTrace" label="Native Stack Trace" />
     <Field type="Thread" name="eventThread" label="Thread" />
     <Field type="boolean" name="failed" label="Failed" description="Failed to obtain the stack trace" />
     <Field type="Tickspan" name="samplingPeriod" label="CPU Time Sampling Period"/>
@@ -1521,6 +1522,11 @@
     <Field type="StackFrame" array="true" struct="true" name="frames" label="Stack Frames" />
   </Type>
 
+  <Type name="NativeStackTrace" label="NativeStacktrace">
+    <Field type="boolean" name="truncated" label="Truncated" />
+    <Field type="NativeStackFrame" array="true" struct="true" name="frames" label="Native Stack Frames" />
+  </Type>
+
   <Type name="FrameType" label="Frame type">
     <Field type="string" name="description" label="Description" />
   </Type>
@@ -1570,6 +1576,10 @@
     <Field type="FrameType" name="type" label="Frame Type" />
   </Type>
 
+  <Type name="NativeStackFrame">
+    <Field type="ulong" name="pc" contentType="address" label="Program Counter (offset from chunk)" />
+  </Type>
+
   <Type name="ChunkHeader" label="Chunk Header">
     <Field type="byte" array="true" name="payload" label="Payload" />
   </Type>
@@ -1608,6 +1618,7 @@
   <XmlType name="char" javaType="char" parameterType="char" fieldType="char"/>
   <XmlType name="string" javaType="java.lang.String" parameterType="const char*" fieldType="const char*"/>
   <XmlType name="StackTrace" javaType="jdk.types.StackTrace" parameterType="u8" fieldType="u8"/>
+  <XmlType name="NativeStackTrace" javaType="jdk.types.NativeStackTrace" parameterType="u8" fieldType="u8"/>
 
   <XmlContentType name="bytes" annotation="jdk.jfr.DataAmount(BYTES)" />
   <XmlContentType name="tickstamp" annotation="jdk.jfr.Timestamp(TICKS)" />
