@@ -162,6 +162,8 @@ class MacroAssembler: public Assembler {
 
   void incrementq(AddressLiteral dst, Register rscratch = noreg);
 
+  void movhlf(XMMRegister dst, XMMRegister src, Register rscratch = noreg);
+
   // Support optimal SSE move instructions.
   void movflt(XMMRegister dst, XMMRegister src) {
     if (dst-> encoding() == src->encoding()) return;
@@ -1308,6 +1310,14 @@ public:
   void subss(XMMRegister dst, XMMRegister    src) { Assembler::subss(dst, src); }
   void subss(XMMRegister dst, Address        src) { Assembler::subss(dst, src); }
   void subss(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
+
+  void vucomish(XMMRegister dst, XMMRegister    src) { Assembler::vucomish(dst, src); }
+  void vucomish(XMMRegister dst, Address        src) { Assembler::vucomish(dst, src); }
+  void vucomish(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
+
+  void vucomxsh(XMMRegister dst, XMMRegister    src) { Assembler::vucomxsh(dst, src); }
+  void vucomxsh(XMMRegister dst, Address        src) { Assembler::vucomxsh(dst, src); }
+  void vucomxsh(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
   void ucomiss(XMMRegister dst, XMMRegister    src) { Assembler::ucomiss(dst, src); }
   void ucomiss(XMMRegister dst, Address        src) { Assembler::ucomiss(dst, src); }

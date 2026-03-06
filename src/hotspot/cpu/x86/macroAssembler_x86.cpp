@@ -1961,6 +1961,13 @@ void MacroAssembler::movflt(XMMRegister dst, AddressLiteral src, Register rscrat
   }
 }
 
+void MacroAssembler::movhlf(XMMRegister dst, XMMRegister src, Register rscratch) {
+  assert(rscratch != noreg, "missing");
+
+  vmovw(rscratch, src);
+  vmovw(dst, rscratch);
+}
+
 void MacroAssembler::movptr(Register dst, Register src) {
   movq(dst, src);
 }
@@ -2686,6 +2693,28 @@ void MacroAssembler::vucomxss(XMMRegister dst, AddressLiteral src, Register rscr
   } else {
     lea(rscratch, src);
     Assembler::vucomxss(dst, Address(rscratch, 0));
+  }
+}
+
+void MacroAssembler::vucomish(XMMRegister dst, AddressLiteral src, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
+  if (reachable(src)) {
+    Assembler::vucomish(dst, as_Address(src));
+  } else {
+    lea(rscratch, src);
+    Assembler::vucomish(dst, Address(rscratch, 0));
+  }
+}
+
+void MacroAssembler::vucomxsh(XMMRegister dst, AddressLiteral src, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
+  if (reachable(src)) {
+    Assembler::vucomxsh(dst, as_Address(src));
+  } else {
+    lea(rscratch, src);
+    Assembler::vucomxsh(dst, Address(rscratch, 0));
   }
 }
 
@@ -9177,7 +9206,7 @@ void MacroAssembler::evpmaxs(BasicType type, XMMRegister dst, KRegister mask, XM
     case T_FLOAT:
       evminmaxps(dst, mask, nds, src, merge, AVX10_2_MINMAX_MAX_COMPARE_SIGN, vector_len); break;
     case T_DOUBLE:
-      evminmaxps(dst, mask, nds, src, merge, AVX10_2_MINMAX_MAX_COMPARE_SIGN, vector_len); break;
+      evminmaxpd(dst, mask, nds, src, merge, AVX10_2_MINMAX_MAX_COMPARE_SIGN, vector_len); break;
     default:
       fatal("Unexpected type argument %s", type2name(type)); break;
   }

@@ -1037,8 +1037,8 @@ void C2_MacroAssembler::evminmax_fp(int opcode, BasicType elem_bt,
   }
 }
 
-void C2_MacroAssembler::vminmax_fp(int opc, BasicType elem_bt, XMMRegister dst, KRegister mask,
-                                   XMMRegister src1, XMMRegister src2, int vlen_enc) {
+void C2_MacroAssembler::vminmax_fp_avx10_2(int opc, BasicType elem_bt, XMMRegister dst, KRegister mask,
+                                           XMMRegister src1, XMMRegister src2, int vlen_enc) {
   assert(opc == Op_MinV || opc == Op_MinReductionV ||
          opc == Op_MaxV || opc == Op_MaxReductionV, "sanity");
 
@@ -2400,7 +2400,7 @@ void C2_MacroAssembler::reduceFloatMinMax(int opcode, int vlen, bool is_dst_vali
     }
 
     if (VM_Version::supports_avx10_2()) {
-      vminmax_fp(opcode, T_FLOAT, wdst, k0, wtmp, wsrc, vlen_enc);
+      vminmax_fp_avx10_2(opcode, T_FLOAT, wdst, k0, wtmp, wsrc, vlen_enc);
     } else {
       vminmax_fp(opcode, T_FLOAT, wdst, wtmp, wsrc, tmp, atmp, btmp, vlen_enc);
     }
@@ -2409,7 +2409,7 @@ void C2_MacroAssembler::reduceFloatMinMax(int opcode, int vlen, bool is_dst_vali
   }
   if (is_dst_valid) {
     if (VM_Version::supports_avx10_2()) {
-      vminmax_fp(opcode, T_FLOAT, dst, k0, wdst, dst, Assembler::AVX_128bit);
+      vminmax_fp_avx10_2(opcode, T_FLOAT, dst, k0, wdst, dst, Assembler::AVX_128bit);
     } else {
       vminmax_fp(opcode, T_FLOAT, dst, wdst, dst, tmp, atmp, btmp, Assembler::AVX_128bit);
     }
@@ -2440,7 +2440,7 @@ void C2_MacroAssembler::reduceDoubleMinMax(int opcode, int vlen, bool is_dst_val
     }
 
     if (VM_Version::supports_avx10_2()) {
-      vminmax_fp(opcode, T_DOUBLE, wdst, k0, wtmp, wsrc, vlen_enc);
+      vminmax_fp_avx10_2(opcode, T_DOUBLE, wdst, k0, wtmp, wsrc, vlen_enc);
     } else {
       vminmax_fp(opcode, T_DOUBLE, wdst, wtmp, wsrc, tmp, atmp, btmp, vlen_enc);
     }
@@ -2451,7 +2451,7 @@ void C2_MacroAssembler::reduceDoubleMinMax(int opcode, int vlen, bool is_dst_val
 
   if (is_dst_valid) {
     if (VM_Version::supports_avx10_2()) {
-      vminmax_fp(opcode, T_DOUBLE, dst, k0, wdst, dst, Assembler::AVX_128bit);
+      vminmax_fp_avx10_2(opcode, T_DOUBLE, dst, k0, wdst, dst, Assembler::AVX_128bit);
     } else {
       vminmax_fp(opcode, T_DOUBLE, dst, wdst, dst, tmp, atmp, btmp, Assembler::AVX_128bit);
     }
@@ -7066,6 +7066,11 @@ void C2_MacroAssembler::scalar_max_min_fp16(int opcode, XMMRegister dst, XMMRegi
   vector_max_min_fp16(opcode, dst, src1, src2, ktmp, xtmp1, xtmp2, Assembler::AVX_128bit);
 }
 
+void C2_MacroAssembler::scalar_max_min_fp16_avx10_2(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                                    KRegister ktmp) {
+  vector_max_min_fp16_avx10_2(opcode, dst, src1, src2, ktmp, Assembler::AVX_128bit);
+}
+
 void C2_MacroAssembler::vector_max_min_fp16(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
                                             KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc) {
   if (opcode == Op_MaxVHF || opcode == Op_MaxHF) {
@@ -7108,5 +7113,29 @@ void C2_MacroAssembler::vector_max_min_fp16(int opcode, XMMRegister dst, XMMRegi
     // in case second operand holds a NaN value then as per above semantics
     // result is same as second operand.
     Assembler::evmovdquw(dst, ktmp, xtmp1, true, vlen_enc);
+  }
+}
+
+void C2_MacroAssembler::vector_max_min_fp16_avx10_2(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                                    KRegister ktmp, int vlen_enc) {
+  if (opcode == Op_MaxVHF || opcode == Op_MaxHF) {
+    // dst = max(src1, src2)
+    evminmaxph(dst, ktmp, src1, src2, true, AVX10_2_MINMAX_MAX_COMPARE_SIGN, vlen_enc);
+  } else {
+    assert(opcode == Op_MinVHF || opcode == Op_MinHF, "");
+    // dst = min(src1, src2)
+    evminmaxph(dst, ktmp, src1, src2, true, AVX10_2_MINMAX_MIN_COMPARE_SIGN, vlen_enc);
+  }
+}
+
+void C2_MacroAssembler::vector_max_min_fp16_avx10_2(int opcode, XMMRegister dst, XMMRegister src1, Address src2,
+                                                    KRegister ktmp, int vlen_enc) {
+  if (opcode == Op_MaxVHF || opcode == Op_MaxHF) {
+    // dst = max(src1, src2)
+    evminmaxph(dst, ktmp, src1, src2, true, AVX10_2_MINMAX_MAX_COMPARE_SIGN, vlen_enc);
+  } else {
+    assert(opcode == Op_MinVHF || opcode == Op_MinHF, "");
+    // dst = min(src1, src2)
+    evminmaxph(dst, ktmp, src1, src2, true, AVX10_2_MINMAX_MIN_COMPARE_SIGN, vlen_enc);
   }
 }
