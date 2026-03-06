@@ -24,6 +24,7 @@ package compiler.c2.gvn;
 
 import compiler.lib.ir_framework.*;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 import java.util.Random;
 
@@ -43,7 +44,9 @@ public class MissedURShiftIAddILShiftIdeal {
     public static void main(String[] args) {
         var framework = new TestFramework();
         framework.addScenarios(new Scenario(0));
-        framework.addScenarios(new Scenario(1, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:VerifyIterativeGVN=1110"));
+        if (Platform.isDebugBuild()) {
+            framework.addScenarios(new Scenario(1, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:VerifyIterativeGVN=1110"));
+        }
         framework.start();
     }
 
