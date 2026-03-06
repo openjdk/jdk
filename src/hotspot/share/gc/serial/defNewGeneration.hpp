@@ -230,15 +230,6 @@ class DefNewGeneration: public Generation {
   // Initialize eden/from/to spaces.
   void init_spaces();
 
-  // Return adjusted new size for NewSizeThreadIncrease.
-  // If any overflow happens, revert to previous new size.
-  size_t adjust_for_thread_increase(size_t new_size_candidate,
-                                    size_t new_size_before,
-                                    size_t alignment,
-                                    size_t thread_increase_size) const;
-
-  size_t calculate_thread_increase_size(int threads_count) const;
-
 
   // Scavenge support
   void swap_spaces();

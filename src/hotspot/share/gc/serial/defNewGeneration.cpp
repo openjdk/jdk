@@ -348,38 +348,6 @@ void DefNewGeneration::expand_eden_by(size_t delta_bytes) {
   post_resize();
 }
 
-size_t DefNewGeneration::calculate_thread_increase_size(int threads_count) const {
-    size_t thread_increase_size = 0;
-    // Check an overflow at 'threads_count * NewSizeThreadIncrease'.
-    if (threads_count > 0 && NewSizeThreadIncrease <= max_uintx / threads_count) {
-      thread_increase_size = threads_count * NewSizeThreadIncrease;
-    }
-    return thread_increase_size;
-}
-
-size_t DefNewGeneration::adjust_for_thread_increase(size_t new_size_candidate,
-                                                    size_t new_size_before,
-                                                    size_t alignment,
-                                                    size_t thread_increase_size) const {
-  size_t desired_new_size = new_size_before;
-
-  if (NewSizeThreadIncrease > 0 && thread_increase_size > 0) {
-
-    // 1. Check an overflow at 'new_size_candidate + thread_increase_size'.
-    if (new_size_candidate <= max_uintx - thread_increase_size) {
-      new_size_candidate += thread_increase_size;
-
-      // 2. Check an overflow at 'align_up'.
-      size_t aligned_max = ((max_uintx - alignment) & ~(alignment-1));
-      if (new_size_candidate <= aligned_max) {
-        desired_new_size = align_up(new_size_candidate, alignment);
-      }
-    }
-  }
-
-  return desired_new_size;
-}
-
 size_t DefNewGeneration::calculate_desired_young_gen_bytes() const {
   size_t old_size = SerialHeap::heap()->old_gen()->capacity();
   size_t new_size_before = _virtual_space.committed_size();
@@ -391,14 +359,8 @@ size_t DefNewGeneration::calculate_desired_young_gen_bytes() const {
   // All space sizes must be multiples of Generation::GenGrain.
   size_t alignment = Generation::GenGrain;
 
-  int threads_count = Threads::number_of_non_daemon_threads();
-  size_t thread_increase_size = calculate_thread_increase_size(threads_count);
-
   size_t new_size_candidate = old_size / NewRatio;
-  // Compute desired new generation size based on NewRatio and NewSizeThreadIncrease
-  // and reverts to previous value if any overflow happens
-  size_t desired_new_size = adjust_for_thread_increase(new_size_candidate, new_size_before,
-                                                       alignment, thread_increase_size);
+  size_t desired_new_size = align_up(new_size_candidate, alignment);
 
   // Adjust new generation size
   desired_new_size = clamp(desired_new_size, min_new_size, max_new_size);
