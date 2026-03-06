@@ -30,6 +30,8 @@ import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.Comparator;
@@ -486,18 +488,18 @@ public final class DerOutputStream
     /**
      * 1/1/1950 is the lowest date that RFC 2630 serializes to UTC time
      */
-    private static final Date utcLow = new Date(-631152000000L); // Dates before 1/1/1950
+    private static final Instant utcLow = Instant.ofEpochMilli(-631152000000L); // Dates before 1/1/1950
 
     /**
      * 12/31/2049 is the highest date that RFC 2630 serializes to UTC time
      */
-    private static final Date utcHigh = new Date(2524607999000L);
+    private static final Instant utcHigh = Instant.ofEpochMilli(2524607999000L);
 
     /**
      * Takes a Date and chooses UTC or GeneralizedTime as per RFC 2630
      */
-    public DerOutputStream putTime(Date d) {
-        return (d.before(utcLow) || d.after(utcHigh)) ? putGeneralizedTime(d) : putUTCTime(d);
+    public DerOutputStream putTime(Instant d) {
+        return (d.isBefore(utcLow) || d.isAfter(utcHigh)) ? putGeneralizedInstant(d) : putUTCInstant(d);
     }
 
     /**
@@ -507,7 +509,7 @@ public final class DerOutputStream
      * and with seconds (even if seconds=0) as per RFC 5280.
      */
     public DerOutputStream putUTCTime(Date d) {
-        return putTime(d, DerValue.tag_UtcTime);
+        return putUTCInstant(d.toInstant());
     }
 
     /**
@@ -517,7 +519,7 @@ public final class DerOutputStream
      * and with seconds (even if seconds=0) as per RFC 5280.
      */
     public DerOutputStream putUTCInstant(Instant d) {
-        return putUTCTime(Date.from(d));
+        return putTime(d, DerValue.tag_UtcTime);
     }
 
     /**
@@ -527,7 +529,7 @@ public final class DerOutputStream
      * and with seconds (even if seconds=0) as per RFC 5280.
      */
     public DerOutputStream putGeneralizedTime(Date d) {
-        return putTime(d, DerValue.tag_GeneralizedTime);
+        return putGeneralizedInstant(d.toInstant());
     }
 
     /**
@@ -537,7 +539,7 @@ public final class DerOutputStream
      * and with seconds (even if seconds=0) as per RFC 5280.
      */
     public DerOutputStream putGeneralizedInstant(Instant d) {
-        return putGeneralizedTime(Date.from(d));
+        return putTime(d, DerValue.tag_GeneralizedTime);
     }
 
     /**
@@ -547,7 +549,7 @@ public final class DerOutputStream
      * @param d the date to be marshalled
      * @param tag the tag for UTC Time or Generalized Time
      */
-    private DerOutputStream putTime(Date d, byte tag) {
+    private DerOutputStream putTime(Instant d, byte tag) {
 
         /*
          * Format the date.
@@ -563,9 +565,10 @@ public final class DerOutputStream
             pattern = "yyyyMMddHHmmss'Z'";
         }
 
-        SimpleDateFormat sdf = new SimpleDateFormat(pattern, Locale.US);
-        sdf.setTimeZone(tz);
-        byte[] time = (sdf.format(d)).getBytes(ISO_8859_1);
+        DateTimeFormatter dateTimeFormatter =
+                DateTimeFormatter.ofPattern(pattern, Locale.US);
+        byte[] time = (d.atZone(ZoneId.of("GMT")).format(dateTimeFormatter))
+                .getBytes(ISO_8859_1);
 
         /*
          * Write the formatted date.

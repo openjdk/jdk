@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,7 +170,7 @@ public abstract non-sealed class X509Certificate extends Certificate
         throws CertificateExpiredException, CertificateNotYetValidException;
 
     /**
-     * Checks that the given Instant is within the certificate's
+     * Checks that the given instant is within the certificate's
      * validity period. In other words, this determines whether the
      * certificate would be valid at the given date/time.
      *
@@ -181,8 +181,8 @@ public abstract non-sealed class X509Certificate extends Certificate
      * The default implementation converts an inputted {@code Instant} to
      * {@code Date} and calls {@code checkValidity(date)}.
      *
-     * @param instant the Instant to check against to see if this certificate
-     *        is valid at that date/time.
+     * @param instant the {@code Instant} to check against to see if this
+     *                certificate is valid at that instant.
      *
      * @throws    CertificateExpiredException if the certificate has expired
      * with respect to the {@code instant} supplied.
@@ -190,6 +190,7 @@ public abstract non-sealed class X509Certificate extends Certificate
      * yet valid with respect to the {@code instant} supplied.
      *
      * @see #checkValidity()
+     * @since 27
      */
     public void checkValidity(Instant instant)
         throws CertificateExpiredException, CertificateNotYetValidException {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1081,15 +1081,7 @@ public class DerValue {
     }
 
     /**
-     * Determines whether Date was encoded as UTC or Generalized time and
-     * calls getUTCTime or getGeneralizedTime accordingly
-     */
-    public Date getTime() throws IOException {
-        return (tag == tag_UtcTime) ? getUTCTime() : getGeneralizedTime();
-    }
-
-    /**
-     * Determines whether Instant was encoded as UTC or Generalized time and
+     * Determines whether {@code Instant} was encoded as UTC or Generalized time and
      * calls getUTCInstant or getGeneralizedInstant accordingly
      */
     public Instant getInstant() throws IOException {

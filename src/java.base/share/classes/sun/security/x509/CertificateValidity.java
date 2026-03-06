@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package sun.security.x509;
 import java.io.IOException;
 import java.security.cert.*;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.Objects;
 
@@ -53,36 +52,26 @@ public class CertificateValidity implements DerEncoder {
     private final Instant notAfter;
 
     // Returns the first time the certificate is valid.
-    public Date getNotBefore() {
-        return new Date(notBefore.toEpochMilli());
-    }
-
-    // Returns the last time the certificate is valid.
-    public Date getNotAfter() {
-       return new Date(notAfter.toEpochMilli());
-    }
-
-    // Returns the first time the certificate is valid.
-    public Instant getNotBeforeInstant() {
+    public Instant getNotBefore() {
         return notBefore;
     }
 
     // Returns the last time the certificate is valid.
-    public Instant getNotAfterInstant() {
+    public Instant getNotAfter() {
        return notAfter;
     }
 
     /**
      * The constructor for this class for the specified interval.
      *
-     * @param notBefore the date and time before which the certificate
-     *                   is not valid
-     * @param notAfter the date and time after which the certificate is
-     *                  not valid
+     * @param notBefore the date and time as {@code Instant} before which the
+     *                  certificate is not valid
+     * @param notAfter the date and time as {@code Instant} after which the
+     *                 certificate is not valid
      */
-    public CertificateValidity(Date notBefore, Date notAfter) {
-        this.notBefore = Objects.requireNonNull(notBefore).toInstant();
-        this.notAfter = Objects.requireNonNull(notAfter).toInstant();
+    public CertificateValidity(Instant notBefore, Instant notAfter) {
+        this.notBefore = Objects.requireNonNull(notBefore);
+        this.notAfter = Objects.requireNonNull(notAfter);
     }
 
     /**
@@ -163,7 +152,7 @@ public class CertificateValidity implements DerEncoder {
      */
     public void valid()
     throws CertificateNotYetValidException, CertificateExpiredException {
-        final Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
+        final Instant now = Instant.now();
         valid(now);
     }
 
