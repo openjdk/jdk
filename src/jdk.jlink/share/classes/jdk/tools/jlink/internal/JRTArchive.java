@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024, Red Hat, Inc.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +33,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.lang.module.ModuleFinder;
-import java.lang.module.ModuleReference;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -51,6 +51,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jdk.internal.jimage.ResourceEntries;
+import jdk.internal.jimage.SystemImageReader;
 import jdk.internal.util.OperatingSystem;
 import jdk.tools.jlink.internal.Archive.Entry.EntryType;
 import jdk.tools.jlink.internal.runtimelink.ResourceDiff;
@@ -63,10 +65,9 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry.Type;
  * associated files from the filesystem of the JDK installation.
  */
 public class JRTArchive implements Archive {
-
     private final String module;
     private final Path path;
-    private final ModuleReference ref;
+    private final ResourceEntries imageResources;
     // The collection of files of this module
     private final List<JRTFile> files = new ArrayList<>();
     // Files not part of the lib/modules image of the JDK install.
@@ -99,12 +100,11 @@ public class JRTArchive implements Archive {
                Set<String> upgradeableFiles) {
         this.module = module;
         this.path = path;
-        this.ref = ModuleFinder.ofSystem()
-                               .find(module)
-                               .orElseThrow(() ->
-                                    new IllegalArgumentException(
-                                            "Module " + module +
-                                            " not part of the JDK install"));
+        ModuleFinder.ofSystem()
+                .find(module)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Module " + module + " not part of the JDK install"));
+        this.imageResources = SystemImageReader.getResourceEntries();
         this.errorOnModifiedFile = errorOnModifiedFile;
         this.otherRes = readModuleResourceFile(module);
         this.resDiff = Objects.requireNonNull(perModDiff).stream()
@@ -159,52 +159,35 @@ public class JRTArchive implements Archive {
                    Objects.equals(path, other.path));
     }
 
+    private boolean isNormalOrModifiedDiff(String name) {
+        ResourceDiff rd = resDiff.get(name);
+        // Filter all resources with a resource diff of kind MODIFIED.
+        // Note that REMOVED won't happen since in that case the module listing
+        // won't have the resource anyway.
+        // Note as well that filter removes files of kind ADDED. Those files are
+        // not in the packaged modules, so ought not to get returned from the
+        // pipeline.
+        return (rd == null || rd.getKind() == ResourceDiff.Kind.MODIFIED);
+    }
+
     private void collectFiles() throws IOException {
         if (files.isEmpty()) {
             addNonClassResources();
+
             // Add classes/resources from the run-time image,
             // patched with the run-time image diff
-            files.addAll(ref.open().list()
-                                   .filter(i -> {
-                                           String lookupKey = String.format("/%s/%s", module, i);
-                                           ResourceDiff rd = resDiff.get(lookupKey);
-                                           // Filter all resources with a resource diff
-                                           // that are of kind MODIFIED.
-                                           // Note that REMOVED won't happen since in
-                                           // that case the module listing won't have
-                                           // the resource anyway.
-                                           // Note as well that filter removes files
-                                           // of kind ADDED. Those files are not in
-                                           // the packaged modules, so ought not to
-                                           // get returned from the pipeline.
-                                           return (rd == null ||
-                                                   rd.getKind() == ResourceDiff.Kind.MODIFIED);
-                                   })
-                                   .map(s -> {
-                                           String lookupKey = String.format("/%s/%s", module, s);
-                                           return new JRTArchiveFile(JRTArchive.this, s,
-                                                           EntryType.CLASS_OR_RESOURCE,
-                                                           null /* hashOrTarget */,
-                                                           false /* symlink */,
-                                                           resDiff.get(lookupKey));
-                                   })
-                                   .toList());
+            imageResources.getEntryNames(module)
+                    .filter(this::isNormalOrModifiedDiff)
+                    .sorted()
+                    .map(name -> new JrtModuleFile(this, name, resDiff.get(name)))
+                    .forEach(files::add);
+
             // Finally add all files only present in the resource diff
             // That is, removed items in the run-time image.
             files.addAll(resDiff.values().stream()
-                                         .filter(rd -> rd.getKind() == ResourceDiff.Kind.REMOVED)
-                                         .map(s -> {
-                                                 int secondSlash = s.getName().indexOf("/", 1);
-                                                 assert secondSlash != -1;
-                                                 String pathWithoutModule = s.getName().substring(secondSlash + 1);
-                                                 return new JRTArchiveFile(JRTArchive.this,
-                                                         pathWithoutModule,
-                                                         EntryType.CLASS_OR_RESOURCE,
-                                                         null  /* hashOrTarget */,
-                                                         false /* symlink */,
-                                                         s);
-                                         })
-                                         .toList());
+                    .filter(rd -> rd.getKind() == ResourceDiff.Kind.REMOVED)
+                    .map(rd -> new JrtModuleFile(this, rd.getName(), rd))
+                    .toList());
         }
     }
 
@@ -234,15 +217,10 @@ public class JRTArchive implements Archive {
                             }
                         }
 
-                        return new JRTArchiveFile(JRTArchive.this,
-                                                  m.resPath,
-                                                  toEntryType(m.resType),
-                                                  m.hashOrTarget,
-                                                  m.symlink,
-                                                  /* diff only for resources */
-                                                  null);
-                 })
-                 .toList());
+                        return new JrtOtherFile(
+                                this, m.resPath, toEntryType(m.resType), m.hashOrTarget, m.symlink);
+                    })
+                    .toList());
         }
     }
 
@@ -323,11 +301,11 @@ public class JRTArchive implements Archive {
                                  resPath);
         }
 
-        /**
+        /*
          *  line: <int>|<int>|<hashOrTarget>|<path>
          *
-         *  Take the integer before '|' convert it to a Type. The second
-         *  token is an integer representing symlinks (or not). The third token is
+         *  Take the integer before '|' convert it to a Type. The second token
+         *  is an integer representing symlinks (or not). The third token is
          *  a hash sum (sha512) of the file denoted by the fourth token (path).
          */
         static ResourceFileEntry decodeFromString(String line) {
@@ -437,47 +415,75 @@ public class JRTArchive implements Archive {
         Entry toEntry();
     }
 
-    record JRTArchiveFile(Archive archive,
-                          String resPath,
-                          EntryType resType,
-                          String sha,
-                          boolean symlink,
-                          ResourceDiff diff) implements JRTFile {
+    record JrtModuleFile(
+            JRTArchive archive,
+            String resPath,
+            ResourceDiff diff) implements JRTFile {
+        @Override
         public Entry toEntry() {
-            return new Entry(archive,
-                             String.format("/%s/%s",
-                                           archive.moduleName(),
-                                           resPath),
-                             resPath,
-                             resType) {
+            assert resPath.startsWith("/" + archive.moduleName() + "/");
+            String resName = resPath.substring(archive.moduleName().length() + 2);
+
+            // If the resource has a diff to the packaged modules, use the diff.
+            // Diffs of kind ADDED have been filtered out in collectFiles();
+            if (diff != null) {
+                assert diff.getKind() != ResourceDiff.Kind.ADDED;
+                assert diff.getName().equals(resPath);
+
+                return new Entry(archive, resPath, resName, EntryType.CLASS_OR_RESOURCE) {
+                    @Override
+                    public long size() {
+                        return diff.getResourceBytes().length;
+                    }
+                    @Override
+                    public InputStream stream() {
+                        return new ByteArrayInputStream(diff.getResourceBytes());
+                    }
+                };
+            } else {
+                return new Entry(archive, resPath, resName, EntryType.CLASS_OR_RESOURCE) {
+                    @Override
+                    public long size() {
+                        return archive.imageResources.getSize(resPath);
+                    }
+
+                    @Override
+                    public InputStream stream() {
+                        // Byte content could be cached in the entry if needed.
+                        return new ByteArrayInputStream(archive.imageResources.getBytes(resPath));
+                    }
+                };
+            }
+        }
+    }
+
+    record JrtOtherFile(
+            JRTArchive archive,
+            String resPath,
+            EntryType resType,
+            String sha,
+            boolean symlink) implements JRTFile {
+
+        // Read from the base JDK image, special casing
+        // symlinks, which have the link target in the
+        // hashOrTarget field.
+        Path targetPath() {
+            return BASE.resolve(symlink ? sha : resPath);
+        }
+
+        public Entry toEntry() {
+            assert resType != EntryType.CLASS_OR_RESOURCE;
+
+            return new Entry(
+                    archive,
+                    String.format("/%s/%s", archive.moduleName(), resPath),
+                    resPath,
+                    resType) {
+
                 @Override
                 public long size() {
                     try {
-                        if (resType != EntryType.CLASS_OR_RESOURCE) {
-                            // Read from the base JDK image, special casing
-                            // symlinks, which have the link target in the
-                            // hashOrTarget field
-                            if (symlink) {
-                                return Files.size(BASE.resolve(sha));
-                            }
-                            return Files.size(BASE.resolve(resPath));
-                        } else {
-                            if (diff != null) {
-                                // If the resource has a diff to the
-                                // packaged modules, use the diff. Diffs of kind
-                                // ADDED have been filtered out in collectFiles();
-                                assert diff.getKind() != ResourceDiff.Kind.ADDED;
-                                assert diff.getName().equals(String.format("/%s/%s",
-                                                                           archive.moduleName(),
-                                                                           resPath));
-                                return diff.getResourceBytes().length;
-                            }
-                            // Read from the module image. This works, because
-                            // the underlying base path is a JrtPath with the
-                            // JrtFileSystem underneath which is able to handle
-                            // this size query.
-                            return Files.size(archive.getPath().resolve(resPath));
-                        }
+                        return Files.size(targetPath());
                     } catch (IOException e) {
                         throw new UncheckedIOException(e);
                     }
@@ -485,28 +491,8 @@ public class JRTArchive implements Archive {
 
                 @Override
                 public InputStream stream() throws IOException {
-                    if (resType != EntryType.CLASS_OR_RESOURCE) {
-                        // Read from the base JDK image.
-                        Path path = symlink ? BASE.resolve(sha) : BASE.resolve(resPath);
-                        return Files.newInputStream(path);
-                    } else {
-                        // Read from the module image. Use the diff to the
-                        // packaged modules if we have one. Diffs of kind
-                        // ADDED have been filtered out in collectFiles();
-                        if (diff != null) {
-                            assert diff.getKind() != ResourceDiff.Kind.ADDED;
-                            assert diff.getName().equals(String.format("/%s/%s",
-                                                                       archive.moduleName(),
-                                                                       resPath));
-                            return new ByteArrayInputStream(diff.getResourceBytes());
-                        }
-                        String module = archive.moduleName();
-                        ModuleReference mRef = ModuleFinder.ofSystem()
-                                                    .find(module).orElseThrow();
-                        return mRef.open().open(resPath).orElseThrow();
-                    }
+                    return Files.newInputStream(targetPath());
                 }
-
             };
         }
     }

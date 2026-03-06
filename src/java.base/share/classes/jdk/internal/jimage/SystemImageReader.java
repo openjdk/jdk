@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,9 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
-import java.nio.file.Path;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
 
 /**
- * Factory to get ImageReader
+ * Static holder class for singleton {@link ImageReader} instance.
  *
  * @implNote This class needs to maintain JDK 8 source compatibility.
  *
@@ -44,15 +39,13 @@ import java.util.function.Function;
  * but also compiled and delivered as part of the jrtfs.jar to support access
  * to the jimage file provided by the shipped JDK by tools running on JDK 8.
  */
-public class ImageReaderFactory {
-    private ImageReaderFactory() {}
-
-    private static final String JAVA_HOME = System.getProperty("java.home");
-    private static final Path BOOT_MODULES_JIMAGE;
+public class SystemImageReader {
+    private static final ImageReader SYSTEM_IMAGE_READER;
 
     static {
+        String javaHome = System.getProperty("java.home");
         FileSystem fs;
-        if (ImageReaderFactory.class.getClassLoader() == null) {
+        if (SystemImageReader.class.getClassLoader() == null) {
             try {
                 fs = (FileSystem) Class.forName("sun.nio.fs.DefaultFileSystemProvider")
                         .getMethod("theFileSystem")
@@ -63,44 +56,32 @@ public class ImageReaderFactory {
         } else {
             fs = FileSystems.getDefault();
         }
-        BOOT_MODULES_JIMAGE = fs.getPath(JAVA_HOME, "lib", "modules");
-    }
-
-    private static final Map<Path, ImageReader> readers = new ConcurrentHashMap<>();
-
-    /**
-     * Returns an {@code ImageReader} to read from the given image file
-     */
-    public static ImageReader get(Path jimage) throws IOException {
-        Objects.requireNonNull(jimage);
         try {
-            return readers.computeIfAbsent(jimage, OPENER);
-        } catch (UncheckedIOException io) {
-            throw io.getCause();
+            SYSTEM_IMAGE_READER = ImageReader.open(fs.getPath(javaHome, "lib", "modules"), PreviewMode.FOR_RUNTIME);
+        } catch (IOException e) {
+            throw new ExceptionInInitializerError(e);
         }
     }
 
-    private static Function<Path, ImageReader> OPENER = new Function<Path, ImageReader>() {
-        public ImageReader apply(Path path) {
-            try {
-                return ImageReader.open(path);
-            } catch (IOException io) {
-                throw new UncheckedIOException(io);
-            }
-        }
-    };
-
     /**
-     * Returns the {@code ImageReader} to read the image file in this
-     * run-time image.
+     * Returns the singleton {@code ImageReader} to read the image file in this
+     * run-time image. The returned instance must not be closed.
      *
      * @throws UncheckedIOException if an I/O error occurs
      */
-    public static ImageReader getImageReader() {
-        try {
-            return get(BOOT_MODULES_JIMAGE);
-        } catch (IOException ioe) {
-            throw new UncheckedIOException(ioe);
-        }
+    public static ImageReader get() {
+        return SYSTEM_IMAGE_READER;
     }
+
+    /**
+     * Returns the "raw" API for accessing underlying jimage resource entries.
+     *
+     * <p>This is only meaningful for use by code dealing directly with jimage
+     * files, and cannot be used to reliably lookup resources used at runtime.
+     */
+    public static ResourceEntries getResourceEntries() {
+        return get().getResourceEntries();
+    }
+
+    private SystemImageReader() {}
 }
