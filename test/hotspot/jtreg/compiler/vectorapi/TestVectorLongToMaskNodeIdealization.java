@@ -332,7 +332,7 @@ public class TestVectorLongToMaskNodeIdealization {
             //               a truncation/zero extension, and we don't optimize.
             //
             // TODO: length=64 leads the AndL mask to be all-ones, and fold away immediately.
-            //       We could eventually extend the optimization to handle that.
+            //       We could eventually extend the optimization to handle that. See JDK-8379398.
             //
             // AVX512: expect vectorization in length range [4..64]
             //         TODO: 2-element masks are currently not properly intrinsified, see JDK-8378589.
