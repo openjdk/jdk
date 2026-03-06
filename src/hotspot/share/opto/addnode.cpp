@@ -1125,6 +1125,12 @@ Node* XorINode::Ideal(PhaseGVN* phase, bool can_reshape) {
     }
   }
 
+  // Rewrite `x ^ INT_MIN` to `x + INT_MIN` since ADDs are more frequently
+  // optimized than XORs.
+  if (phase->type(in2) == TypeInt::MIN) {
+    return new AddINode(in1, in2);
+  }
+
   return AddNode::Ideal(phase, can_reshape);
 }
 
@@ -1176,6 +1182,13 @@ Node* XorLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       phase->record_for_igvn(this);
     }
   }
+
+  // Rewrite `x ^ LONG_MIN` to `x + LONG_MIN` since ADDs are more frequently
+  // optimized than XORs.
+  if (phase->type(in2) == TypeLong::MIN) {
+    return new AddLNode(in1, in2);
+  }
+
   return AddNode::Ideal(phase, can_reshape);
 }
 
