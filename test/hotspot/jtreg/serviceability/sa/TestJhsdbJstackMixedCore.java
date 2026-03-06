@@ -38,7 +38,9 @@ import jtreg.SkippedException;
 /**
  * @test
  * @bug 8374482 8376264 8376284 8377395
- * @requires (os.family == "linux") & (vm.hasSA)
+ * @requires vm.hasSA
+ * @requires vm.gc != "Z"
+ * @requires os.family == "linux"
  * @requires os.arch == "amd64"
  * @library /test/lib
  * @run driver TestJhsdbJstackMixedCore
