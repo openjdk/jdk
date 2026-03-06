@@ -1237,6 +1237,16 @@ public class IRNode {
         vectorNode(MAX_VI, "MaxV", TYPE_INT);
     }
 
+    public static final String MAX_VB = VECTOR_PREFIX + "MAX_VB" + POSTFIX;
+    static {
+        vectorNode(MAX_VB, "MaxV", TYPE_BYTE);
+    }
+
+    public static final String MAX_VS = VECTOR_PREFIX + "MAX_VS" + POSTFIX;
+    static {
+        vectorNode(MAX_VS, "MaxV", TYPE_SHORT);
+    }
+
     public static final String MAX_VHF = VECTOR_PREFIX + "MAX_VHF" + POSTFIX;
     static {
         vectorNode(MAX_VHF, "MaxVHF", TYPE_SHORT);
@@ -1351,6 +1361,16 @@ public class IRNode {
     public static final String MIN_VI = VECTOR_PREFIX + "MIN_VI" + POSTFIX;
     static {
         vectorNode(MIN_VI, "MinV", TYPE_INT);
+    }
+
+    public static final String MIN_VB = VECTOR_PREFIX + "MIN_VB" + POSTFIX;
+    static {
+        vectorNode(MIN_VB, "MinV", TYPE_BYTE);
+    }
+
+    public static final String MIN_VS = VECTOR_PREFIX + "MIN_VS" + POSTFIX;
+    static {
+        vectorNode(MIN_VS, "MinV", TYPE_SHORT);
     }
 
     public static final String MIN_VHF = VECTOR_PREFIX + "MIN_VHF" + POSTFIX;

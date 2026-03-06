@@ -666,6 +666,8 @@ public:
 class MinVNode : public VectorNode {
 public:
   MinVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual Node* Identity(PhaseGVN* phase);
   virtual int Opcode() const;
 };
 
@@ -698,6 +700,8 @@ class UMinVNode : public VectorNode {
 class MaxVNode : public VectorNode {
  public:
   MaxVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual Node* Identity(PhaseGVN* phase);
   virtual int Opcode() const;
 };
 
