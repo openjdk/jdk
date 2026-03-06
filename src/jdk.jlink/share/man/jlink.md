@@ -235,6 +235,16 @@ Options
 Description
 :   Generate CDS archive if the runtime image supports the CDS feature.
 
+### Plugin `cacerts`
+
+Options
+:   `--cacerts=`*alias*\[`,`*alias*\]\*
+
+Description
+:   Create the `cacerts` keystore in the output image with the certificates of
+    the specified aliases only. *alias* is the name of an alias in the
+    `cacerts` keystore.
+
 ## jlink Examples
 
 The following command creates a runtime image in the directory `greetingsapp`.
