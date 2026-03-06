@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -383,6 +383,10 @@ const TypePtr* ArrayCopyNode::get_address_type(PhaseGVN* phase, const TypePtr* a
   return atp->add_offset(Type::OffsetBot);
 }
 
+const TypePtr* ArrayCopyNode::get_src_adr_type(PhaseGVN* phase) const {
+  return get_address_type(phase, _src_type, in(Src));
+}
+
 void ArrayCopyNode::array_copy_test_overlap(PhaseGVN *phase, bool can_reshape, bool disjoint_bases, int count, Node*& forward_ctl, Node*& backward_ctl) {
   Node* ctl = in(TypeFunc::Control);
   if (!disjoint_bases && count > 1) {
@@ -670,7 +674,7 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return mem;
 }
 
-bool ArrayCopyNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) {
+bool ArrayCopyNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) const {
   Node* dest = in(ArrayCopyNode::Dest);
   if (dest->is_top()) {
     return false;

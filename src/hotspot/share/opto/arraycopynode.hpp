@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,7 @@ public:
     _arraycopy_type_Type =  TypeFunc::make(domain, range);
   }
 
+  const TypePtr* get_src_adr_type(PhaseGVN* phase) const;
 private:
   ArrayCopyNode(Compile* C, bool alloc_tightly_coupled, bool has_negative_length_guard);
 
@@ -183,7 +184,7 @@ public:
   virtual bool guaranteed_safepoint()  { return false; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 
-  virtual bool may_modify(const TypeOopPtr* t_oop, PhaseValues* phase);
+  virtual bool may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) const;
 
   bool is_alloc_tightly_coupled() const { return _alloc_tightly_coupled; }
 
