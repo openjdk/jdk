@@ -21,11 +21,10 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8014076 8025067
  * @summary unit test for Arrays.ParallelPrefix().
- * @author Tristan Yan
  * @modules java.management jdk.management
  * @run junit/othervm -Xms256m -Xmx1024m ParallelPrefix
  */
@@ -153,11 +152,11 @@ public class ParallelPrefix {
 
         int[] parallelResult = data.clone();
         Arrays.parallelPrefix(parallelResult, fromIndex, toIndex, op);
-        assertArraysEqual(parallelResult, sequentialResult);
+        assertArraysEqual(sequentialResult, parallelResult);
 
         int[] parallelRangeResult = Arrays.copyOfRange(data, fromIndex, toIndex);
         Arrays.parallelPrefix(parallelRangeResult, op);
-        assertArraysEqual(parallelRangeResult, Arrays.copyOfRange(sequentialResult, fromIndex, toIndex));
+        assertArraysEqual(Arrays.copyOfRange(sequentialResult, fromIndex, toIndex), parallelRangeResult);
     }
 
     @ParameterizedTest
@@ -170,11 +169,11 @@ public class ParallelPrefix {
 
         long[] parallelResult = data.clone();
         Arrays.parallelPrefix(parallelResult, fromIndex, toIndex, op);
-        assertArraysEqual(parallelResult, sequentialResult);
+        assertArraysEqual(sequentialResult, parallelResult);
 
         long[] parallelRangeResult = Arrays.copyOfRange(data, fromIndex, toIndex);
         Arrays.parallelPrefix(parallelRangeResult, op);
-        assertArraysEqual(parallelRangeResult, Arrays.copyOfRange(sequentialResult, fromIndex, toIndex));
+        assertArraysEqual(Arrays.copyOfRange(sequentialResult, fromIndex, toIndex), parallelRangeResult);
     }
 
     @ParameterizedTest
@@ -187,11 +186,11 @@ public class ParallelPrefix {
 
         double[] parallelResult = data.clone();
         Arrays.parallelPrefix(parallelResult, fromIndex, toIndex, op);
-        assertArraysEqual(parallelResult, sequentialResult);
+        assertArraysEqual(sequentialResult, parallelResult);
 
         double[] parallelRangeResult = Arrays.copyOfRange(data, fromIndex, toIndex);
         Arrays.parallelPrefix(parallelRangeResult, op);
-        assertArraysEqual(parallelRangeResult, Arrays.copyOfRange(sequentialResult, fromIndex, toIndex));
+        assertArraysEqual(Arrays.copyOfRange(sequentialResult, fromIndex, toIndex), parallelRangeResult);
     }
 
     @ParameterizedTest
@@ -204,11 +203,11 @@ public class ParallelPrefix {
 
         String[] parallelResult = data.clone();
         Arrays.parallelPrefix(parallelResult, fromIndex, toIndex, op);
-        assertArraysEqual(parallelResult, sequentialResult);
+        assertArraysEqual(sequentialResult, parallelResult);
 
         String[] parallelRangeResult = Arrays.copyOfRange(data, fromIndex, toIndex);
         Arrays.parallelPrefix(parallelRangeResult, op);
-        assertArraysEqual(parallelRangeResult, Arrays.copyOfRange(sequentialResult, fromIndex, toIndex));
+        assertArraysEqual(Arrays.copyOfRange(sequentialResult, fromIndex, toIndex), parallelRangeResult);
     }
 
     @Test
@@ -275,7 +274,7 @@ public class ParallelPrefix {
         assertThrows(ArrayIndexOutOfBoundsException.class, r);
     }
 
-    static void assertArraysEqual(int[] actual, int[] expected) {
+    static void assertArraysEqual(int[] expected, int[] actual) {
         try {
             assertArrayEquals(expected, actual, "");
         } catch (AssertionError x) {
@@ -284,7 +283,7 @@ public class ParallelPrefix {
         }
     }
 
-    static void assertArraysEqual(long[] actual, long[] expected) {
+    static void assertArraysEqual(long[] expected, long[] actual) {
         try {
             assertArrayEquals(expected, actual, "");
         } catch (AssertionError x) {
@@ -293,7 +292,7 @@ public class ParallelPrefix {
         }
     }
 
-    static void assertArraysEqual(double[] actual, double[] expected) {
+    static void assertArraysEqual(double[] expected, double[] actual) {
         try {
             assertArrayEquals(expected, actual, "");
         } catch (AssertionError x) {
@@ -302,7 +301,7 @@ public class ParallelPrefix {
         }
     }
 
-    static void assertArraysEqual(String[] actual, String[] expected) {
+    static void assertArraysEqual(String[] expected, String[] actual) {
         try {
             assertArrayEquals(expected, actual, "");
         } catch (AssertionError x) {

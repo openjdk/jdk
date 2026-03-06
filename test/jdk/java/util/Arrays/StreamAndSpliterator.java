@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8037857
  * @summary tests for stream and spliterator factory methods

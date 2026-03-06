@@ -25,8 +25,8 @@
  * @test
  * @bug 4726380 8037097
  * @summary Check that different sorts give equivalent results.
- * @run junit Correct
  * @key randomness
+ * @run junit Correct
  */
 
 import java.util.*;

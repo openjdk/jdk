@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8155600
  * @summary Tests for Arrays.asList()
@@ -33,13 +33,11 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.stream.IntStream;
 
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.fail;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class AsList {
@@ -50,31 +48,20 @@ public class AsList {
     @MethodSource("arrays")
     public void testIterator(Object[] array) {
         Iterator<Object> itr = Arrays.asList(array).iterator();
-        for (int i = 0; i < array.length; i++) {
+        for (Object o : array) {
             assertTrue(itr.hasNext());
             assertTrue(itr.hasNext()); // must be idempotent
-            assertSame(array[i], itr.next());
-            try {
-                itr.remove();
-                fail("Remove must throw");
-            } catch (UnsupportedOperationException ex) {
-                // expected
-            }
+            assertSame(o, itr.next());
+            assertThrows(UnsupportedOperationException.class, itr::remove);
         }
-        assertFalse(itr.hasNext());
         for (int i = 0; i < 3; i++) {
             assertFalse(itr.hasNext());
-            try {
-                itr.next();
-                fail("Next succeed when there's no data left");
-            } catch (NoSuchElementException ex) {
-                // expected
-            }
+            assertThrows(NoSuchElementException.class, itr::next);
         }
     }
 
     public static Object[][] arrays() {
-        Object[][] arrays = {
+        return new Object[][] {
             { new Object[] { } },
             { new Object[] { 1 } },
             { new Object[] { null } },
@@ -89,7 +76,5 @@ public class AsList {
             { new Object[] { "a", "a", "a", "a" } },
             { IntStream.range(0, 100).boxed().toArray() }
         };
-
-        return arrays;
     }
 }
