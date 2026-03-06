@@ -639,7 +639,7 @@ public:
   void start_full_concurrent_cycle();
   void start_undo_concurrent_cycle();
 
-  void notify_concurrent_cycle_compstart_undo_concurrent_markleted();
+  void notify_concurrent_cycle_completed();
 
   // Stop active components/the concurrent mark thread.
   void stop();
