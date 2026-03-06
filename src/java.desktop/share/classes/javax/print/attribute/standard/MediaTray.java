@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,6 +132,7 @@ public class MediaTray extends Media implements Attribute {
     /**
      * Returns the string table for class {@code MediaTray}.
      */
+    @Override
     protected String[] getStringTable()
     {
         return myStringTable.clone();
@@ -140,6 +141,7 @@ public class MediaTray extends Media implements Attribute {
     /**
      * Returns the enumeration value table for class {@code MediaTray}.
      */
+    @Override
     protected EnumSyntax[] getEnumValueTable() {
         return (EnumSyntax[])myEnumValueTable.clone();
     }
