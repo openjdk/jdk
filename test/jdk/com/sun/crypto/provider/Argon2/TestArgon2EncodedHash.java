@@ -24,7 +24,6 @@ import java.util.Locale;
 import javax.crypto.KDF;
 import javax.crypto.spec.Argon2ParameterSpec;
 import com.sun.crypto.provider.Argon2Impl;
-import com.sun.crypto.provider.Argon2DerivedKey;
 import sun.security.util.Argon2Util;
 import static sun.security.util.Argon2Util.Argon2Info;
 
@@ -69,16 +68,16 @@ public class TestArgon2EncodedHash {
         System.out.println("params = " + params);
         String algo = tv.type();
         Argon2Impl res = new Argon2Impl(algo);
-        byte[] bytes = res.derive(params);
-        String encoded2 = new Argon2DerivedKey(algo, params, bytes,
-                "Generic").toString();
+        String encoded2 = Argon2Util.encodeHash(algo, params,
+                    res.derive(params));
         if (!expected.equals(encoded2)) {
             throw new RuntimeException("Failed! got " + encoded2);
         }
 
         if (algo.equals("ARGON2ID")) {
             KDF kdf = KDF.getInstance(algo);
-            encoded2 = kdf.deriveKey("Generic", params).toString();
+            encoded2 = Argon2Util.encodeHash(algo, params,
+                    kdf.deriveData(params));
             if (!expected.equals(encoded2)) {
                 throw new RuntimeException("Failed! got " + encoded2);
             }

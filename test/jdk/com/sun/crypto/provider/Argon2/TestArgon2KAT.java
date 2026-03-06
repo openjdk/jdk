@@ -111,8 +111,8 @@ public class TestArgon2KAT {
             throw new RuntimeException("Only supports Argon2id: " + algo);
         }
         Argon2ParameterSpec spec = info.builder().build(msg);
-        SecretKey res = KDF.getInstance(algo).deriveKey("Generic", spec);
-        String actual = res.toString();
+        byte[] out = KDF.getInstance(algo).deriveData(spec);
+        String actual = Argon2Util.encodeHash(algo, spec, out);
         if (!actual.equalsIgnoreCase(expected)) {
             System.out.println("Expected: " + expected);
             System.out.println("Actual:   " + actual);
