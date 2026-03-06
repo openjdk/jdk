@@ -1827,7 +1827,7 @@ static void emit_fp_min_max(MacroAssembler* masm, XMMRegister dst,
 
   __ bind(below);
   if (pt == fp_prec_hlf) {
-    __ movhlf(dst, min ? a : b);
+    __ movhlf(dst, min ? a : b, rt);
   } else if (pt == fp_prec_flt) {
     __ movflt(dst, min ? a : b);
   } else {
@@ -25447,7 +25447,7 @@ instruct scalar_binOps_HF_reg(regF dst, regF src1, regF src2)
 
 instruct scalar_minmax_HF_reg_avx10_2(regF dst, regF src1, regF src2)
 %{
-  predicate(VM_Version::supports_avx10_2() && !VLoopReductions::is_reduction(n));
+  predicate(VM_Version::supports_avx10_2());
   match(Set dst (MaxHF src1 src2));
   match(Set dst (MinHF src1 src2));
 
@@ -25459,25 +25459,9 @@ instruct scalar_minmax_HF_reg_avx10_2(regF dst, regF src1, regF src2)
   ins_pipe( pipe_slow );
 %}
 
-instruct scalar_minmax_HF_reduction_reg_avx10_2(regF dst, regF src1, regF src2, regF xtmp, rRegI rtmp, rFlagsReg cr)
-%{
-  predicate(VM_Version::supports_avx10_2() && VLoopReductions::is_reduction(n));
-  match(Set dst (MaxHF src1 src2));
-  match(Set dst (MinHF src1 src2));
-  effect(USE src1, USE src2, TEMP xtmp, TEMP rtmp, KILL cr);
-
-  format %{ "scalar_min_max_fp16 $dst, $src1, $src2\t using $xtmp and $rtmp as TEMP" %}
-  ins_encode %{
-    int opcode = this->ideal_Opcode();
-    emit_fp_min_max(masm, $dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, $xtmp$$XMMRegister, $rtmp$$Register,
-                    (opcode == Op_MinHF) /*min*/, fp_prec_hlf /*pt*/);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 instruct scalar_minmax_HF_reg(regF dst, regF src1, regF src2, kReg ktmp, regF xtmp1, regF xtmp2)
 %{
-  predicate(!VM_Version::supports_avx10_2() && !VLoopReductions::is_reduction(n));
+  predicate(!VM_Version::supports_avx10_2());
   match(Set dst (MaxHF src1 src2));
   match(Set dst (MinHF src1 src2));
   effect(TEMP_DEF dst, TEMP ktmp, TEMP xtmp1, TEMP xtmp2);
@@ -25487,22 +25471,6 @@ instruct scalar_minmax_HF_reg(regF dst, regF src1, regF src2, kReg ktmp, regF xt
     int opcode = this->ideal_Opcode();
     __ scalar_max_min_fp16(opcode, $dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, $ktmp$$KRegister,
                            $xtmp1$$XMMRegister, $xtmp2$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct scalar_minmax_HF_reduction_reg(regF dst, regF src1, regF src2, regF xtmp, rRegI rtmp, rFlagsReg cr)
-%{
-  predicate(!VM_Version::supports_avx10_2() && VLoopReductions::is_reduction(n));
-  match(Set dst (MaxHF src1 src2));
-  match(Set dst (MinHF src1 src2));
-  effect(USE src1, USE src2, TEMP xtmp, TEMP rtmp, KILL cr);
-
-  format %{ "scalar_min_max_fp16 $dst, $src1, $src2\t using $xtmp and $rtmp as TEMP" %}
-  ins_encode %{
-    int opcode = this->ideal_Opcode();
-    emit_fp_min_max(masm, $dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, $xtmp$$XMMRegister, $rtmp$$Register,
-                    (opcode == Op_MinHF) /*min*/, fp_prec_hlf /*pt*/);
   %}
   ins_pipe( pipe_slow );
 %}

@@ -44,14 +44,11 @@ public class Float16OperationsBenchmark {
     short [] vector3;
     short [] vector4;
     short [] vector5;
-    short [] vector6;
     boolean [] vectorPredicate;
 
     private int c0, c1, c2, s1, s2;
 
     Random r;
-
-    static int stride = 1;
 
     static final short f16_one = Float.floatToFloat16(1.0f);
     static final short f16_two = Float.floatToFloat16(2.0f);
@@ -70,7 +67,6 @@ public class Float16OperationsBenchmark {
         vector3   = new short[vectorDim];
         vector4   = new short[vectorDim];
         vector5   = new short[vectorDim];
-        vector6   = new short[vectorDim];
         vectorPredicate = new boolean[vectorDim];
 
         IntStream.range(0, vectorDim).forEach(i -> {vector1[i] = Float.floatToFloat16((float)i);});
@@ -82,7 +78,6 @@ public class Float16OperationsBenchmark {
         IntStream.range(0, vectorDim).forEach(i -> {vector5[i] = ((i & 0x1) == 0) ?
                                                                   float16ToRawShortBits(Float16.NaN) :
                                                                   Float.floatToFloat16((float)i);});
-        IntStream.range(0, vectorDim).forEach(i -> {vector6[i] = Float.floatToFloat16(r.nextFloat());});
         // Special Values
         Float16 [] specialValues = {Float16.NaN, Float16.NEGATIVE_INFINITY, Float16.valueOf(0.0), Float16.valueOf(-0.0), Float16.POSITIVE_INFINITY};
         IntStream.range(0, vectorDim).forEach(
@@ -226,16 +221,10 @@ public class Float16OperationsBenchmark {
     }
 
     @Benchmark
-    public void maxBasicBenchmark() {
-        inc();
-        vectorRes[c0] = float16ToRawShortBits(max(shortBitsToFloat16(vector1[c1]), shortBitsToFloat16(vector2[c2])));
-    }
-
-    @Benchmark
-    public void maxReduceStrideBenchmark() {
-        vectorRes[0] = Short.MIN_VALUE;
-        for (int i = 1; i < vectorDim; i += stride) {
-            vectorRes[i] = float16ToRawShortBits(max(shortBitsToFloat16(vectorRes[i - 1]), shortBitsToFloat16(vector6[i])));
+    public void maxScalarBenchmark() {
+        for (int i = 0; i < vectorDim; i++) {
+            inc(); // Ensures no auto-vectorization
+            vectorRes[c0] = float16ToRawShortBits(max(shortBitsToFloat16(vector1[c1]), shortBitsToFloat16(vector2[c2])));
         }
     }
 
@@ -247,16 +236,10 @@ public class Float16OperationsBenchmark {
     }
 
     @Benchmark
-    public void minBasicBenchmark() {
-        inc();
-        vectorRes[c0] = float16ToRawShortBits(min(shortBitsToFloat16(vector1[c1]), shortBitsToFloat16(vector2[c2])));
-    }
-
-    @Benchmark
-    public void minReduceStrideBenchmark() {
-        vectorRes[0] = Short.MAX_VALUE;
-        for (int i = 1; i < vectorDim; i += stride) {
-            vectorRes[i] = float16ToRawShortBits(min(shortBitsToFloat16(vectorRes[i - 1]), shortBitsToFloat16(vector6[i])));
+    public void minScalarBenchmark() {
+        for (int i = 0; i < vectorDim; i++) {
+            inc(); // Ensures no auto-vectorization
+            vectorRes[c0] = float16ToRawShortBits(min(shortBitsToFloat16(vector1[c1]), shortBitsToFloat16(vector2[c2])));
         }
     }
 
