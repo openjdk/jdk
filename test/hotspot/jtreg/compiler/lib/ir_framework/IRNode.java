@@ -1463,6 +1463,16 @@ public class IRNode {
         beforeMatchingNameRegex(MASK_ALL, "MaskAll");
     }
 
+    public static final String AARCH64_VMASK_ALL_IMM_I = PREFIX + "AARCH64_VMASK_ALL_IMM_I" + POSTFIX;
+    static {
+        machOnlyNameRegex(AARCH64_VMASK_ALL_IMM_I, "vmaskAll_immI");
+    }
+
+    public static final String AARCH64_VMASK_ALL_IMM_L = PREFIX + "AARCH64_VMASK_ALL_IMM_L" + POSTFIX;
+    static {
+        machOnlyNameRegex(AARCH64_VMASK_ALL_IMM_L, "vmaskAll_immL");
+    }
+
     public static final String VECTOR_LONG_TO_MASK = PREFIX + "VECTOR_LONG_TO_MASK" + POSTFIX;
     static {
         beforeMatchingNameRegex(VECTOR_LONG_TO_MASK, "VectorLongToMask");
@@ -2680,6 +2690,11 @@ public class IRNode {
     public static final String RISCV_VFMADD_MASKED = PREFIX + "RISCV_VFMADD_MASKED" + POSTFIX;
     static {
         machOnlyNameRegex(RISCV_VFMADD_MASKED, "vfmadd_masked");
+    }
+
+    public static final String VMASK_AND_NOT_I = PREFIX + "VMASK_AND_NOT_I" + POSTFIX;
+    static {
+        machOnlyNameRegex(VMASK_AND_NOT_I, "vmask_and_notI");
     }
 
     public static final String VMASK_AND_NOT_L = PREFIX + "VMASK_AND_NOT_L" + POSTFIX;
