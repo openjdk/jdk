@@ -324,7 +324,13 @@ public class ArrayDeque<E> extends AbstractCollection<E>
     }
 
     private void copyElements(Collection<? extends E> c) {
-        c.forEach(this::addLast);
+        // Using anonymous class here avoids introducing lambda in early bootstrap
+        c.forEach(new Consumer<E>() {
+            @Override
+            public void accept(E e) {
+                addLast(e);
+            }
+        });
     }
 
     /**
