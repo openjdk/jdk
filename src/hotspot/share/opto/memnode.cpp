@@ -1851,7 +1851,7 @@ Node* LoadNode::split_through_phi(PhaseGVN* phase, bool ignore_missing_instance_
       }
     }
     if (x != the_clone && the_clone != nullptr) {
-      igvn->remove_dead_node(the_clone);
+      igvn->remove_dead_node(the_clone, PhaseIterGVN::DeathHint::Temp);
     }
     phi->set_req(i, x);
   }

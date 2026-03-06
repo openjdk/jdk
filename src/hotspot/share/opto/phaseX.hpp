@@ -187,8 +187,8 @@ public:
 class PhaseTransform : public Phase {
 public:
   PhaseTransform(PhaseNumber pnum) : Phase(pnum) {
-#ifndef PRODUCT
     clear_progress();
+#ifndef PRODUCT
     clear_transforms();
     set_allow_progress(true);
 #endif
@@ -201,12 +201,30 @@ public:
   // true if CFG node d dominates CFG node n
   virtual bool is_dominator(Node *d, Node *n) { fatal("unimplemented for this pass"); return false; };
 
-#ifndef PRODUCT
-  uint   _count_progress;       // For profiling, count transforms that make progress
-  void   set_progress()        { ++_count_progress; assert( allow_progress(),"No progress allowed during verification"); }
+  uint   _count_progress;       // Count transforms that make progress
+  void   set_progress()        { ++_count_progress; assert(allow_progress(), "No progress allowed during verification"); }
   void   clear_progress()      { _count_progress = 0; }
   uint   made_progress() const { return _count_progress; }
 
+  // RAII guard for speculative transforms. Restores _count_progress in the destructor
+  // unless commit() is called, so that abandoned speculative work does not count as progress.
+  class SpeculativeProgressGuard {
+    PhaseTransform* _phase;
+    uint _saved_progress;
+    bool _committed;
+  public:
+    SpeculativeProgressGuard(PhaseTransform* phase) :
+      _phase(phase), _saved_progress(phase->made_progress()), _committed(false) {}
+    ~SpeculativeProgressGuard() {
+      if (!_committed) {
+        _phase->_count_progress = _saved_progress;
+      }
+    }
+
+    void commit() { _committed = true; }
+  };
+
+#ifndef PRODUCT
   uint   _count_transforms;     // For profiling, count transforms performed
   void   set_transforms()      { ++_count_transforms; }
   void   clear_transforms()    { _count_transforms = 0; }
@@ -446,7 +464,6 @@ class PhaseIterGVN : public PhaseGVN {
 private:
   bool _delay_transform;  // When true simply register the node when calling transform
                           // instead of actually optimizing it
-  bool _deep_revisit_done; // Set after deep revisit pass completes successfully
   DEBUG_ONLY(uint _num_processed;) // Running count for trace_PhaseIterGVN_verbose
 
   // Idealize old Node 'n' with respect to its inputs and its value
@@ -455,15 +472,16 @@ private:
   // Drain the IGVN worklist: process nodes until the worklist is empty.
   // Returns true if compilation was aborted (node limit or infinite loop),
   // false on normal completion.
-  bool drain_worklist(uint& loop_count);
+  bool drain_worklist();
 
   // Walk all live nodes and push deep-inspection candidates to _worklist.
   void push_deep_revisit_candidates();
 
   // After the main worklist drains, re-process deep-inspection nodes to
   // catch optimization opportunities from far-away changes. Repeats until
-  // convergence (live_nodes stable) or max rounds reached.
-  void deep_revisit(uint& loop_count);
+  // convergence (no progress made) or max rounds reached.
+  // Returns true if converged.
+  bool deep_revisit();
 
   // Returns true for nodes that inspect the graph beyond their direct
   // inputs, and therefore may miss optimization opportunities when
@@ -520,9 +538,9 @@ public:
   void optimize(bool deep = false);
 
 #ifdef ASSERT
-  void verify_optimize(bool deep);
+  void verify_optimize(bool deep_revisit_converged);
   void verify_Value_for(const Node* n, bool strict = false);
-  void verify_Ideal_for(Node* n, bool can_reshape, bool deep);
+  void verify_Ideal_for(Node* n, bool can_reshape, bool deep_revisit_converged);
   void verify_Identity_for(Node* n);
   void verify_node_invariants_for(const Node* n);
   void verify_empty_worklist(Node* n);
@@ -531,7 +549,7 @@ public:
 #ifndef PRODUCT
   void trace_PhaseIterGVN(Node* n, Node* nn, const Type* old_type);
   void init_verifyPhaseIterGVN();
-  void verify_PhaseIterGVN(bool deep);
+  void verify_PhaseIterGVN(bool deep_revisit_converged);
 #endif
 
 #ifdef ASSERT
@@ -547,15 +565,21 @@ public:
   // It is significant only for debugging and profiling.
   Node* register_new_node_with_optimizer(Node* n, Node* orig = nullptr);
 
+  // Hint for dead node removal, about why the node is dying.
+  // Temp: a temporarily created node that was never part of the graph
+  // (e.g., a speculative clone in split_if to test constant foldability).
+  // Its death does not count as progress for convergence tracking.
+  enum class DeathHint { None, Temp };
+
   // Kill a globally dead Node.  All uses are also globally dead and are
   // aggressively trimmed.
-  void remove_globally_dead_node( Node *dead );
+  void remove_globally_dead_node(Node* dead, DeathHint hint = DeathHint::None);
 
   // Kill all inputs to a dead node, recursively making more dead nodes.
   // The Node must be dead locally, i.e., have no uses.
-  void remove_dead_node( Node *dead ) {
+  void remove_dead_node(Node* dead, DeathHint hint = DeathHint::None) {
     assert(dead->outcnt() == 0 && !dead->is_top(), "node must be dead");
-    remove_globally_dead_node(dead);
+    remove_globally_dead_node(dead, hint);
   }
 
   // Add users of 'n' to worklist

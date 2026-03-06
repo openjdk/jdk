@@ -132,7 +132,7 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   cmp2->set_req(2,con2);
   const Type *t = cmp2->Value(igvn);
   // This compare is dead, so whack it!
-  igvn->remove_dead_node(cmp2);
+  igvn->remove_dead_node(cmp2, PhaseIterGVN::DeathHint::Temp);
   if( !t->singleton() ) return nullptr;
 
   // No intervening control, like a simple Call
@@ -462,7 +462,7 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   igvn->remove_dead_node(r);
 
   // Now remove the bogus extra edges used to keep things alive
-  igvn->remove_dead_node( hook );
+  igvn->remove_dead_node(hook, PhaseIterGVN::DeathHint::Temp);
 
   // Must return either the original node (now dead) or a new node
   // (Do not return a top here, since that would break the uniqueness of top.)
@@ -916,6 +916,7 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
   BoolTest::mask hi_test = this_bool->_test._test;
   BoolTest::mask cond = hi_test;
 
+  PhaseTransform::SpeculativeProgressGuard progress_guard(igvn);
   // convert:
   //
   //          dom_bool = x {<,<=,>,>=} a
@@ -1053,6 +1054,7 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
           // previous if determines the result of this if so
           // replace Bool with constant
           igvn->replace_input_of(this, 1, igvn->intcon(success->_con));
+          progress_guard.commit();
           return true;
         }
       }
@@ -1088,10 +1090,10 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
     // = min(limit, min_jint)
     // = min_jint
     if (adjusted_val->outcnt() == 0) {
-      igvn->remove_dead_node(adjusted_val);
+      igvn->remove_dead_node(adjusted_val, PhaseIterGVN::DeathHint::Temp);
     }
     if (adjusted_lim->outcnt() == 0) {
-      igvn->remove_dead_node(adjusted_lim);
+      igvn->remove_dead_node(adjusted_lim, PhaseIterGVN::DeathHint::Temp);
     }
     igvn->C->record_for_post_loop_opts_igvn(this);
     return false;
@@ -1103,6 +1105,7 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
   igvn->replace_input_of(dom_iff, 1, igvn->intcon(proj->_con));
   igvn->replace_input_of(this, 1, newbool);
 
+  progress_guard.commit();
   return true;
 }
 

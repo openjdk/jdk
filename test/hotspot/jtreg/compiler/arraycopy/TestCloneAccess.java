@@ -23,16 +23,18 @@
 
 /*
  * @test
- * @bug 8248791
+ * @bug 8248791 8375442
  * @summary Test cloning with more than 8 (=ArrayCopyLoadStoreMaxElem) where loads are wrongly replaced by zero.
  * @requires vm.compiler2.enabled | vm.graal.enabled
  *
  * @run main/othervm -XX:-ReduceBulkZeroing
- *                   -XX:CompileCommand=dontinline,compiler.arraycopy.TestCloneAccess::*
- *                   compiler.arraycopy.TestCloneAccess
+ *                   -XX:CompileCommand=dontinline,${test.main.class}::*
+ *                   ${test.main.class}
  * @run main/othervm -XX:-ReduceBulkZeroing -XX:-ReduceInitialCardMarks
- *                   -XX:CompileCommand=dontinline,compiler.arraycopy.TestCloneAccess::*
- *                   compiler.arraycopy.TestCloneAccess
+ *                   -XX:CompileCommand=dontinline,${test.main.class}::*
+ *                   ${test.main.class}
+ * @run main/othervm -XX:-ReduceBulkZeroing -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
+ *                   ${test.main.class}
  */
 package compiler.arraycopy;
 
