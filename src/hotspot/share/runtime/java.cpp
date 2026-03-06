@@ -118,7 +118,8 @@ static void collect_profiled_methods(Method* m) {
   Thread* thread = Thread::current();
   methodHandle mh(thread, m);
   if ((m->method_data() != nullptr) &&
-      (PrintMethodData || CompilerOracle::should_print(mh, static_cast<CompLevel>(m->code()->comp_level())))) {
+      (PrintMethodData || CompilerOracle::should_print(mh,
+        m->has_compiled_code() ? static_cast<CompLevel>(m->code()->comp_level()) : CompLevel_none))) {
     collected_profiled_methods->push(m);
   }
 }

@@ -76,9 +76,9 @@ inline int comp_level_bitmask(int comp_level) {
 
 static const intx default_comp_level_argument =
            comp_level_bitmask(CompLevel_simple)
-        || comp_level_bitmask(CompLevel_limited_profile)
-        || comp_level_bitmask(CompLevel_full_profile)
-        || comp_level_bitmask(CompLevel_full_optimization);
+        | comp_level_bitmask(CompLevel_limited_profile)
+        | comp_level_bitmask(CompLevel_full_profile)
+        | comp_level_bitmask(CompLevel_full_optimization);
 
 static const char* optiontype_names[] = {
 #define enum_of_types(type, name) name,
