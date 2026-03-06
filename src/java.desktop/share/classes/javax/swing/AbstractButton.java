@@ -2507,7 +2507,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
          */
         public String getAccessibleActionDescription(int i) {
             if (i == 0) {
-                return UIManager.getString("AbstractButton.clickText");
+                return AccessibleAction.CLICK;
             } else {
                 return null;
             }
