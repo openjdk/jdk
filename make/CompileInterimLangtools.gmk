@@ -145,7 +145,6 @@ $(eval $(call SetupJavaCompilation, BUILD_JAVAC_SERVER, \
     SRC := $(TOPDIR)/make/langtools/tools, \
     INCLUDES := javacserver, \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/langtools_javacserver_classes, \
-    DEPENDS := $(BUILDTOOLS_OUTPUTDIR)/gensrc/java.base.interim/jdk/internal/javac/PreviewFeature.java, \
 ))
 
 TARGETS += $(BUILD_JAVAC_SERVER)
