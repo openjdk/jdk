@@ -2020,26 +2020,21 @@ Node* VectorLongToMaskNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   uint vlen = dst_type->length();
   const TypeVectMask* is_mask = dst_type->isa_vectmask();
 
+  // Pattern:      src -> VectorMaskToLong -> AndL(mask) -> VectorLongToMask
+  // Replace with: src -> VectorMaskCast
+  //   The cast is needed if there are different mask types, and can be folded otherwise.
   if (in(1)->Opcode() == Op_AndL &&
       in(1)->in(1)->Opcode() == Op_VectorMaskToLong &&
       in(1)->in(2)->bottom_type()->isa_long() &&
       in(1)->in(2)->bottom_type()->is_long()->is_con() &&
-      in(1)->in(2)->bottom_type()->is_long()->get_con() == ((1L << vlen) - 1)) {
-      // Different src/dst mask length represents a re-interpretation operation,
-      // we can however generate a mask casting operation if length matches.
-     Node* src = in(1)->in(1)->in(1);
-     if (is_mask == nullptr) {
-       if (src->Opcode() != Op_VectorStoreMask) {
-         return nullptr;
-       }
-       src = src->in(1);
-     }
-     const TypeVect* src_type = src->bottom_type()->is_vect();
-     if (src_type->length() == vlen &&
-         ((src_type->isa_vectmask() == nullptr && is_mask == nullptr) ||
-          (src_type->isa_vectmask() && is_mask))) {
-       return new VectorMaskCastNode(src, dst_type);
-     }
+      in(1)->in(2)->bottom_type()->is_long()->get_con() == ((1LL << vlen) - 1)) {
+    Node* src = in(1)->in(1)->in(1);
+    const TypeVect* src_type = src->bottom_type()->is_vect();
+    if (src_type->length() == vlen &&
+        ((src_type->isa_vectmask() == nullptr && is_mask == nullptr) ||
+         (src_type->isa_vectmask() && is_mask))) {
+      return new VectorMaskCastNode(src, dst_type);
+    }
   }
 
   // VectorLongToMask(-1/0) => MaskAll(-1/0)
