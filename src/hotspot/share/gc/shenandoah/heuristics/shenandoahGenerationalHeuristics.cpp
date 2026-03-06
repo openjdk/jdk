@@ -364,7 +364,7 @@ size_t ShenandoahGenerationalHeuristics::select_aged_regions(ShenandoahInPlacePr
     }
 
     if (!r->is_regular()) {
-      if (r->is_humongous() && heap->is_tenurable(r)) {
+      if (r->is_humongous_start() && heap->is_tenurable(r)) {
         in_place_promotions.prepare(r);
       }
       // Nothing else to be done for humongous regions
