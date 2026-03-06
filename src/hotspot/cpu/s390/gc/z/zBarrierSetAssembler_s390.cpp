@@ -421,7 +421,54 @@ void ZBarrierSetAssembler::load_copy_masks(MacroAssembler* masm,
   }
 }
 
+// TODO: implement load and store barriers for arraycopy. ppc uses disjoint and conjoint oop copy but aarch64 and x86 does not I do not know form where are they calling the copy_load_at and copy_store_at functions when i remove copy_load_at function on aarch64 and build it, it got build successfully but while running a zgc related test i got the problematic frame as StubRoutines::checkcast_arraycopy_stub
+// also ppc is using a loop whereas others are using vectore instructions. 
 
+void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm,
+                                                         Register jni_env,
+                                                         Register robj,
+                                                         Register temp,
+                                                         Label& slowpath) {
+  BLOCK_COMMENT("ZBarrierSetAssembler::try_resolve_jobject_in_native {");
+
+  Label done, tagged, weak_tagged, uncolor;
+
+  // test for tag
+  __ z_ltg(robj, JNIHandles::tag_mask);
+  __ z_brne(tagged);
+
+  // Resolve local handle
+  __ z_la(robj, Address(robj, 0));
+  __ z_br(done);
+
+  __ bind(tagged);
+
+  // Test for weak tag
+  __ z_ltg(robj, JNIHandles::TypeTag::weak_global);
+  __ z_brne(weak_tagged);
+
+  // Resolve global handle
+  __ z_la(robj, Address(robj, -JNIHandles::TypeTag::global));
+  __ z_ltg(robj, load_bad_mask_from_jni_env(jni_env));
+  __ z_brne(slowpath);
+  __ z_br(uncolor);
+
+  __ bind(weak_tagged);
+
+  // Resolve weak handle
+  __ z_la(robj, Address(robj, -JNIHandles::TypeTag::weak_global));
+  __ z_ltg(robj, mark_bad_mask_from_jni_env(jni_env));
+  __ z_brne(slowpath);
+
+  __ bind(uncolor);
+
+  // Uncolor
+  __ z_srlg(robj, robj, ZPointerLoadShift);
+
+  __ bind(done);
+
+  BLOCK_COMMENT("} ZBarrierSetAssembler::try_resolve_jobject_in_native");
+}
 
 
 
