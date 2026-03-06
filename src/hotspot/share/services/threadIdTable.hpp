@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_SERVICES_THREADIDTABLE_HPP
 
 #include "memory/allStatic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 class JavaThread;
 class ThreadsList;
@@ -40,7 +41,9 @@ class ThreadIdTable : public AllStatic {
 public:
   // Initialization
   static void lazy_initialize(const ThreadsList* threads);
-  static bool is_initialized() { return _is_initialized; }
+  static bool is_initialized() {
+    return AtomicAccess::load_acquire(&_is_initialized);
+  }
 
   // Lookup and list management
   static JavaThread* find_thread_by_tid(jlong tid);

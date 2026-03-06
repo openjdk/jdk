@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1109,6 +1109,11 @@ void Threads::add(JavaThread* p, bool force_daemon) {
 
   // Maintain fast thread list
   ThreadsSMRSupport::add_thread(p);
+
+  if (ThreadIdTable::is_initialized()) {
+    jlong tid = SharedRuntime::get_java_tid(p);
+    ThreadIdTable::add_thread(tid, p);
+  }
 
   // Increase the ObjectMonitor ceiling for the new thread.
   ObjectSynchronizer::inc_in_use_list_ceiling();
