@@ -961,7 +961,7 @@ void MacroAssembler::call(AddressLiteral entry, Register rscratch) {
 void MacroAssembler::ic_call(address entry, jint method_index) {
   RelocationHolder rh = virtual_call_Relocation::spec(pc(), method_index);
   // Needs full 64-bit immediate for later patching.
-  movabs(rax, (int64_t)Universe::non_oop_word());
+  Assembler::mov64(rax, (int64_t)Universe::non_oop_word());
   call(AddressLiteral(entry, rh));
 }
 
@@ -1967,8 +1967,12 @@ void MacroAssembler::mov64(Register dst, int64_t imm64) {
   } else if (is_simm32(imm64)) {
     movq(dst, checked_cast<int32_t>(imm64));
   } else {
-    movabs(dst, imm64);
+    Assembler::mov64(dst, imm64);
   }
+}
+
+void MacroAssembler::mov64(Register dst, int64_t imm64, relocInfo::relocType rtype, int format) {
+  Assembler::mov64(dst, imm64, rtype, format);
 }
 
 void MacroAssembler::movptr(Register dst, Register src) {

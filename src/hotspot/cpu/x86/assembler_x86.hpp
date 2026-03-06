@@ -1530,8 +1530,8 @@ private:
 
   // Moves
 
-  void movabs(Register dst, int64_t imm64);
-  void movabs(Register dst, int64_t imm64, relocInfo::relocType rtype, int format);
+  void mov64(Register dst, int64_t imm64);
+  void mov64(Register dst, int64_t imm64, relocInfo::relocType rtype, int format);
 
   void movb(Address dst, Register src);
   void movb(Address dst, int imm8);

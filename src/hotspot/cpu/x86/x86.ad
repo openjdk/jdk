@@ -7793,7 +7793,7 @@ instruct loadConP(rRegP dst, immP con) %{
 
   format %{ "movq    $dst, $con\t# ptr" %}
   ins_encode %{
-    __ movabs($dst$$Register, $con$$constant, $con->constant_reloc(), RELOC_IMM64);
+    __ mov64($dst$$Register, $con$$constant, $con->constant_reloc(), RELOC_IMM64);
   %}
   ins_pipe(ialu_reg_fat); // XXX
 %}
