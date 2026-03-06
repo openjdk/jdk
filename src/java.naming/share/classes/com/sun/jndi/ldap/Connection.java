@@ -31,8 +31,11 @@ import java.io.InterruptedIOException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.InputStream;
+import java.lang.reflect.Modifier;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+
+import javax.naming.ConfigurationException;
 import javax.net.ssl.SSLSocket;
 
 import javax.naming.CommunicationException;
@@ -296,7 +299,7 @@ public final class Connection implements Runnable {
         return socket;
     }
 
-    private SocketFactory getSocketFactory(String socketFactoryName) throws Exception {
+    private SocketFactory getSocketFactory(String socketFactoryName) throws ConfigurationException {
         if (socketFactoryName == null) {
             if (debug) {
                 System.err.println("Connection: using default SocketFactory");
@@ -306,14 +309,41 @@ public final class Connection implements Runnable {
             if (debug) {
                 System.err.println("Connection: loading supplied SocketFactory: " + socketFactoryName);
             }
-            @SuppressWarnings("unchecked")
-            Class<? extends SocketFactory> socketFactoryClass =
-                    (Class<? extends SocketFactory>) Class.forName(socketFactoryName,
-                            true, Thread.currentThread().getContextClassLoader());
-            Method getDefault =
-                    socketFactoryClass.getMethod("getDefault");
-            SocketFactory factory = (SocketFactory) getDefault.invoke(null, new Object[]{});
-            return factory;
+            Class<?> klass;
+            try {
+                klass = Class.forName(socketFactoryName, false,
+                        Thread.currentThread().getContextClassLoader());
+            } catch (ClassNotFoundException e) {
+                throw new ConfigurationException("failed to load SocketFactory - " + e);
+            }
+            if (!SocketFactory.class.isAssignableFrom(klass)) {
+                throw new ConfigurationException(socketFactoryName + " is not of type "
+                        + SocketFactory.class.getName());
+            }
+            Method method;
+            try {
+                method = klass.getDeclaredMethod("getDefault");
+            } catch (NoSuchMethodException e) {
+                throw new ConfigurationException(socketFactoryName
+                        +  " is missing a public static getDefault() method"
+                        +  " that returns a SocketFactory");
+            }
+            int modifiers = method.getModifiers();
+            if (!Modifier.isStatic(modifiers)
+                    || !Modifier.isPublic(modifiers)
+                    || Modifier.isAbstract(modifiers)) {
+                throw new ConfigurationException(socketFactoryName
+                        +  " is missing a public static getDefault() method"
+                        +  " that returns a SocketFactory");
+            }
+            try {
+                return (SocketFactory) method.invoke(null, new Object[]{});
+            } catch (IllegalAccessException | ClassCastException e) {
+                throw new ConfigurationException(socketFactoryName + ".getDefault() failed - " + e);
+            } catch (InvocationTargetException e) {
+                throw new ConfigurationException(socketFactoryName + ".getDefault() failed - "
+                        + e.getCause());
+            }
         }
     }
 

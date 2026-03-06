@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,8 @@
  *         <br>The value of this environment property specifies the fully
  *         qualified class name of the socket factory used by the LDAP provider.
  *         This class must implement the {@link javax.net.SocketFactory} abstract class
- *         and provide an implementation of the static "getDefault()" method that
- *         returns an instance of the socket factory. By default the environment
+ *         and provide an implementation of the {@code public static SocketFactory getDefault()}
+ *         method that returns an instance of the socket factory. By default the environment
  *         property is not set.
  *     </li>
  *     <li>{@code com.sun.jndi.ldap.connect.timeout}:
