@@ -35,6 +35,7 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
+#include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/verifier.hpp"
@@ -2336,8 +2337,8 @@ Method* InstanceKlass::lookup_method_in_all_interfaces(Symbol* name,
   return nullptr;
 }
 
-PrintClassClosure::PrintClassClosure(outputStream* st, bool verbose)
-  :_st(st), _verbose(verbose) {
+PrintClassClosure::PrintClassClosure(outputStream* st, bool verbose, bool location)
+  :_st(st), _verbose(verbose), _location(location), _aot_statics(0), _aot_dynamics(0) {
   ResourceMark rm;
   _st->print("%-18s  ", "KlassAddr");
   _st->print("%-4s  ", "Size");
@@ -2354,7 +2355,10 @@ void PrintClassClosure::do_klass(Klass* k)  {
   // klass size
   _st->print("%4d  ", k->size());
   // initialization state
-  if (k->is_instance_klass()) {
+
+  InstanceKlass* ik = k->is_instance_klass() ? InstanceKlass::cast(k) : nullptr;
+
+  if (ik != nullptr) {
     _st->print("%-20s  ",InstanceKlass::cast(k)->init_state_name());
   } else {
     _st->print("%-20s  ","");
@@ -2363,18 +2367,68 @@ void PrintClassClosure::do_klass(Klass* k)  {
   char buf[10];
   int i = 0;
   if (k->has_finalizer()) buf[i++] = 'F';
-  if (k->is_instance_klass()) {
-    InstanceKlass* ik = InstanceKlass::cast(k);
+  if (ik != nullptr) {
     if (ik->has_final_method()) buf[i++] = 'f';
     if (ik->is_rewritten()) buf[i++] = 'W';
     if (ik->is_contended()) buf[i++] = 'C';
     if (ik->has_been_redefined()) buf[i++] = 'R';
-    if (ik->in_aot_cache()) buf[i++] = 'S';
+    if (ik->in_aot_cache()) {
+      buf[i++] = 'S';
+
+      if (_location) {
+        if (AOTMetaspace::in_aot_cache_static_region((void*)k)) {
+          _aot_statics++;
+          buf[i++] = 's';
+        } else if (AOTMetaspace::in_aot_cache_dynamic_region((void*)k)) {
+          _aot_dynamics++;
+          buf[i++] = 'd';
+        }
+      }
+    }
   }
   buf[i++] = '\0';
   _st->print("%-7s  ", buf);
   // klass name
   _st->print("%-5s  ", k->external_name());
+
+  if (ik != nullptr && _location) {
+
+    oop pd = java_lang_Class::protection_domain(k->java_mirror());
+
+    if (pd != nullptr) {
+
+      assert(pd->klass()->is_instance_klass(), "pd klass is not InstanceKlass");
+
+      TempNewSymbol css  = SymbolTable::new_symbol("codesource");
+      TempNewSymbol csss = SymbolTable::new_symbol("Ljava/security/CodeSource;");
+
+      fieldDescriptor csfd;
+
+      if (InstanceKlass::cast(pd->klass())->find_field(css, csss, &csfd)) {
+
+        oop cs = pd->obj_field(csfd.offset());
+
+        if (cs != nullptr) {
+          assert(cs->klass()->is_instance_klass(), "cs klass is not InstanceKlass");
+
+          fieldDescriptor locfd;
+
+          TempNewSymbol csls  = SymbolTable::new_symbol("locationNoFragString");
+          TempNewSymbol cslss = SymbolTable::new_symbol("Ljava/lang/String;");
+
+          if (InstanceKlass::cast(cs->klass())->find_field(csls, cslss, &locfd)) {
+            oop loc = cs->obj_field(locfd.offset());
+
+            assert(loc == nullptr || loc->klass() == vmClasses::String_klass(), "locationNoFragString field is not a String");
+
+            if (loc != nullptr) {
+              java_lang_String::print(loc, _st, JVM_MAXPATHLEN);
+            }
+          }
+        }
+      }
+    }
+  }
   // end
   _st->cr();
   if (_verbose) {

@@ -790,19 +790,35 @@ The following commands are available:
         no default value)
 
 `VM.classes` \[*options*\]
-:   Print all loaded classes
+:   Print all loaded classes.
+
+    Some classes may be annotated with flags:
+        - `F` = has, or inherits, a non-empty finalize method,
+        - `f` = has final method,
+        - `W` = methods rewritten,
+        - `C` = marked with `@Contended` annotation,
+        - `R` = has been redefined,
+        - `S` = is shared class (if `-location` is specified then either 's' (for static) or 'd' (for dynamic) AOT cache origin is appended)
 
     Impact: Medium: Depends on number of loaded classes.
 
-    The following *options* must be specified using either *key* or
-    *key*`=`*value* syntax.
+    The following *options* must be specified using either *key* or *key*`=`*value* syntax.
 
     *options*:
 
-    -   `-verbose`: (Optional) Dump the detailed content of a Java class.
-        Some classes are annotated with flags: `F` = has, or inherits, a non-empty finalize method,
-        `f` = has final method, `W` = methods rewritten, `C` = marked with `@Contended` annotation,
-        `R` = has been redefined, `S` = is shared class (BOOLEAN, false)
+    -   `-verbose`: (Optional) Dump the detailed content of a Java class. (BOOLEAN, false)
+
+    -   `-location`: (Optional) Print the location of the class file from which the class is loaded (if available)
+         If provided by its defining ClassLoader, this option will print a URL specifying the location of the
+         class file (directory, jar or other URL location) from which this class was initially loaded.
+
+         Note: JDK (and other classes) loaded by a ClassLoader that does not provide a location URL to the JVM will omit this field.
+
+         Note: if any classes are loaded from an AOT cache, their location reported is that of the original
+               url from which they were loaded at the time of the training run that created the AOT cache,
+               additionally the flags will also be annotated to indicate the AOT cache origin (static or dynamic).
+
+               The total number of classes loaded (if any) from either AOT cache (and the associated cache path location) are summarized.
 
 `VM.classloader_stats`
 :   Print statistics about all ClassLoaders.
