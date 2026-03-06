@@ -232,6 +232,11 @@ public class IRNode {
         beforeMatchingNameRegex(ADD_P, "AddP");
     }
 
+    public static final String ADD_D = PREFIX + "ADD_D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(ADD_D, "AddD");
+    }
+
     public static final String ADD_VD = VECTOR_PREFIX + "ADD_VD" + POSTFIX;
     static {
         vectorNode(ADD_VD, "AddVD", TYPE_DOUBLE);
@@ -757,9 +762,19 @@ public class IRNode {
         vectorNode(DIV_VHF, "DivVHF", TYPE_SHORT);
     }
 
+    public static final String DIV_F = PREFIX + "DIV_F" + POSTFIX;
+    static {
+       beforeMatchingNameRegex(DIV_F, "DivF");
+    }
+
     public static final String DIV_VF = VECTOR_PREFIX + "DIV_VF" + POSTFIX;
     static {
         vectorNode(DIV_VF, "DivVF", TYPE_FLOAT);
+    }
+
+    public static final String DIV_D = PREFIX + "DIV_D" + POSTFIX;
+    static {
+       beforeMatchingNameRegex(DIV_D, "DivD");
     }
 
     public static final String DIV_VD = VECTOR_PREFIX + "DIV_VD" + POSTFIX;
@@ -1257,6 +1272,16 @@ public class IRNode {
         vectorNode(MAX_VL, "MaxV", TYPE_LONG);
     }
 
+    public static final String MAX_VB = VECTOR_PREFIX + "MAX_VB" + POSTFIX;
+    static {
+        vectorNode(MAX_VB, "MaxV", TYPE_BYTE);
+    }
+
+    public static final String MAX_VS = VECTOR_PREFIX + "MAX_VS" + POSTFIX;
+    static {
+        vectorNode(MAX_VS, "MaxV", TYPE_SHORT);
+    }
+
     public static final String MEMBAR = PREFIX + "MEMBAR" + POSTFIX;
     static {
         beforeMatchingNameRegex(MEMBAR, "MemBar");
@@ -1371,6 +1396,16 @@ public class IRNode {
     public static final String MIN_VL = VECTOR_PREFIX + "MIN_VL" + POSTFIX;
     static {
         vectorNode(MIN_VL, "MinV", TYPE_LONG);
+    }
+
+    public static final String MIN_VB = VECTOR_PREFIX + "MIN_VB" + POSTFIX;
+    static {
+        vectorNode(MIN_VB, "MinV", TYPE_BYTE);
+    }
+
+    public static final String MIN_VS = VECTOR_PREFIX + "MIN_VS" + POSTFIX;
+    static {
+        vectorNode(MIN_VS, "MinV", TYPE_SHORT);
     }
 
     public static final String MOD_I = PREFIX + "MOD_I" + POSTFIX;
@@ -2024,6 +2059,11 @@ public class IRNode {
     public static final String SQRT_VF = VECTOR_PREFIX + "SQRT_VF" + POSTFIX;
     static {
         vectorNode(SQRT_VF, "SqrtVF", TYPE_FLOAT);
+    }
+
+    public static final String SQRT_D = PREFIX + "SQRT_D" + POSTFIX;
+    static {
+       beforeMatchingNameRegex(SQRT_D, "SqrtD");
     }
 
     public static final String SQRT_VD = VECTOR_PREFIX + "SQRT_VD" + POSTFIX;
