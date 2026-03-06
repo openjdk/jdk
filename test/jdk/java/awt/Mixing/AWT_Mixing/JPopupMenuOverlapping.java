@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.lang.Override;
 import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.JFrame;
@@ -69,12 +70,14 @@ public class JPopupMenuOverlapping extends OverlappingTestBase {
         frame = new JFrame("Mixing : Dropdown Overlapping test");
         frame.setLayout(new SpringLayout());
         frame.setSize(200, 200);
+        frame.setLocationRelativeTo(null);
 
         popup = new JPopupMenu();
         ActionListener menuListener = new ActionListener() {
 
             public void actionPerformed(ActionEvent event) {
                 lwClicked = true;
+                frame.setVisible(false);
             }
         };
         JMenuItem item;
@@ -83,7 +86,6 @@ public class JPopupMenuOverlapping extends OverlappingTestBase {
             item.addActionListener(menuListener);
         }
         propagateAWTControls(frame);
-        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
         loc = frame.getContentPane().getLocationOnScreen();
     }
@@ -93,9 +95,8 @@ public class JPopupMenuOverlapping extends OverlappingTestBase {
         // run robot
         Robot robot = Util.createRobot();
         robot.setAutoDelay(ROBOT_DELAY);
-
+        robot.mouseMove(0, 0);// Avoid capturing mouse cursor
         loc.translate(75, 75);
-
         pixelPreCheck(robot, loc, currentAwtControl);
 
         try {
@@ -107,7 +108,6 @@ public class JPopupMenuOverlapping extends OverlappingTestBase {
             });
 
             robot.waitForIdle();
-
             clickAndBlink(robot, loc, false);
 
             SwingUtilities.invokeAndWait(new Runnable() {

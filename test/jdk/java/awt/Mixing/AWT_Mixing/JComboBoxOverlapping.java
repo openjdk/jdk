@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,18 @@ import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.lang.Override;
+
 import javax.swing.BoxLayout;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
+
 import test.java.awt.regtesthelpers.Util;
 
 
 /**
- * AWT/Swing overlapping test for {@link javax.swing.JCombobox } component.
+ * AWT/Swing overlapping test for {@link javax.swing.JComboBox } component.
  * <p>This test creates combobox and test if heavyweight component is drawn correctly then dropdown is shown.
  * <p>See base class for details.
  */
@@ -55,18 +58,22 @@ public class JComboBoxOverlapping extends OverlappingTestBase {
     private boolean lwClicked = false;
     private Point loc;
     private Point loc2;
-    private JComboBox cb;
+    private JComboBox<String> cb;
     private JFrame frame;
 
-    {testEmbeddedFrame = true;}
+    {
+        testEmbeddedFrame = true;
+    }
 
     protected void prepareControls() {
         frame = new JFrame("Mixing : Dropdown Overlapping test");
-        frame.getContentPane().setLayout(new BoxLayout(frame.getContentPane(), BoxLayout.Y_AXIS));
+        frame.getContentPane()
+             .setLayout(new BoxLayout(frame.getContentPane(), BoxLayout.Y_AXIS));
         frame.setSize(200, 200);
 
-        cb = new JComboBox(petStrings);
-        cb.setPreferredSize(new Dimension(frame.getContentPane().getWidth(), 20));
+        cb = new JComboBox<>(petStrings);
+        cb.setPreferredSize(new Dimension(frame.getContentPane()
+                                               .getWidth(), 20));
         cb.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -92,13 +99,15 @@ public class JComboBoxOverlapping extends OverlappingTestBase {
         try {
             SwingUtilities.invokeAndWait(() -> {
                 loc = cb.getLocationOnScreen();
-                loc2 = frame.getContentPane().getLocationOnScreen();
+                loc2 = frame.getContentPane()
+                            .getLocationOnScreen();
             });
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
         loc2.translate(75, 75);
+        robot.mouseMove(0, 0); // Avoid capturing mouse cursor
         pixelPreCheck(robot, loc2, currentAwtControl);
 
         loc.translate(3, 3);
