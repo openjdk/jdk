@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,9 +59,6 @@ public class Pem {
     // Pattern matching for stripping whitespace.
     private static final Pattern STRIP_WHITESPACE_PATTERN;
 
-    // Pattern matching for inserting line breaks.
-    private static final Pattern LINE_WRAP_64_PATTERN;
-
     // Lazy initialized PBES2 OID value
     private static ObjectIdentifier PBES2OID;
 
@@ -75,7 +72,6 @@ public class Pem {
         PBE_PATTERN = Pattern.compile("^PBEWith.*And.*",
             Pattern.CASE_INSENSITIVE);
         STRIP_WHITESPACE_PATTERN = Pattern.compile("\\s+");
-        LINE_WRAP_64_PATTERN = Pattern.compile("(.{64})");
     }
 
     public static final String CERTIFICATE = "CERTIFICATE";
@@ -220,10 +216,10 @@ public class Pem {
 
         // Verify header ending with 5 hyphens.
         do {
-            switch (is.read()) {
-                case '-' -> hyphen++;
-                default ->
-                    throw new IOException("Incomplete header");
+            if (is.read() == '-') {
+                hyphen++;
+            } else {
+                throw new IOException("Incomplete header");
             }
         } while (hyphen < 5);
 
@@ -331,7 +327,8 @@ public class Pem {
             preData = Arrays.copyOf(os.toByteArray(), os.size() - 6);
         }
 
-        return new PEM(typeConverter(headerType), data, preData);
+        return (preData == null) ? new PEM(typeConverter(headerType), data) :
+            new PEM(typeConverter(headerType), data, preData);
     }
 
     public static PEM readPEM(InputStream is) throws IOException {
@@ -363,35 +360,19 @@ public class Pem {
      * @return PEM in a string
      */
     public static String pemEncoded(PEM pem) {
-        String p = LINE_WRAP_64_PATTERN.matcher(pem.content()).replaceAll("$1\r\n");
-        return pemEncoded(pem.type(), p);
+        return pemEncoded(pem.type(), pem.content());
     }
 
-    /*
-     * Get PKCS8 encoding from an encrypted private key encoding.
+    /**
+     * Decrypt the EncryptedPrivateKeyInfo with the given keySpec and
+     * return the PKCS#8 byte array
      */
-    public static byte[] decryptEncoding(byte[] encoded, char[] password)
-        throws GeneralSecurityException {
-        EncryptedPrivateKeyInfo ekpi;
-
-        Objects.requireNonNull(password, "password cannot be null");
-        PBEKeySpec keySpec = new PBEKeySpec(password);
-        try {
-            ekpi = new EncryptedPrivateKeyInfo(encoded);
-            return decryptEncoding(ekpi, keySpec);
-        } catch (IOException e) {
-            throw new IllegalArgumentException(e);
-        } finally {
-            keySpec.clearPassword();
-        }
-    }
-
     public static byte[] decryptEncoding(EncryptedPrivateKeyInfo ekpi, PBEKeySpec keySpec)
         throws NoSuchAlgorithmException, InvalidKeyException {
 
         PKCS8EncodedKeySpec p8KeySpec = null;
+        SecretKeyFactory skf = SecretKeyFactory.getInstance(ekpi.getAlgName());
         try {
-            SecretKeyFactory skf = SecretKeyFactory.getInstance(ekpi.getAlgName());
             p8KeySpec = ekpi.getKeySpec(skf.generateSecret(keySpec));
             return p8KeySpec.getEncoded();
         } catch (InvalidKeySpecException e) {
@@ -412,7 +393,7 @@ public class Pem {
      *             return a PrivateKey
      * @param provider KeyFactory provider
      */
-    public static DEREncodable toDEREncodable(byte[] encoded, boolean pair,
+    public static BinaryEncodable toPKCS8Encodable(byte[] encoded, boolean pair,
         Provider provider) throws InvalidKeyException {
 
         PrivateKey privKey;
@@ -467,7 +448,7 @@ public class Pem {
         } finally {
             KeyUtil.clear(p8KeySpec, p8key);
         }
-        if (pair && pubKey != null) {
+        if (pubKey != null) {
             return new KeyPair(pubKey, privKey);
         }
         return privKey;

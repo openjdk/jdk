@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,18 +36,16 @@
  * @run main/othervm DisableRevocation subca
  * @run main/othervm DisableRevocation subci
  * @run main/othervm DisableRevocation alice
- * @enablePreview
  * @author Xuelei Fan
  */
 
 import java.io.*;
-import java.net.SocketException;
-import java.security.DEREncodable;
+import java.security.BinaryEncodable;
 import java.security.PEMDecoder;
 import java.util.*;
 import java.security.Security;
 import java.security.cert.*;
-import java.security.cert.CertPathValidatorException.BasicReason;
+
 import sun.security.util.DerInputStream;
 
 /**
@@ -161,7 +159,7 @@ public final class DisableRevocation {
     }
 
     private static CertStore generateCertificateStore() throws Exception {
-        Collection<DEREncodable> entries = new HashSet<>();
+        Collection<BinaryEncodable> entries = new HashSet<>();
 
         // generate certificate from certificate string
         entries.add(PEM_DECODER.decode(targetCertStr, X509Certificate.class));

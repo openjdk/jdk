@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
  */
 
 import javax.crypto.EncryptedPrivateKeyInfo;
-import java.security.DEREncodable;
+import java.security.BinaryEncodable;
 import java.security.KeyPair;
 import java.security.PEM;
 import java.security.cert.X509CRL;
@@ -399,26 +399,26 @@ class PEMData {
         6onPAs4hkm+63dfzCojvEkALevO8J3OVX7YS5q9J1r75wDn60Ob0Zh+iiorpx8Ob
         WqcWcoJqfdLEyBT+
         -----END PRIVATE KEY-----
-        """, DEREncodable.class, null);
+        """, BinaryEncodable.class, null);
 
     private static final Entry invalidPEM = new Entry("invalidPEM", """
         -----BEGIN INVALID PEM-----
         MIG2AgEAMBAGByqGSM49AgEGBSuBBAAiBIGeMIGbAgEBBDBVS52ZSKZ0oES7twD2
         GGwRIVu3uHlGIwlu0xzFe7sgIPntca2bHfYMhgGxrlCm0q+hZANiAAQNWgwWfLX8
         8pYVjvwbfvDF9f+Oa9w6JjrfpWwFAUI6b1OPgrNUh+yXtUXnQNXnfUcIu0Os53bM
-        """, DEREncodable.class, null);
+        """, BinaryEncodable.class, null);
 
     private static final Entry invalidHeader = new Entry("invalidHeader", """
         ---BEGIN PRIVATE KEY---
         MC4CAQAwBQYDK2VwBCIEIFFZsmD+OKk67Cigc84/2fWtlKsvXWLSoMJ0MHh4jI4I
         -----END PRIVATE KEY-----
-        """, DEREncodable.class, null);
+        """, BinaryEncodable.class, null);
 
     private static final Entry invalidFooter = new Entry("invalidFooter", """
         -----BEGIN PRIVATE KEY-----
         MC4CAQAwBQYDK2VwBCIEIFFZsmD+OKk67Cigc84/2fWtlKsvXWLSoMJ0MHh4jI4I
         ---END PRIVATE KEY---
-        """, DEREncodable.class, null);
+        """, BinaryEncodable.class, null);
 
     private static final Entry incorrectFooter = new Entry("incorrectFooter", """
         -----BEGIN PRIVATE KEY-----
@@ -427,7 +427,7 @@ class PEMData {
         8pYVjvwbfvDF9f+Oa9w6JjrfpWwFAUI6b1OPgrNUh+yXtUXnQNXnfUcIu0Os53bM
         8fTqPkQl6RyWEDHeXqJK8zTBHMeBq9nLfDPSbzQgLDyC64Orn0D8exM=
         -----END PUBLIC KEY-----
-        """, DEREncodable.class, null);
+        """, BinaryEncodable.class, null);
 
     // EC cert with explicit parameters -- Not currently supported by SunEC
     static final String ecCertEX = """
@@ -613,8 +613,8 @@ class PEMData {
         passList.addAll(entryList);
         passList.addAll(encryptedList);
 
-        failureEntryList.add(new Entry("emptyPEM", "", DEREncodable.class, null));
-        failureEntryList.add(new Entry("nullPEM", null, DEREncodable.class, null));
+        failureEntryList.add(new Entry("emptyPEM", "", BinaryEncodable.class, null));
+        failureEntryList.add(new Entry("nullPEM", null, BinaryEncodable.class, null));
         failureEntryList.add(incorrectFooter);
         failureEntryList.add(invalidPEM);
         failureEntryList.add(invalidDer);
