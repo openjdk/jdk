@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.File;
 import java.io.BufferedInputStream;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 
 public class J2DdemoTest {
 
@@ -96,7 +97,7 @@ public class J2DdemoTest {
                     if (n < 0) {
                         break;
                     }
-                    str = new String(b, 0, n);
+                    str = new String(b, 0, n, StandardCharsets.UTF_8);
                     buffer.append(str);
                     System.out.print(str);
                 }
