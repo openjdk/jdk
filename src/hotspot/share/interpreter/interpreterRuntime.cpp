@@ -1470,6 +1470,12 @@ JRT_LEAF(void, InterpreterRuntime::popframe_move_outgoing_args(JavaThread* curre
   jint bci = last_frame.bci();
   methodHandle mh(current, last_frame.method());
   Bytecode_invoke invoke(mh, bci);
+#if !defined(ARM)
+  if (invoke.code() == Bytecodes::_invokestatic) {
+    // This is the result of adjustment of r13 (on x86) in methodHandles, ignore it.
+    return;
+  }
+#endif
   ArgumentSizeComputer asc(invoke.signature());
   int size_of_arguments = (asc.size() + (invoke.has_receiver() ? 1 : 0)); // receiver
   Copy::conjoint_jbytes(src_address, dest_address,

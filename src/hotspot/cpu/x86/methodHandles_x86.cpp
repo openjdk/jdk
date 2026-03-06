@@ -351,6 +351,9 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     __ pop(rax_temp);           // return address
     __ pop(rbx_member);         // extract last argument
     __ push(rax_temp);          // re-push return address
+
+    // Reflect the extracion of the last argument in bcp, it'll become unextended_sp later on.
+    __ increment(r13, wordSize);
     generate_method_handle_dispatch(_masm, iid, rcx_recv, rbx_member, not_for_compiler_entry);
   }
 

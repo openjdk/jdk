@@ -349,7 +349,8 @@ void InterpreterMacroAssembler::load_double(Address src) {
 
 void InterpreterMacroAssembler::prepare_to_jump_from_interpreted() {
   // set sender sp
-  mov(r19_sender_sp, sp);
+  mov(r19_sender_sp, esp);
+  andr(r19_sender_sp, esp, -16);
   // record last_sp
   sub(rscratch1, esp, rfp);
   asr(rscratch1, rscratch1, Interpreter::logStackElementSize);
