@@ -25,9 +25,9 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHINPLACEPROMOTER_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHINPLACEPROMOTER_HPP
 
+#include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
 
-class ShenandoahFreeSet;
 class ShenandoahMarkingContext;
 class ShenandoahGenerationalHeap;
 class ShenandoahHeapRegion;
@@ -35,6 +35,7 @@ class ShenandoahHeapRegion;
 class ShenandoahInPlacePromotionPlanner {
   using idx_t = ShenandoahSimpleBitMap::idx_t;
 
+  // Used to inform free set of regions being promoted
   struct RegionPromotions {
     idx_t _low_idx;
     idx_t _high_idx;
@@ -45,6 +46,16 @@ class ShenandoahInPlacePromotionPlanner {
     explicit RegionPromotions(ShenandoahFreeSet* free_set);
     void increment(idx_t region_index, size_t remnant_bytes);
     void update_free_set(ShenandoahFreeSetPartitionId partition_id) const;
+  };
+
+  struct RegionPromotionStats {
+    size_t count;
+    size_t usage;
+    size_t free;
+    size_t garbage;
+
+    RegionPromotionStats() : count(0), usage(0), free(0), garbage(0) {}
+    void update(ShenandoahHeapRegion* region);
   };
 
   const size_t _old_garbage_threshold;
@@ -60,6 +71,11 @@ class ShenandoahInPlacePromotionPlanner {
 
   // Tracks the padding of space above top in regions eligible for promotion in place
   size_t _pip_padding_bytes;
+
+  // Tracks stats for in place promotions
+  RegionPromotionStats _pip_regular_stats;
+  RegionPromotionStats _pip_humongous_stats;
+
 public:
   explicit ShenandoahInPlacePromotionPlanner(const ShenandoahGenerationalHeap* heap);
 
@@ -69,8 +85,11 @@ public:
   // Prepares the region for promotion by moving top to the end to prevent allocations
   void prepare(ShenandoahHeapRegion* region);
 
-  // Notifies the free set of in place promotions
-  void update_free_set() const;
+  // Notifies the free set and old generation of in place promotions
+  void complete_planning() const;
+
+  const RegionPromotionStats& regular_region_stats() const   { return _pip_regular_stats; }
+  const RegionPromotionStats& humongous_region_stats() const { return _pip_humongous_stats; }
 
   size_t old_garbage_threshold() const { return _old_garbage_threshold; }
 };

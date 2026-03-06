@@ -49,7 +49,6 @@ ShenandoahCollectionSet::ShenandoahCollectionSet(ShenandoahHeap* heap, ReservedS
   _live(0),
   _region_count(0),
   _old_garbage(0),
-  _preselected_regions(nullptr),
   _young_available_bytes_collected(0),
   _old_available_bytes_collected(0),
   _current_index(0) {

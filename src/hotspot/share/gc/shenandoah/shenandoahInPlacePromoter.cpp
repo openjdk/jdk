@@ -58,6 +58,13 @@ void ShenandoahInPlacePromotionPlanner::RegionPromotions::update_free_set(Shenan
   }
 }
 
+void ShenandoahInPlacePromotionPlanner::RegionPromotionStats::update(ShenandoahHeapRegion* region) {
+  count++;
+  usage += region->used();
+  free += region->free();
+  garbage += region->garbage();
+}
+
 ShenandoahInPlacePromotionPlanner::ShenandoahInPlacePromotionPlanner(const ShenandoahGenerationalHeap* heap)
   : _old_garbage_threshold(ShenandoahHeapRegion::region_size_bytes() * heap->old_generation()->heuristics()->get_old_garbage_threshold() / 100)
   , _pip_used_threshold(ShenandoahHeapRegion::region_size_bytes() * ShenandoahGenerationalMinPIPUsage / 100)
@@ -86,6 +93,14 @@ void ShenandoahInPlacePromotionPlanner::prepare(ShenandoahHeapRegion* r) {
     return;
   }
 
+  if (r->is_humongous()) {
+    // Nothing else to do for humongous, we just update the stats and move on. The humongous regions
+    // themselves will be discovered and promoted by gc workers during evacuation.
+    _pip_humongous_stats.update(r);
+    return;
+  }
+
+  _pip_regular_stats.update(r);
   // No allocations from this region have been made during concurrent mark. It meets all the criteria
   // for in-place-promotion. Though we only need the value of top when we fill the end of the region,
   // we use this field to indicate that this region should be promoted in place during the evacuation
@@ -128,8 +143,14 @@ void ShenandoahInPlacePromotionPlanner::prepare(ShenandoahHeapRegion* r) {
   }
 }
 
-void ShenandoahInPlacePromotionPlanner::update_free_set() const {
+void ShenandoahInPlacePromotionPlanner::complete_planning() const {
   _heap->old_generation()->set_pad_for_promote_in_place(_pip_padding_bytes);
+  _heap->old_generation()->set_expected_humongous_region_promotions(_pip_humongous_stats.count);
+  _heap->old_generation()->set_expected_regular_region_promotions(_pip_regular_stats.count);
+  log_info(gc, ergo)("Planning to promote in place %zu humongous regions and %zu"
+                     " regular regions, spanning a total of %zu used bytes",
+                     _pip_humongous_stats.count, _pip_regular_stats.count,
+                     _pip_humongous_stats.usage + _pip_regular_stats.usage);
 
   if (_mutator_regions._regions + _collector_regions._regions > 0) {
     _free_set->account_for_pip_regions(_mutator_regions._regions, _mutator_regions._bytes,

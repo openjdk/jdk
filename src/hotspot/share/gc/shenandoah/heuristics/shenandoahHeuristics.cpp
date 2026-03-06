@@ -122,13 +122,7 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
       }
     } else if (region->is_humongous_start()) {
       // Reclaim humongous regions here, and count them as the immediate garbage
-#ifdef ASSERT
-      bool reg_live = region->has_live();
-      bool bm_live = heap->global_generation()->complete_marking_context()->is_marked(cast_to_oop(region->bottom()));
-      assert(reg_live == bm_live,
-             "Humongous liveness and marks should agree. Region live: %s; Bitmap live: %s; Region Live Words: %zu",
-             BOOL_TO_STR(reg_live), BOOL_TO_STR(bm_live), region->get_live_data_words());
-#endif
+      DEBUG_ONLY(assert_humongous_mark_consistency(region));
       if (!region->has_live()) {
         heap->trash_humongous_region_at(region);
 
@@ -137,7 +131,7 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
         immediate_garbage += garbage;
       }
     } else if (region->is_trash()) {
-      // Count in just trashed collection set, during coalesced CM-with-UR
+      // Count in just trashed humongous continuation regions
       immediate_regions++;
       immediate_garbage += garbage;
     }
@@ -145,13 +139,11 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
 
   // Step 2. Look back at garbage statistics, and decide if we want to collect anything,
   // given the amount of immediately reclaimable garbage. If we do, figure out the collection set.
+  assert(immediate_garbage <= total_garbage,
+         "Cannot have more immediate garbage than total garbage: " PROPERFMT " vs " PROPERFMT,
+         PROPERFMTARGS(immediate_garbage), PROPERFMTARGS(total_garbage));
 
-  assert (immediate_garbage <= total_garbage,
-          "Cannot have more immediate garbage than total garbage: %zu%s vs %zu%s",
-          byte_size_in_proper_unit(immediate_garbage), proper_unit_for_byte_size(immediate_garbage),
-          byte_size_in_proper_unit(total_garbage),     proper_unit_for_byte_size(total_garbage));
-
-  size_t immediate_percent = (total_garbage == 0) ? 0 : (immediate_garbage * 100 / total_garbage);
+  const size_t immediate_percent = (total_garbage == 0) ? 0 : (immediate_garbage * 100 / total_garbage);
 
   if (immediate_percent <= ShenandoahImmediateThreshold) {
     choose_collection_set_from_regiondata(collection_set, candidates, cand_idx, immediate_garbage + free);
@@ -303,3 +295,16 @@ double ShenandoahHeuristics::elapsed_degenerated_cycle_time() const {
   double now = os::elapsedTime();
   return now - _precursor_cycle_start;
 }
+
+#ifdef ASSERT
+void ShenandoahHeuristics::assert_humongous_mark_consistency(ShenandoahHeapRegion* region) {
+  assert(region->is_humongous(), "Region %zu must be humongous", region->index());
+  const oop humongous_oop = cast_to_oop(region->bottom());
+  ShenandoahGeneration* generation = ShenandoahHeap::heap()->generation_for(region->affiliation());
+  const bool bm_live = generation->complete_marking_context()->is_marked(humongous_oop);
+  const bool reg_live = region->has_live();
+  assert(reg_live == bm_live,
+         "Humongous liveness and marks should agree. Region live: %s; Bitmap live: %s; Region Live Words: %zu",
+         BOOL_TO_STR(reg_live), BOOL_TO_STR(bm_live), region->get_live_data_words());
+}
+#endif
