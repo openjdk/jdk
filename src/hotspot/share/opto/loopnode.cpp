@@ -949,6 +949,16 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   // We need a safepoint to insert Parse Predicates for the inner loop.
   SafePointNode* safepoint;
   if (bt == T_INT && head->as_CountedLoop()->is_strip_mined()) {
+    // Check if we need to bail out early if loop peeling is disabled.  Do this
+    // before the graph is modified by `transformed_to_counted_loop()`.
+    if (!LoopPeeling) {
+#ifndef PRODUCT
+      if (TraceLoopOpts) {
+        tty->print("LoopNest cancelled since LoopPeeling is disabled");
+      }
+#endif
+      return false;
+    }
     // Loop is strip mined: use the safepoint of the outer strip mined loop
     OuterStripMinedLoopNode* outer_loop = head->as_CountedLoop()->outer_loop();
     assert(outer_loop != nullptr, "no outer loop");
@@ -957,6 +967,19 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
     exit_test = head->loopexit();
   } else {
     safepoint = find_safepoint(back_control, x, loop);
+  }
+
+  // Later, we peel the loop if we've found a safepoint or if the loop does not
+  // have a call inside it. However, since the IR is modified before we actually
+  // perform the peeling, we can't afford to bail out just prior to peeling,
+  // since the IR will be left in an inconsistent state, so bail out early.
+  if (!LoopPeeling && (safepoint != nullptr || !loop->_has_call)) {
+#ifndef PRODUCT
+    if (TraceLoopOpts) {
+      tty->print("LoopNest cancelled since LoopPeeling is disabled");
+    }
+#endif
+    return false;
   }
 
   IfFalseNode* exit_branch = exit_test->false_proj();

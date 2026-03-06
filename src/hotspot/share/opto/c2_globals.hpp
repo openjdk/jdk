@@ -334,6 +334,9 @@
   product(bool, PartialPeelLoop, true,                                      \
           "Partial peel (rotate) loops")                                    \
                                                                             \
+  product(bool, LoopPeeling, true, DIAGNOSTIC,                              \
+          "Enable loop peeling optimization")                               \
+                                                                            \
   product(intx, PartialPeelNewPhiDelta, 0,                                  \
           "Additional phis that can be created by partial peeling")         \
           range(0, max_jint)                                                \

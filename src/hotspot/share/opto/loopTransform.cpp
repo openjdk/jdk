@@ -524,6 +524,9 @@ bool IdealLoopTree::policy_peeling(PhaseIdealLoop *phase) {
 // return the estimated loop size if peeling is applicable, otherwise return
 // zero. No node budget is allocated.
 uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
+  if (!LoopPeeling) {
+    return 0;
+  }
 
   // If nodes are depleted, some transform has miscalculated its needs.
   assert(!phase->exceeding_node_budget(), "sanity");
@@ -2201,6 +2204,15 @@ void PhaseIdealLoop::do_maximally_unroll(IdealLoopTree *loop, Node_List &old_new
 
   // If loop is tripping an odd number of times, peel odd iteration
   if ((cl->trip_count() & 1) == 1) {
+    if (!LoopPeeling) {
+#ifndef PRODUCT
+      if (TraceLoopOpts) {
+        tty->print("MaxUnroll cancelled since LoopPeeling is disabled");
+        loop->dump_head();
+      }
+#endif
+      return;
+    }
     do_peeling(loop, old_new);
   }
 
@@ -3243,6 +3255,15 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
 #endif
 
   if (needs_guard) {
+    if (!LoopPeeling) {
+#ifndef PRODUCT
+      if (TraceLoopOpts) {
+        tty->print("Empty loop not removed since LoopPeeling is disabled");
+        this->dump_head();
+      }
+#endif
+      return false;
+    }
     // Peel the loop to ensure there's a zero trip guard
     Node_List old_new;
     phase->do_peeling(this, old_new);
