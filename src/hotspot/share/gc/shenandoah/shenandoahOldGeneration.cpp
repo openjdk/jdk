@@ -422,6 +422,7 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
     // At the end of old-gen, we may find that we have reclaimed immediate garbage, allowing a longer allocation runway.
     // We may also find that we have accumulated canddiate regions for mixed evacuation.  If so, we will want to expand
     // the OldCollector reserve in order to make room for these mixed evacuations.
+
     assert(ShenandoahHeap::heap()->mode()->is_generational(), "sanity");
     assert(young_trash_regions == 0, "sanity");
     ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
@@ -583,7 +584,7 @@ void ShenandoahOldGeneration::handle_failed_evacuation() {
 
 void ShenandoahOldGeneration::handle_failed_promotion(Thread* thread, size_t size) {
   _promotion_failure_count.add_then_fetch(1UL);
-  _promotion_failure_words.and_then_fetch(size);
+  _promotion_failure_words.add_then_fetch(size);
 
   LogTarget(Debug, gc, plab) lt;
   LogStream ls(lt);
@@ -765,6 +766,7 @@ size_t ShenandoahOldGeneration::used_regions_size() const {
   return used_regions * ShenandoahHeapRegion::region_size_bytes();
 }
 
+// For the old generation, max_capacity() equals soft_max_capacity()
 size_t ShenandoahOldGeneration::max_capacity() const {
   size_t total_regions = _free_set->total_old_regions();
   return total_regions * ShenandoahHeapRegion::region_size_bytes();

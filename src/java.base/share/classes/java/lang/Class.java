@@ -224,9 +224,9 @@ public final class Class<T> implements java.io.Serializable,
                               AnnotatedElement,
                               TypeDescriptor.OfField<Class<?>>,
                               Constable {
-    private static final int ANNOTATION= 0x00002000;
-    private static final int ENUM      = 0x00004000;
-    private static final int SYNTHETIC = 0x00001000;
+    private static final int ANNOTATION = 0x00002000;
+    private static final int ENUM       = 0x00004000;
+    private static final int SYNTHETIC  = 0x00001000;
 
     private static native void registerNatives();
     static {
@@ -1390,6 +1390,7 @@ public final class Class<T> implements java.io.Serializable,
         // INNER_CLASS forbids. INNER_CLASS allows PRIVATE, PROTECTED,
         // and STATIC, which are not allowed on Location.CLASS.
         // Use getClassFileAccessFlags to expose SUPER status.
+        // Arrays need to use PRIVATE/PROTECTED from its component modifiers.
         var location = (isMemberClass() || isLocalClass() ||
                         isAnonymousClass() || isArray()) ?
             AccessFlag.Location.INNER_CLASS :
@@ -3779,7 +3780,7 @@ public final class Class<T> implements java.io.Serializable,
      * @since 1.8
      */
     public AnnotatedType[] getAnnotatedInterfaces() {
-         return TypeAnnotationParser.buildAnnotatedInterfaces(getRawTypeAnnotations(), getConstantPool(), this);
+        return TypeAnnotationParser.buildAnnotatedInterfaces(getRawTypeAnnotations(), getConstantPool(), this);
     }
 
     private native Class<?> getNestHost0();
