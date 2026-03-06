@@ -379,6 +379,44 @@ GrowableArray<DCmdArgumentInfo*>* DCmdParser::argument_info_array() const {
 DCmdFactory* DCmdFactory::_DCmdFactoryList = nullptr;
 bool DCmdFactory::_has_pending_jmx_notification = false;
 
+
+/**
+ * parse jcmd common option
+ * @param line - a command line with leading common options "[options] <cmd>"
+ * @param updated_line - return value with "<cmd>"
+ */
+static JcmdOptions parse_common_options(const CmdLine& line, stringStream *updated_line) {
+  JcmdOptions options;
+
+  // there is only TIMESTAMP option so far
+  const char TIMESTAMP[] = "-t";
+
+  const char* line_str = line.cmd_addr();
+
+  stringStream cmd;
+  cmd.print("%s", line.cmd_addr());
+  char* rest = cmd.as_string();
+  for (char* token = strtok_r(rest, " ", &rest);
+      token != nullptr;
+      token = strtok_r(nullptr, " ", &rest)) {
+
+    // there only one option for now.
+    if (strcmp(token, TIMESTAMP) == 0) {
+      options.timestamp = JcmdOptions::TimeStamp::Yes;
+
+      // save the remainder before
+      line_str = strstr(line_str, rest);
+    } else {
+      break;
+    }
+  }
+
+  updated_line->write(line_str, strlen(line_str));
+
+  return options;
+}
+
+
 void DCmd::Executor::parse_and_execute(const char* cmdline, char delim, TRAPS) {
 
   if (cmdline == nullptr) return; // Nothing to do!
@@ -393,14 +431,28 @@ void DCmd::Executor::parse_and_execute(const char* cmdline, char delim, TRAPS) {
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               "Invalid syntax");
     }
-    CmdLine line = iter.next();
+
+    // > jcmd [options] <command> [args]
+    //        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    const CmdLine line_optioned = iter.next();
+
+    // parse options
+    stringStream ss_line_naked;
+    const JcmdOptions options = parse_common_options(line_optioned, &ss_line_naked);
+
+    // > jcmd [options] <command> [args]
+    //                  ^^^^^^^^^^^^^^^^
+    CmdLine line(ss_line_naked.base(), ss_line_naked.size(), false);
+
     if (line.is_stop()) {
       break;
     }
+
     if (line.is_executable()) {
-      // Allow for "<cmd> -h|-help|--help" to enable the help diagnostic command.
-      // Ignores any additional arguments.
       ResourceMark rm;
+
+      // treat trailing {-h,-help,--help} as help command
+      // Ignores any additional arguments.
       stringStream updated_line;
       if (reorder_help_cmd(line, updated_line)) {
         CmdLine updated_cmd(updated_line.base(), updated_line.size(), false);
@@ -411,20 +463,26 @@ void DCmd::Executor::parse_and_execute(const char* cmdline, char delim, TRAPS) {
       assert(command != nullptr, "command error must be handled before this line");
       DCmdMark mark(command);
       command->parse(&line, delim, CHECK);
-      execute(command, CHECK);
+
+      if (options.timestamp == JcmdOptions::TimeStamp::Yes){
+        _out->date_stamp(true, "", "\n");
+      }
+
+      execute(command, options, CHECK);
     }
     count++;
   }
 }
 
-void DCmd::Executor::execute(DCmd* command, TRAPS) {
-  command->execute(_source, CHECK);
+void DCmd::Executor::execute(DCmd* command, const JcmdOptions& commonOptions, TRAPS) {
+  command->execute(_source, commonOptions, CHECK);
 }
 
 void DCmd::parse_and_execute(DCmdSource source, outputStream* out,
                              const char* cmdline, char delim, TRAPS) {
   Executor(source, out).parse_and_execute(cmdline, delim, CHECK);
 }
+
 
 bool DCmd::reorder_help_cmd(CmdLine line, stringStream &updated_line) {
   stringStream args;

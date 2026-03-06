@@ -2494,7 +2494,7 @@ SystemDictionaryDCmd::SystemDictionaryDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_option(&_verbose);
 }
 
-void SystemDictionaryDCmd::execute(DCmdSource source, TRAPS) {
+void SystemDictionaryDCmd::execute(DCmdSource source, const JcmdOptions& commonOptions, TRAPS) {
   VM_DumpHashtable dumper(output(), VM_DumpHashtable::DumpSysDict,
                          _verbose.value());
   VMThread::execute(&dumper);

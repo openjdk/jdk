@@ -392,7 +392,7 @@ bool JfrOptionSet::configure(TRAPS) {
   configure._preserve_repository.set_value(_dcmd_preserve_repository.value());
 
   configure.set_verbose(false);
-  configure.execute(DCmd_Source_Internal, THREAD);
+  configure.execute(DCmd_Source_Internal, {} /*options*/, THREAD);
 
   if (HAS_PENDING_EXCEPTION) {
     java_lang_Throwable::print(PENDING_EXCEPTION, tty);
