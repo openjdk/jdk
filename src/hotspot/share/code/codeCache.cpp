@@ -222,8 +222,8 @@ void CodeCache::initialize_heaps() {
   assert(heap_available(CodeBlobType::MethodNonProfiled), "MethodNonProfiled heap is always available for segmented code heap");
 
   size_t compiler_buffer_size = 0;
-  COMPILER1_PRESENT(compiler_buffer_size += CompilationPolicy::c1_count() * Compiler::code_buffer_size());
-  COMPILER2_PRESENT(compiler_buffer_size += CompilationPolicy::c2_count() * C2Compiler::initial_code_buffer_size());
+  COMPILER1_PRESENT(compiler_buffer_size += (size_t)CompilationPolicy::c1_count() * Compiler::code_buffer_size());
+  COMPILER2_PRESENT(compiler_buffer_size += (size_t)CompilationPolicy::c2_count() * C2Compiler::initial_code_buffer_size());
 
   if (!non_nmethod.set) {
     non_nmethod.size += compiler_buffer_size;
