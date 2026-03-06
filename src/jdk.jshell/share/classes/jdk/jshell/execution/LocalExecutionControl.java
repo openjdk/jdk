@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,7 +194,7 @@ public class LocalExecutionControl extends DirectExecutionControl {
         final Object[] res = new Object[1];
         Thread snippetThread = new Thread(execThreadGroup, () -> {
             try {
-                res[0] = doitMethod.invoke(null, new Object[0]);
+                res[0] = doInvoke(doitMethod);
             } catch (InvocationTargetException e) {
                 if (e.getCause() instanceof ThreadDeath) {
                     stopped.set(true);
@@ -273,4 +273,25 @@ public class LocalExecutionControl extends DirectExecutionControl {
         }
     }
 
+    /**
+     * Execute the snippet.
+     *
+     * <p>
+     * This method is invoked within the snippet execution thread to actually execute snippets.
+     * The given method is a static method that takes zero parameters.
+     *
+     * <p>
+     * The implementation in {@link LocalExecutionControl} just invokes {@code method}.
+     * Subclasses may override this method to configure thread-specific context during snippet
+     * execution, etc.
+     *
+     * @param method static method to be invoked taking zero parameters
+     * @return the return value from {@code method}, or null if {@code method} returns void
+     * @throws IllegalAccessException if {@code method} is inaccessible
+     * @throws InvocationTargetException if {@code method} itself throws an exception
+     * @since 25
+     */
+    protected Object doInvoke(Method method) throws IllegalAccessException, InvocationTargetException {
+        return method.invoke(null);
+    }
 }
