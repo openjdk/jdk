@@ -38,7 +38,9 @@ import jdk.test.lib.util.CoreUtils;
 /**
  * @test
  * @bug 8376269
- * @requires (os.family == "linux") & (vm.hasSA)
+ * @requires vm.hasSA
+ * @requires vm.gc != "Z"
+ * @requires os.family == "linux"
  * @requires os.arch == "amd64"
  * @library /test/lib
  * @run driver TestJhsdbJstackMixedWithVDSOCallCore
