@@ -62,7 +62,7 @@
                         FT_GlyphSlot  slot )
   {
     FT_BitmapGlyph  glyph   = (FT_BitmapGlyph)bitmap_glyph;
-    FT_Error        error   = FT_Err_Ok;
+    FT_Error        error;
     FT_Library      library = FT_GLYPH( glyph )->library;
 
 
@@ -75,17 +75,8 @@
     glyph->left = slot->bitmap_left;
     glyph->top  = slot->bitmap_top;
 
-    /* do lazy copying whenever possible */
-    if ( slot->internal->flags & FT_GLYPH_OWN_BITMAP )
-    {
-      glyph->bitmap          = slot->bitmap;
-      slot->internal->flags &= ~FT_GLYPH_OWN_BITMAP;
-    }
-    else
-    {
-      FT_Bitmap_Init( &glyph->bitmap );
-      error = FT_Bitmap_Copy( library, &slot->bitmap, &glyph->bitmap );
-    }
+    FT_Bitmap_Init( &glyph->bitmap );
+    error = FT_Bitmap_Copy( library, &slot->bitmap, &glyph->bitmap );
 
   Exit:
     return error;

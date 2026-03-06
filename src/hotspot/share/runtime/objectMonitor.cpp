@@ -854,7 +854,7 @@ bool ObjectMonitor::deflate_monitor(Thread* current) {
   }
 
   if (UseObjectMonitorTable) {
-    ObjectSynchronizer::deflate_monitor(current, obj, this);
+    ObjectSynchronizer::deflate_monitor(obj, this);
   } else if (obj != nullptr) {
     // Install the old mark word if nobody else has already done it.
     install_displaced_markword_in_object(obj);
@@ -2541,19 +2541,19 @@ bool ObjectMonitor::try_spin(JavaThread* current) {
 // -----------------------------------------------------------------------------
 // wait_set management ...
 
-ObjectWaiter::ObjectWaiter(JavaThread* current) {
-  _next     = nullptr;
-  _prev     = nullptr;
-  _thread   = current;
-  _monitor  = nullptr;
-  _notifier_tid = 0;
-  _recursions = 0;
-  TState    = TS_RUN;
-  _is_wait  = false;
-  _at_reenter = false;
-  _interrupted = false;
-  _do_timed_park = false;
-  _active   = false;
+ObjectWaiter::ObjectWaiter(JavaThread* current)
+  : _next(nullptr),
+    _prev(nullptr),
+    _thread(current),
+    _monitor(nullptr),
+    _notifier_tid(0),
+    _recursions(0),
+    TState(TS_RUN),
+    _is_wait(false),
+    _at_reenter(false),
+    _interrupted(false),
+    _do_timed_park(false),
+    _active(false) {
 }
 
 const char* ObjectWaiter::getTStateName(ObjectWaiter::TStates state) {

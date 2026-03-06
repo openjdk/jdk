@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,10 +47,11 @@ import java.net.http.HttpResponse;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jdk.internal.net.http.websocket.RawChannel;
-import org.testng.annotations.Test;
 import static java.net.http.HttpResponse.BodyHandlers.discarding;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.testng.Assert.assertEquals;
+
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /*
  * This test exercises mechanics of _independent_ reads and writes on the
@@ -222,8 +223,8 @@ public class RawChannelTest {
                         closeChannel(chan);
                     });
             exit.await(); // All done, we need to compare results:
-            assertEquals(clientRead.get(), serverWritten.get());
-            assertEquals(serverRead.get(), clientWritten.get());
+            assertEquals(serverWritten.get(), clientRead.get());
+            assertEquals(clientWritten.get(), serverRead.get());
             Throwable serverError = testServer.failed.get();
             if (serverError != null) {
                 throw new AssertionError("TestServer failed: "
