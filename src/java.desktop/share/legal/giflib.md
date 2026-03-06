@@ -36,7 +36,6 @@ Copyright (C) Eric S. Raymond <esr@thyrsus.com>
 
 SPDX-License-Identifier: MIT
 
-```
 
 tree/README
 
@@ -51,3 +50,5 @@ Toshio Kuratomi <toshio[AT]tiki-lounge.com>
 
 Eric Raymond <esr[AT]snark.thyrsus.com>
     current as well as long time former maintainer of giflib code
+
+```
