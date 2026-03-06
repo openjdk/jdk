@@ -950,14 +950,19 @@ public final class WindowsIconFactory implements Serializable
                     }
                 }
                 if (icon != null) {
-                    if (WindowsGraphicsUtils.isLeftToRight(c)) {
-                        icon.paintIcon(c, g,
-                                       x + VistaMenuItemCheckIconFactory.getIconWidth(),
-                                       y + OFFSET);
+                    if (type == JCheckBoxMenuItem.class
+                            || type == JRadioButtonMenuItem.class) {
+                        if (WindowsGraphicsUtils.isLeftToRight(c)) {
+                            icon.paintIcon(c, g,
+                                    x + VistaMenuItemCheckIconFactory.getIconWidth(),
+                                    y + OFFSET);
+                        } else {
+                            icon.paintIcon(c, g,
+                                    x - VistaMenuItemCheckIconFactory.getIconWidth() + 2 * OFFSET,
+                                    y + OFFSET);
+                        }
                     } else {
-                        icon.paintIcon(c, g,
-                                       x - VistaMenuItemCheckIconFactory.getIconWidth() + 2 * OFFSET,
-                                       y + OFFSET);
+                        icon.paintIcon(c, g, x + OFFSET, y + OFFSET);
                     }
                 }
             }
