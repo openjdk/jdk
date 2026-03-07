@@ -934,7 +934,7 @@ void VM_Version::get_processor_features() {
   }
 
   // Check if processor has Intel Ecore
-  if (FLAG_IS_DEFAULT(EnableX86ECoreOpts) && is_intel() && is_intel_server_family() &&
+  if (FLAG_IS_DEFAULT(EnableX86ECoreOpts) && is_intel() && is_intel_family() &&
     (supports_hybrid() ||
      _model == 0xAF /* Xeon 6 E-cores (Sierra Forest) */ ||
      _model == 0xDD /* Xeon 6+ E-cores (Clearwater Forest) */ )) {
@@ -1609,7 +1609,7 @@ void VM_Version::get_processor_features() {
     if (FLAG_IS_DEFAULT(UseStoreImmI16)) {
       UseStoreImmI16 = false; // don't use it on Intel cpus
     }
-    if (is_intel_server_family() || cpu_family() == 15) {
+    if (is_intel_family() || cpu_family() == 15) {
       if (FLAG_IS_DEFAULT(UseAddressNop)) {
         // Use it on all Intel cpus starting from PentiumPro
         UseAddressNop = true;
@@ -1625,7 +1625,7 @@ void VM_Version::get_processor_features() {
         UseXmmRegToRegMoveAll = false;
       }
     }
-    if (is_intel_server_family() && supports_sse3()) { // New Intel cpus
+    if (is_intel_family() && supports_sse3()) { // New Intel cpus
 #ifdef COMPILER2
       if (FLAG_IS_DEFAULT(MaxLoopPad)) {
         // For new Intel cpus do the next optimization:
@@ -1861,7 +1861,7 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(AllocatePrefetchDistance, allocate_prefetch_distance(use_watermark_prefetch));
   }
 
-  if (is_intel() && is_intel_server_family() && supports_sse3()) {
+  if (is_intel() && is_intel_family() && supports_sse3()) {
     if (FLAG_IS_DEFAULT(AllocatePrefetchLines) &&
         supports_sse4_2() && supports_ht()) { // Nehalem based cpus
       FLAG_SET_DEFAULT(AllocatePrefetchLines, 4);
@@ -2119,7 +2119,7 @@ bool VM_Version::is_intel_cascade_lake() {
 }
 
 bool VM_Version::is_intel_darkmont() {
-  return is_intel() && is_intel_server_family() && (_model == 0xCC || _model == 0xDD);
+  return is_intel() && is_intel_family() && (_model == 0xCC || _model == 0xDD);
 }
 
 // avx3_threshold() sets the threshold at which 64-byte instructions are used
@@ -2128,7 +2128,7 @@ bool VM_Version::is_intel_darkmont() {
 // has improved implementation of 64-byte load/stores and so the default
 // threshold is set to 0 for these platforms.
 int VM_Version::avx3_threshold() {
-  return (is_intel_server_family() &&
+  return (is_intel_family() &&
           supports_serialize() &&
           FLAG_IS_DEFAULT(AVX3Threshold)) ? 0 : AVX3Threshold;
 }
@@ -3294,7 +3294,7 @@ int VM_Version::allocate_prefetch_distance(bool use_watermark_prefetch) {
       return 128;
     }
   } else { // Intel
-    if (supports_sse3() && is_intel_server_family()) {
+    if (supports_sse3() && is_intel_family()) {
       if (supports_sse4_2() && supports_ht()) { // Nehalem based cpus
         return 192;
       } else if (use_watermark_prefetch) { // watermark prefetching on Core
@@ -3302,7 +3302,7 @@ int VM_Version::allocate_prefetch_distance(bool use_watermark_prefetch) {
       }
     }
     if (supports_sse2()) {
-      if (is_intel_server_family()) {
+      if (is_intel_family()) {
         return 256; // Pentium M, Core, Core2
       } else {
         return 512; // Pentium 4
