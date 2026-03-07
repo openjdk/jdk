@@ -63,6 +63,9 @@
   do_stub(compiler, partial_subtype_check)                              \
   do_arch_entry(Arm, compiler, partial_subtype_check,                   \
                 partial_subtype_check, partial_subtype_check)           \
+  do_stub(compiler, atomic_compareAndSet_long)                          \
+  do_arch_entry(Arm, compiler, atomic_compareAndSet_long,               \
+                atomic_compareAndSet_long_entry, atomic_compareAndSet_long_entry)
 
 
 #define STUBGEN_FINAL_BLOBS_ARCH_DO(do_stub,                            \

@@ -4782,12 +4782,15 @@ Address MacroAssembler::argument_address(RegisterOrConstant arg_slot,
 // avoids grossly misrepresenting the profiles under concurrent updates. For speed,
 // counter updates are not atomic.
 //
-void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_offset) {
+void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_offset,
+                                           Register temp, addptr_32_insn_t increment) {
   int base_receiver_offset   = in_bytes(ReceiverTypeData::receiver_offset(0));
   int end_receiver_offset    = in_bytes(ReceiverTypeData::receiver_offset(ReceiverTypeData::row_limit()));
   int poly_count_offset      = in_bytes(CounterData::count_offset());
   int receiver_step          = in_bytes(ReceiverTypeData::receiver_offset(1)) - base_receiver_offset;
   int receiver_to_count_step = in_bytes(ReceiverTypeData::receiver_count_offset(0)) - base_receiver_offset;
+
+  BLOCK_COMMENT("profile_receiver_type {");
 
   // Adjust for MDP offsets. Slots are pointer-sized, so is the global offset.
   assert(is_aligned(mdp_offset, BytesPerWord), "sanity");
@@ -4824,7 +4827,9 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
 
   // Corner case: no profile table. Increment poly counter and exit.
   if (ReceiverTypeData::row_limit() == 0) {
-    addptr(Address(mdp, poly_count_offset, Address::times_ptr), DataLayout::counter_increment);
+    increment(this, Address(mdp, poly_count_offset, Address::times_ptr),
+              DataLayout::counter_increment, temp);
+    BLOCK_COMMENT("} profile_receiver_type");
     return;
   }
 
@@ -4965,7 +4970,9 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   addptr(offset, receiver_to_count_step);
 
   bind(L_count_update);
-  addptr(Address(mdp, offset, Address::times_ptr), DataLayout::counter_increment);
+  increment(this, Address(mdp, offset, Address::times_ptr), DataLayout::counter_increment, temp);
+
+  BLOCK_COMMENT("} profile_receiver_type");
 }
 
 void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* file, int line) {

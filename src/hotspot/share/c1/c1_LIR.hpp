@@ -446,7 +446,7 @@ class LIR_Opr {
   Register as_register_lo() const;
   Register as_register_hi() const;
 
-  Register as_pointer_register() {
+  Register as_pointer_register() const {
 #ifdef _LP64
     if (is_double_cpu()) {
       assert(as_register_lo() == as_register_hi(), "should be a single register");
@@ -893,6 +893,7 @@ class    LIR_OpCompareAndSwap;
 class    LIR_OpLoadKlass;
 class    LIR_OpProfileCall;
 class    LIR_OpProfileType;
+class    LIR_OpIncrementCounter;
 #ifdef ASSERT
 class    LIR_OpAssert;
 #endif
@@ -997,6 +998,7 @@ enum LIR_Code {
   , begin_opMDOProfile
     , lir_profile_call
     , lir_profile_type
+    , lir_increment_counter
   , end_opMDOProfile
   , begin_opAssert
     , lir_assert
@@ -1139,6 +1141,7 @@ class LIR_Op: public CompilationResourceObj {
   virtual LIR_OpLoadKlass* as_OpLoadKlass() { return nullptr; }
   virtual LIR_OpProfileCall* as_OpProfileCall() { return nullptr; }
   virtual LIR_OpProfileType* as_OpProfileType() { return nullptr; }
+  virtual LIR_OpIncrementCounter* as_OpIncrementCounter() { return nullptr; }
 #ifdef ASSERT
   virtual LIR_OpAssert* as_OpAssert() { return nullptr; }
 #endif
@@ -1930,6 +1933,45 @@ class LIR_OpCompareAndSwap : public LIR_Op {
   virtual void print_instr(outputStream* out) const PRODUCT_RETURN;
 };
 
+// LIR_OpIncrementCounter
+class LIR_OpIncrementCounter : public LIR_Op {
+ friend class LIR_OpVisitState;
+
+ private:
+  LIR_Opr _step;
+  LIR_Opr _freq_op;
+  LIR_Opr _md_reg;
+  LIR_Opr _md_op;
+  LIR_Opr _md_offset_op;
+  CodeStub* _overflow_stub;
+
+ public:
+  // Destroys recv
+  LIR_OpIncrementCounter(LIR_Opr step, LIR_Opr dest,
+                         LIR_Opr freq_op, LIR_Opr md_reg, LIR_Opr md_op, LIR_Opr md_offset_op,
+                         CodeStub* overflow_stub, CodeEmitInfo *info)
+    : LIR_Op(lir_increment_counter, dest, info)
+    , _step(step)
+    , _freq_op(freq_op)
+    , _md_reg(md_reg)
+    , _md_op(md_op)
+    , _md_offset_op(md_offset_op)
+    , _overflow_stub(overflow_stub) { }
+
+  LIR_Opr   step()          const            { return _step;          }
+  LIR_Opr   dest()          const            { return result_opr();   }
+  LIR_Opr   freq_op()       const            { return _freq_op;       }
+  LIR_Opr   md_reg()        const            { return _md_reg;        }
+  LIR_Opr   md_op()         const            { return _md_op;         }
+  LIR_Opr   md_offset_op()  const            { return _md_offset_op;  }
+
+  CodeStub* overflow_stub() const            { return _overflow_stub; };
+
+  virtual void emit_code(LIR_Assembler* masm);
+  virtual LIR_OpIncrementCounter* as_OpIncrementCounter() { return this; }
+  virtual void print_instr(outputStream* out) const PRODUCT_RETURN;
+};
+
 // LIR_OpProfileCall
 class LIR_OpProfileCall : public LIR_Op {
  friend class LIR_OpVisitState;
@@ -2231,6 +2273,32 @@ class LIR_List: public CompilationResourceObj {
   void store(LIR_Opr src, LIR_Address* addr, CodeEmitInfo* info = nullptr, LIR_PatchCode patch_code = lir_patch_none);
   void volatile_store_mem_reg(LIR_Opr src, LIR_Address* address, CodeEmitInfo* info, LIR_PatchCode patch_code = lir_patch_none);
   void volatile_store_unsafe_reg(LIR_Opr src, LIR_Opr base, LIR_Opr offset, BasicType type, CodeEmitInfo* info, LIR_PatchCode patch_code);
+
+  void increment_counter(LIR_Opr src, LIR_Opr res,
+                         LIR_Opr freq, LIR_Opr md_reg, LIR_Opr md_op, LIR_Opr md_offset,
+                         CodeStub* overflow, CodeEmitInfo* info);
+
+  void increment_counter(LIR_Opr step, LIR_Opr dummy,
+                         LIR_Opr md_reg, Metadata* md, LIR_Opr offset) {
+    increment_counter(step, dummy,
+                      /*freq*/LIR_OprFact::illegalOpr,
+                      md_reg, LIR_OprFact::metadataConst(md),
+                      offset,
+                      /*overflow*/nullptr, /*info*/nullptr);
+  }
+  void increment_counter(LIR_Opr step, LIR_Opr dummy,
+                         LIR_Opr md_reg, Metadata* md, int offset) {
+    increment_counter(step, dummy, md_reg, md,
+                      LIR_OprFact::intConst(offset));
+  }
+  void increment_counter(LIR_Opr step, LIR_Opr result, LIR_Opr freq,
+                         LIR_Opr md_reg, LIR_Opr md, int offset,
+                         CodeStub* overflow, CodeEmitInfo* info) {
+    increment_counter(step, result,
+                      freq,
+                      md_reg, md, LIR_OprFact::intConst(offset),
+                      overflow, info);
+  }
 
   void idiv(LIR_Opr left, LIR_Opr right, LIR_Opr res, LIR_Opr tmp, CodeEmitInfo* info);
   void idiv(LIR_Opr left, int   right, LIR_Opr res, LIR_Opr tmp, CodeEmitInfo* info);

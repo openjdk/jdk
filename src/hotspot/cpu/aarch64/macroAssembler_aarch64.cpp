@@ -2124,7 +2124,8 @@ Address MacroAssembler::argument_address(RegisterOrConstant arg_slot,
 // avoids grossly misrepresenting the profiles under concurrent updates. For speed,
 // counter updates are not atomic.
 //
-void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_offset) {
+void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_offset,
+                                           increment_mdo_insn_t inc) {
   assert_different_registers(recv, mdp, rscratch1, rscratch2);
 
   int base_receiver_offset   = in_bytes(ReceiverTypeData::receiver_offset(0));
@@ -2137,6 +2138,8 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   base_receiver_offset += mdp_offset;
   end_receiver_offset  += mdp_offset;
   poly_count_offset    += mdp_offset;
+
+  block_comment("profile_receiver_type {");
 
 #ifdef ASSERT
   // We are about to walk the MDO slots without asking for offsets.
@@ -2155,7 +2158,8 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
 
   // Corner case: no profile table. Increment poly counter and exit.
   if (ReceiverTypeData::row_limit() == 0) {
-    increment(Address(mdp, poly_count_offset), DataLayout::counter_increment);
+    inc(this, Address(mdp, poly_count_offset), DataLayout::counter_increment);
+    block_comment("} profile_receiver_type");
     return;
   }
 
@@ -2264,7 +2268,9 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   add(offset, offset, receiver_to_count_step);
 
   bind(L_count_update);
-  increment(Address(mdp, offset), DataLayout::counter_increment);
+  inc(this, Address(mdp, offset), DataLayout::counter_increment);
+
+  block_comment("} profile_receiver_type");
 }
 
 
@@ -2819,7 +2825,7 @@ void MacroAssembler::decrementw(Register reg, int value)
 {
   if (value < 0)  { incrementw(reg, -value);      return; }
   if (value == 0) {                               return; }
-  if (value < (1 << 12)) { subw(reg, reg, value); return; }
+  if (value < (1 << 24)) { subw(reg, reg, value); return; }
   /* else */ {
     guarantee(reg != rscratch2, "invalid dst for register decrement");
     movw(rscratch2, (unsigned)value);
@@ -2831,7 +2837,7 @@ void MacroAssembler::decrement(Register reg, int value)
 {
   if (value < 0)  { increment(reg, -value);      return; }
   if (value == 0) {                              return; }
-  if (value < (1 << 12)) { sub(reg, reg, value); return; }
+  if (value < (1 << 24)) { sub(reg, reg, value); return; }
   /* else */ {
     assert(reg != rscratch2, "invalid dst for register decrement");
     mov(rscratch2, (uint64_t)value);
@@ -2843,7 +2849,7 @@ void MacroAssembler::decrementw(Address dst, int value)
 {
   assert(!dst.uses(rscratch1), "invalid dst for address decrement");
   if (dst.getMode() == Address::literal) {
-    assert(abs(value) < (1 << 12), "invalid value and address mode combination");
+    assert(abs(value) < (1 << 24), "invalid value and address mode combination");
     lea(rscratch2, dst);
     dst = Address(rscratch2);
   }
@@ -2856,7 +2862,7 @@ void MacroAssembler::decrement(Address dst, int value)
 {
   assert(!dst.uses(rscratch1), "invalid address for decrement");
   if (dst.getMode() == Address::literal) {
-    assert(abs(value) < (1 << 12), "invalid value and address mode combination");
+    assert(abs(value) < (1 << 24), "invalid value and address mode combination");
     lea(rscratch2, dst);
     dst = Address(rscratch2);
   }
@@ -2869,7 +2875,7 @@ void MacroAssembler::incrementw(Register reg, int value)
 {
   if (value < 0)  { decrementw(reg, -value);      return; }
   if (value == 0) {                               return; }
-  if (value < (1 << 12)) { addw(reg, reg, value); return; }
+  if (value < (1 << 24)) { addw(reg, reg, value); return; }
   /* else */ {
     assert(reg != rscratch2, "invalid dst for register increment");
     movw(rscratch2, (unsigned)value);
@@ -2881,7 +2887,7 @@ void MacroAssembler::increment(Register reg, int value)
 {
   if (value < 0)  { decrement(reg, -value);      return; }
   if (value == 0) {                              return; }
-  if (value < (1 << 12)) { add(reg, reg, value); return; }
+  if (value < (1 << 24)) { add(reg, reg, value); return; }
   /* else */ {
     assert(reg != rscratch2, "invalid dst for register increment");
     movw(rscratch2, (unsigned)value);
@@ -2889,30 +2895,34 @@ void MacroAssembler::increment(Register reg, int value)
   }
 }
 
-void MacroAssembler::incrementw(Address dst, int value)
+void MacroAssembler::incrementw(Address dst, int value, Register result)
 {
-  assert(!dst.uses(rscratch1), "invalid dst for address increment");
+  assert(!dst.uses(result), "invalid dst for address increment");
+  assert(result->is_valid(), "must be");
+  assert_different_registers(result, rscratch2);
   if (dst.getMode() == Address::literal) {
-    assert(abs(value) < (1 << 12), "invalid value and address mode combination");
+    assert(abs(value) < (1 << 24), "invalid value and address mode combination");
     lea(rscratch2, dst);
     dst = Address(rscratch2);
   }
-  ldrw(rscratch1, dst);
-  incrementw(rscratch1, value);
-  strw(rscratch1, dst);
+  ldrw(result, dst);
+  incrementw(result, value);
+  strw(result, dst);
 }
 
-void MacroAssembler::increment(Address dst, int value)
+void MacroAssembler::increment(Address dst, int value, Register result)
 {
-  assert(!dst.uses(rscratch1), "invalid dst for address increment");
+  assert(!dst.uses(result), "invalid dst for address increment");
+  assert(result->is_valid(), "must be");
+  assert_different_registers(result, rscratch2);
   if (dst.getMode() == Address::literal) {
-    assert(abs(value) < (1 << 12), "invalid value and address mode combination");
+    assert(abs(value) < (1 << 24), "invalid value and address mode combination");
     lea(rscratch2, dst);
     dst = Address(rscratch2);
   }
-  ldr(rscratch1, dst);
-  increment(rscratch1, value);
-  str(rscratch1, dst);
+  ldr(result, dst);
+  increment(result, value);
+  str(result, dst);
 }
 
 // Push lots of registers in the bit set supplied.  Don't push sp.

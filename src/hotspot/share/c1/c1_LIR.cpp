@@ -889,11 +889,30 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       LIR_OpProfileType* opProfileType = (LIR_OpProfileType*)op;
 
       do_input(opProfileType->_mdp); do_temp(opProfileType->_mdp);
-      do_input(opProfileType->_obj);
+      do_input(opProfileType->_obj); do_temp(opProfileType->_obj);
       do_temp(opProfileType->_tmp);
       break;
     }
-  default:
+
+    case lir_increment_counter: {
+      LIR_OpIncrementCounter* opr = op->as_OpIncrementCounter();
+      assert(opr != nullptr, "must be");
+
+      if (opr->_info)                      do_info(opr->_info);
+      do_input(opr->_step);                do_temp(opr->_step);
+      if (opr->_result->is_valid()) {
+        do_temp(opr->_result);             do_output(opr->_result);
+      }
+      if (opr->overflow_stub() != nullptr) do_stub(opr->overflow_stub());
+      if (opr->_md_reg->is_valid())        do_temp(opr->_md_reg);
+      if (opr->_md_op->is_valid())         { do_input(opr->_md_op); }
+      if (opr->_md_offset_op->is_valid()) {
+        do_input(opr->_md_offset_op);      do_temp(opr->_md_offset_op);
+      }
+      break;
+    }
+
+    default:
     op->visit(this);
   }
 }
@@ -1054,6 +1073,17 @@ void LIR_OpAssert::emit_code(LIR_Assembler* masm) {
   masm->emit_assert(this);
 }
 #endif
+
+void LIR_OpIncrementCounter::emit_code(LIR_Assembler* masm) {
+#ifdef RANDOMIZED_PROFILE_CAPTURE
+  masm->increment_profile_ctr
+    (_step, _result, _freq_op,
+     _md_reg, _md_op, _md_offset_op, _overflow_stub);
+  if (overflow_stub()) {
+    masm->append_code_stub(overflow_stub());
+  }
+#endif
+}
 
 void LIR_OpProfileCall::emit_code(LIR_Assembler* masm) {
   masm->emit_profile_call(this);
@@ -1257,6 +1287,22 @@ void LIR_List::volatile_store_unsafe_reg(LIR_Opr src, LIR_Opr base, LIR_Opr offs
             type,
             patch_code,
             info, lir_move_volatile));
+}
+
+
+void LIR_List::increment_counter(LIR_Opr step, LIR_Opr dest,
+                                 LIR_Opr freq,
+                                 LIR_Opr md_reg, LIR_Opr md_op, LIR_Opr md_offset_op,
+                                 CodeStub* overflow, CodeEmitInfo* info) {
+    append(new LIR_OpIncrementCounter (
+            step,
+            dest,
+            freq,
+            md_reg,
+            md_op,
+            md_offset_op,
+            overflow,
+            info));
 }
 
 
@@ -1751,6 +1797,7 @@ const char * LIR_Op::name() const {
      case lir_profile_call:          s = "profile_call";  break;
      // LIR_OpProfileType
      case lir_profile_type:          s = "profile_type";  break;
+     case lir_increment_counter:     s = "increment_counter"; break;
      // LIR_OpAssert
 #ifdef ASSERT
      case lir_assert:                s = "assert";        break;
@@ -1802,7 +1849,7 @@ void LIR_OpCompareAndSwap::print_instr(outputStream* out) const {
   new_value()->print(out); out->print(" ");
   tmp1()->print(out);      out->print(" ");
   tmp2()->print(out);      out->print(" ");
-
+  result_opr()->print(out); out->print(" ");
 }
 
 // LIR_Op0
@@ -1843,6 +1890,15 @@ void LIR_OpRTCall::print_instr(outputStream* out) const {
   out->print("%s", Runtime1::name_for_address(addr()));
   out->print(" ");
   tmp()->print(out);
+  int n = _arguments->length();
+  for (int i = 0; i < n; i++) {
+    _arguments->at(i)->print(out);
+    out->print(" ");
+  }
+  if (_result->is_valid()) {
+    _result->print(out);
+    out->print(" ");
+  }
 }
 
 void LIR_Op1::print_patch_code(outputStream* out, LIR_PatchCode code) {
@@ -2044,6 +2100,16 @@ void LIR_OpProfileType::print_instr(outputStream* out) const {
   mdp()->print(out);          out->print(" ");
   obj()->print(out);          out->print(" ");
   tmp()->print(out);          out->print(" ");
+}
+
+void LIR_OpIncrementCounter::print_instr(outputStream* out) const {
+  step()->print(out);          out->print(" ");
+  dest()->print(out);          out->print(" ");
+  // temp_op()->print(out);       out->print(" ");
+  freq_op()->print(out);       out->print(" ");
+  md_reg()->print(out);        out->print(" ");
+  md_op()->print(out);         out->print(" ");
+  md_offset_op()->print(out);  out->print(" ");
 }
 
 #endif // PRODUCT

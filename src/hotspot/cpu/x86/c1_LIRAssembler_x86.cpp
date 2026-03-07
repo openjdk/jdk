@@ -75,7 +75,7 @@ NEEDS_CLEANUP // remove this definitions ?
 const Register SYNC_header = rax;   // synchronization header
 const Register SHIFT_count = rcx;   // where count for shift operations must be
 
-#define __ _masm->
+#define __ masm()->
 
 
 static void select_different_registers(Register preserve,
@@ -201,6 +201,10 @@ bool LIR_Assembler::is_literal_address(LIR_Address* addr) {
 }
 
 //-------------------------------------------
+
+static Register as_reg(LIR_Opr op) {
+  return op->is_double_cpu() ? op->as_register_lo() : op->as_register();
+}
 
 Address LIR_Assembler::as_Address(LIR_Address* addr) {
   return as_Address(addr, rscratch1);
@@ -1269,12 +1273,36 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
   __ bind(*op->stub()->continuation());
 }
 
+
+static void increment_mdo(MacroAssembler *C1_masm, Address dst, int32_t src, Register temp) {
+  auto masm = [C1_masm]() { return (C1_MacroAssembler*)C1_masm; };
+  assert(masm()->is_C1_MacroAssembler(), "must be");
+  int ratio_shift = exact_log2(ProfileCaptureRatio);
+  Label nope;
+  if (ProfileCaptureRatio > 1) {
+    auto threshold = (1ull << 32) >> ratio_shift;
+    __ cmpl(r_profile_rng, threshold);
+    __ jcc(Assembler::aboveEqual, nope);
+  }
+  __ addptr(dst, src << ratio_shift);
+  if (ProfileCaptureRatio > 1) {
+    __ bind(nope);
+    __ step_random(r_profile_rng, temp);
+  }
+}
+
 void LIR_Assembler::type_profile_helper(Register mdo,
                                         ciMethodData *md, ciProfileData *data,
-                                        Register recv) {
+                                        Register recv, Register temp) {
   int mdp_offset = md->byte_offset_of_slot(data, in_ByteSize(0));
-  __ profile_receiver_type(recv, mdo, mdp_offset);
+  if (ProfileCaptureRatio > 1) {
+    __ profile_receiver_type
+      (recv, mdo, mdp_offset, temp, &increment_mdo);
+  } else {
+    __ profile_receiver_type(recv, mdo, mdp_offset, temp);
+  }
 }
+
 
 void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, Label* failure, Label* obj_is_null) {
   // we always need a stub for the failure case.
@@ -1298,7 +1326,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     md = method->method_data_or_null();
     assert(md != nullptr, "Sanity");
     data = md->bci_to_data(bci);
-    assert(data != nullptr,                "need data for type check");
+    assert(data != nullptr,             "need data for type check");
     assert(data->is_ReceiverTypeData(), "need ReceiverTypeData for type check");
   }
   Label* success_target = success;
@@ -1320,6 +1348,11 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
 
   __ testptr(obj, obj);
   if (op->should_profile()) {
+    int profile_capture_ratio = ProfileCaptureRatio;
+    int ratio_shift = exact_log2(profile_capture_ratio);
+    auto threshold = (1ull << 32) >> ratio_shift;
+    assert(threshold > 0, "must be");
+
     Label not_null;
     Register mdo  = klass_RInfo;
     __ mov_metadata(mdo, md->constant_encoding());
@@ -1331,9 +1364,33 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     __ jmp(*obj_is_null);
     __ bind(not_null);
 
-    Register recv = k_RInfo;
-    __ load_klass(recv, obj, tmp_load_klass);
-    type_profile_helper(mdo, md, data, recv);
+    ProfileStub *stub
+      = profile_capture_ratio > 1 ? new ProfileStub() : nullptr;
+
+    auto lambda = [stub, md, mdo, data, k_RInfo, obj, tmp_load_klass]
+        (LIR_Assembler* ce, LIR_Op* base_op) {
+      auto masm = [=]() { return ce->masm(); };
+      if (stub != nullptr)  __ bind(*stub->entry());
+
+      Register recv = k_RInfo;
+      __ load_klass(recv, obj, tmp_load_klass);
+      ce->type_profile_helper(mdo, md, data, recv, rscratch1);
+
+      if (stub != nullptr)  __ jmp(*stub->continuation());
+    };
+
+    if (stub != nullptr) {
+      __ cmpl(r_profile_rng, threshold);
+      __ jcc(Assembler::below, *stub->entry());
+      __ bind(*stub->continuation());
+      __ step_random(r_profile_rng, rscratch1);
+
+      stub->set_action(lambda, op);
+      stub->set_name("Typecheck stub");
+      append_code_stub(stub);
+    } else {
+      lambda(this, op);
+    }
   } else {
     __ jcc(Assembler::equal, *obj_is_null);
   }
@@ -1418,6 +1475,8 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     ciMethodData* md = nullptr;
     ciProfileData* data = nullptr;
 
+    __ block_comment("void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {");
+
     if (op->should_profile()) {
       ciMethod* method = op->profiled_method();
       assert(method != nullptr, "Should have method");
@@ -1447,8 +1506,9 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
 
       Register recv = k_RInfo;
       __ load_klass(recv, value, tmp_load_klass);
-      type_profile_helper(mdo, md, data, recv);
+      type_profile_helper(mdo, md, data, recv, Rtmp1);
     } else {
+      __ testptr(value, value);
       __ jcc(Assembler::equal, done);
     }
 
@@ -2134,6 +2194,8 @@ void LIR_Assembler::comp_fl2i(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Op
 
 
 void LIR_Assembler::align_call(LIR_Code code) {
+  // We do this here in order not to affect call site alignment.
+  __ save_profile_rng();
   // make sure that the displacement word of the call ends up word aligned
   int offset = __ offset();
   switch (code) {
@@ -2157,6 +2219,8 @@ void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
   __ call(AddressLiteral(op->addr(), rtype));
   add_call_info(code_offset(), op->info());
   __ post_call_nop();
+
+  __ restore_profile_rng();
 }
 
 
@@ -2166,6 +2230,7 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   assert((__ offset() - NativeCall::instruction_size + NativeCall::displacement_offset) % BytesPerWord == 0,
          "must be aligned");
   __ post_call_nop();
+  __ restore_profile_rng();
 }
 
 
@@ -2744,11 +2809,149 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
   __ load_klass(result, obj, rscratch1);
 }
 
+void LIR_Assembler::increment_profile_ctr(LIR_Opr step_opr, LIR_Opr dest_opr,
+                                          LIR_Opr freq_opr,
+                                          LIR_Opr md_reg, LIR_Opr md_opr, LIR_Opr md_offset_opr,
+                                          CodeStub* overflow_stub) {
+#ifndef PRODUCT
+  if (CommentedAssembly) {
+    __ block_comment("increment_profile_ctr" " {");
+  }
+#endif
+
+  int profile_capture_ratio = ProfileCaptureRatio;
+  int ratio_shift = exact_log2(profile_capture_ratio);
+  auto threshold = (UCONST64(1) << 32) >> ratio_shift;
+
+  assert(threshold > 0, "must be");
+
+  ProfileStub *counter_stub
+    = profile_capture_ratio > 1 ? new ProfileStub() : nullptr;
+
+  Register dest = dest_opr->as_register();
+
+  auto lambda = [counter_stub, overflow_stub, freq_opr, ratio_shift, step_opr,
+                 md_reg, md_opr, md_offset_opr, dest_opr, dest] (LIR_Assembler* ce, LIR_Op* op) {
+
+    auto masm = [=]() { return ce->masm(); };
+    Address counter_address;
+
+    if (counter_stub != nullptr)  __ bind(*counter_stub->entry());
+
+    if (md_opr->is_valid()) {
+      if (md_opr->type() == T_METADATA) {
+        __ mov_metadata(md_reg->as_register(),
+                        md_opr->as_constant_ptr()->as_metadata());
+      } else {
+        __ lea(md_reg->as_pointer_register(),
+               ExternalAddress(md_opr->as_constant_ptr()->as_pointer()));
+      }
+      RegisterOrConstant offset =
+        md_offset_opr->is_constant()
+        ? RegisterOrConstant(md_offset_opr->as_constant_ptr()->as_jint())
+        : as_reg(md_offset_opr);
+      counter_address = Address(md_reg->as_pointer_register(), offset);
+    }
+
+    if (step_opr->is_register()) {
+      Register inc = step_opr->as_register();
+      __ lea(dest, counter_address);
+      if (ProfileCaptureRatio > 1) {
+        __ shll(inc, ratio_shift);
+      }
+      __ lea(dest, Address(dest, inc, Address::times_1));
+      __ movl(counter_address, dest);
+      if (ProfileCaptureRatio > 1) {
+        __ shrl(inc, ratio_shift);
+      }
+    } else {
+      jint inc = step_opr->as_constant_ptr()->as_jint_bits();
+      switch (dest_opr->type()) {
+        case T_INT: {
+          inc *= ProfileCaptureRatio;
+          __ movl(dest, counter_address);
+          // Use lea instead of add to avoid destroying condition codes on x86
+          __ lea(dest, Address(dest, inc, Address::times_1));
+          __ movl(counter_address, dest);
+          break;
+        }
+        case T_LONG: {
+          inc *= ProfileCaptureRatio;
+          __ movq(dest, counter_address);
+          // Use lea instead of add to avoid destroying condition codes on x86
+          __ lea(dest, Address(dest, inc, Address::times_1));
+          __ movq(counter_address, dest);
+          break;
+        }
+        default:
+          ShouldNotReachHere();
+      }
+
+      if (step_opr->is_valid() && overflow_stub) {
+        if (!freq_opr->is_valid()) {
+          if (!step_opr->is_constant()) {
+            __ cmpl(step_opr->as_register(), 0);
+            __ jcc(Assembler::equal, *overflow_stub->entry());
+          } else {
+            __ jmp(*overflow_stub->entry());
+            goto exit;
+          }
+        } else {
+          if (!step_opr->is_constant()) {
+            guarantee(dest != step_opr->as_register(), "must be");
+            // If step_opr is 0, make sure the stub check below always fails
+            __ cmpl(step_opr->as_register(), 0);
+            __ movl(step_opr->as_register(), InvocationCounter::count_increment * ProfileCaptureRatio);
+            __ cmovl(Assembler::notEqual, dest, step_opr->as_register());
+          }
+          __ andl(dest, freq_opr->as_jint());
+          __ jcc(Assembler::equal, *overflow_stub->entry());
+        }
+      }
+    }
+
+    if (counter_stub != nullptr) {
+      __ jmp(*counter_stub->continuation());
+    }
+
+  exit: { }
+  };
+
+  if (counter_stub != nullptr) {
+    __ cmpl(r_profile_rng, threshold);
+    __ jcc(Assembler::below, *counter_stub->entry());
+    __ bind(*counter_stub->continuation());
+    __ step_random(r_profile_rng, dest);
+
+    counter_stub->set_action(lambda, nullptr);
+    counter_stub->set_name("IncrementProfileCtr");
+    append_code_stub(counter_stub);
+  } else {
+    lambda(this, nullptr);
+  }
+
+  if (overflow_stub != nullptr) {
+    __ bind(*overflow_stub->continuation());
+  }
+
+#ifndef PRODUCT
+  if (CommentedAssembly) {
+    __ block_comment("} increment_profile_ctr");
+  }
+#endif
+}
+
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   ciMethod* method = op->profiled_method();
   int bci          = op->profiled_bci();
   ciMethod* callee = op->profiled_callee();
   Register tmp_load_klass = rscratch1;
+
+#ifndef PRODUCT
+  if (CommentedAssembly) {
+    __ block_comment("profile_call {");
+  }
+#endif
 
   // Update counter for all call types
   ciMethodData* md = method->method_data_or_null();
@@ -2786,11 +2989,17 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
     } else {
       __ load_klass(recv, recv, tmp_load_klass);
     }
-    type_profile_helper(mdo, md, data, recv);
+    type_profile_helper(mdo, md, data, recv, op->tmp1()->as_register_lo());
   } else {
     // Static call
     __ addptr(counter_addr, DataLayout::counter_increment);
   }
+
+#ifndef PRODUCT
+  if (CommentedAssembly) {
+    __ block_comment("} profile_call");
+  }
+#endif
 }
 
 void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
@@ -2812,6 +3021,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   assert(do_null || do_update, "why are we here?");
   assert(!TypeEntries::was_null_seen(current_klass) || do_update, "why are we here?");
 
+  __ block_comment("emit_profile_type {");
   __ verify_oop(obj);
 
 #ifdef ASSERT
@@ -2960,6 +3170,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
       }
     }
   }
+  __ block_comment("} emit_profile_type");
   __ bind(next);
 }
 
