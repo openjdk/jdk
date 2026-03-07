@@ -1433,7 +1433,7 @@ address StubGenerator::generate_electronicCodeBook_AESCrypt_Parallel(bool is_enc
   const Register key     = c_rarg2;  // key array address
   const Register len_reg = c_rarg3;  // src len (must be multiple of blocksize 16)
   const Register pos     = rax;
-  const Register keylen  = rbx;
+  const Register keylen  = r11;
 
   const XMMRegister xmm_result0       = xmm0;
   const XMMRegister xmm_result1       = xmm1;
@@ -1470,7 +1470,6 @@ __ opc(xmm_result0, reg);
 
   __ enter(); // required for proper stackwalking of RuntimeStub frame
   __ push(len_reg); // save original length for return value
-  __ push(rbx);
 
   __ movl(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
 
@@ -1573,7 +1572,11 @@ __ opc(xmm_result0, reg);
   } //for key_128/192/256
 
   __ BIND(L_exit);
-  __ pop(rbx);
+  // Clear all XMM registers holding sensitive key material before returning
+  __ pxor(xmm_key_tmp, xmm_key_tmp);
+  for (int rnum = XMM_REG_NUM_KEY_FIRST; rnum <= XMM_REG_NUM_KEY_LAST; rnum++) {
+    __ pxor(as_XMMRegister(rnum), as_XMMRegister(rnum));
+  }
   __ pop(rax);
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
