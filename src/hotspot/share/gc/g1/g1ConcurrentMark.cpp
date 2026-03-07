@@ -581,6 +581,11 @@ PartialArrayStateManager* G1ConcurrentMark::partial_array_state_manager() const 
   return _partial_array_state_manager;
 }
 
+G1ConcurrentMarkThread* G1ConcurrentMark::cm_thread() const {
+  assert(is_fully_initialized(), "must be");
+  return _cm_thread;
+}
+
 void G1ConcurrentMark::reset() {
   _has_aborted.store_relaxed(false);
 
@@ -715,7 +720,6 @@ public:
 private:
   // Heap region closure used for clearing the _mark_bitmap.
   class G1ClearBitmapHRClosure : public G1HeapRegionClosure {
-  private:
     G1ConcurrentMark* _cm;
     G1CMBitMap* _bitmap;
     bool _suspendible; // If suspendible, do yield checks.
@@ -959,7 +963,7 @@ void G1ConcurrentMark::pre_concurrent_start(GCCause::Cause cause) {
   _gc_tracer_cm->set_gc_cause(cause);
 }
 
-void G1ConcurrentMark::post_concurrent_mark_start() {
+void G1ConcurrentMark::start_full_concurrent_cycle() {
   // Start Concurrent Marking weak-reference discovery.
   ReferenceProcessor* rp = _g1h->ref_processor_cm();
   rp->start_discovery(false /* always_clear */);
@@ -976,10 +980,26 @@ void G1ConcurrentMark::post_concurrent_mark_start() {
   // when marking is on. So, it's also called at the end of the
   // concurrent start pause to update the heap end, if the heap expands
   // during it. No need to call it here.
+
+  // Signal the thread to start work.
+  cm_thread()->start_full_mark();
 }
 
-void G1ConcurrentMark::post_concurrent_undo_start() {
+void G1ConcurrentMark::start_undo_concurrent_cycle() {
   root_regions()->cancel_scan();
+
+  // Signal the thread to start work.
+  cm_thread()->start_undo_mark();
+}
+
+void G1ConcurrentMark::notify_concurrent_cycle_completed() {
+  cm_thread()->set_idle();
+}
+
+void G1ConcurrentMark::stop() {
+  if (is_fully_initialized()) {
+    cm_thread()->stop();
+  }
 }
 
 /*
@@ -1943,7 +1963,7 @@ bool G1ConcurrentMark::concurrent_cycle_abort() {
   // has been signalled is already rare), and this work should be negligible compared
   // to actual full gc work.
 
-  if (!is_fully_initialized() || (!cm_thread()->in_progress() && !_g1h->concurrent_mark_is_terminating())) {
+  if (!is_fully_initialized() || (!cm_thread()->in_progress() && !cm_thread()->should_terminate())) {
     return false;
   }
 

@@ -352,6 +352,7 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   friend class G1CMRemarkTask;
   friend class G1CMRootRegionScanTask;
   friend class G1CMTask;
+  friend class G1ClearBitMapTask;
   friend class G1ConcurrentMarkThread;
 
   G1ConcurrentMarkThread* _cm_thread;     // The thread doing the work
@@ -524,6 +525,9 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   Atomic<HeapWord*>* _top_at_rebuild_starts;
   // True when Remark pause selected regions for rebuilding.
   bool _needs_remembered_set_rebuild;
+
+  G1ConcurrentMarkThread* cm_thread() const;
+
 public:
   // To be called when an object is marked the first time, e.g. after a successful
   // mark_in_bitmap call. Updates various statistics data.
@@ -602,8 +606,6 @@ public:
                    G1RegionToSpaceMapper* bitmap_storage);
   ~G1ConcurrentMark();
 
-  G1ConcurrentMarkThread* cm_thread() { return _cm_thread; }
-
   G1CMBitMap* mark_bitmap() const { return (G1CMBitMap*)&_mark_bitmap; }
 
   // Calculates the number of concurrent GC threads to be used in the marking phase.
@@ -632,8 +634,15 @@ public:
   // These two methods do the work that needs to be done at the start and end of the
   // concurrent start pause.
   void pre_concurrent_start(GCCause::Cause cause);
-  void post_concurrent_mark_start();
-  void post_concurrent_undo_start();
+
+  // Start the particular type of concurrent cycle. After this call threads may be running.
+  void start_full_concurrent_cycle();
+  void start_undo_concurrent_cycle();
+
+  void notify_concurrent_cycle_completed();
+
+  // Stop active components/the concurrent mark thread.
+  void stop();
 
   // Scan all the root regions and mark everything reachable from
   // them.
