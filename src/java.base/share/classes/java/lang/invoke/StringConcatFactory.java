@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -225,6 +225,7 @@ public final class StringConcatFactory {
      * @jls  5.1.11 String Conversion
      * @jls 15.18.1 String Concatenation Operator +
      */
+    @CallSiteBootstrap
     public static CallSite makeConcat(MethodHandles.Lookup lookup,
                                       String name,
                                       MethodType concatType) throws StringConcatException {
@@ -347,6 +348,7 @@ public final class StringConcatFactory {
      * @jls  5.1.11 String Conversion
      * @jls 15.18.1 String Concatenation Operator +
      */
+    @CallSiteBootstrap
     public static CallSite makeConcatWithConstants(MethodHandles.Lookup lookup,
                                                    String name,
                                                    MethodType concatType,

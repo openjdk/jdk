@@ -33,6 +33,7 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.CallSite;
+import java.lang.invoke.CallSiteBootstrap;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -184,6 +185,7 @@ public final class SwitchBootstraps {
      * @jvms 4.4.6 The CONSTANT_NameAndType_info Structure
      * @jvms 4.4.10 The CONSTANT_Dynamic_info and CONSTANT_InvokeDynamic_info Structures
      */
+    @CallSiteBootstrap
     public static CallSite typeSwitch(MethodHandles.Lookup lookup,
                                       String invocationName,
                                       MethodType invocationType,
@@ -292,6 +294,7 @@ public final class SwitchBootstraps {
      * @jvms 4.4.6 The CONSTANT_NameAndType_info Structure
      * @jvms 4.4.10 The CONSTANT_Dynamic_info and CONSTANT_InvokeDynamic_info Structures
      */
+    @CallSiteBootstrap
     public static CallSite enumSwitch(MethodHandles.Lookup lookup,
                                       String invocationName,
                                       MethodType invocationType,

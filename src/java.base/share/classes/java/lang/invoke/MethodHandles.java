@@ -329,6 +329,7 @@ public final class MethodHandles {
      * @since 16
      * @jvms 5.5 Initialization
      */
+    @ConstantBootstrap
      public static <T> T classData(Lookup caller, String name, Class<T> type) throws IllegalAccessException {
          Objects.requireNonNull(caller);
          Objects.requireNonNull(type);
@@ -423,6 +424,7 @@ public final class MethodHandles {
      * @see #classData(Lookup, String, Class)
      * @see Lookup#defineHiddenClassWithClassData(byte[], Object, boolean, Lookup.ClassOption...)
      */
+    @ConstantBootstrap
     public static <T> T classDataAt(Lookup caller, String name, Class<T> type, int index)
             throws IllegalAccessException
     {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,6 +84,7 @@ public final class ConstantBootstraps {
      * @return a {@code null} value
      * @throws IllegalArgumentException if {@code type} is not a reference type
      */
+    @ConstantBootstrap
     public static Object nullConstant(MethodHandles.Lookup lookup, String name, Class<?> type) {
         if (requireNonNull(type).isPrimitive()) {
             throw new IllegalArgumentException(String.format("not reference: %s", type));
@@ -103,6 +104,7 @@ public final class ConstantBootstraps {
      * @throws IllegalArgumentException if the name is not a descriptor for a
      * primitive type or the type is not {@code Class.class}
      */
+    @ConstantBootstrap
     public static Class<?> primitiveClass(MethodHandles.Lookup lookup, String name, Class<?> type) {
         requireNonNull(name);
         requireNonNull(type);
@@ -136,6 +138,7 @@ public final class ConstantBootstraps {
      * class object does not represent an enum type
      * @see Enum#valueOf(Class, String)
      */
+    @ConstantBootstrap
     public static <E extends Enum<E>> E enumConstant(MethodHandles.Lookup lookup, String name, Class<E> type) {
         requireNonNull(lookup);
         requireNonNull(name);
@@ -160,6 +163,7 @@ public final class ConstantBootstraps {
      * @throws IncompatibleClassChangeError if the specified field is not
      * {@code final}
      */
+    @ConstantBootstrap
     public static Object getStaticFinal(MethodHandles.Lookup lookup, String name, Class<?> type,
                                         Class<?> declaringClass) {
         requireNonNull(lookup);
@@ -213,6 +217,7 @@ public final class ConstantBootstraps {
      * {@code final}
      * @see #getStaticFinal(MethodHandles.Lookup, String, Class, Class)
      */
+    @ConstantBootstrap
     public static Object getStaticFinal(MethodHandles.Lookup lookup, String name, Class<?> type) {
         requireNonNull(type);
 
@@ -247,6 +252,7 @@ public final class ConstantBootstraps {
      * invoking the handle cannot be converted by reference casting
      * @throws Throwable anything thrown by the method handle invocation
      */
+    @ConstantBootstrap
     public static Object invoke(MethodHandles.Lookup lookup, String name, Class<?> type,
                                 MethodHandle handle, Object... args) throws Throwable {
         requireNonNull(type);
@@ -278,6 +284,7 @@ public final class ConstantBootstraps {
      * @throws NoSuchFieldError if the specified field does not exist
      * @throws IllegalArgumentException if the type is not {@code VarHandle}
      */
+    @ConstantBootstrap
     public static VarHandle fieldVarHandle(MethodHandles.Lookup lookup, String name, Class<VarHandle> type,
                                            Class<?> declaringClass, Class<?> fieldType) {
         requireNonNull(lookup);
@@ -312,6 +319,7 @@ public final class ConstantBootstraps {
      * @throws NoSuchFieldError if the specified field does not exist
      * @throws IllegalArgumentException if the type is not {@code VarHandle}
      */
+    @ConstantBootstrap
     public static VarHandle staticFieldVarHandle(MethodHandles.Lookup lookup, String name, Class<VarHandle> type,
                                                  Class<?> declaringClass, Class<?> fieldType) {
         requireNonNull(lookup);
@@ -344,6 +352,7 @@ public final class ConstantBootstraps {
      * accessible to the class performing the operation
      * @throws IllegalArgumentException if the type is not {@code VarHandle}
      */
+    @ConstantBootstrap
     public static VarHandle arrayVarHandle(MethodHandles.Lookup lookup, String name, Class<VarHandle> type,
                                            Class<?> arrayClass) {
         requireNonNull(lookup);
@@ -416,6 +425,7 @@ public final class ConstantBootstraps {
      *         instance of a reference type that is not a wrapper class
      * @since 15
      */
+    @ConstantBootstrap
     public static Object explicitCast(MethodHandles.Lookup lookup, String name, Class<?> dstType, Object value)
             throws ClassCastException {
         if (dstType == void.class)

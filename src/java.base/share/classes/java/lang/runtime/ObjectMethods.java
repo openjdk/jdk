@@ -30,6 +30,8 @@ import java.lang.classfile.ClassHierarchyResolver;
 import java.lang.classfile.Opcode;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
+import java.lang.invoke.CallSiteBootstrap;
+import java.lang.invoke.ConstantBootstrap;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -507,6 +509,8 @@ public final class ObjectMethods {
      *                              in the {@code getters} array is {@code null}
      * @throws Throwable if any exception is thrown during call site construction
      */
+    @CallSiteBootstrap
+    @ConstantBootstrap
     public static Object bootstrap(MethodHandles.Lookup lookup, String methodName, TypeDescriptor type,
                                    Class<?> recordClass,
                                    String names,

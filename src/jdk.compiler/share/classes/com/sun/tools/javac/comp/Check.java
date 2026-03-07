@@ -2076,13 +2076,7 @@ public class Check {
         boolean mustOverride = explicitOverride ||
                 (env.info.isAnonymousDiamond && !m.isConstructor() && !m.isPrivate());
         if (mustOverride && !isOverrider(m)) {
-            DiagnosticPosition pos = tree.pos();
-            for (JCAnnotation a : tree.getModifiers().annotations) {
-                if (a.annotationType.type.tsym == syms.overrideType.tsym) {
-                    pos = a.pos();
-                    break;
-                }
-            }
+            DiagnosticPosition pos = annotationPos(tree, syms.overrideType);
             log.error(pos,
                       explicitOverride ? (m.isStatic() ? Errors.StaticMethodsCannotBeAnnotatedWithOverride(m, m.enclClass()) : Errors.MethodDoesNotOverrideSuperclass(m, m.enclClass())) :
                                 Errors.AnonymousDiamondMethodDoesNotOverrideSuperclass(Fragments.DiamondAnonymousMethodsImplicitlyOverride));
@@ -3684,6 +3678,107 @@ public class Check {
         return isValid;
     }
 
+    void checkBootstrapMethodAnnotations(JCMethodDecl tree, MethodSymbol s) {
+        if (!Feature.BSM_VALIDATION_ANNOTATIONS.allowedInSource(source)) {
+            return;
+        }
+
+        if (!syms.callSiteBootstrapType.isErroneous() && s.attribute(syms.callSiteBootstrapType.tsym) != null) {
+            if (!checkBootstrapMethod(s, false)) {
+                DiagnosticPosition annoPos = annotationPos(tree, syms.callSiteBootstrapType);
+                log.error(annoPos, Errors.NotBootstrapMethod(s.kind.kindName(), s, Fragments.DynamicCallSite));
+            }
+        }
+
+        if (!syms.constantBootstrapType.isErroneous() && s.attribute(syms.constantBootstrapType.tsym) != null) {
+            if (!checkBootstrapMethod(s, true)) {
+                DiagnosticPosition annoPos = annotationPos(tree, syms.constantBootstrapType);
+                log.error(annoPos, Errors.NotBootstrapMethod(s.kind.kindName(), s, Fragments.DynamicConstant));
+            }
+        }
+    }
+
+    boolean checkBootstrapMethod(MethodSymbol s, boolean condy) {
+        var formalParamTypes = s.erasure(types).getParameterTypes();
+        var allParamTypes = !s.isStatic() && !s.isConstructor()
+                ? formalParamTypes.prepend(s.owner.erasure(types))
+                : formalParamTypes;
+        boolean varargs = s.isVarArgs();
+
+        // indy return type - note condy has no restriction, even void is ok
+        if (!condy) {
+            var returnType = s.isConstructor() ? s.owner.erasure(types) : s.erasure(types).getReturnType();
+            if (!types.isCastable(returnType, syms.callSiteType)) {
+                return false;
+            }
+        }
+
+        // condy 1st arg - Lookup, no varargs allowed
+        if (condy) {
+            if (allParamTypes.isEmpty() || !types.isSameType(syms.methodHandleLookupType, allParamTypes.head)) {
+                return false;
+            }
+        }
+
+        // Varargs-ok argument expansion
+        var anticipatingTypes = bsmAnticipatingTypes(allParamTypes, varargs);
+        if (!varargs && allParamTypes.length() < 3) {
+            return false;
+        }
+
+        // Arg0 MethodHandles.Lookup
+        if (!types.isAssignable(syms.methodHandleLookupType, anticipatingTypes.getFirst())) {
+            return false;
+        }
+
+        // Arg1 String
+        if (!types.isAssignable(syms.stringType, anticipatingTypes.get(1))) {
+            return false;
+        }
+
+        // Arg2 MethodType/Class
+        var thirdType = condy ? syms.classType : syms.methodTypeType;
+        if (!types.isAssignable(thirdType, anticipatingTypes.get(2))) {
+            return false;
+        }
+
+        return true;
+    }
+
+    // The first 3 anticipated types of the BSM, with varargs expansion considered.
+    private ArrayList<Type> bsmAnticipatingTypes(List<Type> paramTypes, boolean varargs) {
+        ArrayList<Type> pendingTypes = new ArrayList<>(paramTypes);
+        if (pendingTypes.size() > 3) {
+            pendingTypes.subList(3, pendingTypes.size()).clear();
+            varargs = false;
+        }
+
+        if (varargs) {
+            var varargEntryType = types.elemtype(pendingTypes.removeLast());
+            while (pendingTypes.size() < 3) {
+                pendingTypes.addLast(varargEntryType);
+            }
+        }
+        return pendingTypes;
+    }
+
+    private DiagnosticPosition annotationPos(JCTree tree, Type annotationInterfaceType) {
+        DiagnosticPosition annoPos = tree.pos();
+        JCModifiers mods = switch (tree) {
+            case JCClassDecl cls -> cls.mods;
+            case JCMethodDecl mth -> mth.mods;
+            case JCVariableDecl var -> var.mods;
+            default -> throw Assert.error(tree.toString());
+        };
+        for (JCAnnotation a : mods.annotations) {
+            if (a.annotationType.type.tsym == annotationInterfaceType.tsym) {
+                annoPos = a.pos();
+                break;
+            }
+        }
+        return annoPos;
+    }
+
     void checkDeprecatedAnnotation(DiagnosticPosition pos, Symbol s) {
         if (lint.isEnabled(LintCategory.DEP_ANN) && s.isDeprecatableViaAnnotation() &&
             (s.flags() & DEPRECATED) != 0 &&
@@ -4345,13 +4440,7 @@ public class Check {
             try {
                 types.findDescriptorSymbol((TypeSymbol)cs);
             } catch (Types.FunctionDescriptorLookupError ex) {
-                DiagnosticPosition pos = tree.pos();
-                for (JCAnnotation a : tree.getModifiers().annotations) {
-                    if (a.annotationType.type.tsym == syms.functionalInterfaceType.tsym) {
-                        pos = a.pos();
-                        break;
-                    }
-                }
+                DiagnosticPosition pos = annotationPos(tree, syms.functionalInterfaceType);
                 log.error(pos, Errors.BadFunctionalIntfAnno1(ex.getDiagnostic()));
             }
         }
