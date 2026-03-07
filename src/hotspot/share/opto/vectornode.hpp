@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -321,7 +322,7 @@ class ReductionNode : public Node {
   virtual uint size_of() const { return sizeof(*this); }
 
   // Floating-point addition and multiplication are non-associative, so
-  // AddReductionVF/D and MulReductionVF/D require strict ordering
+  // AddReductionVHF/F/D and MulReductionVHF/F/D require strict ordering
   // in auto-vectorization. Vector API can generate AddReductionVF/D
   // and MulReductionVF/VD without strict ordering, which can benefit
   // some platforms.
@@ -358,6 +359,35 @@ public:
   virtual int Opcode() const;
 };
 
+// Vector add half float as a reduction
+class AddReductionVHFNode : public ReductionNode {
+private:
+  // True if add reduction operation for half floats requires strict ordering.
+  // As an example - The value is true when add reduction for half floats is auto-vectorized
+  // as auto-vectorization mandates strict ordering but the value is false when this node
+  // is generated through VectorAPI as VectorAPI does not impose any such rules on ordering.
+  const bool _requires_strict_order;
+
+public:
+  // _requires_strict_order is set to true by default as mandated by auto-vectorization
+  AddReductionVHFNode(Node* ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
+    ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
+
+  int Opcode() const override;
+  bool requires_strict_order() const override { return _requires_strict_order; }
+
+  uint hash() const override { return Node::hash() + _requires_strict_order; }
+
+  bool cmp(const Node& n) const override {
+    return Node::cmp(n) && _requires_strict_order == ((ReductionNode&)n).requires_strict_order();
+  }
+
+  uint size_of() const override { return sizeof(*this); }
+
+  const Type* bottom_type() const override { return Type::HALF_FLOAT; }
+  uint ideal_reg() const override { return Op_RegF; }
+};
+
 // Vector add float as a reduction
 class AddReductionVFNode : public ReductionNode {
 private:
@@ -367,7 +397,7 @@ private:
   // is generated through VectorAPI as VectorAPI does not impose any such rules on ordering.
   const bool _requires_strict_order;
 public:
-  //_requires_strict_order is set to true by default as mandated by auto-vectorization
+  // _requires_strict_order is set to true by default as mandated by auto-vectorization
   AddReductionVFNode(Node* ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
     ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
 
@@ -393,7 +423,7 @@ private:
   // is generated through VectorAPI as VectorAPI does not impose any such rules on ordering.
   const bool _requires_strict_order;
 public:
-  //_requires_strict_order is set to true by default as mandated by auto-vectorization
+  // _requires_strict_order is set to true by default as mandated by auto-vectorization
   AddReductionVDNode(Node* ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
     ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
 
@@ -577,6 +607,35 @@ public:
   virtual int Opcode() const;
 };
 
+// Vector multiply half float as a reduction
+class MulReductionVHFNode : public ReductionNode {
+private:
+  // True if mul reduction operation for half floats requires strict ordering.
+  // As an example - The value is true when add reduction for half floats is auto-vectorized
+  // as auto-vectorization mandates strict ordering but the value is false when this node
+  // is generated through VectorAPI as VectorAPI does not impose any such rules on ordering.
+  const bool _requires_strict_order;
+
+public:
+  // _requires_strict_order is set to true by default as mandated by auto-vectorization
+  MulReductionVHFNode(Node* ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
+    ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
+
+  int Opcode() const override;
+  bool requires_strict_order() const override { return _requires_strict_order; }
+
+  uint hash() const override { return Node::hash() + _requires_strict_order; }
+
+  bool cmp(const Node& n) const override {
+    return Node::cmp(n) && _requires_strict_order == ((ReductionNode&)n).requires_strict_order();
+  }
+
+  uint size_of() const override { return sizeof(*this); }
+
+  const Type* bottom_type() const override { return Type::HALF_FLOAT; }
+  uint ideal_reg() const override { return Op_RegF; }
+};
+
 // Vector multiply float as a reduction
 class MulReductionVFNode : public ReductionNode {
   // True if mul reduction operation for floats requires strict ordering.
@@ -585,7 +644,7 @@ class MulReductionVFNode : public ReductionNode {
   // is generated through VectorAPI as VectorAPI does not impose any such rules on ordering.
   const bool _requires_strict_order;
 public:
-  //_requires_strict_order is set to true by default as mandated by auto-vectorization
+  // _requires_strict_order is set to true by default as mandated by auto-vectorization
   MulReductionVFNode(Node* ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
     ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
 
@@ -610,7 +669,7 @@ class MulReductionVDNode : public ReductionNode {
   // is generated through VectorAPI as VectorAPI does not impose any such rules on ordering.
   const bool _requires_strict_order;
 public:
-  //_requires_strict_order is set to true by default as mandated by auto-vectorization
+  // _requires_strict_order is set to true by default as mandated by auto-vectorization
   MulReductionVDNode(Node* ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
     ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
 
