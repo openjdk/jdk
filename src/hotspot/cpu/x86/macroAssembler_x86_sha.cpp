@@ -242,7 +242,6 @@ void MacroAssembler::fast_sha256(XMMRegister msg, XMMRegister state0, XMMRegiste
   Label done_hash, loop0;
 
   address K256 = StubRoutines::x86::k256_addr();
-  address pshuffle_byte_flip_mask = StubRoutines::x86::pshuffle_byte_flip_mask_addr();
 
   movdqu(state0, Address(state, 0));
   movdqu(state1, Address(state, 16));
@@ -253,7 +252,7 @@ void MacroAssembler::fast_sha256(XMMRegister msg, XMMRegister state0, XMMRegiste
   palignr(state0, state1, 8);
   pblendw(state1, msgtmp4, 0xF0);
 
-  movdqu(shuf_mask, ExternalAddress(pshuffle_byte_flip_mask));
+  movdqu(shuf_mask, ExternalAddress(StubRoutines::x86::pshuffle_byte_flip_mask_addr()));
   lea(rax, ExternalAddress(K256));
 
   bind(loop0);
@@ -661,8 +660,6 @@ void MacroAssembler::sha256_AVX2(XMMRegister msg, XMMRegister state0, XMMRegiste
         compute_size1, compute_size_end1;
 
   address K256_W = StubRoutines::x86::k256_W_addr();
-  address pshuffle_byte_flip_mask = StubRoutines::x86::pshuffle_byte_flip_mask_addr();
-  address pshuffle_byte_flip_mask_addr = nullptr;
 
 const XMMRegister& SHUF_00BA        = xmm10;    // ymm10: shuffle xBxA -> 00BA
 const XMMRegister& SHUF_DC00        = xmm12;    // ymm12: shuffle xDxC -> DC00
@@ -791,10 +788,14 @@ enum {
   // load g - r10 after it is used as scratch
   movl(h, Address(CTX, 4*7));
 
-  pshuffle_byte_flip_mask_addr = pshuffle_byte_flip_mask;
-  vmovdqu(BYTE_FLIP_MASK, ExternalAddress(pshuffle_byte_flip_mask_addr +  0)); // [PSHUFFLE_BYTE_FLIP_MASK wrt rip]
-  vmovdqu(SHUF_00BA,      ExternalAddress(pshuffle_byte_flip_mask_addr + 32)); // [_SHUF_00BA wrt rip]
-  vmovdqu(SHUF_DC00,      ExternalAddress(pshuffle_byte_flip_mask_addr + 64)); // [_SHUF_DC00 wrt rip]
+  // the three successive pshuffle_byte_flip_mask stub entries should
+  // be offset by 32 bytes
+  assert(StubRoutines::x86::pshuffle_byte_flip_mask_addr() + 32 == StubRoutines::x86::pshuffle_byte_flip_mask_00ba_addr(), "sanity");
+  assert(StubRoutines::x86::pshuffle_byte_flip_mask_addr() + 64 == StubRoutines::x86::pshuffle_byte_flip_mask_dc00_addr(), "sanity");
+
+  vmovdqu(BYTE_FLIP_MASK, ExternalAddress(StubRoutines::x86::pshuffle_byte_flip_mask_addr())); // [PSHUFFLE_BYTE_FLIP_MASK wrt rip]
+  vmovdqu(SHUF_00BA,      ExternalAddress(StubRoutines::x86::pshuffle_byte_flip_mask_00ba_addr())); // [_SHUF_00BA wrt rip]
+  vmovdqu(SHUF_DC00,      ExternalAddress(StubRoutines::x86::pshuffle_byte_flip_mask_dc00_addr())); // [_SHUF_DC00 wrt rip]
 
   movl(g, Address(CTX, 4*6));
 
@@ -953,11 +954,9 @@ bind(only_one_block);
   // load g - r10 after use as scratch
   movl(h, Address(CTX, 4*7));   // 0x5be0cd19
 
-
-  pshuffle_byte_flip_mask_addr = pshuffle_byte_flip_mask;
-  vmovdqu(BYTE_FLIP_MASK, ExternalAddress(pshuffle_byte_flip_mask_addr +  0)); // [PSHUFFLE_BYTE_FLIP_MASK wrt rip]
-  vmovdqu(SHUF_00BA,      ExternalAddress(pshuffle_byte_flip_mask_addr + 32)); // [_SHUF_00BA wrt rip]
-  vmovdqu(SHUF_DC00,      ExternalAddress(pshuffle_byte_flip_mask_addr + 64)); // [_SHUF_DC00 wrt rip]
+  vmovdqu(BYTE_FLIP_MASK, ExternalAddress(StubRoutines::x86::pshuffle_byte_flip_mask_addr())); // [PSHUFFLE_BYTE_FLIP_MASK wrt rip]
+  vmovdqu(SHUF_00BA,      ExternalAddress(StubRoutines::x86::pshuffle_byte_flip_mask_00ba_addr())); // [_SHUF_00BA wrt rip]
+  vmovdqu(SHUF_DC00,      ExternalAddress(StubRoutines::x86::pshuffle_byte_flip_mask_dc00_addr())); // [_SHUF_DC00 wrt rip]
 
   movl(g, Address(CTX, 4*6));   // 0x1f83d9ab
 
@@ -1346,9 +1345,14 @@ void MacroAssembler::sha512_AVX2(XMMRegister msg, XMMRegister state0, XMMRegiste
     // load g - r10 after it is used as scratch
     movq(h, Address(CTX, 8 * 7));
 
-    pshuffle_byte_flip_mask_addr = pshuffle_byte_flip_mask_sha512;
-    vmovdqu(BYTE_FLIP_MASK, ExternalAddress(pshuffle_byte_flip_mask_addr +  0)); // PSHUFFLE_BYTE_FLIP_MASK wrt rip
-    vmovdqu(YMM_MASK_LO,    ExternalAddress(pshuffle_byte_flip_mask_addr + 32));
+    StubRoutines::x86::pshuffle_byte_flip_mask_addr_sha512();
+
+    // the two successive pshuffle_byte_flip_mask_sha512 stub entries should
+    // be offset by 32 bytes
+    assert(StubRoutines::x86::pshuffle_byte_flip_mask_addr_sha512() + 32 == StubRoutines::x86::pshuffle_byte_flip_mask_ymm_lo_addr_sha512(), "sanity");
+
+    vmovdqu(BYTE_FLIP_MASK, ExternalAddress(StubRoutines::x86::pshuffle_byte_flip_mask_addr_sha512())); // PSHUFFLE_BYTE_FLIP_MASK wrt rip
+    vmovdqu(YMM_MASK_LO,    ExternalAddress(StubRoutines::x86::pshuffle_byte_flip_mask_ymm_lo_addr_sha512())); // MASK_YMM_LO wrt rip
 
     movq(g, Address(CTX, 8 * 6));
 

@@ -71,7 +71,7 @@ public:
                   bool needs_return_buffer,
                   int captured_state_mask,
                   bool needs_transition)
-    : StubCodeGenerator(buffer, PrintMethodHandleStubs),
+      : StubCodeGenerator(buffer, PrintMethodHandleStubs),
       _signature(signature),
       _num_args(num_args),
       _ret_bt(ret_bt),
