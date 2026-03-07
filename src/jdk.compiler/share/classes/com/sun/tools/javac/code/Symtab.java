@@ -643,6 +643,8 @@ public class Symtab {
         synthesizeEmptyInterfaceIfMissing(lambdaMetafactory);
         synthesizeEmptyInterfaceIfMissing(serializedLambdaType);
         synthesizeEmptyInterfaceIfMissing(stringConcatFactory);
+        synthesizeEmptyInterfaceIfMissing(callSiteBootstrapType);
+        synthesizeEmptyInterfaceIfMissing(constantBootstrapType);
         synthesizeBoxTypeIfMissing(doubleType);
         synthesizeBoxTypeIfMissing(floatType);
         synthesizeBoxTypeIfMissing(voidType);
