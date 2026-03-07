@@ -138,7 +138,7 @@ final class LazyCollections {
         @SuppressWarnings("unchecked")
         @ForceInline
         private E contentsAcquire(long offset) {
-            return (E) UNSAFE.getReferenceAcquire(elements, offset);
+            return (E) UNSAFE.getReferenceMO(Unsafe.MO_ACQUIRE, elements, offset);
         }
 
     }
@@ -289,7 +289,7 @@ final class LazyCollections {
         @ForceInline
         final V orElseCompute(K key, int index) {
             final long offset = offsetFor(index);
-            final V v = (V) UNSAFE.getReferenceAcquire(values, offset);
+            final V v = (V) UNSAFE.getReferenceMO(Unsafe.MO_ACQUIRE, values, offset);
             if (v != null) {
                 return v;
             }
@@ -435,7 +435,7 @@ final class LazyCollections {
         private Object acquireMutex(long offset) {
             assert mutexes != null;
             // Check if there already is a mutex (Object or TOMB_STONE)
-            final Object mutex = UNSAFE.getReferenceVolatile(mutexes, offset);
+            final Object mutex = UNSAFE.getReferenceMO(Unsafe.MO_VOLATILE, mutexes, offset);
             if (mutex != null) {
                 return mutex;
             }
@@ -539,7 +539,7 @@ final class LazyCollections {
         // We know we hold the monitor here so plain semantic is enough
         // This is an extra safety net to emulate a CAS op.
         if (array[index] == null) {
-            UNSAFE.putReferenceRelease(array, Unsafe.ARRAY_OBJECT_BASE_OFFSET + Unsafe.ARRAY_OBJECT_INDEX_SCALE * (long) index, newValue);
+            UNSAFE.putReferenceMO(Unsafe.MO_RELEASE, array, Unsafe.ARRAY_OBJECT_BASE_OFFSET + Unsafe.ARRAY_OBJECT_INDEX_SCALE * (long) index, newValue);
         }
     }
 

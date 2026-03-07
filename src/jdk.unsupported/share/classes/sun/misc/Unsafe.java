@@ -41,6 +41,8 @@ import jdk.internal.misc.VM;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 
+import static jdk.internal.misc.Unsafe.*; //MO_VOLATILE, etc.
+
 /**
  * A collection of methods for performing low-level, unsafe operations.
  * Although the class and all methods are public, use of this class is
@@ -437,7 +439,7 @@ public final class Unsafe {
     @ForceInline
     public byte getByte(long address) {
         beforeMemoryAccess();
-        return theInternalUnsafe.getByte(address);
+        return theInternalUnsafe.getByte(null, address);
     }
 
     /**
@@ -453,7 +455,7 @@ public final class Unsafe {
     @ForceInline
     public void putByte(long address, byte x) {
         beforeMemoryAccess();
-        theInternalUnsafe.putByte(address, x);
+        theInternalUnsafe.putByte(null, address, x);
     }
 
     /**
@@ -465,7 +467,7 @@ public final class Unsafe {
     @ForceInline
     public short getShort(long address) {
         beforeMemoryAccess();
-        return theInternalUnsafe.getShort(address);
+        return theInternalUnsafe.getShort(null, address);
     }
 
     /**
@@ -477,7 +479,7 @@ public final class Unsafe {
     @ForceInline
     public void putShort(long address, short x) {
         beforeMemoryAccess();
-        theInternalUnsafe.putShort(address, x);
+        theInternalUnsafe.putShort(null, address, x);
     }
 
     /**
@@ -489,7 +491,7 @@ public final class Unsafe {
     @ForceInline
     public char getChar(long address) {
         beforeMemoryAccess();
-        return theInternalUnsafe.getChar(address);
+        return theInternalUnsafe.getChar(null, address);
     }
 
     /**
@@ -501,7 +503,7 @@ public final class Unsafe {
     @ForceInline
     public void putChar(long address, char x) {
         beforeMemoryAccess();
-        theInternalUnsafe.putChar(address, x);
+        theInternalUnsafe.putChar(null, address, x);
     }
 
     /**
@@ -513,7 +515,7 @@ public final class Unsafe {
     @ForceInline
     public int getInt(long address) {
         beforeMemoryAccess();
-        return theInternalUnsafe.getInt(address);
+        return theInternalUnsafe.getInt(null, address);
     }
 
     /**
@@ -525,7 +527,7 @@ public final class Unsafe {
     @ForceInline
     public void putInt(long address, int x) {
         beforeMemoryAccess();
-        theInternalUnsafe.putInt(address, x);
+        theInternalUnsafe.putInt(null, address, x);
     }
 
     /**
@@ -537,7 +539,7 @@ public final class Unsafe {
     @ForceInline
     public long getLong(long address) {
         beforeMemoryAccess();
-        return theInternalUnsafe.getLong(address);
+        return theInternalUnsafe.getLong(null, address);
     }
 
     /**
@@ -549,7 +551,7 @@ public final class Unsafe {
     @ForceInline
     public void putLong(long address, long x) {
         beforeMemoryAccess();
-        theInternalUnsafe.putLong(address, x);
+        theInternalUnsafe.putLong(null, address, x);
     }
 
     /**
@@ -561,7 +563,7 @@ public final class Unsafe {
     @ForceInline
     public float getFloat(long address) {
         beforeMemoryAccess();
-        return theInternalUnsafe.getFloat(address);
+        return theInternalUnsafe.getFloat(null, address);
     }
 
     /**
@@ -573,7 +575,7 @@ public final class Unsafe {
     @ForceInline
     public void putFloat(long address, float x) {
         beforeMemoryAccess();
-        theInternalUnsafe.putFloat(address, x);
+        theInternalUnsafe.putFloat(null, address, x);
     }
 
     /**
@@ -585,7 +587,7 @@ public final class Unsafe {
     @ForceInline
     public double getDouble(long address) {
         beforeMemoryAccess();
-        return theInternalUnsafe.getDouble(address);
+        return theInternalUnsafe.getDouble(null, address);
     }
 
     /**
@@ -597,7 +599,7 @@ public final class Unsafe {
     @ForceInline
     public void putDouble(long address, double x) {
         beforeMemoryAccess();
-        theInternalUnsafe.putDouble(address, x);
+        theInternalUnsafe.putDouble(null, address, x);
     }
 
 
@@ -621,7 +623,7 @@ public final class Unsafe {
     @ForceInline
     public long getAddress(long address) {
         beforeMemoryAccess();
-        return theInternalUnsafe.getAddress(address);
+        return theInternalUnsafe.getAddress(null, address);
     }
 
     /**
@@ -640,7 +642,7 @@ public final class Unsafe {
     @ForceInline
     public void putAddress(long address, long x) {
         beforeMemoryAccess();
-        theInternalUnsafe.putAddress(address, x);
+        theInternalUnsafe.putAddress(null, address, x);
     }
 
 
@@ -1261,7 +1263,7 @@ public final class Unsafe {
     @ForceInline
     public Object getObjectVolatile(Object o, long offset) {
         beforeMemoryAccess();
-        return theInternalUnsafe.getReferenceVolatile(o, offset);
+        return theInternalUnsafe.getReferenceMO(MO_VOLATILE, o, offset);
     }
 
     /**
@@ -1274,7 +1276,7 @@ public final class Unsafe {
     @ForceInline
     public void putObjectVolatile(Object o, long offset, Object x) {
         beforeMemoryAccess();
-        theInternalUnsafe.putReferenceVolatile(o, offset, x);
+        theInternalUnsafe.putReferenceMO(MO_VOLATILE, o, offset, x);
     }
 
     /** Volatile version of {@link #getInt(Object, long)}.
@@ -1285,7 +1287,7 @@ public final class Unsafe {
     @ForceInline
     public int getIntVolatile(Object o, long offset) {
         beforeMemoryAccess();
-        return theInternalUnsafe.getIntVolatile(o, offset);
+        return theInternalUnsafe.getIntMO(MO_VOLATILE, o, offset);
     }
 
     /** Volatile version of {@link #putInt(Object, long, int)}.
@@ -1296,7 +1298,7 @@ public final class Unsafe {
     @ForceInline
     public void putIntVolatile(Object o, long offset, int x) {
         beforeMemoryAccess();
-        theInternalUnsafe.putIntVolatile(o, offset, x);
+        theInternalUnsafe.putIntMO(MO_VOLATILE, o, offset, x);
     }
 
     /** Volatile version of {@link #getBoolean(Object, long)}.
@@ -1307,7 +1309,7 @@ public final class Unsafe {
     @ForceInline
     public boolean getBooleanVolatile(Object o, long offset) {
         beforeMemoryAccess();
-        return theInternalUnsafe.getBooleanVolatile(o, offset);
+        return theInternalUnsafe.getBooleanMO(MO_VOLATILE, o, offset);
     }
 
     /** Volatile version of {@link #putBoolean(Object, long, boolean)}.
@@ -1318,7 +1320,7 @@ public final class Unsafe {
     @ForceInline
     public void putBooleanVolatile(Object o, long offset, boolean x) {
         beforeMemoryAccess();
-        theInternalUnsafe.putBooleanVolatile(o, offset, x);
+        theInternalUnsafe.putBooleanMO(MO_VOLATILE, o, offset, x);
     }
 
     /** Volatile version of {@link #getByte(Object, long)}.
@@ -1330,7 +1332,7 @@ public final class Unsafe {
     @ForceInline
     public byte getByteVolatile(Object o, long offset) {
         beforeMemoryAccess();
-        return theInternalUnsafe.getByteVolatile(o, offset);
+        return theInternalUnsafe.getByteMO(MO_VOLATILE, o, offset);
     }
 
     /** Volatile version of {@link #putByte(Object, long, byte)}.
@@ -1341,7 +1343,7 @@ public final class Unsafe {
     @ForceInline
     public void putByteVolatile(Object o, long offset, byte x) {
         beforeMemoryAccess();
-        theInternalUnsafe.putByteVolatile(o, offset, x);
+        theInternalUnsafe.putByteMO(MO_VOLATILE, o, offset, x);
     }
 
     /** Volatile version of {@link #getShort(Object, long)}.
@@ -1352,7 +1354,7 @@ public final class Unsafe {
     @ForceInline
     public short getShortVolatile(Object o, long offset) {
         beforeMemoryAccess();
-        return theInternalUnsafe.getShortVolatile(o, offset);
+        return theInternalUnsafe.getShortMO(MO_VOLATILE, o, offset);
     }
 
     /** Volatile version of {@link #putShort(Object, long, short)}.
@@ -1363,7 +1365,7 @@ public final class Unsafe {
     @ForceInline
     public void putShortVolatile(Object o, long offset, short x) {
         beforeMemoryAccess();
-        theInternalUnsafe.putShortVolatile(o, offset, x);
+        theInternalUnsafe.putShortMO(MO_VOLATILE, o, offset, x);
     }
 
     /** Volatile version of {@link #getChar(Object, long)}.
@@ -1374,7 +1376,7 @@ public final class Unsafe {
     @ForceInline
     public char getCharVolatile(Object o, long offset) {
         beforeMemoryAccess();
-        return theInternalUnsafe.getCharVolatile(o, offset);
+        return theInternalUnsafe.getCharMO(MO_VOLATILE, o, offset);
     }
 
     /** Volatile version of {@link #putChar(Object, long, char)}.
@@ -1385,7 +1387,7 @@ public final class Unsafe {
     @ForceInline
     public void putCharVolatile(Object o, long offset, char x) {
         beforeMemoryAccess();
-        theInternalUnsafe.putCharVolatile(o, offset, x);
+        theInternalUnsafe.putCharMO(MO_VOLATILE, o, offset, x);
     }
 
     /** Volatile version of {@link #getLong(Object, long)}.
@@ -1396,7 +1398,7 @@ public final class Unsafe {
     @ForceInline
     public long getLongVolatile(Object o, long offset) {
         beforeMemoryAccess();
-        return theInternalUnsafe.getLongVolatile(o, offset);
+        return theInternalUnsafe.getLongMO(MO_VOLATILE, o, offset);
     }
 
     /** Volatile version of {@link #putLong(Object, long, long)}.
@@ -1407,7 +1409,7 @@ public final class Unsafe {
     @ForceInline
     public void putLongVolatile(Object o, long offset, long x) {
         beforeMemoryAccess();
-        theInternalUnsafe.putLongVolatile(o, offset, x);
+        theInternalUnsafe.putLongMO(MO_VOLATILE, o, offset, x);
     }
 
     /** Volatile version of {@link #getFloat(Object, long)}.
@@ -1418,7 +1420,7 @@ public final class Unsafe {
     @ForceInline
     public float getFloatVolatile(Object o, long offset) {
         beforeMemoryAccess();
-        return theInternalUnsafe.getFloatVolatile(o, offset);
+        return theInternalUnsafe.getFloatMO(MO_VOLATILE, o, offset);
     }
 
     /** Volatile version of {@link #putFloat(Object, long, float)}.
@@ -1429,7 +1431,7 @@ public final class Unsafe {
     @ForceInline
     public void putFloatVolatile(Object o, long offset, float x) {
         beforeMemoryAccess();
-        theInternalUnsafe.putFloatVolatile(o, offset, x);
+        theInternalUnsafe.putFloatMO(MO_VOLATILE, o, offset, x);
     }
 
     /** Volatile version of {@link #getDouble(Object, long)}.
@@ -1440,7 +1442,7 @@ public final class Unsafe {
     @ForceInline
     public double getDoubleVolatile(Object o, long offset) {
         beforeMemoryAccess();
-        return theInternalUnsafe.getDoubleVolatile(o, offset);
+        return theInternalUnsafe.getDoubleMO(MO_VOLATILE, o, offset);
     }
 
     /** Volatile version of {@link #putDouble(Object, long, double)}.
@@ -1451,7 +1453,7 @@ public final class Unsafe {
     @ForceInline
     public void putDoubleVolatile(Object o, long offset, double x) {
         beforeMemoryAccess();
-        theInternalUnsafe.putDoubleVolatile(o, offset, x);
+        theInternalUnsafe.putDoubleMO(MO_VOLATILE, o, offset, x);
     }
 
     /**
@@ -1469,7 +1471,7 @@ public final class Unsafe {
     @ForceInline
     public void putOrderedObject(Object o, long offset, Object x) {
         beforeMemoryAccess();
-        theInternalUnsafe.putReferenceRelease(o, offset, x);
+        theInternalUnsafe.putReferenceMO(MO_RELEASE, o, offset, x);
     }
 
     /** Ordered/Lazy version of {@link #putIntVolatile(Object, long, int)}.
@@ -1480,7 +1482,7 @@ public final class Unsafe {
     @ForceInline
     public void putOrderedInt(Object o, long offset, int x) {
         beforeMemoryAccess();
-        theInternalUnsafe.putIntRelease(o, offset, x);
+        theInternalUnsafe.putIntMO(MO_RELEASE, o, offset, x);
     }
 
     /** Ordered/Lazy version of {@link #putLongVolatile(Object, long, long)}.
@@ -1491,7 +1493,7 @@ public final class Unsafe {
     @ForceInline
     public void putOrderedLong(Object o, long offset, long x) {
         beforeMemoryAccess();
-        theInternalUnsafe.putLongRelease(o, offset, x);
+        theInternalUnsafe.putLongMO(MO_RELEASE, o, offset, x);
     }
 
     /**
@@ -1760,7 +1762,7 @@ public final class Unsafe {
     private static @Stable boolean memoryAccessWarned;
 
     private static boolean isMemoryAccessWarned() {
-        return theInternalUnsafe.getBooleanVolatile(MEMORY_ACCESS_WARNED_BASE, MEMORY_ACCESS_WARNED_OFFSET);
+        return theInternalUnsafe.getBooleanMO(MO_VOLATILE, MEMORY_ACCESS_WARNED_BASE, MEMORY_ACCESS_WARNED_OFFSET);
     }
 
     private static boolean trySetMemoryAccessWarned() {
