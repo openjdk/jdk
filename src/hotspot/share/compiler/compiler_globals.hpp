@@ -388,6 +388,12 @@
           "If compilation is stopped with an error, capture diagnostic "    \
           "information at the bailout point")                               \
                                                                             \
+  product(bool, InlineColdMethods, false, DIAGNOSTIC,                       \
+          "Inline cold methods that would otherwise be rejected due to "    \
+          "cold profile counters. Useful for compiler testing to expose "   \
+          "more code to compilers.")                                        \
+                                                                            \
+
 // end of COMPILER_FLAGS
 
 DECLARE_FLAGS(COMPILER_FLAGS)

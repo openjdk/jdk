@@ -295,32 +295,34 @@ bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_met
     return false;
   }
 
-  // don't use counts with -Xcomp
-  if (UseInterpreter) {
-    if (!callee_method->has_compiled_code() &&
-        !callee_method->was_executed_more_than(0)) {
-      set_msg("never executed");
+  // accept cold methods in CTW or -Xcomp
+  if (InlineColdMethods) {
+    return false;
+  }
+
+  if (!callee_method->has_compiled_code() &&
+      !callee_method->was_executed_more_than(0)) {
+    set_msg("never executed");
+    return true;
+  }
+
+  if (is_init_with_ea(callee_method, caller_method, C)) {
+    // Escape Analysis: inline all executed constructors
+    return false;
+  }
+
+  if (MinInlineFrequencyRatio > 0) {
+    int call_site_count  = caller_method->scale_count(profile.count());
+    int invoke_count     = caller_method->interpreter_invocation_count();
+    assert(invoke_count != 0, "require invocation count greater than zero");
+    double freq = (double)call_site_count / (double)invoke_count;
+    // avoid division by 0, set divisor to at least 1
+    int cp_min_inv = MAX2(1, CompilationPolicy::min_invocations());
+    double min_freq = MAX2(MinInlineFrequencyRatio, 1.0 / cp_min_inv);
+
+    if (freq < min_freq) {
+      set_msg("low call site frequency");
       return true;
-    }
-
-    if (is_init_with_ea(callee_method, caller_method, C)) {
-      // Escape Analysis: inline all executed constructors
-      return false;
-    }
-
-    if (MinInlineFrequencyRatio > 0) {
-      int call_site_count  = caller_method->scale_count(profile.count());
-      int invoke_count     = caller_method->interpreter_invocation_count();
-      assert(invoke_count != 0, "require invocation count greater than zero");
-      double freq = (double)call_site_count / (double)invoke_count;
-      // avoid division by 0, set divisor to at least 1
-      int cp_min_inv = MAX2(1, CompilationPolicy::min_invocations());
-      double min_freq = MAX2(MinInlineFrequencyRatio, 1.0 / cp_min_inv);
-
-      if (freq < min_freq) {
-        set_msg("low call site frequency");
-        return true;
-      }
     }
   }
 
@@ -328,8 +330,8 @@ bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_met
 }
 
 bool InlineTree::is_not_reached(ciMethod* callee_method, ciMethod* caller_method, int caller_bci, ciCallProfile& profile) {
-  if (!UseInterpreter) {
-    return false; // -Xcomp
+  if (InlineColdMethods) {
+    return false; // CTW or -Xcomp
   }
   if (profile.count() > 0) {
     return false; // reachable according to profile
@@ -403,7 +405,7 @@ bool InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_method,
       }
     }
 
-    if (!UseInterpreter &&
+    if (InlineColdMethods &&
         is_init_with_ea(callee_method, caller_method, C)) {
       // Escape Analysis stress testing when running Xcomp:
       // inline constructors even if they are not reached.
