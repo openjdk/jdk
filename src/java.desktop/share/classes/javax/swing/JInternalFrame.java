@@ -986,6 +986,9 @@ public class JInternalFrame extends JComponent implements
     @BeanProperty(description
             = "Indicates whether this internal frame is maximized.")
     public void setMaximum(boolean b) throws PropertyVetoException {
+        if (!b) {
+            normalBounds = null;
+        }
         if (isMaximum == b) {
             return;
         }
