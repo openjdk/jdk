@@ -49,10 +49,7 @@ class oopDesc {
   friend class JVMCIVMStructs;
  private:
   volatile markWord _mark;
-  union _metadata {
-    Klass*      _klass;
-    narrowKlass _compressed_klass;
-  } _metadata;
+  narrowKlass _compressed_klass;
 
   // There may be ordering constraints on the initialization of fields that
   // make use of the C++ copy/assign incorrect.
@@ -338,7 +335,7 @@ class oopDesc {
     } else
 #endif
     {
-      return (int)offset_of(oopDesc, _metadata._klass);
+      return (int)offset_of(oopDesc, _compressed_klass);
     }
   }
   static int klass_gap_offset_in_bytes() {

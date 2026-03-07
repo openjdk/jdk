@@ -162,10 +162,12 @@ void ClassLoaderMetaspace::deallocate(MetaWord* ptr, size_t word_size) {
   MetaBlock bl(ptr, word_size);
   // Add to class arena only if block is usable for encodable Klass storage.
   MetaspaceArena* receiving_arena = non_class_space_arena();
-  if (Metaspace::using_class_space() && Metaspace::is_in_class_space(ptr) &&
+#if INCLUDE_CLASS_SPACE
+  if (Metaspace::is_in_class_space(ptr) &&
       is_aligned(ptr, class_space_arena()->allocation_alignment_bytes())) {
     receiving_arena = class_space_arena();
   }
+#endif
   receiving_arena->deallocate(bl);
   DEBUG_ONLY(InternalStats::inc_num_deallocs();)
 }

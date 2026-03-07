@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ public class CDSStreamTestDriver extends DynamicArchiveTestBase {
            } catch (SkippedException s) {
                if (GC.Z.isSelected() && s.toString().equals(skippedException)) {
                    System.out.println("Got " + s.toString() + " as expected.");
-                   System.out.println("Because the test was run with ZGC with UseCompressedOops and UseCompressedClassPointers disabled,");
+                   System.out.println("Because the test was run with ZGC with UseCompressedOops disabled,");
                    System.out.println("but the base archive was created with the options enabled");
               } else {
                    throw new RuntimeException("Archive mapping should always succeed after JDK-8231610 (did the machine run out of memory?)");

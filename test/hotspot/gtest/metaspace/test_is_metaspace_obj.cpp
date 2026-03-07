@@ -65,8 +65,8 @@ public:
 
     // Test VirtualSpaceList::contains
     const VirtualSpaceList* const vslist =
-        (mdType == Metaspace::ClassType && Metaspace::using_class_space()) ?
-         VirtualSpaceList::vslist_class() : VirtualSpaceList::vslist_nonclass();
+       (mdType == Metaspace::ClassType && INCLUDE_CLASS_SPACE) ?
+        VirtualSpaceList::vslist_class() : VirtualSpaceList::vslist_nonclass();
 
     ASSERT_TRUE(vslist->contains((MetaWord*)p));
 

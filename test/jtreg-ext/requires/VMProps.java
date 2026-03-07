@@ -487,8 +487,7 @@ public class VMProps implements Callable<Map<String, String>> {
 
     /**
      * @return true if it's possible for "java -Xshare:dump" to write Java heap objects
-     *         with the current set of jtreg VM options. For example, false will be returned
-     *         if -XX:-UseCompressedClassPointers is specified.
+     *         with the current set of jtreg VM options.
      */
     protected String vmCDSCanWriteArchivedJavaHeap() {
         return "" + ("true".equals(vmCDS()) && WB.canWriteJavaHeapArchive());
@@ -496,8 +495,7 @@ public class VMProps implements Callable<Map<String, String>> {
 
     /**
      * @return true if it's possible for "java -Xshare:dump" to write Java heap objects
-     *         with the current set of jtreg VM options. For example, false will be returned
-     *         if -XX:-UseCompressedClassPointers is specified.
+     *         with the current set of jtreg VM options.
      */
     protected String vmCDSCanWriteMappedArchivedJavaHeap() {
         return "" + ("true".equals(vmCDS()) && WB.canWriteMappedJavaHeapArchive());
@@ -505,8 +503,7 @@ public class VMProps implements Callable<Map<String, String>> {
 
     /**
      * @return true if it's possible for "java -Xshare:dump" to write Java heap objects
-     *         with the current set of jtreg VM options. For example, false will be returned
-     *         if -XX:-UseCompressedClassPointers is specified.
+     *         with the current set of jtreg VM options.
      */
     protected String vmCDSCanWriteStreamedArchivedJavaHeap() {
         return "" + ("true".equals(vmCDS()) && WB.canWriteStreamedJavaHeapArchive());

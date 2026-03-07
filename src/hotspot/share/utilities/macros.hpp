@@ -586,6 +586,18 @@
 #define BIG_ENDIAN_ONLY(code) code
 #endif
 
+#ifdef _LP64
+#define INCLUDE_CLASS_SPACE 1
+#define CLASS_SPACE_ONLY(x) x
+#define NOT_CLASS_SPACE(x)
+#else
+// On 32-bit we use fake "narrow class pointers" which are really just 32-bit pointers,
+// but we don't use a class space (would cause too much address space fragmentation)
+#define INCLUDE_CLASS_SPACE 0
+#define CLASS_SPACE_ONLY(x)
+#define NOT_CLASS_SPACE(x) x
+#endif
+
 #define define_pd_global(type, name, value) const type pd_##name = value;
 
 // Helper macros for constructing file names for includes.

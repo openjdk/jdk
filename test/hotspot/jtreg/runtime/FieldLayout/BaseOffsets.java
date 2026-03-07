@@ -22,47 +22,29 @@
  */
 
 /*
- * @test id=with-coops-with-ccp
+ * @test id=with-coops
  * @library /test/lib /
  * @requires vm.bits == "64"
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:-UseCompactObjectHeaders BaseOffsets
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseCompressedOops -XX:-UseCompactObjectHeaders BaseOffsets
  */
+
 /*
- * @test id=no-coops-with-ccp
+ * @test id=no-coops
  * @library /test/lib /
  * @requires vm.bits == "64"
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCompressedOops -XX:+UseCompressedClassPointers -XX:-UseCompactObjectHeaders BaseOffsets
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCompressedOops -XX:-UseCompactObjectHeaders BaseOffsets
  */
+
 /*
- * @test id=with-coops-no-ccp
- * @library /test/lib /
- * @requires vm.bits == "64"
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseCompressedOops -XX:-UseCompressedClassPointers -XX:-UseCompactObjectHeaders BaseOffsets
- */
-/*
- * @test id=no-coops-no-ccp
- * @library /test/lib /
- * @requires vm.bits == "64"
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:-UseCompactObjectHeaders BaseOffsets
- */
-/*
- * @test id=with-coop--with-coh
+ * @test id=with-coop-with-coh
  * @library /test/lib /
  * @requires vm.bits == "64"
  * @modules java.base/jdk.internal.misc
@@ -71,6 +53,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseCompressedOops -XX:+UseCompactObjectHeaders BaseOffsets
  */
+
 /*
  * @test id=no-coops-with-coh
  * @library /test/lib /
@@ -81,6 +64,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCompressedOops -XX:+UseCompactObjectHeaders BaseOffsets
  */
+
 /*
  * @test id=32bit
  * @library /test/lib /
@@ -117,14 +101,10 @@ public class BaseOffsets {
             INT_OFFSET = 8;
             INT_ARRAY_OFFSET = 12;
             LONG_ARRAY_OFFSET = 16;
-        } else if (WB.getBooleanVMFlag("UseCompressedClassPointers")) {
+        } else {
             INT_OFFSET = 12;
             INT_ARRAY_OFFSET = 16;
             LONG_ARRAY_OFFSET = 16;
-        } else {
-            INT_OFFSET = 16;
-            INT_ARRAY_OFFSET = 20;
-            LONG_ARRAY_OFFSET = 24;
         }
     }
 

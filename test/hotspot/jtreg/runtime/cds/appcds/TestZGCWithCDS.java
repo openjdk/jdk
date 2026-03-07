@@ -65,7 +65,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestZGCWithCDS {
     public final static String HELLO = "Hello World";
     public final static String UNABLE_TO_USE_ARCHIVE = "Unable to use shared archive.";
-    public final static String ERR_MSG = "The saved state of UseCompressedOops and UseCompressedClassPointers is different from runtime, CDS will be disabled.";
+    public final static String ERR_MSG = "The saved state of UseCompressedOops (0) is different from runtime (1), CDS will be disabled.";
     public static void main(String... args) throws Exception {
          boolean compactHeadersOn = Boolean.valueOf(args[0]);
          String compactHeaders = "-XX:" + (compactHeadersOn ? "+" : "-") + "UseCompactObjectHeaders";
@@ -90,7 +90,7 @@ public class TestZGCWithCDS {
          out.shouldContain(HELLO);
          out.shouldHaveExitValue(0);
 
-         System.out.println("2. Run with +UseCompressedOops +UseCompressedClassPointers");
+         System.out.println("2. Run with ZGC, +UseCompressedOops");
          out = TestCommon
                    .exec(helloJar,
                          "-XX:-UseZGC",
@@ -103,20 +103,7 @@ public class TestZGCWithCDS {
          out.shouldContain(ERR_MSG);
          out.shouldHaveExitValue(1);
 
-         System.out.println("3. Run with -UseCompressedOops -UseCompressedClassPointers");
-         out = TestCommon
-                   .exec(helloJar,
-                         "-XX:+UseSerialGC",
-                         "-XX:-UseCompressedOops",
-                         "-XX:-UseCompressedClassPointers",
-                         compactHeaders,
-                         "-Xlog:cds",
-                         "Hello");
-         out.shouldContain(UNABLE_TO_USE_ARCHIVE);
-         out.shouldContain(ERR_MSG);
-         out.shouldHaveExitValue(1);
-
-         System.out.println("4. Run with -UseCompressedOops +UseCompressedClassPointers");
+         System.out.println("3. Run with SerialGC, -UseCompressedOops");
          out = TestCommon
                    .exec(helloJar,
                          "-XX:+UseSerialGC",
@@ -128,20 +115,7 @@ public class TestZGCWithCDS {
          out.shouldContain(HELLO);
          out.shouldHaveExitValue(0);
 
-         System.out.println("5. Run with +UseCompressedOops -UseCompressedClassPointers");
-         out = TestCommon
-                   .exec(helloJar,
-                         "-XX:+UseSerialGC",
-                         "-XX:+UseCompressedOops",
-                         "-XX:-UseCompressedClassPointers",
-                         compactHeaders,
-                         "-Xlog:cds",
-                         "Hello");
-         out.shouldContain(UNABLE_TO_USE_ARCHIVE);
-         out.shouldContain(ERR_MSG);
-         out.shouldHaveExitValue(1);
-
-         System.out.println("6. Run with +UseCompressedOops +UseCompressedClassPointers");
+         System.out.println("6. Run with SerialGC, +UseCompressedOops");
          out = TestCommon
                    .exec(helloJar,
                          "-XX:+UseSerialGC",
@@ -154,26 +128,5 @@ public class TestZGCWithCDS {
          out.shouldContain(ERR_MSG);
          out.shouldHaveExitValue(1);
 
-         System.out.println("7. Dump with -UseCompressedOops -UseCompressedClassPointers");
-         out = TestCommon
-                   .dump(helloJar,
-                         new String[] {"Hello"},
-                         "-XX:+UseSerialGC",
-                         "-XX:-UseCompressedOops",
-                         "-XX:+UseCompressedClassPointers",
-                         compactHeaders,
-                         "-Xlog:cds");
-         out.shouldContain("Dumping shared data to file:");
-         out.shouldHaveExitValue(0);
-
-         System.out.println("8. Run with ZGC");
-         out = TestCommon
-                   .exec(helloJar,
-                         "-XX:+UseZGC",
-                         compactHeaders,
-                         "-Xlog:cds",
-                         "Hello");
-         out.shouldContain(HELLO);
-         out.shouldHaveExitValue(0);
     }
 }

@@ -342,7 +342,7 @@
   volatile_nonstatic_field(ObjectMonitor,      _succ,                                         int64_t)                               \
                                                                                                                                      \
   volatile_nonstatic_field(oopDesc,            _mark,                                         markWord)                              \
-  volatile_nonstatic_field(oopDesc,            _metadata._klass,                              Klass*)                                \
+  volatile_nonstatic_field(oopDesc,            _compressed_klass,                             narrowKlass)                           \
                                                                                                                                      \
   static_field(StubRoutines,                _verify_oop_count,                                jint)                                  \
                                                                                                                                      \

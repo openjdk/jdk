@@ -205,27 +205,25 @@ ArenaStats ClmsStats::totals() const {
 void ClmsStats::print_on(outputStream* st, size_t scale, bool detailed) const {
   StreamIndentor si(st, 2);
   st->cr();
-  if (Metaspace::using_class_space()) {
-    st->print("Non-Class: ");
-  }
+  CLASS_SPACE_ONLY(st->print("Non-Class: ");)
   _arena_stats_nonclass.print_on(st, scale, detailed);
   if (detailed) {
     st->cr();
   }
-  if (Metaspace::using_class_space()) {
+#if INCLUDE_CLASS_SPACE
+  st->cr();
+  st->print("    Class: ");
+  _arena_stats_class.print_on(st, scale, detailed);
+  if (detailed) {
     st->cr();
-    st->print("    Class: ");
-    _arena_stats_class.print_on(st, scale, detailed);
-    if (detailed) {
-      st->cr();
-    }
-    st->cr();
-    st->print("     Both: ");
-    totals().print_on(st, scale, detailed);
-    if (detailed) {
-      st->cr();
-    }
   }
+  st->cr();
+  st->print("     Both: ");
+  totals().print_on(st, scale, detailed);
+  if (detailed) {
+    st->cr();
+  }
+#endif // INCLUDE_CLASS_SPACE
   st->cr();
 }
 

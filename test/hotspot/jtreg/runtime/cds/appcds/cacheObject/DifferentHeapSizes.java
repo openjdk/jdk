@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ public class DifferentHeapSizes {
                 } else {
                     result
                         .assertAbnormalExit("Unable to use shared archive.",
-                                            "The saved state of UseCompressedOops and UseCompressedClassPointers is different from runtime, CDS will be disabled.");
+                                            "The saved state of UseCompressedOops (1) is different from runtime (0), CDS will be disabled.");
                 }
             }
         }

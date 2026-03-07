@@ -75,7 +75,7 @@ static size_t element_size(bool compressed) {
 }
 
 static bool can_compress_element(traceid id) {
-  return Metaspace::using_class_space() && id < uncompressed_threshold;
+  return INCLUDE_CLASS_SPACE == 1 && id < uncompressed_threshold;
 }
 
 static size_t element_size(const Klass* klass) {
