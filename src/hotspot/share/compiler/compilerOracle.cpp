@@ -23,9 +23,9 @@
  */
 
 #include "classfile/symbolTable.hpp"
+#include "compiler/compilationPolicy.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/compilerOracle.hpp"
-#include "compiler/compilationPolicy.hpp"
 #include "compiler/methodMatcher.hpp"
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"

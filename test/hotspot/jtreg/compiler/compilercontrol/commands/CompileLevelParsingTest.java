@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -20,40 +19,42 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
 /*
  * @test
- * @bug 8318671
- * @summary Tests various ways to call memstat
- * @library /test/lib /
- *
- * @run driver compiler.compilercontrol.commands.MemStatTest
+ * @bug 8313713
+ * @summary Test if the following CompileCommand options support compilation
+ *          level bitmask argument: break, compileonly, exclude, print
+ * @library /test/lib
+ * @run driver compiler.compilercontrol.commands.CompileLevelParsingTest
  */
 
 package compiler.compilercontrol.commands;
 
 import jdk.test.lib.process.ProcessTools;
 
-public class CompileWithLevelTest {
+import java.util.List;
+
+public class CompileLevelParsingTest {
+    private final static List<String> commandsWithCompileLevel = List.of("break", "compileonly", "exclude", "print");
+    private final static List<String> compLevels = List.of("0", "7", "8", "15");
+    private static final String DEFAULT_COMP_LEVEL = "15";
+    private static final String METHOD_EXP = "java/lang/Object.toString";
+
     public static void main(String[] args) throws Exception {
-        // default => collect
-        ProcessTools.executeTestJava("-XX:CompileCommand=compileonly,*.*", "-version")
-                .shouldHaveExitValue(0)
-                .shouldNotContain("CompileCommand: An error occurred during parsing")
-                .shouldContain("CompileCommand: compileonly *.* intx compileonly = 15"); // should be registered
-        ProcessTools.executeTestJava("-XX:CompileCommand=compileonly,*.*,7", "-version")
-                .shouldHaveExitValue(0)
-                .shouldNotContain("CompileCommand: An error occurred during parsing")
-                .shouldContain("CompileCommand: compileonly *.* intx compileonly = 7"); // should be registered
-        ProcessTools.executeTestJava("-XX:CompileCommand=compileonly,*.*,0", "-version")
-                .shouldHaveExitValue(0)
-                .shouldNotContain("CompileCommand: An error occurred during parsing")
-                .shouldContain("CompileCommand: compileonly *.* intx compileonly = 7"); // should be registered
-        ProcessTools.executeTestJava("-XX:CompileCommand=compileonly,*.*,true", "-version")
-                .shouldNotHaveExitValue(0)
-                .shouldContain("CompileCommand: An error occurred during parsing")
-                .shouldContain("Error: Value cannot be read for option 'MemStat'")
-                .shouldNotContain("CompileCommand: MemStat"); // should *NOT* be registered
+        for (String cmd : commandsWithCompileLevel) {
+            ProcessTools.executeTestJava("-XX:CompileCommand=" + cmd + "," + METHOD_EXP, "-version")
+                    .shouldHaveExitValue(0)
+                    .shouldNotContain("CompileCommand: An error occurred during parsing")
+                    .shouldContain("CompileCommand: " + cmd + " " + METHOD_EXP + " intx " + cmd + " = " + DEFAULT_COMP_LEVEL); // should be registered
+            for (String level : compLevels) {
+                ProcessTools.executeTestJava("-XX:CompileCommand=" + cmd + "," + METHOD_EXP + "," + level, "-version")
+                        .shouldHaveExitValue(0)
+                        .shouldNotContain("CompileCommand: An error occurred during parsing")
+                        .shouldContain("CompileCommand: " + cmd + " " + METHOD_EXP + " intx " + cmd + " = " + level); // should be registered
+            }
+        }
     }
 }

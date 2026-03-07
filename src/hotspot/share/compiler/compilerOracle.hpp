@@ -25,10 +25,10 @@
 #ifndef SHARE_COMPILER_COMPILERORACLE_HPP
 #define SHARE_COMPILER_COMPILERORACLE_HPP
 
+#include "compiler/compilerDirectives.hpp"
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/istream.hpp"
-#include "compiler/compilerDirectives.hpp"
 
 class methodHandle;
 
