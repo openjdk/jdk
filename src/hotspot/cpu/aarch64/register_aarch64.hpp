@@ -535,6 +535,18 @@ VSeq<N/2> vs_odd(const VSeq<N>& v) {
   return VSeq<N/2>(v.base() + v.delta(), v.delta() * 2);
 }
 
+template<int N>
+FloatRegister vs_head(const VSeq<N>& v) {
+  static_assert(N > 1, "sequence length must be greater than 1");
+  return v.base();
+}
+
+template<int N>
+VSeq<N-1> vs_tail(const VSeq<N>& v) {
+  static_assert(N > 1, "tail sequence length must be greater than 2");
+  return VSeq<N-1>(v.base() + v.delta(), v.delta());
+}
+
 // convenience method to construct a vector register sequence that
 // indexes its elements in reverse order to the original
 
