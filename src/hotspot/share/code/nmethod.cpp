@@ -2072,10 +2072,8 @@ bool nmethod::fix_oop_relocations(bool initialize_immediates) {
       }
     } else if (iter.type() == relocInfo::metadata_type) {
       metadata_Relocation* reloc = iter.metadata_reloc();
-      if (reloc->is_modifying_code()) {
-        reloc->fix_metadata_relocation();
-        modified_code = true;
-      }
+      reloc->fix_metadata_relocation();
+      modified_code |= !reloc->metadata_is_immediate();
     }
   }
   return modified_code;

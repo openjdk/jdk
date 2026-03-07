@@ -1039,9 +1039,6 @@ class metadata_Relocation : public DataRelocation {
   void unpack_data() override;
 
   void fix_metadata_relocation();        // reasserts metadata value
-  bool is_modifying_code()
-    NOT_ARM32({ return false; })
-    ARM32_ONLY(;)
 
   address value() override { return (address) *metadata_addr(); }
 
