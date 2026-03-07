@@ -54,6 +54,8 @@ import java.lang.annotation.Target;
  * {@code null}.
  *
  * @see java.lang.invoke##bsm Execution of bootstrap methods
+ * @see java.lang.constant.DynamicConstantDesc
+ * @see java.lang.classfile.constantpool.ConstantDynamicEntry
  * @jvms 5.4.3.6 Dynamically-Computed Constant and Call Site Resolution
  * @since 27
  */

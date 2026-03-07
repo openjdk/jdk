@@ -2076,13 +2076,7 @@ public class Check {
         boolean mustOverride = explicitOverride ||
                 (env.info.isAnonymousDiamond && !m.isConstructor() && !m.isPrivate());
         if (mustOverride && !isOverrider(m)) {
-            DiagnosticPosition pos = tree.pos();
-            for (JCAnnotation a : tree.getModifiers().annotations) {
-                if (a.annotationType.type.tsym == syms.overrideType.tsym) {
-                    pos = a.pos();
-                    break;
-                }
-            }
+            DiagnosticPosition pos = annotationPos(tree, syms.overrideType);
             log.error(pos,
                       explicitOverride ? (m.isStatic() ? Errors.StaticMethodsCannotBeAnnotatedWithOverride(m, m.enclClass()) : Errors.MethodDoesNotOverrideSuperclass(m, m.enclClass())) :
                                 Errors.AnonymousDiamondMethodDoesNotOverrideSuperclass(Fragments.DiamondAnonymousMethodsImplicitlyOverride));
@@ -3684,20 +3678,22 @@ public class Check {
         return isValid;
     }
 
-    void checkBootstrapMethodAnnotations(DiagnosticPosition pos, MethodSymbol s) {
+    void checkBootstrapMethodAnnotations(JCMethodDecl tree, MethodSymbol s) {
         if (!Feature.BSM_VALIDATION_ANNOTATIONS.allowedInSource(source)) {
             return;
         }
 
         if (!syms.callSiteBootstrapType.isErroneous() && s.attribute(syms.callSiteBootstrapType.tsym) != null) {
             if (!checkBootstrapMethod(s, false)) {
-                log.error(pos, Errors.NotBsmSignature(s, s.kind, Fragments.CallSiteBootstrap));
+                DiagnosticPosition annoPos = annotationPos(tree, syms.callSiteBootstrapType);
+                log.error(annoPos, Errors.NotBootstrapMethod(s.kind.kindName(), s, Fragments.DynamicCallSite));
             }
         }
 
         if (!syms.constantBootstrapType.isErroneous() && s.attribute(syms.constantBootstrapType.tsym) != null) {
             if (!checkBootstrapMethod(s, true)) {
-                log.error(pos, Errors.NotBsmSignature(s, s.kind, Fragments.ConstantBootstrap));
+                DiagnosticPosition annoPos = annotationPos(tree, syms.constantBootstrapType);
+                log.error(annoPos, Errors.NotBootstrapMethod(s.kind.kindName(), s, Fragments.DynamicConstant));
             }
         }
     }
@@ -3764,6 +3760,23 @@ public class Check {
             }
         }
         return pendingTypes;
+    }
+
+    private DiagnosticPosition annotationPos(JCTree tree, Type annotationInterfaceType) {
+        DiagnosticPosition annoPos = tree.pos();
+        JCModifiers mods = switch (tree) {
+            case JCClassDecl cls -> cls.mods;
+            case JCMethodDecl mth -> mth.mods;
+            case JCVariableDecl var -> var.mods;
+            default -> throw Assert.error(tree.toString());
+        };
+        for (JCAnnotation a : mods.annotations) {
+            if (a.annotationType.type.tsym == annotationInterfaceType.tsym) {
+                annoPos = a.pos();
+                break;
+            }
+        }
+        return annoPos;
     }
 
     void checkDeprecatedAnnotation(DiagnosticPosition pos, Symbol s) {
@@ -4427,13 +4440,7 @@ public class Check {
             try {
                 types.findDescriptorSymbol((TypeSymbol)cs);
             } catch (Types.FunctionDescriptorLookupError ex) {
-                DiagnosticPosition pos = tree.pos();
-                for (JCAnnotation a : tree.getModifiers().annotations) {
-                    if (a.annotationType.type.tsym == syms.functionalInterfaceType.tsym) {
-                        pos = a.pos();
-                        break;
-                    }
-                }
+                DiagnosticPosition pos = annotationPos(tree, syms.functionalInterfaceType);
                 log.error(pos, Errors.BadFunctionalIntfAnno1(ex.getDiagnostic()));
             }
         }
