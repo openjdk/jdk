@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,37 +22,18 @@
  */
 package jdk.jpackage.test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.nio.file.Path;
-import java.util.Objects;
-import java.util.function.Supplier;
+import jdk.jpackage.test.CannedFormattedStringTest.Formatter;
+import org.junit.jupiter.api.Test;
 
-@FunctionalInterface
-public interface CannedArgument {
+class CannedArgumentTest {
 
-    public String getValue();
-
-    public static CannedArgument create(Supplier<Object> supplier, String label) {
-        Objects.requireNonNull(supplier);
-        Objects.requireNonNull(label);
-        return new CannedArgument() {
-
-            @Override
-            public String getValue() {
-                return supplier.get().toString();
-            }
-
-            @Override
-            public String toString( ) {
-                return label;
-            }
-        };
-    }
-
-    public static Object cannedAbsolutePath(Path v) {
-        return create(v::toAbsolutePath, String.format("AbsolutePath(%s)", v));
-    }
-
-    public static Object cannedAbsolutePath(String v) {
-        return cannedAbsolutePath(Path.of(v));
+    @Test
+    void test_cannedAbsolutePath() {
+        var a = Formatter.MESSAGE_FORMAT.create("Current directory: {0}", CannedArgument.cannedAbsolutePath("foo"));
+        assertEquals("Current directory: " + Path.of("foo").toAbsolutePath(), a.getValue());
+        assertEquals("Current directory: {0}+[AbsolutePath(foo)]", a.toString());
     }
 }

@@ -954,13 +954,13 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public String getValue(CannedFormattedString str) {
-        return new CannedFormattedString(str.formatter(), str.key(), Stream.of(str.args()).map(arg -> {
+        return new CannedFormattedString(str.formatter(), str.key(), str.args().stream().map(arg -> {
             if (arg instanceof CannedArgument cannedArg) {
                 return cannedArg.value(this);
             } else {
                 return arg;
             }
-        }).toArray()).getValue();
+        }).toList()).getValue();
     }
 
     public JPackageCommand validateOut(CannedFormattedString... strings) {
