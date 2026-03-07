@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 
   // Total virtual time so far.
 inline double G1ConcurrentMarkThread::total_mark_cpu_time_s() {
-  return os::thread_cpu_time(this) + worker_threads_cpu_time_s();
+  return static_cast<double>(os::thread_cpu_time(this)) + worker_threads_cpu_time_s();
 }
 
 // Marking virtual time so far
