@@ -113,6 +113,7 @@
 #endif
 #ifdef COMPILER2
 #include "opto/idealGraphPrinter.hpp"
+#include "runtime/hotCodeGrouper.hpp"
 #endif
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
@@ -797,6 +798,12 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (StringDedup::is_enabled()) {
     StringDedup::start();
   }
+
+#ifdef COMPILER2
+  if (HotCodeHeap) {
+    HotCodeGrouper::initialize();
+  }
+#endif // COMPILER2
 
   // Pre-initialize some JSR292 core classes to avoid deadlock during class loading.
   // It is done after compilers are initialized, because otherwise compilations of
