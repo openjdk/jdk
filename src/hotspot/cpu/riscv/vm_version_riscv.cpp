@@ -124,11 +124,6 @@ void VM_Version::common_initialize() {
     FLAG_SET_DEFAULT(AllocatePrefetchDistance, 0);
   }
 
-  if (UseVectorizedMismatchIntrinsic) {
-    warning("VectorizedMismatch intrinsic is not available on this CPU.");
-    FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
-  }
-
   if (FLAG_IS_DEFAULT(UseCopySignIntrinsic)) {
     FLAG_SET_DEFAULT(UseCopySignIntrinsic, true);
   }
@@ -203,6 +198,16 @@ void VM_Version::common_initialize() {
 
   // Misc Intrinsics that could depend on RVV.
 
+  if (UseRVV) {
+    if (FLAG_IS_DEFAULT(UseVectorizedMismatchIntrinsic)) {
+      UseVectorizedMismatchIntrinsic = true;
+    }
+  } else if (UseVectorizedMismatchIntrinsic) {
+    if (!FLAG_IS_DEFAULT(UseVectorizedMismatchIntrinsic))
+      warning("VectorizedMismatch intrinsic is not available on this CPU.");
+    FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
+  }
+
   if (!AvoidUnalignedAccesses && (UseZba || UseRVV)) {
     if (FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
       FLAG_SET_DEFAULT(UseCRC32Intrinsics, true);
@@ -253,6 +258,14 @@ void VM_Version::c2_initialize() {
 
   if (FLAG_IS_DEFAULT(UseVectorizedHashCodeIntrinsic)) {
     FLAG_SET_DEFAULT(UseVectorizedHashCodeIntrinsic, true);
+  }
+
+  int inline_size = (UseRVV && MaxVectorSize >= 32) ? MaxVectorSize : 0;
+  if (FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize)) {
+    FLAG_SET_DEFAULT(ArrayOperationPartialInlineSize, inline_size);
+  } else if (ArrayOperationPartialInlineSize != 0 && ArrayOperationPartialInlineSize != inline_size) {
+    warning("Setting ArrayOperationPartialInlineSize to %d", inline_size);
+    ArrayOperationPartialInlineSize = inline_size;
   }
 
   if (!UseZicbop) {
