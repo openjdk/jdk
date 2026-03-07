@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,7 +163,7 @@ public class BasicFloat16ArithTests {
 
     private static void checkFloat16(Float16 value16, float expected, String message) {
         float value = value16.floatValue();
-        if (Float.compare(value, expected) != 0) {
+        if (!Float.equivalent(value, expected)) {
             throwRE(String.format("Didn't get expected value for %s;%nexpected %g (%a), got %g (%a)",
                                   message, expected, expected, value, value));
         }
@@ -188,7 +188,7 @@ public class BasicFloat16ArithTests {
             float expected = testCase[1];
             Float16 result =  negate(valueOfExact(arg));
 
-            if (Float.compare(expected, result.floatValue()) != 0) {
+            if (!Float.equivalent(expected, result.floatValue())) {
                 checkFloat16(result, expected, "negate(" + arg + ")");
             }
         }
@@ -215,7 +215,7 @@ public class BasicFloat16ArithTests {
             float expected = testCase[1];
             Float16 result =  abs(valueOfExact(arg));
 
-            if (Float.compare(expected, result.floatValue()) != 0) {
+            if (!Float.equivalent(expected, result.floatValue())) {
                 checkFloat16(result, expected, "abs(" + arg + ")");
             }
         }
@@ -373,7 +373,7 @@ public class BasicFloat16ArithTests {
             float expected = testCase[1];
             Float16 result =  sqrt(valueOfExact(arg));
 
-            if (Float.compare(expected, result.floatValue()) != 0) {
+            if (!Float.equivalent(expected, result.floatValue())) {
                 checkFloat16(result, expected, "sqrt(" + arg + ")");
             }
         }
@@ -410,7 +410,7 @@ public class BasicFloat16ArithTests {
             float expected = testCase[1];
             float result =  (float)getExponent(valueOfExact(arg));
 
-            if (Float.compare(expected, result) != 0) {
+            if (!Float.equivalent(expected, result)) {
                 checkFloat16(Float16.valueOf(result), expected, "getExponent(" + arg + ")");
             }
         }
@@ -445,7 +445,7 @@ public class BasicFloat16ArithTests {
             float expected = testCase[1];
             Float16 result = ulp(valueOfExact(arg));
 
-            if (Float.compare(expected, result.floatValue()) != 0) {
+            if (!Float.equivalent(expected, result.floatValue())) {
                 checkFloat16(result, expected, "ulp(" + arg + ")");
             }
         }
@@ -858,7 +858,7 @@ public class BasicFloat16ArithTests {
     private static void test(String testName,
                            Float16 input1, Float16 input2, Float16 input3,
                            Float16 result, Float16 expected) {
-        if (Float16.compare(expected, result ) != 0) {
+        if (!Float16.equivalent(expected, result )) {
             System.err.println("Failure for "  + testName + ":\n" +
                                "\tFor inputs " + input1   + "\t(" + toHexString(input1) + ") and "
                                                + input2   + "\t(" + toHexString(input2) + ") and"
@@ -879,7 +879,7 @@ public class BasicFloat16ArithTests {
      */
     private static Float16 valueOfExact(float f) {
         Float16 f16 = valueOf(f);
-        if (Float.compare(f16.floatValue(), f) != 0) {
+        if (!Float.equivalent(f16.floatValue(), f)) {
             throw new ArithmeticException("Inexact conversion to Float16 of float value " + f);
         }
         return f16;

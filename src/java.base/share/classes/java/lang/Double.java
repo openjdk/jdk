@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -184,6 +184,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * </ul>
  * Expressions implementing this equivalence relation include:
  * <ul>
+ * <li>{@code Double.equivalent(a, b)}
  * <li>{@code Double.doubleToLongBits(a) == Double.doubleToLongBits(b)}
  * <li>{@code Double.valueOf(a).equals(Double.valueOf(b))}
  * <li>{@code Double.compare(a, b) == 0}
@@ -1524,6 +1525,28 @@ public final class Double extends Number
         return (thisBits == anotherBits ?  0 : // Values are equal
                 (thisBits < anotherBits ? -1 : // (-0.0, 0.0) or (!NaN, NaN)
                  1));                          // (0.0, -0.0) or (NaN, !NaN)
+    }
+
+    /**
+     * {@return {@code true} if the arguments have {@linkplain
+     * ##repEquivalence representation equivalence} and {@code false}
+     * otherwise}
+     *
+     * Special cases:
+     * <ul>
+     * <li>{@code -0.0} and {@code +0.0} are <em>not</em> equivalent
+     * (unlike how {@code -0.0} and {@code +0.0} compare under the
+     * {@code ==} operator)
+     * <li>two NaN values are equivalent to each other, but not
+     * equivalent to any non-NaN value
+     * </ul>
+     *
+     * @param   d1 the first {@code double} to compare
+     * @param   d2 the second {@code double} to compare
+     * @since 27
+     */
+    public static boolean equivalent(double d1, double d2) {
+        return Double.doubleToLongBits(d1) == Double.doubleToLongBits(d2);
     }
 
     /**
