@@ -3685,6 +3685,10 @@ public class Check {
     }
 
     void checkBootstrapMethodAnnotations(DiagnosticPosition pos, MethodSymbol s) {
+        if (!Feature.BSM_VALIDATION_ANNOTATIONS.allowedInSource(source)) {
+            return;
+        }
+
         if (!syms.callSiteBootstrapType.isErroneous() && s.attribute(syms.callSiteBootstrapType.tsym) != null) {
             if (!checkBootstrapMethod(s, false)) {
                 log.error(pos, Errors.NotBsmSignature(s, s.kind, Fragments.CallSiteBootstrap));
@@ -3705,7 +3709,7 @@ public class Check {
                 : formalParamTypes;
         boolean varargs = s.isVarArgs();
 
-        // Return type
+        // indy return type - note condy has no restriction, even void is ok
         if (!condy) {
             var returnType = s.isConstructor() ? s.owner.erasure(types) : s.erasure(types).getReturnType();
             if (!types.isCastable(returnType, syms.callSiteType)) {
@@ -3713,44 +3717,53 @@ public class Check {
             }
         }
 
-        // Arguments
+        // condy 1st arg - Lookup, no varargs allowed
+        if (condy) {
+            if (allParamTypes.isEmpty() || !types.isSameType(syms.methodHandleLookupType, allParamTypes.head)) {
+                return false;
+            }
+        }
+
+        // Varargs-ok argument expansion
+        var anticipatingTypes = bsmAnticipatingTypes(allParamTypes, varargs);
         if (!varargs && allParamTypes.length() < 3) {
             return false;
         }
 
         // Arg0 MethodHandles.Lookup
-        if (condy) {
-            if (!types.isSameType(syms.methodHandleLookupType, paramType(0, allParamTypes, varargs))) {
-                return false;
-            }
-        } else {
-            if (!types.isAssignable(syms.methodHandleLookupType, paramType(0, allParamTypes, varargs))) {
-                return false;
-            }
+        if (!types.isAssignable(syms.methodHandleLookupType, anticipatingTypes.getFirst())) {
+            return false;
         }
 
         // Arg1 String
-        if (!types.isAssignable(syms.stringType, paramType(1, allParamTypes, varargs))) {
+        if (!types.isAssignable(syms.stringType, anticipatingTypes.get(1))) {
             return false;
         }
 
         // Arg2 MethodType/Class
         var thirdType = condy ? syms.classType : syms.methodTypeType;
-        if (!types.isAssignable(thirdType, paramType(2, allParamTypes, varargs))) {
+        if (!types.isAssignable(thirdType, anticipatingTypes.get(2))) {
             return false;
         }
 
         return true;
     }
 
-    private Type paramType(int index, List<Type> paramTypes, boolean varargs) {
-        if (index < paramTypes.size() - 1) {
-            return paramTypes.get(index);
+    // The first 3 anticipated types of the BSM, with varargs expansion considered.
+    private ArrayList<Type> bsmAnticipatingTypes(List<Type> paramTypes, boolean varargs) {
+        ArrayList<Type> pendingTypes = new ArrayList<>(paramTypes);
+        if (pendingTypes.size() > 3) {
+            pendingTypes.subList(3, pendingTypes.size()).clear();
+            varargs = false;
         }
-        if (!varargs) {
-            return index == paramTypes.size() - 1 ? paramTypes.getLast() : Type.noType;
+
+        if (varargs) {
+            var varargEntryType = types.elemtype(pendingTypes.removeLast());
+            while (pendingTypes.size() < 3) {
+                pendingTypes.addLast(varargEntryType);
+            }
         }
-        return types.elemtype(paramTypes.getLast());
+        return pendingTypes;
     }
 
     void checkDeprecatedAnnotation(DiagnosticPosition pos, Symbol s) {
