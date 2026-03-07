@@ -302,17 +302,10 @@ public final class Argon2Impl {
                 }
             }
             int currOfs = pos.slice * this.segLen + startingIdx;
-            // for the first block in this lane, 'prevOfs' should
-            // be the last block of the current lane
-            int prevOfs = (currOfs == 0 ?  this.columns - 1 : currOfs - 1);
 
             long pseudoRand;
-            for (int i = startingIdx; i < this.segLen; i++, currOfs++,
-                    prevOfs++) {
-                // Rotating 'prevOfs' if needed
-                if (currOfs % this.columns == 1) {
-                    prevOfs = currOfs - 1;
-                }
+            for (int i = startingIdx; i < this.segLen; i++, currOfs++) {
+                int prevOfs = (currOfs == 0 ?  this.columns - 1 : currOfs - 1);
 
                 // computing the index of the reference block
                 // Taking pseudo-random value from the previous block
@@ -325,13 +318,12 @@ public final class Argon2Impl {
                 } else {
                     pseudoRand = b[pos.lane][prevOfs].value[0];
                 }
-                // computing the lane of the reference block
-                int refLane = (int) ((pseudoRand >>> 32) % this.lanes);
 
-                if ((pos.pass == 0) && (pos.slice == 0)) {
-                    // can't reference other lanes yet
-                    refLane = pos.lane;
-                }
+                int refLane = (pos.pass == 0) && (pos.slice == 0) ?
+                        // can't reference other lanes yet
+                        pos.lane :
+                        (int) ((pseudoRand >>> 32) % this.lanes);
+
                 // Computing the number of possible reference block within
                 // the lane
                 pos.index = i;
