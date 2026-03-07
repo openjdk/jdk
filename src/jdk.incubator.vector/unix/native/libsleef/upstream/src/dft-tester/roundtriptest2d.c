@@ -1,4 +1,4 @@
-//   Copyright Naoki Shibata and contributors 2010 - 2021.
+//   Copyright Naoki Shibata and contributors 2010 - 2025.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -41,7 +41,11 @@ double check_c(int n, int m) {
 
   real *sx = (real *)Sleef_malloc(n*m*2 * sizeof(real));
   real *sy = (real *)Sleef_malloc(n*m*2 * sizeof(real));
-  real *sz = (real *)Sleef_malloc(n*m*2 * sizeof(real));
+
+  if (!sx || !sy) {
+    fprintf(stderr, "Memory allocation failed");
+    exit(-1);
+  }
 
   for(int i=0;i<n*m*2;i++) sx[i] = (real)(2.0 * (rand() / (double)RAND_MAX) - 1);
 
@@ -66,7 +70,7 @@ double check_c(int n, int m) {
     exit(-1);
   }
 
-  SleefDFT_execute(p, sy, sz);
+  SleefDFT_execute(p, sy, sy);
   SleefDFT_dispose(p);
 
   //
@@ -74,7 +78,7 @@ double check_c(int n, int m) {
   double rmsn = 0, rmsd = 0, scale = 1 / (n*(double)m);
 
   for(int i=0;i<n*m;i++) {
-    rmsn += squ(scale * sz[i*2+0] - sx[i*2+0]) + squ(scale * sz[i*2+1] - sx[i*2+1]);
+    rmsn += squ(scale * sy[i*2+0] - sx[i*2+0]) + squ(scale * sy[i*2+1] - sx[i*2+1]);
     rmsd += squ(                    sx[i*2+0]) + squ(                    sx[i*2+1]);
   }
 
@@ -82,7 +86,6 @@ double check_c(int n, int m) {
 
   Sleef_free(sx);
   Sleef_free(sy);
-  Sleef_free(sz);
 
   //
 
@@ -99,7 +102,7 @@ int main(int argc, char **argv) {
   const int m = 1 << atoi(argv[2]);
   const int nloop = argc >= 4 ? atoi(argv[3]) : 1;
 
-  srand((unsigned int)time(NULL));
+  srand((unsigned int)(Sleef_currentTimeMicros() & 0xffffffff));
 
   SleefDFT_setPlanFilePath(NULL, NULL, SLEEF_PLAN_RESET | SLEEF_PLAN_READONLY);
 

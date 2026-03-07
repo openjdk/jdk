@@ -1,4 +1,4 @@
-//   Copyright Naoki Shibata and contributors 2010 - 2021.
+//   Copyright Naoki Shibata and contributors 2010 - 2025.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -59,7 +59,6 @@
 #define DFTPRIORITY 25
 
 static INLINE int vavailability_i(int name) { return 3; }
-static INLINE void vprefetch_v_p(const void *ptr) { }
 
 /**********************************************
  ** Types
@@ -103,16 +102,16 @@ typedef vquad vargquad;
 #define vset__s64(...) ((v__i64) {__VA_ARGS__})
 #define vset__u64(...) ((v__u64) {__VA_ARGS__})
 
-#define vsetall__vi(v)  vset__vi(v, v)
-#define vsetall__vi2(v) vset__vi2(v, v, v, v)
+#define vsetall__vi(v)  vset__vi((int)v, (int)v)
+#define vsetall__vi2(v) vset__vi2((int)v, (int)v, (int)v, (int)v)
 #define vsetall__vm(v)  vset__vm(v, v, v, v)
 #define vsetall__vo(v)  vset__vo(v, v, v, v)
-#define vsetall__vf(v)  vset__vf(v, v, v, v)
-#define vsetall__vd(v)  vset__vd(v, v)
-#define vsetall__u8(v)  vset__u8(v, v, v, v, v, v, v, v, v, v, v, v, v, v, v, v)
-#define vsetall__u32(v) vset__u32(v, v, v, v)
-#define vsetall__s64(v) vset__s64(v, v)
-#define vsetall__u64(v) vset__u64(v, v)
+#define vsetall__vf(v)  vset__vf((float)v, (float)v, (float)v, (float)v)
+#define vsetall__vd(v)  vset__vd((double)v, (double)v)
+#define vsetall__u8(v)  vset__u8((uint8_t)v, (uint8_t)v, (uint8_t)v, (uint8_t)v, (uint8_t)v, (uint8_t)v, (uint8_t)v, (uint8_t)v, (uint8_t)v, (uint8_t)v, (uint8_t)v, (uint8_t)v, (uint8_t)v, (uint8_t)v, (uint8_t)v, (uint8_t)v)
+#define vsetall__u32(v) vset__u32((uint32_t)v, (uint32_t)v, (uint32_t)v, (uint32_t)v)
+#define vsetall__s64(v) vset__s64((int64_t)v, (int64_t)v)
+#define vsetall__u64(v) vset__u64((uint64_t)v, (uint64_t)v)
 
 #define vzero__vi()  vsetall__vi(0)
 #define vzero__vi2() vsetall__vi2(0)
@@ -351,7 +350,7 @@ static INLINE vmask vcastu_vm_vi(vint vi)
 
 static INLINE vopmask vcast_vo_i(int i) {
   i = i ? -1 : 0;
-  return (vopmask) { i, i, i, i };
+  return (vopmask) { (unsigned int)i, (unsigned int)i, (unsigned int)i, (unsigned int)i };
 }
 
 // signed int to single-precision
@@ -371,7 +370,7 @@ static INLINE vdouble vcast_vd_vi(vint vi)
 {
   vdouble ret;
   vint swap = vec_mergeh(vi, vi);
-#if defined(__clang__) || __GNUC__ >= 7
+#if defined(__clang__) || (__GNUC__ >= 7 && __GNUC__ < 15)
   ret = __builtin_vsx_xvcvsxwdp(swap);
 #else
   __asm__ __volatile__("xvcvsxwdp %x0,%x1" : "=wa" (ret) : "wa" (swap));
@@ -406,7 +405,7 @@ static INLINE vint2 vtruncate_vi2_vf(vfloat vf)
 static INLINE vint vtruncate_vi_vd(vdouble vd)
 {
   vint ret;
-#if defined(__clang__) || __GNUC__ >= 7
+#if defined(__clang__) || (__GNUC__ >= 7 && __GNUC__ < 15)
   ret = __builtin_vsx_xvcvdpsxws(vd);
 #else
   __asm__ __volatile__("xvcvdpsxws %x0,%x1" : "=wa" (ret) : "wa" (vd));
@@ -860,11 +859,11 @@ static INLINE vopmask vgt64_vo_vm_vm(vmask x, vmask y) {
 #define vsrl64_vm_vm_i(x, c) ((vmask)vec_sr((__vector signed long long)x, (__vector unsigned long long)vsetall__vm(c)))
 
 static INLINE vint vcast_vi_vm(vmask vm) {
-  return (vint) { vm[0], vm[2] };
+  return (vint) { (int)vm[0], (int)vm[2] };
 }
 
 static INLINE vmask vcast_vm_vi(vint vi) {
-  return (vmask) (__vector signed long long) { vi[0], vi[1] };
+  return (vmask) (__vector signed long long) { (signed long long)vi[0], (signed long long)vi[1] };
 }
 
 static INLINE vmask vreinterpret_vm_vi64(vint64 v) { return (vmask)v; }

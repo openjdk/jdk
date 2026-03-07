@@ -1,4 +1,4 @@
-//   Copyright Naoki Shibata and contributors 2010 - 2021.
+//   Copyright Naoki Shibata and contributors 2010 - 2025.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -20,7 +20,8 @@ typedef __vector float  vector_float;
 
 #ifdef ENABLE_VSX3
 void sleef_tryVSX3();
-#define SUBST_IF_EXT1(funcvsx3) if (cpuSupportsExt(sleef_tryVSX3)) p = funcvsx3;
+static int cache_vsx3 = -1;
+#define SUBST_IF_EXT1(funcvsx3) if (Sleef_internal_cpuSupportsExt(sleef_tryVSX3, &cache_vsx3)) p = funcvsx3;
 #else
 #define SUBST_IF_EXT1(funcvsx3)
 #endif
@@ -28,3 +29,4 @@ void sleef_tryVSX3();
 #define SUBST_IF_EXT2(funcExt2)
 
 //
+

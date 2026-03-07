@@ -194,13 +194,12 @@ int main(int argc, char **argv)
     mpfr_zinit(result[i]);
   }
 
-  mpfr_t fra, frb, frc, frd, fre;
+  mpfr_t fra, frb, frc, frd;
 
-  mpfr_zinit(fra);
-  mpfr_zinit(frb);
-  mpfr_zinit(frc);
-  mpfr_zinit(frd);
-  mpfr_zinit(fre);
+  mpfr_init(fra);
+  mpfr_init(frb);
+  mpfr_init(frc);
+  mpfr_init(frd);
 
   for(i=0;i<n;i++) {
     double b = 1.0 - pow((double)i / (n-1), p);

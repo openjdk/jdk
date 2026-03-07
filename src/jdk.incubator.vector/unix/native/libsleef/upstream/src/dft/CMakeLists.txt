@@ -11,8 +11,6 @@ if (SLEEFDFT_MAXBUTWIDTH GREATER 7)
   message(FATAL_ERROR "SLEEFDFT_MAXBUTWIDTH has to be smaller than 8." )
 endif()
 
-option(SLEEFDFT_ENABLE_STREAM "Streaming instructions are utilized in DFT." OFF)
-
 # Settings
 
 # Constants definition
@@ -21,30 +19,22 @@ set(LISTSHORTTYPENAME "dp" "sp")
 set(LISTLONGTYPENAME "double" "float")
 set(LISTTYPEID "1" "2")
 
-set(MACRODEF_vecextdp BASETYPEID=1 ENABLE_VECEXT CONFIG=1)
-set(CFLAGS_vecextdp ${FLAGS_ENABLE_VECEXT})
-set(MACRODEF_vecextsp BASETYPEID=2 ENABLE_VECEXT CONFIG=1)
-set(CFLAGS_vecextsp ${FLAGS_ENABLE_VECEXT})
-set(MACRODEF_vecextld BASETYPEID=3 ENABLE_VECEXT CONFIG=1)
-set(CFLAGS_vecextld ${FLAGS_ENABLE_VECEXT})
-set(MACRODEF_vecextqp BASETYPEID=4 ENABLE_VECEXT CONFIG=1)
-set(CFLAGS_vecextqp ${FLAGS_ENABLE_VECEXT})
 set(MACRODEF_purecdp BASETYPEID=1 ENABLE_PUREC CONFIG=1)
 set(CFLAGS_purecdp ${FLAGS_ENABLE_PUREC})
 set(MACRODEF_purecsp BASETYPEID=2 ENABLE_PUREC CONFIG=1)
 set(CFLAGS_purecsp ${FLAGS_ENABLE_PUREC})
+if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+set(CFLAGS_purecdp ${FLAGS_ENABLE_PUREC} -O0)
+set(CFLAGS_purecsp ${FLAGS_ENABLE_PUREC} -O0)
+endif()
 set(MACRODEF_purecld BASETYPEID=3 ENABLE_PUREC CONFIG=1)
 set(CFLAGS_purecld ${FLAGS_ENABLE_PUREC})
 set(MACRODEF_purecqp BASETYPEID=4 ENABLE_PUREC CONFIG=1)
 set(CFLAGS_purecqp ${FLAGS_ENABLE_PUREC})
-set(MACRODEF_sse2dp BASETYPEID=1 ENABLE_SSE2 CONFIG=4)
-set(CFLAGS_sse2dp ${FLAGS_ENABLE_SSE4})
-set(MACRODEF_sse2sp BASETYPEID=2 ENABLE_SSE2 CONFIG=4)
-set(CFLAGS_sse2sp ${FLAGS_ENABLE_SSE4})
-set(MACRODEF_avxdp BASETYPEID=1 ENABLE_AVX CONFIG=1)
-set(CFLAGS_avxdp ${FLAGS_ENABLE_AVX})
-set(MACRODEF_avxsp BASETYPEID=2 ENABLE_AVX CONFIG=1)
-set(CFLAGS_avxsp ${FLAGS_ENABLE_AVX})
+set(MACRODEF_sse2dp BASETYPEID=1 ENABLE_SSE2 CONFIG=2)
+set(CFLAGS_sse2dp ${FLAGS_ENABLE_SSE2})
+set(MACRODEF_sse2sp BASETYPEID=2 ENABLE_SSE2 CONFIG=2)
+set(CFLAGS_sse2sp ${FLAGS_ENABLE_SSE2})
 set(MACRODEF_avx2dp BASETYPEID=1 ENABLE_AVX2 CONFIG=1)
 set(CFLAGS_avx2dp ${FLAGS_ENABLE_AVX2})
 set(MACRODEF_avx2sp BASETYPEID=2 ENABLE_AVX2 CONFIG=1)
@@ -57,8 +47,6 @@ set(MACRODEF_advsimddp BASETYPEID=1 ENABLE_ADVSIMD CONFIG=1)
 set(CFLAGS_advsimddp ${FLAGS_ENABLE_ADVSIMD})
 set(MACRODEF_advsimdsp BASETYPEID=2 ENABLE_ADVSIMD CONFIG=1)
 set(CFLAGS_advsimdsp ${FLAGS_ENABLE_ADVSIMD})
-set(MACRODEF_neon32sp BASETYPEID=2 ENABLE_NEON32 CONFIG=1)
-set(CFLAGS_neon32sp ${FLAGS_ENABLE_NEON32})
 set(MACRODEF_sve256dp BASETYPEID=1 ENABLE_SVE CONFIG=8)
 set(CFLAGS_sve256dp ${FLAGS_ENABLE_SVE})
 set(MACRODEF_sve256sp BASETYPEID=2 ENABLE_SVE CONFIG=8)
@@ -138,22 +126,13 @@ set(ISALIST_SP purecsp)
 set(ISALIST_DP purecdp)
 
 set(LIST_SUPPORTED_FPTYPE 0 1)
-if(CMAKE_C_COMPILER_ID MATCHES "(GNU|Clang)")
-  set(ISALIST_SP vecextsp)
-  set(ISALIST_DP vecextdp)
-endif(CMAKE_C_COMPILER_ID MATCHES "(GNU|Clang)")
 
 # List all available vector data types
 
-if (COMPILER_SUPPORTS_SSE4)
+if (COMPILER_SUPPORTS_SSE2)
   set(ISALIST_SP ${ISALIST_SP} sse2sp)
   set(ISALIST_DP ${ISALIST_DP} sse2dp)
-endif(COMPILER_SUPPORTS_SSE4)
-
-if (COMPILER_SUPPORTS_AVX)
-  set(ISALIST_SP ${ISALIST_SP} avxsp)
-  set(ISALIST_DP ${ISALIST_DP} avxdp)
-endif(COMPILER_SUPPORTS_AVX)
+endif(COMPILER_SUPPORTS_SSE2)
 
 if (COMPILER_SUPPORTS_AVX2)
   set(ISALIST_SP ${ISALIST_SP} avx2sp)
@@ -174,10 +153,6 @@ if (COMPILER_SUPPORTS_SVE)
   set(ISALIST_SP ${ISALIST_SP} sve256sp sve512sp sve1024sp sve2048sp)
   set(ISALIST_DP ${ISALIST_DP} sve256dp sve512dp sve1024dp sve2048dp)
 endif(COMPILER_SUPPORTS_SVE)
-
-if (COMPILER_SUPPORTS_NEON32)
-  set(ISALIST_SP ${ISALIST_SP} neon32sp)
-endif(COMPILER_SUPPORTS_NEON32)
 
 if (COMPILER_SUPPORTS_RVVM1)
   set(ISALIST_SP ${ISALIST_SP} rvvm1128sp rvvm1256sp rvvm1512sp rvvm11024sp rvvm12048sp)
@@ -219,7 +194,18 @@ endif()
 
 # Compiler properties
 
-set(CMAKE_C_FLAGS "${ORG_CMAKE_C_FLAGS} ${DFT_C_FLAGS}")
+if(OPENMP_FOUND)
+  set(CMAKE_C_FLAGS "${ORG_CMAKE_C_FLAGS} ${DFT_C_FLAGS} ${OpenMP_C_FLAGS}")
+  set(CMAKE_CXX_FLAGS "${ORG_CMAKE_C_FLAGS} ${DFT_C_FLAGS} ${OpenMP_C_FLAGS}")
+else()
+  set(CMAKE_C_FLAGS "${ORG_CMAKE_C_FLAGS} ${DFT_C_FLAGS}")
+  set(CMAKE_CXX_FLAGS "${ORG_CMAKE_C_FLAGS} ${DFT_C_FLAGS}")
+endif()
+
+if(MSVC)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
+endif()
+
 set(COMMON_TARGET_PROPERTIES
   C_STANDARD 99                  # -std=gnu99
   )
@@ -228,17 +214,19 @@ if (BUILD_SHARED_LIBS)
   list(APPEND COMMON_TARGET_PROPERTIES POSITION_INDEPENDENT_CODE ON)   # -fPIC
 endif()
 
-set(COMMON_TARGET_DEFINITIONS ${COMMON_TARGET_DEFINITIONS} MAXBUTWIDTH=${SLEEFDFT_MAXBUTWIDTH})
+set(COMMON_TARGET_DEFINITIONS ${COMMON_TARGET_DEFINITIONS}
+  MAXBUTWIDTHDP=${SLEEFDFT_MAXBUTWIDTH} MAXBUTWIDTHSP=${SLEEFDFT_MAXBUTWIDTH}
+)
+
+if (SLEEFDFT_ENABLE_PARALLELFOR)
+  set(COMMON_TARGET_DEFINITIONS ${COMMON_TARGET_DEFINITIONS} SLEEF_ENABLE_PARALLELFOR=1)
+endif()
 
 if (SLEEFDFT_ENABLE_STREAM)
   set(COMMON_TARGET_DEFINITIONS ${COMMON_TARGET_DEFINITIONS} ENABLE_STREAM=1)
 else()
   set(COMMON_TARGET_DEFINITIONS ${COMMON_TARGET_DEFINITIONS} ENABLE_STREAM=0)
 endif()
-
-if(COMPILER_SUPPORTS_OPENMP)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-endif(COMPILER_SUPPORTS_OPENMP)
 
 
 # Include directories
@@ -269,7 +257,7 @@ endif()
 
 add_custom_command(OUTPUT dispatchparam.h
   COMMENT "Generating dispatchparam.h"
-  COMMAND $<TARGET_FILE:${TARGET_MKDISPATCH}> paramonly ${SLEEFDFT_MAXBUTWIDTH} ${ISALIST_DP} > ${CMAKE_CURRENT_BINARY_DIR}/dispatchparam.h
+  COMMAND $<TARGET_FILE:${TARGET_MKDISPATCH}> paramonly ALL ${SLEEFDFT_MAXBUTWIDTH} 1 1 ${ISALIST_SP} > ${CMAKE_CURRENT_BINARY_DIR}/dispatchparam.h
   DEPENDS ${TARGET_MKDISPATCH}
   )
 add_custom_target(dispatchparam.h_generated SOURCES ${CMAKE_CURRENT_BINARY_DIR}/dispatchparam.h)
@@ -282,49 +270,51 @@ foreach(T ${LIST_SUPPORTED_FPTYPE})
   list(GET LISTLONGTYPENAME ${T} LT)                        # LT is "double"
   list(GET LISTTYPEID ${T} ID)                              # ID is 1
 
-  string(CONCAT S "dispatch" ${ST} ".h")                    # S is dispatchdp.h
+  string(CONCAT S "dispatch" ${ST} ".hpp")                  # S is dispatchdp.hpp
   add_custom_command(OUTPUT ${S}
     COMMENT "Generating ${S}"
-    COMMAND $<TARGET_FILE:${TARGET_MKDISPATCH}> ${LT} ${SLEEFDFT_MAXBUTWIDTH} ${ISALIST_${CST}} > ${S}
+    COMMAND $<TARGET_FILE:${TARGET_MKDISPATCH}> ${LT} ${CST} ${SLEEFDFT_MAXBUTWIDTH} 1 1 ${ISALIST_${CST}} > ${S}
     DEPENDS ${TARGET_MKDISPATCH}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
 
-  string(CONCAT G ${S} "_generated")                        # G is dispatchdp.h_generated
+  string(CONCAT G ${S} "_generated")                        # G is dispatchdp.hpp_generated
   add_custom_target(${G} SOURCES ${S})
 endforeach()
 
 # Target dftcommon.o
 
-add_library(dftcommon_obj OBJECT dftcommon.c dftcommon.h ${CMAKE_CURRENT_BINARY_DIR}/dispatchparam.h ${sleef_BINARY_DIR}/include/sleef.h)
+add_library(dftcommon_obj OBJECT dftcommon.cpp dftcommon.hpp ${CMAKE_CURRENT_BINARY_DIR}/dispatchparam.h ${sleef_BINARY_DIR}/include/sleef.h)
 add_dependencies(dftcommon_obj ${TARGET_HEADERS} dispatchparam.h_generated)
 set_source_files_properties(${sleef_BINARY_DIR}/include/sleef.h PROPERTIES GENERATED TRUE)
 set_target_properties(dftcommon_obj PROPERTIES ${COMMON_TARGET_PROPERTIES})
 target_compile_definitions(dftcommon_obj PRIVATE ${COMMON_TARGET_DEFINITIONS})
 
-# Target dft*.o
+# Target dft.o
 
-foreach(T ${LIST_SUPPORTED_FPTYPE})
-  list(GET LISTSHORTTYPENAME ${T} ST)                       # ST is "dp", for example
+add_library(dft_obj OBJECT dft.cpp dftcommon.hpp)
+add_dependencies(dft_obj "dispatchdp.hpp_generated" "dispatchsp.hpp_generated" dispatchparam.h_generated ${TARGET_HEADERS})
+set_target_properties(dft_obj PROPERTIES ${COMMON_TARGET_PROPERTIES})
+target_compile_definitions(dft_obj PRIVATE ${COMMON_TARGET_DEFINITIONS})
 
-  string(CONCAT G "dft" ${ST} "_obj")                       # G is "dftdp_obj"
-  string(CONCAT S "dispatch" ${ST} ".h")                    # S is "dispatchdp.h"
-  add_library(${G} OBJECT dft.c dftcommon.h ${S})
-  string(CONCAT SG ${S} "_generated")                       # SG is "dispatchdp.h_generated"
-  add_dependencies(${G} ${SG} ${TARGET_HEADERS})
-  set_target_properties(${G} PROPERTIES ${COMMON_TARGET_PROPERTIES})
-  list(GET LISTTYPEID ${T} ID)                              # ID is 1
-  target_compile_definitions(${G} PRIVATE BASETYPEID=${ID} ${COMMON_TARGET_DEFINITIONS})
-endforeach()
+# Copy unroll*.cpp.in to ${CMAKE_CURRENT_BINARY_DIR}
 
-# Copy unroll0.org to ${CMAKE_CURRENT_BINARY_DIR}
+add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/unroll0.cpp.in
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/unroll0.cpp.in ${CMAKE_CURRENT_BINARY_DIR}
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/unroll0.cpp.in)
+add_custom_target(unroll0.cpp.in.copied DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/unroll0.cpp.in)
 
-add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/unroll0.org
-  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/unroll0.org ${CMAKE_CURRENT_BINARY_DIR}
-  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/unroll0.org)
-add_custom_target(unroll0.org.copied DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/unroll0.org)
+add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/unroll1.cpp.in
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/unroll1.cpp.in ${CMAKE_CURRENT_BINARY_DIR}
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/unroll1.cpp.in)
+add_custom_target(unroll1.cpp.in.copied DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/unroll1.cpp.in)
 
-# Target unroll*.c
+add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/unroll2.cpp.in
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/unroll2.cpp.in ${CMAKE_CURRENT_BINARY_DIR}
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/unroll2.cpp.in)
+add_custom_target(unroll2.cpp.in.copied DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/unroll2.cpp.in)
+
+# Target unroll*.cpp
 
 foreach(T ${LIST_SUPPORTED_FPTYPE})
   list(GET LISTSHORTTYPENAME ${T} ST)                       # ST is "dp", for example
@@ -333,7 +323,7 @@ foreach(T ${LIST_SUPPORTED_FPTYPE})
 
   foreach(E ${ISALIST_${CST}})                              # E is "sse2dp"
     foreach(N ${NLIST})
-      string(CONCAT UC unroll_ ${N} _ ${E} ".c")            # UC is "unroll_0_sse2dp.c"
+      string(CONCAT UC unroll_ ${N} _ ${E} ".cpp")          # UC is "unroll_0_sse2dp.cpp"
       set(UNROLL_TARGET_${CST} ${UNROLL_TARGET_${CST}} ${UC})
     endforeach()
   endforeach()
@@ -342,9 +332,9 @@ foreach(T ${LIST_SUPPORTED_FPTYPE})
   if(UNROLL_TARGET_${CST})
     add_custom_command(OUTPUT ${UNROLL_TARGET_${CST}}
       COMMENT "Generating ${UNROLL_TARGET_${CST}}"
-      COMMAND $<TARGET_FILE:${TARGET_MKUNROLL}> ${LT} ${ISALIST_${CST}}
+      COMMAND $<TARGET_FILE:${TARGET_MKUNROLL}> unroll0.cpp.in ${LT} ${CST} - ${ISALIST_${CST}}
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-      DEPENDS ${TARGET_MKUNROLL} unroll0.org.copied
+      DEPENDS ${TARGET_MKUNROLL} unroll0.cpp.in.copied
       )
     add_custom_target(unroll_target_${ST} DEPENDS ${UNROLL_TARGET_${CST}})
   endif()
@@ -359,42 +349,24 @@ foreach(T ${LIST_SUPPORTED_FPTYPE})
 
   foreach(E ${ISALIST_${CST}})                              # E is "sse2dp"
     foreach(N ${NLIST})
-      string(CONCAT U unroll_ ${N} _ ${E})                  # U is "unroll_0_sse2dp"
+      string(CONCAT U unroll_ ${N} _ ${E})                  # U  is "unroll_0_sse2dp"
       string(CONCAT UG ${U} "_obj")                         # UG is "unroll_0_sse2dp_obj"
-      string(CONCAT UC ${U} ".c")                           # UC is "unroll_0_sse2dp.c"
+      string(CONCAT UC ${U} ".cpp")                         # UC is "unroll_0_sse2dp.cpp"
       add_library(${UG} OBJECT ${UC})
       set_target_properties(${UG} PROPERTIES ${COMMON_TARGET_PROPERTIES})
       target_include_directories(${UG} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
       target_compile_definitions(${UG} PRIVATE ${COMMON_TARGET_DEFINITIONS} ${MACRODEF_${E}})
       target_compile_options(${UG} PRIVATE ${CFLAGS_${E}})
-      add_dependencies(${UG} ${TARGET_HEADERS} unroll_target_${ST})
+      add_dependencies(${UG} ${TARGET_HEADERS} unroll_target_${ST} ext_tlfloat)
+      list(APPEND UNROLL_OBJECTS $<TARGET_OBJECTS:${UG}>)
     endforeach()
   endforeach()
 endforeach()
 
 # Target libdft
 
-add_library(${TARGET_LIBDFT} $<TARGET_OBJECTS:dftcommon_obj> $<TARGET_OBJECTS:${TARGET_LIBARRAYMAP_OBJ}>)
-target_link_libraries(${TARGET_LIBDFT} ${TARGET_LIBSLEEF} ${LIBM})
-
-foreach(T ${LIST_SUPPORTED_FPTYPE})
-  list(GET LISTSHORTTYPENAME ${T} ST)                       # ST is "dp", for example
-
-  string(CONCAT G "dft" ${ST} "_obj")                       # G is "dftdp_obj"
-  target_sources(${TARGET_LIBDFT} PRIVATE $<TARGET_OBJECTS:${G}>)
-endforeach()
-
-foreach(T ${LIST_SUPPORTED_FPTYPE})
-  list(GET LISTSHORTTYPENAME ${T} ST)                       # ST is "dp", for example
-  string(TOUPPER ${ST} CST)                                 # CST is "DP"
-
-  foreach(E ${ISALIST_${CST}})                              # E is "sse2dp"
-    foreach(N ${NLIST})
-      string(CONCAT UG unroll_ ${N} _ ${E} "_obj")          # U is "unroll_0_sse2dp_obj"
-      target_sources(${TARGET_LIBDFT} PRIVATE $<TARGET_OBJECTS:${UG}>)
-    endforeach()
-  endforeach()
-endforeach()
+add_library(${TARGET_LIBDFT} $<TARGET_OBJECTS:dftcommon_obj> $<TARGET_OBJECTS:dft_obj> ${UNROLL_OBJECTS})
+target_link_libraries(${TARGET_LIBDFT} ${TARGET_LIBSLEEF} ${TLFLOAT_LIBRARIES} ${LIBM})
 
 set_target_properties(${TARGET_LIBDFT} PROPERTIES
   VERSION ${SLEEF_VERSION}

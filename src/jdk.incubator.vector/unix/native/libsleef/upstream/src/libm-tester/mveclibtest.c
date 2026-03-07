@@ -16,10 +16,6 @@ void do_libm() { for(int i=0;i<N;i++) r0[i] = sin(a0[i]); }
 void do_sleef_sse2() { _mm_storeu_pd(r0, Sleef_sind2_u10sse2(_mm_loadu_pd(a0))); }
 #endif
 
-#if defined(__AVX__)
-void do_sleef_avx() { _mm256_storeu_pd(r0, Sleef_sind4_u10avx(_mm256_loadu_pd(a0))); }
-#endif
-
 #if defined(__AVX2__)
 void do_sleef_avx2() { _mm256_storeu_pd(r0, Sleef_sind4_u10avx2(_mm256_loadu_pd(a0))); }
 #endif
@@ -36,12 +32,6 @@ int do_test_once(double d) {
 #if defined(__SSE2__)
   for(int i=0;i<N;i++) a0[i] = d;
   do_sleef_sse2();
-  if (rm == r0[0]) return 1;
-#endif
-
-#if defined(__AVX__)
-  for(int i=0;i<N;i++) a0[i] = d;
-  do_sleef_avx();
   if (rm == r0[0]) return 1;
 #endif
 
@@ -63,10 +53,6 @@ int do_test_once(double d) {
 int check_feature(double d, float f) {
 #if defined(__SSE2__)
   do_sleef_sse2();
-#endif
-
-#if defined(__AVX__)
-  do_sleef_avx();
 #endif
 
 #if defined(__AVX2__)

@@ -1,4 +1,4 @@
-//   Copyright Naoki Shibata and contributors 2010 - 2023.
+//   Copyright Naoki Shibata and contributors 2010 - 2025.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -31,9 +31,9 @@
 #include <float.h>
 #include <limits.h>
 
-#if defined(__AVX2__) || defined(__aarch64__) || defined(__arm__) || defined(__powerpc64__)
-#ifndef FP_FAST_FMA
-#define FP_FAST_FMA
+#if defined(__AVX2__) || defined(__aarch64__) || defined(__powerpc64__)
+#ifndef __FMA__
+#define __FMA__
 #endif
 #endif
 
@@ -41,7 +41,7 @@
 #define __STDC__ 1
 #endif
 
-#if (defined(__GNUC__) || defined(__CLANG__)) && (defined(__i386__) || defined(__x86_64__))
+#if (defined(__GNUC__) || defined(__CLANG__)) && defined(__x86_64__)
 #include <x86intrin.h>
 #endif
 
@@ -75,8 +75,8 @@
 #include USE_INLINE_HEADER
 #include MACRO_ONLY_HEADER
 
-#ifndef ENABLE_PUREC_SCALAR
-#include "sleefinline_purec_scalar.h"
+#ifndef ENABLE_PURECFMA_SCALAR
+#include "sleefinline_purecfma_scalar.h"
 #endif
 
 #endif // #if !defined(USE_INLINE_HEADER)
@@ -92,36 +92,6 @@
 #include "helpersse2.h"
 typedef Sleef___m128d_2 vdouble2;
 typedef Sleef___m128_2 vfloat2;
-#endif
-#endif
-
-#ifdef ENABLE_SSE4
-#include "renamesse4.h"
-#if !defined(USE_INLINE_HEADER)
-#define CONFIG 4
-#include "helpersse2.h"
-typedef Sleef___m128d_2 vdouble2;
-typedef Sleef___m128_2 vfloat2;
-#endif
-#endif
-
-#ifdef ENABLE_AVX
-#include "renameavx.h"
-#if !defined(USE_INLINE_HEADER)
-#define CONFIG 1
-#include "helperavx.h"
-typedef Sleef___m256d_2 vdouble2;
-typedef Sleef___m256_2 vfloat2;
-#endif
-#endif
-
-#ifdef ENABLE_FMA4
-#include "renamefma4.h"
-#if !defined(USE_INLINE_HEADER)
-#define CONFIG 4
-#include "helperavx.h"
-typedef Sleef___m256d_2 vdouble2;
-typedef Sleef___m256_2 vfloat2;
 #endif
 #endif
 
@@ -155,60 +125,16 @@ typedef Sleef___m512_2 vfloat2;
 #endif
 #endif
 
-#ifdef ENABLE_AVX512FNOFMA
-#include "renameavx512fnofma.h"
-#if !defined(USE_INLINE_HEADER)
-#define CONFIG 2
-#include "helperavx512f.h"
-typedef Sleef___m512d_2 vdouble2;
-typedef Sleef___m512_2 vfloat2;
-#endif
-#endif
-
-#ifdef ENABLE_VECEXT
-#define CONFIG 1
-#include "helpervecext.h"
-#include "norename.h"
-#endif
-
 #ifdef ENABLE_PUREC
 #define CONFIG 1
 #include "helperpurec.h"
 #include "norename.h"
 #endif
 
-#ifdef ENABLE_NEON32
-#include "renameneon32.h"
-#if !defined(USE_INLINE_HEADER)
-#define CONFIG 1
-#include "helperneon32.h"
-typedef Sleef_float32x4_t_2 vfloat2;
-#endif
-#endif
-
-#ifdef ENABLE_NEON32VFPV4
-#include "renameneon32vfpv4.h"
-#if !defined(USE_INLINE_HEADER)
-#define CONFIG 4
-#include "helperneon32.h"
-typedef Sleef_float32x4_t_2 vfloat2;
-#endif
-#endif
-
 #ifdef ENABLE_ADVSIMD
 #include "renameadvsimd.h"
 #if !defined(USE_INLINE_HEADER)
 #define CONFIG 1
-#include "helperadvsimd.h"
-typedef Sleef_float64x2_t_2 vdouble2;
-typedef Sleef_float32x4_t_2 vfloat2;
-#endif
-#endif
-
-#ifdef ENABLE_ADVSIMDNOFMA
-#include "renameadvsimdnofma.h"
-#if !defined(USE_INLINE_HEADER)
-#define CONFIG 2
 #include "helperadvsimd.h"
 typedef Sleef_float64x2_t_2 vdouble2;
 typedef Sleef_float32x4_t_2 vfloat2;
@@ -227,14 +153,6 @@ typedef Sleef___m128_2 vfloat2;
 #include "renamesve.h"
 #if !defined(USE_INLINE_HEADER)
 #define CONFIG 1
-#include "helpersve.h"
-#endif
-#endif
-
-#ifdef ENABLE_SVENOFMA
-#include "renamesvenofma.h"
-#if !defined(USE_INLINE_HEADER)
-#define CONFIG 2
 #include "helpersve.h"
 #endif
 #endif
@@ -258,34 +176,12 @@ typedef Sleef_SLEEF_VECTOR_FLOAT_2 vfloat2;
 #endif
 #endif
 
-#ifdef ENABLE_VSXNOFMA
-#include "renamevsxnofma.h"
-#if !defined(USE_INLINE_HEADER)
-#define CONFIG 2
-#include "helperpower_128.h"
-#include "renamevsxnofma.h"
-typedef Sleef_SLEEF_VECTOR_DOUBLE_2 vdouble2;
-typedef Sleef_SLEEF_VECTOR_FLOAT_2 vfloat2;
-#endif
-#endif
-
 #ifdef ENABLE_VSX3
 #include "renamevsx3.h"
 #if !defined(USE_INLINE_HEADER)
 #define CONFIG 3
 #include "helperpower_128.h"
 #include "renamevsx3.h"
-typedef Sleef_SLEEF_VECTOR_DOUBLE_2 vdouble2;
-typedef Sleef_SLEEF_VECTOR_FLOAT_2 vfloat2;
-#endif
-#endif
-
-#ifdef ENABLE_VSX3NOFMA
-#include "renamevsx3nofma.h"
-#if !defined(USE_INLINE_HEADER)
-#define CONFIG 4
-#include "helperpower_128.h"
-#include "renamevsx3nofma.h"
 typedef Sleef_SLEEF_VECTOR_DOUBLE_2 vdouble2;
 typedef Sleef_SLEEF_VECTOR_FLOAT_2 vfloat2;
 #endif
@@ -301,30 +197,10 @@ typedef Sleef_SLEEF_VECTOR_FLOAT_2 vfloat2;
 #endif
 #endif
 
-#ifdef ENABLE_VXENOFMA
-#include "renamevxenofma.h"
-#if !defined(USE_INLINE_HEADER)
-#define CONFIG 141
-#include "helpers390x_128.h"
-typedef Sleef_SLEEF_VECTOR_DOUBLE_2 vdouble2;
-typedef Sleef_SLEEF_VECTOR_FLOAT_2 vfloat2;
-#endif
-#endif
-
 #ifdef ENABLE_VXE2
 #include "renamevxe2.h"
 #if !defined(USE_INLINE_HEADER)
 #define CONFIG 150
-#include "helpers390x_128.h"
-typedef Sleef_SLEEF_VECTOR_DOUBLE_2 vdouble2;
-typedef Sleef_SLEEF_VECTOR_FLOAT_2 vfloat2;
-#endif
-#endif
-
-#ifdef ENABLE_VXE2NOFMA
-#include "renamevxe2nofma.h"
-#if !defined(USE_INLINE_HEADER)
-#define CONFIG 151
 #include "helpers390x_128.h"
 typedef Sleef_SLEEF_VECTOR_DOUBLE_2 vdouble2;
 typedef Sleef_SLEEF_VECTOR_FLOAT_2 vfloat2;
@@ -355,26 +231,10 @@ typedef Sleef_SLEEF_VECTOR_FLOAT_2 vfloat2;
 #endif
 #endif
 
-#ifdef ENABLE_RVVM1NOFMA
-#include "renamervvm1nofma.h"
-#if !defined(USE_INLINE_HEADER)
-#define CONFIG 2
-#include "helperrvv.h"
-#endif
-#endif
-
 #ifdef ENABLE_RVVM2
 #include "renamervvm2.h"
 #if !defined(USE_INLINE_HEADER)
 #define CONFIG 1
-#include "helperrvv.h"
-#endif
-#endif
-
-#ifdef ENABLE_RVVM2NOFMA
-#include "renamervvm2nofma.h"
-#if !defined(USE_INLINE_HEADER)
-#define CONFIG 2
 #include "helperrvv.h"
 #endif
 #endif
@@ -462,184 +322,184 @@ int check_feature(double d, float f) {
   return 0;
 }
 
-#if defined(ENABLE_DP) && !(defined(ENABLE_SVE) || defined(ENABLE_SVENOFMA) || defined(ENABLE_RVVM1) || defined(ENABLE_RVVM1NOFMA) || defined(ENABLE_RVVM2) || defined(ENABLE_RVVM2NOFMA) || defined(USE_INLINE_HEADER))
+#if defined(ENABLE_DP) && !(defined(ENABLE_SVE) || defined(ENABLE_RVVM1) || defined(ENABLE_RVVM2) || defined(USE_INLINE_HEADER))
 static vdouble vd2getx_vd_vd2(vdouble2 v) { return v.x; }
 static vdouble vd2gety_vd_vd2(vdouble2 v) { return v.y; }
 #endif
 
-#if defined(ENABLE_SP) && !(defined(ENABLE_SVE) || defined(ENABLE_SVENOFMA) || defined(ENABLE_RVVM1) || defined(ENABLE_RVVM1NOFMA) || defined(ENABLE_RVVM2) || defined(ENABLE_RVVM2NOFMA) || defined(USE_INLINE_HEADER))
+#if defined(ENABLE_SP) && !(defined(ENABLE_SVE) || defined(ENABLE_RVVM1) || defined(ENABLE_RVVM2) || defined(USE_INLINE_HEADER))
 static vfloat vf2getx_vf_vf2(vfloat2 v) { return v.x; }
 static vfloat vf2gety_vf_vf2(vfloat2 v) { return v.y; }
 #endif
 
 //
 
-#define func_d_d(funcStr, funcName) {                           \
-    while (startsWith(buf, funcStr " ")) {                      \
-      uint64_t u;                                               \
-      sscanf(buf, funcStr " %" PRIx64, &u);                     \
-      double s[VECTLENDP];                                      \
-      memrand(s, sizeof(s));                                    \
+#define func_d_d(funcStr, funcName) {                                \
+    while (startsWith(buf, funcStr " ")) {                        \
+      uint64_t u;                                                \
+      sscanf(buf, funcStr " %" PRIx64, &u);                        \
+      double s[VECTLENDP];                                        \
+      memrand(s, sizeof(s));                                        \
       int idx = xrand() & (VECTLENDP-1);                        \
-      s[idx] = u2d(u);                                          \
-      vdouble a = vloadu_vd_p(s);                               \
-      a = funcName(a);                                          \
-      vstoreu_v_p_vd(s, a);                                     \
-      u = d2u(s[idx]);                                          \
-      printf("%" PRIx64 "\n", u);                               \
-      fflush(stdout);                                           \
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;          \
-    }                                                           \
+      s[idx] = u2d(u);                                                \
+      vdouble a = vloadu_vd_p(s);                                \
+      a = funcName(a);                                                \
+      vstoreu_v_p_vd(s, a);                                        \
+      u = d2u(s[idx]);                                                \
+      printf("%" PRIx64 "\n", u);                                \
+      fflush(stdout);                                                \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                \
+    }                                                                \
   }
 
-#define func_d2_d(funcStr, funcName) {                                  \
-    while (startsWith(buf, funcStr " ")) {                              \
-      uint64_t u;                                                       \
-      sscanf(buf, funcStr " %" PRIx64, &u);                             \
+#define func_d2_d(funcStr, funcName) {                                        \
+    while (startsWith(buf, funcStr " ")) {                                \
+      uint64_t u;                                                        \
+      sscanf(buf, funcStr " %" PRIx64, &u);                                \
       double s[VECTLENDP], t[VECTLENDP];                                \
-      memrand(s, sizeof(s));                                            \
-      memrand(t, sizeof(t));                                            \
+      memrand(s, sizeof(s));                                                \
+      memrand(t, sizeof(t));                                                \
       int idx = xrand() & (VECTLENDP-1);                                \
-      s[idx] = u2d(u);                                                  \
-      vdouble2 v;                                                       \
-      vdouble a = vloadu_vd_p(s);                                       \
-      v = funcName(a);                                                  \
-      vstoreu_v_p_vd(s, vd2getx_vd_vd2(v));                             \
-      vstoreu_v_p_vd(t, vd2gety_vd_vd2(v));                             \
-      Sleef_double2 d2;                                                 \
-      d2.x = s[idx];                                                    \
-      d2.y = t[idx];                                                    \
+      s[idx] = u2d(u);                                                        \
+      vdouble2 v;                                                        \
+      vdouble a = vloadu_vd_p(s);                                        \
+      v = funcName(a);                                                        \
+      vstoreu_v_p_vd(s, vd2getx_vd_vd2(v));                                \
+      vstoreu_v_p_vd(t, vd2gety_vd_vd2(v));                                \
+      Sleef_double2 d2;                                                        \
+      d2.x = s[idx];                                                        \
+      d2.y = t[idx];                                                        \
       printf("%" PRIx64 " %" PRIx64 "\n", d2u(d2.x), d2u(d2.y));        \
-      fflush(stdout);                                                   \
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                  \
-    }                                                                   \
+      fflush(stdout);                                                        \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                        \
+    }                                                                        \
   }
 
-#define func_d_d_d(funcStr, funcName) {                         \
-    while (startsWith(buf, funcStr " ")) {                      \
-      uint64_t u, v;                                            \
-      sscanf(buf, funcStr " %" PRIx64 " %" PRIx64, &u, &v);     \
+#define func_d_d_d(funcStr, funcName) {                                \
+    while (startsWith(buf, funcStr " ")) {                        \
+      uint64_t u, v;                                                \
+      sscanf(buf, funcStr " %" PRIx64 " %" PRIx64, &u, &v);        \
       double s[VECTLENDP], t[VECTLENDP];                        \
-      memrand(s, sizeof(s));                                    \
-      memrand(t, sizeof(t));                                    \
+      memrand(s, sizeof(s));                                        \
+      memrand(t, sizeof(t));                                        \
       int idx = xrand() & (VECTLENDP-1);                        \
-      s[idx] = u2d(u);                                          \
-      t[idx] = u2d(v);                                          \
-      vdouble a, b;                                             \
-      a = vloadu_vd_p(s);                                       \
-      b = vloadu_vd_p(t);                                       \
-      a = funcName(a, b);                                       \
-      vstoreu_v_p_vd(s, a);                                     \
-      u = d2u(s[idx]);                                          \
-      printf("%" PRIx64 "\n", u);                               \
-      fflush(stdout);                                           \
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;          \
-    }                                                           \
+      s[idx] = u2d(u);                                                \
+      t[idx] = u2d(v);                                                \
+      vdouble a, b;                                                \
+      a = vloadu_vd_p(s);                                        \
+      b = vloadu_vd_p(t);                                        \
+      a = funcName(a, b);                                        \
+      vstoreu_v_p_vd(s, a);                                        \
+      u = d2u(s[idx]);                                                \
+      printf("%" PRIx64 "\n", u);                                \
+      fflush(stdout);                                                \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                \
+    }                                                                \
   }
 
-#define func_d_d_i(funcStr, funcName) {                                 \
-    while (startsWith(buf, funcStr " ")) {                              \
-      uint64_t u, v;                                                    \
-      sscanf(buf, funcStr " %" PRIx64 " %" PRIx64, &u, &v);             \
-      double s[VECTLENDP];                                              \
-      int t[VECTLENDP*2];                                               \
-      memrand(s, sizeof(s));                                            \
-      memrand(t, sizeof(t));                                            \
+#define func_d_d_i(funcStr, funcName) {                                        \
+    while (startsWith(buf, funcStr " ")) {                                \
+      uint64_t u, v;                                                        \
+      sscanf(buf, funcStr " %" PRIx64 " %" PRIx64, &u, &v);                \
+      double s[VECTLENDP];                                                \
+      int t[VECTLENDP*2];                                                \
+      memrand(s, sizeof(s));                                                \
+      memrand(t, sizeof(t));                                                \
       int idx = xrand() & (VECTLENDP-1);                                \
-      s[idx] = u2d(u);                                                  \
-      t[idx] = (int)u2d(v);                                             \
-      vstoreu_v_p_vd(s, funcName(vloadu_vd_p(s), vloadu_vi_p(t)));      \
-      u = d2u(s[idx]);                                                  \
-      printf("%" PRIx64 "\n", u);                                       \
-      fflush(stdout);                                                   \
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                  \
-    }                                                                   \
+      s[idx] = u2d(u);                                                        \
+      t[idx] = (int)u2d(v);                                                \
+      vstoreu_v_p_vd(s, funcName(vloadu_vd_p(s), vloadu_vi_p(t)));        \
+      u = d2u(s[idx]);                                                        \
+      printf("%" PRIx64 "\n", u);                                        \
+      fflush(stdout);                                                        \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                        \
+    }                                                                        \
   }
 
-#define func_i_d(funcStr, funcName) {                           \
-    while (startsWith(buf, funcStr " ")) {                      \
-      uint64_t u;                                               \
-      int i;                                                    \
-      sscanf(buf, funcStr " %" PRIx64, &u);                     \
-      double s[VECTLENDP];                                      \
-      int t[VECTLENDP*2];                                       \
-      memrand(s, sizeof(s));                                    \
-      memrand(t, sizeof(t));                                    \
+#define func_i_d(funcStr, funcName) {                                \
+    while (startsWith(buf, funcStr " ")) {                        \
+      uint64_t u;                                                \
+      int i;                                                        \
+      sscanf(buf, funcStr " %" PRIx64, &u);                        \
+      double s[VECTLENDP];                                        \
+      int t[VECTLENDP*2];                                        \
+      memrand(s, sizeof(s));                                        \
+      memrand(t, sizeof(t));                                        \
       int idx = xrand() & (VECTLENDP-1);                        \
-      s[idx] = u2d(u);                                          \
-      vdouble a = vloadu_vd_p(s);                               \
-      vint vi = funcName(a);                                    \
-      vstoreu_v_p_vi(t, vi);                                    \
-      i = t[idx];                                               \
+      s[idx] = u2d(u);                                                \
+      vdouble a = vloadu_vd_p(s);                                \
+      vint vi = funcName(a);                                        \
+      vstoreu_v_p_vi(t, vi);                                        \
+      i = t[idx];                                                \
       printf("%d\n", i);                                        \
-      fflush(stdout);                                           \
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;          \
-    }                                                           \
+      fflush(stdout);                                                \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                \
+    }                                                                \
   }
 
 //
 
-#define func_f_f(funcStr, funcName) {                   \
-    while (startsWith(buf, funcStr " ")) {              \
-      uint32_t u;                                       \
-      sscanf(buf, funcStr " %x", &u);                   \
-      float s[VECTLENSP];                               \
-      memrand(s, sizeof(s));                            \
+#define func_f_f(funcStr, funcName) {                        \
+    while (startsWith(buf, funcStr " ")) {                \
+      uint32_t u;                                        \
+      sscanf(buf, funcStr " %x", &u);                        \
+      float s[VECTLENSP];                                \
+      memrand(s, sizeof(s));                                \
       int idx = xrand() & (VECTLENSP-1);                \
-      s[idx] = u2f(u);                                  \
+      s[idx] = u2f(u);                                        \
       vfloat a = vloadu_vf_p(s);                        \
-      a = funcName(a);                                  \
-      vstoreu_v_p_vf(s, a);                             \
-      u = f2u(s[idx]);                                  \
+      a = funcName(a);                                        \
+      vstoreu_v_p_vf(s, a);                                \
+      u = f2u(s[idx]);                                        \
       printf("%x\n", u);                                \
-      fflush(stdout);                                   \
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;  \
-    }                                                   \
+      fflush(stdout);                                        \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;        \
+    }                                                        \
   }
 
-#define func_f2_f(funcStr, funcName) {                  \
-    while (startsWith(buf, funcStr " ")) {              \
-      uint32_t u;                                       \
-      sscanf(buf, funcStr " %x", &u);                   \
-      float s[VECTLENSP], t[VECTLENSP];                 \
-      memrand(s, sizeof(s));                            \
-      memrand(t, sizeof(t));                            \
+#define func_f2_f(funcStr, funcName) {                        \
+    while (startsWith(buf, funcStr " ")) {                \
+      uint32_t u;                                        \
+      sscanf(buf, funcStr " %x", &u);                        \
+      float s[VECTLENSP], t[VECTLENSP];                        \
+      memrand(s, sizeof(s));                                \
+      memrand(t, sizeof(t));                                \
       int idx = xrand() & (VECTLENSP-1);                \
-      s[idx] = u2f(u);                                  \
+      s[idx] = u2f(u);                                        \
       vfloat2 v;                                        \
       vfloat a = vloadu_vf_p(s);                        \
-      v = funcName(a);                                  \
-      vstoreu_v_p_vf(s, vf2getx_vf_vf2(v));             \
-      vstoreu_v_p_vf(t, vf2gety_vf_vf2(v));             \
-      Sleef_float2 d2;                                  \
-      d2.x = s[idx];                                    \
-      d2.y = t[idx];                                    \
-      printf("%x %x\n", f2u(d2.x), f2u(d2.y));          \
-      fflush(stdout);                                   \
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;  \
-    }                                                   \
+      v = funcName(a);                                        \
+      vstoreu_v_p_vf(s, vf2getx_vf_vf2(v));                \
+      vstoreu_v_p_vf(t, vf2gety_vf_vf2(v));                \
+      Sleef_float2 d2;                                        \
+      d2.x = s[idx];                                        \
+      d2.y = t[idx];                                        \
+      printf("%x %x\n", f2u(d2.x), f2u(d2.y));                \
+      fflush(stdout);                                        \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;        \
+    }                                                        \
   }
 
-#define func_f_f_f(funcStr, funcName) {                 \
-    while (startsWith(buf, funcStr " ")) {              \
-      uint32_t u, v;                                    \
-      sscanf(buf, funcStr " %x %x", &u, &v);            \
-      float s[VECTLENSP], t[VECTLENSP];                 \
-      memrand(s, sizeof(s));                            \
-      memrand(t, sizeof(t));                            \
+#define func_f_f_f(funcStr, funcName) {                        \
+    while (startsWith(buf, funcStr " ")) {                \
+      uint32_t u, v;                                        \
+      sscanf(buf, funcStr " %x %x", &u, &v);                \
+      float s[VECTLENSP], t[VECTLENSP];                        \
+      memrand(s, sizeof(s));                                \
+      memrand(t, sizeof(t));                                \
       int idx = xrand() & (VECTLENSP-1);                \
-      s[idx] = u2f(u);                                  \
-      t[idx] = u2f(v);                                  \
-      vfloat a, b;                                      \
-      a = vloadu_vf_p(s);                               \
-      b = vloadu_vf_p(t);                               \
-      a = funcName(a, b);                               \
-      vstoreu_v_p_vf(s, a);                             \
-      u = f2u(s[idx]);                                  \
+      s[idx] = u2f(u);                                        \
+      t[idx] = u2f(v);                                        \
+      vfloat a, b;                                        \
+      a = vloadu_vf_p(s);                                \
+      b = vloadu_vf_p(t);                                \
+      a = funcName(a, b);                                \
+      vstoreu_v_p_vf(s, a);                                \
+      u = f2u(s[idx]);                                        \
       printf("%x\n", u);                                \
-      fflush(stdout);                                   \
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;  \
-    }                                                   \
+      fflush(stdout);                                        \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;        \
+    }                                                        \
   }
 
 //
@@ -656,11 +516,6 @@ int main2(int argc, char **argv) {
 #endif
 #ifdef ENABLE_SP
     k += 2;
-#endif
-#if defined(ENABLE_NEON32) || defined(ENABLE_NEON32VFPV4)
-    k += 4; // flush to zero
-#elif defined(ENABLE_VECEXT)
-    if (vcast_f_vf(xpowf(vcast_vf_f(0.5f), vcast_vf_f(140))) == 0) k += 4;
 #endif
 #if defined(DETERMINISTIC)
     k += 8;
