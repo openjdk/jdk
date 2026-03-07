@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,6 +123,10 @@ class AddNode : public Node {
   // Supplied function to return the multiplicative opcode
   virtual int min_opcode() const = 0;
 
+  // Check if this node is checked by merge_memops phase
+  virtual bool is_merge_memops_checked()  const { return false; };
+  virtual void set_merge_memops_checked(bool v) { ShouldNotReachHere(); };
+
   static AddNode* make(Node* in1, Node* in2, BasicType bt);
 
   // Utility function to check if the given node is a NOT operation,
@@ -135,8 +140,10 @@ class AddNode : public Node {
 //------------------------------AddINode---------------------------------------
 // Add 2 integers
 class AddINode : public AddNode {
+private:
+  bool _merge_memops_checked;
 public:
-  AddINode( Node *in1, Node *in2 ) : AddNode(in1,in2) {}
+  AddINode( Node *in1, Node *in2 ) : AddNode(in1,in2), _merge_memops_checked(false) {}
   virtual int Opcode() const;
   virtual const Type *add_ring( const Type *, const Type * ) const;
   virtual const Type *add_id() const { return TypeInt::ZERO; }
@@ -147,13 +154,18 @@ public:
   virtual Node* Identity(PhaseGVN* phase);
 
   virtual uint ideal_reg() const { return Op_RegI; }
+  virtual bool is_merge_memops_checked() const { return _merge_memops_checked; }
+  virtual void set_merge_memops_checked(bool v) { _merge_memops_checked = v; }
+  virtual uint size_of() const { return sizeof(AddINode); }
 };
 
 //------------------------------AddLNode---------------------------------------
 // Add 2 longs
 class AddLNode : public AddNode {
+private:
+  bool _merge_memops_checked;
 public:
-  AddLNode( Node *in1, Node *in2 ) : AddNode(in1,in2) {}
+  AddLNode( Node *in1, Node *in2 ) : AddNode(in1,in2), _merge_memops_checked(false) {}
   virtual int Opcode() const;
   virtual const Type *add_ring( const Type *, const Type * ) const;
   virtual const Type *add_id() const { return TypeLong::ZERO; }
@@ -164,6 +176,9 @@ public:
   virtual Node* Identity(PhaseGVN* phase);
 
   virtual uint ideal_reg() const { return Op_RegL; }
+  virtual bool is_merge_memops_checked() const { return _merge_memops_checked; }
+  virtual void set_merge_memops_checked(bool v) { _merge_memops_checked = v; }
+  virtual uint size_of() const { return sizeof(AddLNode); }
 };
 
 //------------------------------AddFNode---------------------------------------
@@ -262,8 +277,10 @@ public:
 // Logically OR 2 integers.  Included with the ADD nodes because it inherits
 // all the behavior of addition on a ring.
 class OrINode : public AddNode {
+private:
+  bool _merge_memops_checked;
 public:
-  OrINode( Node *in1, Node *in2 ) : AddNode(in1,in2) {}
+  OrINode( Node *in1, Node *in2 ) : AddNode(in1,in2), _merge_memops_checked(false) {}
   virtual int Opcode() const;
   virtual const Type *add_ring( const Type *, const Type * ) const;
   virtual const Type *add_id() const { return TypeInt::ZERO; }
@@ -273,14 +290,19 @@ public:
   virtual Node* Identity(PhaseGVN* phase);
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual bool is_merge_memops_checked()  const { return _merge_memops_checked; };
+  virtual void set_merge_memops_checked(bool v) { _merge_memops_checked = v; };
+  virtual uint size_of() const                  { return sizeof(OrINode); }
 };
 
 //------------------------------OrLNode----------------------------------------
 // Logically OR 2 longs.  Included with the ADD nodes because it inherits
 // all the behavior of addition on a ring.
 class OrLNode : public AddNode {
+private:
+  bool _merge_memops_checked;
 public:
-  OrLNode( Node *in1, Node *in2 ) : AddNode(in1,in2) {}
+  OrLNode( Node *in1, Node *in2 ) : AddNode(in1,in2), _merge_memops_checked(false){}
   virtual int Opcode() const;
   virtual const Type *add_ring( const Type *, const Type * ) const;
   virtual const Type *add_id() const { return TypeLong::ZERO; }
@@ -290,6 +312,9 @@ public:
   virtual Node* Identity(PhaseGVN* phase);
   virtual uint ideal_reg() const { return Op_RegL; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual bool is_merge_memops_checked()  const { return _merge_memops_checked; };
+  virtual void set_merge_memops_checked(bool v) { _merge_memops_checked = v; };
+  virtual uint size_of() const                  { return sizeof(OrLNode); }
 };
 
 //------------------------------XorINode---------------------------------------

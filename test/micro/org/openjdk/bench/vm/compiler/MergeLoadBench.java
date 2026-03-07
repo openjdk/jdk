@@ -49,7 +49,9 @@ public class MergeLoadBench {
             LONG_L = MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.LITTLE_ENDIAN),
             LONG_B = MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.BIG_ENDIAN),
             CHAR_L = MethodHandles.byteArrayViewVarHandle(char[].class, ByteOrder.LITTLE_ENDIAN),
-            CHAR_B = MethodHandles.byteArrayViewVarHandle(char[].class, ByteOrder.BIG_ENDIAN);
+            CHAR_B = MethodHandles.byteArrayViewVarHandle(char[].class, ByteOrder.BIG_ENDIAN),
+            SHORT_L = MethodHandles.byteArrayViewVarHandle(short[].class, ByteOrder.LITTLE_ENDIAN),
+            SHORT_B = MethodHandles.byteArrayViewVarHandle(short[].class, ByteOrder.BIG_ENDIAN);
 
     final static int NUMBERS = 8192;
 
@@ -303,6 +305,80 @@ public class MergeLoadBench {
         BH.consume(sum);
     }
 
+    // ==================== Short benchmarks ====================
+
+    @Benchmark
+    public void getShortB(Blackhole BH) {
+        long sum = 0;
+        for (int i = 0; i < longs.length; i++) {
+            short s = getShortB(bytes4, i);
+            sum += s;
+        }
+        BH.consume(sum);
+    }
+
+    @Benchmark
+    public void getShortBV(Blackhole BH) {
+        long sum = 0;
+        for (int i = 0; i < longs.length; i++) {
+            short s = (short) SHORT_B.get(bytes4, i * 2);
+            sum += s;
+        }
+        BH.consume(sum);
+    }
+
+    @Benchmark
+    public void getShortBU(Blackhole BH) {
+        long sum = 0;
+        for (int i = 0; i < longs.length; i++) {
+            short s = getShortBU(bytes4, i);
+            sum += s;
+        }
+        BH.consume(sum);
+    }
+
+    @Benchmark
+    public void getShortL(Blackhole BH) {
+        long sum = 0;
+        for (int i = 0; i < longs.length; i++) {
+            short s = getShortL(bytes4, i);
+            sum += s;
+        }
+        BH.consume(sum);
+    }
+
+    @Benchmark
+    public void getShortLU(Blackhole BH) {
+        long sum = 0;
+        for (int i = 0; i < longs.length; i++) {
+            short s = getShortLU(bytes4, i);
+            sum += s;
+        }
+        BH.consume(sum);
+    }
+
+    @Benchmark
+    public void getShortLV(Blackhole BH) {
+        long sum = 0;
+        for (int i = 0; i < longs.length; i++) {
+            short s = (short) SHORT_L.get(bytes4, i * 2);
+            sum += s;
+        }
+        BH.consume(sum);
+    }
+
+    @Benchmark
+    public void getShortS(Blackhole BH) {
+        long sum = 0;
+        for (int i = 0; i < longs.length; i++) {
+            short s = UNSAFE.getShort(bytes4, Unsafe.ARRAY_BYTE_BASE_OFFSET + i * 2);
+            sum += s;
+        }
+        BH.consume(sum);
+    }
+
+    // ==================== Char benchmarks ====================
+
     @Benchmark
     public void getCharB(Blackhole BH) {
         long sum = 0;
@@ -480,6 +556,38 @@ public class MergeLoadBench {
              | ((UNSAFE.getByte(array, address + 2) & 0xff) << 16)
              | ((UNSAFE.getByte(array, address + 3) & 0xff) << 24);
     }
+
+    // ==================== Short helper methods ====================
+
+    // Big-endian: high byte first (signed)
+    public static short getShortB(byte[] val, int index) {
+        index <<= 1;
+        return (short)(((val[index    ] & 0xff) << 8)
+                     | ((val[index + 1] & 0xff)     ));
+    }
+
+    // Little-endian: low byte first (signed)
+    public static short getShortL(byte[] val, int index) {
+        index <<= 1;
+        return (short)(((val[index    ] & 0xff)     )
+                     | ((val[index + 1] & 0xff) << 8));
+    }
+
+    // Big-endian with Unsafe
+    public static short getShortBU(byte[] array, int offset) {
+        final long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + (offset << 1);
+        return (short) (((UNSAFE.getByte(array, address    ) & 0xff) << 8)
+                      | ((UNSAFE.getByte(array, address + 1) & 0xff)     ));
+    }
+
+    // Little-endian with Unsafe
+    public static short getShortLU(byte[] array, int offset) {
+        final long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + (offset << 1);
+        return (short) (((UNSAFE.getByte(array, address    ) & 0xff)     )
+                      | ((UNSAFE.getByte(array, address + 1) & 0xff) << 8));
+    }
+
+    // ==================== Char helper methods ====================
 
     public static char getCharB(byte[] val, int index) {
         index <<= 1;
