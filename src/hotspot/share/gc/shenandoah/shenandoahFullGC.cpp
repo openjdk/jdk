@@ -217,6 +217,8 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     heap->tlabs_retire(ResizeTLAB);
   }
 
+  heap->free_set()->release_alloc_regions_under_lock(false);
+
   OrderAccess::fence();
 
   phase1_mark_heap();
@@ -1126,6 +1128,7 @@ void ShenandoahFullGC::phase5_epilog() {
         ShenandoahGenerationalFullGC::compute_balances();
       }
       heap->free_set()->finish_rebuild(young_trashed_regions, old_trashed_regions, num_old);
+      free_set->mutator_allocator()->reserve_alloc_regions();
     }
 
     // Set mark incomplete because the marking bitmaps have been reset except pinned regions.

@@ -393,8 +393,8 @@ public:
   };
 
   void heap_region_do(ShenandoahHeapRegion* r) override {
-    if (r->is_cset() || r->is_trash()) {
-      // Count the entire cset or trashed (formerly cset) region as used
+    if (r->is_cset() || r->is_trash() || r->is_atomic_alloc_region()) {
+      // Count the entire cset, trashed (formerly cset) or alloc reserved region as used
       // Note: Immediate garbage trash regions were never in the cset.
       _used += _region_size_bytes;
       _garbage += _region_size_bytes - r->get_live_data_bytes();

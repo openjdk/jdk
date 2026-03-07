@@ -43,7 +43,9 @@ ShenandoahThreadLocalData::ShenandoahThreadLocalData() :
   _plab_promoted(0),
   _plab_allows_promotion(true),
   _plab_retries_enabled(true),
-  _evacuation_stats(new ShenandoahEvacuationStats()) {
+  _evacuation_stats(new ShenandoahEvacuationStats()),
+  _mutator_allocator_start_index(UINT_MAX),
+  _collector_allocator_start_index(UINT_MAX) {
 }
 
 ShenandoahThreadLocalData::~ShenandoahThreadLocalData() {
