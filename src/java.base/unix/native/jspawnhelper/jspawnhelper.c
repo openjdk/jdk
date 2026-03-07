@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,13 @@
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <stdarg.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 
 #include "childproc.h"
 
@@ -139,17 +140,35 @@ void initChildStuff (int fdin, int fdout, ChildStuff *c) {
     offset += sp.parentPathvBytes;
 }
 
+#ifdef DEBUG
+static void checkIsValid(int fd) {
+    if (!fdIsValid(fd)) {
+        error(fd, errno);
+    }
+}
+static void checkIsPipe(int fd) {
+    checkIsValid(fd);
+    if (!fdIsPipe(fd)) {
+        error(fd, errno);
+    }
+}
+static void checkFileDescriptorSetup() {
+    checkIsValid(STDIN_FILENO);
+    checkIsValid(STDOUT_FILENO);
+    checkIsValid(STDERR_FILENO);
+    checkIsPipe(FAIL_FILENO);
+    checkIsPipe(CHILDENV_FILENO);
+}
+#endif // DEBUG
+
 int main(int argc, char *argv[]) {
     ChildStuff c;
-    struct stat buf;
-    /* argv[1] contains the fd number to read all the child info */
-    int r, fdinr, fdinw, fdout;
 
 #ifdef DEBUG
     jtregSimulateCrash(0, 4);
 #endif
 
-    if (argc != 3) {
+    if (argc != 2) {
         fprintf(stdout, "Incorrect number of arguments: %d\n", argc);
         shutItDown();
     }
@@ -159,30 +178,21 @@ int main(int argc, char *argv[]) {
         shutItDown();
     }
 
-    r = sscanf (argv[2], "%d:%d:%d", &fdinr, &fdinw, &fdout);
-    if (r == 3 && fcntl(fdinr, F_GETFD) != -1 && fcntl(fdinw, F_GETFD) != -1) {
-        fstat(fdinr, &buf);
-        if (!S_ISFIFO(buf.st_mode)) {
-            fprintf(stdout, "Incorrect input pipe\n");
-            shutItDown();
-        }
-    } else {
-        fprintf(stdout, "Incorrect FD array data: %s\n", argv[2]);
-        shutItDown();
-    }
+#ifdef DEBUG
+    /* Check expected file descriptors */
+    checkFileDescriptorSetup();
+#endif
 
-    // Close the writing end of the pipe we use for reading from the parent.
-    // We have to do this before we start reading from the parent to avoid
-    // blocking in the case the parent exits before we finished reading from it.
-    close(fdinw); // Deliberately ignore errors (see https://lwn.net/Articles/576478/).
-    initChildStuff (fdinr, fdout, &c);
-    // Now set the file descriptor for the pipe's writing end to -1
-    // for the case that somebody tries to close it again.
-    assert(c.childenv[1] == fdinw);
-    c.childenv[1] = -1;
-    // The file descriptor for reporting errors back to our parent we got on the command
-    // line should be the same like the one in the ChildStuff struct we've just read.
-    assert(c.fail[1] == fdout);
+    initChildStuff(CHILDENV_FILENO, FAIL_FILENO, &c);
+
+#ifdef DEBUG
+    /* Not needed in spawn mode */
+    assert(c.in[0] == -1 && c.in[1] == -1 &&
+           c.out[0] == -1 && c.out[1] == -1 &&
+           c.err[0] == -1 && c.err[1] == -1 &&
+           c.fail[0] == -1 && c.fail[1] == -1 &&
+           c.fds[0] == -1 && c.fds[1] == -1 && c.fds[2] == -1);
+#endif
 
     childProcess (&c);
     return 0; /* NOT REACHED */

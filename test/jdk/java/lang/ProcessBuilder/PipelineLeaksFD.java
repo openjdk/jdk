@@ -46,12 +46,21 @@ import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 /*
- * @test
+ * @test id=FORK
  * @bug 8289643 8291760 8291986
  * @requires os.family == "mac" | (os.family == "linux" & !vm.musl)
  * @summary File descriptor leak detection with ProcessBuilder.startPipeline
  * @library /test/lib
- * @run junit/othervm/timeout=240 PipelineLeaksFD
+ * @run junit/othervm/timeout=240 -Djdk.lang.Process.launchMechanism=FORK PipelineLeaksFD
+ */
+
+/*
+ * @test id=POSIX_SPAWN
+ * @bug 8289643 8291760 8291986
+ * @requires os.family == "mac" | (os.family == "linux" & !vm.musl)
+ * @summary File descriptor leak detection with ProcessBuilder.startPipeline
+ * @library /test/lib
+ * @run junit/othervm/timeout=240 -Djdk.lang.Process.launchMechanism=POSIX_SPAWN PipelineLeaksFD
  */
 
 public class PipelineLeaksFD {
@@ -96,6 +105,8 @@ public class PipelineLeaksFD {
     @ParameterizedTest
     @MethodSource("builders")
     void checkForLeaks(List<ProcessBuilder> builders) throws IOException {
+
+        System.out.println("Using:" + System.getProperty("jdk.lang.Process.launchMechanism"));
 
         List<String> lsofLines = lsofForPids(MY_PID);
         Set<PipeRecord> pipesBefore = pipesFromLSOF(lsofLines, MY_PID);
@@ -162,6 +173,9 @@ public class PipelineLeaksFD {
     @ParameterizedTest()
     @MethodSource("redirectCases")
     void checkRedirectErrorStream(boolean redirectError) {
+
+        System.out.println("Using:" + System.getProperty("jdk.lang.Process.launchMechanism"));
+
         try (Process p = new ProcessBuilder("cat")
                 .redirectErrorStream(redirectError)
                 .start()) {
