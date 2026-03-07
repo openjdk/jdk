@@ -2851,8 +2851,8 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
     *ctrl = iftrue1; // We need exactly the 1 test above
     PhaseIterGVN* igvn = gvn.is_IterGVN();
     if (igvn != nullptr) {
-      igvn->remove_globally_dead_node(r_ok_subtype);
-      igvn->remove_globally_dead_node(r_not_subtype);
+      igvn->remove_globally_dead_node(r_ok_subtype, PhaseIterGVN::DeathHint::Temp);
+      igvn->remove_globally_dead_node(r_not_subtype, PhaseIterGVN::DeathHint::Temp);
     }
     return not_subtype_ctrl;
   }

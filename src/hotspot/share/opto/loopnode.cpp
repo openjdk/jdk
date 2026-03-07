@@ -753,7 +753,7 @@ SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, Node* x, Ideal
     }
 #ifdef ASSERT
     if (mm != nullptr) {
-      _igvn.remove_dead_node(mm);
+      _igvn.remove_dead_node(mm, PhaseIterGVN::DeathHint::Temp);
     }
 #endif
   }
@@ -1834,7 +1834,7 @@ bool PhaseIdealLoop::convert_to_long_loop(Node* cmp, Node* phi, IdealLoopTree* l
       Node* n = iv_nodes.at(i);
       Node* clone = old_new[n->_idx];
       if (clone != nullptr) {
-        _igvn.remove_dead_node(clone);
+        _igvn.remove_dead_node(clone, PhaseIterGVN::DeathHint::Temp);
       }
     }
     return false;

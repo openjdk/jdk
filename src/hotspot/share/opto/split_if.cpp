@@ -481,7 +481,7 @@ Node *PhaseIdealLoop::spinup( Node *iff_dom, Node *new_false, Node *new_true, No
       Node *t = _igvn.hash_find_insert(phi_post);
       if( t ) {                 // See if we already have this one
         // phi_post will not be used, so kill it
-        _igvn.remove_dead_node(phi_post);
+        _igvn.remove_dead_node(phi_post, PhaseIterGVN::DeathHint::Temp);
         phi_post->destruct(&_igvn);
         phi_post = t;
       } else {
@@ -668,7 +668,7 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
       new_true = ifpx;
     }
   }
-  _igvn.remove_dead_node(new_iff);
+  _igvn.remove_dead_node(new_iff, PhaseIterGVN::DeathHint::Temp);
   // Lazy replace IDOM info with the region's dominator
   replace_node_and_forward_ctrl(iff, region_dom);
   // Break the self-cycle. Required for forward_ctrl to work on region.

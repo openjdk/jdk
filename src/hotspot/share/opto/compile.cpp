@@ -2319,7 +2319,7 @@ void Compile::Optimize() {
 #endif
   {
     TracePhase tp(_t_iterGVN);
-    igvn.optimize();
+    igvn.optimize(/*deep=*/true);
   }
 
   if (failing())  return;
@@ -2383,7 +2383,7 @@ void Compile::Optimize() {
       PhaseRenumberLive prl(initial_gvn(), *igvn_worklist());
     }
     igvn.reset();
-    igvn.optimize();
+    igvn.optimize(/*deep=*/true);
     if (failing()) return;
   }
 
@@ -2416,7 +2416,7 @@ void Compile::Optimize() {
       int mcount = macro_count(); // Record number of allocations and locks before IGVN
 
       // Optimize out fields loads from scalar replaceable allocations.
-      igvn.optimize();
+      igvn.optimize(/*deep=*/true);
       print_method(PHASE_ITER_GVN_AFTER_EA, 2);
 
       if (failing()) return;
@@ -2496,7 +2496,7 @@ void Compile::Optimize() {
   {
     TracePhase tp(_t_iterGVN2);
     igvn.reset_from_igvn(&ccp);
-    igvn.optimize();
+    igvn.optimize(/*deep=*/true);
   }
   print_method(PHASE_ITER_GVN2, 2);
 
