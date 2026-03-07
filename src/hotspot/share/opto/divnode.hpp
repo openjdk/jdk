@@ -175,8 +175,6 @@ public:
 
 // Base class for float and double modulus
 class ModFloatingNode : public CallLeafPureNode {
-  TupleNode* make_tuple_of_input_state_and_constant_result(PhaseIterGVN* phase, const Type* con) const;
-
 protected:
   virtual Node* dividend() const = 0;
   virtual Node* divisor() const = 0;
@@ -184,7 +182,7 @@ protected:
 
 public:
   ModFloatingNode(Compile* C, const TypeFunc* tf, address addr, const char* name);
-  Node* Ideal(PhaseGVN* phase, bool can_reshape) override;
+  const Type* Value(PhaseGVN* phase) const override;
 };
 
 // Float Modulus
