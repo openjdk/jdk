@@ -2319,17 +2319,11 @@ void os::uncommit_memory(char* addr, size_t bytes, bool executable) {
 // before it is finished being reserved.
 void os::release_memory(char* addr, size_t bytes) {
   assert_nonempty_range(addr, bytes);
-  bool res;
   if (MemTracker::enabled()) {
     MemTracker::NmtVirtualMemoryLocker nvml;
-    res = pd_release_memory(addr, bytes);
-    if (res) {
-      MemTracker::record_virtual_memory_release(addr, bytes);
-    }
-  } else {
-    res = pd_release_memory(addr, bytes);
+    MemTracker::record_virtual_memory_release(addr, bytes);
   }
-  if (!res) {
+  if (!pd_release_memory(addr, bytes)) {
     fatal("Failed to release " RANGEFMT, RANGEFMTARGS(addr, bytes));
   }
   log_debug(os, map)("Released " RANGEFMT, RANGEFMTARGS(addr, bytes));
