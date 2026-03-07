@@ -2568,6 +2568,9 @@ void G1CollectedHeap::start_concurrent_cycle(bool concurrent_operation_is_full_m
     _cm->post_concurrent_mark_start();
     _cm->cm_thread()->start_full_mark();
   } else {
+    // Since we skip the Cleanup pause that would otherwise set this flag before that phase,
+    // we need to do it here before starting the concurrent undo cycle.
+    collector_state()->set_clear_bitmap_in_progress(true);
     _cm->post_concurrent_undo_start();
     _cm->cm_thread()->start_undo_mark();
   }
