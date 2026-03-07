@@ -950,6 +950,11 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
   __ b(*stub->continuation());
 }
 
+#undef __
+#endif // COMPILER2
+
+#define __ masm->
+
 void ZBarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path) {
   // Resolve weak handle using the standard implementation.
   BarrierSetAssembler::try_resolve_weak_handle_in_c2(masm, obj, tmp, slow_path);
@@ -964,7 +969,6 @@ void ZBarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler* masm, R
 }
 
 #undef __
-#endif // COMPILER2
 
 static uint16_t patch_barrier_relocation_value(int format) {
   switch (format) {

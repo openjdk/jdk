@@ -79,10 +79,12 @@ public:
 
   virtual void check_oop(MacroAssembler *masm, Register oop, const char* msg);
 
-#ifdef COMPILER2
-  OptoReg::Name refine_register(const Node* node, OptoReg::Name opto_reg) const;
+  // also used for native wrapper
   virtual void try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj,
                                              Register tmp, Label& slow_path);
+
+#ifdef COMPILER2
+  OptoReg::Name refine_register(const Node* node, OptoReg::Name opto_reg) const;
 #endif // COMPILER2
 };
 

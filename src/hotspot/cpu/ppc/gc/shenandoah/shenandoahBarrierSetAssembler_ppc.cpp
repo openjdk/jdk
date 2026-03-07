@@ -663,7 +663,6 @@ void ShenandoahBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler
   __ block_comment("} try_resolve_jobject_in_native (shenandoahgc)");
 }
 
-#ifdef COMPILER2
 void ShenandoahBarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler *masm, Register obj,
                                                                   Register tmp, Label &slow_path) {
   __ block_comment("try_resolve_weak_handle_in_c2 (shenandoahgc) {");
@@ -688,7 +687,6 @@ void ShenandoahBarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler
 
   __ block_comment("} try_resolve_weak_handle_in_c2 (shenandoahgc)");
 }
-#endif
 
 // Special shenandoah CAS implementation that handles false negatives due
 // to concurrent evacuation.  That is, the CAS operation is intended to succeed in
