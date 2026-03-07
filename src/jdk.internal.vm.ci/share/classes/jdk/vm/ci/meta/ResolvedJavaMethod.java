@@ -305,9 +305,9 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
                 typename = typename.replaceFirst("\\[\\]$", "...");
             }
 
-            final StringBuilder sb = new StringBuilder(Modifier.toString(getModifiers()));
-            if (sb.length() != 0) {
-                sb.append(' ');
+            final StringBuilder sb = new StringBuilder();
+            if (Modifier.isFinal(getModifiers())) {
+                sb.append("final ");
             }
             return sb.append(typename).append(' ').append(getName()).toString();
         }

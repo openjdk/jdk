@@ -93,31 +93,15 @@ public abstract sealed class Executable extends AccessibleObject
                getDeclaringClass());
     }
 
-    void printModifiersIfNonzero(StringBuilder sb, int mask, boolean isDefault) {
-        int mod = getModifiers() & mask;
+    // Appends source modifiers of this declaration to a display string builder.
+    abstract void appendModifiers(StringBuilder sb);
 
-        if (mod != 0 && !isDefault) {
-            sb.append(Modifier.toString(mod)).append(' ');
-        } else {
-            int access_mod = mod & Modifier.ACCESS_MODIFIERS;
-            if (access_mod != 0)
-                sb.append(Modifier.toString(access_mod)).append(' ');
-            if (isDefault)
-                sb.append("default ");
-            mod = (mod & ~Modifier.ACCESS_MODIFIERS);
-            if (mod != 0)
-                sb.append(Modifier.toString(mod)).append(' ');
-        }
-    }
-
-    String sharedToString(int modifierMask,
-                          boolean isDefault,
-                          Class<?>[] parameterTypes,
+    String sharedToString(Class<?>[] parameterTypes,
                           Class<?>[] exceptionTypes) {
         try {
             StringBuilder sb = new StringBuilder();
 
-            printModifiersIfNonzero(sb, modifierMask, isDefault);
+            appendModifiers(sb);
             specificToStringHeader(sb);
             sb.append(Arrays.stream(parameterTypes)
                       .map(Type::getTypeName)
@@ -151,11 +135,11 @@ public abstract sealed class Executable extends AccessibleObject
         }
     }
 
-    String sharedToGenericString(int modifierMask, boolean isDefault) {
+    String sharedToGenericString() {
         try {
             StringBuilder sb = new StringBuilder();
 
-            printModifiersIfNonzero(sb, modifierMask, isDefault);
+            appendModifiers(sb);
 
             TypeVariable<?>[] typeparms = getTypeParameters();
             if (typeparms.length > 0) {
@@ -548,7 +532,9 @@ public abstract sealed class Executable extends AccessibleObject
      * {@return a string describing this {@code Executable}, including
      * any type parameters}
      */
-    public abstract String toGenericString();
+    public String toGenericString() {
+        return sharedToGenericString();
+    }
 
     /**
      * {@return {@code true} if this executable was declared to take a

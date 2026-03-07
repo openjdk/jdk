@@ -143,7 +143,7 @@ public class VerifyAccess {
             assert (canAccess && refc == defc) || !canAccess;
             return canAccess;
         default:
-            throw new IllegalArgumentException("bad modifiers: "+Modifier.toString(mods));
+            throw new IllegalArgumentException("bad modifiers: %04x".formatted(mods));
         }
     }
 

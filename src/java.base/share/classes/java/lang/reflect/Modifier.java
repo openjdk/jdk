@@ -37,13 +37,23 @@ import java.util.StringJoiner;
  * <cite>The Java Virtual Machine Specification</cite>.
  *
  * @apiNote
- * Not all modifiers that are syntactic Java language modifiers are
- * represented in this class, only those modifiers that <em>also</em>
- * have a corresponding JVM {@linkplain AccessFlag access flag} are
- * included. In particular the {@code default} method modifier (JLS
- * {@jls 9.4.3}) and the {@code sealed} and {@code non-sealed} class
- * (JLS {@jls 8.1.1.2}) and interface (JLS {@jls 9.1.1.4}) modifiers
- * are <em>not</em> represented in this class.
+ * {@code Modifier} was designed with two assumptions:
+ * <ol>
+ * <li>A source modifier corresponds to a JVM access flag;</li>
+ * <li>An access flag bit represents the same access flag in different structures.</li>
+ * </ol>
+ * These assumptions are no longer valid:
+ * <ol>
+ * <li>Java language modifiers like method modifier {@code default} does not
+ *     have a corresponding access flag</li>
+ * <li>The same bit may represent different flags in different structures, like
+ *     {@code 0x0040} represents {@link #VOLATILE ACC_VOLATILE} in fields and
+ *     {@code ACC_BRIDGE} in interfaces</li>
+ * </ol>
+ * To mitigate, {@code Modifier} class only include source modifiers that
+ * <em>also</em> have a corresponding JVM access flag.  Use {@link AccessFlag}
+ * to decode the access flags values, which takes the location of the flags and
+ * the class file version into account.
  *
  * @see Class#getModifiers()
  * @see Member#getModifiers()
@@ -247,10 +257,32 @@ public final class Modifier {
      * {@jls 8.1.1}) and immediately after "{@code static}" for an
      * interface (JLS {@jls 9.1.1}).
      *
+     * @deprecated
+     * This method tries to describe the source modifiers from an access flags
+     * value.  Since the introduction of this API, new source modifiers are
+     * often represented by {@code class} file constructs other than access
+     * flags, and access flags values in different {@code class} file
+     * structures have different interpretations.  As a result, the source
+     * modifiers reported by this API may be incomplete or incorrect.
+     * <p>
+     * The source modifiers of a declaration should be reconstructed manually,
+     * by examining its reflective object.  In addition, the reflective object
+     * methods that provide user-friendly text representations, such as {@link
+     * Class#toGenericString()}, render the source modifiers.
+     * <p>
+     * The access flags of a declaration, with the correct interpretation, can
+     * be obtained from the {@code accessFlags()} methods on the reflective
+     * objects, such as {@link Class#accessFlags()}.
+     * <p>
+     * To print an access flags value for debug output, consider using the
+     * format {@code %04x} instead of this method; this method omits all class
+     * file access flags without a corresponding source modifier.
+     *
      * @param   mod a set of modifiers
      * @return  a string representation of the set of modifiers
      * represented by {@code mod}
      */
+    @Deprecated(since = "27")
     public static String toString(int mod) {
         StringJoiner sj = new StringJoiner(" ");
 
@@ -439,20 +471,28 @@ public final class Modifier {
     private static final int PARAMETER_MODIFIERS =
         Modifier.FINAL;
 
-    static final int ACCESS_MODIFIERS =
-        Modifier.PUBLIC | Modifier.PROTECTED | Modifier.PRIVATE;
-
     /**
      * Return an {@code int} value OR-ing together the source language
      * modifiers that can be applied to a class.
      * @return an {@code int} value OR-ing together the source language
      * modifiers that can be applied to a class.
      *
+     * @deprecated
+     * This method is intended to be used in conjunction with {@link #toString()
+     * Modifier.toString} to filter out flags that would be incorrectly
+     * interpreted as source modifiers from other locations.  {@code toString()}
+     * is now deprecated.
+     * <p>
+     * Use {@link AccessFlag.Location#flags()} and {@link
+     * AccessFlag#sourceModifier()} to examine the source language modifiers
+     * that can be represented by {@code class} file access flags.
+     *
      * @see AccessFlag.Location#CLASS
      * @see AccessFlag.Location#INNER_CLASS
      * @jls 8.1.1 Class Modifiers
      * @since 1.7
      */
+    @Deprecated(since = "27")
     public static int classModifiers() {
         return CLASS_MODIFIERS;
     }
@@ -463,11 +503,22 @@ public final class Modifier {
      * @return an {@code int} value OR-ing together the source language
      * modifiers that can be applied to an interface.
      *
+     * @deprecated
+     * This method is intended to be used in conjunction with {@link #toString()
+     * Modifier.toString()} to filter out flags that would be incorrectly
+     * interpreted as source modifiers from other locations.  {@code toString()}
+     * is now deprecated.
+     * <p>
+     * Use {@link AccessFlag.Location#flags()} and {@link
+     * AccessFlag#sourceModifier()} to examine the source language modifiers
+     * that can be represented by {@code class} file access flags.
+     *
      * @see AccessFlag.Location#CLASS
      * @see AccessFlag.Location#INNER_CLASS
      * @jls 9.1.1 Interface Modifiers
      * @since 1.7
      */
+    @Deprecated(since = "27")
     public static int interfaceModifiers() {
         return INTERFACE_MODIFIERS;
     }
@@ -478,10 +529,21 @@ public final class Modifier {
      * @return an {@code int} value OR-ing together the source language
      * modifiers that can be applied to a constructor.
      *
+     * @deprecated
+     * This method is intended to be used in conjunction with {@link #toString()
+     * Modifier.toString()} to filter out flags that would be incorrectly
+     * interpreted as source modifiers from other locations.  {@code toString()}
+     * is now deprecated.
+     * <p>
+     * Use {@link AccessFlag.Location#flags()} and {@link
+     * AccessFlag#sourceModifier()} to examine the source language modifiers
+     * that can be represented by {@code class} file access flags.
+     *
      * @see AccessFlag.Location#METHOD
      * @jls 8.8.3 Constructor Modifiers
      * @since 1.7
      */
+    @Deprecated(since = "27")
     public static int constructorModifiers() {
         return CONSTRUCTOR_MODIFIERS;
     }
@@ -492,10 +554,21 @@ public final class Modifier {
      * @return an {@code int} value OR-ing together the source language
      * modifiers that can be applied to a method.
      *
+     * @deprecated
+     * This method is intended to be used in conjunction with {@link #toString()
+     * Modifier.toString()} to filter out flags that would be incorrectly
+     * interpreted as source modifiers from other locations.  {@code toString()}
+     * is now deprecated.
+     * <p>
+     * Use {@link AccessFlag.Location#flags()} and {@link
+     * AccessFlag#sourceModifier()} to examine the source language modifiers
+     * that can be represented by {@code class} file access flags.
+     *
      * @see AccessFlag.Location#METHOD
      * @jls 8.4.3 Method Modifiers
      * @since 1.7
      */
+    @Deprecated(since = "27")
     public static int methodModifiers() {
         return METHOD_MODIFIERS;
     }
@@ -506,10 +579,21 @@ public final class Modifier {
      * @return an {@code int} value OR-ing together the source language
      * modifiers that can be applied to a field.
      *
+     * @deprecated
+     * This method is intended to be used in conjunction with {@link #toString()
+     * Modifier.toString()} to filter out flags that would be incorrectly
+     * interpreted as source modifiers from other locations.  {@code toString()}
+     * is now deprecated.
+     * <p>
+     * Use {@link AccessFlag.Location#flags()} and {@link
+     * AccessFlag#sourceModifier()} to examine the source language modifiers
+     * that can be represented by {@code class} file access flags.
+     *
      * @see AccessFlag.Location#FIELD
      * @jls 8.3.1 Field Modifiers
      * @since 1.7
      */
+    @Deprecated(since = "27")
     public static int fieldModifiers() {
         return FIELD_MODIFIERS;
     }
@@ -520,10 +604,21 @@ public final class Modifier {
      * @return an {@code int} value OR-ing together the source language
      * modifiers that can be applied to a parameter.
      *
+     * @deprecated
+     * This method is intended to be used in conjunction with {@link #toString()
+     * Modifier.toString()} to filter out flags that would be incorrectly
+     * interpreted as source modifiers from other locations.  {@code toString()}
+     * is now deprecated.
+     * <p>
+     * Use {@link AccessFlag.Location#flags()} and {@link
+     * AccessFlag#sourceModifier()} to examine the source language modifiers
+     * that can be represented by {@code class} file access flags.
+     *
      * @see AccessFlag.Location#METHOD_PARAMETER
      * @jls 8.4.1 Formal Parameters
      * @since 1.8
      */
+    @Deprecated(since = "27")
     public static int parameterModifiers() {
         return PARAMETER_MODIFIERS;
     }
