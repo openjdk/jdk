@@ -7175,6 +7175,18 @@ instruct membar_release_lock() %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct membar_storeload() %{
+  match(MemBarStoreLoad);
+  ins_cost(4*MEMORY_REF_COST);
+
+  format %{ "MEMBAR-store-load" %}
+  size(4);
+  ins_encode %{
+    __ fence();
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct membar_volatile() %{
   match(MemBarVolatile);
   ins_cost(4*MEMORY_REF_COST);
@@ -7216,6 +7228,18 @@ instruct membar_volatile() %{
 //  ins_encode( /*empty*/ );
 //  ins_pipe(pipe_class_default);
 //%}
+
+instruct membar_full() %{
+  match(MemBarFull);
+  ins_cost(4*MEMORY_REF_COST);
+
+  format %{ "MEMBAR-full" %}
+  size(4);
+  ins_encode %{
+    __ fence();
+  %}
+  ins_pipe(pipe_class_default);
+%}
 
 instruct membar_CPUOrder() %{
   match(MemBarCPUOrder);
