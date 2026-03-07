@@ -2848,7 +2848,7 @@ size_t ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_o
                               _partitions.leftmost(ShenandoahFreeSetPartitionId::OldCollector),
                               _partitions.rightmost(ShenandoahFreeSetPartitionId::OldCollector));
           old_region_count++;
-          assert(ac = ShenandoahHeapRegion::region_size_bytes(), "Cannot move to old unless entire region is in alloc capacity");
+          assert(ac == ShenandoahHeapRegion::region_size_bytes(), "Cannot move to old unless entire region is in alloc capacity");
           mutator_allocatable_words -= ShenandoahHeapRegion::region_size_words();
           continue;
         }
