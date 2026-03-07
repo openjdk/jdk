@@ -111,7 +111,7 @@ static const char * warn_bad_class_descriptor1 = "JNI FindClass received a bad c
 static const char * warn_bad_class_descriptor2 = "\".  A correct class descriptor " \
   "has no leading \"L\" or trailing \";\".  Incorrect descriptors will not be accepted in future releases.";
 static const char * fatal_using_jnienv_in_nonjava = "FATAL ERROR in native method: Using JNIEnv in non-Java thread";
-static const char * warn_other_function_in_critical = "Warning: Calling other JNI functions in the scope of " \
+static const char * fatal_other_function_in_critical = "Calling other JNI functions in the scope of " \
   "Get/ReleasePrimitiveArrayCritical or Get/ReleaseStringCritical";
 static const char * fatal_bad_ref_to_jni = "Bad global or local ref passed to JNI";
 static const char * fatal_received_null_class = "JNI received a null class";
@@ -213,7 +213,9 @@ static inline void
 functionEnter(JavaThread* thr)
 {
   if (thr->in_critical()) {
-    tty->print_cr("%s", warn_other_function_in_critical);
+    tty->print_cr("%s", fatal_other_function_in_critical);
+    // Ideally the following, but at least AWT code triggers this (ouch!):
+    // NativeReportJNIFatalError(thr, fatal_other_function_in_critical);
   }
   check_pending_exception(thr);
 }
@@ -222,7 +224,9 @@ static inline void
 functionEnterExceptionAllowed(JavaThread* thr)
 {
   if (thr->in_critical()) {
-    tty->print_cr("%s", warn_other_function_in_critical);
+    tty->print_cr("%s", fatal_other_function_in_critical);
+    // Ideally the following, but at least AWT code triggers this (ouch!):
+    // NativeReportJNIFatalError(thr, fatal_other_function_in_critical);
   }
 }
 

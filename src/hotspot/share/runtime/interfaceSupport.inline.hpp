@@ -98,6 +98,10 @@ class ThreadStateTransition : public StackObj {
     assert(to == _thread_in_vm || to == _thread_in_Java, "invalid transition");
     assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native transition");
 
+    if (CheckJNICalls && (to == _thread_in_Java) && thread->in_critical()) {
+      fatal("Leaving native code while in JNI critical section, potential deadlock");
+    }
+
     if (!UseSystemMemoryBarrier) {
       thread->set_thread_state_fence(_thread_in_vm);
     } else {

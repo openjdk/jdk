@@ -1034,6 +1034,13 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   if (CheckJNICalls) {
     // clear_pending_jni_exception_check
     __ movptr(Address(thread, JavaThread::pending_jni_exception_check_fn_offset()), NULL_WORD);
+
+    // check we are not in critical section
+    Label L_skip;
+    __ cmpl(Address(r15_thread, JavaThread::jni_critical_offset()), 0);
+    __ jccb(Assembler::zero, L_skip);
+    __ stop("Leaving native code while in JNI critical section, potential deadlock");
+    __ bind(L_skip);
   }
 
   // reset handle block

@@ -937,6 +937,8 @@ public:
   static ByteSize is_disable_suspend_offset()        { return byte_offset_of(JavaThread, _is_disable_suspend); }
 #endif
 
+  static ByteSize jni_critical_offset()          { return byte_offset_of(JavaThread, _jni_active_critical); }
+
   // Returns the jni environment for this thread
   JNIEnv* jni_environment()                      { return &_jni_environment; }
 
