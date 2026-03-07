@@ -177,6 +177,7 @@ public class Symtab {
     public final Type methodHandlesType;
     public final Type methodHandleLookupType;
     public final Type methodTypeType;
+    public final Type callSiteType;
     public final Type nativeHeaderType;
     public final Type throwableType;
     public final Type errorType;
@@ -205,6 +206,8 @@ public class Symtab {
     public final Type retentionType;
     public final Type deprecatedType;
     public final Type suppressWarningsType;
+    public final Type constantBootstrapType;
+    public final Type callSiteBootstrapType;
     public final Type supplierType;
     public final Type inheritedType;
     public final Type profileType;
@@ -558,6 +561,7 @@ public class Symtab {
         methodHandlesType = enterClass("java.lang.invoke.MethodHandles");
         methodHandleLookupType = enterClass("java.lang.invoke.MethodHandles$Lookup");
         methodTypeType = enterClass("java.lang.invoke.MethodType");
+        callSiteType = enterClass("java.lang.invoke.CallSite");
         errorType = enterClass("java.lang.Error");
         illegalArgumentExceptionType = enterClass("java.lang.IllegalArgumentException");
         interruptedExceptionType = enterClass("java.lang.InterruptedException");
@@ -591,6 +595,8 @@ public class Symtab {
         retentionType = enterClass("java.lang.annotation.Retention");
         deprecatedType = enterClass("java.lang.Deprecated");
         suppressWarningsType = enterClass("java.lang.SuppressWarnings");
+        callSiteBootstrapType = enterClass("java.lang.invoke.CallSiteBootstrap");
+        constantBootstrapType = enterClass("java.lang.invoke.ConstantBootstrap");
         supplierType = enterClass("java.util.function.Supplier");
         inheritedType = enterClass("java.lang.annotation.Inherited");
         repeatableType = enterClass("java.lang.annotation.Repeatable");

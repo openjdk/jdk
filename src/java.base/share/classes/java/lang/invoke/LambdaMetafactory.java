@@ -336,6 +336,7 @@ public final class LambdaMetafactory {
      *         invariants are violated, as defined {@link LambdaMetafactory above}.
      * @throws NullPointerException If any argument is {@code null}.
      */
+    @CallSiteBootstrap
     public static CallSite metafactory(MethodHandles.Lookup caller,
                                        String interfaceMethodName,
                                        MethodType factoryType,
@@ -484,6 +485,7 @@ public final class LambdaMetafactory {
      *         {@code altInterfaceCount} or {@code altMethodCount} are negative
      *         integers.
      */
+    @CallSiteBootstrap
     public static CallSite altMetafactory(MethodHandles.Lookup caller,
                                           String interfaceMethodName,
                                           MethodType factoryType,

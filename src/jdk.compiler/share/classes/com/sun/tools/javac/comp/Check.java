@@ -3684,6 +3684,75 @@ public class Check {
         return isValid;
     }
 
+    void checkBootstrapMethodAnnotations(DiagnosticPosition pos, MethodSymbol s) {
+        if (!syms.callSiteBootstrapType.isErroneous() && s.attribute(syms.callSiteBootstrapType.tsym) != null) {
+            if (!checkBootstrapMethod(s, false)) {
+                log.error(pos, Errors.NotBsmSignature(s, s.kind, Fragments.CallSiteBootstrap));
+            }
+        }
+
+        if (!syms.constantBootstrapType.isErroneous() && s.attribute(syms.constantBootstrapType.tsym) != null) {
+            if (!checkBootstrapMethod(s, true)) {
+                log.error(pos, Errors.NotBsmSignature(s, s.kind, Fragments.ConstantBootstrap));
+            }
+        }
+    }
+
+    boolean checkBootstrapMethod(MethodSymbol s, boolean condy) {
+        var formalParamTypes = s.erasure(types).getParameterTypes();
+        var allParamTypes = !s.isStatic() && !s.isConstructor()
+                ? formalParamTypes.prepend(s.owner.erasure(types))
+                : formalParamTypes;
+        boolean varargs = s.isVarArgs();
+
+        // Return type
+        if (!condy) {
+            var returnType = s.isConstructor() ? s.owner.erasure(types) : s.erasure(types).getReturnType();
+            if (!types.isCastable(returnType, syms.callSiteType)) {
+                return false;
+            }
+        }
+
+        // Arguments
+        if (!varargs && allParamTypes.length() < 3) {
+            return false;
+        }
+
+        // Arg0 MethodHandles.Lookup
+        if (condy) {
+            if (!types.isSameType(syms.methodHandleLookupType, paramType(0, allParamTypes, varargs))) {
+                return false;
+            }
+        } else {
+            if (!types.isAssignable(syms.methodHandleLookupType, paramType(0, allParamTypes, varargs))) {
+                return false;
+            }
+        }
+
+        // Arg1 String
+        if (!types.isAssignable(syms.stringType, paramType(1, allParamTypes, varargs))) {
+            return false;
+        }
+
+        // Arg2 MethodType/Class
+        var thirdType = condy ? syms.classType : syms.methodTypeType;
+        if (!types.isAssignable(thirdType, paramType(2, allParamTypes, varargs))) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private Type paramType(int index, List<Type> paramTypes, boolean varargs) {
+        if (index < paramTypes.size() - 1) {
+            return paramTypes.get(index);
+        }
+        if (!varargs) {
+            return index == paramTypes.size() - 1 ? paramTypes.getLast() : Type.noType;
+        }
+        return types.elemtype(paramTypes.getLast());
+    }
+
     void checkDeprecatedAnnotation(DiagnosticPosition pos, Symbol s) {
         if (lint.isEnabled(LintCategory.DEP_ANN) && s.isDeprecatableViaAnnotation() &&
             (s.flags() & DEPRECATED) != 0 &&

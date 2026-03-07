@@ -1004,7 +1004,7 @@ public class Attr extends JCTree.Visitor {
         MethodSymbol prevMethod = chk.setMethod(m);
         try {
             chk.checkDeprecatedAnnotation(tree.pos(), m);
-
+            chk.checkBootstrapMethodAnnotations(tree.pos(), m);
 
             // Create a new environment with local scope
             // for attributing the method.

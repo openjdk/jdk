@@ -1,0 +1,9 @@
+BadBootstrapAnnotations.java:19:52: compiler.err.not.bsm.signature: nonStaticBoot(java.lang.invoke.MethodHandles.Lookup,java.lang.String,java.lang.invoke.MethodType), MTH, (compiler.misc.call.site.bootstrap)
+BadBootstrapAnnotations.java:20:38: compiler.err.not.bsm.signature: badIndyBoot(java.lang.invoke.MethodHandles.Lookup,java.lang.String,java.lang.invoke.MethodType), MTH, (compiler.misc.call.site.bootstrap)
+BadBootstrapAnnotations.java:21:40: compiler.err.not.bsm.signature: badIndyBoot(java.lang.String,java.lang.String,java.lang.invoke.MethodType), MTH, (compiler.misc.call.site.bootstrap)
+BadBootstrapAnnotations.java:22:40: compiler.err.not.bsm.signature: badIndyBoot(java.lang.invoke.MethodHandles.Lookup,int,java.lang.invoke.MethodType), MTH, (compiler.misc.call.site.bootstrap)
+BadBootstrapAnnotations.java:23:40: compiler.err.not.bsm.signature: badIndyBoot(java.lang.invoke.MethodHandles.Lookup,java.lang.String,java.lang.constant.ConstantDesc), MTH, (compiler.misc.call.site.bootstrap)
+BadBootstrapAnnotations.java:27:9: compiler.err.not.bsm.signature: BadBootstrapAnnotations.MySite(java.lang.invoke.MethodHandles.Lookup,java.lang.String,java.lang.String), MTH, (compiler.misc.call.site.bootstrap)
+BadBootstrapAnnotations.java:33:9: compiler.err.not.bsm.signature: BadBootstrapAnnotations.MySite(java.lang.invoke.MethodHandles.Lookup,int,java.lang.invoke.TypeDescriptor), MTH, (compiler.misc.call.site.bootstrap)
+BadBootstrapAnnotations.java:38:38: compiler.err.not.bsm.signature: badCondyBoot(java.lang.Object,java.lang.String,java.lang.invoke.MethodType), MTH, (compiler.misc.constant.bootstrap)
+8 errors
