@@ -1329,7 +1329,8 @@ public:
       // To calculate far_codestub_branch_size correctly.
       return true;
     }
-    return CodeCache::max_distance_to_non_nmethod() > branch_range;
+    return CodeCache::non_nmethod_overflow() ||
+           CodeCache::max_distance_to_non_nmethod() > branch_range;
   }
 
   // Emit a direct call/jump if the entry address will always be in range,
