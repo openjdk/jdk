@@ -39,7 +39,8 @@ import java.lang.invoke.VarHandle;
  */
 final class ConfinedSession extends MemorySessionImpl {
 
-    private int asyncReleaseCount = 0;
+    private int acquireCount;
+    private int asyncReleaseCount;
 
     static final VarHandle ASYNC_RELEASE_COUNT= MhUtil.findVarHandle(MethodHandles.lookup(), "asyncReleaseCount", int.class);
 
