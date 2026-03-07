@@ -46,6 +46,18 @@ JAVA_MANIFEST := $(TOPDIR)/src/java.base/windows/native/launcher/java.manifest
 INCLUDED_LAUNCHERS_FILE := $(SUPPORT_OUTPUTDIR)/modules_static-launchers/$(MODULE)/module-included-launchers.txt
 INCLUDED_LAUNCHERS :=
 
+ifeq ($(if $(filter $(MODULE) true, $(subst $(COMMA),$(SPACE),$(ENABLE_LINKTIME_OPT))), true, false), true)
+  ifeq ($(TOOLCHAIN_TYPE), gcc)
+    CFLAGS_JDKEXE += -flto=$(JOBS) -fuse-linker-plugin -fno-fat-lto-objects
+    CXXFLAGS_JDKEXE += -flto=$(JOBS) -fuse-linker-plugin -fno-fat-lto-objects
+    LDFLAGS_JDKEXE += -flto=$(JOBS) -fuse-linker-plugin
+  else ifeq ($(TOOLCHAIN_TYPE), microsoft)
+    CFLAGS_JDKEXE += -GL -Gy
+    CXXFLAGS_JDKEXE += -GL -Gy
+    LDFLAGS_JDKEXE += -LTCG:INCREMENTAL
+  endif
+endif
+
 ################################################################################
 # Build standard launcher.
 
