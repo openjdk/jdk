@@ -2014,9 +2014,7 @@ public class ForkJoinPool extends AbstractExecutorService
                                 rescan = true;
                                 int nh = t.noUserHelp();
                                 if (propagate =
-                                    (prevSrc != src || nh == 0) &&
-                                    U.getReferenceAcquire(
-                                        a, slotOffset(nb & m)) != null)
+                                    (prevSrc != src || nh == 0) && a[nb & m] != null)
                                     signalWork();
                                 w.topLevelExec(t, fifo);
                                 if ((b = q.base) != nb && !propagate)
@@ -2044,43 +2042,50 @@ public class ForkJoinPool extends AbstractExecutorService
     private int deactivate(WorkQueue w, int phase) {
         if (w == null)                        // currently impossible
             return IDLE;
-        int p = phase | IDLE, activePhase = phase + (IDLE << 1);
-        long pc = ctl, qc = (activePhase & LMASK) | ((pc - RC_UNIT) & UMASK);
-        int sp = w.stackPred = (int)pc;       // set ctl stack link
-        w.phase = p;
-        if (!compareAndSetCtl(pc, qc))        // try to enqueue
-            return w.phase = phase;           // back out on possible signal
-        int ac = (short)(qc >>> RC_SHIFT), n; long e; WorkQueue[] qs;
+        w.phase = phase | IDLE;
+        int activePhase = phase + (IDLE << 1);
+        long pc = ctl, qc, qac;
+        for (;;) {                           // enqueue
+            w.stackPred = (int)pc;
+            qac = (qc = (pc - RC_UNIT) & UMASK | (activePhase & LMASK)) & RC_MASK;
+            if (pc == (pc = U.compareAndExchangeLong(this, CTL, pc, qc)))
+                break;
+            else if (qac < (pc & RC_MASK))
+                return w.phase = phase;      // back out if lost to signal
+        }
+        int ac = (short)(qac >>> RC_SHIFT), n; long e; WorkQueue[] qs;
         if (((e = runState) & STOP) != 0L ||
             ((e & SHUTDOWN) != 0L && ac == 0 && quiescent() > 0) ||
             (qs = queues) == null || (n = qs.length) <= 0)
             return IDLE;                      // terminating
-        for (int k = n << 1, i = phase;;) {   // missed signal checks
-            WorkQueue q; ForkJoinTask<?>[] a; int cap;
-            for (q = null; --k > 0 && (q = qs[++i & (n - 1)]) == null;)
-                ;                            // find next nonempty slot
+        for (int prechecks = Math.min(ac, 2), // reactivation threshold
+                 k = Math.max(n + (n << 1), SPIN_WAITS << 1),
+                 i = 0; k-- > 0 ; ++i) {
+            WorkQueue q; int cap; ForkJoinTask<?>[] a;
             if (w.phase == activePhase)
                 return activePhase;
-            if (q == null || (a = q.array) == null || (cap = a.length) <= 0)
-                break;
-            if (a[q.base & (cap - 1)] != null) {
-                WorkQueue v; long c; int vsp, j;
-                if ((vsp = (int)(c = ctl)) == 0 || (j = vsp & SMASK) >= n ||
-                    (v = qs[j]) == null)
-                    break;
-                long nc = (v.stackPred & LMASK) | ((c + RC_UNIT) & UMASK);
-                if (U.compareAndSetLong(this, CTL, c, nc)) {
-                    v.phase = vsp;
-                    if (v.parking != 0)
-                        U.unpark(v.owner);
-                    if (v == w || w.phase == activePhase)
-                        return activePhase;
-                    break;
+            if ((q = qs[i & (n - 1)]) == null)
+                Thread.onSpinWait();
+            else if ((a = q.array) != null && (cap = a.length) > 0 &&
+                     a[q.base & (cap - 1)] != null) {
+                WorkQueue v; int sp, j; long c;
+                if (prechecks > 0)
+                    --prechecks;
+                else if (((c = ctl) & RC_MASK) <= qac && (sp = (int)c) != 0 &&
+                         (j = sp & SMASK) < n && (v = qs[j]) != null) {
+                    long nc = (v.stackPred & LMASK) | ((c + RC_UNIT) & UMASK);
+                    if ((v == w || k < n) && U.compareAndSetLong(this, CTL, c, nc)) {
+                        v.phase = sp;
+                        if (v.parking != 0)
+                            U.unpark(v.owner);
+                        break;
+                    }
                 }
-                k |= n;                      // ensure re-encounter
+                if (k < n)
+                    k = n;                    // ensure re-encounter
             }
         }
-        return awaitWork(w, p);              // block, drop, or exit
+        return (((phase = w.phase) & IDLE) == 0) ? phase : awaitWork(w, phase);
     }
 
     /**
