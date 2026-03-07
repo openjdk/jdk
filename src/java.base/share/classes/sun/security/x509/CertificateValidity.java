@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package sun.security.x509;
 
 import java.io.IOException;
 import java.security.cert.*;
+import java.time.Instant;
 import java.util.Date;
 import java.util.Objects;
 
@@ -47,28 +48,28 @@ public class CertificateValidity implements DerEncoder {
     static final long YR_2050 = 2524608000000L;
 
     // Private data members
-    private final Date        notBefore;
-    private final Date        notAfter;
+    private final Instant notBefore;
+    private final Instant notAfter;
 
     // Returns the first time the certificate is valid.
-    public Date getNotBefore() {
-        return new Date(notBefore.getTime());
+    public Instant getNotBefore() {
+        return notBefore;
     }
 
     // Returns the last time the certificate is valid.
-    public Date getNotAfter() {
-       return new Date(notAfter.getTime());
+    public Instant getNotAfter() {
+       return notAfter;
     }
 
     /**
      * The constructor for this class for the specified interval.
      *
-     * @param notBefore the date and time before which the certificate
-     *                   is not valid
-     * @param notAfter the date and time after which the certificate is
-     *                  not valid
+     * @param notBefore the date and time as {@code Instant} before which the
+     *                  certificate is not valid
+     * @param notAfter the date and time as {@code Instant} after which the
+     *                 certificate is not valid
      */
-    public CertificateValidity(Date notBefore, Date notAfter) {
+    public CertificateValidity(Instant notBefore, Instant notAfter) {
         this.notBefore = Objects.requireNonNull(notBefore);
         this.notAfter = Objects.requireNonNull(notAfter);
     }
@@ -95,17 +96,17 @@ public class CertificateValidity implements DerEncoder {
             throw new IOException("Invalid encoding for CertificateValidity");
 
         if (seq[0].tag == DerValue.tag_UtcTime) {
-            notBefore = derVal.data.getUTCTime();
+            notBefore = derVal.data.getUTCInstant();
         } else if (seq[0].tag == DerValue.tag_GeneralizedTime) {
-            notBefore = derVal.data.getGeneralizedTime();
+            notBefore = derVal.data.getGeneralizedInstant();
         } else {
             throw new IOException("Invalid encoding for CertificateValidity");
         }
 
         if (seq[1].tag == DerValue.tag_UtcTime) {
-            notAfter = derVal.data.getUTCTime();
+            notAfter = derVal.data.getUTCInstant();
         } else if (seq[1].tag == DerValue.tag_GeneralizedTime) {
-            notAfter = derVal.data.getGeneralizedTime();
+            notAfter = derVal.data.getGeneralizedInstant();
         } else {
             throw new IOException("Invalid encoding for CertificateValidity");
         }
@@ -129,15 +130,15 @@ public class CertificateValidity implements DerEncoder {
 
         DerOutputStream pair = new DerOutputStream();
 
-        if (notBefore.getTime() < YR_2050) {
-            pair.putUTCTime(notBefore);
+        if (notBefore.toEpochMilli() < YR_2050) {
+            pair.putUTCInstant(notBefore);
         } else
-            pair.putGeneralizedTime(notBefore);
+            pair.putGeneralizedInstant(notBefore);
 
-        if (notAfter.getTime() < YR_2050) {
-            pair.putUTCTime(notAfter);
+        if (notAfter.toEpochMilli() < YR_2050) {
+            pair.putUTCInstant(notAfter);
         } else {
-            pair.putGeneralizedTime(notAfter);
+            pair.putGeneralizedInstant(notAfter);
         }
         out.write(DerValue.tag_Sequence, pair);
     }
@@ -151,33 +152,33 @@ public class CertificateValidity implements DerEncoder {
      */
     public void valid()
     throws CertificateNotYetValidException, CertificateExpiredException {
-        Date now = new Date();
+        final Instant now = Instant.now();
         valid(now);
     }
 
     /**
      * Verify that the passed time is within the validity period.
-     * @param now the Date against which to compare the validity
+     * @param now the Instant against which to compare the validity
      * period.
      *
      * @exception CertificateExpiredException if the certificate has expired
-     * with respect to the <code>Date</code> supplied.
+     * with respect to the <code>Instant</code> supplied.
      * @exception CertificateNotYetValidException if the certificate is not
-     * yet valid with respect to the <code>Date</code> supplied.
+     * yet valid with respect to the <code>Instant</code> supplied.
      *
      */
-    public void valid(Date now)
+    public void valid(Instant now)
     throws CertificateNotYetValidException, CertificateExpiredException {
         /*
          * we use the internal Dates rather than the passed in Date
          * because someone could override the Date methods after()
          * and before() to do something entirely different.
          */
-        if (notBefore.after(now)) {
+        if (notBefore.isAfter(now)) {
             throw new CertificateNotYetValidException("NotBefore: " +
                                                       notBefore.toString());
         }
-        if (notAfter.before(now)) {
+        if (notAfter.isBefore(now)) {
             throw new CertificateExpiredException("NotAfter: " +
                                                   notAfter.toString());
         }

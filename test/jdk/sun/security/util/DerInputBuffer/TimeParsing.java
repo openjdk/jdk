@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,8 @@
  * @modules java.base/sun.security.util
  */
 
-import java.io.*;
+import java.io.IOException;
+import java.time.Instant;
 import java.util.Date;
 
 import sun.security.util.DerInputStream;
@@ -111,27 +112,45 @@ public class TimeParsing {
   }
 
   private static Date decodeGeneralized(byte[] b) throws IOException {
+      DerInputStream derin = new DerInputStream(b);
+      return derin.getGeneralizedTime();
+  }
+
+  private static Instant decodeUTCInstant(byte[] b) throws IOException {
     DerInputStream derin = new DerInputStream(b);
-    return derin.getGeneralizedTime();
+    return derin.getUTCInstant();
+  }
+
+  private static Instant decodeGeneralizedInstant(byte[] b) throws IOException {
+    DerInputStream derin = new DerInputStream(b);
+    return derin.getGeneralizedInstant();
   }
 
   private static  void checkUTC(Date d0, byte[] b, String text) throws Exception {
-    Date d1 = decodeUTC(b);
-    if( !d0.equals(d1) ) {
-      throw new Exception("UTCTime " + text + " failed: " + d1.toGMTString());
-    } else {
-      System.out.println("UTCTime " + text + " ok");
-    }
+      Date d1 = decodeUTC(b);
+      Instant d1Instant = decodeUTCInstant(b);
+      if (!d0.equals(d1)
+          && d0.toInstant().toEpochMilli() != d1Instant.toEpochMilli()) {
+          throw new Exception("UTCTime " + text +
+                              " failed: " + d1.toGMTString());
+      } else {
+          System.out.println("UTCTime " + text + " ok");
+      }
   }
 
-  private static  void checkGeneralized(Date d0, byte[] b, String text) throws Exception {
-    Date d1 = decodeGeneralized(b);
-    if( !d0.equals(d1) ) {
-      throw new Exception("GeneralizedTime " + text + " failed: " + d1.toGMTString());
-    } else {
-      System.out.println("GeneralizedTime " + text + " ok");
+    private static void checkGeneralized(Date d0, byte[] b, String text)
+            throws Exception {
+
+        Date d1 = decodeGeneralized(b);
+        Instant d1Instant = decodeGeneralizedInstant(b);
+        if (!d0.equals(d1)
+            && d0.toInstant().toEpochMilli() != d1Instant.toEpochMilli()) {
+            throw new Exception("GeneralizedTime " + text +
+                                " failed: " + d1.toGMTString());
+        } else {
+            System.out.println("GeneralizedTime " + text + " ok");
+        }
     }
-  }
 
   public static void main(String args[]) throws Exception {
     Date d0 = new Date(TIME);

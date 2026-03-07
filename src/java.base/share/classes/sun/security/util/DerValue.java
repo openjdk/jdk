@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import sun.util.calendar.CalendarSystem;
 import java.io.*;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
+import java.time.Instant;
 import java.util.*;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
@@ -888,11 +889,11 @@ public class DerValue {
     }
 
     /**
-     * Private helper routine to extract time from the der value.
+     * Private helper routine to extract time from the der value as an Instant.
      * @param generalized true if Generalized Time is to be read, false
      * if UTC Time is to be read.
      */
-    private Date getTimeInternal(boolean generalized) throws IOException {
+    private Instant getTimeInternal(boolean generalized) throws IOException {
 
         /*
          * UTC time encoded as ASCII chars:
@@ -1064,7 +1065,7 @@ public class DerValue {
             default:
                 throw new IOException("Parse " + type + " time, garbage offset");
         }
-        return new Date(time);
+        return Instant.ofEpochMilli(time);
     }
 
     /**
@@ -1080,11 +1081,11 @@ public class DerValue {
     }
 
     /**
-     * Determines whether Date was encoded as UTC or Generalized time and
-     * calls getUTCTime or getGeneralizedTime accordingly
+     * Determines whether {@code Instant} was encoded as UTC or Generalized time and
+     * calls getUTCInstant or getGeneralizedInstant accordingly
      */
-    public Date getTime() throws IOException {
-        return (tag == tag_UtcTime) ? getUTCTime() : getGeneralizedTime();
+    public Instant getInstant() throws IOException {
+        return (tag == tag_UtcTime) ? getUTCInstant() : getGeneralizedInstant();
     }
 
     /**
@@ -1093,11 +1094,20 @@ public class DerValue {
      * @return the Date held in this DER value
      */
     public Date getUTCTime() throws IOException {
+        return Date.from(getUTCInstant());
+    }
+
+    /**
+     * Returns an Instant if the DerValue is UtcTime.
+     *
+     * @return the Instant held in this DER value
+     */
+    public Instant getUTCInstant() throws IOException {
         if (tag != tag_UtcTime) {
             throw new IOException("DerValue.getUTCTime, not a UtcTime: " + tag);
         }
         if (end - start < 11 || end - start > 17)
-            throw new IOException("DER UTC Time length error");
+            throw new IOException("DER UTC Instant length error");
 
         data.pos = data.end; // Compatibility. Reach end.
         return getTimeInternal(false);
@@ -1109,12 +1119,21 @@ public class DerValue {
      * @return the Date held in this DER value
      */
     public Date getGeneralizedTime() throws IOException {
+        return Date.from(getGeneralizedInstant());
+    }
+
+    /**
+     * Returns an Instant if the DerValue is GeneralizedTime.
+     *
+     * @return the Instant held in this DER value
+     */
+    public Instant getGeneralizedInstant() throws IOException {
         if (tag != tag_GeneralizedTime) {
             throw new IOException(
                 "DerValue.getGeneralizedTime, not a GeneralizedTime: " + tag);
         }
         if (end - start < 13)
-            throw new IOException("DER Generalized Time length error");
+            throw new IOException("DER Generalized Instant length error");
 
         data.pos = data.end; // Compatibility. Reach end.
         return getTimeInternal(true);

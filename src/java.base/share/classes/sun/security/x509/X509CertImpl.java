@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.*;
 import java.security.cert.Certificate;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -503,8 +504,8 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      */
     public void checkValidity()
     throws CertificateExpiredException, CertificateNotYetValidException {
-        Date date = new Date();
-        checkValidity(date);
+        Instant instant = Instant.now();
+        checkValidity(instant);
     }
 
     /**
@@ -522,6 +523,24 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      */
     public void checkValidity(Date date)
     throws CertificateExpiredException, CertificateNotYetValidException {
+        checkValidity(date.toInstant());
+    }
+
+    /**
+     * Checks that the specified instant is within the certificate's
+     * validity period, or basically if the certificate would be
+     * valid at the specified date/time.
+     *
+     * @param instant the Instant to check against to see if this certificate
+     *        is valid at that date/time.
+     *
+     * @exception CertificateExpiredException if the certificate has expired
+     * with respect to the <code>instant</code> supplied.
+     * @exception CertificateNotYetValidException if the certificate is not
+     * yet valid with respect to the <code>instant</code> supplied.
+     */
+    public void checkValidity(Instant instant)
+    throws CertificateExpiredException, CertificateNotYetValidException {
 
         CertificateValidity interval;
         try {
@@ -531,7 +550,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
         }
         if (interval == null)
             throw new CertificateNotYetValidException("Null validity period");
-        interval.valid(date);
+        interval.valid(instant);
     }
 
     /**
@@ -661,6 +680,16 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      * @return the start date of the validity period.
      */
     public Date getNotBefore() {
+        return Date.from(getNotBeforeInstant());
+    }
+
+    /**
+     * Gets the notBefore instant from the validity period of the certificate.
+     *
+     * @return the start instant of the validity period.
+     * @since 27
+     */
+    public Instant getNotBeforeInstant() {
         return info.getValidity().getNotBefore();
     }
 
@@ -670,6 +699,16 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      * @return the end date of the validity period.
      */
     public Date getNotAfter() {
+        return Date.from(getNotAfterInstant());
+    }
+
+    /**
+     * Gets the notAfter instant from the validity period of the certificate.
+     *
+     * @return the end instant of the validity period.
+     * @since 27
+     */
+    public Instant getNotAfterInstant() {
         return info.getValidity().getNotAfter();
     }
 
