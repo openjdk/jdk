@@ -141,6 +141,16 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
     return nullptr;
   }
 
+  // If a phi input uses the phi (directly or transitively), this region is a loop header
+  // not yet converted to a LoopNode. Splitting through a loop header would create a
+  // self-referencing data cycle.
+  for (uint i = 1; i < r->req(); i++) {
+    Node* phi_in = phi->in(i);
+    if (phi_in != nullptr && phi->as_Phi()->is_unsafe_data_reference(phi_in)) {
+      return nullptr;
+    }
+  }
+
   // No other users of the cmp/bool
   if (b->outcnt() != 1 || cmp->outcnt() != 1) {
     //tty->print_cr("many users of cmp/bool");
