@@ -138,12 +138,9 @@ public abstract class Frame implements Cloneable {
   }
 
   public abstract Address getSP();
+  public abstract void setSP(Address newSP);
   public abstract Address getID();
   public abstract Address getFP();
-
-  public void setSP(Address newSP) {
-    throw new UnsupportedPlatformException("Continuation is not yet implemented.");
-  }
 
   /** testers -- platform dependent */
   public abstract boolean equals(Object arg);
