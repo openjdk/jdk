@@ -198,11 +198,11 @@ void BinaryMagnitudeSeq::clear() {
   for (int c = 0; c < BitsPerSize_t; c++) {
     _mags[c] = 0;
   }
-  _sum = 0;
+  _sum.store_relaxed(0);
 }
 
 void BinaryMagnitudeSeq::add(size_t val) {
-  AtomicAccess::add(&_sum, val);
+  _sum.add_then_fetch(val);
 
   int mag = log2i_graceful(val) + 1;
 
@@ -237,7 +237,7 @@ size_t BinaryMagnitudeSeq::num() const {
 }
 
 size_t BinaryMagnitudeSeq::sum() const {
-  return _sum;
+  return _sum.load_relaxed();
 }
 
 int BinaryMagnitudeSeq::min_level() const {

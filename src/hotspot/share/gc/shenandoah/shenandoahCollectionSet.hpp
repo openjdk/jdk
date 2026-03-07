@@ -32,6 +32,7 @@
 #include "memory/allocation.hpp"
 #include "memory/reservedSpace.hpp"
 #include "memory/virtualspace.hpp"
+#include "runtime/atomic.hpp"
 
 class ShenandoahCollectionSet : public CHeapObj<mtGC> {
   friend class ShenandoahHeap;
@@ -80,7 +81,7 @@ private:
   size_t                _old_available_bytes_collected;
 
   shenandoah_padding(0);
-  volatile size_t       _current_index;
+  Atomic<size_t>        _current_index;
   shenandoah_padding(1);
 
 public:
@@ -99,7 +100,7 @@ public:
   bool is_empty() const { return _region_count == 0; }
 
   void clear_current_index() {
-    _current_index = 0;
+    _current_index.store_relaxed(0);
   }
 
   inline bool is_in(ShenandoahHeapRegion* r) const;
