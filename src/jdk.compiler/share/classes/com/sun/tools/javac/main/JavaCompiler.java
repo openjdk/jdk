@@ -823,9 +823,9 @@ public class JavaCompiler {
                 c, () -> diagFactory.fragment(Fragments.UserSelectedCompletionFailure), dcfh);
         }
         JavaFileObject filename = c.classfile;
-        JavaFileObject prev = log.useSource(filename);
 
         if (tree == null) {
+            JavaFileObject prev = log.useSource(filename);
             try {
                 tree = parse(filename, filename.getCharContent(false));
             } catch (IOException e) {
