@@ -24,6 +24,7 @@ package compiler.c2.gvn;
 
 import compiler.lib.ir_framework.*;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 import java.util.Random;
 
@@ -35,15 +36,18 @@ import java.util.Random;
  *          regardless of Add input order, i.e. it is commutative w.r.t. the addition.
  * @library /test/lib /
  * @run driver ${test.main.class}
- * @run driver ${test.main.class} -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
- *              -XX:VerifyIterativeGVN=1110 -Xbatch -XX:CompileCommand=compileonly,${test.main.class}::*
  */
 public class MissedURShiftIAddILShiftIdeal {
 
     private static final Random RANDOM = Utils.getRandomInstance();
 
     public static void main(String[] args) {
-        TestFramework.run();
+        var framework = new TestFramework();
+        framework.addScenarios(new Scenario(0));
+        if (Platform.isDebugBuild()) {
+            framework.addScenarios(new Scenario(1, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:VerifyIterativeGVN=1110"));
+        }
+        framework.start();
     }
 
     @Run(test = {"testI", "testICommuted", "testIComputedY",
