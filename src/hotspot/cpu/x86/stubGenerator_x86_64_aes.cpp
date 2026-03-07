@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2019, 2025, Intel Corporation. All rights reserved.
+* Copyright (c) 2019, 2026, Intel Corporation. All rights reserved.
 *
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
@@ -218,6 +218,8 @@ void StubGenerator::generate_aes_stubs() {
       StubRoutines::_galoisCounterMode_AESCrypt = generate_galoisCounterMode_AESCrypt();
     } else {
       StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptAESCrypt_Parallel();
+      StubRoutines::_electronicCodeBook_encryptAESCrypt = generate_electronicCodeBook_encryptAESCrypt_Parallel();
+      StubRoutines::_electronicCodeBook_decryptAESCrypt = generate_electronicCodeBook_decryptAESCrypt_Parallel();
       if (VM_Version::supports_avx2()) {
           StubRoutines::_galoisCounterMode_AESCrypt = generate_avx2_galoisCounterMode_AESCrypt();
       }
@@ -1399,6 +1401,200 @@ address StubGenerator::generate_cipherBlockChaining_encryptAESCrypt() {
   return start;
 }
 
+// This is a version of ECB/AES Encrypt/Decrypt which does 4 blocks in a loop
+// at a time to hide instruction latency.
+//
+// For encryption (is_encrypt=true):
+//   pxor key[0], aesenc key[1..rounds-1], aesenclast key[rounds]
+// For decryption (is_encrypt=false):
+//   pxor key[1], aesdec key[2..rounds], aesdeclast key[0]
+//
+// Arguments:
+//
+// Inputs:
+//   c_rarg0   - source byte array address
+//   c_rarg1   - destination byte array address
+//   c_rarg2   - session key (Ke/Kd) in little endian int array
+//   c_rarg3   - input length (must be multiple of blocksize 16)
+//
+// Output:
+//   rax       - input length
+//
+address StubGenerator::generate_electronicCodeBook_AESCrypt_Parallel(bool is_encrypt) {
+  assert(UseAES, "need AES instructions and misaligned SSE support");
+  __ align(CodeEntryAlignment);
+  StubId stub_id = is_encrypt ? StubId::stubgen_electronicCodeBook_encryptAESCrypt_id
+                              : StubId::stubgen_electronicCodeBook_decryptAESCrypt_id;
+  StubCodeMark mark(this, stub_id);
+  address start = __ pc();
+
+  const Register from    = c_rarg0;  // source array address
+  const Register to      = c_rarg1;  // destination array address
+  const Register key     = c_rarg2;  // key array address
+  const Register len_reg = c_rarg3;  // src len (must be multiple of blocksize 16)
+  const Register pos     = rax;
+  const Register keylen  = r11;
+
+  const XMMRegister xmm_result0       = xmm0;
+  const XMMRegister xmm_result1       = xmm1;
+  const XMMRegister xmm_result2       = xmm2;
+  const XMMRegister xmm_result3       = xmm3;
+  const XMMRegister xmm_key_shuf_mask = xmm4;
+  const XMMRegister xmm_key_tmp       = xmm5;
+  // keys 0-9 pre-loaded into xmm6-xmm15
+  const int XMM_REG_NUM_KEY_FIRST = 6;
+  const int XMM_REG_NUM_KEY_LAST  = 15;
+  const XMMRegister xmm_key_first = as_XMMRegister(XMM_REG_NUM_KEY_FIRST);
+
+  // for key_128, key_192, key_256
+  const int ROUNDS[3] = {10, 12, 14};
+
+  Label L_exit;
+  Label L_loop4[3], L_single[3], L_done[3];
+
+#ifdef DoFour
+#undef DoFour
+#endif
+#ifdef DoOne
+#undef DoOne
+#endif
+
+#define DoFour(opc, reg)           \
+__ opc(xmm_result0, reg);         \
+__ opc(xmm_result1, reg);         \
+__ opc(xmm_result2, reg);         \
+__ opc(xmm_result3, reg);
+
+#define DoOne(opc, reg)            \
+__ opc(xmm_result0, reg);
+
+  __ enter(); // required for proper stackwalking of RuntimeStub frame
+  __ push(len_reg); // save original length for return value
+
+  __ movl(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
+
+  __ movdqu(xmm_key_shuf_mask, ExternalAddress(key_shuffle_mask_addr()), r10 /*rscratch*/);
+  // load up xmm regs 6 thru 15 with keys 0x00 - 0x90
+  for (int rnum = XMM_REG_NUM_KEY_FIRST, offset = 0x00; rnum <= XMM_REG_NUM_KEY_LAST; rnum++, offset += 0x10) {
+    load_key(as_XMMRegister(rnum), key, offset, xmm_key_shuf_mask);
+  }
+  __ xorptr(pos, pos);
+
+  // key length could be only {11, 13, 15} * 4 = {44, 52, 60}
+  __ cmpl(keylen, 52);
+  __ jcc(Assembler::equal, L_loop4[1]);
+  __ cmpl(keylen, 60);
+  __ jcc(Assembler::equal, L_loop4[2]);
+
+  // k == 0: generate code for key_128
+  // k == 1: generate code for key_192
+  // k == 2: generate code for key_256
+  for (int k = 0; k < 3; ++k) {
+    __ align(OptoLoopAlignment);
+    __ BIND(L_loop4[k]);
+    __ cmpptr(len_reg, 4 * AESBlockSize);
+    __ jcc(Assembler::less, L_single[k]);
+
+    __ movdqu(xmm_result0, Address(from, pos, Address::times_1, 0 * AESBlockSize));
+    __ movdqu(xmm_result1, Address(from, pos, Address::times_1, 1 * AESBlockSize));
+    __ movdqu(xmm_result2, Address(from, pos, Address::times_1, 2 * AESBlockSize));
+    __ movdqu(xmm_result3, Address(from, pos, Address::times_1, 3 * AESBlockSize));
+
+    if (is_encrypt) {
+      DoFour(pxor, xmm_key_first);
+      for (int rnum = 1; rnum < 10; rnum++) {
+        DoFour(aesenc, as_XMMRegister(rnum + XMM_REG_NUM_KEY_FIRST));
+      }
+      for (int i = 10; i < ROUNDS[k]; i++) {
+        load_key(xmm_key_tmp, key, i * 0x10, xmm_key_shuf_mask);
+        DoFour(aesenc, xmm_key_tmp);
+      }
+      load_key(xmm_key_tmp, key, ROUNDS[k] * 0x10, xmm_key_shuf_mask);
+      DoFour(aesenclast, xmm_key_tmp);
+    } else {
+      DoFour(pxor, as_XMMRegister(1 + XMM_REG_NUM_KEY_FIRST));
+      for (int rnum = 2; rnum < 10; rnum++) {
+        DoFour(aesdec, as_XMMRegister(rnum + XMM_REG_NUM_KEY_FIRST));
+      }
+      for (int i = 10; i <= ROUNDS[k]; i++) {
+        load_key(xmm_key_tmp, key, i * 0x10, xmm_key_shuf_mask);
+        DoFour(aesdec, xmm_key_tmp);
+      }
+      DoFour(aesdeclast, xmm_key_first);
+    }
+
+    __ movdqu(Address(to, pos, Address::times_1, 0 * AESBlockSize), xmm_result0);
+    __ movdqu(Address(to, pos, Address::times_1, 1 * AESBlockSize), xmm_result1);
+    __ movdqu(Address(to, pos, Address::times_1, 2 * AESBlockSize), xmm_result2);
+    __ movdqu(Address(to, pos, Address::times_1, 3 * AESBlockSize), xmm_result3);
+
+    __ addptr(pos, 4 * AESBlockSize);
+    __ subptr(len_reg, 4 * AESBlockSize);
+    __ jmp(L_loop4[k]);
+
+    __ align(OptoLoopAlignment);
+    __ BIND(L_single[k]);
+    __ cmpptr(len_reg, AESBlockSize);
+    __ jcc(Assembler::less, L_done[k]);
+
+    __ movdqu(xmm_result0, Address(from, pos, Address::times_1, 0));
+
+    if (is_encrypt) {
+      DoOne(pxor, xmm_key_first);
+      for (int rnum = 1; rnum < 10; rnum++) {
+        DoOne(aesenc, as_XMMRegister(rnum + XMM_REG_NUM_KEY_FIRST));
+      }
+      for (int i = 10; i < ROUNDS[k]; i++) {
+        load_key(xmm_key_tmp, key, i * 0x10, xmm_key_shuf_mask);
+        DoOne(aesenc, xmm_key_tmp);
+      }
+      load_key(xmm_key_tmp, key, ROUNDS[k] * 0x10, xmm_key_shuf_mask);
+      DoOne(aesenclast, xmm_key_tmp);
+    } else {
+      DoOne(pxor, as_XMMRegister(1 + XMM_REG_NUM_KEY_FIRST));
+      for (int rnum = 2; rnum < 10; rnum++) {
+        DoOne(aesdec, as_XMMRegister(rnum + XMM_REG_NUM_KEY_FIRST));
+      }
+      for (int i = 10; i <= ROUNDS[k]; i++) {
+        load_key(xmm_key_tmp, key, i * 0x10, xmm_key_shuf_mask);
+        DoOne(aesdec, xmm_key_tmp);
+      }
+      DoOne(aesdeclast, xmm_key_first);
+    }
+
+    __ movdqu(Address(to, pos, Address::times_1, 0), xmm_result0);
+    __ addptr(pos, AESBlockSize);
+    __ subptr(len_reg, AESBlockSize);
+    __ jmp(L_single[k]);
+
+    __ BIND(L_done[k]);
+    if (k < 2) __ jmp(L_exit);
+  } //for key_128/192/256
+
+  __ BIND(L_exit);
+  // Clear all XMM registers holding sensitive key material before returning
+  __ pxor(xmm_key_tmp, xmm_key_tmp);
+  for (int rnum = XMM_REG_NUM_KEY_FIRST; rnum <= XMM_REG_NUM_KEY_LAST; rnum++) {
+    __ pxor(as_XMMRegister(rnum), as_XMMRegister(rnum));
+  }
+  __ pop(rax);
+  __ leave(); // required for proper stackwalking of RuntimeStub frame
+  __ ret(0);
+
+  return start;
+
+#undef DoFour
+#undef DoOne
+}
+
+address StubGenerator::generate_electronicCodeBook_encryptAESCrypt_Parallel() {
+  return generate_electronicCodeBook_AESCrypt_Parallel(true);
+}
+
+address StubGenerator::generate_electronicCodeBook_decryptAESCrypt_Parallel() {
+  return generate_electronicCodeBook_AESCrypt_Parallel(false);
+}
+
 // This is a version of CBC/AES Decrypt which does 4 blocks in a loop at a time
 // to hide instruction latency
 //
@@ -1493,7 +1689,7 @@ address StubGenerator::generate_cipherBlockChaining_decryptAESCrypt_Parallel() {
 __ opc(xmm_result0, src_reg);         \
 __ opc(xmm_result1, src_reg);         \
 __ opc(xmm_result2, src_reg);         \
-__ opc(xmm_result3, src_reg);         \
+__ opc(xmm_result3, src_reg);
 
   for (int k = 0; k < 3; ++k) {
     __ BIND(L_multiBlock_loopTopHead[k]);
