@@ -42,6 +42,8 @@ import javax.crypto.spec.*;
 import java.nio.ByteBuffer;
 import java.nio.ReadOnlyBufferException;
 
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
 import sun.security.util.Debug;
 import sun.security.jca.*;
 import sun.security.util.KnownOIDs;
@@ -541,6 +543,7 @@ public class Cipher {
      *
      * @see java.security.Provider
      */
+    @CallerSensitive
     public static final Cipher getInstance(String transformation)
             throws NoSuchAlgorithmException, NoSuchPaddingException
     {
@@ -553,6 +556,8 @@ public class Cipher {
             throw new NoSuchAlgorithmException(transformation +
                     " is disabled");
         }
+
+        CryptoAlgorithmConstraints.warn("Cipher", transformation, Reflection.getCallerClass());
 
         List<Transform> transforms = getTransforms(transformation);
         List<ServiceId> cipherServices = new ArrayList<>(transforms.size());
