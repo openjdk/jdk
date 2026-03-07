@@ -1,0 +1,672 @@
+#if[Common1]
+/*
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+#warn This file is preprocessed before being compiled
+
+/*
+ * @test
+ * @compile/module=java.base java/util/SortingHelper.java
+ * @bug 6880672 6896573 6899694 6976036 7013585 7018258 8003981 8226297 8266431
+ * @build Sorting
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_arraySort,_arrayPartition Sorting -shortrun
+ * @run main/othervm -XX:-TieredCompilation -XX:CompileCommand=CompileThresholdScaling,java.util.DualPivotQuicksort::sort,0.0001 Sorting -shortrun
+ * @summary Exercise Arrays.sort, Arrays.parallelSort
+ *
+ * @author Vladimir Yaroslavskiy
+ * @author Jon Bentley
+ * @author Josh Bloch
+ */
+
+import java.io.PrintStream;
+import java.util.Arrays;
+import java.util.Random;
+import java.util.SortingHelper;
+
+public class Sorting {
+
+    private static final PrintStream out = System.out;
+    private static final PrintStream err = System.err;
+
+    // Lengths of arrays for short run
+    private static final int[] SHORT_LENGTHS =
+        { 1, 2, 3, 14, 55, 100, 500, 1_000, 14_000 };
+
+    // Lengths of arrays for long run (default)
+    private static final int[] LONG_LENGTHS =
+        { 1, 2, 3, 14, 55, 100, 500, 1_000, 14_000, 64_000};
+
+    private static final Random random = new Random(0xC0FFEE);
+
+    public static void main(String[] args) {
+        boolean shortRun = args.length > 0 && args[0].equals("-shortrun");
+        int[] lengths = shortRun ? SHORT_LENGTHS : LONG_LENGTHS;
+        long start = System.currentTimeMillis();
+
+        for (int length : lengths) {
+            new IntegerHolder().test(length);
+            new LongHolder().test(length);
+            new ByteHolder().test(length);
+            new CharacterHolder().test(length);
+            new ShortHolder().test(length);
+            new FloatHolder().test(length);
+            new DoubleHolder().test(length);
+        }
+        long end = System.currentTimeMillis();
+        out.format("PASSED in %d sec.\n", (end - start) / 1_000);
+    }
+#end[Common1]
+#if[AllTypes]
+
+    private static class $Type$Holder {
+        // Constant to fill the left part of array
+        private static final $type$ A380 = ($type$) 0xA380;
+
+        // Constant to fill the right part of array
+        private static final $type$ B747 = ($type$) 0xB747;
+
+        private SortingHelper sortingHelper;
+        private boolean withMin;
+        private $type$[] gold;
+        private $type$[] test;
+
+        private $Type$Holder set(SortingHelper sortingHelper) {
+            return set(sortingHelper, false);
+        }
+
+        private $Type$Holder set(SortingHelper sortingHelper, boolean withMin) {
+            this.sortingHelper = sortingHelper;
+            this.withMin = withMin;
+            return this;
+        }
+
+        private void test(int length) {
+            gold = new $type$[length];
+            test = new $type$[length];
+
+#if[IntLongFloatDouble]
+            set(SortingHelper.MERGING_SORT).testStructured();
+            set(SortingHelper.MIXED_INSERTION_SORT, true).testBase();
+#end[IntLongFloatDouble]
+#if[AllTypes]
+            set(SortingHelper.INSERTION_SORT).testBase();
+#end[AllTypes]
+#if[IntLongFloatDouble]
+            set(SortingHelper.HEAP_SORT).testBase();
+#end[IntLongFloatDouble]
+#if[ByteCharShort]
+            set(SortingHelper.COUNTING_SORT).testCore();
+#end[ByteCharShort]
+#if[AllTypes]
+            set(SortingHelper.DUAL_PIVOT_QUICKSORT).testCore();
+#end[AllTypes]
+#if[IntLongFloatDouble]
+            set(SortingHelper.PARALLEL_QUICKSORT).testCore();
+#end[IntLongFloatDouble]
+#if[AllTypes]
+            set(SortingHelper.ARRAYS_SORT).testAll();
+            set(SortingHelper.ARRAYS_PARALLEL_SORT).testAll();
+#end[AllTypes]
+
+            out.println();
+        }
+
+        private void testEmpty() {
+            sortingHelper.sort(new $type$[test.length], 0, 0);
+        }
+
+        private void testStructured() {
+            testEmpty();
+
+            if (test.length < 512) {
+                return;
+            }
+            for (int m = 1; m < 9; ++m) {
+                for (Builder builder : StructuredBuilder.values()) {
+                    builder.build(gold, m);
+                    setup(0);
+                    print("structured", m, builder);
+                    sortingHelper.sort(test, 0, test.length);
+                    checkWithCheckSum(0);
+                }
+            }
+        }
+
+        private void testBase() {
+            if (test.length > 1_000) {
+                return;
+            }
+            testStructured();
+            testWithCheckSum();
+            testWithInsertionSort();
+            testWithScrambling();
+        }
+
+        private void testCore() {
+            testStructured();
+            testWithCheckSum();
+            testWithInsertionSort();
+            testWithScrambling();
+#if[FloatDouble]
+            testNegativeZeroAndNaN();
+#end[FloatDouble]
+        }
+
+        private void testAll() {
+            testCore();
+            testRange();
+        }
+
+        private void testRange() {
+            for (int m = 1; m <= test.length; m <<= 1) {
+                for (Builder builder : UnsortedBuilder.values()) {
+                    builder.build(gold, m);
+                    setup(0);
+                    print("range", m, builder);
+                    testRange(m);
+                }
+            }
+        }
+
+        private void testRange(int m) {
+            try {
+                sortingHelper.sort(test, m + 1, m);
+                fail(sortingHelper + " must throw IllegalArgumentException: " +
+                        "fromIndex = " + (m + 1) + ", toIndex = " + m);
+            } catch (IllegalArgumentException iae) {
+                try {
+                    sortingHelper.sort(test, -m, test.length);
+                    fail(sortingHelper + " must throw ArrayIndexOutOfBoundsException: " +
+                            "fromIndex = " + (-m));
+                } catch (ArrayIndexOutOfBoundsException aoe) {
+                    try {
+                        sortingHelper.sort(test, 0, test.length + m);
+                        fail(sortingHelper + " must throw ArrayIndexOutOfBoundsException: " +
+                                "toIndex = " + (test.length + m));
+                    } catch (ArrayIndexOutOfBoundsException expected) {}
+                }
+            }
+        }
+
+        private void testWithInsertionSort() {
+            if (test.length > 1_000) {
+                return;
+            }
+            for (int m = 1; m <= test.length; m <<= 1) {
+                int offset = m / 4;
+
+                for (Builder builder : UnsortedBuilder.values()) {
+                    builder.build(gold, m);
+                    setup(offset);
+                    print("with insertion sort", m, builder);
+                    sortingHelper.sort(test, offset, test.length - offset);
+                    sortByInsertionSort(gold, offset, test.length - offset);
+                    compare(test, gold);
+                }
+            }
+        }
+
+        private void testWithCheckSum() {
+            for (int m = 1; m <= test.length; m <<= 1) {
+                int offset = m / 4;
+
+                for (Builder builder : UnsortedBuilder.values()) {
+                    builder.build(gold, m);
+                    setup(offset);
+                    print("with check sum", m, builder);
+                    sortingHelper.sort(test, offset, test.length - offset);
+                    checkWithCheckSum(offset);
+                }
+            }
+        }
+
+        private void testWithScrambling() {
+            for (int m = 1; m <= test.length; m <<= 1) {
+                for (Builder builder : SortedBuilder.values()) {
+                    builder.build(gold, m);
+                    setup(0);
+                    print("with scrambling", m, builder);
+                    scramble();
+                    sortingHelper.sort(test, 0, test.length);
+                    compare(test, gold);
+                }
+            }
+        }
+
+#if[FloatDouble]
+        private void testNegativeZeroAndNaN() {
+            for (int m = 1; m <= test.length; m <<= 1) {
+                for (Builder builder : FloatingPointBuilder.values()) {
+                    builder.build(gold, m);
+                    setup(0);
+                    scramble();
+                    print("negative zero and NaN", m, builder);
+                    sortingHelper.sort(test, 0, test.length);
+                    check(test, m);
+                }
+            }
+        }
+
+#end[FloatDouble]
+        private void scramble() {
+            if (withMin) {
+                for (int i = 7; i < test.length * 7; ++i) {
+                    swap(test, random.nextInt(test.length - 1) + 1, random.nextInt(test.length - 1) + 1);
+                }
+            } else {
+                for (int i = 0; i < test.length * 7; ++i) {
+                    swap(test, random.nextInt(test.length), random.nextInt(test.length));
+                }
+            }
+        }
+
+        private void checkWithCheckSum(int m) {
+            checkSorted(test, m);
+            checkCheckSum(test, gold);
+        }
+
+        private void checkSorted($type$[] a, int m) {
+            for (int i = 0; i < m; ++i) {
+                if (a[i] != A380) {
+                    fail("Sort changes left element at position " + i + ": " + a[i] + ", must be A380");
+                }
+            }
+            for (int i = m; i < a.length - m - 1; ++i) {
+                if (a[i] > a[i + 1]) {
+                    fail("Array is not sorted at " + i + "-th position: " + a[i] + " and " + a[i + 1]);
+                }
+            }
+            for (int i = a.length - m; i < a.length; ++i) {
+                if (a[i] != B747) {
+                    fail("Sort changes right element at position " + i + ": " + a[i] + ", must be B747");
+                }
+            }
+        }
+
+        private void checkCheckSum($type$[] a, $type$[] b) {
+            if (checkSumXor(a) != checkSumXor(b)) {
+                fail("Original and sorted arrays are not identical [^]");
+            }
+            if (checkSumPlus(a) != checkSumPlus(b)) {
+                fail("Original and sorted arrays are not identical [+]");
+            }
+        }
+
+        private long checkSumXor($type$[] a) {
+            long checkSum = 0;
+
+            for ($type$ e : a) {
+                checkSum ^= (long) e;
+            }
+            return checkSum;
+        }
+
+        private long checkSumPlus($type$[] a) {
+            long checkSum = 0;
+
+            for ($type$ e : a) {
+                checkSum += (long) e;
+            }
+            return checkSum;
+        }
+
+        private void compare($type$[] a, $type$[] b) {
+            for (int i = 0; i < a.length; ++i) {
+                if (a[i] != b[i]) {
+                    fail("There must be " + b[i] + " instead of " + a[i] + " at position " + i);
+                }
+            }
+        }
+
+        private void sortByInsertionSort($type$[] a, int low, int high) {
+            SortingHelper.INSERTION_SORT.sort(a, low, high);
+        }
+
+        private void setup(int m) {
+            for (int i = 0; i < m; ++i) {
+                gold[i] = A380;
+            }
+            for (int i = gold.length - m; i < gold.length; ++i) {
+                gold[i] = B747;
+            }
+            if (withMin) {
+                gold[m] = $Type$.{#if[!FloatDouble]?MIN_VALUE}{#if[FloatDouble]?NEGATIVE_INFINITY};
+            }
+            test = gold.clone();
+        }
+
+        private void print(String name, int m, Builder builder) {
+            out(name, "$Type$", test.length, sortingHelper, m, builder);
+        }
+
+        private static void swap($type$[] a, int i, int j) {
+            $type$ t = a[i]; a[i] = a[j]; a[j] = t;
+        }
+
+        private static void reverse($type$[] a, int lo, int hi) {
+            for (--hi; lo < hi; swap(a, lo++, hi--));
+        }
+
+#if[FloatDouble]
+        private void check($type$[] a, int m) {
+            final {#if[Float]?int}{#if[Double]?long} NEGATIVE_ZERO = $Type$.{#if[Float]?floatToIntBits(-0.0f)}{#if[Double]?doubleToLongBits(-0.0d)};
+
+            int k1 = a.length / (m + 1) * m     / 5;
+            int k2 = a.length / (m + 1) * m * 2 / 5;
+            int k3 = a.length / (m + 1) * m * 3 / 5;
+            int k4 = a.length / (m + 1) * m * 4 / 5;
+
+            for (int i = 0; i < k1; ++i) {
+                $type$ v = ($type$) (-(a.length + m) + i);
+
+                if (a[i] != v) {
+                    fail("There must be " + v + " instead of " + a[i] + " at position " + i);
+                }
+            }
+            for (int i = k1; i < k2; ++i) {
+                if ($Type$.{#if[Float]?floatToIntBits(a[i])}{#if[Double]?doubleToLongBits(a[i])} != NEGATIVE_ZERO) {
+                    fail("There must be -0.0 instead of " + a[i] + " at position " + i);
+                }
+            }
+            for (int i = k2; i < k3; ++i) {
+                if (a[i] != 0.0{#if[Float]?f}{#if[Double]?d} || $Type$.{#if[Float]?floatToIntBits(a[i])}{#if[Double]?doubleToLongBits(a[i])} == NEGATIVE_ZERO) {
+                    fail("There must be 0.0 instead of " + a[i] + " at position " + i);
+                }
+            }
+            for (int i = k3; i < k4; ++i) {
+                $type$ v = ($type$) (m + i);
+
+                if (a[i] != v) {
+                    fail("There must be " + v + " instead of " + a[i] + " at position " + i);
+                }
+            }
+            for (int i = k4; i < a.length; ++i) {
+                if (!$Type$.isNaN(a[i])) {
+                    fail("There must be NaN instead of " + a[i] + " at position " + i);
+                }
+            }
+        }
+
+#end[FloatDouble]
+        private interface Builder {
+            void build($type$[] a, int m);
+        }
+
+        private enum SortedBuilder implements Builder {
+            ANGLE {
+                @Override
+                public void build($type$[] a, int m) {
+                    for (int i = 0; i < a.length; ++i) {
+                        a[i] = ($type$) (Math.min(i + m, 127));
+                    }
+                }
+            },
+
+            STEPS {
+                @Override
+                public void build($type$[] a, int m) {
+                    for (int i = 0; i < m; ++i) {
+                        a[i] = 0;
+                    }
+                    for (int i = m; i < a.length; ++i) {
+                        a[i] = 1;
+                    }
+                }
+            }
+        }
+
+        private enum UnsortedBuilder implements Builder {
+            RANDOM {
+                @Override
+                public void build($type$[] a, int m) {
+                    for (int i = 0; i < a.length; ++i) {
+                        a[i] = ($type$) random.nextInt();
+                    }
+                }
+            },
+
+            PERMUTATION {
+                @Override
+                public void build($type$[] a, int m) {
+                    for (int i = 0; i < a.length; ++i) {
+                        a[i] = ($type$) (m + i);
+                    }
+                    for (int i = a.length; i > 1; --i) {
+                        swap(a, i - 1, random.nextInt(i));
+                    }
+                }
+            },
+
+            UNIFORM {
+                @Override
+                public void build($type$[] a, int m) {
+                    int mask = (m << 15) - 1;
+
+                    for (int i = 0; i < a.length; ++i) {
+                        a[i] = ($type$) (random.nextInt() & mask);
+                    }
+                }
+            },
+
+            REPEATED {
+                @Override
+                public void build($type$[] a, int m) {
+                    for (int i = 0; i < a.length; ++i) {
+                        a[i] = ($type$) (i % m);
+                    }
+                }
+            },
+
+            DUPLICATED {
+                @Override
+                public void build($type$[] a, int m) {
+                    for (int i = 0; i < a.length; ++i) {
+                        a[i] = ($type$) random.nextInt(m);
+                    }
+                }
+            },
+
+            SAWTOOTH {
+                @Override
+                public void build($type$[] a, int m) {
+                    for (int i = 0, minus = a.length, plus = 0; i < a.length; ) {
+                        for (int k = 0; ++k <= m && i < a.length; ++i) {
+                            a[i] = ($type$) (++plus);
+                        }
+                        for (int k = 0; ++k <= m && i < a.length; ++i) {
+                            a[i] = ($type$) (--minus);
+                        }
+                    }
+                }
+            },
+
+            SHUFFLE {
+                @Override
+                public void build($type$[] a, int m) {
+                    for (int i = 0, j = 0, k = 1; i < a.length; ++i) {
+                        a[i] = ($type$) (random.nextInt(m) > 0 ? (j += 2) : (k += 2));
+                    }
+                }
+            }
+        }
+
+        private enum StructuredBuilder implements Builder {
+            ASCENDING {
+                @Override
+                public void build($type$[] a, int m) {
+                    for (int i = 0; i < a.length; ++i) {
+                        a[i] = ($type$) (m + i);
+                    }
+                }
+            },
+
+            DESCENDING {
+                @Override
+                public void build($type$[] a, int m) {
+                    for (int i = 0; i < a.length; ++i) {
+                        a[i] = ($type$) (a.length - m - i);
+                    }
+                }
+            },
+
+            EQUAL {
+                @Override
+                public void build($type$[] a, int m) {
+                    Arrays.fill(a, ($type$) m);
+                }
+            },
+
+            SHIFTED {
+                @Override
+                public void build($type$[] a, int m) {
+                    for (int i = 0; i < a.length; ++i) {
+                        a[i] = ($type$) (i << 10);
+                    }
+                }
+            },
+
+            ORGAN_PIPES {
+                @Override
+                public void build($type$[] a, int m) {
+                    int middle = a.length / (m + 1);
+
+                    for (int i = 0; i < middle; ++i) {
+                        a[i] = ($type$) i;
+                    }
+                    for (int i = middle; i < a.length; ++i) {
+                        a[i] = ($type$) (a.length - i - 1);
+                    }
+                }
+            },
+
+            PLATEAU {
+                @Override
+                public void build($type$[] a, int m) {
+                    for (int i = 0; i < a.length; ++i) {
+                        a[i] = ($type$) Math.min(i, m);
+                    }
+                }
+            },
+
+            LATCH {
+                @Override
+                public void build($type$[] a, int m) {
+                    int max = Math.max(a.length / m, 2);
+
+                    for (int i = 0; i < a.length; ++i) {
+                        a[i] = ($type$) (i % max);
+                    }
+                }
+            },
+
+            POINT {
+                @Override
+                public void build($type$[] a, int m) {
+                    Arrays.fill(a, ($type$) 0);
+                    a[a.length / 2] = ($type$) m;
+                }
+            },
+
+            LINE {
+                @Override
+                public void build($type$[] a, int m) {
+                    for (int i = 0; i < a.length; ++i) {
+                        a[i] = ($type$) i;
+                    }
+                    reverse(a, Math.max(0, a.length - m), a.length);
+                }
+            },
+
+            PEARL {
+                @Override
+                public void build($type$[] a, int m) {
+                    for (int i = 0; i < a.length; ++i) {
+                        a[i] = ($type$) i;
+                    }
+                    reverse(a, 0, Math.min(m, a.length));
+                }
+            },
+
+            TRAPEZIUM {
+                @Override
+                public void build($type$[] a, int m) {
+                    for (int i = 0; i < a.length; ++i) {
+                        a[i] = ($type$) i;
+                    }
+                    reverse(a, m, a.length - m);
+                }
+            },
+
+            STAGGER {
+                @Override
+                public void build($type$[] a, int m) {
+                    for (int i = 0; i < a.length; ++i) {
+                        a[i] = ($type$) ((i * m + i) % a.length);
+                    }
+                }
+            }
+        }
+#if[FloatDouble]
+
+        private enum FloatingPointBuilder implements Builder {
+            NEGATIVE_ZERO_AND_NAN {
+                @Override
+                public void build($type$[] a, int m) {
+                    int k1 = a.length / (m + 1) * m     / 5;
+                    int k2 = a.length / (m + 1) * m * 2 / 5;
+                    int k3 = a.length / (m + 1) * m * 3 / 5;
+                    int k4 = a.length / (m + 1) * m * 4 / 5;
+
+                    for (int i = 0; i < k1; ++i) {
+                        a[i] = ($type$) (-(a.length + m) + i);
+                    }
+                    for (int i = k1; i < k2; ++i) {
+                        a[i] = -0.0{#if[Float]?f}{#if[Double]?d};
+                    }
+                    for (int i = k2; i < k3; ++i) {
+                        a[i] = 0.0{#if[Float]?f}{#if[Double]?d};
+                    }
+                    for (int i = k3; i < k4; ++i) {
+                        a[i] = ($type$) (m + i);
+                    }
+                    for (int i = k4; i < a.length; ++i) {
+                        a[i] = $Type$.NaN;
+                    }
+                }
+            }
+        }
+#end[FloatDouble]
+    }
+#end[AllTypes]
+#if[Common2]
+
+    private static void out(String name, String type, int length, SortingHelper sortingHelper, int m, Object builder) {
+        out.println("[ " + type + " | Length = " + length + " | " + sortingHelper + " ] 'Test " + name + "', m = " + m + ", " + builder);
+    }
+
+    private static void fail(String message) {
+        err.format("*** TEST FAILED ***\n\n%s\n\n", message);
+        throw new RuntimeException("Test failed");
+    }
+}
+#end[Common2]
