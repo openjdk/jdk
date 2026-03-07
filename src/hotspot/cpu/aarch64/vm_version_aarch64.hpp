@@ -58,6 +58,8 @@ protected:
   // When _prefer_sve_merging_mode_cpy is true, `cpy (imm, zeroing)` is
   // implemented as `movi; cpy(imm, merging)`.
   static constexpr bool _prefer_sve_merging_mode_cpy = true;
+  static bool _cache_dic_enabled;
+  static bool _cache_idc_enabled;
 
   static SpinWait _spin_wait;
 
@@ -252,6 +254,9 @@ public:
   static bool use_neon_for_vector(int vector_length_in_bytes) {
     return vector_length_in_bytes <= 16;
   }
+
+  static bool is_cache_dic_enabled() { return _cache_dic_enabled; }
+  static bool is_cache_idc_enabled() { return _cache_idc_enabled; }
 
   static void get_cpu_features_name(void* features_buffer, stringStream& ss);
 

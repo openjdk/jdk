@@ -52,6 +52,9 @@ uintptr_t VM_Version::_pac_mask;
 
 SpinWait VM_Version::_spin_wait;
 
+bool VM_Version::_cache_dic_enabled;
+bool VM_Version::_cache_idc_enabled;
+
 const char* VM_Version::_features_names[MAX_CPU_FEATURES] = { nullptr };
 
 static SpinWait get_spin_wait_desc() {
@@ -61,6 +64,19 @@ static SpinWait get_spin_wait_desc() {
   }
 
   return spin_wait;
+}
+
+static bool has_neoverse_n1_errata_1542419() {
+  const int major_rev_num = VM_Version::cpu_variant();
+  const int minor_rev_num = VM_Version::cpu_revision();
+  // Neoverse N1: 0xd0c
+  // Erratum 1542419 affects r3p0, r3p1 and r4p0.
+  // It is fixed in r4p1 and later revisions, which are not affected.
+  return (VM_Version::cpu_family() == VM_Version::CPU_ARM &&
+          VM_Version::model_is(0xd0c) &&
+          ((major_rev_num == 3 && minor_rev_num == 0) ||
+           (major_rev_num == 3 && minor_rev_num == 1) ||
+           (major_rev_num == 4 && minor_rev_num == 0)));
 }
 
 void VM_Version::initialize() {
@@ -73,6 +89,9 @@ void VM_Version::initialize() {
   _supports_atomic_getadd4 = true;
   _supports_atomic_getset8 = true;
   _supports_atomic_getadd8 = true;
+
+  _cache_dic_enabled = false;
+  _cache_idc_enabled = false;
 
   get_os_cpu_info();
 
@@ -659,6 +678,32 @@ void VM_Version::initialize() {
   }
   if (UseSVE < 1) {
     clear_feature(CPU_SVE);
+  }
+
+  if (FLAG_IS_DEFAULT(UseSingleICacheInvalidation) && is_cache_idc_enabled() && is_cache_dic_enabled()) {
+    FLAG_SET_DEFAULT(UseSingleICacheInvalidation, true);
+  }
+
+  if (FLAG_IS_DEFAULT(NeoverseN1ICacheErratumMitigation) && has_neoverse_n1_errata_1542419()) {
+    FLAG_SET_DEFAULT(NeoverseN1ICacheErratumMitigation, true);
+  }
+
+  if (NeoverseN1ICacheErratumMitigation) {
+    if (!has_neoverse_n1_errata_1542419()) {
+      vm_exit_during_initialization("NeoverseN1ICacheErratumMitigation is set for the CPU not having Neoverse N1 errata 1542419");
+    }
+    if (FLAG_IS_DEFAULT(UseSingleICacheInvalidation)) {
+      FLAG_SET_DEFAULT(UseSingleICacheInvalidation, true);
+    }
+
+    if (!UseSingleICacheInvalidation) {
+      vm_exit_during_initialization("NeoverseN1ICacheErratumMitigation is set but UseSingleICacheInvalidation is not enabled");
+    }
+  }
+
+  if (UseSingleICacheInvalidation
+      && (!is_cache_idc_enabled() || (!is_cache_dic_enabled() && !NeoverseN1ICacheErratumMitigation))) {
+    vm_exit_during_initialization("UseSingleICacheInvalidation is set but neither IDC nor DIC nor NeoverseN1ICacheErratumMitigation is enabled");
   }
 
   // Construct the "features" string
