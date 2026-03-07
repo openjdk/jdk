@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,21 @@
 
 /*
  * @test
- * @bug 8023130 8166026
  * @summary Unit test for java.lang.ProcessBuilder inheritance of standard output and standard error streams
+ * @bug 8023130 8166026
  * @requires vm.flagless
  * @library /test/lib
  * @build jdk.test.lib.process.*
- * @run testng InheritIOTest
+ * @run junit InheritIOTest
  */
 
 import java.util.List;
 import static java.lang.ProcessBuilder.Redirect.INHERIT;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class InheritIOTest {
 
@@ -45,21 +45,21 @@ public class InheritIOTest {
     private static final String EXPECTED_RESULT_STDOUT = "message";
     private static final String EXPECTED_RESULT_STDERR = EXIT_VALUE_TEMPLATE.formatted(0);
 
-    @DataProvider
-    public Object[][] testCases() {
+    public static Object[][] testCases() {
         return new Object[][]{
              new Object[] { List.of("InheritIOTest$TestInheritIO", "printf", EXPECTED_RESULT_STDOUT) },
              new Object[] { List.of("InheritIOTest$TestRedirectInherit", "printf", EXPECTED_RESULT_STDOUT) }
         };
     }
 
-    @Test(dataProvider = "testCases")
+    @ParameterizedTest
+    @MethodSource("testCases")
     public void testInheritWithoutRedirect(List<String> arguments) throws Throwable {
         ProcessBuilder processBuilder = ProcessTools.createLimitedTestJavaProcessBuilder(arguments);
         OutputAnalyzer outputAnalyzer = ProcessTools.executeCommand(processBuilder);
         outputAnalyzer.shouldHaveExitValue(0);
-        assertEquals(outputAnalyzer.getStdout(), EXPECTED_RESULT_STDOUT);
-        assertEquals(outputAnalyzer.getStderr(), EXPECTED_RESULT_STDERR);
+        assertEquals(EXPECTED_RESULT_STDOUT, outputAnalyzer.getStdout());
+        assertEquals(EXPECTED_RESULT_STDERR, outputAnalyzer.getStderr());
     }
 
     public static class TestInheritIO {
@@ -81,5 +81,4 @@ public class InheritIOTest {
             System.exit(err);
         }
     }
-
 }
