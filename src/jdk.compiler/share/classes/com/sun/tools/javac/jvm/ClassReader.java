@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,7 @@ import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.ByteBuffer.UnderflowException;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.JCDiagnostic.Fragment;
+import com.sun.tools.javac.util.Log.DeferredDiagnosticHandler;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
@@ -2043,15 +2044,27 @@ public class ClassReader {
         }
 
         Attribute.Compound deproxyCompound(CompoundAnnotationProxy a) {
-            Type annotationType = resolvePossibleProxyType(a.type);
-            ListBuffer<Pair<Symbol.MethodSymbol,Attribute>> buf = new ListBuffer<>();
-            for (List<Pair<Name,Attribute>> l = a.values;
-                 l.nonEmpty();
-                 l = l.tail) {
-                MethodSymbol meth = findAccessMethod(annotationType, l.head.fst);
-                buf.append(new Pair<>(meth, deproxy(meth.type.getReturnType(), l.head.snd)));
+            DeferredDiagnosticHandler deferred = log.new DeferredDiagnosticHandler();
+            Type annotationType = syms.objectType;
+            try {
+                annotationType = resolvePossibleProxyType(a.type);
+                ListBuffer<Pair<Symbol.MethodSymbol,Attribute>> buf = new ListBuffer<>();
+                for (List<Pair<Name,Attribute>> l = a.values;
+                     l.nonEmpty();
+                     l = l.tail) {
+                    MethodSymbol meth = findAccessMethod(annotationType, l.head.fst);
+                    buf.append(new Pair<>(meth, deproxy(meth.type.getReturnType(), l.head.snd)));
+                }
+                return new Attribute.Compound(annotationType, buf.toList());
+            } finally {
+                if (!annotationType.tsym.type.hasTag(TypeTag.ERROR)) {
+                    //if the annotation type does not exists
+                    //throw away warnings reported while de-proxying the annotation,
+                    //as the annotation's library is probably missing from the classpath:
+                    deferred.reportDeferredDiagnostics();
+                }
+                log.popDiagnosticHandler(deferred);
             }
-            return new Attribute.Compound(annotationType, buf.toList());
         }
 
         MethodSymbol findAccessMethod(Type container, Name name) {
@@ -2146,15 +2159,21 @@ public class ClassReader {
                 failure = ex;
             }
             if (enumerator == null) {
-                if (failure != null) {
-                    log.warning(Warnings.UnknownEnumConstantReason(currentClassFile,
-                                                                   enumTypeSym,
-                                                                   proxy.enumerator,
-                                                                   failure.getDiagnostic()));
-                } else {
-                    log.warning(Warnings.UnknownEnumConstant(currentClassFile,
-                                                             enumTypeSym,
-                                                             proxy.enumerator));
+                // The enumerator wasn't found: emit a warning and recover
+                JavaFileObject prevSource = log.useSource(requestingOwner.classfile);
+                try {
+                    if (failure != null) {
+                        log.warning(LintWarnings.UnknownEnumConstantReason(currentClassFile,
+                                                                       enumTypeSym,
+                                                                       proxy.enumerator,
+                                                                       failure.getDiagnostic()));
+                    } else {
+                        log.warning(LintWarnings.UnknownEnumConstant(currentClassFile,
+                                                                 enumTypeSym,
+                                                                 proxy.enumerator));
+                    }
+                } finally {
+                    log.useSource(prevSource);
                 }
                 result = new Attribute.Enum(enumTypeSym.type,
                         new VarSymbol(0, proxy.enumerator, syms.botType, enumTypeSym));
