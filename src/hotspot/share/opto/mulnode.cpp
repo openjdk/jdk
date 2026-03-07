@@ -1143,21 +1143,24 @@ const Type* LShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
     return t1;
   }
 
-  // Either input is BOTTOM ==> the result is BOTTOM
-  if ((t1 == TypeInteger::bottom(bt)) || (t2 == TypeInt::INT) ||
-      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM)) {
+  // If nothing is known about the shift amount then the result is BOTTOM
+  if (t2 == TypeInt::INT) {
     return TypeInteger::bottom(bt);
   }
 
   const TypeInteger* r1 = t1->is_integer(bt); // Handy access
-  const TypeInt* r2 = t2->is_int(); // Handy access
+  // Since the shift semantics in Java take into account only the bottom five
+  // bits for ints and the bottom six bits for longs, we can further constrain
+  // the range of values of the shift amount by ANDing with the right mask based
+  // on whether the type is int or long.
+  const TypeInt* mask = TypeInt::make(bits_per_java_integer(bt) - 1);
+  const TypeInt* r2 = RangeInference::infer_and(t2->is_int(), mask);
 
   if (!r2->is_con()) {
     return TypeInteger::bottom(bt);
   }
 
   uint shift = r2->get_con();
-  shift &= bits_per_java_integer(bt) - 1;  // semantics of Java shifts
   // Shift by a multiple of 32/64 does nothing:
   if (shift == 0) {
     return t1;
@@ -1166,22 +1169,20 @@ const Type* LShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
   // If the shift is a constant, shift the bounds of the type,
   // unless this could lead to an overflow.
   if (!r1->is_con()) {
-    jlong lo = r1->lo_as_long(), hi = r1->hi_as_long();
 #ifdef ASSERT
     if (bt == T_INT) {
+      jlong lo = r1->lo_as_long(), hi = r1->hi_as_long();
       jint lo_int = r1->is_int()->_lo, hi_int = r1->is_int()->_hi;
       assert((java_shift_right(java_shift_left(lo, shift, bt),  shift, bt) == lo) == (((lo_int << shift) >> shift) == lo_int), "inconsistent");
       assert((java_shift_right(java_shift_left(hi, shift, bt),  shift, bt) == hi) == (((hi_int << shift) >> shift) == hi_int), "inconsistent");
     }
 #endif
-    if (java_shift_right(java_shift_left(lo, shift, bt),  shift, bt) == lo &&
-        java_shift_right(java_shift_left(hi, shift, bt), shift, bt) == hi) {
-      // No overflow.  The range shifts up cleanly.
-      return TypeInteger::make(java_shift_left(lo, shift, bt),
-                               java_shift_left(hi,  shift, bt),
-                               MAX2(r1->_widen, r2->_widen), bt);
+
+    if (bt == T_INT) {
+        return RangeInference::infer_lshift(r1->is_int(), shift);
     }
-    return TypeInteger::bottom(bt);
+
+    return RangeInference::infer_lshift(r1->is_long(), shift);
   }
 
   return TypeInteger::make(java_shift_left(r1->get_con_as_long(bt), shift, bt), bt);
