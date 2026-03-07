@@ -1802,7 +1802,7 @@ bool  G1CollectedHeap::is_user_requested_concurrent_full_gc(GCCause::Cause cause
 bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
   switch (cause) {
     case GCCause::_g1_humongous_allocation: return true;
-    case GCCause::_g1_periodic_collection:  return G1PeriodicGCInvokesConcurrent;
+    case GCCause::_g1_periodic_collection:  return G1PeriodicGCTask::should_use_concurrent_periodic_gc();
     case GCCause::_wb_breakpoint:           return true;
     case GCCause::_codecache_GC_aggressive: return true;
     case GCCause::_codecache_GC_threshold:  return true;

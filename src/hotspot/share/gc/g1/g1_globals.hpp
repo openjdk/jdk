@@ -336,6 +336,14 @@
           "disables this check.")                                           \
           range(0.0, (double)max_uintx)                                     \
                                                                             \
+  product(uintx, G1PeriodicGCErgonomicInterval, 0, EXPERIMENTAL,            \
+          "Ergonomically determined interval (in milliseconds) for "        \
+          "triggering periodic concurrent mark cycles when "                \
+          "G1PeriodicGCInterval is not explicitly set. A value of zero "    \
+          "disables ergonomic periodic GC. Set automatically based on "     \
+          "heap size if not specified.")                                    \
+          range(0, max_uintx)                                               \
+                                                                            \
   product(uint, G1RemSetFreeMemoryRescheduleDelayMillis, 10, EXPERIMENTAL,  \
           "Time after which the card set free memory task reschedules "     \
           "itself if there is work remaining.")                             \
