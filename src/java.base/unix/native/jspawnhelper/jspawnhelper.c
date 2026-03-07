@@ -183,7 +183,7 @@ int main(int argc, char *argv[]) {
     checkFileDescriptorSetup();
 #endif
 
-    initChildStuff (CHILDENV_FILENO, FAIL_FILENO, &c);
+    initChildStuff(CHILDENV_FILENO, FAIL_FILENO, &c);
 
 #ifdef DEBUG
     /* Not needed in spawn mode */
