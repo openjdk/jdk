@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1096,6 +1096,10 @@ bool CallJavaNode::validate_symbolic_info() const {
   ciMethod* callee = method();
   if (symbolic_info->is_method_handle_intrinsic() && !callee->is_method_handle_intrinsic()) {
     assert(override_symbolic_info(), "should be set");
+  }
+  // Allow deliberate format/formatted -> format_1 redirection.
+  if (override_symbolic_info()) {
+    return true;
   }
   assert(ciMethod::is_consistent_info(symbolic_info, callee), "inconsistent info");
   return true;
