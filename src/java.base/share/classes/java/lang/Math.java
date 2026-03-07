@@ -30,6 +30,7 @@ import java.util.Random;
 import jdk.internal.math.FloatConsts;
 import jdk.internal.math.DoubleConsts;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+import jdk.internal.vm.annotation.Stable;
 
 import static java.lang.Double.*;
 
@@ -772,8 +773,8 @@ public final class Math {
      * @param   a   a floating-point value to be rounded to an integer.
      * @return  the value of the argument rounded to the nearest
      *          {@code int} value.
-     * @see     java.lang.Integer#MAX_VALUE
-     * @see     java.lang.Integer#MIN_VALUE
+     * @see     Integer#MAX_VALUE
+     * @see     Integer#MIN_VALUE
      */
     @IntrinsicCandidate
     public static int round(float a) {
@@ -3746,4 +3747,26 @@ public final class Math {
         return unsignedMultiplyExact(p, x);
     }
 
+    /**
+     * This is pair of values representing
+     * a result of a call to sincos.
+     * @param sin sine value.
+     * @param cos cosine value.
+     */
+    public static record SinCosResult (double sin, double cos) {}
+
+    /**
+     * Returns the pair of [sine,cosine] of an angle. Special cases:
+     * <ul><li>If the argument is NaN or an infinity, then th
+     * result is NaN.</ul>
+     *
+     * <p>The computed result must be within 1 ulp of the exact result.
+     * Results must be semi-monotonic.
+     *
+     * @param a an angle, in radians.
+     * @return  the [sine,cosine] pair for the argument.
+     */
+    public static SinCosResult sincos(double a) {
+        return new SinCosResult(Math.sin(a), Math.cos(a));
+    }
 }
