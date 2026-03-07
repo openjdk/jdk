@@ -76,7 +76,6 @@ extern char **environ;
 /* For POSIX_SPAWN mode */
 #define CHILDENV_FILENO (FAIL_FILENO + 1)
 
-
 /* These numbers must be the same as the Enum in ProcessImpl.java
  * Must be a better way of doing this.
  */

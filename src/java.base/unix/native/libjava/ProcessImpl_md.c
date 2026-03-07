@@ -638,14 +638,28 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
     assert(fdIsValid(child_stderr));
     assert(fdIsPipe(child_fail));
     assert(fdIsPipe(child_childenv));
+    /* This must always hold true, unless someone deliberately closed 0, 1, or 2 in the parent JVM. */
+    assert(child_fail > STDERR_FILENO);
+    assert(child_childenv > STDERR_FILENO);
 
-    /* Slot in dup2 file actions. Order matters! stdout before stderr. */
+    /* Slot in dup2 file actions. */
     posix_spawn_file_actions_init(&file_actions);
+
+    /* First dup2 stdin/out/err to 0,1,2. After this, we can safely dup2 over the
+     * original stdin/out/err. */
     if (call_posix_spawn_file_actions_adddup2(&file_actions, child_stdin, STDIN_FILENO) != 0 ||
         call_posix_spawn_file_actions_adddup2(&file_actions, child_stdout, STDOUT_FILENO) != 0 ||
-        call_posix_spawn_file_actions_adddup2(&file_actions, child_stderr, STDERR_FILENO) != 0 ||
+        /* Order matters: stderr may be redirected to stdout, so this dup2 must happen after the stdout one. */
+        call_posix_spawn_file_actions_adddup2(&file_actions, child_stderr, STDERR_FILENO) != 0)
+    {
+        return -1;
+    }
+
+    /* We dup2 with one intermediary step to prevent accidentally dup2'ing over child_childenv. */
+    const int tmp_child_childenv = child_fail < 10 ? 10 : child_fail - 1;
+    if (call_posix_spawn_file_actions_adddup2(&file_actions, child_childenv, tmp_child_childenv) != 0 ||
         call_posix_spawn_file_actions_adddup2(&file_actions, child_fail, FAIL_FILENO) != 0 ||
-        call_posix_spawn_file_actions_adddup2(&file_actions, child_childenv, CHILDENV_FILENO) != 0)
+        call_posix_spawn_file_actions_adddup2(&file_actions, tmp_child_childenv, CHILDENV_FILENO) != 0)
     {
         return -1;
     }
