@@ -4503,6 +4503,134 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
   return true;
 }
 
+// Reassociates latency-bound reduction loop chains for long Min/Max that have a shape like this:
+// OP(A, OP(B, OP(C, Phi)))
+// To become the following by shifting the Phi node to the front and shifting the rest of inputs:
+// OP(Phi, OP(A, OP(B, C)))
+// This transformation reduces latency thanks to an increase CPU-level parallel processing.
+// This increased parallelism can produce register pressure as a side effect.
+// This is why the optimization currently only applies to specific AddNode subclasses
+// that can particularly suffer in certain scenarios, e.g. long Min/Max.
+// Any attempt to expand this to other AddNode types should take this into consideration.
+class ReassociateReductionChains : public StackObj {
+public:
+  ReassociateReductionChains(IdealLoopTree* loop, PhaseIdealLoop* phase) : _loop(loop), _phase(phase) {
+  }
+
+  void reassociate_chains() {
+    Node* loop_head = _loop->head();
+    for (DUIterator_Fast imax, i = loop_head->fast_outs(imax); i < imax; i++) {
+      Node* loop_head_use = loop_head->fast_out(i);
+      if (loop_head_use->is_Phi()) {
+        PhiNode* phi = loop_head_use->as_Phi();
+        for (DUIterator j = phi->outs(); phi->has_out(j); j++) {
+          Node* n = phi->out(j);
+          if (try_reassociate_chain(n, phi)) {
+            --j;
+          }
+        }
+      }
+    }
+  }
+
+private:
+  IdealLoopTree* _loop;
+  PhaseIdealLoop* _phase;
+
+  static bool is_associative(Node* n) {
+    return n->Opcode() == Op_MinL || n->Opcode() == Op_MaxL;
+  }
+
+  bool try_reassociate_chain(Node* n, PhiNode* phi) {
+    if (!is_associative(n)) {
+      return false;
+    }
+
+    Node* chain_head = nullptr;
+    Node* current = n;
+    int opcode = current->Opcode();
+
+    int chain_length = 1;
+    while (current != nullptr) {
+      if (current->outcnt() != 1) {
+        break;
+      }
+
+      Node* use = nullptr;
+      Node* out = current->unique_out();
+      if (out->Opcode() == opcode) {
+        use = out;
+      }
+
+      if (use != nullptr) {
+        if (!_phase->ctrl_is_member(_loop, use)) {
+          // Only interested in commutative add nodes that are in use in the loop
+          return false;
+        }
+        if (use->in(1)->Opcode() == opcode && use->in(2)->Opcode() == opcode) {
+          // A chain to reassociate cannot be constructed
+          // when the chain can have multiple paths
+          return false;
+        }
+
+        chain_length++;
+        chain_head = use;
+      }
+
+      current = use;
+    }
+
+    if (chain_length < 2) {
+      // Only reassociate long enough chains
+      return false;
+    }
+
+    Node* reassociated = do_reassociate_chain(chain_head, opcode, phi);
+
+    Node* new_chain_head = MinMaxNode::build_min_max_long(&_phase->igvn(), phi, reassociated, opcode == Op_MaxL);
+    _phase->register_new_node(new_chain_head, _loop->head());
+    _phase->C->copy_node_notes_to(new_chain_head, chain_head);
+    _phase->igvn().replace_node(chain_head, new_chain_head);
+
+    return true;
+  }
+
+  Node* do_reassociate_chain(Node* node, int opcode, PhiNode* phi) {
+    if (phi == node->in(1)) {
+      return node->in(2);
+    }
+
+    if (phi == node->in(2)) {
+      return node->in(1);
+    }
+
+    Node* left;
+    Node* right;
+    if (node->in(1)->Opcode() == opcode) {
+      left = do_reassociate_chain(node->in(1), opcode, phi);
+      right = node->in(2);
+    } else {
+      left = node->in(1);
+      right = do_reassociate_chain(node->in(2), opcode, phi);
+    }
+
+    Node* reassoc = MinMaxNode::build_min_max_long(&_phase->igvn(), left, right, opcode == Op_MaxL);
+    _phase->register_new_node(reassoc, _loop->head());
+    _phase->C->copy_node_notes_to(reassoc, node);
+    return reassoc;
+  }
+};
+
+void PhaseIdealLoop::reassociate_reduction_chains() {
+  for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
+    IdealLoopTree* loop = iter.current();
+    if (loop->is_innermost()) {
+      ReassociateReductionChains rrc(loop, this);
+      rrc.reassociate_chains();
+    }
+  }
+}
+
 // AutoVectorize the loop: replace scalar ops with vector ops.
 PhaseIdealLoop::AutoVectorizeStatus
 PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {

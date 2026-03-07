@@ -1539,6 +1539,8 @@ public:
   void eliminate_useless_zero_trip_guard();
   void eliminate_useless_multiversion_if();
 
+  void reassociate_reduction_chains();
+
  public:
   // Change the control input of expensive nodes to allow commoning by
   // IGVN when it is guaranteed to not result in a more frequent
