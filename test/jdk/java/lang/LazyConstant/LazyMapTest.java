@@ -33,20 +33,19 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.Serializable;
-import java.util.AbstractMap;
+import java.util.*;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.Map;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.joining;
@@ -569,6 +568,32 @@ final class LazyMapTest {
     private static int functionCounter(Map<?, ?> lazy) {
         final Object holder = LazyConstantTestUtil.functionHolder(lazy);
         return LazyConstantTestUtil.functionHolderCounter(holder);
+    }
+
+    // Javadoc equivalent
+    class LazyMap<K, V> extends AbstractMap<K, V> {
+
+        private final Map<K, LazyConstant<V>> backingMap;
+
+        public LazyMap(Set<K> keys, Function<K, V> computingFunction) {
+            this.backingMap = keys.stream()
+                    .collect(Collectors.toUnmodifiableMap(
+                            Function.identity(),
+                            k -> LazyConstant.of(() -> computingFunction.apply(k))));
+        }
+
+        @Override
+        public V get(Object key) {
+            var lazyConstant = backingMap.get(key);
+            return lazyConstant == null
+                    ? null
+                    : lazyConstant.get();
+        }
+
+        @Override
+        public Set<Entry<K, V>> entrySet() {
+            return Set.of();
+        }
     }
 
 }

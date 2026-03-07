@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,6 @@ final class LazyConstantTest {
     void basic(Function<Supplier<Integer>, LazyConstant<Integer>> factory) {
         LazyConstantTestUtil.CountingSupplier<Integer> cs = new LazyConstantTestUtil.CountingSupplier<>(SUPPLIER);
         var lazy = factory.apply(cs);
-        assertFalse(lazy.isInitialized());
         assertEquals(SUPPLIER.get(), lazy.get());
         assertEquals(1, cs.cnt());
         assertEquals(SUPPLIER.get(), lazy.get());
@@ -81,25 +80,9 @@ final class LazyConstantTest {
 
     @ParameterizedTest
     @MethodSource("lazyConstants")
-    void orElse(LazyConstant<Integer> constant) {
-        assertNull(constant.orElse(null));
-        constant.get();
-        assertEquals(VALUE, constant.orElse(null));
-    }
-
-    @ParameterizedTest
-    @MethodSource("lazyConstants")
     void get(LazyConstant<Integer> constant) {
         assertEquals(VALUE, constant.get());
     }
-
-    @ParameterizedTest
-    @MethodSource("lazyConstants")
-    void isInitialized(LazyConstant<Integer> constant) {
-        assertFalse(constant.isInitialized());
-        constant.get();
-        assertTrue(constant.isInitialized());
-   }
 
     @ParameterizedTest
     @MethodSource("lazyConstants")

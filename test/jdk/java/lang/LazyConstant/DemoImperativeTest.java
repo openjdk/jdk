@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,6 @@ import static org.junit.jupiter.api.Assertions.*;
 final class DemoImperativeTest {
 
     interface ImperativeStableValue<T> {
-        T orElse(T other);
-        boolean isSet();
         boolean trySet(T t);
         T get();
 
@@ -62,22 +60,16 @@ final class DemoImperativeTest {
             return result;
         }
 
-        @Override public T       orElse(T other) { return underlying.orElse(other); }
-        @Override public boolean isSet() { return underlying.isInitialized(); }
-        @Override public T       get() { return underlying.get(); }
+        @Override public T get() { return underlying.get(); }
 
     }
 
     @Test
     void basic() {
         var stableValue = ImperativeStableValue.<Integer>of();
-        assertFalse(stableValue.isSet());
-        assertEquals(13, stableValue.orElse(13));
         assertTrue(stableValue.trySet(42));
         assertFalse(stableValue.trySet(13));
-        assertTrue(stableValue.isSet());
         assertEquals(42, stableValue.get());
-        assertEquals(42, stableValue.orElse(13));
     }
 
 }

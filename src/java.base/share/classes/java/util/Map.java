@@ -1792,6 +1792,39 @@ public interface Map<K, V> {
      * uncomputed values.
      * <p>
      * The returned Map is <em>not</em> {@linkplain Serializable}.
+     * <p>
+     * If the provided Set of {@code keys} is subsequently modified, the returned Map will
+     * not reflect such modifications.
+     * <p>
+     * The Set of {@code keys} must use {@linkplain Set#equals(Object) equals()} as its
+     * equivalence relation, or its comparison method must be consistent with equals,
+     * otherwise the behavior is unspecified.
+     * <p>
+     * The returned {@code Map<K, V>} can be thought of as a map backed by a
+     * {@code Map<K, LazyConstant<V>>} field and where the {@linkplain Map#get(Object)}
+     * operation is equivalent to:
+     * {@snippet lang = java:
+     * class LazyMap<K, V> extends AbstractMap<K, V> {
+     *
+     *     private final Map<K, LazyConstant<V>> backingMap;
+     *
+     *     public LazyMap(Set<K> keys, Function<K, V> computingFunction) {
+     *         this.backingMap = keys.stream()
+     *                 .collect(Collectors.toUnmodifiableMap(
+     *                         Function.identity(),
+     *                         k -> LazyConstant.of(() -> computingFunction.apply(k))));
+     *     }
+     *
+     *     @Override
+     *     public V get(Object key) {
+     *         var lazyConstant = backingMap.get(key);
+     *         return lazyConstant == null
+     *                 ? null
+     *                 : lazyConstant.get();
+     *     }
+     * }
+     *}
+     * Except, performance and storage efficiency might be better.
      *
      * @implNote  after all values have been initialized successfully, the computing
      *            function is no longer strongly referenced and becomes eligible for

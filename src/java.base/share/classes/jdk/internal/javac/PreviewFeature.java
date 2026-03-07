@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ public @interface PreviewFeature {
         //---
         @JEP(number=525, title="Structured Concurrency", status="Sixth Preview")
         STRUCTURED_CONCURRENCY,
-        @JEP(number = 526, title = "Lazy Constants", status = "Second Preview")
+        @JEP(number = 8376595, title = "Lazy Constants", status = "Third Preview")
         LAZY_CONSTANTS,
         @JEP(number=524, title="PEM Encodings of Cryptographic Objects",
             status="Second Preview")

@@ -1239,6 +1239,28 @@ public interface List<E> extends SequencedCollection<E> {
      * elements.
      * <p>
      * The returned List is <em>not</em> {@linkplain Serializable}.
+     * <p>
+     * The returned {@code List<E>} can be thought of as a list backed by a
+     * {@code List<LazyConstant<E>>} field and where the {@linkplain List#get(int)}
+     * operation is equivalent to:
+     * {@snippet lang = java:
+     * class LazyList<E> extends AbstractList<E> {
+     *
+     *     private final List<LazyConstant<E>> backingList;
+     *
+     *     public LazyList(int size, IntFunction<E> computingFunction) {
+     *         this.backingList = IntStream.range(0, size)
+     *                 .mapToObj(i -> LazyConstant.of(() -> computingFunction.apply(i)))
+     *                 .toList();
+     *     }
+     *
+     *     @Override
+     *     public E get(int index) {
+     *         return backingList.get(index).get();
+     *     }
+     * }
+     *}
+     * Except, performance and storage efficiency might be better.
      *
      * @implNote  after all elements have been initialized successfully, the computing
      *            function is no longer strongly referenced and becomes eligible for

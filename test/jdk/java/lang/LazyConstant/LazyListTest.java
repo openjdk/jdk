@@ -33,11 +33,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.Serializable;
-import java.util.Comparator;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.RandomAccess;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -433,5 +429,27 @@ final class LazyListTest {
 
     static List<Integer> newRegularList() {
         return IntStream.range(0, SIZE).boxed().toList();
+    }
+
+    // Javadoc equivalent
+    class LazyList<E> extends AbstractList<E> {
+
+        private final List<LazyConstant<E>> backingList;
+
+        public LazyList(int size, IntFunction<E> computingFunction) {
+            this.backingList = IntStream.range(0, size)
+                    .mapToObj(i -> LazyConstant.of(() -> computingFunction.apply(i)))
+                    .toList();
+        }
+
+        @Override
+        public E get(int index) {
+            return backingList.get(index).get();
+        }
+
+        @Override
+        public int size() {
+            return backingList.size();
+        }
     }
 }
