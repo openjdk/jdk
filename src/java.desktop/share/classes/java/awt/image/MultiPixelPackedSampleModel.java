@@ -454,7 +454,7 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * @see #setDataElements(int, int, Object, DataBuffer)
      * @throws NullPointerException if {@code data} is {@code null}.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
-     * not in bounds, or if {code obj} is too small to hold the output.
+     * not in bounds, or if {@code obj} is too small to hold the output.
      */
     public Object getDataElements(int x, int y, Object obj, DataBuffer data) {
         if ((x < 0) || (y < 0) || (x >= width) || (y >= height)) {
