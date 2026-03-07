@@ -1078,16 +1078,22 @@ void BCEscapeAnalyzer::merge_block_states(StateInfo *blockstates, ciBlock *dest,
 }
 
 void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
-  int numblocks = _methodBlocks->num_blocks();
-  int stkSize   = _method->max_stack();
-  int numLocals = _method->max_locals();
+  uint numblocks = checked_cast<uint>(_methodBlocks->num_blocks());
+  uint stkSize   = checked_cast<uint>(_method->max_stack());
+  uint numLocals = checked_cast<uint>(_method->max_locals());
   StateInfo state;
 
-  int datacount = (numblocks + 1) * (stkSize + numLocals);
-  int datasize = datacount * sizeof(ArgumentMap);
+  uint64_t datacount64 = (uint64_t)(numblocks + 1) * (stkSize + numLocals);
+  // bail out conservatively on overflow
+  if (datacount64 > SIZE_MAX / sizeof(ArgumentMap)) {
+    _conservative = true;
+    return;
+  }
+  size_t datacount = (size_t)datacount64;
+  size_t datasize = datacount * sizeof(ArgumentMap);
   StateInfo *blockstates = (StateInfo *) arena->Amalloc(numblocks * sizeof(StateInfo));
   ArgumentMap *statedata  = (ArgumentMap *) arena->Amalloc(datasize);
-  for (int i = 0; i < datacount; i++) ::new ((void*)&statedata[i]) ArgumentMap();
+  for (size_t i = 0; i < datacount; i++) ::new ((void*)&statedata[i]) ArgumentMap();
   ArgumentMap *dp = statedata;
   state._vars = dp;
   dp += numLocals;
@@ -1095,7 +1101,7 @@ void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
   dp += stkSize;
   state._initialized = false;
   state._max_stack = stkSize;
-  for (int i = 0; i < numblocks; i++) {
+  for (uint i = 0; i < numblocks; i++) {
     blockstates[i]._vars = dp;
     dp += numLocals;
     blockstates[i]._stack = dp;
@@ -1170,7 +1176,7 @@ void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
       DEBUG_ONLY(int handler_count = 0;)
       int blk_start = blk->start_bci();
       int blk_end = blk->limit_bci();
-      for (int i = 0; i < numblocks; i++) {
+      for (uint i = 0; i < numblocks; i++) {
         ciBlock *b = _methodBlocks->block(i);
         if (b->is_handler()) {
           int ex_start = b->ex_start_bci();
