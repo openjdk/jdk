@@ -38,6 +38,7 @@
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
+#include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
@@ -109,8 +110,6 @@ ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues)
     _promoted_expended(0),
     _promotion_potential(0),
     _pad_for_promote_in_place(0),
-    _promotion_failure_count(0),
-    _promotion_failure_words(0),
     _promotable_humongous_regions(0),
     _promotable_regular_regions(0),
     _is_parsable(true),
@@ -148,8 +147,50 @@ void ShenandoahOldGeneration::augment_promoted_reserve(size_t increment) {
 void ShenandoahOldGeneration::reset_promoted_expended() {
   shenandoah_assert_heaplocked_or_safepoint();
   _promoted_expended.store_relaxed(0);
-  _promotion_failure_count.store_relaxed(0);
-  _promotion_failure_words.store_relaxed(0);
+}
+
+void ShenandoahOldGeneration::maybe_log_promotion_failure_stats(bool concurrent) const {
+  LogTarget(Info, gc, plab) plab_info;
+  if (plab_info.is_enabled()) {
+    size_t failed_count = 0;
+    size_t failed_words = 0;
+
+    class AggregatePromotionFailuresClosure : public ThreadClosure {
+    private:
+      size_t _total_count;
+      size_t _total_words;
+    public:
+      AggregatePromotionFailuresClosure() : _total_count(0), _total_words(0) {}
+
+      void do_thread(Thread* thread) override {
+        ShenandoahPLAB* plab = ShenandoahThreadLocalData::shenandoah_plab(thread);
+        if (plab != nullptr) {
+          _total_count += plab->get_promotion_failure_count();
+          _total_words += plab->get_promotion_failure_words();
+          plab->reset_promotion_failures();
+        }
+      }
+
+      size_t total_count() const { return _total_count; }
+      size_t total_words() const { return _total_words; }
+    };
+
+    AggregatePromotionFailuresClosure cl;
+    if (concurrent) {
+      MutexLocker lock(Threads_lock);
+      Threads::threads_do(&cl);
+    } else {
+      Threads::threads_do(&cl);
+    }
+
+    failed_count = cl.total_count();
+    failed_words = cl.total_words();
+
+    LogStream ls(plab_info);
+    ls.print_cr("Cycle complete, promotions reserved: %zu, promotions expended: %zu, failed count: %zu, failed bytes: %zu",
+                get_promoted_reserve(), get_promoted_expended(),
+                failed_count, failed_words * HeapWordSize);
+  }
 }
 
 size_t ShenandoahOldGeneration::expend_promoted(size_t increment) {
@@ -199,7 +240,8 @@ ShenandoahOldGeneration::configure_plab_for_current_thread(const ShenandoahAlloc
   // We've created a new plab. Now we configure it whether it will be used for promotions
   // and evacuations - or just evacuations.
   Thread* thread = Thread::current();
-  ShenandoahThreadLocalData::reset_plab_promoted(thread);
+  ShenandoahPLAB* shenandoah_plab = ShenandoahThreadLocalData::shenandoah_plab(thread);
+  shenandoah_plab->reset_promoted();
 
   // The actual size of the allocation may be larger than the requested bytes (due to alignment on card boundaries).
   // If this puts us over our promotion budget, we need to disable future PLAB promotions for this thread.
@@ -209,12 +251,12 @@ ShenandoahOldGeneration::configure_plab_for_current_thread(const ShenandoahAlloc
     log_debug(gc, plab)("Thread can promote using PLAB of %zu bytes. Expended: %zu, available: %zu",
                         actual_size, get_promoted_expended(), get_promoted_reserve());
     expend_promoted(actual_size);
-    ShenandoahThreadLocalData::enable_plab_promotions(thread);
-    ShenandoahThreadLocalData::set_plab_actual_size(thread, actual_size);
+    shenandoah_plab->enable_promotions();
+    shenandoah_plab->set_actual_size(actual_size);
   } else {
     // Disable promotions in this thread because entirety of this PLAB must be available to hold old-gen evacuations.
-    ShenandoahThreadLocalData::disable_plab_promotions(thread);
-    ShenandoahThreadLocalData::set_plab_actual_size(thread, 0);
+    shenandoah_plab->disable_promotions();
+    shenandoah_plab->set_actual_size(0);
     log_debug(gc, plab)("Thread cannot promote using PLAB of %zu bytes. Expended: %zu, available: %zu, mixed evacuations? %s",
                         actual_size, get_promoted_expended(), get_promoted_reserve(), BOOL_TO_STR(ShenandoahHeap::heap()->collection_set()->has_old_regions()));
   }
@@ -582,13 +624,21 @@ void ShenandoahOldGeneration::handle_failed_evacuation() {
   }
 }
 
-void ShenandoahOldGeneration::handle_failed_promotion(Thread* thread, size_t size) {
-  _promotion_failure_count.add_then_fetch(1UL);
-  _promotion_failure_words.add_then_fetch(size);
+void ShenandoahOldGeneration::handle_failed_promotion(Thread* thread, size_t size) const {
+  LogTarget(Info, gc, plab) plab_info;
+  if (plab_info.is_enabled()) {
+    ShenandoahPLAB* plab = ShenandoahThreadLocalData::shenandoah_plab(thread);
+    if (plab != nullptr) {
+      plab->record_promotion_failure(size);
+    } else {
+      ResourceMark for_thread_name;
+      log_debug(gc, plab)("Thread: %s has no plab", thread->name());
+    }
+  }
 
-  LogTarget(Debug, gc, plab) lt;
-  LogStream ls(lt);
-  if (lt.is_enabled()) {
+  LogTarget(Debug, gc, plab) plab_debug;
+  if (plab_debug.is_enabled()) {
+    LogStream ls(plab_debug);
     log_failed_promotion(ls, thread, size);
   }
 }
@@ -603,9 +653,10 @@ void ShenandoahOldGeneration::log_failed_promotion(LogStream& ls, Thread* thread
   const size_t gc_id = heap->control_thread()->get_gc_id();
   if ((gc_id != last_report_epoch) || (epoch_report_count++ < MaxReportsPerEpoch)) {
     // Promotion failures should be very rare.  Invest in providing useful diagnostic info.
-    PLAB* const plab = ShenandoahThreadLocalData::plab(thread);
+    ShenandoahPLAB* const shenandoah_plab = ShenandoahThreadLocalData::shenandoah_plab(thread);
+    PLAB* const plab = (shenandoah_plab == nullptr)? nullptr: shenandoah_plab->plab();
     const size_t words_remaining = (plab == nullptr)? 0: plab->words_remaining();
-    const char* promote_enabled = ShenandoahThreadLocalData::allow_plab_promotions(thread)? "enabled": "disabled";
+    const char* promote_enabled = (shenandoah_plab != nullptr && shenandoah_plab->allows_promotion())? "enabled": "disabled";
 
     // Promoted reserve is only changed by vm or control thread. Promoted expended is always accessed atomically.
     const size_t promotion_reserve = get_promoted_reserve();
