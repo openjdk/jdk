@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,18 @@ public class DHasKEM implements KEMSpi {
                 return new KEM.Encapsulated(
                         sub(dh, from, to),
                         pkEm, null);
+
+            } catch (IllegalArgumentException e) {
+                // ECDH validation failure
+                // all-zero shared secret
+                throw e;
+            } catch (InvalidKeyException e) {
+                // Invalid peer public key
+                // Convert InvalidKeyException to an unchecked exception
+                throw new IllegalArgumentException("Invalid peer public key",
+                        e);
             } catch (Exception e) {
+                // Unexpected internal failure
                 throw new ProviderException("internal error", e);
             }
         }
@@ -126,6 +137,11 @@ public class DHasKEM implements KEMSpi {
                 PublicKey pkE = params.DeserializePublicKey(encapsulation);
                 SecretKey dh = params.DH(algorithm, skR, pkE);
                 return sub(dh, from, to);
+
+            } catch (IllegalArgumentException e) {
+                // ECDH validation failure
+                // all-zero shared secret
+                throw e;
             } catch (IOException | InvalidKeyException e) {
                 throw new DecapsulateException("Cannot decapsulate", e);
             } catch (Exception e) {
@@ -248,7 +264,29 @@ public class DHasKEM implements KEMSpi {
             KeyAgreement ka = KeyAgreement.getInstance(kaAlgorithm);
             ka.init(skE);
             ka.doPhase(pkR, true);
-            return ka.generateSecret(alg);
+            // return ka.generateSecret(alg);
+            SecretKey secret = ka.generateSecret(alg);
+
+            // RFC 8446 section 7.4.2: checks for all-zero
+            // X25519/X448 shared secret.
+            if (kaAlgorithm.equals("X25519") ||
+                    kaAlgorithm.equals("X448")) {
+                byte[] s = secret.getEncoded();
+                boolean allZero = true;
+                for (byte b : s) {
+                    if (b != 0) {
+                        allZero = false;
+                        break;
+                    }
+                }
+                if (allZero) {
+                    // Trigger ILLEGAL_PARAMETER alert
+                    throw new IllegalArgumentException(
+                            "All-zero shared secret");
+                }
+            }
+
+            return secret;
         }
     }
 }
