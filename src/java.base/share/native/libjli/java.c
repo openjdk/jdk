@@ -1058,7 +1058,7 @@ static void
 SetMainModule(const char *s)
 {
     static const char format[] = "-Djdk.module.main=%s";
-    char* slash = JLI_StrChr(s, '/');
+    const char* slash = JLI_StrChr(s, '/');
     size_t s_len, def_len;
     char *def;
 
