@@ -33,6 +33,7 @@
  * @run main TestRelativeURLTaglet
  */
 
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.List;
@@ -127,6 +128,9 @@ public class TestRelativeURLTaglet extends JavadocTester implements Taglet {
                     package p.a;
                     /**
                      * Class in {@test ma/p/a}.
+                     *
+                     * @test block1
+                     * @test block2
                      */
                     public class A {}
                     """)
@@ -144,7 +148,8 @@ public class TestRelativeURLTaglet extends JavadocTester implements Taglet {
                 "Package ../../../ma/p/a.",
                 "Class in ../../../ma/p/a.");
         checkOutput("ma/p/a/A.html", true,
-                "Class in ../../../ma/p/a.");
+                "Class in ../../../ma/p/a.",
+                "<dl class=\"notes\">../../../block1 ../../../block2</dl>");
         checkOutput("ma/module-summary.html", true,
                 "Module ../ma.",
                 "Package ../ma/p/a.");
@@ -152,6 +157,35 @@ public class TestRelativeURLTaglet extends JavadocTester implements Taglet {
                 "Class in ma/p/a.",
                 "Module ma.",
                 "Package ma/p/a.");
+    }
+
+    @Test
+    public void testUnnamedPackageURL(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                /**
+                 * Class in unnamed package: {@test tag}.
+                 *
+                 * @test first
+                 * @test second
+                 */
+                 public class C {}
+                """);
+
+        javadoc("-d", base.resolve("out").toString(),
+                "--source-path", src.toString(),
+                "-tagletpath", System.getProperty("test.class.path"),
+                "-taglet", "TestRelativeURLTaglet",
+                src.resolve("C.java").toString());
+        checkExit(Exit.OK);
+
+        checkOutput("C.html", true,
+                "Class in unnamed package: tag.",
+                "<dl class=\"notes\">first second</dl>");
+        checkOutput("index-all.html", true,
+                "Class in unnamed package: tag.");
+        checkOutput("allclasses-index.html", true,
+                "Class in unnamed package: tag.");
     }
 
     // Taglet implementation
@@ -177,13 +211,12 @@ public class TestRelativeURLTaglet extends JavadocTester implements Taglet {
     }
 
     @Override
-    public String toString(List<? extends DocTree> tags, Element element, Path pathToRoot) {
+    public String toString(List<? extends DocTree> tags, Element element, URI pathToRoot) {
         if (tags.size() == 1 && tags.getFirst() instanceof UnknownInlineTagTree uit) {
             return pathToRoot.resolve(uit.getContent().toString()).toString();
         } else {
             return tags.stream()
-                    .map (t -> (UnknownBlockTagTree) t)
-                    .map(t -> pathToRoot.resolve(t.getContent().toString()).toString())
+                    .map(t -> pathToRoot.resolve(((UnknownBlockTagTree) t).getContent().toString()).toString())
                     .collect(Collectors.joining(" "));
         }
     }

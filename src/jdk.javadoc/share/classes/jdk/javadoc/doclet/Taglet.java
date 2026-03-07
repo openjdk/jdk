@@ -25,7 +25,7 @@
 
 package jdk.javadoc.doclet;
 
-import java.nio.file.Path;
+import java.net.URI;
 import java.util.List;
 import java.util.Set;
 
@@ -56,10 +56,10 @@ import com.sun.source.doctree.DocTree;
  *      {@link #isInlineTag() isInlineTag}, to determine the characteristics
  *      of the tags supported by the taglet.
  * <li> As appropriate, the doclet calls the
- *      {@link #toString(List,Element,Path) toString} method on the taglet object,
+ *      {@link #toString(List,Element,URI) toString} method on the taglet object,
  *      giving it a list of tags, the element whose documentation comment contains
- *      the tags, and the path to the documentation root directory, from which
- *      the taglet can determine the string to be included in the documentation.
+ *      the tags, and the relative URI of the documentation root directory, from
+ *      which the taglet can determine the string to be included in the documentation.
  *      The doclet will typically specify any requirements on the contents of
  *      the string that is returned.
  * </ol>
@@ -136,9 +136,9 @@ public interface Taglet {
      * for each comment containing instances of block tags, with a list of all the instances
      * of the block tag in that comment.
      *
-     * @apiNote Taglets that create local references to other documentation resources
-     * may instead override {@link #toString(List, Element, Path)}, which provides the
-     * relative path to the documentation root directory, and throw an exception in the
+     * @apiNote Taglets that create relative references to other documentation resources
+     * may instead override {@link #toString(List, Element, URI)}, which provides the
+     * relative URI of the documentation root directory, and throw an exception in the
      * implementation of this method.
      *
      * @param tags the list of instances of this tag
@@ -148,7 +148,7 @@ public interface Taglet {
      *
      * @see <a href="StandardDoclet.html#user-defined-taglets">User-Defined Taglets
      *      for the Standard Doclet</a>
-     * @see #toString(List, Element, Path)
+     * @see #toString(List, Element, URI)
      */
     String toString(List<? extends DocTree> tags, Element element);
 
@@ -162,21 +162,22 @@ public interface Taglet {
      * for each comment containing instances of block tags, with a list of all the instances
      * of the block tag in that comment.
      *
-     * <p>Since the path of the resource being rendered cannot always be derived from
-     * {@code element}, {@code pathToRoot} provides a convenient way to create references
-     * to other documentation resources relative to the documentation root directory.
+     * <p>Since the location of the resource being rendered cannot always be derived
+     * from {@code element}, {@code pathToRoot} can be used to obtain references to other
+     * documentation resources by invoking its {@link URI#resolve(String) resolve(String)}
+     * method with the relative path of the target resource.
      *
      * @implSpec The default implementation returns {@link #toString(List, Element) toString(tags, element)}.
      *
      * @param tags the list of instances of this tag
      * @param element the element to which the enclosing comment belongs
-     * @param pathToRoot the relative path to the documentation root directory
+     * @param pathToRoot the relative URI of the documentation root directory
      * @return the string representation of the tags to be included in
      *  the generated output
      *
      * @since 27
      */
-    default String toString(List<? extends DocTree> tags, Element element, Path pathToRoot) {
+    default String toString(List<? extends DocTree> tags, Element element, URI pathToRoot) {
         return toString(tags, element);
     }
 
