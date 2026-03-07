@@ -296,30 +296,29 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
   }
 
   {
-    ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::choose_cset :
-                            ShenandoahPhaseTimings::degen_gc_choose_cset);
-
-    collection_set->clear();
     ShenandoahHeapLocker locker(heap->lock());
-    _heuristics->choose_collection_set(collection_set);
-  }
-
-
-  {
-    ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::final_rebuild_freeset :
-                            ShenandoahPhaseTimings::degen_gc_final_rebuild_freeset);
-    ShenandoahHeapLocker locker(heap->lock());
-
-    // We are preparing for evacuation.
-    size_t young_trashed_regions, old_trashed_regions, first_old, last_old, num_old;
-    _free_set->prepare_to_rebuild(young_trashed_regions, old_trashed_regions, first_old, last_old, num_old);
-    if (heap->mode()->is_generational()) {
-      ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
-    size_t allocation_runway =
-      gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_trashed_regions);
-      gen_heap->compute_old_generation_balance(allocation_runway, old_trashed_regions, young_trashed_regions);
+    ShenandoahHeapUsageAccountingLocker accounting_locker(_free_set->usage_accounting_lock());
+    {
+      ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::choose_cset :
+                        ShenandoahPhaseTimings::degen_gc_choose_cset);
+      collection_set->clear();
+      _heuristics->choose_collection_set(collection_set);
     }
-    _free_set->finish_rebuild(young_trashed_regions, old_trashed_regions, num_old);
+
+    {
+      ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::final_rebuild_freeset :
+                              ShenandoahPhaseTimings::degen_gc_final_rebuild_freeset);
+      // We are preparing for evacuation.
+      size_t young_trashed_regions, old_trashed_regions, first_old, last_old, num_old;
+      _free_set->prepare_to_rebuild(young_trashed_regions, old_trashed_regions, first_old, last_old, num_old);
+      if (heap->mode()->is_generational()) {
+        ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
+        size_t allocation_runway =
+          gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_trashed_regions);
+        gen_heap->compute_old_generation_balance(allocation_runway, old_trashed_regions, young_trashed_regions);
+      }
+      _free_set->finish_rebuild(young_trashed_regions, old_trashed_regions, num_old);
+    }
   }
 }
 

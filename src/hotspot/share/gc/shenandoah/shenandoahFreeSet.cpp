@@ -175,6 +175,7 @@ ShenandoahRegionPartitions::ShenandoahRegionPartitions(size_t max_regions, Shena
 void ShenandoahFreeSet::account_for_pip_regions(size_t mutator_regions, size_t mutator_bytes,
                                                 size_t collector_regions, size_t collector_bytes) {
   shenandoah_assert_heaplocked();
+  ShenandoahHeapUsageAccountingLocker locker(usage_accounting_lock());
 
   // We have removed all of these regions from their respective partition. Each pip region is "in" the NotFree partition.
   // We want to account for all pip pad memory as if it had been consumed from within the Mutator partition.
@@ -196,16 +197,6 @@ void ShenandoahFreeSet::account_for_pip_regions(size_t mutator_regions, size_t m
   // to be recycled and put into allocatable OldCollector partition after the region has been promoted in place.
   _partitions.transfer_used_capacity_from_to(ShenandoahFreeSetPartitionId::Collector, ShenandoahFreeSetPartitionId::Mutator,
                                              collector_regions);
-
-  // Conservatively, act as if we've promoted from both Mutator and Collector partitions
-  recompute_total_affiliated</* MutatorEmptiesChanged */ false, /* CollectorEmptiesChanged */ false,
-                             /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ true,
-                             /* CollectorSizeChanged */ true, /* OldCollectorSizeChanged */ false,
-                             /* AffiliatedChangesAreYoungNeutral */ true, /* AffiliatedChangesAreGlobalNeutral */ true,
-                             /* UnaffiliatedChangesAreYoungNeutral */ false>();
-  recompute_total_young_used</* UsedByMutatorChanged */ true, /*UsedByCollectorChanged */ true>();
-  recompute_total_global_used</* UsedByMutatorChanged */ true, /* UsedByCollectorChanged */ true,
-                              /* UsedByOldCollectorChanged */ false>();
 }
 
 ShenandoahFreeSetPartitionId ShenandoahFreeSet::prepare_to_promote_in_place(size_t idx, size_t bytes) {
@@ -253,7 +244,7 @@ inline bool ShenandoahFreeSet::has_alloc_capacity(ShenandoahHeapRegion *r) const
 void ShenandoahFreeSet::resize_old_collector_capacity(size_t regions) {
   shenandoah_assert_heaplocked();
   size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
-  size_t original_old_regions = _partitions.get_capacity(ShenandoahFreeSetPartitionId::OldCollector) / region_size_bytes;
+  size_t original_old_regions = _partitions.capacity_of(ShenandoahFreeSetPartitionId::OldCollector) / region_size_bytes;
   size_t unaffiliated_mutator_regions = _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::Mutator);
   size_t unaffiliated_collector_regions = _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::Collector);
   size_t unaffiliated_old_collector_regions = _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::OldCollector);
@@ -420,6 +411,7 @@ void ShenandoahRegionPartitions::establish_old_collector_intervals(idx_t old_col
 
 void ShenandoahRegionPartitions::increase_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes) {
   shenandoah_assert_heaplocked();
+  assert(_free_set->usage_accounting_lock()->owned_by_self(), "Must own usage accounting lock");
   assert (which_partition < NumPartitions, "Partition must be valid");
 
   _used[int(which_partition)] += bytes;
@@ -431,6 +423,7 @@ void ShenandoahRegionPartitions::increase_used(ShenandoahFreeSetPartitionId whic
 
 void ShenandoahRegionPartitions::decrease_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes) {
   shenandoah_assert_heaplocked();
+  assert(_free_set->usage_accounting_lock()->owned_by_self(), "Must own usage accounting lock");
   assert (which_partition < NumPartitions, "Partition must be valid");
   assert (_used[int(which_partition)] >= bytes, "Must not use less than zero after decrease");
   _used[int(which_partition)] -= bytes;
@@ -473,6 +466,7 @@ void ShenandoahRegionPartitions::increase_capacity(ShenandoahFreeSetPartitionId 
 void ShenandoahRegionPartitions::transfer_used_capacity_from_to(ShenandoahFreeSetPartitionId from_partition,
                                                                 ShenandoahFreeSetPartitionId to_partition, size_t regions) {
   shenandoah_assert_heaplocked();
+  assert(_free_set->usage_accounting_lock()->owned_by_self(), "Must own usage accounting lock");
   size_t bytes = regions * ShenandoahHeapRegion::region_size_bytes();
   assert (from_partition < NumPartitions, "Partition must be valid");
   assert (to_partition < NumPartitions, "Partition must be valid");
@@ -488,6 +482,7 @@ void ShenandoahRegionPartitions::transfer_used_capacity_from_to(ShenandoahFreeSe
 
 void ShenandoahRegionPartitions::decrease_capacity(ShenandoahFreeSetPartitionId which_partition, size_t bytes) {
   shenandoah_assert_heaplocked();
+  assert(_free_set->usage_accounting_lock()->owned_by_self(), "Must own usage accounting lock");
   assert (which_partition < NumPartitions, "Partition must be valid");
   assert(_capacity[int(which_partition)] >= bytes, "Cannot remove more capacity bytes than are present");
   assert(_available[int(which_partition)] >= bytes, "Cannot shrink capacity unless capacity is unused");
@@ -497,47 +492,50 @@ void ShenandoahRegionPartitions::decrease_capacity(ShenandoahFreeSetPartitionId 
 
 void ShenandoahRegionPartitions::increase_available(ShenandoahFreeSetPartitionId which_partition, size_t bytes) {
   shenandoah_assert_heaplocked();
+  assert(_free_set->usage_accounting_lock()->owned_by_self(), "Must own usage accounting lock");
   assert (which_partition < NumPartitions, "Partition must be valid");
   _available[int(which_partition)] += bytes;
 }
 
 void ShenandoahRegionPartitions::decrease_available(ShenandoahFreeSetPartitionId which_partition, size_t bytes) {
   shenandoah_assert_heaplocked();
+  assert(_free_set->usage_accounting_lock()->owned_by_self(), "Must own usage accounting lock");
   assert (which_partition < NumPartitions, "Partition must be valid");
   assert(_available[int(which_partition)] >= bytes, "Cannot remove more available bytes than are present");
   _available[int(which_partition)] -= bytes;
 }
 
-size_t ShenandoahRegionPartitions::get_available(ShenandoahFreeSetPartitionId which_partition) {
-  assert (which_partition < NumPartitions, "Partition must be valid");
-  return _available[int(which_partition)];;
-}
-
 void ShenandoahRegionPartitions::increase_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions) {
+  assert(_free_set->usage_accounting_lock()->owned_by_self(), "Must own usage accounting lock");
   _region_counts[int(which_partition)] += regions;
 }
 
 void ShenandoahRegionPartitions::decrease_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions) {
+  assert(_free_set->usage_accounting_lock()->owned_by_self(), "Must own usage accounting lock");
   assert(_region_counts[int(which_partition)] >= regions, "Cannot remove more regions than are present");
   _region_counts[int(which_partition)] -= regions;
 }
 
 void ShenandoahRegionPartitions::increase_empty_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions) {
+  assert(_free_set->usage_accounting_lock()->owned_by_self(), "Must own usage accounting lock");
   _empty_region_counts[int(which_partition)] += regions;
 }
 
 void ShenandoahRegionPartitions::decrease_empty_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions) {
+  assert(_free_set->usage_accounting_lock()->owned_by_self(), "Must own usage accounting lock");
   assert(_empty_region_counts[int(which_partition)] >= regions, "Cannot remove more regions than are present");
   _empty_region_counts[int(which_partition)] -= regions;
 }
 
 void ShenandoahRegionPartitions::one_region_is_no_longer_empty(ShenandoahFreeSetPartitionId partition) {
+  ShenandoahHeapUsageAccountingLocker locker(_free_set->usage_accounting_lock());
   decrease_empty_region_counts(partition, (size_t) 1);
 }
 
 // All members of partition between low_idx and high_idx inclusive have been removed.
 void ShenandoahRegionPartitions::shrink_interval_if_range_modifies_either_boundary(
   ShenandoahFreeSetPartitionId partition, idx_t low_idx, idx_t high_idx, size_t num_regions) {
+  assert(_free_set->usage_accounting_lock()->owned_by_self(), "Must own usage accounting lock");
   assert((low_idx <= high_idx) && (low_idx >= 0) && (high_idx < _max), "Range must span legal index values");
   size_t span = high_idx + 1 - low_idx;
   bool regions_are_contiguous = (span == num_regions);
@@ -592,6 +590,7 @@ void ShenandoahRegionPartitions::shrink_interval_if_range_modifies_either_bounda
 void ShenandoahRegionPartitions::establish_interval(ShenandoahFreeSetPartitionId partition, idx_t low_idx,
                                                     idx_t high_idx, idx_t low_empty_idx, idx_t high_empty_idx) {
 #ifdef ASSERT
+  assert(_free_set->usage_accounting_lock()->owned_by_self(), "Must own usage accounting lock");
   assert (partition < NumPartitions, "invalid partition");
   if (low_idx != max()) {
     assert((low_idx <= high_idx) && (low_idx >= 0) && (high_idx < _max), "Range must span legal index values");
@@ -656,6 +655,8 @@ void ShenandoahRegionPartitions::expand_interval_if_boundary_modified(Shenandoah
 
 void ShenandoahRegionPartitions::retire_range_from_partition(
   ShenandoahFreeSetPartitionId partition, idx_t low_idx, idx_t high_idx) {
+  shenandoah_assert_heaplocked();
+  ShenandoahHeapUsageAccountingLocker locker(_free_set->usage_accounting_lock());
 
   // Note: we may remove from free partition even if region is not entirely full, such as when available < PLAB::min_size()
   assert ((low_idx < _max) && (high_idx < _max), "Both indices are sane: %zu and %zu < %zu",
@@ -678,6 +679,8 @@ void ShenandoahRegionPartitions::retire_range_from_partition(
 
 size_t ShenandoahRegionPartitions::retire_from_partition(ShenandoahFreeSetPartitionId partition,
                                                          idx_t idx, size_t used_bytes) {
+  shenandoah_assert_heaplocked();
+  ShenandoahHeapUsageAccountingLocker locker(_free_set->usage_accounting_lock());
 
   size_t waste_bytes = 0;
   // Note: we may remove from free partition even if region is not entirely full, such as when available < PLAB::min_size()
@@ -1231,16 +1234,7 @@ ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
   _mutator_bytes_at_last_sample(0),
   _total_humongous_waste(0),
   _alloc_bias_weight(0),
-  _total_young_used(0),
-  _total_old_used(0),
   _total_global_used(0),
-  _young_affiliated_regions(0),
-  _old_affiliated_regions(0),
-  _global_affiliated_regions(0),
-  _young_unaffiliated_regions(0),
-  _global_unaffiliated_regions(0),
-  _total_young_regions(0),
-  _total_global_regions(0),
   _mutator_bytes_allocated_since_gc_start(0)
 {
   clear_internal();
@@ -1248,10 +1242,11 @@ ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
 
 void ShenandoahFreeSet::move_unaffiliated_regions_from_collector_to_old_collector(ssize_t count) {
   shenandoah_assert_heaplocked();
+  ShenandoahHeapUsageAccountingLocker locker(usage_accounting_lock());
   size_t region_size_bytes =  ShenandoahHeapRegion::region_size_bytes();
 
-  size_t old_capacity = _partitions.get_capacity(ShenandoahFreeSetPartitionId::OldCollector);
-  size_t collector_capacity = _partitions.get_capacity(ShenandoahFreeSetPartitionId::Collector);
+  size_t old_capacity = _partitions.capacity_of(ShenandoahFreeSetPartitionId::OldCollector);
+  size_t collector_capacity = _partitions.capacity_of(ShenandoahFreeSetPartitionId::Collector);
   if (count > 0) {
     size_t ucount = count;
     size_t bytes_moved = ucount * region_size_bytes;
@@ -1304,6 +1299,7 @@ void ShenandoahFreeSet::add_promoted_in_place_region_to_old_collector(Shenandoah
   assert(p == ShenandoahFreeSetPartitionId::NotFree, "pip region must be NotFree");
   assert(region->is_young(), "pip region must be young");
 
+  ShenandoahHeapUsageAccountingLocker locker(usage_accounting_lock());
   // Though this region may have been promoted in place from the Collector region, its usage is now accounted within
   // the Mutator partition.
   _partitions.decrease_used(ShenandoahFreeSetPartitionId::Mutator, used_while_awaiting_pip);
@@ -1321,16 +1317,6 @@ void ShenandoahFreeSet::add_promoted_in_place_region_to_old_collector(Shenandoah
     _heap->old_generation()->augment_promoted_reserve(available_in_region);
     assert(available_in_region != region_size_bytes, "Nothing to promote in place");
   }
-  // else, leave this region as NotFree
-
-  recompute_total_used</* UsedByMutatorChanged */ true,
-                       /* UsedByCollectorChanged */ false, /* UsedByOldCollectorChanged */ true>();
-  // Conservatively, assume that pip regions came from both Mutator and Collector
-  recompute_total_affiliated</* MutatorEmptiesChanged */ false, /* CollectorEmptiesChanged */ false,
-                             /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ true,
-                             /* CollectorSizeChanged */ true, /* OldCollectorSizeChanged */ true,
-                             /* AffiliatedChangesAreYoungNeutral */ false, /* AffiliatedChangesAreGlobalNeutral */ true,
-                             /* UnaffiliatedChangesAreYoungNeutral */ true>();
   _partitions.assert_bounds();
 }
 
@@ -1655,6 +1641,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
   }
 
   if (result != nullptr) {
+    ShenandoahHeapUsageAccountingLocker locker(usage_accounting_lock());
     // Allocation successful, bump stats:
     if (req.is_mutator_alloc()) {
       assert(req.is_young(), "Mutator allocations always come from young generation.");
@@ -1700,45 +1687,6 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     if (req.is_mutator_alloc() && (waste_bytes > 0)) {
       increase_bytes_allocated(waste_bytes);
     }
-  }
-
-  switch (orig_partition) {
-  case ShenandoahFreeSetPartitionId::Mutator:
-    recompute_total_used</* UsedByMutatorChanged */ true,
-                         /* UsedByCollectorChanged */ false, /* UsedByOldCollectorChanged */ false>();
-    if (in_new_region) {
-      recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ false,
-                                 /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ false,
-                                 /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ false,
-                                 /* AffiliatedChangesAreYoungNeutral */ false, /* AffiliatedChangesAreGlobalNeutral */ false,
-                                 /* UnaffiliatedChangesAreYoungNeutral */ false>();
-    }
-    break;
-  case ShenandoahFreeSetPartitionId::Collector:
-    recompute_total_used</* UsedByMutatorChanged */ false,
-                         /* UsedByCollectorChanged */ true, /* UsedByOldCollectorChanged */ false>();
-    if (in_new_region) {
-      recompute_total_affiliated</* MutatorEmptiesChanged */ false, /* CollectorEmptiesChanged */ true,
-                                 /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ false,
-                                 /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ false,
-                                 /* AffiliatedChangesAreYoungNeutral */ false, /* AffiliatedChangesAreGlobalNeutral */ false,
-                                 /* UnaffiliatedChangesAreYoungNeutral */ false>();
-    }
-    break;
-  case ShenandoahFreeSetPartitionId::OldCollector:
-    recompute_total_used</* UsedByMutatorChanged */ false,
-                         /* UsedByCollectorChanged */ false, /* UsedByOldCollectorChanged */ true>();
-    if (in_new_region) {
-      recompute_total_affiliated</* MutatorEmptiesChanged */ false, /* CollectorEmptiesChanged */ false,
-                                 /* OldCollectorEmptiesChanged */ true, /* MutatorSizeChanged */ false,
-                                 /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ false,
-                                 /* AffiliatedChangesAreYoungNeutral */ true, /* AffiliatedChangesAreGlobalNeutral */ false,
-                                 /* UnaffiliatedChangesAreYoungNeutral */ true>();
-    }
-    break;
-  case ShenandoahFreeSetPartitionId::NotFree:
-  default:
-    assert(false, "won't happen");
   }
 #ifdef ASSERT
   if (boundary_changed) {
@@ -1814,6 +1762,7 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req, bo
     end++;
   }
 
+  ShenandoahHeapUsageAccountingLocker locker(usage_accounting_lock());
   size_t total_used = 0;
   const size_t used_words_in_last_region = words_size & ShenandoahHeapRegion::region_size_words_mask();
   size_t waste_bytes;
@@ -1889,14 +1838,6 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req, bo
     }
   }
 
-  recompute_total_young_used</* UsedByMutatorChanged */ true, /*UsedByCollectorChanged */ false>();
-  recompute_total_global_used</* UsedByMutatorChanged */ true, /*UsedByCollectorChanged */ false,
-                              /* UsedByOldCollectorChanged */ true>();
-  recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ false,
-                             /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ false,
-                             /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ false,
-                             /* AffiliatedChangesAreYoungNeutral */ false, /* AffiliatedChangesAreGlobalNeutral */ false,
-                             /* UnaffiliatedChangesAreYoungNeutral */ false>();
   _partitions.assert_bounds();
   return _heap->get_region(beg)->bottom();
 }
@@ -1933,14 +1874,6 @@ bool ShenandoahFreeSet::transfer_one_region_from_mutator_to_old_collector(size_t
     _partitions.move_from_partition_to_partition(idx, ShenandoahFreeSetPartitionId::Mutator,
                                                  ShenandoahFreeSetPartitionId::OldCollector, alloc_capacity);
     gen_heap->old_generation()->augment_evacuation_reserve(alloc_capacity);
-    recompute_total_used</* UsedByMutatorChanged */ true,
-                         /* UsedByCollectorChanged */ false, /* UsedByOldCollectorChanged */ true>();
-    // Transferred region is unaffilliated, empty
-    recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ false,
-                               /* OldCollectorEmptiesChanged */ true, /* MutatorSizeChanged */ true,
-                               /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ true,
-                               /* AffiliatedChangesAreYoungNeutral */ true, /* AffiliatedChangesAreGlobalNeutral */ true,
-                               /* UnaffiliatedChangesAreYoungNeutral */ false>();
     _partitions.assert_bounds();
     return true;
   } else {
@@ -1949,11 +1882,12 @@ bool ShenandoahFreeSet::transfer_one_region_from_mutator_to_old_collector(size_t
 }
 
 bool ShenandoahFreeSet::flip_to_old_gc(ShenandoahHeapRegion* r) {
+  shenandoah_assert_heaplocked();
   const size_t idx = r->index();
-
   assert(_partitions.partition_id_matches(idx, ShenandoahFreeSetPartitionId::Mutator), "Should be in mutator view");
   assert(can_allocate_from(r), "Should not be allocated");
 
+  ShenandoahHeapUsageAccountingLocker accounting_locker(usage_accounting_lock());
   const size_t region_alloc_capacity = alloc_capacity(r);
 
   if (transfer_one_region_from_mutator_to_old_collector(idx, region_alloc_capacity)) {
@@ -1987,17 +1921,9 @@ bool ShenandoahFreeSet::flip_to_old_gc(ShenandoahHeapRegion* r) {
       _partitions.move_from_partition_to_partition(idx,
                                                    ShenandoahFreeSetPartitionId::Mutator,
                                                    ShenandoahFreeSetPartitionId::OldCollector, region_alloc_capacity);
-      // Should have no effect on used, since flipped regions are trashed: zero used */
-      // Transferred regions are not affiliated, because they are empty (trash)
-      recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ false,
-                                 /* OldCollectorEmptiesChanged */ true, /* MutatorSizeChanged */ true,
-                                 /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ true,
-                                 /* AffiliatedChangesAreYoungNeutral */ true, /* AffiliatedChangesAreGlobalNeutral */ true,
-                                 /* UnaffiliatedChangesAreYoungNeutral */ false>();
       _partitions.assert_bounds();
       // 4. Do not adjust capacities for generations, we just swapped the regions that have already
       // been accounted for. However, we should adjust the evacuation reserves as those may have changed.
-      shenandoah_assert_heaplocked();
       const size_t reserve = _heap->old_generation()->get_evacuation_reserve();
       _heap->old_generation()->set_evacuation_reserve(reserve - unusable_capacity + region_alloc_capacity);
       return true;
@@ -2009,22 +1935,16 @@ bool ShenandoahFreeSet::flip_to_old_gc(ShenandoahHeapRegion* r) {
 }
 
 void ShenandoahFreeSet::flip_to_gc(ShenandoahHeapRegion* r) {
-  size_t idx = r->index();
+  shenandoah_assert_heaplocked();
 
+  size_t idx = r->index();
   assert(_partitions.partition_id_matches(idx, ShenandoahFreeSetPartitionId::Mutator), "Should be in mutator view");
   assert(can_allocate_from(r), "Should not be allocated");
 
+  ShenandoahHeapUsageAccountingLocker accounting_locker(usage_accounting_lock());
   size_t ac = alloc_capacity(r);
   _partitions.move_from_partition_to_partition(idx, ShenandoahFreeSetPartitionId::Mutator,
                                                ShenandoahFreeSetPartitionId::Collector, ac);
-  recompute_total_used</* UsedByMutatorChanged */ true,
-                       /* UsedByCollectorChanged */ false, /* UsedByOldCollectorChanged */ true>();
-  // Transfer only affects unaffiliated regions, which stay in young
-  recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ true,
-                             /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ true,
-                             /* CollectorSizeChanged */ true, /* OldCollectorSizeChanged */ false,
-                             /* AffiliatedChangesAreYoungNeutral */ true, /* AffiliatedChangesAreGlobalNeutral */ true,
-                             /* UnaffiliatedChangesAreYoungNeutral */ true>();
   _partitions.assert_bounds();
   // We do not ensure that the region is no longer trash, relying on try_allocate_in(), which always comes next,
   // to recycle trash before attempting to allocate anything in the region.
@@ -2037,13 +1957,6 @@ void ShenandoahFreeSet::clear() {
 void ShenandoahFreeSet::clear_internal() {
   shenandoah_assert_heaplocked();
   _partitions.make_all_regions_unavailable();
-  recompute_total_used</* UsedByMutatorChanged */ true,
-                       /* UsedByCollectorChanged */ true, /* UsedByOldCollectorChanged */ true>();
-  recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ true,
-                             /* OldCollectorEmptiesChanged */ true, /* MutatorSizeChanged */ true,
-                             /* CollectorSizeChanged */ true, /* OldCollectorSizeChanged */ true,
-                             /* AffiliatedChangesAreYoungNeutral */ true, /* AffiliatedChangesAreGlobalNeutral */ true,
-                             /* UnaffiliatedChangesAreYoungNeutral */ true>();
   _alloc_bias_weight = 0;
   _partitions.set_bias_from_left_to_right(ShenandoahFreeSetPartitionId::Mutator, true);
   _partitions.set_bias_from_left_to_right(ShenandoahFreeSetPartitionId::Collector, false);
@@ -2274,15 +2187,6 @@ size_t ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_trashed
                                                 old_collector_used + old_cset_regions * region_size_bytes,
                                                 old_collector_humongous_waste);
   _total_humongous_waste = mutator_humongous_waste + old_collector_humongous_waste;
-  _total_young_regions = total_mutator_regions + young_cset_regions;
-  _total_global_regions = _total_young_regions + total_old_collector_regions + old_cset_regions;
-  recompute_total_used</* UsedByMutatorChanged */ true,
-                       /* UsedByCollectorChanged */ true, /* UsedByOldCollectorChanged */ true>();
-  recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ true,
-                             /* OldCollectorEmptiesChanged */ true, /* MutatorSizeChanged */ true,
-                             /* CollectorSizeChanged */ true, /* OldCollectorSizeChanged */ true,
-                             /* AffiliatedChangesAreYoungNeutral */ false, /* AffiliatedChangesAreGlobalNeutral */ false,
-                             /* UnaffiliatedChangesAreYoungNeutral */ false>();
   _partitions.assert_bounds();
 #ifdef ASSERT
   if (_heap->mode()->is_generational()) {
@@ -2303,6 +2207,7 @@ size_t ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_trashed
 void ShenandoahFreeSet::transfer_humongous_regions_from_mutator_to_old_collector(size_t xfer_regions,
                                                                                  size_t humongous_waste_bytes) {
   shenandoah_assert_heaplocked();
+  ShenandoahHeapUsageAccountingLocker locker(usage_accounting_lock());
   size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
 
   _partitions.decrease_humongous_waste(ShenandoahFreeSetPartitionId::Mutator, humongous_waste_bytes);
@@ -2313,15 +2218,6 @@ void ShenandoahFreeSet::transfer_humongous_regions_from_mutator_to_old_collector
   _partitions.increase_humongous_waste(ShenandoahFreeSetPartitionId::OldCollector, humongous_waste_bytes);
   _partitions.increase_used(ShenandoahFreeSetPartitionId::OldCollector, xfer_regions * region_size_bytes);
 
-  // _total_humongous_waste, _total_global_regions are unaffected by transfer
-  _total_young_regions -= xfer_regions;
-  recompute_total_young_used</* UsedByMutatorChanged */ true, /* UsedByCollectorChanged */ false>();
-  recompute_total_old_used</* UsedByOldCollectorChanged */ true>();
-  recompute_total_affiliated</* MutatorEmptiesChanged */ false, /* CollectorEmptiesChanged */ false,
-                             /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ true,
-                             /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ true,
-                             /* AffiliatedChangesAreYoungNeutral */ false, /* AffiliatedChangesAreGlobalNeutral */ true,
-                             /* UnaffiliatedChangesAreYoungNeutral */ true>();
   _partitions.assert_bounds();
   // global_used is unaffected by this transfer
 
@@ -2363,48 +2259,23 @@ void ShenandoahFreeSet::transfer_empty_regions_from_to(ShenandoahFreeSetPartitio
 
   // All transferred regions are empty.
   assert(used_transfer == 0, "empty regions should have no used");
-  _partitions.expand_interval_if_range_modifies_either_boundary(dest, dest_low_idx,
-                                                                dest_high_idx, dest_low_idx, dest_high_idx);
-  _partitions.shrink_interval_if_range_modifies_either_boundary(source, source_low_idx, source_high_idx,
-                                                                transferred_regions);
+  {
+    ShenandoahHeapUsageAccountingLocker locker(usage_accounting_lock());
+    _partitions.expand_interval_if_range_modifies_either_boundary(dest, dest_low_idx,
+                                                                  dest_high_idx, dest_low_idx, dest_high_idx);
+    _partitions.shrink_interval_if_range_modifies_either_boundary(source, source_low_idx, source_high_idx,
+                                                                  transferred_regions);
 
-  _partitions.decrease_region_counts(source, transferred_regions);
-  _partitions.decrease_empty_region_counts(source, transferred_regions);
-  _partitions.decrease_capacity(source, transferred_regions * region_size_bytes);
+    _partitions.decrease_region_counts(source, transferred_regions);
+    _partitions.decrease_empty_region_counts(source, transferred_regions);
+    _partitions.decrease_capacity(source, transferred_regions * region_size_bytes);
 
-  _partitions.increase_capacity(dest, transferred_regions * region_size_bytes);
-  _partitions.increase_region_counts(dest, transferred_regions);
-  _partitions.increase_empty_region_counts(dest, transferred_regions);
+    _partitions.increase_capacity(dest, transferred_regions * region_size_bytes);
+    _partitions.increase_region_counts(dest, transferred_regions);
+    _partitions.increase_empty_region_counts(dest, transferred_regions);
 
-  // Since only empty regions are transferred, no need to recompute_total_used()
-  if (source == ShenandoahFreeSetPartitionId::OldCollector) {
-    assert((dest == ShenandoahFreeSetPartitionId::Collector) || (dest == ShenandoahFreeSetPartitionId::Mutator), "sanity");
-    _total_young_regions += transferred_regions;
-    recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ true,
-                               /* OldCollectorEmptiesChanged */ true, /* MutatorSizeChanged */ true,
-                               /* CollectorSizeChanged */ true, /* OldCollectorSizeChanged */ true,
-                               /* AffiliatedChangesAreYoungNeutral */ true, /* AffiliatedChangesAreGlobalNeutral */ true,
-                               /* UnaffiliatedChangesAreYoungNeutral */ false>();
-  } else {
-    assert((source == ShenandoahFreeSetPartitionId::Collector) || (source == ShenandoahFreeSetPartitionId::Mutator), "sanity");
-    if (dest == ShenandoahFreeSetPartitionId::OldCollector) {
-      _total_young_regions -= transferred_regions;
-      recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ true,
-                                 /* OldCollectorEmptiesChanged */ true, /* MutatorSizeChanged */ true,
-                                 /* CollectorSizeChanged */ true, /* OldCollectorSizeChanged */ true,
-                                 /* AffiliatedChangesAreYoungNeutral */ true, /* AffiliatedChangesAreGlobalNeutral */ true,
-                                 /* UnaffiliatedChangesAreYoungNeutral */ false>();
-    } else {
-      assert((dest == ShenandoahFreeSetPartitionId::Collector) || (dest == ShenandoahFreeSetPartitionId::Mutator), "sanity");
-      // No adjustments to total_young_regions if transferring within young
-      recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ true,
-                                 /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ true,
-                                 /* CollectorSizeChanged */ true, /* OldCollectorSizeChanged */ false,
-                                 /* AffiliatedChangesAreYoungNeutral */ true, /* AffiliatedChangesAreGlobalNeutral */ true,
-                                 /* UnaffiliatedChangesAreYoungNeutral */ true>();
-    }
+    _partitions.assert_bounds();
   }
-  _partitions.assert_bounds();
 }
 
 // Returns number of regions transferred, adds transferred bytes to var argument bytes_transferred
@@ -2444,34 +2315,23 @@ size_t ShenandoahFreeSet::transfer_empty_regions_from_collector_set_to_mutator_s
   }
   // All transferred regions are empty.
   assert(used_transfer == 0, "empty regions should have no used");
-  _partitions.expand_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId::Mutator, mutator_low_idx,
-                                                                mutator_high_idx, mutator_low_idx, mutator_high_idx);
-  _partitions.shrink_interval_if_range_modifies_either_boundary(which_collector, collector_low_idx, collector_high_idx,
-                                                                transferred_regions);
+  {
+    ShenandoahHeapUsageAccountingLocker locker(usage_accounting_lock());
+    _partitions.expand_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId::Mutator, mutator_low_idx,
+                                                                  mutator_high_idx, mutator_low_idx, mutator_high_idx);
+    _partitions.shrink_interval_if_range_modifies_either_boundary(which_collector, collector_low_idx, collector_high_idx,
+                                                                  transferred_regions);
 
-  _partitions.decrease_region_counts(which_collector, transferred_regions);
-  _partitions.decrease_empty_region_counts(which_collector, transferred_regions);
-  _partitions.decrease_capacity(which_collector, transferred_regions * region_size_bytes);
+    _partitions.decrease_region_counts(which_collector, transferred_regions);
+    _partitions.decrease_empty_region_counts(which_collector, transferred_regions);
+    _partitions.decrease_capacity(which_collector, transferred_regions * region_size_bytes);
 
-  _partitions.increase_capacity(ShenandoahFreeSetPartitionId::Mutator, transferred_regions * region_size_bytes);
-  _partitions.increase_region_counts(ShenandoahFreeSetPartitionId::Mutator, transferred_regions);
-  _partitions.increase_empty_region_counts(ShenandoahFreeSetPartitionId::Mutator, transferred_regions);
+    _partitions.increase_capacity(ShenandoahFreeSetPartitionId::Mutator, transferred_regions * region_size_bytes);
+    _partitions.increase_region_counts(ShenandoahFreeSetPartitionId::Mutator, transferred_regions);
+    _partitions.increase_empty_region_counts(ShenandoahFreeSetPartitionId::Mutator, transferred_regions);
 
-  if (which_collector == ShenandoahFreeSetPartitionId::OldCollector) {
-    _total_young_regions += transferred_regions;
-    recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ false,
-                               /* OldCollectorEmptiesChanged */ true, /* MutatorSizeChanged */ true,
-                               /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ true,
-                               /* AffiliatedChangesAreYoungNeutral */ true, /* AffiliatedChangesAreGlobalNeutral */ true,
-                               /* UnaffiliatedChangesAreYoungNeutral */ false>();
-  } else {
-    recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ true,
-                               /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ true,
-                               /* CollectorSizeChanged */ true, /* OldCollectorSizeChanged */ false,
-                               /* AffiliatedChangesAreYoungNeutral */ true, /* AffiliatedChangesAreGlobalNeutral */ true,
-                               /* UnaffiliatedChangesAreYoungNeutral */ true>();
+    _partitions.assert_bounds();
   }
-  _partitions.assert_bounds();
   return transferred_regions;
 }
 
@@ -2514,39 +2374,22 @@ transfer_non_empty_regions_from_collector_set_to_mutator_set(ShenandoahFreeSetPa
   }
   // _empty_region_counts is unaffected, because we transfer only non-empty regions here.
 
-  _partitions.decrease_used(which_collector, used_transfer);
-  _partitions.expand_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId::Mutator,
-                                                                mutator_low_idx, mutator_high_idx, _partitions.max(), -1);
-  _partitions.shrink_interval_if_range_modifies_either_boundary(which_collector, collector_low_idx, collector_high_idx,
-                                                                transferred_regions);
+  {
+    ShenandoahHeapUsageAccountingLocker locker(usage_accounting_lock());
+    _partitions.decrease_used(which_collector, used_transfer);
+    _partitions.expand_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId::Mutator,
+                                                                  mutator_low_idx, mutator_high_idx, _partitions.max(), -1);
+    _partitions.shrink_interval_if_range_modifies_either_boundary(which_collector, collector_low_idx, collector_high_idx,
+                                                                  transferred_regions);
 
-  _partitions.decrease_region_counts(which_collector, transferred_regions);
-  _partitions.decrease_capacity(which_collector, transferred_regions * region_size_bytes);
-  _partitions.increase_capacity(ShenandoahFreeSetPartitionId::Mutator, transferred_regions * region_size_bytes);
-  _partitions.increase_region_counts(ShenandoahFreeSetPartitionId::Mutator, transferred_regions);
-  _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, used_transfer);
+    _partitions.decrease_region_counts(which_collector, transferred_regions);
+    _partitions.decrease_capacity(which_collector, transferred_regions * region_size_bytes);
+    _partitions.increase_capacity(ShenandoahFreeSetPartitionId::Mutator, transferred_regions * region_size_bytes);
+    _partitions.increase_region_counts(ShenandoahFreeSetPartitionId::Mutator, transferred_regions);
+    _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, used_transfer);
 
-  if (which_collector == ShenandoahFreeSetPartitionId::OldCollector) {
-    _total_young_regions += transferred_regions;
+    _partitions.assert_bounds();
   }
-  // _total_global_regions unaffected by transfer
-  recompute_total_used</* UsedByMutatorChanged */ true,
-                       /* UsedByCollectorChanged */ true, /* UsedByOldCollectorChanged */ true>();
-  // All transfers are affiliated
-  if (which_collector == ShenandoahFreeSetPartitionId::OldCollector) {
-    recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ false,
-                               /* OldCollectorEmptiesChanged */ true, /* MutatorSizeChanged */ true,
-                               /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ true,
-                               /* AffiliatedChangesAreYoungNeutral */ false, /* AffiliatedChangesAreGlobalNeutral */ true,
-                               /* UnaffiliatedChangesAreYoungNeutral */ true>();
-  } else {
-    recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollecteorEmptiesChanged */true,
-                               /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ true,
-                               /* CollectorSizeChanged */ true, /* OldCollectorSizeChanged */ false,
-                               /* AffiliatedChangesAreYoungNeutral */ true, /* AffiliatedChangesAreGlobalNeutral */ true,
-                               /* UnaffiliatedChangesAreYoungNeutral */ true>();
-  }
-  _partitions.assert_bounds();
   return transferred_regions;
 }
 
@@ -2596,8 +2439,8 @@ void ShenandoahFreeSet::move_regions_from_collector_to_mutator(size_t max_xfer_r
 void ShenandoahFreeSet::prepare_to_rebuild(size_t &young_trashed_regions, size_t &old_trashed_regions,
                                            size_t &first_old_region, size_t &last_old_region, size_t &old_region_count) {
   shenandoah_assert_heaplocked();
-  assert(rebuild_lock() != nullptr, "sanity");
-  rebuild_lock()->lock(false);
+  assert(usage_accounting_lock() != nullptr, "sanity");
+  usage_accounting_lock()->lock(false);
   // This resets all state information, removing all regions from all sets.
   clear();
   log_debug(gc, free)("Rebuilding FreeSet");
@@ -2612,6 +2455,7 @@ void ShenandoahFreeSet::prepare_to_rebuild(size_t &young_trashed_regions, size_t
 // Return mutator free
 void ShenandoahFreeSet::finish_rebuild(size_t young_trashed_regions, size_t old_trashed_regions, size_t old_region_count) {
   shenandoah_assert_heaplocked();
+  assert(usage_accounting_lock()->owned_by_self(), "sanity");
   size_t young_reserve(0), old_reserve(0);
 
   if (_heap->mode()->is_generational()) {
@@ -2626,14 +2470,12 @@ void ShenandoahFreeSet::finish_rebuild(size_t young_trashed_regions, size_t old_
   size_t young_used_regions, old_used_regions, young_used_bytes, old_used_bytes;
   reserve_regions(young_reserve, old_reserve, old_region_count, young_used_regions, old_used_regions,
                   young_used_bytes, old_used_bytes);
-  _total_young_regions = _heap->num_regions() - old_region_count;
-  _total_global_regions = _heap->num_regions();
   establish_old_collector_alloc_bias();
-
-  // Release the rebuild lock now.  What remains in this function is read-only
-  rebuild_lock()->unlock();
   _partitions.assert_bounds();
   log_status();
+
+  // Release the rebuild lock now.  What remains in this function is read-only
+  usage_accounting_lock()->unlock();
   if (_heap->mode()->is_generational()) {
     // Clear the region balance until it is adjusted in preparation for a subsequent GC cycle.
     _heap->old_generation()->set_region_balance(0);
@@ -2946,47 +2788,43 @@ size_t ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_o
     }
   }
 
-  _partitions.decrease_used(ShenandoahFreeSetPartitionId::Mutator, used_to_old_collector + used_to_collector);
-  _partitions.decrease_region_counts(ShenandoahFreeSetPartitionId::Mutator, regions_to_old_collector + regions_to_collector);
-  _partitions.decrease_empty_region_counts(ShenandoahFreeSetPartitionId::Mutator,
-                                           empty_regions_to_old_collector + empty_regions_to_collector);
-  // decrease_capacity() also decreases available
-  _partitions.decrease_capacity(ShenandoahFreeSetPartitionId::Mutator,
-                                (regions_to_old_collector + regions_to_collector) * region_size_bytes);
-  // increase_capacity() also increases available
-  _partitions.increase_capacity(ShenandoahFreeSetPartitionId::Collector, regions_to_collector * region_size_bytes);
-  _partitions.increase_region_counts(ShenandoahFreeSetPartitionId::Collector, regions_to_collector);
-  _partitions.increase_empty_region_counts(ShenandoahFreeSetPartitionId::Collector, empty_regions_to_collector);
-  // increase_capacity() also increases available
-  _partitions.increase_capacity(ShenandoahFreeSetPartitionId::OldCollector, regions_to_old_collector * region_size_bytes);
-  _partitions.increase_region_counts(ShenandoahFreeSetPartitionId::OldCollector, regions_to_old_collector);
-  _partitions.increase_empty_region_counts(ShenandoahFreeSetPartitionId::OldCollector, empty_regions_to_old_collector);
+  {
+    ShenandoahHeapUsageAccountingLocker locker(usage_accounting_lock());
 
-  if (used_to_collector > 0) {
-    _partitions.increase_used(ShenandoahFreeSetPartitionId::Collector, used_to_collector);
+    _partitions.decrease_used(ShenandoahFreeSetPartitionId::Mutator, used_to_old_collector + used_to_collector);
+    _partitions.decrease_region_counts(ShenandoahFreeSetPartitionId::Mutator, regions_to_old_collector + regions_to_collector);
+    _partitions.decrease_empty_region_counts(ShenandoahFreeSetPartitionId::Mutator,
+                                             empty_regions_to_old_collector + empty_regions_to_collector);
+    // decrease_capacity() also decreases available
+    _partitions.decrease_capacity(ShenandoahFreeSetPartitionId::Mutator,
+                                  (regions_to_old_collector + regions_to_collector) * region_size_bytes);
+    // increase_capacity() also increases available
+    _partitions.increase_capacity(ShenandoahFreeSetPartitionId::Collector, regions_to_collector * region_size_bytes);
+    _partitions.increase_region_counts(ShenandoahFreeSetPartitionId::Collector, regions_to_collector);
+    _partitions.increase_empty_region_counts(ShenandoahFreeSetPartitionId::Collector, empty_regions_to_collector);
+    // increase_capacity() also increases available
+    _partitions.increase_capacity(ShenandoahFreeSetPartitionId::OldCollector, regions_to_old_collector * region_size_bytes);
+    _partitions.increase_region_counts(ShenandoahFreeSetPartitionId::OldCollector, regions_to_old_collector);
+    _partitions.increase_empty_region_counts(ShenandoahFreeSetPartitionId::OldCollector, empty_regions_to_old_collector);
+
+    if (used_to_collector > 0) {
+      _partitions.increase_used(ShenandoahFreeSetPartitionId::Collector, used_to_collector);
+    }
+
+    if (used_to_old_collector > 0) {
+      _partitions.increase_used(ShenandoahFreeSetPartitionId::OldCollector, used_to_old_collector);
+    }
+
+    _partitions.establish_interval(ShenandoahFreeSetPartitionId::Mutator,
+                                   mutator_low_idx, mutator_high_idx, mutator_empty_low_idx, mutator_empty_high_idx);
+    _partitions.establish_interval(ShenandoahFreeSetPartitionId::Collector,
+                                   collector_low_idx, collector_high_idx, collector_empty_low_idx, collector_empty_high_idx);
+
+    _partitions.expand_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId::OldCollector,
+                                                                  old_collector_low_idx, old_collector_high_idx,
+                                                                  old_collector_empty_low_idx, old_collector_empty_high_idx);
+    _partitions.assert_bounds();
   }
-
-  if (used_to_old_collector > 0) {
-    _partitions.increase_used(ShenandoahFreeSetPartitionId::OldCollector, used_to_old_collector);
-  }
-
-  _partitions.establish_interval(ShenandoahFreeSetPartitionId::Mutator,
-                                 mutator_low_idx, mutator_high_idx, mutator_empty_low_idx, mutator_empty_high_idx);
-  _partitions.establish_interval(ShenandoahFreeSetPartitionId::Collector,
-                                 collector_low_idx, collector_high_idx, collector_empty_low_idx, collector_empty_high_idx);
-
-  _partitions.expand_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId::OldCollector,
-                                                                old_collector_low_idx, old_collector_high_idx,
-                                                                old_collector_empty_low_idx, old_collector_empty_high_idx);
-
-  recompute_total_used</* UsedByMutatorChanged */ true,
-                       /* UsedByCollectorChanged */ true, /* UsedByOldCollectorChanged */ true>();
-  recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollecteorEmptiesChanged */true,
-                             /* OldCollectorEmptiesChanged */ true, /* MutatorSizeChanged */ true,
-                             /* CollectorSizeChanged */ true, /* OldCollectorSizeChanged */ true,
-                             /* AffiliatedChangesAreYoungNeutral */ false, /* AffiliatedChangesAreGlobalNeutral */ false,
-                             /* UnaffiliatedChangesAreYoungNeutral */ false>();
-  _partitions.assert_bounds();
   if (LogTarget(Info, gc, free)::is_enabled()) {
     size_t old_reserve = _partitions.available_in(ShenandoahFreeSetPartitionId::OldCollector);
     if (old_reserve < to_reserve_old) {
@@ -3185,7 +3023,7 @@ void ShenandoahFreeSet::log_status() {
       size_t max_humongous = max_contig * ShenandoahHeapRegion::region_size_bytes();
       // capacity() is capacity of mutator
       // used() is used of mutator
-      size_t free = capacity_holding_lock() - used_holding_lock();
+      size_t free = capacity() - used();
       // Since certain regions that belonged to the Mutator free partition at the time of most recent rebuild may have been
       // retired, the sum of used and capacities within regions that are still in the Mutator free partition may not match
       // my internally tracked values of used() and free().
@@ -3223,6 +3061,7 @@ void ShenandoahFreeSet::log_status() {
 
 void ShenandoahFreeSet::decrease_humongous_waste_for_regular_bypass(ShenandoahHeapRegion*r, size_t waste) {
   shenandoah_assert_heaplocked();
+  ShenandoahHeapUsageAccountingLocker accounting_locker(usage_accounting_lock());
   assert(_partitions.membership(r->index()) == ShenandoahFreeSetPartitionId::NotFree, "Humongous regions should be NotFree");
   ShenandoahFreeSetPartitionId p =
     r->is_old()? ShenandoahFreeSetPartitionId::OldCollector: ShenandoahFreeSetPartitionId::Mutator;
@@ -3230,13 +3069,6 @@ void ShenandoahFreeSet::decrease_humongous_waste_for_regular_bypass(ShenandoahHe
   if (waste >= PLAB::min_size() * HeapWordSize) {
     _partitions.decrease_used(p, waste);
     _partitions.unretire_to_partition(r, p);
-    if (r->is_old()) {
-      recompute_total_used</* UsedByMutatorChanged */ false,
-                           /* UsedByCollectorChanged */ false, /* UsedByOldCollectorChanged */ true>();
-    } else {
-      recompute_total_used</* UsedByMutatorChanged */ true,
-                           /* UsedByCollectorChanged */ false, /* UsedByOldCollectorChanged */ false>();
-    }
   }
   _total_humongous_waste -= waste;
 }
