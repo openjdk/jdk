@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public class ML_KEM_Test {
     }
 
     static NamedParameterSpec genParams(String pname) {
-       return switch (pname) {
+        return switch (pname) {
             case "ML-KEM-512" -> NamedParameterSpec.ML_KEM_512;
             case "ML-KEM-768" -> NamedParameterSpec.ML_KEM_768;
             case "ML-KEM-1024" -> NamedParameterSpec.ML_KEM_1024;
@@ -88,38 +88,54 @@ public class ML_KEM_Test {
             var pname = t.get("parameterSet").asString();
             var function = t.get("function").asString();
             System.out.println(">> " + pname + " " + function);
-            if (function.equals("encapsulation")) {
-                for (var c : t.get("tests").asArray()) {
-                    System.out.print(c.get("tcId").asString() + " ");
-                    var ek = new PublicKey() {
-                        public String getAlgorithm() { return pname; }
-                        public String getFormat() { return "RAW"; }
-                        public byte[] getEncoded() { return toByteArray(c.get("ek").asString()); }
-                    };
-                    var e = g.newEncapsulator(
-                            ek, new FixedSecureRandom(toByteArray(c.get("m").asString())));
-                    var enc = e.encapsulate();
-                    Asserts.assertEqualsByteArray(
-                            toByteArray(c.get("c").asString()), enc.encapsulation());
-                    Asserts.assertEqualsByteArray(
-                            toByteArray(c.get("k").asString()), enc.key().getEncoded());
+            for (var c : t.get("tests").asArray()) {
+                System.out.print(c.get("tcId").asString() + " ");
+                switch (function) {
+                    case "encapsulation", "encapsulationKeyCheck" -> {
+                        var ek = new PublicKey() {
+                            public String getAlgorithm() { return pname; }
+                            public String getFormat() { return "RAW"; }
+                            public byte[] getEncoded() { return toByteArray(c.get("ek").asString()); }
+                        };
+                        if (function.equals("encapsulation")) {
+                            var e = g.newEncapsulator(
+                                    ek, new FixedSecureRandom(toByteArray(c.get("m").asString())));
+                            var enc = e.encapsulate();
+                            Asserts.assertEqualsByteArray(
+                                    toByteArray(c.get("c").asString()), enc.encapsulation());
+                            Asserts.assertEqualsByteArray(
+                                    toByteArray(c.get("k").asString()), enc.key().getEncoded());
+                        } else {
+                            if (c.get("testPassed").asString().equals("true")) {
+                                g.newEncapsulator(ek);
+                            } else {
+                                Asserts.assertThrows(Exception.class, () -> g.newEncapsulator(ek));
+                            }
+                        }
+                    }
+                    case "decapsulation", "decapsulationKeyCheck" -> {
+                        var dk = new PrivateKey() {
+                            public String getAlgorithm() { return pname; }
+                            public String getFormat() { return "RAW"; }
+                            public byte[] getEncoded() { return oct(toByteArray(c.get("dk").asString())); }
+                        };
+                        if (function.equals("decapsulation")) {
+                            var d = g.newDecapsulator(dk);
+                            var k = d.decapsulate(toByteArray(c.get("c").asString()));
+                            Asserts.assertEqualsByteArray(toByteArray(c.get("k").asString()), k.getEncoded());
+                        } else {
+                            if (c.get("testPassed").asString().equals("true")) {
+                                g.newDecapsulator(dk);
+                            } else {
+                                Asserts.assertThrows(Exception.class, () -> g.newDecapsulator(dk));
+                            }
+                        }
+                    }
+                    default -> throw new UnsupportedOperationException("Unknown function: " + function);
                 }
-                System.out.println();
-            } else if (function.equals("decapsulation")) {
-                var dk = new PrivateKey() {
-                    public String getAlgorithm() { return pname; }
-                    public String getFormat() { return "RAW"; }
-                    public byte[] getEncoded() { return oct(toByteArray(t.get("dk").asString())); }
-                };
-                for (var c : t.get("tests").asArray()) {
-                    System.out.print(c.get("tcId").asString() + " ");
-                    var d = g.newDecapsulator(dk);
-                    var k = d.decapsulate(toByteArray(c.get("c").asString()));
-                    Asserts.assertEqualsByteArray(toByteArray(c.get("k").asString()), k.getEncoded());
-                }
-                System.out.println();
             }
         }
+        System.out.println();
     }
 
     static byte[] oct(byte[] in) {
