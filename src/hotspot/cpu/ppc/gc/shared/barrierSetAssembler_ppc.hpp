@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,10 +79,12 @@ public:
 
   virtual void check_oop(MacroAssembler *masm, Register oop, const char* msg);
 
-#ifdef COMPILER2
-  OptoReg::Name refine_register(const Node* node, OptoReg::Name opto_reg) const;
+  // also used for native wrapper
   virtual void try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj,
                                              Register tmp, Label& slow_path);
+
+#ifdef COMPILER2
+  OptoReg::Name refine_register(const Node* node, OptoReg::Name opto_reg) const;
 #endif // COMPILER2
 };
 
