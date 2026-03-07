@@ -214,6 +214,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       WARNINGS_ENABLE_ADDITIONAL_CXX=""
       WARNINGS_ENABLE_ADDITIONAL_JVM=""
       DISABLED_WARNINGS="4800 5105"
+      CFLAGS_CONVERSION_WARNINGS=
       ;;
 
     gcc)
@@ -239,6 +240,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       if test "x$OPENJDK_TARGET_CPU_ARCH" = "xppc"; then
         DISABLED_WARNINGS="$DISABLED_WARNINGS psabi"
       fi
+      CFLAGS_CONVERSION_WARNINGS="-Wconversion -Wno-float-conversion"
       ;;
 
     clang)
@@ -258,6 +260,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       # These warnings will never be turned on, since they generate too many
       # false positives.
       DISABLED_WARNINGS="unknown-warning-option unused-parameter"
+      CFLAGS_CONVERSION_WARNINGS="-Wimplicit-int-conversion"
       ;;
   esac
   WARNINGS_ENABLE_ALL="$WARNINGS_ENABLE_ALL_NORMAL $WARNINGS_ENABLE_ADDITIONAL"
@@ -270,6 +273,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
   AC_SUBST(DISABLED_WARNINGS)
   AC_SUBST(DISABLED_WARNINGS_C)
   AC_SUBST(DISABLED_WARNINGS_CXX)
+  AC_SUBST(CFLAGS_CONVERSION_WARNINGS)
 ])
 
 AC_DEFUN([FLAGS_SETUP_QUALITY_CHECKS],
@@ -572,6 +576,11 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
       fi
       TOOLCHAIN_CFLAGS_JDK="-pipe"
       TOOLCHAIN_CFLAGS_JDK_CONLY="-fno-strict-aliasing" # technically NOT for CXX
+    fi
+
+    if test "x$ENABLE_LINKTIME_GC" = xtrue; then
+      TOOLCHAIN_CFLAGS_JDK="$TOOLCHAIN_CFLAGS_JDK -ffunction-sections -fdata-sections"
+      TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -ffunction-sections -fdata-sections"
     fi
 
     if test "x$OPENJDK_TARGET_OS" = xaix; then

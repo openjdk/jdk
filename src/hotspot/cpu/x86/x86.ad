@@ -3341,6 +3341,18 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
         return false;
       }
       break;
+    case Op_UMinReductionV:
+    case Op_UMaxReductionV:
+      if (UseAVX == 0) {
+        return false;
+      }
+      if (bt == T_LONG && !VM_Version::supports_avx512vl()) {
+        return false;
+      }
+      if (UseAVX > 2 && size_in_bits == 512 && !VM_Version::supports_avx512vl()) {
+        return false;
+      }
+      break;
     case Op_MaxV:
     case Op_MinV:
       if (UseSSE < 4 && is_integral_type(bt)) {
@@ -5183,6 +5195,18 @@ operand immL_65535()
   predicate(n->get_long() == 65535);
   match(ConL);
 
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// AOT Runtime Constants Address
+operand immAOTRuntimeConstantsAddress()
+%{
+  // Check if the address is in the range of AOT Runtime Constants
+  predicate(AOTRuntimeConstants::contains((address)(n->get_ptr())));
+  match(ConP);
+
+  op_cost(0);
   format %{ %}
   interface(CONST_INTER);
 %}
@@ -7330,6 +7354,19 @@ instruct loadD(regD dst, memory mem)
     __ movdbl($dst$$XMMRegister, $mem$$Address);
   %}
   ins_pipe(pipe_slow); // XXX
+%}
+
+instruct loadAOTRCAddress(rRegP dst, immAOTRuntimeConstantsAddress con)
+%{
+  match(Set dst con);
+
+  format %{ "leaq  $dst, $con\t# AOT Runtime Constants Address" %}
+
+  ins_encode %{
+    __ load_aotrc_address($dst$$Register, (address)$con$$constant);
+  %}
+
+  ins_pipe(ialu_reg_fat);
 %}
 
 // max = java.lang.Math.max(float a, float b)
@@ -19346,6 +19383,8 @@ instruct reductionI(rRegI dst, rRegI src1, legVec src2, legVec vtmp1, legVec vtm
   match(Set dst (XorReductionV  src1 src2));
   match(Set dst (MinReductionV  src1 src2));
   match(Set dst (MaxReductionV  src1 src2));
+  match(Set dst (UMinReductionV  src1 src2));
+  match(Set dst (UMaxReductionV  src1 src2));
   effect(TEMP vtmp1, TEMP vtmp2);
   format %{ "vector_reduction_int $dst,$src1,$src2 ; using $vtmp1, $vtmp2 as TEMP" %}
   ins_encode %{
@@ -19367,6 +19406,8 @@ instruct reductionL(rRegL dst, rRegL src1, legVec src2, legVec vtmp1, legVec vtm
   match(Set dst (XorReductionV  src1 src2));
   match(Set dst (MinReductionV  src1 src2));
   match(Set dst (MaxReductionV  src1 src2));
+  match(Set dst (UMinReductionV  src1 src2));
+  match(Set dst (UMaxReductionV  src1 src2));
   effect(TEMP vtmp1, TEMP vtmp2);
   format %{ "vector_reduction_long $dst,$src1,$src2 ; using $vtmp1, $vtmp2 as TEMP" %}
   ins_encode %{
@@ -19386,6 +19427,8 @@ instruct reductionL_avx512dq(rRegL dst, rRegL src1, vec src2, vec vtmp1, vec vtm
   match(Set dst (XorReductionV  src1 src2));
   match(Set dst (MinReductionV  src1 src2));
   match(Set dst (MaxReductionV  src1 src2));
+  match(Set dst (UMinReductionV  src1 src2));
+  match(Set dst (UMaxReductionV  src1 src2));
   effect(TEMP vtmp1, TEMP vtmp2);
   format %{ "vector_reduction_long $dst,$src1,$src2 ; using $vtmp1, $vtmp2 as TEMP" %}
   ins_encode %{
@@ -19614,6 +19657,8 @@ instruct reductionB(rRegI dst, rRegI src1, legVec src2, legVec vtmp1, legVec vtm
   match(Set dst (XorReductionV  src1 src2));
   match(Set dst (MinReductionV  src1 src2));
   match(Set dst (MaxReductionV  src1 src2));
+  match(Set dst (UMinReductionV  src1 src2));
+  match(Set dst (UMaxReductionV  src1 src2));
   effect(TEMP vtmp1, TEMP vtmp2);
   format %{ "vector_reduction_byte $dst,$src1,$src2 ; using $vtmp1, $vtmp2 as TEMP" %}
   ins_encode %{
@@ -19632,6 +19677,8 @@ instruct reductionB_avx512bw(rRegI dst, rRegI src1, vec src2, vec vtmp1, vec vtm
   match(Set dst (XorReductionV  src1 src2));
   match(Set dst (MinReductionV  src1 src2));
   match(Set dst (MaxReductionV  src1 src2));
+  match(Set dst (UMinReductionV  src1 src2));
+  match(Set dst (UMaxReductionV  src1 src2));
   effect(TEMP vtmp1, TEMP vtmp2);
   format %{ "vector_reduction_byte $dst,$src1,$src2 ; using $vtmp1, $vtmp2 as TEMP" %}
   ins_encode %{
@@ -19653,6 +19700,8 @@ instruct reductionS(rRegI dst, rRegI src1, legVec src2, legVec vtmp1, legVec vtm
   match(Set dst (XorReductionV  src1 src2));
   match(Set dst (MinReductionV  src1 src2));
   match(Set dst (MaxReductionV  src1 src2));
+  match(Set dst (UMinReductionV  src1 src2));
+  match(Set dst (UMaxReductionV  src1 src2));
   effect(TEMP vtmp1, TEMP vtmp2);
   format %{ "vector_reduction_short $dst,$src1,$src2 ; using $vtmp1, $vtmp2 as TEMP" %}
   ins_encode %{

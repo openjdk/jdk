@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8153142 8195138
  * @modules java.net.http
  *          jdk.httpserver
- * @run testng/othervm HeadersTest1
+ * @run junit/othervm HeadersTest1
  */
 
 import java.io.IOException;
@@ -48,13 +48,13 @@ import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import org.testng.annotations.Test;
 import static java.net.http.HttpResponse.BodyHandlers.ofString;
 import static java.nio.charset.StandardCharsets.US_ASCII;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 public class HeadersTest1 {
 
@@ -106,7 +106,7 @@ public class HeadersTest1 {
             for (String headerName : headernames) {
                 List<String> v2 = hd.allValues(headerName);
                 assertNotNull(v2);
-                assertEquals(new HashSet<>(v2), Set.of("resp1", "resp2"));
+                assertEquals(Set.of("resp1", "resp2"), new HashSet<>(v2));
                 TestKit.assertUnmodifiableList(v2);
             }
 
@@ -130,7 +130,7 @@ public class HeadersTest1 {
 
             // quote
             List<String> quote = hd.allValues("X-Quote-Response");
-            assertEquals(quote, List.of(QUOTED));
+            assertEquals(List.of(QUOTED), quote);
         } finally {
             server.stop(0);
             e.shutdownNow();
