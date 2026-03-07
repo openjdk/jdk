@@ -25,6 +25,7 @@
 #ifndef SHARE_OPTO_SUBNODE_HPP
 #define SHARE_OPTO_SUBNODE_HPP
 
+#include "opto/callnode.hpp"
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/type.hpp"
@@ -637,6 +638,20 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
   virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
+};
+
+//------------------------------PowDNode--------------------------------------
+class PowDNode : public CallLeafPureNode {
+  TupleNode* make_tuple_of_input_state_and_result(PhaseIterGVN* phase, Node* result) const;
+
+public:
+  PowDNode(Compile* C, Node* base, Node* exp);
+  virtual int Opcode() const;
+  virtual const Type *Value(PhaseGVN *phase) const;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+
+  Node* base() const { return in(TypeFunc::Parms + 0); }
+  Node* exp() const  { return in(TypeFunc::Parms + 2); }
 };
 
 #endif // SHARE_OPTO_SUBNODE_HPP
