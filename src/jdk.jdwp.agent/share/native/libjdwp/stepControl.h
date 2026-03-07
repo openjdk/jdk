@@ -37,7 +37,8 @@ typedef struct {
     /* State */
     jboolean pending;
     jboolean frameExited;    /* for depth == STEP_OVER or STEP_OUT */
-    jboolean notifyFramePopFailed;
+    jboolean notifyFramePopFailed; /* for depth == STEP_OUT: true when NotifyFramePop
+                                    * returned OPAQUE_FRAME (no FramePop event expected) */
     jint fromStackDepth;     /* for all but STEP_INTO STEP_INSTRUCTION */
     jint fromLine;           /* for granularity == STEP_LINE */
     jmethodID method;   /* Where line table came from. */

@@ -198,7 +198,7 @@ initState(JNIEnv *env, jthread thread, StepRequest *step)
         // means that there is something about the frame's state that prevents setting up
         // a NotifyFramePop. One example is a frame that is in the process of returning,
         // which can happen if we start single stepping after getting a MethodExit event.
-        // In either any case, we need to be aware that there will be no FramePop event
+        // In either case, we need to be aware that there will be no FramePop event
         // when this frame exits.
         step->notifyFramePopFailed = JNI_TRUE;
         error = JVMTI_ERROR_NONE;
@@ -594,6 +594,10 @@ stepControl_handleStep(JNIEnv *env, jthread thread,
             /* Stepped into a method with lines, so we're done */
             completed = JNI_TRUE;
             LOG_STEP(("stepControl_handleStep: completed, fromDepth<currentDepth(%d<%d) and into method with lines", fromDepth, currentDepth));
+            /* classname was allocated by getClassname() in the condition above; free it here
+             * because the else-branch (which has its own jvmtiDeallocate) is not taken. */
+            jvmtiDeallocate(classname);
+            classname = NULL;
         } else {
             /*
              * We need to continue, but don't want the overhead of step
