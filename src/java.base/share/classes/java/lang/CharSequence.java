@@ -269,9 +269,12 @@ public interface CharSequence {
         // All we have to do here is to count the number of surrogate pairs.
         // The first code unit of a surrogate pair is in [0, lastIndex).
         for (int i = 0; i < lastIndex;) {
-            if (Character.isHighSurrogate(charAt(i++)) && Character.isLowSurrogate(charAt(i))) {
-                n--;
-                i++;
+            if (Character.isHighSurrogate(charAt(i++))) {
+                if (i >= lastIndex) break;
+                if (Character.isLowSurrogate(charAt(i))) {
+                    n--;
+                    i++;
+                }
             }
         }
 
