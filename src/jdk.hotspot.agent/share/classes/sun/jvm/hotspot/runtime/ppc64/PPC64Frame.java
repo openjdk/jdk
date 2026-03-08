@@ -265,7 +265,7 @@ public class PPC64Frame extends Frame {
     if (cb != null) {
       if (cb.isUpcallStub()) {
         return senderForUpcallStub(map, (UpcallStub)cb);
-      } else {
+      } else if (cb.getFrameSize() > 0) {
         return senderForCompiledFrame(map, cb);
       }
     }
