@@ -24,23 +24,49 @@
 /*
  * @test
  * @bug 8364121
- * @summary DESKeySpec.isWeak should throw IKE exception if the offset is
+ * @summary DESKeySpec.isWeak should throw aiobe exception if the offset is
  * negative.
  */
 import java.security.InvalidKeyException;
+import javax.crypto.spec.DESedeKeySpec;
 import javax.crypto.spec.DESKeySpec;
 
-public class NullKey {
+public class OffsetKey {
 
     public static void main(String[] args) throws Exception {
         byte[] strongKey = {
                 (byte)0x12, (byte)0x34, (byte)0x56, (byte)0x78,
+                (byte)0x9A, (byte)0xBC, (byte)0xDE, (byte)0xF0,
+                (byte)0x12, (byte)0x34, (byte)0x56, (byte)0x78,
+                (byte)0x9A, (byte)0xBC, (byte)0xDE, (byte)0xF0,
+                (byte)0x12, (byte)0x34, (byte)0x56, (byte)0x78,
                 (byte)0x9A, (byte)0xBC, (byte)0xDE, (byte)0xF0
         };
 
+        // Test single-DES
         try {
-            DESKeySpec.isWeak(strongKey, -1);
-            throw new Exception("expected InvalidKeyException");
-        } catch (InvalidKeyException ike) {}
+            DESKeySpec desKey = new DESKeySpec(strongKey, -1);
+            throw new Exception("expected ArrayIndexOutOfBoundsException");
+        } catch (ArrayIndexOutOfBoundsException aiobe) {}
+        try {
+            boolean weak = DESKeySpec.isWeak(strongKey, -1);
+            throw new Exception("expected ArrayIndexOutOfBoundsException");
+        } catch (ArrayIndexOutOfBoundsException aiobe) {}
+        try{
+            boolean parityAdjusted = DESKeySpec.isParityAdjusted(strongKey, -1);
+            throw new Exception("expected ArrayIndexOutOfBoundsException");
+        } catch (ArrayIndexOutOfBoundsException aiobe) {}
+
+        // Test triple-DES
+        try{
+            DESedeKeySpec desEdeKey = new DESedeKeySpec(strongKey, -1);
+            throw new Exception("expected ArrayIndexOutOfBoundsException");
+        } catch (ArrayIndexOutOfBoundsException aiobe) {}
+        try{
+            boolean parityAdjusted = DESedeKeySpec.isParityAdjusted(strongKey,
+                    -1);
+            throw new Exception("expected ArrayIndexOutOfBoundsException");
+        } catch (ArrayIndexOutOfBoundsException aiobe) {}
     }
+
 }

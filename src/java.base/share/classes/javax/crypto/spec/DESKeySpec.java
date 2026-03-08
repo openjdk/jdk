@@ -123,7 +123,7 @@ public class DESKeySpec implements java.security.spec.KeySpec {
      * of the buffer are copied to protect against subsequent modification.
      *
      * @exception NullPointerException if the given key material is
-     * <code>null</code>
+     * <code>null</code>.
      * @exception InvalidKeyException if the given key material is shorter
      * than 8 bytes.
      */
@@ -146,11 +146,19 @@ public class DESKeySpec implements java.security.spec.KeySpec {
      * material starts.
      *
      * @exception NullPointerException if the given key material is
-     * <code>null</code>
+     * <code>null</code>.
      * @exception InvalidKeyException if the given key material, starting at
      * <code>offset</code> inclusive, is shorter than 8 bytes.
+     * @exception ArrayIndexOutOfBoundsException if <code>offset</code> is
+     * negative.
      */
     public DESKeySpec(byte[] key, int offset) throws InvalidKeyException {
+        if (key == null) {
+            throw new NullPointerException("null key");
+        }
+        if (offset < 0) {
+            throw new ArrayIndexOutOfBoundsException("offset is negative");
+        }
         if (key.length - offset < DES_KEY_LEN) {
             throw new InvalidKeyException("Wrong key size");
         }
@@ -182,16 +190,20 @@ public class DESKeySpec implements java.security.spec.KeySpec {
      * @exception InvalidKeyException if the given key material is
      * <code>null</code>, or starting at <code>offset</code> inclusive, is
      * shorter than 8 bytes.
+     * @exception ArrayIndexOutOfBoundsException if <code>offset</code> is
+     * negative.
      */
     public static boolean isParityAdjusted(byte[] key, int offset)
         throws InvalidKeyException {
             if (key == null) {
                 throw new InvalidKeyException("null key");
             }
+            if (offset < 0) {
+                throw new ArrayIndexOutOfBoundsException("offset is negative");
+            }
             if (key.length - offset < DES_KEY_LEN) {
                 throw new InvalidKeyException("Wrong key size");
             }
-
             for (int i = 0; i < DES_KEY_LEN; i++) {
                 int k = Integer.bitCount(key[offset++] & 0xff);
                 if ((k & 1) == 0) {
@@ -215,6 +227,8 @@ public class DESKeySpec implements java.security.spec.KeySpec {
      * @exception InvalidKeyException if the given key material is
      * <code>null</code>, or starting at <code>offset</code> inclusive, is
      * shorter than 8 bytes.
+     * @exception ArrayIndexOutOfBoundsException if <code>offset</code> is
+     * negative.
      */
     public static boolean isWeak(byte[] key, int offset)
         throws InvalidKeyException {
@@ -222,7 +236,7 @@ public class DESKeySpec implements java.security.spec.KeySpec {
             throw new InvalidKeyException("null key");
         }
         if (offset < 0) {
-            throw new InvalidKeyException("invalid offset");
+            throw new ArrayIndexOutOfBoundsException("offset is negative");
         }
         if (key.length - offset < DES_KEY_LEN) {
             throw new InvalidKeyException("Wrong key size");
