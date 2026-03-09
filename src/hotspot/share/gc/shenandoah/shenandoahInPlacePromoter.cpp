@@ -32,39 +32,6 @@
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 
-ShenandoahInPlacePromotionPlanner::RegionPromotions::RegionPromotions(ShenandoahFreeSet* free_set)
-  : _low_idx(free_set->max_regions())
-  , _high_idx(-1)
-  , _regions(0)
-  , _bytes(0)
-  , _free_set(free_set)
-{
-}
-
-void ShenandoahInPlacePromotionPlanner::RegionPromotions::increment(idx_t region_index, size_t remnant_bytes) {
-  if (region_index < _low_idx) {
-    _low_idx = region_index;
-  }
-  if (region_index > _high_idx) {
-    _high_idx = region_index;
-  }
-  _regions++;
-  _bytes += remnant_bytes;
-}
-
-void ShenandoahInPlacePromotionPlanner::RegionPromotions::update_free_set(ShenandoahFreeSetPartitionId partition_id) const {
-  if (_regions > 0) {
-    _free_set->shrink_interval_if_range_modifies_either_boundary(partition_id, _low_idx, _high_idx, _regions);
-  }
-}
-
-void ShenandoahInPlacePromotionPlanner::RegionPromotionStats::update(ShenandoahHeapRegion* region) {
-  count++;
-  usage += region->used();
-  free += region->free();
-  garbage += region->garbage();
-}
-
 ShenandoahInPlacePromotionPlanner::ShenandoahInPlacePromotionPlanner(const ShenandoahGenerationalHeap* heap)
   : _old_garbage_threshold(ShenandoahHeapRegion::region_size_bytes() * heap->old_generation()->heuristics()->get_old_garbage_threshold() / 100)
   , _pip_used_threshold(ShenandoahHeapRegion::region_size_bytes() * ShenandoahGenerationalMinPIPUsage / 100)
