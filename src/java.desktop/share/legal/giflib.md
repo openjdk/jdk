@@ -42,13 +42,13 @@ tree/README
 == Authors ==
 
 Gershon Elber <gershon[AT]cs.technion.sc.il>
-	original giflib code
+original giflib code
 
 Toshio Kuratomi <toshio[AT]tiki-lounge.com>
-    uncompressed gif writing code
-    former maintainer
+uncompressed gif writing code
+former maintainer
 
 Eric Raymond <esr[AT]snark.thyrsus.com>
-    current as well as long time former maintainer of giflib code
+current as well as long time former maintainer of giflib code
 
 ```
