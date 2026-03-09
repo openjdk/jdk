@@ -1686,7 +1686,7 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
         assert(mon_info->owner()->is_locked(), "object must be locked now");
         assert(obj->mark().has_monitor(), "must be");
         assert(!deoptee_thread->lock_stack().contains(obj()), "must be");
-        assert(ObjectSynchronizer::read_monitor(thread, obj(), obj->mark())->has_owner(deoptee_thread), "must be");
+        assert(ObjectSynchronizer::read_monitor(obj(), obj->mark())->has_owner(deoptee_thread), "must be");
       }
     }
   }
