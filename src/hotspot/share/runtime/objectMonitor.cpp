@@ -1114,10 +1114,7 @@ void ObjectMonitor::enter_internal(JavaThread* current, ObjectWaiter* current_no
   // the ST of null into _owner in the *subsequent* (following) corresponding
   // monitorexit.
 
-  if (reenter_path) {
-    current_node->TState = ObjectWaiter::TS_RUN;
-    OrderAccess::fence();      // see comments above
-  }
+  current_node->TState = ObjectWaiter::TS_RUN;
   return;
 }
 
