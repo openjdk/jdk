@@ -193,7 +193,7 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
           committed_from_shared_reserves -= proposed_old_region_expansion * region_size_bytes;
         }
       } else {
-        assert(r->is_young() && !heap->is_tenurable(r), "DeMorgan's law (assuming r->is_affiliated)");
+        assert(r->is_young() && !heap->is_tenurable(r) && r->get_top_before_promote() == nullptr, "Should not add region %zu to collection set", r->index());
         size_t anticipated_consumption = (size_t) (live_bytes * ShenandoahEvacWaste);
         size_t new_young_evac_consumption = consumed_by_young_evac + anticipated_consumption;
         size_t new_young_evac_reserve = young_evac_reserve;
