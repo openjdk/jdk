@@ -665,3 +665,55 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_runtime_stub(StubAssembler*
 }
 
 #endif // Compiler1
+
+#ifdef CONPILER2
+
+#undef __
+#define __ _masm->
+
+class ZSetupArguments {
+  MacroAssembler* const _masm;
+  const Register        _ref;
+  const Address         _ref_addr;
+
+public:
+  ZSetupArguments(MacroAssembler* masm, ZLoadBarrierStubC2* stub)
+    : _masm(masm),
+      _ref(stub->ref()),
+      _ref_addr(stub->ref_addr()) {
+
+    // TODO: I am following ppc here, but aarch64 and x86 have different if else conditions
+
+    // Desired Register/argument configuration
+    // _ref: Z_ARG1
+    // _ref_addr: Z_ARG2
+
+    // '_ref_addr' can be unspecified. In that case, the barrier will not heal the reference.
+    if (_ref_addr.base() == noreg) {
+      // TODO: Check the usage of this assert?
+      assert_different_registers(_ref, noreg, Z_R0);
+
+      __ lgr_if_needed(Z_ARG1, _ref);
+      __ z_lghi(Z_ARG2, 0);
+    } else {
+      // TODO: Check the usage of this assert? Why Z_R0 -> I think it's more related to ppc
+      assert_different_registers(_ref, _ref_addr.base(), Z_R0, noreg);
+      assert(!_ref_addr.index()->is_valid(), "reference addresses must not contain an index component");
+
+      if (_ref != Z_ARG2) {
+        // Calculate address first as the address' base register might clash with Z_ARG2
+        __ add2reg(Z_ARG2, _ref_addr.disp(), _ref_addr.base());
+        __ lgr_if_needed(Z_ARG1, _ref);
+      } else if (_ref_addr.base() != Z_ARG1) {
+        __ z_lgr(Z_ARG1, _ref);
+        __ add2reg(Z_ARG2, _ref_addr.disp(), _ref_addr.base());
+      } else {
+        __ z_lgr(Z_R0, _ref);
+        __ add2reg(Z_ARG2, _ref_addr.disp(), _ref_addr.base());
+        __ z_lgr(Z_ARG1, Z_R0);
+      }
+    }
+  }
+};
+
+
