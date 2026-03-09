@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,8 +51,8 @@ public class HtmlFontSizeTest {
         htmlPane.setEditorKit(kit);
 
         String htmlString = "<html>\n"
-            + "<body style=\"font-family:SansSerif; font-size:16pt\">\n"
-            + "<p>This should be 16 pt.</p>\n"
+            + "<body style=\"font-family:SansSerif; font-size:32pt\">\n"
+            + "<p>This should be 32 pt.</p>\n"
             + "</body>\n"
             + "</html>";
 
@@ -71,10 +71,16 @@ public class HtmlFontSizeTest {
         System.out.println("size with W3C:" + w3cFrameSize);
         System.out.println("size without W3C:" + stdFrameSize);
 
-        float ratio = (float)w3cFrameSize.width / (float)stdFrameSize.width;
-        System.out.println("w3cFrameSize.width/stdFrameSize.width " + ratio);
+        float widthRatio = (float)w3cFrameSize.width / (float)stdFrameSize.width;
+        System.out.println("w3cFrameSize.width/stdFrameSize.width " + widthRatio);
 
-        if (!"1.3".equals(String.format(Locale.ENGLISH, "%.1f", ratio))) {
+        float heightRatio = (float)w3cFrameSize.height / (float)stdFrameSize.height;
+        System.out.println("w3cFrameSize.height/stdFrameSize.height " + heightRatio);
+
+        float avgRatio = (widthRatio + heightRatio) / 2.0f;
+        System.out.println("Average ratio of two dimensions " + avgRatio);
+
+        if (!"1.3".equals(String.format(Locale.ENGLISH, "%.1f", avgRatio))) {
             throw new RuntimeException("HTML font size too large with high-DPI scaling and W3C_LENGTH_UNITS");
         }
     }
