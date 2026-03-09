@@ -28,7 +28,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.vm.annotation
- * @run driver/ ${test.main.class}
+ * @run driver ${test.main.class}
  */
 
 package compiler.stable;
