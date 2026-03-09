@@ -955,9 +955,9 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
 
 #define __ masm->
 
-void ZBarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path) {
+void ZBarrierSetAssembler::try_resolve_weak_handle(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path) {
   // Resolve weak handle using the standard implementation.
-  BarrierSetAssembler::try_resolve_weak_handle_in_c2(masm, obj, tmp, slow_path);
+  BarrierSetAssembler::try_resolve_weak_handle(masm, obj, tmp, slow_path);
 
   // Check if the oop is bad, in which case we need to take the slow path.
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadMask);

@@ -260,7 +260,7 @@ void BarrierSetAssembler::check_oop(MacroAssembler *masm, Register oop, const ch
   __ verify_oop(oop, msg);
 }
 
-void BarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path) {
+void BarrierSetAssembler::try_resolve_weak_handle(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path) {
   // Load the oop from the weak handle.
   __ ld(obj, 0, obj);
 }

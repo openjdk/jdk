@@ -110,7 +110,7 @@ public:
   void generate_c2_store_barrier_stub(MacroAssembler* masm, ZStoreBarrierStubC2* stub) const;
 #endif // COMPILER2
 
-  void try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path);
+  void try_resolve_weak_handle(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path);
 
   void store_barrier_fast(MacroAssembler* masm,
                           Register ref_base,
