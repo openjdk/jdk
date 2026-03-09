@@ -43,7 +43,7 @@ static ThreadIdTableHash* volatile _local_table = nullptr;
 static volatile size_t _current_size = 0;
 static volatile size_t _items_count = 0;
 
-volatile bool ThreadIdTable::_is_initialized = false;
+Atomic<bool> ThreadIdTable::_is_initialized(false);
 volatile bool ThreadIdTable::_has_work = false;
 
 class ThreadIdTableEntry : public CHeapObj<mtInternal> {
@@ -85,11 +85,11 @@ void ThreadIdTable::lazy_initialize(const ThreadsList *threads) {
       // There is no obvious benefit in allowing the thread table
       // to be concurrently populated during initialization.
       MutexLocker ml(ThreadIdTableCreate_lock);
-      if (_is_initialized) {
+      if (_is_initialized.load_relaxed()) {
         return;
       }
       create_table(threads->length());
-      AtomicAccess::release_store(&_is_initialized, true);
+      _is_initialized.release_store(true);
     }
 
     for (uint i = 0; i < threads->length(); i++) {
@@ -211,7 +211,7 @@ public:
 };
 
 void ThreadIdTable::do_concurrent_work(JavaThread* jt) {
-  assert(_is_initialized, "Thread table is not initialized");
+  assert(is_initialized(), "Thread table is not initialized");
   _has_work = false;
   double load_factor = get_load_factor();
   log_debug(thread, table)("Concurrent work, load factor: %g", load_factor);

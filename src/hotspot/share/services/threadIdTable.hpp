@@ -26,7 +26,7 @@
 #define SHARE_SERVICES_THREADIDTABLE_HPP
 
 #include "memory/allStatic.hpp"
-#include "runtime/atomicAccess.hpp"
+#include "runtime/atomic.hpp"
 
 class JavaThread;
 class ThreadsList;
@@ -35,14 +35,14 @@ class ThreadIdTableConfig;
 class ThreadIdTable : public AllStatic {
   friend class ThreadIdTableConfig;
 
-  static volatile bool _is_initialized;
+  static Atomic<bool> _is_initialized;
   static volatile bool _has_work;
 
 public:
   // Initialization
   static void lazy_initialize(const ThreadsList* threads);
   static bool is_initialized() {
-    return AtomicAccess::load_acquire(&_is_initialized);
+    return _is_initialized.load_acquire();
   }
 
   // Lookup and list management
