@@ -72,21 +72,13 @@ public class CorrectTextComponentSelectionTest {
 
         // We should place to the text components the long strings in order to
         // cover the components by the selection completely
-        String sf = " ".repeat(50);
-        tf.setText(sf);
+        tf.setText(" ".repeat(50));
         // We check the color of the text component in order to find out the
         // bug reproducible situation
         tf.setForeground(Color.WHITE);
         tf.setBackground(Color.WHITE);
 
-        String sa = "";
-        for (int i = 0; i < 50; i++) {
-            for (int j = 0; j < 50; j++) {
-                sa = sa + " ";
-            }
-            sa = sa + "\n";
-        }
-        ta.setText(sa);
+        ta.setText((" ".repeat(50) + "\n").repeat(50));
         ta.setForeground(Color.WHITE);
         ta.setBackground(Color.WHITE);
 
@@ -105,6 +97,7 @@ public class CorrectTextComponentSelectionTest {
 
         r.waitForIdle();
         r.delay(100);
+
         EventQueue.invokeAndWait(() -> {
             tc.requestFocus();
             tc.selectAll();
@@ -113,13 +106,13 @@ public class CorrectTextComponentSelectionTest {
 
         r.waitForIdle();
         r.delay(100);
-        EventQueue.invokeAndWait(() -> loc = tc.getLocationOnScreen());
-        r.waitForIdle();
-        r.delay(100);
 
-        EventQueue.invokeAndWait(() -> color_center =
-                r.getPixelColor(loc.x + tc.getWidth() / 2,
-                        loc.y + tc.getHeight() / 2));
+        EventQueue.invokeAndWait(() -> {
+            Point p = tc.getLocationOnScreen();
+            p.translate(tc.getWidth() / 2, tc.getHeight() / 2);
+            loc = p;
+            color_center = r.getPixelColor(loc.x, loc.y);
+        });
 
         System.out.println("Color of the text component (CENTER) = "
                 + color_center);
