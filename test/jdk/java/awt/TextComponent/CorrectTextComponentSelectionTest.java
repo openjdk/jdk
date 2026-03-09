@@ -72,10 +72,7 @@ public class CorrectTextComponentSelectionTest {
 
         // We should place to the text components the long strings in order to
         // cover the components by the selection completely
-        String sf = "";
-        for (int i = 0; i < 50; i++) {
-            sf = sf + " ";
-        }
+        String sf = " ".repeat(50);
         tf.setText(sf);
         // We check the color of the text component in order to find out the
         // bug reproducible situation
