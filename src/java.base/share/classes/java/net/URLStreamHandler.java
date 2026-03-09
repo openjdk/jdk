@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -480,15 +480,77 @@ public abstract class URLStreamHandler {
      * @param   u   the URL.
      * @return  a string representation of the {@code URL} argument.
      */
-    protected String toExternalForm(URL u) {
-        String s;
-        return u.getProtocol()
-            + ':'
-            + ((s = u.getAuthority()) != null && !s.isEmpty()
-               ? "//" + s : "")
-            + ((s = u.getPath()) != null ? s : "")
-            + ((s = u.getQuery()) != null ? '?' + s : "")
-            + ((s = u.getRef()) != null ? '#' + s : "");
+    protected String toExternalForm(final URL u) {
+        // Optimized for efficient string concatenation with optional components and separators
+        // Output locals: protocol:[//authority][path][?query][#ref]
+        String protocol, authSeparator, authority, path, querySeparator, query, refSeparator, ref;
+
+        // URL components
+        String pr = u.getProtocol();
+        String a  = u.getAuthority();
+        String p  = u.getPath();
+        String q  = u.getQuery();
+        String r  = u.getRef();
+
+        // Check optional components
+        boolean hasAuthority = a != null && !a.isEmpty();
+        boolean hasPath = p != null;
+        boolean hasQuery = q != null;
+        boolean hasRef = r != null;
+
+        // Protocol is required
+        protocol = pr;
+        // Path is very commonly present
+        path = hasPath ? p : "";
+
+        // Fast path for local URLs like 'file:/path/to/app.jar'
+        if (!hasAuthority && !hasQuery && !hasRef) {
+            return protocol
+                    + ':'
+                    + path;
+        }
+
+        if (hasAuthority) {
+            authSeparator = "//";
+            authority = a;
+        } else {
+            authSeparator = "";
+            authority = "";
+        }
+
+        // Fast path for URL with no query or reference, like 'http://example.com/path/to/image.gif'
+        if (!hasQuery && !hasRef) {
+            return protocol
+                    + ':'
+                    + authSeparator
+                    + authority
+                    + path;
+        }
+
+        // General case for URLs like 'http://example.com/service?param=value#fragment'
+        if (hasQuery) {
+            querySeparator = "?";
+            query = q;
+        } else {
+            querySeparator = "";
+            query = "";
+        }
+        if (hasRef) {
+            refSeparator = "#";
+            ref = r;
+        } else {
+            refSeparator = "";
+            ref = "";
+        }
+        return protocol
+                + ':'
+                + authSeparator
+                + authority
+                + path
+                + querySeparator
+                + query
+                + refSeparator
+                + ref;
     }
 
     /**
