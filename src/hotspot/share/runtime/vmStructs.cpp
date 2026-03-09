@@ -166,7 +166,7 @@
   volatile_nonstatic_field(oopDesc,            _metadata._klass,                              Klass*)                                \
   volatile_nonstatic_field(oopDesc,            _metadata._compressed_klass,                   narrowKlass)                           \
   static_field(BarrierSet,                     _barrier_set,                                  BarrierSet*)                           \
-  nonstatic_field(ArrayKlass,                  _dimension,                                    int)                                   \
+  nonstatic_field(ArrayKlass,                  _dimension,                                    const int)                             \
   volatile_nonstatic_field(ArrayKlass,         _higher_dimension,                             ObjArrayKlass*)                        \
   volatile_nonstatic_field(ArrayKlass,         _lower_dimension,                              ArrayKlass*)                           \
   nonstatic_field(BSMAttributeEntries,         _offsets,                                      Array<u4>*)                            \
@@ -407,6 +407,8 @@
   nonstatic_field(ClassLoaderData,             _next,                                         ClassLoaderData*)                      \
   volatile_nonstatic_field(ClassLoaderData,    _klasses,                                      Klass*)                                \
   nonstatic_field(ClassLoaderData,             _has_class_mirror_holder,                      bool)                                  \
+                                                                                                                                     \
+  static_field(ClassLoaderData,                _the_null_class_loader_data,                   ClassLoaderData*)                      \
                                                                                                                                      \
   volatile_static_field(ClassLoaderDataGraph, _head,                                          ClassLoaderData*)                      \
                                                                                                                                      \

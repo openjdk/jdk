@@ -54,6 +54,8 @@ final class IntVectorMax extends IntVector {
 
     static final int VLENGTH = VSPECIES.laneCount(); // used by the JVM
 
+    static final Class<Integer> CTYPE = int.class; // carrier type used by the JVM
+
     static final Class<Integer> ETYPE = int.class; // used by the JVM
 
     IntVectorMax(int[] v) {
@@ -91,6 +93,9 @@ final class IntVectorMax extends IntVector {
     @ForceInline
     @Override
     public final Class<Integer> elementType() { return int.class; }
+
+    @ForceInline
+    final Class<Integer> carrierType() { return CTYPE; }
 
     @ForceInline
     @Override
@@ -566,7 +571,8 @@ final class IntVectorMax extends IntVector {
 
     static final class IntMaskMax extends AbstractMask<Integer> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Integer> ETYPE = int.class; // used by the JVM
+
+        static final Class<Integer> CTYPE = int.class; // used by the JVM
 
         IntMaskMax(boolean[] bits) {
             this(bits, 0);
@@ -809,7 +815,8 @@ final class IntVectorMax extends IntVector {
 
     static final class IntShuffleMax extends AbstractShuffle<Integer> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Integer> ETYPE = int.class; // used by the JVM
+
+        static final Class<Integer> CTYPE = int.class; // used by the JVM
 
         IntShuffleMax(int[] indices) {
             super(indices);

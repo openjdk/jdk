@@ -262,18 +262,13 @@
   product(bool, AlwaysActAsServerClassMachine, false,                       \
           "(Deprecated) Always act like a server-class machine")            \
                                                                             \
-  product(uint64_t, MaxRAM, 0,                                              \
-          "(Deprecated) Real memory size (in bytes) used to set maximum "   \
-          "heap size")                                                      \
-          range(0, 0XFFFFFFFFFFFFFFFF)                                      \
-                                                                            \
   product(bool, AggressiveHeap, false,                                      \
           "(Deprecated) Optimize heap options for long-running memory "     \
           "intensive apps")                                                 \
                                                                             \
   product(size_t, ErgoHeapSizeLimit, 0,                                     \
           "Maximum ergonomically set heap size (in bytes); zero means use " \
-          "MaxRAM * MaxRAMPercentage / 100")                                \
+          "(System RAM) * MaxRAMPercentage / 100")                          \
           range(0, max_uintx)                                               \
                                                                             \
   product(double, MaxRAMPercentage, 25.0,                                   \
@@ -484,11 +479,6 @@
   product(uintx, NewRatio, 2,                                               \
           "Ratio of old/new generation sizes")                              \
           range(0, max_uintx-1)                                             \
-                                                                            \
-  product_pd(size_t, NewSizeThreadIncrease,                                 \
-          "Additional size added to desired new generation size per "       \
-          "non-daemon thread (in bytes)")                                   \
-          range(0, max_uintx)                                               \
                                                                             \
   product(uintx, QueuedAllocationWarningCount, 0,                           \
           "Number of times an allocation that queues behind a GC "          \

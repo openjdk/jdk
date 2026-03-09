@@ -30,6 +30,7 @@
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "nmt/memTag.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutex.hpp"
@@ -306,7 +307,7 @@ template <class T, MemTag MT>
 class ParallelClaimableQueueSet: public GenericTaskQueueSet<T, MT> {
 private:
   shenandoah_padding(0);
-  volatile jint     _claimed_index;
+  Atomic<jint>      _claimed_index;
   shenandoah_padding(1);
 
   DEBUG_ONLY(uint   _reserved;  )
@@ -325,7 +326,7 @@ public:
   // reserve queues that not for parallel claiming
   void reserve(uint n) {
     assert(n <= size(), "Sanity");
-    _claimed_index = (jint)n;
+    _claimed_index.store_relaxed((jint)n);
     DEBUG_ONLY(_reserved = n;)
   }
 
@@ -336,11 +337,11 @@ template <class T, MemTag MT>
 T* ParallelClaimableQueueSet<T, MT>::claim_next() {
   jint size = (jint)GenericTaskQueueSet<T, MT>::size();
 
-  if (_claimed_index >= size) {
+  if (_claimed_index.load_relaxed() >= size) {
     return nullptr;
   }
 
-  jint index = AtomicAccess::add(&_claimed_index, 1, memory_order_relaxed);
+  jint index = _claimed_index.add_then_fetch(1, memory_order_relaxed);
 
   if (index <= size) {
     return GenericTaskQueueSet<T, MT>::queue((uint)index - 1);
