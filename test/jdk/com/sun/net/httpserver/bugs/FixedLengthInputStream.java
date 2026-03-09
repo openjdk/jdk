@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,6 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 6756771 6755625
- * @summary  com.sun.net.httpserver.HttpServer should handle POSTs larger than 2Gig
- * @library /test/lib
- * @run main FixedLengthInputStream
- * @run main/othervm -Djava.net.preferIPv6Addresses=true FixedLengthInputStream
- */
-
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -47,9 +38,18 @@ import com.sun.net.httpserver.HttpServer;
 import jdk.test.lib.net.URIBuilder;
 import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 
-public class FixedLengthInputStream
-{
+/*
+ * @test
+ * @bug 6756771 6755625
+ * @summary  com.sun.net.httpserver.HttpServer should handle POSTs larger than 2Gig
+ * @library /test/lib
+ * @run main/othervm FixedLengthInputStream
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true FixedLengthInputStream
+ */
+public class FixedLengthInputStream {
     static final long POST_SIZE = 4L * 1024L * 1024L * 1024L; // 4Gig
+
+    private static final Logger logger = Logger.getLogger("com.sun.net.httpserver");
 
     void test(String[] args) throws IOException {
         HttpServer httpServer = startHttpServer();
@@ -89,18 +89,19 @@ public class FixedLengthInputStream
         }
     }
 
+    private static void setupLogging() {
+        final ConsoleHandler handler = new ConsoleHandler();
+        handler.setLevel(Level.FINEST);
+        logger.setLevel(Level.FINEST);
+        logger.addHandler(handler);
+    }
+
     /**
      * Http Server
      */
     HttpServer startHttpServer() throws IOException {
         if (debug) {
-            Logger logger =
-            Logger.getLogger("com.sun.net.httpserver");
-            Handler outHandler = new StreamHandler(System.out,
-                                     new SimpleFormatter());
-            outHandler.setLevel(Level.FINEST);
-            logger.setLevel(Level.FINEST);
-            logger.addHandler(outHandler);
+            setupLogging(); // merely for debugging
         }
         InetAddress loopback = InetAddress.getLoopbackAddress();
         HttpServer httpServer = HttpServer.create(new InetSocketAddress(loopback, 0), 0);
