@@ -26,11 +26,11 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHINPLACEPROMOTER_HPP
 
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
 
 class ShenandoahMarkingContext;
 class ShenandoahGenerationalHeap;
-class ShenandoahHeapRegion;
 
 // This class is responsible for identifying regions that can be
 // promoted in place. It also prepares these regions by preventing
