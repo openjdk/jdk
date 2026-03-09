@@ -72,6 +72,8 @@ public:
   virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register dst, Register jni_env,
                                              Register obj, Register tmp, Label& slowpath);
 
+  void try_resolve_weak_handle(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path);
+
   virtual void check_oop(MacroAssembler *masm, Register obj, const char* msg);
 
   virtual NMethodPatchingType nmethod_patching_type() { return NMethodPatchingType::conc_instruction_and_data_patch; }
@@ -109,8 +111,6 @@ public:
 
   void generate_c2_store_barrier_stub(MacroAssembler* masm, ZStoreBarrierStubC2* stub) const;
 #endif // COMPILER2
-
-  void try_resolve_weak_handle(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path);
 
   void store_barrier_fast(MacroAssembler* masm,
                           Register ref_base,

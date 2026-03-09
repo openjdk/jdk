@@ -70,6 +70,8 @@ public:
   virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register dst, Register jni_env,
                                              Register obj, Register tmp, Label& slowpath);
 
+  virtual void try_resolve_weak_handle(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path);
+
   virtual void barrier_stubs_init() {}
 
   virtual NMethodPatchingType nmethod_patching_type() { return NMethodPatchingType::stw_instruction_and_data_patch; }
@@ -78,8 +80,6 @@ public:
   virtual void c2i_entry_barrier(MacroAssembler* masm, Register tmp1, Register tmp2, Register tmp3);
 
   virtual void check_oop(MacroAssembler *masm, Register oop, const char* msg);
-
-  virtual void try_resolve_weak_handle(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path);
 
 #ifdef COMPILER2
   OptoReg::Name refine_register(const Node* node, OptoReg::Name opto_reg) const;

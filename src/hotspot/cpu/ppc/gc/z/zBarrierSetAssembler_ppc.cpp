@@ -627,6 +627,19 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, R
   __ block_comment("} try_resolve_jobject_in_native (zgc)");
 }
 
+void ZBarrierSetAssembler::try_resolve_weak_handle(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path) {
+  // Resolve weak handle using the standard implementation.
+  BarrierSetAssembler::try_resolve_weak_handle(masm, obj, tmp, slow_path);
+
+  // Check if the oop is bad, in which case we need to take the slow path.
+  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadMask);
+  __ andi_(R0, obj, barrier_Relocation::unpatched);
+  __ bne(CR0, slow_path);
+
+  // Oop is okay, so we uncolor it.
+  __ srdi(obj, obj, ZPointerLoadShift);
+}
+
 #undef __
 
 #ifdef COMPILER1
@@ -952,23 +965,6 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
 
 #undef __
 #endif // COMPILER2
-
-#define __ masm->
-
-void ZBarrierSetAssembler::try_resolve_weak_handle(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path) {
-  // Resolve weak handle using the standard implementation.
-  BarrierSetAssembler::try_resolve_weak_handle(masm, obj, tmp, slow_path);
-
-  // Check if the oop is bad, in which case we need to take the slow path.
-  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadMask);
-  __ andi_(R0, obj, barrier_Relocation::unpatched);
-  __ bne(CR0, slow_path);
-
-  // Oop is okay, so we uncolor it.
-  __ srdi(obj, obj, ZPointerLoadShift);
-}
-
-#undef __
 
 static uint16_t patch_barrier_relocation_value(int format) {
   switch (format) {

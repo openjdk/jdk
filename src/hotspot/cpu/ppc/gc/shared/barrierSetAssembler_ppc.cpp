@@ -179,6 +179,11 @@ void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Re
   __ ld(dst, 0, dst);         // Resolve (untagged) jobject.
 }
 
+void BarrierSetAssembler::try_resolve_weak_handle(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path) {
+  // Load the oop from the weak handle.
+  __ ld(obj, 0, obj);
+}
+
 void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register tmp) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
   assert_different_registers(tmp, R0);
@@ -258,11 +263,6 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler *masm, Register tmp1,
 
 void BarrierSetAssembler::check_oop(MacroAssembler *masm, Register oop, const char* msg) {
   __ verify_oop(oop, msg);
-}
-
-void BarrierSetAssembler::try_resolve_weak_handle(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path) {
-  // Load the oop from the weak handle.
-  __ ld(obj, 0, obj);
 }
 
 #ifdef COMPILER2
