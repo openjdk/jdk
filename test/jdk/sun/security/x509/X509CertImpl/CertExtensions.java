@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,46 @@
 
 import jdk.test.lib.Asserts;
 import sun.security.util.ObjectIdentifier;
-import sun.security.x509.*;
+import sun.security.x509.AlgorithmId;
+import sun.security.x509.AuthorityKeyIdentifierExtension;
+import sun.security.x509.BasicConstraintsExtension;
+import sun.security.x509.CertificateAlgorithmId;
+import sun.security.x509.CertificateSerialNumber;
+import sun.security.x509.CertificateValidity;
+import sun.security.x509.CertificateVersion;
+import sun.security.x509.CertificateX509Key;
+import sun.security.x509.DNSName;
+import sun.security.x509.GeneralName;
+import sun.security.x509.GeneralNameInterface;
+import sun.security.x509.GeneralNames;
+import sun.security.x509.IPAddressName;
+import sun.security.x509.IssuerAlternativeNameExtension;
+import sun.security.x509.KeyIdentifier;
+import sun.security.x509.KeyUsageExtension;
+import sun.security.x509.OIDName;
+import sun.security.x509.PolicyConstraintsExtension;
+import sun.security.x509.PrivateKeyUsageExtension;
+import sun.security.x509.RFC822Name;
+import sun.security.x509.SerialNumber;
+import sun.security.x509.SubjectAlternativeNameExtension;
+import sun.security.x509.SubjectKeyIdentifierExtension;
+import sun.security.x509.URIName;
+import sun.security.x509.UniqueIdentity;
+import sun.security.x509.X500Name;
+import sun.security.x509.X509CertImpl;
+import sun.security.x509.X509CertInfo;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.security.*;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.security.Signature;
+import java.time.Instant;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
@@ -108,8 +143,10 @@ public class CertExtensions {
             x509CertInfo.setSerialNumber(new CertificateSerialNumber(serialNumber));
 
             // create and set the validity interval
-            Date notBefore = new Date(); // Valid from now
-            Date notAfter = new Date(System.currentTimeMillis() + 365L * 24 * 60 * 60 * 1000); // Valid for 1 year
+            Instant notBefore = Instant.now(); // Valid from now
+            Instant notAfter =
+                    Instant.ofEpochMilli(System.currentTimeMillis() +
+                                         365L * 24 * 60 * 60 * 1000); // Valid for 1 year
             x509CertInfo.setValidity(new CertificateValidity(notBefore, notAfter));
 
             // Create Certificate Info which is the representation of X509 Certificate.
@@ -168,8 +205,8 @@ public class CertExtensions {
         cal.set(2014, 03, 10, 12, 30, 30);
         cal.set(2000, 11, 15, 12, 30, 30);
         Date lastDate = cal.getTime();
-        Date firstDate = new Date();
-        PrivateKeyUsageExtension pkusage = new PrivateKeyUsageExtension(firstDate, lastDate);
+        Instant firstDate = Instant.now();
+        PrivateKeyUsageExtension pkusage = new PrivateKeyUsageExtension(firstDate, lastDate.toInstant());
 
         KeyUsageExtension usage = new KeyUsageExtension();
         usage.set(KeyUsageExtension.CRL_SIGN, true);

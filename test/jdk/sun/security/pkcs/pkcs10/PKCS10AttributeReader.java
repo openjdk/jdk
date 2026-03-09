@@ -32,6 +32,7 @@
  * @compile -XDignore.symbol.file PKCS10AttributeReader.java
  * @run main PKCS10AttributeReader
  */
+import java.time.Instant;
 import java.util.Base64;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -84,7 +85,8 @@ public class PKCS10AttributeReader {
         HashMap<ObjectIdentifier, Object> RequestStander = new HashMap() {
             {
                 put(PKCS9Attribute.CHALLENGE_PASSWORD_OID, "GuessWhoAmI");
-                put(PKCS9Attribute.SIGNING_TIME_OID, new Date(861720610000L));
+                put(PKCS9Attribute.SIGNING_TIME_OID,
+                        Instant.ofEpochMilli(861720610000L));
                 put(PKCS9Attribute.CONTENT_TYPE_OID,
                         ObjectIdentifier.of("1.9.50.51.52"));
             }

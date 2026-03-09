@@ -496,7 +496,7 @@ public final class DerOutputStream
     private static final Instant utcHigh = Instant.ofEpochMilli(2524607999000L);
 
     /**
-     * Takes a Date and chooses UTC or GeneralizedTime as per RFC 2630
+     * Takes an instant and chooses UTC or GeneralizedTime as per RFC 2630
      */
     public DerOutputStream putTime(Instant d) {
         return (d.isBefore(utcLow) || d.isAfter(utcHigh)) ? putGeneralizedInstant(d) : putUTCInstant(d);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.Date;
+import java.time.Instant;
 import java.util.Objects;
 
 import javax.net.ssl.KeyManager;
@@ -234,8 +234,8 @@ public class DynamicKeyStoreUtil {
         final long currentTime = System.currentTimeMillis();
         final long oneMinuteInThePast = currentTime - (60 * 1000);
         final long oneDayInTheFuture = currentTime + (24 * 60 * 60 * 1000);
-        final Date startDate = new Date(oneMinuteInThePast);
-        final Date expiryDate = new Date(oneDayInTheFuture);
+        final Instant startDate = Instant.ofEpochMilli(oneMinuteInThePast);
+        final Instant expiryDate = Instant.ofEpochMilli(oneDayInTheFuture);
         return new CertificateValidity(startDate, expiryDate);
     }
 

@@ -63,7 +63,7 @@ public class PKCS10AttrEncoding {
         int len = ids.length;
         Object[] values = {
             ObjectIdentifier.of("1.2.3.4"),
-            new GregorianCalendar(1970, 1, 25, 8, 56, 7).getTime(),
+            new GregorianCalendar(1970, 1, 25, 8, 56, 7).getTime().toInstant(),
             "challenging"
         };
         for (int j = 0; j < len; j++) {
