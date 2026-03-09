@@ -110,13 +110,11 @@ public class CorrectTextComponentSelectionTest {
         EventQueue.invokeAndWait(() -> {
             Point p = tc.getLocationOnScreen();
             p.translate(tc.getWidth() / 2, tc.getHeight() / 2);
-            loc = p;
-            color_center = r.getPixelColor(loc.x, loc.y);
+            color_center = r.getPixelColor(p.x, p.y);
         });
 
-        System.out.println("Color of the text component (CENTER) = "
-                + color_center);
-        System.out.println("White color= " + Color.WHITE);
+        System.out.println("Color of the text component (CENTER) = " + color_center);
+        System.out.println("White color = " + Color.WHITE);
 
         if (color_center.getRGB() != Color.WHITE.getRGB()) {
             throw new RuntimeException("Test Failed");
