@@ -772,7 +772,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     @ForceInline
     final
     $abstractvectortype$ unaryMathOp(VectorOperators.Unary op) {
-        return VectorMathLibrary.unaryMathOp(op, opCode(op), species(), $abstractvectortype$::unaryOperations,
+        return VectorMathLibrary.unaryMathOp(op, opCode(op), vspecies(), $abstractvectortype$::unaryOperations,
                                              this);
     }
 #end[FP]
@@ -983,7 +983,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     @ForceInline
     final
     $abstractvectortype$ binaryMathOp(VectorOperators.Binary op, $abstractvectortype$ that) {
-        return VectorMathLibrary.binaryMathOp(op, opCode(op), species(), $abstractvectortype$::binaryOperations,
+        return VectorMathLibrary.binaryMathOp(op, opCode(op), vspecies(), $abstractvectortype$::binaryOperations,
                                               this, that);
     }
 #end[FP]
