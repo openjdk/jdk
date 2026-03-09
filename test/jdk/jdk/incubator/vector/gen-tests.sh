@@ -69,6 +69,7 @@ do
   bitstype=$type
   Bitstype=$Type
   Boxbitstype=$Boxtype
+  testtype=$type
 
   fptype=$type
   Fptype=$Type
@@ -134,7 +135,7 @@ do
 
   args="$args -Dtype=$type -K$kind -K$fpkind -K$Type -DBoxtype=$Boxtype -DWideboxtype=$Wideboxtype -DMaxValue=$MaxValue -DMinValue=$MinValue"
   args="$args -Dbitstype=$bitstype -DBitstype=$Bitstype -DBoxbitstype=$Boxbitstype"
-  args="$args -Dfptype=$fptype -DFptype=$Fptype -DBoxfptype=$Boxfptype"
+  args="$args -Dtesttype=$testtype -Dfptype=$fptype -DFptype=$Fptype -DBoxfptype=$Boxfptype"
 
   abstractvectortype=${typeprefix}${Type}Vector
   abstractvectorteststype=${typeprefix}${Type}VectorTests

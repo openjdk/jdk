@@ -203,10 +203,10 @@ public class $vectorteststype$ extends AbstractVectorTest {
 #if[FP]
 
     // for floating point addition reduction ops that may introduce rounding errors
-    private static final $type$ RELATIVE_ROUNDING_ERROR_FACTOR_ADD = ($type$)10.0;
+    private static final $type$ RELATIVE_ROUNDING_ERROR_FACTOR_ADD = {#if[FP16]?float16ToRawShortBits(Float16.valueOf(10.0f)):($type$)10.0};
 
     // for floating point multiplication reduction ops that may introduce rounding errors
-    private static final $type$ RELATIVE_ROUNDING_ERROR_FACTOR_MUL = ($type$)50.0;
+    private static final $type$ RELATIVE_ROUNDING_ERROR_FACTOR_MUL = {#if[FP16]?float16ToRawShortBits(Float16.valueOf(50.0f)):($type$)50.0};
 #end[FP]
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / $bits$);
@@ -1654,7 +1654,7 @@ relativeError));
                 collect(Collectors.toList());
 
     static final List<IntFunction<$type$[]>> SELECT_FROM_INDEX_GENERATORS = List.of(
-            withToString("$type$[0..VECLEN*2)", (int s) -> {
+            withToString("$testtype$[0..VECLEN*2)", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> ($type$)(RAND.nextInt()));
             })
@@ -1891,27 +1891,27 @@ relativeError));
 #end[!Int]
 
     static final List<IntFunction<$type$[]>> $TYPE$_COMPARE_GENERATORS = List.of(
-            withToString("$type$[i]", (int s) -> {
+            withToString("$testtype$[i]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> ($type$)i);
             }),
-            withToString("$type$[i - length / 2]", (int s) -> {
+            withToString("$testtype$[i - length / 2]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> ($type$)(i - (s * BUFFER_REPS / 2)));
             }),
-            withToString("$type$[i + 1]", (int s) -> {
+            withToString("$testtype$[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> ($type$)(i + 1));
             }),
-            withToString("$type$[i - 2]", (int s) -> {
+            withToString("$testtype$[i - 2]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> ($type$)(i - 2));
             }),
-            withToString("$type$[zigZag(i)]", (int s) -> {
+            withToString("$testtype$[zigZag(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> i%3 == 0 ? ($type$)i : (i%3 == 1 ? ($type$)(i + 1) : ($type$)(i - 2)));
             }),
-            withToString("$type$[cornerCaseValue(i)]", (int s) -> {
+            withToString("$testtype$[cornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> cornerCaseValue(i));
             })

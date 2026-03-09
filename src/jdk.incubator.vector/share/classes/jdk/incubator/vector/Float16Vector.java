@@ -2821,7 +2821,7 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
         short[] a = toArray();
         int[] res = new int[a.length];
         for (int i = 0; i < a.length; i++) {
-            float e = shortBitsToFloat16(a[i]).floatValue();
+            short e = a[i];
             res[i] = (int) Float16Species.toIntegralChecked(e, true);
         }
         return res;
@@ -2835,7 +2835,7 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
         short[] a = toArray();
         long[] res = new long[a.length];
         for (int i = 0; i < a.length; i++) {
-            float e = shortBitsToFloat16(a[i]).floatValue();
+            short e = a[i];
             res[i] = Float16Species.toIntegralChecked(e, false);
         }
         return res;
@@ -4144,9 +4144,9 @@ public abstract class Float16Vector extends AbstractVector<Float16> {
 
         /*package-private*/
         @ForceInline
-        static long toIntegralChecked(float e, boolean convertToInt) {
-            long value = convertToInt ? (int) e : (long) e;
-            if ((short) value != e) {
+        static long toIntegralChecked(short e, boolean convertToInt) {
+            long value = convertToInt ? shortBitsToFloat16(e).intValue(): shortBitsToFloat16(e).longValue();
+            if (float16ToRawShortBits(Float16.valueOf(value)) != e) {
                 throw badArrayBits(e, convertToInt, value);
             }
             return value;

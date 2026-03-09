@@ -121,10 +121,10 @@ public class Float16Vector512Tests extends AbstractVectorTest {
     private static final short MUL_IDENTITY = float16ToRawShortBits(Float16.valueOf(1.0f));
 
     // for floating point addition reduction ops that may introduce rounding errors
-    private static final short RELATIVE_ROUNDING_ERROR_FACTOR_ADD = (short)10.0;
+    private static final short RELATIVE_ROUNDING_ERROR_FACTOR_ADD = float16ToRawShortBits(Float16.valueOf(10.0f));
 
     // for floating point multiplication reduction ops that may introduce rounding errors
-    private static final short RELATIVE_ROUNDING_ERROR_FACTOR_MUL = (short)50.0;
+    private static final short RELATIVE_ROUNDING_ERROR_FACTOR_MUL = float16ToRawShortBits(Float16.valueOf(50.0f));
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / 512);
 
@@ -1271,7 +1271,7 @@ public class Float16Vector512Tests extends AbstractVectorTest {
                 collect(Collectors.toList());
 
     static final List<IntFunction<short[]>> SELECT_FROM_INDEX_GENERATORS = List.of(
-            withToString("short[0..VECLEN*2)", (int s) -> {
+            withToString("float16[0..VECLEN*2)", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> (short)(RAND.nextInt()));
             })
@@ -1445,27 +1445,27 @@ public class Float16Vector512Tests extends AbstractVectorTest {
     }
 
     static final List<IntFunction<short[]>> FLOAT16_COMPARE_GENERATORS = List.of(
-            withToString("short[i]", (int s) -> {
+            withToString("float16[i]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> (short)i);
             }),
-            withToString("short[i - length / 2]", (int s) -> {
+            withToString("float16[i - length / 2]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> (short)(i - (s * BUFFER_REPS / 2)));
             }),
-            withToString("short[i + 1]", (int s) -> {
+            withToString("float16[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> (short)(i + 1));
             }),
-            withToString("short[i - 2]", (int s) -> {
+            withToString("float16[i - 2]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> (short)(i - 2));
             }),
-            withToString("short[zigZag(i)]", (int s) -> {
+            withToString("float16[zigZag(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> i%3 == 0 ? (short)i : (i%3 == 1 ? (short)(i + 1) : (short)(i - 2)));
             }),
-            withToString("short[cornerCaseValue(i)]", (int s) -> {
+            withToString("float16[cornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> cornerCaseValue(i));
             })

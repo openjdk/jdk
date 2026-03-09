@@ -3680,11 +3680,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         $type$[] a = toArray();
         int[] res = new int[a.length];
         for (int i = 0; i < a.length; i++) {
-#if[FP16]
-            float e = shortBitsToFloat16(a[i]).floatValue();
-#else[FP16]
             $type$ e = a[i];
-#end[FP16]
             res[i] = (int) $Type$Species.toIntegralChecked(e, true);
         }
         return res;
@@ -3721,11 +3717,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         $type$[] a = toArray();
         long[] res = new long[a.length];
         for (int i = 0; i < a.length; i++) {
-#if[FP16]
-            float e = shortBitsToFloat16(a[i]).floatValue();
-#else[FP16]
             $type$ e = a[i];
-#end[FP16]
             res[i] = $Type$Species.toIntegralChecked(e, false);
         }
         return res;
@@ -5780,11 +5772,18 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 
         /*package-private*/
         @ForceInline
-        static long toIntegralChecked({#if[FP16]?float:$type$} e, boolean convertToInt) {
+        static long toIntegralChecked($type$ e, boolean convertToInt) {
+#if[FP16]
+            long value = convertToInt ? shortBitsToFloat16(e).intValue(): shortBitsToFloat16(e).longValue();
+            if (float16ToRawShortBits(Float16.valueOf(value)) != e) {
+                throw badArrayBits(e, convertToInt, value);
+            }
+#else[FP16]
             long value = convertToInt ? (int) e : (long) e;
             if (($type$) value != e) {
                 throw badArrayBits(e, convertToInt, value);
             }
+#end[FP16]
             return value;
         }
 
