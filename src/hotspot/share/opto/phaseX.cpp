@@ -575,7 +575,7 @@ PhaseValues::~PhaseValues() {
   _table.dump();
   // Statistics for value progress and efficiency
   if( PrintCompilation && Verbose && WizardMode ) {
-    tty->print("\n%sValues: %d nodes ---> %d/%d (%d)",
+    tty->print("\n%sValues: %d nodes ---> " UINT64_FORMAT "/%d (%d)",
       is_IterGVN() ? "Iter" : "    ", C->unique(), made_progress(), made_transforms(), made_new_values());
     if( made_transforms() != 0 ) {
       tty->print_cr("  ratio %f", made_progress()/(float)made_transforms() );
@@ -1116,13 +1116,9 @@ void PhaseIterGVN::push_deep_revisit_candidates() {
   all_nodes.push(C->root());
   for (uint j = 0; j < all_nodes.size(); j++) {
     Node* n = all_nodes.at(j);
-    if (n->outcnt() == 0 || needs_deep_revisit(n)) {
+    if (needs_deep_revisit(n)) {
       _worklist.push(n);
     }
-    // Walk outputs to find all reachable nodes. An output-only walk from root
-    // is a superset of an input-only walk: it finds every node the input walk
-    // finds, plus dead nodes (outcnt == 0) that use live nodes but have no
-    // users themselves.
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       all_nodes.push(n->fast_out(i));
     }
@@ -1180,7 +1176,6 @@ bool PhaseIterGVN::deep_revisit() {
 #endif
 
     if (progress == 0) {
-      round++;
       break;
     }
   }
@@ -2222,6 +2217,9 @@ Node *PhaseIterGVN::transform_old(Node* n) {
 #endif
 
   DEBUG_ONLY(uint loop_count = 1;)
+  if (i != nullptr) {
+    set_progress();
+  }
   while (i != nullptr) {
 #ifdef ASSERT
     if (loop_count >= K + C->live_nodes()) {
@@ -2229,7 +2227,6 @@ Node *PhaseIterGVN::transform_old(Node* n) {
     }
 #endif
     assert((i->_idx >= k->_idx) || i->is_top(), "Idealize should return new nodes, use Identity to return old nodes");
-    set_progress();
     // Made a change; put users of original Node on worklist
     add_users_to_worklist(k);
     // Replacing root of transform tree?

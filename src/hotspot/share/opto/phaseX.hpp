@@ -201,10 +201,10 @@ public:
   // true if CFG node d dominates CFG node n
   virtual bool is_dominator(Node *d, Node *n) { fatal("unimplemented for this pass"); return false; };
 
-  uint   _count_progress;       // Count transforms that make progress
-  void   set_progress()        { ++_count_progress; assert(allow_progress(), "No progress allowed during verification"); }
-  void   clear_progress()      { _count_progress = 0; }
-  uint   made_progress() const { return _count_progress; }
+  uint64_t _count_progress;      // Count transforms that make progress
+  void     set_progress()        { ++_count_progress; assert(allow_progress(), "No progress allowed during verification"); }
+  void     clear_progress()      { _count_progress = 0; }
+  uint64_t made_progress() const { return _count_progress; }
 
   // RAII guard for speculative transforms. Restores _count_progress in the destructor
   // unless commit() is called, so that abandoned speculative work does not count as progress.
