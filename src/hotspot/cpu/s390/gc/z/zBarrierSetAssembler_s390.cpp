@@ -45,6 +45,7 @@ private:
     MacroAssembler* masm = _masm;
 
     //TODO: Optimize this function to only save the required registers
+    //TODO: macroAssembler_s390.cpp:5921 save_volatile_regs
     bool preserve_R2 = _result != Z_R2;
     _nbytes_save = (16 - (preserve_R2 ? 0 : 1)) * BytesPerWord;
     int offset = 0;
@@ -470,6 +471,139 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm,
   BLOCK_COMMENT("} ZBarrierSetAssembler::try_resolve_jobject_in_native");
 }
 
+#undef __
 
+#ifdef COMPILER1
+#define __ ce->masm()->
+
+static void z_uncolor(LIR_Assembler* ce, LIR_Opr ref) {
+  __ z_srlg(ref->as_register(), ref->as_register(), ZPointerLoadShift);
+}
+
+static void z_color(LIR_Assembler* ce, LIR_Opr ref) {
+  __ z_sllg(ref->as_register(), ref->as_register(), ZPointerLoadShift);
+  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBits);
+  __ z_oill(ref->as_register(), barrier_Relocation::unpatched);
+}
+
+void ZBarrierSetAssembler::generate_c1_uncolor(LIR_Assembler* ce, LIR_Opr ref) const {
+  z_uncolor(ce, ref);
+}
+
+void ZBarrierSetAssmebler::generate_c1_color(LIR_Assembler* ce, LIR_Opr ref) const {
+  z_color(ce, ref);
+}
+
+void ZBarrierSetAssembler::generate_c1_load_barrier(LIR_Assmebler* ce,
+                                                    LIR_Opr ref,
+                                                    ZLoadBarrierStubC1* stub,
+                                                    bool on_non_string) const {
+  if (on_non_strong) {
+    // Test against MarkBad mask
+    __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadBeforeTest)
+    __ z_ltg(ref->as_register, barrier_Relocation::unpatched);
+
+    // Slow path if not zero
+    __ z_brne(*stub->entry());
+    // Fast path: convert to colorless
+    z_uncolor(ce, ref);
+  } else {
+    Label good;
+    // TODO: double check this implementation, this follows aarch64 but ppc has done it differently
+    __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeTestBit);
+    __ z_ltg(ref->as_register(), barrier_Relocation::unpatched);
+    __ z_bre(good);
+    __ z_br(*stub->entry());
+    __ bind(good);
+    z_uncolor(ce, ref);
+  }
+  __ bind(*stub->continuation());
+}
+
+void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
+                                                         ZLoadBarrierStubC1* stub) const {
+  // Stub entry
+  __ bind(*stub->entry());
+
+  Register ref = stub->ref()->as_register();
+  Register ref_addr = noreg;
+  Register temp = noreg;
+
+  if (stub->tmp()->is_valid()) {
+    //Load address into tmp register
+    ce->leal(stub->ref_addr(), stub()->tmp());
+    ref_addr = tmp = stub->tmp()->as_pointer_register();
+  } else {
+    // Address already in register
+    ref_addr = stub->ref_addr()->as_address_ptr()->base()->as_pointer_register();
+  }
+
+  assert_different_registers(ref, ref_addr, noreg);
+
+  // Setup arguments and call runtime stub
+  __ add2reg(Z_SP, - 2 * BytesPerWord);
+  ce->store_parameter(ref_addr, 1);
+  ce->store_parameter(ref, 0);
+  __ call(RuntimeAddress(stub->runtime_stub()));
+  __ add2reg(Z_SP, 2 * BytesPerWord);
+
+  // TODO: x86 and aarch64 verified results whereas ppc did not, but implementation of vrify oop in s390 and x86 varies
+
+  __ z_lgr(ref, Z_R0);
+  __ z_br(*stub->continuation());
+
+}
+
+void ZBarrierSetAssembler::generate_c1_store_barrier(LIR_Assembler* ce,
+                                                     LIR_Address* addr,
+                                                     LIR_Opr new_zaddress,
+                                                     LIR_Opr new_zpointer,
+                                                     ZStoreBarrierStubC1* stub) const {
+  Register rnew_zaddress = new_zaddress->as_register();
+  Register rnew_zpointer = new_zpointer->as_register();
+
+  Register rbase = addr->base()->as_pointer_register();
+  store_barrier_fast(ce->masm(),
+                     ce->as_Address(addr),
+                     rnew_zaddress,
+                     rnew_zpointer,
+                     true,
+                     stub->is_atomic(),
+                     *stub->entry(),
+                     *stub->continuation());
+}
+
+void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
+                                                          ZStoreBarrierStubC1* stub) const {
+  // Stub entry
+  __ bind(*stub->entry());
+
+  Label slow;
+  Label slow_continuation;
+  store_barrier_medium(ce->masm(),
+                       ce->as_Address(stub->ref_addr()->as_address_ptr()),
+                       Z_R0,
+                       Z_R1, /* Check if we can use these */
+                       false /* is_native */,
+                       stub->is_atomic(),
+                       *stub->continuation(),
+                       slow,
+                       slow_continuation);
+
+  __ bind(slow);
+ 
+  ce->lay(stub->new_zpointer(), stub->ref_addr());
+
+  // Setup arguments and call runtime stub
+  __ add2reg(Z_SP, - 2 * BytesPerWord);
+  // TODO: why 2 when we are only storing on parameter, everybody did this
+  ce->store_parameter(stub->new_zpointer()->as_register(), 0);
+  __ call(RuntimeAddress(stub->runtime_stub()));
+  __ add2reg(Z_SP, 2 * BytesPerWord);
+
+  // Stub exit
+  __ z_br(slow_continuation);
+}
 
 #undef __
+#define __ sasm->
