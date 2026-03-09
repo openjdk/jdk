@@ -1758,7 +1758,7 @@ Node* GraphKit::access_load(Node* adr,   // actual address to load val at
 
   // Restore the previous state only if the load got folded to a constant
   // and we can discard any barriers that might have been added.
-  if (!(load != nullptr && load->is_Con())) {
+  if (load == nullptr || !load->is_Con()) {
     old_state.discard();
   }
   return load;
