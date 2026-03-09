@@ -854,7 +854,7 @@ bool ObjectMonitor::deflate_monitor(Thread* current) {
   }
 
   if (UseObjectMonitorTable) {
-    ObjectSynchronizer::deflate_monitor(current, obj, this);
+    ObjectSynchronizer::deflate_monitor(obj, this);
   } else if (obj != nullptr) {
     // Install the old mark word if nobody else has already done it.
     install_displaced_markword_in_object(obj);
