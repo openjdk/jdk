@@ -886,7 +886,7 @@ class GraphKit : public Phase {
   // So, if an intrinsic might cause this situation, one must start by saving the state in a
   // SavedState by constructing it, and the state will be restored on destruction. If the
   // intrinsic is not bailing out, one need to call discard to prevent restoring the old state.
-  class SavedState :public StackObj {
+  class SavedState : public StackObj {
     GraphKit* _kit;
     int _sp;
     JVMState* _jvms;
