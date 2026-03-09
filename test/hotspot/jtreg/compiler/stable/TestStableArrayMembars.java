@@ -47,7 +47,7 @@ public class TestStableArrayMembars {
     public static void main(String[] args) {
         TestFramework tf = new TestFramework();
         tf.addTestClassesToBootClassPath();
-        tf.addFlags( "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED", "-XX:+UnlockExperimentalVMOptions");
+        tf.addFlags( "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED");
         tf.start();
     }
 
