@@ -875,7 +875,7 @@ FT_BEGIN_HEADER
    */
   typedef struct  FT_Span_
   {
-    short           x;
+    unsigned short  x;
     unsigned short  len;
     unsigned char   coverage;
 

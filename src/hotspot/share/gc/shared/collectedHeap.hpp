@@ -289,7 +289,7 @@ protected:
   DEBUG_ONLY(bool is_in_or_null(const void* p) const { return p == nullptr || is_in(p); })
 
   void set_gc_cause(GCCause::Cause v);
-  GCCause::Cause gc_cause() { return _gc_cause; }
+  GCCause::Cause gc_cause() const { return _gc_cause; }
 
   oop obj_allocate(Klass* klass, size_t size, TRAPS);
   virtual oop array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS);

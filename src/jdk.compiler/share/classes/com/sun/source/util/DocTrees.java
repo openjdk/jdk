@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,23 +195,30 @@ public abstract class DocTrees extends Trees {
 
     /**
      * Returns the language model element referred to by the leaf node of the given
-     * {@link DocTreePath}, or {@code null} if unknown.
+     * {@link DocTreePath}, or {@code null} if the leaf node of {@code path} does
+     * not refer to an element.
+     *
      * @param path the path for the tree node
-     * @return the element
+     * @return the referenced element, or null
+     * @see #getType(DocTreePath)
      */
     public abstract Element getElement(DocTreePath path);
 
     /**
      * Returns the language model type referred to by the leaf node of the given
-     * {@link DocTreePath}, or {@code null} if unknown. This method usually
-     * returns the same value as {@code getElement(path).asType()} for a
-     * {@code path} argument for which {@link #getElement(DocTreePath)} returns
-     * a non-null value, but may return a type that includes additional
-     * information, such as a parameterized generic type instead of a raw type.
+     * {@link DocTreePath}, or {@code null} if the leaf node of {@code path} does
+     * not refer to a type.
+     *
+     * <p>If {@link #getElement(DocTreePath)} returns a non-null value for a given {@code path}
+     * argument, this method usally returns the same value as {@code getElement(path).asType()}.
+     * However, there are cases where the returned type includes additional information,
+     * such as a parameterized generic type instead of a raw type. In other cases, such as with
+     * primitive or array types, the returned type may not have a corresponding element returned
+     * by {@code getElement(DocTreePath)}.</p>
      *
      * @param path the path for the tree node
      * @return the referenced type, or null
-     *
+     * @see #getElement(DocTreePath)
      * @since 15
      */
     public abstract TypeMirror getType(DocTreePath path);
