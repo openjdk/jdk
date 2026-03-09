@@ -73,11 +73,11 @@ abstract class LValue {
             setValue0(value);
         } catch (InvalidTypeException exc) {
             throw new ParseException(
-                "Attempt to set value of incorrect type " +
+                "Attempt to set value of incorrect type: " +
                 exc);
         } catch (ClassNotLoadedException exc) {
             throw new ParseException(
-                "Attempt to set value before " + exc.className() + " was loaded" +
+                "Attempt to set value before " + exc.className() + " was loaded: " +
                 exc);
         }
     }
