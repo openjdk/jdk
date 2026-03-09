@@ -1292,14 +1292,15 @@ public class ForkJoinPool extends AbstractExecutorService
         }
 
         /**
-         * Resizes the queue array unless out of memory.
-         * @param a old array
-         * @param cap old array capacity
-         * @param s current top
+         * Resizes the queue array and pushes unless out of memory.
+         * @param task the task; caller must ensure nonnull
+         * @param pool the pool to signal upon resize
+         * @param unlock if not 1, phase unlock value
          */
-        private void growArray(ForkJoinTask<?>[] a, int cap, int s) {
-            int newCap = cap << 1;
-            if (a != null && a.length == cap && cap > 0 && newCap > 0) {
+        private void growAndPush(ForkJoinTask<?> task, ForkJoinPool pool, int unlock) {
+            ForkJoinTask<?>[] a; int cap, newCap;
+            if ((a = array) != null && (cap = a.length) > 0 &&
+                (newCap = (cap >= 1 << 16) ? cap << 1 : cap << 2) > 0) {
                 ForkJoinTask<?>[] newArray = null;
                 try {
                     newArray = new ForkJoinTask<?>[newCap];
@@ -1833,7 +1834,6 @@ public class ForkJoinPool extends AbstractExecutorService
         }
         if ((tryTerminate(false, false) & STOP) == 0L &&
             phase != 0 && w != null && w.source != DROPPED) {
-            signalWork();                  // possibly replace
             w.cancelTasks();               // clean queue
             signalWork(null, 0L);          // possibly replace
         }
@@ -2159,7 +2159,7 @@ public class ForkJoinPool extends AbstractExecutorService
                 return true;
             }
         }
-        return stat;
+        return false;
     }
 
     /**
@@ -2581,10 +2581,9 @@ public class ForkJoinPool extends AbstractExecutorService
 
     /**
      * Finds and locks a WorkQueue for an external submitter, or
-     * throws RejectedExecutionException if shutdown or terminating.
-     * @param r current ThreadLocalRandom.getProbe() value
+     * throws RejectedExecutionException if shutdown
      * @param rejectOnShutdown true if RejectedExecutionException
-     *        should be thrown when shutdown (else only if terminating)
+     *        should be thrown when shutdown
      */
     final void externalPush(ForkJoinTask<?> task, boolean signalIfEmpty,
                             boolean rejectOnShutdown) {
@@ -2598,12 +2597,10 @@ public class ForkJoinPool extends AbstractExecutorService
             if ((qs = queues) == null || (n = qs.length) <= 0)
                 break;
             if ((q = qs[i = (id = r & EXTERNAL_ID_MASK) & (n - 1)]) == null) {
-                WorkQueue w = new WorkQueue(null, id, 0, false);
-                w.phase = id;
-                boolean reject = ((lockRunState() & SHUTDOWN) != 0 &&
-                                  rejectOnShutdown);
-                if (!reject && queues == qs && qs[i] == null)
-                    q = qs[i] = w;                   // else lost race to install
+                WorkQueue newq = new WorkQueue(null, id, 0, false);
+                lockRunState();
+                if (qs[i] == null && queues == qs)
+                    q = qs[i] = newq;         // else lost race to install
                 unlockRunState();
             }
             if (q != null && (lock = q.tryLockPhase()) != 1) {
@@ -2627,18 +2624,6 @@ public class ForkJoinPool extends AbstractExecutorService
             q.push(task, signalIfEmpty ? this : null, 1);
         else
             externalPush(task, signalIfEmpty, true);
-    }
-
-    /**
-     * Returns queue for an external submission, bypassing call to
-     * submissionQueue if already established and unlocked.
-     */
-    final WorkQueue externalSubmissionQueue(boolean rejectOnShutdown) {
-        WorkQueue[] qs; WorkQueue q; int n;
-        int r = ThreadLocalRandom.getProbe();
-        return (((qs = queues) != null && (n = qs.length) > 0 &&
-                 (q = qs[r & EXTERNAL_ID_MASK & (n - 1)]) != null && r != 0 &&
-                 q.tryLockPhase()) ? q : submissionQueue(r, rejectOnShutdown));
     }
 
     /**
