@@ -45,7 +45,6 @@ public class CorrectTextComponentSelectionTest {
     static Robot r;
     static Frame frame;
     static volatile Color color_center;
-    static volatile Point loc;
 
     public static void main(String[] args) throws Exception {
         try {
