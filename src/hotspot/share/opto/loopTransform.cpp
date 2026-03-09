@@ -778,6 +778,7 @@ void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree* loop, Node_List& old_ne
 //             exit
 //
 void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
+  assert(LoopPeeling != 0, "do_peeling called with loop peeling disabled");
 
   C->set_major_progress();
   // Peeling a 'main' loop in a pre/main/post situation obfuscates the

@@ -949,37 +949,14 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   // We need a safepoint to insert Parse Predicates for the inner loop.
   SafePointNode* safepoint;
   if (bt == T_INT && head->as_CountedLoop()->is_strip_mined()) {
-    // Check if we need to bail out early if loop peeling is disabled.  Do this
-    // before the graph is modified by `transformed_to_counted_loop()`.
-    if (!LoopPeeling) {
-#ifndef PRODUCT
-      if (TraceLoopOpts) {
-        tty->print("LoopNest cancelled since LoopPeeling is disabled");
-      }
-#endif
-      return false;
-    }
     // Loop is strip mined: use the safepoint of the outer strip mined loop
     OuterStripMinedLoopNode* outer_loop = head->as_CountedLoop()->outer_loop();
     assert(outer_loop != nullptr, "no outer loop");
-    safepoint = outer_loop->outer_safepoint();
+    safepoint = LoopPeeling == 0 ? nullptr : outer_loop->outer_safepoint();
     outer_loop->transform_to_counted_loop(&_igvn, this);
     exit_test = head->loopexit();
   } else {
-    safepoint = find_safepoint(back_control, x, loop);
-  }
-
-  // Later, we peel the loop if we've found a safepoint or if the loop does not
-  // have a call inside it. However, since the IR is modified before we actually
-  // perform the peeling, we can't afford to bail out just prior to peeling,
-  // since the IR will be left in an inconsistent state, so bail out early.
-  if (!LoopPeeling && (safepoint != nullptr || !loop->_has_call)) {
-#ifndef PRODUCT
-    if (TraceLoopOpts) {
-      tty->print("LoopNest cancelled since LoopPeeling is disabled");
-    }
-#endif
-    return false;
+    safepoint = LoopPeeling == 0 ? nullptr : find_safepoint(back_control, x, loop);
   }
 
   IfFalseNode* exit_branch = exit_test->false_proj();
@@ -1153,8 +1130,8 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   // Peel one iteration of the loop and use the safepoint at the end
   // of the peeled iteration to insert Parse Predicates. If no well
   // positioned safepoint peel to guarantee a safepoint in the outer
-  // loop.
-  if (safepoint != nullptr || !loop->_has_call) {
+  // loop.  When loop peeling is disabled, skip the peeling step altogether.
+  if (LoopPeeling >= 1 && (safepoint != nullptr || !loop->_has_call)) {
     old_new.clear();
     do_peeling(loop, old_new);
   } else {

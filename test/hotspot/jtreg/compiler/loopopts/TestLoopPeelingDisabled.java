@@ -62,6 +62,13 @@ public class TestLoopPeelingDisabled {
             }
             System.out.println("Loop peeling correctly disabled");
         }
+
+        // Finally, run the same test with loop peeling disabled only when
+        // splitting iterations.  Since the function being tested does not hit
+        // this case, we expect that the loop will be peeled, which is ensured
+        // by the IR annotations.
+        TestFramework.runWithFlags("-XX:+UnlockDiagnosticVMOptions",
+                                   "-XX:LoopPeeling=2");
     }
 
     @Test
@@ -70,8 +77,8 @@ public class TestLoopPeelingDisabled {
     public static int test() {
         int sum = 0;
 
-        // Use an odd trip count so that `do_maximal_unroll()` tries to peel the
-        // odd iteration.
+        // Use an odd trip count so that `do_maximally_unroll()` tries to peel
+        // the odd iteration.
         for (int i = 0; i < 5; i++) {
             sum += array[i];
         }
