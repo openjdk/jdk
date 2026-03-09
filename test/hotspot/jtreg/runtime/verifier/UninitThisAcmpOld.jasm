@@ -34,8 +34,8 @@ class UninitThisAcmpOld version 49:0
          aload_1;
          if_acmpne         L14;
          nop;
-         aload_0;
-  L14:   invokespecial     Method java/lang/Object."<init>":"()V";
+  L14:   aload_0;
+         invokespecial     Method java/lang/Object."<init>":"()V";
          return;
   }
 } // end Class UninitThisAcmpOld
