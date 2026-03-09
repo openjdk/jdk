@@ -1151,7 +1151,7 @@ JRT_ENTRY(MethodCounters*, InterpreterRuntime::build_method_counters(JavaThread*
 JRT_END
 
 
-JRT_ENTRY(void, InterpreterRuntime::at_safepoint(JavaThread* current))
+static void post_single_step(JavaThread* current) {
   // We used to need an explicit preserve_arguments here for invoke bytecodes. However,
   // stack traversal automatically takes care of preserving arguments for invoke, so
   // this is no longer needed.
@@ -1171,6 +1171,14 @@ JRT_ENTRY(void, InterpreterRuntime::at_safepoint(JavaThread* current))
     LastFrameAccessor last_frame(current);
     JvmtiExport::at_single_stepping_point(current, last_frame.method(), last_frame.bcp());
   }
+}
+
+JRT_ENTRY(void, InterpreterRuntime::at_safepoint(JavaThread* current))
+  post_single_step(current);
+JRT_END
+
+JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::at_safepoint_no_async(JavaThread* current))
+  post_single_step(current);
 JRT_END
 
 JRT_LEAF(void, InterpreterRuntime::at_unwind(JavaThread* current))

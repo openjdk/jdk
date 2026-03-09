@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,6 +160,18 @@ void TemplateInterpreterGenerator::generate_all() {
                  );
   }
 
+  { CodeletMark cm(_masm, "no async safepoint entry points");
+    Interpreter::_no_async_safept_entry =
+      EntryPoint(
+                 generate_safept_entry_for(atos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint_no_async)),
+                 generate_safept_entry_for(itos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint_no_async)),
+                 generate_safept_entry_for(ltos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint_no_async)),
+                 generate_safept_entry_for(ftos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint_no_async)),
+                 generate_safept_entry_for(dtos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint_no_async)),
+                 generate_safept_entry_for(vtos, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint_no_async))
+                 );
+  }
+
   { CodeletMark cm(_masm, "exception handling");
     // (Note: this is not safepoint safe because thread may return to compiled code)
     generate_throw_exception();
@@ -290,7 +302,13 @@ void TemplateInterpreterGenerator::set_entry_points_for_all_bytes() {
 void TemplateInterpreterGenerator::set_safepoints_for_all_bytes() {
   for (int i = 0; i < DispatchTable::length; i++) {
     Bytecodes::Code code = (Bytecodes::Code)i;
-    if (Bytecodes::is_defined(code)) Interpreter::_safept_table.set_entry(code, Interpreter::_safept_entry);
+    if (Bytecodes::is_defined(code)) {
+      if (Bytecodes::can_trap(code)) {
+        Interpreter::_safept_table.set_entry(code, Interpreter::_safept_entry);
+      } else {
+        Interpreter::_safept_table.set_entry(code, Interpreter::_no_async_safept_entry);
+      }
+    }
   }
 }
 
