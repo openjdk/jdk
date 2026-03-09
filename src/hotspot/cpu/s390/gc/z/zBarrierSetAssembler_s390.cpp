@@ -607,3 +607,61 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
 
 #undef __
 #define __ sasm->
+
+void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler *sasm,
+                                                                 DecoratorSet decorators) const {
+  const int stack_parameters = 2;
+  const int volatile_regs = 13;
+  const int nbytes_save = (volatile_regs + stack_parameters) * BytesPerWord;
+
+  __ push_frame(nbytes_save);
+  __ save_return_pc();
+  // TODO: check if we need to save R0 as well -> no, aarch64 is not saving it and ppc as well i think
+  __ save_volatile_regs(Z_SP, stack_parameters, true, false);
+
+  // Load arguments back gain from the stack
+  __ z_lay(Z_ARG1, -2 * BytesPerWord, Z_SP); //ref
+  __ z_lay(Z_ARG2, -3 * BytesPerWord, Z_SP); //ref_addr
+
+  __ call_VM_leaf(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(decorators));
+
+  //TODO: Why are we verifying oop, ppc does it but x86 and aarch64 does not
+  __ verify_oop(Z_RET, "Bad pointer after barrier invocation");
+  __ z_lgr(Z_R0, Z_RET);
+
+  __ restore_volatile_regs(Z_SP, stack_parameters, true, false);
+  __ pop_frame();
+  __ restore_return_pc();
+
+  //TODO: Check if there is a better way to do this
+  __ z_br(Z_R14);
+}
+
+void ZBarrierSetAssembler::generate_c1_store_barrier_runtime_stub(StubAssembler* sasm,
+                                                                  bool self_healing) const {
+  const int stack_parameters = 2;
+  const int volatile_regs = 13;
+  const int nbytes_save = (volatile_regs + stack_parameters) * BytesPerWord;
+
+  __ push_frame(nbytes_save);
+  __ save_return_pc();
+  // TODO: check if we need to save R0 as well -> no, aarch64 is not saving it and ppc as well i think
+  __ save_volatile_regs(Z_SP, stack_parameters, true, false);
+
+  __ z_lgr(Z_ARG1, Z_R0);
+
+  if (self_healing) {
+    __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr());
+  } else {
+    __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr());
+  }
+
+  __ restore_volatile_regs(Z_SP, stack_parameters, true, false);
+  __ pop_frame();
+  __ restore_return_pc();
+
+  //TODO: Check if there is a better way to do this
+  __ z_br(Z_R14);
+}
+
+#endif // Compiler1
