@@ -561,70 +561,89 @@ public class ForkJoinPool extends AbstractExecutorService
      * access (which is usually needed anyway).
      *
      * Signalling. Signals (in signalWork) cause new or reactivated
-     * workers to scan for tasks.  SignalWork is invoked in two cases:
-     * (1) When a task is pushed onto an empty queue, and (2) When a
-     * worker takes a top-level task from a queue that has additional
-     * tasks. Together, these suffice in O(log(#threads)) steps to
-     * fully activate with at least enough workers, and ideally no
-     * more than required.  This ideal is unobtainable: Callers do not
-     * know whether another worker will finish its current task and
-     * poll for others without need of a signal (which is otherwise an
-     * advantage of work-stealing vs other schemes), and also must
-     * conservatively estimate the triggering conditions of emptiness
-     * or non-emptiness; all of which usually cause more activations
-     * than necessary (see below). (Method signalWork is also used as
-     * failsafe in case of Thread failures in deregisterWorker, to
-     * activate or create a new worker to replace them).
+     * workers to scan for tasks.  Method signalWork and its callers
+     * try to approximate the unattainable goal of having the right
+     * number of workers activated for the tasks at hand, but must err
+     * on the side of too many workers vs too few to avoid stalls:
      *
-     * Top-Level scheduling
-     * ====================
+     *  * If computations are purely tree structured, it suffices for
+     *    every worker to activate another when it pushes a task into
+     *    an empty queue, resulting in O(log(#threads)) steps to full
+     *    activation. Emptiness must be conservatively approximated,
+     *    which may result in unnecessary signals.  Also, to reduce
+     *    resource usages in some cases, at the expense of slower
+     *    startup in others, activation of an idle thread is preferred
+     *    over creating a new one, here and elsewhere.
+     *
+     *  * At the other extreme, if "flat" tasks (those that do not in
+     *    turn generate others) come in serially from only a single
+     *    producer, each worker taking a task from a queue should
+     *    propagate a signal if there are more tasks in that
+     *    queue. This is equivalent to, but generally faster than,
+     *    arranging the stealer take multiple tasks, re-pushing one or
+     *    more on its own queue, and signalling (because its queue is
+     *    empty), also resulting in logarithmic full activation
+     *    time. If tasks do not not engage in unbounded loops based on
+     *    the actions of other workers with unknown dependencies loop,
+     *    this form of proagation can be limited to one signal per
+     *    activation (phase change). We distinguish the cases by
+     *    further signalling only if the task is an InterruptibleTask
+     *    (see below), which are the only supported forms of task that
+     *    may do so.
+     *
+     * * Because we don't know about usage patterns (or most commonly,
+     *    mixtures), we use both approaches, which present even more
+     *    opportunities to over-signal. (Failure to distinguish these
+     *    cases in terms of submission methods was arguably an early
+     *    design mistake.)  Note that in either of these contexts,
+     *    signals may be (and often are) unnecessary because active
+     *    workers continue scanning after running tasks without the
+     *    need to be signalled (which is one reason work stealing is
+     *    often faster than alternatives), so additional workers
+     *    aren't needed.
+     *
+     * * For rapidly branching tasks that require full pool resources,
+     *   oversignalling is OK, because signalWork will soon have no
+     *   more workers to create or reactivate. But for others (mainly
+     *   externally submitted tasks), overprovisioning may cause very
+     *   noticeable slowdowns due to contention and resource
+     *   wastage. We reduce impact by deactivating workers when
+     *   queues don't have accessible tasks, but reactivating and
+     *   rescanning if other tasks remain.
+     *
+     * * Despite these, signal contention and overhead effects still
+     *   occur during ramp-up and ramp-down of small computations.
      *
      * Scanning. Method runWorker performs top-level scanning for (and
      * execution of) tasks by polling a pseudo-random permutation of
      * the array (by starting at a given index, and using a constant
      * cyclically exhaustive stride.)  It uses the same basic polling
      * method as WorkQueue.poll(), but restarts with a different
-     * permutation on each rescan.  The pseudorandom generator need
-     * not have high-quality statistical properties in the long
+     * permutation on each invocation.  The pseudorandom generator
+     * need not have high-quality statistical properties in the long
      * term. We use Marsaglia XorShifts, seeded with the Weyl sequence
-     * from ThreadLocalRandom probes, which are cheap and suffice.
+     * from ThreadLocalRandom probes, which are cheap and
+     * suffice. Each queue's polling attempts to avoid becoming stuck
+     * when other scanners/pollers stall.  Scans do not otherwise
+     * explicitly take into account core affinities, loads, cache
+     * localities, etc, However, they do exploit temporal locality
+     * (which usually approximates these) by preferring to re-poll
+     * from the same queue after a successful poll before trying
+     * others, which also reduces bookkeeping, cache traffic, and
+     * scanning overhead. But it also reduces fairness, which is
+     * partially counteracted by giving up on detected interference
+     * (which also reduces contention when too many workers try to
+     * take small tasks from the same queue).
      *
      * Deactivation. When no tasks are found by a worker in runWorker,
-     * it invokes deactivate, that first deactivates (to an IDLE
-     * phase).  Avoiding missed signals during deactivation requires a
-     * (conservative) rescan, reactivating if there may be tasks to
-     * poll. Because idle workers are often not yet blocked (parked),
-     * we use a WorkQueue field to advertise that a waiter actually
-     * needs unparking upon signal.
-     *
-     * When tasks are constructed as (recursive) DAGs, top-level
-     * scanning is usually infrequent, and doesn't encounter most
-     * of the following problems addressed by runWorker and awaitWork:
-     *
-     * Locality. Polls are organized into "runs", continuing until
-     * empty or contended, while also minimizing interference by
-     * postponing bookeeping to ends of runs. This may reduce
-     * fairness.
-     *
-     * Contention. When many workers try to poll few queues, they
-     * often collide, generating CAS failures and disrupting locality
-     * of workers already running their tasks. This also leads to
-     * stalls when tasks cannot be taken because other workers have
-     * not finished poll operations, which is detected by reading
-     * ahead in queue arrays. In both cases, workers restart scans in a
-     * way that approximates randomized backoff.
-     *
-     * Oversignalling. When many short top-level tasks are present in
-     * a small number of queues, the above signalling strategy may
-     * activate many more workers than needed, worsening locality and
-     * contention problems, while also generating more global
-     * contention (field ctl is CASed on every activation and
-     * deactivation). We filter out (both in runWorker and
-     * signalWork) attempted signals that are surely not needed
-     * because the signalled tasks are already taken.
-     *
-     * Shutdown and Quiescence
-     * =======================
+     * it tries to deactivate()), giving up (and rescanning) on "ctl"
+     * contention. To avoid missed signals during deactivation, the
+     * method rescans and reactivates if there may have been a missed
+     * signal during deactivation. To reduce false-alarm reactivations
+     * while doing so, we scan multiple times (analogously to method
+     * quiescent()) before trying to reactivate.  Because idle workers
+     * are often not yet blocked (parked), we use a WorkQueue field to
+     * advertise that a waiter actually needs unparking upon signal.
      *
      * Quiescence. Workers scan looking for work, giving up when they
      * don't find any, without being sure that none are available.
@@ -874,7 +893,9 @@ public class ForkJoinPool extends AbstractExecutorService
      * shutdown, runners are interrupted so they can cancel. Since
      * external joining callers never run these tasks, they must await
      * cancellation by others, which can occur along several different
-     * paths.
+     * paths. The inability to rely on caller-runs may also require
+     * extra signalling (resulting in scanning and contention) so is
+     * done only conditionally in methods push and runworker.
      *
      * Across these APIs, rules for reporting exceptions for tasks
      * with results accessed via join() differ from those via get(),
@@ -941,13 +962,9 @@ public class ForkJoinPool extends AbstractExecutorService
      * less-contended applications. To help arrange this, some
      * non-reference fields are declared as "long" even when ints or
      * shorts would suffice.  For class WorkQueue, an
-     * embedded @Contended isolates the very busy top index, along
-     * with status and bookkeeping fields written (mostly) by owners,
-     * that otherwise interfere with reading array and base
-     * fields. There are other variables commonly contributing to
-     * false-sharing-related performance issues (including fields of
-     * class Thread), but we can't do much about this except try to
-     * minimize access.
+     * embedded @Contended region segregates fields most heavily
+     * updated by owners from those most commonly read by stealers or
+     * other management.
      *
      * Initial sizing and resizing of WorkQueue arrays is an even more
      * delicate tradeoff because the best strategy systematically
@@ -956,11 +973,13 @@ public class ForkJoinPool extends AbstractExecutorService
      * direct false-sharing and indirect cases due to GC bookkeeping
      * (cardmarks etc), and reduce the number of resizes, which are
      * not especially fast because they require atomic transfers.
-     * Currently, arrays are initialized to be just large enough to
-     * avoid resizing in most tree-structured tasks, but grow rapidly
-     * until large.  (Maintenance note: any changes in fields, queues,
-     * or their uses, or JVM layout policies, must be accompanied by
-     * re-evaluation of these placement and sizing decisions.)
+     * Currently, arrays for workers are initialized to be just large
+     * enough to avoid resizing in most tree-structured tasks, but
+     * larger for external queues where both false-sharing problems
+     * and the need for resizing are more common. (Maintenance note:
+     * any changes in fields, queues, or their uses, or JVM layout
+     * policies, must be accompanied by re-evaluation of these
+     * placement and sizing decisions.)
      *
      * Style notes
      * ===========
@@ -1043,10 +1062,16 @@ public class ForkJoinPool extends AbstractExecutorService
     static final int DEFAULT_COMMON_MAX_SPARES = 256;
 
     /**
-     * Initial capacity of work-stealing queue array.
+     * Initial capacity of work-stealing queue array for workers.
      * Must be a power of two, at least 2. See above.
      */
     static final int INITIAL_QUEUE_CAPACITY = 1 << 6;
+
+    /**
+     * Initial capacity of work-stealing queue array for external queues.
+     * Must be a power of two, at least 2. See above.
+     */
+    static final int INITIAL_EXTERNAL_QUEUE_CAPACITY = 1 << 9;
 
     // conversions among short, int, long
     static final int  SMASK           = 0xffff;      // (unsigned) short bits
@@ -1188,11 +1213,11 @@ public class ForkJoinPool extends AbstractExecutorService
         @jdk.internal.vm.annotation.Contended("w")
         int stackPred;             // pool stack (ctl) predecessor link
         @jdk.internal.vm.annotation.Contended("w")
-        volatile int parking;      // nonzero if parked in awaitWork
-        @jdk.internal.vm.annotation.Contended("w")
         volatile int source;       // source queue id (or DROPPED)
         @jdk.internal.vm.annotation.Contended("w")
         int nsteals;               // number of steals from other queues
+        @jdk.internal.vm.annotation.Contended("w")
+        volatile int parking;      // nonzero if parked in awaitWork
 
         // Support for atomic operations
         private static final Unsafe U;
@@ -1218,11 +1243,11 @@ public class ForkJoinPool extends AbstractExecutorService
          */
         WorkQueue(ForkJoinWorkerThread owner, int id, int cfg,
                   boolean clearThreadLocals) {
+            array = new ForkJoinTask<?>[owner == null ?
+                                        INITIAL_EXTERNAL_QUEUE_CAPACITY :
+                                        INITIAL_QUEUE_CAPACITY];
+            this.owner = owner;
             this.config = (clearThreadLocals) ? cfg | CLEAR_TLS : cfg;
-            if ((this.owner = owner) == null) {
-                array = new ForkJoinTask<?>[INITIAL_QUEUE_CAPACITY];
-                phase = id | IDLE;
-            }
         }
 
         /**
@@ -1267,15 +1292,14 @@ public class ForkJoinPool extends AbstractExecutorService
         }
 
         /**
-         * Resizes the queue array and pushes unless out of memory.
-         * @param task the task; caller must ensure nonnull
-         * @param pool the pool to signal upon resize
-         * @param unlock if not 1, phase unlock value
+         * Resizes the queue array unless out of memory.
+         * @param a old array
+         * @param cap old array capacity
+         * @param s current top
          */
-        private void growAndPush(ForkJoinTask<?> task, ForkJoinPool pool, int unlock) {
-            ForkJoinTask<?>[] a; int cap, newCap;
-            if ((a = array) != null && (cap = a.length) > 0 &&
-                (newCap = (cap >= 1 << 16) ? cap << 1 : cap << 2) > 0) {
+        private void growArray(ForkJoinTask<?>[] a, int cap, int s) {
+            int newCap = cap << 1;
+            if (a != null && a.length == cap && cap > 0 && newCap > 0) {
                 ForkJoinTask<?>[] newArray = null;
                 try {
                     newArray = new ForkJoinTask<?>[newCap];
@@ -1340,6 +1364,7 @@ public class ForkJoinPool extends AbstractExecutorService
 
         /**
          * Takes next task, if one exists, using configured mode.
+         * (Always internal, never called for Common pool.)
          */
         final ForkJoinTask<?> nextLocalTask() {
             return nextLocalTask(config & FIFO);
@@ -1419,7 +1444,7 @@ public class ForkJoinPool extends AbstractExecutorService
         // specialized execution methods
 
         /**
-         * Runs the given task, as well as remaining local tasks
+         * Runs the given task, as well as remaining local tasks.
          */
         final void topLevelExec(ForkJoinTask<?> task, int fifo) {
             while (task != null) {
@@ -1808,6 +1833,7 @@ public class ForkJoinPool extends AbstractExecutorService
         }
         if ((tryTerminate(false, false) & STOP) == 0L &&
             phase != 0 && w != null && w.source != DROPPED) {
+            signalWork();                  // possibly replace
             w.cancelTasks();               // clean queue
             signalWork(null, 0L);          // possibly replace
         }
@@ -2133,7 +2159,7 @@ public class ForkJoinPool extends AbstractExecutorService
                 return true;
             }
         }
-        return false;
+        return stat;
     }
 
     /**
@@ -2555,9 +2581,10 @@ public class ForkJoinPool extends AbstractExecutorService
 
     /**
      * Finds and locks a WorkQueue for an external submitter, or
-     * throws RejectedExecutionException if shutdown
+     * throws RejectedExecutionException if shutdown or terminating.
+     * @param r current ThreadLocalRandom.getProbe() value
      * @param rejectOnShutdown true if RejectedExecutionException
-     *        should be thrown when shutdown
+     *        should be thrown when shutdown (else only if terminating)
      */
     final void externalPush(ForkJoinTask<?> task, boolean signalIfEmpty,
                             boolean rejectOnShutdown) {
@@ -2571,10 +2598,12 @@ public class ForkJoinPool extends AbstractExecutorService
             if ((qs = queues) == null || (n = qs.length) <= 0)
                 break;
             if ((q = qs[i = (id = r & EXTERNAL_ID_MASK) & (n - 1)]) == null) {
-                WorkQueue newq = new WorkQueue(null, id, 0, false);
-                lockRunState();
-                if (qs[i] == null && queues == qs)
-                    q = qs[i] = newq;         // else lost race to install
+                WorkQueue w = new WorkQueue(null, id, 0, false);
+                w.phase = id;
+                boolean reject = ((lockRunState() & SHUTDOWN) != 0 &&
+                                  rejectOnShutdown);
+                if (!reject && queues == qs && qs[i] == null)
+                    q = qs[i] = w;                   // else lost race to install
                 unlockRunState();
             }
             if (q != null && (lock = q.tryLockPhase()) != 1) {
@@ -2598,6 +2627,18 @@ public class ForkJoinPool extends AbstractExecutorService
             q.push(task, signalIfEmpty ? this : null, 1);
         else
             externalPush(task, signalIfEmpty, true);
+    }
+
+    /**
+     * Returns queue for an external submission, bypassing call to
+     * submissionQueue if already established and unlocked.
+     */
+    final WorkQueue externalSubmissionQueue(boolean rejectOnShutdown) {
+        WorkQueue[] qs; WorkQueue q; int n;
+        int r = ThreadLocalRandom.getProbe();
+        return (((qs = queues) != null && (n = qs.length) > 0 &&
+                 (q = qs[r & EXTERNAL_ID_MASK & (n - 1)]) != null && r != 0 &&
+                 q.tryLockPhase()) ? q : submissionQueue(r, rejectOnShutdown));
     }
 
     /**
