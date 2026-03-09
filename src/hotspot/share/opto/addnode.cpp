@@ -990,7 +990,7 @@ class MergePrimitiveLoads;
 
 /*
  * A LoadNode and a combine Node pair which represent an item for merging,
- * now only OrI/OrL are supported as combine operator, in future we can extend to add/xor
+ * OrI/OrL and AddI/AddL are supported as combine operators
  *
  * Note: combine operator can be shared in different MergeLoadInfo
  */
@@ -1681,7 +1681,7 @@ Node* MergePrimitiveLoads::make_merged_load(const MergeLoadInfoList* merge_list,
 
   merged_load->set_unaligned_access();
   merged_load->set_mismatched_access();
-  _phase->set_type(merged_load, at);
+  _phase->set_type(merged_load, rt);
 
   Node* replace = merged_load;
   if (_require_reverse_bytes) {

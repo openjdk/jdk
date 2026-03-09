@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2025, Alibaba Group Holding Limited. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import java.util.Random;
 
 /*
  * @test
- * @bug 8345845
+ * @bug 8345485
  * @summary Test merging of consecutive loads
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
@@ -47,7 +47,7 @@ import java.util.Random;
 
 /*
  * @test
- * @bug 8345845
+ * @bug 8345485
  * @summary Test merging of consecutive loads
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
