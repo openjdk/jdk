@@ -23,14 +23,14 @@
 
 /*
  * @test
- * @bug 8214934
+ * @bug 8214934 8379201
  * @summary Wrong type annotation offset on casts on expressions
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
  * @build toolbox.ToolBox toolbox.JavapTask
- * @run compile IncorrectCastOffsetTest.java
+ * @run compile -g:none IncorrectCastOffsetTest.java
  * @run main IncorrectCastOffsetTest
  */
 
@@ -106,7 +106,8 @@ public class IncorrectCastOffsetTest {
                  */
                 List.of(
                         "RuntimeVisibleTypeAnnotations:",
-                        "0: #35(): CAST, offset=9, type_index=0"
+                        "0: #24(): CAST, offset=9, type_index=0",
+                        "IncorrectCastOffsetTest$TypeUse"
                 )
         );
         test("IncorrectCastOffsetTest$AnnotatedCast2.class",
@@ -118,7 +119,8 @@ public class IncorrectCastOffsetTest {
                  */
                 List.of(
                         "RuntimeVisibleTypeAnnotations:",
-                        "0: #31(): CAST, offset=1, type_index=0"
+                        "0: #23(): CAST, offset=1, type_index=0",
+                        "IncorrectCastOffsetTest$TypeUse"
                 )
         );
         test("IncorrectCastOffsetTest$AnnotatedCast3.class",
@@ -134,9 +136,9 @@ public class IncorrectCastOffsetTest {
                  */
                 List.of(
                         "RuntimeVisibleTypeAnnotations:",
-                        "0: #35(): CAST, offset=9, type_index=0",
+                        "0: #24(): CAST, offset=9, type_index=0",
                         "IncorrectCastOffsetTest$TypeUse",
-                        "1: #36(): CAST, offset=9, type_index=0",
+                        "1: #25(): CAST, offset=9, type_index=0",
                         "IncorrectCastOffsetTest$TypeUse2"
                 )
         );
@@ -150,9 +152,9 @@ public class IncorrectCastOffsetTest {
                  */
                 List.of(
                         "RuntimeVisibleTypeAnnotations:",
-                        "0: #33(): CAST, offset=4, type_index=0",
+                        "0: #25(): CAST, offset=4, type_index=0",
                         "IncorrectCastOffsetTest$TypeUse",
-                        "#34(): CAST, offset=1, type_index=0",
+                        "1: #26(): CAST, offset=1, type_index=0",
                         "IncorrectCastOffsetTest$TypeUse2"
                 )
         );
@@ -167,8 +169,9 @@ public class IncorrectCastOffsetTest {
                 .getOutput(Task.OutputKind.DIRECT);
 
         for (String expected : expectedOutput) {
-            if (!javapOut.contains(expected))
+            if (!javapOut.contains(expected)) {
                 throw new AssertionError("unexpected output");
+            }
         }
     }
 

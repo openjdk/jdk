@@ -33,6 +33,7 @@ import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_LINUX_R
 import static jdk.jpackage.internal.util.MemoizingSupplier.runOnce;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -41,6 +42,7 @@ import jdk.jpackage.internal.cli.StandardBundlingOperation;
 import jdk.jpackage.internal.model.BundlingOperationDescriptor;
 import jdk.jpackage.internal.model.LinuxPackage;
 import jdk.jpackage.internal.model.PackageType;
+import jdk.jpackage.internal.model.StandardPackageType;
 import jdk.jpackage.internal.util.Result;
 
 public class LinuxBundlingEnvironment extends DefaultBundlingEnvironment {
@@ -55,11 +57,15 @@ public class LinuxBundlingEnvironment extends DefaultBundlingEnvironment {
             });
 
             Supplier<Result<LinuxDebSystemEnvironment>> debSysEnv = () -> {
-                return LinuxDebSystemEnvironment.create(sysEnv.get());
+                return LinuxDebSystemEnvironment.create(sysEnv.get().flatMap(v -> {
+                    return adjustPackageArch(v, StandardPackageType.LINUX_DEB);
+                }));
             };
 
             Supplier<Result<LinuxRpmSystemEnvironment>> rpmSysEnv = () -> {
-                return LinuxRpmSystemEnvironment.create(sysEnv.get());
+                return LinuxRpmSystemEnvironment.create(sysEnv.get().flatMap(v -> {
+                    return adjustPackageArch(v, StandardPackageType.LINUX_RPM);
+                }));
             };
 
             builder.defaultOperation(() -> {
@@ -105,6 +111,20 @@ public class LinuxBundlingEnvironment extends DefaultBundlingEnvironment {
 
     private static BuildEnvFromOptions buildEnv() {
         return new BuildEnvFromOptions().predefinedAppImageLayout(APPLICATION_LAYOUT);
+    }
+
+    private static Result<LinuxSystemEnvironment> adjustPackageArch(LinuxSystemEnvironment sysEnv, StandardPackageType type) {
+        Objects.requireNonNull(sysEnv);
+        Objects.requireNonNull(type);
+        if (sysEnv.nativePackageType().equals(type)) {
+            return Result.of(() -> {
+                return sysEnv;
+            });
+        } else {
+            return LinuxPackageArch.create(type).map(arch -> {
+                return new LinuxSystemEnvironment.Stub(sysEnv.soLookupAvailable(), sysEnv.nativePackageType(), arch);
+            });
+        }
     }
 
     private static final Map<PackageType, BundlingOperationDescriptor> DESCRIPTORS = Stream.of(
