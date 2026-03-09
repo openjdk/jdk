@@ -1176,8 +1176,6 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
 
 //------------------------------basic_plus_adr---------------------------------
 Node* GraphKit::basic_plus_adr(Node* base, Node* ptr, Node* offset) {
-  assert(base != Compile::current()->top(),
-         "Unexpected base == top - use off-heap variant instead");
   // short-circuit a common case
   if (offset == MakeConX(0)) {
     return ptr;
