@@ -213,14 +213,15 @@ public class ResponseSubscribers {
                 close();
                 subscription.cancel();
                 result.completeExceptionally(ex);
+                return;
             }
             subscription.request(1);
         }
 
         @Override
         public void onError(Throwable e) {
-            result.completeExceptionally(e);
             close();
+            result.completeExceptionally(e);
         }
 
         @Override
