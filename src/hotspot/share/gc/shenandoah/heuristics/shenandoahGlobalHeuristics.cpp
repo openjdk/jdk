@@ -171,7 +171,7 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
           // We failed to sufficiently expand old so unwind proposed expansion
           committed_from_shared_reserves -= proposed_old_region_expansion * region_size_bytes;
         }
-      } else if (heap->is_tenurable(r)) {
+      } else if (heap->is_tenurable(r) && r->get_top_before_promote() == nullptr) {
         size_t anticipated_consumption = (size_t) (live_bytes * ShenandoahPromoEvacWaste);
         size_t new_promo_consumption = consumed_by_promo + anticipated_consumption;
         size_t new_promo_reserve = old_promo_reserve;
