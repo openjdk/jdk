@@ -33,7 +33,7 @@
                    T1_FIELD_DICT_FONTDICT )
 
   /* we use pointers to detect modifications made by synthetic fonts */
-  T1_FIELD_NUM   ( "ItalicAngle",        italic_angle,
+  T1_FIELD_FIXED ( "ItalicAngle",        italic_angle,
                    T1_FIELD_DICT_FONTDICT )
   T1_FIELD_BOOL  ( "isFixedPitch",       is_fixed_pitch,
                    T1_FIELD_DICT_FONTDICT )

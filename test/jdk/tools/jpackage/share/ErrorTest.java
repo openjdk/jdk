@@ -945,13 +945,13 @@ public final class ErrorTest {
                             .error("error.msi-product-version-components", "1.2.3.4.5")
                             .advice("error.version-string-wrong-format.advice"),
                     testSpec().type(type).addArgs("--app-version", "256.1")
-                            .error("error.msi-product-version-major-out-of-range", "256.1")
+                            .error("error.msi-product-version-major-out-of-range")
                             .advice("error.version-string-wrong-format.advice"),
                     testSpec().type(type).addArgs("--app-version", "1.256")
-                            .error("error.msi-product-version-minor-out-of-range", "1.256")
+                            .error("error.msi-product-version-minor-out-of-range")
                             .advice("error.version-string-wrong-format.advice"),
                     testSpec().type(type).addArgs("--app-version", "1.2.65536")
-                            .error("error.msi-product-version-build-out-of-range", "1.2.65536")
+                            .error("error.msi-product-version-build-out-of-range")
                             .advice("error.version-string-wrong-format.advice")
             );
         }).flatMap(x -> x).map(TestSpec.Builder::create).toList());

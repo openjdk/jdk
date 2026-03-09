@@ -344,7 +344,7 @@ public final class MethodHandleProxies {
                         ClassLoaders.platformClassLoader() : loader)))
                         .build(proxyDesc, clb -> {
             clb.withSuperclass(CD_Object)
-               .withFlags(ACC_FINAL | ACC_SYNTHETIC)
+               .withFlags(ACC_SUPER | ACC_FINAL | ACC_SYNTHETIC)
                .withInterfaceSymbols(ifaceDesc)
                // static and instance fields
                .withField(TYPE_NAME, CD_Class, ACC_PRIVATE | ACC_STATIC | ACC_FINAL)
