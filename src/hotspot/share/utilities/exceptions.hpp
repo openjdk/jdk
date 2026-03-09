@@ -121,8 +121,7 @@ class Exceptions {
   // Count linkage errors
   static Atomic<int> _linkage_errors;
 
-  // Exception counting for error files of interesting exceptions that may have
-  // caused a problem for the jvm
+  // Count stack overflow errors.
   static Atomic<int> _stack_overflow_errors;
 
  public:
@@ -185,8 +184,9 @@ class Exceptions {
 
   static void wrap_dynamic_exception(bool is_indy, JavaThread* thread);
 
+  // Exception counting of interesting exceptions that may have caused a
+  // problem for the JVM, for reporting in the hs_err file.
   static void increment_stack_overflow_errors();
-
   static bool has_exception_counts();
   static void count_out_of_memory_exceptions(Handle exception);
   static void print_exception_counts_on_error(outputStream* st);
