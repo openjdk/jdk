@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -915,16 +915,13 @@ void GenerateOopMap::do_interpretation()
   // iterated more than once.
   int i = 0;
   do {
-#ifndef PRODUCT
-    const bool log = log_is_enabled(Trace, generateoopmap);
-    if (log) {
+    if (log_is_enabled(Trace, generateoopmap)) {
       ResourceMark rm;
       LogStream st(Log(generateoopmap)::trace());
       st.print("\n\nIteration #%d of do_interpretation loop, method:\n", i);
       method()->print_name(&st);
       st.print("\n\n");
     }
-#endif
     _conflict = false;
     _monitor_safe = true;
     // init_state is now called from init_basic_blocks.  The length of a
@@ -1346,8 +1343,7 @@ void GenerateOopMap::print_current_state(outputStream*   os,
 // Sets the current state to be the state after executing the
 // current instruction, starting in the current state.
 void GenerateOopMap::interp1(BytecodeStream *itr) {
-  const bool log = log_is_enabled(Trace, generateoopmap);
-  if (log) {
+  if (log_is_enabled(Trace, generateoopmap)) {
     ResourceMark rm;
     LogStream st(Log(generateoopmap)::trace());
     print_current_state(&st, itr, TraceNewOopMapGenerationDetailed);
@@ -2095,8 +2091,7 @@ bool GenerateOopMap::compute_map(Thread* current) {
   _did_rewriting  = false;
   _did_relocation = false;
 
-  const bool log = log_is_enabled(Debug, generateoopmap);
-  if (log) {
+  if (log_is_enabled(Debug, generateoopmap)) {
     ResourceMark rm;
     LogStream st(Log(generateoopmap)::debug());
     st.print_cr("Method name: %s\n", method()->name()->as_C_string());
@@ -2261,8 +2256,7 @@ void GenerateOopMap::rewrite_refval_conflicts()
   // Tracing flag
   _did_rewriting = true;
 
-  const bool log = log_is_enabled(Trace, generateoopmap);
-  if (log) {
+  if (log_is_enabled(Trace, generateoopmap)) {
     ResourceMark rm;
     LogStream st(Log(generateoopmap)::trace());
     st.print_cr("ref/value conflict for method %s - bytecodes are getting rewritten", method()->name()->as_C_string());
