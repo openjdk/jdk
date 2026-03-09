@@ -1200,10 +1200,10 @@ public class ForkJoinPool extends AbstractExecutorService
         private static final long ARRAY;
 
         final void updateBase(int v) {
-            U.putIntVolatile(this, BASE, v);
+            U.putIntMO(Unsafe.MO_VOLATILE, this, BASE, v);
         }
         final void updateTop(int v) {
-            U.putIntOpaque(this, TOP, v);
+            U.putIntMO(Unsafe.MO_OPAQUE, this, TOP, v);
         }
         final void updateArray(ForkJoinTask<?>[] a) {
             U.getAndSetReference(this, ARRAY, a);
@@ -1273,7 +1273,7 @@ public class ForkJoinPool extends AbstractExecutorService
                     throw new RejectedExecutionException("Queue capacity exceeded");
                 if (pool != null &&
                     (room == 0 ||
-                     U.getReferenceAcquire(a, slotOffset(m & (s - 1))) == null))
+                     U.getReferenceMO(Unsafe.MO_ACQUIRE, a, slotOffset(m & (s - 1))) == null))
                     pool.signalWork(a, k);    // may have appeared empty
             }
         }
@@ -1334,7 +1334,7 @@ public class ForkJoinPool extends AbstractExecutorService
                     if (U.getReference(a, k) == null) {
                         if (nb == p)
                             break;          // else base is lagging
-                        while (b == (b = U.getIntAcquire(this, BASE)))
+                        while (b == (b = U.getIntMO(Unsafe.MO_ACQUIRE, this, BASE)))
                             Thread.onSpinWait(); // spin to reduce memory traffic
                     }
                     else if ((t = (ForkJoinTask<?>)
@@ -1406,7 +1406,7 @@ public class ForkJoinPool extends AbstractExecutorService
                 ForkJoinTask<?> t; int cap, nb; long k; ForkJoinTask<?>[] a;
                 if ((a = array) == null || (cap = a.length) <= 0)
                     break;
-                t = (ForkJoinTask<?>)U.getReferenceAcquire(
+                t = (ForkJoinTask<?>)U.getReferenceMO(Unsafe.MO_ACQUIRE,
                     a, k = slotOffset((cap - 1) & (b = base)));
                 Object u = U.getReference(         // next slot
                     a, slotOffset((cap - 1) & (nb = b + 1)));
@@ -1463,7 +1463,7 @@ public class ForkJoinPool extends AbstractExecutorService
                             else if (i == base)     // act as poll
                                 updateBase(i + 1);
                             else {                  // swap with top
-                                U.putReferenceVolatile(
+                                U.putReferenceMO(Unsafe.MO_VOLATILE,
                                     a, k, (ForkJoinTask<?>)
                                     U.getAndSetReference(
                                         a, slotOffset(s & m), null));
@@ -1539,7 +1539,7 @@ public class ForkJoinPool extends AbstractExecutorService
                 ForkJoinTask<?> t; ForkJoinTask<?>[] a; int b, cap; long k;
                 if ((a = array) == null || (cap = a.length) <= 0)
                     break;
-                t = (ForkJoinTask<?>)U.getReferenceAcquire(
+                t = (ForkJoinTask<?>)U.getReferenceMO(Unsafe.MO_ACQUIRE,
                     a, k = slotOffset((cap - 1) & (b = base)));
                 if (t == null) {
                     if (top - b <= 0)
@@ -1670,7 +1670,7 @@ public class ForkJoinPool extends AbstractExecutorService
         return U.getAndSetInt(this, PARALLELISM, v);
     }
     private int getParallelismOpaque() {
-        return U.getIntOpaque(this, PARALLELISM);
+        return U.getIntMO(Unsafe.MO_OPAQUE, this, PARALLELISM);
     }
     private CountDownLatch cmpExTerminationSignal(CountDownLatch x) {
         return (CountDownLatch)
@@ -1977,7 +1977,7 @@ public class ForkJoinPool extends AbstractExecutorService
                         ForkJoinTask<?>[] a; int cap;     // poll queue
                         while ((a = q.array) != null && (cap = a.length) > 0) {
                             int b, nb, nk; long bp; ForkJoinTask<?> t;
-                            t = (ForkJoinTask<?>)U.getReferenceAcquire(
+                            t = (ForkJoinTask<?>)U.getReferenceMO(Unsafe.MO_ACQUIRE,
                                 a, bp = slotOffset((cap - 1) & (b = q.base)));
                             long np = slotOffset(nk = (nb = b + 1) & (cap - 1));
                             if (q.base == b) {            // else inconsistent
@@ -1987,7 +1987,7 @@ public class ForkJoinPool extends AbstractExecutorService
                                             break scan;
                                         if (U.getReference(a, np) == null &&
                                             (rescans >= 0 ||
-                                             (U.getReferenceAcquire(a, bp) == null &&
+                                             (U.getReferenceMO(Unsafe.MO_ACQUIRE, a, bp) == null &&
                                               q.top == q.base)))
                                             break;
                                         rescans = 1;      // may be stalled
@@ -2001,12 +2001,12 @@ public class ForkJoinPool extends AbstractExecutorService
                                 }
                                 else if (U.compareAndSetReference(a, bp, t, null)) {
                                     q.base = nb;
-                                    Object nt = U.getReferenceAcquire(a, np);
+                                    Object nt = U.getReferenceMO(Unsafe.MO_ACQUIRE, a, np);
                                     w.source = qid;
                                     rescans = 1;
                                     ++taken;
                                     if (nt != null &&     // confirm a[nk]
-                                        U.getReferenceAcquire(a, np) == nt)
+                                        U.getReferenceMO(Unsafe.MO_ACQUIRE, a, np) == nt)
                                         signalWork(a, nk); // propagate
                                     w.topLevelExec(t, fifo);
                                 }
@@ -2279,7 +2279,7 @@ public class ForkJoinPool extends AbstractExecutorService
                             int sq = q.source, b, cap; long k;
                             if ((a = q.array) == null || (cap = a.length) <= 0)
                                 break;
-                            t = (ForkJoinTask<?>)U.getReferenceAcquire(
+                            t = (ForkJoinTask<?>)U.getReferenceMO(Unsafe.MO_ACQUIRE,
                                 a, k = slotOffset((cap - 1) & (b = q.base)));
                             if (t == task)
                                 eligible = true;
@@ -2360,7 +2360,7 @@ public class ForkJoinPool extends AbstractExecutorService
                             boolean eligible = false;
                             if ((a = q.array) == null || (cap = a.length) <= 0)
                                 break;
-                            t = (ForkJoinTask<?>)U.getReferenceAcquire(
+                            t = (ForkJoinTask<?>)U.getReferenceMO(Unsafe.MO_ACQUIRE,
                                 a, k = slotOffset((cap - 1) & (b = q.base)));
                             if (t instanceof CountedCompleter) {
                                 CountedCompleter<?> f = (CountedCompleter<?>)t;
@@ -2443,7 +2443,7 @@ public class ForkJoinPool extends AbstractExecutorService
                         int b, cap; long k;
                         if ((a = q.array) == null || (cap = a.length) <= 0)
                             break;
-                        t = (ForkJoinTask<?>)U.getReferenceAcquire(
+                        t = (ForkJoinTask<?>)U.getReferenceMO(Unsafe.MO_ACQUIRE,
                             a, k = slotOffset((cap - 1) & (b = q.base)));
                         if (t != null && phase == inactivePhase) // reactivate
                             w.phase = phase = activePhase;
@@ -2800,7 +2800,7 @@ public class ForkJoinPool extends AbstractExecutorService
                 (a = q.array) != null && (cap = a.length) > 0) {
                 for (;;) {
                     ForkJoinTask<?> t; int b; long k;
-                    t = (ForkJoinTask<?>)U.getReferenceAcquire(
+                    t = (ForkJoinTask<?>)U.getReferenceMO(Unsafe.MO_ACQUIRE,
                         a, k = slotOffset((cap - 1) & (b = q.base)));
                     if (q.base == b && t != null &&
                         U.compareAndSetReference(a, k, t, null)) {

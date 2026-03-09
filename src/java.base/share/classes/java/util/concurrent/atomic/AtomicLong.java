@@ -99,7 +99,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      */
     public final void set(long newValue) {
         // See JDK-8180620: Clarify VarHandle mixed-access subtleties
-        U.putLongVolatile(this, VALUE, newValue);
+        U.putLongMO(Unsafe.MO_VOLATILE, this, VALUE, newValue);
     }
 
     /**
@@ -110,7 +110,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @since 1.6
      */
     public final void lazySet(long newValue) {
-        U.putLongRelease(this, VALUE, newValue);
+        U.putLongMO(Unsafe.MO_RELEASE, this, VALUE, newValue);
     }
 
     /**
@@ -156,7 +156,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      */
     @Deprecated(since="9")
     public final boolean weakCompareAndSet(long expectedValue, long newValue) {
-        return U.weakCompareAndSetLongPlain(this, VALUE, expectedValue, newValue);
+        return U.compareAndSetLongMO(Unsafe.MO_WEAK_CAS_PLAIN, this, VALUE, expectedValue, newValue);
     }
 
     /**
@@ -170,7 +170,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @since 9
      */
     public final boolean weakCompareAndSetPlain(long expectedValue, long newValue) {
-        return U.weakCompareAndSetLongPlain(this, VALUE, expectedValue, newValue);
+        return U.compareAndSetLongMO(Unsafe.MO_WEAK_CAS_PLAIN, this, VALUE, expectedValue, newValue);
     }
 
     /**
@@ -420,7 +420,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @since 9
      */
     public final long getOpaque() {
-        return U.getLongOpaque(this, VALUE);
+        return U.getLongMO(Unsafe.MO_OPAQUE, this, VALUE);
     }
 
     /**
@@ -431,7 +431,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @since 9
      */
     public final void setOpaque(long newValue) {
-        U.putLongOpaque(this, VALUE, newValue);
+        U.putLongMO(Unsafe.MO_OPAQUE, this, VALUE, newValue);
     }
 
     /**
@@ -442,7 +442,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @since 9
      */
     public final long getAcquire() {
-        return U.getLongAcquire(this, VALUE);
+        return U.getLongMO(Unsafe.MO_ACQUIRE, this, VALUE);
     }
 
     /**
@@ -453,7 +453,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @since 9
      */
     public final void setRelease(long newValue) {
-        U.putLongRelease(this, VALUE, newValue);
+        U.putLongMO(Unsafe.MO_RELEASE, this, VALUE, newValue);
     }
 
     /**
@@ -485,7 +485,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @since 9
      */
     public final long compareAndExchangeAcquire(long expectedValue, long newValue) {
-        return U.compareAndExchangeLongAcquire(this, VALUE, expectedValue, newValue);
+        return U.compareAndExchangeLongMO(Unsafe.MO_ACQUIRE, this, VALUE, expectedValue, newValue);
     }
 
     /**
@@ -501,7 +501,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @since 9
      */
     public final long compareAndExchangeRelease(long expectedValue, long newValue) {
-        return U.compareAndExchangeLongRelease(this, VALUE, expectedValue, newValue);
+        return U.compareAndExchangeLongMO(Unsafe.MO_RELEASE, this, VALUE, expectedValue, newValue);
     }
 
     /**
@@ -516,7 +516,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @since 9
      */
     public final boolean weakCompareAndSetVolatile(long expectedValue, long newValue) {
-        return U.weakCompareAndSetLong(this, VALUE, expectedValue, newValue);
+        return U.compareAndSetLongMO(Unsafe.MO_WEAK_CAS_VOLATILE, this, VALUE, expectedValue, newValue);
     }
 
     /**
@@ -531,7 +531,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @since 9
      */
     public final boolean weakCompareAndSetAcquire(long expectedValue, long newValue) {
-        return U.weakCompareAndSetLongAcquire(this, VALUE, expectedValue, newValue);
+        return U.compareAndSetLongMO(Unsafe.MO_WEAK_CAS_ACQUIRE, this, VALUE, expectedValue, newValue);
     }
 
     /**
@@ -546,7 +546,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @since 9
      */
     public final boolean weakCompareAndSetRelease(long expectedValue, long newValue) {
-        return U.weakCompareAndSetLongRelease(this, VALUE, expectedValue, newValue);
+        return U.compareAndSetLongMO(Unsafe.MO_WEAK_CAS_RELEASE, this, VALUE, expectedValue, newValue);
     }
 
 }

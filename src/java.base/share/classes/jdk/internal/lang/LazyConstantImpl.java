@@ -151,11 +151,11 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
     @SuppressWarnings("unchecked")
     @ForceInline
     private T getAcquire() {
-        return (T) UNSAFE.getReferenceAcquire(this, CONSTANT_OFFSET);
+        return (T) UNSAFE.getReferenceMO(Unsafe.MO_ACQUIRE, this, CONSTANT_OFFSET);
     }
 
     private void setRelease(T newValue) {
-        UNSAFE.putReferenceRelease(this, CONSTANT_OFFSET, newValue);
+        UNSAFE.putReferenceMO(Unsafe.MO_RELEASE, this, CONSTANT_OFFSET, newValue);
     }
 
     private void preventReentry() {

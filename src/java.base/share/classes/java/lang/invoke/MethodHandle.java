@@ -27,6 +27,7 @@ package java.lang.invoke;
 
 
 import jdk.internal.loader.ClassLoaders;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
@@ -1893,7 +1894,7 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
                 if (oldForm != newForm) {
                     assert (newForm.customized == null || newForm.customized == this);
                     newForm.prepare(); // as in MethodHandle.<init>
-                    UNSAFE.putReferenceRelease(this, FORM_OFFSET, newForm); // properly publish newForm
+                    UNSAFE.putReferenceMO(Unsafe.MO_RELEASE, this, FORM_OFFSET, newForm); // properly publish newForm
                 }
             } finally {
                 updateInProgress = false;

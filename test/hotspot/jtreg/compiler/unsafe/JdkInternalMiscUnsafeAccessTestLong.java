@@ -64,6 +64,10 @@ public class JdkInternalMiscUnsafeAccessTestLong {
 
     static int ARRAY_SHIFT;
 
+    // copies of Unsafe.MO_RELEASE and other MO constants
+    static byte UNSAFE_MO_RELEASE, UNSAFE_MO_ACQUIRE, UNSAFE_MO_OPAQUE, UNSAFE_MO_VOLATILE;
+    static byte UNSAFE_MO_WEAK_CAS_ACQUIRE, UNSAFE_MO_WEAK_CAS_PLAIN, UNSAFE_MO_WEAK_CAS_RELEASE, UNSAFE_MO_WEAK_CAS_VOLATILE;
+
     static {
         try {
             Field f = jdk.internal.misc.Unsafe.class.getDeclaredField("theUnsafe");
@@ -91,6 +95,18 @@ public class JdkInternalMiscUnsafeAccessTestLong {
         ARRAY_OFFSET = UNSAFE.arrayBaseOffset(long[].class);
         int ascale = UNSAFE.arrayIndexScale(long[].class);
         ARRAY_SHIFT = 31 - Integer.numberOfLeadingZeros(ascale);
+
+        try {
+            for (Field umoField : JdkInternalMiscUnsafeAccessTestLong.class.getDeclaredFields()) {
+                String name = umoField.getName();
+                if (!name.startsWith("UNSAFE_MO_"))  continue;
+                Field moField = UNSAFE.getClass().getDeclaredField(name.substring("UNSAFE_".length()));
+                byte value = (Byte) moField.get(null);
+                umoField.set(null, value);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     static void weakDelay() {
@@ -180,15 +196,15 @@ public class JdkInternalMiscUnsafeAccessTestLong {
 
         // Lazy
         {
-            UNSAFE.putLongRelease(base, offset, 0x0123456789ABCDEFL);
-            long x = UNSAFE.getLongAcquire(base, offset);
+            UNSAFE.putLongMO(UNSAFE_MO_RELEASE, base, offset, 0x0123456789ABCDEFL);
+            long x = UNSAFE.getLongMO(UNSAFE_MO_ACQUIRE, base, offset);
             assertEquals(x, 0x0123456789ABCDEFL, "putRelease long value");
         }
 
         // Opaque
         {
-            UNSAFE.putLongOpaque(base, offset, 0xCAFEBABECAFEBABEL);
-            long x = UNSAFE.getLongOpaque(base, offset);
+            UNSAFE.putLongMO(UNSAFE_MO_OPAQUE, base, offset, 0xCAFEBABECAFEBABEL);
+            long x = UNSAFE.getLongMO(UNSAFE_MO_OPAQUE, base, offset);
             assertEquals(x, 0xCAFEBABECAFEBABEL, "putOpaque long value");
         }
 
@@ -244,28 +260,28 @@ public class JdkInternalMiscUnsafeAccessTestLong {
         }
 
         {
-            long r = UNSAFE.compareAndExchangeLongAcquire(base, offset, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
+            long r = UNSAFE.compareAndExchangeLongMO(UNSAFE_MO_ACQUIRE, base, offset, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
             assertEquals(r, 0x0123456789ABCDEFL, "success compareAndExchangeAcquire long");
             long x = UNSAFE.getLong(base, offset);
             assertEquals(x, 0xCAFEBABECAFEBABEL, "success compareAndExchangeAcquire long value");
         }
 
         {
-            long r = UNSAFE.compareAndExchangeLongAcquire(base, offset, 0x0123456789ABCDEFL, 0xDEADBEEFDEADBEEFL);
+            long r = UNSAFE.compareAndExchangeLongMO(UNSAFE_MO_ACQUIRE, base, offset, 0x0123456789ABCDEFL, 0xDEADBEEFDEADBEEFL);
             assertEquals(r, 0xCAFEBABECAFEBABEL, "failing compareAndExchangeAcquire long");
             long x = UNSAFE.getLong(base, offset);
             assertEquals(x, 0xCAFEBABECAFEBABEL, "failing compareAndExchangeAcquire long value");
         }
 
         {
-            long r = UNSAFE.compareAndExchangeLongRelease(base, offset, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
+            long r = UNSAFE.compareAndExchangeLongMO(UNSAFE_MO_RELEASE, base, offset, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
             assertEquals(r, 0xCAFEBABECAFEBABEL, "success compareAndExchangeRelease long");
             long x = UNSAFE.getLong(base, offset);
             assertEquals(x, 0x0123456789ABCDEFL, "success compareAndExchangeRelease long value");
         }
 
         {
-            long r = UNSAFE.compareAndExchangeLongRelease(base, offset, 0xCAFEBABECAFEBABEL, 0xDEADBEEFDEADBEEFL);
+            long r = UNSAFE.compareAndExchangeLongMO(UNSAFE_MO_RELEASE, base, offset, 0xCAFEBABECAFEBABEL, 0xDEADBEEFDEADBEEFL);
             assertEquals(r, 0x0123456789ABCDEFL, "failing compareAndExchangeRelease long");
             long x = UNSAFE.getLong(base, offset);
             assertEquals(x, 0x0123456789ABCDEFL, "failing compareAndExchangeRelease long value");
@@ -274,7 +290,7 @@ public class JdkInternalMiscUnsafeAccessTestLong {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSetLongPlain(base, offset, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
+                success = UNSAFE.compareAndSetLongMO(UNSAFE_MO_WEAK_CAS_PLAIN, base, offset, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
                 if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetPlain long");
@@ -283,7 +299,7 @@ public class JdkInternalMiscUnsafeAccessTestLong {
         }
 
         {
-            boolean success = UNSAFE.weakCompareAndSetLongPlain(base, offset, 0x0123456789ABCDEFL, 0xDEADBEEFDEADBEEFL);
+            boolean success = UNSAFE.compareAndSetLongMO(UNSAFE_MO_WEAK_CAS_PLAIN, base, offset, 0x0123456789ABCDEFL, 0xDEADBEEFDEADBEEFL);
             assertEquals(success, false, "failing weakCompareAndSetPlain long");
             long x = UNSAFE.getLong(base, offset);
             assertEquals(x, 0xCAFEBABECAFEBABEL, "failing weakCompareAndSetPlain long value");
@@ -292,7 +308,7 @@ public class JdkInternalMiscUnsafeAccessTestLong {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSetLongAcquire(base, offset, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
+                success = UNSAFE.compareAndSetLongMO(UNSAFE_MO_WEAK_CAS_ACQUIRE, base, offset, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
                 if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetAcquire long");
@@ -301,7 +317,7 @@ public class JdkInternalMiscUnsafeAccessTestLong {
         }
 
         {
-            boolean success = UNSAFE.weakCompareAndSetLongAcquire(base, offset, 0xCAFEBABECAFEBABEL, 0xDEADBEEFDEADBEEFL);
+            boolean success = UNSAFE.compareAndSetLongMO(UNSAFE_MO_WEAK_CAS_ACQUIRE, base, offset, 0xCAFEBABECAFEBABEL, 0xDEADBEEFDEADBEEFL);
             assertEquals(success, false, "failing weakCompareAndSetAcquire long");
             long x = UNSAFE.getLong(base, offset);
             assertEquals(x, 0x0123456789ABCDEFL, "failing weakCompareAndSetAcquire long value");
@@ -310,7 +326,7 @@ public class JdkInternalMiscUnsafeAccessTestLong {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSetLongRelease(base, offset, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
+                success = UNSAFE.compareAndSetLongMO(UNSAFE_MO_WEAK_CAS_RELEASE, base, offset, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
                 if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetRelease long");
@@ -319,7 +335,7 @@ public class JdkInternalMiscUnsafeAccessTestLong {
         }
 
         {
-            boolean success = UNSAFE.weakCompareAndSetLongRelease(base, offset, 0x0123456789ABCDEFL, 0xDEADBEEFDEADBEEFL);
+            boolean success = UNSAFE.compareAndSetLongMO(UNSAFE_MO_WEAK_CAS_RELEASE, base, offset, 0x0123456789ABCDEFL, 0xDEADBEEFDEADBEEFL);
             assertEquals(success, false, "failing weakCompareAndSetRelease long");
             long x = UNSAFE.getLong(base, offset);
             assertEquals(x, 0xCAFEBABECAFEBABEL, "failing weakCompareAndSetRelease long value");
@@ -328,7 +344,7 @@ public class JdkInternalMiscUnsafeAccessTestLong {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSetLong(base, offset, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
+                success = UNSAFE.compareAndSetLongMO(UNSAFE_MO_WEAK_CAS_VOLATILE, base, offset, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
                 if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSet long");
@@ -337,7 +353,7 @@ public class JdkInternalMiscUnsafeAccessTestLong {
         }
 
         {
-            boolean success = UNSAFE.weakCompareAndSetLong(base, offset, 0xCAFEBABECAFEBABEL, 0xDEADBEEFDEADBEEFL);
+            boolean success = UNSAFE.compareAndSetLongMO(UNSAFE_MO_WEAK_CAS_VOLATILE, base, offset, 0xCAFEBABECAFEBABEL, 0xDEADBEEFDEADBEEFL);
             assertEquals(success, false, "failing weakCompareAndSet long");
             long x = UNSAFE.getLong(base, offset);
             assertEquals(x, 0x0123456789ABCDEFL, "failing weakCompareAndSet long value");

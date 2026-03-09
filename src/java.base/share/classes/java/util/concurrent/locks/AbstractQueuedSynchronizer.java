@@ -488,7 +488,7 @@ public abstract class AbstractQueuedSynchronizer
             U.putInt(this, STATUS, s);
         }
         final void clearStatus() {               // for reducing unneeded signals
-            U.putIntOpaque(this, STATUS, 0);
+            U.putIntMO(Unsafe.MO_OPAQUE, this, STATUS, 0);
         }
 
         private static final long STATUS

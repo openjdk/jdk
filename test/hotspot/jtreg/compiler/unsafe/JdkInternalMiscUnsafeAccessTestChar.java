@@ -64,6 +64,10 @@ public class JdkInternalMiscUnsafeAccessTestChar {
 
     static int ARRAY_SHIFT;
 
+    // copies of Unsafe.MO_RELEASE and other MO constants
+    static byte UNSAFE_MO_RELEASE, UNSAFE_MO_ACQUIRE, UNSAFE_MO_OPAQUE, UNSAFE_MO_VOLATILE;
+    static byte UNSAFE_MO_WEAK_CAS_ACQUIRE, UNSAFE_MO_WEAK_CAS_PLAIN, UNSAFE_MO_WEAK_CAS_RELEASE, UNSAFE_MO_WEAK_CAS_VOLATILE;
+
     static {
         try {
             Field f = jdk.internal.misc.Unsafe.class.getDeclaredField("theUnsafe");
@@ -91,6 +95,18 @@ public class JdkInternalMiscUnsafeAccessTestChar {
         ARRAY_OFFSET = UNSAFE.arrayBaseOffset(char[].class);
         int ascale = UNSAFE.arrayIndexScale(char[].class);
         ARRAY_SHIFT = 31 - Integer.numberOfLeadingZeros(ascale);
+
+        try {
+            for (Field umoField : JdkInternalMiscUnsafeAccessTestChar.class.getDeclaredFields()) {
+                String name = umoField.getName();
+                if (!name.startsWith("UNSAFE_MO_"))  continue;
+                Field moField = UNSAFE.getClass().getDeclaredField(name.substring("UNSAFE_".length()));
+                byte value = (Byte) moField.get(null);
+                umoField.set(null, value);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     static void weakDelay() {
@@ -180,15 +196,15 @@ public class JdkInternalMiscUnsafeAccessTestChar {
 
         // Lazy
         {
-            UNSAFE.putCharRelease(base, offset, '\u0123');
-            char x = UNSAFE.getCharAcquire(base, offset);
+            UNSAFE.putCharMO(UNSAFE_MO_RELEASE, base, offset, '\u0123');
+            char x = UNSAFE.getCharMO(UNSAFE_MO_ACQUIRE, base, offset);
             assertEquals(x, '\u0123', "putRelease char value");
         }
 
         // Opaque
         {
-            UNSAFE.putCharOpaque(base, offset, '\u4567');
-            char x = UNSAFE.getCharOpaque(base, offset);
+            UNSAFE.putCharMO(UNSAFE_MO_OPAQUE, base, offset, '\u4567');
+            char x = UNSAFE.getCharMO(UNSAFE_MO_OPAQUE, base, offset);
             assertEquals(x, '\u4567', "putOpaque char value");
         }
 
@@ -244,28 +260,28 @@ public class JdkInternalMiscUnsafeAccessTestChar {
         }
 
         {
-            char r = UNSAFE.compareAndExchangeCharAcquire(base, offset, '\u0123', '\u4567');
+            char r = UNSAFE.compareAndExchangeCharMO(UNSAFE_MO_ACQUIRE, base, offset, '\u0123', '\u4567');
             assertEquals(r, '\u0123', "success compareAndExchangeAcquire char");
             char x = UNSAFE.getChar(base, offset);
             assertEquals(x, '\u4567', "success compareAndExchangeAcquire char value");
         }
 
         {
-            char r = UNSAFE.compareAndExchangeCharAcquire(base, offset, '\u0123', '\u89AB');
+            char r = UNSAFE.compareAndExchangeCharMO(UNSAFE_MO_ACQUIRE, base, offset, '\u0123', '\u89AB');
             assertEquals(r, '\u4567', "failing compareAndExchangeAcquire char");
             char x = UNSAFE.getChar(base, offset);
             assertEquals(x, '\u4567', "failing compareAndExchangeAcquire char value");
         }
 
         {
-            char r = UNSAFE.compareAndExchangeCharRelease(base, offset, '\u4567', '\u0123');
+            char r = UNSAFE.compareAndExchangeCharMO(UNSAFE_MO_RELEASE, base, offset, '\u4567', '\u0123');
             assertEquals(r, '\u4567', "success compareAndExchangeRelease char");
             char x = UNSAFE.getChar(base, offset);
             assertEquals(x, '\u0123', "success compareAndExchangeRelease char value");
         }
 
         {
-            char r = UNSAFE.compareAndExchangeCharRelease(base, offset, '\u4567', '\u89AB');
+            char r = UNSAFE.compareAndExchangeCharMO(UNSAFE_MO_RELEASE, base, offset, '\u4567', '\u89AB');
             assertEquals(r, '\u0123', "failing compareAndExchangeRelease char");
             char x = UNSAFE.getChar(base, offset);
             assertEquals(x, '\u0123', "failing compareAndExchangeRelease char value");
@@ -274,7 +290,7 @@ public class JdkInternalMiscUnsafeAccessTestChar {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSetCharPlain(base, offset, '\u0123', '\u4567');
+                success = UNSAFE.compareAndSetCharMO(UNSAFE_MO_WEAK_CAS_PLAIN, base, offset, '\u0123', '\u4567');
                 if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetPlain char");
@@ -283,7 +299,7 @@ public class JdkInternalMiscUnsafeAccessTestChar {
         }
 
         {
-            boolean success = UNSAFE.weakCompareAndSetCharPlain(base, offset, '\u0123', '\u89AB');
+            boolean success = UNSAFE.compareAndSetCharMO(UNSAFE_MO_WEAK_CAS_PLAIN, base, offset, '\u0123', '\u89AB');
             assertEquals(success, false, "failing weakCompareAndSetPlain char");
             char x = UNSAFE.getChar(base, offset);
             assertEquals(x, '\u4567', "failing weakCompareAndSetPlain char value");
@@ -292,7 +308,7 @@ public class JdkInternalMiscUnsafeAccessTestChar {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSetCharAcquire(base, offset, '\u4567', '\u0123');
+                success = UNSAFE.compareAndSetCharMO(UNSAFE_MO_WEAK_CAS_ACQUIRE, base, offset, '\u4567', '\u0123');
                 if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetAcquire char");
@@ -301,7 +317,7 @@ public class JdkInternalMiscUnsafeAccessTestChar {
         }
 
         {
-            boolean success = UNSAFE.weakCompareAndSetCharAcquire(base, offset, '\u4567', '\u89AB');
+            boolean success = UNSAFE.compareAndSetCharMO(UNSAFE_MO_WEAK_CAS_ACQUIRE, base, offset, '\u4567', '\u89AB');
             assertEquals(success, false, "failing weakCompareAndSetAcquire char");
             char x = UNSAFE.getChar(base, offset);
             assertEquals(x, '\u0123', "failing weakCompareAndSetAcquire char value");
@@ -310,7 +326,7 @@ public class JdkInternalMiscUnsafeAccessTestChar {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSetCharRelease(base, offset, '\u0123', '\u4567');
+                success = UNSAFE.compareAndSetCharMO(UNSAFE_MO_WEAK_CAS_RELEASE, base, offset, '\u0123', '\u4567');
                 if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetRelease char");
@@ -319,7 +335,7 @@ public class JdkInternalMiscUnsafeAccessTestChar {
         }
 
         {
-            boolean success = UNSAFE.weakCompareAndSetCharRelease(base, offset, '\u0123', '\u89AB');
+            boolean success = UNSAFE.compareAndSetCharMO(UNSAFE_MO_WEAK_CAS_RELEASE, base, offset, '\u0123', '\u89AB');
             assertEquals(success, false, "failing weakCompareAndSetRelease char");
             char x = UNSAFE.getChar(base, offset);
             assertEquals(x, '\u4567', "failing weakCompareAndSetRelease char value");
@@ -328,7 +344,7 @@ public class JdkInternalMiscUnsafeAccessTestChar {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSetChar(base, offset, '\u4567', '\u0123');
+                success = UNSAFE.compareAndSetCharMO(UNSAFE_MO_WEAK_CAS_VOLATILE, base, offset, '\u4567', '\u0123');
                 if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSet char");
@@ -337,7 +353,7 @@ public class JdkInternalMiscUnsafeAccessTestChar {
         }
 
         {
-            boolean success = UNSAFE.weakCompareAndSetChar(base, offset, '\u4567', '\u89AB');
+            boolean success = UNSAFE.compareAndSetCharMO(UNSAFE_MO_WEAK_CAS_VOLATILE, base, offset, '\u4567', '\u89AB');
             assertEquals(success, false, "failing weakCompareAndSet char");
             char x = UNSAFE.getChar(base, offset);
             assertEquals(x, '\u0123', "failing weakCompareAndSet char value");
