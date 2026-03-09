@@ -594,8 +594,8 @@ address StubGenerator::generate_disjoint_copy_avx3_masked(StubId stub_id, addres
       *entry = entries.at(0);
     }
     if (add_handlers) {
-      // restore 1 x UMAM {start,end,handler} addresses from extras
-      register_unsafe_access_handlers(extras, 0, 1);
+      // restore 1/2 x UMAM {start,end,handler} addresses from extras
+      register_unsafe_access_handlers(extras, 0, handlers_count);
     }
 #if INCLUDE_ZGC
     // register addresses at which ZGC does colour patching
@@ -1906,12 +1906,6 @@ __ BIND(L_exit);
 address StubGenerator::generate_fill(StubId stub_id) {
   BasicType t;
   bool aligned;
-  int entry_count = StubInfo::entry_count(stub_id);
-  assert(entry_count == 1, "sanity check");
-  address start = load_archive_data(stub_id);
-  if (start != nullptr) {
-    return start;
-  }
   switch (stub_id) {
   case StubId::stubgen_jbyte_fill_id:
     t = T_BYTE;
@@ -1940,6 +1934,23 @@ address StubGenerator::generate_fill(StubId stub_id) {
   default:
     ShouldNotReachHere();
   }
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  GrowableArray<address> extras;
+  bool add_handlers = ((t == T_BYTE) && !aligned);
+  int handlers_count = (add_handlers ? 1 : 0);
+  int expected_extras_count = (handlers_count * UnsafeMemoryAccess::COLUMN_COUNT); // 0/1 x UMAM {start,end,handler}
+  GrowableArray<address>* extras_ptr = (add_handlers ? &extras : nullptr);
+  address start = load_archive_data(stub_id, nullptr, extras_ptr);
+  if (start != nullptr) {
+    assert(extras.length() == expected_extras_count,
+           "unexpected handler addresses count %d", extras.length());
+    if (add_handlers) {
+      // restore 1 x UMAM {start,end,handler} addresses from extras
+      register_unsafe_access_handlers(extras, 0, 1);
+    }
+    return start;
+  }
 
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
@@ -1956,7 +1967,7 @@ address StubGenerator::generate_fill(StubId stub_id) {
 
   {
     // Add set memory mark to protect against unsafe accesses faulting
-    UnsafeMemoryAccessMark umam(this, ((t == T_BYTE) && !aligned), true);
+    UnsafeMemoryAccessMark umam(this, add_handlers, true);
     __ generate_fill(t, aligned, to, value, r11, rax, xmm0);
   }
 
@@ -1964,8 +1975,14 @@ address StubGenerator::generate_fill(StubId stub_id) {
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 
+  address end = __ pc();
+  if (add_handlers) {
+    retrieve_unsafe_access_handlers(start, end, extras);
+  }
+  assert(extras.length() == expected_extras_count,
+         "unexpected handler addresses count %d", extras.length());
   // record the stub entry and end
-  store_archive_data(stub_id, start, __ pc());
+  store_archive_data(stub_id, start, end, nullptr, extras_ptr);
 
   return start;
 }
