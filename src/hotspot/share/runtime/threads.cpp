@@ -1110,11 +1110,6 @@ void Threads::add(JavaThread* p, bool force_daemon) {
   // Maintain fast thread list
   ThreadsSMRSupport::add_thread(p);
 
-  if (ThreadIdTable::is_initialized()) {
-    jlong tid = SharedRuntime::get_java_tid(p);
-    ThreadIdTable::add_thread(tid, p);
-  }
-
   // Increase the ObjectMonitor ceiling for the new thread.
   ObjectSynchronizer::inc_in_use_list_ceiling();
 
@@ -1131,6 +1126,13 @@ void Threads::remove(JavaThread* p, bool is_daemon) {
   {
     ConditionalMutexLocker throttle_ml(ThreadsLockThrottle_lock, UseThreadsLockThrottleLock);
     MonitorLocker ml(Threads_lock);
+
+    if (ThreadIdTable::is_initialized()) {
+      // This cleanup must be done before the current thread's GC barrier
+      // is detached since we need to touch the threadObj oop.
+      jlong tid = SharedRuntime::get_java_tid(p);
+      ThreadIdTable::remove_thread(tid);
+    }
 
     // BarrierSet state must be destroyed after the last thread transition
     // before the thread terminates. Thread transitions result in calls to
