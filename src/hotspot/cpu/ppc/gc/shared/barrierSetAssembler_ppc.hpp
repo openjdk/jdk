@@ -71,6 +71,7 @@ public:
                                              Register obj, Register tmp, Label& slowpath);
 
   // Can be used in nmethods including native wrappers.
+  // Attention: obj will only be valid until next safepoint (no SATB barrier).
   virtual void try_resolve_weak_handle(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path);
 
   virtual void barrier_stubs_init() {}
