@@ -482,7 +482,7 @@ public abstract class URLStreamHandler {
      */
     protected String toExternalForm(final URL u) {
         // Optimized for efficient string concatenation with optional components and separators
-        // Output locals: protocol:[//authority][path][?query][#ref]
+        // Output format: protocol:[//authority][path][?query][#ref]
         String protocol, authSeparator, authority, path, querySeparator, query, refSeparator, ref;
 
         // URL components
