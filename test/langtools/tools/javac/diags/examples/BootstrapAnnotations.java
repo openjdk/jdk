@@ -21,9 +21,9 @@
  * questions.
  */
 
-// key: compiler.err.not.bootstrap.method
+// key: compiler.warn.not.bootstrap.method
 // key: compiler.misc.dynamic.constant
-// key: compiler.err.not.bootstrap.method
+// key: compiler.warn.not.bootstrap.method
 // key: compiler.misc.dynamic.call.site
 
 import java.lang.invoke.CallSiteBootstrap;

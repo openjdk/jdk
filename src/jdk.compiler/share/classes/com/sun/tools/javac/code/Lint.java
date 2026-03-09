@@ -192,6 +192,11 @@ public class Lint {
         AUXILIARYCLASS("auxiliaryclass"),
 
         /**
+         * Warn about definitely incorrect bootstrap method declarations.
+         */
+        BSM("bsm", true, true),
+
+        /**
          * Warn about use of unnecessary casts.
          */
         CAST("cast"),

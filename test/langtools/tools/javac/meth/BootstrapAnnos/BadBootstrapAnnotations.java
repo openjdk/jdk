@@ -1,9 +1,9 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8019340
- * @summary Verify compile errors derived from bootstrap method annotations
+ * @bug 8379446
+ * @summary Verify compiler warnings derived from bootstrap method annotations
  *
- * @compile/fail/ref=BadBootstrapAnnotations.out -XDrawDiagnostics BadBootstrapAnnotations.java
+ * @compile/fail/ref=BadBootstrapAnnotations.out -Werror -XDrawDiagnostics BadBootstrapAnnotations.java
  */
 
 import java.lang.constant.ConstantDesc;

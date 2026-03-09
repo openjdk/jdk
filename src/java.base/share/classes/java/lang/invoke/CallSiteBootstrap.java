@@ -35,9 +35,10 @@ import java.lang.annotation.Target;
  * Indicates that a method or constructor is intended to be a legal
  * bootstrap method declaration for a dynamically-computed call site.
  *
- * If a method or constructor is annotated with an annotation of this
- * interface, compilers are required to generate an error message if
- * any of the following does not hold:
+ * @apiNote
+ * A Java compiler is encouraged to issue a warning if, for a method or
+ * constructor annotated with an annotation of this interface, any of the
+ * following does not hold:
  * <ul>
  * <li>The declaration takes at least 3 arguments, including the receiver
  *     if the declaration is an instance method.  The arguments can be

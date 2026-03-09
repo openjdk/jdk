@@ -3679,21 +3679,21 @@ public class Check {
     }
 
     void checkBootstrapMethodAnnotations(JCMethodDecl tree, MethodSymbol s) {
-        if (!Feature.BSM_VALIDATION_ANNOTATIONS.allowedInSource(source)) {
+        if (!Feature.WARN_INVALID_BSM_DECLARATIONS.allowedInSource(source)) {
             return;
         }
 
         if (!syms.callSiteBootstrapType.isErroneous() && s.attribute(syms.callSiteBootstrapType.tsym) != null) {
             if (!checkBootstrapMethod(s, false)) {
                 DiagnosticPosition annoPos = annotationPos(tree, syms.callSiteBootstrapType);
-                log.error(annoPos, Errors.NotBootstrapMethod(s.kind.kindName(), s, Fragments.DynamicCallSite));
+                log.warning(annoPos, LintWarnings.NotBootstrapMethod(s.kind.kindName(), s, Fragments.DynamicCallSite));
             }
         }
 
         if (!syms.constantBootstrapType.isErroneous() && s.attribute(syms.constantBootstrapType.tsym) != null) {
             if (!checkBootstrapMethod(s, true)) {
                 DiagnosticPosition annoPos = annotationPos(tree, syms.constantBootstrapType);
-                log.error(annoPos, Errors.NotBootstrapMethod(s.kind.kindName(), s, Fragments.DynamicConstant));
+                log.warning(annoPos, LintWarnings.NotBootstrapMethod(s.kind.kindName(), s, Fragments.DynamicConstant));
             }
         }
     }

@@ -23,8 +23,9 @@
 
 /*
  * @test
+ * @bug 8379446
  * @summary Verify okay BSMs are permitted by annotations
- * @compile GoodBootstrapAnnotations.java
+ * @compile -Xlint:bsm -Werror GoodBootstrapAnnotations.java
  */
 
 import java.lang.constant.ConstantDesc;
