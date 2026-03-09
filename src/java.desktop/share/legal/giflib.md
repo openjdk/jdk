@@ -37,8 +37,6 @@ Copyright (C) Eric S. Raymond <esr@thyrsus.com>
 SPDX-License-Identifier: MIT
 
 
-tree/README
-
 == Authors ==
 
 Gershon Elber <gershon[AT]cs.technion.sc.il>
