@@ -702,18 +702,87 @@ public:
 
       if (_ref != Z_ARG2) {
         // Calculate address first as the address' base register might clash with Z_ARG2
-        __ add2reg(Z_ARG2, _ref_addr.disp(), _ref_addr.base());
+        __ z_lay(Z_ARG2, _ref_addr);
         __ lgr_if_needed(Z_ARG1, _ref);
       } else if (_ref_addr.base() != Z_ARG1) {
         __ z_lgr(Z_ARG1, _ref);
-        __ add2reg(Z_ARG2, _ref_addr.disp(), _ref_addr.base());
+        __ z_lay(Z_ARG2, _ref_addr);
       } else {
         __ z_lgr(Z_R0, _ref);
-        __ add2reg(Z_ARG2, _ref_addr.disp(), _ref_addr.base());
+        __ z_lay(Z_ARG2, _ref_addr);
         __ z_lgr(Z_ARG1, Z_R0);
       }
     }
   }
+
+  ~ZSetupArguments() {
+    // Transfer result
+    __ lgr_if_needed(_ref, Z_R0);
+  }
 };
 
+#undef __
+#define __ _masm->
 
+void ZBArrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, ZLoadBarrierStubC2* stub) const {
+  // TODO: ppc, x86 and aarch64 all have slightly different implementations fot this, I am following x86
+
+  Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
+  BLOCK_COMMENT("ZLoadBarrierStubC2");
+
+  // Stub entry
+  __ bind(*stub->entry());
+
+  // The fast-path shift destroyed the oop - need to re-read it
+  __ z_lay(stub->ref(), stub->ref_addr());
+
+  {
+    SaveLiveRegisters save_live_registers(masm, stub);
+    ZSetupArguments setup_arguments(masm, stub);
+    __ call(RuntimeAddress(stub->slow_path()));
+  }
+
+  __ z_br(*stub->continuation());
+}
+
+void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, ZStoreBarrierStubC2* stub) const {
+  Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
+  BLOCK_COMMENT("ZStoreBarrierStubC2");
+
+  // Stub entry
+  __ bind(*stub->entry());
+
+  Label slow;
+  Label slow_continuation;
+  store_barrier_medium(masm,
+                       stub->ref_addr(),
+                       stub->new_zpointer(),
+                       Z_R0_scratch,
+                       stub->is_native(),
+                       stub->is_atomic(),
+                       *stub->continuation(),
+                       slow,
+                       slow_continuation);
+
+  __ bind(slow);
+  {
+    SaveLiveRegisters save_live_registers(masm, stub);
+    __ z_lay(Z_ARG1, stub->ref_addr());
+
+    if (stub->is_native()) {
+      __ call(RuntimeAddress(ZBarrierSetRuntime::store_barrier_on_native_oop_field_without_healing_addr()));
+    } else if (stub->is_atomic()) {
+      __ call(RuntimeAddress(ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr()));
+    } else if (stub->is_nokeepalive()) {
+      __ call(RuntimeAddress(ZBarrierSetRuntime::no_keepalive_store_barrier_on_oop_field_without_healing_addr()));
+    } else {
+      __ call(RuntimeAddress(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr()));
+    }
+  }
+
+  // Stub exit
+  __ z_br(slow_continuation);
+}
+
+#undef __
+#endif // COMPILER2
