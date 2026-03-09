@@ -524,7 +524,7 @@ bool IdealLoopTree::policy_peeling(PhaseIdealLoop *phase) {
 // return the estimated loop size if peeling is applicable, otherwise return
 // zero. No node budget is allocated.
 uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
-  if (!LoopPeeling) {
+  if (LoopPeeling == 0 || LoopPeeling == 2) {
     return 0;
   }
 

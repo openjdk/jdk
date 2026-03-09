@@ -334,8 +334,12 @@
   product(bool, PartialPeelLoop, true,                                      \
           "Partial peel (rotate) loops")                                    \
                                                                             \
-  product(bool, LoopPeeling, true, DIAGNOSTIC,                              \
-          "Enable loop peeling optimization")                               \
+  product(uint, LoopPeeling, 1, DIAGNOSTIC,                                 \
+          "Control loop peeling optimization: "                             \
+          "0 = always disable loop peeling, "                               \
+          "1 = enable loop peeling (default), "                             \
+          "2 = disable loop peeling for iteration splitting only")          \
+          range(0, 2)                                                       \
                                                                             \
   product(intx, PartialPeelNewPhiDelta, 0,                                  \
           "Additional phis that can be created by partial peeling")         \

@@ -31,11 +31,18 @@
  *      -XX:CompileCommand=compileonly,compiler.loopopts.TestLoopPeeling::test*
  *      compiler.loopopts.TestLoopPeeling
  * @run main/othervm -Xcomp
- *      -XX:+UnlockDiagnosticVMOptions -XX:-LoopPeeling
+ *      -XX:+UnlockDiagnosticVMOptions -XX:LoopPeeling=0
  *      -XX:CompileCommand=compileonly,compiler.loopopts.TestLoopPeeling::test*
  *      compiler.loopopts.TestLoopPeeling
  * @run main/othervm -Xbatch
- *      -XX:+UnlockDiagnosticVMOptions -XX:-LoopPeeling
+ *      -XX:+UnlockDiagnosticVMOptions -XX:LoopPeeling=0
+ *      compiler.loopopts.TestLoopPeeling
+ * @run main/othervm -Xcomp
+ *      -XX:+UnlockDiagnosticVMOptions -XX:LoopPeeling=2
+ *      -XX:CompileCommand=compileonly,compiler.loopopts.TestLoopPeeling::test*
+ *      compiler.loopopts.TestLoopPeeling
+ * @run main/othervm -Xbatch
+ *      -XX:+UnlockDiagnosticVMOptions -XX:LoopPeeling=2
  *      compiler.loopopts.TestLoopPeeling
  */
 
