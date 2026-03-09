@@ -21,7 +21,6 @@
  * questions.
  */
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -98,7 +97,6 @@ public class ZipFSTester {
 
     // create JAR file for test, actual contents don't matter
     static Path jarFile;
-    static FileSystem fs;
 
     @BeforeAll
     static void setup() throws Exception {
@@ -107,18 +105,13 @@ public class ZipFSTester {
                 "dir1/foo",
                 "dir2/bar",
                 "dir1/dir3/fooo");
-        fs = newZipFileSystem(jarFile, Map.of());
-    }
-
-    @AfterAll
-    static void cleanup() throws IOException {
-        fs.close();
     }
 
     @Test
     void test0() throws Exception {
         List<String> list = new LinkedList<>();
-        try (ZipFile zf = new ZipFile(fs.toString())) {
+        try (var fs = newZipFileSystem(jarFile, Map.of());
+             ZipFile zf = new ZipFile(fs.toString())) {
             Enumeration<? extends ZipEntry> zes = zf.entries();
             while (zes.hasMoreElements()) {
                 list.add(zes.nextElement().getName());
@@ -148,7 +141,8 @@ public class ZipFSTester {
         Path tmpfsPath = getTempPath();
         Map<String, Object> env = new HashMap<String, Object>();
         env.put("create", "true");
-        try (FileSystem copy = newZipFileSystem(tmpfsPath, env)) {
+        try (var fs = newZipFileSystem(jarFile, Map.of());
+             FileSystem copy = newZipFileSystem(tmpfsPath, env)) {
             z2zcopy(fs, copy, "/", 0);
 
             // copy the test jar itself in
@@ -282,129 +276,137 @@ public class ZipFSTester {
         final FileSystem fs3 = newZipFileSystem(fs3Path, env);
 
         System.out.println("copy src: fs -> fs0...");
-        z2zcopy(fs, fs0, "/", 0);   // copy fs -> fs1
-        fs0.close();                // dump to file
+        try (var fs = newZipFileSystem(jarFile, Map.of())) {
+            z2zcopy(fs, fs0, "/", 0);   // copy fs -> fs1
+            fs0.close();                // dump to file
 
-        System.out.println("open fs0 as fs1");
-        env = new HashMap<String, Object>();
-        final FileSystem fs1 = newZipFileSystem(fs1Path, env);
+            System.out.println("open fs0 as fs1");
+            env = new HashMap<String, Object>();
+            final FileSystem fs1 = newZipFileSystem(fs1Path, env);
 
-        System.out.println("listing...");
-        final ArrayList<String> files = new ArrayList<>();
-        final ArrayList<String> dirs = new ArrayList<>();
-        list(fs1.getPath("/"), files, dirs);
+            System.out.println("listing...");
+            final ArrayList<String> files = new ArrayList<>();
+            final ArrayList<String> dirs = new ArrayList<>();
+            list(fs1.getPath("/"), files, dirs);
 
-        Thread t0 = new Thread(new Runnable() {
-            public void run() {
-                List<String> list = new ArrayList<>(dirs);
-                Collections.shuffle(list);
-                for (String path : list) {
-                    try {
-                        z2zcopy(fs1, fs2, path, 0);
-                    } catch (Exception x) {
-                        x.printStackTrace();
-                    }
-                }
-            }
-
-        });
-
-        Thread t1 = new Thread(new Runnable() {
-            public void run() {
-                List<String> list = new ArrayList<>(dirs);
-                Collections.shuffle(list);
-                for (String path : list) {
-                    try {
-                        z2zcopy(fs1, fs2, path, 1);
-                    } catch (Exception x) {
-                        x.printStackTrace();
-                    }
-                }
-            }
-
-        });
-
-        Thread t2 = new Thread(new Runnable() {
-            public void run() {
-                List<String> list = new ArrayList<>(dirs);
-                Collections.shuffle(list);
-                for (String path : list) {
-                    try {
-                        z2zcopy(fs1, fs2, path, 2);
-                    } catch (Exception x) {
-                        x.printStackTrace();
-                    }
-                }
-            }
-
-        });
-
-        Thread t3 = new Thread(new Runnable() {
-            public void run() {
-                List<String> list = new ArrayList<>(files);
-                Collections.shuffle(list);
-                while (!list.isEmpty()) {
-                    Iterator<String> itr = list.iterator();
-                    while (itr.hasNext()) {
-                        String path = itr.next();
+            Thread t0 = new Thread(new Runnable() {
+                public void run() {
+                    List<String> list = new ArrayList<>(dirs);
+                    Collections.shuffle(list);
+                    for (String path : list) {
                         try {
-                            if (Files.exists(fs2.getPath(path))) {
-                                z2zmove(fs2, fs3, path);
-                                itr.remove();
-                            }
-                        } catch (FileAlreadyExistsException x) {
-                            itr.remove();
+                            z2zcopy(fs1, fs2, path, 0);
                         } catch (Exception x) {
                             x.printStackTrace();
                         }
                     }
                 }
+
+            });
+
+            Thread t1 = new Thread(new Runnable() {
+                public void run() {
+                    List<String> list = new ArrayList<>(dirs);
+                    Collections.shuffle(list);
+                    for (String path : list) {
+                        try {
+                            z2zcopy(fs1, fs2, path, 1);
+                        } catch (Exception x) {
+                            x.printStackTrace();
+                        }
+                    }
+                }
+
+            });
+
+            Thread t2 = new Thread(new Runnable() {
+                public void run() {
+                    List<String> list = new ArrayList<>(dirs);
+                    Collections.shuffle(list);
+                    for (String path : list) {
+                        try {
+                            z2zcopy(fs1, fs2, path, 2);
+                        } catch (Exception x) {
+                            x.printStackTrace();
+                        }
+                    }
+                }
+
+            });
+
+            Thread t3 = new Thread(new Runnable() {
+                public void run() {
+                    List<String> list = new ArrayList<>(files);
+                    Collections.shuffle(list);
+                    while (!list.isEmpty()) {
+                        Iterator<String> itr = list.iterator();
+                        while (itr.hasNext()) {
+                            String path = itr.next();
+                            try {
+                                if (Files.exists(fs2.getPath(path))) {
+                                    z2zmove(fs2, fs3, path);
+                                    itr.remove();
+                                }
+                            } catch (FileAlreadyExistsException x) {
+                                itr.remove();
+                            } catch (Exception x) {
+                                x.printStackTrace();
+                            }
+                        }
+                    }
+                }
+
+            });
+
+            System.out.println("copying/removing...");
+            t0.start();
+            t1.start();
+            t2.start();
+            t3.start();
+            t0.join();
+            t1.join();
+            t2.join();
+            t3.join();
+
+            System.out.println("closing: fs1, fs2");
+            fs1.close();
+            fs2.close();
+
+            int failed = 0;
+            System.out.println("checkEqual: fs vs fs3");
+            for (String path : files) {
+                try {
+                    checkEqual(fs.getPath(path), fs3.getPath(path));
+                } catch (IOException x) {
+                    //x.printStackTrace();
+                    failed++;
+                }
             }
+            System.out.println("closing: fs3");
+            fs3.close();
 
-        });
+            System.out.println("opening: fs3 as fs4");
+            FileSystem fs4 = newZipFileSystem(fs3Path, env);
 
-        System.out.println("copying/removing...");
-        t0.start(); t1.start(); t2.start(); t3.start();
-        t0.join(); t1.join(); t2.join(); t3.join();
 
-        System.out.println("closing: fs1, fs2");
-        fs1.close();
-        fs2.close();
+            ArrayList<String> files2 = new ArrayList<>();
+            ArrayList<String> dirs2 = new ArrayList<>();
+            list(fs4.getPath("/"), files2, dirs2);
 
-        int failed = 0;
-        System.out.println("checkEqual: fs vs fs3");
-        for (String path : files) {
-            try {
-                checkEqual(fs.getPath(path), fs3.getPath(path));
-            } catch (IOException x) {
-                //x.printStackTrace();
-                failed++;
+            System.out.println("checkEqual: fs vs fs4");
+            for (String path : files2) {
+                checkEqual(fs.getPath(path), fs4.getPath(path));
             }
+            System.out.println("walking: fs4");
+            walk(fs4.getPath("/"));
+            System.out.println("closing: fs4");
+            fs4.close();
+            System.out.printf("failed=%d%n", failed);
+
+            Files.delete(fs1Path);
+            Files.delete(fs2Path);
+            Files.delete(fs3Path);
         }
-        System.out.println("closing: fs3");
-        fs3.close();
-
-        System.out.println("opening: fs3 as fs4");
-        FileSystem fs4 = newZipFileSystem(fs3Path, env);
-
-
-        ArrayList<String> files2 = new ArrayList<>();
-        ArrayList<String> dirs2 = new ArrayList<>();
-        list(fs4.getPath("/"), files2, dirs2);
-
-        System.out.println("checkEqual: fs vs fs4");
-        for (String path : files2) {
-            checkEqual(fs.getPath(path), fs4.getPath(path));
-        }
-        System.out.println("walking: fs4");
-        walk(fs4.getPath("/"));
-        System.out.println("closing: fs4");
-        fs4.close();
-        System.out.printf("failed=%d%n", failed);
-
-        Files.delete(fs1Path);
-        Files.delete(fs2Path);
-        Files.delete(fs3Path);
     }
 
     static final int METHOD_STORED     = 0;
@@ -1028,16 +1030,18 @@ public class ZipFSTester {
      * @see 8299864
      */
     @Test
-    void testFileStoreNullArgs() {
-        // file system containing at least one ZipFileStore
-        FileStore store = fs.getFileStores().iterator().next();
+    void testFileStoreNullArgs() throws Exception {
+        try (var fs = newZipFileSystem(jarFile, Map.of())) {
+            // file system containing at least one ZipFileStore
+            FileStore store = fs.getFileStores().iterator().next();
 
-        // Make sure we are testing the right thing
-        assertEquals("jdk.nio.zipfs.ZipFileStore", store.getClass().getName());
+            // Make sure we are testing the right thing
+            assertEquals("jdk.nio.zipfs.ZipFileStore", store.getClass().getName());
 
-        assertThrows(NullPointerException.class, () -> store.supportsFileAttributeView((String) null));
-        assertThrows(NullPointerException.class, () -> store.supportsFileAttributeView((Class<? extends FileAttributeView>) null));
-        assertThrows(NullPointerException.class, () -> store.getAttribute(null));
-        assertThrows(NullPointerException.class, () -> store.getFileStoreAttributeView(null));
+            assertThrows(NullPointerException.class, () -> store.supportsFileAttributeView((String) null));
+            assertThrows(NullPointerException.class, () -> store.supportsFileAttributeView((Class<? extends FileAttributeView>) null));
+            assertThrows(NullPointerException.class, () -> store.getAttribute(null));
+            assertThrows(NullPointerException.class, () -> store.getFileStoreAttributeView(null));
+        }
     }
 }

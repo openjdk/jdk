@@ -57,6 +57,8 @@ public class PathOps {
 
     static FileSystem fs;
 
+    // This test uses a static file system since some ops tested on
+    // Path depend on the same underlying `fs` instance
     @BeforeAll
     static void setup() throws IOException {
         // create empty JAR file, test doesn't require any contents

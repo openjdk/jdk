@@ -21,15 +21,14 @@
  * questions.
  */
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.net.URISyntaxException;
 import java.nio.file.AccessMode;
 import java.nio.file.ClosedFileSystemException;
 import java.nio.file.FileStore;
-import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -59,16 +58,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class Basic {
 
-    Path jarFile;
-    FileSystem fs;
-    URI uri;
+    static Path jarFile;
+    static URI uri;
 
-    @BeforeEach
-    void setup() throws IOException, URISyntaxException {
+    @BeforeAll
+    static void setup() throws IOException, URISyntaxException {
         jarFile = Utils.createJarFile("basic.jar",
                 "META-INF/services/java.nio.file.spi.FileSystemProvider");
         uri = new URI("jar", jarFile.toUri().toString(), null);
-        fs = FileSystems.newFileSystem(uri, Map.of());
+    }
+
+    @AfterAll
+    static void cleanUp() throws IOException {
+        Files.deleteIfExists(jarFile);
     }
 
     @Test
@@ -79,11 +81,10 @@ public class Basic {
                 "'jar' provider not installed");
     }
 
-    // Note that this test is testing behavior that is set in the
-    // @BeforeEach method.
     @Test
     void newFileSystemTest() throws IOException {
         // To test `newFileSystem`, close the shared FileSystem
+        var fs = FileSystems.newFileSystem(uri, Map.of());
         fs.close();
         // Test: FileSystems#newFileSystem(Path)
         FileSystems.newFileSystem(jarFile).close();
@@ -92,75 +93,82 @@ public class Basic {
     }
 
     @Test
-    void toUriTest() {
-        // Test: exercise toUri method
-        String expected = uri.toString() + "!/foo";
-        String actual = fs.getPath("/foo").toUri().toString();
-        assertEquals(expected, actual, "toUri returned '" + actual +
-                "', expected '" + expected + "'");
+    void toUriTest() throws IOException {
+        try (var fs = FileSystems.newFileSystem(uri, Map.of())) {
+            // Test: exercise toUri method
+            String expected = uri.toString() + "!/foo";
+            String actual = fs.getPath("/foo").toUri().toString();
+            assertEquals(expected, actual, "toUri returned '" + actual +
+                    "', expected '" + expected + "'");
+        }
     }
 
     @Test
     void directoryIteratorTest() throws IOException {
-        // Test: exercise directory iterator and retrieval of basic attributes
-        Files.walkFileTree(fs.getPath("/"), new FileTreePrinter());
+        try (var fs = FileSystems.newFileSystem(uri, Map.of())) {
+            // Test: exercise directory iterator and retrieval of basic attributes
+            Files.walkFileTree(fs.getPath("/"), new FileTreePrinter());
+        }
     }
 
     @Test
     void copyFileTest() throws IOException {
-        // Test: copy file from zip file to current (scratch) directory
-        Path source = fs.getPath("/META-INF/services/java.nio.file.spi.FileSystemProvider");
-        if (Files.exists(source)) {
-            Path target = Path.of(source.getFileName().toString());
-            Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
-            try {
-                long s1 = Files.readAttributes(source, BasicFileAttributes.class).size();
-                long s2 = Files.readAttributes(target, BasicFileAttributes.class).size();
-                assertEquals(s1, s2, "target size != source size");
-            } finally {
-                Files.delete(target);
+        try (var fs = FileSystems.newFileSystem(uri, Map.of())) {
+            // Test: copy file from zip file to current (scratch) directory
+            Path source = fs.getPath("/META-INF/services/java.nio.file.spi.FileSystemProvider");
+            if (Files.exists(source)) {
+                Path target = Path.of(source.getFileName().toString());
+                Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
+                try {
+                    long s1 = Files.readAttributes(source, BasicFileAttributes.class).size();
+                    long s2 = Files.readAttributes(target, BasicFileAttributes.class).size();
+                    assertEquals(s1, s2, "target size != source size");
+                } finally {
+                    Files.delete(target);
+                }
             }
         }
     }
 
     @Test
     void fileStoreTest() throws IOException {
-        // Test: FileStore
-        FileStore store = Files.getFileStore(fs.getPath("/"));
-        assertTrue(store.supportsFileAttributeView("basic"),
-                "BasicFileAttributeView should be supported");
+        try (var fs = FileSystems.newFileSystem(uri, Map.of())) {
+            // Test: FileStore
+            FileStore store = Files.getFileStore(fs.getPath("/"));
+            assertTrue(store.supportsFileAttributeView("basic"),
+                    "BasicFileAttributeView should be supported");
+        }
     }
 
     @Test
-    void watchRegisterNPETest() {
-        // Test: watch register should throw PME
-        assertThrows(ProviderMismatchException.class, () -> fs.getPath("/")
-                .register(FileSystems.getDefault().newWatchService(), ENTRY_CREATE),
-                "watch service is not supported");
+    void watchRegisterNPETest() throws IOException {
+        try (var fs = FileSystems.newFileSystem(uri, Map.of())) {
+            // Test: watch register should throw PME
+            assertThrows(ProviderMismatchException.class, () -> fs.getPath("/")
+                            .register(FileSystems.getDefault().newWatchService(), ENTRY_CREATE),
+                    "watch service is not supported");
+        }
     }
 
     @Test
-    void pathMatcherIAETest() {
-        // Test: IllegalArgumentException
-        assertThrows(IllegalArgumentException.class, () -> fs.getPathMatcher(":glob"),
-                "IllegalArgumentException not thrown");
-        assertDoesNotThrow(() -> fs.getPathMatcher("glob:"),
-                "Unexpected IllegalArgumentException");
+    void pathMatcherIAETest() throws IOException {
+        try (var fs = FileSystems.newFileSystem(uri, Map.of())) {
+            // Test: IllegalArgumentException
+            assertThrows(IllegalArgumentException.class, () -> fs.getPathMatcher(":glob"),
+                    "IllegalArgumentException not thrown");
+            assertDoesNotThrow(() -> fs.getPathMatcher("glob:"),
+                    "Unexpected IllegalArgumentException");
+        }
     }
 
     @Test
     void closedFileSystemTest() throws IOException {
         // Test: ClosedFileSystemException
+        var fs = FileSystems.newFileSystem(uri, Map.of());
         fs.close();
         assertFalse(fs.isOpen(), "FileSystem should be closed");
         assertThrows(ClosedFileSystemException.class,
                 () -> fs.provider().checkAccess(fs.getPath("/missing"), AccessMode.READ));
-    }
-
-    @AfterEach
-    void cleanup() throws IOException {
-        fs.close();
-        Files.deleteIfExists(jarFile);
     }
 
     // FileVisitor that pretty prints a file tree
