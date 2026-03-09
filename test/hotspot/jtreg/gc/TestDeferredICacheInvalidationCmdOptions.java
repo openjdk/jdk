@@ -27,6 +27,7 @@ package gc;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.whitebox.WhiteBox;
+import jtreg.SkippedException;
 
 /*
  * @test
@@ -34,6 +35,7 @@ import jdk.test.whitebox.WhiteBox;
  * @summary Test command-line options for UseSingleICacheInvalidation and NeoverseN1ICacheErratumMitigation
  * @library /test/lib
  * @requires os.arch == "aarch64"
+ * @requires os.family == "linux"
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI gc.TestDeferredICacheInvalidationCmdOptions
@@ -41,32 +43,17 @@ import jdk.test.whitebox.WhiteBox;
 
 public class TestDeferredICacheInvalidationCmdOptions {
 
-    private static final WhiteBox WB = WhiteBox.getWhiteBox();
-
     // CPU identifiers
     private static final int CPU_ARM = 0x41;
     private static final int NEOVERSE_N1_MODEL = 0xd0c;
 
-    // CPU info parsed from WhiteBox.getCPUFeatures()
-    private static int cpuFamily;
-    private static int cpuVariant;
-    private static int cpuModel;
-    private static int cpuModel2;
-    private static int cpuRevision;
-    private static boolean isNeoverseN1;
     private static boolean isAffected;
 
     public static void main(String[] args) throws Exception {
-        System.out.println("Testing UseSingleICacheInvalidation and NeoverseN1ICacheErratumMitigation command-line options...");
-
-        // Parse CPU features first
+        // Parse CPU features and print CPU info
         parseCPUFeatures();
-        printCPUInfo();
 
-        if (cpuFamily != CPU_ARM) {
-            System.out.println("Not running on ARM CPU, skipping tests");
-            return;
-        }
+        System.out.println("Testing UseSingleICacheInvalidation and NeoverseN1ICacheErratumMitigation command-line options...");
 
         // Test case 1: Check defaults on Neoverse N1 pre-r4p1 (if applicable)
         testCase1_DefaultsOnNeoverseN1();
@@ -105,84 +92,69 @@ public class TestDeferredICacheInvalidationCmdOptions {
      * - cpuRevision: minor revision
      * - cpuModel2: secondary model (if present, in parentheses)
      *
+     * Sets the static field isAffected and prints CPU info.
+     *
      * Format: 0x%02x:0x%x:0x%03x:%d[(0x%03x)]
      * Example: "0x41:0x3:0xd0c:0" or "0x41:0x3:0xd0c:0(0xd0c)"
+     *
+     * @throws SkippedException if not running on ARM CPU
      */
     private static void parseCPUFeatures() {
-        String cpuFeatures = WB.getCPUFeatures();
+        WhiteBox wb = WhiteBox.getWhiteBox();
+        String cpuFeatures = wb.getCPUFeatures();
         System.out.println("CPU Features string: " + cpuFeatures);
 
         if (cpuFeatures == null || cpuFeatures.isEmpty()) {
-            System.out.println("Warning: No CPU features available");
-            isNeoverseN1 = false;
-            isAffected = false;
-            return;
+            throw new RuntimeException("No CPU features available");
         }
 
-        try {
-            // Extract the first part before the comma (contains family:variant:model:revision(model2))
-            int commaIndex = cpuFeatures.indexOf(",");
-            if (commaIndex == -1) {
-                System.out.println("Warning: Unexpected CPU features format (no comma): " + cpuFeatures);
-                isNeoverseN1 = false;
-                isAffected = false;
-                return;
-            }
-
-            String cpuPart = cpuFeatures.substring(0, commaIndex).trim();
-
-            // Split by colon to get individual components
-            String[] parts = cpuPart.split(":");
-            if (parts.length < 4) {
-                System.out.println("Warning: Unexpected CPU features format: " + cpuPart);
-                isNeoverseN1 = false;
-                isAffected = false;
-                return;
-            }
-
-            // Parse hex/decimal values, removing "0x" prefix where applicable
-            cpuFamily = Integer.parseInt(parts[0].substring(2), 16);
-            cpuVariant = Integer.parseInt(parts[1].substring(2), 16);
-            cpuModel = Integer.parseInt(parts[2].substring(2), 16);
-
-            int model2Start = parts[3].indexOf("(");
-            String revisionStr = parts[3];
-            cpuModel2 = 0; // Default to 0 if not present
-            if (model2Start != -1) {
-                if (!parts[3].endsWith(")")) {
-                    System.out.println("Warning: Unexpected CPU features format (missing closing parenthesis): " + parts[3]);
-                    isNeoverseN1 = false;
-                    isAffected = false;
-                    return;
-                }
-                String model2Str = parts[3].substring(model2Start + 1, parts[3].length() - 1);
-                cpuModel2 = Integer.parseInt(model2Str.substring(2), 16);
-                revisionStr = parts[3].substring(0, model2Start);
-            }
-            cpuRevision = Integer.parseInt(revisionStr);
-
-            // Check if either model or model2 matches Neoverse N1
-            isNeoverseN1 = (cpuFamily == CPU_ARM) &&
-                           (cpuModel == NEOVERSE_N1_MODEL || cpuModel2 == NEOVERSE_N1_MODEL);
-
-            // Neoverse N1: Errata 1542419 affects r3p0, r3p1 and r4p0
-            // It is fixed in r4p1 and later revisions
-            if (isNeoverseN1) {
-                isAffected = (cpuVariant == 3 && cpuRevision == 0) ||
-                             (cpuVariant == 3 && cpuRevision == 1) ||
-                             (cpuVariant == 4 && cpuRevision == 0);
-            } else {
-                isAffected = false;
-            }
-        } catch (Exception e) {
-            System.out.println("Error parsing CPU features: " + e.getMessage());
-            e.printStackTrace();
-            isNeoverseN1 = false;
-            isAffected = false;
+        int commaIndex = cpuFeatures.indexOf(",");
+        if (commaIndex == -1) {
+            throw new RuntimeException("Unexpected CPU features format (no comma): " + cpuFeatures);
         }
+
+        String cpuPart = cpuFeatures.substring(0, commaIndex).trim();
+
+        String[] parts = cpuPart.split(":");
+        if (parts.length < 4) {
+            throw new RuntimeException("Unexpected CPU features format: " + cpuPart);
+        }
+
+        int cpuFamily = Integer.parseInt(parts[0].substring(2), 16);
+        if (cpuFamily != CPU_ARM) {
+            throw new SkippedException("Not running on ARM CPU (cpuFamily=0x" + Integer.toHexString(cpuFamily) + ")");
+        }
+
+        int cpuVariant = Integer.parseInt(parts[1].substring(2), 16);
+        int cpuModel = Integer.parseInt(parts[2].substring(2), 16);
+        int cpuModel2 = 0;
+
+        int model2Start = parts[3].indexOf("(");
+        String revisionStr = parts[3];
+        if (model2Start != -1) {
+            if (!parts[3].endsWith(")")) {
+                throw new RuntimeException("Unexpected CPU features format (missing closing parenthesis): " + parts[3]);
+            }
+            String model2Str = parts[3].substring(model2Start + 1, parts[3].length() - 1);
+            cpuModel2 = Integer.parseInt(model2Str.substring(2), 16);
+            revisionStr = parts[3].substring(0, model2Start);
+        }
+        int cpuRevision = Integer.parseInt(revisionStr);
+
+        // Neoverse N1 errata 1542419 affects r3p0, r3p1 and r4p0.
+        // It is fixed in r4p1 and later revisions.
+        if (cpuModel == NEOVERSE_N1_MODEL || cpuModel2 == NEOVERSE_N1_MODEL) {
+            isAffected = (cpuVariant == 3 && cpuRevision == 0) ||
+                         (cpuVariant == 3 && cpuRevision == 1) ||
+                         (cpuVariant == 4 && cpuRevision == 0);
+        }
+
+        printCPUInfo(cpuFamily, cpuVariant, cpuModel, cpuModel2, cpuRevision);
     }
 
-    private static void printCPUInfo() {
+    private static void printCPUInfo(int cpuFamily, int cpuVariant, int cpuModel, int cpuModel2, int cpuRevision) {
+        boolean isNeoverseN1 = (cpuFamily == CPU_ARM) &&
+                               (cpuModel == NEOVERSE_N1_MODEL || cpuModel2 == NEOVERSE_N1_MODEL);
         System.out.println("\n=== CPU Information ===");
         System.out.println("CPU Family: 0x" + Integer.toHexString(cpuFamily));
         System.out.println("CPU Variant: 0x" + Integer.toHexString(cpuVariant));
@@ -283,15 +255,19 @@ public class TestDeferredICacheInvalidationCmdOptions {
         output.shouldHaveExitValue(0);
 
         String output_str = output.getOutput();
-        boolean hasSingleEnabled = output_str.matches("(?s).*bool\\s+UseSingleICacheInvalidation\\s*=\\s*true.*");
+        boolean hasSingleDisabled = output_str.matches("(?s).*bool\\s+UseSingleICacheInvalidation\\s*=\\s*false.*");
         boolean hasErrataDisabled = output_str.matches("(?s).*bool\\s+NeoverseN1ICacheErratumMitigation\\s*=\\s*false.*");
 
         System.out.println("NeoverseN1ICacheErratumMitigation disabled: " + hasErrataDisabled);
-        System.out.println("UseSingleICacheInvalidation enabled: " + hasSingleEnabled);
+        System.out.println("UseSingleICacheInvalidation disabled: " + hasSingleDisabled);
 
-        // On affected CPUs, disabling errata should disable deferred invalidation
-        if (hasErrataDisabled && hasSingleEnabled) {
-            throw new RuntimeException("On affected CPU, disabling NeoverseN1ICacheErratumMitigation should disable UseSingleICacheInvalidation");
+        if (!hasErrataDisabled) {
+            throw new RuntimeException("Failed to disable NeoverseN1ICacheErratumMitigation via command line");
+        }
+
+        // On affected CPUs, disabling errata should also disable UseSingleICacheInvalidation
+        if (!hasSingleDisabled) {
+            throw new RuntimeException("On affected CPU, disabling NeoverseN1ICacheErratumMitigation should also disable UseSingleICacheInvalidation");
         }
         System.out.println("Correctly synchronized on affected CPU");
     }
@@ -301,6 +277,11 @@ public class TestDeferredICacheInvalidationCmdOptions {
      * but NeoverseN1ICacheErratumMitigation is set to false on affected CPUs.
      */
     private static void testCase4_ConflictingFlagsOnAffectedCPUs() throws Exception {
+        if (!isAffected) {
+            System.out.println("\nTest case 4: Skipping since CPU is not affected by Neoverse N1 errata 1542419");
+            return;
+        }
+
         System.out.println("\nTest case 4: Try to set UseSingleICacheInvalidation=true with NeoverseN1ICacheErratumMitigation=false");
 
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
@@ -311,19 +292,11 @@ public class TestDeferredICacheInvalidationCmdOptions {
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
-        if (isAffected) {
-            // This should fail on affected CPUs (conflicting requirement)
-            if (output.getExitValue() != 0) {
-                System.out.println("JVM correctly rejected conflicting flags on affected CPU");
-                output.shouldContain("Error");
-            } else {
-                throw new RuntimeException("On affected CPU, conflicting flags should cause error");
-            }
-        } else {
-            // On unaffected CPUs, this should succeed
-            output.shouldHaveExitValue(0);
-            System.out.println("Note: JVM accepted flags on unaffected CPU (or CPU not Neoverse N1)");
+        if (output.getExitValue() == 0) {
+            throw new RuntimeException("On affected CPU, conflicting flags should cause error");
         }
+        output.shouldContain("Error");
+        System.out.println("JVM correctly rejected conflicting flags on affected CPU");
     }
 
     /**
@@ -331,7 +304,7 @@ public class TestDeferredICacheInvalidationCmdOptions {
      */
     private static void testCase5_ExplicitlyEnableErrataEnablesDeferred() throws Exception {
         if (!isAffected) {
-            System.out.println("\nTest case 5: Skipping since CPU is not affected by errata");
+            System.out.println("\nTest case 5: Skipping since CPU is not affected by Neoverse N1 errata 1542419");
             return;
         }
 
@@ -353,8 +326,12 @@ public class TestDeferredICacheInvalidationCmdOptions {
         System.out.println("NeoverseN1ICacheErratumMitigation enabled: " + hasErrataEnabled);
         System.out.println("UseSingleICacheInvalidation enabled: " + hasSingleEnabled);
 
-        if (hasErrataEnabled && !hasSingleEnabled) {
-            throw new RuntimeException("On affected CPU, enabling NeoverseN1ICacheErratumMitigation should enable UseSingleICacheInvalidation");
+        if (!hasErrataEnabled) {
+            throw new RuntimeException("Failed to enable NeoverseN1ICacheErratumMitigation via command line");
+        }
+
+        if (!hasSingleEnabled) {
+            throw new RuntimeException("On affected CPU, enabling NeoverseN1ICacheErratumMitigation should also enable UseSingleICacheInvalidation");
         }
         System.out.println("Correctly synchronized on affected CPU");
     }
@@ -381,9 +358,15 @@ public class TestDeferredICacheInvalidationCmdOptions {
 
         System.out.println("UseSingleICacheInvalidation disabled: " + hasSingleDisabled);
         System.out.println("NeoverseN1ICacheErratumMitigation disabled: " + hasErrataDisabled);
-        if (!hasSingleDisabled || !hasErrataDisabled) {
-            throw new RuntimeException("Both flags should be disabled when explicitly set to false");
+
+        if (!hasErrataDisabled) {
+            throw new RuntimeException("Failed to disable NeoverseN1ICacheErratumMitigation via command line");
         }
+
+        if (!hasSingleDisabled) {
+            throw new RuntimeException("Failed to disable UseSingleICacheInvalidation via command line");
+        }
+
         System.out.println("Successfully disabled both flags");
     }
 
@@ -393,7 +376,7 @@ public class TestDeferredICacheInvalidationCmdOptions {
      */
     private static void testCase7_ConflictingErrataWithoutDeferred() throws Exception {
         if (!isAffected) {
-            System.out.println("\nTest case 7: Skipping since CPU is not affected by errata");
+            System.out.println("\nTest case 7: Skipping since CPU is not affected by Neoverse N1 errata 1542419");
             return;
         }
         System.out.println("\nTest case 7: Try to set NeoverseN1ICacheErratumMitigation=true with UseSingleICacheInvalidation=false");
@@ -408,12 +391,11 @@ public class TestDeferredICacheInvalidationCmdOptions {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         // This should fail on affected CPUs (conflicting requirement)
-        if (output.getExitValue() != 0) {
-            System.out.println("JVM correctly rejected conflicting flags on affected CPU");
-            output.shouldContain("Error");
-        } else {
-            throw new RuntimeException("On affected CPU, setting NeoverseN1ICacheErratumMitigation=true with UseSingleICacheInvalidation=false");
+        if (output.getExitValue() == 0) {
+            throw new RuntimeException("On affected CPU, setting NeoverseN1ICacheErratumMitigation=true with UseSingleICacheInvalidation=false should cause an error");
         }
+        output.shouldContain("Error");
+        System.out.println("JVM correctly rejected conflicting flags on affected CPU");
     }
 
     /**
@@ -421,7 +403,7 @@ public class TestDeferredICacheInvalidationCmdOptions {
      */
     private static void testCase8_EnablingErrataOnUnaffectedCPU() throws Exception {
         if (isAffected) {
-            System.out.println("\nTest case 8: Skipping since CPU is affected by errata");
+            System.out.println("\nTest case 8: Skipping since CPU is affected by Neoverse N1 errata 1542419");
             return;
         }
 
@@ -435,11 +417,10 @@ public class TestDeferredICacheInvalidationCmdOptions {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         // This should fail on unaffected CPUs (errata not present)
-        if (output.getExitValue() != 0) {
-            System.out.println("JVM correctly rejected enabling errata flag on unaffected CPU");
-            output.shouldContain("Error");
-        } else {
+        if (output.getExitValue() == 0) {
             throw new RuntimeException("On unaffected CPU, setting NeoverseN1ICacheErratumMitigation=true should cause error");
         }
+        output.shouldContain("Error");
+        System.out.println("JVM correctly rejected enabling errata flag on unaffected CPU");
     }
 }

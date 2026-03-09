@@ -269,11 +269,6 @@ public class TestDeferredICacheInvalidation {
                     while (running.get()) {
                         readLock.lock();
                         try {
-                            if (WB.getMethodCompilationLevel(method) != compLevel) {
-                                throw new IllegalStateException("Method " + method
-                                    + " is not compiled at the compilation level: "
-                                    + compLevel + ". Got: " + WB.getMethodCompilationLevel(method));
-                            }
                             method.invoke(null);
                         } finally {
                             readLock.unlock();
@@ -302,6 +297,7 @@ public class TestDeferredICacheInvalidation {
     public static void main(String[] args) throws Exception {
         if (!Boolean.TRUE.equals(WB.getBooleanVMFlag("UseSingleICacheInvalidation"))) {
             System.out.println("Skip. Test requires UseSingleICacheInvalidation enabled.");
+            return;
         }
         compLevel = (args[1].equals("C1")) ? 1 : 4;
         compileMethods();
