@@ -570,6 +570,8 @@ java/nio/channels/DatagramChannel/Unref.java                    8233437 generic-
 java/nio/channels/DatagramChannel/BasicMulticastTests.java      8144003 macosx-all
 java/nio/channels/DatagramChannel/MulticastSendReceiveTests.java 8144003 macosx-all
 java/nio/channels/DatagramChannel/Promiscuous.java              8144003 macosx-all
+java/nio/channels/SocketChannel/CloseDuringConnect.java         8375658 macosx-26.0,macosx-26.1,macosx-26.2,macosx-26.3
+java/nio/channels/SocketChannel/OpenLeak.java                   8375658 macosx-26.0,macosx-26.1,macosx-26.2,macosx-26.3
 
 ############################################################################
 
