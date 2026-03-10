@@ -480,75 +480,32 @@ public abstract class URLStreamHandler {
      * @param   u   the URL.
      * @return  a string representation of the {@code URL} argument.
      */
-    protected String toExternalForm(final URL u) {
-        // Optimized for efficient string concatenation with optional components and separators
-        // Output format: protocol:[//authority][path][?query][#ref]
+    protected String toExternalForm(URL u) {
+        // Normalize empty components to ""
+        String s;
+        var auth  = (s = u.getAuthority()) == null || s.isEmpty() ? "" : s;
+        var path  = (s = u.getPath())  == null ? "" : s;
+        var query = (s = u.getQuery()) == null ? "" : s;
+        var ref   = (s = u.getRef())   == null ? "" : s;
 
-        // Local variables used by concatenation
-        String protocol = u.getProtocol(), authSeparator, authority, path, querySeparator, query, refSeparator, ref;
-
-        // Extract URL components
-        String a  = u.getAuthority();
-        String p  = u.getPath();
-        String q  = u.getQuery();
-        String r  = u.getRef();
-
-        // Check optional components
-        boolean hasAuthority = a != null && !a.isEmpty();
-        boolean hasQuery = q != null;
-        boolean hasRef = r != null;
-
-        path = p != null ? p : "";
-
-        // Specialized concatenation for local URLs without query or ref
-        if (!hasAuthority && !hasQuery && !hasRef) {
-            return protocol
-                    + ':'
-                    + path;
+        // Fast paths for empty components
+        if (query == "" && ref == "") {
+            if (auth == "") {
+                return u.getProtocol() + ":" + path;
+            } else {
+                return u.getProtocol() + "://" + auth + path;
+            }
         }
 
-        if (hasAuthority) {
-            authSeparator = "//";
-            authority = a;
-        } else {
-            authSeparator = "";
-            authority = "";
-        }
-
-        // Specialized concatenation for URLs with no query or ref
-        if (!hasQuery && !hasRef) {
-            return protocol
-                    + ':'
-                    + authSeparator
-                    + authority
-                    + path;
-        }
-
-        if (hasQuery) {
-            querySeparator = "?";
-            query = q;
-        } else {
-            querySeparator = "";
-            query = "";
-        }
-        if (hasRef) {
-            refSeparator = "#";
-            ref = r;
-        } else {
-            refSeparator = "";
-            ref = "";
-        }
-
-        // Concatenation for the general case
-        return protocol
-                + ':'
-                + authSeparator
-                + authority
+        // General case
+        var aSep = auth  != "" ? "//" : "";
+        var qSep = query != "" ? "?"  : "";
+        var rSep = ref   != "" ? "#"  : "";
+        return u.getProtocol() + ":"
+                + aSep + auth
                 + path
-                + querySeparator
-                + query
-                + refSeparator
-                + ref;
+                + qSep + query
+                + rSep + ref;
     }
 
     /**
