@@ -1848,7 +1848,7 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 const Type* BoolNode::Value_cmpu_and_mask(PhaseValues* phase) const {
   Node* cmp = in(1);
   if (cmp != nullptr && cmp->Opcode() == Op_CmpU) {
-    Node* cmp1 = cmp->in(1);
+    Node* cmp1 = cmp->in(1)->uncast();
     Node* cmp2 = cmp->in(2);
 
     if (cmp1->Opcode() == Op_AndI) {
