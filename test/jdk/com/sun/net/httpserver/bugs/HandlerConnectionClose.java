@@ -57,7 +57,7 @@ import javax.net.ssl.SSLSession;
  * @summary  test that the handler can request a connection close.
  * @library /test/lib
  * @build jdk.test.lib.net.SimpleSSLContext
- * @run main/othervm HandlerConnectionClose
+ * @run main/othervm ${test.main.class}
  */
 public class HandlerConnectionClose {
     static final int ONEK = 1024;

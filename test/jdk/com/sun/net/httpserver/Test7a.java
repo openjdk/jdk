@@ -40,8 +40,8 @@ import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
  * @summary Light weight HTTP server
  * @library /test/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.test.lib.net.URIBuilder
- * @run main/othervm Test7a
- * @run main/othervm -Djava.net.preferIPv6Addresses=true Test7a
+ * @run main/othervm ${test.main.class}
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true ${test.main.class}
  */
 public class Test7a extends Test {
 

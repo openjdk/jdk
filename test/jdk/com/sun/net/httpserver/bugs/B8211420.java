@@ -36,8 +36,8 @@ import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
  * @test
  * @bug 8211420
  * @library /test/lib
- * @run main/othervm B8211420
- * @run main/othervm -Djava.net.preferIPv6Addresses=true B8211420
+ * @run main/othervm ${test.main.class}
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true ${test.main.class}
  * @summary
  */
 public class B8211420 {

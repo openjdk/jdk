@@ -40,8 +40,8 @@ import jdk.test.lib.net.URIBuilder;
  * @summary Light weight HTTP server
  * @library /test/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.test.lib.net.URIBuilder
- * @run main/othervm Test8a
- * @run main/othervm -Djava.net.preferIPv6Addresses=true Test8a
+ * @run main/othervm ${test.main.class}
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true ${test.main.class}
  */
 public class Test8a extends Test {
 

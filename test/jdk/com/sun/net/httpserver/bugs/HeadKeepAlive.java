@@ -48,7 +48,7 @@ import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
  * @bug 8304963
  * @summary Connection should be reusable after HEAD request
  * @library /test/lib
- * @run junit/othervm HeadKeepAlive
+ * @run junit/othervm ${test.main.class}
  */
 public class HeadKeepAlive {
 

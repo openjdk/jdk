@@ -45,7 +45,7 @@ import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
  * @test
  * @bug 8190793
  * @summary Httpserver does not detect truncated request body
- * @run main/othervm TruncatedRequestBody
+ * @run main/othervm ${test.main.class}
  */
 /*
  * Send two POST requests to the server which are both trucated

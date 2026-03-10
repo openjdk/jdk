@@ -50,8 +50,8 @@ import static jdk.test.lib.Utils.createTempFileOfSize;
  *        jdk.test.lib.Utils
  *        jdk.test.lib.net.SimpleSSLContext
  *        jdk.test.lib.net.URIBuilder
- * @run main/othervm Test13
- * @run main/othervm -Djava.net.preferIPv6Addresses=true Test13
+ * @run main/othervm ${test.main.class}
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true ${test.main.class}
  */
 public class Test13 extends Test {
 

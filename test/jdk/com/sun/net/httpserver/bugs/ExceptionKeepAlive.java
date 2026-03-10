@@ -49,7 +49,7 @@ import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
  * @summary Exceptions thrown from HttpHandler.handle should not close connection
  *          if response is completed
  * @library /test/lib
- * @run junit/othervm ExceptionKeepAlive
+ * @run junit/othervm ${test.main.class}
  */
 public class ExceptionKeepAlive {
 

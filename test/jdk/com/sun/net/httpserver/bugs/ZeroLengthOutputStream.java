@@ -52,7 +52,7 @@ import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
  * @summary HttpExchange.getResponseBody write and close should not throw
  *          even when response length is zero
  * @library /test/lib
- * @run junit/othervm ZeroLengthOutputStream
+ * @run junit/othervm ${test.main.class}
  */
 public class ZeroLengthOutputStream {
 

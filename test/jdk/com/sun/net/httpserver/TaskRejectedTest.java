@@ -45,7 +45,7 @@ import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
  * @test
  * @bug 8169358
  * @summary  HttpServer does not close client connection when RejectedExecutionException occurs.
- * @run main/othervm TaskRejectedTest
+ * @run main/othervm ${test.main.class}
  */
 public class TaskRejectedTest {
 

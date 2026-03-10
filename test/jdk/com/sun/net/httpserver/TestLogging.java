@@ -42,8 +42,8 @@ import static jdk.test.lib.Utils.createTempFileOfSize;
  * @library /test/lib
  * @build jdk.test.lib.Utils
  *        jdk.test.lib.net.URIBuilder
- * @run main/othervm TestLogging
- * @run main/othervm -Djava.net.preferIPv6Addresses=true TestLogging
+ * @run main/othervm ${test.main.class}
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true ${test.main.class}
  */
 public class TestLogging extends Test {
 

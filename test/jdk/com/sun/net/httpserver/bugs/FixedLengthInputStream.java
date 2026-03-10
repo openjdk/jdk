@@ -43,8 +43,8 @@ import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
  * @bug 6756771 6755625
  * @summary  com.sun.net.httpserver.HttpServer should handle POSTs larger than 2Gig
  * @library /test/lib
- * @run main/othervm FixedLengthInputStream
- * @run main/othervm -Djava.net.preferIPv6Addresses=true FixedLengthInputStream
+ * @run main/othervm ${test.main.class}
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true ${test.main.class}
  */
 public class FixedLengthInputStream {
     static final long POST_SIZE = 4L * 1024L * 1024L * 1024L; // 4Gig
