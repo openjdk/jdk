@@ -43,10 +43,18 @@ public class ReassociateVectorBenchmark {
     long [] longIn1;
     long [] longOut;
 
+    short [] shortIn1;
+    short [] shortOut;
+
+    byte [] byteIn1;
+    byte [] byteOut;
+
     static final VectorSpecies<Float> fspecies = FloatVector.SPECIES_PREFERRED;
     static final VectorSpecies<Double> dspecies = DoubleVector.SPECIES_PREFERRED;
     static final VectorSpecies<Integer> ispecies = IntVector.SPECIES_PREFERRED;
     static final VectorSpecies<Long> lspecies = LongVector.SPECIES_PREFERRED;
+    static final VectorSpecies<Short> sspecies = ShortVector.SPECIES_PREFERRED;
+    static final VectorSpecies<Byte> bspecies = ByteVector.SPECIES_PREFERRED;
 
     @Setup(Level.Trial)
     public void BmSetup() {
@@ -57,9 +65,17 @@ public class ReassociateVectorBenchmark {
         longIn1 = new long[size];
         longOut = new long[size];
 
+        shortIn1 = new short[size];
+        shortOut = new short[size];
+
+        byteIn1 = new byte[size];
+        byteOut = new byte[size];
+
         for (int i = 4; i < size; i++) {
             intIn1[i] = r.nextInt();
             longIn1[i] = r.nextLong();
+            shortIn1[i] = (short) r.nextInt();
+            byteIn1[i] = (byte) r.nextInt();
         }
     }
 
@@ -85,8 +101,9 @@ public class ReassociateVectorBenchmark {
         return res.lane(0);
     }
 
+    // int: bcast(a) MUL (bcast(b) MUL (bcast(c) MUL array))
     @Benchmark
-    public void reassociateVectorsKernel1() {
+    public void reassociateIntMulChainedBroadcasts() {
         for (int i = 0; i < ispecies.loopBound(size); i += ispecies.length()) {
             IntVector.broadcast(ispecies, i)
                      .lanewise(VectorOperators.MUL,
@@ -99,22 +116,9 @@ public class ReassociateVectorBenchmark {
         }
     }
 
+    // int: (bcast(a) MUL bcast(b)) MUL (bcast(c) MUL array)
     @Benchmark
-    public void reassociateVectorsKernel2() {
-        for (int i = 0; i < lspecies.loopBound(size); i += lspecies.length()) {
-            LongVector.broadcast(lspecies, i)
-                      .lanewise(VectorOperators.ADD,
-                                LongVector.broadcast(lspecies, i + 1)
-                                          .lanewise(VectorOperators.ADD,
-                                                    LongVector.broadcast(lspecies, i + 2)
-                                                              .lanewise(VectorOperators.ADD,
-                                                                        LongVector.fromArray(lspecies, longIn1, i))))
-            .intoArray(longOut, i);
-        }
-    }
-
-    @Benchmark
-    public void reassociateVectorsKernel3() {
+    public void reassociateIntMulBalancedBroadcasts() {
         for (int i = 0; i < ispecies.loopBound(size); i += ispecies.length()) {
             IntVector left =
                 IntVector.broadcast(ispecies, i)
@@ -128,6 +132,108 @@ public class ReassociateVectorBenchmark {
 
             left.lanewise(VectorOperators.MUL, right)
                 .intoArray(intOut, i);
+        }
+    }
+
+    // long: bcast(a) MUL (bcast(b) MUL (bcast(c) MUL array))
+    @Benchmark
+    public void reassociateLongMulChainedBroadcasts() {
+        for (int i = 0; i < lspecies.loopBound(size); i += lspecies.length()) {
+            LongVector.broadcast(lspecies, (long) i)
+                      .lanewise(VectorOperators.MUL,
+                                LongVector.broadcast(lspecies, (long) (i + 1))
+                                          .lanewise(VectorOperators.MUL,
+                                                    LongVector.broadcast(lspecies, (long) (i + 2))
+                                                              .lanewise(VectorOperators.MUL,
+                                                                        LongVector.fromArray(lspecies, longIn1, i))))
+            .intoArray(longOut, i);
+        }
+    }
+
+    // long: (bcast(a) MUL bcast(b)) MUL (bcast(c) MUL array)
+    @Benchmark
+    public void reassociateLongMulBalancedBroadcasts() {
+        for (int i = 0; i < lspecies.loopBound(size); i += lspecies.length()) {
+            LongVector left =
+                LongVector.broadcast(lspecies, (long) i)
+                          .lanewise(VectorOperators.MUL,
+                                    LongVector.broadcast(lspecies, (long) (i + 1)));
+
+            LongVector right =
+                LongVector.broadcast(lspecies, (long) (i + 2))
+                          .lanewise(VectorOperators.MUL,
+                                    LongVector.fromArray(lspecies, longIn1, i));
+
+            left.lanewise(VectorOperators.MUL, right)
+                .intoArray(longOut, i);
+        }
+    }
+
+    // short: bcast(a) MUL (bcast(b) MUL (bcast(c) MUL array))
+    @Benchmark
+    public void reassociateShortMulChainedBroadcasts() {
+        for (int i = 0; i < sspecies.loopBound(size); i += sspecies.length()) {
+            ShortVector.broadcast(sspecies, (short) i)
+                       .lanewise(VectorOperators.MUL,
+                                 ShortVector.broadcast(sspecies, (short) (i + 1))
+                                            .lanewise(VectorOperators.MUL,
+                                                      ShortVector.broadcast(sspecies, (short) (i + 2))
+                                                                 .lanewise(VectorOperators.MUL,
+                                                                           ShortVector.fromArray(sspecies, shortIn1, i))))
+            .intoArray(shortOut, i);
+        }
+    }
+
+    // short: (bcast(a) MUL bcast(b)) MUL (bcast(c) MUL array)
+    @Benchmark
+    public void reassociateShortMulBalancedBroadcasts() {
+        for (int i = 0; i < sspecies.loopBound(size); i += sspecies.length()) {
+            ShortVector left =
+                ShortVector.broadcast(sspecies, (short) i)
+                           .lanewise(VectorOperators.MUL,
+                                     ShortVector.broadcast(sspecies, (short) (i + 1)));
+
+            ShortVector right =
+                ShortVector.broadcast(sspecies, (short) (i + 2))
+                           .lanewise(VectorOperators.MUL,
+                                     ShortVector.fromArray(sspecies, shortIn1, i));
+
+            left.lanewise(VectorOperators.MUL, right)
+                .intoArray(shortOut, i);
+        }
+    }
+
+    // byte: bcast(a) MUL (bcast(b) MUL (bcast(c) MUL array))
+    @Benchmark
+    public void reassociateByteMulChainedBroadcasts() {
+        for (int i = 0; i < bspecies.loopBound(size); i += bspecies.length()) {
+            ByteVector.broadcast(bspecies, (byte) i)
+                      .lanewise(VectorOperators.MUL,
+                                ByteVector.broadcast(bspecies, (byte) (i + 1))
+                                           .lanewise(VectorOperators.MUL,
+                                                     ByteVector.broadcast(bspecies, (byte) (i + 2))
+                                                                .lanewise(VectorOperators.MUL,
+                                                                          ByteVector.fromArray(bspecies, byteIn1, i))))
+            .intoArray(byteOut, i);
+        }
+    }
+
+    // byte: (bcast(a) MUL bcast(b)) MUL (bcast(c) MUL array)
+    @Benchmark
+    public void reassociateByteMulBalancedBroadcasts() {
+        for (int i = 0; i < bspecies.loopBound(size); i += bspecies.length()) {
+            ByteVector left =
+                ByteVector.broadcast(bspecies, (byte) i)
+                          .lanewise(VectorOperators.MUL,
+                                    ByteVector.broadcast(bspecies, (byte) (i + 1)));
+
+            ByteVector right =
+                ByteVector.broadcast(bspecies, (byte) (i + 2))
+                          .lanewise(VectorOperators.MUL,
+                                    ByteVector.fromArray(bspecies, byteIn1, i));
+
+            left.lanewise(VectorOperators.MUL, right)
+                .intoArray(byteOut, i);
         }
     }
 }

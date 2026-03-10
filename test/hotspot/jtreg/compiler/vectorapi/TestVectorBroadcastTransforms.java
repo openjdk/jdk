@@ -27,7 +27,7 @@
  * @summary Optimize vector operations by reassociating broadcasted inputs
  * @modules jdk.incubator.vector
  * @library /test/lib /
- * @run driver compiler.vectorapi.TestVectorBroadcastReassociations
+ * @run driver compiler.vectorapi.TestVectorBroadcastTransforms
  */
 
 package compiler.vectorapi;
@@ -35,11 +35,11 @@ package compiler.vectorapi;
 import compiler.lib.ir_framework.*;
 import compiler.lib.verify.Verify;
 import jdk.incubator.vector.*;
-import java.util.stream.IntStream;
+
 import jdk.test.lib.Utils;
 import java.util.Random;
 
-public class TestVectorBroadcastReassociations {
+public class TestVectorBroadcastTransforms {
 
     public static void main(String[] args) {
         TestFramework.runWithFlags("--add-modules=jdk.incubator.vector");
@@ -1083,128 +1083,4 @@ public class TestVectorBroadcastReassociations {
         Verify.checkEQ(sr, (short) Math.max(sa, sb));
     }
 
-    /* =======================
-     * Reassociation
-     * ======================= */
-
-    static int [] intIn;
-    static int [] intOut;
-    static int ia = 17, ib = 9;
-
-    static {
-        intIn = IntStream.range(0, ISP.length()).toArray();
-        intOut = new int[ISP.length()];
-    }
-
-    @Test
-    @IR(applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
-        counts = { IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 1 ", IRNode.ADD_I, ">= 1",
-                   IRNode.REPLICATE_I, IRNode.VECTOR_SIZE_ANY, ">= 1" })
-    @Warmup(value = 10000)
-    static void test_reassociation1() {
-        IntVector.broadcast(ISP, ia)
-                 .lanewise(VectorOperators.ADD,
-                           IntVector.broadcast(ISP, ib)
-                                    .lanewise(VectorOperators.ADD,
-                                              IntVector.fromArray(ISP, intIn, 0)))
-                 .intoArray(intOut, 0);
-    }
-
-    @Test
-    @IR(applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
-        counts = { IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 1 ", IRNode.ADD_I, ">= 1",
-                   IRNode.REPLICATE_I, IRNode.VECTOR_SIZE_ANY, ">= 1" })
-    @Warmup(value = 10000)
-    static void test_reassociation2() {
-        IntVector.broadcast(ISP, ia)
-                 .lanewise(VectorOperators.ADD,
-                           IntVector.fromArray(ISP, intIn, 0)
-                                    .lanewise(VectorOperators.ADD,
-                                              IntVector.broadcast(ISP, ib)))
-                 .intoArray(intOut, 0);
-    }
-
-    @Test
-    @IR(applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
-        counts = { IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 1 ", IRNode.ADD_I, ">= 1",
-                   IRNode.REPLICATE_I, IRNode.VECTOR_SIZE_ANY, ">= 1" })
-    @Warmup(value = 10000)
-    static void test_reassociation3() {
-        IntVector.broadcast(ISP, ia)
-                 .lanewise(VectorOperators.ADD,
-                           IntVector.fromArray(ISP, intIn, 0))
-                 .lanewise(VectorOperators.ADD,
-                           IntVector.broadcast(ISP, ib))
-                 .intoArray(intOut, 0);
-    }
-
-    @Test
-    @IR(applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
-        counts = { IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 1 ", IRNode.ADD_I, ">= 1",
-                   IRNode.REPLICATE_I, IRNode.VECTOR_SIZE_ANY, ">= 1" })
-    @Warmup(value = 10000)
-    static void test_reassociation4() {
-        IntVector.fromArray(ISP, intIn, 0)
-                 .lanewise(VectorOperators.ADD,
-                           IntVector.broadcast(ISP, ia))
-                 .lanewise(VectorOperators.ADD,
-                           IntVector.broadcast(ISP, ib))
-                 .intoArray(intOut, 0);
-    }
-
-    @Test
-    @IR(applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
-        counts = { IRNode.MUL_VI, IRNode.VECTOR_SIZE_ANY, " 1 ", IRNode.MUL_I, ">= 1",
-                   IRNode.REPLICATE_I, IRNode.VECTOR_SIZE_ANY, ">= 1" })
-    @Warmup(value = 10000)
-    static void test_reassociation5() {
-        IntVector.broadcast(ISP, ia)
-                 .lanewise(VectorOperators.MUL,
-                           IntVector.broadcast(ISP, ib)
-                                    .lanewise(VectorOperators.MUL,
-                                              IntVector.fromArray(ISP, intIn, 0)))
-                 .intoArray(intOut, 0);
-    }
-
-    @Test
-    @IR(applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
-        counts = { IRNode.MUL_VI, IRNode.VECTOR_SIZE_ANY, " 1 ", IRNode.MUL_I, ">= 1",
-                   IRNode.REPLICATE_I, IRNode.VECTOR_SIZE_ANY, ">= 1" })
-    @Warmup(value = 10000)
-    static void test_reassociation6() {
-        IntVector.broadcast(ISP, ia)
-                 .lanewise(VectorOperators.MUL,
-                           IntVector.fromArray(ISP, intIn, 0)
-                                    .lanewise(VectorOperators.MUL,
-                                              IntVector.broadcast(ISP, ib)))
-                 .intoArray(intOut, 0);
-    }
-
-    @Test
-    @IR(applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
-        counts = { IRNode.MUL_VI, IRNode.VECTOR_SIZE_ANY, " 1 ", IRNode.MUL_I, ">= 1",
-                   IRNode.REPLICATE_I, IRNode.VECTOR_SIZE_ANY, ">= 1" })
-    @Warmup(value = 10000)
-    static void test_reassociation7() {
-        IntVector.broadcast(ISP, ia)
-                 .lanewise(VectorOperators.MUL,
-                           IntVector.fromArray(ISP, intIn, 0))
-                 .lanewise(VectorOperators.MUL,
-                           IntVector.broadcast(ISP, ib))
-                 .intoArray(intOut, 0);
-    }
-
-    @Test
-    @IR(applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
-        counts = { IRNode.MUL_VI, IRNode.VECTOR_SIZE_ANY, " 1 ", IRNode.MUL_I, ">= 1",
-                   IRNode.REPLICATE_I, IRNode.VECTOR_SIZE_ANY, ">= 1" })
-    @Warmup(value = 10000)
-    static void test_reassociation8() {
-        IntVector.fromArray(ISP, intIn, 0)
-                 .lanewise(VectorOperators.MUL,
-                           IntVector.broadcast(ISP, ia))
-                 .lanewise(VectorOperators.MUL,
-                           IntVector.broadcast(ISP, ib))
-                 .intoArray(intOut, 0);
-    }
 }
