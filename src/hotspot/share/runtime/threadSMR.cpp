@@ -726,8 +726,8 @@ JavaThread* ThreadsList::find_JavaThread_from_java_tid(jlong java_tid) const {
         }
       }
     }
-  } else if (includes(thread)) {
-    // The thread is protected by this list
+  } else if (includes(thread) && !thread->is_exiting()) {
+    // The thread is protected by this list and has yet exited
     return thread;
   }
   return nullptr;
