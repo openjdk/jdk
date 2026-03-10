@@ -81,7 +81,7 @@ public class GenerateOopMapTest {
         // Prints extra stuff with detailed. Not sure how useful this is but keep it for now.
         if (Platform.isDebugBuild()) {
             pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:generateoopmap=trace:detail.log",
-                                                                  "-XX:+TraceNewOopMapGenerationDetailed",
+                                                                  "-XX:+Verbose",
                                                                   "GenerateOopMapTest", "test");
             o = new OutputAnalyzer(pb.start());
             o.shouldHaveExitValue(0);

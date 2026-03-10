@@ -1342,7 +1342,7 @@ void GenerateOopMap::interp1(BytecodeStream *itr) {
   if (log_is_enabled(Trace, generateoopmap)) {
     ResourceMark rm;
     LogStream st(Log(generateoopmap)::trace());
-    print_current_state(&st, itr, TraceNewOopMapGenerationDetailed);
+    print_current_state(&st, itr, Verbose);
   }
 
   // Should we report the results? Result is reported *before* the instruction at the current bci is executed.
