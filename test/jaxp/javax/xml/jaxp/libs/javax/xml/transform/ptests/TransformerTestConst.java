@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,22 @@
  */
 package javax.xml.transform.ptests;
 
-import static jaxp.library.JAXPTestUtilities.FILE_SEP;
-import static jaxp.library.JAXPTestUtilities.getPathByClassName;
+import java.io.File;
+import java.nio.file.Path;
 
 /**
  * This is the Base test class provide basic support for JAXP functional test
  */
 public class TransformerTestConst {
+    private static final Path SRC_ROOT = Path.of(System.getProperty("test.src")).toAbsolutePath();
+
     /**
      * XML source file directory.
      */
-    public static final String XML_DIR = getPathByClassName(TransformerTestConst.class,
-            ".." + FILE_SEP + "xmlfiles");
-
+    public static final String XML_DIR = SRC_ROOT.resolveSibling("xmlfiles").toString() + File.separatorChar;
 
     /**
      * Golden validation files directory.
      */
-    public static final String GOLDEN_DIR = getPathByClassName(TransformerTestConst.class,
-            ".." + FILE_SEP + "xmlfiles" + FILE_SEP + "out");
+    public static final String GOLDEN_DIR = SRC_ROOT.resolveSibling("xmlfiles").resolve("out").toString() + File.separatorChar;
 }

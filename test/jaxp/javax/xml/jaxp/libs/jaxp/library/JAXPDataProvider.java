@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,33 @@
 
 package jaxp.library;
 
-import org.testng.annotations.DataProvider;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsProvider;
+import org.junit.jupiter.params.provider.ArgumentsSource;
+import org.junit.jupiter.params.support.AnnotationConsumer;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.util.stream.Stream;
 
 /**
  * Provide invalid parameters for negative testing Factory.newInstance.
  */
-public class JAXPDataProvider {
+public class JAXPDataProvider implements ArgumentsProvider, AnnotationConsumer<JAXPDataProvider.NewInstanceNeg> {
+    @Target({ ElementType.ANNOTATION_TYPE, ElementType.METHOD })
+    @Retention(RetentionPolicy.RUNTIME)
+    @ArgumentsSource(JAXPDataProvider.class)
+    public @interface NewInstanceNeg { }
 
-    @DataProvider(name = "new-instance-neg")
-    public static Object[][] getNewInstanceNeg() {
-        return new Object[][] { { null, null }, { null, JAXPDataProvider.class.getClassLoader() } };
+    @Override
+    public void accept(NewInstanceNeg annotation) { }
+
+    @Override
+    public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
+        return Stream.of(Arguments.arguments(null, null),
+                Arguments.arguments(null, JAXPDataProvider.class.getClassLoader()));
     }
-
 }
