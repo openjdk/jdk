@@ -269,6 +269,7 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
   __ z_st(temp1, Address(temp2, in_bytes(ZStoreBarrierEntry::prev_offset())));
 }  
 
+// TODO: ppc does not have is_native support
 void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
                                                 Address ref_addr,
                                                 Register temp1,
@@ -379,6 +380,74 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
   }
 
   BLOCK_COMMENT("} ZBarrierSetAssembler::store_at");
+}
+
+void ZBarrierSetAssembler::copy_load_at_fast(MacroAssembler* masm,
+                                             Register zpointer,
+                                             Register addr,
+                                             Register load_bad_mask,
+                                             Label& slow_path,
+                                             Label& continuation) const {
+  __ z_lg(zpointer, Address(addr, 0));
+  __ z_cgr(zpointer, load_bad_mask);
+  __ z_bne(slow_path);
+  __ bind(continuation);
+}
+
+void ZBarrierSetAssembler::copy_load_at_slow(MacroAssembler* masm,
+                                             Register zpointer,
+                                             Register addr,
+                                             // Register temp,
+                                             Label& slow_path,
+                                             Label& continuation) const {
+  __ align(32);
+  __ bind(slow_path);
+  {
+    ZRuntimeCallSpill rcs(masm, Z_R0);
+    assert(zpointer != Z_ARG2, "or change argument setup");
+    __ lgr_if_needed(Z_ARG2, addr);
+    __ Call_VM_leaf(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(), zpointer, R4_ARG2);
+  }
+  __ z_sllg(zpointer, Z_R0, ZPointerLoadShift); // Slow-path has uncolored; revert
+  __ z_br(continuation);
+}
+
+void ZBarrierSetAssembler::copy_store_at_fast(MacroAssembler* masm,
+                                              Register zpointer,
+                                              Register addr,
+                                              Register store_bad_mask,
+                                              Register store_good_mask,
+                                              Label& medium_path,
+                                              Label& continuation,
+                                              bool dest_uninitialized) const {
+  if (!dest_unintialized) {
+    __ z_lg(Z_R0, Address(addr, 0));
+    __ z_cgr(Z_R0, store_bad_mask);
+    __ brne(medium_path);
+    __ bind(continuation);
+  }
+  __ z_ogr(zpointer, store_good_mask);
+  __ z_stg(zpointer, Address(addr, 0));
+}
+
+void ZBarrierSetAssembler::copy_store_at_slow(MacroAssembler* masm,
+                                              Register addr,
+                                              // Register temp,
+                                              Label& medium_path,
+                                              Label& continuation,
+                                              bool dest_unintialized) const {
+  if (!dest_unintialized) {
+    Label slow_path;
+    __ align(32);
+    __ bind(medium_path);
+    store_barrier_medium(masm, addr, Z_R0_scratch, Z_R1_scratch, false, false, continuation, slow_path);
+    __ bind(slow_path);
+    {
+      ZRuntimeCallSpill rcs(masm, noreg);
+      __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr(), addr);
+    }
+    __ z_br(continuation);
+  }
 }
 
 // TODO: Check if to go with x86, aarch64 or ppc, currently this implementation is according to ppc
@@ -786,3 +855,32 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
 
 #undef __
 #endif // COMPILER2
+
+#undef __
+#define __ masm->
+
+// Verify a colored pointer
+// TODO: I am following the implementation of ppc because the implementation of verify_oop of s390 matches ppc and the call for verify_oop in the above implementations are also defined just like ppc
+void ZBarrierSetAssembler::check_oop(MacroAssembler *masm, Register obj, const char* msg) {
+  if (!VerifyOops) {
+    return;
+  }
+  Label done, skip_uncolor;
+  // Skip (colored) null
+  __ z_srlg(Z_R0, obj, ZPointerLoadShift);
+  __ z_ltgr(Z_R0, Z_R0);
+  __ z_br(done);
+
+  // Check if ZAddressHeapBase << ZPointerLoadShift is set. If so, we need to uncolor.
+  __ z_srlg(Z_R0, obj, bitpos);
+  __ z_chi(Z_R0, 0x01);
+  __ z_lgr(Z_R0, obj);
+  __ z_brz(skip_uncolor);
+  __ z_srlg(Z_R0, obj, ZPointerLoadShift);
+  __ bind(skip_uncolor);
+
+  __ verify_oop(Z_R0, msg);
+  __ bind(done);
+}
+
+#undef __
