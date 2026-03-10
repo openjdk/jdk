@@ -284,7 +284,6 @@ protected:
     uint _optoLoopAlignment;
     uint _maxVectorSize;
     uint _codeEntryAlignment;
-    uint _useUnalignedLoadStores;
     uint _arrayOperationPartialInlineSize;
     uint _allocatePrefetchLines;
     uint _allocateInstancePrefetchLines;
@@ -293,7 +292,8 @@ protected:
 #if defined(X86)
     enum X86Flags {
       x86_none = 0,
-      x86_enableX86ECoreOpts = 1
+      x86_enableX86ECoreOpts = 1,
+      x86_useUnalignedLoadStores = 2
     };
     uint _avx3threshold;
     uint _x86_flags;

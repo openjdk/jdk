@@ -493,10 +493,8 @@ void AOTCodeCache::Config::record(uint cpu_features_offset) {
   _contendedPaddingWidth           = ContendedPaddingWidth;
   _gc                              = (uint)Universe::heap()->kind();
   _optoLoopAlignment               = (uint)OptoLoopAlignment;
-  _useUnalignedLoadStores          = (uint)UseUnalignedLoadStores;
   _maxVectorSize                   = (uint)MaxVectorSize;
   _codeEntryAlignment              = (uint)CodeEntryAlignment;
-  _useUnalignedLoadStores          = (uint)UseUnalignedLoadStores;
   _arrayOperationPartialInlineSize = (uint)ArrayOperationPartialInlineSize;
   _allocatePrefetchLines           = (uint)AllocatePrefetchLines;
   _allocateInstancePrefetchLines   = (uint)AllocateInstancePrefetchLines;
@@ -508,6 +506,11 @@ void AOTCodeCache::Config::record(uint cpu_features_offset) {
   if (EnableX86ECoreOpts) {
     _x86_flags |= x86_enableX86ECoreOpts;
   }
+#if !defined(ZERO)
+  if (UseUnalignedLoadStores) {
+    _x86_flags |= x86_useUnalignedLoadStores;
+  }
+#endif // !defined(ZERO)
 #endif // defined(X86)
 #if defined(AARCH64)
   _prefetchCopyIntervalInBytes     = (uint)PrefetchCopyIntervalInBytes;
@@ -637,13 +640,6 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
     return false;
   }
 
-  // switching off UseUnalignedLoadStores can affect validity of fill
-  // stubs
-  if (_useUnalignedLoadStores && !UseUnalignedLoadStores) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseUnalignedLoadStores = true vs current = false");
-    return false;
-  }
-
   // changing ArrayOperationPartialInlineSize can affect validity of
   // nmethods and stubs
   if (_arrayOperationPartialInlineSize != (uint)ArrayOperationPartialInlineSize) {
@@ -683,6 +679,14 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with EnableX86ECoreOpts = %s vs current %s", (EnableX86ECoreOpts ? "false" : "true"), (EnableX86ECoreOpts ? "true" : "false"));
     return false;
   }
+#if !defined(ZERO)
+  // switching off UseUnalignedLoadStores can affect validity of fill
+  // stubs
+  if (((_x86_flags & x86_useUnalignedLoadStores) != 0) && !UseUnalignedLoadStores) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseUnalignedLoadStores = true vs current = false");
+    return false;
+  }
+#endif // !defined(ZERO)
 #endif // defined(X86)
 
 #if defined(AARCH64)
