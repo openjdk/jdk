@@ -274,7 +274,7 @@ public class AMD64Frame extends Frame {
     //
     // frame::next_frame() creates RegisterMap instance with 4 arguments.
     // It sets RegisterMap::WalkContinuation::skip to final argument (walk_cont),
-    // then _chunk would not be initialized following code in c'tor of RegisterMap.
+    // therefore _chunk will not be initialized by the following code in c'tor of RegisterMap.
     //
     //   if (walk_cont == WalkContinuation::include && thread != nullptr && thread->last_continuation() != nullptr) {
     //     _chunk = stackChunkHandle(Thread::current()->handle_area()->allocate_null_handle(), true /* dummy */);
