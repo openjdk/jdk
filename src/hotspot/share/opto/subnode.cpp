@@ -108,7 +108,7 @@ const Type* SubNode::Value(PhaseGVN* phase) const {
   }
   const Type* t1 = phase->type(in(1));
   const Type* t2 = phase->type(in(2));
-  return sub(t1,t2);            // Local flavor of type subtraction
+  return sub(t1,t2, phase);            // Local flavor of type subtraction
 
 }
 
@@ -334,7 +334,7 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
 
 //------------------------------sub--------------------------------------------
 // A subtract node differences it's two inputs.
-const Type *SubINode::sub( const Type *t1, const Type *t2 ) const {
+const Type *SubINode::sub(const Type *t1, const Type *t2, PhaseGVN*) const {
   const TypeInt *r0 = t1->is_int(); // Handy access
   const TypeInt *r1 = t2->is_int();
   int32_t lo = java_subtract(r0->_lo, r1->_hi);
@@ -511,7 +511,7 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
 //------------------------------sub--------------------------------------------
 // A subtract node differences it's two inputs.
-const Type *SubLNode::sub( const Type *t1, const Type *t2 ) const {
+const Type *SubLNode::sub(const Type *t1, const Type *t2, PhaseGVN*) const {
   const TypeLong *r0 = t1->is_long(); // Handy access
   const TypeLong *r1 = t2->is_long();
   jlong lo = java_subtract(r0->_lo, r1->_hi);
@@ -552,14 +552,14 @@ const Type* SubFPNode::Value(PhaseGVN* phase) const {
       (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM) )
     return bot;
 
-  return sub(t1,t2);            // Local flavor of type subtraction
+  return sub(t1,t2, phase);            // Local flavor of type subtraction
 }
 
 
 //=============================================================================
 //------------------------------sub--------------------------------------------
 // A subtract node differences its two inputs.
-const Type* SubHFNode::sub(const Type* t1, const Type* t2) const {
+const Type* SubHFNode::sub(const Type* t1, const Type* t2, PhaseGVN*) const {
   // Half precision floating point subtraction follows the rules of IEEE 754
   // applicable to other floating point types.
   if (t1->isa_half_float_constant() != nullptr &&
@@ -588,7 +588,7 @@ Node *SubFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
 //------------------------------sub--------------------------------------------
 // A subtract node differences its two inputs.
-const Type *SubFNode::sub( const Type *t1, const Type *t2 ) const {
+const Type *SubFNode::sub(const Type *t1, const Type *t2, PhaseGVN*) const {
   // no folding if one of operands is infinity or NaN, do not do constant folding
   if( g_isfinite(t1->getf()) && g_isfinite(t2->getf()) ) {
     return TypeF::make( t1->getf() - t2->getf() );
@@ -623,7 +623,7 @@ Node *SubDNode::Ideal(PhaseGVN *phase, bool can_reshape){
 
 //------------------------------sub--------------------------------------------
 // A subtract node differences its two inputs.
-const Type *SubDNode::sub( const Type *t1, const Type *t2 ) const {
+const Type *SubDNode::sub(const Type *t1, const Type *t2, PhaseGVN*) const {
   // no folding if one of operands is infinity or NaN, do not do constant folding
   if( g_isfinite(t1->getd()) && g_isfinite(t2->getd()) ) {
     return TypeD::make( t1->getd() - t2->getd() );
@@ -678,7 +678,7 @@ CmpNode *CmpNode::make(Node *in1, Node *in2, BasicType bt, bool unsigned_comp) {
 //------------------------------cmp--------------------------------------------
 // Simplify a CmpI (compare 2 integers) node, based on local information.
 // If both inputs are constants, compare them.
-const Type *CmpINode::sub( const Type *t1, const Type *t2 ) const {
+const Type *CmpINode::sub(const Type *t1, const Type *t2, PhaseGVN*) const {
   const TypeInt *r0 = t1->is_int(); // Handy access
   const TypeInt *r1 = t2->is_int();
 
@@ -745,7 +745,7 @@ const Type* CmpINode::Value(PhaseGVN* phase) const {
 
 // Simplify a CmpU (compare 2 integers) node, based on local information.
 // If both inputs are constants, compare them.
-const Type* CmpUNode::sub(const Type* t1, const Type* t2) const {
+const Type* CmpUNode::sub(const Type* t1, const Type* t2, PhaseGVN*) const {
   const TypeInt* r0 = t1->is_int();
   const TypeInt* r1 = t2->is_int();
 
@@ -795,7 +795,7 @@ const Type* CmpUNode::Value(PhaseGVN* phase) const {
     return bottom_type();
   }
 
-  const Type* t_sub = sub(t1, t2); // compare based on immediate inputs
+  const Type* t_sub = sub(t1, t2, phase); // compare based on immediate inputs
 
   uint in1_op = in1->Opcode();
   if (in1_op == Op_AddI || in1_op == Op_SubI) {
@@ -847,8 +847,8 @@ const Type* CmpUNode::Value(PhaseGVN* phase) const {
         int w = MAX2(r0->_widen, r1->_widen); // _widen does not matter here
         const TypeInt* tr1 = TypeInt::make(lo_tr1, hi_tr1, w);
         const TypeInt* tr2 = TypeInt::make(lo_tr2, hi_tr2, w);
-        const TypeInt* cmp1 = sub(tr1, t2)->is_int();
-        const TypeInt* cmp2 = sub(tr2, t2)->is_int();
+        const TypeInt* cmp1 = sub(tr1, t2, phase)->is_int();
+        const TypeInt* cmp2 = sub(tr2, t2, phase)->is_int();
         // Compute union, so that cmp handles all possible results from the two cases
         const Type* t_cmp = cmp1->meet(cmp2);
         // Pick narrowest type, based on overflow computation and on immediate inputs
@@ -903,7 +903,7 @@ Node *CmpLNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
 //=============================================================================
 // Simplify a CmpL (compare 2 longs ) node, based on local information.
 // If both inputs are constants, compare them.
-const Type *CmpLNode::sub( const Type *t1, const Type *t2 ) const {
+const Type *CmpLNode::sub(const Type *t1, const Type *t2, PhaseGVN*) const {
   const TypeLong *r0 = t1->is_long(); // Handy access
   const TypeLong *r1 = t2->is_long();
 
@@ -931,7 +931,7 @@ const Type *CmpLNode::sub( const Type *t1, const Type *t2 ) const {
 
 // Simplify a CmpUL (compare 2 unsigned longs) node, based on local information.
 // If both inputs are constants, compare them.
-const Type* CmpULNode::sub(const Type* t1, const Type* t2) const {
+const Type* CmpULNode::sub(const Type* t1, const Type* t2, PhaseGVN*) const {
   const TypeLong* r0 = t1->is_long();
   const TypeLong* r1 = t2->is_long();
 
@@ -961,7 +961,7 @@ const Type* CmpULNode::sub(const Type* t1, const Type* t2) const {
 //------------------------------sub--------------------------------------------
 // Simplify an CmpP (compare 2 pointers) node, based on local information.
 // If both inputs are constants, compare them.
-const Type *CmpPNode::sub( const Type *t1, const Type *t2 ) const {
+const Type *CmpPNode::sub(const Type *t1, const Type *t2, PhaseGVN* phase) const {
   const TypePtr *r0 = t1->is_ptr(); // Handy access
   const TypePtr *r1 = t2->is_ptr();
 
@@ -986,7 +986,7 @@ const Type *CmpPNode::sub( const Type *t1, const Type *t2 ) const {
       Node* in2 = in(2)->uncast();
       AllocateNode* alloc1 = AllocateNode::Ideal_allocation(in1);
       AllocateNode* alloc2 = AllocateNode::Ideal_allocation(in2);
-      if (MemNode::detect_ptr_independence(in1, alloc1, in2, alloc2, nullptr)) {
+      if (MemNode::detect_ptr_independence(in1, alloc1, in2, alloc2, phase)) {
         return TypeInt::CC_GT;  // different pointers
       }
     }
@@ -1196,7 +1196,7 @@ Node *CmpPNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
 //------------------------------sub--------------------------------------------
 // Simplify an CmpN (compare 2 pointers) node, based on local information.
 // If both inputs are constants, compare them.
-const Type *CmpNNode::sub( const Type *t1, const Type *t2 ) const {
+const Type *CmpNNode::sub(const Type *t1, const Type *t2, PhaseGVN*) const {
   ShouldNotReachHere();
   return bottom_type();
 }
@@ -1458,8 +1458,8 @@ Node* BoolNode::fold_cmpI(PhaseGVN* phase, SubNode* cmp, Node* cmp1, int cmp_op,
         const TypeInt* tr1 = TypeInt::make(min_jint, hi_int, w);
         const TypeInt* tr2 = TypeInt::make(lo_int, max_jint, w);
         // Compare second input of cmp to both type ranges
-        const Type* sub_tr1 = cmp->sub(tr1, cmp2_type);
-        const Type* sub_tr2 = cmp->sub(tr2, cmp2_type);
+        const Type* sub_tr1 = cmp->sub(tr1, cmp2_type, phase);
+        const Type* sub_tr2 = cmp->sub(tr2, cmp2_type, phase);
         if (sub_tr1 == TypeInt::CC_LT && sub_tr2 == TypeInt::CC_GT) {
           // The result of the add/sub will never equal cmp2. Replace BoolNode
           // by false (0) if it tests for equality and by true (1) otherwise.
