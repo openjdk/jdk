@@ -46,3 +46,143 @@ class MachNode;
 class Node;
 #endif // COMPILER2
 
+const int ZBarrierRelocationFormatStoreGoodBeforeLoad = 0;
+const int ZBarrierRelocationFormatStoreBadBeforeLoad = 1;
+const int ZBarrierRelocationFormatStoreGoodBits = 2;
+const int ZBarrierRelocationFormatMarkBadBeforeTest = 3;
+const int ZBarrierRelocationFormatLoadGoodBeforeTestBit = 4;
+
+class ZBarrierSetAssembler : public ZBarrierSetAssemblerBase {
+public:
+virtual void zBarrierSetAssembler::load_at(MacroAssembler* masm,
+                                   DecoratorSet decorators,
+                                   BasicType type,
+                                   Register dst,
+                                   Address src,
+                                   Register temp1,
+                                   Register temp2);
+
+void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
+                                              Address ref_addr,
+                                              Register rnew_zaddress,
+                                              Register rnew_zpointer,
+                                              bool in_nmethod,
+                                              bool is_atomic,
+                                              Label& medium_path,
+                                              Label& medium_path_continuation) const;
+
+void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
+                                                Address ref_addr,
+                                                Register temp1,
+                                                Register temp2,
+                                                bool is_native,
+                                                bool is_atomic,
+                                                Label& medium_path_continuation,
+                                                Label& slow_path,
+                                                Label& slow_path_continuation) const;
+
+virtual void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
+                                    DecoratorSet decorators,
+                                    BasicType type,
+                                    Address dst,
+                                    Register src,
+                                    Register temp1,
+                                    Register temp2,
+                                    Register temp3);
+
+void ZBarrierSetAssembler::copy_load_at_fast(MacroAssembler* masm,
+                                             Register zpointer,
+                                             Register addr,
+                                             Register load_bad_mask,
+                                             Label& slow_path,
+                                             Label& continuation) const;
+
+void ZBarrierSetAssembler::copy_load_at_slow(MacroAssembler* masm,
+                                             Register zpointer,
+                                             Register addr,
+                                             Label& slow_path,
+                                             Label& continuation) const;
+
+void ZBarrierSetAssembler::copy_store_at_fast(MacroAssembler* masm,
+                                              Register zpointer,
+                                              Register addr,
+                                              Register store_bad_mask,
+                                              Register store_good_mask,
+                                              Label& medium_path,
+                                              Label& continuation,
+                                              bool dest_uninitialized) const;
+
+void ZBarrierSetAssembler::copy_store_at_slow(MacroAssembler* masm,
+                                              Register addr,
+                                              Label& medium_path,
+                                              Label& continuation,
+                                              bool dest_unintialized) const;
+
+void ZBarrierSetAssembler::generate_disjoint_oop_copy(MacroAssembler* masm, bool dest_unintialized);
+
+void ZBarrierSetAssembler::generate_conjoint_oop_copy(MacroAssembler* masm, bool dest_unintialized);
+
+void ZBarrierSetAssembler::load_copy_masks(MacroAssembler* masm,
+                                           Register load_bad_mask,
+                                           Register store_bad_mask,
+                                           Register store_good_mask,
+                                           bool dest_uninitialized) const;
+
+virtual void ZBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm,
+                                              DecoratorSet decorators,
+                                              BasicType type,
+                                              Register src,
+                                              Register dst,
+                                              Register count);
+
+virtual void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm,
+                                                         Register jni_env,
+                                                         Register robj,
+                                                         Register temp,
+                                                         Label& slowpath);
+
+#ifdef COMPILER1
+
+void ZBarrierSetAssembler::generate_c1_color(LIR_Assembler* ce, LIR_Opr ref) const;
+void ZBarrierSetAssembler::generate_c1_uncolor(LIR_Assembler* ce, LIR_Opr ref) const
+
+void ZBarrierSetAssembler::generate_c1_load_barrier(LIR_Assmebler* ce,
+                                                    LIR_Opr ref,
+                                                    ZLoadBarrierStubC1* stub,
+                                                    bool on_non_string) const;
+
+void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
+                                                         ZLoadBarrierStubC1* stub) const;
+
+void ZBarrierSetAssembler::generate_c1_store_barrier(LIR_Assembler* ce,
+                                                     LIR_Address* addr,
+                                                     LIR_Opr new_zaddress,
+                                                     LIR_Opr new_zpointer,
+                                                     ZStoreBarrierStubC1* stub) const;
+
+void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
+                                                          ZStoreBarrierStubC1* stub) const;
+
+void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler *sasm,
+                                                                 DecoratorSet decorators) const;
+
+void ZBarrierSetAssembler::generate_c1_store_barrier_runtime_stub(StubAssembler* sasm,
+                                                                  bool self_healing) const;
+
+#endif // Compiler1
+
+#ifdef CONPILER2
+
+void ZBArrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, ZLoadBarrierStubC2* stub) const;
+
+void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, ZStoreBarrierStubC2* stub) const;
+
+#endif // COMPILER2
+
+void ZBarrierSetAssembler::check_oop(MacroAssembler *masm, Register obj, const char* msg);
+
+void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format);
+
+void patch_barriers() {}
+
+#endif // CPU_S390_GC_Z_ZBARRIERSETASSEMBLER_S390_HPP
