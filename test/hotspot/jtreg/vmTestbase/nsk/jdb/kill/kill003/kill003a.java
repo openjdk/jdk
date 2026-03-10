@@ -32,6 +32,7 @@ public class kill003a {
     public static void main(String args[]) {
         synchronized (args) {
         }
+        System.out.println("done");
         System.exit(JdbTest.JCK_STATUS_BASE);
     }
 }

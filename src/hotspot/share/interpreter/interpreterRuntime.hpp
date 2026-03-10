@@ -174,6 +174,8 @@ private:
 
   // Virtual Thread Preemption
   DEBUG_ONLY(static bool is_preemptable_call(address entry_point);)
+
+  DEBUG_ONLY(static void generate_oop_map_alot();)
 };
 
 

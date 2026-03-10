@@ -899,6 +899,9 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, TraceOopMapRewrites, false,                                 \
           "Trace rewriting of methods during oop map generation")           \
                                                                             \
+  develop(bool, GenerateOopMapALot, false,                                  \
+          "Generate interpreter oopmaps at all safepoints")                 \
+                                                                            \
   develop(bool, TraceFinalizerRegistration, false,                          \
           "Trace registration of final references")                         \
                                                                             \

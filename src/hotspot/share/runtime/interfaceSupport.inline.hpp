@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -234,8 +234,9 @@ class ThreadBlockInVM  : public ThreadBlockInVMPreprocess<> {
 
 #ifdef ASSERT
 class VMEntryWrapper {
+  bool _no_async;
  public:
-  VMEntryWrapper();
+  VMEntryWrapper(bool no_async);
   ~VMEntryWrapper();
 };
 
@@ -288,7 +289,7 @@ class VMNativeEntryWrapper {
       ThreadWXEnable __wx(&wx_mode, current);                        \
     )                                                                \
     VM_ENTRY_BASE(result_type, header, current)                      \
-    DEBUG_ONLY(VMEntryWrapper __vew;)
+    DEBUG_ONLY(VMEntryWrapper __vew(false);)
 
 // JRT_LEAF currently can be called from either _thread_in_Java or
 // _thread_in_native mode.
@@ -319,7 +320,7 @@ class VMNativeEntryWrapper {
       ThreadWXEnable __wx(&wx_mode, current);                        \
     )                                                                \
     VM_ENTRY_BASE(result_type, header, current)                      \
-    DEBUG_ONLY(VMEntryWrapper __vew;)
+    DEBUG_ONLY(VMEntryWrapper __vew(true);)
 
 // Same as JRT Entry but allows for return value after the safepoint
 // to get back into Java from the VM
@@ -337,14 +338,14 @@ class VMNativeEntryWrapper {
     assert(current == JavaThread::current(), "Must be");             \
     ThreadInVMfromJava __tiv(current);                               \
     JavaThread* THREAD = current; /* For exception macros. */        \
-    DEBUG_ONLY(VMEntryWrapper __vew;)
+    DEBUG_ONLY(VMEntryWrapper __vew(true);)
 
 #define JRT_BLOCK_NO_ASYNC                                           \
     {                                                                \
     assert(current == JavaThread::current(), "Must be");             \
     ThreadInVMfromJava __tiv(current, false /* check asyncs */);     \
     JavaThread* THREAD = current; /* For exception macros. */        \
-    DEBUG_ONLY(VMEntryWrapper __vew;)
+    DEBUG_ONLY(VMEntryWrapper __vew(false);)
 
 #define JRT_BLOCK_END }
 
