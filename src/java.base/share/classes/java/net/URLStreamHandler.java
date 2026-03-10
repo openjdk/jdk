@@ -483,10 +483,11 @@ public abstract class URLStreamHandler {
     protected String toExternalForm(final URL u) {
         // Optimized for efficient string concatenation with optional components and separators
         // Output format: protocol:[//authority][path][?query][#ref]
-        String protocol, authSeparator, authority, path, querySeparator, query, refSeparator, ref;
 
-        // URL components
-        String pr = u.getProtocol();
+        // Local variables used by concatenation
+        String protocol = u.getProtocol(), authSeparator, authority, path, querySeparator, query, refSeparator, ref;
+
+        // Extract URL components
         String a  = u.getAuthority();
         String p  = u.getPath();
         String q  = u.getQuery();
@@ -494,16 +495,12 @@ public abstract class URLStreamHandler {
 
         // Check optional components
         boolean hasAuthority = a != null && !a.isEmpty();
-        boolean hasPath = p != null;
         boolean hasQuery = q != null;
         boolean hasRef = r != null;
 
-        // Protocol is required
-        protocol = pr;
-        // Path is very commonly present
-        path = hasPath ? p : "";
+        path = p != null ? p : "";
 
-        // Fast path for local URLs like 'file:/path/to/app.jar'
+        // Specialized concatenation for local URLs without query or ref
         if (!hasAuthority && !hasQuery && !hasRef) {
             return protocol
                     + ':'
@@ -518,7 +515,7 @@ public abstract class URLStreamHandler {
             authority = "";
         }
 
-        // Fast path for URL with no query or reference, like 'http://example.com/path/to/image.gif'
+        // Specialized concatenation for URLs with no query or ref
         if (!hasQuery && !hasRef) {
             return protocol
                     + ':'
@@ -527,7 +524,6 @@ public abstract class URLStreamHandler {
                     + path;
         }
 
-        // General case for URLs like 'http://example.com/service?param=value#fragment'
         if (hasQuery) {
             querySeparator = "?";
             query = q;
@@ -542,6 +538,8 @@ public abstract class URLStreamHandler {
             refSeparator = "";
             ref = "";
         }
+
+        // Concatenation for the general case
         return protocol
                 + ':'
                 + authSeparator
