@@ -25,6 +25,7 @@ package compiler.loopopts;
 
 import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
+import jdk.test.lib.Asserts;
 
 /*
  * @test
@@ -54,11 +55,11 @@ public class TestLoopPeelingDisabled {
         try {
             TestFramework.runWithFlags("-XX:+UnlockDiagnosticVMOptions",
                                        "-XX:LoopPeeling=0");
-            throw new RuntimeException("Expected IRViolationException");
+            Asserts.fail("Expected IRViolationException");
         } catch (IRViolationException e) {
             String info = e.getExceptionInfo();
             if (!info.contains("NO compilation output found for this phase")) {
-                throw new RuntimeException("Unexpected IR violation: " + info);
+                Asserts.fail("Unexpected IR violation: " + info);
             }
             System.out.println("Loop peeling correctly disabled");
         }
