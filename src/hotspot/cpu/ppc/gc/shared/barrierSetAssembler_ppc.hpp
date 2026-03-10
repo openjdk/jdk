@@ -72,6 +72,8 @@ public:
 
   // Can be used in nmethods including native wrappers.
   // Attention: obj will only be valid until next safepoint (no SATB barrier).
+  // TODO: maybe rename to try_peek_weak_handle on all platforms (try: operation may fail, peek: obj is not kept alive)
+  // (other platforms currently use it for C2 only: try_resolve_weak_handle_in_c2)
   virtual void try_resolve_weak_handle(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path);
 
   virtual void barrier_stubs_init() {}
