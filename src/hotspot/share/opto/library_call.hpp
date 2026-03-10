@@ -153,6 +153,8 @@ class LibraryCallKit : public GraphKit {
   };
 
   // Helper functions to inline natives
+  RegionNode* create_bailout();
+  bool check_bailout(RegionNode* bailout);
   Node* generate_guard(Node* test, RegionNode* region, float true_prob);
   Node* generate_slow_guard(Node* test, RegionNode* region);
   Node* generate_fair_guard(Node* test, RegionNode* region);

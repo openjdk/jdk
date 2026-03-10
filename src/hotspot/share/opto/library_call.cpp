@@ -843,23 +843,21 @@ void LibraryCallKit::set_result(RegionNode* region, PhiNode* value) {
   assert(value->type()->basic_type() == result()->bottom_type()->basic_type(), "sanity");
 }
 
-#define RETURN_ON_BAILOUT(region, ...) \
-  do { \
-    RegionNode* region = new RegionNode(1); \
-    record_for_igvn(region); \
-    \
-    __VA_ARGS__; \
-    \
-    if (region->req() > 1) { \
-      region = _gvn.transform(region)->as_Region(); \
-      Node* frame = _gvn.transform(new ParmNode(C->start(), TypeFunc::FramePtr)); \
-      Node* halt = _gvn.transform(new HaltNode(region, frame, "unexpected guard failure in intrinsic")); \
-      C->root()->add_req(halt); \
-    } \
-    if (stopped()) { \
-      return true; \
-    } \
-  } while (0);
+RegionNode* LibraryCallKit::create_bailout() {
+  RegionNode* bailout = new RegionNode(1);
+  record_for_igvn(bailout);
+  return bailout;
+}
+
+bool LibraryCallKit::check_bailout(RegionNode* bailout) {
+  if (bailout->req() > 1) {
+    bailout = _gvn.transform(bailout)->as_Region();
+    Node* frame = _gvn.transform(new ParmNode(C->start(), TypeFunc::FramePtr));
+    Node* halt = _gvn.transform(new HaltNode(bailout, frame, "unexpected guard failure in intrinsic"));
+    C->root()->add_req(halt); \
+  }
+  return stopped();
+}
 
 //------------------------------generate_guard---------------------------
 // Helper function for generating guarded fast-slow graph structures.
@@ -1151,9 +1149,11 @@ bool LibraryCallKit::inline_countPositives() {
   Node* len        = argument(2);
 
   ba = must_be_not_null(ba, true);
-  RETURN_ON_BAILOUT(bailout, {
-    generate_string_range_check(ba, offset, len, false, bailout);
-  })
+  RegionNode* bailout = create_bailout();
+  generate_string_range_check(ba, offset, len, false, bailout);
+  if (check_bailout(bailout)) {
+    return true;
+  }
 
   Node* ba_start = array_element_address(ba, offset, T_BYTE);
   Node* result = new CountPositivesNode(control(), memory(TypeAryPtr::BYTES), ba_start, len);
@@ -1307,10 +1307,12 @@ bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
   Node* tgt_start = array_element_address(tgt, intcon(0), T_BYTE);
 
   // Range checks
-  RETURN_ON_BAILOUT(bailout, {
-    generate_string_range_check(src, src_offset, src_count, ae != StrIntrinsicNode::LL, bailout);
-    generate_string_range_check(tgt, intcon(0), tgt_count, ae == StrIntrinsicNode::UU, bailout);
-  })
+  RegionNode* bailout = create_bailout();
+  generate_string_range_check(src, src_offset, src_count, ae != StrIntrinsicNode::LL, bailout);
+  generate_string_range_check(tgt, intcon(0), tgt_count, ae == StrIntrinsicNode::UU, bailout);
+  if (check_bailout(bailout)) {
+    return true;
+  }
 
   RegionNode* region = new RegionNode(5);
   Node* phi = new PhiNode(region, TypeInt::INT);
@@ -1403,9 +1405,11 @@ bool LibraryCallKit::inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae) {
   Node* src_count = _gvn.transform(new SubINode(max, from_index));
 
   // Range checks
-  RETURN_ON_BAILOUT(bailout, {
-    generate_string_range_check(src, src_offset, src_count, ae == StrIntrinsicNode::U, bailout);
-  })
+  RegionNode* bailout = create_bailout();
+  generate_string_range_check(src, src_offset, src_count, ae == StrIntrinsicNode::U, bailout);
+  if (check_bailout(bailout)) {
+    return true;
+  }
 
   // Check for int_ch >= 0
   Node* int_ch_cmp = _gvn.transform(new CmpINode(int_ch, intcon(0)));
@@ -1496,10 +1500,12 @@ bool LibraryCallKit::inline_string_copy(bool compress) {
   }
 
   // Range checks
-  RETURN_ON_BAILOUT(bailout, {
-    generate_string_range_check(src, src_offset, length, convert_src, bailout);
-    generate_string_range_check(dst, dst_offset, length, convert_dst, bailout);
-  })
+  RegionNode* bailout = create_bailout();
+  generate_string_range_check(src, src_offset, length, convert_src, bailout);
+  generate_string_range_check(dst, dst_offset, length, convert_dst, bailout);
+  if (check_bailout(bailout)) {
+    return true;
+  }
 
   Node* src_start = array_element_address(src, src_offset, src_elem);
   Node* dst_start = array_element_address(dst, dst_offset, dst_elem);
@@ -1565,13 +1571,15 @@ bool LibraryCallKit::inline_string_toBytesU() {
     jvms()->set_should_reexecute(true);
 
     value = must_be_not_null(value, true);
-    RETURN_ON_BAILOUT(bailout, {
-      generate_negative_guard(offset, bailout, nullptr, true);
-      generate_negative_guard(length, bailout, nullptr, true);
-      generate_limit_guard(offset, length, load_array_length(value), bailout, true);
-      // Make sure that resulting byte[] length does not overflow Integer.MAX_VALUE
-      generate_limit_guard(length, intcon(0), intcon(max_jint/2), bailout, true);
-    })
+    RegionNode* bailout = create_bailout();
+    generate_negative_guard(offset, bailout, nullptr, true);
+    generate_negative_guard(length, bailout, nullptr, true);
+    generate_limit_guard(offset, length, load_array_length(value), bailout, true);
+    // Make sure that resulting byte[] length does not overflow Integer.MAX_VALUE
+    generate_limit_guard(length, intcon(0), intcon(max_jint/2), bailout, true);
+    if (check_bailout(bailout)) {
+      return true;
+    }
 
     Node* size = _gvn.transform(new LShiftINode(length, intcon(1)));
     Node* klass_node = makecon(TypeKlassPtr::make(ciTypeArrayKlass::make(T_BYTE)));
@@ -1657,10 +1665,12 @@ bool LibraryCallKit::inline_string_getCharsU() {
   src_begin = _gvn.transform(new LShiftINode(src_begin, intcon(1)));
 
   // Range checks
-  RETURN_ON_BAILOUT(bailout, {
-    generate_string_range_check(src, src_begin, length, true, bailout);
-    generate_string_range_check(dst, dst_begin, length, false, bailout);
-  })
+  RegionNode* bailout = create_bailout();
+  generate_string_range_check(src, src_begin, length, true, bailout);
+  generate_string_range_check(dst, dst_begin, length, false, bailout);
+  if (check_bailout(bailout)) {
+    return true;
+  }
 
   // Calculate starting addresses.
   Node* src_start = array_element_address(src, src_begin, T_BYTE);
@@ -6210,10 +6220,12 @@ bool LibraryCallKit::inline_encodeISOArray(bool ascii) {
   }
 
   // Check source & target bounds
-  RETURN_ON_BAILOUT(bailout, {
-    generate_string_range_check(src, src_offset, length, src_elem == T_BYTE, bailout);
-    generate_string_range_check(dst, dst_offset, length, false, bailout);
-  })
+  RegionNode* bailout = create_bailout();
+  generate_string_range_check(src, src_offset, length, src_elem == T_BYTE, bailout);
+  generate_string_range_check(dst, dst_offset, length, false, bailout);
+  if (check_bailout(bailout)) {
+    return true;
+  }
 
   Node* src_start = array_element_address(src, src_offset, T_CHAR);
   Node* dst_start = array_element_address(dst, dst_offset, dst_elem);
