@@ -1,0 +1,127 @@
+/*
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/*
+ * @test
+ * @bug 8379327
+ * @summary Verify correctness for combined low/high 64-bit multiplication patterns.
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100
+ *   -XX:CompileCommand=compileonly,compiler.c2.TestMultiplyHighLowFusion::doMath
+ *   -XX:CompileCommand=compileonly,compiler.c2.TestMultiplyHighLowFusion::doMathSwapped
+ *   -XX:CompileCommand=compileonly,compiler.c2.TestMultiplyHighLowFusion::doUnsignedMath
+ *   -XX:CompileCommand=compileonly,compiler.c2.TestMultiplyHighLowFusion::doUnsignedMathSwapped
+ *   compiler.c2.TestMultiplyHighLowFusion
+ */
+
+package compiler.c2;
+
+import java.math.BigInteger;
+import java.util.Random;
+
+public class TestMultiplyHighLowFusion {
+  private static final BigInteger MASK_64 = BigInteger.ONE.shiftLeft(64).subtract(BigInteger.ONE);
+  private static final long[] CORNER_CASES = {
+      0L,
+      1L,
+      -1L,
+      Long.MIN_VALUE,
+      Long.MAX_VALUE,
+      0x00000000FFFFFFFFL,
+      0xFFFFFFFF00000000L,
+      0x123456789ABCDEFL,
+      0xFEDCBA9876543210L
+  };
+
+  private static long doMath(long a, long b) {
+    long low = a * b;
+    long high = Math.multiplyHigh(a, b);
+    return low + high;
+  }
+
+  private static long doMathSwapped(long a, long b) {
+    long low = b * a;
+    long high = Math.multiplyHigh(b, a);
+    return low + high;
+  }
+
+  private static long doUnsignedMath(long a, long b) {
+    long low = a * b;
+    long high = Math.unsignedMultiplyHigh(a, b);
+    return low + high;
+  }
+
+  private static long doUnsignedMathSwapped(long a, long b) {
+    long low = b * a;
+    long high = Math.unsignedMultiplyHigh(b, a);
+    return low + high;
+  }
+
+  private static long expectedSigned(long a, long b) {
+    BigInteger product = BigInteger.valueOf(a).multiply(BigInteger.valueOf(b));
+    long low = product.longValue();
+    long high = product.shiftRight(64).longValue();
+    return low + high;
+  }
+
+  private static long expectedUnsigned(long a, long b) {
+    BigInteger ua = BigInteger.valueOf(a).and(MASK_64);
+    BigInteger ub = BigInteger.valueOf(b).and(MASK_64);
+    BigInteger product = ua.multiply(ub);
+    long low = product.longValue();
+    long high = product.shiftRight(64).longValue();
+    return low + high;
+  }
+
+  private static void verifyPair(long a, long b) {
+    long expectedSigned = expectedSigned(a, b);
+    long expectedUnsigned = expectedUnsigned(a, b);
+
+    long signed = doMath(a, b);
+    long signedSwapped = doMathSwapped(a, b);
+    long unsigned = doUnsignedMath(a, b);
+    long unsignedSwapped = doUnsignedMathSwapped(a, b);
+
+    if (signed != expectedSigned || signedSwapped != expectedSigned) {
+      throw new RuntimeException("Signed mismatch for a=" + a + ", b=" + b +
+          ": got=" + signed + ", gotSwapped=" + signedSwapped + ", expected=" + expectedSigned);
+    }
+    if (unsigned != expectedUnsigned || unsignedSwapped != expectedUnsigned) {
+      throw new RuntimeException("Unsigned mismatch for a=" + a + ", b=" + b +
+          ": got=" + unsigned + ", gotSwapped=" + unsignedSwapped + ", expected=" + expectedUnsigned);
+    }
+  }
+
+  public static void main(String[] args) {
+    Random random = new Random(0x8379327L);
+
+    for (long a : CORNER_CASES) {
+      for (long b : CORNER_CASES) {
+        verifyPair(a, b);
+      }
+    }
+
+    for (int i = 0; i < 200_000; i++) {
+      verifyPair(random.nextLong(), random.nextLong());
+    }
+  }
+}
