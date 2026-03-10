@@ -1287,8 +1287,11 @@ MergeLoadInfo MergePrimitiveLoads::merge_load_info(LoadNode* load) const {
         break;
       }
       case Op_CallStaticJava: {
-        // Ignore - load is only used for debug info in uncommon_trap
-        // This is safe because the load value is not used for actual computation
+        // Ignore if load is only used for debug info in uncommon_trap.
+        // This is safe because the load value is not used for actual computation.
+        if (!out->as_CallStaticJava()->is_uncommon_trap()) {
+          return invalid;
+        }
         break;
       }
       default:
@@ -1325,6 +1328,7 @@ Node* MergePrimitiveLoads::run() {
   Node* oper = _combine;
   NOT_PRODUCT(int steps = 0;)    // prevent dead loop in bad graph
   while (load == nullptr NOT_PRODUCT(&& steps < 30)) {
+    NOT_PRODUCT(steps++;)
     assert(is_supported_combine_opcode(oper->Opcode())
            || oper->Opcode() == Op_ConvI2L || oper->is_LShift(), "unexpected node");
     Node* lhs = oper->in(1); // Check one input is enough
@@ -1339,10 +1343,13 @@ Node* MergePrimitiveLoads::run() {
     } else {
       // not found
       add_operators_to_worklist(_combine);
-      return _combine;
+      return nullptr;
     }
   }
-  assert(load != nullptr, "reach loop limit");
+  if (load == nullptr) {
+    // Reached loop limit in debug build
+    return nullptr;
+  }
   NOT_PRODUCT( if (is_trace_basic()) { tty->print("[TraceMergeLoads] candidate:"); _combine->dump(); tty->cr(); })
 
   ResourceMark rm;
@@ -1350,7 +1357,7 @@ Node* MergePrimitiveLoads::run() {
   int count = collect_merge_list(merge_list, load);
   if (count == -1) {
     add_operators_to_worklist(_combine);
-    return _combine;
+    return nullptr;
   }
 
   Node* replace = make_merged_load(merge_list, count);
@@ -1358,7 +1365,7 @@ Node* MergePrimitiveLoads::run() {
 
   if (replace == nullptr) {
     add_operators_to_worklist(_combine);
-    return _combine;
+    return nullptr;
   } else {
     return replace;
   }
@@ -1768,7 +1775,7 @@ Node* OrINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
 
   Node* progress = AddNode::Ideal(phase, can_reshape);
-  if (progress) {
+  if (progress != nullptr) {
     return progress;
   }
 
@@ -1826,7 +1833,7 @@ Node* OrLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
 
   Node* progress = AddNode::Ideal(phase, can_reshape);
-  if (progress) {
+  if (progress != nullptr) {
     return progress;
   }
 
