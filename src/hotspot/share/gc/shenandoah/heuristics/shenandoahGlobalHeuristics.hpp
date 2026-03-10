@@ -89,6 +89,8 @@ public:
   void set_reserve(size_t bytes)    { _reserve = bytes; }
 };
 
+// These are the attributes of a region required to decide if it can be
+// added to the collection set or not.
 struct ShenandoahGlobalRegionAttributes {
   size_t garbage;
   size_t live_data_bytes;
@@ -97,6 +99,10 @@ struct ShenandoahGlobalRegionAttributes {
   bool   is_tenurable;
 };
 
+// This class consolidates all of the data required to build a global
+// collection set. Critically, it takes no dependencies on any classes
+// that themselves depend on ShenandoahHeap. This makes it possible to
+// write extensive unit tests for this complex code.
 class ShenandoahGlobalCSetBudget {
   size_t _region_size_bytes;
   size_t _garbage_threshold;
@@ -131,6 +137,7 @@ public:
 
   ShenandoahGlobalRegionDisposition try_add_region(const ShenandoahGlobalRegionAttributes& region);
 
+  // Any remaining shared budget is given to the promotion reserve.
   void finish() {
     if (_shared.committed < _shared.limit) {
       promo.add_to_reserve(_shared.limit - _shared.committed);
