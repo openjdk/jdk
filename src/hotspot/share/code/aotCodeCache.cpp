@@ -524,7 +524,7 @@ void AOTCodeCache::Config::record(uint cpu_features_offset) {
     _aarch64_flags |= aarch64_useSIMDForMemoryOps;
   }
   if (UseBlockZeroing) {
-    _aarch64_flags |= aarch64_useBlockZeroingavoid;
+    _aarch64_flags |= aarch64_useBlockZeroing;
   }
   if (UseSVE) {
     _aarch64_flags |= aarch64_useSVE;
