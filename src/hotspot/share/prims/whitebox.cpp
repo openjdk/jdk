@@ -918,7 +918,9 @@ WB_ENTRY(jboolean, WB_IsMethodCompilable(JNIEnv* env, jobject o, jobject method,
       return can_be_compiled_at_level(mh, is_osr, CompLevel_full_optimization);
     } else if (excluded_c2) {
       // C2 only has ExcludeOption set: Check if compilable with C1.
-      return can_be_compiled_at_level(mh, is_osr, CompLevel_simple);
+      return can_be_compiled_at_level(mh, is_osr, CompLevel_simple)
+          || can_be_compiled_at_level(mh, is_osr, CompLevel_limited_profile)
+          || can_be_compiled_at_level(mh, is_osr, CompLevel_full_profile);
     }
   } else if (comp_level > CompLevel_none && is_excluded_for_compiler(CompileBroker::compiler((int)comp_level), comp_level, mh)) {
     // Compilation of 'method' excluded by compiler used for 'comp_level'.
@@ -1158,7 +1160,7 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, JavaThrea
   } else if (mh->lookup_osr_nmethod_for(bci, comp_level, false) != nullptr) {
     return true;
   }
-  tty->print("WB error: failed to %s compile at level %d method ", is_blocking ? "blocking" : "", comp_level);
+  tty->print("WB error: failed to%s compile at level %d method ", is_blocking ? " blocking" : "", comp_level);
   mh->print_short_name(tty);
   tty->cr();
   if (is_blocking && is_queued) {

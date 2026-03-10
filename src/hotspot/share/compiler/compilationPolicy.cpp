@@ -817,6 +817,7 @@ CompileTask* CompilationPolicy::select_task(CompileQueue* compile_queue, JavaThr
   methodHandle max_method_h(THREAD, max_method);
 
   if (max_task != nullptr && max_task->comp_level() == CompLevel_full_profile && TieredStopAtLevel > CompLevel_full_profile &&
+      !DirectivesStack::getMatchingDirective(max_method_h, CompLevel_limited_profile)->ExcludeOption &&
       max_method != nullptr && is_method_profiled(max_method_h) && !Arguments::is_compiler_only()) {
     max_task->set_comp_level(CompLevel_limited_profile);
 
