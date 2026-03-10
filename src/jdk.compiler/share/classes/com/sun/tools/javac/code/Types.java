@@ -1436,7 +1436,7 @@ public class Types {
                     return visit(s, t);
 
                 return s.hasTag(ARRAY)
-                    && containsTypeEquivalent(t.elemtype, elemtype(s));
+                    && visit(t.elemtype, elemtype(s));
             }
 
             @Override

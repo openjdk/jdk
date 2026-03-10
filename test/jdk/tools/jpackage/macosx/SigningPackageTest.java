@@ -94,7 +94,7 @@ public class SigningPackageTest {
     }
 
     public static Collection<Object[]> test() {
-        return TestSpec.testCases(true).stream().map(v -> {
+        return TestSpec.testCases().stream().map(v -> {
             return new Object[] {v};
         }).toList();
     }
@@ -126,7 +126,10 @@ public class SigningPackageTest {
                 }
 
                 if (appImageSignOption.isEmpty()) {
-                    if (packageSignOption.get().type() != SignKeyOption.Type.SIGN_KEY_IDENTITY) {
+                    if (!List.of(
+                            SignKeyOption.Type.SIGN_KEY_IDENTITY,
+                            SignKeyOption.Type.SIGN_KEY_IDENTITY_SHA1
+                    ).contains(packageSignOption.get().type())) {
                         // They request to sign the .pkg installer without
                         // the "--mac-installer-sign-identity" option,
                         // but didn't specify a signing option for the packaged app image.
@@ -204,15 +207,61 @@ public class SigningPackageTest {
         }
 
         MacSign.ResolvedKeychain keychain() {
-            return SigningBase.StandardKeychain.MAIN.keychain();
+            return chooseKeychain(Stream.of(
+                    appImageSignOption.stream(),
+                    packageSignOption.stream()
+            ).flatMap(x -> x).map(SignKeyOption::type).findFirst().orElseThrow()).keychain();
         }
 
-        static List<TestSpec> testCases(boolean withUnicode) {
+        /**
+         * Types of test cases to skip.
+         */
+        enum SkipTestCases {
+            /**
+             * Skip test cases with signing identities/key names with symbols outside of the
+             * ASCII codepage.
+             */
+            SKIP_UNICODE,
+            /**
+             * Skip test cases in which the value of the "--mac-signing-key-user-name"
+             * option is the full signing identity name.
+             */
+            SKIP_SIGN_KEY_USER_FULL_NAME,
+            /**
+             * Skip test cases in which the value of the "--mac-installer-sign-identity" or
+             * "--mac-app-image-sign-identity" option is the SHA1 digest of the signing
+             * certificate.
+             */
+            SKIP_SIGN_KEY_IDENTITY_SHA1,
+            ;
+        }
+
+        static List<TestSpec> minimalTestCases() {
+            return testCases(SkipTestCases.values());
+        }
+
+        static List<TestSpec> testCases(SkipTestCases... skipTestCases) {
+
+            final var skipTestCasesAsSet = Set.of(skipTestCases);
+
+            final var signIdentityTypes = Stream.of(SignKeyOption.Type.defaultValues()).filter(v -> {
+                switch (v) {
+                    case SIGN_KEY_USER_FULL_NAME -> {
+                        return !skipTestCasesAsSet.contains(SkipTestCases.SKIP_SIGN_KEY_USER_FULL_NAME);
+                    }
+                    case SIGN_KEY_IDENTITY_SHA1 -> {
+                        return !skipTestCasesAsSet.contains(SkipTestCases.SKIP_SIGN_KEY_IDENTITY_SHA1);
+                    }
+                    default -> {
+                        return true;
+                    }
+                }
+            }).toList();
 
             List<TestSpec> data = new ArrayList<>();
 
             List<List<SigningBase.StandardCertificateRequest>> certRequestGroups;
-            if (withUnicode) {
+            if (!skipTestCasesAsSet.contains(SkipTestCases.SKIP_UNICODE)) {
                 certRequestGroups = List.of(
                         List.of(SigningBase.StandardCertificateRequest.CODESIGN, SigningBase.StandardCertificateRequest.PKG),
                         List.of(SigningBase.StandardCertificateRequest.CODESIGN_UNICODE, SigningBase.StandardCertificateRequest.PKG_UNICODE)
@@ -224,19 +273,33 @@ public class SigningPackageTest {
             }
 
             for (var certRequests : certRequestGroups) {
-                for (var signIdentityType : SignKeyOption.Type.defaultValues()) {
-                    var keychain = SigningBase.StandardKeychain.MAIN.keychain();
+                for (var signIdentityType : signIdentityTypes) {
+                    if (signIdentityType == SignKeyOption.Type.SIGN_KEY_IMPLICIT
+                            && !SigningBase.StandardKeychain.SINGLE.contains(certRequests.getFirst())) {
+                        // Skip invalid test case: the keychain for testing signing without
+                        // an explicitly specified signing key option doesn't have this signing key.
+                        break;
+                    }
+
+                    if (signIdentityType.passThrough() && !certRequests.contains(SigningBase.StandardCertificateRequest.CODESIGN)) {
+                        // Using a pass-through signing option.
+                        // Doesn't make sense to waste time on testing it with multiple certificates.
+                        // Skip the test cases using non "default" certificate.
+                        break;
+                    }
+
+                    var keychain = chooseKeychain(signIdentityType).keychain();
                     var appImageSignKeyOption = new SignKeyOption(signIdentityType, certRequests.getFirst(), keychain);
                     var pkgSignKeyOption = new SignKeyOption(signIdentityType, certRequests.getLast(), keychain);
 
                     switch (signIdentityType) {
-                        case SIGN_KEY_IDENTITY -> {
+                        case SIGN_KEY_IDENTITY, SIGN_KEY_IDENTITY_SHA1 -> {
                             // Use "--mac-installer-sign-identity" and "--mac-app-image-sign-identity" signing options.
                             // They allows to sign the packaged app image and the installer (.pkg) separately.
                             data.add(new TestSpec(Optional.of(appImageSignKeyOption), Optional.empty(), PackageType.MAC));
                             data.add(new TestSpec(Optional.empty(), Optional.of(pkgSignKeyOption), PackageType.MAC_PKG));
                         }
-                        case SIGN_KEY_USER_SHORT_NAME -> {
+                        case SIGN_KEY_USER_SHORT_NAME, SIGN_KEY_IMPLICIT -> {
                             // Use "--mac-signing-key-user-name" signing option with short user name or implicit signing option.
                             // It signs both the packaged app image and the installer (.pkg).
                             // Thus, if the installer is not signed, it can be used only with .dmg packaging.
@@ -262,6 +325,14 @@ public class SigningPackageTest {
             }
 
             return data;
+        }
+
+        private static SigningBase.StandardKeychain chooseKeychain(SignKeyOption.Type signIdentityType) {
+            if (signIdentityType == SignKeyOption.Type.SIGN_KEY_IMPLICIT) {
+                return SigningBase.StandardKeychain.SINGLE;
+            } else {
+                return SigningBase.StandardKeychain.MAIN;
+            }
         }
     }
 }
