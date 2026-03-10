@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,12 @@ public class RuntimePackageTest {
 
     @Test(ifOS = MACOS)
     public static void testFromBundle() {
-        init(MacHelper::createRuntimeBundle).run();
+        init(() -> {
+            return MacHelper.buildRuntimeBundle().mutator(cmd -> {
+                // Set custom version in the Info.plist file of the predefined runtime bundle.
+                cmd.addArguments("--app-version", "17.52");
+            }).create();
+        }).run();
     }
 
     @Test(ifOS = LINUX)
