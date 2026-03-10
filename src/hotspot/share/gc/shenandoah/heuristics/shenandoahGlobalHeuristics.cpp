@@ -191,8 +191,8 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
 
   for (size_t idx = 0; idx < size; idx++) {
     ShenandoahHeapRegion* r = data[idx].get_region();
-    if (cset->is_in(r)) {
-      assert(heap->is_tenurable(r), "Region %zu already in the collection set must be tenurable", idx);
+    if (cset->is_in(r) || r->get_top_before_promote() != nullptr) {
+      assert(heap->is_tenurable(r), "Region %zu already selected for promotion must be tenurable", idx);
       continue;
     }
 
@@ -201,7 +201,7 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
     attrs.live_data_bytes = r->get_live_data_bytes();
     attrs.free_bytes = r->free();
     attrs.is_old = r->is_old();
-    attrs.is_tenurable = !r->is_old() && heap->is_tenurable(r) && r->get_top_before_promote() == nullptr;
+    attrs.is_tenurable = !r->is_old() && heap->is_tenurable(r);
 
     if (budget.try_add_region(attrs) != ShenandoahGlobalRegionDisposition::SKIP) {
       cset->add_region(r);

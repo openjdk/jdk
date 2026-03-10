@@ -90,8 +90,8 @@ void ShenandoahYoungHeuristics::choose_young_collection_set(ShenandoahCollection
 
   for (size_t idx = 0; idx < size; idx++) {
     ShenandoahHeapRegion* r = data[idx].get_region();
-    if (cset->is_in(r)) {
-      assert(heap->is_tenurable(r), "Region %zu already in the collection set must be tenurable", idx);
+    if (cset->is_in(r) || r->get_top_before_promote() != nullptr) {
+      assert(heap->is_tenurable(r), "Region %zu already selected for promotion must be tenurable", idx);
       continue;
     }
 
