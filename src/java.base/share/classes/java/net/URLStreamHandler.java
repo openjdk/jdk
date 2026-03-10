@@ -489,7 +489,7 @@ public abstract class URLStreamHandler {
         var ref   = (s = u.getRef())   == null ? "" : s;
 
         // Fast paths for empty components
-        if (query == "" && ref == "") {
+        if (u.getQuery() == null && u.getRef() == null) {
             if (auth == "") {
                 return u.getProtocol() + ":" + path;
             } else {
@@ -499,8 +499,8 @@ public abstract class URLStreamHandler {
 
         // General case
         var aSep = auth  != "" ? "//" : "";
-        var qSep = query != "" ? "?"  : "";
-        var rSep = ref   != "" ? "#"  : "";
+        var qSep = u.getQuery() != null ? "?"  : "";
+        var rSep = u.getRef()   != null ? "#"  : "";
         return u.getProtocol() + ":"
                 + aSep + auth
                 + path
