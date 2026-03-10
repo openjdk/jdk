@@ -67,7 +67,7 @@ public class ForceViews {
              Arguments.of("Compact", 256, 512, 0, 256, 32, 32, compact));
     }
 
-    @ParameterizedTest(autoCloseArguments=false)
+    @ParameterizedTest
     @MethodSource("provider")
     public void test(String tst, int mapPosition, int mapLength,
                      int sliceIndex, int sliceLength, int regionOffset,

@@ -270,13 +270,13 @@ public class BulkPutBuffer {
         return proxies;
     }
 
-    static Stream<Arguments> proxies() {
-        List<Arguments> args = new ArrayList<Arguments>();
+    static Stream<BufferProxy> proxies() {
+        List<BufferProxy> args = new ArrayList<BufferProxy>();
         for (Class<?> type : typeToAttr.keySet()) {
 
             List<BufferProxy> proxies = getProxies(type);
             for (BufferProxy proxy : proxies) {
-                args.add(Arguments.of(proxy));
+                args.add(proxy);
             }
         }
         return args.stream();

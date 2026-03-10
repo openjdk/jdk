@@ -452,28 +452,28 @@ public class EqualsCompareTest {
         }
     }
 
-    public static Stream<Arguments> bufferTypesSource() {
+    public static Stream<BufferType> bufferTypesSource() {
         return Stream.of
-            (Arguments.of(new BufferType.Bytes(BufferKind.HEAP)),
-             Arguments.of(new BufferType.Bytes(BufferKind.DIRECT)),
-             Arguments.of(new BufferType.Chars(BufferKind.HEAP)),
-             Arguments.of(new BufferType.Chars(BufferKind.HEAP_VIEW)),
-             Arguments.of(new BufferType.Chars(BufferKind.DIRECT)),
-             Arguments.of(new BufferType.Shorts(BufferKind.HEAP)),
-             Arguments.of(new BufferType.Shorts(BufferKind.HEAP_VIEW)),
-             Arguments.of(new BufferType.Shorts(BufferKind.DIRECT)),
-             Arguments.of(new BufferType.Ints(BufferKind.HEAP)),
-             Arguments.of(new BufferType.Ints(BufferKind.HEAP_VIEW)),
-             Arguments.of(new BufferType.Ints(BufferKind.DIRECT)),
-             Arguments.of(new BufferType.Floats(BufferKind.HEAP)),
-             Arguments.of(new BufferType.Floats(BufferKind.HEAP_VIEW)),
-             Arguments.of(new BufferType.Floats(BufferKind.DIRECT)),
-             Arguments.of(new BufferType.Longs(BufferKind.HEAP)),
-             Arguments.of(new BufferType.Longs(BufferKind.HEAP_VIEW)),
-             Arguments.of(new BufferType.Longs(BufferKind.DIRECT)),
-             Arguments.of(new BufferType.Doubles(BufferKind.HEAP)),
-             Arguments.of(new BufferType.Doubles(BufferKind.HEAP_VIEW)),
-             Arguments.of(new BufferType.Doubles(BufferKind.DIRECT)));
+            (new BufferType.Bytes(BufferKind.HEAP),
+             new BufferType.Bytes(BufferKind.DIRECT),
+             new BufferType.Chars(BufferKind.HEAP),
+             new BufferType.Chars(BufferKind.HEAP_VIEW),
+             new BufferType.Chars(BufferKind.DIRECT),
+             new BufferType.Shorts(BufferKind.HEAP),
+             new BufferType.Shorts(BufferKind.HEAP_VIEW),
+             new BufferType.Shorts(BufferKind.DIRECT),
+             new BufferType.Ints(BufferKind.HEAP),
+             new BufferType.Ints(BufferKind.HEAP_VIEW),
+             new BufferType.Ints(BufferKind.DIRECT),
+             new BufferType.Floats(BufferKind.HEAP),
+             new BufferType.Floats(BufferKind.HEAP_VIEW),
+             new BufferType.Floats(BufferKind.DIRECT),
+             new BufferType.Longs(BufferKind.HEAP),
+             new BufferType.Longs(BufferKind.HEAP_VIEW),
+             new BufferType.Longs(BufferKind.DIRECT),
+             new BufferType.Doubles(BufferKind.HEAP),
+             new BufferType.Doubles(BufferKind.HEAP_VIEW),
+             new BufferType.Doubles(BufferKind.DIRECT));
     }
 
     public static Stream<Arguments> floatBufferTypesSource() {
