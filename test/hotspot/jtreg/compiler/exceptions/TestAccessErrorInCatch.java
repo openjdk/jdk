@@ -37,7 +37,7 @@
  *   -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyStack
  *   -XX:TieredStopAtLevel=3
  *   TestAccessErrorInCatch
- * @run main/othervm -XX:+GenerateOopMapALot TestAccessErrorInCatch
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+GenerateOopMapALot TestAccessErrorInCatch
  */
 
 import java.lang.invoke.MethodHandle;
