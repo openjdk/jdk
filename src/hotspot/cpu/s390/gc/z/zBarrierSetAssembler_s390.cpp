@@ -450,6 +450,63 @@ void ZBarrierSetAssembler::copy_store_at_slow(MacroAssembler* masm,
   }
 }
 
+// Arguments for generated stub:
+//      from:  Z_ARG1
+//      to:    Z_ARG2
+//      count: Z_ARG3 (int >= 0)
+// TODO: Use vector instructions
+void ZBarrierSetAssembler::generate_disjoint_oop_copy(MacroAssembler* masm, bool dest_unintialized) {
+  const Register zpointer = ;
+  // TODO: Where is zpointer stored?
+  Label done, loop, load_bad, load_good, store_bad, store_good;
+  __ z_chi(Z_ARG3, 0);
+  __ z_bre(done);
+  __ align(32);
+
+  __ bind(loop);
+  copy_load_at_fast(masm, zpointer, Z_ARG1, _load_bad_mask, load_bad, load_good);
+  copy_store_at_fast(masm, zpointer, Z_ARG2, _store_bad_mask, _store_good_mask, store_bad, store_good, dest_uninitialized);
+  __ add2reg(Z_ARG1, 8);
+  __ add2reg(Z_ARG2, 8);
+  __ z_brct(Z_ARG3, loop);
+
+  __ bind(done);
+  // TODO: look at it again, we can also use __ z_xogr(Z_RET, Z_RET);
+  __ load_const_optimized(Z_RET, 0);
+  __ z_br(Z_R14);
+
+  copy_load_at_slow(masm, zpointer, Z_ARG1, load_bad, load_good);
+  copy_load_at_fast(masm, Z_ARG2, store_bad, store_good, dest_unintialized);
+}
+
+void ZBarrierSetAssembler::generate_conjoint_oop_copy(MacroAssembler* masm, bool dest_unintialized) {
+  const Register zpointer = ;
+  // TODO: Where is zpointer stored?
+  Label done, loop, load_bad, load_good, store_bad, store_good;
+  __ z_sllg(Z_R0, Z_ARG3, 3);
+  __ z_ltgr(Z_R0, Z_R0);
+  __ z_brz(done);
+  // Point behind last elements and copy backwards.
+  __ z_agr(Z_ARG1, Z_R0);
+  __ z_arg(Z_ARG2, Z_R0);
+
+  __ align(32);
+  __ bind(loop);
+  __ add2reg(Z_ARG1, -8);
+  __ add2reg(Z_ARG2, -8);
+  copy_load_at_fast(masm, zpointer, Z_ARG1, _load_bad_mask, load_bad, load_good);
+  copy_store_at_fast(masm, zpointer, Z_ARG2, _store_bad_mask, _store_good_mask, store_bad, store_good, dest_unintialized);
+  __ z_brct(Z_ARG3, loop);
+
+  __ bind(done);
+  // TODO: look at it again, we can also use __ z_xogr(Z_RET, Z_RET);
+  __ load_const_optimized(Z_RET, 0);
+  __ z_br(Z_R14);
+
+  copy_load_at_slow(masm, zpointer, Z_ARG1, load_bad, load_good);
+  copy_store_at_slow(masm, Z_ARG2, store_bad, store_good, dest_unintialized);
+}
+
 // TODO: Check if to go with x86, aarch64 or ppc, currently this implementation is according to ppc
 // because BarrierSetAssembler::copy_load_at is not implemented on s390 as well as on ppc but 
 // implemented on x86 and aarch64
