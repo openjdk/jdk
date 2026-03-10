@@ -44,8 +44,6 @@ import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
-import java.util.logging.StreamHandler;
 import jdk.test.lib.net.SimpleSSLContext;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
