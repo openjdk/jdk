@@ -63,7 +63,7 @@ import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
  * @author Rich Schiavi
  */
 @SuppressWarnings("serial") // Same-version serialization only
-public final class WindowsIconFactory implements Serializable
+public class WindowsIconFactory implements Serializable
 {
     private static Icon frame_closeIcon;
     private static Icon frame_iconifyIcon;
