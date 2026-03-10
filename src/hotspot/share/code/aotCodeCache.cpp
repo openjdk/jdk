@@ -487,12 +487,53 @@ void AOTCodeCache::Config::record(uint cpu_features_offset) {
   if (RestrictContended) {
     _flags |= restrictContendedPadding;
   }
-  _compressedOopShift    = CompressedOops::shift();
-  _compressedOopBase     = CompressedOops::base();
-  _compressedKlassShift  = CompressedKlassPointers::shift();
-  _contendedPaddingWidth = ContendedPaddingWidth;
-  _gc                    = (uint)Universe::heap()->kind();
-  _cpu_features_offset   = cpu_features_offset;
+  _compressedOopShift              = CompressedOops::shift();
+  _compressedOopBase               = CompressedOops::base();
+  _compressedKlassShift            = CompressedKlassPointers::shift();
+  _contendedPaddingWidth           = ContendedPaddingWidth;
+  _gc                              = (uint)Universe::heap()->kind();
+  _optoLoopAlignment               = (uint)OptoLoopAlignment;
+  _useUnalignedLoadStores          = (uint)UseUnalignedLoadStores;
+  _maxVectorSize                   = (uint)MaxVectorSize;
+  _codeEntryAlignment              = (uint)CodeEntryAlignment;
+  _useUnalignedLoadStores          = (uint)UseUnalignedLoadStores;
+  _arrayOperationPartialInlineSize = (uint)ArrayOperationPartialInlineSize;
+  _allocatePrefetchLines           = (uint)AllocatePrefetchLines;
+  _allocateInstancePrefetchLines   = (uint)AllocateInstancePrefetchLines;
+  _allocatePrefetchDistance        = (uint)AllocatePrefetchDistance;
+  _allocatePrefetchStepSize        = (uint)AllocatePrefetchStepSize;
+#if defined(X86)
+  _avx3threshold                   = (uint)AVX3Threshold;
+  _x86_flags                       = 0;
+  if (EnableX86ECoreOpts) {
+    _x86_flags |= x86_enableX86ECoreOpts;
+  }
+#endif // defined(X86)
+#if defined(AARCH64)
+  _prefetchCopyIntervalInBytes     = (uint)PrefetchCopyIntervalInBytes;
+  _blockZeroingLowLimit            = (uint)BlockZeroingLowLimit;
+  _softwarePrefetchHintDistance    = (uint)SoftwarePrefetchHintDistance;
+  _aarch64_flags                   = 0;
+  if (AvoidUnalignedAccesses) {
+    _aarch64_flags |= aarch64_avoidUnalignedAccesses;
+  }
+  if (UseSIMDForMemoryOps) {
+    _aarch64_flags |= aarch64_useSIMDForMemoryOps;
+  }
+  if (UseBlockZeroing) {
+    _aarch64_flags |= aarch64_useBlockZeroingavoid;
+  }
+  if (UseSVE) {
+    _aarch64_flags |= aarch64_useSVE;
+  }
+  if (UseLSE) {
+    _aarch64_flags |= aarch64_useLSE;
+  }
+#endif // defined(AARCH64)
+#if INCLUDE_JVMCI
+  _enableJVMCI                     = (uint)EnableJVMCI;
+#endif
+  _cpu_features_offset             = cpu_features_offset;
 }
 
 bool AOTCodeCache::Config::verify_cpu_features(AOTCodeCache* cache) const {
@@ -563,6 +604,157 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with CompressedKlassPointers::shift() = %d vs current %d", _compressedKlassShift, CompressedKlassPointers::shift());
     return false;
   }
+  if (((_flags & enableContendedPadding) != 0) != EnableContended) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with EnableContended = %s vs current %s", (enableContendedPadding ? "false" : "true"), (EnableContended ? "true" : "false"));
+    return false;
+  }
+  if (((_flags & restrictContendedPadding) != 0) != RestrictContended) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with RestrictContended = %s vs current %s", (restrictContendedPadding ? "false" : "true"), (RestrictContended ? "true" : "false"));
+    return false;
+  }
+  // Tests for config options which might affect validity of adapters,
+  // stubs or nmethods. Currently we take a pessemistic stand and
+  // drop the whole cache if any of these are changed.
+
+  // change to opto alignment can affect performance of array copy
+  // stubs and nmethods
+  if (_optoLoopAlignment != (uint)OptoLoopAlignment) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with OptoLoopAlignment = %d vs current %d", (int)_optoLoopAlignment, (int)OptoLoopAlignment);
+    return false;
+  }
+
+  // change to MaxVectorSize can affect validity of array copy/fill
+  // stubs
+  if (_maxVectorSize != (uint)MaxVectorSize) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with MaxVectorSize = %d vs current %d", (int)_maxVectorSize, (int)MaxVectorSize);
+    return false;
+  }
+
+  // change to CodeEntryAlignment can affect performance of array
+  // copy stubs and nmethods
+  if (_codeEntryAlignment != CodeEntryAlignment) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with CodeEntryAlignment = %d vs current %d", _codeEntryAlignment, CodeEntryAlignment);
+    return false;
+  }
+
+  // switching off UseUnalignedLoadStores can affect validity of fill
+  // stubs
+  if (_useUnalignedLoadStores && !UseUnalignedLoadStores) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseUnalignedLoadStores = true vs current = false");
+    return false;
+  }
+
+  // changing ArrayOperationPartialInlineSize can affect validity of
+  // nmethods and stubs
+  if (_arrayOperationPartialInlineSize != (uint)ArrayOperationPartialInlineSize) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with ArrayOperationPartialInlineSize = %d vs current %d", (int)_arrayOperationPartialInlineSize, (int)ArrayOperationPartialInlineSize);
+    return false;
+  }
+
+  // changing Prefetch configuration can affect validity of nmethods
+  // and stubs
+  if (_allocatePrefetchLines != (uint)AllocatePrefetchLines) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with  = %d vs current %d", (int)_allocatePrefetchLines, (int)AllocatePrefetchLines);
+    return false;
+  }
+  if (_allocateInstancePrefetchLines != (uint)AllocateInstancePrefetchLines) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with  = %d vs current %d", (int)_allocateInstancePrefetchLines, (int)AllocateInstancePrefetchLines);
+    return false;
+  }
+  if (_allocatePrefetchDistance != (uint)AllocatePrefetchDistance) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with  = %d vs current %d", (int)_allocatePrefetchDistance, (int)AllocatePrefetchDistance);
+    return false;
+  }
+  if (_allocatePrefetchStepSize != (uint)AllocatePrefetchStepSize) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with  = %d vs current %d", (int)_allocatePrefetchStepSize, (int)AllocatePrefetchStepSize);
+    return false;
+  }
+
+#if defined(X86)
+  // change to AVX3Threshold may affect validity of array copy stubs
+  // and nmethods
+  if (_avx3threshold != (uint)AVX3Threshold) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with AVX3Threshold = %d vs current %d", (int)_avx3threshold, AVX3Threshold);
+    return false;
+  }
+
+  // change to EnableX86ECoreOpts may affect validity of nmethods
+  if (((_x86_flags & x86_enableX86ECoreOpts) != 0) != EnableX86ECoreOpts) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with EnableX86ECoreOpts = %s vs current %s", (EnableX86ECoreOpts ? "false" : "true"), (EnableX86ECoreOpts ? "true" : "false"));
+    return false;
+  }
+#endif // defined(X86)
+
+#if defined(AARCH64)
+  // change to PrefetchCopyIntervalInBytes may affect validity of
+  // array copy stubs
+  if (_prefetchCopyIntervalInBytes != (uint)PrefetchCopyIntervalInBytes) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with PrefetchCopyIntervalInBytes = %d vs current %d", (int)_prefetchCopyIntervalInBytes, (int)PrefetchCopyIntervalInBytes);
+    return false;
+  }
+
+  // change to BlockZeroingLowLimit may affect validity of array fill
+  // stubs
+  if (_blockZeroingLowLimit != (uint)BlockZeroingLowLimit) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with BlockZeroingLowLimit = %d vs current %d", (int)_blockZeroingLowLimit, (int)BlockZeroingLowLimit);
+    return false;
+  }
+
+  // change to SoftwarePrefetchHintDistance may affect validity of array fill
+  // stubs
+  if (_softwarePrefetchHintDistance != (uint)SoftwarePrefetchHintDistance) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with SoftwarePrefetchHintDistance = %d vs current %d", (int)_softwarePrefetchHintDistance, (int)SoftwarePrefetchHintDistance);
+    return false;
+  }
+
+  // switching on AvoidUnalignedAccesses may affect validity of array
+  // copy stubs and nmethods
+  if (((_aarch64_flags & aarch64_avoidUnalignedAccesses) == 0) && AvoidUnalignedAccesses) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with AvoidUnalignedAccesses = false vs current = true");
+    return false;
+  }
+
+  // change to UseSIMDForMemoryOps may affect validity of array
+  // copy stubs and nmethods
+  if (((_aarch64_flags & aarch64_useSIMDForMemoryOps) != 0) != (uint)UseSIMDForMemoryOps) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseSIMDForMemoryOps = %s vs current %s", (UseSIMDForMemoryOps ? "false" : "true"), (UseSIMDForMemoryOps ? "true" : "false"));
+    return false;
+  }
+
+  // change to UseSIMDForArrayEquals may affect validity of array
+  // copy stubs and nmethods
+  if (((_aarch64_flags & aarch64_useSIMDForArrayEquals) != 0) != (uint)UseSIMDForArrayEquals) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseSIMDForArrayEquals = %s vs current %s", (UseSIMDForArrayEquals ? "false" : "true"), (UseSIMDForArrayEquals ? "true" : "false"));
+    return false;
+  }
+
+  // change to UseBlockZeroing may affect validity of array fill stubs
+  if (((_aarch64_flags & aarch64_useBlockZeroing) != 0) != (uint)UseBlockZeroing) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseBlockZeroing = %s vs current %s", (UseBlockZeroing ? "false" : "true"), (UseBlockZeroing ? "true" : "false"));
+    return false;
+  }
+
+  // change to useSVE may affect validity of stubs
+  if (((_aarch64_flags & aarch64_useSVE) != 0) != (uint)UseSVE) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseSVE = %s vs current %s", (UseSVE ? "false" : "true"), (UseSVE ? "true" : "false"));
+    return false;
+  }
+
+  // change to useSVE may affect validity of stubs and methods
+  if (((_aarch64_flags & aarch64_useLSE) != 0) != (uint)UseLSE) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseLSE = %s vs current %s", (UseLSE ? "false" : "true"), (UseLSE ? "true" : "false"));
+    return false;
+  }
+#endif // defined(AARCH64)
+
+#if INCLUDE_JVMCI
+  // change to EnableJVMCI will affect validity of adapters and
+  // nmethods
+  if (_enableJVMCI != (uint)EnableJVMCI) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with EnableJVMCI = %s vs current %s", (_enableJVMCI ? "true" : "false"), (EnableJVMCI ? "true" : "false"));
+    return false;
+  }
+#endif // INCLUDE_JVMCI
 
   // The following checks do not affect AOT adapters caching
 

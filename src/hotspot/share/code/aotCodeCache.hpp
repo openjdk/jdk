@@ -281,6 +281,42 @@ protected:
     uint _compressedKlassShift;
     uint _contendedPaddingWidth;
     uint _gc;
+    uint _optoLoopAlignment;
+    uint _maxVectorSize;
+    uint _codeEntryAlignment;
+    uint _useUnalignedLoadStores;
+    uint _arrayOperationPartialInlineSize;
+    uint _allocatePrefetchLines;
+    uint _allocateInstancePrefetchLines;
+    uint _allocatePrefetchDistance;
+    uint _allocatePrefetchStepSize;
+#if defined(X86)
+    enum X86Flags {
+      x86_none = 0,
+      x86_enableX86ECoreOpts = 1
+    };
+    uint _avx3threshold;
+    uint _x86_flags;
+#endif // defined(X86)
+#if defined(AARCH64)
+    enum AArch64Flags {
+      aarch64_none = 0,
+      aarch64_avoidUnalignedAccesses = 1,
+      aarch64_useSIMDForMemoryOps = 2,
+      aarch64_useSIMDForArrayEquals = 4,
+      aarch64_useBlockZeroing = 8,
+      aarch64_useSVE = 16,
+      aarch64_useLSE = 32
+    };
+    // this is global but x86 does not use it and aarch64 does
+    uint _prefetchCopyIntervalInBytes;
+    uint _blockZeroingLowLimit;
+    uint _softwarePrefetchHintDistance;
+    uint _aarch64_flags;
+#endif // defined(AARCH64)
+#if INCLUDE_JVMCI
+    uint _enableJVMCI;
+#endif // INCLUDE_JVMCI
     enum Flags {
       none                     = 0,
       debugVM                  = 1,
