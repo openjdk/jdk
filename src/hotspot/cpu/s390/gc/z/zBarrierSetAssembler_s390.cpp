@@ -22,7 +22,32 @@
  * questions.
  */
 
+// TODO: Check which of these are useless
 #include "asm/macroAssembler.inline.hpp"
+#include "asm/register.hpp"
+#include "code/codeBlob.hpp"
+#include "code/vmreg.inline.hpp"
+#include "gc/z/zAddress.hpp"
+#include "gc/z/zBarrier.inline.hpp"
+#include "gc/z/zBarrierSet.hpp"
+#include "gc/z/zBarrierSetAssembler.hpp"
+#include "gc/z/zBarrierSetRuntime.hpp"
+#include "gc/z/zThreadLocalData.hpp"
+#include "memory/resourceArea.hpp"
+#include "register_s390.hpp"
+#include "runtime/jniHandles.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
+#ifdef COMPILER1
+#include "c1/c1_LIRAssembler.hpp"
+#include "c1/c1_MacroAssembler.hpp"
+#include "gc/z/c1/zBarrierSetC1.hpp"
+#endif // COMPILER1
+#ifdef COMPILER2
+#include "gc/z/c2/zBarrierSetC2.hpp"
+#include "opto/output.hpp"
+#endif // COMPILER2
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
@@ -941,3 +966,30 @@ void ZBarrierSetAssembler::check_oop(MacroAssembler *masm, Register obj, const c
 }
 
 #undef __
+
+static uint16_t pathc_barrier_relocation_value(int format) {
+  switch (format) {
+    case ZBarrierRelocationFormatStoreGoodBeforeLoad:
+    case ZBarrierRelocationFormatStoreGoodBits:
+      return (uint16_t)ZPointerStoreGoodMask;
+    case ZBarrierRelocationFormatStoreBadBeforeLoad:
+      return (uint16_t)ZPointerStoreBadMask;
+    case ZBarrierRelocationFormatMarkBadBeforeTest:
+      return (uint16_t)ZPointerMarkBadMask;
+    case ZBarrierRelocationFormatLoadGoodBeforeTestBit:
+      return (uint16_t)ZPointerLoadBadMask;
+    default:
+      ShouldNotReachHere();
+      return 0;
+  }
+}
+
+// TODO: the __ relocate() will be replaced by a suitable load immediate, store immediate etc to store the above Good and Bad
+// masks during every epoch of the gc. I do not know where and how are these instructions are decided. This implementation follows
+// ppc and luckily for them the pathced instructions are li, ori, cmpli and andi. These masks are needed to be loaded in the 
+// emitted instructions itself and on ppc the place to put these instructions are the last 16 bits (addr + 2), but depending upon
+// emitted instructions on s390 the place to put these masks may change. See aarch64 for reference.
+void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format) {
+  *(uint16_t*)(addr BIG_ENDIAN_ONLY(+2)) = patch_barrier_relocation_value(format);
+  ICache::invalidate_word((address)patch_addr);
+}
