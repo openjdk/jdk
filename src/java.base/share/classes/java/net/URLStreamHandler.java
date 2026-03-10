@@ -481,26 +481,25 @@ public abstract class URLStreamHandler {
      * @return  a string representation of the {@code URL} argument.
      */
     protected String toExternalForm(URL u) {
-        // Normalize empty components to ""
-        String s;
-        var auth  = (s = u.getAuthority()) == null || s.isEmpty() ? "" : s;
-        var path  = (s = u.getPath())  == null ? "" : s;
-        var query = (s = u.getQuery()) == null ? "" : s;
-        var ref   = (s = u.getRef())   == null ? "" : s;
-
         // Fast paths for empty components
         if (u.getQuery() == null && u.getRef() == null) {
-            if (auth == "") {
+            var path = u.getPath() == null ? "" : u.getPath();
+            if (u.getAuthority() == null || u.getAuthority().isEmpty()) {
                 return u.getProtocol() + ":" + path;
             } else {
-                return u.getProtocol() + "://" + auth + path;
+                return u.getProtocol() + "://" + u.getAuthority() + path;
             }
         }
-
-        // General case
-        var aSep = auth  != "" ? "//" : "";
+        // Components
+        var auth = u.getAuthority() == null || u.getAuthority().isEmpty() ? "" : u.getAuthority();
+        var path = u.getPath()   == null ? "" : u.getPath();
+        var query = u.getQuery() == null ? "" : u.getQuery();
+        var ref   = u.getRef()   == null ? "" : u.getRef();
+        // Separators
+        var aSep = auth != "" ? "//" : "";
         var qSep = u.getQuery() != null ? "?"  : "";
         var rSep = u.getRef()   != null ? "#"  : "";
+        // Concatenate
         return u.getProtocol() + ":"
                 + aSep + auth
                 + path
