@@ -23,7 +23,6 @@
 
 package javax.xml.xpath.ptests;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Attr;
@@ -41,7 +40,6 @@ import javax.xml.xpath.XPathFactory;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Iterator;
 
 import static javax.xml.xpath.XPathConstants.BOOLEAN;
@@ -51,6 +49,8 @@ import static javax.xml.xpath.XPathConstants.NUMBER;
 import static javax.xml.xpath.XPathConstants.STRING;
 import static javax.xml.xpath.ptests.XPathTestConst.XML_DIR;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -586,7 +586,7 @@ public class XPathTest {
     public void testCheckXPath56() {
         // CR 6376058 says that an impl will be provided, but by
         // default we still return null here
-        Assertions.assertNull(xpath.getNamespaceContext());
+        assertNull(xpath.getNamespaceContext());
     }
 
     /**
@@ -616,7 +616,7 @@ public class XPathTest {
      */
     @Test
     public void testCheckXPath59() {
-        Assertions.assertNull(xpath.getXPathFunctionResolver());
+        assertNull(xpath.getXPathFunctionResolver());
     }
 
     /**
@@ -627,7 +627,7 @@ public class XPathTest {
     @Test
     public void testCheckXPath60() {
         xpath.setXPathFunctionResolver((functionName, arity) -> null);
-        Assertions.assertNotNull(xpath.getXPathFunctionResolver());
+        assertNotNull(xpath.getXPathFunctionResolver());
     }
 
     /**
@@ -645,7 +645,7 @@ public class XPathTest {
      */
     @Test
     public void testCheckXPath62() {
-        Assertions.assertNull(xpath.getXPathVariableResolver());
+        assertNull(xpath.getXPathVariableResolver());
     }
 
     /**
@@ -656,7 +656,7 @@ public class XPathTest {
     @Test
     public void testCheckXPath63() {
         xpath.setXPathVariableResolver(qname -> null);
-        Assertions.assertNotNull(xpath.getXPathVariableResolver());
+        assertNotNull(xpath.getXPathVariableResolver());
     }
 
     /**
