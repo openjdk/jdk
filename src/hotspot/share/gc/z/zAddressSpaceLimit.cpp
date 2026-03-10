@@ -31,9 +31,13 @@
 #include "utilities/ostream.hpp"
 
 size_t ZAddressSpaceLimit::heap() {
-  // Allow the heap to occupy 50% of the address space
+  // Allow the heap to occupy [100/MaxVirtMemFraction]% of the address space
   const size_t limit = os::reserve_memory_limit() / MaxVirtMemFraction;
-  return align_up(limit, ZGranuleSize);
+  if (can_align_up(limit, ZGranuleSize)) {
+    return align_up(limit, ZGranuleSize);
+  } else {
+    return align_down(limit, ZGranuleSize);
+  }
 }
 
 void ZAddressSpaceLimit::print_limits() {
