@@ -45,6 +45,8 @@ import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
  * @test
  * @bug 8190793
  * @summary Httpserver does not detect truncated request body
+ * @comment We use othervm because this test configures logging handlers
+ *          for the system wide "com.sun.net.httpserver" logger
  * @run main/othervm ${test.main.class}
  */
 /*

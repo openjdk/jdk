@@ -55,6 +55,8 @@ import javax.net.ssl.SSLSession;
  * @summary  test that the handler can request a connection close.
  * @library /test/lib
  * @build jdk.test.lib.net.SimpleSSLContext
+ * @comment We use othervm because this test configures logging handlers
+ *          for the system wide "com.sun.net.httpserver" logger
  * @run main/othervm ${test.main.class}
  */
 public class HandlerConnectionClose {

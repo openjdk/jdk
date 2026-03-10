@@ -36,6 +36,8 @@ import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
  * @test
  * @bug 8211420
  * @library /test/lib
+ * @comment We use othervm because this test configures logging handlers
+ *          for the system wide "com.sun.net.httpserver" logger
  * @run main/othervm ${test.main.class}
  * @run main/othervm -Djava.net.preferIPv6Addresses=true ${test.main.class}
  * @summary

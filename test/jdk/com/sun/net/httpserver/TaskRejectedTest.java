@@ -45,6 +45,8 @@ import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
  * @test
  * @bug 8169358
  * @summary  HttpServer does not close client connection when RejectedExecutionException occurs.
+ * @comment We use othervm because this test configures logging handlers
+ *          for the system wide "com.sun.net.httpserver" logger
  * @run main/othervm ${test.main.class}
  */
 public class TaskRejectedTest {
@@ -55,7 +57,7 @@ public class TaskRejectedTest {
 
     private static final int TIMEOUT = 10000; // 10 sec
 
-    private static final Logger logger = Logger.getLogger(HttpServer.class.getPackage().getName());
+    private static final Logger logger = Logger.getLogger("com.sun.net.httpserver");
 
     private static void setupLogging() {
         final Handler consoleHandler = new ConsoleHandler();

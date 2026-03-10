@@ -42,6 +42,8 @@ import static jdk.test.lib.Utils.createTempFileOfSize;
  * @library /test/lib
  * @build jdk.test.lib.Utils
  *        jdk.test.lib.net.URIBuilder
+ * @comment We use othervm because this test configures logging handlers
+ *          for the system wide "com.sun.net.httpserver" logger
  * @run main/othervm ${test.main.class}
  * @run main/othervm -Djava.net.preferIPv6Addresses=true ${test.main.class}
  */

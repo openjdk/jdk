@@ -46,6 +46,8 @@ import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
  * @bug 8304963
  * @summary Connection should be reusable after HEAD request
  * @library /test/lib
+ * @comment We use othervm because this test configures logging handlers
+ *          for the system wide "com.sun.net.httpserver" logger
  * @run junit/othervm ${test.main.class}
  */
 public class HeadKeepAlive {

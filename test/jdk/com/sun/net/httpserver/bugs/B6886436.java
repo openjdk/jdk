@@ -36,6 +36,8 @@ import static com.sun.net.httpserver.HttpExchange.RSPBODY_CHUNKED;
  * @bug 6886436
  * @summary HttpServer should not send a body with 204 response.
  * @library /test/lib
+ * @comment We use othervm because this test configures logging handlers
+ *          for the system wide "com.sun.net.httpserver" logger
  * @run main/othervm ${test.main.class}
  * @run main/othervm -Djava.net.preferIPv6Addresses=true ${test.main.class}
  */

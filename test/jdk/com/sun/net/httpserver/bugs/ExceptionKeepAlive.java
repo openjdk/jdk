@@ -47,6 +47,8 @@ import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
  * @summary Exceptions thrown from HttpHandler.handle should not close connection
  *          if response is completed
  * @library /test/lib
+ * @comment We use othervm because this test configures logging handlers
+ *          for the system wide "com.sun.net.httpserver" logger
  * @run junit/othervm ${test.main.class}
  */
 public class ExceptionKeepAlive {

@@ -41,6 +41,8 @@ import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
  * @bug 6756771 6755625
  * @summary  com.sun.net.httpserver.HttpServer should handle POSTs larger than 2Gig
  * @library /test/lib
+ * @comment We use othervm because this test configures logging handlers
+ *          for the system wide "com.sun.net.httpserver" logger
  * @run main/othervm ${test.main.class}
  * @run main/othervm -Djava.net.preferIPv6Addresses=true ${test.main.class}
  */
