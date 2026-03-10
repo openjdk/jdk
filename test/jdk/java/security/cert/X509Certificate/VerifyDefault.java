@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8175029
+ * @bug 8175029 8377979
  * @library /test/lib
  * @summary check that default implementation of
  *          X509Certificate.verify(PublicKey, Provider) works on custom
@@ -43,10 +43,11 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
-import java.util.Collection;
+import java.time.Instant;
 import java.util.Date;
-import java.util.List;
 import java.util.Set;
+
+import jdk.test.lib.Asserts;
 import jdk.test.lib.security.CertUtils;
 
 public class VerifyDefault {
@@ -134,7 +135,47 @@ public class VerifyDefault {
 
     public static void main(String[] args) throws Exception {
         X509Certificate cert = CertUtils.getCertFromString(TEST_CERT);
+
+        // verify the certs
+        new TestX509Certificate(cert).verify(cert.getPublicKey());
         new TestX509Certificate(cert).verify(cert.getPublicKey(),
                                              (Provider)null);
+
+        // verify the validity dates
+        verifyValidityTimes(new TestX509Certificate(cert));
+    }
+
+    private static void verifyValidityTimes(final TestX509Certificate cert)
+            throws CertificateNotYetValidException,
+            CertificateExpiredException {
+
+        final Date notBeforeDate =cert.getNotBefore();
+        final Instant notBeforeInstant = cert.getNotBeforeInstant();
+        final Date notAfterDate = cert.getNotAfter();
+        final Instant notAfterInstant = cert.getNotAfterInstant();
+
+        // checking dates returned by the cert
+        Asserts.assertNotNull(notBeforeDate);
+        Asserts.assertNotNull(notBeforeInstant);
+        Asserts.assertNotNull(notAfterDate);
+        Asserts.assertNotNull(notAfterInstant);
+        Asserts.assertEquals(notBeforeInstant.toString(),
+                "2017-03-28T16:47:26Z");
+        Asserts.assertEquals(notAfterInstant.toString(),
+                "2017-06-26T16:47:26Z");
+        Asserts.assertEquals(notBeforeDate.getTime(),
+                notBeforeInstant.toEpochMilli());
+        Asserts.assertEquals(notAfterDate.getTime(),
+                notAfterInstant.toEpochMilli());
+
+        // checking validity of the cert
+        cert.checkValidity(Instant.parse("2017-05-26T16:47:26Z"));
+        Asserts.assertThrows(CertificateExpiredException.class,
+                () -> cert.checkValidity(
+                        Instant.parse("2018-05-26T16:47:26Z")));
+        Asserts.assertThrows(CertificateNotYetValidException.class,
+                () -> cert.checkValidity(
+                        Instant.parse("2012-05-26T16:47:26Z")));
+
     }
 }
