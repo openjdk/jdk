@@ -856,10 +856,10 @@ void LibraryCallKit::set_result(RegionNode* region, PhiNode* value) {
       Node* halt = _gvn.transform(new HaltNode(region, frame, "unexpected guard failure in intrinsic")); \
       C->root()->add_req(halt); \
     } \
-  } while (0); \
-  if (stopped()) { \
-    return true; \
-  }
+    if (stopped()) { \
+      return true; \
+    } \
+  } while (0);
 
 //------------------------------generate_guard---------------------------
 // Helper function for generating guarded fast-slow graph structures.
