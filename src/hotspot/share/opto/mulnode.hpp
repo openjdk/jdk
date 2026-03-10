@@ -25,6 +25,7 @@
 #ifndef SHARE_OPTO_MULNODE_HPP
 #define SHARE_OPTO_MULNODE_HPP
 
+#include "opto/multnode.hpp"
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/type.hpp"
@@ -32,6 +33,7 @@
 // Portions of code courtesy of Clifford Click
 
 class PhaseTransform;
+class Matcher;
 
 //------------------------------MulNode----------------------------------------
 // Classic MULTIPLY functionality.  This covers all the usual 'multiply'
@@ -203,6 +205,52 @@ public:
   const Type *bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
   friend const Type* MulHiValue(const Type *t1, const Type *t2, const Type *bot);
+};
+
+//------------------------------MulHiLoLNode-----------------------------------
+// Lower and upper 64-bit results of a signed 64x64->128 multiply.
+class MulHiLoLNode : public MultiNode {
+protected:
+  MulHiLoLNode(Node* in1, Node* in2) : MultiNode(3) {
+    init_req(0, nullptr);
+    init_req(1, in1);
+    init_req(2, in2);
+  }
+
+public:
+  enum {
+    lo_proj_num = 0,
+    hi_proj_num = 1
+  };
+
+  virtual int Opcode() const;
+  virtual Node* Identity(PhaseGVN* phase) { return this; }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape) { return nullptr; }
+  virtual const Type* Value(PhaseGVN* phase) const { return bottom_type(); }
+  virtual uint hash() const { return Node::hash(); }
+  virtual bool is_CFG() const { return false; }
+  virtual uint ideal_reg() const { return NotAMachineReg; }
+  virtual const Type* bottom_type() const { return TypeTuple::LONG_PAIR; }
+
+  virtual Node* match(const ProjNode* proj, const Matcher* m);
+
+  static MulHiLoLNode* make(Node* mul_hi);
+
+  ProjNode* lo_proj() { return proj_out_or_null(lo_proj_num); }
+  ProjNode* hi_proj() { return proj_out_or_null(hi_proj_num); }
+
+private:
+  virtual bool depends_only_on_test() const { return false; }
+};
+
+//------------------------------UMulHiLoLNode----------------------------------
+// Lower and upper 64-bit results of an unsigned 64x64->128 multiply.
+class UMulHiLoLNode : public MulHiLoLNode {
+public:
+  UMulHiLoLNode(Node* in1, Node* in2) : MulHiLoLNode(in1, in2) {}
+  virtual int Opcode() const;
+
+  static UMulHiLoLNode* make(Node* umul_hi);
 };
 
 //------------------------------AndINode---------------------------------------

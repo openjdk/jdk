@@ -3259,6 +3259,41 @@ void Compile::handle_div_mod_op(Node* n, BasicType bt, bool is_unsigned) {
   }
 }
 
+void Compile::handle_mulhi_mul_op(Node* n, bool is_unsigned) {
+  const int fused_opcode = is_unsigned ? Op_UMulHiLoL : Op_MulHiLoL;
+  if (!Matcher::has_match_rule(fused_opcode)) {
+    return;
+  }
+
+  Node* mul = n->find_similar(Op_MulL);
+  if (mul == nullptr) {
+    Node* lhs = n->in(1);
+    Node* rhs = n->in(2);
+    if (rhs != nullptr && rhs->outcnt() >= 2) {
+      for (DUIterator_Fast dmax, i = rhs->fast_outs(dmax); i < dmax; i++) {
+        Node* use = rhs->fast_out(i);
+        if (use != n &&
+            use->Opcode() == Op_MulL &&
+            use->req() == n->req() &&
+            use->in(1) == rhs &&
+            use->in(2) == lhs) {
+          mul = use;
+          break;
+        }
+      }
+    }
+  }
+
+  if (mul == nullptr) {
+    return;
+  }
+
+  MulHiLoLNode* mul_hi_lo = is_unsigned ? static_cast<MulHiLoLNode*>(UMulHiLoLNode::make(n))
+                                        : MulHiLoLNode::make(n);
+  mul->subsume_by(mul_hi_lo->lo_proj(), this);
+  n->subsume_by(mul_hi_lo->hi_proj(), this);
+}
+
 void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop, Unique_Node_List& dead_nodes) {
   switch( nop ) {
   // Count all float operations that may use FPU
@@ -3728,6 +3763,14 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
 
   case Op_UModL:
     handle_div_mod_op(n, T_LONG, true);
+    break;
+
+  case Op_MulHiL:
+    handle_mulhi_mul_op(n, false);
+    break;
+
+  case Op_UMulHiL:
+    handle_mulhi_mul_op(n, true);
     break;
 
   case Op_LoadVector:
