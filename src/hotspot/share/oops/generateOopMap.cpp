@@ -2025,7 +2025,7 @@ void GenerateOopMap::ret_jump_targets_do(BytecodeStream *bcs, jmpFct_t jmpFct, i
     DEBUG_ONLY(BasicBlock* target_bb = &jsr_bb[1];)
     assert(target_bb  == get_basic_block_at(target_bci), "wrong calc. of successor basicblock");
     bool alive = jsr_bb->is_alive();
-    log_debug(generateoopmap)("pc = %d, ret -> %d alive: %s\n", bci, target_bci, alive ? "true" : "false");
+    log_debug(generateoopmap)("pc = %d, ret -> %d alive: %s", bci, target_bci, alive ? "true" : "false");
     if (alive) jmpFct(this, target_bci, data);
   }
 }
@@ -2200,7 +2200,7 @@ void GenerateOopMap::result_for_basicblock(int bci) {
 void GenerateOopMap::record_refval_conflict(int varNo) {
   assert(varNo>=0 && varNo< _max_locals, "index out of range");
 
-  log_trace(generateoopmap)("### Conflict detected (local no: %d)\n", varNo);
+  log_trace(generateoopmap)("### Conflict detected (local no: %d)", varNo);
 
   if (!_new_var_map) {
     _new_var_map = NEW_RESOURCE_ARRAY(int, _max_locals);

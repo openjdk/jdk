@@ -46,46 +46,32 @@ public class GenerateOopMapTest {
     static String tracePattern = "[trace][generateoopmap]        5  vars = 'r'      stack = 'v'   monitors = ''  \tifne";
     static String traceDetailPattern = "[generateoopmap]         0 vars     = ( r  |slot0)    invokestatic()V";
 
-    static void match(String logFileName, String pattern, boolean shouldContain) throws Exception {
-        // Does this use piles of memory?
-        boolean contains = Files.readString(Path.of(logFileName)).contains(pattern);
-        if (shouldContain && !contains) {
-            throw new RuntimeException("Pattern " + pattern + " not found in " + logFileName);
-        } else if (!shouldContain && contains) {
-            throw new RuntimeException("Pattern " + pattern + " should not be found in " + logFileName);
-        }
-    }
-
     static void test() throws Exception {
         // Don't print much with info level.
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:generateoopmap=info:info.log",
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:generateoopmap=info",
                                                                              "GenerateOopMapTest", "test");
         OutputAnalyzer o = new OutputAnalyzer(pb.start());
-        o.shouldHaveExitValue(0);
-        match("info.log", debugPattern, false);
+        o.shouldNotContain(infoPattern).shouldHaveExitValue(0);
 
         // Prints bytecodes and BasicBlock information in debug.
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:generateoopmap=debug:debug.log",
-                                                                             "GenerateOopMapTest", "test");
-        o = new OutputAnalyzer(pb.start());
-        o.shouldHaveExitValue(0);
-        match("debug.log", debugPattern, true);
-
-        // Prints ref/val for each bytecode in trace.
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:generateoopmap=trace:trace.log",
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:generateoopmap=debug",
                                                               "GenerateOopMapTest", "test");
         o = new OutputAnalyzer(pb.start());
-        o.shouldHaveExitValue(0);
-        match("trace.log", tracePattern, true);
+        o.shouldContain(debugPattern).shouldHaveExitValue(0);
+
+        // Prints ref/val for each bytecode in trace.
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:generateoopmap=trace",
+                                                              "GenerateOopMapTest", "test");
+        o = new OutputAnalyzer(pb.start());
+        o.shouldContain(tracePattern).shouldHaveExitValue(0);
 
         // Prints extra stuff with detailed. Not sure how useful this is but keep it for now.
         if (Platform.isDebugBuild()) {
-            pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:generateoopmap=trace:detail.log",
+            pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:generateoopmap=trace",
                                                                   "-XX:+Verbose",
                                                                   "GenerateOopMapTest", "test");
             o = new OutputAnalyzer(pb.start());
-            o.shouldHaveExitValue(0);
-            match("detail.log", traceDetailPattern, true);
+            o.shouldContain(traceDetailPattern).shouldHaveExitValue(0);
         }
     };
 
