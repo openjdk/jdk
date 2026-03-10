@@ -76,7 +76,7 @@ public class ForceViews {
         throws Exception {
 
         Path file = Path.of(".", "junk");
-        try (FileChannel fc = FileChannel.open(file, CREATE_NEW, READ, WRITE, DELETE_ON_CLOSE)) {
+        try (FileChannel fc = FileChannel.open(file, CREATE, READ, WRITE, DELETE_ON_CLOSE)) {
             fc.write(ByteBuffer.wrap(new byte[1024]));
             fc.position(0);
 
