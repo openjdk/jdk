@@ -1131,7 +1131,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   // of the peeled iteration to insert Parse Predicates. If no well
   // positioned safepoint peel to guarantee a safepoint in the outer
   // loop.  When loop peeling is disabled, skip the peeling step altogether.
-  if (LoopPeeling >= 1 && (safepoint != nullptr || !loop->_has_call)) {
+  if (LoopPeeling != 0 && (safepoint != nullptr || !loop->_has_call)) {
     old_new.clear();
     do_peeling(loop, old_new);
   } else {

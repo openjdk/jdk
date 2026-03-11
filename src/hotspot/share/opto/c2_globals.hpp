@@ -338,7 +338,9 @@
           "Control loop peeling optimization: "                             \
           "0 = always disable loop peeling, "                               \
           "1 = enable loop peeling (default), "                             \
-          "2 = disable loop peeling for iteration splitting only")          \
+          "2 = disable loop peeling as a standalone optimization but "      \
+          "allow it as a helper to other loop optimizations like removing " \
+          "empty loops")                                                    \
           range(0, 2)                                                       \
                                                                             \
   product(intx, PartialPeelNewPhiDelta, 0,                                  \
