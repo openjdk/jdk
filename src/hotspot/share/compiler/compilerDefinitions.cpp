@@ -447,9 +447,6 @@ void CompilerConfig::set_jvmci_specific_flags() {
       if (FLAG_IS_DEFAULT(InitialCodeCacheSize)) {
         FLAG_SET_DEFAULT(InitialCodeCacheSize, MAX2(16*M, InitialCodeCacheSize));
       }
-      if (FLAG_IS_DEFAULT(NewSizeThreadIncrease)) {
-        FLAG_SET_DEFAULT(NewSizeThreadIncrease, MAX2(4*K, NewSizeThreadIncrease));
-      }
       if (FLAG_IS_DEFAULT(Tier3DelayOn)) {
         // This effectively prevents the compile broker scheduling tier 2
         // (i.e., limited C1 profiling) compilations instead of tier 3
