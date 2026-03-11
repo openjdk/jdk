@@ -1362,7 +1362,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   }
 
 #if INCLUDE_JFR
-  __ enter_stackwalker_critical_section();
+  __ enter_jfr_critical_section();
 
   // This poll test is to uphold the invariant that a JFR sampled frame
   // must not return to its caller without a prior safepoint poll check.
@@ -1404,7 +1404,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // remove frame anchor
   __ leave();
 
-  JFR_ONLY(__ leave_stackwalker_critical_section();)
+  JFR_ONLY(__ leave_jfr_critical_section();)
 
   // restore sender sp
   __ mv(sp, esp);

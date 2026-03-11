@@ -37,7 +37,7 @@
 #define DEFINE_OFFSET_STACKWALKER \
   static ByteSize stackwalker_thread_local_offset() { return byte_offset_of(Thread, _stackwalker_thread_local); }
 
-#define CRITICAL_SECTION_OFFSET_STACKWALKER \
+#define SAMPLING_CRITICAL_SECTION_OFFSET_JFR \
 StackWalkerThreadLocal::critical_section_offset() + THREAD_LOCAL_OFFSET_STACKWALKER
 
 #endif // SHARE_RUNTIME_STACKWALKER_THREAD_EXTENSION_HPP
