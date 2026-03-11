@@ -1529,7 +1529,7 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
   GrowableArray<JavaThread*>* wantList = nullptr;
 
   ObjectMonitor* mon = mark.has_monitor()
-      ? ObjectSynchronizer::read_monitor(current_thread, hobj(), mark)
+      ? ObjectSynchronizer::read_monitor(hobj(), mark)
       : nullptr;
 
   if (mon != nullptr) {

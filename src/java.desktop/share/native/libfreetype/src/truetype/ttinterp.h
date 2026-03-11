@@ -439,7 +439,7 @@ FT_BEGIN_HEADER
   FT_LOCAL( void )
   TT_Done_Context( TT_ExecContext  exec );
 
-  FT_LOCAL( FT_Error )
+  FT_LOCAL( void )
   TT_Load_Context( TT_ExecContext  exec,
                    TT_Face         face,
                    TT_Size         size );

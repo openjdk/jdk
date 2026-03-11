@@ -26,12 +26,16 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHINPLACEPROMOTER_HPP
 
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
 
 class ShenandoahMarkingContext;
 class ShenandoahGenerationalHeap;
-class ShenandoahHeapRegion;
 
+// This class is responsible for identifying regions that can be
+// promoted in place. It also prepares these regions by preventing
+// them from being used for allocations. Finally, it notifies the
+// freeset which regions are to be promoted in place.
 class ShenandoahInPlacePromotionPlanner {
   using idx_t = ShenandoahSimpleBitMap::idx_t;
 
@@ -43,11 +47,34 @@ class ShenandoahInPlacePromotionPlanner {
     size_t _bytes;
     ShenandoahFreeSet* _free_set;
 
-    explicit RegionPromotions(ShenandoahFreeSet* free_set);
-    void increment(idx_t region_index, size_t remnant_bytes);
-    void update_free_set(ShenandoahFreeSetPartitionId partition_id) const;
+    explicit RegionPromotions(ShenandoahFreeSet* free_set)
+      : _low_idx(free_set->max_regions())
+      , _high_idx(-1)
+      , _regions(0)
+      , _bytes(0)
+      , _free_set(free_set)
+    {
+    }
+
+    void increment(idx_t region_index, size_t remnant_bytes) {
+      if (region_index < _low_idx) {
+        _low_idx = region_index;
+      }
+      if (region_index > _high_idx) {
+        _high_idx = region_index;
+      }
+      _regions++;
+      _bytes += remnant_bytes;
+    }
+
+    void update_free_set(ShenandoahFreeSetPartitionId partition_id) const {
+      if (_regions > 0) {
+        _free_set->shrink_interval_if_range_modifies_either_boundary(partition_id, _low_idx, _high_idx, _regions);
+      }
+    }
   };
 
+  // Used to track metrics about the regions being promoted in place
   struct RegionPromotionStats {
     size_t count;
     size_t usage;
@@ -55,7 +82,12 @@ class ShenandoahInPlacePromotionPlanner {
     size_t garbage;
 
     RegionPromotionStats() : count(0), usage(0), free(0), garbage(0) {}
-    void update(ShenandoahHeapRegion* region);
+    void update(ShenandoahHeapRegion* region) {
+      count++;
+      usage += region->used();
+      free += region->free();
+      garbage += region->garbage();
+    }
   };
 
   const size_t _old_garbage_threshold;
@@ -94,6 +126,8 @@ public:
   size_t old_garbage_threshold() const { return _old_garbage_threshold; }
 };
 
+// For regions that have been selected and prepared for promotion, this class
+// will perform the actual promotion.
 class ShenandoahInPlacePromoter {
   ShenandoahGenerationalHeap* _heap;
 public:
@@ -108,3 +142,4 @@ private:
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHINPLACEPROMOTER_HPP
+
