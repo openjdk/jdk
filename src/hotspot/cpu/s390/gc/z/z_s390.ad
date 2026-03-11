@@ -145,4 +145,21 @@ instruct zStorePNull(memory mem, immP0 zero, iRegP temp, flagsReg cr) %{
   ins_pipe(pipe_class_dummy);
 %}
 
+// TODO: current implementation of z_color requires an extra register, either verify we have that or change the implementation
+instruct zCompareAndSwapP(iRegI res, iRegP mem, iRegP newval, iRegP temp, iRegP oldval, iRegP oldval_temp, flagsReg cr) %{
+  match(Set res (CompareAndSwapP mem (Binary oldval newval)));
+  match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
+  predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
+  effect(TEMP tmp, KILL oldval, KILL cr);
 
+  format %{ "CompareAndSwapP $oldval, $newval, $mem" %}
+  ins_encode %{
+    assert_different_registers($oldval$$Register, $mem$$Register);
+    const Address mem_addr = Address($mem$$Register, 0);
+    z_store_barrier(masm, this, mem_addr, $newval$$Register, $temp$$Register, true /* is_atomic */);
+    z_color(masm, this, $oldval_temp$$Register, $oldval$$Register);
+    __ z_csg($oldval_temp$$Register, $newval$$Register, $mem_addr$$Address);
+// TODO: Check if we need to uncolor
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
