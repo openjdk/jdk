@@ -60,4 +60,13 @@ final class IOUtils {
             throw new JPackageException(I18N.format("error.cannot-write-to-output-dir", outdir.toAbsolutePath()));
         }
     }
+
+    static void deleteIfExistsIgnoreError(Path path) {
+        try {
+            Files.deleteIfExists(path);
+        } catch (IOException ex) {
+            Log.trace(ex, "Faile to delete [%s]", path);
+        }
+    }
 }
+
