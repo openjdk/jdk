@@ -105,7 +105,7 @@ public class TestDelegation {
                          Arguments.of(nonExistentFile, false));
     }
     /**
-     * MethodSource that is used to test Files::isRegularFile. The DataProvider's
+     * MethodSource that is used to test Files::isRegularFile. The MethodSource's
      * elements are:
      * <UL>
      *     <li>Path to validate</li>

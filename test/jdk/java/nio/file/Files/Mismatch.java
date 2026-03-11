@@ -74,7 +74,7 @@ public class Mismatch {
     }
 
     /*
-     * DataProvider for mismatch test. Provides the following fields:
+     * MethodSource for mismatch test. Provides the following fields:
      * path1 -- the path to a file
      * path2 -- the path to another file
      * expected -- expected result of the mismatch method
@@ -237,7 +237,7 @@ public class Mismatch {
     }
 
     /*
-     * DataProvider for mismatch tests involving ZipFS using a few test cases selected
+     * MethodSource for mismatch tests involving ZipFS using a few test cases selected
      * from those of the original mismatch tests.
      */
     public static Stream<Arguments> getDataForMismatchZipfs() throws IOException {
@@ -257,7 +257,7 @@ public class Mismatch {
     }
 
     /*
-     * DataProvider for verifying null handling.
+     * MethodSource for verifying null handling.
      */
     public static Stream<Arguments> getDataForNull() throws IOException {
         Path test = createASCIIFile(testDir, "testNonNull", 2200, -1, ' ');
@@ -267,7 +267,7 @@ public class Mismatch {
     }
 
     /*
-     * DataProvider for verifying how the mismatch method handles the situation
+     * MethodSource for verifying how the mismatch method handles the situation
      * when one or both files do not exist.
      */
     public static Stream<Arguments> getDataForFileNotExist() throws IOException {
