@@ -481,30 +481,33 @@ public abstract class URLStreamHandler {
      * @return  a string representation of the {@code URL} argument.
      */
     protected String toExternalForm(URL u) {
+        // Optionality, subtly different for authority
+        var emptyAuth  = u.getAuthority() == null || u.getAuthority().isEmpty();
+        var emptyPath = u.getPath() == null;
+        var emptyQuery = u.getQuery() == null;
+        var emptyRef   = u.getRef() == null;
         // Fast paths for empty components
-        if (u.getQuery() == null && u.getRef() == null) {
-            var path = u.getPath() == null ? "" : u.getPath();
-            if (u.getAuthority() == null || u.getAuthority().isEmpty()) {
+        if (emptyQuery && emptyRef) {
+            var path = emptyPath ? "" : u.getPath();
+            if (emptyAuth) {
                 return u.getProtocol() + ":" + path;
             } else {
                 return u.getProtocol() + "://" + u.getAuthority() + path;
             }
         }
-        // Components
-        var auth = u.getAuthority() == null || u.getAuthority().isEmpty() ? "" : u.getAuthority();
-        var path = u.getPath()   == null ? "" : u.getPath();
-        var query = u.getQuery() == null ? "" : u.getQuery();
-        var ref   = u.getRef()   == null ? "" : u.getRef();
-        // Separators
-        var aSep = auth != "" ? "//" : "";
-        var qSep = u.getQuery() != null ? "?"  : "";
-        var rSep = u.getRef()   != null ? "#"  : "";
-        // Concatenate
-        return u.getProtocol() + ":"
-                + aSep + auth
+        // Prefer locals for efficient concatenation
+        var authSep  = emptyAuth  ? ":" : "://";
+        var auth     = emptyAuth  ? "" : u.getAuthority();
+        var path     = emptyPath  ? "" : u.getPath();
+        var querySep = emptyQuery ? "" : "?";
+        var query    = emptyQuery ? "" : u.getQuery();
+        var refSep   = emptyRef   ? "" : "#";
+        var ref      = emptyRef   ? "" : u.getRef();
+        return u.getProtocol()
+                + authSep + auth
                 + path
-                + qSep + query
-                + rSep + ref;
+                + querySep + query
+                + refSep + ref;
     }
 
     /**
