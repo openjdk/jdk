@@ -912,9 +912,8 @@ void GenerateOopMap::do_interpretation()
   int i = 0;
   do {
     if (log_is_enabled(Trace, generateoopmap)) {
-      ResourceMark rm;
       LogStream st(Log(generateoopmap)::trace());
-      st.print("\n\nIteration #%d of do_interpretation loop, method:\n", i);
+      st.print("Iteration #%d of do_interpretation loop, method:", i);
       method()->print_name(&st);
       st.print("\n\n");
     }
@@ -1309,6 +1308,7 @@ void GenerateOopMap::print_current_state(outputStream*   os,
     case Bytecodes::_invokestatic:
     case Bytecodes::_invokedynamic:
     case Bytecodes::_invokeinterface: {
+      ResourceMark rm;
       int idx = currentBC->has_index_u4() ? currentBC->get_index_u4() : currentBC->get_index_u2();
       ConstantPool* cp      = method()->constants();
       int nameAndTypeIdx    = cp->name_and_type_ref_index_at(idx, currentBC->code());
@@ -1340,7 +1340,6 @@ void GenerateOopMap::print_current_state(outputStream*   os,
 // current instruction, starting in the current state.
 void GenerateOopMap::interp1(BytecodeStream *itr) {
   if (log_is_enabled(Trace, generateoopmap)) {
-    ResourceMark rm;
     LogStream st(Log(generateoopmap)::trace());
     print_current_state(&st, itr, Verbose);
   }
