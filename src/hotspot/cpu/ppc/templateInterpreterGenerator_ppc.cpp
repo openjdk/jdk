@@ -1591,7 +1591,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ st_ptr(R0, JavaThread::pending_jni_exception_check_fn_offset(), R16_thread);
   }
 
-#if INCLUDE_JFR
+  #if INCLUDE_JFR
   __ enter_jfr_critical_section();
 
   // This poll test is to uphold the invariant that a JFR sampled frame

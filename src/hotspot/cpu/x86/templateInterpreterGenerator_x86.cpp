@@ -1144,6 +1144,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
 #if INCLUDE_JFR
   __ enter_jfr_critical_section();
+
   // This poll test is to uphold the invariant that a JFR sampled frame
   // must not return to its caller without a prior safepoint poll check.
   // The earlier poll check in this routine is insufficient for this purpose
