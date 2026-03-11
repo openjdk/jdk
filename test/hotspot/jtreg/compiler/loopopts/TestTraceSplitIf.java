@@ -36,7 +36,6 @@ import jdk.test.lib.process.ProcessTools;
 public class TestTraceSplitIf {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-            "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+TraceSplitIf",
             "-Xcomp",
             HelloWorld.class.getName()
