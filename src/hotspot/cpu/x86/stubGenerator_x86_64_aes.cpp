@@ -1494,11 +1494,15 @@ address StubGenerator::generate_cipherBlockChaining_encryptAESCrypt() {
 //
 address StubGenerator::generate_electronicCodeBook_AESCrypt_Parallel(bool is_encrypt) {
   assert(UseAES, "need AES instructions and misaligned SSE support");
-  __ align(CodeEntryAlignment);
   StubId stub_id = is_encrypt ? StubId::stubgen_electronicCodeBook_encryptAESCrypt_id
                               : StubId::stubgen_electronicCodeBook_decryptAESCrypt_id;
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
 
   const Register from    = c_rarg0;  // source array address
   const Register to      = c_rarg1;  // destination array address
@@ -1652,6 +1656,9 @@ __ opc(xmm_result0, reg);
   __ pop(rax);
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
+
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
 
   return start;
 
