@@ -27,8 +27,10 @@
  * @summary fold_compares_helper must clean up speculative lo node when bailing out with deep revisit
  * @library /test/lib /
  * @run main/othervm -XX:-TieredCompilation -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
- *                   -XX:CompileCommand=compileonly,compiler.igvn.TestFoldComparesCleanup::test
- *                   compiler.igvn.TestFoldComparesCleanup
+ *                   -XX:CompileCommand=compileonly,${test.main.class}::test
+ *                   ${test.main.class}
+ *
+ * @run main ${test.main.class}
  */
 package compiler.igvn;
 
