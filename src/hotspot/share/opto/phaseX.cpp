@@ -2695,6 +2695,11 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   if (use_op == Op_VectorStoreMask) {
     add_users_to_worklist_if(worklist, use, [](Node* u) { return u->Opcode() == Op_VectorMaskToLong; });
   }
+  // VectorStoreMaskNode::Identity looks through VectorMaskCast to find
+  // VectorLoadMask (Float/Double masks insert a VectorMaskCast).
+  if (use_op == Op_VectorMaskCast) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) { return u->Opcode() == Op_VectorStoreMask; });
+  }
 
   // From CastX2PNode::Ideal
   // CastX2P(AddX(x, y))

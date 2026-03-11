@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * Copyright (c) 2025, 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8356760 8367292
+ * @bug 8356760 8367292 8377588
  * @library /test/lib /
  * @summary IR test for VectorMask.toLong()
  * @modules jdk.incubator.vector
@@ -237,8 +237,8 @@ public class VectorMaskToLongTest {
     }
 
     @Test
-    @IR(counts = { IRNode.VECTOR_LONG_TO_MASK, "= 1",
-                   IRNode.VECTOR_MASK_TO_LONG, "= 1" },
+    @IR(counts = { IRNode.VECTOR_LONG_TO_MASK, "= 0",
+                   IRNode.VECTOR_MASK_TO_LONG, "= 0" },
         applyIfCPUFeatureOr = { "svebitperm", "true", "avx2", "true", "rvv", "true" })
     @IR(counts = { IRNode.VECTOR_LONG_TO_MASK, "= 0",
                    IRNode.VECTOR_MASK_TO_LONG, "= 1" },
@@ -251,8 +251,8 @@ public class VectorMaskToLongTest {
     }
 
     @Test
-    @IR(counts = { IRNode.VECTOR_LONG_TO_MASK, "= 1",
-                   IRNode.VECTOR_MASK_TO_LONG, "= 1" },
+    @IR(counts = { IRNode.VECTOR_LONG_TO_MASK, "= 0",
+                   IRNode.VECTOR_MASK_TO_LONG, "= 0" },
         applyIfCPUFeatureOr = { "svebitperm", "true", "avx2", "true", "rvv", "true" })
     @IR(counts = { IRNode.VECTOR_LONG_TO_MASK, "= 0",
                    IRNode.VECTOR_MASK_TO_LONG, "= 1" },

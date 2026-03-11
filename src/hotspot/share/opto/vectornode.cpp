@@ -1497,8 +1497,13 @@ Node* VectorStoreMaskNode::Identity(PhaseGVN* phase) {
   // Identity transformation on boolean vectors.
   //   VectorStoreMask (VectorLoadMask bv) elem_size ==> bv
   //   vector[n]{bool} => vector[n]{t} => vector[n]{bool}
-  if (in(1)->Opcode() == Op_VectorLoadMask) {
-    return in(1)->in(1);
+  //   VectorStoreMask (VectorMaskCast (VectorLoadMask bv)) elem_size ==> bv
+  Node* n = in(1);
+  if (n->Opcode() == Op_VectorMaskCast) {
+    n = n->in(1);
+  }
+  if (n->Opcode() == Op_VectorLoadMask) {
+    return n->in(1);
   }
   return this;
 }
