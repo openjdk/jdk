@@ -282,13 +282,15 @@ protected:
     uint _contendedPaddingWidth;
     uint _gc;
     uint _optoLoopAlignment;
-    uint _maxVectorSize;
     uint _codeEntryAlignment;
-    uint _arrayOperationPartialInlineSize;
     uint _allocatePrefetchLines;
     uint _allocateInstancePrefetchLines;
     uint _allocatePrefetchDistance;
     uint _allocatePrefetchStepSize;
+#ifdef COMPILER2
+    uint _maxVectorSize;
+    uint _arrayOperationPartialInlineSize;
+#endif // COMPILER2
 #if defined(X86)
     enum X86Flags {
       x86_none = 0,

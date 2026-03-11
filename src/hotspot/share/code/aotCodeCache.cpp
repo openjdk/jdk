@@ -493,13 +493,15 @@ void AOTCodeCache::Config::record(uint cpu_features_offset) {
   _contendedPaddingWidth           = ContendedPaddingWidth;
   _gc                              = (uint)Universe::heap()->kind();
   _optoLoopAlignment               = (uint)OptoLoopAlignment;
-  _maxVectorSize                   = (uint)MaxVectorSize;
   _codeEntryAlignment              = (uint)CodeEntryAlignment;
-  _arrayOperationPartialInlineSize = (uint)ArrayOperationPartialInlineSize;
   _allocatePrefetchLines           = (uint)AllocatePrefetchLines;
   _allocateInstancePrefetchLines   = (uint)AllocateInstancePrefetchLines;
   _allocatePrefetchDistance        = (uint)AllocatePrefetchDistance;
   _allocatePrefetchStepSize        = (uint)AllocatePrefetchStepSize;
+#ifdef COMPILER2
+  _maxVectorSize                   = (uint)MaxVectorSize;
+  _arrayOperationPartialInlineSize = (uint)ArrayOperationPartialInlineSize;
+#endif // COMPILER2
 #if defined(X86)
   _avx3threshold                   = (uint)AVX3Threshold;
   _x86_flags                       = 0;
@@ -626,24 +628,10 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
     return false;
   }
 
-  // change to MaxVectorSize can affect validity of array copy/fill
-  // stubs
-  if (_maxVectorSize != (uint)MaxVectorSize) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with MaxVectorSize = %d vs current %d", (int)_maxVectorSize, (int)MaxVectorSize);
-    return false;
-  }
-
   // change to CodeEntryAlignment can affect performance of array
   // copy stubs and nmethods
   if (_codeEntryAlignment != CodeEntryAlignment) {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with CodeEntryAlignment = %d vs current %d", _codeEntryAlignment, CodeEntryAlignment);
-    return false;
-  }
-
-  // changing ArrayOperationPartialInlineSize can affect validity of
-  // nmethods and stubs
-  if (_arrayOperationPartialInlineSize != (uint)ArrayOperationPartialInlineSize) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with ArrayOperationPartialInlineSize = %d vs current %d", (int)_arrayOperationPartialInlineSize, (int)ArrayOperationPartialInlineSize);
     return false;
   }
 
@@ -665,6 +653,22 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with  = %d vs current %d", (int)_allocatePrefetchStepSize, (int)AllocatePrefetchStepSize);
     return false;
   }
+
+#ifdef COMPILER2
+  // change to MaxVectorSize can affect validity of array copy/fill
+  // stubs
+  if (_maxVectorSize != (uint)MaxVectorSize) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with MaxVectorSize = %d vs current %d", (int)_maxVectorSize, (int)MaxVectorSize);
+    return false;
+  }
+
+  // changing ArrayOperationPartialInlineSize can affect validity of
+  // nmethods and stubs
+  if (_arrayOperationPartialInlineSize != (uint)ArrayOperationPartialInlineSize) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with ArrayOperationPartialInlineSize = %d vs current %d", (int)_arrayOperationPartialInlineSize, (int)ArrayOperationPartialInlineSize);
+    return false;
+  }
+#endif // COMPILER2
 
 #if defined(X86)
   // change to AVX3Threshold may affect validity of array copy stubs
