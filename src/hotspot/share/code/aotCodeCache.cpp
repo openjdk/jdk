@@ -523,6 +523,9 @@ void AOTCodeCache::Config::record(uint cpu_features_offset) {
   if (UseSIMDForMemoryOps) {
     _aarch64_flags |= aarch64_useSIMDForMemoryOps;
   }
+  if (UseSIMDForArrayEquals) {
+    _aarch64_flags |= aarch64_useSIMDForArrayEquals;
+  }
   if (UseBlockZeroing) {
     _aarch64_flags |= aarch64_useBlockZeroing;
   }
