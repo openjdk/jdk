@@ -78,6 +78,7 @@
 #include "gc/z/zStackChunkGCData.inline.hpp"
 #endif
 #if INCLUDE_JFR
+#include "jfr/jfr.inline.hpp"
 #include "runtime/stackWalker.inline.hpp"
 #endif
 #ifdef COMPILER1
@@ -601,6 +602,7 @@ void FreezeBase::unwind_frames() {
   entry->flush_stack_processing(_thread);
   assert_frames_in_continuation_are_safe(_thread);
   JFR_ONLY(StackWalker::check_and_process_requests(_thread));
+  JFR_ONLY(Jfr::check_and_process_sample_request(_thread));
   set_anchor_to_entry(_thread, entry);
 }
 

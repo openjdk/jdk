@@ -33,6 +33,7 @@
 #include "runtime/stackWatermarkSet.hpp"
 #include "utilities/globalDefinitions.hpp"
 #if INCLUDE_JFR
+#include "jfr/jfr.inline.hpp"
 #include "runtime/stackWalker.inline.hpp"
 #endif
 
@@ -161,6 +162,7 @@ void SafepointMechanism::process(JavaThread *thread, bool allow_suspend, bool ch
   } while (need_rechecking);
 
   JFR_ONLY(StackWalker::check_and_process_requests(thread));
+  JFR_ONLY(Jfr::check_and_process_sample_request(thread));
 
   update_poll_values(thread);
   assert(sp_before == thread->last_Java_sp(), "Anchor has changed");

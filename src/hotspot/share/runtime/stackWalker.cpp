@@ -27,11 +27,11 @@
 
 #if INCLUDE_JFR
 
-#include "jfr/support/jfrThreadLocal.hpp"
 #include "code/codeCache.hpp"
 #include "code/debugInfoRec.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jfr/support/jfrThreadLocal.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"

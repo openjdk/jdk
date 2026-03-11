@@ -93,6 +93,7 @@
 #include "opto/runtime.hpp"
 #endif
 #if INCLUDE_JFR
+#include "jfr/jfr.inline.hpp"
 #include "runtime/stackWalker.inline.hpp"
 #endif
 
@@ -3293,6 +3294,7 @@ VMRegPair *SharedRuntime::find_callee_arguments(Symbol* sig, bool has_receiver, 
 JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *current) )
   assert(current == JavaThread::current(), "pre-condition");
   JFR_ONLY(StackWalker::check_and_process_requests(current));
+  JFR_ONLY(Jfr::check_and_process_sample_request(current));
 
   // During OSR migration, we unwind the interpreted frame and replace it with a compiled
   // frame. The stack watermark code below ensures that the interpreted frame is processed

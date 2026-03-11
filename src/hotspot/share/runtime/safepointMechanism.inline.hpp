@@ -32,6 +32,7 @@
 #include "runtime/safepoint.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #if INCLUDE_JFR
+#include "jfr/jfr.inline.hpp"
 #include "runtime/stackWalker.hpp"
 #endif
 
@@ -61,7 +62,8 @@ bool SafepointMechanism::global_poll() {
 
 inline bool SafepointMechanism::has_pending_safepoint(JavaThread* thread) {
   return global_poll() || thread->handshake_state()->has_operation()
-         JFR_ONLY(|| thread->stackwalker_thread_local().has_requests());
+         JFR_ONLY(|| thread->stackwalker_thread_local().has_requests())
+         JFR_ONLY(|| Jfr::has_sample_request(thread));
 }
 
 bool SafepointMechanism::should_process(JavaThread* thread, bool allow_suspend) {

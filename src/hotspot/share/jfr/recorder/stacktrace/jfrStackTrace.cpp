@@ -22,6 +22,7 @@
  *
  */
 
+#include "jfr/periodic/sampling/jfrSampleRequest.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
@@ -125,6 +126,39 @@ bool JfrStackTrace::equals(const JfrStackTrace& rhs) const {
 static inline bool is_in_continuation(const frame& frame, JavaThread* jt) {
   return JfrThreadLocal::is_vthread(jt) &&
     (Continuation::is_frame_in_continuation(jt, frame) || Continuation::is_continuation_enterSpecial(frame));
+}
+
+static inline bool is_interpreter(const JfrSampleRequest& request) {
+  return request._sample_bcp != nullptr;
+}
+
+void JfrStackTrace::record_interpreter_top_frame(const JfrSampleRequest& request) {
+  assert(_hash == 0, "invariant");
+  assert(_count == 0, "invariant");
+  assert(_frames != nullptr, "invariant");
+  assert(_frames->length() == 0, "invariant");
+  _hash = 1;
+  const Method* method = reinterpret_cast<Method*>(request._sample_pc);
+  assert(method != nullptr, "invariant");
+  const traceid mid = JfrTraceId::load(method);
+  const int bci = method->is_native() ? 0 : method->bci_from(reinterpret_cast<address>(request._sample_bcp));
+  const u1 type = method->is_native() ? JfrStackFrame::FRAME_NATIVE : JfrStackFrame::FRAME_INTERPRETER;
+  _hash = (_hash * 31) + mid;
+  _hash = (_hash * 31) + bci;
+  _hash = (_hash * 31) + type;
+  _frames->append(JfrStackFrame(mid, bci, type, method->method_holder()));
+  _count++;
+}
+
+bool JfrStackTrace::record(JavaThread* jt, const frame& frame, bool in_continuation, const JfrSampleRequest& request) {
+  if (is_interpreter(request)) {
+    record_interpreter_top_frame(request);
+    if (frame.pc() == nullptr) {
+      // No sender frame. Done.
+      return true;
+    }
+  }
+  return record(jt, frame, in_continuation, 0);
 }
 
 bool JfrStackTrace::record(JavaThread* jt, int skip, int64_t stack_filter_id) {

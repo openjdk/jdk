@@ -34,10 +34,14 @@ class InstanceKlass;
 class JavaThread;
 class JfrCheckpointWriter;
 class JfrChunkWriter;
+struct JfrSampleRequest;
+
 class JfrStackTrace : public JfrCHeapObj {
- friend class JfrCPUTimeThreadSampling;
+  friend class JfrCPUTimeThreadSampling;
+  friend class JfrNativeSamplerCallback;
   friend class JfrStackTraceRepository;
   friend class LeakProfilerStackTraceWriter;
+  friend class JfrThreadSampling;
   friend class ObjectSampleCheckpoint;
   friend class ObjectSampler;
   friend class StackTraceResolver;
@@ -69,6 +73,8 @@ class JfrStackTrace : public JfrCHeapObj {
   bool full_stacktrace() const { return _reached_root; }
   bool record_inner(JavaThread* jt, const frame& frame, bool in_continuation, int skip, int64_t stack_filter_id = -1);
   bool record(JavaThread* jt, const frame& frame, bool in_continuation, int skip, int64_t stack_filter_id = -1);
+  void record_interpreter_top_frame(const JfrSampleRequest& request);
+
   JfrStackTrace(traceid id, const JfrStackTrace& trace, const JfrStackTrace* next);
 
  public:
@@ -80,6 +86,7 @@ class JfrStackTrace : public JfrCHeapObj {
   traceid id() const { return _id; }
 
   bool record(JavaThread* current_thread, int skip, int64_t stack_filter_id);
+  bool record(JavaThread* jt, const frame& frame, bool in_continuation, const JfrSampleRequest& request);
   bool should_write() const { return !_written; }
 
   void start_record_frames();
