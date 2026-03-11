@@ -68,11 +68,11 @@ public class TestArrayCopyEliminationUncRematerialization {
     }
 
     private record TestConfig(int srcSize, byte srcVal, int copyLen, int copyIdx, int writeIdx, byte writeVal, int returnIdx) {
-        static TestConfig init() {
+        static TestConfig make() {
             int copyLen = RANDOM.nextInt(10, 64); // 64 is the default value for -XX:EliminateAllocationArraySizeLimit.
             int srcSize = RANDOM.nextInt(copyLen + 20, 1000);
             int copyIdx = RANDOM.nextInt(1, srcSize - copyLen); // The index we start arraycopying src from.
-            int returnIdx = RANDOM.nextInt(0, copyLen); // The index where dst retunrns from. Must correspond to writeIdx in src.
+            int returnIdx = RANDOM.nextInt(0, copyLen); // The index where dst returns from. Must correspond to writeIdx in src.
             int writeIdx = copyIdx + returnIdx; // The index we write to in src.
             byte srcVal = 1;
             byte writeVal = (byte) RANDOM.nextInt(2, Byte.MAX_VALUE);
@@ -118,7 +118,7 @@ public class TestArrayCopyEliminationUncRematerialization {
     // test method, where the offset into src is provided in an argument. C2 cannot put any rematerialization
     // loads in the uncomon path then, but it is useful for checking the correct result.
     private static String generate(CompileFramework comp) {
-        TestConfig config = TestConfig.init();
+        TestConfig config = TestConfig.make();
 
         final List<TemplateToken> tests = new ArrayList<>();
         tests.add(PrimitiveType.generateLibraryRNG());

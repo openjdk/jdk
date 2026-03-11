@@ -266,19 +266,18 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
 // the memory graph towards the provided ArrayCopyNode. For every node encountered on the traversal, check that it is
 // independent from the provided rematerialization. Returns false if every node on the traversal is independent and
 // true otherwise.
-bool has_interfering_store(const ArrayCopyNode* ac, const Node* load, PhaseGVN* phase) {
-  assert(ac != nullptr && load != nullptr && load->is_Mem(), "sanity");
-  MemNode* load_mem_node = load->as_Mem();
-  AccessAnalyzer acc(phase, load_mem_node);
+bool has_interfering_store(const ArrayCopyNode* ac, LoadNode* load, PhaseGVN* phase) {
+  assert(ac != nullptr && load != nullptr, "sanity");
+  AccessAnalyzer acc(phase, load);
 
   ResourceMark rm;
   Unique_Node_List to_visit;
-  to_visit.push(load_mem_node->in(MemNode::Memory));
+  to_visit.push(load->in(MemNode::Memory));
 
   for (uint worklist_idx = 0; worklist_idx < to_visit.size(); worklist_idx++) {
-    Node* mem = to_visit[worklist_idx];
+    Node* mem = to_visit.at(worklist_idx);
 
-    if (mem == ac || (mem->is_Proj() && mem->in(0)->is_ArrayCopy() && mem->in(0) == ac)) {
+    if (mem->is_Proj() && mem->in(0)->is_ArrayCopy() && mem->in(0) == ac) {
       // Reached the target, so visit what is left on the worklist.
       continue;
     }
@@ -310,7 +309,7 @@ bool has_interfering_store(const ArrayCopyNode* ac, const Node* load, PhaseGVN* 
 
 // Generate loads from source of the arraycopy for fields of
 // destination needed at a deoptimization point
-Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, Node* sfpt, intptr_t offset, Node* ctl, Node* mem, BasicType ft, const Type *ftype, AllocateNode *alloc) {
+Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, Node* ctl, Node* mem, BasicType ft, const Type* ftype, AllocateNode* alloc) {
   BasicType bt = ft;
   const Type *type = ftype;
   if (ft == T_NARROWOOP) {
@@ -368,10 +367,10 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, Node* sfpt, intpt
       BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
       res = ArrayCopyNode::load(bs, &_igvn, ctl, mergemem, adr, adr_type, type, bt);
       // ... and ensure that pinning the rematerialization load inside the uncommon path is safe.
-      if (mem != ac->memory() && ctl->is_Proj() && ctl->as_Proj()->is_uncommon_trap_proj() && res != nullptr && res->is_Mem() &&
-          has_interfering_store(ac, res, &_igvn)) {
+      if (mem != ac->memory() && ctl->is_Proj() && ctl->as_Proj()->is_uncommon_trap_proj() && res != nullptr && res->is_Load() &&
+          has_interfering_store(ac, res->as_Load(), &_igvn)) {
         // Not safe: use control and memory from the arraycopy to ensure correct memory state.
-        return make_arraycopy_load(ac, sfpt, offset, ac->control(), ac->memory(), ft, ftype, alloc);
+        return make_arraycopy_load(ac, offset, ac->control(), ac->memory(), ft, ftype, alloc);
       }
     }
   }
@@ -467,7 +466,7 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
         assert(false, "Object is not scalar replaceable if a LoadStore node accesses its field");
         return nullptr;
       } else if (val->is_ArrayCopy()) {
-        Node* res = make_arraycopy_load(val->as_ArrayCopy(), val, offset, val->in(0), val->in(TypeFunc::Memory), ft, phi_type, alloc);
+        Node* res = make_arraycopy_load(val->as_ArrayCopy(), offset, val->in(0), val->in(TypeFunc::Memory), ft, phi_type, alloc);
         if (res == nullptr) {
           return nullptr;
         }
@@ -495,7 +494,7 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
 }
 
 // Search the last value stored into the object's field.
-Node *PhaseMacroExpand::value_from_mem(Node *origin, Node* ctl, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, AllocateNode *alloc) {
+Node* PhaseMacroExpand::value_from_mem(Node* origin, Node* ctl, BasicType ft, const Type* ftype, const TypeOopPtr* adr_t, AllocateNode* alloc) {
   assert(adr_t->is_known_instance_field(), "instance required");
   int instance_id = adr_t->instance_id();
   assert((uint)instance_id == alloc->_idx, "wrong allocation");
@@ -602,7 +601,7 @@ Node *PhaseMacroExpand::value_from_mem(Node *origin, Node* ctl, BasicType ft, co
         ac_ctl = ctl;
         ac_mem = orig_mem;
       }
-      return make_arraycopy_load(ac, origin, offset, ac_ctl, ac_mem, ft, ftype, alloc);
+      return make_arraycopy_load(ac, offset, ac_ctl, ac_mem, ft, ftype, alloc);
     }
   }
   // Something went wrong.
@@ -912,7 +911,7 @@ SafePointScalarObjectNode* PhaseMacroExpand::create_scalarized_object_descriptio
 
     const TypeOopPtr *field_addr_type = res_type->add_offset(offset)->isa_oopptr();
 
-    Node *field_val = value_from_mem(sfpt, sfpt->control(), basic_elem_type, field_type, field_addr_type, alloc);
+    Node* field_val = value_from_mem(sfpt, sfpt->control(), basic_elem_type, field_type, field_addr_type, alloc);
 
     // We weren't able to find a value for this field,
     // give up on eliminating this allocation.
