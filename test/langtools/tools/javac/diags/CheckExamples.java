@@ -45,12 +45,22 @@ import java.util.*;
 
 /**
  * Check invariants for a set of examples.
+ *
+ * READ THIS IF THIS TEST FAILS AFTER ADDING A NEW KEY TO 'compiler.properties':
+ * The 'examples' subdirectory contains a number of examples which provoke
+ * the reporting of most of the compiler message keys.
+ *
  * -- each example should exactly declare the keys that will be generated when
  *      it is run.
+ * -- this is done by the "// key:"-comment in each fine.
  * -- together, the examples should cover the set of resource keys in the
  *      compiler.properties bundle. A list of exceptions may be given in the
  *      not-yet.txt file. Entries on the not-yet.txt list should not be
  *      covered by examples.
+ * -- some keys are only reported by the compiler when specific options are
+ *      supplied. For the purposes of this test, this can be specified by a
+ *      comment e.g. like this: "// options: -Xlint:empty"
+ *
  * When new keys are added to the resource bundle, it is strongly recommended
  * that corresponding new examples be added here, if at all practical, instead
  * of simply and lazily being added to the not-yet.txt list.

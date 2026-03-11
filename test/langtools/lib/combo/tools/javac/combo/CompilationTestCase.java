@@ -112,6 +112,10 @@ public class CompilationTestCase extends JavacTemplateTestBase {
         assertCompile(expandMarkers(constructs), () -> assertCompileSucceededWithWarning(warning), false);
     }
 
+    protected void assertOKWithWarning(String warning, int numberOfTimes, String... constructs) {
+        assertCompile(expandMarkers(constructs), () -> assertCompileSucceededWithWarning(warning, numberOfTimes), false);
+    }
+
     protected void assertFail(String expectedDiag, String... constructs) {
         assertCompile(expandMarkers(constructs), () -> assertCompileFailed(expectedDiag), false);
     }

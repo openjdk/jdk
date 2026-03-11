@@ -71,7 +71,7 @@ public class BridgeShouldHaveNoInteriorAnnotationsTest
     };
 
 
-    // Expected output can't be directly encoded into NestedLambdasCastedTest !!!
+    // Expected output can't be directly encoded into BridgeShouldHaveNoInteriorAnnotationsTest !!!
     static class OutputExpectedOnceHolder {
         public String[] outputs = {
             "0: #120(): CAST, offset=1, type_index=0, location=[TYPE_ARGUMENT(0)]",
