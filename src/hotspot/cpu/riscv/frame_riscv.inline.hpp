@@ -398,8 +398,7 @@ frame frame::sender(RegisterMap* map) const {
     StackWatermarkSet::on_iteration(map->thread(), result);
   }
 
-  // Checking is_older() only makes sense if both sender and the current
-  // frame are not on the heap, i.e. they have absolute addresses on the stack.
+  // Calling frame::id() is currently not supported for heap frames.
   assert(result._on_heap || this->_on_heap || result.is_older(this->id()), "Must be");
 
   return result;
