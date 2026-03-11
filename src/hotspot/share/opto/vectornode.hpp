@@ -1067,7 +1067,7 @@ class LoadVectorNode : public LoadNode {
   DEBUG_ONLY( bool _must_verify_alignment = false; );
  public:
   LoadVectorNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, ControlDependency control_dependency = LoadNode::DependsOnlyOnTest)
-    : LoadNode(c, mem, adr, at, vt, MemNode::unordered, control_dependency, false) {
+    : LoadNode(c, mem, adr, at, vt, MemNode::unordered, control_dependency) {
     init_class_id(Class_LoadVector);
     set_mismatched_access();
   }

@@ -2084,8 +2084,6 @@ public:
   Node* find(uint idx) const;
 
   NONCOPYABLE(Node_Stack);
-
-  void dump() PRODUCT_RETURN;
 };
 
 

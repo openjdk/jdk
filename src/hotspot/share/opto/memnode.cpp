@@ -357,12 +357,6 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
   const Type *t_adr = phase->type(address);
   if (t_adr == Type::TOP)              return NodeSentinel; // caller will return null
 
-  if (can_reshape && igvn != nullptr && is_out_of_bound_access(phase)) {
-    ResourceMark rm;
-    make_paths_from_here_dead(igvn, nullptr, "igvn");
-    return NodeSentinel; // caller will return null
-  }
-
   if (can_reshape && is_unsafe_access() && (t_adr == TypePtr::NULL_PTR)) {
     // Unsafe off-heap access with zero address. Remove access and other control users
     // to not confuse optimizations and add a HaltNode to fail if this is ever executed.
@@ -955,8 +949,7 @@ bool LoadNode::cmp(const Node &n) const {
   LoadNode& load = (LoadNode &)n;
   return Type::equals(_type, load._type) &&
          _control_dependency == load._control_dependency &&
-         _mo == load._mo &&
-         _rc_constant_folded == load._rc_constant_folded;
+         _mo == load._mo;
 }
 const Type *LoadNode::bottom_type() const { return _type; }
 uint LoadNode::ideal_reg() const {
@@ -982,9 +975,6 @@ void LoadNode::dump_spec(outputStream *st) const {
       st->print("unknown reason");
     }
     st->print(")");
-  }
-  if (_rc_constant_folded) {
-    st->print(" rc_constant_folded");
   }
 }
 #endif
@@ -1018,7 +1008,7 @@ bool LoadNode::is_immutable_value(Node* adr) {
 //----------------------------LoadNode::make-----------------------------------
 // Polymorphic factory method:
 Node* LoadNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, const Type* rt, BasicType bt, MemOrd mo,
-                     ControlDependency control_dependency, bool require_atomic_access, bool unaligned, bool mismatched, bool unsafe, uint8_t barrier_data, bool rc_constant_folded) {
+                     ControlDependency control_dependency, bool require_atomic_access, bool unaligned, bool mismatched, bool unsafe, uint8_t barrier_data) {
   Compile* C = gvn.C;
   assert(adr->is_top() || C->get_alias_index(gvn.type(adr)->is_ptr()) == C->get_alias_index(adr_type), "adr and adr_type must agree");
 
@@ -1036,25 +1026,25 @@ Node* LoadNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypeP
           "raw memory operations should have control edge");
   LoadNode* load = nullptr;
   switch (bt) {
-  case T_BOOLEAN: load = new LoadUBNode(ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency, rc_constant_folded); break;
-  case T_BYTE:    load = new LoadBNode (ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency, rc_constant_folded); break;
-  case T_INT:     load = new LoadINode (ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency, rc_constant_folded); break;
-  case T_CHAR:    load = new LoadUSNode(ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency, rc_constant_folded); break;
-  case T_SHORT:   load = new LoadSNode (ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency, rc_constant_folded); break;
-  case T_LONG:    load = new LoadLNode (ctl, mem, adr, adr_type, rt->is_long(), mo, control_dependency, require_atomic_access, rc_constant_folded); break;
-  case T_FLOAT:   load = new LoadFNode (ctl, mem, adr, adr_type, rt,            mo, control_dependency, rc_constant_folded); break;
-  case T_DOUBLE:  load = new LoadDNode (ctl, mem, adr, adr_type, rt,            mo, control_dependency, require_atomic_access, rc_constant_folded); break;
-  case T_ADDRESS: load = new LoadPNode (ctl, mem, adr, adr_type, rt->is_ptr(),  mo, control_dependency, rc_constant_folded); break;
+  case T_BOOLEAN: load = new LoadUBNode(ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency); break;
+  case T_BYTE:    load = new LoadBNode (ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency); break;
+  case T_INT:     load = new LoadINode (ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency); break;
+  case T_CHAR:    load = new LoadUSNode(ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency); break;
+  case T_SHORT:   load = new LoadSNode (ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency); break;
+  case T_LONG:    load = new LoadLNode (ctl, mem, adr, adr_type, rt->is_long(), mo, control_dependency, require_atomic_access); break;
+  case T_FLOAT:   load = new LoadFNode (ctl, mem, adr, adr_type, rt,            mo, control_dependency); break;
+  case T_DOUBLE:  load = new LoadDNode (ctl, mem, adr, adr_type, rt,            mo, control_dependency, require_atomic_access); break;
+  case T_ADDRESS: load = new LoadPNode (ctl, mem, adr, adr_type, rt->is_ptr(),  mo, control_dependency); break;
   case T_OBJECT:
   case T_NARROWOOP:
 #ifdef _LP64
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
-      load = new LoadNNode(ctl, mem, adr, adr_type, rt->make_narrowoop(), mo, control_dependency, rc_constant_folded);
+      load = new LoadNNode(ctl, mem, adr, adr_type, rt->make_narrowoop(), mo, control_dependency);
     } else
 #endif
     {
       assert(!adr->bottom_type()->is_ptr_to_narrowoop() && !adr->bottom_type()->is_ptr_to_narrowklass(), "should have got back a narrow oop");
-      load = new LoadPNode(ctl, mem, adr, adr_type, rt->is_ptr(), mo, control_dependency, rc_constant_folded);
+      load = new LoadPNode(ctl, mem, adr, adr_type, rt->is_ptr(), mo, control_dependency);
     }
     break;
   default:
@@ -1097,15 +1087,6 @@ static bool skip_through_membars(Compile::AliasType* atp, const TypeInstPtr* tp,
   }
 
   return false;
-}
-
-LoadNode* LoadNode::with_rc_constant_folded() const {
-  if (!_rc_constant_folded) {
-    LoadNode* ld = clone()->as_Load();
-    ld->_rc_constant_folded = true;
-    return ld;
-  }
-  return nullptr;
 }
 
 // Is the value loaded previously stored by an arraycopy? If so return
@@ -1337,68 +1318,6 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
     break;
   }
 
-  return nullptr;
-}
-
-bool MemNode::is_out_of_bound_access(PhaseGVN* phase) const {
-  Node* adr = in(MemNode::Address);
-  const TypePtr* tp = phase->type(adr)->isa_ptr();
-
-  const TypeAryPtr* ary_t = tp->isa_aryptr();
-  if (ary_t == nullptr) {
-    return false;
-  }
-  const Type* elem_t = ary_t->elem();
-  if (elem_t == Type::BOTTOM) {
-    return false;
-  }
-
-  AddPNode* addp = adr->isa_AddP();
-  if (addp == nullptr) {
-    return false;
-  }
-  Node* base = addp->in(AddPNode::Base);
-  Node* adr2 = addp->in(AddPNode::Address);
-
-  if (adr2->is_AddP() || adr2 != base) {
-    return false;
-  }
-
-  Node* offset = addp->in(AddPNode::Offset);
-  const TypeX* offset_t = phase->type(offset)->isa_intptr_t();
-
-  if (offset_t == nullptr || !offset_t->is_con()) {
-    return false;
-  }
-
-  const TypeInt* array_size = ary_t->size();
-  assert(array_size->_lo >= 0, "array can't have negative length");
-
-  uintptr_t size = array_size->_hi;
-  uintptr_t off = offset_t->get_con();
-
-  BasicType bt = elem_t->array_element_basic_type();
-  uint shift  = exact_log2(type2aelembytes(bt));
-  uintptr_t header = arrayOopDesc::base_offset_in_bytes(bt);
-
-  if (off + memory_size() > header + (size << shift)) {
-    return true;
-  }
-  return false;
-}
-
-const Type* MemNode::Value_common(PhaseGVN* phase) const {
-  // Either input is TOP ==> the result is TOP
-  Node* mem = in(MemNode::Memory);
-  const Type *t1 = phase->type(mem);
-  if (t1 == Type::TOP)  return Type::TOP;
-  Node* adr = in(MemNode::Address);
-  const TypePtr* tp = phase->type(adr)->isa_ptr();
-  if (tp == nullptr || tp->empty())  return Type::TOP;
-
-  if (is_out_of_bound_access(phase)) {
-    return Type::TOP;
-  }
   return nullptr;
 }
 
@@ -2088,7 +2007,6 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           ctl = IfNode::up_one_dom(ctl);
           if (ctl == use->in(0)) {
             set_req(0, use->in(0));
-            _control_dependency = use->as_Load()->_control_dependency;
             return this;
           }
         }
@@ -2169,14 +2087,13 @@ LoadNode::load_array_final_field(const TypeKlassPtr *tkls,
 
 //------------------------------Value-----------------------------------------
 const Type* LoadNode::Value(PhaseGVN* phase) const {
-  const Type* res = Value_common(phase);
-  if (res != nullptr) {
-    return res;
-  }
   // Either input is TOP ==> the result is TOP
   Node* mem = in(MemNode::Memory);
+  const Type *t1 = phase->type(mem);
+  if (t1 == Type::TOP)  return Type::TOP;
   Node* adr = in(MemNode::Address);
   const TypePtr* tp = phase->type(adr)->isa_ptr();
+  if (tp == nullptr || tp->empty())  return Type::TOP;
   int off = tp->offset();
   assert(off != Type::OffsetTop, "case covered by TypePtr::empty");
   Compile* C = phase->C;
@@ -2823,7 +2740,7 @@ Node *LoadRangeNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // We can fetch the length directly through an AllocateArrayNode.
   // This works even if the length is not constant (clone or newArray).
-  if (!UseNewCode2 && offset == arrayOopDesc::length_offset_in_bytes()) {
+  if (offset == arrayOopDesc::length_offset_in_bytes()) {
     AllocateArrayNode* alloc = AllocateArrayNode::Ideal_array_allocation(base);
     if (alloc != nullptr) {
       Node* allocated_length = alloc->Ideal_length();
@@ -2858,19 +2775,12 @@ Node* LoadRangeNode::Identity(PhaseGVN* phase) {
   if (offset == arrayOopDesc::length_offset_in_bytes()) {
     AllocateArrayNode* alloc = AllocateArrayNode::Ideal_array_allocation(base);
     if (alloc != nullptr) {
-      if (UseNewCode2) {
-        InitializeNode* init = alloc->initialization();
-        if (init != nullptr) {
-          return init->length();
-        }
-      } else {
-        Node* allocated_length = alloc->Ideal_length();
-        // Do not allow make_ideal_length to allocate a CastII node.
-        Node* len = alloc->make_ideal_length(tary, phase, false);
-        if (allocated_length == len) {
-          // Return allocated_length only if it would not be improved by a CastII.
-          return allocated_length;
-        }
+      Node* allocated_length = alloc->Ideal_length();
+      // Do not allow make_ideal_length to allocate a CastII node.
+      Node* len = alloc->make_ideal_length(tary, phase, false);
+      if (allocated_length == len) {
+        // Return allocated_length only if it would not be improved by a CastII.
+        return allocated_length;
       }
     }
   }
@@ -3675,10 +3585,11 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
 //------------------------------Value-----------------------------------------
 const Type* StoreNode::Value(PhaseGVN* phase) const {
-  const Type* res = Value_common(phase);
-  if (res != nullptr) {
-    return res;
-  }
+  // Either input is TOP ==> the result is TOP
+  const Type *t1 = phase->type( in(MemNode::Memory) );
+  if( t1 == Type::TOP ) return Type::TOP;
+  const Type *t2 = phase->type( in(MemNode::Address) );
+  if( t2 == Type::TOP ) return Type::TOP;
   const Type *t3 = phase->type( in(MemNode::ValueIn) );
   if( t3 == Type::TOP ) return Type::TOP;
   return Type::MEMORY;
@@ -4428,8 +4339,7 @@ bool MemBarNode::cmp( const Node &n ) const {
 }
 
 //------------------------------make-------------------------------------------
-MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn, Node* array_length) {
-  assert((array_length != nullptr) == (opcode == Op_Initialize), "");
+MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn) {
   switch (opcode) {
   case Op_MemBarAcquire:     return new MemBarAcquireNode(C, atp, pn);
   case Op_LoadFence:         return new LoadFenceNode(C, atp, pn);
@@ -4444,7 +4354,7 @@ MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn, Node* ar
   case Op_MemBarFull:        return new MemBarFullNode(C, atp, pn);
   case Op_MemBarCPUOrder:    return new MemBarCPUOrderNode(C, atp, pn);
   case Op_OnSpinWait:        return new OnSpinWaitNode(C, atp, pn);
-  case Op_Initialize:        return new InitializeNode(C, atp, pn, array_length);
+  case Op_Initialize:        return new InitializeNode(C, atp, pn);
   default: ShouldNotReachHere(); return nullptr;
   }
 }
@@ -4779,16 +4689,11 @@ MemBarNode* MemBarNode::leading_membar() const {
 // reasonable limit on the complexity of optimized initializations.
 
 //---------------------------InitializeNode------------------------------------
-InitializeNode::InitializeNode(Compile* C, int adr_type, Node* rawoop, Node* length)
+InitializeNode::InitializeNode(Compile* C, int adr_type, Node* rawoop)
   : MemBarNode(C, adr_type, rawoop),
     _is_complete(Incomplete), _does_not_escape(false)
 {
-  add_req(length);
   init_class_id(Class_Initialize);
-  if (length != C->top()) {
-    init_flags(Flag_is_macro);
-    C->add_macro_node(this);
-  }
 
   assert(adr_type == Compile::AliasIdxRaw, "only valid atp");
   assert(in(RawAddress) == rawoop, "proper init");

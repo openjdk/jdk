@@ -2313,8 +2313,7 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
           phi = prev;         // Just use existing control
         } else {              // Else need a new Phi
           // Make a new Phi merging data values properly
-          const Type* old_t = igvn().type(old);
-          phi = PhiNode::make(prev, old, old_t, old_t == Type::MEMORY ? C->get_adr_type(C->get_alias_index(old->adr_type())) : nullptr);
+          phi = PhiNode::make( prev, old );
           phi->set_req( 1, nnn );
         }
       }

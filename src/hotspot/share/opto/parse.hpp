@@ -494,7 +494,7 @@ class Parse : public GraphKit {
   // Helper function to generate array store
   void array_store(BasicType etype);
   // Helper function to compute array addressing
-  Node* array_addressing(BasicType type, int vals, const Type*& elemtype, bool& rc_constant_folded);
+  Node* array_addressing(BasicType type, int vals, const Type*& elemtype);
 
   void clinit_deopt();
 

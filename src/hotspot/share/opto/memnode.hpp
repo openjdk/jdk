@@ -162,16 +162,12 @@ public:
   // the given memory state?  (The state may or may not be in(Memory).)
   Node* can_see_stored_value(Node* st, PhaseValues* phase) const;
 
-  bool is_out_of_bound_access(PhaseGVN* phase) const;
-
   void set_unaligned_access() { _unaligned_access = true; }
   bool is_unaligned_access() const { return _unaligned_access; }
   void set_mismatched_access() { _mismatched_access = true; }
   bool is_mismatched_access() const { return _mismatched_access; }
   void set_unsafe_access() { _unsafe_access = true; }
   bool is_unsafe_access() const { return _unsafe_access; }
-
-  const Type* Value_common(PhaseGVN* phase) const;
 
 #ifndef PRODUCT
   static void dump_adr_type(const TypePtr* adr_type, outputStream* st);
@@ -259,7 +255,6 @@ private:
   // adhere to the Java specification.  The required behaviour is stored in
   // this field.
   const MemOrd _mo;
-  bool _rc_constant_folded;
 
   AllocateNode* is_new_object_mark_load() const;
 
@@ -273,8 +268,8 @@ protected:
   virtual Node* find_previous_arraycopy(PhaseValues* phase, Node* ld_alloc, Node*& mem, bool can_see_stored_value) const;
 public:
 
-  LoadNode(Node *c, Node *mem, Node *adr, const TypePtr* at, const Type *rt, MemOrd mo, ControlDependency control_dependency, bool rc_constant_folded)
-    : MemNode(c,mem,adr,at), _control_dependency(control_dependency), _mo(mo), _rc_constant_folded(rc_constant_folded), _type(rt) {
+  LoadNode(Node *c, Node *mem, Node *adr, const TypePtr* at, const Type *rt, MemOrd mo, ControlDependency control_dependency)
+    : MemNode(c,mem,adr,at), _control_dependency(control_dependency), _mo(mo), _type(rt) {
     init_class_id(Class_Load);
   }
   inline bool is_unordered() const { return !is_acquire(); }
@@ -292,7 +287,7 @@ public:
                     const TypePtr* at, const Type* rt, BasicType bt,
                     MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest,
                     bool require_atomic_access = false, bool unaligned = false, bool mismatched = false, bool unsafe = false,
-                    uint8_t barrier_data = 0, bool rc_constant_folded = false);
+                    uint8_t barrier_data = 0);
 
   virtual uint hash()   const;  // Check the type
 
@@ -354,9 +349,6 @@ public:
   bool has_unknown_control_dependency() const  { return _control_dependency == UnknownControl; }
   bool has_pinned_control_dependency() const   { return _control_dependency == Pinned; }
 
-  LoadNode* with_rc_constant_folded() const;
-  bool rc_constant_folded() const { return _rc_constant_folded; }
-
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
@@ -392,8 +384,8 @@ private:
 // Load a byte (8bits signed) from memory
 class LoadBNode : public LoadNode {
 public:
-  LoadBNode(Node *c, Node *mem, Node *adr, const TypePtr* at, const TypeInt *ti, MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest, bool rc_constant_folded = false)
-    : LoadNode(c, mem, adr, at, ti, mo, control_dependency, rc_constant_folded) {}
+  LoadBNode(Node *c, Node *mem, Node *adr, const TypePtr* at, const TypeInt *ti, MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest)
+    : LoadNode(c, mem, adr, at, ti, mo, control_dependency) {}
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
@@ -406,8 +398,8 @@ public:
 // Load a unsigned byte (8bits unsigned) from memory
 class LoadUBNode : public LoadNode {
 public:
-  LoadUBNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeInt* ti, MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest, bool rc_constant_folded = false)
-    : LoadNode(c, mem, adr, at, ti, mo, control_dependency, rc_constant_folded) {}
+  LoadUBNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeInt* ti, MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest)
+    : LoadNode(c, mem, adr, at, ti, mo, control_dependency) {}
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node* Ideal(PhaseGVN *phase, bool can_reshape);
@@ -420,8 +412,8 @@ public:
 // Load an unsigned short/char (16bits unsigned) from memory
 class LoadUSNode : public LoadNode {
 public:
-  LoadUSNode(Node *c, Node *mem, Node *adr, const TypePtr* at, const TypeInt *ti, MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest, bool rc_constant_folded = false)
-    : LoadNode(c, mem, adr, at, ti, mo, control_dependency, rc_constant_folded) {}
+  LoadUSNode(Node *c, Node *mem, Node *adr, const TypePtr* at, const TypeInt *ti, MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest)
+    : LoadNode(c, mem, adr, at, ti, mo, control_dependency) {}
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
@@ -434,8 +426,8 @@ public:
 // Load a short (16bits signed) from memory
 class LoadSNode : public LoadNode {
 public:
-  LoadSNode(Node *c, Node *mem, Node *adr, const TypePtr* at, const TypeInt *ti, MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest, bool rc_constant_folded = false)
-    : LoadNode(c, mem, adr, at, ti, mo, control_dependency, rc_constant_folded) {}
+  LoadSNode(Node *c, Node *mem, Node *adr, const TypePtr* at, const TypeInt *ti, MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest)
+    : LoadNode(c, mem, adr, at, ti, mo, control_dependency) {}
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
@@ -448,8 +440,8 @@ public:
 // Load an integer from memory
 class LoadINode : public LoadNode {
 public:
-  LoadINode(Node *c, Node *mem, Node *adr, const TypePtr* at, const TypeInt *ti, MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest, bool rc_constant_folded = false)
-    : LoadNode(c, mem, adr, at, ti, mo, control_dependency, rc_constant_folded) {}
+  LoadINode(Node *c, Node *mem, Node *adr, const TypePtr* at, const TypeInt *ti, MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest)
+    : LoadNode(c, mem, adr, at, ti, mo, control_dependency) {}
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual int store_Opcode() const { return Op_StoreI; }
@@ -481,8 +473,8 @@ class LoadLNode : public LoadNode {
 
 public:
   LoadLNode(Node *c, Node *mem, Node *adr, const TypePtr* at, const TypeLong *tl,
-            MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest, bool require_atomic_access = false, bool rc_constant_folded = false)
-    : LoadNode(c, mem, adr, at, tl, mo, control_dependency, rc_constant_folded), _require_atomic_access(require_atomic_access) {}
+            MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest, bool require_atomic_access = false)
+    : LoadNode(c, mem, adr, at, tl, mo, control_dependency), _require_atomic_access(require_atomic_access) {}
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegL; }
   virtual int store_Opcode() const { return Op_StoreL; }
@@ -510,8 +502,8 @@ public:
 // Load a float (64 bits) from memory
 class LoadFNode : public LoadNode {
 public:
-  LoadFNode(Node *c, Node *mem, Node *adr, const TypePtr* at, const Type *t, MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest, bool rc_constant_folded = false)
-    : LoadNode(c, mem, adr, at, t, mo, control_dependency, rc_constant_folded) {}
+  LoadFNode(Node *c, Node *mem, Node *adr, const TypePtr* at, const Type *t, MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest)
+    : LoadNode(c, mem, adr, at, t, mo, control_dependency) {}
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegF; }
   virtual int store_Opcode() const { return Op_StoreF; }
@@ -531,8 +523,8 @@ class LoadDNode : public LoadNode {
 
 public:
   LoadDNode(Node *c, Node *mem, Node *adr, const TypePtr* at, const Type *t,
-            MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest, bool require_atomic_access = false, bool rc_constant_folded = false)
-    : LoadNode(c, mem, adr, at, t, mo, control_dependency, rc_constant_folded), _require_atomic_access(require_atomic_access) {}
+            MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest, bool require_atomic_access = false)
+    : LoadNode(c, mem, adr, at, t, mo, control_dependency), _require_atomic_access(require_atomic_access) {}
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegD; }
   virtual int store_Opcode() const { return Op_StoreD; }
@@ -560,8 +552,8 @@ public:
 // Load a pointer from memory (either object or array)
 class LoadPNode : public LoadNode {
 public:
-  LoadPNode(Node *c, Node *mem, Node *adr, const TypePtr *at, const TypePtr* t, MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest, bool rc_constant_folded = false)
-    : LoadNode(c, mem, adr, at, t, mo, control_dependency, rc_constant_folded) {}
+  LoadPNode(Node *c, Node *mem, Node *adr, const TypePtr *at, const TypePtr* t, MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest)
+    : LoadNode(c, mem, adr, at, t, mo, control_dependency) {}
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegP; }
   virtual int store_Opcode() const { return Op_StoreP; }
@@ -573,8 +565,8 @@ public:
 // Load a narrow oop from memory (either object or array)
 class LoadNNode : public LoadNode {
 public:
-  LoadNNode(Node *c, Node *mem, Node *adr, const TypePtr *at, const Type* t, MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest, bool rc_constant_folded = false)
-    : LoadNode(c, mem, adr, at, t, mo, control_dependency, rc_constant_folded) {}
+  LoadNNode(Node *c, Node *mem, Node *adr, const TypePtr *at, const Type* t, MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest)
+    : LoadNode(c, mem, adr, at, t, mo, control_dependency) {}
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegN; }
   virtual int store_Opcode() const { return Op_StoreN; }
@@ -1228,7 +1220,7 @@ public:
   // Optional 'precedent' becomes an extra edge if not null.
   static MemBarNode* make(Compile* C, int opcode,
                           int alias_idx = Compile::AliasIdxBot,
-                          Node* precedent = nullptr, Node* array_length = nullptr);
+                          Node* precedent = nullptr);
 
   MemBarNode* trailing_membar() const;
   MemBarNode* leading_membar() const;
@@ -1390,11 +1382,10 @@ public:
     Control    = TypeFunc::Control,
     Memory     = TypeFunc::Memory,     // MergeMem for states affected by this op
     RawAddress = TypeFunc::Parms+0,    // the newly-allocated raw address
-    Length     = TypeFunc::Parms+1,
-    RawStores  = TypeFunc::Parms+2     // zero or more stores (or TOP)
+    RawStores  = TypeFunc::Parms+1     // zero or more stores (or TOP)
   };
 
-  InitializeNode(Compile* C, int adr_type, Node* rawoop, Node* length);
+  InitializeNode(Compile* C, int adr_type, Node* rawoop);
   virtual int Opcode() const;
   virtual uint size_of() const { return sizeof(*this); }
   virtual uint ideal_reg() const { return 0; } // not matched in the AD file
@@ -1411,10 +1402,6 @@ public:
   // (Note: Both InitializeNode::allocation and AllocateNode::initialization
   // are defined in graphKit.cpp, which sets up the bidirectional relation.)
   AllocateNode* allocation();
-
-  Node* length() const {
-    return in(Length);
-  }
 
   // Anything other than zeroing in this init?
   bool is_non_zero();

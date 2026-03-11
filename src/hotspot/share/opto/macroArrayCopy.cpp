@@ -501,7 +501,7 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
         // paths have stub or runtime calls as raw memory barriers.
         MemBarNode* mb = MemBarNode::make(C, Op_Initialize,
                                           Compile::AliasIdxRaw,
-                                          top(), top());
+                                          top());
         transform_later(mb);
         mb->set_req(TypeFunc::Control,local_ctrl);
         mb->set_req(TypeFunc::Memory, local_mem->memory_at(Compile::AliasIdxRaw));

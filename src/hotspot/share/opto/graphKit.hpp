@@ -552,7 +552,7 @@ class GraphKit : public Phase {
   Node* make_load(Node* ctl, Node* adr, const Type* t, BasicType bt,
                   MemNode::MemOrd mo, LoadNode::ControlDependency control_dependency = LoadNode::DependsOnlyOnTest,
                   bool require_atomic_access = false, bool unaligned = false,
-                  bool mismatched = false, bool unsafe = false, uint8_t barrier_data = 0, bool rc_constant_folded = false);
+                  bool mismatched = false, bool unsafe = false, uint8_t barrier_data = 0);
 
   // Create & transform a StoreNode and store the effect into the
   // parser's memory state.
@@ -797,7 +797,7 @@ class GraphKit : public Phase {
   // Helper functions to build synchronizations
   int next_monitor();
   Node* insert_mem_bar(int opcode, Node* precedent = nullptr);
-  Node* insert_mem_bar_volatile(int opcode, int alias_idx, Node* precedent = nullptr, Node* array_length = nullptr);
+  Node* insert_mem_bar_volatile(int opcode, int alias_idx, Node* precedent = nullptr);
   // Optional 'precedent' is appended as an extra edge, to force ordering.
   FastLockNode* shared_lock(Node* obj);
   void shared_unlock(Node* box, Node* obj);
