@@ -4615,6 +4615,9 @@ address StubGenerator::generate_upcall_stub_load_target() {
 
   __ ret(0);
 
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
