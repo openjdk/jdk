@@ -194,8 +194,6 @@ class StackWalkerThreadLocal {
 
   volatile bool _do_async_processing_of_requests;
 
-  bool _critical_section;
-
   bool _processing_requests;
 
   volatile bool _vthread;
@@ -211,20 +209,11 @@ public:
     _lock(UNLOCKED),
     _has_requests(false),
     _do_async_processing_of_requests(false),
-    _critical_section(false),
     _processing_requests(false),
     _vthread(false) {}
 
   static void on_set_current_thread(JavaThread* thread, oop thread_obj);
   static bool is_vthread(JavaThread* jt);
-
-  bool in_critical_section() const {
-    return _critical_section;
-  }
-
-  static ByteSize critical_section_offset() {
-    return byte_offset_of(StackWalkerThreadLocal, _critical_section);
-  }
 
   StackWalkerRequestQueue& queue() {
     return _queue;

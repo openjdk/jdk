@@ -27,6 +27,7 @@
 
 #if INCLUDE_JFR
 
+#include "jfr/support/jfrThreadLocal.hpp"
 #include "code/codeCache.hpp"
 #include "code/debugInfoRec.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -615,8 +616,7 @@ static bool build_from_ljf(StackWalkRequest& request,
   }
   assert(last_pc != nullptr, "invariant");
   if (is_interpreter(last_pc)) {
-    const StackWalkerThreadLocal& tl = jt->stackwalker_thread_local();
-    if (tl.in_critical_section()) {
+    if (jt->jfr_thread_local()->in_sampling_critical_section()) {
       return false;
     }
     request.set_sample_pc(last_pc);
@@ -638,8 +638,7 @@ static bool build_from_context(StackWalkRequest& request,
   request.set_sample_sp(sp);
   assert(sp_in_stack(request, jt), "invariant");
   if (is_interpreter(request)) {
-    const StackWalkerThreadLocal& tl = jt->stackwalker_thread_local();
-    if (tl.in_critical_section() || !in_stack(fp, jt)) {
+    if (jt->jfr_thread_local()->in_sampling_critical_section() || !in_stack(fp, jt)) {
       return false;
     }
     if (frame::is_interpreter_frame_setup_at(fp, request.sample_sp())) {

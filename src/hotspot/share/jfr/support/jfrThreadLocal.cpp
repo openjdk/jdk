@@ -76,7 +76,8 @@ JfrThreadLocal::JfrThreadLocal() :
   _jvm_thread_excluded(false),
   _vthread(false),
   _notified(false),
-  _dead(false)
+  _dead(false),
+  _sampling_critical_section(false)
 #ifdef LINUX
   ,_cpu_timer(nullptr)
 #endif
@@ -295,6 +296,10 @@ ByteSize JfrThreadLocal::vthread_excluded_offset() {
 
 ByteSize JfrThreadLocal::notified_offset() {
   return byte_offset_of(JfrThreadLocal, _notified);
+}
+
+ByteSize JfrThreadLocal::sampling_critical_section_offset() {
+  return byte_offset_of(JfrThreadLocal, _sampling_critical_section);
 }
 
 void JfrThreadLocal::set(bool* exclusion_field, bool state) {

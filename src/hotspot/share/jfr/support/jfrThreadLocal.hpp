@@ -75,6 +75,7 @@ class JfrThreadLocal {
   bool _vthread;
   bool _notified;
   bool _dead;
+  bool _sampling_critical_section;
 
 #ifdef LINUX
   timer_t* _cpu_timer;
@@ -251,6 +252,10 @@ class JfrThreadLocal {
     return _dead;
   }
 
+  bool in_sampling_critical_section() const {
+    return _sampling_critical_section;
+  }
+
   // Serialization state.
   bool should_write() const;
 
@@ -290,6 +295,7 @@ class JfrThreadLocal {
   static ByteSize vthread_epoch_offset();
   static ByteSize vthread_excluded_offset();
   static ByteSize notified_offset();
+  static ByteSize sampling_critical_section_offset();
 
   friend class JfrJavaThread;
   friend class JfrCheckpointManager;
