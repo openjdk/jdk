@@ -22,20 +22,22 @@
  */
 package test.gaptest;
 
-import static jaxp.library.JAXPTestUtilities.FILE_SEP;
-import static jaxp.library.JAXPTestUtilities.getPathByClassName;
+import java.io.File;
+import java.nio.file.Path;
 
 /**
  * This class defines the path constant
  */
 public class GapTestConst {
+    private static final Path TEST_SRC = Path.of(System.getProperty("test.src")).toAbsolutePath();
+
     /**
      * XML source file directory.
      */
-    public static final String XML_DIR = getPathByClassName(GapTestConst.class, "xmlfiles");
+    public static final String XML_DIR = TEST_SRC.resolve("xmlfiles").toString() + File.separatorChar;
 
     /**
      * Golden validation files directory.
      */
-    public static final String GOLDEN_DIR = getPathByClassName(GapTestConst.class, "xmlfiles" + FILE_SEP + "out");
+    public static final String GOLDEN_DIR = TEST_SRC.resolve("xmlfiles").resolve("out").toString() + File.separatorChar;
 }
