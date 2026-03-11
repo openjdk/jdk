@@ -44,6 +44,11 @@ package java.net;
  * requestPasswordAuthentication() methods which in turn will call the
  * getPasswordAuthentication() method of the registered object.
  * <p>
+ * To prevent or authorize modification of default authenticator by any third party libraries,
+ * creat a sub-class of {@link AuthenticatorModifyAccessChecker}
+ * and supply the name of sub-class in "authenticator.modify.access.checker.class" system property.
+ * Modification will be allowed by default.
+ * <p>
  * All methods that request authentication have a default implementation
  * that fails.
  *
@@ -61,6 +66,15 @@ class Authenticator {
 
     // The system-wide authenticator object.  See setDefault().
     private static volatile Authenticator theAuthenticator;
+    private static AuthenticatorModifyAccessChecker modifyAccessChecker;
+
+    static {
+        try {
+            modifyAccessChecker = (AuthenticatorModifyAccessChecker) Class.forName(System.getProperty("authenticator.modify.access.checker.class", AuthenticatorModifyAccessChecker.class.getName())).getDeclaredConstructor().newInstance();
+        } catch (Exception e) {
+            modifyAccessChecker = new AuthenticatorModifyAccessChecker();
+        }
+    }
 
     private String requestingHost;
     private InetAddress requestingSite;
@@ -112,6 +126,9 @@ class Authenticator {
      *                  any previously set authenticator is removed.
      */
     public static synchronized void setDefault(Authenticator a) {
+        if (!modifyAccessChecker.canModifyAuthenticator(a)) {
+            return;
+        }
         theAuthenticator = a;
     }
 
