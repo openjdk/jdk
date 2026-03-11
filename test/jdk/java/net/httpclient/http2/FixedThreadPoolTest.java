@@ -30,7 +30,7 @@
  *        jdk.test.lib.Asserts
  *        jdk.test.lib.Utils
  *        jdk.test.lib.net.SimpleSSLContext
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors FixedThreadPoolTest
+ * @run junit/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors FixedThreadPoolTest
  */
 
 import java.net.*;
@@ -51,7 +51,7 @@ import static jdk.test.lib.Asserts.assertFileContentsEqual;
 import static jdk.test.lib.Utils.createTempFile;
 import static jdk.test.lib.Utils.createTempFileOfSize;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 public class FixedThreadPoolTest implements HttpServerAdapters {
 
@@ -92,7 +92,7 @@ public class FixedThreadPoolTest implements HttpServerAdapters {
     }
 
     @Test
-    public static void test() throws Exception {
+    public void test() throws Exception {
         try {
             initialize();
             simpleTest(false);

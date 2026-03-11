@@ -22,6 +22,7 @@
  *
  */
 
+#include "code/aotCodeCache.hpp"
 #include "gc/shared/c1/cardTableBarrierSetC1.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
@@ -123,6 +124,7 @@ void CardTableBarrierSetC1::post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Op
   assert(addr->is_register(), "must be a register at this point");
 
 #ifdef CARDTABLEBARRIERSET_POST_BARRIER_HELPER
+  assert(!AOTCodeCache::is_on(), "this path is not implemented");
   gen->CardTableBarrierSet_post_barrier_helper(addr, card_table_base);
 #else
   LIR_Opr tmp = gen->new_pointer_register();
@@ -135,6 +137,17 @@ void CardTableBarrierSetC1::post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Op
   }
 
   LIR_Address* card_addr;
+#if INCLUDE_CDS
+  if (AOTCodeCache::is_on_for_dump()) {
+    // load the card table address from the AOT Runtime Constants area
+    LIR_Opr byte_map_base_adr = LIR_OprFact::intptrConst(AOTRuntimeConstants::card_table_base_address());
+    LIR_Opr byte_map_base_reg = gen->new_pointer_register();
+    __ move(byte_map_base_adr, byte_map_base_reg);
+    LIR_Address* byte_map_base_indirect = new LIR_Address(byte_map_base_reg, 0, T_LONG);
+    __ move(byte_map_base_indirect, byte_map_base_reg);
+    card_addr = new LIR_Address(tmp, byte_map_base_reg, T_BYTE);
+  } else
+#endif
   if (gen->can_inline_as_constant(card_table_base)) {
     card_addr = new LIR_Address(tmp, card_table_base->as_jint(), T_BYTE);
   } else {

@@ -30,7 +30,6 @@
 #include "gc/g1/g1FullGCHeapRegionAttr.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "runtime/atomicAccess.hpp"
 
 bool G1FullCollector::is_compacting(oop obj) const {
   return _region_attr_table.is_compacting(cast_from_oop<HeapWord *>(obj));

@@ -76,8 +76,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * {@code exp}, {@code log}, {@code log10},
  * {@code cbrt}, {@code atan2}, {@code pow},
  * {@code sinh}, {@code cosh}, {@code tanh},
- * {@code asinh}, {@code acosh}, {@code hypot},
- * {@code expm1}, and {@code log1p}.
+ * {@code asinh}, {@code acosh},{@code atanh},
+ * {@code hypot}, {@code expm1}, and {@code log1p}.
  *
  * <p>
  * The platform uses signed two's complement integer arithmetic with
@@ -2220,6 +2220,38 @@ public final class StrictMath {
      */
     public static double acosh(double x) {
         return FdLibm.Acosh.compute(x);
+    }
+
+    /**
+     * Returns the inverse hyperbolic tangent of a {@code double} value.
+     * The inverse hyperbolic tangent of <i>x</i> is defined to be the function such that
+     * atanh({@linkplain Math#tanh tanh(<i>x</i>)}) = <i>x</i> for any <i>x</i>.
+     * Note that the domain of the exact atanh is (-1; 1), the range is unrestricted.
+     *
+     * <p>Special cases:
+     * <ul>
+     *
+     * <li>If the argument is NaN, then the result is NaN.
+     *
+     * <li>If the argument is zero, then the result is a zero with the
+     * same sign as the argument.
+     *
+     * <li>If the argument is {@code +1.0}, then the result is
+     * positive infinity.
+     *
+     * <li>If the argument is {@code -1.0}, then the result is
+     * negative infinity.
+     *
+     * <li>If the argument is greater than {@code 1.0} in magnitude, then the result is NaN.
+     *
+     * </ul>
+     *
+     * @param   x The number whose inverse hyperbolic tangent is to be returned.
+     * @return  The inverse hyperbolic tangent of {@code x}.
+     * @since 27
+     */
+    public static double atanh(double x) {
+        return FdLibm.Atanh.compute(x);
     }
 
     /**

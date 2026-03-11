@@ -157,7 +157,7 @@ public class Helper {
     }
 
     public static void inflate(byte[] src, int srcOff, byte[] dst, int dstOff, int len) {
-        StringUTF16.inflate(src, srcOff, dst, dstOff, len);
+        StringLatin1.inflate(src, srcOff, dst, dstOff, len);
     }
 
     public static int indexOf(byte[] src, int srcCount,

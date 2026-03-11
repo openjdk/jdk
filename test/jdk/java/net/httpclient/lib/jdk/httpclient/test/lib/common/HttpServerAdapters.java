@@ -876,6 +876,8 @@ public interface HttpServerAdapters {
 
         @Override
         public void handle(HttpTestExchange t) throws IOException {
+            System.err.printf("EchoHandler received request to %s from %s (version %s)%n",
+                    t.getRequestURI(), t.getRemoteAddress(), t.getExchangeVersion());
             InputStream is = null;
             OutputStream os = null;
             try {
@@ -895,7 +897,7 @@ public interface HttpServerAdapters {
                         ? t.responseLength(bytes.length)
                         : HttpTestExchange.fixedRsp(bytes.length);
                 t.sendResponseHeaders(200, responseLength);
-                if (!t.getRequestMethod().equals("HEAD")) {
+                if (!t.getRequestMethod().equals("HEAD") && bytes.length > 0) {
                     os.write(bytes);
                 }
             } finally {

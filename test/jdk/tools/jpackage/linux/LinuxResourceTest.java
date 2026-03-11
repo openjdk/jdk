@@ -30,6 +30,7 @@ import java.util.Objects;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageCommand.StandardAssert;
 import jdk.jpackage.test.JPackageOutputValidator;
 import jdk.jpackage.test.LinuxHelper;
 import jdk.jpackage.test.PackageTest;
@@ -66,7 +67,7 @@ public class LinuxResourceTest {
 
             final var packageProp = property("Package", "dont-install-me");
             final var verProp = property("Version", "1.2.3-R2");
-            final var arhProp = property("Architecture", "bar");
+            final var archProp = property("Architecture", "bar");
 
             TKit.createTextFile(controlFile, List.of(
                     packageProp.format(),
@@ -74,12 +75,14 @@ public class LinuxResourceTest {
                     "Section: APPLICATION_SECTION",
                     "Maintainer: APPLICATION_MAINTAINER",
                     "Priority: optional",
-                    arhProp.format(),
+                    archProp.format(),
                     "Provides: dont-install-me",
                     "Description: APPLICATION_DESCRIPTION",
                     "Installed-Size: APPLICATION_INSTALLED_SIZE",
                     "Depends: PACKAGE_DEFAULT_DEPENDENCIES"
             ));
+
+            cmd.excludeStandardAsserts(StandardAssert.LINUX_PACKAGE_ARCH);
 
             new JPackageOutputValidator()
                     .expectMatchingStrings(MAIN.cannedFormattedString(
@@ -92,7 +95,7 @@ public class LinuxResourceTest {
 
             packageProp.expectedValue(LinuxHelper.getPackageName(cmd)).token("APPLICATION_PACKAGE").resourceDirFile(controlFile).validateOutput(cmd);
             verProp.expectedValue(cmd.version()).token("APPLICATION_VERSION_WITH_RELEASE").resourceDirFile(controlFile).validateOutput(cmd);
-            arhProp.expectedValue(LinuxHelper.getDefaultPackageArch(cmd.packageType())).token("APPLICATION_ARCH").resourceDirFile(controlFile).validateOutput(cmd);
+            archProp.expectedValue(LinuxHelper.getDefaultPackageArch(cmd.packageType())).token("APPLICATION_ARCH").resourceDirFile(controlFile).validateOutput(cmd);
         })
         .forTypes(PackageType.LINUX_RPM)
         .addInitializer(cmd -> {
