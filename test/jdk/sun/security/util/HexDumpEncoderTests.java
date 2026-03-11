@@ -27,6 +27,10 @@ import sun.security.util.HexDumpEncoder;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 
 /*
@@ -76,7 +80,9 @@ public class HexDumpEncoderTests {
         resultIso.shouldHaveExitValue(0);
         // filtering out potential warnings, keeping only
         // ----START----....----END----
-        final var filteredResultIso = getSubstring(resultIso.getStdout());
+        final String rawLatin1ResultFromFile = Files.readString(
+                Path.of("ISO-8859-1.txt"));
+        final var filteredResultIso = getSubstring(rawLatin1ResultFromFile);
 
         // This will take all available StandardCharsets and test them all
         // comparing to the ISO_8859_1.
@@ -97,10 +103,12 @@ public class HexDumpEncoderTests {
                             final var result =
                                     ProcessTools.executeTestJava(testCommand);
                             result.shouldHaveExitValue(0);
+                            final String rawResultFromFile = Files.readString(
+                                    Path.of(charset.name()+".txt"));
                             // filtering out potential warnings, keeping only
                             // ----START----....----END----
                             final var filteredResult =
-                                    getSubstring(result.getStdout());
+                                    getSubstring(rawResultFromFile);
 
                             // The outputs of the ISO encoding must be identical
                             // to the one tested
@@ -120,7 +128,8 @@ public class HexDumpEncoderTests {
          * This will test the encode and encode buffer functions at once,
          * as they are both representing the string in LATIN_1
          * <p>
-         * The output is put as a system.out
+         * The output is put to the file in scratch dir with corresponding
+         * encoding name
          */
         public static void main(String[] args) throws Exception {
 
@@ -129,13 +138,19 @@ public class HexDumpEncoderTests {
             final String encodeBufferResult =
                     encoder.encodeBuffer(new byte[100]);
             final String encodeResult = encoder.encode(new byte[100]);
-            System.out.printf("""
+
+            final String content = String.format("""
 
                             ----START----
                             Cert Encoded With Encode Buffer: %s
                             Cert Encoded With Encode: %s
                             ----END----""",
                     encodeBufferResult, encodeResult);
+            Files.writeString(
+                    Paths.get(Charset.defaultCharset().displayName() + ".txt"),
+                    content,
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.TRUNCATE_EXISTING);
         }
     }
 }
