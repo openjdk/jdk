@@ -523,7 +523,6 @@ Node::DomResult MemNode::maybe_all_controls_dominate(Node* dom, Node* sub, Phase
         }
       } else {
         if (n->Value(phase) == Type::TOP) {
-          ShouldNotReachHere();
           return DomResult::EncounteredDeadCode;
         }
         // First, own control edge.
