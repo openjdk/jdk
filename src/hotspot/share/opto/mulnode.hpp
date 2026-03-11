@@ -209,13 +209,9 @@ public:
 
 //------------------------------MulHiLoLNode-----------------------------------
 // Lower and upper 64-bit results of a signed 64x64->128 multiply.
-class MulHiLoLNode : public MultiNode {
+class MulHiLoLNode : public BinaryMultiNode {
 protected:
-  MulHiLoLNode(Node* in1, Node* in2) : MultiNode(3) {
-    init_req(0, nullptr);
-    init_req(1, in1);
-    init_req(2, in2);
-  }
+  MulHiLoLNode(Node* ctrl, Node* in1, Node* in2) : BinaryMultiNode(ctrl, in1, in2) {}
 
 public:
   enum {
@@ -224,12 +220,6 @@ public:
   };
 
   virtual int Opcode() const;
-  virtual Node* Identity(PhaseGVN* phase) { return this; }
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape) { return nullptr; }
-  virtual const Type* Value(PhaseGVN* phase) const { return bottom_type(); }
-  virtual uint hash() const { return Node::hash(); }
-  virtual bool is_CFG() const { return false; }
-  virtual uint ideal_reg() const { return NotAMachineReg; }
   virtual const Type* bottom_type() const { return TypeTuple::LONG_PAIR; }
 
   virtual Node* match(const ProjNode* proj, const Matcher* m);
@@ -238,16 +228,13 @@ public:
 
   ProjNode* lo_proj() { return proj_out_or_null(lo_proj_num); }
   ProjNode* hi_proj() { return proj_out_or_null(hi_proj_num); }
-
-private:
-  virtual bool depends_only_on_test() const { return false; }
 };
 
 //------------------------------UMulHiLoLNode----------------------------------
 // Lower and upper 64-bit results of an unsigned 64x64->128 multiply.
 class UMulHiLoLNode : public MulHiLoLNode {
 public:
-  UMulHiLoLNode(Node* in1, Node* in2) : MulHiLoLNode(in1, in2) {}
+  UMulHiLoLNode(Node* ctrl, Node* in1, Node* in2) : MulHiLoLNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 
   static UMulHiLoLNode* make(Node* umul_hi);

@@ -1631,12 +1631,6 @@ TupleNode* ModFloatingNode::make_tuple_of_input_state_and_constant_result(PhaseI
 
 //=============================================================================
 
-DivModNode::DivModNode( Node *c, Node *dividend, Node *divisor ) : MultiNode(3) {
-  init_req(0, c);
-  init_req(1, dividend);
-  init_req(2, divisor);
-}
-
 DivModNode* DivModNode::make(Node* div_or_mod, BasicType bt, bool is_unsigned) {
   assert(bt == T_INT || bt == T_LONG, "only int or long input pattern accepted");
 

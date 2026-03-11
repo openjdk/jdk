@@ -3267,21 +3267,7 @@ void Compile::handle_mulhi_mul_op(Node* n, bool is_unsigned) {
 
   Node* mul = n->find_similar(Op_MulL);
   if (mul == nullptr) {
-    Node* lhs = n->in(1);
-    Node* rhs = n->in(2);
-    if (rhs != nullptr && rhs->outcnt() >= 2) {
-      for (DUIterator_Fast dmax, i = rhs->fast_outs(dmax); i < dmax; i++) {
-        Node* use = rhs->fast_out(i);
-        if (use != n &&
-            use->Opcode() == Op_MulL &&
-            use->req() == n->req() &&
-            use->in(1) == rhs &&
-            use->in(2) == lhs) {
-          mul = use;
-          break;
-        }
-      }
-    }
+    mul = n->find_similar(Op_MulL, true);
   }
 
   if (mul == nullptr) {
