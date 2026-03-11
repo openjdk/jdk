@@ -25,7 +25,7 @@ package nsk.jdb.kill.kill003;
 
 import nsk.share.jdb.*;
 
-/* This is debuggee aplication */
+/* This is debuggee application */
 public class kill003a {
     static NullPointerException exception = new NullPointerException();
 
