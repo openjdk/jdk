@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,21 +31,29 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.AppImageSigningConfig;
 import jdk.jpackage.internal.model.Application;
+import jdk.jpackage.internal.model.ApplicationLaunchers;
+import jdk.jpackage.internal.model.ExternalApplication;
+import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.MacApplicationMixin;
+import jdk.jpackage.internal.util.PListReader;
+import jdk.jpackage.internal.util.Result;
+import jdk.jpackage.internal.util.RootedPath;
 
 final class MacApplicationBuilder {
 
-    MacApplicationBuilder(Application app) {
-        this.app = Objects.requireNonNull(app);
+    MacApplicationBuilder(ApplicationBuilder appBuilder) {
+        this.superBuilder = Objects.requireNonNull(appBuilder);
     }
 
     private MacApplicationBuilder(MacApplicationBuilder other) {
-        this(other.app);
+        this(other.superBuilder.copy());
         icon = other.icon;
         bundleName = other.bundleName;
         bundleIdentifier = other.bundleIdentifier;
@@ -90,18 +98,28 @@ final class MacApplicationBuilder {
         return this;
     }
 
+    Optional<ExternalApplication> externalApplication() {
+        return superBuilder.externalApplication();
+    }
+
+    Optional<ApplicationLaunchers> launchers() {
+        return superBuilder.launchers();
+    }
+
     MacApplication create() {
         if (externalInfoPlistFile != null) {
             return createCopyForExternalInfoPlistFile().create();
         }
+
+        var app = superBuilder.create();
 
         validateAppVersion(app);
         validateAppContentDirs(app);
 
         final var mixin = new MacApplicationMixin.Stub(
                 validatedIcon(),
-                validatedBundleName(),
-                validatedBundleIdentifier(),
+                validatedBundleName(app),
+                validatedBundleIdentifier(app),
                 validatedCategory(),
                 appStore,
                 createSigningConfig());
@@ -143,53 +161,72 @@ final class MacApplicationBuilder {
     }
 
     private static void validateAppContentDirs(Application app) {
-        for (var contentDir : app.contentDirs()) {
+        app.contentDirSources().stream().filter(rootedPath -> {
+            return rootedPath.branch().getNameCount() == 1;
+        }).map(RootedPath::fullPath).forEach(contentDir -> {
             if (!Files.isDirectory(contentDir)) {
                 Log.info(I18N.format("warning.app.content.is.not.dir",
                         contentDir));
-            } else if (!CONTENTS_SUB_DIRS.contains(contentDir.getFileName().toString())) {
+            } else if (!CONTENTS_SUB_DIRS.contains(contentDir.getFileName())) {
                 Log.info(I18N.format("warning.non.standard.contents.sub.dir",
                         contentDir));
             }
-        }
+        });
     }
 
     private MacApplicationBuilder createCopyForExternalInfoPlistFile() {
-        try {
-            final var plistFile = AppImageInfoPListFile.loadFromInfoPList(externalInfoPlistFile);
+        final var builder = new MacApplicationBuilder(this);
 
-            final var builder = new MacApplicationBuilder(this);
+        builder.externalInfoPlistFile(null);
 
-            builder.externalInfoPlistFile(null);
+        Result<PListReader> plistResult = Result.of(() -> {
+            return new PListReader(Files.readAllBytes(externalInfoPlistFile));
+        }, Exception.class);
 
+        plistResult.value().ifPresent(plist -> {
             if (builder.bundleName == null) {
-                builder.bundleName(plistFile.bundleName());
+                plist.findValue("CFBundleName").ifPresent(builder::bundleName);
             }
 
             if (builder.bundleIdentifier == null) {
-                builder.bundleIdentifier(plistFile.bundleIdentifier());
+                plist.findValue("CFBundleIdentifier").ifPresent(builder::bundleIdentifier);
             }
 
             if (builder.category == null) {
-                builder.category(plistFile.category());
+                plist.findValue("LSApplicationCategoryType").ifPresent(builder::category);
             }
 
-            return builder;
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        } catch (Exception ex) {
-            throw I18N.buildConfigException("message.app-image-requires-identifier")
-                    .advice("message.app-image-requires-identifier.advice")
-                    .cause(ex)
-                    .create();
-        }
+            if (builder.superBuilder.version().isEmpty()) {
+                plist.findValue("CFBundleVersion").ifPresent(builder.superBuilder::version);
+            }
+        });
+
+        plistResult.firstError().filter(_ -> {
+            // If we are building a runtime and the Info.plist file of the predefined
+            // runtime bundle is malformed or unavailable, ignore it.
+            return !superBuilder.isRuntime();
+        }).ifPresent(ex -> {
+            // We are building an application from the predefined app image and
+            // the Info.plist file in the predefined app image bundle is malformed or unavailable. Bail out.
+            switch (ex) {
+                case IOException ioex -> {
+                    throw new UncheckedIOException(ioex);
+                }
+                default -> {
+                    throw new JPackageException(
+                            I18N.format("error.invalid-app-image-plist-file", externalInfoPlistFile), ex);
+                }
+            }
+        });
+
+        return builder;
     }
 
     private Optional<AppImageSigningConfig> createSigningConfig() {
-        return Optional.ofNullable(signingBuilder).flatMap(AppImageSigningConfigBuilder::create);
+        return Optional.ofNullable(signingBuilder).map(AppImageSigningConfigBuilder::create);
     }
 
-    private String validatedBundleName() {
+    private String validatedBundleName(Application app) {
         final var value = Optional.ofNullable(bundleName).orElseGet(() -> {
             final var appName = app.name();
 // Commented out for backward compatibility
@@ -208,7 +245,7 @@ final class MacApplicationBuilder {
         return value;
     }
 
-    private String validatedBundleIdentifier() {
+    private String validatedBundleIdentifier(Application app) {
         final var value = Optional.ofNullable(bundleIdentifier).orElseGet(() -> {
             return app.mainLauncher()
                     .flatMap(Launcher::startupInfo)
@@ -251,13 +288,18 @@ final class MacApplicationBuilder {
     private Path externalInfoPlistFile;
     private AppImageSigningConfigBuilder signingBuilder;
 
-    private final Application app;
+    private final ApplicationBuilder superBuilder;
 
     private static final Defaults DEFAULTS = new Defaults("utilities");
 
     private static final int MAX_BUNDLE_NAME_LENGTH = 16;
 
     // List of standard subdirectories of the "Contents" directory
-    private static final Set<String> CONTENTS_SUB_DIRS = Set.of("MacOS",
-            "Resources", "Frameworks", "PlugIns", "SharedSupport");
+    private static final Set<Path> CONTENTS_SUB_DIRS = Stream.of(
+            "MacOS",
+            "Resources",
+            "Frameworks",
+            "PlugIns",
+            "SharedSupport"
+    ).map(Path::of).collect(Collectors.toUnmodifiableSet());
 }

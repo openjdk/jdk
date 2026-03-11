@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1405,7 +1405,7 @@ public class BasicSplitPaneUI extends SplitPaneUI
             // If the splitpane has a zero size then no op out of here.
             // If we execute this function now, we're going to cause ourselves
             // much grief.
-            if (containerSize.height <= 0 || containerSize.width <= 0 ) {
+            if (containerSize.height <= 0 && containerSize.width <= 0 ) {
                 lastSplitPaneSize = 0;
                 return;
             }

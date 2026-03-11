@@ -213,7 +213,7 @@ final class MsiDatabase {
 
         Objects.requireNonNull(str);
         Objects.requireNonNull(callback);
-        var sb = new StringBuffer();
+        var sb = new StringBuilder();
         var m = FORMATTED_STRING_TOKEN.matcher(str);
         while (m.find()) {
             var token = m.group();

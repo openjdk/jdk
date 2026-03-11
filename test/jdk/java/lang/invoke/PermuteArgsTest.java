@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /* @test
  * @summary unit tests for method handles which permute their arguments
  * @library /test/lib /java/lang/invoke/common
- * @run testng/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies -ea -esa -DPermuteArgsTest.MAX_ARITY=8 test.java.lang.invoke.PermuteArgsTest
+ * @run junit/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies -ea -esa -DPermuteArgsTest.MAX_ARITY=8 test.java.lang.invoke.PermuteArgsTest
  */
 
 /* Examples of manual runs:
@@ -35,7 +35,6 @@
 
 package test.java.lang.invoke;
 
-import org.testng.annotations.Test;
 import test.java.lang.invoke.lib.CodeCacheOverflowProcessor;
 
 import java.lang.invoke.MethodHandle;
@@ -52,6 +51,10 @@ import static java.lang.invoke.MethodHandles.Lookup;
 import static java.lang.invoke.MethodHandles.lookup;
 import static java.lang.invoke.MethodHandles.permuteArguments;
 import static java.lang.invoke.MethodType.methodType;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class PermuteArgsTest {
     private static final Class<?> CLASS = PermuteArgsTest.class;
@@ -259,11 +262,11 @@ public class PermuteArgsTest {
             reverse(perm, 0, perm.length);
         }
         switch (perm.length) {
-        case 2: assert(testCases - testCases0 == 2); break;
-        case 3: assert(testCases - testCases0 == 6); break;
-        case 4: assert(testCases - testCases0 == 24); break;
-        case 5: assert(testCases - testCases0 == 120); break;
-        case 6: assert(testCases - testCases0 > 720/3); break;
+            case 2 -> assertEquals(2, testCases - testCases0);
+            case 3 -> assertEquals(6, testCases - testCases0);
+            case 4 -> assertEquals(24, testCases - testCases0);
+            case 5 -> assertEquals(120, testCases - testCases0);
+            case 6 -> assertTrue(testCases - testCases0 > 720/3);
         }
     }
 

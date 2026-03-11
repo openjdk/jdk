@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.util.Arrays;
 
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.io.JdkConsoleImpl;
+import jdk.internal.misc.VM;
 
 /**
  * A utility class for reading passwords
@@ -65,7 +66,9 @@ public class Password {
                     }
                     consoleBytes = ConsoleHolder.convertToBytes(consoleEntered);
                     in = new ByteArrayInputStream(consoleBytes);
-                } else if (System.in.available() == 0) {
+                } else if (in == System.in && VM.isBooted()
+                            && System.in.available() == 0) {
+                    // Warn if reading password from System.in but it's empty.
                     // This may be running in an IDE Run Window or in JShell,
                     // which acts like an interactive console and echoes the
                     // entered password. In this case, print a warning that
@@ -73,6 +76,7 @@ public class Password {
                     // it's more likely the input comes from a pipe, such as
                     // "echo password |" or "cat password_file |" where input
                     // will be silently consumed without echoing to the screen.
+                    // Warn only if VM is booted and ResourcesMgr is available.
                     System.err.print(ResourcesMgr.getString
                             ("warning.input.may.be.visible.on.screen"));
                 }

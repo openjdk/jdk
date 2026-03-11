@@ -1148,6 +1148,8 @@ public:
 // is seen. A per ReceiverTypeData counter is incremented on type
 // overflow (when there's no more room for a not yet profiled Klass*).
 //
+// Updated by platform-specific code, for example MacroAssembler::profile_receiver_type.
+//
 class ReceiverTypeData : public CounterData {
   friend class VMStructs;
   friend class JVMCIVMStructs;

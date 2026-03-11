@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,6 +115,12 @@ protected:
       GrowableArrayBase(capacity, initial_len), _data(data) {}
 
   ~GrowableArrayView() {}
+
+protected:
+  // Used by AOTGrowableArray for MetaspaceClosure support.
+  E** data_addr() {
+    return &_data;
+  }
 
 public:
   bool operator==(const GrowableArrayView& rhs) const {
@@ -487,16 +493,16 @@ public:
     return false;
   }
 
-  // Remove all elements up to the index (exclusive). The order is preserved.
-  void remove_till(int idx) {
-    remove_range(0, idx);
+  // Remove all elements in the range [0; end). The order is preserved.
+  void remove_till(int end) {
+    remove_range(0, end);
   }
 
-  // Remove all elements in the range [start - end). The order is preserved.
+  // Remove all elements in the range [start; end). The order is preserved.
   void remove_range(int start, int end) {
     assert(0 <= start, "illegal start index %d", start);
-    assert(start < end && end <= this->_len,
-           "erase called with invalid range (%d, %d) for length %d",
+    assert(start <= end && end <= this->_len,
+           "erase called with invalid range [%d, %d) for length %d",
            start, end, this->_len);
 
     for (int i = start, j = end; j < this->length(); i++, j++) {

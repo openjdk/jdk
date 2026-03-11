@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.function.Predicate;
-import jdk.jpackage.internal.util.function.ThrowingSupplier;
+import java.util.function.Supplier;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
@@ -86,7 +86,12 @@ public class RuntimePackageTest {
 
     @Test(ifOS = MACOS)
     public static void testFromBundle() {
-        init(MacHelper::createRuntimeBundle).run();
+        init(() -> {
+            return MacHelper.buildRuntimeBundle().mutator(cmd -> {
+                // Set custom version in the Info.plist file of the predefined runtime bundle.
+                cmd.addArguments("--app-version", "17.52");
+            }).create();
+        }).run();
     }
 
     @Test(ifOS = LINUX)
@@ -114,7 +119,7 @@ public class RuntimePackageTest {
         return init(JPackageCommand::createInputRuntimeImage);
     }
 
-    private static PackageTest init(ThrowingSupplier<Path> createRuntime) {
+    private static PackageTest init(Supplier<Path> createRuntime) {
         Objects.requireNonNull(createRuntime);
 
         final Path[] runtimeImageDir = new Path[1];

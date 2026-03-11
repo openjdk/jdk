@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,9 +54,9 @@
  */
 package tck.java.time;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertSame;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -69,6 +69,8 @@ import java.io.ObjectStreamConstants;
 import java.io.Serializable;
 import java.util.Formatter;
 import java.util.Map;
+
+import org.junit.jupiter.api.Assertions;
 
 /**
  * Base test class.
@@ -107,13 +109,13 @@ public abstract class AbstractTCKTest {
     }
 
     protected static void assertSerializable(Object object) throws IOException, ClassNotFoundException {
-        assertEquals(object instanceof Serializable, true);
+        assertEquals(true, object instanceof Serializable);
         Object deserializedObject = writeThenRead(object);
-        assertEquals(deserializedObject, object);
+        assertEquals(object, deserializedObject);
     }
 
     protected static void assertSerializableSame(Object object) throws IOException, ClassNotFoundException {
-        assertEquals(object instanceof Serializable, true);
+        assertEquals(true, object instanceof Serializable);
         Object deserializedObject = writeThenRead(object);
         assertSame(deserializedObject, object);
     }
@@ -139,26 +141,26 @@ public abstract class AbstractTCKTest {
         byte[] bytes = baos.toByteArray();
         ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
         try (DataInputStream dis = new DataInputStream(bais)) {
-            assertEquals(dis.readShort(), ObjectStreamConstants.STREAM_MAGIC);
-            assertEquals(dis.readShort(), ObjectStreamConstants.STREAM_VERSION);
-            assertEquals(dis.readByte(), ObjectStreamConstants.TC_OBJECT);
-            assertEquals(dis.readByte(), ObjectStreamConstants.TC_CLASSDESC);
-            assertEquals(dis.readUTF(), serClass);
-            assertEquals(dis.readLong(), serVer);
-            assertEquals(dis.readByte(), ObjectStreamConstants.SC_EXTERNALIZABLE | ObjectStreamConstants.SC_BLOCK_DATA);
-            assertEquals(dis.readShort(), 0);  // number of fields
-            assertEquals(dis.readByte(), ObjectStreamConstants.TC_ENDBLOCKDATA);  // end of classdesc
-            assertEquals(dis.readByte(), ObjectStreamConstants.TC_NULL);  // no superclasses
+            assertEquals(ObjectStreamConstants.STREAM_MAGIC, dis.readShort());
+            assertEquals(ObjectStreamConstants.STREAM_VERSION, dis.readShort());
+            assertEquals(ObjectStreamConstants.TC_OBJECT, dis.readByte());
+            assertEquals(ObjectStreamConstants.TC_CLASSDESC, dis.readByte());
+            assertEquals(serClass, dis.readUTF());
+            assertEquals(serVer, dis.readLong());
+            assertEquals(ObjectStreamConstants.SC_EXTERNALIZABLE | ObjectStreamConstants.SC_BLOCK_DATA, dis.readByte());
+            assertEquals(0, dis.readShort());  // number of fields
+            assertEquals(ObjectStreamConstants.TC_ENDBLOCKDATA, dis.readByte());  // end of classdesc
+            assertEquals(ObjectStreamConstants.TC_NULL, dis.readByte());  // no superclasses
             if (expectedBytes.length < 256) {
-                assertEquals(dis.readByte(), ObjectStreamConstants.TC_BLOCKDATA);
-                assertEquals(dis.readUnsignedByte(), expectedBytes.length, "blockdata length incorrect");
+                assertEquals(ObjectStreamConstants.TC_BLOCKDATA, dis.readByte());
+                assertEquals(expectedBytes.length, dis.readUnsignedByte(), "blockdata length incorrect");
             } else {
-                assertEquals(dis.readByte(), ObjectStreamConstants.TC_BLOCKDATALONG);
-                assertEquals(dis.readInt(), expectedBytes.length, "blockdatalong length incorrect");
+                assertEquals(ObjectStreamConstants.TC_BLOCKDATALONG, dis.readByte());
+                assertEquals(expectedBytes.length, dis.readInt(), "blockdatalong length incorrect");
             }
             byte[] input = new byte[expectedBytes.length];
             dis.readFully(input);
-            assertEquals(input, expectedBytes);
+            Assertions.assertArrayEquals(expectedBytes, input);
             if (matches.length > 0) {
                 for (byte[] match : matches) {
                     boolean matched = false;
@@ -167,7 +169,7 @@ public abstract class AbstractTCKTest {
                             dis.mark(1000);
                             byte[] possible = new byte[match.length];
                             dis.readFully(possible);
-                            assertEquals(possible, match);
+                            Assertions.assertArrayEquals(match, possible);
                             matched = true;
                         } catch (AssertionError ex) {
                             dis.reset();
@@ -176,8 +178,8 @@ public abstract class AbstractTCKTest {
                     }
                 }
             } else {
-                assertEquals(dis.readByte(), ObjectStreamConstants.TC_ENDBLOCKDATA);  // end of blockdata
-                assertEquals(dis.read(), -1);
+                assertEquals(ObjectStreamConstants.TC_ENDBLOCKDATA, dis.readByte());  // end of blockdata
+                assertEquals(-1, dis.read());
             }
         }
     }

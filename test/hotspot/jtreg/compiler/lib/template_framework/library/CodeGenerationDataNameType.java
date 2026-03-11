@@ -101,6 +101,13 @@ public interface CodeGenerationDataNameType extends DataName.Type {
     static PrimitiveType booleans() { return PrimitiveType.BOOLEANS; }
 
     /**
+     * The Float16 type.
+     *
+     * @return The Float16 type.
+     */
+    static CodeGenerationDataNameType float16() { return Float16Type.FLOAT16; }
+
+    /**
      * List of all {@link PrimitiveType}s.
      */
     List<PrimitiveType> PRIMITIVE_TYPES = List.of(
@@ -153,5 +160,20 @@ public interface CodeGenerationDataNameType extends DataName.Type {
         longs(),
         floats(),
         doubles()
+    );
+
+    /**
+     * List of all scalar numeric types.
+     */
+    List<CodeGenerationDataNameType> SCALAR_NUMERIC_TYPES = List.of(
+        bytes(),
+        chars(),
+        shorts(),
+        ints(),
+        longs(),
+        floats(),
+        doubles(),
+        booleans(),
+        float16()
     );
 }

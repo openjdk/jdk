@@ -351,7 +351,14 @@ public class DummyWebSocketServer implements Closeable {
         if (!started.get()) {
             throw new IllegalStateException("Not yet started");
         }
-        return URI.create("ws://localhost:" + address.getPort());
+        String ip = address.getAddress().isAnyLocalAddress()
+                ? InetAddress.getLoopbackAddress().getHostAddress()
+                : address.getAddress().getHostAddress();
+        if (ip.indexOf(':') >= 0) {
+            ip = String.format("[%s]", ip);
+        }
+
+        return URI.create("ws://" + ip + ":" + address.getPort());
     }
 
     private boolean readRequest(SocketChannel channel, StringBuilder request)
