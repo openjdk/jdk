@@ -39,7 +39,6 @@
  *      -jdb=${test.jdk}/bin/jdb
  *      -java.options="${test.vm.opts} ${test.java.opts}"
  *      -workdir=.
- *      -jdb.option="-trackallthreads"
  *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
 
@@ -84,17 +83,24 @@ public class kill003 extends JdbTest {
             success = false;
         }
 
+        // Execution is at a bytecode that is not expected to handle an async exception.  Throw one here
+        // to make sure it gets handled without crashing.  The exception will be delivered at the next
+        // bytecode that can handle the async exception.
         reply = jdb.receiveReplyForWithMessageWait(JdbCommand.kill + threads[0] + " " + DEBUGGEE_EXCEPTION,
                                                    "killed");
 
+        // Continue the debuggee - the async exception will be delivered to the debuggee.
         reply = jdb.receiveReplyFor(JdbCommand.cont);
 
+        // Ask the debuggee for its local variables at the bytecode where the async exception was delivered, which
+        // should be reachable.
         reply = jdb.receiveReplyForWithMessageWait(JdbCommand.locals, "Local variables");
 
         if (jdb.terminated()) {
             throw new Failure("Debuggee exited");
         }
 
+        // The lack of exception handler in the debuggee should cause it to exit when continued.
         jdb.contToExit(1);
     }
 }
