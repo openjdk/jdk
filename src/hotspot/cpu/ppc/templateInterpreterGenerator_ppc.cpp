@@ -1591,7 +1591,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ st_ptr(R0, JavaThread::pending_jni_exception_check_fn_offset(), R16_thread);
   }
 
-#if INCLUDE_STACKWALKER
+#if INCLUDE_JFR
   __ enter_stackwalker_critical_section();
 
   // This poll test is to uphold the invariant that a JFR sampled frame
@@ -1607,7 +1607,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ align(32);
   __ bind(fast_path);
 
-#endif // INCLUDE_STACKWALKER
+#endif // INCLUDE_JFR
 
   __ reset_last_Java_frame();
 
@@ -1651,7 +1651,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ call_stub(result_handler_addr);
 
   __ merge_frames(/*top_frame_sp*/ R21_sender_SP, /*return_pc*/ R12_scratch2, R11_scratch1, R0);
-  STACKWALKER_ONLY(__ leave_stackwalker_critical_section();)
+  JFR_ONLY(__ leave_stackwalker_critical_section();)
 
   // Must use the return pc which was loaded from the caller's frame
   // as the VM uses return-pc-patching for deoptimization.

@@ -998,7 +998,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
 
   bind(no_unlock);
 
-  STACKWALKER_ONLY(enter_stackwalker_critical_section();)
+  JFR_ONLY(enter_stackwalker_critical_section();)
 
   // The below poll is for the stack watermark barrier. It allows fixing up frames lazily,
   // that would normally not be safe to use. Such bad returns into unsafe territory of
@@ -1039,7 +1039,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     cmpptr(rbx, Address(rthread, JavaThread::reserved_stack_activation_offset()));
     jcc(Assembler::lessEqual, no_reserved_zone_enabling);
 
-    STACKWALKER_ONLY(leave_stackwalker_critical_section();)
+    JFR_ONLY(leave_stackwalker_critical_section();)
 
     call_VM_leaf(
       CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone), rthread);
@@ -1052,7 +1052,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
 
   leave();                           // remove frame anchor
 
-  STACKWALKER_ONLY(leave_stackwalker_critical_section();)
+  JFR_ONLY(leave_stackwalker_critical_section();)
 
   pop(ret_addr);                     // get return address
   mov(rsp, rbx);                     // set sp to sender sp
@@ -1060,7 +1060,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
 
 }
 
-#if INCLUDE_STACKWALKER
+#if INCLUDE_JFR
 void InterpreterMacroAssembler::enter_stackwalker_critical_section() {
   const Address stackwalker_critical_section(r15_thread, in_bytes(CRITICAL_SECTION_OFFSET_STACKWALKER));
   movbool(stackwalker_critical_section, true);
@@ -1070,7 +1070,7 @@ void InterpreterMacroAssembler::leave_stackwalker_critical_section() {
   const Address stackwalker_critical_section(r15_thread, in_bytes(CRITICAL_SECTION_OFFSET_STACKWALKER));
   movbool(stackwalker_critical_section, false);
 }
-#endif // INCLUDE_STACKWALKER
+#endif // INCLUDE_JFR
 
 void InterpreterMacroAssembler::get_method_counters(Register method,
                                                     Register mcs, Label& skip) {

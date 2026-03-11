@@ -2756,7 +2756,7 @@ WB_ENTRY(void, WB_BusyWaitCPUTime(JNIEnv* env, jobject wb, jint time))
 WB_END
 
 WB_ENTRY(jboolean, WB_CPUSamplerSetOutOfStackWalking(JNIEnv* env, jobject wb, jboolean enable))
-  #if defined(ASSERT) && INCLUDE_STACKWALKER && defined(LINUX)
+  #if defined(ASSERT) && INCLUDE_JFR && defined(LINUX)
     return StackWalker::set_out_of_stack_walking_enabled(enable == JNI_TRUE) ? JNI_TRUE : JNI_FALSE;
   #else
     return JNI_FALSE;

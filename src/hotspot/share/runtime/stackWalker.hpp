@@ -28,7 +28,7 @@
 
 #include "utilities/macros.hpp"
 
-#if INCLUDE_STACKWALKER
+#if INCLUDE_JFR
 
 #include "memory/allStatic.hpp"
 
@@ -284,5 +284,5 @@ public:
   DEBUG_ONLY(static bool set_out_of_stack_walking_enabled(bool enabled);)
 };
 
-#endif // INCLUDE_STACKWALKER
+#endif // INCLUDE_JFR
 #endif // SHARE_RUNTIME_STACKWALKER_HPP

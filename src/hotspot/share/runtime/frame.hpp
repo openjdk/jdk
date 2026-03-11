@@ -507,7 +507,7 @@ class frame {
   // assert(frame::verify_return_pc(return_address), "must be a return pc");
 #endif
 
-#if INCLUDE_STACKWALKER
+#if INCLUDE_JFR
   // Static helper routines
   static address interpreter_bcp(const intptr_t* fp);
   static address interpreter_return_address(const intptr_t* fp);

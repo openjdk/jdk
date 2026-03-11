@@ -876,7 +876,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   Register fp = R22_tmp2;
   load_fp(fp);
 
-  STACKWALKER_ONLY(enter_stackwalker_critical_section();)
+  JFR_ONLY(enter_stackwalker_critical_section();)
   safepoint_poll(slow_path, R11_scratch1, true /* at_return */, false /* in_nmethod */);
   b(fast_path);
   bind(slow_path);
@@ -910,7 +910,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     cmpld(CR0, fp, R0);
     blt_predict_taken(CR0, no_reserved_zone_enabling);
 
-    STACKWALKER_ONLY(leave_stackwalker_critical_section();)
+    JFR_ONLY(leave_stackwalker_critical_section();)
 
     // Enable reserved zone again, throw stack overflow exception.
     call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone), R16_thread);
@@ -926,12 +926,12 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   remove_top_frame_given_fp(fp, R21_sender_SP, R23_tmp3, /*return_pc*/ R0, R11_scratch1);
   mtlr(R0);
   pop_cont_fastpath();
-  STACKWALKER_ONLY(leave_stackwalker_critical_section();)
+  JFR_ONLY(leave_stackwalker_critical_section();)
 
   BLOCK_COMMENT("} remove_activation");
 }
 
-#if INCLUDE_STACKWALKER
+#if INCLUDE_JFR
 void InterpreterMacroAssembler::enter_stackwalker_critical_section() {
   li(R0, 1);
   stb(R0, in_bytes(CRITICAL_SECTION_OFFSET_STACKWALKER), R16_thread);
@@ -941,7 +941,7 @@ void InterpreterMacroAssembler::leave_stackwalker_critical_section() {
   li(R0, 0);
   stb(R0, in_bytes(CRITICAL_SECTION_OFFSET_STACKWALKER), R16_thread);
 }
-#endif // INCLUDE_STACKWALKER
+#endif // INCLUDE_JFR
 
 // Lock object
 //

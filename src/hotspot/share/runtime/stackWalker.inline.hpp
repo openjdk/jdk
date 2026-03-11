@@ -28,7 +28,7 @@
 
 #include "utilities/macros.hpp"
 
-#if INCLUDE_STACKWALKER
+#if INCLUDE_JFR
 
 #include "runtime/stackWalker.hpp"
 
@@ -49,5 +49,5 @@ void StackWalker::check_and_process_requests(JavaThread* jt) {
   }
 }
 
-#endif // INCLUDE_STACKWALKER
+#endif // INCLUDE_JFR
 #endif // SHARE_RUNTIME_STACKWALKER_INLINE_HPP

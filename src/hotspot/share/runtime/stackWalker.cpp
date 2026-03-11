@@ -25,7 +25,7 @@
 
 #include "utilities/macros.hpp"
 
-#if INCLUDE_STACKWALKER
+#if INCLUDE_JFR
 
 #include "code/codeCache.hpp"
 #include "code/debugInfoRec.hpp"
@@ -1141,4 +1141,4 @@ void StackWalker::on_javathread_create(JavaThread* thread) {
   thread->stackwalker_thread_local().queue().init();
 }
 
-#endif // INCLUDE_STACKWALKER
+#endif // INCLUDE_JFR

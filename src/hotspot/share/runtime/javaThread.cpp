@@ -737,7 +737,7 @@ void JavaThread::run() {
   assert(!Thread::current()->owns_locks(), "sanity check");
 
   JFR_ONLY(Jfr::on_thread_start(this);)
-  STACKWALKER_ONLY(StackWalker::on_javathread_create(this);)
+  JFR_ONLY(StackWalker::on_javathread_create(this);)
 
   DTRACE_THREAD_PROBE(start, this);
 

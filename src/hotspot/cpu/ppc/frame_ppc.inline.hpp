@@ -391,7 +391,7 @@ void frame::update_map_with_saved_link(RegisterMapT* map, intptr_t** link_addr) 
   // Nothing to do.
 }
 
-#if INCLUDE_STACKWALKER
+#if INCLUDE_JFR
 
 // Static helper routines
 inline intptr_t* frame::sender_sp(intptr_t* fp) { return fp; }
@@ -428,6 +428,6 @@ inline bool frame::is_interpreter_frame_setup_at(const intptr_t* fp, const void*
   return sp <= fp - ((frame::ijava_state_size + frame::top_ijava_frame_abi_size) >> LogBytesPerWord);
 }
 
-#endif // INCLUDE_STACKWALKER
+#endif // INCLUDE_JFR
 
 #endif // CPU_PPC_FRAME_PPC_INLINE_HPP

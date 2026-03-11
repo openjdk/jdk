@@ -35,7 +35,7 @@
 
 // Inline functions for AArch64 frames:
 
-#if INCLUDE_STACKWALKER
+#if INCLUDE_JFR
 
 // Static helper routines
 
@@ -80,7 +80,7 @@ inline intptr_t* frame::fp(const intptr_t* sp) {
   return reinterpret_cast<intptr_t*>(sp[-2]);
 }
 
-#endif // INCLUDE_STACKWALKER
+#endif // INCLUDE_JFR
 
 // Constructors:
 

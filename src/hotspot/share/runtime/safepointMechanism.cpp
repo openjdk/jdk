@@ -32,7 +32,7 @@
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "utilities/globalDefinitions.hpp"
-#if INCLUDE_STACKWALKER
+#if INCLUDE_JFR
 #include "runtime/stackWalker.inline.hpp"
 #endif
 
@@ -160,7 +160,7 @@ void SafepointMechanism::process(JavaThread *thread, bool allow_suspend, bool ch
     need_rechecking = thread->handshake_state()->has_operation() && thread->handshake_state()->process_by_self(allow_suspend, check_async_exception);
   } while (need_rechecking);
 
-  STACKWALKER_ONLY(StackWalker::check_and_process_requests(thread));
+  JFR_ONLY(StackWalker::check_and_process_requests(thread));
 
   update_poll_values(thread);
   assert(sp_before == thread->last_Java_sp(), "Anchor has changed");

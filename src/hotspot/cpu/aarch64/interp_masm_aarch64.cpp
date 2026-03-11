@@ -603,7 +603,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
 
   bind(no_unlock);
 
-  STACKWALKER_ONLY(enter_stackwalker_critical_section();)
+  JFR_ONLY(enter_stackwalker_critical_section();)
 
   // The below poll is for the stack watermark barrier. It allows fixing up frames lazily,
   // that would normally not be safe to use. Such bad returns into unsafe territory of
@@ -647,7 +647,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     cmp(rscratch2, rscratch1);
     br(Assembler::LS, no_reserved_zone_enabling);
 
-    STACKWALKER_ONLY(leave_stackwalker_critical_section();)
+    JFR_ONLY(leave_stackwalker_critical_section();)
 
     call_VM_leaf(
       CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone), rthread);
@@ -661,7 +661,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   // remove frame anchor
   leave();
 
-  STACKWALKER_ONLY(leave_stackwalker_critical_section();)
+  JFR_ONLY(leave_stackwalker_critical_section();)
 
   // restore sender esp
   mov(esp, rscratch2);
@@ -673,7 +673,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   andr(sp, esp, -16);
 }
 
-#if INCLUDE_STACKWALKER
+#if INCLUDE_JFR
 void InterpreterMacroAssembler::enter_stackwalker_critical_section() {
   const Address stackwalker_critical_section(rthread, in_bytes(CRITICAL_SECTION_OFFSET_STACKWALKER));
   mov(rscratch1, true);
@@ -684,7 +684,7 @@ void InterpreterMacroAssembler::leave_stackwalker_critical_section() {
   const Address stackwalker_critical_section(rthread, in_bytes(CRITICAL_SECTION_OFFSET_STACKWALKER));
   strb(zr, stackwalker_critical_section);
 }
-#endif // INCLUDE_STACKWALKER
+#endif // INCLUDE_JFR
 
 // Lock object
 //
