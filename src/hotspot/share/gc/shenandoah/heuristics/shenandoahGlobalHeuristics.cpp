@@ -141,7 +141,7 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
   size_t unaffiliated_young_memory = unaffiliated_young_regions * region_size_bytes;
   size_t unaffiliated_old_regions = free_set->old_collector_unaffiliated_regions();
   size_t unaffiliated_old_memory = unaffiliated_old_regions * region_size_bytes;
-  
+
   // Figure out how many unaffiliated regions are dedicated to Collector and OldCollector reserves.  Let these
   // be shuffled between young and old generations in order to expedite evacuation of whichever regions have the
   // most garbage, regardless of whether these garbage-first regions reside in young or old generation.
