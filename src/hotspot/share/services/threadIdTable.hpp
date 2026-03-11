@@ -41,7 +41,7 @@ class ThreadIdTable : public AllStatic {
 public:
   // Initialization
   static void lazy_initialize(const ThreadsList* threads);
-  static bool is_initialized() {
+  static bool is_initialized_acquire() {
     return _is_initialized.load_acquire();
   }
 

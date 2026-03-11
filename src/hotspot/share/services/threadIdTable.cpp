@@ -43,7 +43,7 @@ static ThreadIdTableHash* volatile _local_table = nullptr;
 static volatile size_t _current_size = 0;
 static volatile size_t _items_count = 0;
 
-Atomic<bool> ThreadIdTable::_is_initialized(false);
+Atomic<bool> ThreadIdTable::_is_initialized {false};
 volatile bool ThreadIdTable::_has_work = false;
 
 class ThreadIdTableEntry : public CHeapObj<mtInternal> {
@@ -80,7 +80,7 @@ class ThreadIdTableConfig : public AllStatic {
 // Lazily creates the table and populates it with the given
 // thread list
 void ThreadIdTable::lazy_initialize(const ThreadsList *threads) {
-  if (!is_initialized()) {
+  if (!_is_initialized.load_acquire()) {
     {
       // There is no obvious benefit in allowing the thread table
       // to be concurrently populated during initialization.
@@ -211,7 +211,7 @@ public:
 };
 
 void ThreadIdTable::do_concurrent_work(JavaThread* jt) {
-  assert(is_initialized(), "Thread table is not initialized");
+  assert(_is_initialized.load_relaxed(), "Thread table is not initialized");
   _has_work = false;
   double load_factor = get_load_factor();
   log_debug(thread, table)("Concurrent work, load factor: %g", load_factor);
@@ -222,7 +222,7 @@ void ThreadIdTable::do_concurrent_work(JavaThread* jt) {
 
 JavaThread* ThreadIdTable::add_thread(jlong tid, JavaThread* java_thread) {
   assert(Threads_lock->owned_by_self(), "Must hold Threads_lock");
-  assert(is_initialized(), "Thread table is not initialized");
+  assert(_is_initialized.load_relaxed(), "Thread table is not initialized");
   Thread* thread = Thread::current();
   ThreadIdTableLookup lookup(tid);
   ThreadGet tg;
@@ -241,7 +241,7 @@ JavaThread* ThreadIdTable::add_thread(jlong tid, JavaThread* java_thread) {
 }
 
 JavaThread* ThreadIdTable::find_thread_by_tid(jlong tid) {
-  assert(is_initialized(), "Thread table is not initialized");
+  assert(_is_initialized.load_relaxed(), "Thread table is not initialized");
   Thread* thread = Thread::current();
   ThreadIdTableLookup lookup(tid);
   ThreadGet tg;
@@ -251,7 +251,7 @@ JavaThread* ThreadIdTable::find_thread_by_tid(jlong tid) {
 
 bool ThreadIdTable::remove_thread(jlong tid) {
   assert(Threads_lock->owned_by_self(), "Must hold Threads_lock");
-  assert(is_initialized(), "Thread table is not initialized");
+  assert(_is_initialized.load_relaxed(), "Thread table is not initialized");
   Thread* thread = Thread::current();
   ThreadIdTableLookup lookup(tid);
   return _local_table->remove(thread, lookup);
