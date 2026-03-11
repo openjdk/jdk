@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,14 @@
  * @bug 8312306
  * @summary Check the destroy()/isDestroyed() of the PBEKey impl from SunJCE
  * @library /test/lib
- * @run testng/othervm PBEKeyDestroyTest
+ * @run junit/othervm PBEKeyDestroyTest
  */
 import javax.crypto.*;
 import javax.crypto.spec.*;
 import java.nio.charset.StandardCharsets;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 public class PBEKeyDestroyTest {
 
@@ -48,22 +49,22 @@ public class PBEKeyDestroyTest {
         SecretKey key2 = skf.generateSecret(keySpec);
 
         // should be equal
-        Assert.assertFalse(key1.isDestroyed());
-        Assert.assertFalse(key2.isDestroyed());
-        Assert.assertTrue(key1.equals(key2));
-        Assert.assertTrue(key2.equals(key1));
+        assertFalse(key1.isDestroyed());
+        assertFalse(key2.isDestroyed());
+        assertTrue(key1.equals(key2));
+        assertTrue(key2.equals(key1));
 
         // destroy key1
         key1.destroy();
-        Assert.assertTrue(key1.isDestroyed());
-        Assert.assertFalse(key1.equals(key2));
-        Assert.assertFalse(key2.equals(key1));
+        assertTrue(key1.isDestroyed());
+        assertFalse(key1.equals(key2));
+        assertFalse(key2.equals(key1));
 
         // also destroy key2
         key2.destroy();
-        Assert.assertTrue(key2.isDestroyed());
-        Assert.assertFalse(key1.equals(key2));
-        Assert.assertFalse(key2.equals(key1));
+        assertTrue(key2.isDestroyed());
+        assertFalse(key1.equals(key2));
+        assertFalse(key2.equals(key1));
 
         // call destroy again to make sure no unexpected exceptions
         key2.destroy();
