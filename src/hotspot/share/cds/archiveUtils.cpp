@@ -312,22 +312,9 @@ void DumpRegion::pack(DumpRegion* next) {
 }
 
 void WriteClosure::do_ptr(void** p) {
-  // Write ptr into the archive; ptr can be:
-  //   (a) null                 -> written as 0
-  //   (b) a "buffered" address -> written as is
-  //   (c) a "source"   address -> convert to "buffered" and write
-  // The common case is (c). E.g., when writing the vmClasses into the archive.
-  // We have (b) only when we don't have a corresponding source object. E.g.,
-  // the archived c++ vtable entries.
   address ptr = *(address*)p;
-  if (ptr != nullptr && !ArchiveBuilder::current()->is_in_buffer_space(ptr)) {
-    ptr = ArchiveBuilder::current()->get_buffered_addr(ptr);
-  }
-  // null pointers do not need to be converted to offsets
-  if (ptr != nullptr) {
-    ptr = (address)ArchiveBuilder::current()->buffer_to_offset(ptr);
-  }
-  _dump_region->append_intptr_t((intptr_t)ptr, false);
+  AOTCompressedPointers::narrowPtr narrowp = AOTCompressedPointers::encode(ptr);
+  _dump_region->append_intptr_t(checked_cast<intptr_t>(narrowp), false);
 }
 
 void ReadClosure::do_ptr(void** p) {

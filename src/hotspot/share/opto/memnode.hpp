@@ -182,7 +182,7 @@ private:
   MemNode* const _n;
   Node* _base;
   intptr_t _offset;
-  int _memory_size;
+  const int _memory_size;
   bool _maybe_raw;
   AllocateNode* _alloc;
   const TypePtr* _adr_type;
@@ -196,13 +196,13 @@ public:
   class AccessIndependence {
   public:
     // Whether 'other' writes into the memory which '_n' observes. This value is conservative, that
-    // is it is only true when it is provable that the memory accessed by the nodes is
+    // is, it is only true when it is provable that the memory accessed by the nodes is
     // non-overlapping.
     bool independent;
 
     // If 'independent' is true, this is the memory input of 'other' that corresponds to the memory
     // location that '_n' observes. For example, if 'other' is a StoreNode, then 'mem' is its
-    // memory input, if 'other' is a MergeMemNode, then 'mem' is the memory input corresponds to
+    // memory input, if 'other' is a MergeMemNode, then 'mem' is the memory input corresponding to
     // the alias class of '_n'.
     // If 'independent' is false,
     // - 'mem' is non-nullptr if it seems that 'other' writes to the exact memory location '_n'
@@ -211,7 +211,7 @@ public:
     Node* mem;
   };
 
-  AccessIndependence detect_access_independence(Node* other);
+  AccessIndependence detect_access_independence(Node* other) const;
 };
 
 //------------------------------LoadNode---------------------------------------

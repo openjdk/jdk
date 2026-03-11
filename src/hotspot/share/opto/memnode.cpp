@@ -700,12 +700,12 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
 
   Node* mem = in(MemNode::Memory); // start searching here...
   int cnt = 50;                    // Cycle limiter
-  for (;;) {
+  for (;; cnt--) {
     // While we can dance past unrelated stores...
     if (phase->type(mem) == Type::TOP) {
       // Encounter a dead node
       return phase->C->top();
-    } else if (--cnt < 0) {
+    } else if (cnt <= 0) {
       // Caught in cycle or a complicated dance?
       return nullptr;
     } else if (mem->is_Phi()) {
@@ -791,7 +791,7 @@ AccessAnalyzer::AccessAnalyzer(PhaseValues* phase, MemNode* n)
 // Decide whether the memory accessed by '_n' and 'other' may overlap. This function may be used
 // when we want to walk the memory graph to fold a load, or when we want to hoist a load above a
 // loop when there are no stores that may overlap with the load inside the loop.
-AccessAnalyzer::AccessIndependence AccessAnalyzer::detect_access_independence(Node* other) {
+AccessAnalyzer::AccessIndependence AccessAnalyzer::detect_access_independence(Node* other) const {
   assert(_phase->type(other) == Type::MEMORY, "must be a memory node %s", other->Name());
   assert(!other->is_Phi(), "caller must handle Phi");
 
@@ -827,8 +827,8 @@ AccessAnalyzer::AccessIndependence AccessAnalyzer::detect_access_independence(No
       return {false, other};
     }
 
-    // If it is provable that the memory accessed by mem does not overlap the memory accessed by
-    // _n, we may walk past mem.
+    // If it is provable that the memory accessed by 'other' does not overlap the memory accessed
+    // by '_n', we may walk past 'other'.
     // For raw accesses, 2 accesses are independent if they have the same base and the offsets
     // say that they do not overlap.
     // For heap accesses, 2 accesses are independent if either the bases are provably different
@@ -838,9 +838,9 @@ AccessAnalyzer::AccessIndependence AccessAnalyzer::detect_access_independence(No
       return {false, nullptr};
     }
 
-    // If the offsets say that the accesses do not overlap, then it is provable that mem and _n do
-    // not overlap. For example, a LoadI from Object+8 is independent from a StoreL into Object+12,
-    // no matter what the bases are.
+    // If the offsets say that the accesses do not overlap, then it is provable that 'other' and
+    // '_n' do not overlap. For example, a LoadI from Object+8 is independent from a StoreL into
+    // Object+12, no matter what the bases are.
     if (st_offset != _offset && st_offset != Type::OffsetBot) {
       const int MAX_STORE = MAX2(BytesPerLong, (int)MaxVectorSize);
       assert(other->as_Store()->memory_size() <= MAX_STORE, "");
@@ -1249,8 +1249,13 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
       }
       // LoadVector/StoreVector needs additional check to ensure the types match.
       if (st->is_StoreVector()) {
-        const TypeVect*  in_vt = st->as_StoreVector()->vect_type();
-        const TypeVect* out_vt = as_LoadVector()->vect_type();
+        if ((Opcode() != Op_LoadVector && Opcode() != Op_StoreVector) || st->Opcode() != Op_StoreVector) {
+          // Some kind of masked access or gather/scatter
+          return nullptr;
+        }
+
+        const TypeVect* in_vt = st->as_StoreVector()->vect_type();
+        const TypeVect* out_vt = is_Load() ? as_LoadVector()->vect_type() : as_StoreVector()->vect_type();
         if (in_vt != out_vt) {
           return nullptr;
         }
@@ -3588,8 +3593,11 @@ Node* StoreNode::Identity(PhaseGVN* phase) {
       val->in(MemNode::Address)->eqv_uncast(adr) &&
       val->in(MemNode::Memory )->eqv_uncast(mem) &&
       val->as_Load()->store_Opcode() == Opcode()) {
-    // Ensure vector type is the same
-    if (!is_StoreVector() || (mem->is_LoadVector() && as_StoreVector()->vect_type() == mem->as_LoadVector()->vect_type())) {
+    if (!is_StoreVector()) {
+      result = mem;
+    } else if (Opcode() == Op_StoreVector && val->Opcode() == Op_LoadVector &&
+               as_StoreVector()->vect_type() == val->as_LoadVector()->vect_type()) {
+      // Ensure both are not masked accesses or gathers/scatters and vector types are the same
       result = mem;
     }
   }

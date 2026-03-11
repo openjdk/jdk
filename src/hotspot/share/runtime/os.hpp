@@ -245,9 +245,7 @@ class os: AllStatic {
   static size_t pd_pretouch_memory(void* first, void* last, size_t page_size);
 
   static char*  pd_reserve_memory_special(size_t size, size_t alignment, size_t page_size,
-
                                           char* addr, bool executable);
-  static bool   pd_release_memory_special(char* addr, size_t bytes);
 
   static size_t page_size_for_region(size_t region_size, size_t min_pages, bool must_be_aligned);
 
@@ -605,7 +603,6 @@ class os: AllStatic {
   // reserve, commit and pin the entire memory region
   static char*  reserve_memory_special(size_t size, size_t alignment, size_t page_size,
                                        char* addr, bool executable);
-  static void   release_memory_special(char* addr, size_t bytes);
   static void   large_page_init();
   static size_t large_page_size();
   static bool   can_commit_large_page_memory();

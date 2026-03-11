@@ -28,7 +28,8 @@
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/parallel/objectStartArray.hpp"
 #include "gc/parallel/psVirtualspace.hpp"
-#include "gc/parallel/spaceCounters.hpp"
+#include "gc/shared/generationCounters.hpp"
+#include "gc/shared/hSpaceCounters.hpp"
 
 class ReservedSpace;
 
@@ -51,9 +52,9 @@ class PSYoungGen : public CHeapObj<mtGC> {
 
   // Performance counters
   GenerationCounters*   _gen_counters;
-  SpaceCounters*        _eden_counters;
-  SpaceCounters*        _from_counters;
-  SpaceCounters*        _to_counters;
+  HSpaceCounters*       _eden_counters;
+  HSpaceCounters*       _from_counters;
+  HSpaceCounters*       _to_counters;
 
   // Initialize the space boundaries
   void compute_initial_space_boundaries();

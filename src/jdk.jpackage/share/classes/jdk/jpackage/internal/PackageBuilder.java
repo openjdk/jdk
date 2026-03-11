@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,7 +207,7 @@ final class PackageBuilder {
         });
     }
 
-    private static Path mapInstallDir(Path installDir, PackageType pkgType) {
+    private static Path mapInstallDir(Path installDir, PackageType type) {
         var ex = buildConfigException("error.invalid-install-dir", installDir).create();
 
         if (installDir.getNameCount() == 0) {
@@ -223,15 +223,17 @@ final class PackageBuilder {
             throw ex;
         }
 
-        switch (pkgType) {
-            case StandardPackageType.WIN_EXE, StandardPackageType.WIN_MSI -> {
-                if (installDir.isAbsolute()) {
-                    throw ex;
+        if (type instanceof StandardPackageType stdType) {
+            switch (stdType) {
+                case WIN_EXE, WIN_MSI -> {
+                    if (installDir.isAbsolute()) {
+                        throw ex;
+                    }
                 }
-            }
-            default -> {
-                if (!installDir.isAbsolute()) {
-                    throw ex;
+                default -> {
+                    if (!installDir.isAbsolute()) {
+                        throw ex;
+                    }
                 }
             }
         }
