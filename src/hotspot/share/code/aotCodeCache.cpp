@@ -609,6 +609,12 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with CompressedKlassPointers::shift() = %d vs current %d", _compressedKlassShift, CompressedKlassPointers::shift());
     return false;
   }
+
+  // check CPU features before checking flags that may be
+  // auto-configured in response to them
+  if (!verify_cpu_features(cache)) {
+    return false;
+  }
   if (((_flags & enableContendedPadding) != 0) != EnableContended) {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with EnableContended = %s vs current %s", (enableContendedPadding ? "false" : "true"), (EnableContended ? "true" : "false"));
     return false;
@@ -781,9 +787,6 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
     AOTStubCaching = false;
   }
 
-  if (!verify_cpu_features(cache)) {
-    return false;
-  }
   return true;
 }
 
