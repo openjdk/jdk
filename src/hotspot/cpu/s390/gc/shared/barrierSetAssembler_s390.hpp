@@ -70,8 +70,6 @@ public:
 #ifdef COMPILER2
   OptoReg::Name refine_register(const Node* node,
                                 OptoReg::Name opto_reg) const;
-  virtual void try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj,
-                                             Register tmp, Label& slow_path);
 #endif // COMPILER2
 
   static const int OFFSET_TO_PATCHABLE_DATA_INSTRUCTION = 6 + 6 + 6; // iihf(6) + iilf(6) + lg(6)
