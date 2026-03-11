@@ -191,6 +191,11 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
   __ block_comment("} nmethod_entry_barrier (nmethod_entry_barrier)");
 }
 
+void BarrierSetAssembler::try_resolve_weak_handle(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path) {
+  // Load the oop from the weak handle.
+  __ z_lg(obj, Address(obj));
+}
+
 #ifdef COMPILER2
 
 OptoReg::Name BarrierSetAssembler::refine_register(const Node* node, OptoReg::Name opto_reg) const {
@@ -204,11 +209,6 @@ OptoReg::Name BarrierSetAssembler::refine_register(const Node* node, OptoReg::Na
   }
 
   return opto_reg;
-}
-
-void BarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path) {
-  // Load the oop from the weak handle.
-  __ z_lg(obj, Address(obj));
 }
 
 #undef __
