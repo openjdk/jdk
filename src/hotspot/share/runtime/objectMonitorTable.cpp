@@ -46,7 +46,7 @@
 //
 // When you want to find a monitor associated with an object, you extract the
 // hash value of the object. Then calculate an index by taking the hash value
-// and bit-wise AND it with the capacity mask (e.g. size-1) of the OMT. Now
+// and bit-wise AND it with the capacity mask (i.e., size-1) of the OMT. Now
 // use that index into the OMT's array of pointers. If the pointer is non
 // null, check if it's a monitor pointer that is associated with the object.
 // If so you're done. If the pointer is non null, but associated with another
@@ -55,7 +55,7 @@
 // means that the monitor is simply not in the OMT.
 //
 // If the size of the pointer array is significantly larger than the number of
-// pointers in it, the chance of finding the monitor in the hash index
+// pointers in it, the chance of finding the monitor at the hash index
 // (without any further linear searching) is quite high. It is also straight
 // forward to generate C2 code for this, which for the fast path doesn't
 // contain any branching at all. See: C2_MacroAssembler::fast_lock().
@@ -69,10 +69,10 @@
 // old monitor pointers from the old table to the new.
 //
 // But since the OMT is a concurrent hash table and things needs to work for
-// other clients of the OMT while we grow it, it's gets a bit more
+// other clients of the OMT while we grow it, it gets a bit more
 // complicated.
 //
-// Both the new and (potentially several) old table(s) may exist at the same
+// The new and (potentially several) old table(s) may exist at the same
 // time. The newest is always called the "current", and the older ones are
 // singly linked using a "prev" pointer.
 //
@@ -82,7 +82,8 @@
 //
 // After that we start to go through all the indexes in the old table. If the
 // index is empty (the pointer is null) we put a "tombstone" into that index,
-// which will prevent any future concurrent insert ending up in that index.
+// which will prevent any future concurrent insert from ending up in that
+// index.
 //
 // If the index contains a monitor pointer, we insert that monitor pointer
 // into the OMT which can be considered as one generation newer. If the index
@@ -92,11 +93,11 @@
 // that is not null, not a tombstone and not removed, is considered to be a
 // pointer to a monitor.
 //
-// When all the monitor pointers from an old OMT has been transferred to the
+// When all the monitor pointers from an old OMT have been transferred to the
 // new OMT, the old table is unlinked.
 //
 // This copying from an old OMT to one generation newer OMT, will continue
-// until all the monitor pointers from old OMTs has been transferred to the
+// until all the monitor pointers from old OMTs have been transferred to the
 // newest "current" OMT.
 //
 // The memory for old, unlinked OMTs will be freed after a thread-local
@@ -255,7 +256,7 @@ public:
   }
 
   ObjectMonitor* prepare_insert(oop obj, intptr_t hash) {
-    // Acquire any tomb stones and relocations if prev transitioned to null.
+    // Acquire any tombstones and relocations if prev transitioned to null.
     Table* prev = AtomicAccess::load_acquire(&_prev);
     if (prev != nullptr) {
       ObjectMonitor* result = prev->prepare_insert(obj, hash);
@@ -273,7 +274,7 @@ public:
 
       if (entry == empty()) {
         // Found an empty slot to install the new monitor in.
-        // To avoid concurrent inserts succeeding, place a tomb stone here.
+        // To avoid concurrent inserts succeeding, place a tombstone here.
         Entry result = AtomicAccess::cmpxchg(bucket, entry, tombstone(), memory_order_relaxed);
         if (result == entry) {
           // Success! Nobody will try to insert here again, except reinsert from rehashing.
@@ -515,7 +516,7 @@ void ObjectMonitorTable::create() {
   _curr = new Table(128, nullptr);
 }
 
-ObjectMonitor* ObjectMonitorTable::monitor_get(Thread* current, oop obj) {
+ObjectMonitor* ObjectMonitorTable::monitor_get(oop obj) {
   const intptr_t hash = obj->mark().hash();
   Table* curr = AtomicAccess::load_acquire(&_curr);
   ObjectMonitor* monitor = curr->get(obj, hash);
@@ -562,7 +563,7 @@ ObjectMonitorTable::Table* ObjectMonitorTable::grow_table(Table* curr) {
   return result;
 }
 
-ObjectMonitor* ObjectMonitorTable::monitor_put_get(Thread* current, ObjectMonitor* monitor, oop obj) {
+ObjectMonitor* ObjectMonitorTable::monitor_put_get(ObjectMonitor* monitor, oop obj) {
   const intptr_t hash = obj->mark().hash();
   Table* curr = AtomicAccess::load_acquire(&_curr);
 
@@ -577,7 +578,7 @@ ObjectMonitor* ObjectMonitorTable::monitor_put_get(Thread* current, ObjectMonito
   }
 }
 
-void ObjectMonitorTable::remove_monitor_entry(Thread* current, ObjectMonitor* monitor) {
+void ObjectMonitorTable::remove_monitor_entry(ObjectMonitor* monitor) {
   oop obj = monitor->object_peek();
   if (obj == nullptr) {
     // Defer removal until subsequent rebuilding.
@@ -586,7 +587,7 @@ void ObjectMonitorTable::remove_monitor_entry(Thread* current, ObjectMonitor* mo
   const intptr_t hash = obj->mark().hash();
   Table* curr = AtomicAccess::load_acquire(&_curr);
   curr->remove(obj, curr->as_entry(monitor), hash);
-  assert(monitor_get(current, obj) != monitor, "should have been removed");
+  assert(monitor_get(obj) != monitor, "should have been removed");
 }
 
 // Before handshake; rehash and unlink tables.

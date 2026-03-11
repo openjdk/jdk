@@ -1704,7 +1704,7 @@ com.sun.security.allowedAIALocations=
 #
 # PKCS #8 encoding format for newly created ML-KEM and ML-DSA private keys
 #
-# draft-ietf-lamps-kyber-certificates-11 and RFC 9881 define three possible formats for a private key:
+# RFC 9935 and RFC 9881 define three possible formats for a private key:
 # a seed (64 bytes for ML-KEM, 32 bytes for ML-DSA), an expanded private key,
 # or a sequence containing both.
 #
