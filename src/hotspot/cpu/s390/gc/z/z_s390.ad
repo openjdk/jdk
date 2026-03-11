@@ -1,0 +1,148 @@
+/*
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026 IBM Corporation. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+source_hpp %{
+
+#include "gc/shared/gc_globals.hpp"
+#include "gc/z/c2/zBarrierSetC2.hpp"
+#include "gc/z/zThreadLocalData.hpp"
+
+static void z_color(MacroAssembler* masm, const MachNode* node, Register dst, Register src) {
+  assert_different_registers(src, dst);
+  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
+  __ z_lhi(dst, barrier_Relocation::unpatched);
+  __ z_sllg(src, src, ZPointerLoadShift);
+  __ z_ogr(dst, src);
+}
+
+static void z_uncolor(MacroAssembler* masm, const MachNode* node, Register ref) {
+  __ z_srlg(ref, ref, ZpointerLoadShift);
+}
+
+static void z_keep_alive_load_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register ref) {
+  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadBeforeTest);
+  __ z_ltg(ref, barrier_Relocation::unpatched);
+
+  ZLoadBarrierStubC2* const stub = ZLoadBarrierStubC2::create(node, ref_addr, ref);
+  __ z_brne(*stub->entry());
+
+  z_uncolor(masm, node, ref);
+
+  __ bind(*stub->continuation());
+}
+
+static void z_load_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, register ref) {
+  Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
+  const bool on_non_strong =
+      ((node->barrier_data() & ZBarrierWeak) != 0) ||
+      ((node->barrier_data() & ZBarrierPhantom) != 0);
+
+  if (on_non_strong) {
+    z_keep_alive_load_barrier(masm, node, ref_addr, ref);
+    return;
+  }
+
+  z_uncolor(masm, node, ref);
+  if (node->barrier_data() == ZBarrierElided) {
+    return;
+  }
+  ZLoadBarrierStubC2* const stub = ZLoadBarrierStubC2::create(node, ref_addr, ref);
+  // TODO: Check what is the correct way here, all architecture have different implementations and here i am following aarch64
+  Label good;
+  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
+  __ z_chi(ref, barrier_Relocation::unpatched);
+  __ z_bre(good);
+  __ z_br(*stub->entry());
+  __ bind(good);
+
+  z_uncolor(masm, node, ref);
+  __bind(*stub->continuation());
+}
+
+static z_store_barrier(MacroAssembler* masm, const Machnode* node, Address ref_addr, Register rnew_zaddress, Register rnew_zpointer, bool is_atomic) {
+  Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
+  if (node->barrier_data() == ZBarrierElided) {
+    z_color(masm, node, rnew_zpointer, rnew_zaddress);
+  } else {
+    bool is_native = (node->barrier_data() & ZBarrierNative) != 0;
+    bool is_nokeepalive = (node->barrier_data() & ZBarrierNoKeepAlive) != 0;
+    ZStoreBarrierStubC2* const stub = ZStoreBarrierStubC2::create(node, ref_addr, rnew_zaddress, rnew_zpointer, is_native, is_atomic, is_nokeepalive);
+    ZBarrierSetAssembler* bs_asm = ZBarrierSet::assembler();
+    bs_asm->store_barrier_fast(masm, ref_addr, rnew_zaddress, rnew_zpointer, true /* in_nmethod */, is_atomic, *stub->entry(), *stub->continuation());
+  }
+%}
+
+// Load Pointer
+instruct zLoadP(iRegP dst, memory mem, flagsReg cr) %{
+  predicate(UseZGC && n->as_Load()->barrier_data() != 0);
+  match(Set dst (LoadP mem));
+  effect(TEMP dst, KILL cr);
+  // TODO: recheck these 2 below
+  ins_is_late_expanded_null_check_candidate(true);
+  ins_cost(MEMORY_REF_COST);
+
+  format %{ "LG      $dst,$mem\t # ptr" %}
+
+  ins_encode %{
+    __ z_lg($dst$$Register, $mem$$Address);
+    z_load_barrier(masm, this, $mem$$Address, $dst$$Register);
+  %}
+
+  ins_pipe(pipe_class_dummy);
+%}
+
+// TODO: x86 has also written match rule for cmpP
+
+// Store Pointer
+instruct zStoreP(memory mem, iRegP src, iRegP temp, flagsReg cr) %{
+  predicate(UseZGC && n->as_Store()->barrier_data() != 0);
+  match(Set mem (StoreP mem src));
+  effect(TEMP tmp, KILL cr);
+
+  //TODO: double check the instruction cost
+  ins_cost(MEMORY_REF_COST);
+  format %{ "STG     $mem, $src\t # ptr" %}
+  ins_encode %{
+    z_store_barrier(masm, this, $mem$$Address, $src$$Register, $temp$$Register, false /* is_atomic */);
+    __ z_stg($temp$$Register, $mem$$Address);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+// Store Null Pointer
+instruct zStorePNull(memory mem, immP0 zero, iRegP temp, flagsReg cr) %{
+  predicate(UseZGC && n->as_Store()->barrier_data() != 0);
+  match(Set mem (StoreP mem zero));
+  effect(TEMP tmp, KILL cr);
+
+  ins_cost(MEMORY_REF_COST);
+  format %{ "STG     $mem, null\t # ptr" %}
+  ins_encode %{
+    z_store_barrier(masm, this, $mem$$Address, noreg, $temp$$Register, false /* is_atomic */);
+    __ z_stg($temp$$Register, $mem$$Address);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+
