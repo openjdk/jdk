@@ -89,12 +89,20 @@ public interface OutputBuffer {
    */
   public long pid();
 
+  public static OutputBuffer of(Process p, boolean quiet) {
+    return of(p, null, quiet);
+  }
+
   public static OutputBuffer of(Process p, Charset cs) {
-    return new LazyOutputBuffer(p, cs);
+    return of(p, cs, false);
   }
 
   public static OutputBuffer of(Process p) {
-    return new LazyOutputBuffer(p, null);
+    return of(p, null, false);
+  }
+
+  public static OutputBuffer of(Process p, Charset cs, boolean quiet) {
+    return new LazyOutputBuffer(p, cs, quiet);
   }
 
   public static OutputBuffer of(String stdout, String stderr, int exitValue) {
@@ -106,6 +114,7 @@ public interface OutputBuffer {
   }
 
   class LazyOutputBuffer implements OutputBuffer {
+    private final boolean quiet;
     private static class StreamTask {
       private final ByteArrayOutputStream buffer;
       private final Future<Void> future;
@@ -136,13 +145,16 @@ public interface OutputBuffer {
     private volatile Integer exitValue; // null implies we don't yet know
 
     private final void logProgress(String state) {
+      if (!quiet) {
         System.out.println("[" + Instant.now().toString() + "] " + state
-                           + " for process " + p.pid());
+                + " for process " + p.pid());
         System.out.flush();
+      }
     }
 
-    private LazyOutputBuffer(Process p, Charset cs) {
+    private LazyOutputBuffer(Process p, Charset cs, boolean quiet) {
       this.p = p;
+      this.quiet = quiet;
       logProgress("Gathering output");
       outTask = new StreamTask(p.getInputStream(), cs);
       errTask = new StreamTask(p.getErrorStream(), cs);
