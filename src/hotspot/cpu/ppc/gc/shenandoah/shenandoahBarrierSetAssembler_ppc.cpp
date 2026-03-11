@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2025, Red Hat, Inc. All rights reserved.
  * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -661,6 +662,33 @@ void ShenandoahBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler
   __ bind(done);
   __ block_comment("} try_resolve_jobject_in_native (shenandoahgc)");
 }
+
+#ifdef COMPILER2
+void ShenandoahBarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler *masm, Register obj,
+                                                                  Register tmp, Label &slow_path) {
+  __ block_comment("try_resolve_weak_handle_in_c2 (shenandoahgc) {");
+
+  assert_different_registers(obj, tmp);
+
+  Label done;
+
+  // Resolve weak handle using the standard implementation.
+  BarrierSetAssembler::try_resolve_weak_handle_in_c2(masm, obj, tmp, slow_path);
+
+  // Check if the reference is null, and if it is, take the fast path.
+  __ cmpdi(CR0, obj, 0);
+  __ beq(CR0, done);
+
+  // Check if the heap is under weak-reference/roots processing, in
+  // which case we need to take the slow path.
+  __ lbz(tmp, in_bytes(ShenandoahThreadLocalData::gc_state_offset()), R16_thread);
+  __ andi_(tmp, tmp, ShenandoahHeap::WEAK_ROOTS);
+  __ bne(CR0, slow_path);
+  __ bind(done);
+
+  __ block_comment("} try_resolve_weak_handle_in_c2 (shenandoahgc)");
+}
+#endif
 
 // Special shenandoah CAS implementation that handles false negatives due
 // to concurrent evacuation.  That is, the CAS operation is intended to succeed in

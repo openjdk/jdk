@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022, 2023 SAP SE. All rights reserved.
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,15 +31,15 @@
 #include "testutils.hpp"
 #include "unittest.hpp"
 
+// ASAN complains about allocating very large sizes
+#if !INCLUDE_ASAN
+
 // Check NMT header for integrity, as well as expected type and size.
 static void check_expected_malloc_header(const void* payload, MemTag mem_tag, size_t size) {
   const MallocHeader* hdr = MallocHeader::resolve_checked(payload);
   EXPECT_EQ(hdr->size(), size);
   EXPECT_EQ(hdr->mem_tag(), mem_tag);
 }
-
-// ASAN complains about allocating very large sizes
-#if !INCLUDE_ASAN
 
 // Check that a malloc with an overflowing size is rejected.
 TEST_VM(NMT, malloc_failure1) {

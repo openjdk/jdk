@@ -84,8 +84,8 @@ public abstract class IntVector extends AbstractVector<Integer> {
     // The various shape-specific subclasses
     // also specialize them by wrapping
     // them in a call like this:
-    //    return (Byte128Vector)
-    //       super.bOp((Byte128Vector) o);
+    //    return (ByteVector128)
+    //       super.bOp((ByteVector128) o);
     // The purpose of that is to forcibly inline
     // the generic definition from this file
     // into a sharply-typed and size-specific
@@ -4084,13 +4084,13 @@ public abstract class IntVector extends AbstractVector<Integer> {
         @Override
         @ForceInline
         public final IntVector zero() {
-            if ((Class<?>) vectorType() == IntMaxVector.class)
-                return IntMaxVector.ZERO;
+            if ((Class<?>) vectorType() == IntVectorMax.class)
+                return IntVectorMax.ZERO;
             switch (vectorBitSize()) {
-                case 64: return Int64Vector.ZERO;
-                case 128: return Int128Vector.ZERO;
-                case 256: return Int256Vector.ZERO;
-                case 512: return Int512Vector.ZERO;
+                case 64: return IntVector64.ZERO;
+                case 128: return IntVector128.ZERO;
+                case 256: return IntVector256.ZERO;
+                case 512: return IntVector512.ZERO;
             }
             throw new AssertionError();
         }
@@ -4098,13 +4098,13 @@ public abstract class IntVector extends AbstractVector<Integer> {
         @Override
         @ForceInline
         public final IntVector iota() {
-            if ((Class<?>) vectorType() == IntMaxVector.class)
-                return IntMaxVector.IOTA;
+            if ((Class<?>) vectorType() == IntVectorMax.class)
+                return IntVectorMax.IOTA;
             switch (vectorBitSize()) {
-                case 64: return Int64Vector.IOTA;
-                case 128: return Int128Vector.IOTA;
-                case 256: return Int256Vector.IOTA;
-                case 512: return Int512Vector.IOTA;
+                case 64: return IntVector64.IOTA;
+                case 128: return IntVector128.IOTA;
+                case 256: return IntVector256.IOTA;
+                case 512: return IntVector512.IOTA;
             }
             throw new AssertionError();
         }
@@ -4113,13 +4113,13 @@ public abstract class IntVector extends AbstractVector<Integer> {
         @Override
         @ForceInline
         public final VectorMask<Integer> maskAll(boolean bit) {
-            if ((Class<?>) vectorType() == IntMaxVector.class)
-                return IntMaxVector.IntMaxMask.maskAll(bit);
+            if ((Class<?>) vectorType() == IntVectorMax.class)
+                return IntVectorMax.IntMaskMax.maskAll(bit);
             switch (vectorBitSize()) {
-                case 64: return Int64Vector.Int64Mask.maskAll(bit);
-                case 128: return Int128Vector.Int128Mask.maskAll(bit);
-                case 256: return Int256Vector.Int256Mask.maskAll(bit);
-                case 512: return Int512Vector.Int512Mask.maskAll(bit);
+                case 64: return IntVector64.IntMask64.maskAll(bit);
+                case 128: return IntVector128.IntMask128.maskAll(bit);
+                case 256: return IntVector256.IntMask256.maskAll(bit);
+                case 512: return IntVector512.IntMask512.maskAll(bit);
             }
             throw new AssertionError();
         }
@@ -4147,42 +4147,42 @@ public abstract class IntVector extends AbstractVector<Integer> {
     /** Species representing {@link IntVector}s of {@link VectorShape#S_64_BIT VectorShape.S_64_BIT}. */
     public static final VectorSpecies<Integer> SPECIES_64
         = new IntSpecies(VectorShape.S_64_BIT,
-                            Int64Vector.class,
-                            Int64Vector.Int64Mask.class,
-                            Int64Vector.Int64Shuffle.class,
-                            Int64Vector::new);
+                            IntVector64.class,
+                            IntVector64.IntMask64.class,
+                            IntVector64.IntShuffle64.class,
+                            IntVector64::new);
 
     /** Species representing {@link IntVector}s of {@link VectorShape#S_128_BIT VectorShape.S_128_BIT}. */
     public static final VectorSpecies<Integer> SPECIES_128
         = new IntSpecies(VectorShape.S_128_BIT,
-                            Int128Vector.class,
-                            Int128Vector.Int128Mask.class,
-                            Int128Vector.Int128Shuffle.class,
-                            Int128Vector::new);
+                            IntVector128.class,
+                            IntVector128.IntMask128.class,
+                            IntVector128.IntShuffle128.class,
+                            IntVector128::new);
 
     /** Species representing {@link IntVector}s of {@link VectorShape#S_256_BIT VectorShape.S_256_BIT}. */
     public static final VectorSpecies<Integer> SPECIES_256
         = new IntSpecies(VectorShape.S_256_BIT,
-                            Int256Vector.class,
-                            Int256Vector.Int256Mask.class,
-                            Int256Vector.Int256Shuffle.class,
-                            Int256Vector::new);
+                            IntVector256.class,
+                            IntVector256.IntMask256.class,
+                            IntVector256.IntShuffle256.class,
+                            IntVector256::new);
 
     /** Species representing {@link IntVector}s of {@link VectorShape#S_512_BIT VectorShape.S_512_BIT}. */
     public static final VectorSpecies<Integer> SPECIES_512
         = new IntSpecies(VectorShape.S_512_BIT,
-                            Int512Vector.class,
-                            Int512Vector.Int512Mask.class,
-                            Int512Vector.Int512Shuffle.class,
-                            Int512Vector::new);
+                            IntVector512.class,
+                            IntVector512.IntMask512.class,
+                            IntVector512.IntShuffle512.class,
+                            IntVector512::new);
 
     /** Species representing {@link IntVector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
     public static final VectorSpecies<Integer> SPECIES_MAX
         = new IntSpecies(VectorShape.S_Max_BIT,
-                            IntMaxVector.class,
-                            IntMaxVector.IntMaxMask.class,
-                            IntMaxVector.IntMaxShuffle.class,
-                            IntMaxVector::new);
+                            IntVectorMax.class,
+                            IntVectorMax.IntMaskMax.class,
+                            IntVectorMax.IntShuffleMax.class,
+                            IntVectorMax::new);
 
     /**
      * Preferred species for {@link IntVector}s.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,16 @@
  * questions.
  */
 
-/* @test
-   @bug 8262731
-   @key headful printer
-   @summary Verify that "PrinterJob.print" throws the expected exception,
-            if "Printable.print" throws an exception.
-   @run main ExceptionFromPrintableIsIgnoredTest MAIN PE
-   @run main ExceptionFromPrintableIsIgnoredTest MAIN RE
-   @run main ExceptionFromPrintableIsIgnoredTest EDT PE
-   @run main ExceptionFromPrintableIsIgnoredTest EDT RE
+/*
+ * @test
+ * @bug 8262731 8268675
+ * @key printer
+ * @summary Verify that "PrinterJob.print" throws the expected exception,
+ *          if "Printable.print" throws an exception.
+ * @run main ExceptionFromPrintableIsIgnoredTest MAIN PE
+ * @run main ExceptionFromPrintableIsIgnoredTest MAIN RE
+ * @run main ExceptionFromPrintableIsIgnoredTest EDT PE
+ * @run main ExceptionFromPrintableIsIgnoredTest EDT RE
  */
 
 import java.awt.Graphics;
@@ -63,14 +64,6 @@ public class ExceptionFromPrintableIsIgnoredTest {
         System.out.println(String.format(
                 "Test started. threadType='%s', exceptionType='%s'",
                 threadType, exceptionType));
-
-        String osName = System.getProperty("os.name");
-        boolean isOSX = osName.toLowerCase().startsWith("mac");
-        if ((exceptionType == TestExceptionType.RE) && !isOSX) {
-            System.out.println(
-                "Currently this test scenario can be verified only on macOS.");
-            return;
-        }
 
         printError = null;
 

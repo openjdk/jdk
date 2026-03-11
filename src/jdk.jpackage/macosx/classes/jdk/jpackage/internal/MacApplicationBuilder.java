@@ -32,7 +32,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import jdk.jpackage.internal.util.RootedPath;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.AppImageSigningConfig;
@@ -40,6 +39,8 @@ import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.MacApplicationMixin;
+import jdk.jpackage.internal.model.JPackageException;
+import jdk.jpackage.internal.util.RootedPath;
 
 final class MacApplicationBuilder {
 
@@ -183,15 +184,13 @@ final class MacApplicationBuilder {
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         } catch (Exception ex) {
-            throw I18N.buildConfigException("message.app-image-requires-identifier")
-                    .advice("message.app-image-requires-identifier.advice")
-                    .cause(ex)
-                    .create();
+            throw new JPackageException(
+                    I18N.format("error.invalid-app-image-plist-file", externalInfoPlistFile), ex);
         }
     }
 
     private Optional<AppImageSigningConfig> createSigningConfig() {
-        return Optional.ofNullable(signingBuilder).flatMap(AppImageSigningConfigBuilder::create);
+        return Optional.ofNullable(signingBuilder).map(AppImageSigningConfigBuilder::create);
     }
 
     private String validatedBundleName() {

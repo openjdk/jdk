@@ -48,11 +48,11 @@ void G1EvacStats::log_plab_allocation() {
                       "used: %zuB, "
                       "undo waste: %zuB, ",
                       _description,
-                      _allocated * HeapWordSize,
-                      _wasted * HeapWordSize,
-                      _unused * HeapWordSize,
+                      allocated() * HeapWordSize,
+                      wasted() * HeapWordSize,
+                      unused() * HeapWordSize,
                       used() * HeapWordSize,
-                      _undo_wasted * HeapWordSize);
+                      undo_wasted() * HeapWordSize);
   log_debug(gc, plab)("%s other allocation: "
                       "region end waste: %zuB, "
                       "regions filled: %u, "
@@ -157,13 +157,13 @@ void G1EvacStats::adjust_desired_plab_size() {
     assert(is_object_aligned(max_size()) && min_size() <= max_size(),
            "PLAB clipping computation may be incorrect");
 
-    assert(_allocated != 0 || _unused == 0,
+    assert(allocated() != 0 || unused() == 0,
            "Inconsistency in PLAB stats: "
            "_allocated: %zu, "
            "_wasted: %zu, "
            "_unused: %zu, "
            "_undo_wasted: %zu",
-           _allocated, _wasted, _unused, _undo_wasted);
+           allocated(), wasted(), unused(), undo_wasted());
 
     size_t plab_size = compute_desired_plab_size();
     // Take historical weighted average

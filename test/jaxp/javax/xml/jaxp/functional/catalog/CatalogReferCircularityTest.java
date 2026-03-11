@@ -23,18 +23,20 @@
 
 package catalog;
 
-import static catalog.CatalogTestUtils.catalogResolver;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import javax.xml.catalog.CatalogException;
+import javax.xml.catalog.CatalogResolver;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static catalog.CatalogTestUtils.catalogResolver;
 
 /*
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm catalog.CatalogReferCircularityTest
+ * @run junit/othervm catalog.CatalogReferCircularityTest
  * @summary Via nextCatalog entry, the catalog reference chain may be
  *          a (partial) closed circuit. For instance, a catalog may use itself
  *          as an additional catalog specified in its own nextCatalog entry.
@@ -42,22 +44,19 @@ import org.testng.annotations.Test;
  */
 public class CatalogReferCircularityTest {
 
-    @Test(dataProvider = "catalogName",
-            expectedExceptions = CatalogException.class)
+    @ParameterizedTest
+    @ValueSource(strings={
+            // This catalog defines itself as next catalog.
+            "catalogReferCircle-itself.xml",
+
+            // This catalog defines catalogReferCircle-right.xml as its next
+            // catalog. And catalogReferCircle-right.xml also defines
+            // catalogReferCircle-left.xml as its next catalog, too.
+            "catalogReferCircle-left.xml" })
     public void testReferCircularity(String catalogFile) {
-        catalogResolver(catalogFile).resolveEntity(null,
-                "http://remote/dtd/ghost/docGhost.dtd");
-    }
-
-    @DataProvider(name = "catalogName")
-    public Object[][] catalogName() {
-        return new Object[][] {
-                // This catalog defines itself as next catalog.
-                { "catalogReferCircle-itself.xml" },
-
-                // This catalog defines catalogReferCircle-right.xml as its next
-                // catalog. And catalogReferCircle-right.xml also defines
-                // catalogReferCircle-left.xml as its next catalog, too.
-                { "catalogReferCircle-left.xml" } };
+        CatalogResolver resolver = catalogResolver(catalogFile);
+        Assertions.assertThrows(
+                CatalogException.class,
+                () -> resolver.resolveEntity(null, "http://remote/dtd/ghost/docGhost.dtd"));
     }
 }

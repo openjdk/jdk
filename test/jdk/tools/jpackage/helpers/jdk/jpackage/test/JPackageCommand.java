@@ -43,7 +43,6 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -98,7 +97,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         verifyActions = new Actions(cmd.verifyActions);
         standardAsserts = cmd.standardAsserts;
         readOnlyPathAsserts = cmd.readOnlyPathAsserts;
-        outputValidators = cmd.outputValidators;
+        validators = cmd.validators;
         executeInDirectory = cmd.executeInDirectory;
         winMsiLogFile = cmd.winMsiLogFile;
         unpackedPackageDirectory = cmd.unpackedPackageDirectory;
@@ -245,7 +244,12 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public String version() {
-        return getArgumentValue("--app-version", () -> "1.0");
+        return PropertyFinder.findAppProperty(this,
+                PropertyFinder.cmdlineOptionWithValue("--app-version"),
+                PropertyFinder.appImageFile(appImageFile -> {
+                    return appImageFile.version();
+                })
+        ).orElse("1.0");
     }
 
     public String name() {
@@ -895,14 +899,20 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return removeOldOutputBundle;
     }
 
-    public JPackageCommand validateOutput(TKit.TextStreamVerifier validator) {
-        return validateOutput(validator::apply);
+    public JPackageCommand validateOut(TKit.TextStreamVerifier validator) {
+        new JPackageOutputValidator().add(validator).applyTo(this);
+        return this;
     }
 
-    public JPackageCommand validateOutput(Consumer<Iterator<String>> validator) {
+    public JPackageCommand validateErr(TKit.TextStreamVerifier validator) {
+        new JPackageOutputValidator().stderr().add(validator).applyTo(this);
+        return this;
+    }
+
+    public JPackageCommand validateResult(Consumer<Executor.Result> validator) {
         Objects.requireNonNull(validator);
         saveConsoleOutput(true);
-        outputValidators.add(validator);
+        validators.add(validator);
         return this;
     }
 
@@ -911,7 +921,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         public String value(JPackageCommand cmd);
     }
 
-    public static Object cannedArgument(Function<JPackageCommand, Object> supplier, String label) {
+    public static CannedArgument cannedArgument(Function<JPackageCommand, Object> supplier, String label) {
         Objects.requireNonNull(supplier);
         Objects.requireNonNull(label);
         return new CannedArgument() {
@@ -931,8 +941,16 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return v.addPrefix("message.error-header");
     }
 
+    public static CannedFormattedString makeError(String key, Object ... args) {
+        return makeError(JPackageStringBundle.MAIN.cannedFormattedString(key, args));
+    }
+
     public static CannedFormattedString makeAdvice(CannedFormattedString v) {
         return v.addPrefix("message.advice-header");
+    }
+
+    public static CannedFormattedString makeAdvice(String key, Object ... args) {
+        return makeAdvice(JPackageStringBundle.MAIN.cannedFormattedString(key, args));
     }
 
     public String getValue(CannedFormattedString str) {
@@ -945,13 +963,13 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         }).toArray()).getValue();
     }
 
-    public JPackageCommand validateOutput(CannedFormattedString... str) {
-        // Will look up the given errors in the order they are specified.
-        Stream.of(str).map(this::getValue)
-                .map(TKit::assertTextStream)
-                .reduce(TKit.TextStreamVerifier.group(),
-                        TKit.TextStreamVerifier.Group::add,
-                        TKit.TextStreamVerifier.Group::add).tryCreate().ifPresent(this::validateOutput);
+    public JPackageCommand validateOut(CannedFormattedString... strings) {
+        new JPackageOutputValidator().expectMatchingStrings(strings).applyTo(this);
+        return this;
+    }
+
+    public JPackageCommand validateErr(CannedFormattedString... strings) {
+        new JPackageOutputValidator().stderr().expectMatchingStrings(strings).applyTo(this);
         return this;
     }
 
@@ -1036,6 +1054,10 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
         final var directoriesAssert = new ReadOnlyPathsAssert(copy);
 
+        standardAssertOutputValidators().forEach(validator -> {
+            validator.applyTo(copy);
+        });
+
         Executor.Result result;
         if (expectedExitCode.isEmpty()) {
             result = copy.createExecutor().executeWithoutExitCodeCheck();
@@ -1050,8 +1072,8 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             ConfigFilesStasher.INSTANCE.accept(this);
         }
 
-        for (final var outputValidator: outputValidators) {
-            outputValidator.accept(result.getOutput().iterator());
+        for (final var validator: copy.validators) {
+            validator.accept(result);
         }
 
         if (result.getExitCode() == 0 && expectedExitCode.isPresent()) {
@@ -1174,14 +1196,13 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
             Function<JPackageCommand, List<Path>> create() {
                 return cmd -> {
-                    if (enable != null && !enable.test(cmd)) {
+                    if (!cmd.hasArgument(argName) || (enable != null && !enable.test(cmd))) {
                         return List.of();
                     } else {
                         final List<Optional<Path>> dirs;
                         if (multiple) {
                             dirs = Stream.of(cmd.getAllArgumentValues(argName))
-                                    .map(Builder::tokenizeValue)
-                                    .flatMap(x -> x)
+                                    .flatMap(Builder::tokenizeValue)
                                     .map(Builder::toExistingFile).toList();
                         } else {
                             dirs = Optional.ofNullable(cmd.getArgumentValue(argName))
@@ -1192,11 +1213,11 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                                 .map(cmd::getArgumentValue)
                                 .filter(Objects::nonNull)
                                 .map(Builder::toExistingFile)
-                                .filter(Optional::isPresent).map(Optional::orElseThrow)
+                                .flatMap(Optional::stream)
                                 .collect(toSet());
 
                         return dirs.stream()
-                                .filter(Optional::isPresent).map(Optional::orElseThrow)
+                                .flatMap(Optional::stream)
                                 .filter(Predicate.not(mutablePaths::contains))
                                 .toList();
                     }
@@ -1279,7 +1300,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             }
         }),
         MAC_BUNDLE_UNSIGNED_SIGNATURE(cmd -> {
-            if (TKit.isOSX() && !MacHelper.appImageSigned(cmd)) {
+            if (TKit.isOSX()) {
                 MacHelper.verifyUnsignedBundleSignature(cmd);
             }
         }),
@@ -1303,7 +1324,14 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         }),
         PREDEFINED_APP_IMAGE_COPY(cmd -> {
             Optional.ofNullable(cmd.getArgumentValue("--app-image")).filter(_ -> {
-                return !TKit.isOSX() || !MacHelper.signPredefinedAppImage(cmd);
+                if (!TKit.isOSX() || !cmd.hasArgument("--mac-sign")) {
+                    return true;
+                } else {
+                    var signAppImage = MacHelper.signPredefinedAppImage(cmd)
+                            || MacHelper.hasAppImageSignIdentity(cmd)
+                            || MacHelper.isSignWithoutSignIdentity(cmd);
+                    return !signAppImage;
+                }
             }).filter(_ -> {
                 // Don't examine the contents of the output app image if this is Linux package installing in the "/usr" subtree.
                 return Optional.<Boolean>ofNullable(cmd.onLinuxPackageInstallDir(null, _ -> false)).orElse(true);
@@ -1355,10 +1383,38 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                 TKit.assertFileExists(cmd.appLayout().libapplauncher());
             }
         }),
+        LINUX_PACKAGE_ARCH(cmd -> {
+            if (TKit.isLinux() && !cmd.isImagePackageType()) {
+                var asserter = TKit.assertTextStream(LinuxUnexpectedBundleArchRegexp.VALUE).negate();
+                return Stream.of(true, false).map(stderr -> {
+                    var validator = new JPackageOutputValidator();
+                    if (stderr) {
+                        return validator.stderr();
+                    } else {
+                        return validator;
+                    }
+                }).map(validator -> {
+                    return validator.add(asserter);
+                }).toList();
+            } else {
+                return List.of();
+            }
+        }),
         ;
 
-        StandardAssert(Consumer<JPackageCommand> action) {
+        StandardAssert(
+                Consumer<JPackageCommand> action,
+                Function<JPackageCommand, Collection<JPackageOutputValidator>> outputValidatorsSupplier) {
             this.action = action;
+            this.outputValidatorsSupplier = outputValidatorsSupplier;
+        }
+
+        StandardAssert(Consumer<JPackageCommand> action) {
+            this(Objects.requireNonNull(action), null);
+        }
+
+        StandardAssert(Function<JPackageCommand, Collection<JPackageOutputValidator>> outputValidatorsSupplier) {
+            this(null, Objects.requireNonNull(outputValidatorsSupplier));
         }
 
         private static JPackageCommand convertFromRuntime(JPackageCommand cmd) {
@@ -1370,7 +1426,38 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             return copy;
         }
 
+        Stream<JPackageOutputValidator> outputValidators(JPackageCommand cmd) {
+            Objects.requireNonNull(cmd);
+            return Optional.ofNullable(outputValidatorsSupplier).map(v -> {
+                return v.apply(cmd);
+            }).stream().flatMap(Collection::stream);
+        }
+
+        void apply(JPackageCommand cmd) {
+            Objects.requireNonNull(cmd);
+            if (action != null) {
+                action.accept(cmd);
+            }
+        }
+
         private final Consumer<JPackageCommand> action;
+        private final Function<JPackageCommand, Collection<JPackageOutputValidator>> outputValidatorsSupplier;
+
+        private static final class LinuxUnexpectedBundleArchRegexp {
+            private static final Pattern ANY = Pattern.compile(".*");
+            private static final Pattern ARCHITECTURE_PROPERTY = Pattern.compile("Arch|Architecture");
+
+            static final Pattern VALUE = JPackageStringBundle.MAIN.cannedFormattedStringAsPattern("error.unexpected-package-property", arg -> {
+                return switch ((String)arg) {
+                    case "propertyName" -> {
+                        yield ARCHITECTURE_PROPERTY;
+                    }
+                    default -> {
+                        yield ANY;
+                    }
+                };
+            }, "propertyName", "expectedValue", "actualValue", "customResource");
+        }
     }
 
     public JPackageCommand setStandardAsserts(StandardAssert ... asserts) {
@@ -1387,9 +1474,15 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     JPackageCommand runStandardAsserts() {
         for (var standardAssert : standardAsserts.stream().sorted().toList()) {
-            standardAssert.action.accept(this);
+            standardAssert.apply(this);
         }
         return this;
+    }
+
+    private List<JPackageOutputValidator> standardAssertOutputValidators() {
+        return standardAsserts.stream().sorted().flatMap(standardAssert -> {
+            return standardAssert.outputValidators(this);
+        }).toList();
     }
 
     private boolean expectAppImageFile() {
@@ -1651,10 +1744,6 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         }).collect(Collectors.joining(" "));
     }
 
-    public static Stream<String> stripTimestamps(Stream<String> stream) {
-        return stream.map(JPackageCommand::stripTimestamp);
-    }
-
     public static String stripTimestamp(String str) {
         final var m = TIMESTAMP_REGEXP.matcher(str);
         if (m.find()) {
@@ -1831,7 +1920,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     private Path unpackedPackageDirectory;
     private Set<ReadOnlyPathAssert> readOnlyPathAsserts = Set.of(ReadOnlyPathAssert.values());
     private Set<StandardAssert> standardAsserts = Set.of(StandardAssert.values());
-    private List<Consumer<Iterator<String>>> outputValidators = new ArrayList<>();
+    private List<Consumer<Executor.Result>> validators = new ArrayList<>();
 
     private enum DefaultToolProviderKey {
         VALUE

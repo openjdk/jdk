@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  *       ReferenceTracker
- * @run testng/othervm -Djdk.internal.httpclient.debug=true
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true
  *                     -Djdk.httpclient.HttpClient.log=requests,responses,errors
  *                     ISO_8859_1_Test
  * @summary Tests that a client is able to receive ISO-8859-1 encoded header values.
@@ -48,7 +48,6 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -60,21 +59,11 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 import javax.net.ssl.SSLContext;
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.ITestContext;
-import org.testng.ITestResult;
-import org.testng.SkipException;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
@@ -82,30 +71,38 @@ import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpOption.H3_DISCOVERY;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.extension.TestWatcher;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class ISO_8859_1_Test implements HttpServerAdapters {
 
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
-    DummyServer http1DummyServer;
-    HttpTestServer http1TestServer;   // HTTP/1.1 ( http )
-    HttpTestServer https1TestServer;  // HTTPS/1.1 ( https  )
-    HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
-    HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
-    HttpTestServer http3TestServer;   // HTTP/3 ( h3  )
-    String http1Dummy;
-    String http1URI;
-    String https1URI;
-    String http2URI;
-    String https2URI;
-    String http3URI;
+    private static DummyServer http1DummyServer;
+    private static HttpTestServer http1TestServer;   // HTTP/1.1 ( http )
+    private static HttpTestServer https1TestServer;  // HTTPS/1.1 ( https  )
+    private static HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
+    private static HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
+    private static HttpTestServer http3TestServer;   // HTTP/3 ( h3  )
+    private static String http1Dummy;
+    private static String http1URI;
+    private static String https1URI;
+    private static String http2URI;
+    private static String https2URI;
+    private static String http3URI;
 
-    static final int RESPONSE_CODE = 200;
     static final int ITERATION_COUNT = 4;
-    static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
-    static final Class<CompletionException> CE = CompletionException.class;
     // a shared executor helps reduce the amount of threads created by the test
     static final Executor executor = new TestExecutor(Executors.newCachedThreadPool());
     static final ConcurrentMap<String, Throwable> FAILURES = new ConcurrentHashMap<>();
@@ -121,8 +118,8 @@ public class ISO_8859_1_Test implements HttpServerAdapters {
         return String.format("[%d s, %d ms, %d ns] ", secs, mill, nan);
     }
 
-    final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
-    private volatile HttpClient sharedClient;
+    private static final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
+    private static volatile HttpClient sharedClient;
 
     static class TestExecutor implements Executor {
         final AtomicLong tasks = new AtomicLong();
@@ -148,40 +145,40 @@ public class ISO_8859_1_Test implements HttpServerAdapters {
         }
     }
 
-    protected boolean stopAfterFirstFailure() {
+    private static boolean stopAfterFirstFailure() {
         return Boolean.getBoolean("jdk.internal.httpclient.debug");
     }
 
-    final AtomicReference<SkipException> skiptests = new AtomicReference<>();
-    void checkSkip() {
-        var skip = skiptests.get();
-        if (skip != null) throw skip;
-    }
-    static String name(ITestResult result) {
-        var params = result.getParameters();
-        return result.getName()
-                + (params == null ? "()" : Arrays.toString(result.getParameters()));
-    }
-
-    @BeforeMethod
-    void beforeMethod(ITestContext context) {
-        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
-            if (skiptests.get() == null) {
-                SkipException skip = new SkipException("some tests failed");
-                skip.setStackTrace(new StackTraceElement[0]);
-                skiptests.compareAndSet(null, skip);
+    static final class TestStopper implements TestWatcher, BeforeEachCallback {
+        final AtomicReference<String> failed = new AtomicReference<>();
+        TestStopper() { }
+        @Override
+        public void testFailed(ExtensionContext context, Throwable cause) {
+            if (stopAfterFirstFailure()) {
+                String msg = "Aborting due to: " + cause;
+                failed.compareAndSet(null, msg);
+                FAILURES.putIfAbsent(context.getDisplayName(), cause);
+                System.out.printf("%nTEST FAILED: %s%s%n\tAborting due to %s%n%n",
+                        now(), context.getDisplayName(), cause);
+                System.err.printf("%nTEST FAILED: %s%s%n\tAborting due to %s%n%n",
+                        now(), context.getDisplayName(), cause);
             }
+        }
+
+        @Override
+        public void beforeEach(ExtensionContext context) {
+            String msg = failed.get();
+            Assumptions.assumeTrue(msg == null, msg);
         }
     }
 
-    @AfterClass
-    static final void printFailedTests(ITestContext context) {
+    @RegisterExtension
+    static final TestStopper stopper = new TestStopper();
+
+    @AfterAll
+    static void printFailedTests() {
         out.println("\n=========================");
         try {
-            var failed = context.getFailedTests().getAllResults().stream()
-                    .collect(Collectors.toMap(r -> name(r), ITestResult::getThrowable));
-            FAILURES.putAll(failed);
-
             out.printf("%n%sCreated %d servers and %d clients%n",
                     now(), serverCount.get(), clientCount.get());
             if (FAILURES.isEmpty()) return;
@@ -199,7 +196,7 @@ public class ISO_8859_1_Test implements HttpServerAdapters {
         }
     }
 
-    private String[] uris() {
+    private static String[] uris() {
         return new String[] {
                 http3URI,
                 http1Dummy,
@@ -210,13 +207,7 @@ public class ISO_8859_1_Test implements HttpServerAdapters {
         };
     }
 
-    static AtomicLong URICOUNT = new AtomicLong();
-
-    @DataProvider(name = "variants")
-    public Object[][] variants(ITestContext context) {
-        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
-            return new Object[0][];
-        }
+    public static Object[][] variants() {
         String[] uris = uris();
         Object[][] result = new Object[uris.length * 2][];
         int i = 0;
@@ -265,7 +256,7 @@ public class ISO_8859_1_Test implements HttpServerAdapters {
         }
     }
 
-    private static final Exception completionCause(CompletionException x) {
+    private static Exception completionCause(CompletionException x) {
         Throwable c = x;
         while (c  instanceof CompletionException
                 || c instanceof ExecutionException) {
@@ -285,10 +276,11 @@ public class ISO_8859_1_Test implements HttpServerAdapters {
         return builder;
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     public void test(String uri, boolean sameClient) throws Exception {
-        checkSkip();
-        System.out.println("Request to " + uri);
+
+        System.out.printf("%n%s-- test sameClient=%s uri=%s%n%n", now(), sameClient, uri);
 
         HttpClient client = newHttpClient(uri, sameClient);
 
@@ -307,7 +299,7 @@ public class ISO_8859_1_Test implements HttpServerAdapters {
             var response = cf.get();
             System.out.println("Got: " + response);
             var value = response.headers().firstValue("Header8859").orElse(null);
-            assertEquals(value, "U\u00ffU");
+            assertEquals("U\u00ffU", value);
         }
         System.out.println("HttpClient: PASSED");
         if (uri.contains("http1")) {
@@ -317,10 +309,10 @@ public class ISO_8859_1_Test implements HttpServerAdapters {
             conn.connect();
             conn.getInputStream().readAllBytes();
             var value = conn.getHeaderField("Header8859");
-            assertEquals(value, "U\u00ffU", "legacy stack failed");
+            assertEquals("U\u00ffU", value, "legacy stack failed");
             System.out.println("URLConnection: PASSED");
         }
-        System.out.println("test: DONE");
+        System.out.println(now() + "test: DONE");
     }
 
     static final class DummyServer extends Thread implements AutoCloseable {
@@ -335,8 +327,8 @@ public class ISO_8859_1_Test implements HttpServerAdapters {
         static final InetSocketAddress LOOPBACK =
                 new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         final ServerSocket socket;
-        final CopyOnWriteArrayList<Socket> accepted = new CopyOnWriteArrayList<Socket>();
-        final CompletableFuture<Void> done = new CompletableFuture();
+        final CopyOnWriteArrayList<Socket> accepted = new CopyOnWriteArrayList<>();
+        final CompletableFuture<Void> done = new CompletableFuture<>();
         volatile boolean closed;
         DummyServer() throws IOException  {
             socket = new ServerSocket();
@@ -387,11 +379,11 @@ public class ISO_8859_1_Test implements HttpServerAdapters {
             }
         }
 
-        final void close(AutoCloseable toclose) {
+        void close(AutoCloseable toclose) {
             try { toclose.close(); } catch (Exception x) {};
         }
 
-        final public void close() {
+        public void close() {
             closed = true;
             close(socket);
             accepted.forEach(this::close);
@@ -410,8 +402,8 @@ public class ISO_8859_1_Test implements HttpServerAdapters {
         }
     }
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         HttpServerAdapters.HttpTestHandler handler = new ISO88591Handler();
         InetSocketAddress loopback = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
 
@@ -448,8 +440,8 @@ public class ISO_8859_1_Test implements HttpServerAdapters {
         http3TestServer.start();
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         String sharedClientName =
                 sharedClient == null ? null : sharedClient.toString();
         sharedClient = null;

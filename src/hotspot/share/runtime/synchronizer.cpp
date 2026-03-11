@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -350,7 +350,7 @@ bool ObjectSynchronizer::quick_notify(oopDesc* obj, JavaThread* current, bool al
   }
 
   if (mark.has_monitor()) {
-    ObjectMonitor* const mon = read_monitor(current, obj, mark);
+    ObjectMonitor* const mon = read_monitor(obj, mark);
     if (mon == nullptr) {
       // Racing with inflation/deflation go slow path
       return false;
@@ -485,7 +485,7 @@ ObjectLocker::ObjectLocker(Handle obj, TRAPS) : _thread(THREAD), _obj(obj),
       // otherwise just force other vthreads to preempt in case they try
       // to acquire this monitor.
       _skip_exit = !_thread->preemption_cancelled();
-      ObjectSynchronizer::read_monitor(_thread, _obj())->set_object_strong();
+      ObjectSynchronizer::read_monitor(_obj())->set_object_strong();
       _thread->set_pending_preempted_exception();
 
     }
@@ -502,7 +502,7 @@ void ObjectLocker::wait_uninterruptibly(TRAPS) {
   ObjectSynchronizer::waitUninterruptibly(_obj, 0, _thread);
   if (_thread->preempting()) {
     _skip_exit = true;
-    ObjectSynchronizer::read_monitor(_thread, _obj())->set_object_strong();
+    ObjectSynchronizer::read_monitor(_obj())->set_object_strong();
     _thread->set_pending_preempted_exception();
   }
 }
@@ -749,7 +749,7 @@ bool ObjectSynchronizer::current_thread_holds_lock(JavaThread* current,
   }
 
   while (mark.has_monitor()) {
-    ObjectMonitor* monitor = read_monitor(current, obj, mark);
+    ObjectMonitor* monitor = read_monitor(obj, mark);
     if (monitor != nullptr) {
       return monitor->is_entered(current) != 0;
     }
@@ -778,7 +778,7 @@ JavaThread* ObjectSynchronizer::get_lock_owner(ThreadsList * t_list, Handle h_ob
   }
 
   while (mark.has_monitor()) {
-    ObjectMonitor* monitor = read_monitor(Thread::current(), obj, mark);
+    ObjectMonitor* monitor = read_monitor(obj, mark);
     if (monitor != nullptr) {
       return Threads::owning_thread_from_monitor(t_list, monitor);
     }
@@ -1195,13 +1195,10 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
     GrowableArray<ObjectMonitor*> delete_list((int)deflated_count);
     unlinked_count = _in_use_list.unlink_deflated(deflated_count, &delete_list, &safepointer);
 
-#ifdef ASSERT
+    GrowableArray<ObjectMonitorTable::Table*> table_delete_list;
     if (UseObjectMonitorTable) {
-      for (ObjectMonitor* monitor : delete_list) {
-        assert(!ObjectSynchronizer::contains_monitor(current, monitor), "Should have been removed");
-      }
+      ObjectMonitorTable::rebuild(&table_delete_list);
     }
-#endif
 
     log.before_handshake(unlinked_count);
 
@@ -1222,6 +1219,9 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
 
     // Delete the unlinked ObjectMonitors.
     deleted_count = delete_monitors(&delete_list, &safepointer);
+    if (UseObjectMonitorTable) {
+      ObjectMonitorTable::destroy(&table_delete_list);
+    }
     assert(unlinked_count == deleted_count, "must be");
   }
 
@@ -1425,7 +1425,7 @@ void ObjectSynchronizer::chk_in_use_entry(ObjectMonitor* n, outputStream* out,
     return;
   }
 
-  ObjectMonitor* const obj_mon = read_monitor(Thread::current(), obj, mark);
+  ObjectMonitor* const obj_mon = read_monitor(obj, mark);
   if (n != obj_mon) {
     out->print_cr("ERROR: monitor=" INTPTR_FORMAT ": in-use monitor's "
                   "object does not refer to the same monitor: obj="
@@ -1471,8 +1471,8 @@ void ObjectSynchronizer::log_in_use_monitor_details(outputStream* out, bool log_
   out->flush();
 }
 
-ObjectMonitor* ObjectSynchronizer::get_or_insert_monitor_from_table(oop object, JavaThread* current, bool* inserted) {
-  ObjectMonitor* monitor = get_monitor_from_table(current, object);
+ObjectMonitor* ObjectSynchronizer::get_or_insert_monitor_from_table(oop object, bool* inserted) {
+  ObjectMonitor* monitor = get_monitor_from_table(object);
   if (monitor != nullptr) {
     *inserted = false;
     return monitor;
@@ -1482,7 +1482,7 @@ ObjectMonitor* ObjectSynchronizer::get_or_insert_monitor_from_table(oop object, 
   alloced_monitor->set_anonymous_owner();
 
   // Try insert monitor
-  monitor = add_monitor(current, alloced_monitor, object);
+  monitor = add_monitor(alloced_monitor, object);
 
   *inserted = alloced_monitor == monitor;
   if (!*inserted) {
@@ -1522,7 +1522,7 @@ ObjectMonitor* ObjectSynchronizer::get_or_insert_monitor(oop object, JavaThread*
   EventJavaMonitorInflate event;
 
   bool inserted;
-  ObjectMonitor* monitor = get_or_insert_monitor_from_table(object, current, &inserted);
+  ObjectMonitor* monitor = get_or_insert_monitor_from_table(object, &inserted);
 
   if (inserted) {
     log_inflate(current, object, cause);
@@ -1538,7 +1538,7 @@ ObjectMonitor* ObjectSynchronizer::get_or_insert_monitor(oop object, JavaThread*
 }
 
 // Add the hashcode to the monitor to match the object and put it in the hashtable.
-ObjectMonitor* ObjectSynchronizer::add_monitor(JavaThread* current, ObjectMonitor* monitor, oop obj) {
+ObjectMonitor* ObjectSynchronizer::add_monitor(ObjectMonitor* monitor, oop obj) {
   assert(UseObjectMonitorTable, "must be");
   assert(obj == monitor->object(), "must be");
 
@@ -1546,14 +1546,14 @@ ObjectMonitor* ObjectSynchronizer::add_monitor(JavaThread* current, ObjectMonito
   assert(hash != 0, "must be set when claiming the object monitor");
   monitor->set_hash(hash);
 
-  return ObjectMonitorTable::monitor_put_get(current, monitor, obj);
+  return ObjectMonitorTable::monitor_put_get(monitor, obj);
 }
 
-bool ObjectSynchronizer::remove_monitor(Thread* current, ObjectMonitor* monitor, oop obj) {
+void ObjectSynchronizer::remove_monitor(ObjectMonitor* monitor, oop obj) {
   assert(UseObjectMonitorTable, "must be");
   assert(monitor->object_peek() == obj, "must be, cleared objects are removed by is_dead");
 
-  return ObjectMonitorTable::remove_monitor_entry(current, monitor);
+  ObjectMonitorTable::remove_monitor_entry(monitor);
 }
 
 void ObjectSynchronizer::deflate_mark_word(oop obj) {
@@ -1573,20 +1573,6 @@ void ObjectSynchronizer::create_om_table() {
     return;
   }
   ObjectMonitorTable::create();
-}
-
-bool ObjectSynchronizer::needs_resize() {
-  if (!UseObjectMonitorTable) {
-    return false;
-  }
-  return ObjectMonitorTable::should_resize();
-}
-
-bool ObjectSynchronizer::resize_table(JavaThread* current) {
-  if (!UseObjectMonitorTable) {
-    return true;
-  }
-  return ObjectMonitorTable::resize(current);
 }
 
 class ObjectSynchronizer::LockStackInflateContendedLocks : private OopClosure {
@@ -1735,7 +1721,7 @@ bool ObjectSynchronizer::fast_lock_spin_enter(oop obj, LockStack& lock_stack, Ja
       return true;
     } else if (observed_deflation) {
       // Spin while monitor is being deflated.
-      ObjectMonitor* monitor = ObjectSynchronizer::read_monitor(current, obj, mark);
+      ObjectMonitor* monitor = ObjectSynchronizer::read_monitor(obj, mark);
       return monitor == nullptr || monitor->is_being_async_deflated();
     }
     // Else stop spinning.
@@ -1895,7 +1881,7 @@ void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) 
   if (UseObjectMonitorTable) {
     monitor = read_caches(current, lock, object);
     if (monitor == nullptr) {
-      monitor = get_monitor_from_table(current, object);
+      monitor = get_monitor_from_table(object);
     }
   } else {
     monitor = ObjectSynchronizer::read_monitor(mark);
@@ -1939,7 +1925,7 @@ ObjectMonitor* ObjectSynchronizer::inflate_locked_or_imse(oop obj, ObjectSynchro
     }
 
     assert(mark.has_monitor(), "must be");
-    ObjectMonitor* monitor = ObjectSynchronizer::read_monitor(current, obj, mark);
+    ObjectMonitor* monitor = ObjectSynchronizer::read_monitor(obj, mark);
     if (monitor != nullptr) {
       if (monitor->has_anonymous_owner()) {
         LockStack& lock_stack = current->lock_stack();
@@ -2101,7 +2087,7 @@ ObjectMonitor* ObjectSynchronizer::inflate_fast_locked_object(oop object, Object
     // contains a deflating monitor it must be anonymously owned.
     if (monitor->has_anonymous_owner()) {
       // The monitor must be anonymously owned if it was added
-      assert(monitor == get_monitor_from_table(current, object), "The monitor must be found");
+      assert(monitor == get_monitor_from_table(object), "The monitor must be found");
       // New fresh monitor
       break;
     }
@@ -2293,39 +2279,31 @@ ObjectMonitor* ObjectSynchronizer::inflate_and_enter(oop object, BasicLock* lock
   return monitor;
 }
 
-void ObjectSynchronizer::deflate_monitor(Thread* current, oop obj, ObjectMonitor* monitor) {
+void ObjectSynchronizer::deflate_monitor(oop obj, ObjectMonitor* monitor) {
   if (obj != nullptr) {
     deflate_mark_word(obj);
-  }
-  bool removed = remove_monitor(current, monitor, obj);
-  if (obj != nullptr) {
-    assert(removed, "Should have removed the entry if obj was alive");
+    remove_monitor(monitor, obj);
   }
 }
 
-ObjectMonitor* ObjectSynchronizer::get_monitor_from_table(Thread* current, oop obj) {
+ObjectMonitor* ObjectSynchronizer::get_monitor_from_table(oop obj) {
   assert(UseObjectMonitorTable, "must be");
-  return ObjectMonitorTable::monitor_get(current, obj);
-}
-
-bool ObjectSynchronizer::contains_monitor(Thread* current, ObjectMonitor* monitor) {
-  assert(UseObjectMonitorTable, "must be");
-  return ObjectMonitorTable::contains_monitor(current, monitor);
+  return ObjectMonitorTable::monitor_get(obj);
 }
 
 ObjectMonitor* ObjectSynchronizer::read_monitor(markWord mark) {
   return mark.monitor();
 }
 
-ObjectMonitor* ObjectSynchronizer::read_monitor(Thread* current, oop obj) {
-  return ObjectSynchronizer::read_monitor(current, obj, obj->mark());
+ObjectMonitor* ObjectSynchronizer::read_monitor(oop obj) {
+  return ObjectSynchronizer::read_monitor(obj, obj->mark());
 }
 
-ObjectMonitor* ObjectSynchronizer::read_monitor(Thread* current, oop obj, markWord mark) {
+ObjectMonitor* ObjectSynchronizer::read_monitor(oop obj, markWord mark) {
   if (!UseObjectMonitorTable) {
     return read_monitor(mark);
   } else {
-    return ObjectSynchronizer::get_monitor_from_table(current, obj);
+    return ObjectSynchronizer::get_monitor_from_table(obj);
   }
 }
 

@@ -32,8 +32,10 @@
 
 class ThreadLocalAllocStats;
 
-// ThreadLocalAllocBuffer: a descriptor for thread-local storage used by
-// the threads for allocation. It is thread-private at any time.
+// ThreadLocalAllocBuffer is a descriptor for thread-local storage used by
+// mutator threads for local/private allocation. As a TLAB is thread-private,
+// there is no concurrent/parallel access to its memory or its members,
+// other than by estimated_used_bytes().
 //
 // Heap sampling is performed via the end and allocation_end
 // fields.
@@ -52,7 +54,7 @@ private:
 
   size_t    _desired_size;                       // desired size   (including alignment_reserve)
   size_t    _refill_waste_limit;                 // hold onto tlab if free() is larger than this
-  size_t    _allocated_before_last_gc;           // total bytes allocated up until the last gc
+  uint64_t  _allocated_before_last_gc;           // total bytes allocated up until the last gc
 
   static size_t   _max_size;                          // maximum size of any TLAB
   static int      _reserve_for_allocation_prefetch;   // Reserve at the end of the TLAB
@@ -123,7 +125,7 @@ public:
   // Due to races with concurrent allocations and/or resetting the TLAB the return
   // value may be inconsistent with any other metrics (e.g. total allocated
   // bytes), and may just incorrectly return 0.
-  // Intented fo external inspection only where accuracy is not 100% required.
+  // Intended for external inspection only where accuracy is not 100% required.
   size_t estimated_used_bytes() const;
 
   // Allocate size HeapWords. The memory is NOT initialized to zero.
