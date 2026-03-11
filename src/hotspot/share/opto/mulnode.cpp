@@ -611,7 +611,7 @@ const Type* UMulHiLNode::Value(PhaseGVN* phase) const {
 MulHiLoLNode* MulHiLoLNode::make(Node* mul_hi) {
   assert(mul_hi->Opcode() == Op_MulHiL, "expected MulHiL");
 
-  MulHiLoLNode* mul_hi_lo = new MulHiLoLNode(mul_hi->in(1), mul_hi->in(2));
+  MulHiLoLNode* mul_hi_lo = new MulHiLoLNode(mul_hi->in(0), mul_hi->in(1), mul_hi->in(2));
   [[maybe_unused]] Node* lo_proj = new ProjNode(mul_hi_lo, MulHiLoLNode::lo_proj_num);
   [[maybe_unused]] Node* hi_proj = new ProjNode(mul_hi_lo, MulHiLoLNode::hi_proj_num);
   return mul_hi_lo;
@@ -620,7 +620,7 @@ MulHiLoLNode* MulHiLoLNode::make(Node* mul_hi) {
 UMulHiLoLNode* UMulHiLoLNode::make(Node* umul_hi) {
   assert(umul_hi->Opcode() == Op_UMulHiL, "expected UMulHiL");
 
-  UMulHiLoLNode* umul_hi_lo = new UMulHiLoLNode(umul_hi->in(1), umul_hi->in(2));
+  UMulHiLoLNode* umul_hi_lo = new UMulHiLoLNode(umul_hi->in(0), umul_hi->in(1), umul_hi->in(2));
   [[maybe_unused]] Node* lo_proj = new ProjNode(umul_hi_lo, MulHiLoLNode::lo_proj_num);
   [[maybe_unused]] Node* hi_proj = new ProjNode(umul_hi_lo, MulHiLoLNode::hi_proj_num);
   return umul_hi_lo;

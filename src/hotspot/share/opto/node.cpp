@@ -2875,17 +2875,30 @@ bool Node::is_iteratively_computed() {
 //--------------------------find_similar------------------------------
 // Return a node with opcode "opc" and same inputs as "this" if one can
 // be found; Otherwise return null;
-Node* Node::find_similar(int opc) {
-  if (req() >= 2) {
-    Node* def = in(1);
+Node* Node::find_similar(int opc, bool swapped) {
+  uint def_idx = swapped ? 2 : 1;
+  if (req() > def_idx) {
+    Node* def = in(def_idx);
     if (def && def->outcnt() >= 2) {
       for (DUIterator_Fast dmax, i = def->fast_outs(dmax); i < dmax; i++) {
         Node* use = def->fast_out(i);
-        if (use != this &&
-            use->Opcode() == opc &&
-            use->req() == req() &&
-            has_same_inputs_as(use)) {
-          return use;
+        if (use != this && use->Opcode() == opc && use->req() == req()) {
+          if (swapped) {
+            if (use->in(0) == in(0) && use->in(1) == in(2) && use->in(2) == in(1)) {
+              bool same_inputs = true;
+              for (uint j = 3; j < req(); j++) {
+                if (use->in(j) != in(j)) {
+                  same_inputs = false;
+                  break;
+                }
+              }
+              if (same_inputs) {
+                return use;
+              }
+            }
+          } else if (use->has_same_inputs_as(this)) {
+            return use;
+          }
         }
       }
     }
