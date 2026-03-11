@@ -905,6 +905,7 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
   IfNode* dom_iff = proj->in(0)->as_If();
   BoolNode* dom_bool = dom_iff->in(1)->as_Bool();
   Node* lo = dom_iff->in(1)->in(1)->in(2);
+  Node* orig_lo = lo;
   Node* hi = this_cmp->in(2);
   Node* n = this_cmp->in(1);
   IfProjNode* otherproj = proj->other_if_proj();
@@ -1089,6 +1090,9 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
     // min(limit, max(-2 + min_jint + 1, min_jint))
     // = min(limit, min_jint)
     // = min_jint
+    if (lo != orig_lo && lo->outcnt() == 0) {
+      igvn->remove_dead_node(lo, PhaseIterGVN::DeathHint::Temp);
+    }
     if (adjusted_val->outcnt() == 0) {
       igvn->remove_dead_node(adjusted_val, PhaseIterGVN::DeathHint::Temp);
     }
