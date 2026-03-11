@@ -79,7 +79,7 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/serviceThread.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
-#include "runtime/stackWalker.hpp"
+#include "jfr/periodic/sampling/jfrStackWalker.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/threadIdentifier.hpp"
@@ -737,7 +737,7 @@ void JavaThread::run() {
   assert(!Thread::current()->owns_locks(), "sanity check");
 
   JFR_ONLY(Jfr::on_thread_start(this);)
-  JFR_ONLY(StackWalker::on_javathread_create(this);)
+  JFR_ONLY(JfrStackWalker::on_javathread_create(this);)
 
   DTRACE_THREAD_PROBE(start, this);
 

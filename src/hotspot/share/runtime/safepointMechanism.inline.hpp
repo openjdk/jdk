@@ -33,7 +33,7 @@
 #include "runtime/stackWatermarkSet.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfr.inline.hpp"
-#include "runtime/stackWalker.hpp"
+#include "jfr/periodic/sampling/jfrStackWalker.hpp"
 #endif
 
 // Caller is responsible for using a memory barrier if needed.

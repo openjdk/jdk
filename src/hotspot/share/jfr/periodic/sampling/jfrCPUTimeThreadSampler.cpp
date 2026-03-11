@@ -321,7 +321,7 @@ void JfrCPUTimeThreadSampling::create_sampler(JfrCPUSamplerThrottle& throttle) {
   _sampler = new JfrCPUSamplerThread(throttle);
   _sampler->start_thread();
   _sampler->enroll();
-  StackWalker::initialize();
+  JfrStackWalker::initialize();
 }
 
 void JfrCPUTimeThreadSampling::update_run_state(JfrCPUSamplerThrottle& throttle) {
@@ -380,7 +380,7 @@ void handle_timer_signal(int signo, siginfo_t* info, void* context) {
   _instance->handle_timer_signal(info, context);
 }
 
-class JfrCPUTimeStackWalkerCallback : public StackWalkerCallback {
+class JfrCPUTimeJfrStackWalkerCallback : public JfrStackWalkerCallback {
   JavaThread* _requested_thread;
   JfrTicks _sample_ticks;
   Tickspan _cpu_time_period;
@@ -388,12 +388,12 @@ class JfrCPUTimeStackWalkerCallback : public StackWalkerCallback {
   traceid _tid;
   bool _biased;
 
-  static u1 convert_type(StackWalkerFrameType type) {
+  static u1 convert_type(JfrStackWalkerFrameType type) {
     switch (type) {
-      case StackWalkerFrameType::FRAME_INTERPRETER: return JfrStackFrame::FRAME_INTERPRETER;
-      case StackWalkerFrameType::FRAME_JIT:         return JfrStackFrame::FRAME_JIT;
-      case StackWalkerFrameType::FRAME_INLINE:      return JfrStackFrame::FRAME_INLINE;
-      case StackWalkerFrameType::FRAME_NATIVE:      return JfrStackFrame::FRAME_NATIVE;
+      case JfrStackWalkerFrameType::FRAME_INTERPRETER: return JfrStackFrame::FRAME_INTERPRETER;
+      case JfrStackWalkerFrameType::FRAME_JIT:         return JfrStackFrame::FRAME_JIT;
+      case JfrStackWalkerFrameType::FRAME_INLINE:      return JfrStackFrame::FRAME_INLINE;
+      case JfrStackWalkerFrameType::FRAME_NATIVE:      return JfrStackFrame::FRAME_NATIVE;
     }
     ShouldNotReachHere();
   }
@@ -414,7 +414,7 @@ class JfrCPUTimeStackWalkerCallback : public StackWalkerCallback {
   }
 
 public:
-  JfrCPUTimeStackWalkerCallback(JfrTicks sample_ticks, Tickspan cpu_time_period) :
+  JfrCPUTimeJfrStackWalkerCallback(JfrTicks sample_ticks, Tickspan cpu_time_period) :
     _requested_thread(nullptr),
     _sample_ticks(sample_ticks),
     _cpu_time_period(cpu_time_period),
@@ -423,7 +423,7 @@ public:
     _biased(false) {
   }
 
-  ~JfrCPUTimeStackWalkerCallback() {
+  ~JfrCPUTimeJfrStackWalkerCallback() {
     if (_stack_trace != nullptr) {
       delete _stack_trace;
     }
@@ -453,7 +453,7 @@ public:
     }
   }
 
-  void stack_frame(const Method* method, int bci, int line_no, StackWalkerFrameType type) final {
+  void stack_frame(const Method* method, int bci, int line_no, JfrStackWalkerFrameType type) final {
     assert(_stack_trace != nullptr, "invariant");
     _stack_trace->record_frame(method, bci, line_no, convert_type(type));
   }
@@ -488,10 +488,10 @@ void JfrCPUTimeThreadSampling::handle_timer_signal(siginfo_t* info, void* contex
 
   JavaThread* current = get_java_thread_if_valid();
   if (current != nullptr) {
-    StackWalkRequest request;
+    JfrStackWalkRequest request;
     request.set_max_frames(JfrOptionSet::stackdepth());
-    request.construct_callback<JfrCPUTimeStackWalkerCallback>(now, cpu_time_period);
-    StackWalker::request_stack_trace(request, current, context, true /* suspended */);
+    request.construct_callback<JfrCPUTimeJfrStackWalkerCallback>(now, cpu_time_period);
+    JfrStackWalker::request_stack_trace(request, current, context, true /* suspended */);
   }
   _sampler->decrement_signal_handler_count();
 }

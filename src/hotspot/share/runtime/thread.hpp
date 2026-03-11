@@ -44,9 +44,6 @@
 #if INCLUDE_JFR
 #include "jfr/support/jfrThreadExtension.hpp"
 #endif
-#if INCLUDE_JFR
-#include "runtime/stackWalkerThreadExtension.hpp"
-#endif
 
 class CompilerThread;
 class HandleArea;
