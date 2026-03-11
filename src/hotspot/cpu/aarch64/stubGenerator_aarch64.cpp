@@ -12658,18 +12658,32 @@ class StubGenerator: public StubCodeGenerator {
 
     if (UseMontgomeryMultiplyIntrinsic) {
       StubId stub_id = StubId::stubgen_montgomeryMultiply_id;
-      StubCodeMark mark(this, stub_id);
-      MontgomeryMultiplyGenerator g(_masm, /*squaring*/false);
-      StubRoutines::_montgomeryMultiply = g.generate_multiply();
+      address start = load_archive_data(stub_id);
+      if (start == nullptr) {
+        // we have to generate it
+        StubCodeMark mark(this, stub_id);
+        MontgomeryMultiplyGenerator g(_masm, /*squaring*/false);
+        start = g.generate_multiply();
+        // record the stub start and end
+        store_archive_data(stub_id, start, _masm->pc());
+      }
+      StubRoutines::_montgomeryMultiply = start;
     }
 
     if (UseMontgomerySquareIntrinsic) {
       StubId stub_id = StubId::stubgen_montgomerySquare_id;
-      StubCodeMark mark(this, stub_id);
-      MontgomeryMultiplyGenerator g(_masm, /*squaring*/true);
-      // We use generate_multiply() rather than generate_square()
-      // because it's faster for the sizes of modulus we care about.
-      StubRoutines::_montgomerySquare = g.generate_multiply();
+      address start = load_archive_data(stub_id);
+      if (start == nullptr) {
+        // we have to generate it
+        StubCodeMark mark(this, stub_id);
+        MontgomeryMultiplyGenerator g(_masm, /*squaring*/true);
+        // We use generate_multiply() rather than generate_square()
+        // because it's faster for the sizes of modulus we care about.
+        start = g.generate_multiply();
+        // record the stub start and end
+        store_archive_data(stub_id, start, _masm->pc());
+      }
+      StubRoutines::_montgomerySquare = start;
     }
 
 #endif // COMPILER2
