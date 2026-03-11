@@ -895,11 +895,9 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   /* compiler */                                                            \
                                                                             \
-  /* notice: the max range value here is max_jint, not max_intx  */         \
-  /* because of overflow issue                                   */         \
   product(intx, CICompilerCount, CI_COMPILER_COUNT,                         \
           "Number of compiler threads to run")                              \
-          range(0, max_jint)                                                \
+          range(0, 1024)                                                    \
           constraint(CICompilerCountConstraintFunc, AfterErgo)              \
                                                                             \
   product(bool, UseDynamicNumberOfCompilerThreads, true,                    \
