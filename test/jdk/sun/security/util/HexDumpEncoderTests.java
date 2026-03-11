@@ -51,38 +51,14 @@ public class HexDumpEncoderTests {
         };
     }
 
-    /**
-     * Bets a substring between ----START---- and ----END---- inclusive
-     * in order to remove warnings and any other messages unrelated to the test
-     * @param rawStdout stdout of the process
-     * @return filtered substring between ----START---- and ----END----
-     */
-    private static String getSubstring(final String rawStdout) {
-        final var start = "----START----";
-        final var end = "----END----";
-
-        final int startIndex = rawStdout.indexOf(start);
-        final int endIndex = rawStdout.indexOf(end, startIndex);
-        if (startIndex == -1) {
-            throw new RuntimeException(start + " not found");
-        } else if (endIndex == -1) {
-            throw new RuntimeException(end + " not found");
-        }
-
-        return rawStdout.substring(startIndex, endIndex);
-    }
-
     public static void main(String[] args) throws Exception {
 
         final var testCommandIso = getTestCommand("ISO-8859-1");
 
         final var resultIso = ProcessTools.executeTestJava(testCommandIso);
         resultIso.shouldHaveExitValue(0);
-        // filtering out potential warnings, keeping only
-        // ----START----....----END----
-        final String rawLatin1ResultFromFile = Files.readString(
+        final String latin1ResultFromFile = Files.readString(
                 Path.of("ISO-8859-1.txt"));
-        final var filteredResultIso = getSubstring(rawLatin1ResultFromFile);
 
         // This will take all available StandardCharsets and test them all
         // comparing to the ISO_8859_1.
@@ -103,17 +79,13 @@ public class HexDumpEncoderTests {
                             final var result =
                                     ProcessTools.executeTestJava(testCommand);
                             result.shouldHaveExitValue(0);
-                            final String rawResultFromFile = Files.readString(
+                            final String resultFromFile = Files.readString(
                                     Path.of(charset.name()+".txt"));
-                            // filtering out potential warnings, keeping only
-                            // ----START----....----END----
-                            final var filteredResult =
-                                    getSubstring(rawResultFromFile);
 
                             // The outputs of the ISO encoding must be identical
                             // to the one tested
-                            Asserts.assertEquals(filteredResultIso,
-                                    filteredResult,
+                            Asserts.assertEquals(latin1ResultFromFile,
+                                    resultFromFile,
                                     "Encoding " + charset.name());
                         } catch (Exception e) {
                             throw new RuntimeException(e);
@@ -140,11 +112,8 @@ public class HexDumpEncoderTests {
             final String encodeResult = encoder.encode(new byte[100]);
 
             final String content = String.format("""
-
-                            ----START----
                             Cert Encoded With Encode Buffer: %s
-                            Cert Encoded With Encode: %s
-                            ----END----""",
+                            Cert Encoded With Encode: %s""",
                     encodeBufferResult, encodeResult);
             Files.writeString(
                     Paths.get(Charset.defaultCharset().displayName() + ".txt"),
