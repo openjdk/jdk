@@ -121,7 +121,6 @@ public class TestArrayCopyEliminationUncRematerialization {
         TestConfig config = TestConfig.make();
 
         final List<TemplateToken> tests = new ArrayList<>();
-        tests.add(PrimitiveType.generateLibraryRNG());
         tests.add(config.constDefinitions());
 
         // Generate all testcases for (almost) all primitive types.
@@ -229,18 +228,6 @@ public class TestArrayCopyEliminationUncRematerialization {
                 @Test
                 @IR(counts = { IRNode.LOAD_#{ptyShort}, "=#{loadCount}" },
                     applyIf = { "TieredCompilation", "true"})
-                """,
-                testMethodConst.asToken(testName, templates)
-            ));
-
-            var testCaseConstX64 = Template.make("testName", "loadCount", "tmp", (String testName, Integer loadCout, TestTemplates templates) -> scope(
-                let("ptyShort", pty.abbrev()),
-                runTestConst.asToken(testName),
-                """
-                @Test
-                @IR(counts = { IRNode.LOAD_#{ptyShort}, "=#{loadCount}" },
-                    applyIf = { "TieredCompilation", "true"},
-                    applyIfPlatform = { "x64", "true" })
                 """,
                 testMethodConst.asToken(testName, templates)
             ));
