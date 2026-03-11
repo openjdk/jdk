@@ -325,20 +325,6 @@ static BOOL JavaAccessibilityIsSupportedAttribute(id element, NSString *attribut
     return [[element accessibilityAttributeNames] indexOfObject:attribute] != NSNotFound;
 }
 
-/*
- * Class:     sun_lwawt_macosx_CAccessibility
- * Method:    roleKey
- * Signature: (Ljavax/accessibility/AccessibleRole;)Ljava/lang/String;
- */
-JNIEXPORT jstring JNICALL Java_sun_lwawt_macosx_CAccessibility_roleKey
-(JNIEnv *env, jclass clz, jobject axRole)
-{
-    DECLARE_CLASS_RETURN(sjc_AccessibleRole, "javax/accessibility/AccessibleRole", NULL);
-    DECLARE_FIELD_RETURN(sjf_key, sjc_AccessibleRole, "key", "Ljava/lang/String;", NULL);
-    return (*env)->GetObjectField(env, axRole, sjf_key);
-}
-
-
 // errors from NSAccessibilityErrors
 void JavaAccessibilityRaiseSetAttributeToIllegalTypeException(const char *functionName, id element, NSString *attribute, id value)
 {

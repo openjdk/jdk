@@ -126,8 +126,8 @@ public:
   static const char* inflate_cause_name(const InflateCause cause);
 
   static ObjectMonitor* read_monitor(markWord mark);
-  static ObjectMonitor* read_monitor(Thread* current, oop obj);
-  static ObjectMonitor* read_monitor(Thread* current, oop obj, markWord mark);
+  static ObjectMonitor* read_monitor(oop obj);
+  static ObjectMonitor* read_monitor(oop obj, markWord mark);
 
   // Returns the identity hash value for an oop
   // NOTE: It may cause monitor inflation
@@ -209,11 +209,11 @@ public:
 
   static void handle_sync_on_value_based_class(Handle obj, JavaThread* locking_thread);
 
-  static ObjectMonitor* get_or_insert_monitor_from_table(oop object, JavaThread* current, bool* inserted);
+  static ObjectMonitor* get_or_insert_monitor_from_table(oop object, bool* inserted);
   static ObjectMonitor* get_or_insert_monitor(oop object, JavaThread* current, ObjectSynchronizer::InflateCause cause);
 
-  static ObjectMonitor* add_monitor(JavaThread* current, ObjectMonitor* monitor, oop obj);
-  static void remove_monitor(Thread* current, ObjectMonitor* monitor, oop obj);
+  static ObjectMonitor* add_monitor(ObjectMonitor* monitor, oop obj);
+  static void remove_monitor(ObjectMonitor* monitor, oop obj);
 
   static void deflate_mark_word(oop object);
 
@@ -239,9 +239,9 @@ public:
   static ObjectMonitor* inflate_fast_locked_object(oop object, ObjectSynchronizer::InflateCause cause, JavaThread* locking_thread, JavaThread* current);
   static ObjectMonitor* inflate_and_enter(oop object, BasicLock* lock, ObjectSynchronizer::InflateCause cause, JavaThread* locking_thread, JavaThread* current);
 
-  static void deflate_monitor(Thread* current, oop obj, ObjectMonitor* monitor);
+  static void deflate_monitor(oop obj, ObjectMonitor* monitor);
 
-  static ObjectMonitor* get_monitor_from_table(Thread* current, oop obj);
+  static ObjectMonitor* get_monitor_from_table(oop obj);
 
   static bool contains_monitor(Thread* current, ObjectMonitor* monitor);
 
