@@ -502,19 +502,17 @@ void AOTCodeCache::Config::record(uint cpu_features_offset) {
   _maxVectorSize                   = (uint)MaxVectorSize;
   _arrayOperationPartialInlineSize = (uint)ArrayOperationPartialInlineSize;
 #endif // COMPILER2
-#if defined(X86)
+#if defined(X86) && !defined(ZERO)
   _avx3threshold                   = (uint)AVX3Threshold;
   _x86_flags                       = 0;
   if (EnableX86ECoreOpts) {
     _x86_flags |= x86_enableX86ECoreOpts;
   }
-#if !defined(ZERO)
   if (UseUnalignedLoadStores) {
     _x86_flags |= x86_useUnalignedLoadStores;
   }
-#endif // !defined(ZERO)
-#endif // defined(X86)
-#if defined(AARCH64)
+#endif // defined(X86) && !defined(ZERO)
+#if defined(AARCH64)  && !defined(ZERO)
   _prefetchCopyIntervalInBytes     = (uint)PrefetchCopyIntervalInBytes;
   _blockZeroingLowLimit            = (uint)BlockZeroingLowLimit;
   _softwarePrefetchHintDistance    = (uint)SoftwarePrefetchHintDistance;
@@ -534,7 +532,7 @@ void AOTCodeCache::Config::record(uint cpu_features_offset) {
   if (UseLSE) {
     _aarch64_flags |= aarch64_useLSE;
   }
-#endif // defined(AARCH64)
+#endif // defined(AARCH64) && !defined(ZERO)
 #if INCLUDE_JVMCI
   _enableJVMCI                     = (uint)EnableJVMCI;
 #endif
@@ -676,7 +674,7 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
   }
 #endif // COMPILER2
 
-#if defined(X86)
+#if defined(X86) && !defined(ZERO)
   // change to AVX3Threshold may affect validity of array copy stubs
   // and nmethods
   if (_avx3threshold != (uint)AVX3Threshold) {
@@ -689,17 +687,15 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with EnableX86ECoreOpts = %s vs current %s", (EnableX86ECoreOpts ? "false" : "true"), (EnableX86ECoreOpts ? "true" : "false"));
     return false;
   }
-#if !defined(ZERO)
   // switching off UseUnalignedLoadStores can affect validity of fill
   // stubs
   if (((_x86_flags & x86_useUnalignedLoadStores) != 0) && !UseUnalignedLoadStores) {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseUnalignedLoadStores = true vs current = false");
     return false;
   }
-#endif // !defined(ZERO)
-#endif // defined(X86)
+#endif // defined(X86) && !defined(ZERO)
 
-#if defined(AARCH64)
+#if defined(AARCH64) && !defined(ZERO)
   // change to PrefetchCopyIntervalInBytes may affect validity of
   // array copy stubs
   if (_prefetchCopyIntervalInBytes != (uint)PrefetchCopyIntervalInBytes) {
@@ -759,7 +755,7 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseLSE = %s vs current %s", (UseLSE ? "false" : "true"), (UseLSE ? "true" : "false"));
     return false;
   }
-#endif // defined(AARCH64)
+#endif // defined(AARCH64) && !defined(ZERO)
 
 #if INCLUDE_JVMCI
   // change to EnableJVMCI will affect validity of adapters and

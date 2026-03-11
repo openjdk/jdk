@@ -291,7 +291,7 @@ protected:
     uint _maxVectorSize;
     uint _arrayOperationPartialInlineSize;
 #endif // COMPILER2
-#if defined(X86)
+#if defined(X86) && !defined(ZERO)
     enum X86Flags {
       x86_none = 0,
       x86_enableX86ECoreOpts = 1,
@@ -299,8 +299,8 @@ protected:
     };
     uint _avx3threshold;
     uint _x86_flags;
-#endif // defined(X86)
-#if defined(AARCH64)
+#endif // defined(X86) && !defined(ZERO)
+#if defined(AARCH64) && !defined(ZERO)
     enum AArch64Flags {
       aarch64_none = 0,
       aarch64_avoidUnalignedAccesses = 1,
@@ -315,7 +315,7 @@ protected:
     uint _blockZeroingLowLimit;
     uint _softwarePrefetchHintDistance;
     uint _aarch64_flags;
-#endif // defined(AARCH64)
+#endif // defined(AARCH64) && !defined(ZERO)
 #if INCLUDE_JVMCI
     uint _enableJVMCI;
 #endif // INCLUDE_JVMCI
