@@ -44,5 +44,4 @@ requires.extraPropDefns.vmOpts = \
     --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
 requires.properties= \
     vm.continuations \
-    vm.debug \
-    java.enablePreview
+    vm.debug
