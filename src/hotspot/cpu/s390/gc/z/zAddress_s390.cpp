@@ -106,6 +106,6 @@ size_t ZPlatformAddressHeapBaseShift() {
   return ZPlatformAddressOffsetBits();
 }
 
-void ZGlobalPointers::pd_set_good_masks() {
+void ZGlobalsPointers::pd_set_good_masks() {
   // TODO: aarch64 and x86 are using this to initialize and clear some variables, basically if you want to do something before the gc starts you can do it here.
 }

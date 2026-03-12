@@ -144,9 +144,9 @@ virtual void try_resolve_jobject_in_native(MacroAssembler* masm,
 #ifdef COMPILER1
 
 void generate_c1_color(LIR_Assembler* ce, LIR_Opr ref) const;
-void generate_c1_uncolor(LIR_Assembler* ce, LIR_Opr ref) const
+void generate_c1_uncolor(LIR_Assembler* ce, LIR_Opr ref) const;
 
-void generate_c1_load_barrier(LIR_Assmebler* ce,
+void generate_c1_load_barrier(LIR_Assembler* ce,
                               LIR_Opr ref,
                               ZLoadBarrierStubC1* stub,
                               bool on_non_string) const;
