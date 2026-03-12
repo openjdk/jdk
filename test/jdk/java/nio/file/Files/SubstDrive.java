@@ -115,7 +115,7 @@ public class SubstDrive {
         assertTrue(Files.exists(p));
 
         Files.writeString(p, fileContents);
-        assertTrue(fileContents.equals(Files.readString(p)));
+        assertEquals(fileContents, Files.readString(p));
     }
 
     /**
@@ -194,7 +194,7 @@ public class SubstDrive {
 
         Map<String, Object> attr1 = Files.readAttributes(SUBST_DRIVE, "*");
         Map<String, Object> attr2 = Files.readAttributes(tempDirectory, "*");
-        assertTrue(attr1.equals(attr2));
+        assertEquals(attr2, attr1);
     }
 
     /**
@@ -288,12 +288,12 @@ public class SubstDrive {
         Path tempFile = Path.of(SUBST_DRIVE.toString(), "test.txt");
         String contents = "Hello world!";
         Files.writeString(tempFile, contents);
-        assertTrue(contents.equals(Files.readString(tempFile)));
+        assertEquals(contents, Files.readString(tempFile));
 
         Path link = Path.of(SUBST_DRIVE.toString(), "link");
         Files.createSymbolicLink(link, tempFile);
 
-        assertTrue(contents.equals(Files.readString(link)));
+        assertEquals(contents, Files.readString(link));
         assertEquals(Files.isExecutable(tempFile), Files.isExecutable(link));
         assertEquals(Files.isReadable(tempFile), Files.isReadable(link));
         assertEquals(Files.isDirectory(tempFile), Files.isDirectory(link));
@@ -328,7 +328,7 @@ public class SubstDrive {
         Path tempFile = Files.createTempFile(SUBST_DRIVE, "prefix", "suffix");
         String contents = "Hello world!";
         Files.writeString(tempFile, contents);
-        assertTrue(contents.equals(Files.readString(tempFile)));
+        assertEquals(contents, Files.readString(tempFile));
 
         Path tempDirectory2 = Files.createTempDirectory(TEST_TEMP_DIRECTORY, "tmp");
         Path copy = Path.of(tempDirectory2.toString(), "copied");
@@ -341,7 +341,7 @@ public class SubstDrive {
         Files.move(tempFile, cut);
         assertTrue(Files.notExists(tempFile));
         assertTrue(Files.exists(cut));
-        assertTrue(contents.equals(Files.readString(cut)));
+        assertEquals(contents, Files.readString(cut));
     }
 
     /**
