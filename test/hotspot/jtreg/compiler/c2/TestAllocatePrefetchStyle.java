@@ -1,5 +1,5 @@
 /*
- * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2026 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,33 +19,26 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCOLLECTIONSETPRESELECTOR_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHCOLLECTIONSETPRESELECTOR_HPP
+/*
+ * @test
+ * @bug 8379180
+ * @summary test AllocatePrefetchStyle
+ *
+ * @run main/othervm -Xbatch -XX:AllocatePrefetchStyle=2 compiler.c2.TestAllocatePrefetchStyle
+ * @run main/othervm -Xbatch -XX:AllocatePrefetchStyle=3 compiler.c2.TestAllocatePrefetchStyle
+ */
+package compiler.c2;
 
-#include "gc/shenandoah/shenandoahCollectionSet.hpp"
-#include "memory/resourceArea.hpp"
-
-class ShenandoahCollectionSetPreselector : public StackObj {
-  ShenandoahCollectionSet* _cset;
-  bool* _pset;
-  ResourceMark _rm;
-
-public:
-  ShenandoahCollectionSetPreselector(ShenandoahCollectionSet* cset, size_t num_regions):
-    _cset(cset) {
-    _pset = NEW_RESOURCE_ARRAY(bool, num_regions);
-    for (unsigned int i = 0; i < num_regions; i++) {
-        _pset[i] = false;
+public class TestAllocatePrefetchStyle {
+    public static void main(String[] args) {
+        for (int i = 0; i < 20_000; i++) {
+            test();
+        }
     }
-    _cset->establish_preselected(_pset);
-  }
 
-  ~ShenandoahCollectionSetPreselector() {
-    _cset->abandon_preselected();
-  }
-};
-
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHCOLLECTIONSETPRESELECTOR_HPP
+    private static int[] test() {
+        return new int[10];
+    }
+}
