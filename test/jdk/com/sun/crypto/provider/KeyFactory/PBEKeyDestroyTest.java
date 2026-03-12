@@ -28,8 +28,9 @@
  * @library /test/lib
  * @run junit/othervm PBEKeyDestroyTest
  */
-import javax.crypto.*;
-import javax.crypto.spec.*;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 import java.nio.charset.StandardCharsets;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
