@@ -24,7 +24,7 @@
 /*
  * @test
  * @key headful
- * @bug 8236907 8354901
+ * @bug 8236907
  * @summary  Verifies if JTable last row is visible.
  * @run main LastVisibleRow
  */
@@ -60,7 +60,9 @@ public class LastVisibleRow {
         Point clkPoint;
         try {
             testRobot = new Robot();
-            SwingUtilities.invokeAndWait((Runnable) LastVisibleRow::createAndShowGUI);
+            testRobot.setAutoWaitForIdle(true);
+            testRobot.setAutoDelay(30);
+            SwingUtilities.invokeAndWait(LastVisibleRow::createAndShowGUI);
             testRobot.delay(1000);
             testRobot.waitForIdle();
             BufferedImage bufferedImageBefore = testRobot.createScreenCapture(getCaptureRect());
@@ -71,7 +73,6 @@ public class LastVisibleRow {
             testRobot.waitForIdle();
             clearSelect();
             resetMousePos();
-            testRobot.delay(1000);
             testRobot.waitForIdle();
             BufferedImage bufferedImageAfter = testRobot.createScreenCapture(getCaptureRect());
 
@@ -136,7 +137,7 @@ public class LastVisibleRow {
     }
 
     private static void resetMousePos() {
-        testRobot.mouseMove(5, 5);
+        testRobot.mouseMove(50, 50);
         testRobot.delay(50);
     }
 
@@ -163,9 +164,9 @@ public class LastVisibleRow {
             Point point = new Point(cellRect.x, cellRect.y);
             SwingUtilities.convertPointToScreen(point, table);
 
-            captureRect[0] = new Rectangle(point.x+5, point.y+2,
+            captureRect[0] = new Rectangle(point.x + 5, point.y + 2,
                     table.getColumnCount() * cellRect.width - 10,
-                    cellRect.height-2);
+                    cellRect.height - 2);
         });
         return captureRect[0];
     }
