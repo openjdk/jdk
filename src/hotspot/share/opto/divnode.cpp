@@ -1604,10 +1604,10 @@ const Type* ModFloatingNode::Value(PhaseGVN* phase) const {
   if (constant_result != nullptr) {
     const TypeTuple* tt = t->is_tuple();
     uint cnt = tt->cnt();
-    const Type** fields = TypeTuple::fields(cnt);
-    for (uint i = 0; i < cnt; i++) {
-      fields[i] = (i == TypeFunc::Parms) ? constant_result : tt->field_at(i);
-    }
+    uint param_cnt = cnt - TypeFunc::Parms;
+    const Type** fields = TypeTuple::fields(param_cnt);
+    fields[TypeFunc::Parms] = constant_result;
+    if (param_cnt > 1) { fields[TypeFunc::Parms + 1] = Type::HALF; }
     return TypeTuple::make(cnt, fields);
   }
   return t;
