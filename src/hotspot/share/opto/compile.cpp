@@ -3265,10 +3265,7 @@ void Compile::handle_mulhi_mul_op(Node* n, bool is_unsigned) {
     return;
   }
 
-  Node* mul = n->find_similar(Op_MulL);
-  if (mul == nullptr) {
-    mul = n->find_similar(Op_MulL, true);
-  }
+  Node* mul = n->find_similar(Op_MulL, true);
 
   if (mul == nullptr) {
     return;
