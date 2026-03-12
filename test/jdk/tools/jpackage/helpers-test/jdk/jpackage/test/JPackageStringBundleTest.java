@@ -24,6 +24,7 @@ package jdk.jpackage.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -44,6 +45,24 @@ class JPackageStringBundleTest {
     @Test
     void test_cannedFormattedString() {
         assertFalse(JPackageStringBundle.MAIN.cannedFormattedString("error.version-string-empty").getValue().isBlank());
+    }
+
+    @Test
+    void test_cannedFormattedString_equals() {
+        var a = JPackageStringBundle.MAIN.cannedFormattedString("error.version-string-empty");
+        var b = JPackageStringBundle.MAIN.cannedFormattedString("error.version-string-empty");
+
+        assertEquals(a, b);
+
+        a = JPackageStringBundle.MAIN.cannedFormattedString("message.error-header", "foo");
+        b = JPackageStringBundle.MAIN.cannedFormattedString("message.error-header", "foo");
+
+        assertEquals(a, b);
+
+        a = JPackageStringBundle.MAIN.cannedFormattedString("message.error-header", "foo");
+        b = JPackageStringBundle.MAIN.cannedFormattedString("message.error-header", "bar");
+
+        assertNotEquals(a, b);
     }
 
     @Test
