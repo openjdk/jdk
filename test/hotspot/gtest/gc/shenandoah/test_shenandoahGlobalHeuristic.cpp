@@ -28,9 +28,9 @@
 static const size_t REGION_SIZE = 256 * 1024;
 
 // Waste factors matching the default JVM flag values.
-static const double OLD_EVAC_WASTE   = 1.4;
-static const double PROMO_EVAC_WASTE = 1.2;
-static const double YOUNG_EVAC_WASTE = 1.2;
+static const double OLD_EVAC_WASTE   = ShenandoahOldEvacWaste;
+static const double PROMO_EVAC_WASTE = ShenandoahPromoEvacWaste;
+static const double YOUNG_EVAC_WASTE = ShenandoahEvacWaste;
 
 // Default thresholds as percentages of region size.
 static const size_t GARBAGE_THRESHOLD = REGION_SIZE * 25 / 100;
