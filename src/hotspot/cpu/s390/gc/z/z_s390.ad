@@ -189,6 +189,7 @@ instruct zCompareAndSwap(iRegI res, iRegP mem, iRegP newval, iRegP newval_temp, 
   ins_pipe(pipe_class_dummy);
 %}
 
+// TODO: Double check this implementation currently this is copied form g1_s390.ad g1GetAndSetP
 instruct zSetAndGetP(iRegP mem, iRegP newval, iRegP temp, flagsReg cr) %{
   match(Set newval (GetAndSetP mem newval));
   predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
@@ -210,3 +211,5 @@ instruct zSetAndGetP(iRegP mem, iRegP newval, iRegP temp, flagsReg cr) %{
   %}
   ins_pipe(pipe_class_dummy);
 %}
+
+//TODO: x86 has also implemented loadP and null check, see if it is required for us
