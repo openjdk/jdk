@@ -73,9 +73,9 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Signature;
 import java.time.Instant;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.TimeZone;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 
 
 public class CertExtensions {
@@ -143,10 +143,9 @@ public class CertExtensions {
             x509CertInfo.setSerialNumber(new CertificateSerialNumber(serialNumber));
 
             // create and set the validity interval
-            Instant notBefore = Instant.now(); // Valid from now
-            Instant notAfter =
-                    Instant.ofEpochMilli(System.currentTimeMillis() +
-                                         365L * 24 * 60 * 60 * 1000); // Valid for 1 year
+            // valid from now and for 1 year
+            Instant notBefore = Instant.now();
+            Instant notAfter = notBefore.plus(365, ChronoUnit.DAYS);
             x509CertInfo.setValidity(new CertificateValidity(notBefore, notAfter));
 
             // Create Certificate Info which is the representation of X509 Certificate.
@@ -201,12 +200,10 @@ public class CertExtensions {
         issuerNames.add(ip);
         issuerNames.add(oid);
         IssuerAlternativeNameExtension issuerName = new IssuerAlternativeNameExtension(issuerNames);
-        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("America/Los_Angeles"));
-        cal.set(2014, 03, 10, 12, 30, 30);
-        cal.set(2000, 11, 15, 12, 30, 30);
-        Date lastDate = cal.getTime();
+        Instant lastDate = LocalDateTime.of(2000, 11, 15, 12, 30, 3)
+                .toInstant(ZoneOffset.UTC);
         Instant firstDate = Instant.now();
-        PrivateKeyUsageExtension pkusage = new PrivateKeyUsageExtension(firstDate, lastDate.toInstant());
+        PrivateKeyUsageExtension pkusage = new PrivateKeyUsageExtension(firstDate, lastDate);
 
         KeyUsageExtension usage = new KeyUsageExtension();
         usage.set(KeyUsageExtension.CRL_SIGN, true);

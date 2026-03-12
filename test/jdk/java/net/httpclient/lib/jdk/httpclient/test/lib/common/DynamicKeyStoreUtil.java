@@ -33,6 +33,7 @@ import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 
 import javax.net.ssl.KeyManager;
@@ -231,11 +232,9 @@ public class DynamicKeyStoreUtil {
 
     private static CertificateValidity certDuration() {
         // create a cert with 1 day validity, starting from 1 minute back
-        final long currentTime = System.currentTimeMillis();
-        final long oneMinuteInThePast = currentTime - (60 * 1000);
-        final long oneDayInTheFuture = currentTime + (24 * 60 * 60 * 1000);
-        final Instant startDate = Instant.ofEpochMilli(oneMinuteInThePast);
-        final Instant expiryDate = Instant.ofEpochMilli(oneDayInTheFuture);
+        final Instant currentTime = Instant.now();
+        final Instant startDate = currentTime.minusSeconds(60);
+        final Instant expiryDate = currentTime.plus(1, ChronoUnit.DAYS);
         return new CertificateValidity(startDate, expiryDate);
     }
 

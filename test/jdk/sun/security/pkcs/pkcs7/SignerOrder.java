@@ -41,7 +41,6 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
-import java.util.Date;
 import sun.security.pkcs.ContentInfo;
 import sun.security.pkcs.PKCS7;
 import sun.security.pkcs.SignerInfo;
@@ -245,8 +244,7 @@ class SimpleSigner {
         Instant firstDate, lastDate;
 
         firstDate = Instant.now();
-        lastDate = Instant.ofEpochMilli(
-                firstDate.toEpochMilli() + validity + 1000);
+        lastDate = firstDate.plusMillis(validity).plusMillis(1000);
 
         CertificateValidity interval = new CertificateValidity(firstDate,
                 lastDate);

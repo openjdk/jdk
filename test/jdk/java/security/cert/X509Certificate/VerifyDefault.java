@@ -169,13 +169,22 @@ public class VerifyDefault {
                 notAfterInstant.toEpochMilli());
 
         // checking validity of the cert
-        cert.checkValidity(Instant.parse("2017-05-26T16:47:26Z"));
+        final Instant validInstant = Instant.parse("2017-05-26T16:47:26Z");
+        final Instant expiredInstant = Instant.parse("2018-05-26T16:47:26Z");
+        final Instant notYetValidInstant =
+                Instant.parse("2012-05-26T16:47:26Z");
+
+        cert.checkValidity(validInstant);
         Asserts.assertThrows(CertificateExpiredException.class,
-                () -> cert.checkValidity(
-                        Instant.parse("2018-05-26T16:47:26Z")));
+                () -> cert.checkValidity(expiredInstant));
         Asserts.assertThrows(CertificateNotYetValidException.class,
-                () -> cert.checkValidity(
-                        Instant.parse("2012-05-26T16:47:26Z")));
+                () -> cert.checkValidity(notYetValidInstant));
+
+        cert.checkValidity(Date.from(validInstant));
+        Asserts.assertThrows(CertificateExpiredException.class,
+                () -> cert.checkValidity(Date.from(expiredInstant)));
+        Asserts.assertThrows(CertificateNotYetValidException.class,
+                () -> cert.checkValidity(Date.from(notYetValidInstant)));
 
     }
 }

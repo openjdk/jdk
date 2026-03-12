@@ -376,6 +376,7 @@ public abstract non-sealed class X509Certificate extends Certificate
      *
      * @return the start date of the validity period.
      * @see #checkValidity
+     * @since 27
      */
     public Instant getNotBeforeInstant() {
         final Date date = getNotBefore();
@@ -406,6 +407,7 @@ public abstract non-sealed class X509Certificate extends Certificate
      *
      * @return the end date of the validity period.
      * @see #checkValidity
+     * @since 27
      */
     public Instant getNotAfterInstant() {
         final Date date = getNotAfter();

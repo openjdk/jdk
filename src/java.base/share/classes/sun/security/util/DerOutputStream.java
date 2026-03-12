@@ -554,8 +554,6 @@ public final class DerOutputStream
         /*
          * Format the date.
          */
-
-        TimeZone tz = TimeZone.getTimeZone("GMT");
         String pattern;
 
         if (tag == DerValue.tag_UtcTime) {

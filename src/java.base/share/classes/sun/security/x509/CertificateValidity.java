@@ -27,7 +27,6 @@ package sun.security.x509;
 import java.io.IOException;
 import java.security.cert.*;
 import java.time.Instant;
-import java.util.Date;
 import java.util.Objects;
 
 import sun.security.util.*;
@@ -130,12 +129,12 @@ public class CertificateValidity implements DerEncoder {
 
         DerOutputStream pair = new DerOutputStream();
 
-        if (notBefore.toEpochMilli() < YR_2050) {
+        if (notBefore.isBefore(Instant.ofEpochMilli(YR_2050))) {
             pair.putUTCInstant(notBefore);
         } else
             pair.putGeneralizedInstant(notBefore);
 
-        if (notAfter.toEpochMilli() < YR_2050) {
+        if (notAfter.isBefore(Instant.ofEpochMilli(YR_2050))) {
             pair.putUTCInstant(notAfter);
         } else {
             pair.putGeneralizedInstant(notAfter);
@@ -170,9 +169,9 @@ public class CertificateValidity implements DerEncoder {
     public void valid(Instant now)
     throws CertificateNotYetValidException, CertificateExpiredException {
         /*
-         * we use the internal Dates rather than the passed in Date
-         * because someone could override the Date methods after()
-         * and before() to do something entirely different.
+         * we use the internal Instants rather than the passed in Instant
+         * because someone could override the Instant methods isAfter()
+         * and isBefore() to do something entirely different.
          */
         if (notBefore.isAfter(now)) {
             throw new CertificateNotYetValidException("NotBefore: " +

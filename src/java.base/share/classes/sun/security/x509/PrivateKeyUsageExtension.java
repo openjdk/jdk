@@ -195,8 +195,7 @@ public class PrivateKeyUsageExtension extends Extension {
      */
     public void valid()
     throws CertificateNotYetValidException, CertificateExpiredException {
-        Date now = new Date();
-        valid(now);
+        valid(Instant.now());
     }
 
     /**
