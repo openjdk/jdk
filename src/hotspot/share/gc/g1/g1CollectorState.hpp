@@ -29,19 +29,36 @@
 #include "utilities/globalDefinitions.hpp"
 
 // State of the G1 collection.
+//
+// The rough phasing is Young-Only, Mixed / Space Reclamation and
+// Full GC "phase".
+//
+// We split the Young-only phase into three parts to cover interesting
+// sub-phases and avoid separate tracking.
 class G1CollectorState {
-  // Indicates whether we are in the phase where we do partial gcs that only contain
-  // the young generation. Not set while _in_full_gc is set.
-  bool _in_young_only_phase;
-
-  // Indicates whether we are in the last young gc before the mixed gc phase. This GC
-  // is required to keep pause time requirements.
-  bool _in_young_gc_before_mixed;
+  enum Phase {
+    // Indicates that the next GC in the Young-Only phase will (likely) be a "Normal"
+    // young GC.
+    YoungNormal,
+    // We are in a concurrent start GC during the Young-Only phase. This is only set
+    // during that GC because we only decide whether we do this type of GC at the start
+    // of the pause.
+    YoungConcurrentStart,
+    // Indicates that we are about to start or in the last young gc in the Young-Only
+    // phase before the Mixed phase. This GC is required to keep pause time requirements.
+    YoungLastYoung,
+    // Doing extra old generation cleanups.
+    Mixed,
+    // The Full GC phase (that coincides with the Full GC pause).
+    FullGC
+  } _phase;
 
   // If _initiate_conc_mark_if_possible is set at the beginning of a
   // pause, it is a suggestion that the pause should start a marking
   // cycle by doing the concurrent start work. However, it is possible
-  // that the concurrent marking thread is still finishing up the
+  // This decision is mostly based on heap occupancy.
+  //
+  // If the concurrent marking thread is still finishing up the
   // previous marking cycle (e.g., clearing the marking bitmap).
   // If that is the case we cannot start a new cycle and
   // we'll have to wait for the concurrent marking thread to finish
@@ -50,47 +67,33 @@ class G1CollectorState {
   // to start a cycle, we will set _in_concurrent_start_gc which
   // will stay true until the end of the concurrent start pause doing the
   // concurrent start work.
-  volatile bool _in_concurrent_start_gc;
-
-  // At the end of a pause we check the heap occupancy and we decide
-  // whether we will start a marking cycle during the next pause. If
-  // we decide that we want to do that, set this parameter. This parameter will
-  // stay set until the beginning of a subsequent pause (not necessarily
-  // the next one) when we decide that we will indeed start a marking cycle and
-  // do the concurrent start phase work.
   volatile bool _initiate_conc_mark_if_possible;
-
-  // Set during a full gc pause.
-  bool _in_full_gc;
 
 public:
   G1CollectorState() :
-    _in_young_only_phase(true),
-    _in_young_gc_before_mixed(false),
+    _phase(YoungNormal),
 
-    _in_concurrent_start_gc(false),
-    _initiate_conc_mark_if_possible(false),
-
-    _in_full_gc(false) { }
+    _initiate_conc_mark_if_possible(false) { }
 
   // Phase setters
-  void set_in_young_only_phase(bool v) { _in_young_only_phase = v; }
+  void set_in_normal_young_gc() { _phase = YoungNormal; }
+  void set_in_space_reclamation_phase() { _phase = Mixed; }
+  void set_in_full_gc() { _phase = FullGC; }
 
   // Pause setters
-  void set_in_young_gc_before_mixed(bool v) { _in_young_gc_before_mixed = v; }
-  void set_in_concurrent_start_gc(bool v) { _in_concurrent_start_gc = v; }
-  void set_in_full_gc(bool v) { _in_full_gc = v; }
+  void set_in_young_gc_before_mixed() { _phase = YoungLastYoung; }
+  void set_in_concurrent_start_gc() { _phase = YoungConcurrentStart; _initiate_conc_mark_if_possible = false; }
 
   void set_initiate_conc_mark_if_possible(bool v) { _initiate_conc_mark_if_possible = v; }
 
   // Phase getters
-  bool in_young_only_phase() const { return _in_young_only_phase && !_in_full_gc; }
-  bool in_mixed_phase() const { return !_in_young_only_phase && !_in_full_gc; }
+  bool is_in_young_only_phase() const { return _phase >= YoungNormal && _phase <= YoungLastYoung; }
+  bool is_in_mixed_phase() const { return _phase == Mixed; }
 
   // Specific pauses
-  bool in_young_gc_before_mixed() const { return _in_young_gc_before_mixed; }
-  bool in_full_gc() const { return _in_full_gc; }
-  bool in_concurrent_start_gc() const { return _in_concurrent_start_gc; }
+  bool is_in_young_gc_before_mixed() const { return _phase == YoungLastYoung; }
+  bool is_in_full_gc() const { return _phase == FullGC; }
+  bool is_in_concurrent_start_gc() const { return _phase == YoungConcurrentStart; }
 
   bool initiate_conc_mark_if_possible() const { return _initiate_conc_mark_if_possible; }
 
