@@ -585,7 +585,6 @@ C2V_END
 
 C2V_VMENTRY_0(jboolean, hasNeverInlineDirective,(JNIEnv* env, jobject, ARGUMENT_PAIR(method)))
   methodHandle method (THREAD, UNPACK_PAIR(Method, method));
-  // Treat JVMCI compiler as C1 for CompilerOracle::should_not_inline() answer
   return !Inline || CompilerOracle::should_not_inline(method, CompLevel_full_optimization) || method->dont_inline();
 C2V_END
 

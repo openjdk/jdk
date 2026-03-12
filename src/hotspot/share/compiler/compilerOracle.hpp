@@ -163,6 +163,7 @@ class CompilerOracle : AllStatic {
   static bool changes_current_thread(const methodHandle& method);
 
   // Tells whether we should print the assembly for this method
+  // If level == CompLevel_none or CompLevel_any, returns true if there is a print command with any mask
   static bool should_print(const methodHandle& method, CompLevel level);
 
   // Tells whether we should log the compilation data for this method
