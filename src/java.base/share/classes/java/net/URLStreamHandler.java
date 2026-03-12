@@ -481,6 +481,11 @@ public abstract class URLStreamHandler {
      * @return  a string representation of the {@code URL} argument.
      */
     protected String toExternalForm(URL u) {
+        // Optimizations in this method are based on the following observations:
+        // 1: The query and ref components are commonly empty and can be specialized
+        // 2: String concatenation is faster when locals are concatenated with no interleaving code
+        // 3: A single concatenation is faster than combining results of other concatenations
+
         // Optionality, subtly different for authority
         var emptyAuth = u.getAuthority() == null || u.getAuthority().isEmpty();
         var emptyPath = u.getPath() == null;
