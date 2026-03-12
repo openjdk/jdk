@@ -6846,6 +6846,10 @@ void MacroAssembler::spin_wait() {
 }
 
 void MacroAssembler::spin_wait_wfet(int delay_ns) {
+  // The sequence assumes CNTFRQ_EL0 is fixed to 1GHz. The assumption is valid
+  // starting from Armv8.6, according to the "D12.1.2 The system counter" of the
+  // Arm Architecture Reference Manual for A-profile architecture version M.a.a.
+  // This is sufficient because FEAT_WFXT is introduced from Armv8.6.
   Register target = rscratch1;
   Register current = rscratch2;
   get_cntvctss_el0(current);

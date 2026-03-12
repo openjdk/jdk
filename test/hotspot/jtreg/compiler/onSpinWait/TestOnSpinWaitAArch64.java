@@ -109,9 +109,9 @@ public class TestOnSpinWaitAArch64 {
         }
 
         if ("wfet".equals(spinWaitInst) &&
-            (analyzer.contains("the CPU does not support the SB instruction") ||
-             analyzer.contains("the CPU does not support the FEAT_ECV") ||
-             analyzer.contains("the CPU does not support the WFET instruction"))) {
+            (analyzer.contains("CPU does not support the SB instruction") ||
+             analyzer.contains("CPU does not support the FEAT_ECV") ||
+             analyzer.contains("CPU does not support the WFET instruction"))) {
             System.out.println("Skipping the test. The CPU does not support SB or WFET instruction, or FEAT_ECV.");
             return;
         }
