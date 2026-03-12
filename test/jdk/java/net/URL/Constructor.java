@@ -262,6 +262,8 @@ public class Constructor {
         new Entry(null, "file:/path#", "file:/path#"),
         new Entry(null, "file:/path?", "file:/path?"),
         new Entry(null, "file:/path?#", "file:/path?#"),
+        new Entry(null, "file:///path#", "file:/path#"),
+        new Entry(null, "file:///path?", "file:/path?"),
         new Entry(null, "file:/path#?", "file:/path#?"),
         new Entry("file:/path", "path?#", "file:/path?#"),
         new Entry(null, "file:", "file:"),
