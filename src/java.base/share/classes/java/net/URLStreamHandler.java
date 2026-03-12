@@ -489,11 +489,9 @@ public abstract class URLStreamHandler {
         // Fast paths for empty components
         if (emptyQuery && emptyRef) {
             var path = emptyPath ? "" : u.getPath();
-            if (emptyAuth) {
-                return u.getProtocol() + ":" + path;
-            } else {
-                return u.getProtocol() + "://" + u.getAuthority() + path;
-            }
+            return emptyAuth
+                    ? (u.getProtocol() + ":" + path)
+                    : (u.getProtocol() + "://" + u.getAuthority() + path);
         }
         // Prefer locals for efficient concatenation
         var authSep  = emptyAuth  ? ":" : "://";
