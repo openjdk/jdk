@@ -207,6 +207,11 @@ bool ConstraintCastNode::higher_equal_types(PhaseGVN* phase, const Node* other) 
   return true;
 }
 
+Node* ConstraintCastNode::pin_node_under_control_impl() const {
+  assert(_dependency.is_floating(), "already pinned");
+  return make_cast_for_type(in(0), in(1), bottom_type(), _dependency.with_pinned_dependency(), _extra_types);
+}
+
 #ifndef PRODUCT
 void ConstraintCastNode::dump_spec(outputStream *st) const {
   TypeNode::dump_spec(st);
@@ -277,12 +282,9 @@ void CastIINode::dump_spec(outputStream* st) const {
 }
 #endif
 
-CastIINode* CastIINode::pin_array_access_node() const {
+CastIINode* CastIINode::pin_node_under_control_impl() const {
   assert(_dependency.is_floating(), "already pinned");
-  if (has_range_check()) {
-    return new CastIINode(in(0), in(1), bottom_type(), _dependency.with_pinned_dependency(), has_range_check());
-  }
-  return nullptr;
+  return new CastIINode(in(0), in(1), bottom_type(), _dependency.with_pinned_dependency(), _range_check_dependency, _extra_types);
 }
 
 void CastIINode::remove_range_check_cast(Compile* C) {

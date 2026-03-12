@@ -142,129 +142,6 @@ enum class HeapArchiveMode {
   _streaming
 };
 
-class ArchiveMappedHeapHeader {
-  size_t           _ptrmap_start_pos; // The first bit in the ptrmap corresponds to this position in the heap.
-  size_t           _oopmap_start_pos; // The first bit in the oopmap corresponds to this position in the heap.
-  HeapRootSegments _root_segments;    // Heap root segments info
-
-public:
-  ArchiveMappedHeapHeader();
-  ArchiveMappedHeapHeader(size_t ptrmap_start_pos,
-                          size_t oopmap_start_pos,
-                          HeapRootSegments root_segments);
-
-  size_t ptrmap_start_pos() const { return _ptrmap_start_pos; }
-  size_t oopmap_start_pos() const { return _oopmap_start_pos; }
-  HeapRootSegments root_segments() const { return _root_segments; }
-
-  // This class is trivially copyable and assignable.
-  ArchiveMappedHeapHeader(const ArchiveMappedHeapHeader&) = default;
-  ArchiveMappedHeapHeader& operator=(const ArchiveMappedHeapHeader&) = default;
-};
-
-
-class ArchiveStreamedHeapHeader {
-  size_t _forwarding_offset;                      // Offset of forwarding information in the heap region.
-  size_t _roots_offset;                           // Start position for the roots
-  size_t _root_highest_object_index_table_offset; // Offset of root dfs depth information
-  size_t _num_roots;                              // Number of embedded roots
-  size_t _num_archived_objects;                   // The number of archived heap objects
-
-public:
-  ArchiveStreamedHeapHeader();
-  ArchiveStreamedHeapHeader(size_t forwarding_offset,
-                            size_t roots_offset,
-                            size_t num_roots,
-                            size_t root_highest_object_index_table_offset,
-                            size_t num_archived_objects);
-
-  size_t forwarding_offset() const { return _forwarding_offset; }
-  size_t roots_offset() const { return _roots_offset; }
-  size_t num_roots() const { return _num_roots; }
-  size_t root_highest_object_index_table_offset() const { return _root_highest_object_index_table_offset; }
-  size_t num_archived_objects() const { return _num_archived_objects; }
-
-  // This class is trivially copyable and assignable.
-  ArchiveStreamedHeapHeader(const ArchiveStreamedHeapHeader&) = default;
-  ArchiveStreamedHeapHeader& operator=(const ArchiveStreamedHeapHeader&) = default;
-};
-
-class ArchiveMappedHeapInfo {
-  MemRegion _buffer_region;             // Contains the archived objects to be written into the CDS archive.
-  CHeapBitMap _oopmap;
-  CHeapBitMap _ptrmap;
-  HeapRootSegments _root_segments;
-  size_t _oopmap_start_pos;             // How many zeros were removed from the beginning of the bit map?
-  size_t _ptrmap_start_pos;             // How many zeros were removed from the beginning of the bit map?
-
-public:
-  ArchiveMappedHeapInfo() :
-    _buffer_region(),
-    _oopmap(128, mtClassShared),
-    _ptrmap(128, mtClassShared),
-    _root_segments(),
-    _oopmap_start_pos(),
-    _ptrmap_start_pos() {}
-  bool is_used() { return !_buffer_region.is_empty(); }
-
-  MemRegion buffer_region() { return _buffer_region; }
-  void set_buffer_region(MemRegion r) { _buffer_region = r; }
-
-  char* buffer_start() { return (char*)_buffer_region.start(); }
-  size_t buffer_byte_size() { return _buffer_region.byte_size();    }
-
-  CHeapBitMap* oopmap() { return &_oopmap; }
-  CHeapBitMap* ptrmap() { return &_ptrmap; }
-
-  void set_oopmap_start_pos(size_t start_pos) { _oopmap_start_pos = start_pos; }
-  void set_ptrmap_start_pos(size_t start_pos) { _ptrmap_start_pos = start_pos; }
-
-  void set_root_segments(HeapRootSegments segments) { _root_segments = segments; };
-  HeapRootSegments root_segments() { return _root_segments; }
-
-  ArchiveMappedHeapHeader create_header();
-};
-
-class ArchiveStreamedHeapInfo {
-  MemRegion _buffer_region;             // Contains the archived objects to be written into the CDS archive.
-  CHeapBitMap _oopmap;
-  size_t _roots_offset;                 // Offset of the HeapShared::roots() object, from the bottom
-                                        // of the archived heap objects, in bytes.
-  size_t _num_roots;
-
-  size_t _forwarding_offset;            // Offset of forwarding information from the bottom
-  size_t _root_highest_object_index_table_offset; // Offset to root dfs depth information
-  size_t _num_archived_objects;         // The number of archived objects written into the CDS archive.
-
-public:
-  ArchiveStreamedHeapInfo()
-    : _buffer_region(),
-      _oopmap(128, mtClassShared),
-      _roots_offset(),
-      _forwarding_offset(),
-      _root_highest_object_index_table_offset(),
-      _num_archived_objects() {}
-
-  bool is_used() { return !_buffer_region.is_empty(); }
-
-  void set_buffer_region(MemRegion r) { _buffer_region = r; }
-  MemRegion buffer_region() { return _buffer_region; }
-  char* buffer_start() { return (char*)_buffer_region.start(); }
-  size_t buffer_byte_size() { return _buffer_region.byte_size();    }
-
-  CHeapBitMap* oopmap() { return &_oopmap; }
-  void set_roots_offset(size_t n) { _roots_offset = n; }
-  size_t roots_offset() { return _roots_offset; }
-  void set_num_roots(size_t n) { _num_roots = n; }
-  size_t num_roots() { return _num_roots; }
-  void set_forwarding_offset(size_t n) { _forwarding_offset = n; }
-  void set_root_highest_object_index_table_offset(size_t n) { _root_highest_object_index_table_offset = n; }
-  void set_num_archived_objects(size_t n) { _num_archived_objects = n; }
-  size_t num_archived_objects() { return _num_archived_objects; }
-
-  ArchiveStreamedHeapHeader create_header();
-};
-
 class HeapShared: AllStatic {
   friend class VerifySharedOopClosure;
 
@@ -505,8 +382,10 @@ private:
   static bool walk_one_object(PendingOopStack* stack, int level, KlassSubGraphInfo* subgraph_info,
                               oop orig_obj, oop referrer);
 
- public:
   static void reset_archived_object_states(TRAPS);
+  static void ensure_determinism(TRAPS);
+ public:
+  static void prepare_for_archiving(TRAPS);
   static void create_archived_object_cache() {
     _archived_object_cache =
       new (mtClass)ArchivedObjectCache(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE);
@@ -575,7 +454,7 @@ private:
  public:
   static void finish_materialize_objects() NOT_CDS_JAVA_HEAP_RETURN;
 
-  static void write_heap(ArchiveMappedHeapInfo* mapped_heap_info, ArchiveStreamedHeapInfo* streamed_heap_info) NOT_CDS_JAVA_HEAP_RETURN;
+  static void write_heap(AOTMappedHeapInfo* mapped_heap_info, AOTStreamedHeapInfo* streamed_heap_info) NOT_CDS_JAVA_HEAP_RETURN;
   static objArrayOop scratch_resolved_references(ConstantPool* src);
   static void add_scratch_resolved_references(ConstantPool* src, objArrayOop dest) NOT_CDS_JAVA_HEAP_RETURN;
   static void init_dumping() NOT_CDS_JAVA_HEAP_RETURN;

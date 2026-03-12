@@ -128,7 +128,7 @@ private:
 
   // The value of command-line argument ShenandoahOldGarbageThreshold represents the percent of garbage that must
   // be present within an old-generation region before that region is considered a good candidate for inclusion in
-  // the collection set under normal circumstances.  For our purposes, normal circustances are when the memory consumed
+  // the collection set under normal circumstances.  For our purposes, normal circumstances are when the memory consumed
   // by the old generation is less than 50% of the soft heap capacity.  When the old generation grows beyond the 50%
   // threshold, we dynamically adjust the old garbage threshold, allowing us to invest in packing the old generation
   // more tightly so that more memory can be made available to the more frequent young GC cycles.  This variable

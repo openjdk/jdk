@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,10 +40,6 @@ import jdk.httpclient.test.lib.common.HttpServerAdapters;
 
 import com.sun.net.httpserver.HttpsServer;
 import jdk.httpclient.test.lib.common.TestServerConfigurator;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 
@@ -54,7 +50,12 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.ANY;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
 import static java.net.http.HttpOption.H3_DISCOVERY;
-import static org.testng.Assert.*;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /*
  * @test
@@ -63,7 +64,7 @@ import static org.testng.Assert.*;
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  *        DigestEchoServer ReferenceTracker jdk.httpclient.test.lib.common.TestServerConfigurator
- * @run testng/othervm -Dtest.requiresHost=true
+ * @run junit/othervm -Dtest.requiresHost=true
  * -Djdk.httpclient.HttpClient.log=requests,headers,errors,quic
  * -Djdk.internal.httpclient.debug=false
  * AuthFilterCacheTest
@@ -81,29 +82,28 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
         SSLContext.setDefault(context);
     }
 
-    HttpTestServer http1Server;
-    HttpTestServer http2Server;
-    HttpTestServer https1Server;
-    HttpTestServer https2Server;
-    HttpTestServer h3onlyServer;
-    HttpTestServer h3altSvcServer;
-    DigestEchoServer.TunnelingProxy proxy;
-    URI http1URI;
-    URI https1URI;
-    URI http2URI;
-    URI https2URI;
-    URI h3onlyURI;
-    URI h3altSvcURI;
-    InetSocketAddress proxyAddress;
-    ProxySelector proxySelector;
-    MyAuthenticator auth;
-    HttpClient client;
-    ExecutorService serverExecutor = Executors.newCachedThreadPool();
-    ExecutorService virtualExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
+    private static HttpTestServer http1Server;
+    private static HttpTestServer http2Server;
+    private static HttpTestServer https1Server;
+    private static HttpTestServer https2Server;
+    private static HttpTestServer h3onlyServer;
+    private static HttpTestServer h3altSvcServer;
+    private static DigestEchoServer.TunnelingProxy proxy;
+    private static URI http1URI;
+    private static URI https1URI;
+    private static URI http2URI;
+    private static URI https2URI;
+    private static URI h3onlyURI;
+    private static URI h3altSvcURI;
+    private static InetSocketAddress proxyAddress;
+    private static ProxySelector proxySelector;
+    private static MyAuthenticator auth;
+    private static HttpClient client;
+    private static ExecutorService serverExecutor = Executors.newCachedThreadPool();
+    private static ExecutorService virtualExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
             .name("HttpClient-Worker", 0).factory());
 
-    @DataProvider(name = "uris")
-    Object[][] testURIs() {
+    static Object[][] testURIs() {
         Object[][] uris = new Object[][]{
                 {List.of(http1URI.resolve("direct/orig/"),
                         https1URI.resolve("direct/orig/"),
@@ -117,8 +117,8 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
         return uris;
     }
 
-    public HttpClient newHttpClient(ProxySelector ps, Authenticator auth) {
-        HttpClient.Builder builder = newClientBuilderForH3()
+    public static HttpClient newHttpClient(ProxySelector ps, Authenticator auth) {
+        HttpClient.Builder builder = HttpServerAdapters.createClientBuilderForH3()
                 .executor(virtualExecutor)
                 .sslContext(context)
                 .authenticator(auth)
@@ -126,8 +126,8 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
         return builder.build();
     }
 
-    @BeforeClass
-    public void setUp() throws Exception {
+    @BeforeAll
+    public static void setUp() throws Exception {
         try {
             InetSocketAddress sa =
                     new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
@@ -189,8 +189,8 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
                     .version(HTTP_2).build();
             System.out.println("Sending head request: " + headRequest);
             var headResponse = client.send(headRequest, BodyHandlers.ofString());
-            assertEquals(headResponse.statusCode(), 200);
-            assertEquals(headResponse.version(), HTTP_2);
+            assertEquals(200, headResponse.statusCode());
+            assertEquals(HTTP_2, headResponse.version());
 
             System.out.println("Setup: done");
         } catch (Exception x) {
@@ -202,8 +202,8 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
         }
     }
 
-    @AfterClass
-    public void tearDown() {
+    @AfterAll
+    public static void tearDown() {
         proxy = stop(proxy, DigestEchoServer.TunnelingProxy::stop);
         http1Server = stop(http1Server, HttpTestServer::stop);
         https1Server = stop(https1Server, HttpTestServer::stop);
@@ -378,7 +378,8 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
         }
     }
 
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("testURIs")
     public void test(List<URI> uris) throws Exception {
         System.out.println("Servers listening at "
                 + uris.stream().map(URI::toString)

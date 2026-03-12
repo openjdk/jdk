@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import static java.util.Locale.ROOT;
 
 public class Platform {
@@ -188,14 +189,17 @@ public class Platform {
     }
 
     public static boolean isMusl() {
-        try {
-            ProcessBuilder pb = new ProcessBuilder("ldd", "--version");
+        var lddPath = Stream.of("/bin/ldd", "/usr/bin/ldd").filter(p -> Files.exists(Path.of(p))).findFirst();
+        if (lddPath.isPresent()) {
+            ProcessBuilder pb = new ProcessBuilder(lddPath.get(), "--version");
             pb.redirectErrorStream(true);
-            Process p = pb.start();
-            BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            String l = b.readLine();
-            if (l != null && l.contains("musl")) { return true; }
-        } catch(Exception e) {
+            try (Process p = pb.start()) {
+                BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                String l = b.readLine();
+                return (l != null && l.contains("musl"));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
         return false;
     }

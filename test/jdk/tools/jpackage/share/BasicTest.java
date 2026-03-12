@@ -47,6 +47,7 @@ import jdk.jpackage.test.ConfigurationTarget;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageOutputValidator;
 import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.JavaAppDesc;
 import jdk.jpackage.test.JavaTool;
@@ -241,7 +242,11 @@ public final class BasicTest {
                         JPackageStringBundle.MAIN.cannedFormattedString("message.package-created"));
             }
 
-            cmd.validateOutput(verboseContent.toArray(CannedFormattedString[]::new));
+            new JPackageOutputValidator()
+                    .expectMatchingStrings(verboseContent.toArray(CannedFormattedString[]::new))
+                    .matchTimestamps()
+                    .stripTimestamps()
+                    .applyTo(cmd);
         });
 
         target.cmd().ifPresent(JPackageCommand::execute);
@@ -264,12 +269,9 @@ public final class BasicTest {
             cmd.addArgument("--verbose");
         }
 
-        cmd.validateOutput(Stream.of(
-                List.of("error.no-main-class-with-main-jar", "hello.jar"),
-                List.of("error.no-main-class-with-main-jar.advice", "hello.jar")
-        ).map(args -> {
-            return JPackageStringBundle.MAIN.cannedFormattedString(args.getFirst(), args.subList(1, args.size()).toArray());
-        }).toArray(CannedFormattedString[]::new));
+        cmd.validateErr(
+                JPackageCommand.makeError("error.no-main-class-with-main-jar", "hello.jar"),
+                JPackageCommand.makeAdvice("error.no-main-class-with-main-jar.advice", "hello.jar"));
 
         cmd.execute(1);
     }
@@ -429,7 +431,7 @@ public final class BasicTest {
 
         if (TestTempType.TEMPDIR_NOT_EMPTY.equals(type)) {
             pkgTest.setExpectedExitCode(1).addInitializer(cmd -> {
-                cmd.validateOutput(JPackageStringBundle.MAIN.cannedFormattedString(
+                cmd.validateErr(JPackageCommand.makeError(
                         "error.parameter-not-empty-directory", cmd.getArgumentValue("--temp"), "--temp"));
             }).addBundleVerifier(cmd -> {
                 // Check jpackage didn't use the supplied directory.

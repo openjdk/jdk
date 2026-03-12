@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 #include "cds/aotClassFilter.hpp"
 #include "cds/aotClassLocation.hpp"
+#include "cds/aotCompressedPointers.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
@@ -1282,11 +1283,10 @@ unsigned int SystemDictionaryShared::hash_for_shared_dictionary(address ptr) {
 class CopySharedClassInfoToArchive : StackObj {
   CompactHashtableWriter* _writer;
   bool _is_builtin;
-  ArchiveBuilder *_builder;
 public:
   CopySharedClassInfoToArchive(CompactHashtableWriter* writer,
                                bool is_builtin)
-    : _writer(writer), _is_builtin(is_builtin), _builder(ArchiveBuilder::current()) {}
+    : _writer(writer), _is_builtin(is_builtin) {}
 
   void do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
     if (!info.is_excluded() && info.is_builtin() == _is_builtin) {
@@ -1299,11 +1299,10 @@ public:
       Symbol* name = info._klass->name();
       name = ArchiveBuilder::current()->get_buffered_addr(name);
       hash = SystemDictionaryShared::hash_for_shared_dictionary((address)name);
-      u4 delta = _builder->buffer_to_offset_u4((address)record);
       if (_is_builtin && info._klass->is_hidden()) {
         // skip
       } else {
-        _writer->add(hash, delta);
+        _writer->add(hash, AOTCompressedPointers::encode_not_null(record));
       }
       if (log_is_enabled(Trace, aot, hashtables)) {
         ResourceMark rm;

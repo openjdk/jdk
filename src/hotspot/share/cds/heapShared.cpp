@@ -25,6 +25,7 @@
 #include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassInitializer.hpp"
 #include "cds/aotClassLocation.hpp"
+#include "cds/aotCompressedPointers.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotMappedHeapLoader.hpp"
 #include "cds/aotMappedHeapWriter.hpp"
@@ -94,55 +95,6 @@ struct ArchivableStaticFieldInfo {
     return klass_name != nullptr;
   }
 };
-
-// Anything that goes in the header must be thoroughly purged from uninitialized memory
-// as it will be written to disk. Therefore, the constructors memset the memory to 0.
-// This is not the prettiest thing, but we need to know every byte is initialized,
-// including potential padding between fields.
-
-ArchiveMappedHeapHeader::ArchiveMappedHeapHeader(size_t ptrmap_start_pos,
-                                                 size_t oopmap_start_pos,
-                                                 HeapRootSegments root_segments) {
-  memset((char*)this, 0, sizeof(*this));
-  _ptrmap_start_pos = ptrmap_start_pos;
-  _oopmap_start_pos = oopmap_start_pos;
-  _root_segments = root_segments;
-}
-
-ArchiveMappedHeapHeader::ArchiveMappedHeapHeader() {
-  memset((char*)this, 0, sizeof(*this));
-}
-
-ArchiveMappedHeapHeader ArchiveMappedHeapInfo::create_header() {
-  return ArchiveMappedHeapHeader{_ptrmap_start_pos,
-                                 _oopmap_start_pos,
-                                 _root_segments};
-}
-
-ArchiveStreamedHeapHeader::ArchiveStreamedHeapHeader(size_t forwarding_offset,
-                                                     size_t roots_offset,
-                                                     size_t num_roots,
-                                                     size_t root_highest_object_index_table_offset,
-                                                     size_t num_archived_objects) {
-  memset((char*)this, 0, sizeof(*this));
-  _forwarding_offset = forwarding_offset;
-  _roots_offset = roots_offset;
-  _num_roots = num_roots;
-  _root_highest_object_index_table_offset = root_highest_object_index_table_offset;
-  _num_archived_objects = num_archived_objects;
-}
-
-ArchiveStreamedHeapHeader::ArchiveStreamedHeapHeader() {
-  memset((char*)this, 0, sizeof(*this));
-}
-
-ArchiveStreamedHeapHeader ArchiveStreamedHeapInfo::create_header() {
-  return ArchiveStreamedHeapHeader{_forwarding_offset,
-                                   _roots_offset,
-                                   _num_roots,
-                                   _root_highest_object_index_table_offset,
-                                   _num_archived_objects};
-}
 
 HeapArchiveMode HeapShared::_heap_load_mode = HeapArchiveMode::_uninitialized;
 HeapArchiveMode HeapShared::_heap_write_mode = HeapArchiveMode::_uninitialized;
@@ -293,6 +245,28 @@ void HeapShared::reset_archived_object_states(TRAPS) {
                          CHECK);
   Handle boot_loader(THREAD, result.get_oop());
   reset_states(boot_loader(), CHECK);
+}
+
+void HeapShared::ensure_determinism(TRAPS) {
+  TempNewSymbol class_name = SymbolTable::new_symbol("jdk/internal/util/WeakReferenceKey");
+  TempNewSymbol method_name = SymbolTable::new_symbol("ensureDeterministicAOTCache");
+
+  Klass* weak_ref_key_class = SystemDictionary::resolve_or_fail(class_name, true, CHECK);
+  precond(weak_ref_key_class != nullptr);
+
+  log_debug(aot)("Calling WeakReferenceKey::ensureDeterministicAOTCache(Object.class)");
+  JavaValue result(T_BOOLEAN);
+  JavaCalls::call_static(&result,
+                         weak_ref_key_class,
+                         method_name,
+                         vmSymbols::void_boolean_signature(),
+                         CHECK);
+  assert(result.get_jboolean() == false, "sanity");
+}
+
+void HeapShared::prepare_for_archiving(TRAPS) {
+  reset_archived_object_states(CHECK);
+  ensure_determinism(CHECK);
 }
 
 HeapShared::ArchivedObjectCache* HeapShared::_archived_object_cache = nullptr;
@@ -892,7 +866,7 @@ void HeapShared::end_scanning_for_oops() {
   delete_seen_objects_table();
 }
 
-void HeapShared::write_heap(ArchiveMappedHeapInfo* mapped_heap_info, ArchiveStreamedHeapInfo* streamed_heap_info) {
+void HeapShared::write_heap(AOTMappedHeapInfo* mapped_heap_info, AOTStreamedHeapInfo* streamed_heap_info) {
   {
     NoSafepointVerifier nsv;
     CDSHeapVerifier::verify();
@@ -1197,8 +1171,7 @@ public:
       ArchivedKlassSubGraphInfoRecord* record = HeapShared::archive_subgraph_info(&info);
       Klass* buffered_k = ArchiveBuilder::get_buffered_klass(klass);
       unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary((address)buffered_k);
-      u4 delta = ArchiveBuilder::current()->any_to_offset_u4(record);
-      _writer->add(hash, delta);
+      _writer->add(hash, AOTCompressedPointers::encode_not_null(record));
     }
     return true; // keep on iterating
   }
