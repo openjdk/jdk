@@ -252,6 +252,7 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
 
     phase5_epilog();
   }
+  heap->start_idle_span();
 
   // Resize metaspace
   MetaspaceGC::compute_new_size();
@@ -1124,8 +1125,9 @@ void ShenandoahFullGC::phase5_epilog() {
       if (heap->mode()->is_generational()) {
         ShenandoahGenerationalFullGC::compute_balances();
       }
-      free_set->finish_rebuild(young_trashed_regions, old_trashed_regions, num_old);
+      heap->free_set()->finish_rebuild(young_trashed_regions, old_trashed_regions, num_old);
     }
+
     // Set mark incomplete because the marking bitmaps have been reset except pinned regions.
     _generation->set_mark_incomplete();
 

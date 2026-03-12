@@ -40,6 +40,7 @@ class ShenandoahGenerationalHeap : public ShenandoahHeap {
 public:
   explicit ShenandoahGenerationalHeap(ShenandoahCollectorPolicy* policy);
   void post_initialize() override;
+  void initialize_generations() override;
   void initialize_heuristics() override;
   void post_initialize_heuristics() override;
 
@@ -81,6 +82,8 @@ public:
   }
 
   inline bool is_tenurable(const ShenandoahHeapRegion* r) const;
+
+  void start_idle_span() override;
 
   // Ages regions that haven't been used for allocations in the current cycle.
   // Resets ages for regions that have been used for allocations.

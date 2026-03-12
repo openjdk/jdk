@@ -31,7 +31,7 @@
  *        jdk.test.lib.Asserts
  *        jdk.test.lib.Utils
  *        jdk.test.lib.net.SimpleSSLContext
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors
+ * @run junit/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors
  *                     -Djdk.internal.httpclient.debug=true
  *                     H3BasicTest
  */
@@ -60,7 +60,6 @@ import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.httpclient.test.lib.http3.Http3TestServer;
 import jdk.test.lib.RandomFactory;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.Test;
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
@@ -69,6 +68,8 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static jdk.test.lib.Asserts.assertFileContentsEqual;
 import static jdk.test.lib.Utils.createTempFile;
 import static jdk.test.lib.Utils.createTempFileOfSize;
+
+import org.junit.jupiter.api.Test;
 
 public class H3BasicTest implements HttpServerAdapters {
 
@@ -151,7 +152,7 @@ public class H3BasicTest implements HttpServerAdapters {
     }
 
     @Test
-    public static void test() throws Exception {
+    public void test() throws Exception {
         try {
             initialize();
             System.out.println("servers initialized");
