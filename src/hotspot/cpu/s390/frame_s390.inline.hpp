@@ -136,7 +136,7 @@ inline void frame::interpreter_frame_set_monitors(BasicObjectLock* monitors) {
 // represents an invalid (incomparable) frame. Shold not be called for heap frames.
 inline intptr_t* frame::id(void) const {
   // Use _fp. _sp or _unextended_sp wouldn't be correct due to resizing.
-  return _fp;
+  return real_fp();
 }
 
 // Return true if this frame is older (less recent activation) than

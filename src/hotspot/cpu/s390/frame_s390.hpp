@@ -463,7 +463,7 @@
 
   // Accessors
 
-  inline intptr_t* fp() const { return _fp; }
+  inline intptr_t* fp() const { assert_absolute(); return _fp; }
 
  private:
 
