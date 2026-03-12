@@ -2581,6 +2581,13 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       return u->Opcode() == Op_CmpU;
     });
   }
+  // If changed AddI/AddL inputs, check URShift users for
+  // "((X << z) + Y) >>> z" optimization in URShift{I,L}Node::Ideal.
+  if (use_op == Op_AddI || use_op == Op_AddL) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_URShiftI || u->Opcode() == Op_URShiftL;
+    });
+  }
   // If changed AndI/AndL inputs, check RShift/URShift users for "(x & mask) >> shift" optimization opportunity
   if (use_op == Op_AndI || use_op == Op_AndL) {
     add_users_to_worklist_if(worklist, use, [](Node* u) {
