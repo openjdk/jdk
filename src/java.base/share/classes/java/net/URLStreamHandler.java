@@ -487,10 +487,10 @@ public abstract class URLStreamHandler {
         // 3: A single concatenation is faster than combining results of other concatenations
 
         // Optionality, subtly different for authority
-        var emptyAuth = u.getAuthority() == null || u.getAuthority().isEmpty();
-        var emptyPath = u.getPath() == null;
-        var emptyQuery = u.getQuery() == null;
-        var emptyRef = u.getRef() == null;
+        boolean emptyAuth = u.getAuthority() == null || u.getAuthority().isEmpty();
+        boolean emptyPath = u.getPath() == null;
+        boolean emptyQuery = u.getQuery() == null;
+        boolean emptyRef = u.getRef() == null;
         var path = emptyPath ? "" : u.getPath();
         // Fast paths for empty components
         if (emptyQuery && emptyRef) {
