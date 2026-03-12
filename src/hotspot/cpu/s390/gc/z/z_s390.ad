@@ -146,11 +146,10 @@ instruct zStorePNull(memory mem, immP0 zero, iRegP temp, flagsReg cr) %{
 %}
 
 // TODO: current implementation of z_color requires an extra register, either verify we have that or change the implementation
-instruct zCompareAndSwapP(iRegI res, iRegP mem, iRegP newval, iRegP temp, iRegP oldval, iRegP oldval_temp, flagsReg cr) %{
-  match(Set res (CompareAndSwapP mem (Binary oldval newval)));
-  match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
+instruct zCompareAndExchangeP(iRegI res, iRegP mem, iRegP newval, iRegP temp, iRegP oldval, iRegP oldval_temp, flagsReg cr) %{
+  match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
   predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP tmp, KILL oldval, KILL cr);
+  effect(TEMP tmp, Temp oldval_temp, KILL oldval, KILL cr);
 
   format %{ "CompareAndSwapP $oldval, $newval, $mem" %}
   ins_encode %{
@@ -159,7 +158,55 @@ instruct zCompareAndSwapP(iRegI res, iRegP mem, iRegP newval, iRegP temp, iRegP 
     z_store_barrier(masm, this, mem_addr, $newval$$Register, $temp$$Register, true /* is_atomic */);
     z_color(masm, this, $oldval_temp$$Register, $oldval$$Register);
     __ z_csg($oldval_temp$$Register, $newval$$Register, $mem_addr$$Address);
-// TODO: Check if we need to uncolor
+    z_uncolor(masm, this, $res$$Register);
+// TODO: Check which register we need to uncolor
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+// TODO: Check if number and placements of these arguments matter? and if so where it's decided
+instruct zCompareAndSwap(iRegI res, iRegP mem, iRegP newval, iRegP newval_temp, iRegP oldval, iRegP oldval_temp, flagsReg cr) %{
+  match(Set res (CompareAndSwapP mem (Binary oldval newval)));
+  match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
+  predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
+  effect(TEMP newval_temp, TEMP oldval_temp, KILL oldval, KILL cr);
+
+  format %{ " CompareAndExchange $oldval, $newval, $mem\n\t"
+            " ipm $res\n\t"
+            " srl $res, 28"  %}
+
+  ins_encode %{
+    assert_different_registers($oldval$$Register, $mem$$Register);
+    const Address mem_addr = Address($mem$$Register, 0);
+    z_store_barrier(masm, this, mem_addr, $newval$$Register, $newval_temp$$Register, true /* is_atomic */);
+    z_color(masm, this, $oldval_temp$$Register, $oldval$$Register);
+    __ z_csg($oldval_temp$$Register, $newval_temp$$Register, mem_addr);
+    // TODO: double check if cc is set to 0 if failed, chat is saying otherwise but this is part of already implemented code
+    __ load_const_optimized(Z_R0_scratch, 0L);           // false (failed)
+    __ load_const_optimized($res$$Register, 1L);         // true  (succeed)
+    __ z_locgr($res$$Register, Z_R0_scratch, Assembler::bcondNotEqual);
+    %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct zSetAndGetP(iRegP mem, iRegP newval, iRegP temp, flagsReg cr) %{
+  match(Set newval (GetAndSetP mem newval));
+  predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
+  effect(TEMP tmp, KILL cr);
+
+  format %{ "XCHGP $newval, $mem" %}
+
+  ins_encode %{
+    Label(retry);
+    const Address mem_addr = Address($mem$$Register, 0);
+
+    z_store_barrier(masm, this, mem_addr, $newval$$Register, $temp$$Register, true /* is_atomic */);
+    __ z_lg($temp$$Register, mem_addr);
+    __ bind(retry);
+    __ z_csg($temp$$Register, $newval$$Register, mem_addr);
+    __ z_brne(retry);
+    __ z_lgr($newval$$Register, $temp$$Register);
+    z_uncolor(masm, this, $newval$$Register);
   %}
   ins_pipe(pipe_class_dummy);
 %}
