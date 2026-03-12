@@ -354,6 +354,11 @@ void G1FullCollector::phase1_mark_live_objects() {
   }
 #if TASKQUEUE_STATS
   marking_task_queues()->print_and_reset_taskqueue_stats("Marking Task Queue");
+  auto get_stats = [&](uint i) {
+    return marker(i)->partial_array_splitter().stats();
+  };
+  PartialArrayTaskStats::log_set(_num_workers, get_stats,
+                                 "Partial Array Full GC Task Stats");
 #endif
 }
 
