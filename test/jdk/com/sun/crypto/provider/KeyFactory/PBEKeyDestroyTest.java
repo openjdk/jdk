@@ -31,7 +31,9 @@
 import javax.crypto.*;
 import javax.crypto.spec.*;
 import java.nio.charset.StandardCharsets;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
@@ -51,20 +53,20 @@ public class PBEKeyDestroyTest {
         // should be equal
         assertFalse(key1.isDestroyed());
         assertFalse(key2.isDestroyed());
-        assertTrue(key1.equals(key2));
-        assertTrue(key2.equals(key1));
+        assertEquals(key1, key2);
+        assertEquals(key2, key1);
 
         // destroy key1
         key1.destroy();
         assertTrue(key1.isDestroyed());
-        assertFalse(key1.equals(key2));
-        assertFalse(key2.equals(key1));
+        assertNotEquals(key1, key2);
+        assertNotEquals(key2, key1);
 
         // also destroy key2
         key2.destroy();
         assertTrue(key2.isDestroyed());
-        assertFalse(key1.equals(key2));
-        assertFalse(key2.equals(key1));
+        assertNotEquals(key1, key2);
+        assertNotEquals(key2, key1);
 
         // call destroy again to make sure no unexpected exceptions
         key2.destroy();
