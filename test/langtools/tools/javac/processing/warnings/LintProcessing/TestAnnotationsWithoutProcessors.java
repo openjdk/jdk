@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,20 @@
 
 /*
  * @test
- * @bug 8193214
+ * @bug 8193214 8379446
  * @summary Verify annotations without processors warning not given for base module annotations.
  * @library /tools/javac/lib
  * @modules java.compiler
  * @build JavacTestingAbstractProcessor TestAnnotationsWithoutProcessors
- * @compile/ref=empty.out -XDrawDiagnostics -Xlint:processing,-options -processor TestAnnotationsWithoutProcessors --release 8 TestAnnotationsWithoutProcessors.java
+ * @compile/ref=empty.out -XDrawDiagnostics -Xlint:processing,-options -processor TestAnnotationsWithoutProcessors -source 8 TestAnnotationsWithoutProcessors.java
  * @compile/ref=empty.out -XDrawDiagnostics -Xlint:processing -processor TestAnnotationsWithoutProcessors TestAnnotationsWithoutProcessors.java
  */
 
 import java.lang.annotation.*;
+import java.lang.invoke.CallSiteBootstrap;
+import java.lang.invoke.ConstantBootstrap;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.TypeDescriptor;
 import java.util.*;
 import javax.annotation.processing.*;
 import javax.lang.model.element.*;
@@ -52,6 +56,10 @@ public class TestAnnotationsWithoutProcessors extends JavacTestingAbstractProces
     public static void main(String... args) {
         return;
     }
+
+    @CallSiteBootstrap
+    @ConstantBootstrap
+    public static Object bootstrap(MethodHandles.Lookup lookup, String name, TypeDescriptor type) { return null; }
 
     @FunctionalInterface
     interface OneMethod {
