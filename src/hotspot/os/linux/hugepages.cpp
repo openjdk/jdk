@@ -35,16 +35,16 @@
 #include <dirent.h>
 
 ExplicitHugePageSupport::ExplicitHugePageSupport() :
-  _initialized(false), _pagesizes(), _pre_allocated(), _default_hugepage_size(SIZE_MAX), _inconsistent(false) {}
+  _initialized(false), _pagesizes(), _pre_allocated_pagesizes(), _default_hugepage_size(SIZE_MAX), _inconsistent(false) {}
 
 os::PageSizes ExplicitHugePageSupport::pagesizes() const {
   assert(_initialized, "Not initialized");
   return _pagesizes;
 }
 
-os::PageSizes ExplicitHugePageSupport::pre_allocated() const {
+os::PageSizes ExplicitHugePageSupport::pre_allocated_pagesizes() const {
   assert(_initialized, "Not initialized");
-  return _pre_allocated;
+  return _pre_allocated_pagesizes;
 }
 
 size_t ExplicitHugePageSupport::default_hugepage_size() const {
@@ -167,7 +167,7 @@ void ExplicitHugePageSupport::scan_os() {
   _default_hugepage_size = scan_default_hugepagesize();
   if (_default_hugepage_size > 0) {
     _pagesizes = scan_hugepages();
-    _pre_allocated = filter_pre_allocated_hugepages(_pagesizes);
+    _pre_allocated_pagesizes = filter_pre_allocated_hugepages(_pagesizes);
     // See https://www.kernel.org/doc/Documentation/vm/hugetlbpage.txt: /proc/meminfo should match
     // /sys/kernel/mm/hugepages/hugepages-xxxx. However, we may run on a broken kernel (e.g. on WSL)
     // that only exposes /proc/meminfo but not /sys/kernel/mm/hugepages. In that case, we are not

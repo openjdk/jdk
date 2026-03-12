@@ -48,7 +48,7 @@ class ExplicitHugePageSupport {
   os::PageSizes _pagesizes;
 
   // Above pages filtered for where the contents of file nr_hugepages was larger than zero
-  os::PageSizes _pre_allocated;
+  os::PageSizes _pre_allocated_pagesizes;
 
   // Contains the default hugepage. The "default hugepage size" is the one that
   // - is marked in /proc/meminfo as "Hugepagesize"
@@ -64,7 +64,7 @@ public:
   void scan_os();
 
   os::PageSizes pagesizes() const;
-  os::PageSizes pre_allocated() const;
+  os::PageSizes pre_allocated_pagesizes() const;
   size_t default_hugepage_size() const;
   void print_on(outputStream* os);
 
