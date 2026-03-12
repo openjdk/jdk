@@ -118,7 +118,8 @@ public class ImageLocation {
      *     <li>{@code "[/modules]/<module>/META-INF/preview/<path>"} preview
      *     resource or directory:<br>
      *     {@code FLAGS_IS_PREVIEW_VERSION}, and additionally {@code
-     *     FLAGS_IS_PREVIEW_ONLY} if no normal version of the resource exists.
+     *     FLAGS_IS_PREVIEW_ONLY} if no normal version of the resource or
+     *     directory exists.
      *     <li>In all other cases, returned flags are zero (note that {@code
      *     "/packages/xxx"} entries may have flags, but these are calculated
      *     elsewhere).
@@ -129,7 +130,7 @@ public class ImageLocation {
      *     is present.
      * @return flags for the ATTRIBUTE_PREVIEW_FLAGS attribute.
      */
-    public static int getFlags(String name, Predicate<String> hasEntry) {
+    public static int getPreviewFlags(String name, Predicate<String> hasEntry) {
         if (name.startsWith(PACKAGES_PREFIX + "/")) {
             throw new IllegalArgumentException(
                     "Package sub-directory flags handled separately: " + name);

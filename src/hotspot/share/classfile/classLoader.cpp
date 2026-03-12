@@ -267,7 +267,7 @@ static bool jimage_exists() {
 // Returns the JImage file reference (which may or may not be initialized).
 static JImageFile* jimage_non_null() {
   assert(jimage_exists(), "should have been opened by ClassLoader::lookup_vm_options "
-                          "and remained throughout normal JVM lifetime");
+                          "and remains open throughout normal JVM lifetime");
   return JImage_file;
 }
 

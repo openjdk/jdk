@@ -69,6 +69,9 @@ public final class ModuleReference implements Comparable<ModuleReference> {
      * given module.
      *
      * <p>The same reference can be used for multiple packages in the same module.
+     *
+     * @param moduleName the name of the module in which this package exits.
+     * @param isPreview whether the associated package is defined for preview mode.
      */
     public static ModuleReference forPackage(String moduleName, boolean isPreview) {
         return new ModuleReference(moduleName, FLAGS_PKG_HAS_RESOURCES | previewFlag(isPreview));
@@ -78,11 +81,18 @@ public final class ModuleReference implements Comparable<ModuleReference> {
      * Returns a reference for empty packages in a given module.
      *
      * <p>The same reference can be used for multiple packages in the same module.
+     *
+     * @param moduleName the name of the module in which this package exits.
+     * @param isPreview whether the associated package is defined for preview mode.
      */
     public static ModuleReference forEmptyPackage(String moduleName, boolean isPreview) {
         return new ModuleReference(moduleName, previewFlag(isPreview));
     }
 
+    /**
+     * Returns the appropriate FLAGS_PKG_HAS_XXX_VERSION constant according to
+     * whether the associated package is defined for preview mode.
+     */
     private static int previewFlag(boolean isPreview) {
         return isPreview ? FLAGS_PKG_HAS_PREVIEW_VERSION : FLAGS_PKG_HAS_NORMAL_VERSION;
     }

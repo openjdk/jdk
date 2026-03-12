@@ -357,7 +357,7 @@ u4 ImageFileReader::find_location_index(const char* path, u8 *size) const {
         ImageLocation location(data);
         // Make sure result is not a false positive.
         if (verify_location(location, path)) {
-                *size = (jlong)location.get_attribute(ImageLocation::ATTRIBUTE_UNCOMPRESSED);
+            *size = (jlong)location.get_attribute(ImageLocation::ATTRIBUTE_UNCOMPRESSED);
             return offset;
         }
     }

@@ -260,7 +260,7 @@ public final class ImageFileCreator {
                     offset[0] += onFileSize;
                     return;
                 }
-                int locFlags = ImageLocation.getFlags(
+                int locFlags = ImageLocation.getPreviewFlags(
                         res.path(), p -> resultResources.findEntry(p).isPresent());
                 duplicates.add(path);
                 writer.addLocation(path, offset[0], compressedSize, uncompressedSize, locFlags);

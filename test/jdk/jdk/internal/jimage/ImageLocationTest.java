@@ -52,17 +52,17 @@ public class ImageLocationTest {
         String previewName = previewName(name);
 
         int noPreviewFlags =
-                ImageLocation.getFlags(name, Set.of(name)::contains);
+                ImageLocation.getPreviewFlags(name, Set.of(name)::contains);
         assertEquals(0, noPreviewFlags);
         assertFalse(ImageLocation.hasPreviewVersion(noPreviewFlags));
         assertFalse(ImageLocation.isPreviewOnly(noPreviewFlags));
 
         int withPreviewFlags =
-                ImageLocation.getFlags(name, Set.of(name, previewName)::contains);
+                ImageLocation.getPreviewFlags(name, Set.of(name, previewName)::contains);
         assertTrue(ImageLocation.hasPreviewVersion(withPreviewFlags));
         assertFalse(ImageLocation.isPreviewOnly(withPreviewFlags));
 
-        int previewOnlyFlags = ImageLocation.getFlags(previewName, Set.of(previewName)::contains);
+        int previewOnlyFlags = ImageLocation.getPreviewFlags(previewName, Set.of(previewName)::contains);
         assertFalse(ImageLocation.hasPreviewVersion(previewOnlyFlags));
         assertTrue(ImageLocation.isPreviewOnly(previewOnlyFlags));
     }
@@ -75,14 +75,14 @@ public class ImageLocationTest {
             "/modules/modfoo/META-INF",
             "/modules/modfoo/META-INF/module-info.class"})
     public void getFlags_zero(String name) {
-        assertEquals(0, ImageLocation.getFlags(name, Set.of(name)::contains));
+        assertEquals(0, ImageLocation.getPreviewFlags(name, Set.of(name)::contains));
     }
 
     @Test
     public void getFlags_packageFlags() {
         assertThrows(
                 IllegalArgumentException.class,
-                () -> ImageLocation.getFlags("/packages/pkgname", p -> true));
+                () -> ImageLocation.getPreviewFlags("/packages/pkgname", p -> true));
     }
 
     @Test

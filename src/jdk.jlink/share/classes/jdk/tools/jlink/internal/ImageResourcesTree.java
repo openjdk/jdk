@@ -352,7 +352,7 @@ public final class ImageResourcesTree {
                     i += 1;
                 }
                 if (current != tree.getRoot() && !(current instanceof ResourceNode)) {
-                    int locFlags = ImageLocation.getFlags(current.getPath(), tree.directAccess::containsKey);
+                    int locFlags = ImageLocation.getPreviewFlags(current.getPath(), tree.directAccess::containsKey);
                     // Normal directory entries have 4-byte entries (offset only).
                     int size = ret.length * 4;
                     writer.addLocation(current.getPath(), offset, 0, size, locFlags);
