@@ -482,10 +482,10 @@ public abstract class URLStreamHandler {
      */
     protected String toExternalForm(URL u) {
         // Optionality, subtly different for authority
-        var emptyAuth  = u.getAuthority() == null || u.getAuthority().isEmpty();
+        var emptyAuth = u.getAuthority() == null || u.getAuthority().isEmpty();
         var emptyPath = u.getPath() == null;
         var emptyQuery = u.getQuery() == null;
-        var emptyRef   = u.getRef() == null;
+        var emptyRef = u.getRef() == null;
         // Fast paths for empty components
         if (emptyQuery && emptyRef) {
             var path = emptyPath ? "" : u.getPath();
@@ -494,13 +494,13 @@ public abstract class URLStreamHandler {
                     : (u.getProtocol() + "://" + u.getAuthority() + path);
         }
         // Prefer locals for efficient concatenation
-        var authSep  = emptyAuth  ? ":" : "://";
-        var auth     = emptyAuth  ? "" : u.getAuthority();
-        var path     = emptyPath  ? "" : u.getPath();
+        var authSep = emptyAuth ? ":" : "://";
+        var auth = emptyAuth ? "" : u.getAuthority();
+        var path = emptyPath ? "" : u.getPath();
         var querySep = emptyQuery ? "" : "?";
-        var query    = emptyQuery ? "" : u.getQuery();
-        var refSep   = emptyRef   ? "" : "#";
-        var ref      = emptyRef   ? "" : u.getRef();
+        var query = emptyQuery ? "" : u.getQuery();
+        var refSep = emptyRef ? "" : "#";
+        var ref = emptyRef ? "" : u.getRef();
         return u.getProtocol()
                 + authSep + auth
                 + path
