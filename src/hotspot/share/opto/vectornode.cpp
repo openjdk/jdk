@@ -1721,7 +1721,7 @@ bool ReductionNode::auto_vectorization_requires_strict_order(int vopc) {
     case Op_AddReductionVD:
     case Op_MulReductionVD:
       // Floating-point addition and multiplication are non-associative,
-      // so AddReductionVF/D and MulReductionVF/D require strict ordering
+      // so AddReductionVHF/VF/VD and MulReductionVHF/VF/VD require strict ordering
       // in auto-vectorization.
       return true;
     default:

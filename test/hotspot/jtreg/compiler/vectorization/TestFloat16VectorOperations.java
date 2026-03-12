@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2026, Arm Limited. All rights reserved.
+ * Copyright 2025, 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -495,7 +495,7 @@ public class TestFloat16VectorOperations {
         Verify.checkEQ(shortBitsToFloat16(expected), shortBitsToFloat16(vectorMulReductionFloat16()));
     }
 
-    // This testcase verifies that autovectorization takes place in scenarios where masked
+    // This test case verifies that autovectorization takes place in scenarios where masked
     // add reduction instructions are required to be generated on platforms that support
     // such masked/partial instructions.
     @Test
@@ -514,7 +514,7 @@ public class TestFloat16VectorOperations {
     }
 
     @Check(test="vectorAddReductionFloat16Partial")
-    public void checkResultvectorAddReductionFloat16Partial() {
+    public void checkResultAddReductionFloat16Partial() {
         short expected = (short) 0;
         for (int i = 0; i < LEN; i+=8) {
             expected = floatToFloat16(float16ToFloat(expected) + float16ToFloat(input1[i]));
@@ -525,7 +525,7 @@ public class TestFloat16VectorOperations {
         Verify.checkEQ(shortBitsToFloat16(expected), shortBitsToFloat16(vectorAddReductionFloat16Partial()));
     }
 
-    // Partial multiply reduction for floating point is disabled on aarch64. This test makes sure that code that performs such partial
+    // Partial multiply reduction for floating point is disabled on AArch64. This test makes sure that code that performs such partial
     // multiply reduction operation for FP16 runs without any failures/result mismatch.
     @Test
     @Warmup(500)
@@ -541,7 +541,7 @@ public class TestFloat16VectorOperations {
     }
 
     @Check(test="vectorMulReductionFloat16Partial")
-    public void checkResultvectorMulReductionFloat16Partial() {
+    public void checkResultMulReductionFloat16Partial() {
         short expected = floatToFloat16(1.0f);
         for (int i = 0; i < LEN; i+=8) {
             expected = floatToFloat16(float16ToFloat(expected) * float16ToFloat(input1[i]));
@@ -552,7 +552,7 @@ public class TestFloat16VectorOperations {
         Verify.checkEQ(shortBitsToFloat16(expected), shortBitsToFloat16(vectorMulReductionFloat16Partial()));
     }
 
-    // This testcase verifies that autovectorization does NOT take place when using Float16
+    // This test case verifies that autovectorization does NOT take place when using Float16.
     // Filed RFE: JDK-8375321
     @Test
     @Warmup(50)

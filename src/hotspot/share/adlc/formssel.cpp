@@ -4233,7 +4233,7 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"PopulateIndex")==0 ||
         strcmp(opType,"AddReductionVI")==0 ||
         strcmp(opType,"AddReductionVL")==0 ||
-        strcmp(opType, "AddReductionVHF")==0 ||
+        strcmp(opType,"AddReductionVHF")==0 ||
         strcmp(opType,"AddReductionVF")==0 ||
         strcmp(opType,"AddReductionVD")==0 ||
         strcmp(opType,"MulReductionVI")==0 ||

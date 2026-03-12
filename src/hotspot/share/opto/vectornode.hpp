@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2025 Arm Limited and/or its affiliates.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -611,7 +611,7 @@ public:
 class MulReductionVHFNode : public ReductionNode {
 private:
   // True if mul reduction operation for half floats requires strict ordering.
-  // As an example - The value is true when add reduction for half floats is auto-vectorized
+  // As an example - The value is true when mul reduction for half floats is auto-vectorized
   // as auto-vectorization mandates strict ordering but the value is false when this node
   // is generated through VectorAPI as VectorAPI does not impose any such rules on ordering.
   const bool _requires_strict_order;
