@@ -27,8 +27,10 @@
  * @summary Sanity test for -XX:+TraceSplitIf to ensure it doesn't crash and produces output.
  * @library /test/lib
  * @requires vm.compiler2.enabled & vm.debug
- * @run driver TestTraceSplitIf
+ * @run driver ${test.main.class}
  */
+
+package compiler.splitif;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
