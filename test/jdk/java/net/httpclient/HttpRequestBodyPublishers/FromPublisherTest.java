@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.net.http.HttpRequest;
+import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -37,11 +39,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @test
  * @bug 8364733
  * @summary Verify all specified `HttpRequest.BodyPublishers::fromPublisher` behavior
- * @build RecordingSubscriber
- * @run junit FromPublisherTest
+ * @build ByteBufferUtils
+ *        RecordingSubscriber
+ *        ReplayTestSupport
+ * @run junit ${test.main.class}
  */
 
-class FromPublisherTest {
+class FromPublisherTest extends ReplayTestSupport {
 
     @Test
     void testNullPublisher() {
@@ -95,6 +99,17 @@ class FromPublisherTest {
         assertEquals("subscribe", publisherInvocations.take());
         assertEquals(subscriber, publisherInvocations.take());
         assertTrue(subscriber.invocations.isEmpty());
+    }
+
+    @Override
+    Iterable<ReplayTarget> createReplayTargets() {
+        byte[] content = ByteBufferUtils.byteArrayOfLength(10);
+        ByteBuffer expectedBuffer = ByteBuffer.wrap(content);
+        HttpRequest.BodyPublisher delegatePublisher = HttpRequest.BodyPublishers.ofByteArray(content);
+        HttpRequest.BodyPublisher publisher =
+                HttpRequest.BodyPublishers.fromPublisher(
+                        delegatePublisher, delegatePublisher.contentLength());
+        return List.of(new ReplayTarget(expectedBuffer, publisher));
     }
 
 }

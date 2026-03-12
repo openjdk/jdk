@@ -26,9 +26,12 @@
  * @summary Verifies `HttpRequest.BodyPublishers::ofFileChannel`
  * @library /test/lib
  *          /test/jdk/java/net/httpclient/lib
- * @build jdk.httpclient.test.lib.common.HttpServerAdapters
+ * @build ByteBufferUtils
+ *        RecordingSubscriber
+ *        ReplayTestSupport
+ *        jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext
- * @run junit FileChannelPublisherTest
+ * @run junit ${test.main.class}
  */
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestHandler;
@@ -54,6 +57,7 @@ import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
+import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
@@ -82,9 +86,9 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class FileChannelPublisherTest {
+class OfFileChannelTest extends ReplayTestSupport {
 
-    private static final String CLASS_NAME = FileChannelPublisherTest.class.getSimpleName();
+    private static final String CLASS_NAME = OfFileChannelTest.class.getSimpleName();
 
     private static final Logger LOGGER = Utils.getDebugLogger(CLASS_NAME::toString, Utils.DEBUG);
 
@@ -648,6 +652,22 @@ class FileChannelPublisherTest {
             }
         }
 
+    }
+
+    @Override
+    Iterable<ReplayTarget> createReplayTargets() {
+        int fileLength = 42;
+        byte[] fileBytes = generateFileBytes(fileLength);
+        Path filePath = Path.of("replayTarget.txt");
+        try {
+            Files.write(filePath, fileBytes, StandardOpenOption.CREATE);
+            FileChannel fileChannel = FileChannel.open(filePath);
+            HttpRequest.BodyPublisher publisher = BodyPublishers.ofFileChannel(fileChannel, 0, fileLength);
+            ByteBuffer expectedBuffer = ByteBuffer.wrap(fileBytes);
+            return List.of(new ReplayTarget(expectedBuffer, fileLength, publisher, fileChannel));
+        } catch (IOException ioe) {
+            throw new UncheckedIOException(ioe);
+        }
     }
 
     /**

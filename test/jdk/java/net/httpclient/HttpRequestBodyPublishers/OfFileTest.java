@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,15 +51,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @test
  * @bug 8226303 8235459 8358688 8364733
  * @summary Verify all specified `HttpRequest.BodyPublishers::ofFile` behavior
+ *
  * @build ByteBufferUtils
  *        RecordingSubscriber
- * @run junit OfFileTest
+ *        ReplayTestSupport
+ *
+ * @run junit ${test.main.class}
  *
  * @comment Using `main/othervm` to initiate tests that depend on a custom-configured JVM
- * @run main/othervm -Xmx64m OfFileTest testOOM
+ * @run main/othervm -Xmx64m ${test.main.class} testOOM
  */
 
-public class OfFileTest {
+public class OfFileTest extends ReplayTestSupport {
 
     private static final Path DEFAULT_FS_DIR = Path.of(System.getProperty("user.dir", "."));
 
@@ -220,6 +223,24 @@ public class OfFileTest {
         byte[] readBytes = subscriber.drainToByteArray(subscription, Long.MAX_VALUE);
         ByteBufferUtils.assertEquals(fileBytes, readBytes, null);
 
+    }
+
+    @Override
+    Iterable<ReplayTarget> createReplayTargets() {
+        byte[] fileBytes = ByteBufferUtils.byteArrayOfLength(3);
+        ByteBuffer expectedBuffer = ByteBuffer.wrap(fileBytes);
+        return parentDirs()
+                .stream()
+                .map(parentDir -> {
+                    try {
+                        Path filePath = createFile(parentDir, "replayTest", fileBytes);
+                        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofFile(filePath);
+                        return new ReplayTarget(expectedBuffer, publisher);
+                    } catch (IOException ioe) {
+                        throw new UncheckedIOException(ioe);
+                    }
+                })
+                .toList();
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.http.HttpRequest;
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.Flow;
 import java.util.function.Supplier;
@@ -41,15 +42,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @test
  * @bug 8364733
  * @summary Verify all specified `HttpRequest.BodyPublishers::ofInputStream` behavior
+ *
  * @build ByteBufferUtils
  *        RecordingSubscriber
- * @run junit OfInputStreamTest
+ *        ReplayTestSupport
+ *
+ * @run junit ${test.main.class}
  *
  * @comment Using `main/othervm` to initiate tests that depend on a custom-configured JVM
- * @run main/othervm -Xmx64m OfInputStreamTest testOOM
+ * @run main/othervm -Xmx64m ${test.main.class} testOOM
  */
 
-public class OfInputStreamTest {
+public class OfInputStreamTest extends ReplayTestSupport {
 
     @Test
     void testNullInputStreamSupplier() {
@@ -183,6 +187,16 @@ public class OfInputStreamTest {
             throw exception;
         }
 
+    }
+
+    @Override
+    Iterable<ReplayTarget> createReplayTargets() {
+        byte[] content = ByteBufferUtils.byteArrayOfLength(10);
+        ByteBuffer expectedBuffer = ByteBuffer.wrap(content);
+        HttpRequest.BodyPublisher publisher =
+                HttpRequest.BodyPublishers.ofInputStream(
+                        () -> new ByteArrayInputStream(content));
+        return List.of(new ReplayTarget(expectedBuffer, -1, publisher, null));
     }
 
     /**
