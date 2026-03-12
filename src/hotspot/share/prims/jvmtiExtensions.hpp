@@ -40,10 +40,18 @@ class JvmtiExtensions : public AllStatic {
  private:
   static GrowableArray<jvmtiExtensionFunctionInfo*>* _ext_functions;
   static GrowableArray<jvmtiExtensionEventInfo*>* _ext_events;
+  static volatile bool _request_stack_trace_requested;
 
  public:
   // register extensions function
   static void register_extensions();
+
+  // called after VM initialization to perform deferred setup
+  static void post_initialize();
+
+  // track whether InitializeRequestStackTrace was called
+  static void set_request_stack_trace_requested() { _request_stack_trace_requested = true; }
+  static bool is_request_stack_trace_requested()  { return _request_stack_trace_requested; }
 
   // returns the list of extension functions
   static jvmtiError get_functions(JvmtiEnv* env, jint* extension_count_ptr,

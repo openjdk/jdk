@@ -265,7 +265,6 @@
 #define NOT_JFR_RETURN_(code) { return code; }
 #endif
 
-
 #ifndef INCLUDE_JVMCI
 #define INCLUDE_JVMCI 1
 #endif

@@ -50,7 +50,7 @@
 JfrThreadLocal::JfrThreadLocal() :
   _sample_request(),
   _sample_request_queue(8),
-  _sample_monitor(Mutex::nosafepoint, "JfrSampleMonitor_lock"),
+  _sample_monitor(Monitor::nosafepoint, "jfr thread sample monitor"),
   _java_event_writer(nullptr),
   _java_buffer(nullptr),
   _native_buffer(nullptr),

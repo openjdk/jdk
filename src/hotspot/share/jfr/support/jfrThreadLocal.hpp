@@ -155,6 +155,7 @@ class JfrThreadLocal {
     _java_event_writer = java_event_writer;
   }
 
+
   int sample_state() const {
     return AtomicAccess::load_acquire(&_sample_state);
   }
