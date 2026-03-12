@@ -165,7 +165,7 @@ public class Mismatch {
              Arguments.of(test70025a, test70025b, MISMATCH_NO, "read 8 * full buffer plus a partial buffer, no mismatch"),
 
 
-             /**
+             /*
               * Spec Case 3: the value returned is the position of the first mismatched byte
               * Impl: the impl uses a buffer 8192. The testcases below covers a range of files
               * with sizes <= and > the buffer size. The last buffer is either full or partially full.
@@ -176,7 +176,7 @@ public class Mismatch {
              Arguments.of(test147a, test147m0, 0, "mismatch = 0 (at the beginning)"),
              Arguments.of(test65536m0, test65536a, 0, "mismatch = 0 (at the beginning)"),
 
-             /**
+             /*
               * Compares files of equal sizes
               */
              // small files
@@ -198,14 +198,14 @@ public class Mismatch {
              Arguments.of(test70025a, test70025m35000, 35000, "read about half of the file, mismatch = 35000"),
              Arguments.of(test70025a, test70025m70024, 70024, "read through the whole file, mismatch = 70024 (at the end)"),
 
-             /**
+             /*
               * Compares files of unequal sizes
               */
              Arguments.of(test8192m8191, test70025m35000, 8191, "mismatch at the end of the 1st file/buffer, mismatch = 8191"),
              Arguments.of(test65536m32768, test70025m8400, 8400, "mismatch in the 2nd buffer, mismatch = 8400"),
              Arguments.of(test70025m70024, test1065000m532500, 70024, "mismatch at the end of the 1st file, mismatch = 70024"),
 
-             /**
+             /*
               * Spec Case 4:  returns the size of the smaller file (in bytes) when the files are
               * different sizes and every byte of the smaller file is identical to the corresponding
               * byte of the larger file.

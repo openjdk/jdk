@@ -343,11 +343,7 @@ public class ReadWriteString {
     }
 
     private void checkNullPointerException(Callable<?> c) {
-        try {
-            assertThrows(NullPointerException.class, () -> c.call());
-        } catch (Exception e) {
-            fail("not expected", e);
-        }
+        assertThrows(NullPointerException.class, () -> c.call());
     }
 
     private void testReadWrite(int size, Charset cs, boolean append) throws IOException {
@@ -368,7 +364,7 @@ public class ReadWriteString {
             } else {
                 Files.writeString(testFiles[0], str, cs, APPEND);
             }
-            assertEquals(size*2, Files.size(testFiles[0]));
+            assertEquals(size * 2, Files.size(testFiles[0]));
         }
 
 

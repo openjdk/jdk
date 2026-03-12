@@ -151,12 +151,12 @@ public class CopyProcFile {
         }
     }
 
-    static Stream<Arguments> functions() throws IOException {
+    static Stream<FHolder> functions() throws IOException {
         return Stream.of
-            (Arguments.of(new FHolder((s, d) -> copy(s, d))),
-             Arguments.of(new FHolder((s, d) -> transferToIO(s, d))),
-             Arguments.of(new FHolder((s, d) -> transferToNIO(s, d))),
-             Arguments.of(new FHolder((s, d) -> transferFrom(s, d))));
+            (new FHolder((s, d) -> copy(s, d)),
+             new FHolder((s, d) -> transferToIO(s, d)),
+             new FHolder((s, d) -> transferToNIO(s, d)),
+             new FHolder((s, d) -> transferFrom(s, d)));
     }
 
     @ParameterizedTest
@@ -170,9 +170,7 @@ public class CopyProcFile {
             }
             long mismatch = Files.mismatch(Path.of(BUFFERED_COPY),
                                            Path.of(TARGET));
-            if (mismatch != -1) {
-                throw new RuntimeException("Target does not match copy");
-            }
+            assertEquals(-1, mismatch, "Target does not match copy");
         } finally {
             try {
                 Files.delete(Path.of(TARGET));

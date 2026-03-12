@@ -387,21 +387,13 @@ public class StreamTest {
     }
 
     private void checkMalformedInputException(Stream<String> s) {
-        try {
             assertThrows(UncheckedIOException.class,
-                         () -> s.collect(Collectors.toList()));
-        } catch (UncheckedIOException ex) {
-            assertInstanceOf(MalformedInputException.class, ex.getCause(),
-                             "MalformedInputException expected");
-        }
+                         () -> s.collect(Collectors.toList()),
+                         "MalformedInputException expected");
     }
 
     private void checkNullPointerException(Callable<?> c) {
-        try {
-            assertThrows(NullPointerException.class, () -> c.call());
-        } catch (Exception e) {
-            fail(e + " not expected");
-        }
+        assertThrows(NullPointerException.class, () -> c.call());
     }
 
     @Test

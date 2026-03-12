@@ -126,11 +126,7 @@ public class BytesAndLines {
     }
 
     private void checkNullPointerException(Callable<?> c) {
-        try {
-            assertThrows(NullPointerException.class, () -> c.call());
-        } catch (Exception e) {
-            fail(e + " not expected");
-        }
+        assertThrows(NullPointerException.class, () -> c.call());
     }
 
     /**
