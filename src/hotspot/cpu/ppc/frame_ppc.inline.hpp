@@ -137,7 +137,7 @@ inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address
 
 // Return unique id for this frame. The id must have a value where we
 // can distinguish identity and younger/older relationship. null
-// represents an invalid (incomparable) frame.
+// represents an invalid (incomparable) frame. Shold not be called for heap frames.
 inline intptr_t* frame::id(void) const {
   // Use _fp. _sp or _unextended_sp wouldn't be correct due to resizing.
   return _fp;
