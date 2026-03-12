@@ -129,14 +129,14 @@ public:
 void zBarrierSetAssembler::load_at(MacroAssembler* masm,
                                    DecoratorSet decorators,
                                    BasicType type,
+                                   const Address& src,
                                    Register dst,
-                                   Address src,
                                    Register temp1,
                                    Register temp2) {
   if (!ZBarrierSet::barrier_needed(decorators, type)) {
     // Barrier not needed
     // TODO: load_at uses two temporary registers temp1, temp2
-    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, temp1);
+    BarrierSetAssembler::load_at(masm, decorators, type, src, dst, temp1, temp2);
     return;
   }
 
@@ -347,7 +347,7 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
 void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
                                     DecoratorSet decorators,
                                     BasicType type,
-                                    Address dst,
+                                    const Address& dst,
                                     Register src,
                                     Register temp1,
                                     Register temp2,

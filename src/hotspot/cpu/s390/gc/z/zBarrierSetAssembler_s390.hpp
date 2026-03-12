@@ -44,6 +44,8 @@ class ZStoreBarrierStubC1;
 #ifdef COMPILER2
 class MachNode;
 class Node;
+class ZLoadBarrierStubC2;
+class ZStoreBarrierStubC2;
 #endif // COMPILER2
 
 const int ZBarrierRelocationFormatStoreGoodBeforeLoad = 0;
@@ -57,10 +59,11 @@ public:
 virtual void load_at(MacroAssembler* masm,
                      DecoratorSet decorators,
                      BasicType type,
+                     const Address& src,
                      Register dst,
-                     Address src,
                      Register temp1,
-                     Register temp2);
+                     Register temp2,
+                     Label *L_handle_null = nullptr);
 
 void store_barrier_fast(MacroAssembler* masm,
                         Address ref_addr,
@@ -84,7 +87,7 @@ void store_barrier_medium(MacroAssembler* masm,
 virtual void store_at(MacroAssembler* masm,
                       DecoratorSet decorators,
                       BasicType type,
-                      Address dst,
+                      const Address& dst,
                       Register src,
                       Register temp1,
                       Register temp2,
@@ -169,9 +172,9 @@ void generate_c1_load_barrier_runtime_stub(StubAssembler *sasm,
 void generate_c1_store_barrier_runtime_stub(StubAssembler* sasm,
                                             bool self_healing) const;
 
-#endif // Compiler1
+#endif // COMPILER1
 
-#ifdef CONPILER2
+#ifdef COMPILER2
 
 void generate_c2_load_barrier_stub(MacroAssembler* masm, ZLoadBarrierStubC2* stub) const;
 
@@ -185,4 +188,5 @@ void patch_barrier_relocation(address addr, int format);
 
 void patch_barriers() {}
 
+};
 #endif // CPU_S390_GC_Z_ZBARRIERSETASSEMBLER_S390_HPP
