@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package compiler.c2.irTests.igvn;
+package compiler.c2.igvn;
 
 import compiler.lib.ir_framework.*;
 
