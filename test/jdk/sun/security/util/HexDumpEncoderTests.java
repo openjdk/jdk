@@ -70,8 +70,7 @@ public class HexDumpEncoderTests {
                             .isStatic(field.getModifiers())) {
                         try {
                             // getting the charset to test
-                            final var charset = (Charset) field
-                                    .get(StandardCharsets.ISO_8859_1);
+                            final var charset = (Charset) field.get(null);
 
                             final var testCommand =
                                     getTestCommand(charset.name());
