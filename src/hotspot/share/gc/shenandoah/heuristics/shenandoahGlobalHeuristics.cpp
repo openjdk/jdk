@@ -36,14 +36,13 @@ ShenandoahGlobalHeuristics::ShenandoahGlobalHeuristics(ShenandoahGlobalGeneratio
 }
 
 
-size_t ShenandoahGlobalHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
-                                                                         RegionData* data, size_t size,
-                                                                         size_t actual_free) {
+void ShenandoahGlobalHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
+                                                                       RegionData* data, size_t size,
+                                                                       size_t actual_free) {
   // Better select garbage-first regions
-  QuickSort::sort<RegionData>(data, (int) size, compare_by_garbage);
+  QuickSort::sort<RegionData>(data, size, compare_by_garbage);
 
   choose_global_collection_set(cset, data, size, actual_free, 0 /* cur_young_garbage */);
-  return 0;
 }
 
 
@@ -128,7 +127,7 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
   size_t cur_garbage = cur_young_garbage;
   for (size_t idx = 0; idx < size; idx++) {
     ShenandoahHeapRegion* r = data[idx].get_region();
-    assert(!cset->is_preselected(r->index()), "There should be no preselected regions during GLOBAL GC");
+    assert(!cset->is_in(r->index()), "Region (%zu) should not be in the collection set", r->index());
     bool add_region = false;
     size_t region_garbage = r->garbage();
     size_t new_garbage = cur_garbage + region_garbage;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -345,7 +345,7 @@ bool PhaseIdealLoop::loop_phi_backedge_type_contains_zero(const Node* phi_diviso
 // Replace the dominated test with an obvious true or false.  Place it on the
 // IGVN worklist for later cleanup.  Move control-dependent data Nodes on the
 // live path up to the dominating control.
-void PhaseIdealLoop::dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip, bool pin_array_access_nodes) {
+void PhaseIdealLoop::dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip, bool prevdom_not_imply_this) {
   if (VerifyLoopOptimizations && PrintOpto) { tty->print_cr("dominating test"); }
 
   // prevdom is the dominating projection of the dominating test.
@@ -386,26 +386,25 @@ void PhaseIdealLoop::dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip, b
     return;
   }
 
-  rewire_safe_outputs_to_dominator(dp, prevdom, pin_array_access_nodes);
+  rewire_safe_outputs_to_dominator(dp, prevdom, prevdom_not_imply_this);
 }
 
-void PhaseIdealLoop::rewire_safe_outputs_to_dominator(Node* source, Node* dominator, const bool pin_array_access_nodes) {
+void PhaseIdealLoop::rewire_safe_outputs_to_dominator(Node* source, Node* dominator, const bool dominator_not_imply_source) {
   IdealLoopTree* old_loop = get_loop(source);
 
   for (DUIterator_Fast imax, i = source->fast_outs(imax); i < imax; i++) {
     Node* out = source->fast_out(i); // Control-dependent node
-    // Do not rewire Div and Mod nodes which could have a zero divisor to avoid skipping their zero check.
-    if (out->depends_only_on_test() && _igvn.no_dependent_zero_check(out)) {
+    if (out->depends_only_on_test()) {
       assert(out->in(0) == source, "must be control dependent on source");
       _igvn.replace_input_of(out, 0, dominator);
-      if (pin_array_access_nodes) {
+      if (dominator_not_imply_source) {
         // Because of Loop Predication, Loads and range check Cast nodes that are control dependent on this range
         // check (that is about to be removed) now depend on multiple dominating Hoisted Check Predicates. After the
         // removal of this range check, these control dependent nodes end up at the lowest/nearest dominating predicate
         // in the graph. To ensure that these Loads/Casts do not float above any of the dominating checks (even when the
         // lowest dominating check is later replaced by yet another dominating check), we need to pin them at the lowest
         // dominating check.
-        Node* clone = out->pin_array_access_node();
+        Node* clone = out->pin_node_under_control();
         if (clone != nullptr) {
           clone = _igvn.register_new_node_with_optimizer(clone, out);
           _igvn.replace_node(out, clone);
@@ -1644,7 +1643,7 @@ bool PhaseIdealLoop::try_merge_identical_ifs(Node* n) {
 void PhaseIdealLoop::push_pinned_nodes_thru_region(IfNode* dom_if, Node* region) {
   for (DUIterator i = region->outs(); region->has_out(i); i++) {
     Node* u = region->out(i);
-    if (!has_ctrl(u) || u->is_Phi() || !u->depends_only_on_test() || !_igvn.no_dependent_zero_check(u)) {
+    if (!has_ctrl(u) || u->is_Phi() || !u->depends_only_on_test()) {
       continue;
     }
     assert(u->in(0) == region, "not a control dependent node?");
@@ -1704,7 +1703,7 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
       !n->is_Proj() &&
       !n->is_MergeMem() &&
       !n->is_CMove() &&
-      !n->is_OpaqueNotNull() &&
+      !n->is_OpaqueConstantBool() &&
       !n->is_OpaqueInitializedAssertionPredicate() &&
       !n->is_OpaqueTemplateAssertionPredicate() &&
       !is_raw_to_oop_cast && // don't extend live ranges of raw oops
@@ -1724,11 +1723,11 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
         Node* outside_ctrl = place_outside_loop(n_ctrl, loop_ctrl);
         if (!would_sink_below_pre_loop_exit(loop_ctrl, outside_ctrl)) {
           if (n->depends_only_on_test()) {
-            Node* pinned_clone = n->pin_array_access_node();
+            // If this node depends_only_on_test, it will be rewired to a control input that is not
+            // the correct test. As a result, it must be pinned otherwise it can be incorrectly
+            // rewired to a dominating test equivalent to the new control.
+            Node* pinned_clone = n->pin_node_under_control();
             if (pinned_clone != nullptr) {
-              // Pin array access nodes: if this is an array load, it's going to be dependent on a condition that's not a
-              // range check for that access. If that condition is replaced by an identical dominating one, then an
-              // unpinned load would risk floating above its range check.
               register_new_node(pinned_clone, n_ctrl);
               maybe_pinned_n = pinned_clone;
               _igvn.replace_node(n, pinned_clone);
@@ -1754,11 +1753,11 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
           Node* u = n->last_out(j); // Clone private computation per use
           _igvn.rehash_node_delayed(u);
           Node* x = nullptr;
-          if (n->depends_only_on_test()) {
-            // Pin array access nodes: if this is an array load, it's going to be dependent on a condition that's not a
-            // range check for that access. If that condition is replaced by an identical dominating one, then an
-            // unpinned load would risk floating above its range check.
-            x = n->pin_array_access_node();
+          if (n->in(0) != nullptr && n->depends_only_on_test()) {
+            // If this node depends_only_on_test, it will be rewired to a control input that is not
+            // the correct test. As a result, it must be pinned otherwise it can be incorrectly
+            // rewired to a dominating test equivalent to the new control.
+            x = n->pin_node_under_control();
           }
           if (x == nullptr) {
             x = n->clone();
@@ -2045,14 +2044,14 @@ Node* PhaseIdealLoop::clone_iff(PhiNode* phi) {
     if (b->is_Phi()) {
       _igvn.replace_input_of(phi, i, clone_iff(b->as_Phi()));
     } else {
-      assert(b->is_Bool() || b->is_OpaqueNotNull() || b->is_OpaqueInitializedAssertionPredicate(),
-             "bool, non-null check with OpaqueNotNull or Initialized Assertion Predicate with its Opaque node");
+      assert(b->is_Bool() || b->is_OpaqueConstantBool() || b->is_OpaqueInitializedAssertionPredicate(),
+             "bool, non-null check with OpaqueConstantBool or Initialized Assertion Predicate with its Opaque node");
     }
   }
   Node* n = phi->in(1);
   Node* sample_opaque = nullptr;
   Node *sample_bool = nullptr;
-  if (n->is_OpaqueNotNull() || n->is_OpaqueInitializedAssertionPredicate()) {
+  if (n->is_OpaqueConstantBool() || n->is_OpaqueInitializedAssertionPredicate()) {
     sample_opaque = n;
     sample_bool = n->in(1);
     assert(sample_bool->is_Bool(), "wrong type");
@@ -2228,7 +2227,7 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
       // split if to break.
       assert(!use->is_OpaqueTemplateAssertionPredicate(),
              "should not clone a Template Assertion Predicate which should be removed once it's useless");
-      if (use->is_If() || use->is_CMove() || use->is_OpaqueNotNull() || use->is_OpaqueInitializedAssertionPredicate() ||
+      if (use->is_If() || use->is_CMove() || use->is_OpaqueConstantBool() || use->is_OpaqueInitializedAssertionPredicate() ||
           (use->Opcode() == Op_AllocateArray && use->in(AllocateNode::ValidLengthTest) == old)) {
         // Since this code is highly unlikely, we lazily build the worklist
         // of such Nodes to go split.
@@ -2328,14 +2327,12 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
       // We notify all uses of old, including use, and the indirect uses,
       // that may now be optimized because we have replaced old with phi.
       _igvn.add_users_to_worklist(old);
-      if (idx == 0 &&
-          use->depends_only_on_test()) {
-        Node* pinned_clone = use->pin_array_access_node();
+      if (idx == 0 && use->depends_only_on_test()) {
+        // If this node depends_only_on_test, it will be rewired to a control input that is not the
+        // correct test. As a result, it must be pinned otherwise it can be incorrectly rewired to
+        // a dominating test equivalent to the new control.
+        Node* pinned_clone = use->pin_node_under_control();
         if (pinned_clone != nullptr) {
-          // Pin array access nodes: control is updated here to a region. If, after some transformations, only one path
-          // into the region is left, an array load could become dependent on a condition that's not a range check for
-          // that access. If that condition is replaced by an identical dominating one, then an unpinned load would risk
-          // floating above its range check.
           pinned_clone->set_req(0, phi);
           register_new_node_with_ctrl_of(pinned_clone, use);
           _igvn.replace_node(use, pinned_clone);
@@ -4102,11 +4099,9 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
         not_peel.test(n->_idx) && peel.test(n->in(0)->_idx)) {
       Node* n_clone = old_new[n->_idx];
       if (n_clone->depends_only_on_test()) {
-        // Pin array access nodes: control is updated here to the loop head. If, after some transformations, the
-        // backedge is removed, an array load could become dependent on a condition that's not a range check for that
-        // access. If that condition is replaced by an identical dominating one, then an unpinned load would risk
-        // floating above its range check.
-        Node* pinned_clone = n_clone->pin_array_access_node();
+        // If this node depends_only_on_test, it will be rewire to the loop head, which is not the
+        // correct test
+        Node* pinned_clone = n_clone->pin_node_under_control();
         if (pinned_clone != nullptr) {
           register_new_node_with_ctrl_of(pinned_clone, n_clone);
           old_new.map(n->_idx, pinned_clone);

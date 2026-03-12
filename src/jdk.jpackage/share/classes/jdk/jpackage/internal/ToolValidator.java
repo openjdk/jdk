@@ -33,7 +33,6 @@ import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
-import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.DottedVersion;
 
@@ -46,9 +45,6 @@ final class ToolValidator {
 
     ToolValidator(Path toolPath) {
         this.toolPath = Objects.requireNonNull(toolPath);
-        if (OperatingSystem.isLinux()) {
-            setCommandLine("--version");
-        }
     }
 
     ToolValidator setCommandLine(String... args) {

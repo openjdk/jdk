@@ -138,6 +138,26 @@ void G1RegionMappingChangedListener::on_commit(uint start_idx, size_t num_region
   reset_from_card_cache(start_idx, num_regions);
 }
 
+// Collects commonly used scoped objects that are related to initial setup.
+class G1GCMark : StackObj {
+  ResourceMark _rm;
+  IsSTWGCActiveMark _active_gc_mark;
+  GCIdMark _gc_id_mark;
+  SvcGCMarker _sgcm;
+  GCTraceCPUTime _tcpu;
+
+public:
+  G1GCMark(GCTracer* tracer, bool is_full_gc) :
+    _rm(),
+    _active_gc_mark(),
+    _gc_id_mark(),
+    _sgcm(is_full_gc ? SvcGCMarker::FULL : SvcGCMarker::MINOR),
+    _tcpu(tracer) {
+
+    assert_at_safepoint_on_vm_thread();
+  }
+};
+
 void G1CollectedHeap::run_batch_task(G1BatchedTask* cl) {
   uint num_workers = MAX2(1u, MIN2(cl->num_workers_estimate(), workers()->active_workers()));
   cl->set_max_workers(num_workers);
@@ -914,12 +934,11 @@ void G1CollectedHeap::verify_after_full_collection() {
 void G1CollectedHeap::do_full_collection(size_t allocation_word_size,
                                          bool clear_all_soft_refs,
                                          bool do_maximal_compaction) {
-  assert_at_safepoint_on_vm_thread();
-
-  G1FullGCMark gc_mark;
+  G1FullGCTracer tracer;
+  G1GCMark gc_mark(&tracer, true /* is_full_gc */);
   GCTraceTime(Info, gc) tm("Pause Full", nullptr, gc_cause(), true);
-  G1FullCollector collector(this, clear_all_soft_refs, do_maximal_compaction, gc_mark.tracer());
 
+  G1FullCollector collector(this, clear_all_soft_refs, do_maximal_compaction, &tracer);
   collector.prepare_collection();
   collector.collect();
   collector.complete_collection(allocation_word_size);
@@ -1633,21 +1652,13 @@ jint G1CollectedHeap::initialize() {
   return JNI_OK;
 }
 
-bool G1CollectedHeap::concurrent_mark_is_terminating() const {
-  assert(_cm != nullptr, "_cm must have been created");
-  assert(_cm->is_fully_initialized(), "thread must exist in order to check if mark is terminating");
-  return _cm->cm_thread()->should_terminate();
-}
-
 void G1CollectedHeap::stop() {
   // Stop all concurrent threads. We do this to make sure these threads
   // do not continue to execute and access resources (e.g. logging)
   // that are destroyed during shutdown.
   _cr->stop();
   _service_thread->stop();
-  if (_cm->is_fully_initialized()) {
-    _cm->cm_thread()->stop();
-  }
+  _cm->stop();
 }
 
 void G1CollectedHeap::safepoint_synchronize_begin() {
@@ -1704,8 +1715,7 @@ void G1CollectedHeap::ref_processing_init() {
   //   * Reference discovery is MT (see below).
   //   * Reference discovery requires a barrier (see below).
   //   * Reference processing may or may not be MT
-  //     (depending on the value of ParallelRefProcEnabled
-  //     and ParallelGCThreads).
+  //     (depending on the value of ParallelGCThreads).
   //   * A full GC disables reference discovery by the CM
   //     ref processor and abandons any entries on it's
   //     discovered lists.
@@ -1839,12 +1849,12 @@ void G1CollectedHeap::increment_old_marking_cycles_completed(bool concurrent,
     record_whole_heap_examined_timestamp();
   }
 
-  // We need to clear the "in_progress" flag in the CM thread before
+  // We need to tell G1ConcurrentMark to update the state  before
   // we wake up any waiters (especially when ExplicitInvokesConcurrent
   // is set) so that if a waiter requests another System.gc() it doesn't
   // incorrectly see that a marking cycle is still in progress.
   if (concurrent) {
-    _cm->cm_thread()->set_idle();
+    _cm->notify_concurrent_cycle_completed();
   }
 
   // Notify threads waiting in System.gc() (with ExplicitGCInvokesConcurrent)
@@ -2547,11 +2557,9 @@ void G1CollectedHeap::start_concurrent_cycle(bool concurrent_operation_is_full_m
   assert(!_cm->in_progress(), "Can not start concurrent operation while in progress");
   MutexLocker x(G1CGC_lock, Mutex::_no_safepoint_check_flag);
   if (concurrent_operation_is_full_mark) {
-    _cm->post_concurrent_mark_start();
-    _cm->cm_thread()->start_full_mark();
+    _cm->start_full_concurrent_cycle();
   } else {
-    _cm->post_concurrent_undo_start();
-    _cm->cm_thread()->start_undo_mark();
+    _cm->start_undo_concurrent_cycle();
   }
   G1CGC_lock->notify();
 }
@@ -2714,16 +2722,7 @@ void G1CollectedHeap::flush_region_pin_cache() {
 }
 
 void G1CollectedHeap::do_collection_pause_at_safepoint(size_t allocation_word_size) {
-  assert_at_safepoint_on_vm_thread();
-  assert(!is_stw_gc_active(), "collection is not reentrant");
-
-  ResourceMark rm;
-
-  IsSTWGCActiveMark active_gc_mark;
-  GCIdMark gc_id_mark;
-  SvcGCMarker sgcm(SvcGCMarker::MINOR);
-
-  GCTraceCPUTime tcpu(_gc_tracer_stw);
+  G1GCMark gcm(_gc_tracer_stw, false /* is_full_gc */);
 
   _bytes_used_during_gc = 0;
 

@@ -40,19 +40,19 @@ class ShenandoahPassiveHeuristics : public ShenandoahHeuristics {
 public:
   ShenandoahPassiveHeuristics(ShenandoahSpaceInfo* space_info);
 
-  virtual bool should_start_gc();
+  bool should_start_gc() override;
 
-  virtual bool should_unload_classes();
+  bool should_unload_classes() override;
 
-  virtual bool should_degenerate_cycle();
+  bool should_degenerate_cycle() override;
 
-  virtual size_t choose_collection_set_from_regiondata(ShenandoahCollectionSet* set,
-                                                       RegionData* data, size_t data_size,
-                                                       size_t free);
+  void choose_collection_set_from_regiondata(ShenandoahCollectionSet* set,
+                                             RegionData* data, size_t data_size,
+                                             size_t free) override;
 
-  virtual const char* name()     { return "Passive"; }
-  virtual bool is_diagnostic()   { return true; }
-  virtual bool is_experimental() { return false; }
+  const char* name() override     { return "Passive"; }
+  bool is_diagnostic() override   { return true; }
+  bool is_experimental() override { return false; }
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHPASSIVEHEURISTICS_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@
   f(intx,  CompileThresholdConstraintFunc)              \
   f(intx,  OnStackReplacePercentageConstraintFunc)      \
   f(size_t, CodeCacheSegmentSizeConstraintFunc)         \
-  f(intx,  CodeEntryAlignmentConstraintFunc)            \
+  f(uint,  CodeEntryAlignmentConstraintFunc)            \
   f(intx,  OptoLoopAlignmentConstraintFunc)             \
   f(uintx, ArraycopyDstPrefetchDistanceConstraintFunc)  \
   f(uintx, ArraycopySrcPrefetchDistanceConstraintFunc)  \

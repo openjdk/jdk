@@ -128,7 +128,7 @@ private:
 
   // The value of command-line argument ShenandoahOldGarbageThreshold represents the percent of garbage that must
   // be present within an old-generation region before that region is considered a good candidate for inclusion in
-  // the collection set under normal circumstances.  For our purposes, normal circustances are when the memory consumed
+  // the collection set under normal circumstances.  For our purposes, normal circumstances are when the memory consumed
   // by the old generation is less than 50% of the soft heap capacity.  When the old generation grows beyond the 50%
   // threshold, we dynamically adjust the old garbage threshold, allowing us to invest in packing the old generation
   // more tightly so that more memory can be made available to the more frequent young GC cycles.  This variable
@@ -155,8 +155,8 @@ private:
   void set_trigger_if_old_is_overgrown();
 
  protected:
-  size_t
-  choose_collection_set_from_regiondata(ShenandoahCollectionSet* set, RegionData* data, size_t data_size, size_t free) override;
+  void choose_collection_set_from_regiondata(ShenandoahCollectionSet* set,
+                                             RegionData* data, size_t data_size, size_t free) override;
 
   // This internal helper routine adds as many mixed evacuation candidate regions as fit within the old-gen evacuation budget
   // to the collection set.  This may be called twice to prepare for any given mixed evacuation cycle, the first time with

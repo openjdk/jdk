@@ -39,8 +39,8 @@
 #include "utilities/hashTable.hpp"
 #include "utilities/resizableHashTable.hpp"
 
-class ArchiveMappedHeapInfo;
-class ArchiveStreamedHeapInfo;
+class AOTMappedHeapInfo;
+class AOTStreamedHeapInfo;
 class CHeapBitMap;
 class FileMapInfo;
 class Klass;
@@ -247,8 +247,8 @@ private:
   } _relocated_ptr_info;
 
   void print_region_stats(FileMapInfo *map_info,
-                          ArchiveMappedHeapInfo* mapped_heap_info,
-                          ArchiveStreamedHeapInfo* streamed_heap_info);
+                          AOTMappedHeapInfo* mapped_heap_info,
+                          AOTStreamedHeapInfo* streamed_heap_info);
   void print_bitmap_region_stats(size_t size, size_t total_size);
   void print_heap_region_stats(char* start, size_t size, size_t total_size);
 
@@ -329,49 +329,22 @@ public:
     return current()->buffer_to_requested_delta();
   }
 
-  inline static u4 to_offset_u4(uintx offset) {
-    guarantee(offset <= MAX_SHARED_DELTA, "must be 32-bit offset " INTPTR_FORMAT, offset);
-    return (u4)offset;
-  }
-
 public:
-  static const uintx MAX_SHARED_DELTA = ArchiveUtils::MAX_SHARED_DELTA;;
-
   // The address p points to an object inside the output buffer. When the archive is mapped
   // at the requested address, what's the offset of this object from _requested_static_archive_bottom?
-  uintx buffer_to_offset(address p) const;
+  size_t buffer_to_offset(address p) const;
 
-  // Same as buffer_to_offset, except that the address p points to either (a) an object
-  // inside the output buffer, or (b), an object in the currently mapped static archive.
-  uintx any_to_offset(address p) const;
+  // Same as buffer_to_offset, except that the address p points to one of the following:
+  // - an object in the ArchiveBuilder's buffer.
+  // - an object in the currently mapped AOT cache rw/ro regions.
+  // - an object that has been copied into the ArchiveBuilder's buffer.
+  size_t any_to_offset(address p) const;
 
   // The reverse of buffer_to_offset()
-  address offset_to_buffered_address(u4 offset) const;
+  address offset_to_buffered_address(size_t offset) const;
 
   template <typename T>
-  u4 buffer_to_offset_u4(T p) const {
-    uintx offset = buffer_to_offset((address)p);
-    return to_offset_u4(offset);
-  }
-
-  template <typename T>
-  u4 any_to_offset_u4(T p) const {
-    assert(p != nullptr, "must not be null");
-    uintx offset = any_to_offset((address)p);
-    return to_offset_u4(offset);
-  }
-
-  template <typename T>
-  u4 any_or_null_to_offset_u4(T p) const {
-    if (p == nullptr) {
-      return 0;
-    } else {
-      return any_to_offset_u4<T>(p);
-    }
-  }
-
-  template <typename T>
-  T offset_to_buffered(u4 offset) const {
+  T offset_to_buffered(size_t offset) const {
     return (T)offset_to_buffered_address(offset);
   }
 
@@ -438,8 +411,8 @@ public:
   void make_training_data_shareable();
   void relocate_to_requested();
   void write_archive(FileMapInfo* mapinfo,
-                     ArchiveMappedHeapInfo* mapped_heap_info,
-                     ArchiveStreamedHeapInfo* streamed_heap_info);
+                     AOTMappedHeapInfo* mapped_heap_info,
+                     AOTStreamedHeapInfo* streamed_heap_info);
   void write_region(FileMapInfo* mapinfo, int region_idx, DumpRegion* dump_region,
                     bool read_only,  bool allow_exec);
 

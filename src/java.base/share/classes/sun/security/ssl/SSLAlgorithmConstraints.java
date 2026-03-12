@@ -454,7 +454,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
                                 .equalsIgnoreCase(paramDigestAlg));
 
             } catch (InvalidParameterSpecException e) {
-                if (SSLLogger.isOn() && SSLLogger.isOn("ssl")) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.warning("Invalid AlgorithmParameters: "
                             + parameters + "; Error: " + e.getMessage());
                 }

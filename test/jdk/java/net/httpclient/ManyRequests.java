@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,8 @@
  * @test
  * @bug 8087112 8180044 8256459
  * @key intermittent
- * @modules java.net.http/jdk.internal.net.http.common
- *          java.logging
- *          jdk.httpserver
  * @library /test/lib /test/jdk/java/net/httpclient/lib
- * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestServerConfigurator
- * @compile ../../../com/sun/net/httpserver/LogFilter.java
- * @compile ../../../com/sun/net/httpserver/EchoHandler.java
- * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
+ * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.HttpServerAdapters
  * @run main/othervm/timeout=160 -Djdk.httpclient.HttpClient.log=ssl,channel ManyRequests
  * @run main/othervm/timeout=160 -Djdk.httpclient.HttpClient.log=channel -Dtest.insertDelay=true ManyRequests
  * @run main/othervm/timeout=160 -Djdk.httpclient.HttpClient.log=channel -Dtest.chunkSize=64 ManyRequests
@@ -41,19 +35,14 @@
  */
  // * @run main/othervm/timeout=40 -Djdk.httpclient.HttpClient.log=ssl,channel ManyRequests
 
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsParameters;
-import com.sun.net.httpserver.HttpsServer;
-import com.sun.net.httpserver.HttpExchange;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ConnectException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Builder;
+import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
@@ -61,7 +50,6 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Formatter;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Random;
@@ -77,15 +65,14 @@ import java.util.logging.Level;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLParameters;
 
-import jdk.httpclient.test.lib.common.TestServerConfigurator;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.test.lib.Platform;
 import jdk.test.lib.RandomFactory;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
 
-public class ManyRequests {
+public class ManyRequests implements HttpServerAdapters {
 
     static final int MAX_COUNT = 50;
     static final int MAX_LIMIT = 40;
@@ -106,11 +93,8 @@ public class ManyRequests {
                          + ", XFixed=" + XFIXED);
         SSLContext ctx = SimpleSSLContext.findSSLContext();
 
-        InetSocketAddress addr = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-        HttpsServer server = HttpsServer.create(addr, 0);
         ExecutorService executor = executorFor("HTTPS/1.1 Server Thread");
-        server.setHttpsConfigurator(new Configurator(addr.getAddress(), ctx));
-        server.setExecutor(executor);
+        HttpTestServer server = HttpTestServer.create(Version.HTTP_1_1, ctx, executor);
         ExecutorService virtualExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
                 .name("HttpClient-Worker", 0).factory());
 
@@ -125,7 +109,7 @@ public class ManyRequests {
             System.out.println("OK");
         } finally {
             client.close();
-            server.stop(0);
+            server.stop();
             virtualExecutor.close();
             executor.shutdownNow();
         }
@@ -138,15 +122,15 @@ public class ManyRequests {
            Integer.parseInt(System.getProperty("test.chunkSize", "0")));
     static final boolean XFIXED = Boolean.getBoolean("test.XFixed");
 
-    static class TestEchoHandler extends EchoHandler {
+    static class TestEchoHandler extends HttpTestEchoHandler {
         final Random rand = RANDOM;
         @Override
-        public void handle(HttpExchange e) throws IOException {
+        public void handle(HttpTestExchange e) throws IOException {
             System.out.println("Server: received " + e.getRequestURI());
             super.handle(e);
         }
         @Override
-        protected void close(HttpExchange t, OutputStream os) throws IOException {
+        protected void close(HttpTestExchange t, OutputStream os) throws IOException {
             if (INSERT_DELAY) {
                 try { Thread.sleep(rand.nextInt(200)); }
                 catch (InterruptedException e) {}
@@ -155,7 +139,7 @@ public class ManyRequests {
             super.close(t, os);
         }
         @Override
-        protected void close(HttpExchange t, InputStream is) throws IOException {
+        protected void close(HttpTestExchange t, InputStream is) throws IOException {
             if (INSERT_DELAY) {
                 try { Thread.sleep(rand.nextInt(200)); }
                 catch (InterruptedException e) {}
@@ -181,7 +165,7 @@ public class ManyRequests {
         return s;
     }
 
-    static void test(HttpsServer server, HttpClient client) throws Exception {
+    static void test(HttpTestServer server, HttpClient client) throws Exception {
         int port = server.getAddress().getPort();
 
         URI baseURI = URIBuilder.newBuilder()
@@ -213,8 +197,11 @@ public class ManyRequests {
                 byte[] buf = new byte[(i + 1) * CHUNK_SIZE + i + 1];  // different size bodies
                 rand.nextBytes(buf);
                 URI uri = new URI(baseURI.toString() + String.valueOf(i + 1));
-                HttpRequest r = HttpRequest.newBuilder(uri)
-                        .header("XFixed", "true")
+                HttpRequest.Builder reqBuilder = HttpRequest.newBuilder(uri);
+                if (XFIXED) {
+                    reqBuilder.header("XFixed", "yes");
+                }
+                HttpRequest r = reqBuilder
                         .POST(BodyPublishers.ofByteArray(buf))
                         .build();
                 bodies.put(r, buf);
@@ -365,21 +352,6 @@ public class ManyRequests {
         for (Object o : msg)
             sb.append(o);
         throw new RuntimeException(sb.toString());
-    }
-
-    static class Configurator extends HttpsConfigurator {
-        private final InetAddress serverAddr;
-        public Configurator(InetAddress serverAddr, SSLContext ctx) {
-            super(ctx);
-            this.serverAddr = serverAddr;
-        }
-
-        @Override
-        public void configure(HttpsParameters params) {
-            final SSLParameters parameters = getSSLContext().getSupportedSSLParameters();
-            TestServerConfigurator.addSNIMatcher(this.serverAddr, parameters);
-            params.setSSLParameters(parameters);
-        }
     }
 
     private static ExecutorService executorFor(String serverThreadName) {

@@ -25,6 +25,9 @@
 package jdk.jpackage.internal;
 
 import java.io.PrintWriter;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -33,18 +36,33 @@ public final class Globals {
     private Globals() {
     }
 
-    Globals objectFactory(ObjectFactory v) {
+    public Globals objectFactory(ObjectFactory v) {
         checkMutable();
         objectFactory = Optional.ofNullable(v).orElse(ObjectFactory.DEFAULT);
         return this;
     }
 
-    ObjectFactory objectFactory() {
+    public ObjectFactory objectFactory() {
         return objectFactory;
     }
 
-    Globals executorFactory(ExecutorFactory v) {
+    public Globals executorFactory(ExecutorFactory v) {
         return objectFactory(ObjectFactory.build(objectFactory).executorFactory(v).create());
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> Optional<T> findProperty(Object key) {
+        return Optional.ofNullable((T)properties.get(Objects.requireNonNull(key)));
+    }
+
+    public Optional<Boolean> findBooleanProperty(Object key) {
+        return findProperty(key);
+    }
+
+    public <T> Globals setProperty(Object key, T value) {
+        checkMutable();
+        properties.compute(Objects.requireNonNull(key), (_, _) -> value);
+        return this;
     }
 
     Log.Logger logger() {
@@ -79,6 +97,7 @@ public final class Globals {
 
     private ObjectFactory objectFactory = ObjectFactory.DEFAULT;
     private final Log.Logger logger = new Log.Logger();
+    private final Map<Object, Object> properties = new HashMap<>();
 
     private static final ScopedValue<Globals> INSTANCE = ScopedValue.newInstance();
     private static final Globals DEFAULT = new Globals();

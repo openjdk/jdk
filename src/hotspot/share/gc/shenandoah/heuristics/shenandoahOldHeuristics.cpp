@@ -884,9 +884,8 @@ bool ShenandoahOldHeuristics::is_experimental() {
   return true;
 }
 
-size_t ShenandoahOldHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* set,
-                                                                      ShenandoahHeuristics::RegionData* data,
-                                                                      size_t data_size, size_t free) {
+void ShenandoahOldHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* set,
+                                                                    ShenandoahHeuristics::RegionData* data,
+                                                                    size_t data_size, size_t free) {
   ShouldNotReachHere();
-  return 0;
 }
