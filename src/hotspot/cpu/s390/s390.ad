@@ -2702,6 +2702,10 @@ ins_attrib ins_alignment(1);
 ins_attrib ins_cannot_rematerialize(false);
 ins_attrib ins_should_rematerialize(false);
 
+// Whether this node is expanded during code emission into a sequence of
+// instructions and the first instruction can perform an implicit null check.
+ins_attrib ins_is_late_expanded_null_check_candidate(false);
+
 //----------OPERANDS-----------------------------------------------------------
 // Operand definitions must precede instruction definitions for correct
 // parsing in the ADLC because operands constitute user defined types

@@ -1,32 +1,38 @@
-/*
- * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2026 IBM Corporation. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
+//
+// Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2026 IBM Corporation. All rights reserved.
+// DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+//
+// This code is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 2 only, as
+// published by the Free Software Foundation.
+//
+// This code is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// version 2 for more details (a copy is included in the LICENSE file that
+// accompanied this code).
+//
+// You should have received a copy of the GNU General Public License version
+// 2 along with this work; if not, write to the Free Software Foundation,
+// Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+//
+// Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+// or visit www.oracle.com if you need additional information or have any
+// questions.
+//
 
 source_hpp %{
 
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/c2/zBarrierSetC2.hpp"
 #include "gc/z/zThreadLocalData.hpp"
+
+%}
+
+source %{
+
+#include "gc/z/zBarrierSetAssembler.hpp"
 
 static void z_color(MacroAssembler* masm, const MachNode* node, Register dst, Register src) {
   assert_different_registers(src, dst);
@@ -118,7 +124,7 @@ instruct zLoadP(iRegP dst, memory mem, flagsReg cr) %{
 instruct zStoreP(memory mem, iRegP src, iRegP temp, flagsReg cr) %{
   predicate(UseZGC && n->as_Store()->barrier_data() != 0);
   match(Set mem (StoreP mem src));
-  effect(TEMP tmp, KILL cr);
+  effect(TEMP temp, KILL cr);
 
   //TODO: double check the instruction cost
   ins_cost(MEMORY_REF_COST);
@@ -134,7 +140,7 @@ instruct zStoreP(memory mem, iRegP src, iRegP temp, flagsReg cr) %{
 instruct zStorePNull(memory mem, immP0 zero, iRegP temp, flagsReg cr) %{
   predicate(UseZGC && n->as_Store()->barrier_data() != 0);
   match(Set mem (StoreP mem zero));
-  effect(TEMP tmp, KILL cr);
+  effect(TEMP temp, KILL cr);
 
   ins_cost(MEMORY_REF_COST);
   format %{ "STG     $mem, null\t # ptr" %}
@@ -146,10 +152,10 @@ instruct zStorePNull(memory mem, immP0 zero, iRegP temp, flagsReg cr) %{
 %}
 
 // TODO: current implementation of z_color requires an extra register, either verify we have that or change the implementation
-instruct zCompareAndExchangeP(iRegI res, iRegP mem, iRegP newval, iRegP temp, iRegP oldval, iRegP oldval_temp, flagsReg cr) %{
+instruct zCompareAndExchangeP(iRegI res, iRegP mem, iRegP newval, iRegP temp, iRegP oldval_temp, iRegP oldval, flagsReg cr) %{
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
   predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP tmp, Temp oldval_temp, KILL oldval, KILL cr);
+  effect(TEMP temp, TEMP oldval_temp, TEMP oldval, KILL cr);
 
   format %{ "CompareAndSwapP $oldval, $newval, $mem" %}
   ins_encode %{
@@ -157,7 +163,7 @@ instruct zCompareAndExchangeP(iRegI res, iRegP mem, iRegP newval, iRegP temp, iR
     const Address mem_addr = Address($mem$$Register, 0);
     z_store_barrier(masm, this, mem_addr, $newval$$Register, $temp$$Register, true /* is_atomic */);
     z_color(masm, this, $oldval_temp$$Register, $oldval$$Register);
-    __ z_csg($oldval_temp$$Register, $newval$$Register, $mem_addr$$Address);
+    __ z_csg($oldval_temp$$Register, $newval$$Register, mem_addr);
     z_uncolor(masm, this, $res$$Register);
 // TODO: Check which register we need to uncolor
   %}
@@ -165,11 +171,11 @@ instruct zCompareAndExchangeP(iRegI res, iRegP mem, iRegP newval, iRegP temp, iR
 %}
 
 // TODO: Check if number and placements of these arguments matter? and if so where it's decided
-instruct zCompareAndSwap(iRegI res, iRegP mem, iRegP newval, iRegP newval_temp, iRegP oldval, iRegP oldval_temp, flagsReg cr) %{
+instruct zCompareAndSwap(iRegI res, iRegP mem, iRegP newval, iRegP newval_temp, iRegP oldval_temp, iRegP oldval, flagsReg cr) %{
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
   predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP newval_temp, TEMP oldval_temp, KILL oldval, KILL cr);
+  effect(TEMP newval_temp, TEMP oldval_temp, TEMP oldval, KILL cr);
 
   format %{ " CompareAndExchange $oldval, $newval, $mem\n\t"
             " ipm $res\n\t"
@@ -193,7 +199,7 @@ instruct zCompareAndSwap(iRegI res, iRegP mem, iRegP newval, iRegP newval_temp, 
 instruct zSetAndGetP(iRegP mem, iRegP newval, iRegP temp, flagsReg cr) %{
   match(Set newval (GetAndSetP mem newval));
   predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
-  effect(TEMP tmp, KILL cr);
+  effect(TEMP temp, KILL cr);
 
   format %{ "XCHGP $newval, $mem" %}
 
