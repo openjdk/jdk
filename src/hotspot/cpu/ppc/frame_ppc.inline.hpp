@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -137,7 +137,7 @@ inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address
 
 // Return unique id for this frame. The id must have a value where we
 // can distinguish identity and younger/older relationship. null
-// represents an invalid (incomparable) frame. Shold not be called for heap frames.
+// represents an invalid (incomparable) frame. Should not be called for heap frames.
 inline intptr_t* frame::id(void) const {
   // Use _fp. _sp or _unextended_sp wouldn't be correct due to resizing.
   return real_fp();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -245,7 +245,7 @@ inline bool frame::equal(frame other) const {
 
 // Return unique id for this frame. The id must have a value where we can distinguish
 // identity and younger/older relationship. null represents an invalid (incomparable)
-// frame. Shold not be called for heap frames.
+// frame. Should not be called for heap frames.
 inline intptr_t* frame::id(void) const { return real_fp(); }
 
 // Return true if the frame is older (less recent activation) than the frame represented by id
