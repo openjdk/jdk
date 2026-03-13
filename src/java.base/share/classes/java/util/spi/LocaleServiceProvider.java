@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,7 +166,7 @@ import java.util.Locale;
  * <a href="http://cldr.unicode.org/">Common Locale Data Repository (CLDR)</a>
  * to implement locale-sensitive APIs in the {@code java.util} and
  * {@code java.text} packages. This locale data derives the set of locales
- * supported by the Java runtime environment. The following table lists the
+ * supported by the Java runtime environment. The following tables list the
  * version of CLDR used in each JDK release. Unless otherwise specified, all
  * update releases in a given JDK release family use the same CLDR version.
  * Note that the CLDR locale data are subject to change. Users should not assume
@@ -175,6 +175,9 @@ import java.util.Locale;
  * Refer to <a href="https://cldr.unicode.org/index/downloads">CLDR Releases</a>
  * for the deltas between their releases.
  * <table class="striped">
+ * <!-- The expanded table should include the current JDK release, followed
+ * by commonly used releases, with other releases listed in the details
+ * section -->
  * <caption style="display:none">JDK releases and supported CLDR versions</caption>
  * <thead>
  * <tr><th scope="col">JDK release</th>
@@ -185,21 +188,37 @@ import java.util.Locale;
  *     <td>CLDR 48</td></tr>
  * <tr><th scope="row" style="text-align:left">JDK 25</th>
  *     <td>CLDR 47</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 21</th>
+ *     <td>CLDR 43</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 17</th>
+ *     <td>CLDR 39</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 11</th>
+ *     <td>CLDR 33</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 8</th>
+ *     <td>CLDR 21.0.1</td></tr>
+ * </tbody>
+ * </table>
+ * <details>
+ * <summary>Show other JDK releases</summary>
+ * <table class="striped">
+ * <caption style="display:none">Other JDK releases and supported CLDR
+ * versions</caption>
+ * <thead>
+ * <tr><th scope="col">JDK release</th>
+ *     <th scope="col">CLDR version</th></tr>
+ * </thead>
+ * <tbody>
  * <tr><th scope="row" style="text-align:left">JDK 24</th>
  *     <td>CLDR 46</td></tr>
  * <tr><th scope="row" style="text-align:left">JDK 23</th>
  *     <td>CLDR 45</td></tr>
  * <tr><th scope="row" style="text-align:left">JDK 22</th>
  *     <td>CLDR 44</td></tr>
- * <tr><th scope="row" style="text-align:left">JDK 21</th>
- *     <td>CLDR 43</td></tr>
  * <tr><th scope="row" style="text-align:left">JDK 20</th>
  *     <td>CLDR 42</td></tr>
  * <tr><th scope="row" style="text-align:left">JDK 19</th>
  *     <td>CLDR 41</td></tr>
  * <tr><th scope="row" style="text-align:left">JDK 18</th>
- *     <td>CLDR 39</td></tr>
- * <tr><th scope="row" style="text-align:left">JDK 17</th>
  *     <td>CLDR 39</td></tr>
  * <tr><th scope="row" style="text-align:left">JDK 16</th>
  *     <td>CLDR 38</td></tr>
@@ -211,16 +230,13 @@ import java.util.Locale;
  *     <td>CLDR 35.1</td></tr>
  * <tr><th scope="row" style="text-align:left">JDK 12</th>
  *     <td>CLDR 33</td></tr>
- * <tr><th scope="row" style="text-align:left">JDK 11</th>
- *     <td>CLDR 33</td></tr>
  * <tr><th scope="row" style="text-align:left">JDK 10</th>
  *     <td>CLDR 29</td></tr>
  * <tr><th scope="row" style="text-align:left">JDK 9</th>
  *     <td>CLDR 29</td></tr>
- * <tr><th scope="row" style="text-align:left">JDK 8</th>
- *     <td>CLDR 21.0.1</td></tr>
  * </tbody>
  * </table>
+ * </details>
  *
  * @since        1.6
  */
