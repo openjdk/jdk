@@ -116,7 +116,7 @@ define_pd_global(intx, InitArrayShortSize, 9*BytesPerLong);
                                                                             \
   /* special instructions */                                                \
   product(bool, SuperwordUseVSX, false,                                     \
-          "Use VSX instructions for superword optimization.")               \
+          "Use VSX instructions for superword optimization (recommended on POWER9+).")               \
                                                                             \
   product(bool, UseByteReverseInstructions, false, DIAGNOSTIC,              \
           "Use byte reverse instructions.")                                 \
