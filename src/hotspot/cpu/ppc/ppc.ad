@@ -2770,39 +2770,6 @@ encode %{
     }
   %}
 
-  enc_class enc_load_long_constP_hi(iRegLdst dst, immP src, iRegLdst toc) %{
-    if (!ra_->C->output()->in_scratch_emit_size()) {
-      intptr_t val = $src$$constant;
-      relocInfo::relocType constant_reloc = $src->constant_reloc();  // src
-      address const_toc_addr;
-      RelocationHolder r; // Initializes type to none.
-      if (constant_reloc == relocInfo::oop_type) {
-        // Create an oop constant and a corresponding relocation.
-        AddressLiteral a = __ constant_oop_address((jobject)val);
-        const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
-        r = a.rspec();
-      } else if (constant_reloc == relocInfo::metadata_type) {
-        // Notify OOP recorder (don't need the relocation)
-        AddressLiteral a = __ constant_metadata_address((Metadata *)val);
-        const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
-      } else {  // non-oop pointers, e.g. card mark base, heap top
-        // Create a non-oop constant, no relocation needed.
-        const_toc_addr = __ long_constant((jlong)$src$$constant);
-      }
-
-      if (const_toc_addr == nullptr) {
-        ciEnv::current()->record_out_of_memory_failure();
-        return;
-      }
-      __ relocate(r); // If set above.
-      // Get the constant's TOC offset.
-      const int toc_offset = __ offset_to_method_toc(const_toc_addr);
-      // Store the toc offset of the constant.
-      ((loadConP_hiNode*)this)->_const_toc_offset = toc_offset;
-    }
-
-    __ addis($dst$$Register, $toc$$Register, MacroAssembler::largeoffset_si16_si16_hi(_const_toc_offset));
-  %}
 
   // Postalloc expand emitter for loading a ptr constant from the method's TOC.
   // Enc_class needed as consttanttablebase is not supported by postalloc
@@ -5964,44 +5931,13 @@ instruct loadConP0or1(iRegPdst dst, immP_0or1 src) %{
 instruct loadConP(iRegPdst dst, immP_NM src, iRegLdst toc) %{
   match(Set dst src);
   effect(TEMP toc);
-
   ins_num_consts(1);
-
   format %{ "LD      $dst, offset, $toc \t// load ptr $src from TOC" %}
   size(8);
   ins_encode( enc_load_long_constP(dst, src, toc) );
   ins_pipe(pipe_class_memory);
 %}
 
-// Expand node for constant pool load: large offset.
-instruct loadConP_hi(iRegPdst dst, immP_NM src, iRegLdst toc) %{
-  effect(DEF dst, USE src, USE toc);
-  predicate(false);
-
-  ins_num_consts(1);
-  ins_field_const_toc_offset(int);
-
-  format %{ "ADDIS   $dst, $toc, offset \t// load ptr $src from TOC (hi)" %}
-  size(4);
-  ins_encode( enc_load_long_constP_hi(dst, src, toc) );
-  ins_pipe(pipe_class_default);
-%}
-
-// Expand node for constant pool load: large offset.
-instruct loadConP_lo(iRegPdst dst, immP_NM src, iRegLdst base) %{
-  match(Set dst src);
-  effect(TEMP base);
-
-  ins_field_const_toc_offset_hi_node(loadConP_hiNode*);
-
-  format %{ "LD      $dst, offset, $base \t// load ptr $src from TOC (lo)" %}
-  size(4);
-  ins_encode %{
-    int offset = ra_->C->output()->in_scratch_emit_size() ? 0 : _const_toc_offset_hi_node->_const_toc_offset;
-    __ ld($dst$$Register, MacroAssembler::largeoffset_si16_si16_lo(offset), $base$$Register);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
 
 // Load pointer constant from constant table. Expand in case an
 // offset > 16 bit is needed.
@@ -6062,36 +5998,6 @@ instruct loadConF(regF dst, immF src, iRegLdst toc) %{
   ins_pipe(pipe_class_memory);
 %}
 
-// Expand node for constant pool load: large offset.
-instruct loadConFComp(regF dst, immF src, iRegLdst toc) %{
-  effect(DEF dst, USE src, USE toc);
-  ins_cost(MEMORY_REF_COST);
-
-  ins_num_consts(1);
-
-  format %{ "ADDIS   $toc, $toc, offset_hi\n\t"
-            "LFS     $dst, offset_lo, $toc \t// load float $src from TOC (hi/lo)\n\t"
-            "ADDIS   $toc, $toc, -offset_hi"%}
-  size(12);
-  ins_encode %{
-    FloatRegister Rdst    = $dst$$FloatRegister;
-    Register Rtoc         = $toc$$Register;
-    address float_address = __ float_constant($src$$constant);
-    if (float_address == nullptr) {
-      ciEnv::current()->record_out_of_memory_failure();
-      return;
-    }
-    int offset            = __ offset_to_method_toc(float_address);
-    int hi = (offset + (1<<15))>>16;
-    int lo = offset - hi * (1<<16);
-
-    __ addis(Rtoc, Rtoc, hi);
-    __ lfs(Rdst, lo, Rtoc);
-    __ addis(Rtoc, Rtoc, -hi);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
 // Adlc adds toc node MachConstantTableBase.
 instruct loadConF_Ex(regF dst, immF src) %{
   match(Set dst src);
@@ -6144,35 +6050,6 @@ instruct loadConD(regD dst, immD src, iRegLdst toc) %{
   ins_pipe(pipe_class_memory);
 %}
 
-// Expand node for constant pool load: large offset.
-instruct loadConDComp(regD dst, immD src, iRegLdst toc) %{
-  effect(DEF dst, USE src, USE toc);
-  ins_cost(MEMORY_REF_COST);
-
-  ins_num_consts(1);
-
-  format %{ "ADDIS   $toc, $toc, offset_hi\n\t"
-            "LFD     $dst, offset_lo, $toc \t// load double $src from TOC (hi/lo)\n\t"
-            "ADDIS   $toc, $toc, -offset_hi" %}
-  size(12);
-  ins_encode %{
-    FloatRegister Rdst    = $dst$$FloatRegister;
-    Register      Rtoc    = $toc$$Register;
-    address float_address = __ double_constant($src$$constant);
-    if (float_address == nullptr) {
-      ciEnv::current()->record_out_of_memory_failure();
-      return;
-    }
-    int offset = __ offset_to_method_toc(float_address);
-    int hi = (offset + (1<<15))>>16;
-    int lo = offset - hi * (1<<16);
-
-    __ addis(Rtoc, Rtoc, hi);
-    __ lfd(Rdst, lo, Rtoc);
-    __ addis(Rtoc, Rtoc, -hi);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
 
 // Adlc adds toc node MachConstantTableBase.
 instruct loadConD_Ex(regD dst, immD src) %{
