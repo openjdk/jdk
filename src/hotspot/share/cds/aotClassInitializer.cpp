@@ -59,6 +59,21 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
     return false;
   }
 
+#ifndef PRODUCT
+  if (AOTInitTestClass == nullptr && ArchiveHeapTestClass == nullptr) {
+    // The above flags (in debug builds only) allow user code to be executed in assembly phase,
+    // strictly for testing purposes. If these flags are not set, no user code will be executed
+    // in assembly phase.
+    if (ik->class_loader() != nullptr && !ik->is_hidden()) {
+      if (ik->is_interface() && !ik->interface_needs_clinit_execution_as_super()) {
+        // TODO: why are these interfaces marked as initialized??
+      } else {
+        assert(false, "cannot execute user code");
+      }
+    }
+  }
+#endif // PRODUCT
+
   // About "static field that may hold a different value" errors:
   //
   // Automatic selection for aot-inited classes
