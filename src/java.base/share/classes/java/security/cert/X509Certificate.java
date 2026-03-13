@@ -178,7 +178,7 @@ public abstract non-sealed class X509Certificate extends Certificate
      * instant.
      *
      * @implSpec
-     * The default implementation converts an inputted {@code Instant} to
+     * The default implementation converts the specified {@code Instant} to
      * {@code Date} and calls {@code checkValidity(date)}.
      *
      * @param instant the {@code Instant} to check against to see if this
@@ -352,8 +352,8 @@ public abstract non-sealed class X509Certificate extends Certificate
     public abstract Date getNotBefore();
 
     /**
-     * Gets the {@code notBefore} date from the validity period of
-     * the certificate.
+     * Gets the {@code notBefore} date as an {@code Instant} from the validity
+     * period of the certificate.
      * The relevant ASN.1 definitions are:
      * <pre>
      * validity             Validity
