@@ -109,8 +109,7 @@ public class JavaRuntimeURLConnection extends URLConnection {
 
     @Override
     public long getContentLengthLong() {
-        // Note: UncheckedIOException is thrown by the Node subclass in
-        // ExplodedImage (this not obvious, so worth calling out).
+        // connectResourceNode() may throw UncheckedIOException.
         try {
             return connectResourceNode().size();
         } catch (IOException | UncheckedIOException ioe) {
@@ -127,7 +126,7 @@ public class JavaRuntimeURLConnection extends URLConnection {
     // Perform percent decoding of the resource name/path from the URL.
     private static String percentDecode(String path) throws MalformedURLException {
         if (path.indexOf('%') == -1) {
-            // Nothing to decode (overwhelmingly common case).
+            // Nothing to decode (common case).
             return path;
         }
         // Any additional special case decoding logic should go here.
