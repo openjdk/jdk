@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,15 +46,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @test
  * @bug 8226303 8364733
  * @summary Verify all specified `HttpRequest.BodyPublishers::ofByteArrays` behavior
+ *
  * @build ByteBufferUtils
  *        RecordingSubscriber
+ *        ReplayTestSupport
+ *
  * @run junit OfByteArraysTest
  *
  * @comment Using `main/othervm` to initiate tests that depend on a custom-configured JVM
  * @run main/othervm -Xmx64m OfByteArraysTest testOOM
  */
 
-public class OfByteArraysTest {
+public class OfByteArraysTest extends ReplayTestSupport {
 
     @ParameterizedTest
     @ValueSource(ints = {0, 1, 2, 3})
@@ -255,6 +258,14 @@ public class OfByteArraysTest {
             throw nextException;
         }
 
+    }
+
+    @Override
+    Iterable<ReplayTarget> createReplayTargets() {
+        byte[] byteArray = ByteBufferUtils.byteArrayOfLength(9);
+        ByteBuffer expectedBuffer = ByteBuffer.wrap(byteArray);
+        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofByteArrays(List.of(byteArray));
+        return List.of(new ReplayTarget(expectedBuffer, -1, publisher, null));
     }
 
     /**
