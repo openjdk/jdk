@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1411,6 +1411,7 @@ public final class Long extends Number
      * @param divisor the value doing the dividing
      * @return the unsigned quotient of the first argument divided by
      * the second argument
+     * @throws ArithmeticException if the divisor is zero
      * @see #remainderUnsigned
      * @since 1.8
      */
@@ -1434,6 +1435,7 @@ public final class Long extends Number
      * @param divisor the value doing the dividing
      * @return the unsigned remainder of the first argument divided by
      * the second argument
+     * @throws ArithmeticException if the divisor is zero
      * @see #divideUnsigned
      * @since 1.8
      */

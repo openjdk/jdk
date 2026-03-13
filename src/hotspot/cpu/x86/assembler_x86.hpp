@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1965,6 +1965,7 @@ private:
   void pmovsxbq(XMMRegister dst, XMMRegister src);
   void pmovsxbw(XMMRegister dst, XMMRegister src);
   void pmovsxwd(XMMRegister dst, XMMRegister src);
+  void pmovzxwd(XMMRegister dst, XMMRegister src);
   void vpmovsxbd(XMMRegister dst, XMMRegister src, int vector_len);
   void vpmovsxbq(XMMRegister dst, XMMRegister src, int vector_len);
   void vpmovsxbw(XMMRegister dst, XMMRegister src, int vector_len);
@@ -2331,10 +2332,14 @@ private:
   // Unordered Compare Scalar Double-Precision Floating-Point Values and set EFLAGS
   void ucomisd(XMMRegister dst, Address src);
   void ucomisd(XMMRegister dst, XMMRegister src);
+  void vucomxsd(XMMRegister dst, Address src);
+  void vucomxsd(XMMRegister dst, XMMRegister src);
 
   // Unordered Compare Scalar Single-Precision Floating-Point Values and set EFLAGS
   void ucomiss(XMMRegister dst, Address src);
   void ucomiss(XMMRegister dst, XMMRegister src);
+  void vucomxss(XMMRegister dst, Address src);
+  void vucomxss(XMMRegister dst, XMMRegister src);
 
   void xabort(int8_t imm8);
 

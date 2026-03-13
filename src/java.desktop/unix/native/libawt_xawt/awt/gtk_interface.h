@@ -541,6 +541,8 @@ typedef struct GtkApi {
                                 guint required_micro);
     jobject (*get_setting)(JNIEnv *env, Setting property);
 
+    gboolean (*apply_theme_if_needed)();
+
     void (*paint_arrow)(WidgetType widget_type, GtkStateType state_type,
         GtkShadowType shadow_type, const gchar *detail,
         gint x, gint y, gint width, gint height,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,6 @@ import javax.swing.JComponent;
 import javax.swing.UIManager;
 import javax.swing.plaf.ComponentUI;
 
-import sun.awt.AppContext;
-
 /**
  * Windows check box.
  *
@@ -43,7 +41,7 @@ public final class WindowsCheckBoxUI extends WindowsRadioButtonUI
     // of BasicCheckBoxUI because we want to pick up all the
     // painting changes made in WindowsRadioButtonUI.
 
-    private static final Object WINDOWS_CHECK_BOX_UI_KEY = new Object();
+    private static final ComponentUI UI = new WindowsCheckBoxUI();
 
     private static final String propertyPrefix = "CheckBox" + ".";
 
@@ -53,14 +51,7 @@ public final class WindowsCheckBoxUI extends WindowsRadioButtonUI
     //          Create PLAF
     // ********************************
     public static ComponentUI createUI(JComponent c) {
-        AppContext appContext = AppContext.getAppContext();
-        WindowsCheckBoxUI windowsCheckBoxUI =
-                (WindowsCheckBoxUI) appContext.get(WINDOWS_CHECK_BOX_UI_KEY);
-        if (windowsCheckBoxUI == null) {
-            windowsCheckBoxUI = new WindowsCheckBoxUI();
-            appContext.put(WINDOWS_CHECK_BOX_UI_KEY, windowsCheckBoxUI);
-        }
-        return windowsCheckBoxUI;
+        return UI;
     }
 
 

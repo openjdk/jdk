@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@ import static jdk.jpackage.test.HelloApp.configureAndExecute;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.TKit;
-import static jdk.jpackage.test.WindowsHelper.killProcess;
 
 public class WinChildProcessTest {
     private static final Path TEST_APP_JAVA = TKit.TEST_SRC_ROOT
@@ -52,7 +51,7 @@ public class WinChildProcessTest {
 
     @Test
     public static void test() {
-        long childPid = 0;
+        Optional<ProcessHandle> child = Optional.empty();
         try {
             JPackageCommand cmd = JPackageCommand
                     .helloAppImage(TEST_APP_JAVA + "*Hello")
@@ -69,21 +68,18 @@ public class WinChildProcessTest {
             String pidStr = output.get(0);
 
             // parse child PID
-            childPid = Long.parseLong(pidStr.split("=", 2)[1]);
+            var childPid = Long.parseLong(pidStr.split("=", 2)[1]);
 
             // Check whether the termination of third party application launcher
             // also terminating the launched third party application
             // If third party application is not terminated the test is
             // successful else failure
-            Optional<ProcessHandle> processHandle = ProcessHandle.of(childPid);
-            boolean isAlive = processHandle.isPresent()
-                    && processHandle.get().isAlive();
-            TKit.assertTrue(isAlive, "Check child process is alive");
+            child = ProcessHandle.of(childPid);
+            boolean isAlive = child.map(ProcessHandle::isAlive).orElse(false);
+            TKit.assertTrue(isAlive, String.format("Check child process with PID=%d is alive", childPid));
         } finally {
-            if (childPid != 0) {
-                // Kill only a specific child instance
-                killProcess(childPid);
-            }
+            TKit.trace("About to kill the child process...");
+            child.ifPresent(ProcessHandle::destroyForcibly);
         }
     }
 }

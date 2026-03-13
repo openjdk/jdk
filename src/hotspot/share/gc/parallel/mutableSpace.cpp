@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 #include "memory/iterator.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/align.hpp"
@@ -123,7 +122,7 @@ void MutableSpace::initialize(MemRegion mr,
   // makes the new space available for allocation by other threads.  So this
   // assignment must follow all other configuration and initialization that
   // might be done for expansion.
-  AtomicAccess::release_store(end_addr(), mr.end());
+  _end.release_store(mr.end());
 
   if (clear_space) {
     clear(mangle_space);
@@ -140,7 +139,7 @@ void MutableSpace::clear(bool mangle_space) {
 #ifndef PRODUCT
 
 void MutableSpace::mangle_unused_area() {
-  mangle_region(MemRegion(_top, _end));
+  mangle_region(MemRegion(top(), end()));
 }
 
 void MutableSpace::mangle_region(MemRegion mr) {
@@ -155,14 +154,10 @@ HeapWord* MutableSpace::cas_allocate(size_t size) {
     // If end is read first, other threads may advance end and top such that
     // current top > old end and current top + size > current end.  Then
     // pointer_delta underflows, allowing installation of top > current end.
-    HeapWord* obj = AtomicAccess::load_acquire(top_addr());
+    HeapWord* obj = _top.load_acquire();
     if (pointer_delta(end(), obj) >= size) {
       HeapWord* new_top = obj + size;
-      HeapWord* result = AtomicAccess::cmpxchg(top_addr(), obj, new_top);
-      // result can be one of two:
-      //  the old top value: the exchange succeeded
-      //  otherwise: the new value of the top is returned.
-      if (result != obj) {
+      if (!_top.compare_set(obj, new_top)) {
         continue; // another thread beat us to the allocation, try again
       }
       assert(is_object_aligned(obj) && is_object_aligned(new_top),
@@ -177,7 +172,7 @@ HeapWord* MutableSpace::cas_allocate(size_t size) {
 // Try to deallocate previous allocation. Returns true upon success.
 bool MutableSpace::cas_deallocate(HeapWord *obj, size_t size) {
   HeapWord* expected_top = obj + size;
-  return AtomicAccess::cmpxchg(top_addr(), expected_top, obj) == expected_top;
+  return _top.compare_set(expected_top, obj);
 }
 
 void MutableSpace::oop_iterate(OopIterateClosure* cl) {

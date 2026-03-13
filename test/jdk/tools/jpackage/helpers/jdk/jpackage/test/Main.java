@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,17 +27,24 @@ import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toMap;
 import static jdk.jpackage.test.TestBuilder.CMDLINE_ARG_PREFIX;
 
+import java.io.IOException;
+import java.io.PrintStream;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.function.ExceptionBox;
+import jdk.jpackage.internal.util.function.ThrowingRunnable;
 
 
 public final class Main {
@@ -47,10 +54,52 @@ public final class Main {
     }
 
     public static void main(TestBuilder.Builder builder, String... args) throws Exception {
+        Objects.requireNonNull(builder);
+
+        var argList = List.of(args);
+
+        var ignoreLogfile = argList.contains(CMDLINE_ARG_PREFIX + "ignore-logfile");
+
+        List<String> filteredArgs;
+        if (ignoreLogfile) {
+            filteredArgs = argList.stream().filter(Predicate.isEqual(CMDLINE_ARG_PREFIX + "ignore-logfile").negate()).toList();
+        } else {
+            filteredArgs = argList;
+        }
+
+        ThrowingRunnable<Exception> workload = () -> {
+            run(builder, filteredArgs);
+        };
+
+        try {
+            Optional.ofNullable(TKit.getConfigProperty("logfile")).filter(_ -> {
+                return !ignoreLogfile;
+            }).map(Path::of).ifPresentOrElse(logfile -> {
+
+                try (var out = new PrintStream(
+                        Files.newOutputStream(logfile, StandardOpenOption.CREATE, StandardOpenOption.APPEND),
+                        true,
+                        System.out.charset())) {
+
+                    TKit.withOutput(workload, out, out);
+
+                } catch (IOException ex) {
+                    throw new UncheckedIOException(ex);
+                }
+
+            }, () -> {
+                ThrowingRunnable.toRunnable(workload).run();
+            });
+        } catch (Exception ex) {
+            throw ExceptionBox.unbox(ex);
+        }
+    }
+
+    private static void run(TestBuilder.Builder builder, List<String> args) throws Exception {
         boolean listTests = false;
         List<TestInstance> tests = new ArrayList<>();
         try (TestBuilder testBuilder = builder.testConsumer(tests::add).create()) {
-            Deque<String> argsAsList = new ArrayDeque<>(List.of(args));
+            Deque<String> argsAsList = new ArrayDeque<>(args);
             while (!argsAsList.isEmpty()) {
                 var arg = argsAsList.pop();
                 TestBuilder.trace(String.format("Parsing [%s]...", arg));
@@ -115,7 +164,7 @@ public final class Main {
             return;
         }
 
-        TKit.withExtraLogStream(() -> runTests(orderedTests));
+        runTests(orderedTests);
     }
 
     private static void runTests(List<TestInstance> tests) {

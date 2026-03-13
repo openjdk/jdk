@@ -82,14 +82,9 @@ public class LargeResponseTest implements HttpServerAdapters {
         }
     }
 
-    static final SSLContext context;
+    private static final SSLContext context = SimpleSSLContext.findSSLContext();
     static {
-        try {
-            context = new SimpleSSLContext().get();
-            SSLContext.setDefault(context);
-        } catch (Exception x) {
-            throw new ExceptionInInitializerError(x);
-        }
+        SSLContext.setDefault(context);
     }
 
     final AtomicLong requestCounter = new AtomicLong();

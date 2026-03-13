@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -708,7 +708,6 @@ void TemplateTable::index_check(Register array, Register index) {
     __ mv(x11, index);
   }
   Label ok;
-  __ sext(index, index, 32);
   __ bltu(index, length, ok);
   __ mv(x13, array);
   __ mv(t1, Interpreter::_throw_ArrayIndexOutOfBoundsException_entry);
@@ -1052,7 +1051,7 @@ void TemplateTable::aastore() {
   transition(vtos, vtos);
   // stack: ..., array, index, value
   __ ld(x10, at_tos());    // value
-  __ ld(x12, at_tos_p1()); // index
+  __ lw(x12, at_tos_p1()); // index
   __ ld(x13, at_tos_p2()); // array
 
   index_check(x13, x12);     // kills x11
@@ -1462,9 +1461,9 @@ void TemplateTable::iinc() {
   transition(vtos, vtos);
   __ load_signed_byte(x11, at_bcp(2)); // get constant
   locals_index(x12);
-  __ ld(x10, iaddress(x12, x10, _masm));
+  __ lw(x10, iaddress(x12, x10, _masm));
   __ addw(x10, x10, x11);
-  __ sd(x10, iaddress(x12, t0, _masm));
+  __ sw(x10, iaddress(x12, t0, _masm));
 }
 
 void TemplateTable::wide_iinc() {
@@ -1477,9 +1476,9 @@ void TemplateTable::wide_iinc() {
   __ orr(x11, x11, t1);
 
   locals_index_wide(x12);
-  __ ld(x10, iaddress(x12, t0, _masm));
+  __ lw(x10, iaddress(x12, t0, _masm));
   __ addw(x10, x10, x11);
-  __ sd(x10, iaddress(x12, t0, _masm));
+  __ sw(x10, iaddress(x12, t0, _masm));
 }
 
 void TemplateTable::convert() {
@@ -2192,7 +2191,8 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
   __ mv(t0, (int) code);
 
   // Class initialization barrier for static methods
-  if (VM_Version::supports_fast_class_init_checks() && bytecode() == Bytecodes::_invokestatic) {
+  if (bytecode() == Bytecodes::_invokestatic) {
+    assert(VM_Version::supports_fast_class_init_checks(), "sanity");
     __ bne(temp, t0, L_clinit_barrier_slow);  // have we resolved this bytecode?
     __ ld(temp, Address(Rcache, in_bytes(ResolvedMethodEntry::method_offset())));
     __ load_method_holder(temp, temp);
@@ -2243,8 +2243,8 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   __ mv(t0, (int) code);  // have we resolved this bytecode?
 
   // Class initialization barrier for static fields
-  if (VM_Version::supports_fast_class_init_checks() &&
-      (bytecode() == Bytecodes::_getstatic || bytecode() == Bytecodes::_putstatic)) {
+  if (bytecode() == Bytecodes::_getstatic || bytecode() == Bytecodes::_putstatic) {
+    assert(VM_Version::supports_fast_class_init_checks(), "sanity");
     const Register field_holder = temp;
 
     __ bne(temp, t0, L_clinit_barrier_slow);
@@ -3279,7 +3279,7 @@ void TemplateTable::invokevirtual_helper(Register index,
   __ load_klass(x10, recv);
 
   // profile this call
-  __ profile_virtual_call(x10, xlocals, x13);
+  __ profile_virtual_call(x10, xlocals);
 
   // get target Method & entry point
   __ lookup_virtual_method(x10, index, method);
@@ -3406,7 +3406,7 @@ void TemplateTable::invokeinterface(int byte_no) {
                              /*return_method=*/false);
 
   // profile this call
-  __ profile_virtual_call(x13, x30, x9);
+  __ profile_virtual_call(x13, x30);
 
   // Get declaring interface class from method, and itable index
   __ load_method_holder(x10, xmethod);

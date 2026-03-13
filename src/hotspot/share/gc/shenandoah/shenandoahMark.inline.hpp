@@ -167,7 +167,7 @@ inline void ShenandoahMark::do_chunked_array_start(ShenandoahObjToScanQueue* q, 
 
   if (len <= (int) ObjArrayMarkingStride*2) {
     // A few slices only, process directly
-    array->oop_iterate_range(cl, 0, len);
+    array->oop_iterate_elements_range(cl, 0, len);
   } else {
     int bits = log2i_graceful(len);
     // Compensate for non-power-of-two arrays, cover the array in excess:
@@ -216,7 +216,7 @@ inline void ShenandoahMark::do_chunked_array_start(ShenandoahObjToScanQueue* q, 
     // Process the irregular tail, if present
     int from = last_idx;
     if (from < len) {
-      array->oop_iterate_range(cl, from, len);
+      array->oop_iterate_elements_range(cl, from, len);
     }
   }
 }
@@ -225,8 +225,6 @@ template <class T>
 inline void ShenandoahMark::do_chunked_array(ShenandoahObjToScanQueue* q, T* cl, oop obj, int chunk, int pow, bool weak) {
   assert(obj->is_objArray(), "expect object array");
   objArrayOop array = objArrayOop(obj);
-
-  assert (ObjArrayMarkingStride > 0, "sanity");
 
   // Split out tasks, as suggested in ShenandoahMarkTask docs. Avoid pushing tasks that
   // are known to start beyond the array.
@@ -248,7 +246,7 @@ inline void ShenandoahMark::do_chunked_array(ShenandoahObjToScanQueue* q, T* cl,
   assert (0 < to && to <= len, "to is sane: %d/%d", to, len);
 #endif
 
-  array->oop_iterate_range(cl, from, to);
+  array->oop_iterate_elements_range(cl, from, to);
 }
 
 template <ShenandoahGenerationType GENERATION>

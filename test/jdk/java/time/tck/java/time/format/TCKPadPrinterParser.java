@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,48 +61,55 @@ package tck.java.time.format;
 
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.text.ParsePosition;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.SignStyle;
 import java.time.temporal.TemporalAccessor;
 
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Test padding behavior of formatter.
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TCKPadPrinterParser {
 
     private DateTimeFormatterBuilder builder;
     private ParsePosition pos;
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         builder = new DateTimeFormatterBuilder();
         pos = new ParsePosition(0);
     }
 
     //-----------------------------------------------------------------------
-    @Test(expectedExceptions=IndexOutOfBoundsException.class)
+    @Test
     public void test_parse_negativePosition() {
-        builder.padNext(3, '-').appendLiteral('Z');
-        builder.toFormatter().parseUnresolved("--Z", new ParsePosition(-1));
+        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> {
+            builder.padNext(3, '-').appendLiteral('Z');
+            builder.toFormatter().parseUnresolved("--Z", new ParsePosition(-1));
+        });
     }
 
-    @Test(expectedExceptions=IndexOutOfBoundsException.class)
+    @Test
     public void test_parse_offEndPosition() {
-        builder.padNext(3, '-').appendLiteral('Z');
-        builder.toFormatter().parseUnresolved("--Z", new ParsePosition(4));
+        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> {
+            builder.padNext(3, '-').appendLiteral('Z');
+            builder.toFormatter().parseUnresolved("--Z", new ParsePosition(4));
+        });
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="parseStrict")
     Object[][] data_parseStrict() {
         return new Object[][] {
                 {"222", 3, -1, 222},
@@ -126,22 +133,22 @@ public class TCKPadPrinterParser {
         };
     }
 
-    @Test(dataProvider="parseStrict")
+    @ParameterizedTest
+    @MethodSource("data_parseStrict")
     public void test_parseStrict(String text, int expectedIndex, int expectedErrorIndex, Number expectedMonth) {
         builder.padNext(3, '#').appendValue(MONTH_OF_YEAR, 1, 3, SignStyle.NORMAL);
         TemporalAccessor parsed = builder.toFormatter().parseUnresolved(text, pos);
-        assertEquals(pos.getIndex(), expectedIndex);
-        assertEquals(pos.getErrorIndex(), expectedErrorIndex);
+        assertEquals(expectedIndex, pos.getIndex());
+        assertEquals(expectedErrorIndex, pos.getErrorIndex());
         if (expectedMonth != null) {
-            assertEquals(parsed.isSupported(MONTH_OF_YEAR), true);
-            assertEquals(parsed.getLong(MONTH_OF_YEAR), expectedMonth.longValue());
+            assertEquals(true, parsed.isSupported(MONTH_OF_YEAR));
+            assertEquals(expectedMonth.longValue(), parsed.getLong(MONTH_OF_YEAR));
         } else {
-            assertEquals(parsed, null);
+            assertEquals(null, parsed);
         }
     }
 
     //-----------------------------------------------------------------------
-    @DataProvider(name="parseLenient")
     Object[][] data_parseLenient() {
         return new Object[][] {
                 {"222", 3, -1, 222},
@@ -167,17 +174,18 @@ public class TCKPadPrinterParser {
         };
     }
 
-    @Test(dataProvider="parseLenient")
+    @ParameterizedTest
+    @MethodSource("data_parseLenient")
     public void test_parseLenient(String text, int expectedIndex, int expectedErrorIndex, Number expectedMonth) {
         builder.parseLenient().padNext(3, '#').appendValue(MONTH_OF_YEAR, 1, 3, SignStyle.NORMAL);
         TemporalAccessor parsed = builder.toFormatter().parseUnresolved(text, pos);
-        assertEquals(pos.getIndex(), expectedIndex);
-        assertEquals(pos.getErrorIndex(), expectedErrorIndex);
+        assertEquals(expectedIndex, pos.getIndex());
+        assertEquals(expectedErrorIndex, pos.getErrorIndex());
         if (expectedMonth != null) {
-            assertEquals(parsed.isSupported(MONTH_OF_YEAR), true);
-            assertEquals(parsed.getLong(MONTH_OF_YEAR), expectedMonth.longValue());
+            assertEquals(true, parsed.isSupported(MONTH_OF_YEAR));
+            assertEquals(expectedMonth.longValue(), parsed.getLong(MONTH_OF_YEAR));
         } else {
-            assertEquals(parsed, null);
+            assertEquals(null, parsed);
         }
     }
 
@@ -186,19 +194,19 @@ public class TCKPadPrinterParser {
     public void test_parse_decoratedStartsWithPad() {
         builder.padNext(8, '-').appendLiteral("-HELLO-");
         TemporalAccessor parsed = builder.toFormatter().parseUnresolved("--HELLO-", pos);
-        assertEquals(pos.getIndex(), 0);
-        assertEquals(pos.getErrorIndex(), 2);
-        assertEquals(parsed, null);
+        assertEquals(0, pos.getIndex());
+        assertEquals(2, pos.getErrorIndex());
+        assertEquals(null, parsed);
     }
 
     @Test
     public void test_parse_decoratedStartsWithPad_number() {
         builder.padNext(3, '-').appendValue(MONTH_OF_YEAR, 1, 2, SignStyle.NORMAL);
         TemporalAccessor parsed = builder.toFormatter().parseUnresolved("--2", pos);
-        assertEquals(pos.getIndex(), 3);
-        assertEquals(pos.getErrorIndex(), -1);
-        assertEquals(parsed.isSupported(MONTH_OF_YEAR), true);
-        assertEquals(parsed.getLong(MONTH_OF_YEAR), 2L);  // +2, not -2
+        assertEquals(3, pos.getIndex());
+        assertEquals(-1, pos.getErrorIndex());
+        assertEquals(true, parsed.isSupported(MONTH_OF_YEAR));
+        assertEquals(2L, parsed.getLong(MONTH_OF_YEAR));  // +2, not -2
     }
 
     //-----------------------------------------------------------------------
@@ -206,8 +214,8 @@ public class TCKPadPrinterParser {
     public void test_parse_decoratedEmpty_strict() {
         builder.padNext(4, '-').optionalStart().appendValue(DAY_OF_MONTH).optionalEnd();
         TemporalAccessor parsed = builder.toFormatter().parseUnresolved("----", pos);
-        assertEquals(pos.getIndex(), 4);
-        assertEquals(pos.getErrorIndex(), -1);
+        assertEquals(4, pos.getIndex());
+        assertEquals(-1, pos.getErrorIndex());
         assertNotNull(parsed);
     }
 
@@ -215,8 +223,8 @@ public class TCKPadPrinterParser {
     public void test_parse_decoratedEmpty_lenient() {
         builder.parseLenient().padNext(4, '-').optionalStart().appendValue(DAY_OF_MONTH).optionalEnd();
         TemporalAccessor parsed = builder.toFormatter().parseUnresolved("----", pos);
-        assertEquals(pos.getIndex(), 4);
-        assertEquals(pos.getErrorIndex(), -1);
+        assertEquals(4, pos.getIndex());
+        assertEquals(-1, pos.getErrorIndex());
         assertNotNull(parsed);
     }
 

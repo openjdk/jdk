@@ -388,3 +388,17 @@ Java_com_sun_java_swing_plaf_gtk_GTKEngine_nativeSetRangeValue(
     gtk->set_range_value(widget_type, value, min, max, visible);
     gtk->gdk_threads_leave();
 }
+
+/*
+ * Class:     com_sun_java_swing_plaf_gtk_GTKLookAndFeel
+ * Method:    applyThemeIfNeeded
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL
+Java_com_sun_java_swing_plaf_gtk_GTKLookAndFeel_applyThemeIfNeeded(JNIEnv *env, jobject this) {
+    gtk->gdk_threads_enter();
+    const gboolean result = gtk->apply_theme_if_needed();
+    gtk->gdk_threads_leave();
+
+    return result;
+}

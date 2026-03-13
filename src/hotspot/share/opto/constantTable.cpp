@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,7 +158,7 @@ void ConstantTable::calculate_offsets_and_size() {
   // Align size up to the next section start (which is insts; see
   // CodeBuffer::align_at_start).
   assert(_size == -1, "already set?");
-  _size = align_up(offset, (int)CodeEntryAlignment);
+  _size = align_up(offset, CodeEntryAlignment);
 }
 
 bool ConstantTable::emit(C2_MacroAssembler* masm) const {

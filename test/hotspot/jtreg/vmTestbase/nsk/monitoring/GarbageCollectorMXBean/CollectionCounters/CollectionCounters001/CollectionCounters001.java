@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,19 @@
 
 /*
  * @test
- * @key randomness
  *
  * @summary converted from VM Testbase nsk/monitoring/GarbageCollectorMXBean/CollectionCounters/CollectionCounters001.
  * VM Testbase keywords: [monitoring]
  *
- * @requires vm.opt.DisableExplicitGC != "true"
  * @library /vmTestbase
  *          /test/lib
- * @run main/othervm -XX:-UseGCOverheadLimit
+ *
+ * @build jdk.test.whitebox.WhiteBox
+ * @requires vm.opt.DisableExplicitGC != "true"
+ * @requires vm.compMode != "Xcomp"
+ *
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseGCOverheadLimit
  *      nsk.monitoring.GarbageCollectorMXBean.CollectionCounters.CollectionCounters001.CollectionCounters001
  *      -testMode=directly
  *      -iterations=5
@@ -42,10 +46,12 @@ package nsk.monitoring.GarbageCollectorMXBean.CollectionCounters.CollectionCount
 
 import java.util.List;
 import java.lang.management.*;
+
+import jdk.test.whitebox.WhiteBox;
+
 import nsk.share.TestFailure;
 import nsk.share.test.*;
 import nsk.monitoring.share.*;
-import nsk.share.gc.Algorithms;
 import nsk.share.runner.RunParams;
 import nsk.share.runner.RunParamsAware;
 
@@ -80,12 +86,15 @@ public class CollectionCounters001 extends MonitoringTestBase implements RunPara
         private void runOne(ExecutionController stresser) {
                 updateCounters();
                 validate(false /* don't check gc count increases */);
-                Algorithms.eatMemory(stresser);
+
+                WhiteBox.getWhiteBox().fullGC();
                 updateCounters();
                 validate(true);
+
                 System.gc();
                 updateCounters();
                 validate(true);
+
                 memory.gc();
                 updateCounters();
                 validate(true);

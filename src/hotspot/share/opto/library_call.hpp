@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,10 +158,12 @@ class LibraryCallKit : public GraphKit {
   Node* generate_fair_guard(Node* test, RegionNode* region);
   Node* generate_negative_guard(Node* index, RegionNode* region,
                                 // resulting CastII of index:
-                                Node* *pos_index = nullptr);
+                                Node** pos_index = nullptr,
+                                bool with_opaque = false);
   Node* generate_limit_guard(Node* offset, Node* subseq_length,
                              Node* array_length,
-                             RegionNode* region);
+                             RegionNode* region,
+                             bool with_opaque = false);
   void  generate_string_range_check(Node* array, Node* offset,
                                     Node* length, bool char_count,
                                     bool halt_on_oob = false);
