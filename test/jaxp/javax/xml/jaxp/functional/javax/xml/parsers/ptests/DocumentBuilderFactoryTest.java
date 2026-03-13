@@ -74,6 +74,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
+ * @build jaxp.library.JAXPDataProvider
  * @run junit/othervm javax.xml.parsers.ptests.DocumentBuilderFactoryTest
  */
 public class DocumentBuilderFactoryTest {
@@ -137,7 +138,7 @@ public class DocumentBuilderFactoryTest {
      * null , should throw FactoryConfigurationError
      */
     @ParameterizedTest
-    @JAXPDataProvider.NewInstanceNeg
+    @MethodSource("jaxp.library.JAXPDataProvider#newInstanceNeg")
     public void testNewInstanceNeg(String factoryClassName, ClassLoader classLoader) {
         assertThrows(
                 FactoryConfigurationError.class,

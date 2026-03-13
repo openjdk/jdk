@@ -101,7 +101,7 @@ public class ValidatorTest {
 
         ErrorHandler mh = new MyErrorHandler();
         validator.setErrorHandler(mh);
-        assertSame(validator.getErrorHandler(), mh);
+        assertSame(mh, validator.getErrorHandler());
 
     }
 

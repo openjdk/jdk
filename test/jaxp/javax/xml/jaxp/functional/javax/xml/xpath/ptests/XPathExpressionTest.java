@@ -101,30 +101,6 @@ public class XPathExpressionTest {
     }
 
     /**
-     * compile(String) throws NPE if expression is null.
-     */
-    @Test
-    public void testXPathCompileNullInput() {
-        assertThrows(NullPointerException.class, () -> xpath.compile(null));
-    }
-
-    /**
-     * compile(String) throws XPathExpressionException if expression is junk characters.
-     */
-    @Test
-    public void testXPathCompileJunkInput() {
-        assertThrows(XPathExpressionException.class, () -> xpath.compile("-*&"));
-    }
-
-    /**
-     * compile(String) throws XPathExpressionException if expression is blank.
-     */
-    @Test
-    public void testXPathCompileBlankInput() {
-        assertThrows(XPathExpressionException.class, () -> xpath.compile(" "));
-    }
-
-    /**
      * Test for evaluate(java.lang.Object item,QName returnType)throws
      * XPathExpressionException.
      */

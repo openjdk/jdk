@@ -74,6 +74,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @test
  * @bug 8080907 8169778
  * @library /javax/xml/jaxp/libs
+ * @build jaxp.library.JAXPDataProvider
  * @run junit/othervm javax.xml.validation.ptests.SchemaFactoryTest
  * @summary Class containing the test cases for SchemaFactory
  */
@@ -145,7 +146,7 @@ public class SchemaFactoryTest {
      * factoryClassName is null , should throw IllegalArgumentException
      */
     @ParameterizedTest
-    @JAXPDataProvider.NewInstanceNeg
+    @MethodSource("jaxp.library.JAXPDataProvider#newInstanceNeg")
     public void testNewInstanceWithNullFactoryClassName(String factoryClassName, ClassLoader classLoader) {
         assertThrows(
                 IllegalArgumentException.class,
@@ -279,7 +280,7 @@ public class SchemaFactoryTest {
 
         ErrorHandler handler = new MyErrorHandler();
         sf.setErrorHandler(handler);
-        assertSame(sf.getErrorHandler(), handler);
+        assertSame(handler, sf.getErrorHandler());
 
         sf.setErrorHandler(null);
         assertNull(sf.getErrorHandler());

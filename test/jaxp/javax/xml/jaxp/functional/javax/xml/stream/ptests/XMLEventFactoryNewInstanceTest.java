@@ -40,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @test
  * @bug 8169778
  * @library /javax/xml/jaxp/libs
+ * @build jaxp.library.JAXPDataProvider
  * @run junit/othervm javax.xml.stream.ptests.XMLEventFactoryNewInstanceTest
  * @summary Tests for XMLEventFactory.newFactory(factoryId , classLoader)
  */
@@ -95,7 +96,7 @@ public class XMLEventFactoryNewInstanceTest {
      * throw NullPointerException
      */
     @ParameterizedTest
-    @JAXPDataProvider.NewInstanceNeg
+    @MethodSource("jaxp.library.JAXPDataProvider#newInstanceNeg")
     public void testNewFactoryNeg(String factoryId, ClassLoader classLoader) {
         assertThrows(NullPointerException.class, () -> XMLEventFactory.newFactory(factoryId, classLoader));
     }

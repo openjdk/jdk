@@ -23,33 +23,14 @@
 
 package jaxp.library;
 
-import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.ArgumentsProvider;
-import org.junit.jupiter.params.provider.ArgumentsSource;
-import org.junit.jupiter.params.support.AnnotationConsumer;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-import java.util.stream.Stream;
-
 /**
  * Provide invalid parameters for negative testing Factory.newInstance.
  */
-public class JAXPDataProvider implements ArgumentsProvider, AnnotationConsumer<JAXPDataProvider.NewInstanceNeg> {
-    @Target({ ElementType.ANNOTATION_TYPE, ElementType.METHOD })
-    @Retention(RetentionPolicy.RUNTIME)
-    @ArgumentsSource(JAXPDataProvider.class)
-    public @interface NewInstanceNeg { }
-
-    @Override
-    public void accept(NewInstanceNeg annotation) { }
-
-    @Override
-    public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
-        return Stream.of(Arguments.arguments(null, null),
-                Arguments.arguments(null, JAXPDataProvider.class.getClassLoader()));
+public class JAXPDataProvider {
+    public static Object[][] newInstanceNeg() {
+        return new Object[][] {
+                { null, null },
+                { null, JAXPDataProvider.class.getClassLoader() },
+        };
     }
 }

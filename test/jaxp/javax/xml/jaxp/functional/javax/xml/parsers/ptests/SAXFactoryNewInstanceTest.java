@@ -39,6 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
+ * @build jaxp.library.JAXPDataProvider
  * @run junit/othervm javax.xml.parsers.ptests.SAXFactoryNewInstanceTest
  * @summary Tests for SAXParserFactory.newInstance(factoryClassName , classLoader)
  */
@@ -73,7 +74,7 @@ public class SAXFactoryNewInstanceTest {
      * throw FactoryConfigurationError
      */
     @ParameterizedTest
-    @JAXPDataProvider.NewInstanceNeg
+    @MethodSource("jaxp.library.JAXPDataProvider#newInstanceNeg")
     public void testNewInstanceNeg(String factoryClassName, ClassLoader classLoader) {
         assertThrows(
                 FactoryConfigurationError.class,

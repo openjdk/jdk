@@ -49,6 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @test
  * @bug 8169778
  * @library /javax/xml/jaxp/libs
+ * @build jaxp.library.JAXPDataProvider
  * @run junit/othervm javax.xml.xpath.ptests.XPathFactoryTest
  */
 public class XPathFactoryTest {
@@ -124,7 +125,7 @@ public class XPathFactoryTest {
      * factoryClassName, java.lang.ClassLoader classLoader)
      */
     @ParameterizedTest
-    @JAXPDataProvider.NewInstanceNeg
+    @MethodSource("jaxp.library.JAXPDataProvider#newInstanceNeg")
     public void testNewInstanceWithNullFactoryClassName(String factoryClassName, ClassLoader classLoader) {
         assertThrows(
                 XPathFactoryConfigurationException.class,

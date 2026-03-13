@@ -42,6 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @test
  * @bug 8169778
  * @library /javax/xml/jaxp/libs
+ * @build jaxp.library.JAXPDataProvider
  * @run junit/othervm javax.xml.datatype.ptests.FactoryNewInstanceTest
  * @summary Tests for DatatypeFactory.newInstance(factoryClassName , classLoader)
  */
@@ -94,7 +95,7 @@ public class FactoryNewInstanceTest {
      * throw DatatypeConfigurationException
      */
     @ParameterizedTest
-    @JAXPDataProvider.NewInstanceNeg
+    @MethodSource("jaxp.library.JAXPDataProvider#newInstanceNeg")
     public void testNewInstanceNeg(String factoryClassName, ClassLoader classLoader) throws DatatypeConfigurationException {
         assertThrows(
                 DatatypeConfigurationException.class,

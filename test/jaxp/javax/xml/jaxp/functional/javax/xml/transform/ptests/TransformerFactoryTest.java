@@ -59,6 +59,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @test
  * @bug 8169778
  * @library /javax/xml/jaxp/libs
+ * @build jaxp.library.JAXPDataProvider
  * @run junit/othervm javax.xml.transform.ptests.TransformerFactoryTest
  */
 public class TransformerFactoryTest {
@@ -120,7 +121,7 @@ public class TransformerFactoryTest {
      * null , should throw TransformerFactoryConfigurationError
      */
     @ParameterizedTest
-    @JAXPDataProvider.NewInstanceNeg
+    @MethodSource("jaxp.library.JAXPDataProvider#newInstanceNeg")
     public void testNewInstanceNeg(String factoryClassName, ClassLoader classLoader) {
         assertThrows(
                 TransformerFactoryConfigurationError.class,

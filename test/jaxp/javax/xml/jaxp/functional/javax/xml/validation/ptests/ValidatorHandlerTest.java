@@ -68,8 +68,7 @@ public class ValidatorHandlerTest {
 
         ErrorHandler handler = new MyErrorHandler();
         validatorHandler.setErrorHandler(handler);
-        assertSame(validatorHandler.getErrorHandler(), handler);
-
+        assertSame(handler, validatorHandler.getErrorHandler());
     }
 
     @Test
@@ -129,7 +128,7 @@ public class ValidatorHandlerTest {
 
         ContentHandler handler = new DefaultHandler();
         validatorHandler.setContentHandler(handler);
-        assertSame(validatorHandler.getContentHandler(), handler);
+        assertSame(handler, validatorHandler.getContentHandler());
 
         validatorHandler.setContentHandler(null);
         assertNull(validatorHandler.getContentHandler());
