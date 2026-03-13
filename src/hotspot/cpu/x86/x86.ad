@@ -11647,7 +11647,7 @@ instruct mulL_mem_imm(rRegL dst, memory src, immL32 imm, rFlagsReg cr)
   ins_pipe(ialu_reg_mem_alu0);
 %}
 
-instruct mulHiLoL_rReg(rax_RegL rax, rdx_RegL rdx, no_rax_rdx_RegL src, rFlagsReg cr)
+instruct mulHiLoL_rReg(rax_RegL rax, rdx_RegL rdx, rRegL src, rFlagsReg cr)
 %{
   match(MulHiLoL src rax);
   match(MulHiLoL rax src);
@@ -11661,14 +11661,14 @@ instruct mulHiLoL_rReg(rax_RegL rax, rdx_RegL rdx, no_rax_rdx_RegL src, rFlagsRe
   ins_pipe(ialu_reg_reg_alu0);
 %}
 
-instruct umulHiLoL_rReg(rax_RegL rax, rdx_RegL rdx, no_rax_rdx_RegL src, rFlagsReg cr)
+instruct umulHiLoL_rReg(rax_RegL rax, rdx_RegL rdx, rRegL src, rFlagsReg cr)
 %{
   match(UMulHiLoL src rax);
   match(UMulHiLoL rax src);
   effect(KILL cr);
 
   ins_cost(300);
-  format %{ "mulq   RDX:RAX, RAX, $src\t# umulhilo" %}
+  format %{ "mulq    RDX:RAX, RAX, $src\t# umulhilo" %}
   ins_encode %{
     __ mulq($src$$Register);
   %}
