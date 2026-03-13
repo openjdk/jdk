@@ -2322,10 +2322,12 @@ OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
 // Vector width in bytes.
 int Matcher::vector_width_in_bytes(BasicType bt) {
   if (SuperwordUseVSX) {
-    assert(MaxVectorSize == 16, "");
+    assert(MaxVectorSize == 16,
+           "SuperwordUseVSX requires MaxVectorSize 16, got %ld", MaxVectorSize);
     return 16;
   } else {
-    assert(MaxVectorSize == 8, "");
+    assert(MaxVectorSize == 8,
+           "expected MaxVectorSize 8, got %ld", MaxVectorSize);
     return 8;
   }
 }
@@ -2333,10 +2335,12 @@ int Matcher::vector_width_in_bytes(BasicType bt) {
 // Vector ideal reg.
 uint Matcher::vector_ideal_reg(int size) {
   if (SuperwordUseVSX) {
-    assert(MaxVectorSize == 16 && size == 16, "");
+    assert(MaxVectorSize == 16 && size == 16,
+           "SuperwordUseVSX requires MaxVectorSize 16, got %d", size);
     return Op_VecX;
   } else {
-    assert(MaxVectorSize == 8 && size == 8, "");
+    assert(MaxVectorSize == 8 && size == 8,
+           "expected MaxVectorSize 8, got %d", size);
     return Op_RegL;
   }
 }
