@@ -54,6 +54,8 @@ import static java.nio.file.StandardOpenOption.*;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -157,14 +159,13 @@ public class BytesAndLines {
      * has content.
      */
     @Test
+    @EnabledOnOs(OS.LINUX)
     public void testReadAllBytesOnProcFS() throws IOException {
         // read from procfs
-        if (System.getProperty("os.name").equals("Linux")) {
-            Path statFile = Paths.get("/proc/self/stat");
-            byte[] data = Files.readAllBytes(statFile);
-            assertTrue(data.length > 0,
-                       "Files.readAllBytes('" + statFile + "') failed to read");
-        }
+        Path statFile = Paths.get("/proc/self/stat");
+        byte[] data = Files.readAllBytes(statFile);
+        assertTrue(data.length > 0,
+                   "Files.readAllBytes('" + statFile + "') failed to read");
     }
 
     /**
@@ -262,13 +263,12 @@ public class BytesAndLines {
      * has content.
      */
     @Test
+    @EnabledOnOs(OS.LINUX)
     public void testReadAllLinesOnProcFS() throws IOException {
-        if (System.getProperty("os.name").equals("Linux")) {
-            Path statFile = Paths.get("/proc/self/stat");
-            List<String> lines = Files.readAllLines(statFile);
-            assertTrue(lines.size() > 0,
-                       "Files.readAllLines('" + statFile + "') failed to read");
-        }
+        Path statFile = Paths.get("/proc/self/stat");
+        List<String> lines = Files.readAllLines(statFile);
+        assertTrue(lines.size() > 0,
+                   "Files.readAllLines('" + statFile + "') failed to read");
     }
 
     /**

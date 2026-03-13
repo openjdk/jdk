@@ -57,6 +57,8 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -540,16 +542,15 @@ public class StreamTest {
     }
 
     @Test
+    @EnabledOnOs(OS.LINUX)
     public void testProcFile() throws IOException {
-        if (System.getProperty("os.name").equals("Linux")) {
-            Path path = Paths.get("/proc/cpuinfo");
-            if (Files.exists(path)) {
-                String NEW_LINE = System.getProperty("line.separator");
-                String s =
-                    Files.lines(path).collect(Collectors.joining(NEW_LINE));
-                assertNotEquals(0, s.length(),
-                                "Files.lines(\"" + path + "\") returns no data");
-            }
+        Path path = Paths.get("/proc/cpuinfo");
+        if (Files.exists(path)) {
+            String NEW_LINE = System.getProperty("line.separator");
+            String s =
+                Files.lines(path).collect(Collectors.joining(NEW_LINE));
+            assertNotEquals(0, s.length(),
+                            "Files.lines(\"" + path + "\") returns no data");
         }
     }
 }
