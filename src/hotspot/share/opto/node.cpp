@@ -2885,10 +2885,12 @@ Node* Node::find_similar(int opc, bool is_commutative) {
             use->Opcode() == opc &&
             use->req() == req()) {
           bool same = false;
-          if (use->has_same_inputs_as(this)) {
-            same = true;
-          } else if (is_commutative && req() >= 3) {
-            if (use->in(0) == in(0) && use->in(1) == in(2) && use->in(2) == in(1)) {
+          if (!is_commutative || req() < 3) {
+            same = use->has_same_inputs_as(this);
+          } else {
+            if (use->in(0) == in(0) &&
+                ((use->in(1) == in(1) && use->in(2) == in(2)) ||
+                 (use->in(1) == in(2) && use->in(2) == in(1)))) {
               same = true;
               for (uint j = 3; j < req(); j++) {
                 if (use->in(j) != in(j)) {

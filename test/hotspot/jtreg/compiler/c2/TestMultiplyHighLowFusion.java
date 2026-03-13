@@ -25,18 +25,14 @@
  * @test
  * @bug 8379327
  * @summary Verify correctness for combined low/high 64-bit multiplication patterns.
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100
- *   -XX:CompileCommand=compileonly,compiler.c2.TestMultiplyHighLowFusion::doMath
- *   -XX:CompileCommand=compileonly,compiler.c2.TestMultiplyHighLowFusion::doMathSwapped
- *   -XX:CompileCommand=compileonly,compiler.c2.TestMultiplyHighLowFusion::doUnsignedMath
- *   -XX:CompileCommand=compileonly,compiler.c2.TestMultiplyHighLowFusion::doUnsignedMathSwapped
- *   compiler.c2.TestMultiplyHighLowFusion
+ * @library /test/lib /
+ * @run driver compiler.c2.TestMultiplyHighLowFusion
  */
 
 package compiler.c2;
 
+import compiler.lib.ir_framework.*;
 import java.math.BigInteger;
-import java.util.Random;
 
 public class TestMultiplyHighLowFusion {
   private static final BigInteger MASK_64 = BigInteger.ONE.shiftLeft(64).subtract(BigInteger.ONE);
@@ -52,28 +48,73 @@ public class TestMultiplyHighLowFusion {
       0xFEDCBA9876543210L
   };
 
-  private static long doMath(long a, long b) {
+  private static final java.util.Random RANDOM = new java.util.Random(0x8379327L);
+  private int warmupCount = 0;
+
+  public static void main(String[] args) {
+    TestFramework.run();
+  }
+
+  @Test
+  @IR(applyIfPlatform = {"x64", "true"}, phase = CompilePhase.PRINT_IDEAL, counts = {"\\bMulHiLoL\\b", "1"})
+  public static long doMath(long a, long b) {
     long low = a * b;
     long high = Math.multiplyHigh(a, b);
     return low + high;
   }
 
-  private static long doMathSwapped(long a, long b) {
+  @Test
+  @IR(applyIfPlatform = {"x64", "true"}, phase = CompilePhase.PRINT_IDEAL, counts = {"\\bMulHiLoL\\b", "1"})
+  public static long doMathSwapped(long a, long b) {
     long low = b * a;
     long high = Math.multiplyHigh(b, a);
     return low + high;
   }
 
-  private static long doUnsignedMath(long a, long b) {
+  @Test
+  @IR(applyIfPlatform = {"x64", "true"}, phase = CompilePhase.PRINT_IDEAL, counts = {"\\bUMulHiLoL\\b", "1"})
+  public static long doUnsignedMath(long a, long b) {
     long low = a * b;
     long high = Math.unsignedMultiplyHigh(a, b);
     return low + high;
   }
 
-  private static long doUnsignedMathSwapped(long a, long b) {
+  @Test
+  @IR(applyIfPlatform = {"x64", "true"}, phase = CompilePhase.PRINT_IDEAL, counts = {"\\bUMulHiLoL\\b", "1"})
+  public static long doUnsignedMathSwapped(long a, long b) {
     long low = b * a;
     long high = Math.unsignedMultiplyHigh(b, a);
     return low + high;
+  }
+
+  @Run(test = {"doMath", "doMathSwapped", "doUnsignedMath", "doUnsignedMathSwapped"})
+  public void runTests() {
+    if (warmupCount < CORNER_CASES.length * CORNER_CASES.length) {
+      int aIdx = warmupCount / CORNER_CASES.length;
+      int bIdx = warmupCount % CORNER_CASES.length;
+      verifyPair(CORNER_CASES[aIdx], CORNER_CASES[bIdx]);
+      warmupCount++;
+    } else {
+      verifyPair(RANDOM.nextLong(), RANDOM.nextLong());
+    }
+  }
+
+  private void verifyPair(long a, long b) {
+    long expectedSigned = expectedSigned(a, b);
+    long expectedUnsigned = expectedUnsigned(a, b);
+
+    if (doMath(a, b) != expectedSigned) {
+      throw new RuntimeException("Signed mismatch for a=" + a + ", b=" + b);
+    }
+    if (doMathSwapped(a, b) != expectedSigned) {
+      throw new RuntimeException("Signed swapped mismatch for a=" + a + ", b=" + b);
+    }
+    if (doUnsignedMath(a, b) != expectedUnsigned) {
+      throw new RuntimeException("Unsigned mismatch for a=" + a + ", b=" + b);
+    }
+    if (doUnsignedMathSwapped(a, b) != expectedUnsigned) {
+      throw new RuntimeException("Unsigned swapped mismatch for a=" + a + ", b=" + b);
+    }
   }
 
   private static long expectedSigned(long a, long b) {
@@ -90,38 +131,5 @@ public class TestMultiplyHighLowFusion {
     long low = product.longValue();
     long high = product.shiftRight(64).longValue();
     return low + high;
-  }
-
-  private static void verifyPair(long a, long b) {
-    long expectedSigned = expectedSigned(a, b);
-    long expectedUnsigned = expectedUnsigned(a, b);
-
-    long signed = doMath(a, b);
-    long signedSwapped = doMathSwapped(a, b);
-    long unsigned = doUnsignedMath(a, b);
-    long unsignedSwapped = doUnsignedMathSwapped(a, b);
-
-    if (signed != expectedSigned || signedSwapped != expectedSigned) {
-      throw new RuntimeException("Signed mismatch for a=" + a + ", b=" + b +
-          ": got=" + signed + ", gotSwapped=" + signedSwapped + ", expected=" + expectedSigned);
-    }
-    if (unsigned != expectedUnsigned || unsignedSwapped != expectedUnsigned) {
-      throw new RuntimeException("Unsigned mismatch for a=" + a + ", b=" + b +
-          ": got=" + unsigned + ", gotSwapped=" + unsignedSwapped + ", expected=" + expectedUnsigned);
-    }
-  }
-
-  public static void main(String[] args) {
-    Random random = new Random(0x8379327L);
-
-    for (long a : CORNER_CASES) {
-      for (long b : CORNER_CASES) {
-        verifyPair(a, b);
-      }
-    }
-
-    for (int i = 0; i < 200_000; i++) {
-      verifyPair(random.nextLong(), random.nextLong());
-    }
   }
 }
