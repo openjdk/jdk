@@ -682,14 +682,14 @@ void G1ConcurrentMark::set_concurrency_and_phase(uint active_tasks, bool concurr
 #if TASKQUEUE_STATS
 void G1ConcurrentMark::print_and_reset_taskqueue_stats() {
 
-  _task_queues->print_and_reset_taskqueue_stats("G1ConcurrentMark Oop Queue");
+  _task_queues->print_and_reset_taskqueue_stats("Concurrent Mark");
 
   auto get_pa_stats = [&](uint i) {
     return _tasks[i]->partial_array_task_stats();
   };
 
   PartialArrayTaskStats::log_set(_max_num_tasks, get_pa_stats,
-                                 "G1ConcurrentMark Partial Array Task Stats");
+                                 "Concurrent Mark Partial Array");
 
   for (uint i = 0; i < _max_num_tasks; ++i) {
     get_pa_stats(i)->reset();
