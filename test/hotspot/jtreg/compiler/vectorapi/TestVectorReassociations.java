@@ -27,7 +27,7 @@
  * @summary Test reassociation of broadcasted inputs across vector operations
  * @modules jdk.incubator.vector
  * @library /test/lib /
- * @run driver compiler.vectorapi.TestVectorBroadcastReassociationTransforms
+ * @run driver compiler.vectorapi.TestVectorReassociations
  */
 
 package compiler.vectorapi;
@@ -41,7 +41,7 @@ import java.util.stream.IntStream;
  *   VectorOp(broadcast(a), VectorOp(broadcast(b), array))
  *     => VectorOp(broadcast(ScalarOp(a, b)), array)
  */
-public class TestVectorBroadcastReassociationTransforms {
+public class TestVectorReassociations {
 
     public static void main(String[] args) {
         TestFramework.runWithFlags("--add-modules=jdk.incubator.vector");

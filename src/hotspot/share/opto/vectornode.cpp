@@ -1201,7 +1201,10 @@ bool VectorNode::can_push_through_broadcast(BasicType bt) {
   return true;
 }
 
-Node* VectorNode::make_scalar(Compile* c, int sopc, Node* control, Node* in1, Node* in2, Node* in3) {
+Node* VectorNode::make_scalar(Compile* c, int vopc, BasicType bt, Node* control, Node* in1, Node* in2, Node* in3) {
+  int sopc = scalar_opcode(vopc, bt);
+  assert(sopc != 0, "unhandled vector opcode %s", NodeClassNames[vopc]);
+  assert(opcode(sopc, bt) == vopc, "scalar_opcode and opcode must agree for %s", NodeClassNames[vopc]);
   switch (sopc) {
     case Op_AddI:
       return new AddINode(in1, in2);
@@ -1290,8 +1293,8 @@ Node* VectorNode::create_reassociated_node(Node* parent, Node* child, Node* cinp
 // this will facilitate strength reducing vector operation with all broadcasted inputs to
 // scalar operation.
 //
-// VectorOperation (VectorBroadcast INP1) (VectorOperation (VectorBroadcast INP2) INP3) =>
-//    VectorOperation (VectorOperation (VectorBroadcast INP1) (VectorBroadcast INP2)) INP3
+// VectorOp (Replicate INP1) (VectorOp (Replicate INP2) INP3) =>
+//    VectorOp (VectorOp (Replicate INP1) (Replicate INP2)) INP3
 //
 Node* VectorNode::reassociate_vector_operation(PhaseGVN* phase) {
   // Enable re-association for integral vector operations.
@@ -1323,11 +1326,11 @@ Node* VectorNode::reassociate_vector_operation(PhaseGVN* phase) {
   return nullptr;
 }
 
-// Convert vector operation with all broadcasted inputs to scalar operation using following
+// Convert vector operation with all Replicate inputs to scalar operation using following
 // ideal transformation.
 //
-// VectorOperation (VectorBroadcast INP1,  VectorBroadcast INP2) =>
-//   VectorBroadcast (ScalarOperation INP1, INP2)
+// VectorOp (Replicate INP1, Replicate INP2) =>
+//   Replicate (ScalarOp INP1, INP2)
 //
 Node* VectorNode::push_through_broadcast(PhaseGVN* phase) {
   BasicType bt = vect_type()->element_basic_type();
@@ -1350,9 +1353,23 @@ Node* VectorNode::push_through_broadcast(PhaseGVN* phase) {
       sinp3 = in(3)->in(1);
     }
 
-    Node* sop = make_scalar(phase->C, scalar_opcode(Opcode(), bt), in(0), sinp1, sinp2, sinp3);
+    Node* sop = make_scalar(phase->C, Opcode(), bt, in(0), sinp1, sinp2, sinp3);
     if (sop != nullptr) {
       sop = phase->transform(sop);
+
+      // For subword types, ADD/SUB/MUL scalar operations compute at int width and may
+      // produce values outside the subword range. Insert explicit truncatation logic
+      // before feeding the result of computation to Replicate.
+      // This prevents non-truncated int values from leaking into downstream IR if the
+      // Replicate is later disconnected by other transformations.
+      int sopc = scalar_opcode(Opcode(), bt);
+      if (is_subword_type(bt) && (sopc == Op_AddI || sopc == Op_SubI || sopc == Op_MulI)) {
+        int shift_count = (BitsPerInt - BitsPerByte * type2aelembytes(bt));
+        Node* con_shift = phase->intcon(shift_count);
+        sop = phase->transform(new LShiftINode(sop, con_shift));
+        sop = phase->transform(new RShiftINode(sop, con_shift));
+      }
+
       return new ReplicateNode(sop, vect_type());
     }
   }
