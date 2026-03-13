@@ -114,7 +114,6 @@ public interface OutputBuffer {
   }
 
   class LazyOutputBuffer implements OutputBuffer {
-    private final boolean quiet;
     private static class StreamTask {
       private final ByteArrayOutputStream buffer;
       private final Future<Void> future;
@@ -139,22 +138,23 @@ public interface OutputBuffer {
       }
     }
 
+    private final boolean verbose;
     private final StreamTask outTask;
     private final StreamTask errTask;
     private final Process p;
     private volatile Integer exitValue; // null implies we don't yet know
 
     private final void logProgress(String state) {
-      if (!quiet) {
+      if (verbose) {
         System.out.println("[" + Instant.now().toString() + "] " + state
                 + " for process " + p.pid());
         System.out.flush();
       }
     }
 
-    private LazyOutputBuffer(Process p, Charset cs, boolean quiet) {
+    private LazyOutputBuffer(Process p, Charset cs, boolean verbose) {
       this.p = p;
-      this.quiet = quiet;
+      this.verbose = verbose;
       logProgress("Gathering output");
       outTask = new StreamTask(p.getInputStream(), cs);
       errTask = new StreamTask(p.getErrorStream(), cs);

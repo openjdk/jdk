@@ -56,21 +56,21 @@ public final class OutputAnalyzer {
      * @throws IOException If an I/O error occurs.
      */
     public OutputAnalyzer(Process process, Charset cs) throws IOException {
-      this(process, cs, false);
+        this(process, cs, true);
     }
 
     /**
      * Create an OutputAnalyzer, a utility class for verifying output and exit
-     * value from a Process
+     * value from a Process, with a configurable verbosity level.
      *
      * @param process Process to analyze
      * @param cs The charset used to convert stdout/stderr from bytes to chars
      *           or null for the default charset.
-     * @param quiet Set to true to limit logging to stdout.
+     * @param verbose Set to false to limit logging to stdout.
      * @throws IOException If an I/O error occurs.
      */
-    public OutputAnalyzer(Process process, Charset cs, boolean quiet) throws IOException {
-        buffer = OutputBuffer.of(process, cs, quiet);
+    public OutputAnalyzer(Process process, Charset cs, boolean verbose) throws IOException {
+        buffer = OutputBuffer.of(process, cs, verbose);
     }
 
     /**
@@ -81,19 +81,19 @@ public final class OutputAnalyzer {
      * @throws IOException If an I/O error occurs.
      */
     public OutputAnalyzer(Process process) throws IOException {
-      this(process, false);
+        this(process, true);
     }
 
     /**
      * Create an OutputAnalyzer, a utility class for verifying output and exit
-     * value from a Process
+     * value from a Process, with a configurable verbosity level.
      *
      * @param process Process to analyze
-     * @param quiet Set to true to limit logging to stdout.
+     * @param verbose Set to false to limit logging to stdout.
      * @throws IOException If an I/O error occurs.
      */
-    public OutputAnalyzer(Process process, boolean quiet) throws IOException {
-        buffer = OutputBuffer.of(process, quiet);
+    public OutputAnalyzer(Process process, boolean verbose) throws IOException {
+        buffer = OutputBuffer.of(process, verbose);
     }
 
     /**
