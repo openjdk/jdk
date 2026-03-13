@@ -394,9 +394,10 @@ public abstract non-sealed class X509Certificate extends Certificate
     public abstract Date getNotAfter();
 
     /**
-     * Gets the {@code notAfter} date from the validity period of
-     * the certificate. See {@link #getNotBeforeInstant() getNotBeforeInstant}
-     * for relevant ASN.1 definitions.
+     * Gets the {@code notAfter} date as an {@code Instant} from the validity
+     * period of the certificate.
+     * See {@link #getNotBeforeInstant() getNotBeforeInstant} for relevant
+     * ASN.1 definitions.
      *
      * @apiNote Subclasses should override this method to directly return an
      * instant.
