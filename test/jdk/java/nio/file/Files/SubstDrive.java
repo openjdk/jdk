@@ -227,7 +227,7 @@ public class SubstDrive {
 
         assertEquals(
             SUBST_DRIVE.getFileSystem().getRootDirectories(),
-            tempDirectory.getFileSystem().getRootDirectories());//XXX
+            tempDirectory.getFileSystem().getRootDirectories());
     }
 
     /**
