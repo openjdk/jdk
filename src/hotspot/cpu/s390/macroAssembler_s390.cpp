@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
- * Copyright 2024 IBM Corporation. All rights reserved.
+ * Copyright 2024, 2026 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -6413,7 +6413,7 @@ void MacroAssembler::compiler_fast_lock_object(Register obj, Register box, Regis
       // Check if object matches.
       z_lg(tmp2, Address(tmp1_monitor, ObjectMonitor::object_offset()));
       BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
-      bs_asm->try_resolve_weak_handle_in_c2(this, tmp2, Z_R0_scratch, slow_path);
+      bs_asm->try_resolve_weak_handle(this, tmp2, Z_R0_scratch, slow_path);
       z_cgr(obj, tmp2);
       z_brne(slow_path);
 

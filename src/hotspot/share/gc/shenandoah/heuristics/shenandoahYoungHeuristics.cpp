@@ -54,9 +54,7 @@ void ShenandoahYoungHeuristics::choose_collection_set_from_regiondata(Shenandoah
   // Better select garbage-first regions
   QuickSort::sort<RegionData>(data, size, compare_by_garbage);
 
-  size_t cur_young_garbage = add_preselected_regions_to_collection_set(cset, data, size);
-
-  choose_young_collection_set(cset, data, size, actual_free, cur_young_garbage);
+  choose_young_collection_set(cset, data, size, actual_free);
 
   // Especially when young-gen trigger is expedited in order to finish mixed evacuations, there may not be
   // enough consolidated garbage to make effective use of young-gen evacuation reserve.  If there is still
@@ -70,8 +68,7 @@ void ShenandoahYoungHeuristics::choose_collection_set_from_regiondata(Shenandoah
 
 void ShenandoahYoungHeuristics::choose_young_collection_set(ShenandoahCollectionSet* cset,
                                                             const RegionData* data,
-                                                            size_t size, size_t actual_free,
-                                                            size_t cur_young_garbage) const {
+                                                            size_t size, size_t actual_free) const {
 
   const auto heap = ShenandoahGenerationalHeap::heap();
 
@@ -82,23 +79,20 @@ void ShenandoahYoungHeuristics::choose_young_collection_set(ShenandoahCollection
   // This is young-gen collection or a mixed evacuation.
   // If this is mixed evacuation, the old-gen candidate regions have already been added.
   size_t cur_cset = 0;
+  size_t cur_young_garbage = cset->garbage();
   const size_t max_cset = (size_t) (heap->young_generation()->get_evacuation_reserve() / ShenandoahEvacWaste);
   const size_t free_target = (capacity * ShenandoahMinFreeThreshold) / 100 + max_cset;
   const size_t min_garbage = (free_target > actual_free) ? (free_target - actual_free) : 0;
 
-
   log_info(gc, ergo)(
-          "Adaptive CSet Selection for YOUNG. Max Evacuation: %zu%s, Actual Free: %zu%s.",
-          byte_size_in_proper_unit(max_cset), proper_unit_for_byte_size(max_cset),
-          byte_size_in_proper_unit(actual_free), proper_unit_for_byte_size(actual_free));
+          "Adaptive CSet Selection for YOUNG. Max Evacuation: " PROPERFMT ", Actual Free: " PROPERFMT,
+          PROPERFMTARGS(max_cset), PROPERFMTARGS(actual_free));
 
   for (size_t idx = 0; idx < size; idx++) {
     ShenandoahHeapRegion* r = data[idx].get_region();
-    if (cset->is_preselected(r->index())) {
-      continue;
-    }
+    assert(!cset->is_in(r), "Region %zu should not already be in the collection set", idx);
 
-    // Note that we do not add tenurable regions if they were not pre-selected.  They were not preselected
+    // Note that we do not add tenurable regions if they were not pre-selected.  They were not selected
     // because there is insufficient room in old-gen to hold their to-be-promoted live objects or because
     // they are to be promoted in place.
     if (!heap->is_tenurable(r)) {
