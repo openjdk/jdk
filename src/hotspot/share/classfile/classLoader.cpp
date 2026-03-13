@@ -288,7 +288,7 @@ static bool is_preview_enabled() {
 static JImageLocationRef jimage_find_resource(const char* module_name,
                                               const char* file_name,
                                               bool is_preview,
-                                              jlong *size) {
+                                              jlong* size) {
   return ((*JImageFindResource)(jimage_non_null(),
                                 module_name,
                                 file_name,
@@ -1460,7 +1460,7 @@ char* ClassLoader::lookup_vm_options() {
     JImageLocationRef location =
             jimage_find_resource(JAVA_BASE_NAME, "jdk/internal/vm/options", /* is_preview */ false, &size);
     if (location != 0) {
-      char *options = NEW_C_HEAP_ARRAY(char, size+1, mtClass);
+      char* options = NEW_C_HEAP_ARRAY(char, size+1, mtClass);
       (*JImageGetResource)(jimage_non_null(), location, options, size);
       options[size] = '\0';
       return options;
