@@ -40,8 +40,12 @@ class JvmtiExtensions : public AllStatic {
  private:
   static GrowableArray<jvmtiExtensionFunctionInfo*>* _ext_functions;
   static GrowableArray<jvmtiExtensionEventInfo*>* _ext_events;
+  static bool _request_stack_trace_enabled;
 
  public:
+  static bool request_stack_trace_enabled()        { return _request_stack_trace_enabled; }
+  static void set_request_stack_trace_enabled(bool v) { _request_stack_trace_enabled = v; }
+
   // register extensions function
   static void register_extensions();
 

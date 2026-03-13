@@ -27,6 +27,7 @@
 
 #if defined(LINUX)
 #include "jfr/periodic/sampling/jfrThreadSampling.hpp"
+#include "prims/jvmtiExtensions.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTime.hpp"
@@ -493,7 +494,7 @@ JfrCPUTimeThreadSampling& JfrCPUTimeThreadSampling::instance() {
 JfrCPUTimeThreadSampling* JfrCPUTimeThreadSampling::create() {
   assert(_instance == nullptr, "invariant");
   _instance = new JfrCPUTimeThreadSampling();
-  if (JvmtiExport::can_request_stack_trace()) {
+  if (JvmtiExtensions::request_stack_trace_enabled()) {
     initialize_jvmti();
   }
   return _instance;
@@ -501,6 +502,10 @@ JfrCPUTimeThreadSampling* JfrCPUTimeThreadSampling::create() {
 
 void JfrCPUTimeThreadSampling::destroy() {
   if (_instance != nullptr) {
+    if (JvmtiExtensions::request_stack_trace_enabled()) {
+      JvmtiExtensions::set_request_stack_trace_enabled(false);
+      deinitialize_jvmti();
+    }
     delete _instance;
     _instance = nullptr;
   }
@@ -531,16 +536,30 @@ void JfrCPUTimeThreadSampling::update_run_state(JfrCPUSamplerThrottle& throttle)
     }
     return;
   }
-  if (_sampler != nullptr && !JvmtiExport::can_request_stack_trace()) {
+  if (_sampler != nullptr && !JvmtiExtensions::request_stack_trace_enabled()) {
     _sampler->set_throttle(throttle);
     _sampler->disenroll();
   }
 }
 
 void JfrCPUTimeThreadSampling::initialize_jvmti() {
+  JfrCPUTimeThreadSampling* inst = _instance;
+  if (inst == nullptr) {
+    return;
+  }
   JfrEventSetting::set_enabled(JfrAsyncStackTraceEvent, true);
   JfrCPUSamplerThrottle throttle(500.0);
-  instance().update_run_state(throttle);
+  inst->update_run_state(throttle);
+}
+
+void JfrCPUTimeThreadSampling::deinitialize_jvmti() {
+  JfrCPUTimeThreadSampling* inst = _instance;
+  if (inst == nullptr) {
+    return;
+  }
+  JfrEventSetting::set_enabled(JfrAsyncStackTraceEvent, false);
+  JfrCPUSamplerThrottle throttle(0.0);
+  inst->update_run_state(throttle);
 }
 
 void JfrCPUTimeThreadSampling::set_rate(double rate) {
