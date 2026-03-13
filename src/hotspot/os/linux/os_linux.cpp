@@ -4208,12 +4208,6 @@ char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_
   return addr;
 }
 
-bool os::pd_release_memory_special(char* base, size_t bytes) {
-  assert(UseLargePages, "only for large pages");
-  // Plain munmap is sufficient
-  return pd_release_memory(base, bytes);
-}
-
 size_t os::large_page_size() {
   return _large_page_size;
 }
@@ -4555,6 +4549,7 @@ void os::Linux::numa_init() {
     FLAG_SET_ERGO_IF_DEFAULT(UseNUMAInterleaving, true);
   }
 
+#if INCLUDE_PARALLELGC
   if (UseParallelGC && UseNUMA && UseLargePages && !can_commit_large_page_memory()) {
     // With static large pages we cannot uncommit a page, so there's no way
     // we can make the adaptive lgrp chunk resizing work. If the user specified both
@@ -4566,6 +4561,7 @@ void os::Linux::numa_init() {
       UseAdaptiveNUMAChunkSizing = false;
     }
   }
+#endif
 }
 
 void os::Linux::disable_numa(const char* reason, bool warning) {

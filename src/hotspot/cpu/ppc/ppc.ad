@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+// Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2012, 2026 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -2234,6 +2234,12 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_FmaVD:
       return (SuperwordUseVSX && UseFMA);
 
+    case Op_MinF:
+    case Op_MaxF:
+    case Op_MinD:
+    case Op_MaxD:
+      return (PowerArchitecturePPC64 >= 9);
+
     case Op_Digit:
       return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isDigit);
     case Op_LowerCase:
@@ -2406,10 +2412,8 @@ bool Matcher::is_generic_vector(MachOper* opnd)  {
   return false;
 }
 
-// Return whether or not this register is ever used as an argument. This
-// function is used on startup to build the trampoline stubs in generateOptoStub.
-// Registers not mentioned will be killed by the VM call in the trampoline, and
-// arguments in those registers not be available to the callee.
+#ifdef ASSERT
+// Return whether or not this register is ever used as an argument.
 bool Matcher::can_be_java_arg(int reg) {
   // We must include the virtual halves in order to get STDs and LDs
   // instead of STWs and LWs in the trampoline stubs.
@@ -2441,10 +2445,7 @@ bool Matcher::can_be_java_arg(int reg) {
 
   return false;
 }
-
-bool Matcher::is_spillable_arg(int reg) {
-  return can_be_java_arg(reg);
-}
+#endif
 
 uint Matcher::int_pressure_limit()
 {
@@ -3708,13 +3709,6 @@ frame %{
 
   // Compiled code's Frame Pointer.
   frame_pointer(R1); // R1_SP
-
-  // Interpreter stores its frame pointer in a register which is
-  // stored to the stack by I2CAdaptors. I2CAdaptors convert from
-  // interpreted java to compiled java.
-  //
-  // R14_state holds pointer to caller's cInterpreter.
-  interpreter_frame_pointer(R14); // R14_state
 
   stack_alignment(frame::alignment_in_bytes);
 
@@ -7169,6 +7163,18 @@ instruct membar_release_lock() %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct membar_storeload() %{
+  match(MemBarStoreLoad);
+  ins_cost(4*MEMORY_REF_COST);
+
+  format %{ "MEMBAR-store-load" %}
+  size(4);
+  ins_encode %{
+    __ fence();
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct membar_volatile() %{
   match(MemBarVolatile);
   ins_cost(4*MEMORY_REF_COST);
@@ -7210,6 +7216,18 @@ instruct membar_volatile() %{
 //  ins_encode( /*empty*/ );
 //  ins_pipe(pipe_class_default);
 //%}
+
+instruct membar_full() %{
+  match(MemBarFull);
+  ins_cost(4*MEMORY_REF_COST);
+
+  format %{ "MEMBAR-full" %}
+  size(4);
+  ins_encode %{
+    __ fence();
+  %}
+  ins_pipe(pipe_class_default);
+%}
 
 instruct membar_CPUOrder() %{
   match(MemBarCPUOrder);
@@ -12309,6 +12327,58 @@ instruct maxI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegC
   ins_encode %{
     __ cmpw(CR0, $src1$$Register, $src2$$Register);
     __ isel($dst$$Register, CR0, Assembler::greater, /*invert*/false, $src1$$Register, $src2$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct minF(regF dst, regF src1, regF src2) %{
+  match(Set dst (MinF src1 src2));
+  predicate(PowerArchitecturePPC64 >= 9);
+  ins_cost(DEFAULT_COST);
+
+  format %{ "MinF $dst, $src1, $src2" %}
+  size(4);
+  ins_encode %{
+    __ xsminjdp($dst$$FloatRegister->to_vsr(), $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct minD(regD dst, regD src1, regD src2) %{
+  match(Set dst (MinD src1 src2));
+  predicate(PowerArchitecturePPC64 >= 9);
+  ins_cost(DEFAULT_COST);
+
+  format %{ "MinD $dst, $src1, $src2" %}
+  size(4);
+  ins_encode %{
+    __ xsminjdp($dst$$FloatRegister->to_vsr(), $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct maxF(regF dst, regF src1, regF src2) %{
+  match(Set dst (MaxF src1 src2));
+  predicate(PowerArchitecturePPC64 >= 9);
+  ins_cost(DEFAULT_COST);
+
+  format %{ "MaxF $dst, $src1, $src2" %}
+  size(4);
+  ins_encode %{
+    __ xsmaxjdp($dst$$FloatRegister->to_vsr(), $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct maxD(regD dst, regD src1, regD src2) %{
+  match(Set dst (MaxD src1 src2));
+  predicate(PowerArchitecturePPC64 >= 9);
+  ins_cost(DEFAULT_COST);
+
+  format %{ "MaxD $dst, $src1, $src2" %}
+  size(4);
+  ins_encode %{
+    __ xsmaxjdp($dst$$FloatRegister->to_vsr(), $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr());
   %}
   ins_pipe(pipe_class_default);
 %}

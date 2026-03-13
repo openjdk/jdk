@@ -214,6 +214,6 @@ public class BufferingSubscriberCancelTest {
                 return;
             Thread.sleep(100);
         }
-        assertEquals(expected, actual); // will fail with the usual testng message
+        assertEquals(expected, actual); // will fail with the usual junit message
     }
 }
