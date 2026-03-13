@@ -253,9 +253,9 @@ public class DurationTest {
      */
     @ParameterizedTest
     @MethodSource("getDurationAndSign")
-    public void checkDurationSign(String lexRepresentation, int sign) {
+    public void checkDurationSign(String lexRepresentation, int expectedSign) {
         Duration duration = datatypeFactory.newDuration(lexRepresentation);
-        assertEquals(duration.getSign(), sign);
+        assertEquals(expectedSign, duration.getSign());
     }
 
     /*
@@ -266,9 +266,9 @@ public class DurationTest {
         Duration durationPos = datatypeFactory.newDuration("P1Y0M0DT0H0M0S");
         Duration durationNeg = datatypeFactory.newDuration("-P1Y0M0DT0H0M0S");
 
-        assertEquals(durationPos.negate(), durationNeg);
-        assertEquals(durationNeg.negate(), durationPos);
-        assertEquals(durationPos.negate().negate(), durationPos);
+        assertEquals(durationNeg, durationPos.negate());
+        assertEquals(durationPos, durationNeg.negate());
+        assertEquals(durationPos, durationPos.negate().negate());
     }
 
     /*
@@ -360,12 +360,12 @@ public class DurationTest {
             BigDecimal seconds) {
         Duration duration = datatypeFactory.newDuration(lexRepresentation);
 
-        assertEquals(duration.getField(YEARS), years);
-        assertEquals(duration.getField(MONTHS), months);
-        assertEquals(duration.getField(DAYS), days);
-        assertEquals(duration.getField(HOURS), hours);
-        assertEquals(duration.getField(MINUTES), minutes);
-        assertEquals(duration.getField(SECONDS), seconds);
+        assertEquals(years, duration.getField(YEARS));
+        assertEquals(months, duration.getField(MONTHS));
+        assertEquals(days, duration.getField(DAYS));
+        assertEquals(hours, duration.getField(HOURS));
+        assertEquals(minutes, duration.getField(MINUTES));
+        assertEquals(seconds, duration.getField(SECONDS));
     }
 
     public static Object[][] getNumberAndString() {
@@ -384,10 +384,10 @@ public class DurationTest {
     @ParameterizedTest
     @MethodSource("getNumberAndString")
     public void checkDurationToString(boolean isPositive, int years, int months, int days, int hours, int minutes, int seconds, String lexical) {
-        Duration duration = datatypeFactory.newDuration(isPositive,  years,  months,  days,  hours,  minutes,  seconds);
-        assertEquals(duration.toString(), lexical);
+        Duration duration = datatypeFactory.newDuration(isPositive, years, months, days, hours, minutes, seconds);
+        assertEquals(lexical, duration.toString());
 
-        assertEquals(datatypeFactory.newDuration(duration.toString()), duration);
+        assertEquals(duration, datatypeFactory.newDuration(duration.toString()));
     }
 
     public static Object[][] getDurationAndField() {
@@ -418,9 +418,9 @@ public class DurationTest {
      */
     @ParameterizedTest
     @MethodSource("getDurationAndField")
-    public void checkDurationGetOneField(String lexRepresentation, Function<Duration, Integer> getter, int value) {
+    public void checkDurationGetOneField(String lexRepresentation, Function<Duration, Integer> getter, int expectedValue) {
         Duration duration = datatypeFactory.newDuration(lexRepresentation);
-        assertEquals(getter.apply(duration).intValue(), value);
+        assertEquals(expectedValue, getter.apply(duration).intValue());
     }
 
     /*

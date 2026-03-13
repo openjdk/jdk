@@ -70,7 +70,7 @@ public class XMLGregorianCalendarTest {
      */
     @ParameterizedTest
     @ValueSource(ints={ 0, 1, 2, 16, 1000 })
-    public void checkNewCalendar(int ms) {
+    public void checkNewCalendar(int expectedMillis) {
         // valid milliseconds
         XMLGregorianCalendar calendar = datatypeFactory.newXMLGregorianCalendar(2004, // year
                 6, // month
@@ -78,12 +78,12 @@ public class XMLGregorianCalendarTest {
                 19, // hour
                 20, // minute
                 59, // second
-                ms, // milliseconds
+                expectedMillis, // milliseconds
                 840 // timezone
                 );
         // expected success
 
-        assertEquals(calendar.getMillisecond(), ms);
+        assertEquals(expectedMillis, calendar.getMillisecond());
     }
 
     /*
@@ -93,17 +93,17 @@ public class XMLGregorianCalendarTest {
      */
     @ParameterizedTest
     @ValueSource(ints={ 0, 1, 2, 16, 1000 })
-    public void checkNewTime(int ms) {
+    public void checkNewTime(int expectedMillis) {
         // valid milliseconds
         XMLGregorianCalendar calendar2 = datatypeFactory.newXMLGregorianCalendarTime(19, // hour
                 20, // minute
                 59, // second
-                ms, // milliseconds
+                expectedMillis, // milliseconds
                 840 // timezone
                 );
         // expected success
 
-        assertEquals(calendar2.getMillisecond(), ms);
+        assertEquals(expectedMillis, calendar2.getMillisecond());
     }
 
     /*
@@ -184,10 +184,10 @@ public class XMLGregorianCalendarTest {
         XMLGregorianCalendar calendar1Clone = (XMLGregorianCalendar)calendar1.clone();
 
         calendar1Clone.add(duration);
-        assertEquals(calendar1Clone, calendar2);
+        assertEquals(calendar2, calendar1Clone);
 
         calendar2.add(duration.negate());
-        assertEquals(calendar2, calendar1);
+        assertEquals(calendar1, calendar2);
 
     }
 
@@ -227,8 +227,8 @@ public class XMLGregorianCalendarTest {
         XMLGregorianCalendar orig = datatypeFactory.newXMLGregorianCalendar(lexical);
         XMLGregorianCalendar normalized = datatypeFactory.newXMLGregorianCalendar(lexical).normalize();
 
-        assertEquals(normalized.getTimezone(), orig.getTimezone());
-        assertEquals(normalized.getMillisecond(), orig.getMillisecond());
+        assertEquals(orig.getTimezone(), normalized.getTimezone());
+        assertEquals(orig.getMillisecond(), normalized.getMillisecond());
     }
 
     /*

@@ -90,8 +90,7 @@ public class SAXSourceTest {
             SAXSource saxSource =
                     new SAXSource(new InputSource(fis));
             saxSource.setSystemId(SYSTEM_ID);
-            assertEquals(SAXSource.sourceToInputSource(saxSource).getSystemId(),
-                    SYSTEM_ID);
+            assertEquals(SYSTEM_ID, SAXSource.sourceToInputSource(saxSource).getSystemId());
         }
     }
 }

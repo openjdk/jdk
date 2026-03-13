@@ -67,8 +67,8 @@ public class XMLInputFactoryNewInstanceTest {
         XMLInputFactory if2 = XMLInputFactory.newFactory();
         assertNotSame(if1, if2, "same instance returned:");
         assertSame(if1.getClass(), if2.getClass(),
-                  "unexpected class mismatch for newDefaultFactory():");
-        assertEquals(if1.getClass().getName(), DEFAULT_IMPL_CLASS);
+                "unexpected class mismatch for newDefaultFactory():");
+        assertEquals(DEFAULT_IMPL_CLASS, if1.getClass().getName());
     }
 
     /*

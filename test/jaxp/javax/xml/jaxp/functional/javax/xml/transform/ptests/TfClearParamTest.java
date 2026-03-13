@@ -81,7 +81,7 @@ public class TfClearParamTest {
     public void clear01() throws TransformerConfigurationException {
         Transformer transformer = TransformerFactory.newInstance().newTransformer();
         transformer.setParameter(LONG_PARAM_NAME, PARAM_VALUE);
-        assertEquals(transformer.getParameter(LONG_PARAM_NAME).toString(), PARAM_VALUE);
+        assertEquals(PARAM_VALUE, transformer.getParameter(LONG_PARAM_NAME).toString());
     }
 
     /**
@@ -123,9 +123,9 @@ public class TfClearParamTest {
     public void clear04() throws TransformerConfigurationException {
         Transformer transformer = TransformerFactory.newInstance().newTransformer();
 
-        int intObject = 5;
-        transformer.setParameter(SHORT_PARAM_NAME, intObject);
-        assertEquals(intObject, transformer.getParameter(SHORT_PARAM_NAME));
+        int expectedIntValue = 5;
+        transformer.setParameter(SHORT_PARAM_NAME, expectedIntValue);
+        assertEquals(expectedIntValue, transformer.getParameter(SHORT_PARAM_NAME));
     }
 
     /**
@@ -140,7 +140,7 @@ public class TfClearParamTest {
                 newTransformer(new StreamSource(new File(XSL_FILE)));
 
         transformer.setParameter(LONG_PARAM_NAME, PARAM_VALUE);
-        assertEquals(transformer.getParameter(LONG_PARAM_NAME), PARAM_VALUE);
+        assertEquals(PARAM_VALUE, transformer.getParameter(LONG_PARAM_NAME));
     }
 
     /**
@@ -171,7 +171,7 @@ public class TfClearParamTest {
 
             Transformer transformer = TransformerFactory.newInstance().newTransformer(saxSource);
             transformer.setParameter(LONG_PARAM_NAME, PARAM_VALUE);
-            assertEquals(transformer.getParameter(LONG_PARAM_NAME), PARAM_VALUE);
+            assertEquals(PARAM_VALUE, transformer.getParameter(LONG_PARAM_NAME));
         }
     }
 
@@ -211,7 +211,7 @@ public class TfClearParamTest {
         Transformer transformer = tfactory.newTransformer(domSource);
 
         transformer.setParameter(LONG_PARAM_NAME, PARAM_VALUE);
-        assertEquals(transformer.getParameter(LONG_PARAM_NAME), PARAM_VALUE);
+        assertEquals(PARAM_VALUE, transformer.getParameter(LONG_PARAM_NAME));
     }
 
     /**

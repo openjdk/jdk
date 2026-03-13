@@ -596,9 +596,9 @@ public class XPathTest {
      */
     @Test
     public void testCheckXPath57() {
-        MyNamespaceContext myNamespaceContext = new MyNamespaceContext();
-        xpath.setNamespaceContext(myNamespaceContext);
-        assertEquals(xpath.getNamespaceContext(), myNamespaceContext);
+        MyNamespaceContext expectedNamespaceContext = new MyNamespaceContext();
+        xpath.setNamespaceContext(expectedNamespaceContext);
+        assertEquals(expectedNamespaceContext, xpath.getNamespaceContext());
     }
 
     /**
