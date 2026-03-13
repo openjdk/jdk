@@ -55,7 +55,6 @@ public class TypeInfoTest {
 
         assertEquals("Test", typeInfo.getTypeName());
         assertEquals("testNS", typeInfo.getTypeNamespace());
-
     }
 
     private TypeInfo getTypeOfRoot(String schemaText, String docText) throws Exception {

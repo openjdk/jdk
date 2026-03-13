@@ -145,7 +145,7 @@ public class ElementTest {
         Document document = createDOM("ElementSample02.xml");
         Element elemNode = document.createElement("pricetag2");
         elemNode.setAttribute(name, value);
-        assertEquals(elemNode.getAttribute(name), value);
+        assertEquals(value, elemNode.getAttribute(name));
     }
 
     /*
@@ -219,7 +219,7 @@ public class ElementTest {
         Attr myAttr = document.createAttributeNS(XML_NS_URI, qualifiedName);
         myAttr.setValue(value);
         assertNull(elemNode.setAttributeNodeNS(myAttr));
-        assertEquals(elemNode.getAttributeNS(XML_NS_URI, localName), value);
+        assertEquals(value, elemNode.getAttributeNS(XML_NS_URI, localName));
     }
 
     @Test

@@ -85,8 +85,8 @@ public class DocumentTest {
     public void testCreateAttributeNS(String namespaceURI, String name) throws Exception {
         Document document = createDOMWithNS("DocumentTest01.xml");
         Attr attr = document.createAttributeNS(namespaceURI, name);
-        assertEquals(attr.getNamespaceURI(), namespaceURI);
-        assertEquals(attr.getName(), name);
+        assertEquals(namespaceURI, attr.getNamespaceURI());
+        assertEquals(name, attr.getName());
     }
 
     public static Object[][] getElementName() {
@@ -100,10 +100,10 @@ public class DocumentTest {
      */
     @ParameterizedTest
     @MethodSource("getElementName")
-    public void testGetElementsByTagNameNS(String localName, int number) throws Exception {
+    public void testGetElementsByTagNameNS(String localName, int expectedLength) throws Exception {
         Document document = createDOMWithNS("DocumentTest01.xml");
         NodeList nodeList = document.getElementsByTagNameNS("urn:BooksAreUs.org:BookInfo", localName);
-        assertEquals(nodeList.getLength(), number);
+        assertEquals(expectedLength, nodeList.getLength());
     }
 
     /*

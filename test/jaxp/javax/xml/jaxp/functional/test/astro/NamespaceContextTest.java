@@ -83,6 +83,6 @@ public class NamespaceContextTest {
     @Test
     public void testQNameString() {
         QName qname = new QName(NS_URI, LOCAL_PART, PREFIX);
-        assertEquals(QName.valueOf(qname.toString()), qname);
+        assertEquals(qname, QName.valueOf(qname.toString()));
     }
 }

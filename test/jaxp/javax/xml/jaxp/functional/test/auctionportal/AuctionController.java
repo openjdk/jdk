@@ -324,12 +324,12 @@ public class AuctionController {
         Duration sellDuration = DatatypeFactory.newInstance().newDuration(childList.item(0).getNodeValue());
         assertFalse(sellDuration.isShorterThan(duration));
         assertFalse(sellDuration.isLongerThan(duration));
-        assertEquals(sellDuration.getField(DatatypeConstants.DAYS), BigInteger.valueOf(365));
-        assertEquals(sellDuration.normalizeWith(new GregorianCalendar(1999, 2, 22)), duration);
+        assertEquals(BigInteger.valueOf(365), sellDuration.getField(DatatypeConstants.DAYS));
+        assertEquals(duration, sellDuration.normalizeWith(new GregorianCalendar(1999, 2, 22)));
 
         Duration myDuration = sellDuration.add(duration);
-        assertEquals(myDuration.normalizeWith(new GregorianCalendar(2003, 2, 22)),
-                DatatypeFactory.newInstance().newDuration("P730D"));
+        assertEquals(DatatypeFactory.newInstance().newDuration("P730D"),
+                myDuration.normalizeWith(new GregorianCalendar(2003, 2, 22)));
     }
 
     /**

@@ -86,7 +86,7 @@ public class NodeTest {
     @ParameterizedTest
     @MethodSource("getFeatureSupportedList")
     public void testHasFeature(Node node, String feature, String version, boolean supported) {
-        assertEquals(node.isSupported(feature, version), supported);
+        assertEquals(supported, node.isSupported(feature, version));
     }
 
     /*

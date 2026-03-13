@@ -112,7 +112,7 @@ public class DomImplementationTest {
     @ParameterizedTest
     @MethodSource("getFeatureSupportedList")
     public void testHasFeature(DOMImplementation impl, String feature, String version, boolean isSupported) {
-        assertEquals(impl.hasFeature(feature,version), isSupported);
+        assertEquals(isSupported, impl.hasFeature(feature, version));
     }
 
 
@@ -122,8 +122,8 @@ public class DomImplementationTest {
 
 
     private static void verifyDocumentType(DocumentType documentType, String name, String publicId, String systemId) {
-        assertEquals(documentType.getPublicId(), publicId);
-        assertEquals(documentType.getSystemId(), systemId);
-        assertEquals(documentType.getName(), name);
+        assertEquals(publicId, documentType.getPublicId());
+        assertEquals(systemId, documentType.getSystemId());
+        assertEquals(name, documentType.getName());
     }
 }

@@ -328,7 +328,7 @@ public class XMLReaderTest {
         XMLReader xmlReader = spf.newSAXParser().getXMLReader();
         XMLFilterImpl xmlFilter = new XMLFilterImpl();
         xmlReader.setEntityResolver(xmlFilter);
-        assertEquals(xmlReader.getEntityResolver(), xmlFilter);
+        assertEquals(xmlFilter, xmlReader.getEntityResolver());
     }
 
     /**
@@ -355,7 +355,7 @@ public class XMLReaderTest {
         XMLReader xmlReader = spf.newSAXParser().getXMLReader();
         XMLFilterImpl xmlFilter = new XMLFilterImpl();
         xmlReader.setDTDHandler(xmlFilter);
-        assertEquals(xmlReader.getDTDHandler(), xmlFilter);
+        assertEquals(xmlFilter, xmlReader.getDTDHandler());
     }
 
     /**
@@ -382,7 +382,7 @@ public class XMLReaderTest {
         XMLReader xmlReader = spf.newSAXParser().getXMLReader();
         XMLFilterImpl xmlFilter = new XMLFilterImpl();
         xmlReader.setContentHandler(xmlFilter);
-        assertEquals(xmlReader.getContentHandler(), xmlFilter);
+        assertEquals(xmlFilter, xmlReader.getContentHandler());
     }
 
     /**

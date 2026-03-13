@@ -60,7 +60,6 @@ public class TextTest extends AbstractCharacterDataTest {
         textNode.splitText(0);
         int increased = node.getChildNodes().getLength() - rawChildNum;
         assertEquals(1, increased);
-
     }
 
     @Override

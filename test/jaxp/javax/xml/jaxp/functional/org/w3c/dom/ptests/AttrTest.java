@@ -144,7 +144,6 @@ public class AttrTest {
         Attr attr = document.createAttribute("newAttribute");
         attr.setValue("newVal");
         assertEquals("newVal", attr.getValue());
-
     }
 
 }

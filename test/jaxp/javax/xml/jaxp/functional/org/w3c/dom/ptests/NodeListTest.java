@@ -56,8 +56,7 @@ public class NodeListTest {
         Element elem1 = (Element) nl.item(n - 1);
         nl.item(n);
         Element elem3 = (Element) nl.item(n - 1);
-        assertEquals(elem3, elem1);
-
+        assertEquals(elem1, elem3);
     }
 
 }

@@ -193,8 +193,7 @@ public abstract class AbstractCharacterDataTest {
     @MethodSource("getDataForTestSubstring")
     public void testSubstringData(String text, int offset, int count, String result) throws Exception {
         CharacterData cd = createCharacterData(text);
-        String retStr = cd.substringData(offset, count);
-        assertEquals(retStr, result);
+        assertEquals(result, cd.substringData(offset, count));
     }
 
     public static Object[][] getDataForTestSubstringNeg() {

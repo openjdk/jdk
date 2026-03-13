@@ -66,12 +66,8 @@ public class Bug4858685 {
         transformer.transform(streamSource, domResult);
 
         // dump DOM in a human readable form
-        String gotString = DOMDump.dumpDom(domResult.getNode());
-
         String goldenString = new String(Files.readAllBytes(Paths.get(GOLDEN_DIR + "Bug4858685.txt")));
-
-        assertEquals(gotString, goldenString);
-
+        assertEquals(goldenString, DOMDump.dumpDom(domResult.getNode()));
     }
 
     /**
