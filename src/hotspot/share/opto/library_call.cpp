@@ -854,7 +854,7 @@ bool LibraryCallKit::check_bailout(RegionNode* bailout) {
     bailout = _gvn.transform(bailout)->as_Region();
     Node* frame = _gvn.transform(new ParmNode(C->start(), TypeFunc::FramePtr));
     Node* halt = _gvn.transform(new HaltNode(bailout, frame, "unexpected guard failure in intrinsic"));
-    C->root()->add_req(halt); \
+    C->root()->add_req(halt);
   }
   return stopped();
 }
@@ -1138,10 +1138,6 @@ bool LibraryCallKit::inline_array_equals(StrIntrinsicNode::ArgEnc ae) {
 //------------------------------inline_countPositives------------------------------
 // int java.lang.StringCoding#countPositives0(byte[] ba, int off, int len)
 bool LibraryCallKit::inline_countPositives() {
-  if (too_many_traps(Deoptimization::Reason_intrinsic)) {
-    return false;
-  }
-
   assert(callee()->signature()->size() == 3, "countPositives has 3 parameters");
   // no receiver since it is static method
   Node* ba         = argument(0);
@@ -1283,9 +1279,6 @@ bool LibraryCallKit::inline_string_indexOf(StrIntrinsicNode::ArgEnc ae) {
 
 //-----------------------------inline_string_indexOfI-----------------------
 bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
-  if (too_many_traps(Deoptimization::Reason_intrinsic)) {
-    return false;
-  }
   if (!Matcher::match_rule_supported(Op_StrIndexOf)) {
     return false;
   }
@@ -1459,9 +1452,6 @@ bool LibraryCallKit::inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae) {
 //   void StringLatin1.inflate0(byte[] src, int srcOff, char[] dst, int dstOff, int len)
 //   void StringLatin1.inflate0(byte[] src, int srcOff, byte[] dst, int dstOff, int len)
 bool LibraryCallKit::inline_string_copy(bool compress) {
-  if (too_many_traps(Deoptimization::Reason_intrinsic)) {
-    return false;
-  }
   int nargs = 5;  // 2 oops, 3 ints
   assert(callee()->signature()->size() == nargs, "string copy has 5 arguments");
 
@@ -1553,10 +1543,6 @@ bool LibraryCallKit::inline_string_copy(bool compress) {
 //------------------------inline_string_toBytesU--------------------------
 // public static byte[] StringUTF16.toBytes0(char[] value, int off, int len)
 bool LibraryCallKit::inline_string_toBytesU() {
-  if (too_many_traps(Deoptimization::Reason_intrinsic)) {
-    return false;
-  }
-
   // Get the arguments.
   assert(callee()->signature()->size() == 3, "character array encoder requires 3 arguments");
   Node* value     = argument(0);
@@ -1638,10 +1624,6 @@ bool LibraryCallKit::inline_string_toBytesU() {
 //------------------------inline_string_getCharsU--------------------------
 // public void StringUTF16.getChars0(byte[] src, int srcBegin, int srcEnd, char dst[], int dstBegin)
 bool LibraryCallKit::inline_string_getCharsU() {
-  if (too_many_traps(Deoptimization::Reason_intrinsic)) {
-    return false;
-  }
-
   // Get the arguments.
   Node* src       = argument(0);
   Node* src_begin = argument(1);
