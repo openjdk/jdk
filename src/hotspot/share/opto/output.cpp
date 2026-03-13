@@ -363,15 +363,6 @@ bool PhaseOutput::need_stack_bang(int frame_size_in_bytes) const {
            DEBUG_ONLY(|| true)));
 }
 
-bool PhaseOutput::need_register_stack_bang() const {
-  // Determine if we need to generate a register stack overflow check.
-  // This is only used on architectures which have split register
-  // and memory stacks.
-  // Bang if the method is not a stub function and has java calls
-  return (C->stub_function() == nullptr && C->has_java_calls());
-}
-
-
 // Compute the size of first NumberOfLoopInstrToAlign instructions at the top
 // of a loop. When aligning a loop we need to provide enough instructions
 // in cpu's fetch buffer to feed decoders. The loop alignment could be
