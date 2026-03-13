@@ -41,6 +41,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
+import jdk.internal.platform.Metrics;
 import jdk.test.lib.Container;
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Platform;
@@ -170,10 +171,14 @@ public class TestJcmd {
         opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z")
             .addJavaOpts("-cp", "/test-classes/")
             .addDockerOpts("--cap-add=SYS_PTRACE")
+            .addDockerOpts("--pull=never")
             .addDockerOpts("--name", CONTAINER_NAME)
             .addClassOptions("" + TIME_TO_RUN_CONTAINER_PROCESS);
 
-        if (IS_PODMAN && !ROOT_UID.equals(getId("-u"))) {
+        final Metrics metrics = Metrics.systemMetrics();
+        if (IS_PODMAN
+                && !ROOT_UID.equals(getId("-u"))
+                && "cgroupv2".equals(metrics.getProvider())) {
             // map the current userid to the one in the target namespace
             opts.addDockerOpts("--userns=keep-id");
         }
@@ -186,7 +191,7 @@ public class TestJcmd {
         return ProcessTools.startProcess("main-container-process",
                                       pb,
                                       line -> line.contains(EventGeneratorLoop.MAIN_METHOD_STARTED),
-                                      5, TimeUnit.SECONDS);
+                                      15, TimeUnit.SECONDS);
     }
 
 
