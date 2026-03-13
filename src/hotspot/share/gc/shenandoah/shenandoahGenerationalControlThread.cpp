@@ -186,7 +186,7 @@ ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread:
   global_heuristics->record_requested_gc();
 
   if (ShenandoahCollectorPolicy::should_run_full_gc(request.cause)) {
-    return stw_full;;
+    return stw_full;
   } else {
     // Unload and clean up everything. Note that this is an _explicit_ request and so does not use
     // the same `should_unload_classes` call as the regulator's concurrent gc request.

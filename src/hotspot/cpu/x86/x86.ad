@@ -2726,11 +2726,8 @@ bool Matcher::is_short_branch_offset(int rule, int br_size, int offset) {
   return (-128 <= offset && offset <= 127);
 }
 
+#ifdef ASSERT
 // Return whether or not this register is ever used as an argument.
-// This function is used on startup to build the trampoline stubs in
-// generateOptoStub.  Registers not mentioned will be killed by the VM
-// call in the trampoline, and arguments in those registers not be
-// available to the callee.
 bool Matcher::can_be_java_arg(int reg)
 {
   return
@@ -2750,11 +2747,7 @@ bool Matcher::can_be_java_arg(int reg)
     reg == XMM6_num || reg == XMM6b_num ||
     reg == XMM7_num || reg == XMM7b_num;
 }
-
-bool Matcher::is_spillable_arg(int reg)
-{
-  return can_be_java_arg(reg);
-}
+#endif
 
 uint Matcher::int_pressure_limit()
 {
@@ -4690,11 +4683,6 @@ frame
 
   // Compiled code's Frame Pointer
   frame_pointer(RSP);
-
-  // Interpreter stores its frame pointer in a register which is
-  // stored to the stack by I2CAdaptors.
-  // I2CAdaptors convert from interpreted java to compiled java.
-  interpreter_frame_pointer(RBP);
 
   // Stack alignment requirement
   stack_alignment(StackAlignmentInBytes); // Alignment size in bytes (128-bit -> 16 bytes)
@@ -8864,6 +8852,21 @@ instruct membar_release_lock()
   ins_pipe(empty);
 %}
 
+instruct membar_storeload(rFlagsReg cr) %{
+  match(MemBarStoreLoad);
+  effect(KILL cr);
+  ins_cost(400);
+
+  format %{
+    $$template
+    $$emit$$"lock addl [rsp + #0], 0\t! membar_storeload"
+  %}
+  ins_encode %{
+    __ membar(Assembler::StoreLoad);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct membar_volatile(rFlagsReg cr) %{
   match(MemBarVolatile);
   effect(KILL cr);
@@ -8889,6 +8892,21 @@ instruct unnecessary_membar_volatile()
   format %{ "MEMBAR-volatile (unnecessary so empty encoding)" %}
   ins_encode();
   ins_pipe(empty);
+%}
+
+instruct membar_full(rFlagsReg cr) %{
+  match(MemBarFull);
+  effect(KILL cr);
+  ins_cost(400);
+
+  format %{
+    $$template
+    $$emit$$"lock addl [rsp + #0], 0\t! membar_full"
+  %}
+  ins_encode %{
+    __ membar(Assembler::StoreLoad);
+  %}
+  ins_pipe(pipe_slow);
 %}
 
 instruct membar_storestore() %{
