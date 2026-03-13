@@ -72,11 +72,6 @@ inline void MacroAssembler::mr_if_needed(Register rd, Register rs, bool allow_no
 inline void MacroAssembler::fmr_if_needed(FloatRegister rd, FloatRegister rs) {
   if (rs != rd) fmr(rd, rs);
 }
-inline void MacroAssembler::endgroup_if_needed(bool needed) {
-  if (needed) {
-    endgroup();
-  }
-}
 
 inline void MacroAssembler::membar(int bits) {
   // Comment: Usage of elemental_membar(bits) is not recommended for Power 8.
@@ -240,13 +235,13 @@ inline bool MacroAssembler::is_bc_far_variant3_at(address instruction_addr) {
   // Variant 3, far cond branch to the next instruction, already patched to nops:
   //
   //    nop
-  //    endgroup
+  //    nop
   //  SKIP/DEST:
   //
   const int instruction_1 = *(int*)(instruction_addr);
   const int instruction_2 = *(int*)(instruction_addr + 4);
   return is_nop(instruction_1) &&
-         is_endgroup(instruction_2);
+         is_nop(instruction_2);
 }
 
 // set dst to -1, 0, +1 as follows: if CR0bi is "greater than", dst is set to 1,
