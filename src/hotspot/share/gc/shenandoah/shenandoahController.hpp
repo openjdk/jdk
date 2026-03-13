@@ -29,6 +29,7 @@
 #include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
+#include "runtime/atomic.hpp"
 
 /**
  * This interface exposes methods necessary for the heap to interact
@@ -38,7 +39,7 @@ class ShenandoahController: public ConcurrentGCThread {
 private:
   shenandoah_padding(0);
   // A monotonically increasing GC count.
-  volatile size_t _gc_id;
+  Atomic<size_t> _gc_id;
   shenandoah_padding(1);
 
 protected:
