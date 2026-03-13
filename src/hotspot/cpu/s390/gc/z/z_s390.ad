@@ -79,7 +79,7 @@ static void z_load_barrier(MacroAssembler* masm, const MachNode* node, Address r
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
   __ z_chi(ref, barrier_Relocation::unpatched);
   __ z_bre(good);
-  __ z_br(*stub->entry());
+  __ z_brul(*stub->entry());
   __ bind(good);
 
   z_uncolor(masm, node, ref);
