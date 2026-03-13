@@ -265,7 +265,7 @@ void report_untested(const char* file, int line, const char* message) {
 }
 
 void report_java_out_of_memory(const char* message) {
-  static Atomic<bool> out_of_memory_reported{0};
+  static Atomic<bool> out_of_memory_reported{false};
 
   JFR_ONLY(Jfr::on_report_java_out_of_memory();)
 
