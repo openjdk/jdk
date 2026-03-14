@@ -11649,7 +11649,6 @@ instruct mulL_mem_imm(rRegL dst, memory src, immL32 imm, rFlagsReg cr)
 
 instruct mulHiLoL_rReg(rax_RegL rax, rdx_RegL rdx, rRegL src, rFlagsReg cr)
 %{
-  match(MulHiLoL src rax);
   match(MulHiLoL rax src);
   effect(KILL cr);
 
