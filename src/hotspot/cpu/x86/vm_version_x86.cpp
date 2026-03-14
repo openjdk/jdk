@@ -1973,7 +1973,7 @@ void VM_Version::get_processor_features() {
   // have improved implementation of 64-byte load/stores and so the default
   // threshold is set to 0 for these platforms.
   if (FLAG_IS_DEFAULT(CopyAVX3Threshold)) {
-    if (is_intel_server_family() && supports_serialize()) {
+    if (is_intel() && is_intel_server_family() && supports_serialize()) {
       FLAG_SET_DEFAULT(CopyAVX3Threshold, 0);
     } else {
       FLAG_SET_DEFAULT(CopyAVX3Threshold, AVX3Threshold);
