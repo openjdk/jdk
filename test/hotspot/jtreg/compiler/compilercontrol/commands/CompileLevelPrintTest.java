@@ -42,6 +42,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -52,6 +53,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.BooleanSupplier;
 import java.util.regex.Matcher;
@@ -61,30 +63,28 @@ public class CompileLevelPrintTest {
     static final Method TEST_METHOD;
     static {
         try {
-            TEST_METHOD = Testee.class.getDeclaredMethod("compiledMethod",
-                    new Class[] {int.class});
+            TEST_METHOD = Testee.class.getDeclaredMethod("compiledMethod", new Class[] {int.class});
         } catch (NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
     }
-    static final String TEST_METHOD_NAME_DOT =
-            TEST_METHOD.getDeclaringClass().getName().replace('.', '/')
+    static final String TEST_METHOD_NAME_DOT = TEST_METHOD.getDeclaringClass().getName().replace('.', '/')
             + "." + TEST_METHOD.getName();
-    static final String TEST_METHOD_NAME_DBL_COLON =
-            TEST_METHOD.getDeclaringClass().getName()
+    static final String TEST_METHOD_NAME_DBL_COLON = TEST_METHOD.getDeclaringClass().getName()
             + "::" + TEST_METHOD.getName();
     static final String TEST_METHOD_SIGNATURE = TEST_METHOD_NAME_DBL_COLON + "(";
 
-    static final String TESTEE_WAITING_FOR_START_CMD = "==> waiting for start command <==";
+    static final String TESTEE_WAITING_FOR_START_CMD = "==> waiting for start command";
 
-    static final Path START_CMD_FILE = Path.of(".start");
-    static final Path STOP_TEST_METHOD_CMD = Path.of(".stop");
+    static final String START_CMD = "start";
+    static final String STOP_CMD = "stop";
 
     static final boolean DEBUG_OUTPUT = false;
 
     static class TesteeState {
         final CountDownLatch waitingForStartTest = new CountDownLatch(1);
-        volatile boolean areCompilerQueuesEmpty = false;
+        final AtomicInteger compiler1QueueSize = new AtomicInteger();
+        final AtomicInteger compiler2QueueSize = new AtomicInteger(0);
         final Set<String> compileCommandsReported = Collections.synchronizedSet(new HashSet<>());
         volatile Set<String> testMethodCompiledAtLevel = Collections.synchronizedSet(new HashSet<>());
         final Set<String> testMethodExcludedAtLevel = Collections.synchronizedSet(new HashSet<>());
@@ -151,10 +151,8 @@ public class CompileLevelPrintTest {
                     "-XX:CompileCommand=print," + TEST_METHOD_NAME_DBL_COLON + "," + printCmdCompLevel,
                     CompileLevelPrintTest.class.getName());
 
-            Files.deleteIfExists(START_CMD_FILE);
-            Files.deleteIfExists(STOP_TEST_METHOD_CMD);
-
             try (Process process = pb.start();
+                 BufferedWriter processInput = process.outputWriter();
                  BufferedReader processOutput = process.inputReader();
                  BufferedReader processErrOut = process.errorReader()) {
                 try {
@@ -165,11 +163,13 @@ public class CompileLevelPrintTest {
                     Thread stderrParser = startDaemonThread(() ->
                             testeeErrorOutputMonitor(processErrOut, testeeState, "testee-" + process.pid() + ".err"));
 
+                    System.out.println("##> Waiting for testee to get ready for the start command");
                     if (!testeeState.waitingForStartTest.await(30, TimeUnit.SECONDS)) {
                         throw new RuntimeException("No start signal from testee");
                     }
 
-                    Asserts.assertTrue(waitUntil(() -> testeeState.areCompilerQueuesEmpty),
+                    Asserts.assertTrue(waitUntil(() -> testeeState.compiler1QueueSize.get() < 5
+                            && testeeState.compiler2QueueSize.get() < 5),
                             "Compiler queue is still not empty");
                     Asserts.assertTrue(testeeState.compileCommandsReported.contains(
                             compileCmd + " " + TEST_METHOD_NAME_DOT + " intx " + compileCmd + " = " + cmdCompLevel),
@@ -179,7 +179,8 @@ public class CompileLevelPrintTest {
                             "'CompileCommand: print ...' was not printed");
 
                     System.out.println("##> Order testee to start");
-                    Files.createFile(START_CMD_FILE);
+                    processInput.write(START_CMD); processInput.newLine(); processInput.flush();
+
                     Asserts.assertTrue(waitUntil(() ->
                             expectedCompLevel.equals(testeeState.testMethodCompiledAtLevel)
                             && expectedCompLevel.equals(testeeState.testMethodPrintedAtLevel)
@@ -189,7 +190,8 @@ public class CompileLevelPrintTest {
                                + " or method was compiled at incorrect level (" + expectExcludedAtLevels + ")");
 
                     System.out.println("##> Test method compiled, now stop");
-                    Files.createFile(STOP_TEST_METHOD_CMD);
+                    processInput.write(STOP_CMD); processInput.newLine(); processInput.flush();
+                    processInput.close();
 
                     Asserts.assertEquals(process.waitFor(), 0);
                     stdoutParser.join();
@@ -201,7 +203,6 @@ public class CompileLevelPrintTest {
                     System.out.println("########> Test passed");
                 } catch (Exception ex) {
                     ex.printStackTrace();
-                    touchFile(STOP_TEST_METHOD_CMD);
                     process.destroyForcibly();
                     throw ex;
                 }
@@ -234,12 +235,16 @@ public class CompileLevelPrintTest {
                         msg = "Compile command reported: " + matcher.group(1);
 
                     } else if ((matcher = reTieredEvent.matcher(line)).matches()) {
-                        int compilerQueuesSize = Integer.parseInt(matcher.group(3))
-                                + Integer.parseInt(matcher.group(4));
-
-                        testeeState.areCompilerQueuesEmpty = compilerQueuesSize == 0;
+                        testeeState.compiler1QueueSize.set(Integer.parseInt(matcher.group(3)));
+                        testeeState.compiler2QueueSize.set(Integer.parseInt(matcher.group(4)));
 
                     } else if ((matcher = reCompilation.matcher(line)).matches()) {
+                        if ("C1".equalsIgnoreCase(matcher.group(2))) {
+                            testeeState.compiler1QueueSize.decrementAndGet();
+                        } else {
+                            testeeState.compiler2QueueSize.decrementAndGet();
+                        }
+
                         if (matcher.group(6).contains(TEST_METHOD_NAME_DBL_COLON)) {
                             testeeState.testMethodCompiledAtLevel.add(matcher.group(5));
 
@@ -319,23 +324,59 @@ public class CompileLevelPrintTest {
     }
 
     static class Testee {
-        static void run() throws IOException {
-            System.err.println("==> entering testee() <==");
-            try {
-                for (;;) {
-                    System.err.println(TESTEE_WAITING_FOR_START_CMD);
-                    Asserts.assertTrue(waitUntil(() -> Files.exists(START_CMD_FILE) || Files.exists(STOP_TEST_METHOD_CMD)));
-                    if (Files.exists(STOP_TEST_METHOD_CMD)) {
-                        break;
-                    }
-                    Files.deleteIfExists(START_CMD_FILE);
+        private static final CountDownLatch startCmd = new CountDownLatch(1);
+        private static final CountDownLatch stopCmd = new CountDownLatch(1);
 
-                    System.err.println("==> starting test <==");
-                    runTestCode();
+        static void run() throws IOException, InterruptedException {
+            System.err.println("==> entering testee()");
+
+            try {
+                startDaemonThread(Testee::inputMonitor);
+
+                if (stopCmd.getCount() == 0) {
+                    return;
                 }
-                Files.deleteIfExists(STOP_TEST_METHOD_CMD);
+
+                // Print 3 times, since the output can be intermixed with
+                System.err.println(TESTEE_WAITING_FOR_START_CMD);
+                if (!startCmd.await(33, TimeUnit.SECONDS)) {
+                    System.err.println("==> 'start' command was not given in stdin");
+                    return;
+                }
+
+                if (stopCmd.getCount() == 0) {
+                    return;
+                }
+
+                System.err.println("==> starting test");
+                runTestCode();
             } finally {
-                System.err.println("==> exiting testee() <==");
+                System.err.println("==> exiting testee()");
+            }
+        }
+
+        private static void inputMonitor() {
+            try (BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in))) {
+                String line;
+                while ((line = stdin.readLine()) != null) {
+                    line = line.trim();
+                    System.err.println("==> STDIN: " + line);
+
+                    switch (line) {
+                        case START_CMD:
+                            startCmd.countDown();
+                            break;
+
+                        case STOP_CMD:
+                            stopCmd.countDown();
+                            break;
+
+                        default:
+                            System.err.println("==> ERROR: unknown command");
+                    }
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
             }
         }
 
@@ -355,11 +396,9 @@ public class CompileLevelPrintTest {
             // To trigger compilation, 100-200 should be enough for C1 and 600-700 for C2
             for (int i = 0; i < 1500; i++) {
                 compiledMethod(i);
-                if ((i & 0xf) == 0) {
-                    if (Files.exists(STOP_TEST_METHOD_CMD)) {
-                        System.err.println("==> compiledMethod() has been compiled at iteration " + i + " <==");
-                        return true;
-                    }
+                if ((i & 0xf) == 0 && stopCmd.getCount() == 0) {
+                    System.err.println("==> compiledMethod() has been compiled at iteration " + i);
+                    return true;
                 }
             }
             return false;
@@ -381,18 +420,12 @@ public class CompileLevelPrintTest {
         return t;
     }
 
-    static void touchFile(Path file) throws IOException {
-        if (!Files.exists(file)) {
-            Files.createFile(file);
-        }
-    }
-
     static boolean waitUntil(BooleanSupplier condition) {
         for (int maxWait = 300; maxWait > 0; --maxWait) {
             if (condition.getAsBoolean()) {
                 return true;
             }
-            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(100));
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(200));
         }
         return false;
     }
