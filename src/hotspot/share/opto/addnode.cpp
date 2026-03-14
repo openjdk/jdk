@@ -1012,7 +1012,7 @@ public:
 
   MergeLoadInfo& operator=(const MergeLoadInfo& other) = default;
 
-  bool is_invalid() { return _load == nullptr; }
+  bool is_invalid() const { return _load == nullptr; }
 
   static const MergeLoadInfo INVALID;
   static MergeLoadInfo make_invalid () { return INVALID; }
@@ -1303,14 +1303,10 @@ MergeLoadInfo MergePrimitiveLoads::merge_load_info(LoadNode* load) const {
     return invalid;
   }
 
-  // For Add operations, we must ensure the load is unsigned to prevent carry.
-  // Signed loads can produce negative values which, when added, could cause
-  // unexpected carry into adjacent byte positions.
-  if (is_add_combine_opcode(combine_oper->Opcode())) {
-    if (!is_unsigned_load_opcode(load->Opcode())) {
-      return invalid;
-    }
-  }
+  // For Add operations, the unsigned check is deferred to collect_merge_list().
+  // The sign bit check there correctly allows signed loads at the MSB position
+  // (where carry propagation doesn't matter) while requiring unsigned loads at
+  // all other positions to prevent unexpected carry into adjacent byte positions.
 
   assert(shift != -1, "must be set");
   return MergeLoadInfo(load, combine_oper, shift);
@@ -1326,9 +1322,9 @@ Node* MergePrimitiveLoads::run() {
   // go up through combine operators to find load node
   LoadNode* load = nullptr;
   Node* oper = _combine;
-  NOT_PRODUCT(int steps = 0;)    // prevent dead loop in bad graph
-  while (load == nullptr NOT_PRODUCT(&& steps < 30)) {
-    NOT_PRODUCT(steps++;)
+  int steps = 0;    // prevent dead loop in bad graph
+  while (load == nullptr && steps < 30) {
+    steps++;
     assert(is_supported_combine_opcode(oper->Opcode())
            || oper->Opcode() == Op_ConvI2L || oper->is_LShift(), "unexpected node");
     Node* lhs = oper->in(1); // Check one input is enough
@@ -1420,7 +1416,7 @@ bool MergePrimitiveLoads::is_compatible_load(const LoadNode* other_load, const L
     }
   }
 
-  if (other_load->is_acquire() || !other_load->is_unordered()) {
+  if (!other_load->is_unordered()) {
     return false;
   }
 
@@ -1540,7 +1536,6 @@ int MergePrimitiveLoads::collect_merge_list(MergeLoadInfoList* merge_list, const
   bool find_candidate = false;
 
   for (int i = 0; i < collected; i++) {
-    // MergeLoadInfo* info = array[i];
     MergeLoadInfo* info = merge_list->adr_at(i);
     if (info->is_invalid()) {
       return -1;
@@ -1595,7 +1590,8 @@ int MergePrimitiveLoads::collect_merge_list(MergeLoadInfoList* merge_list, const
   _require_reverse_bytes = (order == LowToHigh);
 #endif
   if (_require_reverse_bytes &&
-      (!Matcher::match_rule_supported(Op_ReverseBytesUS) ||
+      (!Matcher::match_rule_supported(Op_ReverseBytesS) ||
+       !Matcher::match_rule_supported(Op_ReverseBytesUS) ||
        !Matcher::match_rule_supported(Op_ReverseBytesI) ||
        !Matcher::match_rule_supported(Op_ReverseBytesL))) {
     // Reverse Bytes is not supported

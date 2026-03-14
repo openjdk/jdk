@@ -134,6 +134,7 @@ namespace TraceMergeStores {
     }
   };
 }
+// MergeLoads reuses the same tracing tags as MergeStores (BASIC, POINTER_PARSING, etc.)
 namespace TraceMergeLoads = TraceMergeStores;
 
 #endif // SHARE_OPTO_TRACEMERGESTORESTAG_HPP

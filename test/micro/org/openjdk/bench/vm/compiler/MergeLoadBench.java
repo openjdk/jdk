@@ -217,7 +217,7 @@ public class MergeLoadBench {
     @Benchmark
     public void getLongBV(Blackhole BH) {
         long sum = 0;
-        for (int i = 0; i < ints.length; i++) {
+        for (int i = 0; i < longs.length; i++) {
             sum += (long) LONG_B.get(bytes8, i * 8);
         }
         BH.consume(sum);
@@ -244,7 +244,7 @@ public class MergeLoadBench {
     @Benchmark
     public void getLongLV(Blackhole BH) {
         long sum = 0;
-        for (int i = 0; i < ints.length; i++) {
+        for (int i = 0; i < longs.length; i++) {
             sum += (long) LONG_L.get(bytes8, i * 8);
         }
         BH.consume(sum);
@@ -534,19 +534,19 @@ public class MergeLoadBench {
     }
 
     static long getLongRB(byte[] array, int offset) {
-        return getLongB(array, offset);
+        return Long.reverseBytes(getLongB(array, offset));
     }
 
     static long getLongRBU(byte[] array, int offset) {
-        return getLongBU(array, offset);
+        return Long.reverseBytes(getLongBU(array, offset));
     }
 
     static long getLongRL(byte[] array, int offset) {
-        return getLongL(array, offset);
+        return Long.reverseBytes(getLongL(array, offset));
     }
 
     static long getLongRLU(byte[] array, int offset) {
-        return getLongLU(array, offset);
+        return Long.reverseBytes(getLongLU(array, offset));
     }
 
     public static int getIntLU(byte[] array, int offset) {

@@ -153,12 +153,12 @@ public class TestMergeLoadsAdd {
         return (aB[0] & 0xFF) + ((aB[1] & 0xFF) << 8);
     }
 
-    // 2 shorts with Add currently stay as scalar short loads
+    // 2 shorts with Add -> LoadI
     @Test
     @IR(counts = {
-            IRNode.LOAD_S_OF_CLASS, SHORT_ARRAY, "1",
-            IRNode.LOAD_US_OF_CLASS, SHORT_ARRAY, "1",
-            IRNode.LOAD_I_OF_CLASS, SHORT_ARRAY, "0",
+            IRNode.LOAD_S_OF_CLASS, SHORT_ARRAY, "0",
+            IRNode.LOAD_US_OF_CLASS, SHORT_ARRAY, "0",
+            IRNode.LOAD_I_OF_CLASS, SHORT_ARRAY, "1",
             IRNode.LOAD_L_OF_CLASS, SHORT_ARRAY, "0",
         },
         applyIf = {"UseUnalignedAccesses", "true"},
@@ -167,14 +167,13 @@ public class TestMergeLoadsAdd {
         return (aS[0] & 0xFFFF) + ((aS[1] & 0xFFFF) << 16);
     }
 
-    // 4 bytes with Add currently merge the low 2-byte subchain only
-
+    // 4 bytes with Add -> LoadI
     @Test
     @IR(counts = {
-            IRNode.LOAD_B_OF_CLASS, BYTE_ARRAY, "1",
-            IRNode.LOAD_UB_OF_CLASS, BYTE_ARRAY, "1",
-            IRNode.LOAD_US_OF_CLASS, BYTE_ARRAY, "1",
-            IRNode.LOAD_I_OF_CLASS, BYTE_ARRAY, "0",
+            IRNode.LOAD_B_OF_CLASS, BYTE_ARRAY, "0",
+            IRNode.LOAD_UB_OF_CLASS, BYTE_ARRAY, "0",
+            IRNode.LOAD_US_OF_CLASS, BYTE_ARRAY, "0",
+            IRNode.LOAD_I_OF_CLASS, BYTE_ARRAY, "1",
             IRNode.LOAD_L_OF_CLASS, BYTE_ARRAY, "0",
         },
         applyIf = {"UseUnalignedAccesses", "true"},

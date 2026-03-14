@@ -853,6 +853,7 @@ static bool scan_value(enum OptionType type, char* line, int& total_bytes_read,
 
         if (!validator.is_valid()) {
           jio_snprintf(errorbuf, buf_size, "Unrecognized tag name in %s: %s", option2name(option), validator.what());
+          return false;
         }
       } else if (option == CompileCommandEnum::PrintIdealPhase) {
         PhaseNameValidator validator(value);
