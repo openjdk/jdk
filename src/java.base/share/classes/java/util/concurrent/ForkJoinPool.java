@@ -2661,7 +2661,7 @@ public class ForkJoinPool extends AbstractExecutorService
         }
         else {                     // find and lock queue
             internal = false;
-            q = submissionQueue(ThreadLocalRandom.getProbe(), true);
+            q = externalSubmissionQueue(true);
         }
         q.push(task, signalIfEmpty ? this : null, internal);
         return task;
