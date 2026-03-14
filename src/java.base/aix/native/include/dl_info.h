@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,20 +22,28 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-/*
- * Aix' own version of dladdr().
- * This function tries to mimic dladdr(3) on Linux
- * (see http://linux.die.net/man/3/dladdr)
- * dladdr(3) is not POSIX but a GNU extension, and is not available on AIX.
+#ifndef AIX_INCLUDE_DL_INFO_H
+#define AIX_INCLUDE_DL_INFO_H
+
+/* struct for dladdr
+ * Differences between AIX dladdr and Linux dladdr:
  *
+ * 1) Dl_info.dli_fbase: can never work, is not included in our struct
+ *   A loaded image on AIX is divided in multiple segments, at least two
+ *   (text and data) but potentially also far more. This is because the loader may
+ *   load each member into an own segment, as for instance happens with the libC.a
+ * 2) Dl_info.dli_sname: This only works for code symbols (functions); for data, a
+ *   zero-length string is returned ("").
+ * 3) Dl_info.dli_saddr: For code, this will return the entry point of the function,
+ *   not the function descriptor.
  */
 
-#include "dl_info.h"
+typedef struct {
+  const char *dli_fname; /* file path of loaded library */
+  const char *dli_sname; /* symbol name; "" if not known */
+  void *dli_saddr;       /* address of *entry* of function; not function descriptor; */
+} Dl_info;
 
-#ifdef __cplusplus
-extern "C"
 #endif
-int dladdr(void *addr, Dl_info *info);
