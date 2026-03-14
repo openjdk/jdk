@@ -50,7 +50,7 @@ public class VectorMaskCastIdentityTest {
     }
 
     @Test
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "= 2" }, applyIfCPUFeatureOr = {"asimd", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "= 2" }, applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"})
     public static int testTwoCastToDifferentType() {
         // The types before and after the two casts are not the same, so the cast cannot be eliminated.
         VectorMask<Float> mFloat64 = VectorMask.fromArray(FloatVector.SPECIES_64, mr, 0);
@@ -84,7 +84,7 @@ public class VectorMaskCastIdentityTest {
     }
 
     @Test
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "= 0" }, applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "= 0" }, applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     public static int testTwoCastToSameType() {
         // The types before and after the two casts are the same, so the cast will be eliminated.
         VectorMask<Integer> mInt128 = VectorMask.fromArray(IntVector.SPECIES_128, mr, 0);
@@ -101,7 +101,7 @@ public class VectorMaskCastIdentityTest {
     }
 
     @Test
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "= 1" }, applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "= 1" }, applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     public static int testOneCastToDifferentType() {
         // The types before and after the only cast are different, the cast will not be eliminated.
         VectorMask<Float> mFloat128 = VectorMask.fromArray(FloatVector.SPECIES_128, mr, 0).not();
