@@ -1972,8 +1972,12 @@ void VM_Version::get_processor_features() {
   // The Intel platforms that supports the serialize instruction
   // have improved implementation of 64-byte load/stores and so the default
   // threshold is set to 0 for these platforms.
-  if (is_intel_server_family() && supports_serialize()) {
+  if (FLAG_IS_DEFAULT(CopyAVX3Threshold)) {
+    if (is_intel_server_family() && supports_serialize()) {
       FLAG_SET_DEFAULT(CopyAVX3Threshold, 0);
+    } else {
+      FLAG_SET_DEFAULT(CopyAVX3Threshold, AVX3Threshold);
+    }
   }
 }
 
