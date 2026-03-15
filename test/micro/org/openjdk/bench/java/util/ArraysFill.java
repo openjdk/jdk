@@ -69,37 +69,44 @@ public class ArraysFill {
     }
 
     @Benchmark
-    public void testCharFill() {
+    public char testCharFill() {
         Arrays.fill(testCharArray, (char) -1);
+        return (char) (testCharArray[0] + testCharArray[size - 1]);
     }
 
     @Benchmark
-    public void testByteFill() {
+    public byte testByteFill() {
         Arrays.fill(testByteArray, (byte) -1);
+        return (byte) (testByteArray[0] + testByteArray[size - 1]);
     }
 
     @Benchmark
-    public void testShortFill() {
+    public short testShortFill() {
         Arrays.fill(testShortArray, (short) -1);
+        return (short) (testShortArray[0] + testShortArray[size - 1]);
     }
 
     @Benchmark
-    public void testIntFill() {
+    public int testIntFill() {
         Arrays.fill(testIntArray, -1);
+        return testIntArray[0] + testIntArray[size - 1];
     }
 
     @Benchmark
-    public void testLongFill() {
+    public long testLongFill() {
         Arrays.fill(testLongArray, -1);
+        return testLongArray[0] + testLongArray[size - 1];
     }
 
     @Benchmark
-    public void testFloatFill() {
+    public float testFloatFill() {
         Arrays.fill(testFloatArray, (float) -1.0);
+        return testFloatArray[0] + testFloatArray[size - 1];
     }
 
     @Benchmark
-    public void testDoubleFill() {
+    public double testDoubleFill() {
         Arrays.fill(testDoubleArray, -1.0);
+        return testDoubleArray[0] + testDoubleArray[size - 1];
     }
 }
