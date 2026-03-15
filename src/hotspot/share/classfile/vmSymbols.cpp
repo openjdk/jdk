@@ -77,9 +77,9 @@ static const char* vm_symbol_enum_name(vmSymbolID sid) {
 static const char* vm_symbol_bodies = VM_SYMBOLS_DO(VM_SYMBOL_BODY, VM_ALIAS_IGNORE);
 
 void vmSymbols::initialize() {
-  assert(SID_LIMIT <= (1<<log2_SID_LIMIT), "must fit in this bitfield");
-  assert(SID_LIMIT*5 > (1<<log2_SID_LIMIT), "make the bitfield smaller, please");
-  assert(vmIntrinsics::FLAG_LIMIT <= (1 << vmIntrinsics::log2_FLAG_LIMIT), "must fit in this bitfield");
+  static_assert(SID_LIMIT <= (1<<log2_SID_LIMIT), "must fit in this bitfield");
+  static_assert(SID_LIMIT*5 > (1<<log2_SID_LIMIT), "make the bitfield smaller, please");
+  static_assert(vmIntrinsics::FLAG_LIMIT <= (1 << vmIntrinsics::log2_FLAG_LIMIT), "must fit in this bitfield");
 
   if (!CDSConfig::is_using_archive()) {
     const char* string = &vm_symbol_bodies[0];

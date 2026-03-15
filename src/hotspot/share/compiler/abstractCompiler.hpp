@@ -126,7 +126,7 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   bool is_intrinsic_available(const methodHandle& method, DirectiveSet* directive) {
     vmIntrinsics::ID id = method->intrinsic_id();
     assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
-    return is_intrinsic_supported(method) &&
+    return is_intrinsic_supported(id) &&
            vmIntrinsics::is_intrinsic_available(id) &&
            !directive->is_intrinsic_disabled(id);
   }
@@ -139,8 +139,17 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   // by default no intrinsics are supported by a compiler except
   // the ones listed in the method. Overriding methods should conform
   // to this behavior.
-  virtual bool is_intrinsic_supported(const methodHandle& method) {
+  virtual bool is_intrinsic_supported(vmIntrinsics::ID id) {
     return false;
+  }
+  // Fine-grained query about polymorphic intrinsics,
+  // applicable only to an intrinsic with a polymorphic prefix.
+  virtual bool is_intrinsic_supported(vmIntrinsics::ID id,
+                                      vmIntrinsics::MemoryOrder mo,
+                                      BasicType bt = T_OBJECT,
+                                      vmIntrinsics::BitsOperation op = vmIntrinsics::OP_NONE) {
+    assert(vmIntrinsics::polymorphic_prefix(id) != vmIntrinsics::PP_NONE, "");
+    return is_intrinsic_supported(id);
   }
 
   // Compiler type queries.
