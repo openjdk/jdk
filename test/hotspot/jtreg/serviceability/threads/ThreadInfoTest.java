@@ -36,6 +36,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @bug 8323792
  * @summary Make sure that jmm_GetThreadInfo() call does not crash JVM
  * @library /test/lib
+ * @modules java.management
  * @run main/othervm ThreadInfoTest
  */
 
@@ -137,6 +138,7 @@ public class ThreadInfoTest {
 
         public MyReplacerThread(long []ids) {
             this.ids = ids;
+            this.setDaemon(true);
         }
 
         public void run() {
@@ -179,35 +181,12 @@ public class ThreadInfoTest {
         }
     }
 
-    static class MySteadyThread extends Thread {
-        long lifeMs;
-
-        public MySteadyThread(long i) {
-            super("MySteadyThread-" + i);
-            this.lifeMs = i * 10;
-        }
-
-        public void run() {
-            while (true) {
-                try {
-                Object o = new Object();
-                synchronized (o) {
-                    goSleep(lifeMs);
-                    o.wait(lifeMs);
-                }
-                } catch (Exception e) {
-                    System.err.println(e);
-                }
-                goSleep(1);
-            }
-        }
-    }
-
     static class MyGetThreadInfoThread extends Thread {
         long [] ids;
 
         public MyGetThreadInfoThread(long [] ids) {
             this.ids = ids;
+            this.setDaemon(true);
         }
 
         public void run() {
@@ -224,6 +203,7 @@ public class ThreadInfoTest {
         public MyBusyThread() {
             super("MyBusyThread");
             list = new ArrayList<Object>();
+            this.setDaemon(true);
         }
 
         public void run() {
