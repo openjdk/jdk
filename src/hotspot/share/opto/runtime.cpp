@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,6 +233,7 @@ const TypeFunc* OptoRuntime::_base64_decodeBlock_Type             = nullptr;
 const TypeFunc* OptoRuntime::_string_IndexOf_Type                 = nullptr;
 const TypeFunc* OptoRuntime::_poly1305_processBlocks_Type         = nullptr;
 const TypeFunc* OptoRuntime::_intpoly_montgomeryMult_P256_Type    = nullptr;
+const TypeFunc* OptoRuntime::_intpoly_mult_25519_Type             = nullptr;
 const TypeFunc* OptoRuntime::_intpoly_assign_Type                 = nullptr;
 const TypeFunc* OptoRuntime::_updateBytesCRC32_Type               = nullptr;
 const TypeFunc* OptoRuntime::_updateBytesCRC32C_Type              = nullptr;
@@ -1745,6 +1746,24 @@ static const TypeFunc* make_intpoly_montgomeryMult_P256_Type() {
   return TypeFunc::make(domain, range);
 }
 
+static const TypeFunc* make_intpoly_mult_25519_Type() {
+  int argcnt = 3;
+
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;    // a array
+  fields[argp++] = TypePtr::NOTNULL;    // b array
+  fields[argp++] = TypePtr::NOTNULL;    // r(esult) array
+  assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms + 0] = nullptr; // void
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
+  return TypeFunc::make(domain, range);
+}
+
 static const TypeFunc* make_intpoly_assign_Type() {
   int argcnt = 4;
 
@@ -2330,6 +2349,7 @@ void OptoRuntime::initialize_types() {
   _string_IndexOf_Type                = make_string_IndexOf_Type();
   _poly1305_processBlocks_Type        = make_poly1305_processBlocks_Type();
   _intpoly_montgomeryMult_P256_Type   = make_intpoly_montgomeryMult_P256_Type();
+  _intpoly_mult_25519_Type            = make_intpoly_mult_25519_Type();
   _intpoly_assign_Type                = make_intpoly_assign_Type();
   _updateBytesCRC32_Type              = make_updateBytesCRC32_Type();
   _updateBytesCRC32C_Type             = make_updateBytesCRC32C_Type();

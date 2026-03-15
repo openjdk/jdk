@@ -538,6 +538,12 @@ class methodHandle;
   do_name(intPolyMult_name, "mult")                                                                                     \
   do_signature(intPolyMult_signature, "([J[J[J)V")                                                                      \
                                                                                                                         \
+  /* support for sun.security.util.math.intpoly.IntegerPolynomial25519 */                                               \
+  do_class(sun_security_util_math_intpoly_IntegerPolynomial25519, "sun/security/util/math/intpoly/IntegerPolynomial25519")                         \
+  do_intrinsic(_intpoly_mult_25519, sun_security_util_math_intpoly_IntegerPolynomial25519, intPolyMult25519_name, intPolyMult25519_signature, F_R) \
+  do_name(intPolyMult25519_name, "mult")                                                                                \
+  do_signature(intPolyMult25519_signature, "([J[J[J)V")                                                                 \
+                                                                                                                        \
   do_class(sun_security_util_math_intpoly_IntegerPolynomial, "sun/security/util/math/intpoly/IntegerPolynomial")        \
   do_intrinsic(_intpoly_assign, sun_security_util_math_intpoly_IntegerPolynomial, intPolyAssign_name, intPolyAssign_signature, F_S) \
    do_name(intPolyAssign_name, "conditionalAssign")                                                                     \

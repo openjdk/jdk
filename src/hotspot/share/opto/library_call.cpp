@@ -661,6 +661,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_poly1305_processBlocks();
   case vmIntrinsics::_intpoly_montgomeryMult_P256:
     return inline_intpoly_montgomeryMult_P256();
+  case vmIntrinsics::_intpoly_mult_25519:
+    return inline_intpoly_mult_25519();
   case vmIntrinsics::_intpoly_assign:
     return inline_intpoly_assign();
   case vmIntrinsics::_encodeISOArray:
@@ -8311,6 +8313,40 @@ bool LibraryCallKit::inline_intpoly_montgomeryMult_P256() {
 
   Node* call = make_runtime_call(RC_LEAF | RC_NO_FP,
                                  OptoRuntime::intpoly_montgomeryMult_P256_Type(),
+                                 stubAddr, stubName, TypePtr::BOTTOM,
+                                 a_start, b_start, r_start);
+  return true;
+}
+
+bool LibraryCallKit::inline_intpoly_mult_25519() {
+  address stubAddr;
+  const char *stubName;
+  assert(UseIntPolyIntrinsics, "need intpoly intrinsics support");
+  assert(callee()->signature()->size() == 3, "intpoly_mult_25519 has %d parameters", callee()->signature()->size());
+  stubAddr = StubRoutines::intpoly_mult_25519();
+  stubName = "intpoly_mult_25519";
+
+  if (!stubAddr) return false;
+  null_check_receiver();  // null-check receiver
+  if (stopped())  return true;
+
+  Node* a = argument(1);
+  Node* b = argument(2);
+  Node* r = argument(3);
+
+  a = must_be_not_null(a, true);
+  b = must_be_not_null(b, true);
+  r = must_be_not_null(r, true);
+
+  Node* a_start = array_element_address(a, intcon(0), T_LONG);
+  assert(a_start, "a array is null");
+  Node* b_start = array_element_address(b, intcon(0), T_LONG);
+  assert(b_start, "b array is null");
+  Node* r_start = array_element_address(r, intcon(0), T_LONG);
+  assert(r_start, "r array is null");
+
+  Node* call = make_runtime_call(RC_LEAF | RC_NO_FP,
+                                 OptoRuntime::intpoly_mult_25519_Type(),
                                  stubAddr, stubName, TypePtr::BOTTOM,
                                  a_start, b_start, r_start);
   return true;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4216,6 +4216,7 @@ void StubGenerator::generate_compiler_stubs() {
 
   if (UseIntPolyIntrinsics) {
     StubRoutines::_intpoly_montgomeryMult_P256 = generate_intpoly_montgomeryMult_P256();
+    StubRoutines::_intpoly_mult_25519 = generate_intpoly_mult_25519();
     StubRoutines::_intpoly_assign = generate_intpoly_assign();
   }
 

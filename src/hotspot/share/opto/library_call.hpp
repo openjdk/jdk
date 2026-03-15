@@ -361,6 +361,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_base64_decodeBlock();
   bool inline_poly1305_processBlocks();
   bool inline_intpoly_montgomeryMult_P256();
+  bool inline_intpoly_mult_25519();
   bool inline_intpoly_assign();
   bool inline_digestBase_implCompress(vmIntrinsics::ID id);
   bool inline_double_keccak();
