@@ -206,6 +206,8 @@ static jvmtiError JNICALL RequestStackTrace(const jvmtiEnv* env, ...) {
 static jvmtiError JNICALL EnableRequestStackTrace(const jvmtiEnv* env, ...) {
   JvmtiExtensions::set_request_stack_trace_enabled(true);
 #if INCLUDE_JFR && defined(LINUX)
+  JavaThread* current_thread = JavaThread::current();
+  ThreadInVMfromNative __tiv(current_thread);
   JfrCPUTimeThreadSampling::initialize_jvmti();
 #endif
   return JVMTI_ERROR_NONE;
@@ -215,6 +217,8 @@ static jvmtiError JNICALL EnableRequestStackTrace(const jvmtiEnv* env, ...) {
 static jvmtiError JNICALL DisableRequestStackTrace(const jvmtiEnv* env, ...) {
   JvmtiExtensions::set_request_stack_trace_enabled(false);
 #if INCLUDE_JFR && defined(LINUX)
+  JavaThread* current_thread = JavaThread::current();
+  ThreadInVMfromNative __tiv(current_thread);
   JfrCPUTimeThreadSampling::deinitialize_jvmti();
 #endif
   return JVMTI_ERROR_NONE;

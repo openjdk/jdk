@@ -357,7 +357,7 @@ void JfrCPUSamplerThread::start_thread() {
 
 void JfrCPUSamplerThread::enroll() {
   activate();
-  if (AtomicAccess::cmpxchg(&_timers_enrolled, false, true)) {
+  if (!AtomicAccess::cmpxchg(&_timers_enrolled, false, true)) {
     AtomicAccess::store(&_warned_about_timer_creation_failure, false);
     log_trace(jfr)("Enrolling CPU thread sampler timers");
     if (!init_timers()) {
