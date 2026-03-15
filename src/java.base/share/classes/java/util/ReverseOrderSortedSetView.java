@@ -363,7 +363,7 @@ class ReverseOrderSortedSetView<E> implements SortedSet<E> {
 
         public SortedSet<E> tailSet(E from) {
             if (aboveHead(from) && belowTail(from))
-                return ReverseOrderSortedSetView.this.new Subset(null, tail);
+                return ReverseOrderSortedSetView.this.new Subset(from, tail);
             else
                 throw new IllegalArgumentException();
         }
