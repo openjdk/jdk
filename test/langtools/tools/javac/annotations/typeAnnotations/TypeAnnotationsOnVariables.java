@@ -236,6 +236,21 @@ public class TypeAnnotationsOnVariables {
                                       while (true) {
                                           @TypeAnno long test2 = 0;
                                           System.err.println(test2);
+                                          try (@TypeAnno AutoCloseable ac = () -> {}) {
+                                              System.err.println(ac);
+                                          } catch (@TypeAnno Exception e1) {
+                                              System.err.println(e1);
+                                          }
+                                          try {
+                                              "".length();
+                                          } catch (@TypeAnno final Exception e2) {
+                                              System.err.println(e2);
+                                          }
+                                          try {
+                                              "".length();
+                                          } catch (@TypeAnno IllegalStateException | @TypeAnno NullPointerException | IllegalArgumentException e3) {
+                                              System.err.println(e3);
+                                          }
                                       }
                                   };
                               }
@@ -269,9 +284,19 @@ public class TypeAnnotationsOnVariables {
 
         checkJavapOutput(testClass,
                          List.of("      RuntimeInvisibleTypeAnnotations:",
-                                 "        0: #31(): LOCAL_VARIABLE, {start_pc=2, length=12, index=0}",
+                                 "        0: #66(): LOCAL_VARIABLE, {start_pc=2, length=122, index=0}",
                                  "          Test$TypeAnno",
-                                 "        1: #31(): LOCAL_VARIABLE, {start_pc=4, length=7, index=2}",
+                                 "        1: #66(): LOCAL_VARIABLE, {start_pc=4, length=117, index=2}",
+                                 "          Test$TypeAnno",
+                                 "        2: #66(): RESOURCE_VARIABLE, {start_pc=18, length=52, index=4}",
+                                 "          Test$TypeAnno",
+                                 "        3: #66(): EXCEPTION_PARAMETER, exception_index=2",
+                                 "          Test$TypeAnno",
+                                 "        4: #66(): EXCEPTION_PARAMETER, exception_index=3",
+                                 "          Test$TypeAnno",
+                                 "        5: #66(): EXCEPTION_PARAMETER, exception_index=4",
+                                 "          Test$TypeAnno",
+                                 "        6: #66(): EXCEPTION_PARAMETER, exception_index=5",
                                  "          Test$TypeAnno"));
     }
 
