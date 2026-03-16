@@ -72,15 +72,15 @@ public class URIResolverTest {
      */
     private final static String XSL_TEMP_FILE = "temp/cities.xsl";
 
-    record TestResolver(String validateHref, String validateBase) implements URIResolver {
+    record TestResolver(String expectedHref, String expectedBase) implements URIResolver {
         /**
          * Called by the processor when it encounters an xsl:include, xsl:import,
          * or document() function.
          */
         @Override
         public Source resolve(String href, String base) {
-            assertEquals(href, validateHref);
-            assertEquals(base, validateBase);
+            assertEquals(expectedHref, href);
+            assertEquals(expectedBase, base);
             // Return null if the href cannot be resolved.
             return null;
         }
