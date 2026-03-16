@@ -961,7 +961,7 @@ void MacroAssembler::call(AddressLiteral entry, Register rscratch) {
 void MacroAssembler::ic_call(address entry, jint method_index) {
   RelocationHolder rh = virtual_call_Relocation::spec(pc(), method_index);
   // Needs full 64-bit immediate for later patching.
-  mov64(rax, (int64_t)Universe::non_oop_word());
+  Assembler::mov64(rax, (int64_t)Universe::non_oop_word());
   call(AddressLiteral(entry, rh));
 }
 
@@ -1961,6 +1961,20 @@ void MacroAssembler::movflt(XMMRegister dst, AddressLiteral src, Register rscrat
   }
 }
 
+void MacroAssembler::mov64(Register dst, int64_t imm64) {
+  if (is_uimm32(imm64)) {
+    movl(dst, checked_cast<uint32_t>(imm64));
+  } else if (is_simm32(imm64)) {
+    movq(dst, checked_cast<int32_t>(imm64));
+  } else {
+    Assembler::mov64(dst, imm64);
+  }
+}
+
+void MacroAssembler::mov64(Register dst, int64_t imm64, relocInfo::relocType rtype, int format) {
+  Assembler::mov64(dst, imm64, rtype, format);
+}
+
 void MacroAssembler::movptr(Register dst, Register src) {
   movq(dst, src);
 }
@@ -1971,13 +1985,7 @@ void MacroAssembler::movptr(Register dst, Address src) {
 
 // src should NEVER be a real pointer. Use AddressLiteral for true pointers
 void MacroAssembler::movptr(Register dst, intptr_t src) {
-  if (is_uimm32(src)) {
-    movl(dst, checked_cast<uint32_t>(src));
-  } else if (is_simm32(src)) {
-    movq(dst, checked_cast<int32_t>(src));
-  } else {
-    mov64(dst, src);
-  }
+  mov64(dst, src);
 }
 
 void MacroAssembler::movptr(Address dst, Register src) {
@@ -10032,6 +10040,20 @@ void MacroAssembler::restore_legacy_gprs() {
   movq(rcx, Address(rsp, 14 * wordSize));
   movq(rax, Address(rsp, 15 * wordSize));
   addq(rsp, 16 * wordSize);
+}
+
+void MacroAssembler::load_aotrc_address(Register reg, address a) {
+#if INCLUDE_CDS
+  assert(AOTRuntimeConstants::contains(a), "address out of range for data area");
+  if (AOTCodeCache::is_on_for_dump()) {
+    // all aotrc field addresses should be registered in the AOTCodeCache address table
+    lea(reg, ExternalAddress(a));
+  } else {
+    mov64(reg, (uint64_t)a);
+  }
+#else
+  ShouldNotReachHere();
+#endif
 }
 
 void MacroAssembler::setcc(Assembler::Condition comparison, Register dst) {

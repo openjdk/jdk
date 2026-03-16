@@ -5754,11 +5754,33 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, uint64_t &byte_off
 }
 
 void MacroAssembler::load_byte_map_base(Register reg) {
+#if INCLUDE_CDS
+  if (AOTCodeCache::is_on_for_dump()) {
+    address byte_map_base_adr = AOTRuntimeConstants::card_table_base_address();
+    lea(reg, ExternalAddress(byte_map_base_adr));
+    ldr(reg, Address(reg));
+    return;
+  }
+#endif
   CardTableBarrierSet* ctbs = CardTableBarrierSet::barrier_set();
 
   // Strictly speaking the card table base isn't an address at all, and it might
   // even be negative. It is thus materialised as a constant.
   mov(reg, (uint64_t)ctbs->card_table_base_const());
+}
+
+void MacroAssembler::load_aotrc_address(Register reg, address a) {
+#if INCLUDE_CDS
+  assert(AOTRuntimeConstants::contains(a), "address out of range for data area");
+  if (AOTCodeCache::is_on_for_dump()) {
+    // all aotrc field addresses should be registered in the AOTCodeCache address table
+    lea(reg, ExternalAddress(a));
+  } else {
+    mov(reg, (uint64_t)a);
+  }
+#else
+  ShouldNotReachHere();
+#endif
 }
 
 void MacroAssembler::build_frame(int framesize) {
