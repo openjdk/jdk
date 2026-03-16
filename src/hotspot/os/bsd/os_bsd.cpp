@@ -2614,7 +2614,7 @@ void os::Bsd::print_open_file_descriptors(outputStream* st, char* buf, size_t bu
   // print lower threshold if count exceeds buffer size
   int nfiles = res / sizeof(struct proc_fdinfo);
   if ((size_t)nfiles >= max_fds) {
-    st->print_cr("Open File Descriptors: >%zu", max_fds);
+    st->print_cr("Open File Descriptors: > %zu", max_fds);
     return;
   }
   st->print_cr("Open File Descriptors: %d", nfiles);
