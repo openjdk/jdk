@@ -1079,11 +1079,21 @@ const intptr_t OneBit     =  1; // only right_most bit set in a word
 
 // same as nth_bit(n), but allows handing in a type as template parameter. Allows
 // us to use nth_bit with 64-bit types on 32-bit platforms
+// Guard shift count to avoid UB: shift by >= type width or negative is undefined
 template<class T> inline T nth_bit_typed(int n) {
+  const unsigned bits = sizeof(T) * 8;
+  if (n < 0 || n >= (int)bits) return (T)0;
   return ((T)1) << n;
 }
+// Use unsigned type for arithmetic to avoid signed overflow (e.g. n==63 for jlong) and shift-by-width UB
+template<typename T> struct right_n_bits_unsigned_type {
+  static_assert(std::is_integral<T>::value, "T must be an integral type");
+  using type = typename std::make_unsigned<T>::type;
+};
+// Unsigned overflow is well-defined (wraps). Shift count is guarded in nth_bit_typed.
 template<class T> inline T right_n_bits_typed(int n) {
-  return nth_bit_typed<T>(n) - 1;
+  using U = typename right_n_bits_unsigned_type<T>::type;
+  return (T)(nth_bit_typed<U>(n) - (U)1);
 }
 
 // bit-operations using a mask m
