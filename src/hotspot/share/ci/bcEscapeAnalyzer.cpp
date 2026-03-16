@@ -1078,9 +1078,9 @@ void BCEscapeAnalyzer::merge_block_states(StateInfo *blockstates, ciBlock *dest,
 }
 
 void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
-  uint numblocks = checked_cast<uint>(_methodBlocks->num_blocks());
-  uint stkSize   = checked_cast<uint>(_method->max_stack());
-  uint numLocals = checked_cast<uint>(_method->max_locals());
+  uint numblocks = _methodBlocks->num_blocks();
+  uint stkSize   = _method->max_stack();
+  uint numLocals = _method->max_locals();
   StateInfo state;
 
   uint64_t datacount64 = (uint64_t)(numblocks + 1) * (stkSize + numLocals);
@@ -1093,7 +1093,9 @@ void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
   size_t datasize = datacount * sizeof(ArgumentMap);
   StateInfo *blockstates = (StateInfo *) arena->Amalloc(numblocks * sizeof(StateInfo));
   ArgumentMap *statedata  = (ArgumentMap *) arena->Amalloc(datasize);
-  for (size_t i = 0; i < datacount; i++) ::new ((void*)&statedata[i]) ArgumentMap();
+  for (size_t i = 0; i < datacount; i++) {
+    ::new ((void*)&statedata[i]) ArgumentMap();
+  }
   ArgumentMap *dp = statedata;
   state._vars = dp;
   dp += numLocals;

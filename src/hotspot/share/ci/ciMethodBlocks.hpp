@@ -38,7 +38,7 @@ private:
   Arena *_arena;
   GrowableArray<ciBlock *>  *_blocks;
   ciBlock  **_bci_to_block;
-  int _num_blocks;
+  u2 _num_blocks;
   int _code_size;
 
   void do_analysis();
@@ -50,7 +50,7 @@ public:
   ciBlock *make_block_at(int bci);
   ciBlock *split_block_at(int bci);
   bool is_block_start(int bci);
-  int num_blocks()  { return _num_blocks;}
+  u2 num_blocks()   { return _num_blocks;}
   void clear_processed();
 
   ciBlock *make_dummy_block(); // a block not associated with a bci
