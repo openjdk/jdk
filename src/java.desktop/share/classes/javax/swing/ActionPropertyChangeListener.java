@@ -111,7 +111,7 @@ abstract class ActionPropertyChangeListener<T extends JComponent>
         while ((r = (OwnedWeakReference)queue.poll()) != null) {
             ActionPropertyChangeListener<?> oldPCL = r.getOwner();
             Action oldAction = oldPCL.getAction();
-            if (oldAction!=null) {
+            if (oldAction != null) {
                 oldAction.removePropertyChangeListener(oldPCL);
             }
         }
