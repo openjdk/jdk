@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,6 +181,7 @@ class ConsoleIOContext extends IOContext {
 
         setupReader.accept(reader);
         reader.setOpt(Option.DISABLE_EVENT_EXPANSION);
+        reader.setVariable(LineReader.WORDCHARS, "_$");
 
         reader.setParser((line, cursor, context) -> {
             if (!ConsoleIOContext.this.allowIncompleteInputs && !repl.isComplete(line)) {
