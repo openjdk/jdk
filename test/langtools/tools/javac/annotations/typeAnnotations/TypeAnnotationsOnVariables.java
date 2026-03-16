@@ -210,9 +210,6 @@ public class TypeAnnotationsOnVariables {
     }
 
     static String treeToString(Tree tree) {
-        if (tree.toString().contains("\n")) {
-            System.err.println("!!!");
-        }
         return String.valueOf(tree).replaceAll("\\R", " ");
     }
 
@@ -236,7 +233,7 @@ public class TypeAnnotationsOnVariables {
                                       while (true) {
                                           @TypeAnno long test2 = 0;
                                           System.err.println(test2);
-                                          try (@TypeAnno AutoCloseable ac = () -> {}) {
+                                          try (@TypeAnno AutoCloseable ac = null) {
                                               System.err.println(ac);
                                           } catch (@TypeAnno Exception e1) {
                                               System.err.println(e1);
@@ -251,6 +248,13 @@ public class TypeAnnotationsOnVariables {
                                           } catch (@TypeAnno IllegalStateException | @TypeAnno NullPointerException | IllegalArgumentException e3) {
                                               System.err.println(e3);
                                           }
+                                          Runnable r2 = () -> {
+                                              @TypeAnno long test3 = 0;
+                                              while (true) {
+                                                  @TypeAnno long test4 = 0;
+                                                  System.err.println(test4);
+                                              }
+                                          };
                                       }
                                   };
                               }
@@ -272,32 +276,47 @@ public class TypeAnnotationsOnVariables {
         MethodModel oMethod = singletonValue(name2Method.get("o"));
         var oTypeAnnos = getAnnotations(oMethod);
         assertFalse(oTypeAnnos.isPresent(), () -> oTypeAnnos.toString());
-        String lambdaMethodName =
-                name2Method.keySet()
-                           .stream()
-                           .filter(s -> s.startsWith("lambda"))
-                           .findAny()
-                           .orElseThrow();
+
+        checkTypeAnnotations(testClass,
+                             name2Method,
+                             "lambda$o$0",
+                             "        0: #64(): LOCAL_VARIABLE, {start_pc=2, length=125, index=0}",
+                             "          Test$TypeAnno",
+                             "        1: #64(): LOCAL_VARIABLE, {start_pc=4, length=120, index=2}",
+                             "          Test$TypeAnno",
+                             "        2: #64(): RESOURCE_VARIABLE, {start_pc=14, length=52, index=4}",
+                             "          Test$TypeAnno",
+                             "        3: #64(): EXCEPTION_PARAMETER, exception_index=2",
+                             "          Test$TypeAnno",
+                             "        4: #64(): EXCEPTION_PARAMETER, exception_index=3",
+                             "          Test$TypeAnno",
+                             "        5: #64(): EXCEPTION_PARAMETER, exception_index=4",
+                             "          Test$TypeAnno",
+                             "        6: #64(): EXCEPTION_PARAMETER, exception_index=5",
+                             "          Test$TypeAnno");
+
+        checkTypeAnnotations(testClass,
+                             name2Method,
+                             "lambda$o$1",
+                             "        0: #64(): LOCAL_VARIABLE, {start_pc=2, length=12, index=0}",
+                             "          Test$TypeAnno",
+                             "        1: #64(): LOCAL_VARIABLE, {start_pc=4, length=7, index=2}",
+                             "          Test$TypeAnno");
+    }
+
+    private void checkTypeAnnotations(Path testClass,
+                                      Map<String, List<MethodModel>> name2Method,
+                                      String lambdaMethodName,
+                                      String... expectedEntries) {
         MethodModel lambdaMethod = singletonValue(name2Method.get(lambdaMethodName));
         var lambdaTypeAnnos = getAnnotations(lambdaMethod);
         assertTrue(lambdaTypeAnnos.isPresent(), () -> lambdaTypeAnnos.toString());
+        assertEquals(expectedEntries.length / 2,
+                     lambdaTypeAnnos.orElseThrow().annotations().size(),
+                     () -> lambdaTypeAnnos.orElseThrow().annotations().toString());
 
         checkJavapOutput(testClass,
-                         List.of("      RuntimeInvisibleTypeAnnotations:",
-                                 "        0: #66(): LOCAL_VARIABLE, {start_pc=2, length=122, index=0}",
-                                 "          Test$TypeAnno",
-                                 "        1: #66(): LOCAL_VARIABLE, {start_pc=4, length=117, index=2}",
-                                 "          Test$TypeAnno",
-                                 "        2: #66(): RESOURCE_VARIABLE, {start_pc=18, length=52, index=4}",
-                                 "          Test$TypeAnno",
-                                 "        3: #66(): EXCEPTION_PARAMETER, exception_index=2",
-                                 "          Test$TypeAnno",
-                                 "        4: #66(): EXCEPTION_PARAMETER, exception_index=3",
-                                 "          Test$TypeAnno",
-                                 "        5: #66(): EXCEPTION_PARAMETER, exception_index=4",
-                                 "          Test$TypeAnno",
-                                 "        6: #66(): EXCEPTION_PARAMETER, exception_index=5",
-                                 "          Test$TypeAnno"));
+                         List.of(expectedEntries));
     }
 
     private <T> T singletonValue(List<T> values) {
