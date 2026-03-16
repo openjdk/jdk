@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *  
+ *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
  * published by the Free Software Foundation.  Oracle designates this
@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *  
+ *
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
@@ -167,6 +167,9 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   XMMRegister Acc2 = xmm11;
   XMMRegister N    = xmm12;
   XMMRegister Carry = xmm13;
+  XMMRegister C = xmm14;
+  XMMRegister D = xmm15;
+  XMMRegister DD = xmm9;
 
   // Constants
   XMMRegister modulus = xmm5;
@@ -197,6 +200,46 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   __ movq(T, Address(aLimbs, 0));
   __ evporq(A, A, T, Assembler::AVX_512bit);
 
+// Start new logic
+  // Row 0
+  __ vpbroadcastq(B, Address(bLimbs, 0), Assembler::AVX_512bit);
+  __ evpmadd52luq(Acc1, allLimbs, A, B, false, Assembler::AVX_512bit);
+  __ evpmadd52huq(Acc2, allLimbs, A, B, false, Assembler::AVX_512bit);
+  // Shift for previous low order bits and high order alignment before add 
+  __ evpermq(Acc1, allLimbs, shift1R, Acc1, false, Assembler::AVX_512bit);
+  __ vpaddq(Acc1, Acc1, Acc2, Assembler::AVX_512bit);
+  __ vpxorq(Acc2, Acc2, Acc2, Assembler::AVX_512bit);
+  // Row 1
+  __ vpbroadcastq(B, Address(bLimbs, 8), Assembler::AVX_512bit);
+  __ evpmadd52luq(Acc1, allLimbs, A, B, false, Assembler::AVX_512bit);
+  __ evpmadd52huq(Acc2, allLimbs, A, B, false, Assembler::AVX_512bit);
+  __ evpermq(Acc1, allLimbs, shift1R, Acc1, false, Assembler::AVX_512bit);
+  __ vpaddq(Acc1, Acc1, Acc2, Assembler::AVX_512bit);
+  __ vpxorq(Acc2, Acc2, Acc2, Assembler::AVX_512bit);
+  // Row 2
+  __ vpbroadcastq(B, Address(bLimbs, 16), Assembler::AVX_512bit);
+  __ evpmadd52luq(Acc1, allLimbs, A, B, false, Assembler::AVX_512bit);
+  __ evpmadd52huq(Acc2, allLimbs, A, B, false, Assembler::AVX_512bit);
+  __ evpermq(Acc1, allLimbs, shift1R, Acc1, false, Assembler::AVX_512bit);
+  __ vpaddq(Acc1, Acc1, Acc2, Assembler::AVX_512bit);
+  __ vpxorq(Acc2, Acc2, Acc2, Assembler::AVX_512bit);
+  // At this point Acc1 is completely set at 8q, with single high order at c7
+  __ evpermq(Acc1h, allLimbs, shift1R, Acc1, false, Assembler::AVX_512bit);
+
+  // Row 3
+  __ vpbroadcastq(B, Address(bLimbs, 24), Assembler::AVX_512bit);
+  __ evpmadd52luq(Acc1, allLimbs, A, B, false, Assembler::AVX_512bit);
+  __ evpmadd52huq(Acc2, allLimbs, A, B, false, Assembler::AVX_512bit);
+  __ evpermq(Acc1, allLimbs, shift1R, Acc1, false, Assembler::AVX_512bit);
+  __ vpaddq(Acc1, Acc1, Acc2, Assembler::AVX_512bit);
+  // Row 4
+  __ vpbroadcastq(B, Address(bLimbs, 32), Assembler::AVX_512bit);
+  __ evpmadd52luq(Acc1, allLimbs, A, B, false, Assembler::AVX_512bit);
+  __ evpmadd52huq(Acc2, allLimbs, A, B, false, Assembler::AVX_512bit);
+  __ evpermq(Acc1, allLimbs, shift1R, Acc1, false, Assembler::AVX_512bit);
+  __ vpaddq(Acc1, Acc1, Acc2, Assembler::AVX_512bit);
+// End new logic
+  
   // Acc1 = 0
   __ vpxorq(Acc1, Acc1, Acc1, Assembler::AVX_512bit);
   for (int i = 0; i< 5; i++) {
