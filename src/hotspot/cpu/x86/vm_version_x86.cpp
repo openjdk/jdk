@@ -1967,6 +1967,18 @@ void VM_Version::get_processor_features() {
   if (FLAG_IS_DEFAULT(UseCopySignIntrinsic)) {
       FLAG_SET_DEFAULT(UseCopySignIntrinsic, true);
   }
+  // CopyAVX3Threshold is the threshold at which 64-byte instructions are used
+  // for implementing the array copy and clear operations.
+  // The Intel platforms that supports the serialize instruction
+  // have improved implementation of 64-byte load/stores and so the default
+  // threshold is set to 0 for these platforms.
+  if (FLAG_IS_DEFAULT(CopyAVX3Threshold)) {
+    if (is_intel() && is_intel_server_family() && supports_serialize()) {
+      FLAG_SET_DEFAULT(CopyAVX3Threshold, 0);
+    } else {
+      FLAG_SET_DEFAULT(CopyAVX3Threshold, AVX3Threshold);
+    }
+  }
 }
 
 void VM_Version::print_platform_virtualization_info(outputStream* st) {
@@ -2120,17 +2132,6 @@ bool VM_Version::is_intel_cascade_lake() {
 
 bool VM_Version::is_intel_darkmont() {
   return is_intel() && is_intel_server_family() && (_model == 0xCC || _model == 0xDD);
-}
-
-// avx3_threshold() sets the threshold at which 64-byte instructions are used
-// for implementing the array copy and clear operations.
-// The Intel platforms that supports the serialize instruction
-// has improved implementation of 64-byte load/stores and so the default
-// threshold is set to 0 for these platforms.
-int VM_Version::avx3_threshold() {
-  return (is_intel_server_family() &&
-          supports_serialize() &&
-          FLAG_IS_DEFAULT(AVX3Threshold)) ? 0 : AVX3Threshold;
 }
 
 void VM_Version::clear_apx_test_state() {
