@@ -252,12 +252,7 @@ void JvmtiExtensions::register_extensions() {
     { (char*)"ucontext", JVMTI_KIND_OUT_BUF, JVMTI_TYPE_CVOID, JNI_FALSE },
     { (char*)"user_data", JVMTI_KIND_IN, JVMTI_TYPE_JLONG, JNI_FALSE }
   };
-  // EnableRequestStackTrace
-  static jvmtiParamInfo func_params4[] = {
-  };
-  // DisableRequestStackTrace
-  static jvmtiParamInfo func_params5[] = {
-  };
+  // EnableRequestStackTrace and DisableRequestStackTrace take no parameters.
 
   static jvmtiError errors[] = {
     JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
@@ -308,8 +303,8 @@ void JvmtiExtensions::register_extensions() {
     (jvmtiExtensionFunction)EnableRequestStackTrace,
     (char*)"com.sun.hotspot.functions.EnableRequestStackTrace",
     (char*)"Enables requesting a stacktrace via RequestStackTrace",
-    sizeof(func_params4)/sizeof(func_params4[0]),
-    func_params4,
+    0,
+    nullptr,
     sizeof(errors)/sizeof(jvmtiError),   // non-universal errors
     errors
   };
@@ -318,8 +313,8 @@ void JvmtiExtensions::register_extensions() {
     (jvmtiExtensionFunction)DisableRequestStackTrace,
     (char*)"com.sun.hotspot.functions.DisableRequestStackTrace",
     (char*)"Disables requesting a stacktrace via RequestStackTrace",
-    sizeof(func_params5)/sizeof(func_params5[0]),
-    func_params5,
+    0,
+    nullptr,
     sizeof(errors)/sizeof(jvmtiError),   // non-universal errors
     errors
   };
