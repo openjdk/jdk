@@ -30,6 +30,7 @@
 #include "runtime/icache.hpp"
 #include "runtime/os.hpp"
 #include "runtime/os.hpp"
+#include "utilities/integerCast.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciExceptions.hpp"
 #endif
@@ -178,8 +179,8 @@ public:
   address destination() const;
 
   void set_destination(address dest) {
-    int offset = dest - instruction_address();
-    unsigned int insn = 0b100101 << 26;
+    int offset = integer_cast<int>(dest - instruction_address());
+    int insn = 0b100101 << 26;
     assert((offset & 3) == 0, "should be");
     offset >>= 2;
     offset &= (1 << 26) - 1; // mask off insn part
