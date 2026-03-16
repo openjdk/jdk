@@ -4062,12 +4062,12 @@ void os::Linux::large_page_init() {
 
     _large_page_size = large_page_size;
 
+    // Populate _page_sizes with _large_page_size  (default large page size) even if not pre-allocated.
+    // Then, populate _page_sizes with all smaller large page sizes that have been pre-allocated.
     os::PageSizes pre_allocated = HugePages::explicit_hugepage_info().pre_allocated();
-    // Populate _page_sizes with _large_page_size (even if not pre-allocated).
-    // Then, populate _page_sizes with all smaller (large) page sizes that has been pre-allocated.
     for (size_t page_size = _large_page_size; page_size != 0; page_size = pre_allocated.next_smaller(page_size)) {
-      _page_sizes.add(page_size);
-    }
+_page_sizes.add(page_size);
+}
   }
 
   set_coredump_filter(LARGEPAGES_BIT);
