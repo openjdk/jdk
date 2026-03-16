@@ -38,6 +38,9 @@ import java.util.concurrent.locks.ReentrantLock;
  * @library /test/lib
  * @modules java.management
  * @run main/othervm ThreadInfoTest
+ *
+ * @comment Exercise getThreadInfo(ids, 0).  Depth parameter of zero means
+ * no VM operation, which could crash with Threads starting and ending.
  */
 
 public class ThreadInfoTest {
@@ -45,42 +48,33 @@ public class ThreadInfoTest {
         (com.sun.management.ThreadMXBean)ManagementFactory.getThreadMXBean();
 
     private static final int NUM_THREADS = 2;
-    static long [] ids = new long[NUM_THREADS];
-    static ThreadInfo [] infos = new ThreadInfo[NUM_THREADS];
+    static long[] ids = new long[NUM_THREADS];
+    static ThreadInfo[] infos = new ThreadInfo[NUM_THREADS];
     static volatile int count = 0;
     static int ITERATIONS = 4;
 
-    public static void main(String[] argv)
-        throws Exception {
-
+    public static void main(String[] argv) throws Exception {
         boolean replacing = false;
-        int prevCount = -1;
 
         startThreads(ids, NUM_THREADS);
-
         new MyGetThreadInfoThread(ids).start();
         new MyReplacerThread(ids).start();
-        new MyBusyThread().start();
-        for (int index = 0; index < ITERATIONS; index++) {
+        for (int i = 0; i < ITERATIONS; i++) {
             do {
-                if (count == 0) {
-                    startThreads(ids, NUM_THREADS);
-                }
-                count = showInfo(ids, infos);
-                if (count != prevCount) {
-                    System.out.println("ThreadInfos found (Threads alive): " + count);
-                }
-                prevCount = count;
+                count = countInfo(ids, infos);
+                System.out.println("Iteration " + i + ": ThreadInfos found (Threads alive): " + count);
                 goSleep(100);
             } while (count > 0);
         }
     }
 
     private static Thread newThread(int i) {
-        return new MyThread(i);
+        Thread thread = new MyThread(i);
+        thread.setDaemon(true);
+        return thread;
     }
 
-    private static void startThreads(long [] ids, int count) {
+   private static void startThreads(long[] ids, int count) {
         System.out.println("Starting " + count + " Threads...");
         Thread[] threads = new Thread[count];
         for (int i = 0; i < count; i++) {
@@ -91,12 +85,11 @@ public class ThreadInfoTest {
         System.out.println(ids);
     }
 
-    // Show ThreadInfo from array, return how many are non-null.
-    private static int showInfo(long [] ids, ThreadInfo [] info) {
+    // Count ThreadInfo from array, return how many are non-null.
+    private static int countInfo(long[] ids, ThreadInfo[] info) {
         int count = 0;
         if (info != null) {
-        int i = 0;
-        int maxToReplace = 1;
+            int i = 0;
             for (ThreadInfo ti: info) {
                 if (ti != null) {
                     count++;
@@ -106,17 +99,16 @@ public class ThreadInfoTest {
         }
         return count;
     }
-    private static int replaceThreads(long [] ids, ThreadInfo [] info, int maxToReplace) {
+
+    private static int replaceThreads(long[] ids, ThreadInfo[] info) {
         int replaced = 0;
-        int count = 0;
         if (info != null) {
             int i = 0;
             for (ThreadInfo ti: info) {
-                if (ti == null && replaced < maxToReplace) {
+                if (ti == null) {
                     Thread thread = newThread(i);
                     thread.start();
                     ids[i] = thread.getId();
-                    count++;
                     replaced++;
                 }
                 i++;
@@ -133,10 +125,11 @@ public class ThreadInfoTest {
         }
     }
 
+    // A Thread which replaces Threads in the shared array of threads.
     static class MyReplacerThread extends Thread {
-        long [] ids;
+        long[] ids;
 
-        public MyReplacerThread(long []ids) {
+        public MyReplacerThread(long[] ids) {
             this.ids = ids;
             this.setDaemon(true);
         }
@@ -145,12 +138,12 @@ public class ThreadInfoTest {
             boolean replacing = false;
             while (true) {
                 if (replacing) {
-                    int replaced = replaceThreads(ids, infos, 10);
+                    int replaced = replaceThreads(ids, infos);
                 }
-                if (count < 100) {
+                if (count < 10) {
                     replacing = true;
                 }
-                if (count > 200) {
+                if (count > 20) {
                     replacing = false;
                 }
                 goSleep(1);
@@ -158,14 +151,13 @@ public class ThreadInfoTest {
         }
     }
 
+    // A Thread which lives for a short while.
     static class MyThread extends Thread {
-        long lifeMs;
         long endTimeMs;
 
-        public MyThread(long lifeMs) {
-            super("MyThread-" + lifeMs);
-            this.lifeMs = lifeMs * lifeMs * 10;
-            endTimeMs = lifeMs + System.currentTimeMillis();
+        public MyThread(long n) {
+            super("MyThread-" + n);
+            endTimeMs = (n * n * 10) + System.currentTimeMillis();
         }
 
         public void run() {
@@ -181,10 +173,11 @@ public class ThreadInfoTest {
         }
     }
 
+    // A Thread to continually call getThreadInfo on a shared array of thread ids.
     static class MyGetThreadInfoThread extends Thread {
-        long [] ids;
+        long[] ids;
 
-        public MyGetThreadInfoThread(long [] ids) {
+        public MyGetThreadInfoThread(long[] ids) {
             this.ids = ids;
             this.setDaemon(true);
         }
@@ -196,28 +189,4 @@ public class ThreadInfoTest {
             }
         }
     }
-
-    static class MyBusyThread extends Thread {
-        List<Object> list;
-
-        public MyBusyThread() {
-            super("MyBusyThread");
-            list = new ArrayList<Object>();
-            this.setDaemon(true);
-        }
-
-        public void run() {
-            long i = 0;
-            while (true) {
-                if (i % 1000 == 0) {
-                  list = new ArrayList<Object>();
-                }
-                byte [] junk = new byte[1024*104*10];
-                list.add(junk);
-                goSleep(10);
-                i++;
-            }
-        }
-    }
 }
-
