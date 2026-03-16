@@ -134,7 +134,7 @@ static os::PageSizes scan_hugepages() {
   return pagesizes;
 }
 
-os::PageSizes filter_pre_allocated_hugepages(os::PageSizes pagesizes) {
+static os::PageSizes filter_pre_allocated_hugepages(os::PageSizes pagesizes) {
   os::PageSizes pre_allocated{};
   char filename[PATH_MAX];
   for (size_t ps = pagesizes.smallest(); ps != 0; ps = pagesizes.next_larger(ps)) {
