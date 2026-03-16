@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8329817 8334432 8339076 8341260 8362207
+ * @bug 8329817 8334432 8339076 8341260 8362207 8375224
  * @modules jdk.incubator.vector
  * @summary Basic tests of Float16 arithmetic and similar operations
  */
@@ -55,6 +55,7 @@ public class BasicFloat16ArithTests {
         checkValueOfDouble();
         checkValueOfLong();
         checkValueOfString();
+        checkToString();
         checkBaseConversionRoundTrip();
         FusedMultiplyAddTests.main();
     }
@@ -166,6 +167,16 @@ public class BasicFloat16ArithTests {
         if (Float.compare(value, expected) != 0) {
             throwRE(String.format("Didn't get expected value for %s;%nexpected %g (%a), got %g (%a)",
                                   message, expected, expected, value, value));
+        }
+    }
+
+    private static void checkString(Float16 value16, String expected, String message) {
+        String staticToString = Float16.toString(value16);
+        String instanceToString = value16.toString();
+        if (!expected.equals(staticToString) || !expected.equals(instanceToString)) {
+            throwRE(String.format(
+                    "Didn't get expected string for %s;%nexpected %s, got static %s and instance %s",
+                    message, expected, staticToString, instanceToString));
         }
     }
 
@@ -621,6 +632,36 @@ public class BasicFloat16ArithTests {
     }
 
     private static record String2Float16Case(String input, float expected) {
+    }
+
+    private static void checkToString() {
+        checkString(Float16.NaN, "NaN", "NaN");
+        checkString(POSITIVE_INFINITY, "Infinity", "+infinity");
+        checkString(NEGATIVE_INFINITY, "-Infinity", "-infinity");
+        checkString(valueOfExact(0.0f), "0.0", "+0.0");
+        checkString(valueOfExact(-0.0f), "-0.0", "-0.0");
+        checkString(valueOfExact(1.0f), "1.0", "1.0");
+        checkString(valueOfExact(-1.0f), "-1.0", "-1.0");
+        checkString(shortBitsToFloat16((short) 0x3555), "0.3333", "representative finite value");
+        checkString(shortBitsToFloat16((short) 0x03ff), "6.1E-5", "largest subnormal");
+        checkString(MIN_NORMAL, "6.104E-5", "Float16.MIN_NORMAL");
+        checkString(shortBitsToFloat16((short) 0x0401), "6.11E-5", "smallest normal above Float16.MIN_NORMAL");
+        checkString(MIN_VALUE, "6.0E-8", "Float16.MIN_VALUE");
+        checkString(shortBitsToFloat16((short) 0x0002), "1.2E-7", "second subnormal");
+        checkString(shortBitsToFloat16((short) 0x8001), "-6.0E-8", "negative Float16.MIN_VALUE");
+        checkString(shortBitsToFloat16((short) 0x83ff), "-6.1E-5", "negative largest subnormal");
+        checkString(shortBitsToFloat16((short) 0x7bfe), "6.547E4", "next-to-maximum finite value");
+        checkString(MAX_VALUE, "6.55E4", "Float16.MAX_VALUE");
+        checkString(shortBitsToFloat16((short) 0x1418), "9.99E-4", "largest value below plain notation lower bound");
+        checkString(shortBitsToFloat16((short) 0x1419), "0.001", "smallest value at plain notation lower bound");
+        checkString(shortBitsToFloat16((short) 0x141a), "0.001001", "next value above plain notation lower bound");
+        checkString(valueOf(0.001f), "0.001", "plain notation lower bound");
+        checkString(valueOf(0.000999f), "9.99E-4", "scientific notation below lower bound");
+        checkString(shortBitsToFloat16((short) 0x63cf), "999.5", "largest value below plain notation upper bound");
+        checkString(valueOfExact(999.0f), "999.0", "plain notation upper bound");
+        checkString(shortBitsToFloat16((short) 0x63d0), "1.0E3", "smallest value at plain notation upper bound");
+        checkString(shortBitsToFloat16((short) 0x63d1), "1.0005E3", "next value above plain notation upper bound");
+        checkString(valueOfExact(1000.0f), "1.0E3", "scientific notation at upper bound");
     }
 
     private static void checkBaseConversionRoundTrip() {
