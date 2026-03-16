@@ -90,7 +90,4 @@ define_pd_global(size_t,   CodeCacheMinimumUseSpace,     400*K);
 
 define_pd_global(bool,     TrapBasedRangeChecks,          true);
 
-// Ergonomics related flags
-define_pd_global(bool,     NeverActAsServerClassMachine, false);
-
 #endif // CPU_PPC_C2_GLOBALS_PPC_HPP

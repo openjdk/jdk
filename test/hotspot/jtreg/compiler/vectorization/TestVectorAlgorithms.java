@@ -556,7 +556,7 @@ public class TestVectorAlgorithms {
                   IRNode.VECTOR_MASK_CMP,                     "> 0",
                   IRNode.VECTOR_TEST,                         "> 0",
                   IRNode.STORE_VECTOR,                        "> 0"},
-        applyIfCPUFeatureOr = {"asimd", "true"})
+        applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"})
     public Object filterI_VectorAPI_v2_l2(int[] a, int[] r, int threshold) {
         return VectorAlgorithmsImpl.filterI_VectorAPI_v2_l2(a, r, threshold);
     }
@@ -566,7 +566,7 @@ public class TestVectorAlgorithms {
                   IRNode.VECTOR_MASK_CMP,                     "> 0",
                   IRNode.VECTOR_TEST,                         "> 0",
                   IRNode.STORE_VECTOR,                        "> 0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     public Object filterI_VectorAPI_v2_l4(int[] a, int[] r, int threshold) {
         return VectorAlgorithmsImpl.filterI_VectorAPI_v2_l4(a, r, threshold);
     }
@@ -647,7 +647,7 @@ public class TestVectorAlgorithms {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
                   IRNode.ADD_VI,        "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     public Object conditionalSumB_VectorAPI_v2(byte[] a) {
         return VectorAlgorithmsImpl.conditionalSumB_VectorAPI_v2(a);
     }
@@ -663,7 +663,7 @@ public class TestVectorAlgorithms {
     @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0",
                   IRNode.MUL_VF,        "> 0",
                   IRNode.SQRT_VF,       "> 0"},
-        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     public Object pieceWise2FunctionF_VectorAPI_v1(float[] a, float[] r) {
         return VectorAlgorithmsImpl.pieceWise2FunctionF_VectorAPI_v1(a, r);
     }
@@ -672,7 +672,7 @@ public class TestVectorAlgorithms {
     @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0",
                   IRNode.MUL_VF,        "> 0",
                   IRNode.SQRT_VF,       "> 0"},
-        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     public Object pieceWise2FunctionF_VectorAPI_v2(float[] a, float[] r) {
         return VectorAlgorithmsImpl.pieceWise2FunctionF_VectorAPI_v2(a, r);
     }
