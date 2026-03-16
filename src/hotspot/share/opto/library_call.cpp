@@ -2393,47 +2393,6 @@ DecoratorSet LibraryCallKit::mo_decorator_for_access_kind(AccessKind kind) {
   }
 }
 
-LibraryCallKit::SavedState::SavedState(LibraryCallKit* kit) :
-  _kit(kit),
-  _sp(kit->sp()),
-  _jvms(kit->jvms()),
-  _map(kit->clone_map()),
-  _discarded(false)
-{
-  for (DUIterator_Fast imax, i = kit->control()->fast_outs(imax); i < imax; i++) {
-    Node* out = kit->control()->fast_out(i);
-    if (out->is_CFG()) {
-      _ctrl_succ.push(out);
-    }
-  }
-}
-
-LibraryCallKit::SavedState::~SavedState() {
-  if (_discarded) {
-    _kit->destruct_map_clone(_map);
-    return;
-  }
-  _kit->jvms()->set_map(_map);
-  _kit->jvms()->set_sp(_sp);
-  _map->set_jvms(_kit->jvms());
-  _kit->set_map(_map);
-  _kit->set_sp(_sp);
-  for (DUIterator_Fast imax, i = _kit->control()->fast_outs(imax); i < imax; i++) {
-    Node* out = _kit->control()->fast_out(i);
-    if (out->is_CFG() && out->in(0) == _kit->control() && out != _kit->map() && !_ctrl_succ.member(out)) {
-      _kit->_gvn.hash_delete(out);
-      out->set_req(0, _kit->C->top());
-      _kit->C->record_for_igvn(out);
-      --i; --imax;
-      _kit->_gvn.hash_find_insert(out);
-    }
-  }
-}
-
-void LibraryCallKit::SavedState::discard() {
-  _discarded = true;
-}
-
 bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, const AccessKind kind, const bool unaligned) {
   if (callee()->is_static())  return false;  // caller must have the capability!
   DecoratorSet decorators = C2_UNSAFE_ACCESS;
