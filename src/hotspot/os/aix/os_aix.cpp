@@ -79,8 +79,6 @@
 
 // put OS-includes here (sorted alphabetically)
 #include <alloca.h>
-#include <ctype.h>
-#include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <inttypes.h>

@@ -5389,37 +5389,27 @@ void os::print_open_file_descriptors(outputStream* st) {
   DIR* dirp = opendir("/proc/self/fd");
   int fds = 0;
   struct dirent* dentp;
-  const int TIMEOUT_MS = 50;
-  struct timespec start, now;
+  const jlong TIMEOUT_NS = 50000000L;  // 50 ms in nanoseconds
   bool timed_out = false;
-  int status = clock_gettime(CLOCK_MONOTONIC, &start);
-  assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
-
-  if (dirp == nullptr) {
-    st->print_cr("Open File Descriptors: unknown");
-    return;
-  }
 
   // limit proc file read to 50ms
-  while ((dentp = readdir(dirp)) != nullptr) {
+  jlong start = os::javaTimeNanos();
+  assert(dirp != nullptr, "No proc fs?");
+  while ((dentp = readdir(dirp)) != nullptr && !timed_out) {
     if (isdigit(dentp->d_name[0])) fds++;
     if (fds % 100 == 0) {
-      int status = clock_gettime(CLOCK_MONOTONIC, &now);
-      assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
-      long elapsed_ms = (now.tv_sec - start.tv_sec) * 1000L +
-                        (now.tv_nsec - start.tv_nsec) / 1000000L;
-      if (elapsed_ms > TIMEOUT_MS) {
+      jlong now = os::javaTimeNanos();
+      if ((now - start) > TIMEOUT_NS) {
         timed_out = true;
-        break;
       }
     }
   }
 
   closedir(dirp);
   if (timed_out) {
-    st->print_cr("Open File Descriptors: > %d", fds - 1); // minus the opendir fd itself
+    st->print_cr("Open File Descriptors: > %d", fds);
   } else {
-    st->print_cr("Open File Descriptors: %d", fds - 1);
+    st->print_cr("Open File Descriptors: %d", fds);
   }
 }
 
