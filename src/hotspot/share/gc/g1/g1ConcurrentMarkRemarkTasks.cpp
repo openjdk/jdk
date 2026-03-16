@@ -243,7 +243,7 @@ static int compare_region_gc_efficiency(G1HeapRegion** rr1, G1HeapRegion** rr2) 
 }
 
 GrowableArrayCHeap<G1HeapRegion*, mtGC>* G1UpdateRegionLivenessAndSelectForRebuildTask::sort_and_prune_old_selected() {
-  // Nothing to do for the humongous candidates. Old selected need to be pruned.
+  // Nothing to do for the humongous candidates here. Old selected need to be pruned.
 
   if (_old_selected_for_rebuild.length() != 0) {
     _old_selected_for_rebuild.sort(compare_region_gc_efficiency);

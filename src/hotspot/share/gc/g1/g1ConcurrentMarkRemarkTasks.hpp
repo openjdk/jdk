@@ -64,6 +64,9 @@ public:
     return (uint)_old_selected_for_rebuild.length() + (uint)_humongous_selected_for_rebuild.length();
   }
 
+  // Sort selected old regions by efficiency and prune them based on G1HeapWastePercent.
+  // This pruning improves rebuild time in addition to remembered set memory usage.
+  // Returns the set of regions selected in efficiency order.
   GrowableArrayCHeap<G1HeapRegion*, mtGC>* sort_and_prune_old_selected();
 
   static uint desired_num_workers(uint num_regions);
