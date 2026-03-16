@@ -33,6 +33,7 @@
 #include "oops/compressedOops.hpp"
 #include "oops/compressedKlass.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/integerCast.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 class OopMap;
@@ -512,16 +513,16 @@ private:
 
 public:
 
-  void push(RegSet regs, Register stack) { if (regs.bits()) push(regs.bits(), stack); }
-  void pop(RegSet regs, Register stack) { if (regs.bits()) pop(regs.bits(), stack); }
+  void push(RegSet regs, Register stack) { if (regs.bits()) push(integer_cast<unsigned int>(regs.bits()), stack); }
+  void pop(RegSet regs, Register stack) { if (regs.bits()) pop(integer_cast<unsigned int>(regs.bits()), stack); }
 
-  void push_fp(FloatRegSet regs, Register stack, FpPushPopMode mode = PushPopFull) { if (regs.bits()) push_fp(regs.bits(), stack, mode); }
-  void pop_fp(FloatRegSet regs, Register stack, FpPushPopMode mode = PushPopFull) { if (regs.bits()) pop_fp(regs.bits(), stack, mode); }
+  void push_fp(FloatRegSet regs, Register stack, FpPushPopMode mode = PushPopFull) { if (regs.bits()) push_fp(integer_cast<unsigned int>(regs.bits()), stack, mode); }
+  void pop_fp(FloatRegSet regs, Register stack, FpPushPopMode mode = PushPopFull) { if (regs.bits()) pop_fp(integer_cast<unsigned int>(regs.bits()), stack, mode); }
 
   static RegSet call_clobbered_gp_registers();
 
-  void push_p(PRegSet regs, Register stack) { if (regs.bits()) push_p(regs.bits(), stack); }
-  void pop_p(PRegSet regs, Register stack) { if (regs.bits()) pop_p(regs.bits(), stack); }
+  void push_p(PRegSet regs, Register stack) { if (regs.bits()) push_p(integer_cast<unsigned int>(regs.bits()), stack); }
+  void pop_p(PRegSet regs, Register stack) { if (regs.bits()) pop_p(integer_cast<unsigned int>(regs.bits()), stack); }
 
   // Push and pop everything that might be clobbered by a native
   // runtime call except rscratch1 and rscratch2.  (They are always
