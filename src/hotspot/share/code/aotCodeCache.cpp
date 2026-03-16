@@ -2260,7 +2260,10 @@ void AOTCodeAddressTable::init_extrs() {
 #ifndef ZERO
 #if defined(AMD64) || defined(AARCH64) || defined(RISCV64)
   ADD_EXTERNAL_ADDRESS(MacroAssembler::debug64);
-#endif
+#endif // defined(AMD64) || defined(AARCH64) || defined(RISCV64)
+#if defined(AMD64)
+  ADD_EXTERNAL_ADDRESS(warning);
+#endif // defined(AMD64)
 #endif // ZERO
 
   // addresses of fields in AOT runtime constants area
