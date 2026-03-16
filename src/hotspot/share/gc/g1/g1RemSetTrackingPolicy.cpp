@@ -23,11 +23,18 @@
  */
 
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1CollectionSetChooser.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1RemSetTrackingPolicy.hpp"
 #include "runtime/safepoint.hpp"
+
+static size_t mixed_gc_live_threshold_bytes() {
+  return G1HeapRegion::GrainBytes * (size_t)G1MixedGCLiveThresholdPercent / 100;
+}
+
+static bool region_occupancy_low_enough_for_evac(size_t live_bytes) {
+  return live_bytes < mixed_gc_live_threshold_bytes();
+}
 
 void G1RemSetTrackingPolicy::update_at_allocate(G1HeapRegion* r) {
   assert(r->is_young() || r->is_humongous() || r->is_old(),
@@ -75,7 +82,8 @@ bool G1RemSetTrackingPolicy::update_old_before_rebuild(G1HeapRegion* r) {
 
   bool selected_for_rebuild = false;
 
-  if (G1CollectionSetChooser::region_occupancy_low_enough_for_evac(r->live_bytes()) &&
+  if (region_occupancy_low_enough_for_evac(r->live_bytes()) &&
+      !G1CollectedHeap::heap()->is_old_gc_alloc_region(r) &&
       !r->rem_set()->is_tracked()) {
     r->rem_set()->set_state_updating();
     selected_for_rebuild = true;

@@ -245,8 +245,7 @@ public:
 
   // Merge collection set candidates from marking into the current marking candidates
   // (which needs to be empty).
-  void set_candidates_from_marking(G1HeapRegion** candidates,
-                                   uint num_candidates);
+  void set_candidates_from_marking(GrowableArrayCHeap<G1HeapRegion*, mtGC>* selected);
   // The most recent length of the list that had been merged last via
   // set_candidates_from_marking(). Used for calculating minimum collection set
   // regions.
