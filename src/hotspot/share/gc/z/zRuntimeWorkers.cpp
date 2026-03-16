@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ ZRuntimeWorkers::ZRuntimeWorkers()
   log_info_p(gc, init)("Runtime Workers: %u", _workers.max_workers());
 
   // Initialize worker threads
-  _workers.initialize_workers(false /* concurrent */);
+  _workers.initialize_workers();
   _workers.set_active_workers(_workers.max_workers());
   if (_workers.active_workers() != _workers.max_workers()) {
     vm_exit_during_initialization("Failed to create ZRuntimeWorkers");

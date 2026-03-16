@@ -35,7 +35,7 @@ class G1MapperWorkers : AllStatic {
   static WorkerThreads* workers() {
     if (_workers == nullptr) {
       _workers = new WorkerThreads("G1 Small Workers", MaxWorkers);
-      _workers->initialize_workers(false /* concurrent */);
+      _workers->initialize_workers();
       _workers->set_active_workers(MaxWorkers);
     }
     return _workers;

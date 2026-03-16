@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2022, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -265,12 +265,12 @@ jint ShenandoahHeap::initialize() {
   if (_workers == nullptr) {
     vm_exit_during_initialization("Failed necessary allocation.");
   } else {
-    _workers->initialize_workers(true /* concurrent */);
+    _workers->initialize_workers();
   }
 
   if (ParallelGCThreads > 1) {
     _safepoint_workers = new ShenandoahWorkerThreads("Safepoint Cleanup Thread", ParallelGCThreads);
-    _safepoint_workers->initialize_workers(false /* concurrent */);
+    _safepoint_workers->initialize_workers();
   }
 
   //

@@ -1193,7 +1193,7 @@ class CHTWorkers : AllStatic {
   static WorkerThreads* workers() {
     if (_workers == nullptr) {
       _workers = new WorkerThreads("CHT Workers", MaxWorkers);
-      _workers->initialize_workers(false /* concurrent */);
+      _workers->initialize_workers();
       _workers->set_active_workers(MaxWorkers);
     }
     return _workers;

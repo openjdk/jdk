@@ -36,8 +36,7 @@ WorkerTaskDispatcher::WorkerTaskDispatcher() :
     _started(0),
     _not_finished(0),
     _start_semaphore(),
-    _end_semaphore(),
-    _worker_priority(NearMaxPriority) {}
+    _end_semaphore() {}
 
 void WorkerTaskDispatcher::coordinator_distribute_task(WorkerTask* task, uint num_workers) {
   // No workers are allowed to read the state variables until they have been signaled.
@@ -89,11 +88,8 @@ WorkerThreads::WorkerThreads(const char* name, uint max_workers) :
     _active_workers(0),
     _dispatcher() {}
 
-void WorkerThreads::initialize_workers(bool concurrent) {
+void WorkerThreads::initialize_workers() {
   const uint initial_active_workers = UseDynamicNumberOfGCThreads ? 1 : _max_workers;
-  // Avoid priority inversion when running in concurrent mode
-  ThreadPriority priority = concurrent ? NormPriority : NearMaxPriority;
-  _dispatcher.set_worker_priority(priority);
   if (set_active_workers(initial_active_workers) != initial_active_workers) {
     vm_exit_during_initialization();
   }
@@ -214,8 +210,6 @@ WorkerThread::WorkerThread(const char* name_prefix, uint name_suffix, WorkerTask
 }
 
 void WorkerThread::run() {
-  os::set_priority(this, _dispatcher->worker_priority());
-
   while (true) {
     _dispatcher->worker_run_task();
   }

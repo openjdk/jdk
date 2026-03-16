@@ -546,7 +546,7 @@ void G1ConcurrentMark::fully_initialize() {
   _max_concurrent_workers = ConcGCThreads;
 
   _concurrent_workers = new WorkerThreads("G1 Conc", _max_concurrent_workers);
-  _concurrent_workers->initialize_workers(true /* concurrent */);
+  _concurrent_workers->initialize_workers();
   _num_concurrent_workers = _concurrent_workers->active_workers();
 
   if (!_global_mark_stack.initialize()) {

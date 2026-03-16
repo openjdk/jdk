@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ WorkerThreads* OopStorageParIterPerf::_workers = nullptr;
 WorkerThreads* OopStorageParIterPerf::workers() const {
   if (_workers == nullptr) {
     WorkerThreads* wg = new WorkerThreads("OopStorageParIterPerf workers", _num_workers);
-    wg->initialize_workers(false /* concurrent */);
+    wg->initialize_workers();
     wg->set_active_workers(_num_workers);
     _workers = wg;
   }
