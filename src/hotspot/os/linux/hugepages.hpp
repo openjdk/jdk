@@ -47,7 +47,7 @@ class ExplicitHugePageSupport {
   // in /sys/kernel/mm/hugepages/hugepage-xxx)
   os::PageSizes _pagesizes;
 
-  // Above pages filtered for where the contents of file nr_hugepages is larger than zero
+  // Above pages filtered for where the contents of file nr_hugepages was larger than zero
   os::PageSizes _pre_allocated;
 
   // Contains the default hugepage. The "default hugepage size" is the one that
