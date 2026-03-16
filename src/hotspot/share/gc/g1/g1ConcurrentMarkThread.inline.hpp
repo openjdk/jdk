@@ -42,7 +42,7 @@ inline double G1ConcurrentMarkThread::worker_threads_cpu_time_s() {
 
 inline bool G1ConcurrentMarkThread::is_in_full_concurrent_cycle() const {
   ServiceState state = _state;
-  return (state >= FullCycleMarking && state <= FullCycleResetForNextCycle);
+  return (state == FullCycleMarking || state == FullCycleRebuildOrScrub || state == FullCycleResetForNextCycle);
 }
 
 inline void G1ConcurrentMarkThread::set_idle() {
