@@ -124,7 +124,7 @@ public interface DocSourcePositions extends SourcePositions {
 
     /**
      * {@return the ending position of the given {@link Tree}. If the ending position is not available, returns
-     * {@link javax.tools.Diagnostic#NOPOS}.
+     * {@link javax.tools.Diagnostic#NOPOS}}
      *
      * <p>The given tree should be under the given comment tree. The returned position must be at the end of the yield
      * of this tree, that is for any sub-tree of this tree, the following must hold:
