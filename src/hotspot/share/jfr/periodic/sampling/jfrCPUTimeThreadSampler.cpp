@@ -27,13 +27,13 @@
 
 #if defined(LINUX)
 #include "jfr/periodic/sampling/jfrThreadSampling.hpp"
-#include "prims/jvmtiExtensions.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "jfrfiles/jfrEventClasses.hpp"
 #include "memory/resourceArea.hpp"
+#include "prims/jvmtiExtensions.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/osThread.hpp"
