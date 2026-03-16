@@ -91,13 +91,13 @@ final class StringUTF16 {
     }
 
     /**
-     * Inserts the given code point to the specified position of the provided
+     * Writes the given code point to the specified position of the provided
      * UTF-16 string byte array.
      * <p>
      * <b>WARNING: This method does not perform any input validations.</b>
      *
      * @param val a UTF-16 string byte array
-     * @param index the index of the character to insert the code point to
+     * @param index the index of the character to write the code point to
      * @param c a code point
      */
     // vmIntrinsics::_putCharStringU
