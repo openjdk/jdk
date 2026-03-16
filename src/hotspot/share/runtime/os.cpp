@@ -1912,17 +1912,7 @@ void os::trace_page_sizes_for_requested_size(const char* str,
 // as was done for logical processors here, or replicate and
 // specialize this method for each platform.  (Or fix os to have
 // some inheritance structure and use subclassing.  Sigh.)
-// If you want some platform to always or never behave as a server
-// class machine, change the setting of AlwaysActAsServerClassMachine
-// and NeverActAsServerClassMachine in globals*.hpp.
 bool os::is_server_class_machine() {
-  // First check for the early returns
-  if (NeverActAsServerClassMachine) {
-    return false;
-  }
-  if (AlwaysActAsServerClassMachine) {
-    return true;
-  }
   // Then actually look at the machine
   bool  result                                    = false;
   const unsigned int server_processors            = 2;
