@@ -113,7 +113,7 @@ public final class Argon2Impl {
         }
         int memory = checkMax(spec.memoryKiB(), MEMORY_MAX,
                 "Memory size %d exceeds SunJCE's maximum %d");
-        int parallelism = checkMax(spec.parallelism(), P_MAX,
+        int lanes = checkMax(spec.parallelism(), P_MAX,
                 "Parallelism value %d exceeds SunJCE's maximum %d");
         int tagLen = spec.tagLen();
         int iterations = spec.iterations();
@@ -128,11 +128,11 @@ public final class Argon2Impl {
             // Allocate 72 bytes for storing initialHash(h0) since H_0 is
             // appended w/ additional 8 bytes for generating the first 2
             // blocks in fillFirstTwoColumns(...).
-            h0Plus8Bytes = initialHash(parallelism, tagLen, memory,
+            h0Plus8Bytes = initialHash(lanes, tagLen, memory,
                 iterations, Version.V13, type, msg, nonce, secret, ad);
 
             // 2) Allocate memory m' - stored inside Argon2Instance
-            Argon2Instance instance = new Argon2Instance(type, parallelism,
+            Argon2Instance instance = new Argon2Instance(type, lanes,
                     memory, iterations);
             instance.fillFirstTwoColumns(h0Plus8Bytes);
             instance.fillMemoryBlocks();
@@ -152,7 +152,7 @@ public final class Argon2Impl {
         return value;
     }
 
-    private static byte[] initialHash(int parallelism, int tagLen, int memory,
+    private static byte[] initialHash(int lanes, int tagLen, int memory,
             int iterations, Version v, Type type, byte[] msg, byte[] nonce,
             byte[] secret, byte[] ad) {
         // 1) Initial hashing
@@ -164,7 +164,7 @@ public final class Argon2Impl {
 
         Blake2b bl = new Blake2b(ARGON2_PREHASH_DIGEST_LENGTH);
         byte[] in = new byte[24];
-        i2bLittle4(parallelism, in, 0);
+        i2bLittle4(lanes, in, 0);
         i2bLittle4(tagLen, in, 4);
         i2bLittle4(memory, in, 8);
         i2bLittle4(iterations, in, 12);
@@ -196,14 +196,14 @@ public final class Argon2Impl {
         private final int blockNum;
         private final Block[][] b;
 
-        Argon2Instance(Type type, int parallelism, int memory, int passes) {
+        Argon2Instance(Type type, int lanes, int memory, int passes) {
             this.type = type;
-            this.lanes = parallelism;
-            this.segLen = memory / (parallelism * 4);
-            this.columns = segLen * 4;
-            this.blockNum = this.columns * this.lanes;
+            this.lanes = lanes;
+            this.segLen = memory / (lanes * ARGON2_SLICE_NUM);
+            this.columns = segLen * ARGON2_SLICE_NUM;
+            this.blockNum = columns * lanes;
             this.passes = passes;
-            this.b = new Block[this.lanes][this.columns];
+            this.b = new Block[lanes][columns];
         }
 
         void fillFirstTwoColumns(byte[] h0Plus8Bytes) {
