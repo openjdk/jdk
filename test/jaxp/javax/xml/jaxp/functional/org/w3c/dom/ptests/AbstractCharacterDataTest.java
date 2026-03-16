@@ -22,21 +22,20 @@
  */
 package org.w3c.dom.ptests;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.w3c.dom.DOMException.INDEX_SIZE_ERR;
-import static org.w3c.dom.ptests.DOMTestUtil.DOMEXCEPTION_EXPECTED;
-
-import java.io.IOException;
-
-import javax.xml.parsers.ParserConfigurationException;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.w3c.dom.CharacterData;
 import org.w3c.dom.DOMException;
 import org.xml.sax.SAXException;
+
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.w3c.dom.DOMException.INDEX_SIZE_ERR;
+import static org.w3c.dom.ptests.DOMTestUtil.DOMEXCEPTION_EXPECTED;
 
 /*
  * @summary common test for the CharacterData Interface

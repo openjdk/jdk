@@ -23,12 +23,9 @@
 
 package test.gaptest;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.parallel.Execution;
-import org.junit.jupiter.api.parallel.ExecutionMode;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.XMLFilterImpl;
@@ -46,7 +43,11 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static jaxp.library.JAXPTestUtilities.clearSystemProperty;
+import static jaxp.library.JAXPTestUtilities.setSystemProperty;
+import static org.testng.Assert.assertTrue;
+
+ssertions.assertTrue;
 
 /*
  * @test

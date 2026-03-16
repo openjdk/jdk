@@ -33,13 +33,18 @@ import java.nio.file.Path;
 public class SAXTestConst {
     private static final Path TEST_SRC = Path.of(System.getProperty("test.src")).toAbsolutePath();
 
+    private static String forwardSlashDir(Path p) {
+        // Convention in these tests is to include trailing '/' in directory strings.
+        return p.toString().replace(File.separatorChar, '/') + '/';
+    }
+
     /**
      * XML source file directory.
      */
-    public static final String XML_DIR = TEST_SRC.resolveSibling("xmlfiles").toString() + File.separatorChar;
+    public static final String XML_DIR = forwardSlashDir(TEST_SRC.resolveSibling("xmlfiles"));
 
     /**
      * Golden validation files directory.
      */
-    public static final String GOLDEN_DIR = TEST_SRC.resolveSibling("xmlfiles").resolve("out").toString() + File.separatorChar;
+    public static final String GOLDEN_DIR = XML_DIR + "out/";
 }
