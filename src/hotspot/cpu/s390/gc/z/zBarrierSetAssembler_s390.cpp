@@ -166,7 +166,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   // __ z_la(scratch, src);
 
   // Load oop at address
-  __ z_lg(dst, Address(src, 0));
+  __ z_lg(dst, src);
 
   const bool on_non_strong =
       (decorators & ON_WEAK_OOP_REF) != 0 ||
@@ -241,32 +241,35 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
       // A not relocatable object could have spurious raw null pointers in its fields after
       // getting promoted to the old generation.
       __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
-      __ z_lhi(rnew_zpointer, barrier_Relocation::unpatched);
-      __ z_chy(rnew_zpointer, ref_addr);
+      __ z_lghi(rnew_zpointer, barrier_Relocation::unpatched);
+      // TODO: Check if this will work or else implement z_chy
+      __ z_ch(rnew_zpointer, ref_addr);
     } else {
       // Stores on relocatable objects never need to deal with raw null pointers in fields.
       // Raw null pointers may only exist in the young generation, as they get pruned when
       // the object is relocated to old. And no pre-write barrier needs to perform any action
       // in the young generation.
       __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreBadBeforeLoad);
-      __ z_lhi(rnew_zpointer, barrier_Relocation::unpatched);
+      __ z_lghi(rnew_zpointer, barrier_Relocation::unpatched);
       // RuntimeTODO: check if it is correct, // z_cg(rnew_zpointer, ref_addr);
-      __ z_chy(rnew_zpointer, ref_addr);
+      // TODO: Check if this will work or else implement z_chy
+      __ z_ch(rnew_zpointer, ref_addr);
     }
     __ z_brne(medium_path);
     __ bind(medium_path_continuation);
     assert_different_registers(rnew_zaddress, rnew_zpointer);
     __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
-    __ z_lhi(rnew_zpointer, barrier_Relocation::unpatched);
+    __ z_lghi(rnew_zpointer, barrier_Relocation::unpatched);
     // TODO: check for the condition rnew_zaddress == noreg i.e. nullptr
     __ z_sllg(rnew_zaddress, rnew_zaddress, ZPointerLoadShift);
     __ z_ogr(rnew_zpointer, rnew_zaddress);
   } else {
     //TODO: check if this assert failure is necssary
     assert(!is_atomic, "atomics outside of nmethods not supported");
-    __ z_lg(rnew_zpointer, Address(ref_addr, 0));
+    __ z_lg(rnew_zpointer, ref_addr);
     //TODO: check if we want to compare 32 bits or 64 bits
-    __ z_chy(rnew_zpointer, Address(Z_thread, ZThreadLocalData::store_bad_mask_offset()));
+      // TODO: Check if this will work or else implement z_chy
+    __ z_ch(rnew_zpointer, Address(Z_thread, ZThreadLocalData::store_bad_mask_offset()));
     __ z_brne(medium_path);
     __ bind(medium_path_continuation);
     if (rnew_zaddress == noreg) {

@@ -37,7 +37,7 @@ source %{
 static void z_color(MacroAssembler* masm, const MachNode* node, Register dst, Register src) {
   assert_different_registers(src, dst);
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
-  __ z_lhi(dst, barrier_Relocation::unpatched);
+  __ z_lghi(dst, barrier_Relocation::unpatched);
   __ z_sllg(src, src, ZPointerLoadShift);
   __ z_ogr(dst, src);
 }
@@ -46,9 +46,10 @@ static void z_uncolor(MacroAssembler* masm, const MachNode* node, Register ref) 
   __ z_srlg(ref, ref, ZPointerLoadShift);
 }
 
+// Purpose: Compare the reference with the mask and jump to the runtime if not equal, else just uncolor it
 static void z_keep_alive_load_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register ref) {
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadBeforeTest);
-  __ z_lghi(ref, barrier_Relocation::unpatched);
+  __ z_cghi(ref, barrier_Relocation::unpatched);
 
   ZLoadBarrierStubC2* const stub = ZLoadBarrierStubC2::create(node, ref_addr, ref);
   __ z_brne(*stub->entry());
@@ -58,6 +59,7 @@ static void z_keep_alive_load_barrier(MacroAssembler* masm, const MachNode* node
   __ bind(*stub->continuation());
 }
 
+// Purpose: Check is pointer is good if it is just uncolor it else call the runtime
 static void z_load_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register ref) {
   Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
   const bool on_non_strong =
@@ -77,7 +79,7 @@ static void z_load_barrier(MacroAssembler* masm, const MachNode* node, Address r
   // TODO: Check what is the correct way here, all architecture have different implementations and here i am following aarch64
   Label good;
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBeforeLoad);
-  __ z_chi(ref, barrier_Relocation::unpatched);
+  __ z_cghi(ref, barrier_Relocation::unpatched);
   __ z_bre(good);
   __ z_brul(*stub->entry());
   __ bind(good);
@@ -86,6 +88,7 @@ static void z_load_barrier(MacroAssembler* masm, const MachNode* node, Address r
   __ bind(*stub->continuation());
 }
 
+//Purpose: Check if oop is initialized if it not just color it else call store_barrier_fast
 static void z_store_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register rnew_zaddress, Register rnew_zpointer, bool is_atomic) {
   Assembler::InlineSkippedInstructionsCounter skipped_counter(masm);
   if (node->barrier_data() == ZBarrierElided) {
