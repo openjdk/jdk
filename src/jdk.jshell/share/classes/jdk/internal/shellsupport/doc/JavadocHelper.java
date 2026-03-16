@@ -744,7 +744,7 @@ public abstract class JavadocHelper implements AutoCloseable {
                         }
                     };
                 DocCommentTree tree = trees.getDocCommentTree(fo);
-                offset += (int) trees.getSourcePositions().getStartPosition(null, tree, tree);
+                offset += (int) trees.getSourcePositions().getStartPosition(tree, tree);
                 return Pair.of(tree, offset);
             } catch (URISyntaxException ex) {
                 throw new IllegalStateException(ex);
