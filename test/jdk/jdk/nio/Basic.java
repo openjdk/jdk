@@ -123,6 +123,7 @@ public class Basic {
     /**
      * Basic test of channel registered with Selector
      */
+    @Test
     public void testSelect() throws IOException {
         Selector sel = Selector.open();
         try (Connection connection = Connection.open()) {
@@ -182,6 +183,7 @@ public class Basic {
     /**
      * Test that the SelectableChannelCloser implCloseChannel method is invoked.
      */
+    @Test
     public void testImplCloseChannel() throws IOException {
         try (Connection connection = Connection.open()) {
             FileDescriptor fd = getFD(connection.channel1());
@@ -205,6 +207,7 @@ public class Basic {
     /**
      * Test that the SelectableChannelCloser implReleaseChannel method is invoked.
      */
+    @Test
     public void testImplReleaseChannel() throws IOException {
         Selector sel = Selector.open();
         try (Connection connection = Connection.open()) {
