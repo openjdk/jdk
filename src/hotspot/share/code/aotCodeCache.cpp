@@ -576,16 +576,16 @@ void AOTCodeCache::Config::record(uint cpu_features_offset) {
     set_x86_flag(x86_enableX86ECoreOpts);
   }
   if (UseUnalignedLoadStores) {
-    set_x86_flags(x86_useUnalignedLoadStores);
+    set_x86_flag(x86_useUnalignedLoadStores);
   }
   _x86_use_intrinsics_flags            = 0;
   if (UseAVX) {
-    set_x86_use_flag(x86_useAVX);
+    set_x86_flag(x86_useAVX);
   }
   if (UseAPX) {
-    set_x86_use_flag(x86_useAPX);
+    set_x86_flag(x86_useAPX);
   }
-  if (UseLibmIntrinsics) {
+  if (UseLibmIntrinsic) {
     set_x86_use_flag(x86_useLibm);
   }
   if (UseIntPolyIntrinsics) {
@@ -862,26 +862,26 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
   }
 
   // change to EnableX86ECoreOpts may affect validity of nmethods
-  if (test_x86_flags(x86_enableX86ECoreOpts) != EnableX86ECoreOpts) {
+  if (test_x86_flag(x86_enableX86ECoreOpts) != EnableX86ECoreOpts) {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with EnableX86ECoreOpts = %s vs current %s", (EnableX86ECoreOpts ? "false" : "true"), (EnableX86ECoreOpts ? "true" : "false"));
     return false;
   }
   // switching off UseUnalignedLoadStores can affect validity of fill
   // stubs
-  if (test_x86_flags(x86_useUnalignedLoadStores) && !UseUnalignedLoadStores) {
+  if (test_x86_flag(x86_useUnalignedLoadStores) && !UseUnalignedLoadStores) {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseUnalignedLoadStores = true vs current = false");
     return false;
   }
 
   // check x86-specific intrinsic use settings are compatible
 
-  // change to useLibmIntrinsics  may affect validity of stubs
-  if (test_x86_use_flags(x86_useLibm) != ) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseLibmIntrinsics = %s vs current %s", (UseLibmIntrinsics ? "false" : "true"), (UseLibmIntrinsics ? "true" : "false"));
+  // change to useLibmIntrinsic  may affect validity of stubs
+  if (test_x86_use_flag(x86_useLibm) != UseLibmIntrinsic) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseLibmIntrinsic = %s vs current %s", (UseLibmIntrinsic ? "false" : "true"), (UseLibmIntrinsic ? "true" : "false"));
     return false;
   }
   // change to  may affect validity of nmethods
-  if (test_x86_use_flags(x86_useIntPoly) != UseIntPolyIntrinsics) {
+  if (test_x86_use_flag(x86_useIntPoly) != UseIntPolyIntrinsics) {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseIntPolyIntrinsics = %s vs current %s", (UseIntPolyIntrinsics ? "false" : "true"), (UseIntPolyIntrinsics ? "true" : "false"));
     return false;
   }

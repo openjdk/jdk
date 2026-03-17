@@ -340,7 +340,7 @@ protected:
       x86_none                   = 0,
       x86_enableX86ECoreOpts     = 1,
       x86_useUnalignedLoadStores = 2,
-      x86_useAVX                 = 4
+      x86_useAVX                 = 4,
       x86_useAPX                 = 8
     };
     uint _x86_flags;
