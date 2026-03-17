@@ -59,7 +59,7 @@ public class TestCheckCastPPRawOopSchedulingAtSafepoint {
                 g[d][(int) e] = d;
                 synchronized (new Test()) {}
             } while (++e < 5);
-        } 
+        }
         for (int i = 0; i < Test.a; ++i) {
             for (int j = 0; j < Test.a ; ++j) {
                 Test.c += g[i][j];
