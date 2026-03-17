@@ -1552,7 +1552,7 @@ bool LibraryCallKit::inline_string_toBytesU() {
   Node* newcopy = nullptr;
 
   // Set the original stack and the reexecute bit for the interpreter to reexecute
-  // the bytecode that invokes StringUTF16.toBytes() if deoptimization happens.
+  // the bytecode that invokes StringUTF16.toBytes0() if deoptimization happens.
   { PreserveReexecuteState preexecs(this);
     jvms()->set_should_reexecute(true);
 
@@ -1624,6 +1624,7 @@ bool LibraryCallKit::inline_string_toBytesU() {
 //------------------------inline_string_getCharsU--------------------------
 // public void StringUTF16.getChars0(byte[] src, int srcBegin, int srcEnd, char dst[], int dstBegin)
 bool LibraryCallKit::inline_string_getCharsU() {
+  assert(callee()->signature()->size() == 5, "StringUTF16.getChars0() has 5 arguments");
   // Get the arguments.
   Node* src       = argument(0);
   Node* src_begin = argument(1);
@@ -1702,9 +1703,16 @@ bool LibraryCallKit::inline_string_getCharsU() {
 // static void StringUTF16.putChar(byte[] val, int index, int c)
 // static char StringUTF16.getChar(byte[] val, int index)
 bool LibraryCallKit::inline_string_char_access(bool is_store) {
+  Node* ch;
+  if (is_store) {
+    assert(callee()->signature()->size() == 3, "StringUTF16.putChar() has 3 arguments");
+    ch = argument(2);
+  } else {
+    assert(callee()->signature()->size() == 2, "StringUTF16.getChar() has 2 arguments");
+    ch = nullptr;
+  }
   Node* value  = argument(0);
   Node* index  = argument(1);
-  Node* ch = is_store ? argument(2) : nullptr;
 
   // This intrinsic accesses byte[] array as char[] array. Computing the offsets
   // correctly requires matched array shapes.
