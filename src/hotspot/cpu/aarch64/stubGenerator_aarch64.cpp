@@ -2944,6 +2944,8 @@ class StubGenerator: public StubCodeGenerator {
     if (start != nullptr) {
       return start;
     }
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, stub_id);
     start = __ pc();
       __ leave();
       __ mov(r0, 0);
