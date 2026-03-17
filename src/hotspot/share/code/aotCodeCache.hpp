@@ -118,7 +118,7 @@ public:
 
   static bool is_valid_entry_kind(Kind kind) { return kind > None && kind < Kind_count; }
   static bool is_blob(Kind kind) { return kind == SharedBlob || kind == C1Blob || kind == C2Blob || kind == StubGenBlob; }
-  static bool is_single_stub_blob(Kind kind) { return kind == SharedBlob || kind == C1Blob || kind == C2Blob || kind == StubGenBlob; }
+  static bool is_single_stub_blob(Kind kind) { return kind == SharedBlob || kind == C1Blob || kind == C2Blob; }
   static bool is_multi_stub_blob(Kind kind) { return kind == StubGenBlob; }
   static bool is_adapter(Kind kind) { return kind == Adapter; }
 };
