@@ -818,7 +818,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
       cb = nm;
       if (compile_state == nullptr) {
         // This compile didn't come through the CompileBroker so perform the printing here
-        DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, compiler == nullptr || compiler->is_c1() ? CompLevel_simple : CompLevel_full_optimization); // TODO kshroko: JVMCI == C2 or C1 here?
+        DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, compiler == nullptr || compiler->is_c1() ? CompLevel_simple : CompLevel_full_optimization);
         nm->maybe_print_nmethod(directive);
         DirectivesStack::release(directive);
 

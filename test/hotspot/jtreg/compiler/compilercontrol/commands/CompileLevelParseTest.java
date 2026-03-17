@@ -28,7 +28,7 @@
  * @summary Test if the following CompileCommand options support compilation
  *          level bitmask argument: break, compileonly, exclude, print
  * @library /test/lib
- * @run driver compiler.compilercontrol.commands.CompileLevelParsingTest
+ * @run driver compiler.compilercontrol.commands.CompileLevelParseTest
  */
 
 package compiler.compilercontrol.commands;
@@ -37,7 +37,7 @@ import jdk.test.lib.process.ProcessTools;
 
 import java.util.List;
 
-public class CompileLevelParsingTest {
+public class CompileLevelParseTest {
     private final static List<String> commandsWithCompileLevel = List.of("break", "compileonly", "exclude", "print");
     private final static List<String> compLevels = List.of("0", "7", "8", "15");
     private static final String DEFAULT_COMP_LEVEL = "15";
@@ -54,6 +54,12 @@ public class CompileLevelParsingTest {
                         .shouldHaveExitValue(0)
                         .shouldNotContain("CompileCommand: An error occurred during parsing")
                         .shouldContain("CompileCommand: " + cmd + " " + METHOD_EXP + " intx " + cmd + " = " + level); // should be registered
+            }
+            for (String incorrectLevel : List.of("c1", "true", "false")) {
+                ProcessTools.executeTestJava("-XX:CompileCommand=" + cmd + "," + METHOD_EXP + "," + incorrectLevel, "-version")
+                        .shouldHaveExitValue(1)
+                        .shouldContain("CompileCommand: An error occurred during parsing")
+                        .shouldNotContain("CompileCommand: " + cmd + " " + METHOD_EXP + " intx " + cmd + " = " + incorrectLevel);
             }
         }
     }

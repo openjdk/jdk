@@ -794,13 +794,6 @@ static bool parseMemStat(const char* line, uintx& value, int& bytes_read, char* 
   return false;
 }
 
-static bool parse_optional_int(const char* line, intx& value, int& bytes_read, uintx default_value) {
-  if (sscanf(line, "%zd%n", &value, &bytes_read) < 1) {
-    value = default_value;
-  }
-  return true;
-}
-
 static bool scan_value(enum OptionType type, char* line, int& total_bytes_read,
         TypedMethodOptionMatcher* matcher, CompileCommandEnum option, char* errorbuf, const int buf_size) {
   int bytes_read = 0;
@@ -812,17 +805,22 @@ static bool scan_value(enum OptionType type, char* line, int& total_bytes_read,
     intx value;
     bool success = false;
     switch (option) {
+      case CompileCommandEnum::MemLimit:
+        // Special parsing for MemLimit
+        success = parseMemLimit(line, value, bytes_read, errorbuf, buf_size);
+        break;
       case CompileCommandEnum::Break:
       case CompileCommandEnum::CompileOnly:
       case CompileCommandEnum::Exclude:
       case CompileCommandEnum::Print:
-        // In the commands above the int parameter (compilation level) can be optional
-        // for compatibility with previous versions. If user did not specify it, assume maximum value
-        success = parse_optional_int(line, value, bytes_read, default_comp_level_argument);
-        break;
-      case CompileCommandEnum::MemLimit:
-        // Special parsing for MemLimit
-        success = parseMemLimit(line, value, bytes_read, errorbuf, buf_size);
+        // In the commands above the parameter used to be a boolean. Now it is an int (a compilation level mask).
+        // For compatibility with previous versions we keep it optional. If user did not specify the mask, assume default value
+        if (*line == '\0') {
+            value = default_comp_level_argument;
+            success = true;
+        } else {
+            success = sscanf(line, "%zd%n", &value, &bytes_read) == 1;
+        }
         break;
       default:
         // Is it a raw number?

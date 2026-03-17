@@ -94,6 +94,14 @@ CompileTask::~CompileTask() {
     MonitorLocker wait_ml(CompileTaskWait_lock);
     wait_ml.notify_all();
   }
+  release_directive();
+}
+
+void CompileTask::release_directive() {
+  if (_directive != nullptr) {
+    DirectivesStack::release(_directive);
+    _directive = nullptr;
+  }
 }
 
 void CompileTask::wait_for_no_active_tasks() {

@@ -800,6 +800,5 @@ DirectiveSet* DirectivesStack::getMatchingDirective(const methodHandle& method, 
   guarantee(match != nullptr, "There should always be a default directive that matches");
 
   // Check for legacy compile commands update, without DirectivesStack_lock
-  DirectiveSet* result = match->compilecommand_compatibility_init(method, comp_level);
-  return result;
+  return match->compilecommand_compatibility_init(method, comp_level);
 }
