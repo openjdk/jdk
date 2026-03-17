@@ -958,9 +958,17 @@ void VM_Version::get_processor_features() {
   if (UseSSE < 1)
     _features.clear_feature(CPU_SSE);
 
-  //since AVX instructions is slower than SSE in some ZX cpus, force USEAVX=0.
-  if (is_zx() && ((cpu_family() == 6) || (cpu_family() == 7))) {
-    UseAVX = 0;
+  // ZX cpus specific settings
+  if (is_zx() && FLAG_IS_DEFAULT(UseAVX)) {
+    if (cpu_family() == 7) {
+      if (extended_cpu_model() == 0x5B || extended_cpu_model() == 0x6B) {
+        UseAVX = 1;
+      } else if (extended_cpu_model() == 0x1B || extended_cpu_model() == 0x3B) {
+        UseAVX = 0;
+      }
+    } else if (cpu_family() == 6) {
+      UseAVX = 0;
+    }
   }
 
   // UseSSE is set to the smaller of what hardware supports and what
@@ -1959,6 +1967,18 @@ void VM_Version::get_processor_features() {
   if (FLAG_IS_DEFAULT(UseCopySignIntrinsic)) {
       FLAG_SET_DEFAULT(UseCopySignIntrinsic, true);
   }
+  // CopyAVX3Threshold is the threshold at which 64-byte instructions are used
+  // for implementing the array copy and clear operations.
+  // The Intel platforms that supports the serialize instruction
+  // have improved implementation of 64-byte load/stores and so the default
+  // threshold is set to 0 for these platforms.
+  if (FLAG_IS_DEFAULT(CopyAVX3Threshold)) {
+    if (is_intel() && is_intel_server_family() && supports_serialize()) {
+      FLAG_SET_DEFAULT(CopyAVX3Threshold, 0);
+    } else {
+      FLAG_SET_DEFAULT(CopyAVX3Threshold, AVX3Threshold);
+    }
+  }
 }
 
 void VM_Version::print_platform_virtualization_info(outputStream* st) {
@@ -2112,17 +2132,6 @@ bool VM_Version::is_intel_cascade_lake() {
 
 bool VM_Version::is_intel_darkmont() {
   return is_intel() && is_intel_server_family() && (_model == 0xCC || _model == 0xDD);
-}
-
-// avx3_threshold() sets the threshold at which 64-byte instructions are used
-// for implementing the array copy and clear operations.
-// The Intel platforms that supports the serialize instruction
-// has improved implementation of 64-byte load/stores and so the default
-// threshold is set to 0 for these platforms.
-int VM_Version::avx3_threshold() {
-  return (is_intel_server_family() &&
-          supports_serialize() &&
-          FLAG_IS_DEFAULT(AVX3Threshold)) ? 0 : AVX3Threshold;
 }
 
 void VM_Version::clear_apx_test_state() {
@@ -2623,6 +2632,23 @@ const char* VM_Version::cpu_family_description(void) {
       return _family_id_intel[cpu_family_id];
     }
   }
+  if (is_zx()) {
+    int cpu_model_id = extended_cpu_model();
+    if (cpu_family_id == 7) {
+      switch (cpu_model_id) {
+        case 0x1B:
+          return "wudaokou";
+        case 0x3B:
+          return "lujiazui";
+        case 0x5B:
+          return "yongfeng";
+        case 0x6B:
+          return "shijidadao";
+      }
+    } else if (cpu_family_id == 6) {
+      return "zhangjiang";
+    }
+  }
   if (is_hygon()) {
     return "Dhyana";
   }
@@ -2642,6 +2668,9 @@ int VM_Version::cpu_type_description(char* const buf, size_t buf_len) {
   } else if (is_amd()) {
     cpu_type = "AMD";
     x64 = cpu_is_em64t() ? " AMD64" : "";
+  } else if (is_zx()) {
+    cpu_type = "Zhaoxin";
+    x64 = cpu_is_em64t() ? " x86_64" : "";
   } else if (is_hygon()) {
     cpu_type = "Hygon";
     x64 = cpu_is_em64t() ? " AMD64" : "";
@@ -3258,6 +3287,12 @@ int VM_Version::allocate_prefetch_distance(bool use_watermark_prefetch) {
       return 256; // Opteron
     } else {
       return 128; // Athlon
+    }
+  } else if (is_zx()) {
+    if (supports_sse2()) {
+      return 256;
+    } else {
+      return 128;
     }
   } else { // Intel
     if (supports_sse3() && is_intel_server_family()) {

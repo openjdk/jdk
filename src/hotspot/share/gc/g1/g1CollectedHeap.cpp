@@ -1652,21 +1652,13 @@ jint G1CollectedHeap::initialize() {
   return JNI_OK;
 }
 
-bool G1CollectedHeap::concurrent_mark_is_terminating() const {
-  assert(_cm != nullptr, "_cm must have been created");
-  assert(_cm->is_fully_initialized(), "thread must exist in order to check if mark is terminating");
-  return _cm->cm_thread()->should_terminate();
-}
-
 void G1CollectedHeap::stop() {
   // Stop all concurrent threads. We do this to make sure these threads
   // do not continue to execute and access resources (e.g. logging)
   // that are destroyed during shutdown.
   _cr->stop();
   _service_thread->stop();
-  if (_cm->is_fully_initialized()) {
-    _cm->cm_thread()->stop();
-  }
+  _cm->stop();
 }
 
 void G1CollectedHeap::safepoint_synchronize_begin() {
@@ -1857,12 +1849,12 @@ void G1CollectedHeap::increment_old_marking_cycles_completed(bool concurrent,
     record_whole_heap_examined_timestamp();
   }
 
-  // We need to clear the "in_progress" flag in the CM thread before
+  // We need to tell G1ConcurrentMark to update the state  before
   // we wake up any waiters (especially when ExplicitInvokesConcurrent
   // is set) so that if a waiter requests another System.gc() it doesn't
   // incorrectly see that a marking cycle is still in progress.
   if (concurrent) {
-    _cm->cm_thread()->set_idle();
+    _cm->notify_concurrent_cycle_completed();
   }
 
   // Notify threads waiting in System.gc() (with ExplicitGCInvokesConcurrent)
@@ -2565,11 +2557,9 @@ void G1CollectedHeap::start_concurrent_cycle(bool concurrent_operation_is_full_m
   assert(!_cm->in_progress(), "Can not start concurrent operation while in progress");
   MutexLocker x(G1CGC_lock, Mutex::_no_safepoint_check_flag);
   if (concurrent_operation_is_full_mark) {
-    _cm->post_concurrent_mark_start();
-    _cm->cm_thread()->start_full_mark();
+    _cm->start_full_concurrent_cycle();
   } else {
-    _cm->post_concurrent_undo_start();
-    _cm->cm_thread()->start_undo_mark();
+    _cm->start_undo_concurrent_cycle();
   }
   G1CGC_lock->notify();
 }

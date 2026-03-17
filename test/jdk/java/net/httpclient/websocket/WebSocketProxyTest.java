@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @library /test/lib
  * @compile SecureSupport.java DummySecureWebSocketServer.java ../ProxyServer.java
  * @build jdk.test.lib.net.SimpleSSLContext WebSocketProxyTest
- * @run testng/othervm
+ * @run junit/othervm
  *         -Djdk.internal.httpclient.debug=true
  *         -Djdk.internal.httpclient.websocket.debug=true
  *         -Djdk.httpclient.HttpClient.log=errors,requests,headers
@@ -61,16 +61,18 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 
 import static java.net.http.HttpClient.newBuilder;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.assertEquals;
-import static org.testng.FileAssert.fail;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class WebSocketProxyTest {
 
@@ -132,8 +134,7 @@ public class WebSocketProxyTest {
             @Override public String toString() { return "AUTH_TUNNELING_PROXY_SERVER"; }
         };
 
-    @DataProvider(name = "servers")
-    public Object[][] servers() {
+    public static Object[][] servers() {
         return new Object[][] {
             { SERVER_WITH_CANNED_DATA,       TUNNELING_PROXY_SERVER      },
             { SERVER_WITH_CANNED_DATA,       AUTH_TUNNELING_PROXY_SERVER },
@@ -175,7 +176,8 @@ public class WebSocketProxyTest {
         return "%s and %s %s".formatted(actual, expected, message);
     }
 
-    @Test(dataProvider = "servers")
+    @ParameterizedTest
+    @MethodSource("servers")
     public void simpleAggregatingBinaryMessages
             (Function<int[],DummySecureWebSocketServer> serverSupplier,
              Supplier<ProxyServer> proxyServerSupplier)
@@ -263,7 +265,7 @@ public class WebSocketProxyTest {
                     .join();
 
             List<byte[]> a = actual.join();
-            assertEquals(ofBytes(a), ofBytes(expected), diagnose(a, expected));
+            assertEquals(ofBytes(expected), ofBytes(a), diagnose(a, expected));
         }
     }
 
@@ -359,7 +361,7 @@ public class WebSocketProxyTest {
             } catch (CompletionException expected) {
                 WebSocketHandshakeException e = (WebSocketHandshakeException)expected.getCause();
                 HttpResponse<?> response = e.getResponse();
-                assertEquals(response.statusCode(), 407);
+                assertEquals(407, response.statusCode());
             }
         }
     }
@@ -398,7 +400,7 @@ public class WebSocketProxyTest {
         }
     }
 
-    @BeforeMethod
+    @BeforeEach
     public void breakBetweenTests() {
         System.gc();
         try {Thread.sleep(100); } catch (InterruptedException x) { /* OK */ }

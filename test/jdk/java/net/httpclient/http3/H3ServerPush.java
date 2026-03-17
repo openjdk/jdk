@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  *        jdk.httpclient.test.lib.http2.PushHandler
  *        jdk.test.lib.Utils
  *        jdk.test.lib.net.SimpleSSLContext
- * @run testng/othervm/timeout=960
+ * @run junit/othervm/timeout=960
  *      -Djdk.httpclient.HttpClient.log=errors,requests,headers
  *      -Djdk.internal.httpclient.debug=false
  *      H3ServerPush
@@ -66,13 +66,14 @@ import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.httpclient.test.lib.http2.PushHandler;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static jdk.test.lib.Utils.createTempFileOfSize;
-import static org.testng.Assert.assertEquals;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class H3ServerPush implements HttpServerAdapters {
 
@@ -81,14 +82,14 @@ public class H3ServerPush implements HttpServerAdapters {
     static final int LOOPS = 13;
     static final int FILE_SIZE = 512 * 1024 + 343;
 
-    static Path tempFile;
+    private static Path tempFile;
 
-    HttpTestServer server;
-    URI uri;
-    URI headURI;
+    private static HttpTestServer server;
+    private static URI uri;
+    private static URI headURI;
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         tempFile = createTempFileOfSize(CLASS_NAME, ".dat", FILE_SIZE);
         var sslContext = SimpleSSLContext.findSSLContext();
         var h2Server = new Http2TestServer(true, sslContext);
@@ -109,12 +110,12 @@ public class H3ServerPush implements HttpServerAdapters {
         HttpRequest headRequest = HttpRequest.newBuilder(headURI)
                 .HEAD().version(Version.HTTP_2).build();
         var headResponse = client.send(headRequest, BodyHandlers.ofString());
-        assertEquals(headResponse.statusCode(), 200);
-        assertEquals(headResponse.version(), Version.HTTP_2);
+        assertEquals(200, headResponse.statusCode());
+        assertEquals(Version.HTTP_2, headResponse.version());
     }
 
-    @AfterTest
-    public void teardown() {
+    @AfterAll
+    public static void teardown() {
         server.stop();
     }
 
@@ -144,7 +145,7 @@ public class H3ServerPush implements HttpServerAdapters {
             resultMap.put(request, cf);
             System.out.println("waiting for response");
             var resp = cf.join();
-            assertEquals(resp.version(), Version.HTTP_3);
+            assertEquals(Version.HTTP_3, resp.version());
             var seen = new HashSet<>();
             resultMap.forEach((k, v) -> {
                 if (seen.add(k)) {
@@ -158,16 +159,16 @@ public class H3ServerPush implements HttpServerAdapters {
             for (HttpRequest r : resultMap.keySet()) {
                 System.out.println("Checking " + r);
                 HttpResponse<String> response = resultMap.get(r).join();
-                assertEquals(response.statusCode(), 200);
-                assertEquals(response.version(), Version.HTTP_3);
-                assertEquals(response.body(), tempFileAsString);
+                assertEquals(200, response.statusCode());
+                assertEquals(Version.HTTP_3, response.version());
+                assertEquals(tempFileAsString, response.body());
             }
             resultMap.forEach((k, v) -> {
                 if (seen.add(k)) {
                     System.out.println("Got " + v.join());
                 }
             });
-            assertEquals(resultMap.size(), LOOPS + 1);
+            assertEquals(LOOPS + 1, resultMap.size());
         }
     }
 
@@ -194,11 +195,11 @@ public class H3ServerPush implements HttpServerAdapters {
             System.err.println("results.size: " + resultMap.size());
             for (HttpRequest r : resultMap.keySet()) {
                 HttpResponse<String> response = resultMap.get(r).join();
-                assertEquals(response.statusCode(), 200);
-                assertEquals(response.version(), Version.HTTP_3);
-                assertEquals(response.body(), tempFileAsString);
+                assertEquals(200, response.statusCode());
+                assertEquals(Version.HTTP_3, response.version());
+                assertEquals(tempFileAsString, response.body());
             }
-            assertEquals(resultMap.size(), LOOPS + 1);
+            assertEquals(LOOPS + 1, resultMap.size());
         }
     }
 
@@ -242,12 +243,12 @@ public class H3ServerPush implements HttpServerAdapters {
             resultsMap.put(request, cf);
             for (HttpRequest r : resultsMap.keySet()) {
                 HttpResponse<Path> response = resultsMap.get(r).join();
-                assertEquals(response.statusCode(), 200);
-                assertEquals(response.version(), Version.HTTP_3);
+                assertEquals(200, response.statusCode());
+                assertEquals(Version.HTTP_3, response.version());
                 String fileAsString = Files.readString(response.body());
-                assertEquals(fileAsString, tempFileAsString);
+                assertEquals(tempFileAsString, fileAsString);
             }
-            assertEquals(resultsMap.size(), LOOPS + 1);
+            assertEquals(LOOPS + 1, resultsMap.size());
         }
     }
 
@@ -274,12 +275,12 @@ public class H3ServerPush implements HttpServerAdapters {
             resultsMap.put(request, cf);
             for (HttpRequest r : resultsMap.keySet()) {
                 HttpResponse<Path> response = resultsMap.get(r).join();
-                assertEquals(response.statusCode(), 200);
-                assertEquals(response.version(), Version.HTTP_3);
+                assertEquals(200, response.statusCode());
+                assertEquals(Version.HTTP_3, response.version());
                 String fileAsString = Files.readString(response.body());
-                assertEquals(fileAsString, tempFileAsString);
+                assertEquals(tempFileAsString, fileAsString);
             }
-            assertEquals(resultsMap.size(), LOOPS + 1);
+            assertEquals(LOOPS + 1, resultsMap.size());
         }
     }
 
@@ -340,13 +341,13 @@ public class H3ServerPush implements HttpServerAdapters {
             resultsMap.put(request, cf);
             for (HttpRequest r : resultsMap.keySet()) {
                 HttpResponse<Void> response = resultsMap.get(r).join();
-                assertEquals(response.statusCode(), 200);
-                assertEquals(response.version(), Version.HTTP_3);
+                assertEquals(200, response.statusCode());
+                assertEquals(Version.HTTP_3, response.version());
                 byte[] ba = byteArrayConsumerMap.get(r).getAccumulatedBytes();
                 String result = new String(ba, UTF_8);
-                assertEquals(result, tempFileAsString);
+                assertEquals(tempFileAsString, result);
             }
-            assertEquals(resultsMap.size(), LOOPS + 1);
+            assertEquals(LOOPS + 1, resultsMap.size());
         }
     }
 
@@ -384,13 +385,13 @@ public class H3ServerPush implements HttpServerAdapters {
             resultsMap.put(request, cf);
             for (HttpRequest r : resultsMap.keySet()) {
                 HttpResponse<Void> response = resultsMap.get(r).join();
-                assertEquals(response.statusCode(), 200);
-                assertEquals(response.version(), Version.HTTP_3);
+                assertEquals(200, response.statusCode());
+                assertEquals(Version.HTTP_3, response.version());
                 byte[] ba = byteArrayConsumerMap.get(r).getAccumulatedBytes();
                 String result = new String(ba, UTF_8);
-                assertEquals(result, tempFileAsString);
+                assertEquals(tempFileAsString, result);
             }
-            assertEquals(resultsMap.size(), LOOPS + 1);
+            assertEquals(LOOPS + 1, resultsMap.size());
         }
     }
 }

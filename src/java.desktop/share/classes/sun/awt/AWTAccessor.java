@@ -361,13 +361,6 @@ public final class AWTAccessor {
          * Accessor for InputEvent.getButtonDownMasks()
          */
         int[] getButtonDownMasks();
-
-        /*
-         * Accessor for InputEvent.canAccessSystemClipboard field
-         */
-        boolean canAccessSystemClipboard(InputEvent event);
-        void setCanAccessSystemClipboard(InputEvent event,
-                boolean canAccessSystemClipboard);
     }
 
     /**
