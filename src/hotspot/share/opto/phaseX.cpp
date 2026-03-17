@@ -2881,6 +2881,10 @@ void PhaseCCP::analyze_step(Unique_Node_List& worklist, Node* n) {
     // nodes that become dead.
     _maybe_top_type_nodes.push(n);
   }
+  if (new_type == Type::TOP && (n->is_div_or_mod(T_INT) && (n->is_div_or_mod(T_LONG) && type(n->in(0)) != TypeLong::TOP))) {
+    ShouldNotReachHere();
+    _maybe_top_type_nodes.push(n);
+  }
 }
 
 // Some nodes can refine their types due to type change somewhere deep
@@ -3180,7 +3184,7 @@ Node *PhaseCCP::transform( Node *n ) {
       Node* type_node = _maybe_top_type_nodes.at(i);
       if (type(type_node) == Type::TOP) {
         ResourceMark rm;
-        type_node->as_Type()->make_paths_from_here_dead(this, nullptr, "ccp");
+        type_node->make_paths_from_here_dead(this, nullptr, "ccp");
       }
     }
   } else {
