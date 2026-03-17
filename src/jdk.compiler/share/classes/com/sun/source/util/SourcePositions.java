@@ -103,7 +103,7 @@ public interface SourcePositions {
      * @return the end position of tree
      * @deprecated use {@link #getEndPosition(Tree)} instead
      */
-    @Deprecated(since = "27", forRemoval = true)
+     @Deprecated(since = "27", forRemoval = true)
      default long getEndPosition(CompilationUnitTree file, Tree tree) {
          return getEndPosition(tree);
      }
