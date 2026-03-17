@@ -464,28 +464,28 @@ AOTCodeCache::~AOTCodeCache() {
 void AOTCodeCache::Config::record(uint cpu_features_offset) {
   _flags = 0;
 #ifdef ASSERT
-  _flags |= debugVM;
+  set_flag(debugVM);
 #endif
   if (UseCompressedOops) {
-    _flags |= compressedOops;
+    set_flag(compressedOops);
   }
   if (UseCompressedClassPointers) {
-    _flags |= compressedClassPointers;
+    set_flag(compressedClassPointers);
   }
   if (UseTLAB) {
-    _flags |= useTLAB;
+    set_flag(useTLAB);
   }
   if (JavaAssertions::systemClassDefault()) {
-    _flags |= systemClassAssertions;
+    set_flag(systemClassAssertions);
   }
   if (JavaAssertions::userClassDefault()) {
-    _flags |= userClassAssertions;
+    set_flag(userClassAssertions);
   }
   if (EnableContended) {
-    _flags |= enableContendedPadding;
+    set_flag(enableContendedPadding);
   }
   if (RestrictContended) {
-    _flags |= restrictContendedPadding;
+    set_flag(restrictContendedPadding);
   }
   _compressedOopShift              = CompressedOops::shift();
   _compressedOopBase               = CompressedOops::base();
@@ -502,14 +502,94 @@ void AOTCodeCache::Config::record(uint cpu_features_offset) {
   _maxVectorSize                   = (uint)MaxVectorSize;
   _arrayOperationPartialInlineSize = (uint)ArrayOperationPartialInlineSize;
 #endif // COMPILER2
+  _use_intrinsics_flags = 0;
+  if (UseCRC32Intrinsics) {
+    set_use_flag(useCRC32);
+  }
+  if (UseCRC32CIntrinsics) {
+    set_use_flag(useCRC32C);
+  }
+  if (UseMultiplyToLenIntrinsic) {
+    set_use_flag(useMultiplyToLen);
+  }
+  if (UseSquareToLenIntrinsic) {
+    set_use_flag(useSquareToLen);
+  }
+  if (UseMulAddIntrinsic) {
+    set_use_flag(useMulAdd);
+  }
+  if (UseMontgomeryMultiplyIntrinsic) {
+    set_use_flag(useMontgomeryMultiply);
+  }
+  if (UseMontgomerySquareIntrinsic) {
+    set_use_flag(useMontgomerySquare);
+  }
+  if (UseChaCha20Intrinsics) {
+    set_use_flag(useChaCha20);
+  }
+  if (UseDilithiumIntrinsics) {
+    set_use_flag(useDilithium);
+  }
+  if (UseKyberIntrinsics) {
+    set_use_flag(useKyber);
+  }
+  if (UseBASE64Intrinsics) {
+    set_use_flag(useBASE64);
+  }
+  if (UseAdler32Intrinsics) {
+    set_use_flag(useAdler32);
+  }
+  if (UseAESIntrinsics) {
+    set_use_flag(useAES);
+  }
+  if (UseGHASHIntrinsics) {
+    set_use_flag(useGHASH);
+  }
+  if (UseMD5Intrinsics) {
+    set_use_flag(useMD5);
+  }
+  if (UseSHA1Intrinsics) {
+    set_use_flag(useSHA1);
+  }
+  if (UseSHA256Intrinsics) {
+    set_use_flag(useSHA256);
+  }
+  if (UseSHA512Intrinsics) {
+    set_use_flag(useSHA512);
+  }
+  if (UseSHA3Intrinsics) {
+    set_use_flag(useSHA3);
+  }
+  if (UsePoly1305Intrinsics) {
+    set_use_flag(usePoly1305);
+  }
+  if (UseVectorizedMismatchIntrinsic) {
+    set_use_flag(useVectorizedMismatch);
+  }
+  if (UseSecondarySupersTable) {
+    set_use_flag(useSecondarySupersTable);
+  }
 #if defined(X86) && !defined(ZERO)
   _avx3threshold                   = (uint)AVX3Threshold;
   _x86_flags                       = 0;
   if (EnableX86ECoreOpts) {
-    _x86_flags |= x86_enableX86ECoreOpts;
+    set_x86_flag(x86_enableX86ECoreOpts);
   }
   if (UseUnalignedLoadStores) {
-    _x86_flags |= x86_useUnalignedLoadStores;
+    set_x86_flags(x86_useUnalignedLoadStores);
+  }
+  _x86_use_intrinsics_flags            = 0;
+  if (UseAVX) {
+    set_x86_use_flag(x86_useAVX);
+  }
+  if (UseAPX) {
+    set_x86_use_flag(x86_useAPX);
+  }
+  if (UseLibmIntrinsics) {
+    set_x86_use_flag(x86_useLibm);
+  }
+  if (UseIntPolyIntrinsics) {
+    set_x86_use_flag(x86_useIntPoly);
   }
 #endif // defined(X86) && !defined(ZERO)
 #if defined(AARCH64)  && !defined(ZERO)
@@ -518,22 +598,32 @@ void AOTCodeCache::Config::record(uint cpu_features_offset) {
   _softwarePrefetchHintDistance    = (uint)SoftwarePrefetchHintDistance;
   _aarch64_flags                   = 0;
   if (AvoidUnalignedAccesses) {
-    _aarch64_flags |= aarch64_avoidUnalignedAccesses;
+    set_aarch64_flag(aarch64_avoidUnalignedAccesses);
   }
   if (UseSIMDForMemoryOps) {
-    _aarch64_flags |= aarch64_useSIMDForMemoryOps;
+    set_aarch64_flag(aarch64_useSIMDForMemoryOps);
   }
   if (UseSIMDForArrayEquals) {
-    _aarch64_flags |= aarch64_useSIMDForArrayEquals;
-  }
-  if (UseBlockZeroing) {
-    _aarch64_flags |= aarch64_useBlockZeroing;
+    set_aarch64_flag(aarch64_useSIMDForArrayEquals);
   }
   if (UseSVE) {
-    _aarch64_flags |= aarch64_useSVE;
+    set_aarch64_flag(aarch64_useSVE);
   }
   if (UseLSE) {
-    _aarch64_flags |= aarch64_useLSE;
+    set_aarch64_flag(aarch64_useLSE);
+  }
+  _aarch64_use_intrinsics_flags     = 0;
+  if (UseBlockZeroing) {
+    set_aarch64_use_flag(aarch64_useBlockZeroing);
+  }
+  if (UseSIMDForBigIntegerShiftIntrinsics) {
+    set_aarch64_use_flag(aarch64_useSIMDForBigIntegerShift);
+  }
+  if (UseSimpleArrayEquals) {
+    set_aarch64_use_flag(aarch64_useSimpleArrayEquals);
+  }
+  if (UseSecondarySupersCache) {
+    set_aarch64_use_flag(aarch64_useSecondarySupersCache);
   }
 #endif // defined(AARCH64) && !defined(ZERO)
 #if INCLUDE_JVMCI
@@ -585,12 +675,12 @@ bool AOTCodeCache::Config::verify_cpu_features(AOTCodeCache* cache) const {
 bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
   // First checks affect all cached AOT code
 #ifdef ASSERT
-  if ((_flags & debugVM) == 0) {
+  if (!test_flag(debugVM)) {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created by product VM, it can't be used by debug VM");
     return false;
   }
 #else
-  if ((_flags & debugVM) != 0) {
+  if (test_flag(debugVM)) {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created by debug VM, it can't be used by product VM");
     return false;
   }
@@ -602,7 +692,7 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
     return false;
   }
 
-  if (((_flags & compressedClassPointers) != 0) != UseCompressedClassPointers) {
+  if (test_flag(compressedClassPointers) != UseCompressedClassPointers) {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseCompressedClassPointers = %s", UseCompressedClassPointers ? "false" : "true");
     return false;
   }
@@ -616,11 +706,11 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
   if (!verify_cpu_features(cache)) {
     return false;
   }
-  if (((_flags & enableContendedPadding) != 0) != EnableContended) {
+  if (test_flag(enableContendedPadding) != EnableContended) {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with EnableContended = %s vs current %s", (enableContendedPadding ? "false" : "true"), (EnableContended ? "true" : "false"));
     return false;
   }
-  if (((_flags & restrictContendedPadding) != 0) != RestrictContended) {
+  if (test_flag(restrictContendedPadding) != RestrictContended) {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with RestrictContended = %s vs current %s", (restrictContendedPadding ? "false" : "true"), (RestrictContended ? "true" : "false"));
     return false;
   }
@@ -677,6 +767,92 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
   }
 #endif // COMPILER2
 
+  // check intrinsic use settings are compatible
+
+  if (test_use_flag(useCRC32) != UseCRC32Intrinsics) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseCRC32Intrinsics = %s vs current %s", (UseCRC32Intrinsics ? "false" : "true"), (UseCRC32Intrinsics ? "true" : "false"));
+    return false;
+  }
+  if (test_use_flag(useCRC32C) != UseCRC32CIntrinsics) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseCRC32CIntrinsics = %s vs current %s", (UseCRC32CIntrinsics ? "false" : "true"), (UseCRC32CIntrinsics ? "true" : "false"));
+    return false;
+  }
+  if (test_use_flag(useMultiplyToLen) != UseMultiplyToLenIntrinsic) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseMultiplyToLenIntrinsic = %s vs current %s", (UseMultiplyToLenIntrinsic ? "false" : "true"), (UseMultiplyToLenIntrinsic ? "true" : "false"));
+    return false;
+  }
+  if (test_use_flag(useMulAdd) != UseMulAddIntrinsic) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseMulAddIntrinsic = %s vs current %s", (UseMulAddIntrinsic ? "false" : "true"), (UseMulAddIntrinsic ? "true" : "false"));
+    return false;
+  }
+  if (test_use_flag(useMontgomeryMultiply) != UseMontgomeryMultiplyIntrinsic) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseMontgomeryMultiplyIntrinsic %s vs current %s", (UseMontgomeryMultiplyIntrinsic ? "false" : "true"), (UseMontgomeryMultiplyIntrinsic ? "true" : "false"));
+    return false;
+  }
+  if (test_use_flag(useMontgomerySquare) != UseMontgomerySquareIntrinsic) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseMontgomerySquareIntrinsic %s vs current %s", (UseMontgomerySquareIntrinsic ? "false" : "true"), (UseMontgomerySquareIntrinsic ? "true" : "false"));
+    return false;
+  }
+  if (test_use_flag(useChaCha20) != UseChaCha20Intrinsics) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseChaCha20Intrinsics = %s vs current %s", (UseChaCha20Intrinsics ? "false" : "true"), (UseChaCha20Intrinsics ? "true" : "false"));
+    return false;
+  }
+  if (test_use_flag(useDilithium) != UseDilithiumIntrinsics) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseDilithiumIntrinsics = %s vs current %s", (UseDilithiumIntrinsics ? "false" : "true"), (UseDilithiumIntrinsics ? "true" : "false"));
+    return false;
+  }
+  if (test_use_flag(useKyber) != UseKyberIntrinsics) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseKyberIntrinsics = %s vs current %s", (UseKyberIntrinsics ? "false" : "true"), (UseKyberIntrinsics ? "true" : "false"));
+    return false;
+  }
+  if (test_use_flag(useBASE64) != UseBASE64Intrinsics) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseBASE64Intrinsics = %s vs current %s", (UseBASE64Intrinsics ? "false" : "true"), (UseBASE64Intrinsics ? "true" : "false"));
+    return false;
+  }
+  if (test_use_flag(useAES) != UseAESIntrinsics) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseAESIntrinsics = %s vs current %s", (UseAESIntrinsics ? "false" : "true"), (UseAESIntrinsics ? "true" : "false"));
+    return false;
+  }
+  if (test_use_flag(useAESCTR) != UseAESCTRIntrinsics) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseAESCTRIntrinsics = %s vs current %s", (UseAESCTRIntrinsics ? "false" : "true"), (UseAESCTRIntrinsics ? "true" : "false"));
+    return false;
+  }
+  if (test_use_flag(useGHASH) != UseGHASHIntrinsics) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseGHASHIntrinsics = %s vs current %s", (UseGHASHIntrinsics ? "false" : "true"), (UseGHASHIntrinsics ? "true" : "false"));
+    return false;
+  }
+  if (test_use_flag(useMD5) != UseMD5Intrinsics) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseMD5Intrinsics = %s vs current %s", (UseMD5Intrinsics ? "false" : "true"), (UseMD5Intrinsics ? "true" : "false"));
+    return false;
+  }
+  if (test_use_flag(useSHA1) != UseSHA1Intrinsics) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseSHA1Intrinsics = %s vs current %s", (UseSHA1Intrinsics ? "false" : "true"), (UseSHA1Intrinsics ? "true" : "false"));
+    return false;
+  }
+  if (test_use_flag(useSHA256) != UseSHA256Intrinsics) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseSHA256Intrinsics = %s vs current %s", (UseSHA256Intrinsics ? "false" : "true"), (UseSHA256Intrinsics ? "true" : "false"));
+    return false;
+  }
+  if (test_use_flag(useSHA512) != UseSHA512Intrinsics) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseSHA512Intrinsics = %s vs current %s", (UseSHA512Intrinsics ? "false" : "true"), (UseSHA512Intrinsics ? "true" : "false"));
+    return false;
+  }
+  if (test_use_flag(useSHA3) != UseSHA3Intrinsics) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseSHA3Intrinsics = %s vs current %s", (UseSHA3Intrinsics ? "false" : "true"), (UseSHA3Intrinsics ? "true" : "false"));
+    return false;
+  }
+  if (test_use_flag(usePoly1305) != UsePoly1305Intrinsics) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UsePoly1305Intrinsics = %s vs current %s", (UsePoly1305Intrinsics ? "false" : "true"), (UsePoly1305Intrinsics ? "true" : "false"));
+    return false;
+  }
+  if (test_use_flag(useVectorizedMismatch) != UseVectorizedMismatchIntrinsic) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseVectorizedMismatchIntrinsic = %s vs current %s", (UseVectorizedMismatchIntrinsic ? "false" : "true"), (UseVectorizedMismatchIntrinsic ? "true" : "false"));
+    return false;
+  }
+  if (test_use_flag(useSecondarySupersTable) != UseSecondarySupersTable) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseSecondarySupersTable = %s vs current %s", (UseSecondarySupersTable ? "false" : "true"), (UseSecondarySupersTable ? "true" : "false"));
+    return false;
+  }
 #if defined(X86) && !defined(ZERO)
   // change to AVX3Threshold may affect validity of array copy stubs
   // and nmethods
@@ -686,16 +862,30 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
   }
 
   // change to EnableX86ECoreOpts may affect validity of nmethods
-  if (((_x86_flags & x86_enableX86ECoreOpts) != 0) != EnableX86ECoreOpts) {
+  if (test_x86_flags(x86_enableX86ECoreOpts) != EnableX86ECoreOpts) {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with EnableX86ECoreOpts = %s vs current %s", (EnableX86ECoreOpts ? "false" : "true"), (EnableX86ECoreOpts ? "true" : "false"));
     return false;
   }
   // switching off UseUnalignedLoadStores can affect validity of fill
   // stubs
-  if (((_x86_flags & x86_useUnalignedLoadStores) != 0) && !UseUnalignedLoadStores) {
+  if (test_x86_flags(x86_useUnalignedLoadStores) && !UseUnalignedLoadStores) {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseUnalignedLoadStores = true vs current = false");
     return false;
   }
+
+  // check x86-specific intrinsic use settings are compatible
+
+  // change to useLibmIntrinsics  may affect validity of stubs
+  if (test_x86_use_flags(x86_useLibm) != ) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseLibmIntrinsics = %s vs current %s", (UseLibmIntrinsics ? "false" : "true"), (UseLibmIntrinsics ? "true" : "false"));
+    return false;
+  }
+  // change to  may affect validity of nmethods
+  if (test_x86_use_flags(x86_useIntPoly) != UseIntPolyIntrinsics) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseIntPolyIntrinsics = %s vs current %s", (UseIntPolyIntrinsics ? "false" : "true"), (UseIntPolyIntrinsics ? "true" : "false"));
+    return false;
+  }
+
 #endif // defined(X86) && !defined(ZERO)
 
 #if defined(AARCH64) && !defined(ZERO)
@@ -729,35 +919,59 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
 
   // change to UseSIMDForMemoryOps may affect validity of array
   // copy stubs and nmethods
-  if (((_aarch64_flags & aarch64_useSIMDForMemoryOps) != 0) != (uint)UseSIMDForMemoryOps) {
+  if (test_aarch64_flag(aarch64_useSIMDForMemoryOps) != (uint)UseSIMDForMemoryOps) {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseSIMDForMemoryOps = %s vs current %s", (UseSIMDForMemoryOps ? "false" : "true"), (UseSIMDForMemoryOps ? "true" : "false"));
     return false;
   }
 
   // change to UseSIMDForArrayEquals may affect validity of array
   // copy stubs and nmethods
-  if (((_aarch64_flags & aarch64_useSIMDForArrayEquals) != 0) != (uint)UseSIMDForArrayEquals) {
+  if (test_aarch64_flag(aarch64_useSIMDForArrayEquals) != (uint)UseSIMDForArrayEquals) {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseSIMDForArrayEquals = %s vs current %s", (UseSIMDForArrayEquals ? "false" : "true"), (UseSIMDForArrayEquals ? "true" : "false"));
     return false;
   }
 
-  // change to UseBlockZeroing may affect validity of array fill stubs
-  if (((_aarch64_flags & aarch64_useBlockZeroing) != 0) != (uint)UseBlockZeroing) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseBlockZeroing = %s vs current %s", (UseBlockZeroing ? "false" : "true"), (UseBlockZeroing ? "true" : "false"));
+  // change to useSIMDForSHA3 may affect validity of SHA3 stubs
+  if (test_aarch64_flag(aarch64_useSIMDForSHA3) != UseSIMDForSHA3Intrinsic) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseSIMDForSHA3Intrinsic = %s vs current %s", (UseSIMDForSHA3Intrinsic ? "false" : "true"), (UseSIMDForSHA3Intrinsic ? "true" : "false"));
     return false;
   }
 
-  // change to useSVE may affect validity of stubs
-  if (((_aarch64_flags & aarch64_useSVE) != 0) != (uint)UseSVE) {
+  // change to UseSVE may affect validity of stubs and nmethods
+  if (test_aarch64_flag(aarch64_useSVE) != (uint)UseSVE) {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseSVE = %s vs current %s", (UseSVE ? "false" : "true"), (UseSVE ? "true" : "false"));
     return false;
   }
 
-  // change to useSVE may affect validity of stubs and methods
-  if (((_aarch64_flags & aarch64_useLSE) != 0) != (uint)UseLSE) {
+  // change to UseLSE may affect validity of stubs and nmethods
+  if (test_aarch64_flag(aarch64_useLSE) != (uint)UseLSE) {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseLSE = %s vs current %s", (UseLSE ? "false" : "true"), (UseLSE ? "true" : "false"));
     return false;
   }
+
+  // check aarch64-specific intrinsic use settings are compatible
+
+  // change to UseBlockZeroing may affect validity of stubs
+  if (test_aarch64_use_flag(aarch64_useBlockZeroing) != UseBlockZeroing) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseBlockZeroin g= %s vs current %s", (UseBlockZeroing ? "false" : "true"), (UseBlockZeroing ? "true" : "false"));
+    return false;
+  }
+  // change to UseSIMDForBigIntegerShiftIntrinsics may affect validity of stubs
+  if (test_aarch64_use_flag(aarch64_useSIMDForBigIntegerShift) != UseSIMDForBigIntegerShiftIntrinsics) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseSIMDForBigIntegerShiftIntrinsics = %s vs current %s", (UseSIMDForBigIntegerShiftIntrinsics ? "false" : "true"), (UseSIMDForBigIntegerShiftIntrinsics ? "true" : "false"));
+    return false;
+  }
+  // change to UseSimpleArrayEquals may affect validity of stubs
+  if (test_aarch64_use_flag(aarch64_useSimpleArrayEquals) != UseSimpleArrayEquals) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseSimpleArrayEquals = %s vs current %s", (UseSimpleArrayEquals ? "false" : "true"), (UseSimpleArrayEquals ? "true" : "false"));
+    return false;
+  }
+  // change to UseSecondarySupersCache may affect validity of stubs
+  if (test_aarch64_use_flag(aarch64_useSecondarySupersCache) != UseSecondarySupersCache) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseSecondarySupersCache = %s vs current %s", (UseSecondarySupersCache ? "false" : "true"), (UseSecondarySupersCache ? "true" : "false"));
+    return false;
+  }
+
 #endif // defined(AARCH64) && !defined(ZERO)
 
 #if INCLUDE_JVMCI
@@ -769,9 +983,13 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
   }
 #endif // INCLUDE_JVMCI
 
+  // Ensure intrinsics use flags are the same -- we may be able to
+  // relax some of these later
+
+
   // The following checks do not affect AOT adapters caching
 
-  if (((_flags & compressedOops) != 0) != UseCompressedOops) {
+  if (test_flag(compressedOops) != UseCompressedOops) {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseCompressedOops = %s", UseCompressedOops ? "false" : "true");
     AOTStubCaching = false;
   }
