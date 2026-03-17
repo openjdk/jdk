@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2024 Red Hat, Inc.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -3129,16 +3129,21 @@ JNI_END
 
 
 JNI_ENTRY(jobject, jni_GetModule(JNIEnv* env, jclass clazz))
-  return Modules::get_module(clazz, THREAD);
+  HOTSPOT_JNI_GETMODULE_ENTRY(env, clazz);
+  jobject ret = Modules::get_module(clazz, THREAD);
+  HOTSPOT_JNI_GETMODULE_RETURN(ret);
+  return ret;
 JNI_END
 
 JNI_ENTRY(jboolean, jni_IsVirtualThread(JNIEnv* env, jobject obj))
+  HOTSPOT_JNI_ISVIRTUALTHREAD_ENTRY(env, obj);
+  jboolean ret = JNI_FALSE;
   oop thread_obj = JNIHandles::resolve_external_guard(obj);
   if (thread_obj != nullptr && thread_obj->is_a(vmClasses::BaseVirtualThread_klass())) {
-    return JNI_TRUE;
-  } else {
-    return JNI_FALSE;
+    ret = JNI_TRUE;
   }
+  HOTSPOT_JNI_ISVIRTUALTHREAD_RETURN(ret);
+  return ret;
 JNI_END
 
 
