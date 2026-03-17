@@ -22,11 +22,19 @@
  */
 
 /*
- * @test
- * @bug 8325567 8325621
+ * @test id=badargs
+ * @bug 8325567 8325621 8379967
  * @requires (os.family == "linux") | (os.family == "aix") | (os.family == "mac")
  * @library /test/lib
- * @run driver JspawnhelperWarnings
+ * @run driver JspawnhelperWarnings badargs
+ */
+
+/*
+ * @test id=badversion
+ * @bug 8325567 8325621 8379967
+ * @requires (os.family == "linux") | (os.family == "aix") | (os.family == "mac")
+ * @library /test/lib
+ * @run driver JspawnhelperWarnings badversion
  */
 
 import java.nio.file.Paths;
@@ -36,6 +44,13 @@ import jdk.test.lib.process.ProcessTools;
 
 public class JspawnhelperWarnings {
 
+    // See childproc_errorcodes.h
+    static final int ESTEP_JSPAWN_ARG_ERROR = 1;
+    static final int ESTEP_JSPAWN_VERSION_ERROR = 2;
+
+    // See exitCodeFromErrorCode() in childproc_errorcodes.c
+    static final int EXITCODE_OFFSET = 0x10;
+
     private static void tryWithNArgs(int nArgs) throws Exception {
         System.out.println("Running jspawnhelper with " + nArgs + " args");
         String[] args = new String[nArgs + 1];
@@ -43,7 +58,8 @@ public class JspawnhelperWarnings {
         args[0] = Paths.get(System.getProperty("java.home"), "lib", "jspawnhelper").toString();
         Process p = ProcessTools.startProcess("jspawnhelper", new ProcessBuilder(args));
         OutputAnalyzer oa = new OutputAnalyzer(p);
-        oa.shouldHaveExitValue(1);
+        oa.shouldHaveExitValue(EXITCODE_OFFSET + ESTEP_JSPAWN_ARG_ERROR);
+        oa.shouldContain("jspawnhelper fail: (1-0-0)");
         oa.shouldContain("This command is not for general use");
         if (nArgs != 2) {
             oa.shouldContain("Incorrect number of arguments");
@@ -59,16 +75,28 @@ public class JspawnhelperWarnings {
         args[2] = "1:1:1";
         Process p = ProcessTools.startProcess("jspawnhelper", new ProcessBuilder(args));
         OutputAnalyzer oa = new OutputAnalyzer(p);
-        oa.shouldHaveExitValue(1);
+        oa.shouldHaveExitValue(EXITCODE_OFFSET + ESTEP_JSPAWN_VERSION_ERROR);
+        oa.shouldContain("jspawnhelper fail: (2-0-0)");
         oa.shouldContain("This command is not for general use");
         oa.shouldContain("Incorrect Java version: wrongVersion");
     }
 
     public static void main(String[] args) throws Exception {
-        for (int nArgs = 0; nArgs < 10; nArgs++) {
-            tryWithNArgs(nArgs);
+        if (args.length != 1) {
+            throw new RuntimeException("test argument error");
         }
-
-        testVersion();
+        switch (args[0]) {
+            case "badargs" -> {
+                for (int nArgs = 0; nArgs < 10; nArgs++) {
+                    if (nArgs != 2) {
+                        tryWithNArgs(nArgs);
+                    }
+                }
+            }
+            case "badversion" -> {
+                testVersion();
+            }
+            default -> throw new RuntimeException("test argument error");
+        }
     }
 }

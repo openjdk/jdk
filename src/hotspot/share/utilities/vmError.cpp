@@ -43,7 +43,6 @@
 #include "oops/compressedOops.hpp"
 #include "prims/whitebox.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/init.hpp"
@@ -86,12 +85,12 @@ bool              VMError::coredump_status;
 char              VMError::coredump_message[O_BUFLEN];
 int               VMError::_current_step;
 const char*       VMError::_current_step_info;
-volatile jlong    VMError::_reporting_start_time = -1;
-volatile bool     VMError::_reporting_did_timeout = false;
-volatile jlong    VMError::_step_start_time = -1;
-volatile bool     VMError::_step_did_timeout = false;
-volatile bool     VMError::_step_did_succeed = false;
-volatile intptr_t VMError::_first_error_tid = -1;
+Atomic<jlong>     VMError::_reporting_start_time{-1};
+Atomic<bool>      VMError::_reporting_did_timeout{false};
+Atomic<jlong>     VMError::_step_start_time{-1};
+Atomic<bool>      VMError::_step_did_timeout{false};
+Atomic<bool>      VMError::_step_did_succeed{false};
+Atomic<intptr_t>  VMError::_first_error_tid{-1};
 int               VMError::_id;
 const char*       VMError::_message;
 char              VMError::_detail_msg[1024];
@@ -105,8 +104,8 @@ int               VMError::_lineno;
 size_t            VMError::_size;
 const size_t      VMError::_reattempt_required_stack_headroom = 64 * K;
 const intptr_t    VMError::segfault_address = pd_segfault_address;
-Thread* volatile VMError::_handshake_timed_out_thread = nullptr;
-Thread* volatile VMError::_safepoint_timed_out_thread = nullptr;
+Atomic<Thread*>   VMError::_handshake_timed_out_thread{};
+Atomic<Thread*>   VMError::_safepoint_timed_out_thread{};
 
 // List of environment variables that should be reported in error log file.
 static const char* env_list[] = {
@@ -248,7 +247,7 @@ bool VMError::can_reattempt_step(const char* &stop_reason) {
     return false;
   }
 
-  if (_step_did_timeout) {
+  if (_step_did_timeout.load_relaxed()) {
     stop_reason = "Step time limit reached";
     return false;
   }
@@ -543,12 +542,12 @@ static void report_vm_version(outputStream* st, char* buf, int buflen) {
 
 // Returns true if at least one thread reported a fatal error and fatal error handling is in process.
 bool VMError::is_error_reported() {
-  return _first_error_tid != -1;
+  return _first_error_tid.load_relaxed() != -1;
 }
 
 // Returns true if the current thread reported a fatal error.
 bool VMError::is_error_reported_in_current_thread() {
-  return _first_error_tid == os::current_thread_id();
+  return _first_error_tid.load_relaxed() == os::current_thread_id();
 }
 
 // Helper, return current timestamp for timeout handling.
@@ -560,24 +559,24 @@ jlong VMError::get_current_timestamp() {
 
 void VMError::record_reporting_start_time() {
   const jlong now = get_current_timestamp();
-  AtomicAccess::store(&_reporting_start_time, now);
+  _reporting_start_time.store_relaxed(now);
 }
 
 jlong VMError::get_reporting_start_time() {
-  return AtomicAccess::load(&_reporting_start_time);
+  return _reporting_start_time.load_relaxed();
 }
 
 void VMError::record_step_start_time() {
   const jlong now = get_current_timestamp();
-  AtomicAccess::store(&_step_start_time, now);
+  _step_start_time.store_relaxed(now);
 }
 
 jlong VMError::get_step_start_time() {
-  return AtomicAccess::load(&_step_start_time);
+  return _step_start_time.load_relaxed();
 }
 
 void VMError::clear_step_start_time() {
-  return AtomicAccess::store(&_step_start_time, (jlong)0);
+  return _step_start_time.store_relaxed(0);
 }
 
 // This is the main function to report a fatal error. Only one thread can
@@ -612,31 +611,31 @@ void VMError::report(outputStream* st, bool _verbose) {
   const char* stop_reattempt_reason = nullptr;
 # define BEGIN                                             \
   if (_current_step == 0) {                                \
-    _step_did_succeed = false;                             \
+    _step_did_succeed.store_relaxed(false);                \
     _current_step = __LINE__;                              \
     {
       // [Begin logic]
 
 # define STEP_IF(s, cond)                                  \
     }                                                      \
-    _step_did_succeed = true;                              \
+    _step_did_succeed.store_relaxed(true);                 \
   }                                                        \
   if (_current_step < __LINE__) {                          \
-    _step_did_succeed = false;                             \
+    _step_did_succeed.store_relaxed(false);                \
     _current_step = __LINE__;                              \
     _current_step_info = s;                                \
     if ((cond)) {                                          \
       record_step_start_time();                            \
-      _step_did_timeout = false;
+      _step_did_timeout.store_relaxed(false);
       // [Step logic]
 
 # define STEP(s) STEP_IF(s, true)
 
 # define REATTEMPT_STEP_IF(s, cond)                        \
     }                                                      \
-    _step_did_succeed = true;                              \
+    _step_did_succeed.store_relaxed(true);                 \
   }                                                        \
-  if (_current_step < __LINE__ && !_step_did_succeed) {    \
+  if (_current_step < __LINE__ && !_step_did_succeed.load_relaxed()) { \
     _current_step = __LINE__;                              \
     _current_step_info = s;                                \
     const bool cond_value = (cond);                        \
@@ -650,7 +649,7 @@ void VMError::report(outputStream* st, bool _verbose) {
 
 # define END                                               \
     }                                                      \
-    _step_did_succeed = true;                              \
+    _step_did_succeed.store_relaxed(true);                 \
     clear_step_start_time();                               \
   }
 
@@ -1330,6 +1329,13 @@ void VMError::report(outputStream* st, bool _verbose) {
   STEP_IF("printing OS information", _verbose)
     os::print_os_info(st);
     st->cr();
+#ifdef __APPLE__
+    // Avoid large stack allocation on Mac for FD count during signal-handling.
+    os::Bsd::print_open_file_descriptors(st, buf, sizeof(buf));
+    st->cr();
+#else
+    os::print_open_file_descriptors(st);
+#endif
 
   STEP_IF("printing CPU info", _verbose)
     os::print_cpu_info(st, buf, sizeof(buf));
@@ -1359,21 +1365,21 @@ void VMError::report(outputStream* st, bool _verbose) {
 void VMError::set_handshake_timed_out_thread(Thread* thread) {
   // Only preserve the first thread to time-out this way. The atomic operation ensures
   // visibility to the target thread.
-  AtomicAccess::replace_if_null(&_handshake_timed_out_thread, thread);
+  _handshake_timed_out_thread.compare_exchange(nullptr, thread);
 }
 
 void VMError::set_safepoint_timed_out_thread(Thread* thread) {
   // Only preserve the first thread to time-out this way. The atomic operation ensures
   // visibility to the target thread.
-  AtomicAccess::replace_if_null(&_safepoint_timed_out_thread, thread);
+  _safepoint_timed_out_thread.compare_exchange(nullptr, thread);
 }
 
 Thread* VMError::get_handshake_timed_out_thread() {
-  return AtomicAccess::load(&_handshake_timed_out_thread);
+  return _handshake_timed_out_thread.load_relaxed();
 }
 
 Thread* VMError::get_safepoint_timed_out_thread() {
-  return AtomicAccess::load(&_safepoint_timed_out_thread);
+  return _safepoint_timed_out_thread.load_relaxed();
 }
 
 // Report for the vm_info_cmd. This prints out the information above omitting
@@ -1551,6 +1557,8 @@ void VMError::print_vm_info(outputStream* st) {
 
   os::print_os_info(st);
   st->cr();
+  os::print_open_file_descriptors(st);
+  st->cr();
 
   // STEP("printing CPU info")
 
@@ -1708,8 +1716,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
   static bool log_done = false;         // done saving error log
 
   intptr_t mytid = os::current_thread_id();
-  if (_first_error_tid == -1 &&
-      AtomicAccess::cmpxchg(&_first_error_tid, (intptr_t)-1, mytid) == -1) {
+  if (_first_error_tid.compare_set(-1, mytid)) {
 
     if (SuppressFatalErrorMessage) {
       os::abort(CreateCoredumpOnCrash);
@@ -1756,7 +1763,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
   } else {
     // This is not the first error, see if it happened in a different thread
     // or in the same thread during error reporting.
-    if (_first_error_tid != mytid) {
+    if (_first_error_tid.load_relaxed() != mytid) {
       if (!SuppressFatalErrorMessage) {
         char msgbuf[64];
         jio_snprintf(msgbuf, sizeof(msgbuf),
@@ -1788,19 +1795,19 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
       st->cr();
 
       // Timeout handling.
-      if (_step_did_timeout) {
+      if (_step_did_timeout.load_relaxed()) {
         // The current step had a timeout. Lets continue reporting with the next step.
         st->print_raw("[timeout occurred during error reporting in step \"");
         st->print_raw(_current_step_info);
         st->print_cr("\"] after " INT64_FORMAT " s.",
                      (int64_t)
-                     ((get_current_timestamp() - _step_start_time) / TIMESTAMP_TO_SECONDS_FACTOR));
-      } else if (_reporting_did_timeout) {
+                     ((get_current_timestamp() - get_step_start_time()) / TIMESTAMP_TO_SECONDS_FACTOR));
+      } else if (_reporting_did_timeout.load_relaxed()) {
         // We hit ErrorLogTimeout. Reporting will stop altogether. Let's wrap things
         // up, the process is about to be stopped by the WatcherThread.
         st->print_cr("------ Timeout during error reporting after " INT64_FORMAT " s. ------",
                      (int64_t)
-                     ((get_current_timestamp() - _reporting_start_time) / TIMESTAMP_TO_SECONDS_FACTOR));
+                     ((get_current_timestamp() - get_reporting_start_time()) / TIMESTAMP_TO_SECONDS_FACTOR));
         st->flush();
         // Watcherthread is about to call os::die. Lets just wait.
         os::infinite_sleep();
@@ -2100,10 +2107,10 @@ bool VMError::check_timeout() {
     // Timestamp is stored in nanos.
     if (reporting_start_time > 0) {
       const jlong end = reporting_start_time + (jlong)ErrorLogTimeout * TIMESTAMP_TO_SECONDS_FACTOR;
-      if (end <= now && !_reporting_did_timeout) {
+      if (end <= now && !_reporting_did_timeout.load_relaxed()) {
         // We hit ErrorLogTimeout and we haven't interrupted the reporting
         // thread yet.
-        _reporting_did_timeout = true;
+        _reporting_did_timeout.store_relaxed(true);
         interrupt_reporting_thread();
         return true; // global timeout
       }
@@ -2119,10 +2126,10 @@ bool VMError::check_timeout() {
     const int max_step_timeout_secs = 5;
     const jlong timeout_duration = MAX2((jlong)max_step_timeout_secs, (jlong)ErrorLogTimeout * TIMESTAMP_TO_SECONDS_FACTOR / 4);
     const jlong end = step_start_time + timeout_duration;
-    if (end <= now && !_step_did_timeout) {
+    if (end <= now && !_step_did_timeout.load_relaxed()) {
       // The step timed out and we haven't interrupted the reporting
       // thread yet.
-      _step_did_timeout = true;
+      _step_did_timeout.store_relaxed(true);
       interrupt_reporting_thread();
       return false; // (Not a global timeout)
     }
