@@ -65,18 +65,18 @@ private:
 
   uint64_t _aot_flags;
 
-  void set_flag(AOTCodeVMFlags flag) { 
-    _aot_flags |= BIT_MASK(flag); 
-  } 
+  void set_flag(AOTCodeVMFlags flag) {
+    _aot_flags |= BIT_MASK(flag);
+  }
  
-  bool cached_flag(AOTCodeVMFlags flag) const { 
-    return (_aot_flags & BIT_MASK(flag)) != 0; 
-  } 
+  bool cached_flag(AOTCodeVMFlags flag) const {
+    return (_aot_flags & BIT_MASK(flag)) != 0;
+  }
  
-  const char* cached_to_str(AOTCodeVMFlags flag) const { 
-    bool flag_value = cached_flag(flag); 
-    return BOOL_TO_STR(flag_value); 
-  } 
+  const char* cached_to_str(AOTCodeVMFlags flag) const {
+    bool flag_value = cached_flag(flag);
+    return BOOL_TO_STR(flag_value);
+  }
 
 public:
   AOTPDConfig() {}
