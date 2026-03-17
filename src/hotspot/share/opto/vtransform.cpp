@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,7 +111,7 @@ bool VTransformOptimize::optimize_step(VTransformNode* vtn) {
   return progress;
 }
 
-// Compute a linearization of the graph. We do this with a reverse-post-order of a DFS.
+// Compute a linearization of the graph. We do this using topological sorting with a priority queue.
 // This only works if the graph is a directed acyclic graph (DAG). The C2 graph, and
 // the VLoopDependencyGraph are both DAGs, but after introduction of vectors/packs, the
 // graph has additional constraints which can introduce cycles. Example:
@@ -132,63 +133,108 @@ bool VTransformGraph::schedule() {
 #endif
 
   ResourceMark rm;
-  GrowableArray<VTransformNode*> stack;
-  VectorSet pre_visited;
-  VectorSet post_visited;
 
-  collect_nodes_without_strong_in_edges(stack);
-  const int num_alive_nodes = count_alive_vtnodes();
-
-  // We create a reverse-post-visit order. This gives us a linearization, if there are
-  // no cycles. Then, we simply reverse the order, and we have a schedule.
-  int rpo_idx = num_alive_nodes - 1;
-  while (!stack.is_empty()) {
-    VTransformNode* vtn = stack.top();
-    if (!pre_visited.test_set(vtn->_idx)) {
-      // Forward arc in graph (pre-visit).
-    } else if (!post_visited.test(vtn->_idx)) {
-      // Forward arc in graph. Check if all uses were already visited:
-      //   Yes -> post-visit.
-      //   No  -> we are mid-visit.
-      bool all_uses_already_visited = true;
-
-      // We only need to respect the strong edges (data edges and strong memory edges).
-      // Violated weak memory edges are allowed, but require a speculative aliasing
-      // runtime check, see VTransform::apply_speculative_aliasing_runtime_checks.
-      for (uint i = 0; i < vtn->out_strong_edges(); i++) {
-        VTransformNode* use = vtn->out_strong_edge(i);
-
-        // Skip dead nodes
-        if (!use->is_alive()) { continue; }
-
-        // Skip backedges.
-        if ((use->is_loop_head_phi() || use->isa_CountedLoop() != nullptr) && use->in_req(2) == vtn) {
-          continue;
-        }
-
-        if (post_visited.test(use->_idx)) { continue; }
-        if (pre_visited.test(use->_idx)) {
-          // Cycle detected!
-          // The nodes that are pre_visited but not yet post_visited form a path from
-          // the "root" to the current vtn. Now, we are looking at an edge (vtn, use),
-          // and discover that use is also pre_visited but not post_visited. Thus, use
-          // lies on that path from "root" to vtn, and the edge (vtn, use) closes a
-          // cycle.
-          NOT_PRODUCT(if (_trace._rejections) { trace_schedule_cycle(stack, pre_visited, post_visited); } )
-          return false;
-        }
-        stack.push(use);
-        all_uses_already_visited = false;
-      }
-
-      if (all_uses_already_visited) {
-        stack.pop();
-        post_visited.set(vtn->_idx);           // post-visit
-        _schedule.at_put_grow(rpo_idx--, vtn); // assign rpo_idx
-      }
-    } else {
-      stack.pop(); // Already post-visited. Ignore secondary edge.
+  GrowableArray<VTransformNode*> alive_nodes;
+  collect_alive_vtnodes(alive_nodes);
+  const int num_alive_nodes = alive_nodes.length();
+  if (num_alive_nodes == 0) {
+#ifndef PRODUCT
+    if (_trace._info) {
+      print_schedule();
     }
+#endif
+    return true;
+  }
+
+  // Number of remaining strong predecessors for each node.
+  GrowableArray<int> strong_indegree;
+  // Number of weak predecessors which have not yet scheduled.
+  GrowableArray<int> weak_penalty;
+
+  for (int i = 0; i < alive_nodes.length(); i++) {
+    VTransformNode* vtn = alive_nodes.at(i);
+    strong_indegree.at_put_grow(vtn->_idx, 0);
+    weak_penalty.at_put_grow(vtn->_idx, 0);
+  }
+
+  // Initialize strong_indegree and weak_penalty.
+  for (int i = 0; i < alive_nodes.length(); i++) {
+    VTransformNode* def = alive_nodes.at(i);
+
+    for (uint j = 0; j < def->out_strong_edges(); j++) {
+      VTransformNode* use = def->out_strong_edge(j);
+      if (!use->is_alive() || is_ignored_backedge(def, use)) {
+        continue;
+      }
+      strong_indegree.at_put(use->_idx, strong_indegree.at(use->_idx) + 1);
+    }
+
+    for (uint j = 0; j < def->out_weak_edges(); j++) {
+      VTransformNode* use = def->out_weak_edge(j);
+      if (!use->is_alive() || is_ignored_backedge(def, use)) {
+        continue;
+      }
+      weak_penalty.at_put(use->_idx, weak_penalty.at(use->_idx) + 1);
+    }
+  }
+
+  VTransformPriorityQueue candidates;
+  VectorSet visited;
+
+  for (int i = 0; i < alive_nodes.length(); i++) {
+    VTransformNode* vtn = alive_nodes.at(i);
+    if (strong_indegree.at(vtn->_idx) == 0) {
+      candidates.push(new VTransformNodeEntry(vtn, weak_penalty.at(vtn->_idx)));
+    }
+  }
+
+  _schedule.clear();
+
+  int sched_idx = 0;
+  while (!candidates.is_empty()) {
+    VTransformNodeEntry* entry = candidates.pop();
+    VTransformNode* vtn = entry->_node;
+
+    if (visited.test(vtn->_idx)) {
+      continue;
+    }
+
+    // Lazy refresh: penalty may have improved after enqueue.
+    if (entry->_weak_penalty != weak_penalty.at(vtn->_idx)) {
+      candidates.push(new VTransformNodeEntry(vtn, weak_penalty.at(vtn->_idx)));
+      continue;
+    }
+
+    visited.set(vtn->_idx);
+    _schedule.at_put_grow(sched_idx++, vtn);
+
+    // Update weak_penalty first so that we can insert node with the latest priority later.
+    for (uint i = 0; i < vtn->out_weak_edges(); i++) {
+      VTransformNode* use = vtn->out_weak_edge(i);
+      if (!use->is_alive() || is_ignored_backedge(vtn, use) || visited.test(use->_idx)) {
+        continue;
+      }
+
+      weak_penalty.at_put(use->_idx, weak_penalty.at(use->_idx) - 1);
+    }
+
+    for (uint i = 0; i < vtn->out_strong_edges(); i++) {
+      VTransformNode* use = vtn->out_strong_edge(i);
+      if (!use->is_alive() || is_ignored_backedge(vtn, use)) {
+        continue;
+      }
+
+      const int new_degree = strong_indegree.at(use->_idx) - 1;
+      strong_indegree.at_put(use->_idx, new_degree);
+      if (new_degree == 0) {
+        candidates.push(new VTransformNodeEntry(use, weak_penalty.at(use->_idx)));
+      }
+    }
+  }
+
+  if (sched_idx != num_alive_nodes) {
+    NOT_PRODUCT(if (_trace._rejections) { tty->print_cr("schedule failed: strong-edge cycle"); })
+    return false;
   }
 
 #ifndef PRODUCT
@@ -197,33 +243,21 @@ bool VTransformGraph::schedule() {
   }
 #endif
 
-  assert(rpo_idx == -1, "used up all rpo_idx, rpo_idx=%d", rpo_idx);
   return true;
 }
 
-// Push all "root" nodes, i.e. those that have no strong input edges (data edges and strong memory edges):
-void VTransformGraph::collect_nodes_without_strong_in_edges(GrowableArray<VTransformNode*>& stack) const {
+void VTransformGraph::collect_alive_vtnodes(GrowableArray<VTransformNode*>& alive_nodes) {
   for (int i = 0; i < _vtnodes.length(); i++) {
     VTransformNode* vtn = _vtnodes.at(i);
-    if (!vtn->is_alive()) { continue; }
-    if (!vtn->has_strong_in_edge()) {
-      stack.push(vtn);
+    if (vtn->is_alive()) {
+      alive_nodes.push(vtn);
     }
-    // If an Outer node has both inputs and outputs, we will most likely have cycles in the final graph.
-    // This is not a correctness problem, but it just will prevent vectorization. If this ever happens
-    // try to find a way to avoid the cycle somehow.
-    assert(vtn->isa_Outer() == nullptr || (vtn->has_strong_in_edge() != (vtn->out_strong_edges() > 0)),
-           "Outer nodes should either be inputs or outputs, but not both, otherwise we may get cycles");
   }
 }
 
-int VTransformGraph::count_alive_vtnodes() const {
-  int count = 0;
-  for (int i = 0; i < _vtnodes.length(); i++) {
-    VTransformNode* vtn = _vtnodes.at(i);
-    if (vtn->is_alive()) { count++; }
-  }
-  return count;
+bool VTransformGraph::is_ignored_backedge(VTransformNode* def, VTransformNode* use) const {
+  return (use->is_loop_head_phi() || use->isa_CountedLoop() != nullptr) &&
+         use->in_req(LoopNode::LoopBackControl) == def;
 }
 
 // Find all nodes that in the loop, in a 2-phase process:
@@ -319,18 +353,6 @@ float VTransformGraph::cost_for_vector_loop() const {
 }
 
 #ifndef PRODUCT
-void VTransformGraph::trace_schedule_cycle(const GrowableArray<VTransformNode*>& stack,
-                                           const VectorSet& pre_visited,
-                                           const VectorSet& post_visited) const {
-  tty->print_cr("\nVTransform::schedule found a cycle on path (P), vectorization attempt fails.");
-  for (int j = 0; j < stack.length(); j++) {
-    VTransformNode* n = stack.at(j);
-    bool on_path = pre_visited.test(n->_idx) && !post_visited.test(n->_idx);
-    tty->print("  %s ", on_path ? "P" : "_");
-    n->print();
-  }
-}
-
 void VTransformApplyResult::trace(VTransformNode* vtnode) const {
   tty->print("  apply: ");
   vtnode->print();
