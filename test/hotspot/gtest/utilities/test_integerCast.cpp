@@ -240,8 +240,12 @@ TEST(TestIntegerCast, permit_tautology) {
   static_assert(is_always_integer_convertible<From, To>());
   EXPECT_EQ(static_cast<To>(values.from.min),
             (integer_cast<To, true>(values.from.min)));
+  EXPECT_EQ(static_cast<To>(values.from.min),
+            (integer_cast_permit_tautology<To>(values.from.min)));
   EXPECT_EQ(static_cast<To>(values.from.max),
             (integer_cast<To, true>(values.from.max)));
+  EXPECT_EQ(static_cast<To>(values.from.max),
+            integer_cast_permit_tautology<To>(values.from.max));
 }
 
 TEST(TestIntegerCast, check_constexpr) {

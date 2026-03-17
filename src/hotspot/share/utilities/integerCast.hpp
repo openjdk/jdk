@@ -88,7 +88,8 @@ constexpr bool is_integer_convertible(From from) {
 // range of values for the To type (is_always_integer_convertible<From, To>()
 // is true).  If true, the conversion will be performed as requested. If
 // false, a compile-time error is produced.  The default is false for 64bit
-// platforms, true for 32bit platforms.
+// platforms, true for 32bit platforms.  See integer_cast_permit_tautology as
+// the preferred way to override the default and always provide a true value.
 //
 // Unnecessary integer_casts make code harder to understand.  Hence the
 // compile-time failure for tautological conversions, to alert that a code
@@ -124,6 +125,17 @@ constexpr To integer_cast(From from) {
 #endif // ASSERT
   }
   return static_cast<To>(from);
+}
+
+// Equivalent to "integer_cast<To, true>(from)", disabling the compile-time
+// check for tautological casts.  Using this function is prefered to direct
+// use of the permit_tautology template parameter for integer_cast, unless the
+// choice is computed.
+template<typename To, typename From,
+         ENABLE_IF(std::is_integral_v<To>),
+         ENABLE_IF(std::is_integral_v<From>)>
+constexpr To integer_cast_permit_tautology(From from) {
+  return integer_cast<To, true>(from);
 }
 
 // Convert an enumerator to an integral value via static_cast, after a
