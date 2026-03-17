@@ -1150,7 +1150,7 @@ void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
     if (blk->is_handler() || blk->is_ret_target()) {
       // for an exception handler or a target of a ret instruction, we assume the worst case,
       // that any variable could contain any argument
-      for (int i = 0; i < numLocals; i++) {
+      for (uint i = 0; i < numLocals; i++) {
         state._vars[i] = allVars;
       }
       if (blk->is_handler()) {
@@ -1163,7 +1163,7 @@ void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
         state._stack[i] = allVars;
       }
     } else {
-      for (int i = 0; i < numLocals; i++) {
+      for (uint i = 0; i < numLocals; i++) {
         state._vars[i] = blkState->_vars[i];
       }
       for (int i = 0; i < blkState->_stack_height; i++) {

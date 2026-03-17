@@ -76,7 +76,7 @@ class ciMethod : public ciMetadata {
 
   // Code attributes.
   int _code_size;
-  u2 _max_stack;
+  uint _max_stack;
   u2 _max_locals;
   vmIntrinsicID _intrinsic_id;
   int _handler_count;
@@ -182,7 +182,7 @@ class ciMethod : public ciMetadata {
   // Method code and related information.
   address code()                                 { if (_code == nullptr) load_code(); return _code; }
   int code_size() const                          { check_is_loaded(); return _code_size; }
-  u2 max_stack() const                           { check_is_loaded(); return _max_stack; }
+  uint max_stack() const                          { check_is_loaded(); return _max_stack; }
   u2 max_locals() const                          { check_is_loaded(); return _max_locals; }
   vmIntrinsicID intrinsic_id() const             { check_is_loaded(); return _intrinsic_id; }
   bool has_exception_handlers() const            { check_is_loaded(); return _handler_count > 0; }
