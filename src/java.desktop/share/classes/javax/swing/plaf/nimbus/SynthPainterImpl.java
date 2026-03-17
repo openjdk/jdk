@@ -63,7 +63,7 @@ class SynthPainterImpl extends SynthPainter {
         if (p != null) {
             if (g instanceof Graphics2D){
                 Graphics2D gfx = (Graphics2D)g;
-                if (transform != null){
+                if (transform != null) {
                     gfx.transform(transform);
                 }
                 gfx.translate(x, y);
