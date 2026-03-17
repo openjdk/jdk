@@ -1148,7 +1148,7 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
     if (CDSConfig::is_dumping_full_module_graph()) {
       ClassLoaderDataShared::ensure_module_entry_tables_exist();
       ClassLoaderDataShared::build_tables(CHECK);
-      HeapShared::reset_archived_object_states(CHECK);
+      HeapShared::prepare_for_archiving(CHECK);
     }
 
     AOTReferenceObjSupport::initialize(CHECK);

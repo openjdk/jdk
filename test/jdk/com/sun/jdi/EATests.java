@@ -84,6 +84,15 @@
  * @comment Regression test for using the wrong thread when logging during re-locking from deoptimization.
  *
  * @comment DiagnoseSyncOnValueBasedClasses=2 will cause logging when locking on \@ValueBased objects.
+ * @run driver EATests
+ *                 -XX:+UnlockDiagnosticVMOptions
+ *                 -Xms256m -Xmx256m
+ *                 -Xbootclasspath/a:.
+ *                 -XX:CompileCommand=dontinline,*::dontinline_*
+ *                 -XX:+WhiteBoxAPI
+ *                 -Xbatch
+ *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
+ *                 -XX:DiagnoseSyncOnValueBasedClasses=2
  *
  * @comment Re-lock may inflate monitors when re-locking, which cause monitorinflation trace logging.
  * @run driver EATests

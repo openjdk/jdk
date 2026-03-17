@@ -1307,8 +1307,8 @@ bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
   Node* tgt_start = array_element_address(tgt, intcon(0), T_BYTE);
 
   // Range checks
-  generate_string_range_check(src, src_offset, src_count, ae != StrIntrinsicNode::LL);
-  generate_string_range_check(tgt, intcon(0), tgt_count, ae == StrIntrinsicNode::UU);
+  generate_string_range_check(src, src_offset, src_count, ae != StrIntrinsicNode::LL, true);
+  generate_string_range_check(tgt, intcon(0), tgt_count, ae == StrIntrinsicNode::UU, true);
   if (stopped()) {
     return true;
   }
@@ -1404,7 +1404,7 @@ bool LibraryCallKit::inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae) {
   Node* src_count = _gvn.transform(new SubINode(max, from_index));
 
   // Range checks
-  generate_string_range_check(src, src_offset, src_count, ae == StrIntrinsicNode::U);
+  generate_string_range_check(src, src_offset, src_count, ae == StrIntrinsicNode::U, true);
 
   // Check for int_ch >= 0
   Node* int_ch_cmp = _gvn.transform(new CmpINode(int_ch, intcon(0)));
@@ -1448,11 +1448,11 @@ bool LibraryCallKit::inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae) {
 }
 //---------------------------inline_string_copy---------------------
 // compressIt == true --> generate a compressed copy operation (compress char[]/byte[] to byte[])
-//   int StringUTF16.compress(char[] src, int srcOff, byte[] dst, int dstOff, int len)
-//   int StringUTF16.compress(byte[] src, int srcOff, byte[] dst, int dstOff, int len)
+//   int StringUTF16.compress0(char[] src, int srcOff, byte[] dst, int dstOff, int len)
+//   int StringUTF16.compress0(byte[] src, int srcOff, byte[] dst, int dstOff, int len)
 // compressIt == false --> generate an inflated copy operation (inflate byte[] to char[]/byte[])
-//   void StringLatin1.inflate(byte[] src, int srcOff, char[] dst, int dstOff, int len)
-//   void StringLatin1.inflate(byte[] src, int srcOff, byte[] dst, int dstOff, int len)
+//   void StringLatin1.inflate0(byte[] src, int srcOff, char[] dst, int dstOff, int len)
+//   void StringLatin1.inflate0(byte[] src, int srcOff, byte[] dst, int dstOff, int len)
 bool LibraryCallKit::inline_string_copy(bool compress) {
   if (too_many_traps(Deoptimization::Reason_intrinsic)) {
     return false;
@@ -1495,8 +1495,8 @@ bool LibraryCallKit::inline_string_copy(bool compress) {
   }
 
   // Range checks
-  generate_string_range_check(src, src_offset, length, convert_src);
-  generate_string_range_check(dst, dst_offset, length, convert_dst);
+  generate_string_range_check(src, src_offset, length, convert_src, true);
+  generate_string_range_check(dst, dst_offset, length, convert_dst, true);
   if (stopped()) {
     return true;
   }
@@ -2393,47 +2393,6 @@ DecoratorSet LibraryCallKit::mo_decorator_for_access_kind(AccessKind kind) {
   }
 }
 
-LibraryCallKit::SavedState::SavedState(LibraryCallKit* kit) :
-  _kit(kit),
-  _sp(kit->sp()),
-  _jvms(kit->jvms()),
-  _map(kit->clone_map()),
-  _discarded(false)
-{
-  for (DUIterator_Fast imax, i = kit->control()->fast_outs(imax); i < imax; i++) {
-    Node* out = kit->control()->fast_out(i);
-    if (out->is_CFG()) {
-      _ctrl_succ.push(out);
-    }
-  }
-}
-
-LibraryCallKit::SavedState::~SavedState() {
-  if (_discarded) {
-    _kit->destruct_map_clone(_map);
-    return;
-  }
-  _kit->jvms()->set_map(_map);
-  _kit->jvms()->set_sp(_sp);
-  _map->set_jvms(_kit->jvms());
-  _kit->set_map(_map);
-  _kit->set_sp(_sp);
-  for (DUIterator_Fast imax, i = _kit->control()->fast_outs(imax); i < imax; i++) {
-    Node* out = _kit->control()->fast_out(i);
-    if (out->is_CFG() && out->in(0) == _kit->control() && out != _kit->map() && !_ctrl_succ.member(out)) {
-      _kit->_gvn.hash_delete(out);
-      out->set_req(0, _kit->C->top());
-      _kit->C->record_for_igvn(out);
-      --i; --imax;
-      _kit->_gvn.hash_find_insert(out);
-    }
-  }
-}
-
-void LibraryCallKit::SavedState::discard() {
-  _discarded = true;
-}
-
 bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, const AccessKind kind, const bool unaligned) {
   if (callee()->is_static())  return false;  // caller must have the capability!
   DecoratorSet decorators = C2_UNSAFE_ACCESS;
@@ -2900,7 +2859,7 @@ bool LibraryCallKit::inline_unsafe_fence(vmIntrinsics::ID id) {
       insert_mem_bar(Op_StoreStoreFence);
       return true;
     case vmIntrinsics::_fullFence:
-      insert_mem_bar(Op_MemBarVolatile);
+      insert_mem_bar(Op_MemBarFull);
       return true;
     default:
       fatal_unexpected_iid(id);
@@ -3070,13 +3029,14 @@ bool LibraryCallKit::inline_native_vthread_start_transition(address funcAddr, co
   Node* vt_addr = basic_plus_adr(vt_oop, java_lang_Thread::is_in_vthread_transition_offset());
   access_store_at(nullptr, jt_addr, _gvn.type(jt_addr)->is_ptr(), ideal.ConI(1), TypeInt::BOOL, T_BOOLEAN, IN_NATIVE | MO_UNORDERED);
   access_store_at(nullptr, vt_addr, _gvn.type(vt_addr)->is_ptr(), ideal.ConI(1), TypeInt::BOOL, T_BOOLEAN, IN_NATIVE | MO_UNORDERED);
-  insert_mem_bar(Op_MemBarVolatile);
+  insert_mem_bar(Op_MemBarStoreLoad);
   ideal.sync_kit(this);
 
   Node* global_disable_addr = makecon(TypeRawPtr::make((address)MountUnmountDisabler::global_vthread_transition_disable_count_address()));
   Node* global_disable = ideal.load(ideal.ctrl(), global_disable_addr, TypeInt::INT, T_INT, Compile::AliasIdxRaw, true /*require_atomic_access*/);
   Node* vt_disable_addr = basic_plus_adr(vt_oop, java_lang_Thread::vthread_transition_disable_count_offset());
-  Node* vt_disable = ideal.load(ideal.ctrl(), vt_disable_addr, TypeInt::INT, T_INT, Compile::AliasIdxRaw, true /*require_atomic_access*/);
+  const TypePtr* vt_disable_addr_t = _gvn.type(vt_disable_addr)->is_ptr();
+  Node* vt_disable = ideal.load(ideal.ctrl(), vt_disable_addr, TypeInt::INT, T_INT, C->get_alias_index(vt_disable_addr_t), true /*require_atomic_access*/);
   Node* disabled = _gvn.transform(new AddINode(global_disable, vt_disable));
 
   ideal.if_then(disabled, BoolTest::ne, ideal.ConI(0)); {

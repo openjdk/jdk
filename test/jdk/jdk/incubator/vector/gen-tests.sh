@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -126,7 +126,6 @@ do
 
   abstractvectortype=${typeprefix}${Type}Vector
   abstractvectorteststype=${typeprefix}${Type}VectorTests
-  abstractbitsvectortype=${typeprefix}${Bitstype}Vector
   abstractfpvectortype=${typeprefix}${Fptype}Vector
   args="$args -Dabstractvectortype=$abstractvectortype -Dabstractvectorteststype=$abstractvectorteststype -Dabstractbitsvectortype=$abstractbitsvectortype -Dabstractfpvectortype=$abstractfpvectortype"
 
@@ -136,12 +135,12 @@ do
 
   for bits in 64 128 256 512 Max
   do
-    vectortype=${typeprefix}${Type}${bits}Vector
-    vectorteststype=${typeprefix}${Type}${bits}VectorTests
-    vectorbenchtype=${typeprefix}${Type}${bits}Vector
-    masktype=${typeprefix}${Type}${bits}Mask
-    bitsvectortype=${typeprefix}${Bitstype}${bits}Vector
-    fpvectortype=${typeprefix}${Fptype}${bits}Vector
+    vectortype=${typeprefix}${Type}$Vector{bits}
+    vectorteststype=${typeprefix}${Type}Vector${bits}Tests
+    vectorbenchtype=${typeprefix}${Type}Vector${bits}
+    masktype=${typeprefix}${Type}$Mask{bits}
+    bitsvectortype=${typeprefix}${Bitstype}Vector${bits}
+    fpvectortype=${typeprefix}${Fptype}Vector${bits}
     shape=S${bits}Bit
     Shape=S_${bits}_BIT
     if [[ "${vectortype}" == "ByteMaxVector" ]]; then
@@ -211,12 +210,12 @@ do
   # For each size
   for bits in 64 128 256 512 Max
   do
-    vectortype=${typeprefix}${Type}${bits}Vector
-    vectorteststype=${typeprefix}${Type}${bits}VectorLoadStoreTests
-    vectorbenchtype=${typeprefix}${Type}${bits}VectorLoadStore
-    masktype=${typeprefix}${Type}${bits}Mask
-    bitsvectortype=${typeprefix}${Bitstype}${bits}Vector
-    fpvectortype=${typeprefix}${Fptype}${bits}Vector
+    vectortype=${typeprefix}${Type}Vector${bits}
+    vectorteststype=${typeprefix}${Type}Vector${bits}LoadStoreTests
+    vectorbenchtype=${typeprefix}${Type}Vector${bits}LoadStore
+    masktype=${typeprefix}${Type}Mask${bits}
+    bitsvectortype=${typeprefix}${Bitstype}Vector${bits}
+    fpvectortype=${typeprefix}${Fptype}Vector${bits}
     shape=S${bits}Bit
     Shape=S_${bits}_BIT
     if [[ "${vectortype}" == "ByteMaxVector" ]]; then

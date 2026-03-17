@@ -321,8 +321,10 @@ void ArchiveBuilder::sort_klasses() {
 }
 
 address ArchiveBuilder::reserve_buffer() {
-  // AOTCodeCache::max_aot_code_size() accounts for aot code region.
-  size_t buffer_size = LP64_ONLY(CompressedClassSpaceSize) NOT_LP64(256 * M) + AOTCodeCache::max_aot_code_size();
+  // On 64-bit: reserve address space for archives up to the max encoded offset limit.
+  // On 32-bit: use 256MB + AOT code size due to limited virtual address space.
+  size_t buffer_size = LP64_ONLY(AOTCompressedPointers::MaxMetadataOffsetBytes)
+                       NOT_LP64(256 * M + AOTCodeCache::max_aot_code_size());
   ReservedSpace rs = MemoryReserver::reserve(buffer_size,
                                              AOTMetaspace::core_region_alignment(),
                                              os::vm_page_size(),

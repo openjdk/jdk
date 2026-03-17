@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,25 +39,29 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.net.ssl.SSLContext;
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
-import org.testng.ITestContext;
-import org.testng.SkipException;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpOption.H3_DISCOVERY;
-import static org.testng.Assert.assertEquals;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.extension.TestWatcher;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 
 /*
@@ -68,15 +72,15 @@ import static org.testng.Assert.assertEquals;
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.httpclient.test.lib.quic.QuicStandaloneServer
- * @run testng/othervm -Djdk.internal.httpclient.debug=true
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true
  *                     -Djdk.httpclient.HttpClient.log=requests,responses,errors,quic:controls
  *                     -Djdk.httpclient.quic.maxInitialTimeout=1
  *                     H3MaxInitialTimeoutTest
- * @run testng/othervm -Djdk.internal.httpclient.debug=true
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true
  *                     -Djdk.httpclient.HttpClient.log=requests,responses,errors,quic:controls
  *                     -Djdk.httpclient.quic.maxInitialTimeout=2
  *                     H3MaxInitialTimeoutTest
- * @run testng/othervm -Djdk.internal.httpclient.debug=true
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true
  *                     -Djdk.httpclient.HttpClient.log=requests,responses,errors,quic:controls
  *                     -Djdk.httpclient.quic.maxInitialTimeout=2147483647
  *                     H3MaxInitialTimeoutTest
@@ -84,8 +88,8 @@ import static org.testng.Assert.assertEquals;
 public class H3MaxInitialTimeoutTest implements HttpServerAdapters {
 
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
-    DatagramChannel receiver;
-    String h3URI;
+    static DatagramChannel receiver;
+    static String h3URI;
 
     static final Executor executor = new TestExecutor(Executors.newVirtualThreadPerTaskExecutor());
     static final ConcurrentMap<String, Throwable> FAILURES = new ConcurrentHashMap<>();
@@ -125,20 +129,37 @@ public class H3MaxInitialTimeoutTest implements HttpServerAdapters {
         }
     }
 
-    protected boolean stopAfterFirstFailure() {
+    private static boolean stopAfterFirstFailure() {
         return Boolean.getBoolean("jdk.internal.httpclient.debug");
     }
 
-    @BeforeMethod
-    void beforeMethod(ITestContext context) {
-        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
-            var x = new SkipException("Skipping: some test failed");
-            x.setStackTrace(new StackTraceElement[0]);
-            throw x;
+    static final class TestStopper implements TestWatcher, BeforeEachCallback {
+        final AtomicReference<String> failed = new AtomicReference<>();
+        TestStopper() { }
+        @Override
+        public void testFailed(ExtensionContext context, Throwable cause) {
+            if (stopAfterFirstFailure()) {
+                String msg = "Aborting due to: " + cause;
+                failed.compareAndSet(null, msg);
+                FAILURES.putIfAbsent(context.getDisplayName(), cause);
+                System.out.printf("%nTEST FAILED: %s%s%n\tAborting due to %s%n%n",
+                        now(), context.getDisplayName(), cause);
+                System.err.printf("%nTEST FAILED: %s%s%n\tAborting due to %s%n%n",
+                        now(), context.getDisplayName(), cause);
+            }
+        }
+
+        @Override
+        public void beforeEach(ExtensionContext context) {
+            String msg = failed.get();
+            Assumptions.assumeTrue(msg == null, msg);
         }
     }
 
-    @AfterClass
+    @RegisterExtension
+    static final TestStopper stopper = new TestStopper();
+
+    @AfterAll
     static void printFailedTests() {
         out.println("\n=========================");
         try {
@@ -159,13 +180,8 @@ public class H3MaxInitialTimeoutTest implements HttpServerAdapters {
         }
     }
 
-    @DataProvider(name = "h3URIs")
-    public Object[][] versions(ITestContext context) {
-        if (stopAfterFirstFailure() && context.getFailedTests().size() > 0) {
-            return new Object[0][];
-        }
-        Object[][] result = {{h3URI}};
-        return result;
+    public static Object[][] versions() {
+        return new Object[][] {{h3URI}};
     }
 
     private HttpClient makeNewClient(long connectionTimeout) {
@@ -180,7 +196,8 @@ public class H3MaxInitialTimeoutTest implements HttpServerAdapters {
         return client;
     }
 
-    @Test(dataProvider = "h3URIs")
+    @ParameterizedTest
+    @MethodSource("versions")
     public void testTimeout(final String h3URI) throws Exception {
         long timeout = Long.getLong("jdk.httpclient.quic.maxInitialTimeout", 30);
         long connectionTimeout = timeout == Integer.MAX_VALUE ? 2 : 10 * timeout;
@@ -196,8 +213,8 @@ public class H3MaxInitialTimeoutTest implements HttpServerAdapters {
                 HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
                 out.println("Response #1: " + response);
                 out.println("Version  #1: " + response.version());
-                assertEquals(response.statusCode(), 200, "first response status");
-                assertEquals(response.version(), HTTP_3, "first response version");
+                assertEquals(200, response.statusCode(), "first response status");
+                assertEquals(HTTP_3, response.version(), "first response version");
                 throw new AssertionError("Expected ConnectException not thrown");
             } catch (ConnectException c) {
                 String msg = c.getMessage();
@@ -222,8 +239,8 @@ public class H3MaxInitialTimeoutTest implements HttpServerAdapters {
     }
 
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         receiver = DatagramChannel.open();
         receiver.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
         h3URI = URIBuilder.newBuilder()
@@ -235,8 +252,8 @@ public class H3MaxInitialTimeoutTest implements HttpServerAdapters {
                 .toString();
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         System.err.println("=======================================================");
         System.err.println("               Tearing down test");
         System.err.println("=======================================================");
