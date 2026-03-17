@@ -25,6 +25,7 @@
 #ifndef SHARE_CODE_AOTCODECACHE_HPP
 #define SHARE_CODE_AOTCODECACHE_HPP
 
+#include "code/aotPDConfig.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "runtime/stubInfo.hpp"
 #include "utilities/hashTable.hpp"
@@ -276,6 +277,7 @@ class AOTCodeCache : public CHeapObj<mtCode> {
 // Classes used to describe AOT code cache.
 protected:
   class Config {
+    AOTPDConfig _pd_config;
     address _compressedOopBase;
     uint _compressedOopShift;
     uint _compressedKlassShift;
@@ -291,31 +293,6 @@ protected:
     uint _maxVectorSize;
     uint _arrayOperationPartialInlineSize;
 #endif // COMPILER2
-#if defined(X86) && !defined(ZERO)
-    enum X86Flags {
-      x86_none = 0,
-      x86_enableX86ECoreOpts = 1,
-      x86_useUnalignedLoadStores = 2
-    };
-    uint _avx3threshold;
-    uint _x86_flags;
-#endif // defined(X86) && !defined(ZERO)
-#if defined(AARCH64) && !defined(ZERO)
-    enum AArch64Flags {
-      aarch64_none = 0,
-      aarch64_avoidUnalignedAccesses = 1,
-      aarch64_useSIMDForMemoryOps = 2,
-      aarch64_useSIMDForArrayEquals = 4,
-      aarch64_useBlockZeroing = 8,
-      aarch64_useSVE = 16,
-      aarch64_useLSE = 32
-    };
-    // this is global but x86 does not use it and aarch64 does
-    uint _prefetchCopyIntervalInBytes;
-    uint _blockZeroingLowLimit;
-    uint _softwarePrefetchHintDistance;
-    uint _aarch64_flags;
-#endif // defined(AARCH64) && !defined(ZERO)
 #if INCLUDE_JVMCI
     uint _enableJVMCI;
 #endif // INCLUDE_JVMCI
