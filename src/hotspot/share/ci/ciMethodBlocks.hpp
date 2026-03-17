@@ -50,7 +50,7 @@ public:
   ciBlock *make_block_at(int bci);
   ciBlock *split_block_at(int bci);
   bool is_block_start(int bci);
-  u2 num_blocks()   { return _num_blocks;}
+  int num_blocks()  { return _num_blocks;}
   void clear_processed();
 
   ciBlock *make_dummy_block(); // a block not associated with a bci
