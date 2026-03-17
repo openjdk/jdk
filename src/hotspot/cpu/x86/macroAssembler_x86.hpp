@@ -162,7 +162,7 @@ class MacroAssembler: public Assembler {
 
   void incrementq(AddressLiteral dst, Register rscratch = noreg);
 
-  void movhlf(XMMRegister dst, XMMRegister src, Register rscratch = noreg);
+  void movhlf(XMMRegister dst, XMMRegister src);
 
   // Support optimal SSE move instructions.
   void movflt(XMMRegister dst, XMMRegister src) {

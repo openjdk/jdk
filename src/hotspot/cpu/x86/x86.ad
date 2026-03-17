@@ -1714,39 +1714,49 @@ enum FP_PREC {
   fp_prec_dbl
 };
 
-static inline void emit_fp_ucom_half(MacroAssembler* masm, XMMRegister p, XMMRegister q) {
-  if (VM_Version::supports_avx10_2()) {
-    __ vucomxsh(p, q);
+static inline void emit_fp_ucom(MacroAssembler* masm, enum FP_PREC pt,
+                                XMMRegister p, XMMRegister q) {
+  if (pt == fp_prec_hlf) {
+    if (VM_Version::supports_avx10_2()) {
+      __ vucomxsh(p, q);
+    } else {
+      __ vucomish(p, q);
+    }
+  } else if (pt == fp_prec_flt) {
+    if (VM_Version::supports_avx10_2()) {
+      __ vucomxss(p, q);
+    } else {
+      __ ucomiss(p, q);
+    }
   } else {
-    __ vucomish(p, q);
+    if (VM_Version::supports_avx10_2()) {
+      __ vucomxsd(p, q);
+    } else {
+      __ ucomisd(p, q);
+    }
   }
 }
 
-static inline void emit_fp_ucom_single(MacroAssembler* masm, XMMRegister p, XMMRegister q) {
-  if (VM_Version::supports_avx10_2()) {
-    __ vucomxss(p, q);
+static inline void movfp(MacroAssembler* masm, enum FP_PREC pt,
+                         XMMRegister dst, XMMRegister src) {
+  if (pt == fp_prec_hlf) {
+    __ movhlf(dst, src);
+  } else if (pt == fp_prec_flt) {
+    __ movflt(dst, src);
   } else {
-    __ ucomiss(p, q);
+    __ movdbl(dst, src);
   }
 }
 
-static inline void emit_fp_ucom_double(MacroAssembler* masm, XMMRegister p, XMMRegister q) {
-  if (VM_Version::supports_avx10_2()) {
-    __ vucomxsd(p, q);
-  } else {
-    __ ucomisd(p, q);
-  }
-}
-
-// Math.min()        # Math.max()
+// Math.min()          # Math.max()
 // -----------------------------
-// (v)ucomis[s/d].   #
-// ja   -> b         # a
-// jp   -> NaN       # NaN
-// jb   -> a         # b
-// je                #
-// |-jz -> a | b     # a & b
-// |    -> a         #
+// (v)ucomis[h/s/d]    #
+// ja   -> b           # a
+// jp   -> NaN         # NaN
+// jb   -> a           # b
+// je                  #
+// |-jz -> a | b       # a & b
+// |    -> a           #
 static void emit_fp_min_max(MacroAssembler* masm, XMMRegister dst,
                             XMMRegister a, XMMRegister b,
                             XMMRegister xmmt, Register rt,
@@ -1754,13 +1764,7 @@ static void emit_fp_min_max(MacroAssembler* masm, XMMRegister dst,
 
   Label nan, zero, below, above, done;
 
-  if (pt == fp_prec_hlf) {
-    emit_fp_ucom_half(masm, a, b);
-  } else if (pt == fp_prec_flt) {
-    emit_fp_ucom_single(masm, a, b);
-  } else {
-    emit_fp_ucom_double(masm, a, b);
-  }
+  emit_fp_ucom(masm, pt, a, b);
 
   if (dst->encoding() != (min ? b : a)->encoding()) {
     __ jccb(Assembler::above, above); // CF=0 & ZF=0
@@ -1773,22 +1777,10 @@ static void emit_fp_min_max(MacroAssembler* masm, XMMRegister dst,
 
   // equal
   __ vpxor(xmmt, xmmt, xmmt, Assembler::AVX_128bit);
-  if (pt == fp_prec_hlf) {
-    emit_fp_ucom_half(masm, a, xmmt);
-  } else if (pt == fp_prec_flt) {
-    emit_fp_ucom_single(masm, a, xmmt);
-  } else {
-    emit_fp_ucom_double(masm, a, xmmt);
-  }
+  emit_fp_ucom(masm, pt, a, xmmt);
 
   __ jccb(Assembler::equal, zero);
-  if (pt == fp_prec_hlf) {
-    __ movhlf(dst, a, rt);
-  } else if (pt == fp_prec_flt) {
-    __ movflt(dst, a);
-  } else {
-    __ movdbl(dst, a);
-  }
+  movfp(masm, pt, dst, a);
 
   __ jmp(done);
 
@@ -1802,13 +1794,7 @@ static void emit_fp_min_max(MacroAssembler* masm, XMMRegister dst,
   __ jmp(done);
 
   __ bind(above);
-  if (pt == fp_prec_hlf) {
-    __ movhlf(dst, min ? b : a, rt);
-  } else if (pt == fp_prec_flt) {
-    __ movflt(dst, min ? b : a);
-  } else {
-    __ movdbl(dst, min ? b : a);
-  }
+  movfp(masm, pt, dst, min ? b : a);
 
   __ jmp(done);
 
@@ -1826,13 +1812,7 @@ static void emit_fp_min_max(MacroAssembler* masm, XMMRegister dst,
   __ jmp(done);
 
   __ bind(below);
-  if (pt == fp_prec_hlf) {
-    __ movhlf(dst, min ? a : b, rt);
-  } else if (pt == fp_prec_flt) {
-    __ movflt(dst, min ? a : b);
-  } else {
-    __ movdbl(dst, min ? a : b);
-  }
+  movfp(masm, pt, dst, min ? a : b);
 
   __ bind(done);
 }
@@ -7404,222 +7384,140 @@ instruct loadAOTRCAddress(rRegP dst, immAOTRuntimeConstantsAddress con)
   ins_pipe(ialu_reg_fat);
 %}
 
+// min = java.lang.Math.min(float a, float b)
 // max = java.lang.Math.max(float a, float b)
-instruct maxF_reg_avx10_2(regF dst, regF a, regF b)
+instruct minmaxF_reg_avx10_2(regF dst, regF a, regF b)
 %{
   predicate(VM_Version::supports_avx10_2() && !VLoopReductions::is_reduction(n));
   match(Set dst (MaxF a b));
+  match(Set dst (MinF a b));
 
-  format %{ "maxF $dst, $a, $b" %}
+  format %{ "minmaxF $dst, $a, $b" %}
   ins_encode %{
-    __ vminmax_fp_avx10_2(Op_MaxV, T_FLOAT, $dst$$XMMRegister, k0, $a$$XMMRegister, $b$$XMMRegister, Assembler::AVX_128bit);
+    int opcode = this->ideal_Opcode();
+    __ sminmax_fp_avx10_2(opcode, T_FLOAT, $dst$$XMMRegister, k0, $a$$XMMRegister, $b$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct maxF_reduction_reg_avx10_2(regF dst, regF a, regF b, regF xtmp, rRegI rtmp, rFlagsReg cr)
+instruct minmaxF_reduction_reg_avx10_2(regF dst, regF a, regF b, regF xtmp, rRegI rtmp, rFlagsReg cr)
 %{
   predicate(VM_Version::supports_avx10_2() && VLoopReductions::is_reduction(n));
   match(Set dst (MaxF a b));
+  match(Set dst (MinF a b));
   effect(USE a, USE b, TEMP xtmp, TEMP rtmp, KILL cr);
 
-  format %{ "maxF_reduction $dst, $a, $b \t! using $xtmp and $rtmp as TEMP" %}
+  format %{ "minmaxF_reduction $dst, $a, $b \t! using $xtmp and $rtmp as TEMP" %}
   ins_encode %{
+    int opcode = this->ideal_Opcode();
+    bool min = (opcode == Op_MinF) ? true : false;
     emit_fp_min_max(masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xtmp$$XMMRegister, $rtmp$$Register,
-                    false /*min*/, fp_prec_flt /*pt*/);
+                    min, fp_prec_flt /*pt*/);
   %}
   ins_pipe( pipe_slow );
 %}
 
+// min = java.lang.Math.min(float a, float b)
 // max = java.lang.Math.max(float a, float b)
-instruct maxF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, legRegF btmp)
+instruct minmaxF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, legRegF btmp)
 %{
   predicate(!VM_Version::supports_avx10_2() && UseAVX > 0 && !VLoopReductions::is_reduction(n));
   match(Set dst (MaxF a b));
+  match(Set dst (MinF a b));
   effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
 
-  format %{ "maxF $dst, $a, $b \t! using $tmp, $atmp and $btmp as TEMP" %}
+  format %{ "minmaxF $dst, $a, $b \t! using $tmp, $atmp and $btmp as TEMP" %}
   ins_encode %{
-    __ vminmax_fp(Op_MaxV, T_FLOAT, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, Assembler::AVX_128bit);
+    int opcode = this->ideal_Opcode();
+    int param_opcode = (opcode == Op_MinF) ? Op_MinV : Op_MaxV;
+    __ vminmax_fp(param_opcode, T_FLOAT, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $tmp$$XMMRegister,
+                  $atmp$$XMMRegister, $btmp$$XMMRegister, Assembler::AVX_128bit);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct maxF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xtmp, rRegI rtmp, rFlagsReg cr)
+instruct minmaxF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xtmp, rRegI rtmp, rFlagsReg cr)
 %{
   predicate(!VM_Version::supports_avx10_2() && UseAVX > 0 && VLoopReductions::is_reduction(n));
   match(Set dst (MaxF a b));
+  match(Set dst (MinF a b));
   effect(USE a, USE b, TEMP xtmp, TEMP rtmp, KILL cr);
 
-  format %{ "maxF_reduction $dst, $a, $b \t!using $xtmp and $rtmp as TEMP" %}
+  format %{ "minmaxF_reduction $dst, $a, $b \t!using $xtmp and $rtmp as TEMP" %}
   ins_encode %{
+    int opcode = this->ideal_Opcode();
+    bool min = (opcode == Op_MinF) ? true : false;
     emit_fp_min_max(masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xtmp$$XMMRegister, $rtmp$$Register,
-                    false /*min*/, fp_prec_flt /*pt*/);
+                    min, fp_prec_flt /*pt*/);
   %}
   ins_pipe( pipe_slow );
 %}
 
+// min = java.lang.Math.min(double a, double b)
 // max = java.lang.Math.max(double a, double b)
-instruct maxD_reg_avx10_2(regD dst, regD a, regD b)
+instruct minmaxD_reg_avx10_2(regD dst, regD a, regD b)
 %{
   predicate(VM_Version::supports_avx10_2() && !VLoopReductions::is_reduction(n));
   match(Set dst (MaxD a b));
+  match(Set dst (MinD a b));
 
-  format %{ "maxD $dst, $a, $b" %}
+  format %{ "minmaxD $dst, $a, $b" %}
   ins_encode %{
-    __ vminmax_fp_avx10_2(Op_MaxV, T_DOUBLE, $dst$$XMMRegister, k0, $a$$XMMRegister, $b$$XMMRegister, Assembler::AVX_128bit);
+    int opcode = this->ideal_Opcode();
+    __ sminmax_fp_avx10_2(opcode, T_DOUBLE, $dst$$XMMRegister, k0, $a$$XMMRegister, $b$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct maxD_reduction_reg_avx10_2(regD dst, regD a, regD b, regD xtmp, rRegI rtmp, rFlagsReg cr)
+instruct minmaxD_reduction_reg_avx10_2(regD dst, regD a, regD b, regD xtmp, rRegI rtmp, rFlagsReg cr)
 %{
   predicate(VM_Version::supports_avx10_2() && VLoopReductions::is_reduction(n));
   match(Set dst (MaxD a b));
+  match(Set dst (MinD a b));
   effect(USE a, USE b, TEMP xtmp, TEMP rtmp, KILL cr);
 
-  format %{ "maxD_reduction $dst, $a, $b \t! using $xtmp and $rtmp as TEMP" %}
+  format %{ "minmaxD_reduction $dst, $a, $b \t! using $xtmp and $rtmp as TEMP" %}
   ins_encode %{
+    int opcode = this->ideal_Opcode();
+    bool min = (opcode == Op_MinD) ? true : false;
     emit_fp_min_max(masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xtmp$$XMMRegister, $rtmp$$Register,
-                    false /*min*/, fp_prec_dbl /*pt*/);
+                    min, fp_prec_dbl /*pt*/);
   %}
   ins_pipe( pipe_slow );
 %}
 
+// min = java.lang.Math.min(double a, double b)
 // max = java.lang.Math.max(double a, double b)
-instruct maxD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, legRegD btmp)
+instruct minmaxD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, legRegD btmp)
 %{
   predicate(!VM_Version::supports_avx10_2() && UseAVX > 0 && !VLoopReductions::is_reduction(n));
   match(Set dst (MaxD a b));
+  match(Set dst (MinD a b));
   effect(USE a, USE b, TEMP atmp, TEMP btmp, TEMP tmp);
 
-  format %{ "maxD $dst, $a, $b \t! using $tmp, $atmp and $btmp as TEMP" %}
+  format %{ "minmaxD $dst, $a, $b \t! using $tmp, $atmp and $btmp as TEMP" %}
   ins_encode %{
-    __ vminmax_fp(Op_MaxV, T_DOUBLE, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, Assembler::AVX_128bit);
+    int opcode = this->ideal_Opcode();
+    int param_opcode = (opcode == Op_MinD) ? Op_MinV : Op_MaxV;
+    __ vminmax_fp(param_opcode, T_DOUBLE, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $tmp$$XMMRegister,
+                  $atmp$$XMMRegister, $btmp$$XMMRegister, Assembler::AVX_128bit);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct maxD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xtmp, rRegL rtmp, rFlagsReg cr)
+instruct minmaxD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xtmp, rRegL rtmp, rFlagsReg cr)
 %{
   predicate(!VM_Version::supports_avx10_2() && UseAVX > 0 && VLoopReductions::is_reduction(n));
   match(Set dst (MaxD a b));
-  effect(USE a, USE b, TEMP xtmp, TEMP rtmp, KILL cr);
-
-  format %{ "maxD_reduction $dst, $a, $b \t! using $xtmp and $rtmp as TEMP" %}
-  ins_encode %{
-    emit_fp_min_max(masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xtmp$$XMMRegister, $rtmp$$Register,
-                    false /*min*/, fp_prec_dbl /*pt*/);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-// min = java.lang.Math.min(float a, float b)
-instruct minF_reg_avx10_2(regF dst, regF a, regF b)
-%{
-  predicate(VM_Version::supports_avx10_2() && !VLoopReductions::is_reduction(n));
-  match(Set dst (MinF a b));
-
-  format %{ "minF $dst, $a, $b" %}
-  ins_encode %{
-    __ vminmax_fp_avx10_2(Op_MinV, T_FLOAT, $dst$$XMMRegister, k0, $a$$XMMRegister, $b$$XMMRegister, Assembler::AVX_128bit);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct minF_reduction_reg_avx10_2(regF dst, regF a, regF b, regF xtmp, rRegI rtmp, rFlagsReg cr)
-%{
-  predicate(VM_Version::supports_avx10_2() && VLoopReductions::is_reduction(n));
-  match(Set dst (MinF a b));
-  effect(USE a, USE b, TEMP xtmp, TEMP rtmp, KILL cr);
-
-  format %{ "minF_reduction $dst, $a, $b \t! using $xtmp and $rtmp as TEMP" %}
-  ins_encode %{
-    emit_fp_min_max(masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xtmp$$XMMRegister, $rtmp$$Register,
-                    true /*min*/, fp_prec_flt /*pt*/);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-// min = java.lang.Math.min(float a, float b)
-instruct minF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, legRegF btmp)
-%{
-  predicate(!VM_Version::supports_avx10_2() && UseAVX > 0 && !VLoopReductions::is_reduction(n));
-  match(Set dst (MinF a b));
-  effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
-
-  format %{ "minF $dst, $a, $b \t! using $tmp, $atmp and $btmp as TEMP" %}
-  ins_encode %{
-    __ vminmax_fp(Op_MinV, T_FLOAT, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, Assembler::AVX_128bit);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct minF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xtmp, rRegI rtmp, rFlagsReg cr)
-%{
-  predicate(!VM_Version::supports_avx10_2() && UseAVX > 0 && VLoopReductions::is_reduction(n));
-  match(Set dst (MinF a b));
-  effect(USE a, USE b, TEMP xtmp, TEMP rtmp, KILL cr);
-
-  format %{ "minF_reduction $dst, $a, $b \t! using $xtmp and $rtmp as TEMP" %}
-  ins_encode %{
-    emit_fp_min_max(masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xtmp$$XMMRegister, $rtmp$$Register,
-                    true /*min*/, fp_prec_flt /*pt*/);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-// min = java.lang.Math.min(double a, double b)
-instruct minD_reg_avx10_2(regD dst, regD a, regD b)
-%{
-  predicate(VM_Version::supports_avx10_2() && !VLoopReductions::is_reduction(n));
-  match(Set dst (MinD a b));
-
-  format %{ "minD $dst, $a, $b" %}
-  ins_encode %{
-    __ vminmax_fp_avx10_2(Op_MinV, T_DOUBLE, $dst$$XMMRegister, k0, $a$$XMMRegister, $b$$XMMRegister, Assembler::AVX_128bit);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct minD_reduction_reg_avx10_2(regD dst, regD a, regD b, regD xtmp, rRegI rtmp, rFlagsReg cr)
-%{
-  predicate(VM_Version::supports_avx10_2() && VLoopReductions::is_reduction(n));
   match(Set dst (MinD a b));
   effect(USE a, USE b, TEMP xtmp, TEMP rtmp, KILL cr);
 
-  format %{ "minD_reduction $dst, $a, $b \t! using $xtmp and $rtmp as TEMP" %}
+  format %{ "minmaxD_reduction $dst, $a, $b \t! using $xtmp and $rtmp as TEMP" %}
   ins_encode %{
+    int opcode = this->ideal_Opcode();
+    bool min = (opcode == Op_MinD) ? true : false;
     emit_fp_min_max(masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xtmp$$XMMRegister, $rtmp$$Register,
-                    true /*min*/, fp_prec_dbl /*pt*/);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-// min = java.lang.Math.min(double a, double b)
-instruct minD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, legRegD btmp)
-%{
-  predicate(!VM_Version::supports_avx10_2() && UseAVX > 0 && !VLoopReductions::is_reduction(n));
-  match(Set dst (MinD a b));
-  effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
-
-  format %{ "minD $dst, $a, $b \t! using $tmp, $atmp and $btmp as TEMP" %}
-  ins_encode %{
-    __ vminmax_fp(Op_MinV, T_DOUBLE, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, Assembler::AVX_128bit);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct minD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xtmp, rRegL rtmp, rFlagsReg cr)
-%{
-  predicate(!VM_Version::supports_avx10_2() && UseAVX > 0 && VLoopReductions::is_reduction(n));
-  match(Set dst (MinD a b));
-  effect(USE a, USE b, TEMP xtmp, TEMP rtmp, KILL cr);
-
-  format %{ "maxD_reduction $dst, $a, $b \t! using $xtmp and $rtmp as TEMP" %}
-  ins_encode %{
-    emit_fp_min_max(masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xtmp$$XMMRegister, $rtmp$$Register,
-                    true /*min*/, fp_prec_dbl /*pt*/);
+                    min, fp_prec_dbl /*pt*/);
   %}
   ins_pipe( pipe_slow );
 %}

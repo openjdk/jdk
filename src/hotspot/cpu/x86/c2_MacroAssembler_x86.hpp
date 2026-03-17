@@ -70,6 +70,9 @@ public:
   void vminmax_fp_avx10_2(int opc, BasicType elem_bt, XMMRegister dst, KRegister mask,
                           XMMRegister src1, XMMRegister src2, int vlen_enc);
 
+  void sminmax_fp_avx10_2(int opc, BasicType elem_bt, XMMRegister dst, KRegister mask,
+                          XMMRegister src1, XMMRegister src2);
+
   void vpuminmaxq(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc);
 
   void evminmax_fp(int opcode, BasicType elem_bt,

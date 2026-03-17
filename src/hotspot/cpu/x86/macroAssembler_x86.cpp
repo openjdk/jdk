@@ -1961,11 +1961,8 @@ void MacroAssembler::movflt(XMMRegister dst, AddressLiteral src, Register rscrat
   }
 }
 
-void MacroAssembler::movhlf(XMMRegister dst, XMMRegister src, Register rscratch) {
-  assert(rscratch != noreg, "missing");
-
-  vmovw(rscratch, src);
-  vmovw(dst, rscratch);
+void MacroAssembler::movhlf(XMMRegister dst, XMMRegister src) {
+  vmovw(dst, src);
 }
 
 void MacroAssembler::mov64(Register dst, int64_t imm64) {

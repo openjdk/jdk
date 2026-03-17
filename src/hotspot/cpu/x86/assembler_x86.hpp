@@ -1696,6 +1696,9 @@ private:
 
   void vmovw(XMMRegister dst, Register src);
   void vmovw(Register dst, XMMRegister src);
+  void vmovw(XMMRegister dst, Address src);
+  void vmovw(Address dst, XMMRegister src);
+  void vmovw(XMMRegister dst, XMMRegister src);
 
   void movsbq(Register dst, Address src);
   void movsbq(Register dst, Register src);
@@ -2789,6 +2792,9 @@ private:
   void vminpd(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
 
   // AVX10.2 floating point minmax instructions
+  void vminmaxsh(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int imm8);
+  void vminmaxss(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int imm8);
+  void vminmaxsd(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int imm8);
   void evminmaxph(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int imm8, int vector_len);
   void evminmaxph(XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int imm8, int vector_len);
   void evminmaxps(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int imm8, int vector_len);
