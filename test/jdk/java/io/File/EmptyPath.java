@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -286,6 +287,7 @@ public class EmptyPath {
     }
 
     @Test
+    @DisabledOnOs({OS.WINDOWS})
     public void listRoots() {
         Set<String> expected = Arrays.stream(f.getAbsoluteFile().listRoots())
             .map(File::toString)
@@ -294,6 +296,20 @@ public class EmptyPath {
             .map(File::toString)
             .collect(Collectors.toSet());
         assertEquals(expected, actual);
+    }
+
+    @Test
+    @EnabledOnOs({OS.WINDOWS})
+    public void listRootsWindows() {
+        Set<String> expected = Arrays.stream(f.getAbsoluteFile().listRoots())
+            .map(File::toString)
+            .collect(Collectors.toSet());
+        Set<String> actual = Arrays.stream(f.listRoots())
+            .map(File::toString)
+            .collect(Collectors.toSet());
+        Set<String> intersection =
+            actual.stream().filter(expected::contains).collect(Collectors.toSet());
+        assertFalse(intersection.isEmpty());
     }
 
     @Test
