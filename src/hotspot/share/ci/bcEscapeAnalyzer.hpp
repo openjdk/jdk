@@ -152,6 +152,11 @@ class BCEscapeAnalyzer : public ArenaObj {
   // Copy dependencies from this analysis into "deps"
   void copy_dependencies(Dependencies *deps);
 
+  // Returns true if the datacount computation for iterate_blocks would
+  // overflow, i.e. the allocation size exceeds what can be represented.
+  // Extracted as a public static method for testability (JDK-8216486).
+  static bool datacount_overflow(uint numblocks, uint stkSize, uint numLocals);
+
 #ifndef PRODUCT
   // dump escape information
   void dump();
