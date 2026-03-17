@@ -187,24 +187,24 @@ public class Bug6937964Test {
                 QName xmlSchemaType = duration.getXMLSchemaType();
                 assertEquals(DatatypeConstants.DURATION_YEARMONTH, xmlSchemaType, "Duration created with " +
                         "XMLSchemaType of\"" + xmlSchemaType + "\" was expected to be \""
-                        + DatatypeConstants.DURATION_YEARMONTH + "\" and has the value \"" + duration.toString() + "\"");
-                } catch (IllegalStateException illegalStateException) {
-                    // TODO; this test really should pass
-                    System.err.println("Please fix this bug that is being ignored, for now: " + illegalStateException.getMessage());
-                }
+                        + DatatypeConstants.DURATION_YEARMONTH + "\" and has the value \"" + duration + "\"");
+            } catch (IllegalStateException illegalStateException) {
+                // TODO; this test really should pass
+                System.err.println("Please fix this bug that is being ignored, for now: " + illegalStateException.getMessage());
+            }
 
             // does it have the right value?
-            assertEquals(duration.toString(), expectedLex, "Duration created with \"" + actualLex +
-                    "\" was expected to be \"" + expectedLex + "\" and has the value \"" + duration.toString() + "\"");
+            assertEquals(expectedLex, duration.toString(), "Duration created with \"" + actualLex +
+                    "\" was expected to be \"" + expectedLex + "\" and has the value \"" + duration + "\"");
             // Duration created with correct value
         } catch (Exception exception) {
             if (DEBUG) {
-                System.err.println("Exception in creating duration: \"" + exception.toString() + "\"");
+                System.err.println("Exception in creating duration: \"" + exception + "\"");
             }
 
             // was this expected to succed?
             assertEquals(TEST_VALUE_FAIL, expectedLex, "the value \"" + actualLex + "\" is valid yet " +
-                    "it failed with \"" + exception.toString() + "\"");
+                    "it failed with \"" + exception + "\"");
             // expected failure
         }
     }

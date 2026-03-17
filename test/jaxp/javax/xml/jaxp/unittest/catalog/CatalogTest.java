@@ -356,9 +356,9 @@ public class CatalogTest extends CatalogSupportBase {
         try {
             System.setProperty(KEY_FILES, files);
             CatalogResolver catalogResolver = CatalogManager.catalogResolver(CatalogFeatures.defaults());
-            String sysId = catalogResolver.resolveEntity(null, systemId).getSystemId();
-            assertEquals(sysId, Paths.get(filepath + expectedUri).toUri().toString().replace("///", "/"),
-                    "System ID match not right");
+            String actualSysId = catalogResolver.resolveEntity(null, systemId).getSystemId();
+            String expectedSysId = Paths.get(filepath + expectedUri).toUri().toString().replace("///", "/");
+            assertEquals(expectedSysId, actualSysId, "System ID match not right");
         } finally {
             System.clearProperty(KEY_FILES);
         }

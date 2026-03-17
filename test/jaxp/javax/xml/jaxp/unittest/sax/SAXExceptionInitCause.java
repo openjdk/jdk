@@ -84,8 +84,8 @@ public class SAXExceptionInitCause {
         // Check that constructor properly initializes cause
         Exception cause = new Exception(SAX_CAUSE_MESSAGE);
         SAXException exception = new SAXException(cause);
-        assertSame(exception.getCause(), cause);
-        assertSame(exception.getException(), cause);
+        assertSame(cause, exception.getCause());
+        assertSame(cause, exception.getException());
     }
 
     @Test
@@ -94,8 +94,8 @@ public class SAXExceptionInitCause {
         SAXException exception = new SAXException();
         Exception cause = new Exception(SAX_CAUSE_MESSAGE);
         exception.initCause(cause);
-        assertSame(exception.getCause(), cause);
-        assertSame(exception.getException(), cause);
+        assertSame(cause, exception.getCause());
+        assertSame(cause, exception.getException());
     }
 
     @Test
@@ -105,7 +105,7 @@ public class SAXExceptionInitCause {
         SAXException exception = new SAXException();
         Throwable cause = new Throwable(SAX_CAUSE_MESSAGE);
         exception.initCause(cause);
-        assertSame(exception.getCause(), cause);
+        assertSame(cause, exception.getCause());
         assertNull(exception.getException());
     }
 

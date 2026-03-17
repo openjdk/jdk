@@ -158,9 +158,9 @@ public class DeclarationTest {
         SAXParser parser = SAXParserFactory.newDefaultInstance().newSAXParser();
         NewMethodImpl h = new NewMethodImpl();
         parser.parse(xml, h);
-        assertEquals(h.version, version);
-        assertEquals(h.encoding, encoding);
-        assertEquals(h.standalone, standalone);
+        assertEquals(version, h.version);
+        assertEquals(encoding, h.encoding);
+        assertEquals(standalone, h.standalone);
     }
 
     /**
@@ -178,9 +178,9 @@ public class DeclarationTest {
         XMLReader r = SAXParserFactory.newDefaultInstance().newSAXParser().getXMLReader();
         r.setContentHandler(h);
         r.parse(new InputSource(new StringReader(xml)));
-        assertEquals(h.version, version);
-        assertEquals(h.encoding, encoding);
-        assertEquals(h.standalone, standalone);
+        assertEquals(version, h.version);
+        assertEquals(encoding, h.encoding);
+        assertEquals(standalone, h.standalone);
     }
 
     static class DefaultImpl extends DefaultHandler {

@@ -34,6 +34,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
@@ -176,7 +177,7 @@ public class XMLGregorianCalendarTest {
 
     @Test
     public void testEqualsWithEqualObjectParam() {
-        assertEquals(calendar, factory.newXMLGregorianCalendar(), "equals method is expected to return true");
+        assertTrue(calendar.equals(factory.newXMLGregorianCalendar()), "equals method is expected to return true");
     }
 
     @Test

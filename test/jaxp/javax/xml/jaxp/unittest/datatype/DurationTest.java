@@ -43,6 +43,7 @@ import java.util.TimeZone;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /*
@@ -101,8 +102,7 @@ public class DurationTest {
         Duration dt2 = factory.newDuration(t2);
 
         Duration result = dt1.subtract(dt2);
-        Duration expected = factory.newDuration(e);
-        assertEquals(result, expected, "The result should be " + e);
+        assertEquals(factory.newDuration(e), result, "The result should be " + e);
 
     }
 
@@ -209,7 +209,7 @@ public class DurationTest {
 
     @Test
     public void testEqualsWithEqualObjectParam() {
-        assertEquals(duration, factory.newDuration(100), "equals method is expected to return true");
+        assertTrue(duration.equals(factory.newDuration(100)), "equals method is expected to return true");
     }
 
     /**
