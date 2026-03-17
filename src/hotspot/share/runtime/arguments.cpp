@@ -537,7 +537,6 @@ static SpecialFlag const special_jvm_flags[] = {
   { "UseCompressedClassPointers",   JDK_Version::jdk(25),  JDK_Version::jdk(27), JDK_Version::undefined() },
 #endif
   { "AggressiveHeap",               JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
-  { "UseNewLongLShift",             JDK_Version::jdk(27),  JDK_Version::jdk(28), JDK_Version::jdk(29) },
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
 
@@ -555,6 +554,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "NewSizeThreadIncrease",        JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "NeverActAsServerClassMachine", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "AlwaysActAsServerClassMachine", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
+  { "UseNewLongLShift",             JDK_Version::undefined(), JDK_Version::jdk(27), JDK_Version::jdk(28) },
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
