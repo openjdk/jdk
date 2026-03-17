@@ -83,6 +83,7 @@
 #endif
 
 # include <ctype.h>
+# include <dirent.h>
 # include <dlfcn.h>
 # include <endian.h>
 # include <errno.h>
@@ -113,6 +114,7 @@
 # include <sys/types.h>
 # include <sys/utsname.h>
 # include <syscall.h>
+# include <time.h>
 # include <unistd.h>
 #ifdef __GLIBC__
 # include <malloc.h>
@@ -2160,6 +2162,8 @@ void os::print_os_info(outputStream* st) {
   os::Linux::print_libversion_info(st);
 
   os::Posix::print_rlimit_info(st);
+
+  os::print_open_file_descriptors(st);
 
   os::Posix::print_load_average(st);
   st->cr();
@@ -5429,3 +5433,33 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
 
   return res;
 } // end: os::pd_dll_unload()
+
+void os::print_open_file_descriptors(outputStream* st) {
+  DIR* dirp = opendir("/proc/self/fd");
+  int fds = 0;
+  struct dirent* dentp;
+  const jlong TIMEOUT_NS = 50000000L;  // 50 ms in nanoseconds
+  bool timed_out = false;
+
+  // limit proc file read to 50ms
+  jlong start = os::javaTimeNanos();
+  assert(dirp != nullptr, "No proc fs?");
+  while ((dentp = readdir(dirp)) != nullptr && !timed_out) {
+    if (isdigit(dentp->d_name[0])) fds++;
+    if (fds % 100 == 0) {
+      jlong now = os::javaTimeNanos();
+      if ((now - start) > TIMEOUT_NS) {
+        timed_out = true;
+      }
+    }
+  }
+
+  closedir(dirp);
+  if (timed_out) {
+    st->print_cr("Open File Descriptors: > %d", fds);
+  } else {
+    st->print_cr("Open File Descriptors: %d", fds);
+  }
+}
+
+

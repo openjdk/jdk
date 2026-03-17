@@ -511,12 +511,12 @@ void StubGenerator::copy_bytes_backward(Register from, Register dest,
 // - If target supports AVX3 features (BW+VL+F) then implementation uses 32 byte vectors (YMMs)
 //   for both special cases (various small block sizes) and aligned copy loop. This is the
 //   default configuration.
-// - If copy length is above AVX3Threshold, then implementation use 64 byte vectors (ZMMs)
+// - If copy length is above CopyAVX3Threshold, then implementation use 64 byte vectors (ZMMs)
 //   for main copy loop (and subsequent tail) since bulk of the cycles will be consumed in it.
 // - If user forces MaxVectorSize=32 then above 4096 bytes its seen that REP MOVs shows a
 //   better performance for disjoint copies. For conjoint/backward copy vector based
 //   copy performs better.
-// - If user sets AVX3Threshold=0, then special cases for small blocks sizes operate over
+// - If user sets CopyAVX3Threshold=0, then special cases for small blocks sizes operate over
 //   64 byte vector registers (ZMMs).
 
 // Inputs:
@@ -575,8 +575,7 @@ address StubGenerator::generate_disjoint_copy_avx3_masked(StubId stub_id, addres
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
-  int avx3threshold = VM_Version::avx3_threshold();
-  bool use64byteVector = (MaxVectorSize > 32) && (avx3threshold == 0);
+  bool use64byteVector = (MaxVectorSize > 32) && (CopyAVX3Threshold == 0);
   const int large_threshold = 2621440; // 2.5 MB
   Label L_main_loop, L_main_loop_64bytes, L_tail, L_tail64, L_exit, L_entry;
   Label L_repmovs, L_main_pre_loop, L_main_pre_loop_64bytes, L_pre_main_post_64;
@@ -647,7 +646,7 @@ address StubGenerator::generate_disjoint_copy_avx3_masked(StubId stub_id, addres
       __ cmpq(temp2, large_threshold);
       __ jcc(Assembler::greaterEqual, L_copy_large);
     }
-    if (avx3threshold != 0) {
+    if (CopyAVX3Threshold != 0) {
       __ cmpq(count, threshold[shift]);
       if (MaxVectorSize == 64) {
         // Copy using 64 byte vectors.
@@ -659,7 +658,7 @@ address StubGenerator::generate_disjoint_copy_avx3_masked(StubId stub_id, addres
       }
     }
 
-    if ((MaxVectorSize < 64)  || (avx3threshold != 0)) {
+    if ((MaxVectorSize < 64)  || (CopyAVX3Threshold != 0)) {
       // Partial copy to make dst address 32 byte aligned.
       __ movq(temp2, to);
       __ andq(temp2, 31);
@@ -913,8 +912,7 @@ address StubGenerator::generate_conjoint_copy_avx3_masked(StubId stub_id, addres
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
-  int avx3threshold = VM_Version::avx3_threshold();
-  bool use64byteVector = (MaxVectorSize > 32) && (avx3threshold == 0);
+  bool use64byteVector = (MaxVectorSize > 32) && (CopyAVX3Threshold == 0);
 
   Label L_main_pre_loop, L_main_pre_loop_64bytes, L_pre_main_post_64;
   Label L_main_loop, L_main_loop_64bytes, L_tail, L_tail64, L_exit, L_entry;
@@ -979,12 +977,12 @@ address StubGenerator::generate_conjoint_copy_avx3_masked(StubId stub_id, addres
     // PRE-MAIN-POST loop for aligned copy.
     __ BIND(L_entry);
 
-    if ((MaxVectorSize > 32) && (avx3threshold != 0)) {
+    if ((MaxVectorSize > 32) && (CopyAVX3Threshold != 0)) {
       __ cmpq(temp1, threshold[shift]);
       __ jcc(Assembler::greaterEqual, L_pre_main_post_64);
     }
 
-    if ((MaxVectorSize < 64)  || (avx3threshold != 0)) {
+    if ((MaxVectorSize < 64)  || (CopyAVX3Threshold != 0)) {
       // Partial copy to make dst address 32 byte aligned.
       __ leaq(temp2, Address(to, temp1, (Address::ScaleFactor)(shift), 0));
       __ andq(temp2, 31);
@@ -1199,7 +1197,7 @@ void StubGenerator::arraycopy_avx3_special_cases_conjoint(XMMRegister xmm, KRegi
                                                            bool use64byteVector, Label& L_entry, Label& L_exit) {
   Label L_entry_64, L_entry_96, L_entry_128;
   Label L_entry_160, L_entry_192;
-  bool avx3 = (MaxVectorSize > 32) && (VM_Version::avx3_threshold() == 0);
+  bool avx3 = (MaxVectorSize > 32) && (CopyAVX3Threshold == 0);
 
   int size_mat[][6] = {
   /* T_BYTE */ {32 , 64,  96 , 128 , 160 , 192 },

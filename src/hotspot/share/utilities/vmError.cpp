@@ -1329,6 +1329,13 @@ void VMError::report(outputStream* st, bool _verbose) {
   STEP_IF("printing OS information", _verbose)
     os::print_os_info(st);
     st->cr();
+#ifdef __APPLE__
+    // Avoid large stack allocation on Mac for FD count during signal-handling.
+    os::Bsd::print_open_file_descriptors(st, buf, sizeof(buf));
+    st->cr();
+#else
+    os::print_open_file_descriptors(st);
+#endif
 
   STEP_IF("printing CPU info", _verbose)
     os::print_cpu_info(st, buf, sizeof(buf));
@@ -1549,6 +1556,8 @@ void VMError::print_vm_info(outputStream* st) {
   // STEP("printing OS information")
 
   os::print_os_info(st);
+  st->cr();
+  os::print_open_file_descriptors(st);
   st->cr();
 
   // STEP("printing CPU info")

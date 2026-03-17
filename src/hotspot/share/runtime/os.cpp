@@ -2302,24 +2302,13 @@ void os::uncommit_memory(char* addr, size_t bytes, bool executable) {
   log_debug(os, map)("Uncommitted " RANGEFMT, RANGEFMTARGS(addr, bytes));
 }
 
-// The scope of NmtVirtualMemoryLocker covers both pd_release_memory and record_virtual_memory_release because
-// these operations must happen atomically to avoid races causing NMT to fall out os sync with the OS reality.
-// We do not have the same lock protection for pd_reserve_memory and record_virtual_memory_reserve.
-// We assume that there is some external synchronization that prevents a region from being released
-// before it is finished being reserved.
+// pd_release_memory is called outside the protection of the NMT lock.
+// Until pd_release_memory is called, The OS is unable to give away the about-to-be-released range to another thread.
+// So there is no risk of another thread re-reserving the range before this function is done with it.
 void os::release_memory(char* addr, size_t bytes) {
   assert_nonempty_range(addr, bytes);
-  bool res;
-  if (MemTracker::enabled()) {
-    MemTracker::NmtVirtualMemoryLocker nvml;
-    res = pd_release_memory(addr, bytes);
-    if (res) {
-      MemTracker::record_virtual_memory_release(addr, bytes);
-    }
-  } else {
-    res = pd_release_memory(addr, bytes);
-  }
-  if (!res) {
+  MemTracker::record_virtual_memory_release(addr, bytes);
+  if (!pd_release_memory(addr, bytes)) {
     fatal("Failed to release " RANGEFMT, RANGEFMTARGS(addr, bytes));
   }
   log_debug(os, map)("Released " RANGEFMT, RANGEFMTARGS(addr, bytes));
@@ -2392,17 +2381,8 @@ char* os::map_memory(int fd, const char* file_name, size_t file_offset,
 }
 
 void os::unmap_memory(char *addr, size_t bytes) {
-  bool result;
-  if (MemTracker::enabled()) {
-    MemTracker::NmtVirtualMemoryLocker nvml;
-    result = pd_unmap_memory(addr, bytes);
-    if (result) {
-      MemTracker::record_virtual_memory_release(addr, bytes);
-    }
-  } else {
-    result = pd_unmap_memory(addr, bytes);
-  }
-  if (!result) {
+  MemTracker::record_virtual_memory_release(addr, bytes);
+  if (!pd_unmap_memory(addr, bytes)) {
     fatal("Failed to unmap memory " RANGEFMT, RANGEFMTARGS(addr, bytes));
   }
 }
