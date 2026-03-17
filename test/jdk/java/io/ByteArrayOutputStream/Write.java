@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 4017158 8180410
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
- * @run testng Write
+ * @run junit Write
  * @summary Check for correct implementation of ByteArrayInputStream.write
  * @key randomness
  */
@@ -35,8 +35,11 @@ import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 import java.util.Random;
 import jdk.test.lib.RandomFactory;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class Write {
     private static void doBoundsTest(byte[] b, int off, int len,
@@ -77,7 +80,7 @@ public class Write {
     }
 
     @Test
-    public static void boundsTest() throws Exception {
+    public void boundsTest() throws Exception {
         byte array1[] = {1 , 2 , 3 , 4 , 5};     // Simple array
 
         //Create new ByteArrayOutputStream object
@@ -91,7 +94,7 @@ public class Write {
     }
 
     @Test
-    public static void writeTest() throws Exception {
+    public void writeTest() throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Random rnd = RandomFactory.getRandom();
         final int size = 17 + rnd.nextInt(128);
@@ -109,17 +112,17 @@ public class Write {
 
         baos.write(b, off1, len1);
         byte[] b1 = baos.toByteArray();
-        assertEquals(b1.length, len1, "Array length test 1 failed.");
-        assertEquals(b1, Arrays.copyOfRange(b, off1, off1 + len1),
+        assertEquals(len1, b1.length, "Array length test 1 failed.");
+        assertArrayEquals(b1, Arrays.copyOfRange(b, off1, off1 + len1),
             "Array equality test 1 failed.");
 
         baos.write(b, off2, len2);
         byte[] b2 = baos.toByteArray();
-        assertEquals(b2.length, len1 + len2, "Array length test 2 failed.");
-        assertEquals(Arrays.copyOfRange(b2, 0, len1),
+        assertEquals(len1 + len2, b2.length, "Array length test 2 failed.");
+        assertArrayEquals(Arrays.copyOfRange(b2, 0, len1),
              Arrays.copyOfRange(b, off1, off1 + len1),
             "Array equality test 2A failed.");
-        assertEquals(Arrays.copyOfRange(b2, len1, len1 + len2),
+        assertArrayEquals(Arrays.copyOfRange(b2, len1, len1 + len2),
             Arrays.copyOfRange(b, off2, off2 + len2),
             "Array equality test 2B failed.");
 
@@ -129,14 +132,14 @@ public class Write {
         if (b3.length != len1 + len2 + b.length) {
             throw new RuntimeException("Array length test 3 failed.");
         }
-        assertEquals(b3.length, len3, "Array length test 3 failed.");
-        assertEquals(Arrays.copyOfRange(b3, 0, len1),
+        assertEquals(len3, b3.length, "Array length test 3 failed.");
+        assertArrayEquals(Arrays.copyOfRange(b3, 0, len1),
              Arrays.copyOfRange(b, off1, off1 + len1),
             "Array equality test 3A failed.");
-        assertEquals(Arrays.copyOfRange(b3, len1, len1 + len2),
+        assertArrayEquals(Arrays.copyOfRange(b3, len1, len1 + len2),
             Arrays.copyOfRange(b, off2, off2 + len2),
             "Array equality test 3B failed.");
-        assertEquals(Arrays.copyOfRange(b3, len1 + len2, len3), b,
+        assertArrayEquals(Arrays.copyOfRange(b3, len1 + len2, len3), b,
             "Array equality test 3C failed.");
     }
 }

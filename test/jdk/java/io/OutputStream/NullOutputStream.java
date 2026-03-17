@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,54 +21,54 @@
  * questions.
  */
 
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-
 import java.io.IOException;
 import java.io.OutputStream;
 
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.fail;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /*
  * @test
  * @bug 4358774
- * @run testng NullOutputStream
+ * @run junit NullOutputStream
  * @summary Check for expected behavior of OutputStream.nullOutputStream().
  */
 public class NullOutputStream {
     private static OutputStream openStream;
     private static OutputStream closedStream;
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         openStream = OutputStream.nullOutputStream();
         closedStream = OutputStream.nullOutputStream();
-        try {
-           closedStream.close();
-        } catch (IOException e) {
-            fail("Unexpected IOException");
-        }
+        assertDoesNotThrow(() -> closedStream.close());
     }
 
-    @AfterClass
+    @AfterAll
     public static void closeStream() {
-        try {
-            openStream.close();
-        } catch (IOException e) {
-            fail("Unexpected IOException");
-        }
+        assertDoesNotThrow(() -> openStream.close());
     }
 
     @Test
-    public static void testOpen() {
+    public void testOpen() {
         assertNotNull(openStream,
             "OutputStream.nullOutputStream() returned null");
     }
 
     @Test
-    public static void testWrite() {
+    public void testWrite() {
         try {
             openStream.write(62832);
         } catch (IOException e) {
@@ -77,29 +77,18 @@ public class NullOutputStream {
     }
 
     @Test
-    public static void testWriteBII() {
-        try {
-            openStream.write(new byte[] {(byte)6}, 0, 1);
-        } catch (Exception e) {
-            fail("Unexpected IOException");
-        }
+    public void testWriteBII() {
+        assertDoesNotThrow(() -> openStream.write(new byte[] {(byte)6}, 0, 1));
     }
 
     @Test
-    public static void testWriteClosed() {
-        try {
-            closedStream.write(62832);
-            fail("Expected IOException not thrown");
-        } catch (IOException e) {
-        }
+    public void testWriteClosed() {
+        assertThrows(IOException.class, () -> closedStream.write(62832));
     }
 
     @Test
-    public static void testWriteBIIClosed() {
-        try {
-            closedStream.write(new byte[] {(byte)6}, 0, 1);
-            fail("Expected IOException not thrown");
-        } catch (IOException e) {
-        }
+    public void testWriteBIIClosed() {
+        assertThrows(IOException.class,
+                     () -> closedStream.write(new byte[] {(byte)6}, 0, 1));
     }
 }

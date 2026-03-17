@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,17 +29,20 @@ import java.io.LineNumberReader;
 import java.io.PushbackReader;
 import java.io.Reader;
 import java.io.StringReader;
-import org.testng.Assert;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import java.util.stream.Stream;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /*
  * @test
  * @bug 8248383
  * @summary Ensure that zero is returned for read into zero length array
- * @run testng ReadIntoZeroLengthArray
+ * @run junit ReadIntoZeroLengthArray
  */
 public class ReadIntoZeroLengthArray {
     private File file;
@@ -47,37 +50,34 @@ public class ReadIntoZeroLengthArray {
     private char[] cbuf0;
     private char[] cbuf1;
 
-    @BeforeTest
+    @BeforeAll
     public void setup() throws IOException {
         file = File.createTempFile("foo", "bar", new File("."));
         cbuf0 = new char[0];
         cbuf1 = new char[1];
     }
 
-    @AfterTest
+    @AfterAll
     public void teardown() throws IOException {
         file.delete();
     }
 
-    @DataProvider(name = "readers")
-    public Object[][] getReaders() throws IOException {
+    public Stream<Reader> readers() throws IOException {
         Reader fileReader = new FileReader(file);
-        return new Object[][] {
-            {new LineNumberReader(fileReader)},
-            {new CharArrayReader(new char[] {27})},
-            {new PushbackReader(fileReader)},
-            {fileReader},
-            {new StringReader(new String(new byte[] {(byte)42}))}
-        };
+        return Stream.of(new LineNumberReader(fileReader),
+                         new CharArrayReader(new char[] {27}),
+                         new PushbackReader(fileReader),
+                         fileReader,
+                         new StringReader(new String(new byte[] {(byte)42})));
     }
 
-    @Test(dataProvider = "readers")
+    @MethodSource("readers")
     void test0(Reader r) throws IOException {
-        Assert.assertEquals(r.read(cbuf0), 0);
+        assertEquals(0, r.read(cbuf0));
     }
 
-    @Test(dataProvider = "readers")
+    @MethodSource("readers")
     void test1(Reader r) throws IOException {
-        Assert.assertEquals(r.read(cbuf1, 0, 0), 0);
+        assertEquals(0, r.read(cbuf1, 0, 0));
     }
 }
