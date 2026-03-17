@@ -2613,7 +2613,7 @@ void os::Bsd::print_open_file_descriptors(outputStream* st, char* buf, size_t bu
   pid_t my_pid;
 
   // ensure the scratch buffer is big enough for at least one FD info struct
-  assert(buflen >= sizeof(struct proc_fdinfo));
+  precond(buflen >= sizeof(struct proc_fdinfo));
   kern_return_t kres = pid_for_task(mach_task_self(), &my_pid);
   if (kres != KERN_SUCCESS) {
     st->print_cr("Open File Descriptors: unknown");
