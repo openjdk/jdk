@@ -3819,7 +3819,7 @@ static int hugetlbfs_page_size_flag(size_t page_size) {
 
 static bool hugetlbfs_sanity_check(size_t page_size) {
   const os::PageSizes page_sizes = HugePages::explicit_hugepage_info().pagesizes();
-  assert(page_sizes.contains(page_size), "Invalid page sizes passed");
+  assert(page_sizes.contains(page_size), "Invalid page sizes passed (%zu)", page_size);
 
   // Include the page size flag to ensure we sanity check the correct page size.
   int flags = MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | hugetlbfs_page_size_flag(page_size);
@@ -4066,10 +4066,10 @@ void os::Linux::large_page_init() {
 
     _large_page_size = large_page_size;
 
-    // Populate _page_sizes with large page sizes less than or equal to
-    // _large_page_size.
-    for (size_t page_size = _large_page_size; page_size != 0;
-           page_size = all_large_pages.next_smaller(page_size)) {
+    // Populate _page_sizes with _large_page_size (default large page size) even if not pre-allocated.
+    // Then, populate _page_sizes with all smaller large page sizes that have been pre-allocated.
+    os::PageSizes pre_allocated = HugePages::explicit_hugepage_info().pre_allocated_pagesizes();
+    for (size_t page_size = _large_page_size; page_size != 0; page_size = pre_allocated.next_smaller(page_size)) {
       _page_sizes.add(page_size);
     }
   }
