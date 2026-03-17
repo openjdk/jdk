@@ -123,7 +123,7 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "It cannot be used with OnSpinWaitInst=none."                 \
           "For OnSpinWaitInst=wfet it must be 1.")                      \
           range(1, 99)                                                  \
-  product(uint, OnSpinWaitDelay, 40, EXPERIMENTAL,                      \
+  product(uint, OnSpinWaitDelay, 40, DIAGNOSTIC,                        \
           "The minimum delay (in nanoseconds) of the OnSpinWait loop."  \
           "It can only be used with -XX:OnSpinWaitInst=wfet.")          \
           range(1, 1000)                                                \
