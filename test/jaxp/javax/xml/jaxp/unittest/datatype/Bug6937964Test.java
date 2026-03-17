@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,24 @@
 
 package datatype;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeConstants;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.Duration;
 import javax.xml.namespace.QName;
-
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 
 /*
  * @test
  * @bug 6937964
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm datatype.Bug6937964Test
+ * @run junit/othervm datatype.Bug6937964Test
  * @summary Test Duration is normalized.
  */
 public class Bug6937964Test {
@@ -65,7 +65,7 @@ public class Bug6937964Test {
         DatatypeFactory dtf = DatatypeFactory.newInstance();
         Duration d = dtf.newDurationYearMonth("P20Y15M");
         int years = d.getYears();
-        Assert.assertEquals(years, 21, "Return value should be normalized");
+        Assertions.assertEquals(21, years, "Return value should be normalized");
     }
 
     @Test
@@ -74,7 +74,7 @@ public class Bug6937964Test {
         Duration d = dtf.newDurationYearMonth(671976000000L);
         int years = d.getYears();
         System.out.println("Years: " + years);
-        Assert.assertEquals(years, 21, "Return value should be normalized");
+        Assertions.assertEquals(21, years, "Return value should be normalized");
     }
 
     @Test
@@ -84,7 +84,7 @@ public class Bug6937964Test {
         BigInteger mon = new BigInteger("15");
         Duration d = dtf.newDurationYearMonth(true, year, mon);
         int years = d.getYears();
-        Assert.assertEquals(years, 21, "Return value should be normalized");
+        Assertions.assertEquals(21, years, "Return value should be normalized");
     }
 
     @Test
@@ -92,7 +92,7 @@ public class Bug6937964Test {
         DatatypeFactory dtf = DatatypeFactory.newInstance();
         Duration d = dtf.newDurationYearMonth(true, 20, 15);
         int years = d.getYears();
-        Assert.assertEquals(years, 21, "Return value should be normalized");
+        Assertions.assertEquals(21, years, "Return value should be normalized");
     }
 
     @Test
@@ -100,7 +100,7 @@ public class Bug6937964Test {
         DatatypeFactory dtf = DatatypeFactory.newInstance();
         Duration d = dtf.newDurationDayTime("P1DT23H59M65S");
         int days = d.getDays();
-        Assert.assertEquals(days, 2, "Return value should be normalized");
+        Assertions.assertEquals(2, days, "Return value should be normalized");
     }
 
     @Test
@@ -108,7 +108,7 @@ public class Bug6937964Test {
         DatatypeFactory dtf = DatatypeFactory.newInstance();
         Duration d = dtf.newDurationDayTime(172805000L);
         int days = d.getDays();
-        Assert.assertEquals(days, 2, "Return value should be normalized");
+        Assertions.assertEquals(2, days, "Return value should be normalized");
     }
 
     @Test
@@ -121,7 +121,7 @@ public class Bug6937964Test {
         Duration d = dtf.newDurationDayTime(true, day, hour, min, sec);
         int days = d.getDays();
         System.out.println("Days: " + days);
-        Assert.assertEquals(days, 2, "Return value should be normalized");
+        Assertions.assertEquals(2, days, "Return value should be normalized");
     }
 
     @Test
@@ -130,23 +130,23 @@ public class Bug6937964Test {
         Duration d = dtf.newDurationDayTime(true, 1, 23, 59, 65);
         int days = d.getDays();
         System.out.println("Days: " + days);
-        Assert.assertEquals(days, 2, "Return value should be normalized");
+        Assertions.assertEquals(2, days, "Return value should be normalized");
     }
 
-    @DataProvider(name = "lexicalvalues")
-    public Object[][] actualAndExpectedLexicals() {
-        Object actualAndExpected [][] = {
-                {"P13M", "P1Y1M"},
-                {"-P13M", "-P1Y1M"},
-                {"P1Y", "P1Y"},
-                {"-P1Y", "-P1Y"},
-                {"P1Y25M", "P3Y1M"},
-                {"-P1Y25M", "-P3Y1M"}
+    public static Object[][] lexicalvalues() {
+        Object actualAndExpected[][] = {
+                { "P13M", "P1Y1M" },
+                { "-P13M", "-P1Y1M" },
+                { "P1Y", "P1Y" },
+                { "-P1Y", "-P1Y" },
+                { "P1Y25M", "P3Y1M" },
+                { "-P1Y25M", "-P3Y1M" }
         };
         return actualAndExpected;
     }
 
-    @Test(dataProvider = "lexicalvalues")
+    @ParameterizedTest
+    @MethodSource("lexicalvalues")
     public void testNewDurationYearMonthLexicalRepresentation1(String actualLex, String expectedLex) {
         /**
          * Lexical test values to test.
@@ -156,7 +156,7 @@ public class Bug6937964Test {
         try {
             datatypeFactory = DatatypeFactory.newInstance();
         } catch (DatatypeConfigurationException datatypeConfigurationException) {
-            Assert.fail(datatypeConfigurationException.toString());
+            Assertions.fail(datatypeConfigurationException.toString());
         }
 
         if (DEBUG) {
@@ -174,15 +174,15 @@ public class Bug6937964Test {
             }
 
             // was this expected to fail?
-            Assert.assertNotEquals(expectedLex, TEST_VALUE_FAIL, "the value \"" + actualLex + "\" is invalid " +
-                    "yet it created the Duration \"" + duration.toString() + "\"" );
+            Assertions.assertNotEquals(TEST_VALUE_FAIL, expectedLex, "the value \"" + actualLex + "\" is invalid " +
+                    "yet it created the Duration \"" + duration.toString() + "\"");
 
             // right XMLSchemaType?
             // TODO: enable test, it should pass, it fails with Exception(s)
             // for now due to a bug
             try {
                 QName xmlSchemaType = duration.getXMLSchemaType();
-                Assert.assertEquals(xmlSchemaType, DatatypeConstants.DURATION_YEARMONTH, "Duration created with " +
+                Assertions.assertEquals(DatatypeConstants.DURATION_YEARMONTH, xmlSchemaType, "Duration created with " +
                         "XMLSchemaType of\"" + xmlSchemaType + "\" was expected to be \""
                         + DatatypeConstants.DURATION_YEARMONTH + "\" and has the value \"" + duration.toString() + "\"");
                 } catch (IllegalStateException illegalStateException) {
@@ -190,24 +190,23 @@ public class Bug6937964Test {
                     System.err.println("Please fix this bug that is being ignored, for now: " + illegalStateException.getMessage());
                 }
 
-                // does it have the right value?
-                Assert.assertEquals(duration.toString(), expectedLex, "Duration created with \"" + actualLex +
-                        "\" was expected to be \"" + expectedLex + "\" and has the value \"" + duration.toString() + "\"");
-                // Duration created with correct value
-            } catch (Exception exception) {
-                if (DEBUG) {
-                    System.err.println("Exception in creating duration: \"" + exception.toString() + "\"");
-                }
-
-                // was this expected to succed?
-                Assert.assertEquals(TEST_VALUE_FAIL, expectedLex, "the value \"" + actualLex + "\" is valid yet " +
-                        "it failed with \"" + exception.toString() + "\"");
-                // expected failure
+            // does it have the right value?
+            Assertions.assertEquals(duration.toString(), expectedLex, "Duration created with \"" + actualLex +
+                    "\" was expected to be \"" + expectedLex + "\" and has the value \"" + duration.toString() + "\"");
+            // Duration created with correct value
+        } catch (Exception exception) {
+            if (DEBUG) {
+                System.err.println("Exception in creating duration: \"" + exception.toString() + "\"");
             }
+
+            // was this expected to succed?
+            Assertions.assertEquals(TEST_VALUE_FAIL, expectedLex, "the value \"" + actualLex + "\" is valid yet " +
+                    "it failed with \"" + exception.toString() + "\"");
+            // expected failure
+        }
     }
 
-    @DataProvider(name = "lexDayTime")
-    public Object[][] lexDayTimeData() {
+    public static Object[][] lexDayTimeData() {
         BigInteger one = new BigInteger("1");
         BigInteger zero = new BigInteger("0");
         BigDecimal bdZero = new BigDecimal("0");
@@ -223,7 +222,8 @@ public class Bug6937964Test {
     /**
      * TCK test failure
      */
-    @Test(dataProvider = "lexDayTime")
+    @ParameterizedTest
+    @MethodSource("lexDayTimeData")
     public void testNewDurationDayTime005(String lex, boolean isPositive, BigInteger year, BigInteger month, BigInteger days,
                                           BigInteger hour, BigInteger minutes, BigDecimal seconds) {
         StringBuffer result = new StringBuffer();
@@ -232,7 +232,7 @@ public class Bug6937964Test {
         try {
             df = DatatypeFactory.newInstance();
         } catch (DatatypeConfigurationException e) {
-            Assert.fail(e.toString());
+            Assertions.fail(e.toString());
         }
 
         Duration duration = null;
@@ -282,8 +282,8 @@ public class Bug6937964Test {
                         + seconds + "\'");
             }
         }
-        if(result.length() > 0) {
-            Assert.fail(result.substring(2));
+        if (result.length() > 0) {
+            Assertions.fail(result.substring(2));
         }
         System.out.println("OK");
     }

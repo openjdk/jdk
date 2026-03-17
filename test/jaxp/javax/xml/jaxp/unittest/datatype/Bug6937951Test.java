@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,14 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /*
  * @test
  * @bug 6937951
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm datatype.Bug6937951Test
+ * @run junit/othervm datatype.Bug6937951Test
  * @summary Test midnight is same as the start of the next day in XMLGregorianCalendar.
  */
 public class Bug6937951Test {
@@ -47,9 +47,9 @@ public class Bug6937951Test {
         System.out.println("c1: " + c1.getYear() + "-" + c1.getMonth() + "-" + c1.getDay() + "T" + c1.getHour());
         System.out.println(c1.equals(c2) ? "pass" : "fail"); // fails
         if (!c1.equals(c2))
-            Assert.fail("hour 24 needs to be treated as equal to hour 0 of the next day");
+            Assertions.fail("hour 24 needs to be treated as equal to hour 0 of the next day");
         if (c1.getYear() != 2000 && c1.getHour() != 0)
-            Assert.fail("hour 24 needs to be treated as equal to hour 0 of the next day");
+            Assertions.fail("hour 24 needs to be treated as equal to hour 0 of the next day");
 
     }
 

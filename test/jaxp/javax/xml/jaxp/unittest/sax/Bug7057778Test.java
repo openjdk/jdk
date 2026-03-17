@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,17 @@
 
 package sax;
 
-import static jaxp.library.JAXPTestUtilities.USER_DIR;
-import static jaxp.library.JAXPTestUtilities.getSystemProperty;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.Attributes;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+import org.xml.sax.XMLReader;
+import org.xml.sax.ext.DefaultHandler2;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -35,23 +44,14 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-import org.testng.Assert;
-import org.testng.annotations.Test;
-import org.xml.sax.Attributes;
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
-import org.xml.sax.XMLReader;
-import org.xml.sax.ext.DefaultHandler2;
+
+import static org.junit.jupiter.api.Assertions.fail;
 
 /*
  * @test
  * @bug 7057778
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm sax.Bug7057778Test
+ * @run junit/othervm sax.Bug7057778Test
  * @summary Test the file can be deleted after SAXParser.parse(File, DefaultHandler).
  */
 public class Bug7057778Test {
@@ -62,7 +62,7 @@ public class Bug7057778Test {
     @Test
     public void testParse() {
         File src = new File(getClass().getResource(xml).getFile());
-        File dst = new File(USER_DIR + xml1);
+        File dst = new File(xml1);
         try {
             copyFile(src, dst);
             SAXParserFactory spf = SAXParserFactory.newInstance();
@@ -83,13 +83,13 @@ public class Bug7057778Test {
                 System.out.println("Delete: OK");
             } else {
                 System.out.println("Delete: NG");
-                Assert.fail("Error: denied to delete the file");
+                fail("Error: denied to delete the file");
             }
         }
 
     }
 
-    private void copyFile(File src, File dst) throws FileNotFoundException, IOException {
+    private void copyFile(File src, File dst) throws IOException {
         InputStream in = new FileInputStream(src);
         OutputStream out = new FileOutputStream(dst);
         // Transfer bytes
@@ -134,12 +134,6 @@ public class Bug7057778Test {
 
         }
 
-        public void endElement(String uri, String localName, String qName) throws SAXException {
-        }
-
-        public void characters(char ch[], int start, int length) throws SAXException {
-        }
-
         public void comment(char[] ch, int start, int length) {
             String text = new String(ch, start, length);
             // System.out.println(text);
@@ -177,7 +171,7 @@ public class Bug7057778Test {
         // Start a new line
         // and indent the next line appropriately
         private void nl() throws SAXException {
-            String lineEnd = getSystemProperty("line.separator");
+            String lineEnd = System.lineSeparator();
 
             try {
                 out.write(lineEnd);

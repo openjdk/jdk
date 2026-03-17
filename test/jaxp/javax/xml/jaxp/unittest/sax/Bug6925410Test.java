@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,15 @@ package sax;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 
-import org.testng.annotations.Test;
-import org.testng.Assert;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Assertions;
 import org.xml.sax.helpers.XMLReaderFactory;
 
 /*
  * @test
  * @bug 6925410
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm sax.Bug6925410Test
+ * @run junit/othervm sax.Bug6925410Test
  * @summary Test XMLReaderFactory can createXMLReader repeatedly.
  */
 public class Bug6925410Test {
@@ -51,7 +51,7 @@ public class Bug6925410Test {
             System.out.println(speed + "ms");
         } catch (Throwable e) {
             e.printStackTrace();
-            Assert.fail(e.toString());
+            Assertions.fail(e.toString());
         }
 
     }

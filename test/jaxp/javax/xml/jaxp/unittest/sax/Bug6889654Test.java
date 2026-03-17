@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,8 @@ import java.io.StringReader;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -39,7 +39,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 6889654
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm sax.Bug6889654Test
+ * @run junit/othervm sax.Bug6889654Test
  * @summary Test SAXException includes whole information.
  */
 public class Bug6889654Test {
@@ -54,10 +54,10 @@ public class Bug6889654Test {
             // e.printStackTrace();
             String msg = e.toString();
             if (msg.indexOf("systemId") == -1) {
-                Assert.fail("CR6889654 -- details should be returned.");
+                Assertions.fail("CR6889654 -- details should be returned.");
             }
             if (msg.indexOf(MSG) == -1) {
-                Assert.fail("CR6889649 -- additional error message not returned.");
+                Assertions.fail("CR6889649 -- additional error message not returned.");
             }
             System.out.println("error message:\n" + msg);
         }

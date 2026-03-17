@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@ import java.io.ByteArrayInputStream;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -38,7 +38,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 6949607
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm sax.Bug6949607Test
+ * @run junit/othervm sax.Bug6949607Test
  * @summary Test Attributes.getValue returns null when parameter uri is empty.
  */
 public class Bug6949607Test {
@@ -72,7 +72,7 @@ public class Bug6949607Test {
             System.out.println("withNs: " + attr_WithNs);
             System.out.println("NoNs: " + attr_NoNs);
 
-            Assert.assertTrue(attr_NoNs == null, "Should return null when uri is empty.");
+            Assertions.assertNull(attr_NoNs, "Should return null when uri is empty.");
 
         }
     }

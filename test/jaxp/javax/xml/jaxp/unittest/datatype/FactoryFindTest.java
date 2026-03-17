@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,20 @@
 
 package datatype;
 
+import org.junit.jupiter.api.Test;
+
+import javax.xml.datatype.DatatypeFactory;
 import java.net.URL;
 import java.net.URLClassLoader;
-import javax.xml.datatype.DatatypeFactory;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm datatype.FactoryFindTest
+ * @run junit/othervm datatype.FactoryFindTest
  * @summary Test Classloader for DatatypeFactory.
  */
 public class FactoryFindTest {
@@ -42,19 +46,19 @@ public class FactoryFindTest {
     @Test
     public void testFactoryFind() throws Exception {
         DatatypeFactory factory = DatatypeFactory.newInstance();
-        Assert.assertTrue(factory.getClass().getClassLoader() == null);
+        assertNull(factory.getClass().getClassLoader());
 
         Thread.currentThread().setContextClassLoader(null);
 
         factory = DatatypeFactory.newInstance();
-        Assert.assertTrue(factory.getClass().getClassLoader() == null);
+        assertNull(factory.getClass().getClassLoader());
 
         Thread.currentThread().setContextClassLoader(new MyClassLoader());
         factory = DatatypeFactory.newInstance();
         if (System.getSecurityManager() == null)
-            Assert.assertTrue(myClassLoaderUsed);
+            assertTrue(myClassLoaderUsed);
         else
-            Assert.assertFalse(myClassLoaderUsed);
+            assertFalse(myClassLoaderUsed);
     }
 
     class MyClassLoader extends URLClassLoader {

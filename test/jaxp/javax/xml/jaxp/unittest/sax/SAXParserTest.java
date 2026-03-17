@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,22 @@
 
 package sax;
 
-import static jaxp.library.JAXPTestUtilities.getSystemProperty;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
+
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /*
  * @test
  * @bug 8213734
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng sax.SAXParserTest
+ * @run junit sax.SAXParserTest
  * @summary Tests functionalities for SAXParser.
  */
 public class SAXParserTest {
@@ -51,7 +50,7 @@ public class SAXParserTest {
      */
     @Test
     public void testCloseReaders() throws Exception {
-        if (!getSystemProperty("os.name").contains("Windows")) {
+        if (!System.getProperty("os.name").contains("Windows")) {
             System.out.println("This test only needs to be run on Windows.");
             return;
         }
@@ -76,10 +75,7 @@ public class SAXParserTest {
 
     private static Path createTestFile(Path dir, String name) throws IOException {
         Path path = Files.createTempFile(name, ".xml");
-            byte[] bytes = "<?xml version=\"1.0\"?><test a1=\"x\" a2=\"y\"/>"
-        .getBytes(StandardCharsets.UTF_8);
-
-        Files.write(path, bytes);
+        Files.writeString(path, "<?xml version=\"1.0\"?><test a1=\"x\" a2=\"y\"/>");
         return path;
     }
 }
