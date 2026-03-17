@@ -741,7 +741,7 @@ SafepointBlob::SafepointBlob(
   OopMapSet*  oop_maps,
   int         frame_size
 )
-: SingletonBlob("SafepointBlob", CodeBlobKind::Safepoint, cb,
+  : SingletonBlob(cb->name(), CodeBlobKind::Safepoint, cb,
                 size, sizeof(SafepointBlob), frame_size, oop_maps)
 {}
 
@@ -759,7 +759,7 @@ SafepointBlob* SafepointBlob::create(
     blob = new (size) SafepointBlob(cb, size, oop_maps, frame_size);
   }
 
-  trace_new_stub(blob, "SafepointBlob");
+  trace_new_stub(blob, "SafepointBlob - ", blob->name());
 
   return blob;
 }

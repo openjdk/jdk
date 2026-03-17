@@ -487,10 +487,17 @@ class RuntimeStub: public RuntimeBlob {
 
   address entry_point() const         { return code_begin(); }
 
+  void post_restore_impl() {
+    trace_new_stub(this, "RuntimeBlob - ", name());
+  }
+
   void print_on_impl(outputStream* st) const;
   void print_value_on_impl(outputStream* st) const;
 
   class Vptr : public RuntimeBlob::Vptr {
+    void post_restore(CodeBlob* instance) const override {
+      instance->as_runtime_stub()->post_restore_impl();
+    }
     void print_on(const CodeBlob* instance, outputStream* st) const override {
       instance->as_runtime_stub()->print_on_impl(st);
     }
@@ -527,10 +534,17 @@ class SingletonBlob: public RuntimeBlob {
 
   address entry_point()                          { return code_begin(); }
 
+  void post_restore_impl() {
+    trace_new_stub(this, "SingletonBlob - ", name());
+  }
+
   void print_on_impl(outputStream* st) const;
   void print_value_on_impl(outputStream* st) const;
 
   class Vptr : public RuntimeBlob::Vptr {
+    void post_restore(CodeBlob* instance) const override {
+      ((SingletonBlob*)instance)->post_restore_impl();
+    }
     void print_on(const CodeBlob* instance, outputStream* st) const override {
       ((const SingletonBlob*)instance)->print_on_impl(st);
     }
@@ -615,10 +629,18 @@ class DeoptimizationBlob: public SingletonBlob {
   address implicit_exception_uncommon_trap() const { return (EnableJVMCI ? code_begin() + _implicit_exception_uncommon_trap_offset : nullptr); }
 #endif // INCLUDE_JVMCI
 
+  void post_restore_impl() {
+    trace_new_stub(this, "DeoptimizationBlob");
+  }
+
   void print_value_on_impl(outputStream* st) const;
 
   class Vptr : public SingletonBlob::Vptr {
-    void print_value_on(const CodeBlob* instance, outputStream* st) const override {
+    void post_restore(CodeBlob* instance) const override {
+      ((DeoptimizationBlob*)instance)->post_restore_impl();
+    }
+
+   void print_value_on(const CodeBlob* instance, outputStream* st) const override {
       ((const DeoptimizationBlob*)instance)->print_value_on_impl(st);
     }
   };
