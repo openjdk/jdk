@@ -22,7 +22,6 @@
  */
 package catalog;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
@@ -39,6 +38,7 @@ import javax.xml.catalog.CatalogResolver.NotFoundAction;
 import java.net.URI;
 import java.nio.file.Paths;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
@@ -51,7 +51,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 @TestInstance(Lifecycle.PER_CLASS)
 public class CatalogResolverTest extends CatalogSupportBase {
-    static final String KEY_FILES = "javax.xml.catalog.files";
     static final String SYSTEM_ID = "http://openjdk_java_net/xml/catalog/dtd/system.dtd";
 
     /*
@@ -116,15 +115,14 @@ public class CatalogResolverTest extends CatalogSupportBase {
         Catalog c = getCatalog(cResolve);
 
         if (expectedThrow != null) {
-            assertThrows(expectedThrow,
-                    () -> resolveRef(c, action, systemId));
+            assertThrows(expectedThrow, () -> resolveRef(c, action, systemId));
         } else {
-
             String sysId = resolveRef(c, action, systemId);
             System.out.println(sysId);
-            Assertions.assertEquals(sysId,
-                    (expectedResult == null) ? null : Paths.get(filepath + expectedResult).toUri().toString().replace("///", "/"),
-                    "System ID match not right");
+            String expected = (expectedResult == null)
+                    ? null
+                    : Paths.get(filepath + expectedResult).toUri().toString().replace("///", "/");
+            assertEquals(expected, sysId, "System ID match not right");
         }
     }
 

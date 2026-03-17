@@ -23,7 +23,6 @@
 
 package sax;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.NamespaceSupport;
 
@@ -31,6 +30,7 @@ import java.util.Enumeration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
@@ -51,14 +51,14 @@ public class NSSupportTest {
 
         String[] parts = new String[3];
         nssupport.processName("dc:name1", parts, false);
-        Assertions.assertEquals("http://www.purl.org/dc", parts[0]);
-        Assertions.assertEquals("name1", parts[1]);
-        Assertions.assertEquals("dc:name1", parts[2]);
+        assertEquals("http://www.purl.org/dc", parts[0]);
+        assertEquals("name1", parts[1]);
+        assertEquals("dc:name1", parts[2]);
 
         nssupport.processName("name2", parts, false);
-        Assertions.assertEquals("http://www.java.com", parts[0]);
-        Assertions.assertEquals("name2", parts[1]);
-        Assertions.assertEquals("name2", parts[2]);
+        assertEquals("http://www.java.com", parts[0]);
+        assertEquals("name2", parts[1]);
+        assertEquals("name2", parts[2]);
     }
 
     @Test
@@ -70,27 +70,27 @@ public class NSSupportTest {
         assertFalse(nssupport.isNamespaceDeclUris());
         nssupport.declarePrefix("xmlns", "");
         nssupport.processName("xmlns:name", parts, true);
-        Assertions.assertNull(parts[0]);
-        Assertions.assertNull(parts[1]);
-        Assertions.assertNull(parts[2]);
+        assertNull(parts[0]);
+        assertNull(parts[1]);
+        assertNull(parts[2]);
 
         nssupport.reset();
 
         nssupport.setNamespaceDeclUris(true);
         nssupport.declarePrefix("xmlns", "");
         nssupport.processName("xmlns:name", parts, true);
-        Assertions.assertEquals(NamespaceSupport.NSDECL, parts[0]);
-        Assertions.assertEquals("name", parts[1]);
-        Assertions.assertEquals("xmlns:name", parts[2]);
+        assertEquals(NamespaceSupport.NSDECL, parts[0]);
+        assertEquals("name", parts[1]);
+        assertEquals("xmlns:name", parts[2]);
 
         nssupport.reset();
 
         nssupport.setNamespaceDeclUris(true);
         nssupport.declarePrefix("xml", "");
         nssupport.processName("xml:name", parts, true);
-        Assertions.assertEquals(NamespaceSupport.XMLNS, parts[0]);
-        Assertions.assertEquals("name", parts[1]);
-        Assertions.assertEquals("xml:name", parts[2]);
+        assertEquals(NamespaceSupport.XMLNS, parts[0]);
+        assertEquals("name", parts[1]);
+        assertEquals("xml:name", parts[2]);
 
     }
 
@@ -101,14 +101,14 @@ public class NSSupportTest {
 
         nssupport.pushContext();
         nssupport.declarePrefix("dc", "http://www.purl.org/dc");
-        Assertions.assertEquals("dc", nssupport.getPrefix("http://www.purl.org/dc"));
+        assertEquals("dc", nssupport.getPrefix("http://www.purl.org/dc"));
 
         nssupport.popContext();
-        Assertions.assertNull(nssupport.getPrefix("http://www.purl.org/dc"));
+        assertNull(nssupport.getPrefix("http://www.purl.org/dc"));
         nssupport.processName("dc:name1", parts, false);
-        Assertions.assertNull(parts[0]);
-        Assertions.assertNull(parts[1]);
-        Assertions.assertNull(parts[2]);
+        assertNull(parts[0]);
+        assertNull(parts[1]);
+        assertNull(parts[2]);
     }
 
     @Test
@@ -228,7 +228,7 @@ public class NSSupportTest {
         assertEquals("http://www.purl.org/dcnew", nssupport.getURI("dcnew"));
 
         // Negative test
-        Assertions.assertNull(nssupport.getURI("wrong_prefix"));
-        Assertions.assertNull(nssupport.getURI(""));
+        assertNull(nssupport.getURI("wrong_prefix"));
+        assertNull(nssupport.getURI(""));
     }
 }

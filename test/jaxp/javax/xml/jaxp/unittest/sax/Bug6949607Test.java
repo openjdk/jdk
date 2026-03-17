@@ -23,16 +23,16 @@
 
 package sax;
 
-import java.io.ByteArrayInputStream;
-
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
+
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import java.io.ByteArrayInputStream;
+
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /*
  * @test
@@ -72,7 +72,7 @@ public class Bug6949607Test {
             System.out.println("withNs: " + attr_WithNs);
             System.out.println("NoNs: " + attr_NoNs);
 
-            Assertions.assertNull(attr_NoNs, "Should return null when uri is empty.");
+            assertNull(attr_NoNs, "Should return null when uri is empty.");
 
         }
     }

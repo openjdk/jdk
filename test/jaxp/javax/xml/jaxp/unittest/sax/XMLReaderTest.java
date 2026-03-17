@@ -54,7 +54,6 @@ public class XMLReaderTest {
      *
      * Except test format, this test is the same as JCK's test Ctor003.
      */
-    // TODO:
     @Test
     public void testcreateXMLReader() throws SAXException, ParserConfigurationException {
         String className = SAXParserFactory.newInstance().newSAXParser()

@@ -26,10 +26,11 @@ import java.io.File;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
@@ -44,11 +45,10 @@ public class ExternalRefTest {
      * @bug 8326915
      * Verifies that SAXParseException rather than NPE is thrown when a validating
      * parser is restricted from processing external references.
-     * @throws Exception if the test fails
      */
     @Test
-    public void testValidatingParser() throws Exception {
-        Assertions.assertThrows(SAXParseException.class, this::validateWithParser);
+    public void testValidatingParser() {
+        assertThrows(SAXParseException.class, this::validateWithParser);
     }
 
     private void validateWithParser() throws Exception {

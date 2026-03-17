@@ -23,7 +23,6 @@
 
 package datatype;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -44,6 +43,7 @@ import java.util.TimeZone;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /*
  * @test
@@ -102,7 +102,7 @@ public class DurationTest {
 
         Duration result = dt1.subtract(dt2);
         Duration expected = factory.newDuration(e);
-        Assertions.assertEquals(result, expected, "The result should be " + e);
+        assertEquals(result, expected, "The result should be " + e);
 
     }
 
@@ -123,13 +123,13 @@ public class DurationTest {
         Duration bigDur = factory.newDuration(20000);
         Duration smallDur = factory.newDuration(10000);
         if (smallDur.subtract(bigDur).getSign() != -1) {
-            Assertions.fail("smallDur.subtract(bigDur).getSign() is not -1");
+            fail("smallDur.subtract(bigDur).getSign() is not -1");
         }
         if (bigDur.subtract(smallDur).getSign() != 1) {
-            Assertions.fail("bigDur.subtract(smallDur).getSign() is not 1");
+            fail("bigDur.subtract(smallDur).getSign() is not 1");
         }
         if (smallDur.subtract(smallDur).getSign() != 0) {
-            Assertions.fail("smallDur.subtract(smallDur).getSign() is not 0");
+            fail("smallDur.subtract(smallDur).getSign() is not 0");
         }
 
     }
@@ -141,14 +141,14 @@ public class DurationTest {
 
         Duration dur = factory.newDuration(num);
         if (dur.multiply(factor).getSeconds() != 10) {
-            Assertions.fail("duration.multiply() return wrong value");
+            fail("duration.multiply() return wrong value");
         }
         // factor is 2*10^(-1)
         if (dur.multiply(new BigDecimal(new BigInteger("2"), 1)).getSeconds() != 1) {
-            Assertions.fail("duration.multiply() return wrong value");
+            fail("duration.multiply() return wrong value");
         }
         if (dur.subtract(factory.newDuration(1000)).multiply(new BigDecimal(new BigInteger("2"), 1)).getSeconds() != 0) {
-            Assertions.fail("duration.multiply() return wrong value");
+            fail("duration.multiply() return wrong value");
         }
     }
 
@@ -248,7 +248,7 @@ public class DurationTest {
         if (compareErrors) {
             // TODO; fix bug, these tests should pass
             if (false) {
-                Assertions.fail("Errors in comparing indeterminate relations, see Stderr");
+                fail("Errors in comparing indeterminate relations, see Stderr");
             } else {
                 System.err.println("Please fix this bug: " + "Errors in comparing indeterminate relations, see Stderr");
             }

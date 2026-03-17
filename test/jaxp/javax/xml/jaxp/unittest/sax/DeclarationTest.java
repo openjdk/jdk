@@ -23,7 +23,6 @@
 
 package sax;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.xml.sax.InputSource;
@@ -35,6 +34,9 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import java.io.File;
 import java.io.StringReader;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
@@ -156,9 +158,9 @@ public class DeclarationTest {
         SAXParser parser = SAXParserFactory.newDefaultInstance().newSAXParser();
         NewMethodImpl h = new NewMethodImpl();
         parser.parse(xml, h);
-        Assertions.assertEquals(h.version, version);
-        Assertions.assertEquals(h.encoding, encoding);
-        Assertions.assertEquals(h.standalone, standalone);
+        assertEquals(h.version, version);
+        assertEquals(h.encoding, encoding);
+        assertEquals(h.standalone, standalone);
     }
 
     /**
@@ -176,9 +178,9 @@ public class DeclarationTest {
         XMLReader r = SAXParserFactory.newDefaultInstance().newSAXParser().getXMLReader();
         r.setContentHandler(h);
         r.parse(new InputSource(new StringReader(xml)));
-        Assertions.assertEquals(h.version, version);
-        Assertions.assertEquals(h.encoding, encoding);
-        Assertions.assertEquals(h.standalone, standalone);
+        assertEquals(h.version, version);
+        assertEquals(h.encoding, encoding);
+        assertEquals(h.standalone, standalone);
     }
 
     static class DefaultImpl extends DefaultHandler {
@@ -202,7 +204,7 @@ public class DeclarationTest {
                 throws SAXException
         {
             super.declaration(version, encoding, standalone);
-            Assertions.assertTrue(startDocumentInvoked, "declaration follows startDocument");
+            assertTrue(startDocumentInvoked, "declaration follows startDocument");
             this.version = version;
             this.encoding = encoding;
             this.standalone = standalone;

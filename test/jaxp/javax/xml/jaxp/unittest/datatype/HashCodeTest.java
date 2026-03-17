@@ -23,12 +23,14 @@
 
 package datatype;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 /*
  * @test
@@ -71,11 +73,11 @@ public class HashCodeTest {
         int hashCode2 = cal2.hashCode();
 
         if (equal) {
-            Assertions.assertEquals(cal1, cal2);
-            Assertions.assertEquals(hashCode1, hashCode2);
+            assertEquals(cal1, cal2);
+            assertEquals(hashCode1, hashCode2);
         } else {
-            Assertions.assertNotEquals(cal1, cal2);
-            Assertions.assertNotEquals(hashCode1, hashCode2);
+            assertNotEquals(cal1, cal2);
+            assertNotEquals(hashCode1, hashCode2);
         }
     }
 }

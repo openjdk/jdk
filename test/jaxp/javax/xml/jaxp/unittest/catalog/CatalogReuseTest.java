@@ -22,7 +22,6 @@
  */
 package catalog;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
@@ -33,6 +32,8 @@ import javax.xml.catalog.Catalog;
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogManager;
 import java.net.URI;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
@@ -97,7 +98,7 @@ public class CatalogReuseTest extends CatalogSupportBase {
     @MethodSource("dataWithCatalogD")
     public void testD(Catalog c, String uri, String expected) throws Exception {
         String m = c.matchURI(uri);
-        Assertions.assertTrue(m.endsWith(expected), "Expected: " + expected);
+        assertTrue(m.endsWith(expected), "Expected: " + expected);
     }
 
     /*
@@ -107,7 +108,7 @@ public class CatalogReuseTest extends CatalogSupportBase {
     @MethodSource("dataWithCatalogA")
     public void testA(Catalog c, String uri, String expected) throws Exception {
         String m = c.matchURI(uri);
-        Assertions.assertTrue(m.endsWith(expected), "Expected: " + expected);
+        assertTrue(m.endsWith(expected), "Expected: " + expected);
     }
 
     /*
@@ -118,7 +119,7 @@ public class CatalogReuseTest extends CatalogSupportBase {
     public void testNew(String uri, String expected) throws Exception {
         Catalog c = getCatalog();
         String m = c.matchURI(uri);
-        Assertions.assertTrue(m.endsWith(expected), "Expected: " + expected);
+        assertTrue(m.endsWith(expected), "Expected: " + expected);
 
     }
 

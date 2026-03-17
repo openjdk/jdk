@@ -22,7 +22,6 @@
  */
 package catalog;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -67,8 +66,12 @@ import java.io.StringWriter;
 import java.net.URI;
 import java.nio.file.Paths;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
@@ -115,7 +118,7 @@ public class CatalogTest extends CatalogSupportBase {
         SAXParser parser = getSAXParser(false, true, null);
         parser.parse(xmlSource, handler);
 
-        Assertions.assertEquals(expected, handler.getResult().trim());
+        assertEquals(expected, handler.getResult().trim());
     }
 
     /*
@@ -148,7 +151,7 @@ public class CatalogTest extends CatalogSupportBase {
         }
         System.out.println(": expected [" + expected + "] <> actual [" + result.trim() + "]");
 
-        Assertions.assertEquals(expected, result.trim());
+        assertEquals(expected, result.trim());
     }
 
     /*
@@ -202,7 +205,7 @@ public class CatalogTest extends CatalogSupportBase {
         StringWriter out = new StringWriter();
         transformer.transform(xml, new StreamResult(out));
         if (expected != null) {
-            Assertions.assertTrue(out.toString().contains(expected), "supportURIResolver");
+            assertTrue(out.toString().contains(expected), "supportURIResolver");
         }
     }
 
@@ -334,8 +337,8 @@ public class CatalogTest extends CatalogSupportBase {
         URI catalogFile = getClass().getResource(cFile).toURI();
         CatalogResolver cur = CatalogManager.catalogResolver(CatalogFeatures.defaults(), catalogFile);
         Source source = cur.resolve(href, null);
-        Assertions.assertNotNull(source, "Source returned is null");
-        Assertions.assertEquals(expectedUri, source.getSystemId(), msg);
+        assertNotNull(source, "Source returned is null");
+        assertEquals(expectedUri, source.getSystemId(), msg);
     }
 
     /*
@@ -354,7 +357,7 @@ public class CatalogTest extends CatalogSupportBase {
             System.setProperty(KEY_FILES, files);
             CatalogResolver catalogResolver = CatalogManager.catalogResolver(CatalogFeatures.defaults());
             String sysId = catalogResolver.resolveEntity(null, systemId).getSystemId();
-            Assertions.assertEquals(sysId, Paths.get(filepath + expectedUri).toUri().toString().replace("///", "/"),
+            assertEquals(sysId, Paths.get(filepath + expectedUri).toUri().toString().replace("///", "/"),
                     "System ID match not right");
         } finally {
             System.clearProperty(KEY_FILES);
@@ -376,9 +379,9 @@ public class CatalogTest extends CatalogSupportBase {
         CatalogFeatures features = CatalogFeatures.builder().with(CatalogFeatures.Feature.PREFER, prefer).build();
         CatalogResolver catalogResolver = CatalogManager.catalogResolver(features, catalogFile);
         InputSource is = catalogResolver.resolveEntity(pubId, sysId);
-        Assertions.assertNotNull(is, msg);
+        assertNotNull(is, msg);
         String expected = (expectedUri == null) ? expectedFile : expectedUri;
-        Assertions.assertEquals(expected, is.getSystemId(), msg);
+        assertEquals(expected, is.getSystemId(), msg);
     }
 
     /*
@@ -400,7 +403,7 @@ public class CatalogTest extends CatalogSupportBase {
         } else {
             result = c.matchSystem(systemId);
         }
-        Assertions.assertEquals(expected, result);
+        assertEquals(expected, result);
     }
 
     /*
@@ -425,7 +428,7 @@ public class CatalogTest extends CatalogSupportBase {
                 .build();
         CatalogResolver catalogResolver = CatalogManager.catalogResolver(f, catalogFile);
         String result = catalogResolver.resolveEntity(publicId, systemId).getSystemId();
-        Assertions.assertEquals(expected, result);
+        assertEquals(expected, result);
     }
 
     /**
@@ -468,7 +471,7 @@ public class CatalogTest extends CatalogSupportBase {
                     "-//FOO//DTD XML Dummy V0.0//EN",
                     "http://www.oracle.com/alt1sys.dtd")
                     .getSystemId();
-            Assertions.assertTrue(actualSystemId.contains("dummy.dtd"),
+            assertTrue(actualSystemId.contains("dummy.dtd"),
                     "Resulting id should contain dummy.dtd, indicating a match by publicId");
 
         } catch (Exception e) {
@@ -556,7 +559,7 @@ public class CatalogTest extends CatalogSupportBase {
             reader.setContentHandler(handler);
             reader.parse(url);
             System.out.println(test + ": expected [" + expected + "] <> actual [" + handler.getResult() + "]");
-            Assertions.assertEquals(expected, handler.getResult());
+            assertEquals(expected, handler.getResult());
         } catch (SAXException | IOException e) {
             fail(e.getMessage());
         }
@@ -581,7 +584,7 @@ public class CatalogTest extends CatalogSupportBase {
         } catch (Exception e) {
             String msg = e.getMessage();
             if (msg != null) {
-                Assertions.assertTrue(msg.contains(expectedMsgId),
+                assertTrue(msg.contains(expectedMsgId),
                         "Message shall contain the corrent message ID " + expectedMsgId);
             }
         }
@@ -611,7 +614,7 @@ public class CatalogTest extends CatalogSupportBase {
             System.out.println("testIgnoreInvalidCatalog: expected [null]");
             System.out.println("testIgnoreInvalidCatalog: expected [null]");
             System.out.println("actual [" + actualSystemId + "]");
-            Assertions.assertNull(actualSystemId);
+            assertNull(actualSystemId);
         } catch (Exception e) {
             fail(e.getMessage());
         }

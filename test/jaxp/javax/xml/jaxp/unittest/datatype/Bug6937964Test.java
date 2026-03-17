@@ -23,7 +23,6 @@
 
 package datatype;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -35,6 +34,10 @@ import javax.xml.datatype.Duration;
 import javax.xml.namespace.QName;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /*
  * @test
@@ -65,7 +68,7 @@ public class Bug6937964Test {
         DatatypeFactory dtf = DatatypeFactory.newInstance();
         Duration d = dtf.newDurationYearMonth("P20Y15M");
         int years = d.getYears();
-        Assertions.assertEquals(21, years, "Return value should be normalized");
+        assertEquals(21, years, "Return value should be normalized");
     }
 
     @Test
@@ -74,7 +77,7 @@ public class Bug6937964Test {
         Duration d = dtf.newDurationYearMonth(671976000000L);
         int years = d.getYears();
         System.out.println("Years: " + years);
-        Assertions.assertEquals(21, years, "Return value should be normalized");
+        assertEquals(21, years, "Return value should be normalized");
     }
 
     @Test
@@ -84,7 +87,7 @@ public class Bug6937964Test {
         BigInteger mon = new BigInteger("15");
         Duration d = dtf.newDurationYearMonth(true, year, mon);
         int years = d.getYears();
-        Assertions.assertEquals(21, years, "Return value should be normalized");
+        assertEquals(21, years, "Return value should be normalized");
     }
 
     @Test
@@ -92,7 +95,7 @@ public class Bug6937964Test {
         DatatypeFactory dtf = DatatypeFactory.newInstance();
         Duration d = dtf.newDurationYearMonth(true, 20, 15);
         int years = d.getYears();
-        Assertions.assertEquals(21, years, "Return value should be normalized");
+        assertEquals(21, years, "Return value should be normalized");
     }
 
     @Test
@@ -100,7 +103,7 @@ public class Bug6937964Test {
         DatatypeFactory dtf = DatatypeFactory.newInstance();
         Duration d = dtf.newDurationDayTime("P1DT23H59M65S");
         int days = d.getDays();
-        Assertions.assertEquals(2, days, "Return value should be normalized");
+        assertEquals(2, days, "Return value should be normalized");
     }
 
     @Test
@@ -108,7 +111,7 @@ public class Bug6937964Test {
         DatatypeFactory dtf = DatatypeFactory.newInstance();
         Duration d = dtf.newDurationDayTime(172805000L);
         int days = d.getDays();
-        Assertions.assertEquals(2, days, "Return value should be normalized");
+        assertEquals(2, days, "Return value should be normalized");
     }
 
     @Test
@@ -121,7 +124,7 @@ public class Bug6937964Test {
         Duration d = dtf.newDurationDayTime(true, day, hour, min, sec);
         int days = d.getDays();
         System.out.println("Days: " + days);
-        Assertions.assertEquals(2, days, "Return value should be normalized");
+        assertEquals(2, days, "Return value should be normalized");
     }
 
     @Test
@@ -130,7 +133,7 @@ public class Bug6937964Test {
         Duration d = dtf.newDurationDayTime(true, 1, 23, 59, 65);
         int days = d.getDays();
         System.out.println("Days: " + days);
-        Assertions.assertEquals(2, days, "Return value should be normalized");
+        assertEquals(2, days, "Return value should be normalized");
     }
 
     public static Object[][] lexicalvalues() {
@@ -156,7 +159,7 @@ public class Bug6937964Test {
         try {
             datatypeFactory = DatatypeFactory.newInstance();
         } catch (DatatypeConfigurationException datatypeConfigurationException) {
-            Assertions.fail(datatypeConfigurationException.toString());
+            fail(datatypeConfigurationException.toString());
         }
 
         if (DEBUG) {
@@ -174,7 +177,7 @@ public class Bug6937964Test {
             }
 
             // was this expected to fail?
-            Assertions.assertNotEquals(TEST_VALUE_FAIL, expectedLex, "the value \"" + actualLex + "\" is invalid " +
+            assertNotEquals(TEST_VALUE_FAIL, expectedLex, "the value \"" + actualLex + "\" is invalid " +
                     "yet it created the Duration \"" + duration.toString() + "\"");
 
             // right XMLSchemaType?
@@ -182,7 +185,7 @@ public class Bug6937964Test {
             // for now due to a bug
             try {
                 QName xmlSchemaType = duration.getXMLSchemaType();
-                Assertions.assertEquals(DatatypeConstants.DURATION_YEARMONTH, xmlSchemaType, "Duration created with " +
+                assertEquals(DatatypeConstants.DURATION_YEARMONTH, xmlSchemaType, "Duration created with " +
                         "XMLSchemaType of\"" + xmlSchemaType + "\" was expected to be \""
                         + DatatypeConstants.DURATION_YEARMONTH + "\" and has the value \"" + duration.toString() + "\"");
                 } catch (IllegalStateException illegalStateException) {
@@ -191,7 +194,7 @@ public class Bug6937964Test {
                 }
 
             // does it have the right value?
-            Assertions.assertEquals(duration.toString(), expectedLex, "Duration created with \"" + actualLex +
+            assertEquals(duration.toString(), expectedLex, "Duration created with \"" + actualLex +
                     "\" was expected to be \"" + expectedLex + "\" and has the value \"" + duration.toString() + "\"");
             // Duration created with correct value
         } catch (Exception exception) {
@@ -200,7 +203,7 @@ public class Bug6937964Test {
             }
 
             // was this expected to succed?
-            Assertions.assertEquals(TEST_VALUE_FAIL, expectedLex, "the value \"" + actualLex + "\" is valid yet " +
+            assertEquals(TEST_VALUE_FAIL, expectedLex, "the value \"" + actualLex + "\" is valid yet " +
                     "it failed with \"" + exception.toString() + "\"");
             // expected failure
         }
@@ -232,7 +235,7 @@ public class Bug6937964Test {
         try {
             df = DatatypeFactory.newInstance();
         } catch (DatatypeConfigurationException e) {
-            Assertions.fail(e.toString());
+            fail(e.toString());
         }
 
         Duration duration = null;
@@ -283,7 +286,7 @@ public class Bug6937964Test {
             }
         }
         if (result.length() > 0) {
-            Assertions.fail(result.substring(2));
+            fail(result.substring(2));
         }
         System.out.println("OK");
     }

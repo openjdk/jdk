@@ -23,9 +23,12 @@
 
 package sax;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ext.Attributes2Impl;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
@@ -43,17 +46,17 @@ public class Attributes2ImplTest {
         impl.addAttribute("http://www.cars.com/xml", "attr2", "Qname2", "type", "value");
         impl.addAttribute("http://www.cars.com/xml", "attr3", "Qname3", "type", "value");
 
-        Assertions.assertTrue(impl.isDeclared(0));
+        assertTrue(impl.isDeclared(0));
         impl.setDeclared(0, false);
-        Assertions.assertFalse(impl.isDeclared(0));
+        assertFalse(impl.isDeclared(0));
 
-        Assertions.assertTrue(impl.isDeclared("Qname2"));
+        assertTrue(impl.isDeclared("Qname2"));
         impl.setDeclared(1, false);
-        Assertions.assertFalse(impl.isDeclared("Qname2"));
+        assertFalse(impl.isDeclared("Qname2"));
 
-        Assertions.assertTrue(impl.isDeclared("http://www.cars.com/xml", "attr3"));
+        assertTrue(impl.isDeclared("http://www.cars.com/xml", "attr3"));
         impl.setDeclared(2, false);
-        Assertions.assertFalse(impl.isDeclared(2));
+        assertFalse(impl.isDeclared(2));
 
         try {
             impl.isDeclared(3);
@@ -89,17 +92,17 @@ public class Attributes2ImplTest {
         impl.addAttribute("http://www.cars.com/xml", "attr2", "Qname2", "type", "value");
         impl.addAttribute("http://www.cars.com/xml", "attr3", "Qname3", "type", "value");
 
-        Assertions.assertTrue(impl.isSpecified(0));
+        assertTrue(impl.isSpecified(0));
         impl.setSpecified(0, false);
-        Assertions.assertFalse(impl.isSpecified(0));
+        assertFalse(impl.isSpecified(0));
 
-        Assertions.assertTrue(impl.isSpecified("Qname2"));
+        assertTrue(impl.isSpecified("Qname2"));
         impl.setSpecified(1, false);
-        Assertions.assertFalse(impl.isSpecified("Qname2"));
+        assertFalse(impl.isSpecified("Qname2"));
 
-        Assertions.assertTrue(impl.isSpecified("http://www.cars.com/xml", "attr3"));
+        assertTrue(impl.isSpecified("http://www.cars.com/xml", "attr3"));
         impl.setSpecified(2, false);
-        Assertions.assertFalse(impl.isSpecified(2));
+        assertFalse(impl.isSpecified(2));
 
         try {
             impl.isSpecified(3);
@@ -140,13 +143,13 @@ public class Attributes2ImplTest {
         Attributes2Impl impl3 = new Attributes2Impl();
         impl3.setAttributes(impl1);
 
-        Assertions.assertEquals(impl1.getQName(0), impl2.getQName(0));
-        Assertions.assertEquals(impl1.getQName(0), impl3.getQName(0));
+        assertEquals(impl1.getQName(0), impl2.getQName(0));
+        assertEquals(impl1.getQName(0), impl3.getQName(0));
 
-        Assertions.assertEquals(impl1.getQName(1), impl2.getQName(1));
-        Assertions.assertEquals(impl1.getQName(1), impl3.getQName(1));
+        assertEquals(impl1.getQName(1), impl2.getQName(1));
+        assertEquals(impl1.getQName(1), impl3.getQName(1));
 
-        Assertions.assertEquals(impl1.getQName(2), impl2.getQName(2));
-        Assertions.assertEquals(impl1.getQName(2), impl3.getQName(2));
+        assertEquals(impl1.getQName(2), impl2.getQName(2));
+        assertEquals(impl1.getQName(2), impl3.getQName(2));
     }
 }

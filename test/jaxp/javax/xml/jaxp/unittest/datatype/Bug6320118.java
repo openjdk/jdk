@@ -64,7 +64,6 @@ public class Bug6320118 {
         assertEquals(0, calendar.getHour(), "hour 24 needs to be treated as hour 0 of next day");
     }
 
-    // TODO:
     @Test
     public void test3() {
         XMLGregorianCalendar calendar = df.newXMLGregorianCalendar();
