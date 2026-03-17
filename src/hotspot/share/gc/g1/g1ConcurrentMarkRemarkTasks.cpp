@@ -247,7 +247,7 @@ GrowableArrayCHeap<G1HeapRegion*, mtGC>* G1UpdateRegionLivenessAndSelectForRebui
 
   if (_old_selected_for_rebuild.length() != 0) {
     _old_selected_for_rebuild.sort(compare_region_gc_efficiency);
-    prune(&_old_selected_for_rebuild);    
+    prune(&_old_selected_for_rebuild);
   }
 
   return &_old_selected_for_rebuild;
