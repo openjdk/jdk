@@ -1537,6 +1537,7 @@ bool FileMapInfo::can_use_heap_region() {
   }
 
   if (!object_streaming_mode() && !AOTMappedHeapLoader::can_use()) {
+    // Currently this happens only when using ZGC with an AOT cache generated with -XX:-AOTStreamableObjects
     AOTMetaspace::report_loading_error("CDS heap data cannot be used by the selected GC. "
                                        "Please choose a different GC or rebuild AOT cache "
                                        "with -XX:+AOTStreamableObjects");
@@ -1551,7 +1552,7 @@ bool FileMapInfo::can_use_heap_region() {
       AOTMetaspace::report_loading_error("CDS heap data is disabled because JVMTI ClassFileLoadHook is in use.");
       return false;
     }
-    if (!CDSConfig::is_using_full_module_graph()) {
+    if (!CDSConfig::is_dumping_static_archive() && !CDSConfig::is_using_full_module_graph()) {
       AOTMetaspace::report_loading_error("CDS heap data is disabled because archived full module graph is not used.");
       return false;
     }

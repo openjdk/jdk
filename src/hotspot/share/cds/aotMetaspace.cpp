@@ -1814,6 +1814,9 @@ MapArchiveResult AOTMetaspace::map_archives(FileMapInfo* static_mapinfo, FileMap
         if (r->used() > 0) {
           AOTMetaspace::report_loading_error("Cannot use CDS heap data.");
         }
+        if (!CDSConfig::is_dumping_static_archive()) {
+          CDSConfig::stop_using_full_module_graph("No CDS heap data");
+        }
       }
     }
 #endif // _LP64

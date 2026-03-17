@@ -979,7 +979,7 @@ bool CDSConfig::is_dumping_klass_subgraphs() {
     //
     // KlassSubGraphs are disabled in the preimage static archive, which contains a very
     // limited set of oops.
-    return is_dumping_heap() && !is_dumping_aot_linked_classes();
+    return is_dumping_heap() && is_dumping_full_module_graph() && !is_dumping_aot_linked_classes();
   } else {
     return false;
   }
