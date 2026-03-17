@@ -41,7 +41,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
-import jdk.internal.platform.Metrics;
 import jdk.test.lib.Container;
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Platform;
@@ -174,14 +173,6 @@ public class TestJcmd {
             .addDockerOpts("--pull=never")
             .addDockerOpts("--name", CONTAINER_NAME)
             .addClassOptions("" + TIME_TO_RUN_CONTAINER_PROCESS);
-
-        final Metrics metrics = Metrics.systemMetrics();
-        if (IS_PODMAN
-                && !ROOT_UID.equals(getId("-u"))
-                && "cgroupv2".equals(metrics.getProvider())) {
-            // map the current userid to the one in the target namespace
-            opts.addDockerOpts("--userns=keep-id");
-        }
 
         // avoid large Xmx
         opts.appendTestJavaOptions = false;
