@@ -542,6 +542,9 @@ void AOTCodeCache::Config::record(uint cpu_features_offset) {
   if (UseAESIntrinsics) {
     set_use_flag(useAES);
   }
+  if (UseAESCTRIntrinsics) {
+    set_use_flag(useAESCTR);
+  }
   if (UseGHASHIntrinsics) {
     set_use_flag(useGHASH);
   }
