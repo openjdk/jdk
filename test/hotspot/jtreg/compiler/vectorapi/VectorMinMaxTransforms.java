@@ -23,11 +23,11 @@
 
 package compiler.vectorapi;
 
+import compiler.lib.generators.Generator;
+import compiler.lib.generators.Generators;
 import compiler.lib.ir_framework.*;
 import compiler.lib.verify.*;
-import java.util.Random;
 import jdk.incubator.vector.*;
-import jdk.test.lib.Utils;
 
 /**
  * @test
@@ -37,11 +37,11 @@ import jdk.test.lib.Utils;
  * @summary IR verification for MinV/MaxV Identity and Ideal transforms
  * @modules jdk.incubator.vector
  *
- * @run driver compiler.vectorapi.VectorMinMaxTransforms
+ * @run driver ${test.main.class}
  */
 public class VectorMinMaxTransforms {
     private static final int LENGTH = 256;
-    private static final Random RD = Utils.getRandomInstance();
+    private static final Generators RD = Generators.G;
 
     private static final VectorSpecies<Integer> I_SPECIES = IntVector.SPECIES_PREFERRED;
     private static int[] ia, ib, ir;
@@ -81,19 +81,25 @@ public class VectorMinMaxTransforms {
         sb = new short[LENGTH];
         sr = new short[LENGTH];
 
+        Generator<Integer> iGen = RD.ints();
+        Generator<Long> lGen = RD.longs();
+        Generator<Float> fGen = RD.floats();
+        Generator<Double> dGen = RD.doubles();
+
+        RD.fill(iGen, ia);
+        RD.fill(iGen, ib);
+        RD.fill(lGen, la);
+        RD.fill(lGen, lb);
+        RD.fill(fGen, fa);
+        RD.fill(fGen, fb);
+        RD.fill(dGen, da);
+        RD.fill(dGen, db);
+
         for (int i = 0; i < LENGTH; i++) {
-            ia[i] = RD.nextInt();
-            ib[i] = RD.nextInt();
-            la[i] = RD.nextLong();
-            lb[i] = RD.nextLong();
-            fa[i] = RD.nextFloat();
-            fb[i] = RD.nextFloat();
-            da[i] = RD.nextDouble();
-            db[i] = RD.nextDouble();
-            ba[i] = (byte) RD.nextInt();
-            bb[i] = (byte) RD.nextInt();
-            sa[i] = (short) RD.nextInt();
-            sb[i] = (short) RD.nextInt();
+            ba[i] = iGen.next().byteValue();
+            bb[i] = iGen.next().byteValue();
+            sa[i] = iGen.next().shortValue();
+            sb[i] = iGen.next().shortValue();
         }
     }
 

@@ -2430,9 +2430,10 @@ bool MulVLNode::has_uint_inputs() const {
          has_vector_elements_fit_uint(in(2));
 }
 
-static Node* MinMaxV_Common_Ideal(Node* n, int min_opcode, int max_opcode, PhaseGVN* phase, bool can_reshape) {
+static Node* MinMaxV_Common_Ideal(MinMaxVNode* n, PhaseGVN* phase, bool can_reshape) {
   int vopc = n->Opcode();
-  assert(vopc == Op_UMinV || vopc == Op_UMaxV || vopc == Op_MinV || vopc == Op_MaxV, "Unexpected opcode");
+  int min_opcode = n->min_opcode();
+  int max_opcode = n->max_opcode();
 
   Node* min_op = nullptr;
   Node* max_op = nullptr;
@@ -2465,7 +2466,7 @@ static Node* MinMaxV_Common_Ideal(Node* n, int min_opcode, int max_opcode, Phase
 }
 
 Node* MinVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  Node* progress = MinMaxV_Common_Ideal(this, Op_MinV, Op_MaxV, phase, can_reshape);
+  Node* progress = MinMaxV_Common_Ideal(this, phase, can_reshape);
   if (progress != nullptr) return progress;
 
   return VectorNode::Ideal(phase, can_reshape);
@@ -2480,7 +2481,7 @@ Node* MinVNode::Identity(PhaseGVN* phase) {
 }
 
 Node* MaxVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  Node* progress = MinMaxV_Common_Ideal(this, Op_MinV, Op_MaxV, phase, can_reshape);
+  Node* progress = MinMaxV_Common_Ideal(this, phase, can_reshape);
   if (progress != nullptr) return progress;
 
   return VectorNode::Ideal(phase, can_reshape);
@@ -2495,7 +2496,7 @@ Node* MaxVNode::Identity(PhaseGVN* phase) {
 }
 
 Node* UMinVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  Node* progress = MinMaxV_Common_Ideal(this, Op_UMinV, Op_UMaxV, phase, can_reshape);
+  Node* progress = MinMaxV_Common_Ideal(this, phase, can_reshape);
   if (progress != nullptr) return progress;
 
   return VectorNode::Ideal(phase, can_reshape);
@@ -2510,7 +2511,7 @@ Node* UMinVNode::Identity(PhaseGVN* phase) {
 }
 
 Node* UMaxVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  Node* progress = MinMaxV_Common_Ideal(this, Op_UMinV, Op_UMaxV, phase, can_reshape);
+  Node* progress = MinMaxV_Common_Ideal(this, phase, can_reshape);
   if (progress != nullptr) return progress;
 
   return VectorNode::Ideal(phase, can_reshape);
