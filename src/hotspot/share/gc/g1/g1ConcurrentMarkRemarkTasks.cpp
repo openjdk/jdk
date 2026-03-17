@@ -42,7 +42,7 @@ struct G1UpdateRegionLivenessAndSelectForRebuildTask::G1OnRegionClosure : public
   uint _num_humongous_regions_removed;
 
   GrowableArrayCHeap<G1HeapRegion*, mtGC> _local_old_selected;
-  GrowableArrayCHeap<G1HeapRegion*, mtGC> _local_humongous_selected;
+  uint _local_num_humongous_selected;
 
   G1FreeRegionList* _local_cleanup_list;
 
@@ -55,7 +55,7 @@ struct G1UpdateRegionLivenessAndSelectForRebuildTask::G1OnRegionClosure : public
     _num_old_regions_removed(0),
     _num_humongous_regions_removed(0),
     _local_old_selected(16),
-    _local_humongous_selected(16),
+    _local_num_humongous_selected(0),
     _local_cleanup_list(local_cleanup_list) {}
 
   void reclaim_empty_region_common(G1HeapRegion* hr) {
@@ -103,7 +103,7 @@ struct G1UpdateRegionLivenessAndSelectForRebuildTask::G1OnRegionClosure : public
       if (is_live) {
         const bool selected_for_rebuild = tracker->update_humongous_before_rebuild(hr);
         if (selected_for_rebuild) {
-          _local_humongous_selected.push(hr);
+          _local_num_humongous_selected++;
         }
 
         auto on_humongous_region = [&] (G1HeapRegion* hr) {
@@ -142,6 +142,7 @@ G1UpdateRegionLivenessAndSelectForRebuildTask::G1UpdateRegionLivenessAndSelectFo
   _cm(cm),
   _hrclaimer(num_workers),
   _old_selected_for_rebuild(128),
+  _num_humongous_selected_for_rebuild(0),
   _cleanup_list("Empty Regions After Mark List") {}
 
 G1UpdateRegionLivenessAndSelectForRebuildTask::~G1UpdateRegionLivenessAndSelectForRebuildTask() {
@@ -166,7 +167,7 @@ void G1UpdateRegionLivenessAndSelectForRebuildTask::work(uint worker_id) {
     _g1h->decrement_summary_bytes(on_region_cl._freed_bytes);
 
     _old_selected_for_rebuild.appendAll(&on_region_cl._local_old_selected);
-    _humongous_selected_for_rebuild.appendAll(&on_region_cl._local_humongous_selected);
+    _num_humongous_selected_for_rebuild += on_region_cl._local_num_humongous_selected;
 
     _cleanup_list.add_ordered(&local_cleanup_list);
     assert(local_cleanup_list.is_empty(), "post-condition");
