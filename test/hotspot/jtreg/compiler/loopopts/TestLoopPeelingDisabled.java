@@ -30,7 +30,7 @@ import jdk.test.lib.Asserts;
 /*
  * @test
  * @bug 8371685
- * @requires vm.debug
+ * @requires vm.flagless & vm.debug
  * @summary Verifies that the LoopPeeling flag correctly disables loop peeling
  *          by checking whether the "After Loop Peeling" compile phase is
  *          emitted.  When loop peeling is disabled, no peeling should occur and
