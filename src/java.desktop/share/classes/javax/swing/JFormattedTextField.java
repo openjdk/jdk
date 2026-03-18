@@ -43,6 +43,9 @@ import java.text.DecimalFormat;
 import java.text.Format;
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.Date;
 
 import javax.swing.event.DocumentEvent;
@@ -540,6 +543,11 @@ public class JFormattedTextField extends JTextField {
      * @return Last valid value
      */
     public Object getValue() {
+        if (value instanceof DateTimeFormatter formatter) {
+            if (getText() != null && !getText().isEmpty()) {
+                return LocalDate.parse(getText(), formatter);
+            }
+        }
         return value;
     }
 
@@ -873,9 +881,27 @@ public class JFormattedTextField extends JTextField {
             return new DefaultFormatterFactory(displayFormatter,
                                                displayFormatter,editFormatter);
         }
+        if (type instanceof DateTimeFormatter) {
+            DateTimeFormatter formatter = new DateTimeFormatterBuilder().toFormatter();
+            AbstractFormatter abstractFormatter = new AbstractFormatter() {
+                @Override
+                public Object stringToValue(String text) throws ParseException {
+                    return formatter.parse(text);
+                }
+
+                @Override
+                public String valueToString(Object value) throws ParseException {
+                    if (value != null) {
+                        DateTimeFormatter format = (DateTimeFormatter) value;
+                        return format.toString();
+                    }
+                    return "";
+                }
+            };
+            return new DefaultFormatterFactory(abstractFormatter);
+        }
         return new DefaultFormatterFactory(new DefaultFormatter());
     }
-
 
     /**
      * Instances of <code>AbstractFormatterFactory</code> are used by
