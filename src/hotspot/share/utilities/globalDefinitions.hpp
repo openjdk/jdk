@@ -1072,22 +1072,25 @@ const intptr_t NoBits     =  0; // no bits set in a word
 const jlong    NoLongBits =  0; // no bits set in a long
 const intptr_t OneBit     =  1; // only right_most bit set in a word
 
-// get a word with the n.th or the right-most or left-most n bits set
+// Return a value of type T with the n.th bit set and all other bits zero.
+// T must be an integral or enum type. n must be non-negative. If n is at
+// least the bitwise size of T then all bits in the result are zero.
 template<typename T = intptr_t>
 constexpr T nth_bit(int n) {
+  assert(n >= 0, "n must be non-negative");
   using U = std::make_unsigned_t<T>;
   constexpr size_t size = sizeof(U) * BitsPerByte;
-  // Returns 0 for negative n.  Maybe that should be an error instead, but
-  // that's the long-standing behavior.  Similarly for n >= size.
   return T((size_t(n) >= size) ? U(0) : (U(1) << n));
 }
 
+// Return a value of type T with all bits below the n.th bit set and all
+// other bits zero. T must be an integral or enum type. n must be
+// non-negative. If n is at least the bitwise size of T then all bits in
+// the result are set.
 template<typename T = intptr_t>
 constexpr T right_n_bits(int n) {
+  assert(n >= 0, "n must be non-negative");
   using U = std::make_unsigned_t<T>;
-  // Returns all-bits-set for negative n.  Maybe that should be an error instead,
-  // but that's the long-standing behavior.  Similarly for n > size.  For
-  // n == size, returning all-bits-set is correct.
   return T(nth_bit<U>(n) - 1);
 }
 
