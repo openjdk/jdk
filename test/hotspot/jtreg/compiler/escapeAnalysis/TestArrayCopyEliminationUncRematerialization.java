@@ -56,6 +56,25 @@ public class TestArrayCopyEliminationUncRematerialization {
     private static final String PACKAGE = "compiler.escapeAnalysis.templated";
     private static final String CLASS_NAME = "TestArrayCopyEliminationUncRematerializationGenerated";
 
+    // This generates a test containing test methods of the form
+    //  static int testStore(int[] src, boolean flag) {
+    //      int[] dst = new int[COPY_LEN];
+    //      System.arraycopy(src, 0, dst, 0, COPY_LEN);
+    //      src[WRITE_IDX] = WRITE_VAL_I; // Pollute the element in the source array corresponding to the returned element in dst.
+    //      if (flag) { // Compiles to unstable if trap when called exclusively with flag = false.
+    //          dst[0] = (byte) 0x7f;
+    //      }
+    //      return dst[RETURN_IDX]; // Corresponds to src[WRITE_IDX]
+    //  }
+    // for all primitive types except byte and for different methods of polluting the source
+    // array and producing an unstable if trap.
+    // There methods generate an IR test that validates that as many rematerialization loads
+    // as possible are placed in the uncommon path and that the returned result is in fact from
+    // the source array.
+    // Between different runs of the test, it will generate different sized arrays and indices
+    // to read from and store to (see TestConfig above). Further, this generates a variant of the
+    // test method, where the offset into src is provided in an argument. C2 cannot put any rematerialization
+    // loads in the uncomon path then, but it is useful for checking the correct result.
     public static void main(String[] args) {
         final CompileFramework comp = new CompileFramework();
 
@@ -67,17 +86,15 @@ public class TestArrayCopyEliminationUncRematerialization {
         comp.invoke(PACKAGE + "." + CLASS_NAME, "main", new Object[] { new String[] { } });
     }
 
-    private record TestConfig(int srcSize, byte srcVal, int copyLen, int copyIdx, int writeIdx, byte writeVal, int returnIdx) {
+    private record TestConfig(int srcSize, int copyLen, int copyIdx, int writeIdx, int returnIdx) {
         static TestConfig make() {
             int copyLen = RANDOM.nextInt(10, 64); // 64 is the default value for -XX:EliminateAllocationArraySizeLimit.
             int srcSize = RANDOM.nextInt(copyLen + 20, 1000);
             int copyIdx = RANDOM.nextInt(1, srcSize - copyLen); // The index we start arraycopying src from.
             int returnIdx = RANDOM.nextInt(0, copyLen); // The index where dst returns from. Must correspond to writeIdx in src.
             int writeIdx = copyIdx + returnIdx; // The index we write to in src.
-            byte srcVal = 1;
-            byte writeVal = (byte) RANDOM.nextInt(2, Byte.MAX_VALUE);
 
-            return new TestConfig(srcSize, srcVal, copyLen, copyIdx, writeIdx, writeVal, returnIdx);
+            return new TestConfig(srcSize, copyLen, copyIdx, writeIdx, returnIdx);
         }
 
         public TemplateToken constDefinitions() {
@@ -87,9 +104,7 @@ public class TestArrayCopyEliminationUncRematerialization {
                     String.format("private static final int COPY_LEN = %d;\n", copyLen),
                     String.format("private static final int COPY_IDX = %d;\n", copyIdx),
                     String.format("private static final int WRITE_IDX = %d;\n", writeIdx),
-                    String.format("private static final int RETURN_IDX = %d;\n", returnIdx),
-                    String.format("private static final byte SRC_VAL = (byte)%d;\n", srcVal),
-                    String.format("private static final byte WRITE_VAL = (byte)%d;\n", writeVal)
+                    String.format("private static final int RETURN_IDX = %d;\n", returnIdx)
             )))).asToken();
         }
 
@@ -98,37 +113,15 @@ public class TestArrayCopyEliminationUncRematerialization {
         }
     }
 
-    // This generates the test method
-    // static int testStore(int[] src, boolean flag) {
-    //     int[] dst = new int[COPY_LEN];
-    //     System.arraycopy(src, 0, dst, 0, COPY_LEN);
-    //     dst[1] = (byte) someValue; // Store of byte value so we can count loads of other primitives.
-    //     if (flag) { // Compiles to unstable if trap when called exclusively with flag = false.
-    //         dst[0] = (byte) 0x7f;
-    //     }
-    //     return dst[1]; // Should return src[1].
-    // }
-    // for all primitive types except byte and for different methods of polluting the source
-    // array and producing an unstable if trap.
-    // There methods generate an IR test that validates that as many rematerialization loads
-    // as possible are placed in the uncommon path and that the returned result is in fact from
-    // the source array.
-    // Between different runs of the test, it will generate different sized arrays and indices
-    // to read from and store to (see TestConfig above). Further, this generates a variant of the
-    // test method, where the offset into src is provided in an argument. C2 cannot put any rematerialization
-    // loads in the uncomon path then, but it is useful for checking the correct result.
     private static String generate(CompileFramework comp) {
         TestConfig config = TestConfig.make();
 
         final List<TemplateToken> tests = new ArrayList<>();
         tests.add(config.constDefinitions());
+        tests.add(PrimitiveType.generateLibraryRNG());
 
-        // Generate all testcases for (almost) all primitive types.
-        tests.addAll(List.of(CodeGenerationDataNameType.doubles(),
-                             CodeGenerationDataNameType.floats(),
-                             CodeGenerationDataNameType.longs(),
-                             CodeGenerationDataNameType.ints(),
-                             CodeGenerationDataNameType.shorts())
+        // Generate all testcases for all primitive types except boolean.
+        tests.addAll(CodeGenerationDataNameType.INTEGRAL_AND_FLOATING_TYPES
                          .stream()
                          .map(pty -> new TestsPerType(pty).generate(config))
                          .collect(Collectors.toList()));
@@ -159,26 +152,28 @@ public class TestArrayCopyEliminationUncRematerialization {
 
             var runTestConst = Template.make("testName", (String testName) -> scope(
                 let("type", pty),
+                let("typeAbbrev", pty.abbrev()),
                 let("srcField", srcArray),
                 """
                 @Run(test = "test#{testName}")
                 static void run#{testName}(RunInfo info) {
-                    Arrays.fill(#{srcField}, SRC_VAL);
+                    Arrays.fill(#{srcField}, SRC_VAL_#{typeAbbrev});
                     #type res = test#{testName}(#{srcField}, info.isWarmUp());
-                    Asserts.assertEQ((#type) SRC_VAL, res, "Wrong result from " + info.getTest().getName() + " with flag " + info.isWarmUp());
+                    Asserts.assertEQ((#type) SRC_VAL_#{typeAbbrev}, res, "Wrong result from " + info.getTest().getName() + " with flag " + info.isWarmUp());
                 }
                 """
             ));
 
             var runTestIdx = Template.make("testName", (String testName) -> scope(
                 let("type", pty),
+                let("typeAbbrev", pty.abbrev()),
                 let("srcField", srcArray),
                 """
                 @Run(test = "test#{testName}")
                 static void run#{testName}(RunInfo info) {
-                    Arrays.fill(#{srcField}, SRC_VAL);
+                    Arrays.fill(#{srcField}, SRC_VAL_#{typeAbbrev});
                     #type res = test#{testName}(#{srcField}, COPY_IDX, info.isWarmUp());
-                    Asserts.assertEQ((#type) SRC_VAL, res, "Wrong result from " + info.getTest().getName() + " with flag " + info.isWarmUp());
+                    Asserts.assertEQ((#type) SRC_VAL_#{typeAbbrev}, res, "Wrong result from " + info.getTest().getName() + " with flag " + info.isWarmUp());
                 }
                 """
             ));
@@ -222,11 +217,11 @@ public class TestArrayCopyEliminationUncRematerialization {
             // For methods with a constant offset into src, validate that only the necessary rematerialization nodes are
             // in the common path.
             var testCaseConst = Template.make("testName", "loadCount", "tmp", (String testName, Integer loadCout, TestTemplates templates) -> scope(
-                let("ptyShort", pty.abbrev()),
+                let("typeAbbrev", pty.abbrev().equals("C") ? "US" : pty.abbrev()),
                 runTestConst.asToken(testName),
                 """
                 @Test
-                @IR(counts = { IRNode.LOAD_#{ptyShort}, "=#{loadCount}" },
+                @IR(counts = { IRNode.LOAD_#{typeAbbrev}, "=#{loadCount}" },
                     applyIf = { "TieredCompilation", "true"})
                 """,
                 testMethodConst.asToken(testName, templates)
@@ -251,21 +246,24 @@ public class TestArrayCopyEliminationUncRematerialization {
             ));
 
             var storeConst = Template.make(() -> scope(
+                let("typeAbbrev", pty.abbrev()),
                 """
-                    src[WRITE_IDX] = WRITE_VAL;
+                    src[WRITE_IDX] = WRITE_VAL_#{typeAbbrev};
                 """
             ));
 
             var storeIdx = Template.make(() -> scope(
+                let("typeAbbrev", pty.abbrev()),
                 """
-                    src[idx + RETURN_IDX] = WRITE_VAL;
+                    src[idx + RETURN_IDX] = WRITE_VAL_#{typeAbbrev};
                 """
             ));
 
             var unstableTrap = Template.make(() -> scope(
+                let("typeAbbrev", pty.abbrev()),
                 """
                 if (flag) {
-                    src[0] = WRITE_VAL;
+                    src[0] = WRITE_VAL_#{typeAbbrev};
                 }
                 """
             ));
@@ -305,30 +303,34 @@ public class TestArrayCopyEliminationUncRematerialization {
             var testAtomics = Template.make(() -> {
                 var getAndSetStoreConst = Template.make(() -> scope(
                     let("type", pty),
+                    let("typeAbbrev", pty.abbrev()),
                     let("handle", handle),
                     """
-                    #{handle}.getAndSet(src, WRITE_IDX, (#type) WRITE_VAL);
+                    #{handle}.getAndSet(src, WRITE_IDX, (#type) WRITE_VAL_#{typeAbbrev});
                     """
                 ));
                 var getAndSetStoreIdx = Template.make(() -> scope(
                     let("type", pty),
+                    let("typeAbbrev", pty.abbrev()),
                     let("handle", handle),
                     """
-                    #{handle}.getAndSet(src, idx + RETURN_IDX, (#type) WRITE_VAL);
+                    #{handle}.getAndSet(src, idx + RETURN_IDX, (#type) WRITE_VAL_#{typeAbbrev});
                     """
                 ));
                 var casStoreConst = Template.make(() -> scope(
                     let("type", pty),
+                    let("typeAbbrev", pty.abbrev()),
                     let("handle", handle),
                     """
-                    #{handle}.compareAndSet(src, WRITE_IDX, (#type) SRC_VAL, (#type) WRITE_VAL);
+                    #{handle}.compareAndSet(src, WRITE_IDX, (#type) SRC_VAL_#{typeAbbrev}, (#type) WRITE_VAL_#{typeAbbrev});
                     """
                 ));
                 var casStoreIdx = Template.make(() -> scope(
                     let("type", pty),
+                    let("typeAbbrev", pty.abbrev()),
                     let("handle", handle),
                     """
-                    #{handle}.compareAndSet(src, idx + RETURN_IDX, (#type) SRC_VAL, (#type) WRITE_VAL);
+                    #{handle}.compareAndSet(src, idx + RETURN_IDX, (#type) SRC_VAL_#{typeAbbrev}, (#type) WRITE_VAL_#{typeAbbrev});
                     """
                 ));
                 return scope(let("type", pty),
@@ -358,15 +360,17 @@ public class TestArrayCopyEliminationUncRematerialization {
                 ));
                 // Just write using a memory segment
                 var memorySegmentStoreConst = Template.make(() -> scope(
+                    let("typeAbbrev", pty.abbrev()),
                     let("layout", layout),
                     """
-                    srcMS.setAtIndex(ValueLayout.#{layout}, WRITE_IDX, WRITE_VAL);
+                    srcMS.setAtIndex(ValueLayout.#{layout}, WRITE_IDX, WRITE_VAL_#{typeAbbrev});
                     """
                 ));
                 var memorySegmentStoreIdx = Template.make(() -> scope(
+                    let("typeAbbrev", pty.abbrev()),
                     let("layout", layout),
                     """
-                    srcMS.setAtIndex(ValueLayout.#{layout}, RETURN_IDX + idx, WRITE_VAL);
+                    srcMS.setAtIndex(ValueLayout.#{layout}, RETURN_IDX + idx, WRITE_VAL_#{typeAbbrev});
                     """
                 ));
                 // Write a single byte somewhere within the returned value.
@@ -422,13 +426,15 @@ public class TestArrayCopyEliminationUncRematerialization {
                     """
                 ));
                 var storeAliasConst = Template.make(() -> scope(
+                    let("typeAbbrev", pty.abbrev()),
                     """
-                    alias[WRITE_IDX] = WRITE_VAL;
+                    alias[WRITE_IDX] = WRITE_VAL_#{typeAbbrev};
                     """
                 ));
                 var storeAliasIdx = Template.make(() -> scope(
+                    let("typeAbbrev", pty.abbrev()),
                     """
-                    alias[RETURN_IDX + idx] = WRITE_VAL;
+                    alias[RETURN_IDX + idx] = WRITE_VAL_#{typeAbbrev};
                     """
                 ));
                 return scope(
@@ -443,15 +449,16 @@ public class TestArrayCopyEliminationUncRematerialization {
                 final String testName = "Switch" + pty.abbrev();
                 return scope(
                     let("type", pty),
+                    let("typeAbbrev", pty.abbrev()),
                     let("testName", testName),
                     let("src", srcArray),
                     """
                     @Run(test = "test#testName")
                     @Warmup(10000)
                     static void run#testName(RunInfo info) {
-                        Arrays.fill(#src, SRC_VAL);
+                        Arrays.fill(#src, SRC_VAL_#{typeAbbrev});
                         #type res = test#testName(#src);
-                        Asserts.assertEQ((#type) SRC_VAL, res, "Wrong Result from " + info.getTest().getName());
+                        Asserts.assertEQ((#type) SRC_VAL_#{typeAbbrev}, res, "Wrong Result from " + info.getTest().getName());
                     }
 
                     @Test
@@ -463,7 +470,7 @@ public class TestArrayCopyEliminationUncRematerialization {
                             for (int j = 0; j < 8; j++) {
                                 switch (i) {
                                     case -1 -> { /*nop*/ }
-                                    case 0 -> src[WRITE_IDX] = WRITE_VAL;
+                                    case 0 -> src[WRITE_IDX] = WRITE_VAL_#{typeAbbrev};
                                 }
                             }
                         }
@@ -484,6 +491,7 @@ public class TestArrayCopyEliminationUncRematerialization {
                 final int copyOtherIdx = RANDOM.nextInt(0, otherLen - arraycopyLen);
                 var arraycopyStoreConst = Template.make(() -> scope(
                     let("type", pty),
+                    let("typeAbbrev", pty.abbrev()),
                     let("arraycopyLen", arraycopyLen),
                     let("other", "other" + pty.abbrev()),
                     let("otherLen", otherLen),
@@ -491,7 +499,7 @@ public class TestArrayCopyEliminationUncRematerialization {
                     Hooks.CLASS_HOOK.insert(scope(
                         """
                         private static final #type[] #other = new #type[#otherLen];
-                        static { Arrays.fill(#other, WRITE_VAL); }
+                        static { Arrays.fill(#other, WRITE_VAL_#{typeAbbrev}); }
                         """
                     )),
                     """
@@ -518,11 +526,24 @@ public class TestArrayCopyEliminationUncRematerialization {
 
             return Template.make(() -> scope(
                 let("type", pty),
+                let("typeAbbrev", pty.abbrev()),
+                let("writeVal", pty.con()),
+                let("rng", pty.callLibraryRNG()),
                 let("src", srcArray),
                 Hooks.CLASS_HOOK.insert(scope(
-                   """
-                   private static final #type[] #src = new #type[SRC_SIZE];
-                   """
+                    """
+                    private static final #type SRC_VAL_#{typeAbbrev};
+                    private static final #type WRITE_VAL_#{typeAbbrev} = #writeVal;
+                    private static final #type[] #src = new #type[SRC_SIZE];
+
+                    static {
+                        #type srcVal;
+                        do {
+                            srcVal = #rng;
+                        } while (srcVal == WRITE_VAL_#{typeAbbrev});
+                        SRC_VAL_#{typeAbbrev} = srcVal;
+                    }
+                    """
                 )),
                 List.of(testStore,
                         testStoreTrapLoop,
