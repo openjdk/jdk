@@ -83,6 +83,8 @@ compiler/c2/aarch64/TestStaticCallStub.java 8359963 linux-aarch64,macosx-aarch64
 
 compiler/longcountedloops/TestLoopNestTooManyTraps.java 8376591 generic-all
 
+compiler/unsafe/AlignmentGapAccess.java 8373487 generic-all
+
 #############################################################################
 
 # :hotspot_gc
@@ -196,4 +198,3 @@ vmTestbase/nsk/monitoring/ThreadMXBean/findMonitorDeadlockedThreads/find006/Test
 # in either implementation or test code.
 
 #############################################################################
-
