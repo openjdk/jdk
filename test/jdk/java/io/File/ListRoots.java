@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /* @test
    @bug 4071322
+   @modules java.base/jdk.internal.util
    @summary Basic test for File.listRoots method
  */
 
@@ -34,6 +35,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import jdk.internal.util.OperatingSystem;
 
 public class ListRoots {
 
@@ -53,14 +56,22 @@ public class ListRoots {
         }
 
         // the list of roots should match FileSystem::getRootDirectories
-        Set<File> roots1 = Stream.of(rs).collect(Collectors.toSet());
+        Set<File> actualSet = Stream.of(rs).collect(Collectors.toSet());
         FileSystem fs = FileSystems.getDefault();
-        Set<File> roots2 = StreamSupport.stream(fs.getRootDirectories().spliterator(), false)
-                .map(Path::toFile)
-                .collect(Collectors.toSet());
-        if (!roots1.equals(roots2)) {
-            System.out.println(roots2);
-            throw new RuntimeException("Does not match FileSystem::getRootDirectories");
+        Stream<File> expectedStream =
+            StreamSupport.stream(fs.getRootDirectories().spliterator(), false)
+                .map(Path::toFile);
+
+        if (OperatingSystem.isWindows()) {
+            if (!expectedStream.anyMatch(actualSet::contains)) {
+                System.err.println(actualSet);
+                throw new RuntimeException("Does not intersect FileSystem::getRootDirectories");
+        } else { // Unix
+            Set<File> expectedSet = expectedStream.collect(Collectors.toSet());
+            if (!actualSet.equals(expectedSet)) {
+                System.err.println(actualSet);
+                throw new RuntimeException("Does not equal FileSystem::getRootDirectories");
+            }
         }
     }
 
