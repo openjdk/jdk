@@ -102,11 +102,11 @@ struct G1UpdateRegionLivenessAndSelectForRebuildTask::G1OnRegionClosure : public
                         || hr->has_pinned_objects();
       if (is_live) {
         const bool selected_for_rebuild = tracker->update_humongous_before_rebuild(hr);
-        if (selected_for_rebuild) {
-          _local_num_humongous_selected++;
-        }
 
         auto on_humongous_region = [&] (G1HeapRegion* hr) {
+          if (selected_for_rebuild) {
+            _local_num_humongous_selected++;
+          }
           _cm->update_top_at_rebuild_start(hr);
         };
         _g1h->humongous_obj_regions_iterate(hr, on_humongous_region);
