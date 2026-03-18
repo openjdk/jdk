@@ -1237,26 +1237,6 @@ Node* GraphKit::basic_plus_adr(Node* base, Node* ptr, Node* offset) {
   return _gvn.transform(AddPNode::make_with_base(base, ptr, offset));
 }
 
-Node* GraphKit::off_heap_plus_addr(Node* ptr, Node* offset) {
-  // short-circuit a common case
-  if (offset == MakeConX(0)) {
-    return ptr;
-  }
-#ifdef ASSERT
-  // Both 32-bit and 64-bit zeros should have been handled by the previous `if`
-  // statement, so if we see either 32-bit or 64-bit zeros here, then we have a
-  // problem.
-  if (offset->is_Con()) {
-    const Type* t = offset->bottom_type();
-    bool is_zero_int = t->isa_int() && t->is_int()->get_con() == 0;
-    bool is_zero_long = t->isa_long() && t->is_long()->get_con() == 0;
-    assert(!is_zero_int && !is_zero_long,
-           "Unexpected zero offset - should have matched MakeConX(0)");
-  }
-#endif
-  return _gvn.transform(AddPNode::make_off_heap(ptr, offset));
-}
-
 Node* GraphKit::ConvI2L(Node* offset) {
   // short-circuit a common case
   jint offset_con = find_int_con(offset, Type::OffsetBot);

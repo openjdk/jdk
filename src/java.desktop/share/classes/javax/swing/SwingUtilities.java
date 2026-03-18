@@ -506,7 +506,7 @@ public class SwingUtilities implements SwingConstants
     public static boolean isDescendingFrom(Component a,Component b) {
         if(a == b)
             return true;
-        for(Container p = a.getParent();p!=null;p=p.getParent())
+        for(Container p = a.getParent(); p != null; p = p.getParent())
             if(p == b)
                 return true;
         return false;

@@ -454,7 +454,7 @@ class os: AllStatic {
   static size_t align_down_vm_page_size(size_t size) { return align_down(size, os::vm_page_size()); }
 
   // The set of page sizes which the VM is allowed to use (may be a subset of
-  //  the page sizes actually available on the platform).
+  // the page sizes actually available on the platform).
   static const PageSizes& page_sizes() { return _page_sizes; }
 
   // Returns the page size to use for a region of memory.
