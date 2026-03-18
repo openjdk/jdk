@@ -1508,9 +1508,6 @@ void VM_Version::get_processor_features() {
         MaxLoopPad = 11;
       }
 #endif // COMPILER2
-      if (FLAG_IS_DEFAULT(UseXMMForArrayCopy)) {
-        UseXMMForArrayCopy = true; // use SSE2 movq on new ZX cpus
-      }
       if (supports_sse4_2()) { // new ZX cpus
         if (FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
           UseUnalignedLoadStores = true; // use movdqu on newest ZX cpus
@@ -1571,10 +1568,6 @@ void VM_Version::get_processor_features() {
       if (FLAG_IS_DEFAULT(AllocatePrefetchInstr)) {
         FLAG_SET_DEFAULT(AllocatePrefetchInstr, 3);
       }
-      // On family 15h processors use XMM and UnalignedLoadStores for Array Copy
-      if (supports_sse2() && FLAG_IS_DEFAULT(UseXMMForArrayCopy)) {
-        FLAG_SET_DEFAULT(UseXMMForArrayCopy, true);
-      }
       if (supports_sse2() && FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
         FLAG_SET_DEFAULT(UseUnalignedLoadStores, true);
       }
@@ -1591,9 +1584,6 @@ void VM_Version::get_processor_features() {
     if (cpu_family() >= 0x17) {
       // On family >=17h processors use XMM and UnalignedLoadStores
       // for Array Copy
-      if (supports_sse2() && FLAG_IS_DEFAULT(UseXMMForArrayCopy)) {
-        FLAG_SET_DEFAULT(UseXMMForArrayCopy, true);
-      }
       if (supports_sse2() && FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
         FLAG_SET_DEFAULT(UseUnalignedLoadStores, true);
       }
@@ -1640,9 +1630,6 @@ void VM_Version::get_processor_features() {
       }
 #endif // COMPILER2
 
-      if (FLAG_IS_DEFAULT(UseXMMForArrayCopy)) {
-        UseXMMForArrayCopy = true; // use SSE2 movq on new Intel cpus
-      }
       if ((supports_sse4_2() && supports_ht()) || supports_avx()) { // Newest Intel cpus
         if (FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
           UseUnalignedLoadStores = true; // use movdqu on newest Intel cpus
