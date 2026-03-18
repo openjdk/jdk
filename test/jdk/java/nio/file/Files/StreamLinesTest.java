@@ -26,13 +26,16 @@
  * @library /test/lib /lib/testlibrary/bootlib
  * @build java.base/java.util.stream.OpTestCase
  *        jdk.test.lib.RandomFactory
- * @run testng/othervm StreamLinesTest
+ * @run junit/othervm StreamLinesTest
  * @summary Tests streams returned from Files.lines, primarily focused on
  *          testing the file-channel-based stream stream with supported
  *          character sets
  * @key randomness
  */
 
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -120,16 +123,15 @@ public class StreamLinesTest extends OpTestCase {
         }
     }
 
-    static Object[] of(String description, IntFunction<String> lineGenerator,
+    static Arguments of(String description, IntFunction<String> lineGenerator,
                        IntFunction<LineSeparator> separatorGenerator, int n, Charset cs) {
-        return new Object[]{description, lineGenerator, separatorGenerator, n, cs};
+        return Arguments.of(description, lineGenerator, separatorGenerator, n, cs);
     }
 
     private static final Random random = RandomFactory.getRandom();
 
-    @DataProvider
-    public static Object[][] lines() {
-        List<Object[]> l = new ArrayList<>();
+    public static Stream<Arguments> lines() {
+        List<Arguments> l = new ArrayList<>();
 
         // Include the three supported optimal-line charsets and one
         // which does not
@@ -175,10 +177,11 @@ public class StreamLinesTest extends OpTestCase {
                      1024, charset));
         }
 
-        return l.toArray(new Object[][]{});
+        return l.stream();
     }
 
-    @Test(dataProvider = "lines")
+    @ParameterizedTest
+    @MethodSource("lines")
     public void test(String description,
                      IntFunction<String> lineGenerator, IntFunction<LineSeparator> separatorGenerator,
                      int lines, Charset cs) throws IOException {
