@@ -601,6 +601,7 @@ void AOTCodeCache::Config::record(uint cpu_features_offset) {
   _prefetchCopyIntervalInBytes     = (uint)PrefetchCopyIntervalInBytes;
   _blockZeroingLowLimit            = (uint)BlockZeroingLowLimit;
   _softwarePrefetchHintDistance    = (uint)SoftwarePrefetchHintDistance;
+  _useSVE                          = (uint)UseSVE;
   _aarch64_flags                   = 0;
   if (AvoidUnalignedAccesses) {
     set_aarch64_flag(aarch64_avoidUnalignedAccesses);
@@ -613,9 +614,6 @@ void AOTCodeCache::Config::record(uint cpu_features_offset) {
   }
   if (UseSIMDForSHA3Intrinsic) {
     set_aarch64_flag(aarch64_useSIMDForSHA3);
-  }
-  if (UseSVE) {
-    set_aarch64_flag(aarch64_useSVE);
   }
   if (UseLSE) {
     set_aarch64_flag(aarch64_useLSE);
@@ -924,6 +922,12 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
     return false;
   }
 
+  // change to UseSVE may affect validity of stubs and nmethods
+  if (_useSVE != (uint)UseSVE) {
+  log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseSVE = %d vs current %d",(int)_useSVE, UseSVE);
+    return false;
+  }
+
   // switching on AvoidUnalignedAccesses may affect validity of array
   // copy stubs and nmethods
   if (!test_aarch64_flag(aarch64_avoidUnalignedAccesses) && AvoidUnalignedAccesses) {
@@ -948,12 +952,6 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
   // change to useSIMDForSHA3 may affect validity of SHA3 stubs
   if (test_aarch64_flag(aarch64_useSIMDForSHA3) != UseSIMDForSHA3Intrinsic) {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseSIMDForSHA3Intrinsic = %s vs current %s", (UseSIMDForSHA3Intrinsic ? "false" : "true"), (UseSIMDForSHA3Intrinsic ? "true" : "false"));
-    return false;
-  }
-
-  // change to UseSVE may affect validity of stubs and nmethods
-  if (test_aarch64_flag(aarch64_useSVE) != UseSVE) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseSVE = %s vs current %s", (UseSVE ? "false" : "true"), (UseSVE ? "true" : "false"));
     return false;
   }
 

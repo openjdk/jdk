@@ -360,14 +360,14 @@ protected:
     uint _prefetchCopyIntervalInBytes;
     uint _blockZeroingLowLimit;
     uint _softwarePrefetchHintDistance;
+    uint _useSVE;
     enum AArch64Flags {
       aarch64_none = 0,
       aarch64_avoidUnalignedAccesses = 1,
       aarch64_useSIMDForMemoryOps    = 2,
       aarch64_useSIMDForArrayEquals  = 4,
       aarch64_useSIMDForSHA3         = 8,
-      aarch64_useSVE                 = 16,
-      aarch64_useLSE                 = 32,
+      aarch64_useLSE                 = 16,
     };
     uint _aarch64_flags;
     enum AArch64IntrinsicsUseFlags {
