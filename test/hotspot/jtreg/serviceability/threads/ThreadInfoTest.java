@@ -29,7 +29,6 @@ import java.lang.management.ThreadMXBean;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.locks.ReentrantLock;
 
 /*
  * @test
@@ -161,9 +160,6 @@ public class ThreadInfoTest {
 
         public void run() {
             try {
-                ReentrantLock lock = new ReentrantLock();
-                lock.lock();
-                Exception myException = new Exception("Test exception");
                 long sleep = Math.max(1, endTimeMs - System.currentTimeMillis());
                 goSleep(sleep);
             } catch (Exception e) {
