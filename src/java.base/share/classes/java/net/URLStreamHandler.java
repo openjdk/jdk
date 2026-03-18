@@ -481,12 +481,8 @@ public abstract class URLStreamHandler {
      * @return  a string representation of the {@code URL} argument.
      */
     protected String toExternalForm(URL u) {
-        // Optimizations in this method are based on the following observations:
-        // 1: Some URL components are commonly empty and can be specialized
-        // 2: One longer concatenation is faster than combining a tree of smaller concatenations
-        // 3: This is java.base where javac lowers '+' to chained StringBuilder::append calls
-        // 4: The control flow analysis of OptimizedStringConcat is fragile and favors
-        //    concatenation without interleaving branches. Let's use locals.
+        // The fast paths and branch-free concatenations in this method are here for
+        // a reason and should not be updated without checking performance figures.
 
         // Optionality, subtly different for authority
         boolean emptyAuth = u.getAuthority() == null || u.getAuthority().isEmpty();
