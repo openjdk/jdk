@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -450,7 +450,7 @@ void ConstantPoolCache::remove_resolved_field_entries_if_non_deterministic() {
       Symbol* klass_name = cp->klass_name_at(klass_cp_index);
       Symbol* name = cp->uncached_name_ref_at(cp_index);
       Symbol* signature = cp->uncached_signature_ref_at(cp_index);
-      if (resolved) {
+      if (resolved && !CDSConfig::is_dumping_preimage_static_archive()) {
         log.print("%s field  CP entry [%3d]: %s => %s.%s:%s%s%s",
                   (archived ? "archived" : "reverted"),
                   cp_index,
@@ -493,7 +493,7 @@ void ConstantPoolCache::remove_resolved_method_entries_if_non_deterministic() {
       Symbol* name = cp->uncached_name_ref_at(cp_index);
       Symbol* signature = cp->uncached_signature_ref_at(cp_index);
       LogStream ls(lt);
-      if (resolved) {
+      if (resolved && !CDSConfig::is_dumping_preimage_static_archive()) {
         ls.print("%s%s method CP entry [%3d]: %s %s.%s:%s",
                 (archived ? "archived" : "reverted"),
                 (rme->is_resolved(Bytecodes::_invokeinterface) ? " interface" : ""),
@@ -539,7 +539,7 @@ void ConstantPoolCache::remove_resolved_indy_entries_if_non_deterministic() {
       Symbol* bsm_name = cp->uncached_name_ref_at(bsm_ref);
       Symbol* bsm_signature = cp->uncached_signature_ref_at(bsm_ref);
       Symbol* bsm_klass = cp->klass_name_at(cp->uncached_klass_ref_index_at(bsm_ref));
-      if (resolved) {
+      if (resolved && !CDSConfig::is_dumping_preimage_static_archive()) {
         log.print("%s indy   CP entry [%3d]: %s (%d)",
                   (archived ? "archived" : "reverted"),
                   cp_index, cp->pool_holder()->name()->as_C_string(), i);
@@ -568,6 +568,8 @@ bool ConstantPoolCache::can_archive_resolved_method(ConstantPool* src_cp, Resolv
     return false;
   }
 
+  int cp_index = method_entry->constant_pool_index();
+
   if (!method_entry->is_resolved(Bytecodes::_invokevirtual)) {
     if (method_entry->method() == nullptr) {
       rejection_reason = "(method entry is not resolved)";
@@ -577,9 +579,24 @@ bool ConstantPoolCache::can_archive_resolved_method(ConstantPool* src_cp, Resolv
       rejection_reason = "(corresponding stub is generated on demand during method resolution)";
       return false; // FIXME: corresponding stub is generated on demand during method resolution (see LinkResolver::resolve_static_call).
     }
-    if (method_entry->is_resolved(Bytecodes::_invokehandle) && !CDSConfig::is_dumping_method_handles()) {
-      rejection_reason = "(not dumping method handles)";
-      return false;
+    if (method_entry->is_resolved(Bytecodes::_invokehandle)) {
+      if (!CDSConfig::is_dumping_method_handles()) {
+        rejection_reason = "(not dumping method handles)";
+        return false;
+      }
+
+      Symbol* sig = constant_pool()->uncached_signature_ref_at(cp_index);
+      Klass* k;
+      if (!AOTConstantPoolResolver::check_methodtype_signature(constant_pool(), sig, &k, true)) {
+        // invokehandles that were resolved in the training run should have been filtered in
+        // AOTConstantPoolResolver::maybe_resolve_fmi_ref so we shouldn't come to here.
+        //
+        // If we come here it's because the AOT assembly phase has executed an invokehandle
+        // that uses an excluded type like jdk.jfr.Event. This should not happen because the
+        // AOT assembly phase should execute only a very limited set of Java code.
+        ResourceMark rm;
+        fatal("AOT assembly phase must not resolve any invokehandles whose signatures include an excluded type");
+      }
     }
     if (method_entry->method()->is_method_handle_intrinsic() && !CDSConfig::is_dumping_method_handles()) {
       rejection_reason = "(not dumping intrinsic method handles)";
@@ -587,7 +604,6 @@ bool ConstantPoolCache::can_archive_resolved_method(ConstantPool* src_cp, Resolv
     }
   }
 
-  int cp_index = method_entry->constant_pool_index();
   assert(src_cp->tag_at(cp_index).is_method() || src_cp->tag_at(cp_index).is_interface_method(), "sanity");
 
   if (!AOTConstantPoolResolver::is_resolution_deterministic(src_cp, cp_index)) {
