@@ -1073,27 +1073,22 @@ const jlong    NoLongBits =  0; // no bits set in a long
 const intptr_t OneBit     =  1; // only right_most bit set in a word
 
 // get a word with the n.th or the right-most or left-most n bits set
-// (note: #define used only so that they can be used in enum constant definitions)
-#define nth_bit(n)        (((n) >= BitsPerWord) ? 0 : (OneBit << (n)))
-#define right_n_bits(n)   (nth_bit(n) - 1)
-
-// same as nth_bit(n), but allows handing in a type as template parameter. Allows
-// us to use nth_bit with 64-bit types on 32-bit platforms
-// Guard shift count to avoid UB: shift by >= type width or negative is undefined
-template<class T> inline T nth_bit_typed(int n) {
-  const unsigned bits = sizeof(T) * 8;
-  if (n < 0 || n >= (int)bits) return (T)0;
-  return ((T)1) << n;
+template<typename T = intptr_t>
+constexpr T nth_bit(int n) {
+  using U = std::make_unsigned_t<T>;
+  constexpr size_t size = sizeof(U) * BitsPerByte;
+  // Returns 0 for negative n.  Maybe that should be an error instead, but
+  // that's the long-standing behavior.  Similarly for n >= size.
+  return T((size_t(n) >= size) ? U(0) : (U(1) << n));
 }
-// Use unsigned type for arithmetic to avoid signed overflow (e.g. n==63 for jlong) and shift-by-width UB
-template<typename T> struct right_n_bits_unsigned_type {
-  static_assert(std::is_integral<T>::value, "T must be an integral type");
-  using type = typename std::make_unsigned<T>::type;
-};
-// Unsigned overflow is well-defined (wraps). Shift count is guarded in nth_bit_typed.
-template<class T> inline T right_n_bits_typed(int n) {
-  using U = typename right_n_bits_unsigned_type<T>::type;
-  return (T)(nth_bit_typed<U>(n) - (U)1);
+
+template<typename T = intptr_t>
+constexpr T right_n_bits(int n) {
+  using U = std::make_unsigned_t<T>;
+  // Returns all-bits-set for negative n.  Maybe that should be an error instead,
+  // but that's the long-standing behavior.  Similarly for n > size.  For
+  // n == size, returning all-bits-set is correct.
+  return T(nth_bit<U>(n) - 1);
 }
 
 // bit-operations using a mask m
