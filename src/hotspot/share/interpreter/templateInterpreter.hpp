@@ -122,7 +122,6 @@ class TemplateInterpreter: public AbstractInterpreter {
   static EntryPoint _deopt_entry[number_of_deopt_entries];      // entry points to return to from a deoptimization
   static address    _deopt_reexecute_return_entry;
   static EntryPoint _safept_entry;
-  static EntryPoint _no_async_safept_entry;
 
   static address _invoke_return_entry[number_of_return_addrs];           // for invokestatic, invokespecial, invokevirtual return entries
   static address _invokeinterface_return_entry[number_of_return_addrs];  // for invokeinterface return entries

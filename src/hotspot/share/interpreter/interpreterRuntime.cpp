@@ -789,8 +789,17 @@ JRT_ENTRY(void, InterpreterRuntime::set_original_bytecode_at(JavaThread* current
   method->set_orig_bytecode_at(method->bci_from(bcp), new_code);
 JRT_END
 
-JRT_ENTRY(void, InterpreterRuntime::_breakpoint(JavaThread* current, Method* method, address bcp))
-  JvmtiExport::post_raw_breakpoint(current, method, bcp);
+JRT_BLOCK_ENTRY(void, InterpreterRuntime::_breakpoint(JavaThread* current, Method* method, address bcp))
+  Bytecodes::Code code = Bytecodes::code_at(method, bcp);
+  if (Bytecodes::can_trap(code)) {
+    JRT_BLOCK
+    JvmtiExport::post_raw_breakpoint(current, method, bcp);
+    JRT_BLOCK_END
+  } else {
+    JRT_BLOCK_NO_ASYNC
+    JvmtiExport::post_raw_breakpoint(current, method, bcp);
+    JRT_BLOCK_END
+  }
 JRT_END
 
 void InterpreterRuntime::resolve_invoke(Bytecodes::Code bytecode, TRAPS) {
@@ -1174,12 +1183,19 @@ static void post_single_step(JavaThread* current) {
   }
 }
 
-JRT_ENTRY(void, InterpreterRuntime::at_safepoint(JavaThread* current))
-  post_single_step(current);
-JRT_END
-
-JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::at_safepoint_no_async(JavaThread* current))
-  post_single_step(current);
+JRT_BLOCK_ENTRY(void, InterpreterRuntime::at_safepoint(JavaThread* current))
+  LastFrameAccessor last_frame(current);
+  assert(last_frame.is_interpreted_frame(), "must be");
+  Bytecodes::Code code = last_frame.code();
+  if (Bytecodes::can_trap(code)) {
+    JRT_BLOCK
+    post_single_step(current);
+    JRT_BLOCK_END
+  } else {
+    JRT_BLOCK_NO_ASYNC
+    post_single_step(current);
+    JRT_BLOCK_END
+  }
 JRT_END
 
 JRT_LEAF(void, InterpreterRuntime::at_unwind(JavaThread* current))

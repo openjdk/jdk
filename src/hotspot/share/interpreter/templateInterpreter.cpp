@@ -221,7 +221,6 @@ EntryPoint TemplateInterpreter::_earlyret_entry;
 EntryPoint TemplateInterpreter::_deopt_entry [TemplateInterpreter::number_of_deopt_entries ];
 address    TemplateInterpreter::_deopt_reexecute_return_entry;
 EntryPoint TemplateInterpreter::_safept_entry;
-EntryPoint TemplateInterpreter::_no_async_safept_entry;
 
 address TemplateInterpreter::_invoke_return_entry[TemplateInterpreter::number_of_return_addrs];
 address TemplateInterpreter::_invokeinterface_return_entry[TemplateInterpreter::number_of_return_addrs];

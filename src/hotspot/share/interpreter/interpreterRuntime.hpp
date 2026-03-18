@@ -129,7 +129,6 @@ private:
 
   // Safepoints
   static void    at_safepoint(JavaThread* current);
-  static void    at_safepoint_no_async(JavaThread* current);
   static void    at_unwind(JavaThread* current);
 
   // Debugger support
