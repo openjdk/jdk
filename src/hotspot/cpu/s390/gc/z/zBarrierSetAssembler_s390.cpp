@@ -196,7 +196,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
       __ z_lgr(Z_ARG1, dst);
     }
     // RuntimeTODO: Why are we storing the contents af temp registers in ARG2, all other architectures have done a similiar thing
-    __ z_lgr(Z_ARG2, temp2);
+    __ z_lay(Z_ARG2, src);
 
     __ call_VM_leaf(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(decorators));
   }
