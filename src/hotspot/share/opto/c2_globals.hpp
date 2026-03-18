@@ -897,7 +897,7 @@
           "Randomize loop peeling decision")                                \
                                                                             \
   develop(bool, StressCountedLoop, false,                                   \
-          "Randomly delay conversion to counted loops")                      \
+          "Randomly delay conversion to counted loops")                     \
 
 // end of C2_FLAGS
 

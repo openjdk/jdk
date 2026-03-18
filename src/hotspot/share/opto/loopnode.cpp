@@ -2069,10 +2069,8 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*& loop, BasicType iv
   }
 
   #ifndef PRODUCT
-  if ( StressCountedLoop ) {
-      if ((C->random() % 2) == 0) {
-          return false;
-    }
+  if (StressCountedLoop && (C->random() % 2 == 0)) {
+    return false;
   }
   #endif
 
@@ -4578,6 +4576,8 @@ void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
              phase->is_counted_loop(_head, loop, T_LONG)) {
     remove_safepoints(phase, true);
   } else {
+    // When StressCountedLoop is enabled, this loop may intentionally avoid a counted loop conversion.
+    // This is expected behavior for the stress mode, which exercises alternative compilation paths.
     if (!StressCountedLoop) {
       assert(!_head->is_Loop() || !_head->as_Loop()->is_loop_nest_inner_loop(), "transformation to counted loop should not fail");
     }
