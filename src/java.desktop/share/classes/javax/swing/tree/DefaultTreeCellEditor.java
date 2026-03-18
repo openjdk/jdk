@@ -259,7 +259,7 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
                                          ((MouseEvent)event).getY());
                     editable = (lastPath != null && path != null &&
                                lastPath.equals(path));
-                    if (path!=null) {
+                    if (path != null) {
                         lastRow = tree.getRowForPath(path);
                         Object value = path.getLastPathComponent();
                         boolean isSelected = tree.isRowSelected(lastRow);

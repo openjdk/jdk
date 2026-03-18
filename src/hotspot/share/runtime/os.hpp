@@ -454,7 +454,7 @@ class os: AllStatic {
   static size_t align_down_vm_page_size(size_t size) { return align_down(size, os::vm_page_size()); }
 
   // The set of page sizes which the VM is allowed to use (may be a subset of
-  //  the page sizes actually available on the platform).
+  // the page sizes actually available on the platform).
   static const PageSizes& page_sizes() { return _page_sizes; }
 
   // Returns the page size to use for a region of memory.
@@ -892,6 +892,9 @@ class os: AllStatic {
   static void print_signal_handlers(outputStream* st, char* buf, size_t buflen);
   static void print_date_and_time(outputStream* st, char* buf, size_t buflen);
   static void print_elapsed_time(outputStream* st, double time);
+
+  // Prints the number of open file descriptors for the current process
+  static void print_open_file_descriptors(outputStream* st);
 
   static void print_user_info(outputStream* st);
   static void print_active_locale(outputStream* st);
