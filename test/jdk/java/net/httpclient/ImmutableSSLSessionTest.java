@@ -79,7 +79,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  *        java.net.http/jdk.internal.net.http.common.ImmutableSSLSessionAccess
  * @run junit/othervm -Djdk.httpclient.HttpClient.log=request,response,headers,errors
- *                    ImmutableSSLSessionTest
+ *                    ${test.main.class}
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ImmutableSSLSessionTest implements HttpServerAdapters {

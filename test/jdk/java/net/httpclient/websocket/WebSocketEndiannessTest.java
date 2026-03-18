@@ -29,7 +29,7 @@
  * @library /test/lib
  * @build DummyWebSocketServer
  *        jdk.test.lib.Asserts
- * @run main WebSocketEndiannessTest
+ * @run main ${test.main.class}
  */
 
 import jdk.internal.net.http.websocket.Frame;

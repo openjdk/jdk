@@ -46,7 +46,7 @@ import jdk.test.lib.net.URIBuilder;
  * @bug 8212926
  * @library /test/lib
  * @summary Basic tests for response timeouts
- * @run main/othervm LargeResponseContent
+ * @run main/othervm ${test.main.class}
  */
 
 public class LargeResponseContent {

@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *          java.base/jdk.internal.net.quic
  * @build jdk.test.lib.net.SimpleSSLContext
  * @summary Verify that a missing transport parameters extension results in missing_extension alert
- * @run junit/othervm QuicTLSEngineMissingParametersTest
+ * @run junit/othervm ${test.main.class}
  */
 public class QuicTLSEngineMissingParametersTest {
 

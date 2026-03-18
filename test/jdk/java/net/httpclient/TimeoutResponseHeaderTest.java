@@ -52,7 +52,7 @@ import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
  *      -Djdk.httpclient.disableRetryConnect
  *      -Djdk.httpclient.redirects.retrylimit=0
  *      -Dtest.requestTimeoutMillis=1000
- *      TimeoutResponseHeaderTest
+ *      ${test.main.class}
  */
 
 /*
@@ -76,7 +76,7 @@ import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
  *      -Djdk.httpclient.redirects.retrylimit=3
  *      -Dtest.requestTimeoutMillis=1000
  *      -Dtest.responseFailureWaitDurationMillis=600
- *      TimeoutResponseHeaderTest
+ *      ${test.main.class}
  */
 
 /**

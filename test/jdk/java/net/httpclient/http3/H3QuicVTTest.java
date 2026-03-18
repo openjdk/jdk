@@ -57,7 +57,7 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  * @run junit/othervm
  *              -Djdk.httpclient.HttpClient.log=requests,responses,headers,errors,http3
- *              H3QuicVTTest
+ *              ${test.main.class}
  */
 /*
  * @test id=never
@@ -70,7 +70,7 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
  * @run junit/othervm
  *              -Djdk.internal.httpclient.quic.selector.useVirtualThreads=never
  *              -Djdk.httpclient.HttpClient.log=requests,responses,headers,errors,http3
- *              H3QuicVTTest
+ *              ${test.main.class}
  */
 /*
  * @test id=always
@@ -83,7 +83,7 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
  * @run junit/othervm
  *              -Djdk.internal.httpclient.quic.selector.useVirtualThreads=always
  *              -Djdk.httpclient.HttpClient.log=requests,responses,headers,errors,http3
- *              H3QuicVTTest
+ *              ${test.main.class}
  */
 /*
  * @test id=explicit-default
@@ -96,7 +96,7 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
  * @run junit/othervm
  *              -Djdk.internal.httpclient.quic.selector.useVirtualThreads=default
  *              -Djdk.httpclient.HttpClient.log=requests,responses,headers,errors,http3
- *              H3QuicVTTest
+ *              ${test.main.class}
  */
 /*
  * @test id=garbage
@@ -109,7 +109,7 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
  * @run junit/othervm
  *              -Djdk.internal.httpclient.quic.selector.useVirtualThreads=garbage
  *              -Djdk.httpclient.HttpClient.log=requests,responses,headers,errors,http3
- *              H3QuicVTTest
+ *              ${test.main.class}
  */
 // -Djava.security.debug=all
 class H3QuicVTTest implements HttpServerAdapters {

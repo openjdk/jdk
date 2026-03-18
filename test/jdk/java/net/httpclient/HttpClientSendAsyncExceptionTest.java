@@ -57,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @bug 8368249
  * @summary Verifies exceptions thrown by `HttpClient::sendAsync`
  * @library /test/jdk/java/net/httpclient/lib /test/lib
- * @run junit HttpClientSendAsyncExceptionTest
+ * @run junit ${test.main.class}
  */
 
 class HttpClientSendAsyncExceptionTest {

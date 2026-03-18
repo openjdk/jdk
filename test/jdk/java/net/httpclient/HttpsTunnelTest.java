@@ -59,11 +59,11 @@ import static java.net.http.HttpClient.Version.HTTP_2;
  *        DigestEchoServer HttpsTunnelTest
  * @run main/othervm -Dtest.requiresHost=true
  *                   -Djdk.httpclient.HttpClient.log=headers
- *                   -Djdk.internal.httpclient.debug=true HttpsTunnelTest
+ *                   -Djdk.internal.httpclient.debug=true ${test.main.class}
  * @run main/othervm -Dtest.requiresHost=true
  *                   -Djdk.httpclient.allowRestrictedHeaders=host
  *                   -Djdk.httpclient.HttpClient.log=headers
- *                   -Djdk.internal.httpclient.debug=true HttpsTunnelTest
+ *                   -Djdk.internal.httpclient.debug=true ${test.main.class}
  *
  */
 

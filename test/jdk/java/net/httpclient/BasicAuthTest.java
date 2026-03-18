@@ -26,7 +26,7 @@
  * @bug 8087112
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
- * @run main/othervm BasicAuthTest
+ * @run main/othervm ${test.main.class}
  * @summary Basic Authentication Test
  */
 

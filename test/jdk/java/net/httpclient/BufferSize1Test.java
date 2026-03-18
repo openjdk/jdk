@@ -54,7 +54,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *          to its lowest possible value, 1, does not wedge the client
  * @library /test/jdk/java/net/httpclient/lib
  *          /test/lib
- * @run junit/othervm -Djdk.httpclient.bufsize=1 BufferSize1Test
+ * @run junit/othervm -Djdk.httpclient.bufsize=1 ${test.main.class}
  */
 
 class BufferSize1Test implements HttpServerAdapters {

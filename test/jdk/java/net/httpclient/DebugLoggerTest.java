@@ -52,17 +52,17 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  *        DebugLoggerTest
- * @run main/othervm  DebugLoggerTest
- * @run main/othervm -Djdk.internal.httpclient.debug=errr  DebugLoggerTest
- * @run main/othervm -Djdk.internal.httpclient.debug=err  DebugLoggerTest ERR
- * @run main/othervm -Djdk.internal.httpclient.debug=out  DebugLoggerTest OUT
- * @run main/othervm -Djdk.internal.httpclient.debug=log  DebugLoggerTest LOG
- * @run main/othervm -Djdk.internal.httpclient.debug=true DebugLoggerTest ERR LOG
- * @run main/othervm -Djdk.internal.httpclient.debug=err,OUT  DebugLoggerTest ERR OUT
- * @run main/othervm -Djdk.internal.httpclient.debug=err,out,log DebugLoggerTest ERR OUT LOG
- * @run main/othervm -Djdk.internal.httpclient.debug=true,log DebugLoggerTest ERR LOG
- * @run main/othervm -Djdk.internal.httpclient.debug=true,out DebugLoggerTest ERR OUT LOG
- * @run main/othervm -Djdk.internal.httpclient.debug=err,OUT,foo  DebugLoggerTest ERR OUT
+ * @run main/othervm  ${test.main.class}
+ * @run main/othervm -Djdk.internal.httpclient.debug=errr  ${test.main.class}
+ * @run main/othervm -Djdk.internal.httpclient.debug=err  ${test.main.class} ERR
+ * @run main/othervm -Djdk.internal.httpclient.debug=out  ${test.main.class} OUT
+ * @run main/othervm -Djdk.internal.httpclient.debug=log  ${test.main.class} LOG
+ * @run main/othervm -Djdk.internal.httpclient.debug=true ${test.main.class} ERR LOG
+ * @run main/othervm -Djdk.internal.httpclient.debug=err,OUT  ${test.main.class} ERR OUT
+ * @run main/othervm -Djdk.internal.httpclient.debug=err,out,log ${test.main.class} ERR OUT LOG
+ * @run main/othervm -Djdk.internal.httpclient.debug=true,log ${test.main.class} ERR LOG
+ * @run main/othervm -Djdk.internal.httpclient.debug=true,out ${test.main.class} ERR OUT LOG
+ * @run main/othervm -Djdk.internal.httpclient.debug=err,OUT,foo  ${test.main.class} ERR OUT
  */
 public class DebugLoggerTest {
     static final PrintStream stdErr = System.err;

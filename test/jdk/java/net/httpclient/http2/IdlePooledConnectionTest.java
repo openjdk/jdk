@@ -61,7 +61,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  *        jdk.test.lib.Asserts
  * @run junit/othervm   -Djdk.internal.httpclient.debug=true
  *                      -Djdk.httpclient.keepalive.timeout.h2=3
- *                      IdlePooledConnectionTest
+ *                      ${test.main.class}
  */
 public class IdlePooledConnectionTest {
 

@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8211437 8216974 8218662
- * @run main/othervm -Djdk.httpclient.HttpClient.log=headers,requests Response204
+ * @run main/othervm -Djdk.httpclient.HttpClient.log=headers,requests ${test.main.class}
  * @summary
  */
 

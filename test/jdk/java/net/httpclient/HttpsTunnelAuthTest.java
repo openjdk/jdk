@@ -55,7 +55,7 @@ import static java.lang.System.out;
  *                   -Djdk.http.auth.tunneling.disabledSchemes
  *                   -Djdk.httpclient.allowRestrictedHeaders=connection
  *                   -Djdk.internal.httpclient.debug=true
- *                   HttpsTunnelAuthTest
+ *                   ${test.main.class}
  *
  */
 //-Djdk.internal.httpclient.debug=true -Dtest.debug=true

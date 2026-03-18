@@ -28,7 +28,7 @@
  *          /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext
- * @run junit FileChannelPublisherTest
+ * @run junit ${test.main.class}
  */
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestHandler;

@@ -74,9 +74,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build HttpGetInCancelledFuture ReferenceTracker
  * @run junit/othervm -DuseReferenceTracker=false
- *                   HttpGetInCancelledFuture
+ *                   ${test.main.class}
  * @run junit/othervm -DuseReferenceTracker=true
- *                   HttpGetInCancelledFuture
+ *                   ${test.main.class}
  * @summary This test verifies that cancelling a future that
  * does an HTTP request using the HttpClient doesn't cause
  * HttpClient::close to block forever.

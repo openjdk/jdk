@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /*
  * @test
- * @run junit/othervm -Djdk.httpclient.HttpClient.log=trace,quic:cc CubicTest
+ * @run junit/othervm -Djdk.httpclient.HttpClient.log=trace,quic:cc ${test.main.class}
  */
 public class CubicTest {
     static class TimeSource implements TimeLine {

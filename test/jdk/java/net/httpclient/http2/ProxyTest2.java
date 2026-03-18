@@ -58,7 +58,7 @@ import java.util.concurrent.*;
  *           tunnelling through an HTTP/1.1 proxy.
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.http2.Http2TestServer
- * @run main/othervm ProxyTest2
+ * @run main/othervm ${test.main.class}
  * @author danielfuchs
  */
 public class ProxyTest2 {

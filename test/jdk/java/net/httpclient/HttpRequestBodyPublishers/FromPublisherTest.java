@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @bug 8364733
  * @summary Verify all specified `HttpRequest.BodyPublishers::fromPublisher` behavior
  * @build RecordingSubscriber
- * @run junit FromPublisherTest
+ * @run junit ${test.main.class}
  */
 
 class FromPublisherTest {

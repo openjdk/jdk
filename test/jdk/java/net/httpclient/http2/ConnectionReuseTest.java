@@ -62,9 +62,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  *        jdk.test.lib.net.IPSupport
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  *
- * @run junit ConnectionReuseTest
+ * @run junit ${test.main.class}
  * @run junit/othervm -Djava.net.preferIPv6Addresses=true
- *                    -Djdk.internal.httpclient.debug=true ConnectionReuseTest
+ *                    -Djdk.internal.httpclient.debug=true ${test.main.class}
  */
 public class ConnectionReuseTest {
 

@@ -41,11 +41,11 @@ import static java.lang.System.out;
 /**
  * @test
  * @summary Ensures that timeouts of multiple requests are handled in correct order
- * @run main/othervm TimeoutOrdering
+ * @run main/othervm ${test.main.class}
  */
 
 // To enable logging use
-// @run main/othervm -Djdk.httpclient.HttpClient.log=all,frames:all TimeoutOrdering
+// @run main/othervm -Djdk.httpclient.HttpClient.log=all,frames:all ${test.main.class}
 
 public class TimeoutOrdering {
 

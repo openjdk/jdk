@@ -61,7 +61,7 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
  * @run main/othervm
  *       -Djdk.internal.httpclient.debug=true
  *       -Djdk.httpclient.HttpClient.log=all
- *       H3QuicTLSConnection
+ *       ${test.main.class}
  */
 public class H3QuicTLSConnection {
 

@@ -63,7 +63,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext
- * @run junit H2GoAwayTest
+ * @run junit ${test.main.class}
  */
 public class H2GoAwayTest {
     private static final String REQ_PATH = "/test";

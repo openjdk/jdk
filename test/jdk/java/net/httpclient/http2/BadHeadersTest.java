@@ -29,7 +29,7 @@
  *          with bad header fields.
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
- * @run junit/othervm -Djdk.internal.httpclient.debug=true BadHeadersTest
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true ${test.main.class}
  */
 
 import jdk.internal.net.http.common.HttpHeadersBuilder;

@@ -25,7 +25,7 @@
  * @test
  * @key randomness
  * @library /test/lib
- * @run junit/othervm -Djdk.internal.httpclient.qpack.log.level=NORMAL DecoderInstructionsReaderTest
+ * @run junit/othervm -Djdk.internal.httpclient.qpack.log.level=NORMAL ${test.main.class}
  */
 
 import jdk.internal.net.http.qpack.QPACK;

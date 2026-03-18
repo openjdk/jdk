@@ -42,7 +42,7 @@ import java.util.concurrent.CompletableFuture;
  * @bug 8243246
  * @summary Verifies that the HttpClient can accept extensions after
  *          chunk length in a chunked response.
- * @run main/othervm Http1ChunkedTest
+ * @run main/othervm ${test.main.class}
  */
 public class Http1ChunkedTest {
 

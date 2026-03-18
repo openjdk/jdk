@@ -30,7 +30,7 @@
  * @run junit/othervm   -Djdk.internal.httpclient.debug=err
  *                      -Djdk.httpclient.connectionWindowSize=65535
  *                      -Djdk.httpclient.windowsize=16384
- *                      ConnectionFlowControlTest
+ *                      ${test.main.class}
  */
 
 import java.io.IOException;

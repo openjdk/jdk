@@ -38,7 +38,7 @@
  *          java.net.http/jdk.internal.net.http.http3
  * @build EncoderDecoderConnector
  * @run junit/othervm -Djdk.internal.httpclient.qpack.log.level=NORMAL
- *                    DecoderSectionSizeLimitTest
+ *                    ${test.main.class}
  */
 
 import jdk.internal.net.http.http3.ConnectionSettings;

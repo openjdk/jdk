@@ -53,10 +53,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @summary Verify all specified `HttpRequest.BodyPublishers::ofFile` behavior
  * @build ByteBufferUtils
  *        RecordingSubscriber
- * @run junit OfFileTest
+ * @run junit ${test.main.class}
  *
  * @comment Using `main/othervm` to initiate tests that depend on a custom-configured JVM
- * @run main/othervm -Xmx64m OfFileTest testOOM
+ * @run main/othervm -Xmx64m ${test.main.class} testOOM
  */
 
 public class OfFileTest {

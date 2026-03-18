@@ -85,7 +85,7 @@ import org.junit.jupiter.params.provider.MethodSource;
  *          java.net.http/jdk.internal.net.http.http3.streams
  *          java.net.http/jdk.internal.net.http.http3.frames
  *          java.net.http/jdk.internal.net.http.http3
- * @run junit/othervm EncoderTest
+ * @run junit/othervm ${test.main.class}
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class EncoderTest {

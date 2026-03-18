@@ -27,7 +27,7 @@
  * @library /test/lib
  * @modules java.net.http/jdk.internal.net.http.qpack:+open
  *          java.net.http/jdk.internal.net.http.qpack.readers
- * @run junit/othervm -Djdk.internal.httpclient.qpack.log.level=NORMAL DynamicTableTest
+ * @run junit/othervm -Djdk.internal.httpclient.qpack.log.level=NORMAL ${test.main.class}
  */
 
 import jdk.internal.net.http.qpack.DynamicTable;

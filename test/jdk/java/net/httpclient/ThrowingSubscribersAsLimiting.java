@@ -35,7 +35,7 @@
  *        ReferenceTracker
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext
- * @run junit/othervm -Djdk.internal.httpclient.debug=true ThrowingSubscribersAsLimiting
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true ${test.main.class}
  */
 
 

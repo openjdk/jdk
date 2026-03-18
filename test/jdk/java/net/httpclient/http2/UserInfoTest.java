@@ -51,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *        jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.http2.Http2TestExchange
  * @compile ../ReferenceTracker.java
- * @run junit UserInfoTest
+ * @run junit ${test.main.class}
  */
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)

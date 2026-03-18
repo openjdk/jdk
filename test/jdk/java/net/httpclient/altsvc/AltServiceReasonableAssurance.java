@@ -98,7 +98,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @run junit/othervm  -Djdk.net.hosts.file=${test.src}/altsvc-dns-hosts.txt
  *                     -Djdk.internal.httpclient.debug=true -Djavax.net.debug=all
  *                     -Djdk.httpclient.HttpClient.log=requests,responses,errors
- *                      AltServiceReasonableAssurance
+ *                      ${test.main.class}
  */
 public class AltServiceReasonableAssurance implements HttpServerAdapters {
 

@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @test
  * @summary verify the behaviour of jdk.internal.net.http.Origin
  * @modules java.net.http/jdk.internal.net.http
- * @run junit OriginTest
+ * @run junit ${test.main.class}
  */
 class OriginTest {
 

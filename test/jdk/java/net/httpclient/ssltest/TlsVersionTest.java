@@ -47,12 +47,12 @@ import static java.net.http.HttpClient.Builder.NO_PROXY;
  * @modules java.net.http/jdk.internal.net.http.common
  * @run main/othervm
  *      -Djdk.internal.httpclient.disableHostnameVerification
- *       TlsVersionTest false
+ *       ${test.main.class} false
  *
  * @run main/othervm
  *      -Djdk.internal.httpclient.disableHostnameVerification
  *      -Djdk.tls.client.protocols="TLSv1.2"
- *       TlsVersionTest true
+ *       ${test.main.class} true
  */
 
 /**

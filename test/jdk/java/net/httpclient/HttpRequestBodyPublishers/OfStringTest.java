@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @summary Verify all specified `HttpRequest.BodyPublishers::ofString` behavior
  * @build ByteBufferUtils
  *        RecordingSubscriber
- * @run junit OfStringTest
+ * @run junit ${test.main.class}
  */
 
 class OfStringTest {

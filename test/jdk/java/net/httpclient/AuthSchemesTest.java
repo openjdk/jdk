@@ -26,7 +26,7 @@
  * @bug 8217237
  * @library /test/lib
  * @modules java.net.http
- * @run main/othervm AuthSchemesTest
+ * @run main/othervm ${test.main.class}
  * @summary HttpClient does not deal well with multi-valued WWW-Authenticate challenge headers
  */
 

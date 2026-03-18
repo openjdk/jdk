@@ -30,7 +30,7 @@
  * @build jdk.test.lib.net.SimpleSSLContext
  *        ReferenceTracker AbstractThrowingPushPromises ThrowingPushPromisesAsStringIO
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
- * @run junit/othervm -Djdk.internal.httpclient.debug=true ThrowingPushPromisesAsStringIO
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true ${test.main.class}
  */
 
 import org.junit.jupiter.params.ParameterizedTest;

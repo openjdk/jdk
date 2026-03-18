@@ -40,19 +40,19 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @bug 8364733
  * @summary Verify all specified `HttpRequest.BodyPublishers::ofByteArray` behavior
  * @build RecordingSubscriber
- * @run junit OfByteArrayTest
+ * @run junit ${test.main.class}
  *
  * @comment Using `main/othervm` to initiate tests that depend on a custom-configured JVM
- * @run main/othervm -Djdk.httpclient.bufsize=3 OfByteArrayTest testChunking "" 0 0 ""
- * @run main/othervm -Djdk.httpclient.bufsize=3 OfByteArrayTest testChunking a 0 0 ""
- * @run main/othervm -Djdk.httpclient.bufsize=3 OfByteArrayTest testChunking a 1 0 ""
- * @run main/othervm -Djdk.httpclient.bufsize=3 OfByteArrayTest testChunking a 0 1 a
- * @run main/othervm -Djdk.httpclient.bufsize=3 OfByteArrayTest testChunking ab 0 1 a
- * @run main/othervm -Djdk.httpclient.bufsize=3 OfByteArrayTest testChunking ab 1 1 b
- * @run main/othervm -Djdk.httpclient.bufsize=3 OfByteArrayTest testChunking ab 0 2 ab
- * @run main/othervm -Djdk.httpclient.bufsize=1 OfByteArrayTest testChunking abc 0 3 a:b:c
- * @run main/othervm -Djdk.httpclient.bufsize=2 OfByteArrayTest testChunking abc 0 3 ab:c
- * @run main/othervm -Djdk.httpclient.bufsize=2 OfByteArrayTest testChunking abcdef 2 4 cd:ef
+ * @run main/othervm -Djdk.httpclient.bufsize=3 ${test.main.class} testChunking "" 0 0 ""
+ * @run main/othervm -Djdk.httpclient.bufsize=3 ${test.main.class} testChunking a 0 0 ""
+ * @run main/othervm -Djdk.httpclient.bufsize=3 ${test.main.class} testChunking a 1 0 ""
+ * @run main/othervm -Djdk.httpclient.bufsize=3 ${test.main.class} testChunking a 0 1 a
+ * @run main/othervm -Djdk.httpclient.bufsize=3 ${test.main.class} testChunking ab 0 1 a
+ * @run main/othervm -Djdk.httpclient.bufsize=3 ${test.main.class} testChunking ab 1 1 b
+ * @run main/othervm -Djdk.httpclient.bufsize=3 ${test.main.class} testChunking ab 0 2 ab
+ * @run main/othervm -Djdk.httpclient.bufsize=1 ${test.main.class} testChunking abc 0 3 a:b:c
+ * @run main/othervm -Djdk.httpclient.bufsize=2 ${test.main.class} testChunking abc 0 3 ab:c
+ * @run main/othervm -Djdk.httpclient.bufsize=2 ${test.main.class} testChunking abcdef 2 4 cd:ef
  */
 
 public class OfByteArrayTest {

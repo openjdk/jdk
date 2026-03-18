@@ -27,7 +27,7 @@
  * @modules java.net.http java.logging jdk.httpserver
  * @library /lib/testlibrary/ /
  * @build ProxyServer
- * @run main/othervm -Djdk.httpclient.HttpClient.log=errors,requests,headers,trace VersionTest
+ * @run main/othervm -Djdk.httpclient.HttpClient.log=errors,requests,headers,trace ${test.main.class}
  */
 
 import com.sun.net.httpserver.Headers;

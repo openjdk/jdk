@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @modules java.net.http/jdk.internal.net.http.http3
  * @modules java.net.http/jdk.internal.net.http.http3.frames
  * @modules java.net.http/jdk.internal.net.http.quic.streams
- * @run junit/othervm FramesDecoderTest
+ * @run junit/othervm ${test.main.class}
  * @summary Tests to check HTTP3 methods decode frames correctly
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)

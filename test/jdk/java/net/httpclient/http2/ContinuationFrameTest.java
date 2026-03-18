@@ -27,7 +27,7 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
  * @compile ../ReferenceTracker.java
- * @run junit/othervm ContinuationFrameTest
+ * @run junit/othervm ${test.main.class}
  */
 
 import java.io.IOException;

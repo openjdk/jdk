@@ -24,7 +24,7 @@
 /*
  * @test
  * @modules java.net.http/jdk.internal.net.http.qpack
- * @run junit/othervm -Djdk.internal.httpclient.qpack.log.level=INFO TablesIndexerTest
+ * @run junit/othervm -Djdk.internal.httpclient.qpack.log.level=INFO ${test.main.class}
  */
 
 import jdk.internal.net.http.qpack.DynamicTable;

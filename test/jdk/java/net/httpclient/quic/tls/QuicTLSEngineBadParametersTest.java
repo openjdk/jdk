@@ -44,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @build jdk.test.lib.net.SimpleSSLContext
  * @summary Verify that QuicTransportExceptions thrown by transport parameter consumer
  *      are propagated to the QuicTLSEngine user
- * @run junit/othervm QuicTLSEngineBadParametersTest
+ * @run junit/othervm ${test.main.class}
  */
 public class QuicTLSEngineBadParametersTest {
 

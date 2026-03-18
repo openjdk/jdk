@@ -64,7 +64,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext
  *        jdk.test.lib.net.URIBuilder
- * @run junit HttpClientSNITest
+ * @run junit ${test.main.class}
  */
 public class HttpClientSNITest {
     private static final String RESP_BODY_TEXT = "hello world";

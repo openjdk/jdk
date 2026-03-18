@@ -25,7 +25,7 @@
  * @test
  * @modules java.net.http
  *          jdk.httpserver
- * @run main/othervm MultiAuthTest
+ * @run main/othervm ${test.main.class}
  * @summary Basic Authentication test with multiple clients issuing
  *          multiple requests. Includes password changes
  *          on server and client side.

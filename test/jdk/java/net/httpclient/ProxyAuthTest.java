@@ -26,7 +26,7 @@
  * @bug 8163561
  * @library /test/lib
  * @summary Verify that Proxy-Authenticate header is correctly handled
- * @run main/othervm ProxyAuthTest
+ * @run main/othervm ${test.main.class}
  */
 
 import java.io.BufferedWriter;

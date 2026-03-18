@@ -31,7 +31,7 @@
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.RandomFactory
  *        jdk.test.lib.net.SimpleSSLContext
- * @run junit HttpResponseLimitingTest
+ * @run junit ${test.main.class}
  */
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;

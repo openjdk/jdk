@@ -88,7 +88,7 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
  *                   -Djdk.httpclient.HttpClient.log=headers
  *                   -Djdk.internal.httpclient.debug=true
  *                   -Djdk.tls.maxHandshakeMessageSize=131072
- *                   LargeHandshakeTest
+ *                   ${test.main.class}
  *
  */
 public class LargeHandshakeTest implements HttpServerAdapters {

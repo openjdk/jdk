@@ -32,7 +32,7 @@
  * @comment Use a higher idle timeout to increase the chances of
  *    the same connection being used for sequential HTTP requests
  * @run junit/othervm -Djdk.httpclient.keepalive.timeout=120
- *                    HttpResponseConnectionLabelTest
+ *                    ${test.main.class}
  */
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;

@@ -31,7 +31,7 @@
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  * @run junit/othervm -Djdk.internal.httpclient.debug=true
  *                     -Djdk.httpclient.enableAllMethodRetry=true
- *                     ThrowingPublishersSanity
+ *                     ${test.main.class}
  */
 
 import org.junit.jupiter.params.ParameterizedTest;

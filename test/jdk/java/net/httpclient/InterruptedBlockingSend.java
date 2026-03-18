@@ -34,7 +34,7 @@ import static java.lang.System.out;
  * @test
  * @bug 8245462
  * @summary Basic test for interrupted blocking send
- * @run main/othervm InterruptedBlockingSend
+ * @run main/othervm ${test.main.class}
  */
 
 public class InterruptedBlockingSend {

@@ -72,10 +72,10 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  *        DigestEchoServer ReferenceTracker DigestEchoClient
- * @run main/othervm DigestEchoClient
+ * @run main/othervm ${test.main.class}
  * @run main/othervm -Djdk.http.auth.proxying.disabledSchemes=
  *                   -Djdk.http.auth.tunneling.disabledSchemes=
- *                   DigestEchoClient
+ *                   ${test.main.class}
  */
 
 public class DigestEchoClient {

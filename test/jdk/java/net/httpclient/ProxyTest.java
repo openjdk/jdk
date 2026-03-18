@@ -74,7 +74,7 @@ import static java.net.Proxy.NO_PROXY;
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext ProxyTest
  *        jdk.httpclient.test.lib.common.TestServerConfigurator
- * @run main/othervm ProxyTest
+ * @run main/othervm ${test.main.class}
  * @author danielfuchs
  */
 public class ProxyTest {

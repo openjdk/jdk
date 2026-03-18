@@ -47,13 +47,13 @@ import jdk.test.lib.net.SimpleSSLContext;
  * @library /test/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  * @run main/othervm -Djdk.httpclient.enableAllMethodRetry
- *                   -Djdk.tls.acknowledgeCloseNotify=true UnknownBodyLengthTest plain false
+ *                   -Djdk.tls.acknowledgeCloseNotify=true ${test.main.class} plain false
  * @run main/othervm -Djdk.httpclient.enableAllMethodRetry
- *                   -Djdk.tls.acknowledgeCloseNotify=true UnknownBodyLengthTest SSL false
+ *                   -Djdk.tls.acknowledgeCloseNotify=true ${test.main.class} SSL false
  * @run main/othervm -Djdk.httpclient.enableAllMethodRetry
- *                   -Djdk.tls.acknowledgeCloseNotify=true UnknownBodyLengthTest plain true
+ *                   -Djdk.tls.acknowledgeCloseNotify=true ${test.main.class} plain true
  * @run main/othervm -Djdk.httpclient.enableAllMethodRetry
- *                   -Djdk.tls.acknowledgeCloseNotify=true UnknownBodyLengthTest SSL true
+ *                   -Djdk.tls.acknowledgeCloseNotify=true ${test.main.class} SSL true
  */
 
 public class UnknownBodyLengthTest {

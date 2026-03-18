@@ -29,7 +29,7 @@
  * @run junit/othervm
  *      -Djdk.internal.httpclient.debug=true
  *      -Djdk.httpclient.HttpClient.log=errors,requests,responses,trace
- *      BadPushPromiseTest
+ *      ${test.main.class}
  */
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;

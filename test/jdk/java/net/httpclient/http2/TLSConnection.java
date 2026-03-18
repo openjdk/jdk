@@ -48,7 +48,7 @@ import jdk.httpclient.test.lib.http2.Http2Handler;
  * @run main/othervm
  *       -Djdk.internal.httpclient.debug=true
  *       -Djdk.httpclient.HttpClient.log=all
- *       TLSConnection
+ *       ${test.main.class}
  */
 public class TLSConnection {
 

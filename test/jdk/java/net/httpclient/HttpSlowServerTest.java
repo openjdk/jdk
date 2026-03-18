@@ -68,7 +68,7 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
  *                   -Djdk.httpclient.HttpClient.log=errors,headers,quic:hs
  *                   -Djdk.internal.httpclient.debug=false
  *                   -Djdk.httpclient.quic.maxInitialTimeout=60
- *                   HttpSlowServerTest
+ *                   ${test.main.class}
  *
  */
 public class HttpSlowServerTest implements HttpServerAdapters {

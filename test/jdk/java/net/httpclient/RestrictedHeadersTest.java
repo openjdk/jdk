@@ -25,10 +25,10 @@
  * @test
  * @bug 8178699
  * @modules java.net.http
- * @run main/othervm RestrictedHeadersTest
- * @run main/othervm -Djdk.httpclient.allowRestrictedHeaders=content-length,connection RestrictedHeadersTest content-length connection
- * @run main/othervm -Djdk.httpclient.allowRestrictedHeaders=host,upgrade RestrictedHeadersTest host upgrade
- * @run main/othervm -Djdk.httpclient.allowRestrictedHeaders=via RestrictedHeadersTest via
+ * @run main/othervm ${test.main.class}
+ * @run main/othervm -Djdk.httpclient.allowRestrictedHeaders=content-length,connection ${test.main.class} content-length connection
+ * @run main/othervm -Djdk.httpclient.allowRestrictedHeaders=host,upgrade ${test.main.class} host upgrade
+ * @run main/othervm -Djdk.httpclient.allowRestrictedHeaders=via ${test.main.class} via
  */
 
 import java.net.URI;

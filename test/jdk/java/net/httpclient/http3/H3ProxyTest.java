@@ -59,7 +59,7 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
  *           if HTTP3_ONLY is specified
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.HttpServerAdapters
- * @run main/othervm H3ProxyTest
+ * @run main/othervm ${test.main.class}
  * @author danielfuchs
  */
 public class H3ProxyTest implements HttpServerAdapters {

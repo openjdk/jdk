@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *          java.base/jdk.internal.net.quic
  * @build jdk.test.lib.net.SimpleSSLContext
  * @summary Verify that a missing ALPN extension results in no_application_protocol alert
- * @run junit/othervm QuicTLSEngineFailedALPNTest
+ * @run junit/othervm ${test.main.class}
  */
 public class QuicTLSEngineFailedALPNTest {
 

@@ -59,7 +59,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @compile ../ReferenceTracker.java
  * @run junit/othervm -Djdk.httpclient.HttpClient.log=quic,errors
  *              -Djdk.httpclient.http3.maxDirectConnectionTimeout=4000
- *              -Djdk.internal.httpclient.debug=true H3UserInfoTest
+ *              -Djdk.internal.httpclient.debug=true ${test.main.class}
  */
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)

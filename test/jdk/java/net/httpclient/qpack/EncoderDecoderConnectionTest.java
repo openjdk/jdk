@@ -49,7 +49,7 @@ import org.junit.jupiter.api.Test;
  *          java.net.http/jdk.internal.net.http.http3
  * @build EncoderDecoderConnector
  * @run junit/othervm -Djdk.internal.httpclient.qpack.log.level=EXTRA
- *                     EncoderDecoderConnectionTest
+ *                     ${test.main.class}
  */
 public class EncoderDecoderConnectionTest {
 

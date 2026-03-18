@@ -43,10 +43,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @summary Verify all specified `HttpRequest.BodyPublishers::ofInputStream` behavior
  * @build ByteBufferUtils
  *        RecordingSubscriber
- * @run junit OfInputStreamTest
+ * @run junit ${test.main.class}
  *
  * @comment Using `main/othervm` to initiate tests that depend on a custom-configured JVM
- * @run main/othervm -Xmx64m OfInputStreamTest testOOM
+ * @run main/othervm -Xmx64m ${test.main.class} testOOM
  */
 
 public class OfInputStreamTest {

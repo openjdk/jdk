@@ -53,7 +53,7 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestUtil
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  * @compile ../ReferenceTracker.java
- * @run main/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors H3Timeout
+ * @run main/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors ${test.main.class}
  */
 public class H3Timeout implements HttpServerAdapters {
 

@@ -29,7 +29,7 @@
  * @build jdk.test.lib.net.SimpleSSLContext
  *        ReferenceTracker ThrowingSubscribersAsLines AbstractThrowingSubscribers
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
- * @run junit/othervm -Djdk.internal.httpclient.debug=true ThrowingSubscribersAsLines
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true ${test.main.class}
  */
 
 import org.junit.jupiter.params.ParameterizedTest;

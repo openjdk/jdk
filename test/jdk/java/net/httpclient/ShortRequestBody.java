@@ -58,7 +58,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @bug 8151441
  * @summary Request body of incorrect (larger or smaller) sizes than that
  *          reported by the body publisher
- * @run main/othervm ShortRequestBody
+ * @run main/othervm ${test.main.class}
  */
 
 public class ShortRequestBody {

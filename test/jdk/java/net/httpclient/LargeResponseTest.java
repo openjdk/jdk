@@ -69,7 +69,7 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
  *                   -Djdk.httpclient.HttpClient.log=headers
  *                   -Djdk.internal.httpclient.debug=true
  *                   -Djdk.httpclient.quic.maxInitialTimeout=60
- *                   LargeResponseTest
+ *                   ${test.main.class}
  *
  */
 public class LargeResponseTest implements HttpServerAdapters {

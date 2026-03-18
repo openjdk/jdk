@@ -25,7 +25,7 @@
  * @test
  * @bug 8164941
  * @modules java.net.http java.logging jdk.httpserver
- * @run main/othervm ZeroRedirects
+ * @run main/othervm ${test.main.class}
  */
 
 import com.sun.net.httpserver.HttpContext;

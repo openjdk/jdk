@@ -31,8 +31,8 @@
  * @build jdk.test.lib.net.SimpleSSLContext DigestEchoServer
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  *        ALPNFailureTest ALPNProxyFailureTest
- * @run main/othervm -Djdk.internal.httpclient.debug=true -Dtest.nolinger=true ALPNProxyFailureTest HTTP_1_1
- * @run main/othervm -Dtest.nolinger=true ALPNProxyFailureTest HTTP_2
+ * @run main/othervm -Djdk.internal.httpclient.debug=true -Dtest.nolinger=true ${test.main.class} HTTP_1_1
+ * @run main/othervm -Dtest.nolinger=true ${test.main.class} HTTP_2
  */
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLContext;

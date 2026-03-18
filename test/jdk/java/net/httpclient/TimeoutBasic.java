@@ -60,7 +60,7 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
  * @library /test/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  * @summary Basic tests for response timeouts
- * @run main/othervm TimeoutBasic
+ * @run main/othervm ${test.main.class}
  */
 
 public class TimeoutBasic {

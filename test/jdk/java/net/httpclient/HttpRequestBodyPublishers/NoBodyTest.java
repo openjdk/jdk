@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @bug 8364733
  * @summary Verify all specified `HttpRequest.BodyPublishers::noBody` behavior
  * @build RecordingSubscriber
- * @run junit NoBodyTest
+ * @run junit ${test.main.class}
  */
 
 class NoBodyTest {

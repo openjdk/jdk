@@ -54,7 +54,7 @@ import static java.net.http.HttpResponse.BodyHandlers.ofString;
  * @run main/othervm/timeout=480
  *     -Djdk.internal.httpclient.debug=true
  *     -Djdk.httpclient.HttpClient.log=all
- *     SplitResponse HTTP connection:CLOSE mode:SYNC
+ *     ${test.main.class} HTTP connection:CLOSE mode:SYNC
  */
 
 /**

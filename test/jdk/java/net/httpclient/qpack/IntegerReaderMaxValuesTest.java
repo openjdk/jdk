@@ -41,7 +41,7 @@ import org.junit.jupiter.params.provider.MethodSource;
  *          java.net.http/jdk.internal.net.http.qpack.readers
  *          java.net.http/jdk.internal.net.http.qpack.writers
  * @run junit/othervm -Djdk.internal.httpclient.qpack.log.level=INFO
- *                     IntegerReaderMaxValuesTest
+ *                     ${test.main.class}
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class IntegerReaderMaxValuesTest {

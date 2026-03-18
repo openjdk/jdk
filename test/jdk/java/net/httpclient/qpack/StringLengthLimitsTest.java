@@ -61,7 +61,7 @@ import org.junit.jupiter.params.provider.MethodSource;
  *          java.net.http/jdk.internal.net.http.http3
  * @build EncoderDecoderConnector
  * @run junit/othervm -Djdk.http.qpack.allowBlockingEncoding=true
- *                      StringLengthLimitsTest
+ *                      ${test.main.class}
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class StringLengthLimitsTest {

@@ -49,15 +49,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @run junit/othervm
  *      -Djdk.httpclient.HttpClient.log=errors
  *      -Djdk.httpclient.bufsize=-1
- *      BufferSizePropertyClampTest
+ *      ${test.main.class}
  * @run junit/othervm
  *      -Djdk.httpclient.HttpClient.log=errors
  *      -Djdk.httpclient.bufsize=0
- *      BufferSizePropertyClampTest
+ *      ${test.main.class}
  * @run junit/othervm
  *      -Djdk.httpclient.HttpClient.log=errors
  *      -Djdk.httpclient.bufsize=16385
- *      BufferSizePropertyClampTest
+ *      ${test.main.class}
  */
 
 class BufferSizePropertyClampTest {

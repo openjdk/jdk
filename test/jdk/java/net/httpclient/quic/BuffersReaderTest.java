@@ -50,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @test
  * @library /test/lib
  * @modules java.net.http/jdk.internal.net.http.quic
- * @run junit/othervm BuffersReaderTest
+ * @run junit/othervm ${test.main.class}
  * @summary Tests various BuffersReader methods
  *  work as expected.
  */

@@ -42,21 +42,21 @@ import jdk.test.lib.security.SSLContextBuilder;
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build Server CertificateTest jdk.httpclient.test.lib.common.TestServerConfigurator
  * @modules java.net.http/jdk.internal.net.http.common
- * @run main/othervm CertificateTest GOOD_CERT expectSuccess
- * @run main/othervm CertificateTest BAD_CERT expectFailure
+ * @run main/othervm ${test.main.class} GOOD_CERT expectSuccess
+ * @run main/othervm ${test.main.class} BAD_CERT expectFailure
  * @run main/othervm
  *      -Djdk.internal.httpclient.disableHostnameVerification
- *       CertificateTest BAD_CERT expectSuccess
+ *       ${test.main.class} BAD_CERT expectSuccess
  * @run main/othervm
  *      -Djdk.internal.httpclient.disableHostnameVerification=true
- *       CertificateTest BAD_CERT expectSuccess
+ *       ${test.main.class} BAD_CERT expectSuccess
  * @run main/othervm
  *      -Djdk.internal.httpclient.disableHostnameVerification=false
- *       CertificateTest BAD_CERT expectFailure
+ *       ${test.main.class} BAD_CERT expectFailure
  * @run main/othervm
  *      -Djdk.internal.httpclient.disableHostnameVerification=xxyyzz
- *       CertificateTest BAD_CERT expectFailure
- * @run main/othervm CertificateTest LOOPBACK_CERT expectSuccess
+ *       ${test.main.class} BAD_CERT expectFailure
+ * @run main/othervm ${test.main.class} LOOPBACK_CERT expectSuccess
  */
 
 /**

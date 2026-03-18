@@ -26,7 +26,7 @@
  * @bug 8087112
  * @modules java.net.http
  *          jdk.httpserver
- * @run main/othervm ImmutableHeaders
+ * @run main/othervm ${test.main.class}
  * @summary ImmutableHeaders
  */
 

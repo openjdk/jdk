@@ -43,7 +43,7 @@ import javax.net.ssl.SSLSocket;
  * @test
  * @bug 8156710
  * @summary Check if HttpTimeoutException is thrown if a server doesn't reply
- * @run main/othervm Timeout
+ * @run main/othervm ${test.main.class}
  */
 public class Timeout {
 

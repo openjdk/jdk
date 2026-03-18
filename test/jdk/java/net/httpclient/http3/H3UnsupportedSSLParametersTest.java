@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @summary Tests that a HttpClient configured with SSLParameters that doesn't include TLSv1.3
  *          cannot be used for HTTP3
  * @library /test/lib /test/jdk/java/net/httpclient/lib
- * @run junit H3UnsupportedSSLParametersTest
+ * @run junit ${test.main.class}
  */
 public class H3UnsupportedSSLParametersTest {
 

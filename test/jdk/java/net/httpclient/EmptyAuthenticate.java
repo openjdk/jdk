@@ -29,7 +29,7 @@
  *          /test/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext
- * @run junit EmptyAuthenticate
+ * @run junit ${test.main.class}
  */
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;

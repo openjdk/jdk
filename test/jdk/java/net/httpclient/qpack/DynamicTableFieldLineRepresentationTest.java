@@ -58,7 +58,7 @@ import org.junit.jupiter.api.Test;
  * @run junit/othervm -Djdk.internal.httpclient.qpack.log.level=EXTRA
  *                     -Djdk.http.qpack.allowBlockingEncoding=true
  *                     -Djdk.http.qpack.decoderBlockedStreams=4
- *                     DynamicTableFieldLineRepresentationTest
+ *                     ${test.main.class}
  */
 public class DynamicTableFieldLineRepresentationTest {
 

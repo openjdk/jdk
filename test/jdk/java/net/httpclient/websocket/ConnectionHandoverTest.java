@@ -26,7 +26,7 @@
  * @bug 8164625
  * @summary Verifies HttpClient yields the connection to the WebSocket
  * @build DummyWebSocketServer
- * @run main/othervm -Djdk.httpclient.HttpClient.log=trace ConnectionHandoverTest
+ * @run main/othervm -Djdk.httpclient.HttpClient.log=trace ${test.main.class}
  */
 
 import java.io.IOException;
