@@ -58,7 +58,7 @@ public class WriteUTF {
 
     @Test
     public void utfDataFormatException() throws IOException {
-        assertThrows(IOException.class, () -> writeUTF(1 << 16));
+        assertThrows(UTFDataFormatException.class, () -> writeUTF(1 << 16));
     }
 
     // Without 8219196 fix, throws ArrayIndexOutOfBoundsException instead of
@@ -66,6 +66,6 @@ public class WriteUTF {
     // without throwing an OutOfMemoryError.
     @Test
     public void arrayIndexOutOfBoundsException() throws IOException {
-        assertThrows(IOException.class, () -> writeUTF(Integer.MAX_VALUE / 3 + 1));
+        assertThrows(UTFDataFormatException.class, () -> writeUTF(Integer.MAX_VALUE / 3 + 1));
     }
 }

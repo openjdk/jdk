@@ -35,7 +35,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import static org.junit.jupiter.api.Assertions.assertLinesMatch;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @test
@@ -88,8 +88,8 @@ public class EncodingTest {
         createFile(getWriter(type, file1.getPath(), csn, null));
         createFile(getWriter(type, file2.getPath(), null, charset));
 
-        assertLinesMatch(Files.readAllLines(Paths.get(file1.getPath()), charset),
-                Files.readAllLines(Paths.get(file2.getPath()), charset));
+        assertEquals(Files.readAllLines(Paths.get(file2.getPath()), charset),
+                Files.readAllLines(Paths.get(file1.getPath()), charset));
     }
 
     void createFile(PrintWriter out) throws IOException {

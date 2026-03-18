@@ -113,17 +113,17 @@ public class Write {
         baos.write(b, off1, len1);
         byte[] b1 = baos.toByteArray();
         assertEquals(len1, b1.length, "Array length test 1 failed.");
-        assertArrayEquals(b1, Arrays.copyOfRange(b, off1, off1 + len1),
+        assertArrayEquals(Arrays.copyOfRange(b, off1, off1 + len1), b1,
             "Array equality test 1 failed.");
 
         baos.write(b, off2, len2);
         byte[] b2 = baos.toByteArray();
         assertEquals(len1 + len2, b2.length, "Array length test 2 failed.");
-        assertArrayEquals(Arrays.copyOfRange(b2, 0, len1),
-             Arrays.copyOfRange(b, off1, off1 + len1),
+        assertArrayEquals(Arrays.copyOfRange(b, off1, off1 + len1),
+            Arrays.copyOfRange(b2, 0, len1),
             "Array equality test 2A failed.");
-        assertArrayEquals(Arrays.copyOfRange(b2, len1, len1 + len2),
-            Arrays.copyOfRange(b, off2, off2 + len2),
+        assertArrayEquals(Arrays.copyOfRange(b, off2, off2 + len2),
+            Arrays.copyOfRange(b2, len1, len1 + len2),
             "Array equality test 2B failed.");
 
         baos.writeBytes(b);
@@ -133,13 +133,13 @@ public class Write {
             throw new RuntimeException("Array length test 3 failed.");
         }
         assertEquals(len3, b3.length, "Array length test 3 failed.");
-        assertArrayEquals(Arrays.copyOfRange(b3, 0, len1),
-             Arrays.copyOfRange(b, off1, off1 + len1),
+        assertArrayEquals(Arrays.copyOfRange(b, off1, off1 + len1),
+            Arrays.copyOfRange(b3, 0, len1),
             "Array equality test 3A failed.");
-        assertArrayEquals(Arrays.copyOfRange(b3, len1, len1 + len2),
-            Arrays.copyOfRange(b, off2, off2 + len2),
+        assertArrayEquals(Arrays.copyOfRange(b, off2, off2 + len2),
+            Arrays.copyOfRange(b3, len1, len1 + len2),
             "Array equality test 3B failed.");
-        assertArrayEquals(Arrays.copyOfRange(b3, len1 + len2, len3), b,
+        assertArrayEquals(b, Arrays.copyOfRange(b3, len1 + len2, len3),
             "Array equality test 3C failed.");
     }
 }

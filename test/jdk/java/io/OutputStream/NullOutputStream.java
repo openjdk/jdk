@@ -28,16 +28,10 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /*
  * @test
@@ -68,12 +62,8 @@ public class NullOutputStream {
     }
 
     @Test
-    public void testWrite() {
-        try {
-            openStream.write(62832);
-        } catch (IOException e) {
-            fail("Unexpected IOException");
-        }
+    public void testWrite() throws IOException {
+        openStream.write(62832);
     }
 
     @Test

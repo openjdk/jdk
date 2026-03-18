@@ -25,8 +25,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -65,64 +63,41 @@ public class NullInputStream {
     }
 
     @Test
-    public void testAvailable() {
-        final var value = new AtomicInteger();
-        assertDoesNotThrow(() -> value.set(openStream.available()));
-        assertEquals(0, value.get(), "available() != 0");
+    public void testAvailable() throws IOException {
+        assertEquals(0, openStream.available());
     }
 
     @Test
-    public void testRead() {
-        final var value = new AtomicInteger();
-        assertDoesNotThrow(() -> value.set(openStream.read()));
-        assertEquals(-1, value.get(), "read() != -1");
+    public void testRead() throws IOException {
+        assertEquals(-1, openStream.read());
     }
 
     @Test
-    public void testReadBII() {
-        final var value = new AtomicInteger();
-        assertDoesNotThrow(() -> value.set(openStream.read(new byte[1], 0, 1)));
-        assertEquals(-1, value.get(), "read(byte[],int,int) != -1");
+    public void testReadBII() throws IOException {
+        assertEquals(-1, openStream.read(new byte[1], 0, 1));
     }
 
     @Test
-    public void testReadAllBytes() {
-        final var value = new AtomicInteger();
-        assertDoesNotThrow(() -> value.set(openStream.readAllBytes().length));
-        assertEquals(0, value.get(), "readAllBytes().length != 0");
+    public void testReadAllBytes() throws IOException {
+        assertEquals(0, openStream.readAllBytes().length);
     }
 
     @Test
-    public void testReadNBytes() {
-        final var value = new AtomicInteger();
-        assertDoesNotThrow(() -> value.set(openStream.readNBytes(new byte[1], 0, 1)));
-        assertEquals(0, value.get(), "readNBytes(byte[],int,int) != 0");
+    public void testReadNBytes() throws IOException {
+        assertEquals(0, openStream.readNBytes(new byte[1], 0, 1));
     }
 
     @Test
-    public void testReadNBytesWithLength() {
+    public void testReadNBytesWithLength() throws IOException {
         assertThrows(IllegalArgumentException.class,
                      () -> openStream.readNBytes(-1));
-
-        final var value = new AtomicInteger();
-        assertDoesNotThrow(() -> {
-                byte[] b = openStream.readNBytes(0);
-                value.set(b.length);
-            });
-        assertEquals(0, value.get(), "readNBytes(0, false) != 0");
-
-        assertDoesNotThrow(() -> {
-                byte[] b = openStream.readNBytes(1);
-                value.set(b.length);
-            });
-        assertEquals(0, value.get(), "readNBytes(1, false) != 0");
+        assertEquals(0, openStream.readNBytes(0).length);
+        assertEquals(0, openStream.readNBytes(1).length);
     }
 
     @Test
-    public void testSkip() {
-        final var value = new AtomicLong();
-        assertDoesNotThrow(() -> value.set(openStream.skip(1)));
-        assertEquals(0L, value.get(), "skip() != 0");
+    public void testSkip() throws IOException {
+        assertEquals(0L, openStream.skip(1));
     }
 
     @Test
@@ -139,10 +114,8 @@ public class NullInputStream {
     }
 
     @Test
-    public void testTransferTo() {
-        final var value = new AtomicLong();
-        assertDoesNotThrow(() -> value.set(openStream.transferTo(new ByteArrayOutputStream(7))));
-        assertEquals(0L, value.get());
+    public void testTransferTo() throws IOException {
+        assertEquals(0L, openStream.transferTo(new ByteArrayOutputStream(7)));
     }
 
     @Test
@@ -158,7 +131,7 @@ public class NullInputStream {
     @Test
     public void testReadBIIClosed() {
         assertThrows(IOException.class,
-                     () ->closedStream.read(new byte[1], 0, 1));
+                     () -> closedStream.read(new byte[1], 0, 1));
     }
 
     @Test

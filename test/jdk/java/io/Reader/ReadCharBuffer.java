@@ -100,15 +100,10 @@ public class ReadCharBuffer {
     }
 
     @Test
-    public void readZeroLength() {
+    public void readZeroLength() throws IOException {
         char[] buf = new char[] {1, 2, 3};
         BufferedReader r = new BufferedReader(new CharArrayReader(buf));
-        int n = -1;
-        try {
-            n = r.read(CharBuffer.allocate(0));
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        int n = r.read(CharBuffer.allocate(0));
         assertEquals(0, n);
     }
 

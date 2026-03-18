@@ -45,24 +45,24 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @run junit ReadIntoZeroLengthArray
  */
 public class ReadIntoZeroLengthArray {
-    private File file;
+    private static File file;
 
-    private char[] cbuf0;
-    private char[] cbuf1;
+    private static char[] cbuf0;
+    private static char[] cbuf1;
 
     @BeforeAll
-    public void setup() throws IOException {
+    public static void setup() throws IOException {
         file = File.createTempFile("foo", "bar", new File("."));
         cbuf0 = new char[0];
         cbuf1 = new char[1];
     }
 
     @AfterAll
-    public void teardown() throws IOException {
+    public static void teardown() throws IOException {
         file.delete();
     }
 
-    public Stream<Reader> readers() throws IOException {
+    public static Stream<Reader> readers() throws IOException {
         Reader fileReader = new FileReader(file);
         return Stream.of(new LineNumberReader(fileReader),
                          new CharArrayReader(new char[] {27}),
@@ -71,11 +71,13 @@ public class ReadIntoZeroLengthArray {
                          new StringReader(new String(new byte[] {(byte)42})));
     }
 
+    @ParameterizedTest(autoCloseArguments=false)
     @MethodSource("readers")
     void test0(Reader r) throws IOException {
         assertEquals(0, r.read(cbuf0));
     }
 
+    @ParameterizedTest(autoCloseArguments=false)
     @MethodSource("readers")
     void test1(Reader r) throws IOException {
         assertEquals(0, r.read(cbuf1, 0, 0));

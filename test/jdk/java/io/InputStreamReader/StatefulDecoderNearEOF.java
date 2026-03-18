@@ -48,15 +48,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class StatefulDecoderNearEOF {
 
     public static Stream<Arguments> inputs() {
-        return Stream.of
-            (// BOM, followed by High surrogate (in UTF-16LE).
-             // First read() should throw an exception.
-             Arguments.of(new byte[] {(byte)0xff, (byte)0xfe, 0, (byte)0xd8}, 0),
+        return Stream.of(
+            // BOM, followed by High surrogate (in UTF-16LE).
+            // First read() should throw an exception.
+            Arguments.of(new byte[] {(byte)0xff, (byte)0xfe, 0, (byte)0xd8}, 0),
 
-             // BOM, followed by 'A', 'B', 'C', then by High surrogate (in UTF-16LE).
-             // Fourth read() should throw an exception.
-             Arguments.of(new byte[] {(byte)0xff, (byte)0xfe, (byte)0x41, 0, (byte)0x42, 0, (byte)0x43, 0, 0, (byte)0xd8}, 3)
-             );
+            // BOM, followed by 'A', 'B', 'C', then by High surrogate (in UTF-16LE).
+            // Fourth read() should throw an exception.
+            Arguments.of(new byte[] {(byte)0xff, (byte)0xfe, (byte)0x41, 0, (byte)0x42, 0, (byte)0x43, 0, 0, (byte)0xd8}, 3));
     }
 
     @ParameterizedTest
