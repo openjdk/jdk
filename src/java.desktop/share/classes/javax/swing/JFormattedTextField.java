@@ -881,8 +881,7 @@ public class JFormattedTextField extends JTextField {
             return new DefaultFormatterFactory(displayFormatter,
                                                displayFormatter,editFormatter);
         }
-        if (type instanceof DateTimeFormatter) {
-            DateTimeFormatter formatter = new DateTimeFormatterBuilder().toFormatter();
+        if (type instanceof DateTimeFormatter formatter) {
             AbstractFormatter abstractFormatter = new AbstractFormatter() {
                 @Override
                 public Object stringToValue(String text) throws ParseException {
