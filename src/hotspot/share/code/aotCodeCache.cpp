@@ -509,6 +509,7 @@ void AOTCodeCache::Config::record(uint cpu_features_offset) {
   if (UseCRC32CIntrinsics) {
     set_use_flag(useCRC32C);
   }
+#ifdef COMPILER2
   if (UseMultiplyToLenIntrinsic) {
     set_use_flag(useMultiplyToLen);
   }
@@ -524,6 +525,7 @@ void AOTCodeCache::Config::record(uint cpu_features_offset) {
   if (UseMontgomerySquareIntrinsic) {
     set_use_flag(useMontgomerySquare);
   }
+#endif // COMPILER2
   if (UseChaCha20Intrinsics) {
     set_use_flag(useChaCha20);
   }
@@ -608,6 +610,9 @@ void AOTCodeCache::Config::record(uint cpu_features_offset) {
   }
   if (UseSIMDForArrayEquals) {
     set_aarch64_flag(aarch64_useSIMDForArrayEquals);
+  }
+  if (UseSIMDForSHA3Intrinsic) {
+    set_aarch64_flag(aarch64_useSIMDForSHA3);
   }
   if (UseSVE) {
     set_aarch64_flag(aarch64_useSVE);
@@ -780,8 +785,13 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseCRC32CIntrinsics = %s vs current %s", (UseCRC32CIntrinsics ? "false" : "true"), (UseCRC32CIntrinsics ? "true" : "false"));
     return false;
   }
+#ifdef COMPILER2
   if (test_use_flag(useMultiplyToLen) != UseMultiplyToLenIntrinsic) {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseMultiplyToLenIntrinsic = %s vs current %s", (UseMultiplyToLenIntrinsic ? "false" : "true"), (UseMultiplyToLenIntrinsic ? "true" : "false"));
+    return false;
+  }
+  if (test_use_flag(useSquareToLen) != UseSquareToLenIntrinsic) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseSquareToLenIntrinsic = %s vs current %s", (UseSquareToLenIntrinsic ? "false" : "true"), (UseSquareToLenIntrinsic ? "true" : "false"));
     return false;
   }
   if (test_use_flag(useMulAdd) != UseMulAddIntrinsic) {
@@ -796,6 +806,7 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseMontgomerySquareIntrinsic %s vs current %s", (UseMontgomerySquareIntrinsic ? "false" : "true"), (UseMontgomerySquareIntrinsic ? "true" : "false"));
     return false;
   }
+#endif // COMPILER2
   if (test_use_flag(useChaCha20) != UseChaCha20Intrinsics) {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseChaCha20Intrinsics = %s vs current %s", (UseChaCha20Intrinsics ? "false" : "true"), (UseChaCha20Intrinsics ? "true" : "false"));
     return false;
@@ -915,21 +926,21 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
 
   // switching on AvoidUnalignedAccesses may affect validity of array
   // copy stubs and nmethods
-  if (((_aarch64_flags & aarch64_avoidUnalignedAccesses) == 0) && AvoidUnalignedAccesses) {
+  if (!test_aarch64_flag(aarch64_avoidUnalignedAccesses) && AvoidUnalignedAccesses) {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with AvoidUnalignedAccesses = false vs current = true");
     return false;
   }
 
   // change to UseSIMDForMemoryOps may affect validity of array
   // copy stubs and nmethods
-  if (test_aarch64_flag(aarch64_useSIMDForMemoryOps) != (uint)UseSIMDForMemoryOps) {
+  if (test_aarch64_flag(aarch64_useSIMDForMemoryOps) != UseSIMDForMemoryOps) {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseSIMDForMemoryOps = %s vs current %s", (UseSIMDForMemoryOps ? "false" : "true"), (UseSIMDForMemoryOps ? "true" : "false"));
     return false;
   }
 
   // change to UseSIMDForArrayEquals may affect validity of array
   // copy stubs and nmethods
-  if (test_aarch64_flag(aarch64_useSIMDForArrayEquals) != (uint)UseSIMDForArrayEquals) {
+  if (test_aarch64_flag(aarch64_useSIMDForArrayEquals) != UseSIMDForArrayEquals) {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseSIMDForArrayEquals = %s vs current %s", (UseSIMDForArrayEquals ? "false" : "true"), (UseSIMDForArrayEquals ? "true" : "false"));
     return false;
   }
@@ -941,13 +952,13 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
   }
 
   // change to UseSVE may affect validity of stubs and nmethods
-  if (test_aarch64_flag(aarch64_useSVE) != (uint)UseSVE) {
+  if (test_aarch64_flag(aarch64_useSVE) != UseSVE) {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseSVE = %s vs current %s", (UseSVE ? "false" : "true"), (UseSVE ? "true" : "false"));
     return false;
   }
 
   // change to UseLSE may affect validity of stubs and nmethods
-  if (test_aarch64_flag(aarch64_useLSE) != (uint)UseLSE) {
+  if (test_aarch64_flag(aarch64_useLSE) != UseLSE) {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseLSE = %s vs current %s", (UseLSE ? "false" : "true"), (UseLSE ? "true" : "false"));
     return false;
   }
