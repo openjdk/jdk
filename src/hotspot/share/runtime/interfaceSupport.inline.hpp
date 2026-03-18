@@ -234,9 +234,8 @@ class ThreadBlockInVM  : public ThreadBlockInVMPreprocess<> {
 
 #ifdef ASSERT
 class VMEntryWrapper {
-  bool _no_async;
  public:
-  VMEntryWrapper(bool no_async);
+  VMEntryWrapper();
   ~VMEntryWrapper();
 };
 
@@ -289,7 +288,7 @@ class VMNativeEntryWrapper {
       ThreadWXEnable __wx(&wx_mode, current);                        \
     )                                                                \
     VM_ENTRY_BASE(result_type, header, current)                      \
-    DEBUG_ONLY(VMEntryWrapper __vew(false);)
+    DEBUG_ONLY(VMEntryWrapper __vew;)
 
 // JRT_LEAF currently can be called from either _thread_in_Java or
 // _thread_in_native mode.
@@ -320,7 +319,7 @@ class VMNativeEntryWrapper {
       ThreadWXEnable __wx(&wx_mode, current);                        \
     )                                                                \
     VM_ENTRY_BASE(result_type, header, current)                      \
-    DEBUG_ONLY(VMEntryWrapper __vew(true);)
+    DEBUG_ONLY(VMEntryWrapper __vew;)
 
 // Same as JRT Entry but allows for return value after the safepoint
 // to get back into Java from the VM
@@ -338,14 +337,14 @@ class VMNativeEntryWrapper {
     assert(current == JavaThread::current(), "Must be");             \
     ThreadInVMfromJava __tiv(current);                               \
     JavaThread* THREAD = current; /* For exception macros. */        \
-    DEBUG_ONLY(VMEntryWrapper __vew(true);)
+    DEBUG_ONLY(VMEntryWrapper __vew;)
 
 #define JRT_BLOCK_NO_ASYNC                                           \
     {                                                                \
     assert(current == JavaThread::current(), "Must be");             \
     ThreadInVMfromJava __tiv(current, false /* check asyncs */);     \
     JavaThread* THREAD = current; /* For exception macros. */        \
-    DEBUG_ONLY(VMEntryWrapper __vew(false);)
+    DEBUG_ONLY(VMEntryWrapper __vew;)
 
 #define JRT_BLOCK_END }
 

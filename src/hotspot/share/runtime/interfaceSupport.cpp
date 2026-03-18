@@ -45,7 +45,7 @@
 // Implementation of InterfaceSupport
 
 #ifdef ASSERT
-VMEntryWrapper::VMEntryWrapper(bool no_async) : _no_async(no_async) {
+VMEntryWrapper::VMEntryWrapper() {
   if (VerifyLastFrame) {
     InterfaceSupport::verify_last_frame();
   }
@@ -67,7 +67,7 @@ VMEntryWrapper::~VMEntryWrapper() {
     InterfaceSupport::verify_stack();
   }
   // Verify interpreter oopmap generation
-  if (!_no_async && GenerateOopMapALot) {
+  if (GenerateOopMapALot) {
     InterpreterRuntime::generate_oop_map_alot();
   }
 }
