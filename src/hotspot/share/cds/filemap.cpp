@@ -1552,9 +1552,14 @@ bool FileMapInfo::can_use_heap_region() {
       AOTMetaspace::report_loading_error("CDS heap data is disabled because JVMTI ClassFileLoadHook is in use.");
       return false;
     }
-    if (!CDSConfig::is_dumping_static_archive() && !CDSConfig::is_using_full_module_graph()) {
-      AOTMetaspace::report_loading_error("CDS heap data is disabled because archived full module graph is not used.");
-      return false;
+    if (!CDSConfig::is_using_full_module_graph()) {
+      if (CDSConfig::is_dumping_final_static_archive()) {
+        // We are loading the preimage static archive, which has no KlassSubGraphs.
+        // See CDSConfig::is_dumping_klass_subgraphs()
+      } else {
+        AOTMetaspace::report_loading_error("CDS heap data is disabled because archived full module graph is not used.");
+        return false;
+      }
     }
   }
 
