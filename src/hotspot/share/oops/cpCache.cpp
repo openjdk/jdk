@@ -450,7 +450,7 @@ void ConstantPoolCache::remove_resolved_field_entries_if_non_deterministic() {
       Symbol* klass_name = cp->klass_name_at(klass_cp_index);
       Symbol* name = cp->uncached_name_ref_at(cp_index);
       Symbol* signature = cp->uncached_signature_ref_at(cp_index);
-      if (resolved) {
+      if (resolved && !CDSConfig::is_dumping_preimage_static_archive()) {
         log.print("%s field  CP entry [%3d]: %s => %s.%s:%s%s%s",
                   (archived ? "archived" : "reverted"),
                   cp_index,
@@ -493,7 +493,7 @@ void ConstantPoolCache::remove_resolved_method_entries_if_non_deterministic() {
       Symbol* name = cp->uncached_name_ref_at(cp_index);
       Symbol* signature = cp->uncached_signature_ref_at(cp_index);
       LogStream ls(lt);
-      if (resolved) {
+      if (resolved && !CDSConfig::is_dumping_preimage_static_archive()) {
         ls.print("%s%s method CP entry [%3d]: %s %s.%s:%s",
                 (archived ? "archived" : "reverted"),
                 (rme->is_resolved(Bytecodes::_invokeinterface) ? " interface" : ""),
@@ -539,7 +539,7 @@ void ConstantPoolCache::remove_resolved_indy_entries_if_non_deterministic() {
       Symbol* bsm_name = cp->uncached_name_ref_at(bsm_ref);
       Symbol* bsm_signature = cp->uncached_signature_ref_at(bsm_ref);
       Symbol* bsm_klass = cp->klass_name_at(cp->uncached_klass_ref_index_at(bsm_ref));
-      if (resolved) {
+      if (resolved && !CDSConfig::is_dumping_preimage_static_archive()) {
         log.print("%s indy   CP entry [%3d]: %s (%d)",
                   (archived ? "archived" : "reverted"),
                   cp_index, cp->pool_holder()->name()->as_C_string(), i);
