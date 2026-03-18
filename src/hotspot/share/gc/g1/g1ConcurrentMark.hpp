@@ -352,6 +352,7 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   friend class G1CMRemarkTask;
   friend class G1CMRootRegionScanTask;
   friend class G1CMTask;
+  friend class G1ClearBitMapTask;
   friend class G1ConcurrentMarkThread;
 
   G1ConcurrentMarkThread* _cm_thread;     // The thread doing the work
@@ -368,7 +369,7 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
 
   // For grey objects
   G1CMMarkStack           _global_mark_stack; // Grey objects behind global finger
-  HeapWord* volatile      _finger;            // The global finger, region aligned,
+  Atomic<HeapWord*>       _finger;            // The global finger, region aligned,
                                               // always pointing to the end of the
                                               // last claimed region
 
@@ -395,19 +396,19 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   WorkerThreadsBarrierSync     _second_overflow_barrier_sync;
 
   // Number of completed mark cycles.
-  volatile uint           _completed_mark_cycles;
+  Atomic<uint>            _completed_mark_cycles;
 
   // This is set by any task, when an overflow on the global data
   // structures is detected
-  volatile bool           _has_overflown;
+  Atomic<bool>            _has_overflown;
   // True: marking is concurrent, false: we're in remark
-  volatile bool           _concurrent;
+  Atomic<bool>            _concurrent;
   // Set at the end of a Full GC so that marking aborts
-  volatile bool           _has_aborted;
+  Atomic<bool>            _has_aborted;
 
   // Used when remark aborts due to an overflow to indicate that
   // another concurrent marking phase should start
-  volatile bool           _restart_for_overflow;
+  Atomic<bool>            _restart_for_overflow;
 
   ConcurrentGCTimer*      _gc_timer_cm;
 
@@ -461,8 +462,8 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
 
   void print_and_reset_taskqueue_stats();
 
-  HeapWord*           finger()       { return _finger;   }
-  bool                concurrent()   { return _concurrent; }
+  HeapWord*           finger()       { return _finger.load_relaxed();   }
+  bool                concurrent()   { return _concurrent.load_relaxed(); }
   uint                active_tasks() { return _num_active_tasks; }
   TaskTerminator*     terminator()   { return &_terminator; }
 
@@ -487,7 +488,7 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   // to satisfy an allocation without doing a GC. This is fine, because all
   // objects in those regions will be considered live anyway because of
   // SATB guarantees (i.e. their TAMS will be equal to bottom).
-  bool out_of_regions() { return _finger >= _heap.end(); }
+  bool out_of_regions() { return finger() >= _heap.end(); }
 
   // Returns the task with the given id
   G1CMTask* task(uint id) {
@@ -499,10 +500,10 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
 
   // Access / manipulation of the overflow flag which is set to
   // indicate that the global stack has overflown
-  bool has_overflown()           { return _has_overflown; }
-  void set_has_overflown()       { _has_overflown = true; }
-  void clear_has_overflown()     { _has_overflown = false; }
-  bool restart_for_overflow()    { return _restart_for_overflow; }
+  bool has_overflown()           { return _has_overflown.load_relaxed(); }
+  void set_has_overflown()       { _has_overflown.store_relaxed(true); }
+  void clear_has_overflown()     { _has_overflown.store_relaxed(false); }
+  bool restart_for_overflow()    { return _restart_for_overflow.load_relaxed(); }
 
   // Methods to enter the two overflow sync barriers
   void enter_first_sync_barrier(uint worker_id);
@@ -516,14 +517,17 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   G1RegionMarkStats* _region_mark_stats;
   // Top pointer for each region at the start of marking. Must be valid for all committed
   // regions.
-  HeapWord* volatile* _top_at_mark_starts;
+  Atomic<HeapWord*>* _top_at_mark_starts;
   // Top pointer for each region at the start of the rebuild remembered set process
   // for regions which remembered sets need to be rebuilt. A null for a given region
   // means that this region does not be scanned during the rebuilding remembered
   // set phase at all.
-  HeapWord* volatile* _top_at_rebuild_starts;
+  Atomic<HeapWord*>* _top_at_rebuild_starts;
   // True when Remark pause selected regions for rebuilding.
   bool _needs_remembered_set_rebuild;
+
+  G1ConcurrentMarkThread* cm_thread() const;
+
 public:
   // To be called when an object is marked the first time, e.g. after a successful
   // mark_in_bitmap call. Updates various statistics data.
@@ -602,8 +606,6 @@ public:
                    G1RegionToSpaceMapper* bitmap_storage);
   ~G1ConcurrentMark();
 
-  G1ConcurrentMarkThread* cm_thread() { return _cm_thread; }
-
   G1CMBitMap* mark_bitmap() const { return (G1CMBitMap*)&_mark_bitmap; }
 
   // Calculates the number of concurrent GC threads to be used in the marking phase.
@@ -632,8 +634,15 @@ public:
   // These two methods do the work that needs to be done at the start and end of the
   // concurrent start pause.
   void pre_concurrent_start(GCCause::Cause cause);
-  void post_concurrent_mark_start();
-  void post_concurrent_undo_start();
+
+  // Start the particular type of concurrent cycle. After this call threads may be running.
+  void start_full_concurrent_cycle();
+  void start_undo_concurrent_cycle();
+
+  void notify_concurrent_cycle_completed();
+
+  // Stop active components/the concurrent mark thread.
+  void stop();
 
   // Scan all the root regions and mark everything reachable from
   // them.
@@ -679,7 +688,7 @@ public:
 
   uint completed_mark_cycles() const;
 
-  bool has_aborted()      { return _has_aborted; }
+  bool has_aborted() { return _has_aborted.load_relaxed(); }
 
   void print_summary_info();
 

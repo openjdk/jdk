@@ -717,8 +717,8 @@ bool FileMapInfo::init_from_file(int fd) {
 }
 
 void FileMapInfo::seek_to_position(size_t pos) {
-  if (os::lseek(_fd, (long)pos, SEEK_SET) < 0) {
-    aot_log_error(aot)("Unable to seek to position %zu", pos);
+  if (os::lseek(_fd, (jlong)pos, SEEK_SET) < 0) {
+    aot_log_error(aot)("Unable to seek to position %zu (errno=%d: %s)", pos, errno, os::strerror(errno));
     AOTMetaspace::unrecoverable_loading_error();
   }
 }
@@ -1325,9 +1325,7 @@ char* FileMapInfo::map_auxiliary_region(int region_index, bool read_only) {
 
   if (VerifySharedSpaces && !r->check_region_crc(mapped_base)) {
     aot_log_error(aot)("region %d CRC error", region_index);
-    if (!os::unmap_memory(mapped_base, r->used_aligned())) {
-      fatal("os::unmap_memory of region %d failed", region_index);
-    }
+    os::unmap_memory(mapped_base, r->used_aligned());
     return nullptr;
   }
 
@@ -1654,9 +1652,7 @@ void FileMapInfo::unmap_region(int i) {
         // is released. Zero it so that we don't accidentally read its content.
         aot_log_info(aot)("Region #%d (%s) is in a reserved space, it will be freed when the space is released", i, shared_region_name[i]);
       } else {
-        if (!os::unmap_memory(mapped_base, size)) {
-          fatal("os::unmap_memory failed");
-        }
+        os::unmap_memory(mapped_base, size);
       }
     }
     r->set_mapped_base(nullptr);

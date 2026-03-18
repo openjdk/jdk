@@ -29,6 +29,7 @@
 #include "opto/movenode.hpp"
 #include "opto/node.hpp"
 #include "opto/opaquenode.hpp"
+#include "opto/opcodes.hpp"
 #include "opto/predicates.hpp"
 
 //------------------------------split_thru_region------------------------------
@@ -716,14 +717,11 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
   } // End of while merge point has phis
 
   _igvn.remove_dead_node(region);
-  if (iff->Opcode() == Op_RangeCheck) {
-    // Pin array access nodes: control is updated here to a region. If, after some transformations, only one path
-    // into the region is left, an array load could become dependent on a condition that's not a range check for
-    // that access. If that condition is replaced by an identical dominating one, then an unpinned load would risk
-    // floating above its range check.
-    pin_array_access_nodes_dependent_on(new_true);
-    pin_array_access_nodes_dependent_on(new_false);
-  }
+
+  // Control is updated here to a region, which is not a test, so any node that
+  // depends_only_on_test must be pinned
+  pin_nodes_dependent_on(new_true, iff->Opcode() == Op_RangeCheck);
+  pin_nodes_dependent_on(new_false, iff->Opcode() == Op_RangeCheck);
 
   if (new_false_region != nullptr) {
     *new_false_region = new_false;
@@ -735,13 +733,22 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
   DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
 }
 
-void PhaseIdealLoop::pin_array_access_nodes_dependent_on(Node* ctrl) {
+void PhaseIdealLoop::pin_nodes_dependent_on(Node* ctrl, bool old_iff_is_rangecheck) {
   for (DUIterator i = ctrl->outs(); ctrl->has_out(i); i++) {
     Node* use = ctrl->out(i);
     if (!use->depends_only_on_test()) {
       continue;
     }
-    Node* pinned_clone = use->pin_array_access_node();
+
+
+    // When a RangeCheckNode is folded because its condition is a constant, IfProjNode::Identity
+    // returns the control input of the RangeCheckNode. As a result, when the old IfNode is not a
+    // RangeCheckNode, and a Load output of it depends_only_on_test, we don't need to pin the Load.
+    if (use->is_Load() && !old_iff_is_rangecheck) {
+      continue;
+    }
+
+    Node* pinned_clone = use->pin_node_under_control();
     if (pinned_clone != nullptr) {
       register_new_node_with_ctrl_of(pinned_clone, use);
       _igvn.replace_node(use, pinned_clone);
