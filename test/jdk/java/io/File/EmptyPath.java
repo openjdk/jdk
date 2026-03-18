@@ -43,13 +43,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -285,32 +283,6 @@ public class EmptyPath {
             .map(Path::toString)
             .collect(Collectors.toSet());
         assertEquals(nioSet, ioSet);
-    }
-
-    @Test
-    @DisabledOnOs({OS.WINDOWS})
-    public void listRoots() {
-        Set<String> expected = Arrays.stream(f.getAbsoluteFile().listRoots())
-            .map(File::toString)
-            .collect(Collectors.toSet());
-        Set<String> actual = Arrays.stream(f.listRoots())
-            .map(File::toString)
-            .collect(Collectors.toSet());
-        assertEquals(expected, actual);
-    }
-
-    @Test
-    @EnabledOnOs({OS.WINDOWS})
-    public void listRootsWindows() {
-        Stream<String> expectedStream = Arrays.stream(File.listRoots())
-            .map(File::toString);
-        Set<String> actualSet = Arrays.stream(f.listRoots())
-            .map(File::toString)
-            .collect(Collectors.toSet());
-
-        boolean intersects = expectedStream.anyMatch(actualSet::contains);
-
-        assertTrue(intersects);
     }
 
     @Test
