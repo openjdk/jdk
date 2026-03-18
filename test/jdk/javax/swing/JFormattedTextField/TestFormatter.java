@@ -39,6 +39,6 @@ public class TestFormatter {
         JFormattedTextField tf = new JFormattedTextField(formatter);
         tf.setText(formatter.format(LocalDate.now()));
         LocalDate date = (LocalDate) tf.getValue();
-        System.out.println(date); 
+        System.out.println(date);
     }
 }
