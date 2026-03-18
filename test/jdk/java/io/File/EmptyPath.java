@@ -302,13 +302,13 @@ public class EmptyPath {
     @Test
     @EnabledOnOs({OS.WINDOWS})
     public void listRootsWindows() {
-        Stream<String> expected = Arrays.stream(File.listRoots())
+        Stream<String> expectedStream = Arrays.stream(File.listRoots())
             .map(File::toString);
-        Set<String> actual = Arrays.stream(f.listRoots())
+        Set<String> actualSet = Arrays.stream(f.listRoots())
             .map(File::toString)
             .collect(Collectors.toSet());
 
-        boolean intersects = expected.anyMatch(actual::contains);
+        boolean intersects = expectedStream.anyMatch(actualSet::contains);
 
         assertTrue(intersects);
     }
