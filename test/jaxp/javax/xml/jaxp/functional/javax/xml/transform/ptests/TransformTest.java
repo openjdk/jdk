@@ -77,7 +77,6 @@ import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
  * @summary Tests for variable combination of Transformer.transform(Source, Result)
  */
 @TestInstance(Lifecycle.PER_CLASS)
-@Execution(ExecutionMode.SAME_THREAD)
 public class TransformTest {
 
     /*

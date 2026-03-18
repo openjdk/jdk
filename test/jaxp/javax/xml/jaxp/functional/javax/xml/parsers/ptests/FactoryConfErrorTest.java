@@ -44,7 +44,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @library /javax/xml/jaxp/libs
  * @run junit/othervm javax.xml.parsers.ptests.FactoryConfErrorTest
  */
-@Execution(ExecutionMode.SAME_THREAD)
 public class FactoryConfErrorTest {
 
     /**

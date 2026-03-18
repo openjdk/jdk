@@ -78,7 +78,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @run junit/othervm javax.xml.validation.ptests.SchemaFactoryTest
  * @summary Class containing the test cases for SchemaFactory
  */
-@Execution(ExecutionMode.SAME_THREAD)
 @TestInstance(Lifecycle.PER_CLASS)
 public class SchemaFactoryTest {
 

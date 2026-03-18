@@ -43,7 +43,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @run junit/othervm sax.XMLReaderTest
  * @summary This class contains tests that cover the creation of XMLReader.
  */
-@Execution(ExecutionMode.SAME_THREAD)
 public class XMLReaderTest {
     private static final String SAX_PROPNAME = "org.xml.sax.driver";
 
