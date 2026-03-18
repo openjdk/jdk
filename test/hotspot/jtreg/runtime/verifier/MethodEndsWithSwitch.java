@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Verify that method can end with a switch instruction.
- * @compile MethodEndsWithLookupswitch.jasm MethodEndsWithTableswitch.jasm
+ * @compile MethodEndsWithLookupSwitch.jasm MethodEndsWithTableSwitch.jasm
  * @run main/othervm MethodEndsWithSwitch
  */
 
@@ -36,7 +36,7 @@ public class MethodEndsWithSwitch {
     }
 
     public static void main(String[] args) throws Exception {
-        test("MethodEndsWithLookupswitch");
-        test("MethodEndsWithTableswitch");
+        test("MethodEndsWithLookupSwitch");
+        test("MethodEndsWithTableSwitch");
     }
 }
