@@ -2881,9 +2881,8 @@ void PhaseCCP::analyze_step(Unique_Node_List& worklist, Node* n) {
     // nodes that become dead.
     _maybe_top_type_nodes.push(n);
   }
-  if (new_type == Type::TOP && (n->is_div_or_mod(T_INT) && (n->is_div_or_mod(T_LONG) && type(n->in(0)) != TypeLong::TOP))) {
-    ShouldNotReachHere();
-    _maybe_top_type_nodes.push(n);
+  if (new_type == Type::TOP && ((n->is_div_or_mod(T_INT) && type(n->in(2)) == TypeInt::ZERO) || (n->is_div_or_mod(T_LONG) && type(n->in(2)) == TypeLong::ZERO))) {
+    assert(type(n->in(0)) == Type::TOP || type(n->in(1)) == Type::TOP, "");
   }
 }
 
