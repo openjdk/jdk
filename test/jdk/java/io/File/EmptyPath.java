@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -301,15 +302,15 @@ public class EmptyPath {
     @Test
     @EnabledOnOs({OS.WINDOWS})
     public void listRootsWindows() {
-        Set<String> expected = Arrays.stream(f.getAbsoluteFile().listRoots())
-            .map(File::toString)
-            .collect(Collectors.toSet());
+        Stream<String> expected = Arrays.stream(File.listRoots())
+            .map(File::toString);
         Set<String> actual = Arrays.stream(f.listRoots())
             .map(File::toString)
             .collect(Collectors.toSet());
-        Set<String> intersection =
-            actual.stream().filter(expected::contains).collect(Collectors.toSet());
-        assertFalse(intersection.isEmpty());
+
+        boolean intersects = expected.anyMatch(actual::contains);
+
+        assertTrue(intersects);
     }
 
     @Test
