@@ -608,13 +608,6 @@ CodeBlob* CodeCache::allocate(uint size, CodeBlobType code_blob_type, bool handl
   }
   CodeBlob* cb = nullptr;
 
-  // Test-only: force fallback solution,
-  //            place stubs in MethodNonProfiled to provoke >128MB distances to non-profiled nmethods.
-  if (code_blob_type == CodeBlobType::NonNMethod) {
-    code_blob_type = CodeBlobType::MethodNonProfiled;
-    _non_nmethod_overflow = true;
-  }
-
   // Get CodeHeap for the given CodeBlobType
   CodeHeap* heap = get_code_heap(code_blob_type);
   assert(heap != nullptr, "No heap for given code_blob_type (%d), heap is null", (int)code_blob_type);
@@ -1254,12 +1247,6 @@ void CodeCache::initialize() {
   // This is used on Windows 64 bit platforms to register
   // Structured Exception Handlers for our generated code.
   os::register_code_area((char*)low_bound(), (char*)high_bound());
-
-  // Test-only: allocate a large MethodNonProfiled blob at the segment start to push subsequent
-  //            non-profiled nmethods far from nmethods/stubs in MethodProfiled/NonNMethod segments.
-  if (ReservedCodeCacheSize > 128 * M) {
-    CodeBlob* bigone = CodeCache::allocate(40*M, CodeBlobType::MethodNonProfiled);
-  }
 }
 
 void codeCache_init() {
