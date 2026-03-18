@@ -482,9 +482,11 @@ public abstract class URLStreamHandler {
      */
     protected String toExternalForm(URL u) {
         // Optimizations in this method are based on the following observations:
-        // 1: The query and ref components are commonly empty and can be specialized
-        // 2: String concatenation is faster when locals are concatenated with no interleaving code
-        // 3: A single concatenation is faster than combining results of other concatenations
+        // 1: Some URL components are commonly empty and can be specialized
+        // 2: One longer concatenation is faster than combining a tree of smaller concatenations
+        // 3: This is java.base where javac lowers '+' to chained StringBuilder::append calls
+        // 4: The control flow analysis of OptimizedStringConcat is fragile and favors
+        //    concatenation without interleaving branches. Let's use locals.
 
         // Optionality, subtly different for authority
         boolean emptyAuth = u.getAuthority() == null || u.getAuthority().isEmpty();
