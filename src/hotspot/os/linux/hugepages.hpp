@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2011, 2024, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -47,6 +47,9 @@ class ExplicitHugePageSupport {
   // in /sys/kernel/mm/hugepages/hugepage-xxx)
   os::PageSizes _pagesizes;
 
+  // Above pages filtered for where the contents of file nr_hugepages was larger than zero
+  os::PageSizes _pre_allocated_pagesizes;
+
   // Contains the default hugepage. The "default hugepage size" is the one that
   // - is marked in /proc/meminfo as "Hugepagesize"
   // - is the size one gets when using mmap(MAP_HUGETLB) when omitting size specifiers like MAP_HUGE_SHIFT)
@@ -61,6 +64,7 @@ public:
   void scan_os();
 
   os::PageSizes pagesizes() const;
+  os::PageSizes pre_allocated_pagesizes() const;
   size_t default_hugepage_size() const;
   void print_on(outputStream* os);
 
