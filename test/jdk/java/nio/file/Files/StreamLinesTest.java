@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 8072773
- * @library /test/lib /lib/testlibrary/bootlib
+ * @library /test/lib
  * @build jdk.test.lib.RandomFactory
  * @run junit/othervm StreamLinesTest
  * @summary Tests streams returned from Files.lines, primarily focused on
@@ -45,9 +45,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.*;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Random;
 import java.util.function.IntFunction;
 import java.util.stream.Stream;
 
@@ -184,7 +186,6 @@ public class StreamLinesTest {
         // Test without a separator at the end
         List<String> expected = readAllLines(p, cs);
         try (Stream<String> s = Files.lines(p, cs)) {
-            List<String> actual = s.toList();
             checkLines(s, expected);
         }
 
