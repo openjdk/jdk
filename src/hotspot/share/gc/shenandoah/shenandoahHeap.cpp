@@ -2700,10 +2700,7 @@ GrowableArray<MemoryPool*> ShenandoahHeap::memory_pools() {
 }
 
 MemoryUsage ShenandoahHeap::memory_usage() {
-  assert(_initial_size <= ShenandoahHeap::heap()->max_capacity(), "sanity");
-  assert(used() <= ShenandoahHeap::heap()->max_capacity(), "sanity");
-  assert(committed() <= ShenandoahHeap::heap()->max_capacity(), "sanity");
-  return MemoryUsage(_initial_size, used(), committed(), max_capacity());
+  return shenandoah_memory_usage(_initial_size, used(), committed(), max_capacity());
 }
 
 ShenandoahRegionIterator::ShenandoahRegionIterator() :
