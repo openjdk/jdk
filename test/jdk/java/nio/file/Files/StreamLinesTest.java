@@ -24,8 +24,7 @@
 /* @test
  * @bug 8072773
  * @library /test/lib /lib/testlibrary/bootlib
- * @build java.base/java.util.stream.OpTestCase
- *        jdk.test.lib.RandomFactory
+ * @build jdk.test.lib.RandomFactory
  * @run junit/othervm StreamLinesTest
  * @summary Tests streams returned from Files.lines, primarily focused on
  *          testing the file-channel-based stream stream with supported
@@ -33,11 +32,10 @@
  * @key randomness
  */
 
+import jdk.test.lib.RandomFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -47,19 +45,15 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.List;
-import java.util.Random;
 import java.util.function.IntFunction;
-import java.util.function.Supplier;
-import java.util.stream.OpTestCase;
 import java.util.stream.Stream;
-import java.util.stream.TestData;
-import jdk.test.lib.RandomFactory;
 
-public class StreamLinesTest extends OpTestCase {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class StreamLinesTest {
 
     enum LineSeparator {
         NONE(""),
@@ -187,29 +181,24 @@ public class StreamLinesTest extends OpTestCase {
                      int lines, Charset cs) throws IOException {
         Path p = generateTempFileWithLines(lineGenerator, separatorGenerator, lines, cs, false);
 
-        Supplier<Stream<String>> ss = () -> {
-            try {
-                return Files.lines(p, cs);
-            }
-            catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        };
-
         // Test without a separator at the end
         List<String> expected = readAllLines(p, cs);
-        withData(TestData.Factory.ofSupplier("Lines with no separator at end", ss))
-                .stream(s -> s)
-                .expectedResult(expected)
-                .exercise();
+        try (Stream<String> s = Files.lines(p, cs)) {
+            List<String> actual = s.toList();
+            checkLines(s, expected);
+        }
 
         // Test with a separator at the end
         writeLineSeparator(p, separatorGenerator, lines, cs);
         expected = readAllLines(p, cs);
-        withData(TestData.Factory.ofSupplier("Lines with separator at end", ss))
-                .stream(s -> s)
-                .expectedResult(expected)
-                .exercise();
+        try (Stream<String> s = Files.lines(p, cs)) {
+            checkLines(s, expected);
+        }
     }
 
+    private static void checkLines(Stream<String> s, List<String> expected) {
+        List<String> lines = s.toList();
+        assertEquals(expected.size(), lines.size(), "Mismatched number of lines");
+        assertEquals(expected, lines, "Mismatched content");
+    }
 }
