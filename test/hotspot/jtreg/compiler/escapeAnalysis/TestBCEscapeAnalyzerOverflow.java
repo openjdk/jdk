@@ -38,20 +38,26 @@
 
 package compiler.escapeAnalysis;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.Label;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.nio.charset.StandardCharsets;
 
 public class TestBCEscapeAnalyzerOverflow {
 
     // Number of goto instructions in the generated method.
-    // Creates NUM_GOTOS + 1 basic blocks. With max_stack=0xFFFF and
-    // max_locals=0xFFFF the product (numblocks+1)*(max_stack+max_locals)
+    // Creates NUM_GOTOS + 1 basic blocks.  With max_stack = 0xFFFF and
+    // max_locals = 0xFFFF the product (numblocks+1)*(max_stack+max_locals)
     // is 16386 * 131070 = 2,147,713,020 which exceeds Integer.MAX_VALUE.
     static final int NUM_GOTOS = 16384;
+    static final int TARGET_MAX_STACK = 0xFFFF;
+    static final int TARGET_MAX_LOCALS = 0xFFFF;
+
+    static final ClassDesc CD_HELPER =
+        ClassDesc.of("compiler.escapeAnalysis.BCEscapeOverflowHelper");
 
     public static void main(String[] args) throws Throwable {
         byte[] classBytes = buildClass();
@@ -68,103 +74,87 @@ public class TestBCEscapeAnalyzerOverflow {
         mh.invoke();
     }
 
-    // Builds a minimal class (version 50, no StackMapTable needed) with:
-    //   public static void bigMethod(Object o)  -- pathological method
-    //   public static void caller()              -- calls bigMethod
-    static byte[] buildClass() throws IOException {
-        int bigCodeLength = 2 + NUM_GOTOS * 3 + 1;
+    /**
+     * Builds a minimal class (version 50, no StackMapTable needed) with:
+     *   public static void bigMethod(Object o)  -- pathological method
+     *   public static void caller()              -- calls bigMethod
+     *
+     * The ClassFile API generates the bytecode; max_stack and max_locals
+     * of bigMethod are then patched to the target overflow-triggering values.
+     */
+    static byte[] buildClass() {
+        var mtd_Obj_void = MethodTypeDesc.of(ConstantDescs.CD_void,
+                                             ConstantDescs.CD_Object);
+        var mtd_void = MethodTypeDesc.of(ConstantDescs.CD_void);
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(baos);
+        byte[] bytes = ClassFile.of(ClassFile.StackMapsOption.DROP_STACK_MAPS)
+            .build(CD_HELPER, cb -> {
+                cb.withVersion(50, 0);
+                cb.withFlags(ClassFile.ACC_PUBLIC | ClassFile.ACC_SUPER);
 
-        // ---- header ----
-        dos.writeInt(0xCAFEBABE);
-        dos.writeShort(0);       // minor version
-        dos.writeShort(50);      // major version (Java 6)
+                // bigMethod(Object o): aload_0, pop, <goto chain>, return
+                cb.withMethod("bigMethod", mtd_Obj_void,
+                    ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC,
+                    mb -> mb.withCode(code -> {
+                        code.aload(0);
+                        code.pop();
+                        for (int i = 0; i < NUM_GOTOS; i++) {
+                            Label next = code.newLabel();
+                            code.goto_(next);
+                            code.labelBinding(next);
+                        }
+                        code.return_();
+                    }));
 
-        // ---- constant pool (14 entries, count = 15) ----
-        dos.writeShort(15);
-        writeUtf8(dos, "compiler/escapeAnalysis/BCEscapeOverflowHelper"); // #1
-        writeUtf8(dos, "java/lang/Object");            // #2
-        writeUtf8(dos, "bigMethod");                   // #3
-        writeUtf8(dos, "(Ljava/lang/Object;)V");       // #4
-        writeUtf8(dos, "Code");                        // #5
-        writeUtf8(dos, "caller");                      // #6
-        writeUtf8(dos, "()V");                         // #7
-        writeUtf8(dos, "<init>");                      // #8
-        dos.writeByte(7);  dos.writeShort(1);          // #9  Class -> #1
-        dos.writeByte(7);  dos.writeShort(2);          // #10 Class -> #2
-        dos.writeByte(12); dos.writeShort(8);          // #11 NameAndType <init>:()V
-                           dos.writeShort(7);
-        dos.writeByte(10); dos.writeShort(10);         // #12 MethodRef Object.<init>
-                           dos.writeShort(11);
-        dos.writeByte(12); dos.writeShort(3);          // #13 NameAndType bigMethod:(L..;)V
-                           dos.writeShort(4);
-        dos.writeByte(10); dos.writeShort(9);          // #14 MethodRef this.bigMethod
-                           dos.writeShort(13);
+                // caller(): new Object → dup → invokespecial <init> →
+                //           invokestatic bigMethod → return
+                cb.withMethod("caller", mtd_void,
+                    ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC,
+                    mb -> mb.withCode(code -> {
+                        code.new_(ConstantDescs.CD_Object);
+                        code.dup();
+                        code.invokespecial(ConstantDescs.CD_Object,
+                            "<init>", mtd_void);
+                        code.invokestatic(CD_HELPER,
+                            "bigMethod", mtd_Obj_void);
+                        code.return_();
+                    }));
+            });
 
-        // ---- class header ----
-        dos.writeShort(0x0021);  // ACC_PUBLIC | ACC_SUPER
-        dos.writeShort(9);       // this_class
-        dos.writeShort(10);      // super_class
-        dos.writeShort(0);       // interfaces_count
-        dos.writeShort(0);       // fields_count
-
-        // ---- methods (2) ----
-        dos.writeShort(2);
-
-        // -- Method 1: public static void bigMethod(Object o) --
-        dos.writeShort(0x0009);              // ACC_PUBLIC | ACC_STATIC
-        dos.writeShort(3);                   // name -> "bigMethod"
-        dos.writeShort(4);                   // descriptor
-        dos.writeShort(1);                   // attributes_count
-        dos.writeShort(5);                   // Code attribute name
-        dos.writeInt(12 + bigCodeLength);    // attribute_length
-        dos.writeShort(0xFFFF);              // max_stack  = 65535
-        dos.writeShort(0xFFFF);              // max_locals = 65535
-        dos.writeInt(bigCodeLength);         // code_length
-        // bytecode: aload_0, pop, goto chain, return
-        dos.writeByte(0x2A);                 // aload_0
-        dos.writeByte(0x57);                 // pop
-        for (int i = 0; i < NUM_GOTOS; i++) {
-            dos.writeByte(0xA7);             // goto
-            dos.writeShort(3);               // offset +3 (next instruction)
-        }
-        dos.writeByte(0xB1);                 // return
-        dos.writeShort(0);                   // exception_table_length
-        dos.writeShort(0);                   // code attributes_count
-
-        // -- Method 2: public static void caller() --
-        //    new Object, dup, invokespecial <init>, invokestatic bigMethod, return
-        int callerCodeLength = 11;
-        dos.writeShort(0x0009);              // ACC_PUBLIC | ACC_STATIC
-        dos.writeShort(6);                   // name -> "caller"
-        dos.writeShort(7);                   // descriptor -> "()V"
-        dos.writeShort(1);                   // attributes_count
-        dos.writeShort(5);                   // Code attribute name
-        dos.writeInt(12 + callerCodeLength); // attribute_length
-        dos.writeShort(2);                   // max_stack
-        dos.writeShort(1);                   // max_locals
-        dos.writeInt(callerCodeLength);      // code_length
-        dos.writeByte(0xBB); dos.writeShort(10);   // new #10 (Object)
-        dos.writeByte(0x59);                       // dup
-        dos.writeByte(0xB7); dos.writeShort(12);   // invokespecial #12
-        dos.writeByte(0xB8); dos.writeShort(14);   // invokestatic #14
-        dos.writeByte(0xB1);                       // return
-        dos.writeShort(0);                   // exception_table_length
-        dos.writeShort(0);                   // code attributes_count
-
-        // ---- class attributes ----
-        dos.writeShort(0);
-
-        dos.flush();
-        return baos.toByteArray();
+        patchBigMethodMaxes(bytes);
+        return bytes;
     }
 
-    static void writeUtf8(DataOutputStream dos, String s) throws IOException {
-        dos.writeByte(1);
-        byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
-        dos.writeShort(bytes.length);
-        dos.write(bytes);
+    /**
+     * Locates bigMethod's Code attribute and patches max_stack/max_locals
+     * to TARGET_MAX_STACK/TARGET_MAX_LOCALS.  The ClassFile API computes
+     * small values (max_stack=1, max_locals=1); we inflate them to create
+     * the pathological overflow case.
+     *
+     * The Code attribute layout is:
+     *   attribute_name_index(u2), attribute_length(u4),
+     *   max_stack(u2), max_locals(u2), code_length(u4), code[...]...
+     *
+     * We search for bigMethod's unique code_length and patch the two u2
+     * fields immediately before it.
+     */
+    static void patchBigMethodMaxes(byte[] b) {
+        int expectedCodeLen = NUM_GOTOS * 3 + 3;
+        for (int i = 4; i <= b.length - 4; i++) {
+            int codeLen = ((b[i] & 0xFF) << 24) | ((b[i + 1] & 0xFF) << 16)
+                        | ((b[i + 2] & 0xFF) << 8) | (b[i + 3] & 0xFF);
+            if (codeLen == expectedCodeLen) {
+                int ms = ((b[i - 4] & 0xFF) << 8) | (b[i - 3] & 0xFF);
+                int ml = ((b[i - 2] & 0xFF) << 8) | (b[i - 1] & 0xFF);
+                if (ms <= 2 && ml <= 2) {
+                    b[i - 4] = (byte)(TARGET_MAX_STACK >>> 8);
+                    b[i - 3] = (byte)(TARGET_MAX_STACK);
+                    b[i - 2] = (byte)(TARGET_MAX_LOCALS >>> 8);
+                    b[i - 1] = (byte)(TARGET_MAX_LOCALS);
+                    return;
+                }
+            }
+        }
+        throw new RuntimeException("Could not find bigMethod Code attribute");
     }
 }
