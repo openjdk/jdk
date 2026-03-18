@@ -61,7 +61,7 @@ public class ThreadInfoTest {
         new MyReplacerThread(ids).start();
         for (int i = 0; i < ITERATIONS; i++) {
             do {
-                count = countInfo(ids, infos);
+                count = countInfo(infos);
                 System.out.println("Iteration " + i + ": ThreadInfos found (Threads alive): " + count);
                 goSleep(100);
             } while (count > 0);
@@ -86,7 +86,7 @@ public class ThreadInfoTest {
     }
 
     // Count ThreadInfo from array, return how many are non-null.
-    private static int countInfo(long[] ids, ThreadInfo[] info) {
+    private static int countInfo(ThreadInfo[] info) {
         int count = 0;
         if (info != null) {
             int i = 0;
@@ -103,15 +103,14 @@ public class ThreadInfoTest {
     private static int replaceThreads(long[] ids, ThreadInfo[] info) {
         int replaced = 0;
         if (info != null) {
-            int i = 0;
-            for (ThreadInfo ti: info) {
+            for (int i = 0; i < info.length; i++) {
+                ThreadInfo ti = info[i];
                 if (ti == null) {
                     Thread thread = newThread(i);
                     thread.start();
                     ids[i] = thread.getId();
                     replaced++;
                 }
-                i++;
             }
         }
         return replaced;
@@ -138,7 +137,7 @@ public class ThreadInfoTest {
             boolean replacing = false;
             while (true) {
                 if (replacing) {
-                    int replaced = replaceThreads(ids, infos);
+                    replaceThreads(ids, infos);
                 }
                 if (count < 10) {
                     replacing = true;
