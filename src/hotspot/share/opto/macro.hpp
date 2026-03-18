@@ -54,7 +54,8 @@ public:
   }
 
   Node* basic_plus_adr(Node* base, Node* ptr, Node* offset) {
-    return (offset == MakeConX(0)) ? ptr : transform_later(AddPNode::make_with_base(base, ptr, offset));
+    return (offset == MakeConX(0)) ?
+           ptr : transform_later(AddPNode::make_with_base(base, ptr, offset));
   }
 
   Node* off_heap_plus_addr(Node* ptr, int offset) {
