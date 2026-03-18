@@ -28,26 +28,6 @@
 
 #define __ _masm->
 
-ATTRIBUTE_ALIGNED(64) constexpr uint64_t MODULUS_P256[] = {
-  0x000fffffffffffffULL, 0x00000fffffffffffULL,
-  0x0000000000000000ULL, 0x0000001000000000ULL,
-  0x0000ffffffff0000ULL, 0x0000000000000000ULL,
-  0x0000000000000000ULL, 0x0000000000000000ULL
-};
-static address modulus_p256(int index = 0) {
-  return (address)&MODULUS_P256[index];
-}
-
-ATTRIBUTE_ALIGNED(64) constexpr uint64_t P256_MASK52[] = {
-  0x000fffffffffffffULL, 0x000fffffffffffffULL,
-  0x000fffffffffffffULL, 0x000fffffffffffffULL,
-  0xffffffffffffffffULL, 0xffffffffffffffffULL,
-  0xffffffffffffffffULL, 0xffffffffffffffffULL,
-};
-static address p256_mask52() {
-  return (address)P256_MASK52;
-}
-
 ATTRIBUTE_ALIGNED(64) constexpr uint64_t SHIFT1R[] = {
   0x0000000000000001ULL, 0x0000000000000002ULL,
   0x0000000000000003ULL, 0x0000000000000004ULL,
@@ -66,6 +46,16 @@ ATTRIBUTE_ALIGNED(64) constexpr uint64_t SHIFT1L[] = {
 };
 static address shift_1L() {
   return (address)SHIFT1L;
+}
+
+ATTRIBUTE_ALIGNED(64) constexpr uint64_t PERMLOW[] = {
+  0x0000000000000000ULL, 0x0000000000000000ULL,
+  0x0000000000000000ULL, 0x0000000000000000ULL,
+  0x0000000000000001ULL, 0x0000000000000002ULL,
+  0x0000000000000000ULL, 0x0000000000000000ULL,
+};
+static address perm_low() {
+  return (address)PERMLOW;
 }
 
 /**
@@ -153,6 +143,12 @@ static address shift_1L() {
  * Mask = sign(Acc2)
  * Result = select(Mask ? Acc1 or Acc2)
  */
+
+ATTRIBUTE_ALIGNED(64) static const uint64_t TERM = 0x13;
+static address term() {
+  return (address)TERM;
+}
+
 void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const Register rLimbs, const Register tmp, MacroAssembler* _masm) {
   Register t0 = tmp;
   Register rscratch = tmp;
@@ -167,32 +163,34 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
   XMMRegister Acc2 = xmm11;
   XMMRegister N    = xmm12;
   XMMRegister Carry = xmm13;
-  XMMRegister C = xmm14;
-  XMMRegister D = xmm15;
-  XMMRegister DD = xmm9;
+  XMMRegister Acc1l = xmm14;
 
   // Constants
   XMMRegister modulus = xmm5;
   XMMRegister shift1L = xmm6;
   XMMRegister shift1R = xmm7;
   XMMRegister Mask52  = xmm8;
+  XMMRegister permLow = xmm15;
   KRegister allLimbs = k1;
   KRegister limb0    = k2;
   KRegister masks[] = {limb0, k3, k4, k5};
+  KRegister last    = k6;
+  KRegister perm    = k7;
 
   for (int i=0; i<4; i++) {
     __ mov64(t0, 1ULL<<i);
     __ kmovql(masks[i], t0);
   }
 
-  __ mov64(t0, 0x1f);
+  __ mov64(t0, 0x1F);
   __ kmovql(allLimbs, t0);
+  __ mov64(t0, 0x1A);
+  __ kmovql(perm, t0);
+  __ mov64(t0, 0xE0);
+  __ kmovql(last, t0);
   __ evmovdqaq(shift1L, allLimbs, ExternalAddress(shift_1L()), false, Assembler::AVX_512bit, rscratch);
   __ evmovdqaq(shift1R, allLimbs, ExternalAddress(shift_1R()), false, Assembler::AVX_512bit, rscratch);
-  __ evmovdqaq(Mask52, allLimbs, ExternalAddress(p256_mask52()), false, Assembler::AVX_512bit, rscratch);
-
-  // M = load(*modulus_p256)
-  __ evmovdqaq(modulus, allLimbs, ExternalAddress(modulus_p256()), false, Assembler::AVX_512bit, rscratch);
+  __ evmovdqaq(permLow, allLimbs, ExternalAddress(perm_low()), false, Assembler::AVX_512bit, rscratch);
 
   // A = load(*aLimbs);  masked evmovdquq() can be slow. Instead load full 256bit, and compbine with 64bit
   __ evmovdquq(A, Address(aLimbs, 8), Assembler::AVX_256bit);
@@ -203,43 +201,60 @@ void multiply_25519_avx512(const Register aLimbs, const Register bLimbs, const R
 // Start new logic
   // Row 0
   __ vpbroadcastq(B, Address(bLimbs, 0), Assembler::AVX_512bit);
-  __ evpmadd52luq(Acc1, allLimbs, A, B, false, Assembler::AVX_512bit);
-  __ evpmadd52huq(Acc2, allLimbs, A, B, false, Assembler::AVX_512bit);
-  // Shift for previous low order bits and high order alignment before add 
+  __ evpmadd52luq(Acc1, allLimbs, A, B, true, Assembler::AVX_512bit);
+  __ evpmadd52huq(Acc2, allLimbs, A, B, true, Assembler::AVX_512bit);
+  // Shift for previous low order bits and high order alignment before add
   __ evpermq(Acc1, allLimbs, shift1R, Acc1, false, Assembler::AVX_512bit);
   __ vpaddq(Acc1, Acc1, Acc2, Assembler::AVX_512bit);
   __ vpxorq(Acc2, Acc2, Acc2, Assembler::AVX_512bit);
+
   // Row 1
   __ vpbroadcastq(B, Address(bLimbs, 8), Assembler::AVX_512bit);
-  __ evpmadd52luq(Acc1, allLimbs, A, B, false, Assembler::AVX_512bit);
-  __ evpmadd52huq(Acc2, allLimbs, A, B, false, Assembler::AVX_512bit);
+  __ evpmadd52luq(Acc1, allLimbs, A, B, true, Assembler::AVX_512bit);
+  __ evpmadd52huq(Acc2, allLimbs, A, B, true, Assembler::AVX_512bit);
   __ evpermq(Acc1, allLimbs, shift1R, Acc1, false, Assembler::AVX_512bit);
   __ vpaddq(Acc1, Acc1, Acc2, Assembler::AVX_512bit);
   __ vpxorq(Acc2, Acc2, Acc2, Assembler::AVX_512bit);
+
   // Row 2
   __ vpbroadcastq(B, Address(bLimbs, 16), Assembler::AVX_512bit);
-  __ evpmadd52luq(Acc1, allLimbs, A, B, false, Assembler::AVX_512bit);
-  __ evpmadd52huq(Acc2, allLimbs, A, B, false, Assembler::AVX_512bit);
+  __ evpmadd52luq(Acc1, allLimbs, A, B, true, Assembler::AVX_512bit);
+  __ evpmadd52huq(Acc2, allLimbs, A, B, true, Assembler::AVX_512bit);
   __ evpermq(Acc1, allLimbs, shift1R, Acc1, false, Assembler::AVX_512bit);
   __ vpaddq(Acc1, Acc1, Acc2, Assembler::AVX_512bit);
   __ vpxorq(Acc2, Acc2, Acc2, Assembler::AVX_512bit);
+  // Move c0..c2 to Acc1l before non-merge of Acc1
+  __ evpermq(Acc1l, perm, permLow, Acc1, false, Assembler::AVX_512bit); 
+  //__ evmovdquq(Acc1l, last, Acc1, false, Assembler::AVX_512bit);
   // At this point Acc1 is completely set at 8q, with single high order at c7
-  __ evpermq(Acc1h, allLimbs, shift1R, Acc1, false, Assembler::AVX_512bit);
+  // We use Acc1 as the upper-limbs to complete the remaining accummulators
+  // and we use Acc1l for the lower-limbs that will accumulate the reduction
 
   // Row 3
   __ vpbroadcastq(B, Address(bLimbs, 24), Assembler::AVX_512bit);
+  // Non-merge of luq of Acc1 zeros out c0..c2 positions
   __ evpmadd52luq(Acc1, allLimbs, A, B, false, Assembler::AVX_512bit);
-  __ evpmadd52huq(Acc2, allLimbs, A, B, false, Assembler::AVX_512bit);
+  __ evpmadd52huq(Acc2, allLimbs, A, B, true, Assembler::AVX_512bit);
+  // Not needed with non-merge of luq of Acc1 -  Zero out c0..c2 positions
+  // __ evpxorq(Acc1, last, Acc1, Acc1, true, Assembler::AVX_512bit);
   __ evpermq(Acc1, allLimbs, shift1R, Acc1, false, Assembler::AVX_512bit);
   __ vpaddq(Acc1, Acc1, Acc2, Assembler::AVX_512bit);
+  __ vpxorq(Acc2, Acc2, Acc2, Assembler::AVX_512bit);
+
   // Row 4
   __ vpbroadcastq(B, Address(bLimbs, 32), Assembler::AVX_512bit);
-  __ evpmadd52luq(Acc1, allLimbs, A, B, false, Assembler::AVX_512bit);
-  __ evpmadd52huq(Acc2, allLimbs, A, B, false, Assembler::AVX_512bit);
+  __ evpmadd52luq(Acc1, allLimbs, A, B, true, Assembler::AVX_512bit);
+  __ evpmadd52huq(Acc2, allLimbs, A, B, true, Assembler::AVX_512bit);
   __ evpermq(Acc1, allLimbs, shift1R, Acc1, false, Assembler::AVX_512bit);
   __ vpaddq(Acc1, Acc1, Acc2, Assembler::AVX_512bit);
+
+  // Pseudo-Marsenne reduction
+  // To Do: alignment between Acc1 and Acc1l
+  //__ evpermq(Acc1l,0x60,[0,0,0,0,0,0,1,2],Acc1,false,Assembler::AVX_512bit);
+  __ vpbroadcastq(B, ExternalAddress(term()), Assembler::AVX_512bit);
+  __ evpmadd52luq(Acc1l, allLimbs, Acc1, B, false, Assembler::AVX_512bit);
 // End new logic
-  
+
   // Acc1 = 0
   __ vpxorq(Acc1, Acc1, Acc1, Assembler::AVX_512bit);
   for (int i = 0; i< 5; i++) {
