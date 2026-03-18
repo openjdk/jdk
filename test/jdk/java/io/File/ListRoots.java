@@ -62,10 +62,10 @@ public class ListRoots {
             StreamSupport.stream(fs.getRootDirectories().spliterator(), false)
                 .map(Path::toFile);
 
-        if (OperatingSystem.isWindows()) {
-            if (!expectedStream.anyMatch(actualSet::contains)) {
-                System.err.println(actualSet);
-                throw new RuntimeException("Does not intersect FileSystem::getRootDirectories");
+        if (OperatingSystem.isWindows() &&
+                !expectedStream.anyMatch(actualSet::contains)) {
+            System.err.println(actualSet);
+            throw new RuntimeException("Does not intersect FileSystem::getRootDirectories");
         } else { // Unix
             Set<File> expectedSet = expectedStream.collect(Collectors.toSet());
             if (!actualSet.equals(expectedSet)) {
