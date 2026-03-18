@@ -23,11 +23,11 @@
  */
 
 #include "memory/allocation.inline.hpp"
-#include "opto/machnode.hpp"
-#include "opto/matcher.hpp"
 #include "opto/addnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
+#include "opto/machnode.hpp"
+#include "opto/matcher.hpp"
 #include "opto/memnode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/phaseX.hpp"
