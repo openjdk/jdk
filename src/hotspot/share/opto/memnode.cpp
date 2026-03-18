@@ -522,7 +522,7 @@ Node::DomResult MemNode::maybe_all_controls_dominate(Node* dom, Node* sub, Phase
           return dom_result;
         }
       } else {
-        if (n->Value(phase) == Type::TOP) {
+        if (phase != nullptr && n->Value(phase) == Type::TOP) {
           return DomResult::EncounteredDeadCode;
         }
         // First, own control edge.
@@ -555,7 +555,7 @@ Node::DomResult MemNode::maybe_all_controls_dominate(Node* dom, Node* sub, Phase
 // if any, which have been previously discovered by the caller.
 bool MemNode::detect_ptr_independence(Node* p1, AllocateNode* a1,
                                       Node* p2, AllocateNode* a2,
-                                      PhaseGVN* phase) {
+                                      PhaseTransform* phase) {
   // Trivial case: Non-overlapping values. Be careful, we can cast a raw pointer to an oop (e.g. in
   // the allocation pattern) so joining the types only works if both are oops. join may also give
   // an incorrect result when both pointers are nullable and the result is supposed to be
@@ -578,9 +578,9 @@ bool MemNode::detect_ptr_independence(Node* p1, AllocateNode* a1,
     return (a1 != a2);
   } else if (a1 != nullptr) {                  // one allocation a1
     // (Note:  p2->is_Con implies p2->in(0)->is_Root, which dominates.)
-    return all_controls_dominate(p2, a1, phase);
+    return all_controls_dominate(p2, a1);
   } else { //(a2 != null)                   // one allocation a2
-    return all_controls_dominate(p1, a2, phase);
+    return all_controls_dominate(p1, a2);
   }
   return false;
 }
@@ -1674,11 +1674,11 @@ bool LoadNode::can_split_through_phi_base(PhaseGVN* phase) {
   }
 
   if (!mem->is_Phi()) {
-    if (!MemNode::all_controls_dominate(mem, base->in(0), phase)) {
+    if (!MemNode::all_controls_dominate(mem, base->in(0))) {
       return false;
     }
   } else if (base->in(0) != mem->in(0)) {
-    if (!MemNode::all_controls_dominate(mem, base->in(0), phase)) {
+    if (!MemNode::all_controls_dominate(mem, base->in(0))) {
       return false;
     }
   }
@@ -1954,7 +1954,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if (in(MemNode::Control) != nullptr
         && can_remove_control()
         && phase->type(base)->higher_equal(TypePtr::NOTNULL)
-        && all_controls_dominate(base, phase->C->start(), phase)) {
+        && all_controls_dominate(base, phase->C->start())) {
       // A method-invariant, non-null address (constant or 'this' argument).
       set_req(MemNode::Control, nullptr);
       return this;
@@ -4821,7 +4821,7 @@ bool InitializeNode::detect_init_independence(Node* value, PhaseGVN* phase) {
       // must have preceded the init, or else be equal to the init.
       // Even after loop optimizations (which might change control edges)
       // a store is never pinned *before* the availability of its inputs.
-      if (!MemNode::all_controls_dominate(n, this, phase)) {
+      if (!MemNode::all_controls_dominate(n, this)) {
         return false;                  // failed to prove a good control
       }
     }

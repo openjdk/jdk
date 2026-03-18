@@ -55,7 +55,7 @@ public:
   // Supplied function returns the subtractend of the inputs.
   // This also type-checks the inputs for sanity.  Guaranteed never to
   // be passed a TOP or BOTTOM type, these are filtered out by a pre-check.
-  virtual const Type *sub(const Type *, const Type * , PhaseGVN*) const = 0;
+  virtual const Type *sub( const Type *, const Type * ) const = 0;
 
   // Supplied function to return the additive identity type.
   // This is returned whenever the subtracts inputs are the same.
@@ -73,7 +73,7 @@ public:
   SubINode( Node *in1, Node *in2 ) : SubNode(in1,in2) {}
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type *sub(const Type *, const Type * , PhaseGVN*) const;
+  virtual const Type *sub( const Type *, const Type * ) const;
   const Type *add_id() const { return TypeInt::ZERO; }
   const Type *bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
@@ -86,7 +86,7 @@ public:
   SubLNode( Node *in1, Node *in2 ) : SubNode(in1,in2) {}
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type *sub(const Type *, const Type * , PhaseGVN*) const;
+  virtual const Type *sub( const Type *, const Type * ) const;
   const Type *add_id() const { return TypeLong::ZERO; }
   const Type *bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
@@ -110,7 +110,7 @@ public:
   SubFNode( Node *in1, Node *in2 ) : SubFPNode(in1,in2) {}
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type *sub(const Type *, const Type * , PhaseGVN*) const;
+  virtual const Type *sub( const Type *, const Type * ) const;
   const Type   *add_id() const { return TypeF::ZERO; }
   const Type   *bottom_type() const { return Type::FLOAT; }
   virtual uint  ideal_reg() const { return Op_RegF; }
@@ -124,7 +124,7 @@ public:
   SubDNode( Node *in1, Node *in2 ) : SubFPNode(in1,in2) {}
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type *sub(const Type *, const Type * , PhaseGVN*) const;
+  virtual const Type *sub( const Type *, const Type * ) const;
   const Type   *add_id() const { return TypeD::ZERO; }
   const Type   *bottom_type() const { return Type::DOUBLE; }
   virtual uint  ideal_reg() const { return Op_RegD; }
@@ -136,7 +136,7 @@ class SubHFNode : public SubFPNode {
 public:
   SubHFNode(Node* in1, Node* in2) : SubFPNode(in1, in2) {}
   virtual int Opcode() const;
-  virtual const Type* sub(const Type*, const Type*, PhaseGVN*) const;
+  virtual const Type* sub(const Type*, const Type*) const;
   const Type* add_id() const { return TypeH::ZERO; }
   const Type* bottom_type() const { return Type::HALF_FLOAT; }
   virtual uint  ideal_reg() const { return Op_RegF; }
@@ -164,7 +164,7 @@ public:
   CmpINode( Node *in1, Node *in2 ) : CmpNode(in1,in2) {}
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type *sub(const Type *, const Type * , PhaseGVN*) const;
+  virtual const Type *sub( const Type *, const Type * ) const;
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
@@ -174,7 +174,7 @@ class CmpUNode : public CmpNode {
 public:
   CmpUNode( Node *in1, Node *in2 ) : CmpNode(in1,in2) {}
   virtual int Opcode() const;
-  virtual const Type *sub(const Type *, const Type * , PhaseGVN*) const;
+  virtual const Type *sub( const Type *, const Type * ) const;
   const Type* Value(PhaseGVN* phase) const;
   bool is_index_range_check() const;
 };
@@ -198,7 +198,7 @@ public:
   CmpPNode( Node *in1, Node *in2 ) : CmpNode(in1,in2) {}
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type *sub(const Type *, const Type *, PhaseGVN*) const;
+  virtual const Type *sub( const Type *, const Type * ) const;
 };
 
 //------------------------------CmpNNode--------------------------------------
@@ -208,7 +208,7 @@ public:
   CmpNNode( Node *in1, Node *in2 ) : CmpNode(in1,in2) {}
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type *sub(const Type *, const Type * , PhaseGVN*) const;
+  virtual const Type *sub( const Type *, const Type * ) const;
 };
 
 //------------------------------CmpLNode---------------------------------------
@@ -218,7 +218,7 @@ public:
   CmpLNode( Node *in1, Node *in2 ) : CmpNode(in1,in2) {}
   virtual int    Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type *sub(const Type *, const Type * , PhaseGVN*) const;
+  virtual const Type *sub( const Type *, const Type * ) const;
 };
 
 //------------------------------CmpULNode---------------------------------------
@@ -227,7 +227,7 @@ class CmpULNode : public CmpNode {
 public:
   CmpULNode(Node* in1, Node* in2) : CmpNode(in1, in2) { }
   virtual int Opcode() const;
-  virtual const Type* sub(const Type*, const Type*, PhaseGVN*) const;
+  virtual const Type* sub(const Type*, const Type*) const;
 };
 
 //------------------------------CmpL3Node--------------------------------------
@@ -262,7 +262,7 @@ class CmpFNode : public CmpNode {
 public:
   CmpFNode( Node *in1, Node *in2 ) : CmpNode(in1,in2) {}
   virtual int Opcode() const;
-  virtual const Type *sub(const Type *, const Type * , PhaseGVN*) const { ShouldNotReachHere(); return nullptr; }
+  virtual const Type *sub( const Type *, const Type * ) const { ShouldNotReachHere(); return nullptr; }
   const Type* Value(PhaseGVN* phase) const;
 };
 
@@ -290,7 +290,7 @@ class CmpDNode : public CmpNode {
 public:
   CmpDNode( Node *in1, Node *in2 ) : CmpNode(in1,in2) {}
   virtual int Opcode() const;
-  virtual const Type *sub(const Type *, const Type * , PhaseGVN*) const { ShouldNotReachHere(); return nullptr; }
+  virtual const Type *sub( const Type *, const Type * ) const { ShouldNotReachHere(); return nullptr; }
   const Type* Value(PhaseGVN* phase) const;
   virtual Node  *Ideal(PhaseGVN *phase, bool can_reshape);
 };
