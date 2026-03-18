@@ -59,6 +59,20 @@ class ZipCoder {
         return new ZipCoder(charset);
     }
 
+    // Hash function equivalent of checkedHash for String inputs
+    static int hash(String name) {
+        int hsh = name.hashCode();
+        int len = name.length();
+        if (len > 0 && name.charAt(len - 1) != '/') {
+            hsh = hsh * 31 + '/';
+        }
+        return hsh;
+    }
+
+    static String toStringUTF8(byte[] ba, int len) {
+        return UTF8.toString(ba, 0, len);
+    }
+
     /**
      * Constants representing the three possible return values for
      * {@link #compare(String, byte[], int, int, boolean)} when
@@ -82,20 +96,20 @@ class ZipCoder {
          */
         NO_MATCH = 2;
 
-    String toString(byte[] ba, int off, int length) {
-        try {
-            return decoder().decode(ByteBuffer.wrap(ba, off, length)).toString();
-        } catch (CharacterCodingException x) {
-            throw new IllegalArgumentException(x);
-        }
-    }
-
     String toString(byte[] ba, int length) {
         return toString(ba, 0, length);
     }
 
     String toString(byte[] ba) {
         return toString(ba, 0, ba.length);
+    }
+
+    String toString(byte[] ba, int off, int length) {
+        try {
+            return decoder().decode(ByteBuffer.wrap(ba, off, length)).toString();
+        } catch (CharacterCodingException x) {
+            throw new IllegalArgumentException(x);
+        }
     }
 
     byte[] getBytes(String s) {
@@ -112,10 +126,6 @@ class ZipCoder {
         } catch (CharacterCodingException x) {
             throw new IllegalArgumentException(x);
         }
-    }
-
-    static String toStringUTF8(byte[] ba, int len) {
-        return UTF8.toString(ba, 0, len);
     }
 
     boolean isUTF8() {
@@ -149,16 +159,6 @@ class ZipCoder {
             h = 31 * h + '/';
         }
         return h;
-    }
-
-    // Hash function equivalent of checkedHash for String inputs
-    static int hash(String name) {
-        int hsh = name.hashCode();
-        int len = name.length();
-        if (len > 0 && name.charAt(len - 1) != '/') {
-            hsh = hsh * 31 + '/';
-        }
-        return hsh;
     }
 
     private final Charset cs;
