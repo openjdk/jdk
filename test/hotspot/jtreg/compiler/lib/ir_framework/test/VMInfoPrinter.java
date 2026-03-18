@@ -31,15 +31,10 @@ import jdk.test.whitebox.WhiteBox;
  * Prints some Test VM info to the socket.
  */
 public class VMInfoPrinter {
-    public static final String START_VM_INFO = "##### IRMatchingVMInfo - used by TestFramework #####";
-    public static final String END_VM_INFO = "----- END VMInfo -----";
-
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
 
     public static void emit() {
         StringBuilder vmInfo = new StringBuilder();
-        vmInfo.append(START_VM_INFO).append(System.lineSeparator());
-        vmInfo.append("<key>:<value>").append(System.lineSeparator());
 
         // CPU feature independent info
         String cpuFeatures = WHITE_BOX.getCPUFeatures();
@@ -65,7 +60,7 @@ public class VMInfoPrinter {
               .append(useAVXIsDefault ? 1 : 0)
               .append(System.lineSeparator());
 
-        vmInfo.append(END_VM_INFO);
-        TestVmSocket.sendWithTag(MessageTag.VM_INFO, vmInfo.toString());
+        vmInfo.append(MessageTag.END_MARKER);
+        TestVmSocket.sendMultiLine(MessageTag.VM_INFO, vmInfo.toString());
     }
 }

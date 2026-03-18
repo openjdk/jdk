@@ -33,7 +33,7 @@ protected:
   virtual void gen_write_ref_array_pre_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                Register addr, Register count) {}
 
-  void store_check(MacroAssembler* masm, Register obj, Address dst);
+  void store_check(MacroAssembler* masm, Register obj, Address dst, Register rscratch);
 
   virtual void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators, Register addr, Register count, Register tmp);
 

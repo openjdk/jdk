@@ -52,7 +52,7 @@ public class VectorMaskCastIdentityTest {
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_4, "> 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
-        applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true" },
+        applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" },
         applyIf = { "MaxVectorSize", ">= 16" })
     public static int testOneCastToSameType() {
         // The types before and after the cast sequence are the same,
@@ -74,7 +74,7 @@ public class VectorMaskCastIdentityTest {
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_4, "> 0",
                    IRNode.VECTOR_MASK_CAST, "= 0" },
-        applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true" },
+        applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" },
         applyIf = { "MaxVectorSize", ">= 16" })
     public static int testTwoCastToSameType() {
         // The types before and after the cast sequence are the same,
@@ -95,7 +95,7 @@ public class VectorMaskCastIdentityTest {
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_4, "> 0",
                    IRNode.VECTOR_MASK_CAST, "= 1" },
-        applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true" },
+        applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" },
         applyIf = { "MaxVectorSize", ">= 16" })
     public static int testOneCastToDifferentType() {
         // The types before and after the cast sequence are different,
@@ -115,7 +115,7 @@ public class VectorMaskCastIdentityTest {
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_Z, IRNode.VECTOR_SIZE_4, "> 0",
                    IRNode.VECTOR_MASK_CAST, "= 2" },
-        applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true" },
+        applyIfCPUFeatureOr = { "asimd", "true", "avx2", "true", "rvv", "true" },
         applyIf = { "MaxVectorSize", ">= 16" })
     public static int testTwoCastToDifferentType() {
         // The types before and after the cast sequence are different, so the

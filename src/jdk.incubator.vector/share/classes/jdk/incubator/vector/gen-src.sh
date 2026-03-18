@@ -72,6 +72,8 @@ do
   fptype=$type
   Fptype=$Type
   Boxfptype=$Boxtype
+  carriertype=$type
+  Carriertype=$Type
 
   case $type in
     byte)
@@ -90,6 +92,7 @@ do
       ;;
     int)
       Boxtype=Integer
+      Carriertype=Integer
       Wideboxtype=Integer
       Boxbitstype=Integer
       fptype=float
@@ -135,6 +138,7 @@ do
   args="$args -Dbitstype=$bitstype -DBitstype=$Bitstype -DBoxbitstype=$Boxbitstype"
   args="$args -Dfptype=$fptype -DFptype=$Fptype -DBoxfptype=$Boxfptype"
   args="$args -DsizeInBytes=$sizeInBytes"
+  args="$args -Dcarriertype=$carriertype -DCarriertype=$Carriertype"
 
   abstractvectortype=${typeprefix}${Type}Vector
   abstractbitsvectortype=${typeprefix}Vector${Bitstype}

@@ -37,9 +37,9 @@ SPDX-License-Identifier: MIT
 extern "C" {
 #endif /* __cplusplus */
 
-#define GIFLIB_MAJOR 5
-#define GIFLIB_MINOR 2
-#define GIFLIB_RELEASE 2
+#define GIFLIB_MAJOR 6
+#define GIFLIB_MINOR 1
+#define GIFLIB_RELEASE 1
 
 #define GIF_ERROR 0
 #define GIF_OK 1
@@ -60,26 +60,26 @@ typedef unsigned int GifPrefixType;
 typedef int GifWord;
 
 typedef struct GifColorType {
-    GifByteType Red, Green, Blue;
+        GifByteType Red, Green, Blue;
 } GifColorType;
 
 typedef struct ColorMapObject {
-    int ColorCount;
-    int BitsPerPixel;
-    bool SortFlag;
-    GifColorType *Colors; /* on malloc(3) heap */
+        int ColorCount;
+        int BitsPerPixel;
+        bool SortFlag;
+        GifColorType *Colors; /* on malloc(3) heap */
 } ColorMapObject;
 
 typedef struct GifImageDesc {
-    GifWord Left, Top, Width, Height; /* Current image dimensions. */
-    bool Interlace;                   /* Sequential/Interlaced lines. */
-    ColorMapObject *ColorMap;         /* The local color map */
+        GifWord Left, Top, Width, Height; /* Current image dimensions. */
+        bool Interlace;                   /* Sequential/Interlaced lines. */
+        ColorMapObject *ColorMap;         /* The local color map */
 } GifImageDesc;
 
 typedef struct ExtensionBlock {
-    int ByteCount;
-    GifByteType *Bytes;            /* on malloc(3) heap */
-    int Function;                  /* The block function code */
+        int ByteCount;
+        GifByteType *Bytes;            /* on malloc(3) heap */
+        int Function;                  /* The block function code */
 #define CONTINUE_EXT_FUNC_CODE 0x00    /* continuation subblock */
 #define COMMENT_EXT_FUNC_CODE 0xfe     /* comment */
 #define GRAPHICS_EXT_FUNC_CODE 0xf9    /* graphics control (GIF89) */
@@ -88,36 +88,36 @@ typedef struct ExtensionBlock {
 } ExtensionBlock;
 
 typedef struct SavedImage {
-    GifImageDesc ImageDesc;
-    GifByteType *RasterBits;         /* on malloc(3) heap */
-    int ExtensionBlockCount;         /* Count of extensions before image */
-    ExtensionBlock *ExtensionBlocks; /* Extensions before image */
+        GifImageDesc ImageDesc;
+        GifByteType *RasterBits;         /* on malloc(3) heap */
+        int ExtensionBlockCount;         /* Count of extensions before image */
+        ExtensionBlock *ExtensionBlocks; /* Extensions before image */
 } SavedImage;
 
 typedef struct GifFileType {
-    GifWord SWidth, SHeight;   /* Size of virtual canvas */
-    GifWord SColorResolution;  /* How many colors can we generate? */
-    GifWord SBackGroundColor;  /* Background color for virtual canvas */
-    GifByteType AspectByte;    /* Used to compute pixel aspect ratio */
-    ColorMapObject *SColorMap; /* Global colormap, NULL if nonexistent. */
-    int ImageCount;            /* Number of current image (both APIs) */
-    GifImageDesc Image;        /* Current image (low-level API) */
-    SavedImage *SavedImages;   /* Image sequence (high-level API) */
-    int ExtensionBlockCount;   /* Count extensions past last image */
-    ExtensionBlock *ExtensionBlocks; /* Extensions past last image */
-    int Error;                       /* Last error condition reported */
-    void *UserData;                  /* hook to attach user data (TVT) */
-    void *Private;                   /* Don't mess with this! */
+        GifWord SWidth, SHeight;   /* Size of virtual canvas */
+        GifWord SColorResolution;  /* How many colors can we generate? */
+        GifWord SBackGroundColor;  /* Background color for virtual canvas */
+        GifByteType AspectByte;    /* Used to compute pixel aspect ratio */
+        ColorMapObject *SColorMap; /* Global colormap, NULL if nonexistent. */
+        int ImageCount;            /* Number of current image (both APIs) */
+        GifImageDesc Image;        /* Current image (low-level API) */
+        SavedImage *SavedImages;   /* Image sequence (high-level API) */
+        int ExtensionBlockCount;   /* Count extensions past last image */
+        ExtensionBlock *ExtensionBlocks; /* Extensions past last image */
+        int Error;                       /* Last error condition reported */
+        void *UserData;                  /* hook to attach user data (TVT) */
+        void *Private;                   /* Don't mess with this! */
 } GifFileType;
 
 #define GIF_ASPECT_RATIO(n) ((n) + 15.0 / 64.0)
 
 typedef enum {
-    UNDEFINED_RECORD_TYPE,
-    SCREEN_DESC_RECORD_TYPE,
-    IMAGE_DESC_RECORD_TYPE, /* Begin with ',' */
-    EXTENSION_RECORD_TYPE,  /* Begin with '!' */
-    TERMINATE_RECORD_TYPE   /* Begin with ';' */
+        UNDEFINED_RECORD_TYPE,
+        SCREEN_DESC_RECORD_TYPE,
+        IMAGE_DESC_RECORD_TYPE, /* Begin with ',' */
+        EXTENSION_RECORD_TYPE,  /* Begin with '!' */
+        TERMINATE_RECORD_TYPE   /* Begin with ';' */
 } GifRecordType;
 
 /* func type to read gif data from arbitrary sources (TVT) */
@@ -133,14 +133,14 @@ typedef int (*OutputFunc)(GifFileType *, const GifByteType *, int);
 ******************************************************************************/
 
 typedef struct GraphicsControlBlock {
-    int DisposalMode;
+        int DisposalMode;
 #define DISPOSAL_UNSPECIFIED 0 /* No disposal specified. */
 #define DISPOSE_DO_NOT 1       /* Leave image in place */
 #define DISPOSE_BACKGROUND 2   /* Set area too background color */
 #define DISPOSE_PREVIOUS 3     /* Restore to previous content */
-    bool UserInputFlag;    /* User confirmation required before disposal */
-    int DelayTime;         /* pre-display delay in 0.01sec units */
-    int TransparentColor;  /* Palette index for transparency, -1 if none */
+        bool UserInputFlag;    /* User confirmation required before disposal */
+        int DelayTime;         /* pre-display delay in 0.01sec units */
+        int TransparentColor;  /* Palette index for transparency, -1 if none */
 #define NO_TRANSPARENT_COLOR -1
 } GraphicsControlBlock;
 
@@ -153,21 +153,21 @@ GifFileType *EGifOpenFileName(const char *GifFileName,
                               const bool GifTestExistence, int *Error);
 GifFileType *EGifOpenFileHandle(const int GifFileHandle, int *Error);
 GifFileType *EGifOpen(void *userPtr, OutputFunc writeFunc, int *Error);
-int EGifSpew(GifFileType *GifFile);
+int EGifSpew(GifFileType *GifFile, int *ErrorCode);
 const char *EGifGetGifVersion(GifFileType *GifFile); /* new in 5.x */
 int EGifCloseFile(GifFileType *GifFile, int *ErrorCode);
 
 #define E_GIF_SUCCEEDED 0
-#define E_GIF_ERR_OPEN_FAILED 1 /* And EGif possible errors. */
-#define E_GIF_ERR_WRITE_FAILED 2
-#define E_GIF_ERR_HAS_SCRN_DSCR 3
-#define E_GIF_ERR_HAS_IMAG_DSCR 4
-#define E_GIF_ERR_NO_COLOR_MAP 5
-#define E_GIF_ERR_DATA_TOO_BIG 6
-#define E_GIF_ERR_NOT_ENOUGH_MEM 7
-#define E_GIF_ERR_DISK_IS_FULL 8
-#define E_GIF_ERR_CLOSE_FAILED 9
-#define E_GIF_ERR_NOT_WRITEABLE 10
+#define E_GIF_ERR_OPEN_FAILED 201 /* And EGif possible errors. */
+#define E_GIF_ERR_WRITE_FAILED 202
+#define E_GIF_ERR_HAS_SCRN_DSCR 203
+#define E_GIF_ERR_HAS_IMAG_DSCR 204
+#define E_GIF_ERR_NO_COLOR_MAP 205
+#define E_GIF_ERR_DATA_TOO_BIG 206
+#define E_GIF_ERR_NOT_ENOUGH_MEM 207
+#define E_GIF_ERR_DISK_IS_FULL 208
+#define E_GIF_ERR_CLOSE_FAILED 209
+#define E_GIF_ERR_NOT_WRITEABLE 210
 
 /* These are legacy.  You probably do not want to call them directly */
 int EGifPutScreenDesc(GifFileType *GifFile, const int GifWidth,

@@ -75,7 +75,7 @@ public class VectorMaskCastTest {
 
     // Byte
     @Test
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     public static VectorMask<Short> testByte64ToShort128(VectorMask<Byte> v) {
         // A not operation is introduced to prevent the cast from being optimized away.
         return v.not().cast(ShortVector.SPECIES_128);
@@ -212,7 +212,7 @@ public class VectorMaskCastTest {
 
     // Short
     @Test
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     public static VectorMask<Integer> testShort64ToInt128(VectorMask<Short> v) {
         return v.not().cast(IntVector.SPECIES_128);
     }
@@ -227,7 +227,7 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     public static VectorMask<Float> testShort64ToFloat128(VectorMask<Short> v) {
         return v.not().cast(FloatVector.SPECIES_128);
     }
@@ -272,7 +272,7 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     public static VectorMask<Byte> testShort128ToByte64(VectorMask<Short> v) {
         return v.not().cast(ByteVector.SPECIES_64);
     }
@@ -408,7 +408,7 @@ public class VectorMaskCastTest {
 
     // Int
     @Test
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"asimd", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"})
     public static VectorMask<Long> testInt64ToLong128(VectorMask<Integer> v) {
         return v.not().cast(LongVector.SPECIES_128);
     }
@@ -423,7 +423,7 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"asimd", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"})
     public static VectorMask<Double> testInt64ToDouble128(VectorMask<Integer> v) {
         return v.not().cast(DoubleVector.SPECIES_128);
     }
@@ -438,7 +438,7 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     public static VectorMask<Short> testInt128ToShort64(VectorMask<Integer> v) {
         return v.not().cast(ShortVector.SPECIES_64);
     }
@@ -574,7 +574,7 @@ public class VectorMaskCastTest {
 
     // Float
     @Test
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"asimd", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"})
     public static VectorMask<Long> testFloat64ToLong128(VectorMask<Float> v) {
         return v.not().cast(LongVector.SPECIES_128);
     }
@@ -589,7 +589,7 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"asimd", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"})
     public static VectorMask<Double> testFloat64ToDouble128(VectorMask<Float> v) {
         return v.not().cast(DoubleVector.SPECIES_128);
     }
@@ -604,7 +604,7 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     public static VectorMask<Short> testFloat128ToShort64(VectorMask<Float> v) {
         return v.not().cast(ShortVector.SPECIES_64);
     }
@@ -740,7 +740,7 @@ public class VectorMaskCastTest {
 
     // Long
     @Test
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"asimd", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"})
     public static VectorMask<Integer> testLong128ToInt64(VectorMask<Long> v) {
         return v.not().cast(IntVector.SPECIES_64);
     }
@@ -755,7 +755,7 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"asimd", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"})
     public static VectorMask<Float> testLong128ToFloat64(VectorMask<Long> v) {
         return v.not().cast(FloatVector.SPECIES_64);
     }
@@ -876,7 +876,7 @@ public class VectorMaskCastTest {
 
     // Double
     @Test
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"asimd", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"})
     public static VectorMask<Integer> testDouble128ToInt64(VectorMask<Double> v) {
         return v.not().cast(IntVector.SPECIES_64);
     }
@@ -891,7 +891,7 @@ public class VectorMaskCastTest {
     }
 
     @Test
-    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeature = {"asimd", "true"})
+    @IR(counts = { IRNode.VECTOR_MASK_CAST, "> 0" }, applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"})
     public static VectorMask<Float> testDouble128ToFloat64(VectorMask<Double> v) {
         return v.not().cast(FloatVector.SPECIES_64);
     }

@@ -967,6 +967,22 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         }
     }
 
+    @Override
+    protected void writeStickyClasses() throws IOException {
+        ClassLoaderData.theNullClassLoaderData().classesDo(k -> {
+            if (k instanceof InstanceKlass) {
+                try {
+                    int size = 1 + (int)VM.getVM().getAddressSize();
+                    writeHeapRecordPrologue(size);
+                    out.writeByte((byte)HPROF_GC_ROOT_STICKY_CLASS);
+                    writeClassID(k);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            }
+        });
+    }
+
     protected void writeObjectArray(ObjArray array) throws IOException {
         int headerSize = getArrayHeaderSize(true);
         final int length = calculateArrayMaxLength(array.getLength(),
@@ -1302,6 +1318,10 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         OopHandle handle = (oop != null)? oop.getHandle() : null;
         long address = getAddressValue(handle);
         writeObjectID(address);
+    }
+
+    private void writeClassID(Klass k) throws IOException {
+        writeObjectID(k.getJavaMirror());
     }
 
     private void writeSymbolID(Symbol sym) throws IOException {

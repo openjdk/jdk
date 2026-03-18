@@ -98,7 +98,7 @@ public class IRMethod implements IRMethodMatchable {
         List<MatchResult> match = matcher.match();
         long endTime = System.nanoTime();
         long duration = (endTime - startTime);
-        System.out.println("Verifying IR rules for " + name() + ": " + duration + " ns = " + (duration / 1000000) + " ms");
+        System.out.println("Verifying IR rules for " + name() + ": " + duration + " ns = " + (duration / 1_000_000) + " ms");
         return new IRMethodMatchResult(method, match);
     }
 }

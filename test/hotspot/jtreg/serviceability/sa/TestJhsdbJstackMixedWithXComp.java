@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, NTT DATA
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,6 +36,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @test id=xcomp
  * @bug 8370176
  * @requires vm.hasSA
+ * @requires vm.gc != "Z"
  * @requires os.family == "linux"
  * @requires os.arch == "amd64"
  * @library /test/lib
@@ -46,6 +47,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @test id=xcomp-preserve-frame-pointer
  * @bug 8370176
  * @requires vm.hasSA
+ * @requires vm.gc != "Z"
  * @requires os.family == "linux"
  * @requires os.arch == "amd64"
  * @library /test/lib
@@ -56,6 +58,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @test id=xcomp-disable-tiered-compilation
  * @bug 8370176
  * @requires vm.hasSA
+ * @requires vm.gc != "Z"
  * @requires os.family == "linux"
  * @requires os.arch == "amd64"
  * @library /test/lib

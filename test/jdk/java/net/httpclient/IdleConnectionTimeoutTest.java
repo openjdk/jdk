@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,6 @@ import jdk.httpclient.test.lib.quic.QuicServerConnection;
 import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,7 +54,10 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.net.http.HttpClient.Version.HTTP_2;
-import static org.testng.Assert.assertEquals;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 /*
  * @test
@@ -68,45 +69,45 @@ import static org.testng.Assert.assertEquals;
  *        jdk.httpclient.test.lib.http2.Http2TestServer
  *        jdk.httpclient.test.lib.http3.Http3TestServer
  *
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout=1
+ * @run junit/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout=1
  *                                                             IdleConnectionTimeoutTest
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout=20
- *                                                             IdleConnectionTimeoutTest
- *
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout.h2=1
- *                                                             IdleConnectionTimeoutTest
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout.h2=20
- *                                                             IdleConnectionTimeoutTest
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout.h2=abc
- *                                                             IdleConnectionTimeoutTest
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout.h2=-1
+ * @run junit/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout=20
  *                                                             IdleConnectionTimeoutTest
  *
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout.h3=1
+ * @run junit/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout.h2=1
  *                                                             IdleConnectionTimeoutTest
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout.h3=20
+ * @run junit/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout.h2=20
  *                                                             IdleConnectionTimeoutTest
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout.h3=abc
+ * @run junit/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout.h2=abc
  *                                                             IdleConnectionTimeoutTest
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout.h3=-1
+ * @run junit/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout.h2=-1
+ *                                                             IdleConnectionTimeoutTest
+ *
+ * @run junit/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout.h3=1
+ *                                                             IdleConnectionTimeoutTest
+ * @run junit/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout.h3=20
+ *                                                             IdleConnectionTimeoutTest
+ * @run junit/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout.h3=abc
+ *                                                             IdleConnectionTimeoutTest
+ * @run junit/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout.h3=-1
  *                                                             IdleConnectionTimeoutTest
  */
 public class IdleConnectionTimeoutTest {
 
-    URI timeoutUriH2, noTimeoutUriH2, timeoutUriH3, noTimeoutUriH3, getH3;
+    private static URI timeoutUriH2, noTimeoutUriH2, timeoutUriH3, noTimeoutUriH3, getH3;
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     static volatile QuicServerConnection latestServerConn;
     final String KEEP_ALIVE_PROPERTY = "jdk.httpclient.keepalive.timeout";
     final String IDLE_CONN_PROPERTY_H2 = "jdk.httpclient.keepalive.timeout.h2";
     final String IDLE_CONN_PROPERTY_H3 = "jdk.httpclient.keepalive.timeout.h3";
-    final String TIMEOUT_PATH = "/serverTimeoutHandler";
-    final String NO_TIMEOUT_PATH = "/noServerTimeoutHandler";
+    static final String TIMEOUT_PATH = "/serverTimeoutHandler";
+    static final String NO_TIMEOUT_PATH = "/noServerTimeoutHandler";
     static Http2TestServer http2TestServer;
     static Http3TestServer http3TestServer;
     static final PrintStream testLog = System.err;
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         http2TestServer = new Http2TestServer(false, 0);
         http2TestServer.addHandler(new ServerTimeoutHandlerH2(), TIMEOUT_PATH);
         http2TestServer.addHandler(new ServerNoTimeoutHandlerH2(), NO_TIMEOUT_PATH);
@@ -212,7 +213,7 @@ public class IdleConnectionTimeoutTest {
         HttpRequest hreq = HttpRequest.newBuilder(uri).version(version).GET()
                 .setOption(H3_DISCOVERY, config).build();
         HttpResponse<String> hresp = runRequest(hc, hreq, 2750);
-        assertEquals(hresp.statusCode(), 200, "idleConnectionTimeoutEvent was not expected but occurred");
+        assertEquals(200, hresp.statusCode(), "idleConnectionTimeoutEvent was not expected but occurred");
     }
 
     private void testNoTimeout(HttpClient hc, URI uri, Version version) {
@@ -221,13 +222,13 @@ public class IdleConnectionTimeoutTest {
         HttpRequest hreq = HttpRequest.newBuilder(uri).version(version).GET()
                 .setOption(H3_DISCOVERY,  config).build();
         HttpResponse<String> hresp = runRequest(hc, hreq, 0);
-        assertEquals(hresp.statusCode(), 200, "idleConnectionTimeoutEvent was not expected but occurred");
+        assertEquals(200, hresp.statusCode(), "idleConnectionTimeoutEvent was not expected but occurred");
     }
 
     private HttpResponse<String> runRequest(HttpClient hc, HttpRequest req, int sleepTime) {
         CompletableFuture<HttpResponse<String>> request = hc.sendAsync(req, HttpResponse.BodyHandlers.ofString(UTF_8));
         HttpResponse<String> hresp = request.join();
-        assertEquals(hresp.statusCode(), 200);
+        assertEquals(200, hresp.statusCode());
         try {
             Thread.sleep(sleepTime);
         } catch (InterruptedException e) {

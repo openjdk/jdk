@@ -3517,11 +3517,6 @@ char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_
   return reserve_large_pages(bytes, addr, exec);
 }
 
-bool os::pd_release_memory_special(char* base, size_t bytes) {
-  assert(base != nullptr, "Sanity check");
-  return pd_release_memory(base, bytes);
-}
-
 static void warn_fail_commit_memory(char* addr, size_t bytes, bool exec) {
   int err = os::get_last_error();
   char buf[256];
@@ -6279,6 +6274,10 @@ const void* os::get_saved_assert_context(const void** sigInfo) {
   }
   *sigInfo = nullptr;
   return nullptr;
+}
+
+void os::print_open_file_descriptors(outputStream* st) {
+  // File descriptor counting not supported on Windows.
 }
 
 /*

@@ -23,6 +23,7 @@
  */
 
 #include "ci/ciUtilities.hpp"
+#include "code/aotCodeCache.hpp"
 #include "gc/shared/c2/cardTableBarrierSetC2.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
@@ -114,13 +115,20 @@ Node* CardTableBarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& access
   return result;
 }
 
-Node* CardTableBarrierSetC2::byte_map_base_node(GraphKit* kit) const {
+Node* CardTableBarrierSetC2::byte_map_base_node(IdealKit* kit) const {
   // Get base of card map
+#if INCLUDE_CDS
+  if (AOTCodeCache::is_on_for_dump()) {
+    // load the card table address from the AOT Runtime Constants area
+    Node* byte_map_base_adr = kit->makecon(TypeRawPtr::make(AOTRuntimeConstants::card_table_base_address()));
+    return kit->load_aot_const(byte_map_base_adr, TypeRawPtr::NOTNULL);
+  }
+#endif
   CardTable::CardValue* card_table_base = ci_card_table_address_const();
    if (card_table_base != nullptr) {
      return kit->makecon(TypeRawPtr::make((address)card_table_base));
    } else {
-     return kit->null();
+     return kit->makecon(Type::get_zero_type(T_ADDRESS));
    }
 }
 
@@ -168,7 +176,7 @@ void CardTableBarrierSetC2::post_barrier(GraphKit* kit,
   Node* card_offset = __ URShiftX(cast, __ ConI(CardTable::card_shift()));
 
   // Combine card table base and card offset
-  Node* card_adr = __ AddP(__ top(), byte_map_base_node(kit), card_offset);
+  Node* card_adr = __ AddP(__ top(), byte_map_base_node(&ideal), card_offset);
 
   // Get the alias_index for raw card-mark memory
   int adr_type = Compile::AliasIdxRaw;
