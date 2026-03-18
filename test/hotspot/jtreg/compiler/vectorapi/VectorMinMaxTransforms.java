@@ -466,7 +466,6 @@ public class VectorMinMaxTransforms {
     }
 
     @Run(test = "testByteMinIdentity")
-    @Warmup(10000)
     public void runByteMinIdentity() {
         for (int i = 0; i < B_SPECIES.loopBound(LENGTH); i += B_SPECIES.length()) {
             testByteMinIdentity(i);
@@ -486,7 +485,6 @@ public class VectorMinMaxTransforms {
     }
 
     @Run(test = "testByteMaxIdentity")
-    @Warmup(10000)
     public void runByteMaxIdentity() {
         for (int i = 0; i < B_SPECIES.loopBound(LENGTH); i += B_SPECIES.length()) {
             testByteMaxIdentity(i);
@@ -515,12 +513,7 @@ public class VectorMinMaxTransforms {
             testByteMinIdeal(i);
         }
         for (int i = 0; i < B_SPECIES.loopBound(LENGTH); i++) {
-            byte expected = (byte) Math.min(Math.min(ba[i] & 0xFF, bb[i] & 0xFF), Math.max(ba[i] & 0xFF, bb[i] & 0xFF));
-            if (ba[i] >= 0 && bb[i] >= 0) {
-                expected = (byte) Math.min(ba[i], bb[i]);
-            } else {
-                expected = (byte) Math.min(Math.min(ba[i], bb[i]), Math.max(ba[i], bb[i]));
-            }
+            byte expected = (byte) Math.min(Math.min(ba[i], bb[i]), Math.max(ba[i], bb[i]));
             Verify.checkEQ(br[i], expected);
         }
     }
