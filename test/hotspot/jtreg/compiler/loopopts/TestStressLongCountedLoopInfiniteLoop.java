@@ -31,6 +31,8 @@
  *                   -XX:CompileCommand=compileonly,${test.main.class}::test ${test.main.class}
  */
 
+package compiler.loopopts;
+
 public class TestStressLongCountedLoopInfiniteLoop {
     static int RANGE;
 
