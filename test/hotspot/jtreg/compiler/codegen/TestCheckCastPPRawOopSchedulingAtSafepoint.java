@@ -23,27 +23,41 @@
 
 /*
  * @test
- * @bug 8372649
+ * @bug 8372649 8376189
  * @summary CheckCastPP with RawPtr input can be scheduled below a safepoint during C2
  *          post-regalloc block-local scheduling, causing a live raw oop at the safepoint
  *          instead of a corresponding oop in the OopMap.
  * @library /test/lib
+ * @modules jdk.incubator.vector
  * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:TrackedInitializationLimit=0
- *                   -XX:CompileCommand=compileonly,${test.main.class}::test*
- *                   -XX:+OptoScheduling ${test.main.class}
+ *                   -XX:CompileCommand=compileonly,${test.main.class}::test8372649
+ *                   -XX:+OptoScheduling ${test.main.class} 8372649
+ * @run main/othervm -XX:+OptoScheduling ${test.main.class} 8376189
  */
 
 package compiler.codegen;
 
+import jdk.incubator.vector.*;
 import jdk.test.lib.Asserts;
 
 public class TestCheckCastPPRawOopSchedulingAtSafepoint {
+    private static final VectorSpecies<Integer> SPECIES_I = IntVector.SPECIES_64;
 
     static public void main(String[] args) {
-        for (int j = 6; 116 > j; ++j) {
-            test();
+        String mode = args[0];
+        if ("8372649".equals(mode)) {
+            run8372649();
+        } else if ("8376189".equals(mode)) {
+            run8376189();
         }
-        Asserts.assertEQ(Test.c,43560L);
+    }
+
+    // JDK-8372649
+    static void run8372649(){
+        for (int j = 6; 116 > j; ++j) {
+            test8372649();
+        }
+        Asserts.assertEQ(Test.c, 43560L);
     }
 
     static class Test {
@@ -52,7 +66,7 @@ public class TestCheckCastPPRawOopSchedulingAtSafepoint {
         static long c;
     }
 
-    static void test() {
+    static void test8372649() {
         float[][] g = new float[Test.a][Test.a];
         for (int d = 7; d < 16; d++) {
             long e = 1;
@@ -66,5 +80,23 @@ public class TestCheckCastPPRawOopSchedulingAtSafepoint {
                 Test.c += g[i][j];
             }
         }
+    }
+
+    // JDK-8376189
+    static void run8376189(){
+        int[] a = new int[10_000];
+        int r = 0;
+        for (int i = 0; i < 10_000; i++) {
+            r = test8376189(a);         
+        }
+        Asserts.assertEQ(r, 0);
+    }
+
+    public static int test8376189(int[] a) {
+        var mins = IntVector.broadcast(SPECIES_I, a[0]);
+        for (int i = 0; i < SPECIES_I.loopBound(a.length); i += SPECIES_I.length()) {
+            mins = IntVector.fromArray(SPECIES_I, a, 0);
+        }
+        return mins.reduceLanes(VectorOperators.MIN);
     }
 }
