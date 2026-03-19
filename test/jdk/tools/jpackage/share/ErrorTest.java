@@ -140,11 +140,9 @@ public final class ErrorTest {
             var appImageDir = (Path)APP_IMAGE.expand(cmd).orElseThrow();
             // Replace the default Info.plist file with an empty one.
             var plistFile = new MacBundle(appImageDir).infoPlistFile();
-            TKit.trace(String.format("Create invalid plist file in [%s]", plistFile));
+            TKit.trace(String.format("Create invalid plist file [%s]", plistFile));
             createXml(plistFile, xml -> {
                 writePList(xml, toXmlConsumer(() -> {
-                    writeDict(xml, toXmlConsumer(() -> {
-                    }));
                 }));
             });
             return appImageDir;
@@ -715,7 +713,7 @@ public final class ErrorTest {
 
    private static void testMacSignWithoutIdentityWithNewTKitState(TestSpec spec) {
         final Token keychainToken = spec.expectedMessages().stream().flatMap(cannedStr -> {
-            return Stream.of(cannedStr.args()).filter(Token.class::isInstance).map(Token.class::cast).filter(token -> {
+            return cannedStr.args().stream().filter(Token.class::isInstance).map(Token.class::cast).filter(token -> {
                 switch (token) {
                     case EMPTY_KEYCHAIN, KEYCHAIN_WITH_APP_IMAGE_CERT, KEYCHAIN_WITH_PKG_CERT -> {
                         return true;
@@ -945,13 +943,13 @@ public final class ErrorTest {
                             .error("error.msi-product-version-components", "1.2.3.4.5")
                             .advice("error.version-string-wrong-format.advice"),
                     testSpec().type(type).addArgs("--app-version", "256.1")
-                            .error("error.msi-product-version-major-out-of-range", "256.1")
+                            .error("error.msi-product-version-major-out-of-range")
                             .advice("error.version-string-wrong-format.advice"),
                     testSpec().type(type).addArgs("--app-version", "1.256")
-                            .error("error.msi-product-version-minor-out-of-range", "1.256")
+                            .error("error.msi-product-version-minor-out-of-range")
                             .advice("error.version-string-wrong-format.advice"),
                     testSpec().type(type).addArgs("--app-version", "1.2.65536")
-                            .error("error.msi-product-version-build-out-of-range", "1.2.65536")
+                            .error("error.msi-product-version-build-out-of-range")
                             .advice("error.version-string-wrong-format.advice")
             );
         }).flatMap(x -> x).map(TestSpec.Builder::create).toList());

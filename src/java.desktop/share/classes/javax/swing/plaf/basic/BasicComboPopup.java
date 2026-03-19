@@ -1070,11 +1070,11 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
                 ComponentOrientation o =(ComponentOrientation)e.getNewValue();
 
                 JList<?> list = getList();
-                if (list!=null && list.getComponentOrientation()!=o) {
+                if (list != null && list.getComponentOrientation()!=o) {
                     list.setComponentOrientation(o);
                 }
 
-                if (scroller!=null && scroller.getComponentOrientation()!=o) {
+                if (scroller != null && scroller.getComponentOrientation()!=o) {
                     scroller.setComponentOrientation(o);
                 }
 

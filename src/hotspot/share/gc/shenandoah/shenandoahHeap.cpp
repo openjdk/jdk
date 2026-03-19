@@ -261,7 +261,7 @@ jint ShenandoahHeap::initialize() {
   //
   // Worker threads must be initialized after the barrier is configured
   //
-  _workers = new ShenandoahWorkerThreads("Shenandoah GC Threads", _max_workers);
+  _workers = new ShenandoahWorkerThreads("ShenWorker", _max_workers);
   if (_workers == nullptr) {
     vm_exit_during_initialization("Failed necessary allocation.");
   } else {

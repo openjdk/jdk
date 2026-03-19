@@ -256,12 +256,6 @@
           "before pushing a continuation entry")                            \
           range(1, INT_MAX/2)                                               \
                                                                             \
-  product_pd(bool, NeverActAsServerClassMachine,                            \
-          "(Deprecated) Never act like a server-class machine")             \
-                                                                            \
-  product(bool, AlwaysActAsServerClassMachine, false,                       \
-          "(Deprecated) Always act like a server-class machine")            \
-                                                                            \
   product(bool, AggressiveHeap, false,                                      \
           "(Deprecated) Optimize heap options for long-running memory "     \
           "intensive apps")                                                 \
@@ -479,11 +473,6 @@
   product(uintx, NewRatio, 2,                                               \
           "Ratio of old/new generation sizes")                              \
           range(0, max_uintx-1)                                             \
-                                                                            \
-  product_pd(size_t, NewSizeThreadIncrease,                                 \
-          "Additional size added to desired new generation size per "       \
-          "non-daemon thread (in bytes)")                                   \
-          range(0, max_uintx)                                               \
                                                                             \
   product(uintx, QueuedAllocationWarningCount, 0,                           \
           "Number of times an allocation that queues behind a GC "          \

@@ -175,13 +175,12 @@ public class MacDmgPackagerTest {
 
     private static void runPackagingMock(Path workDir, MacDmgSystemEnvironment sysEnv) {
 
-        var app = new ApplicationBuilder()
+        var appBuilder = new ApplicationBuilder()
                 .appImageLayout(MacPackagingPipeline.APPLICATION_LAYOUT)
                 .runtimeBuilder(createRuntimeBuilder())
-                .name("foo")
-                .create();
+                .name("foo");
 
-        var macApp = new MacApplicationBuilder(app).create();
+        var macApp = new MacApplicationBuilder(appBuilder).create();
 
         var macDmgPkg = new MacDmgPackageBuilder(new MacPackageBuilder(new PackageBuilder(macApp, MAC_DMG))).create();
 

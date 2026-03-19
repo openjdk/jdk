@@ -194,9 +194,6 @@ void CompilerConfig::set_client_emulation_mode_flags() {
   FLAG_SET_ERGO(EnableJVMCI, false);
   FLAG_SET_ERGO(UseJVMCICompiler, false);
 #endif
-  if (FLAG_IS_DEFAULT(NeverActAsServerClassMachine)) {
-    FLAG_SET_ERGO(NeverActAsServerClassMachine, true);
-  }
   if (FLAG_IS_DEFAULT(InitialCodeCacheSize)) {
     FLAG_SET_ERGO(InitialCodeCacheSize, 160*K);
   }
@@ -447,9 +444,6 @@ void CompilerConfig::set_jvmci_specific_flags() {
       if (FLAG_IS_DEFAULT(InitialCodeCacheSize)) {
         FLAG_SET_DEFAULT(InitialCodeCacheSize, MAX2(16*M, InitialCodeCacheSize));
       }
-      if (FLAG_IS_DEFAULT(NewSizeThreadIncrease)) {
-        FLAG_SET_DEFAULT(NewSizeThreadIncrease, MAX2(4*K, NewSizeThreadIncrease));
-      }
       if (FLAG_IS_DEFAULT(Tier3DelayOn)) {
         // This effectively prevents the compile broker scheduling tier 2
         // (i.e., limited C1 profiling) compilations instead of tier 3
@@ -551,17 +545,10 @@ bool CompilerConfig::should_set_client_emulation_mode_flags() {
   return false;
 #endif
 
-  if (has_c1()) {
-    if (!is_compilation_mode_selected()) {
-      if (NeverActAsServerClassMachine) {
-        return true;
-      }
-    } else if (!has_c2() && !is_jvmci_compiler()) {
-      return true;
-    }
-  }
-
-  return false;
+  return has_c1() &&
+         is_compilation_mode_selected() &&
+         !has_c2() &&
+         !is_jvmci_compiler();
 }
 
 void CompilerConfig::ergo_initialize() {
