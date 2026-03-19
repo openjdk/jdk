@@ -450,27 +450,11 @@ void G1CMRootMemRegions::cancel_scan() {
 void G1CMRootMemRegions::scan_finished() {
   assert(scan_in_progress(), "pre-condition");
 
-  if (!_should_abort.load_relaxed()) {
-    assert(_claimed_root_regions.load_relaxed() >= num_root_regions(),
-           "we should have claimed all root regions, claimed %zu, length = %u",
-           _claimed_root_regions.load_relaxed(), num_root_regions());
-  }
+  assert(_should_abort.load_relaxed() || _claimed_root_regions.load_relaxed() >= num_root_regions(),
+         "we should have claimed all root regions, claimed %zu, length = %u",
+         _claimed_root_regions.load_relaxed(), num_root_regions());
 
   notify_scan_done();
-}
-
-bool G1CMRootMemRegions::wait_until_scan_finished() {
-  if (!scan_in_progress()) {
-    return false;
-  }
-
-  {
-    MonitorLocker ml(G1RootRegionScan_lock, Mutex::_no_safepoint_check_flag);
-    while (scan_in_progress()) {
-      ml.wait();
-    }
-  }
-  return true;
 }
 
 G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
@@ -1120,45 +1104,71 @@ void G1ConcurrentMark::scan_root_region(const MemRegion* region, uint worker_id)
 
 class G1CMRootRegionScanTask : public WorkerTask {
   G1ConcurrentMark* _cm;
+  bool _concurrent;
+
 public:
-  G1CMRootRegionScanTask(G1ConcurrentMark* cm) :
-    WorkerTask("G1 Root Region Scan"), _cm(cm) { }
+  G1CMRootRegionScanTask(G1ConcurrentMark* cm, bool concurrent) :
+    WorkerTask("G1 Root Region Scan"), _cm(cm), _concurrent(concurrent) { }
 
   void work(uint worker_id) {
+    SuspendibleThreadSetJoiner sts_join(_concurrent);
+
     G1CMRootMemRegions* root_regions = _cm->root_regions();
     const MemRegion* region = root_regions->claim_next();
     while (region != nullptr) {
       _cm->scan_root_region(region, worker_id);
+      if (_concurrent) {
+        SuspendibleThreadSet::yield();
+        // If we yielded, a GC may have processed all root regions,
+        // so the loop will naturally exit on the next claim_next() call.
+        // Same if a Full GC signalled abort of the concurrent mark.
+      }
       region = root_regions->claim_next();
     }
   }
 };
 
-void G1ConcurrentMark::scan_root_regions() {
+void G1ConcurrentMark::scan_root_regions(WorkerThreads* workers, bool concurrent) {
   // scan_in_progress() will have been set to true only if there was
   // at least one root region to scan. So, if it's false, we
   // should not attempt to do any further work.
+  // Note that we might have already aborted the concurrent cycle, or ran into
+  // a GC that does the actual work when we reach here.
+  // Both if a Full GC occurring right after starting the concurrent cycle and a
+  // young gc doing the work, this is fine.
+  // Concurrent worker threads will immediately synchronize in the STS when
+  // starting the task, hence stop, continue after that safepoint, and notice that
+  // they are actually done.
   if (root_regions()->scan_in_progress()) {
-    assert(!has_aborted(), "Aborting before root region scanning is finished not supported.");
 
     // Assign one worker to each root-region but subject to the max constraint.
+    // The constraint is also important to avoid accesses beyond the allocated per-worker
+    // marking helper data structures. We might get passed different WorkerThreads with
+    // different number of threads (potential worker ids) than helper data structures when
+    // completing this work during GC.
     const uint num_workers = MIN2(root_regions()->num_root_regions(),
                                   _max_concurrent_workers);
 
-    G1CMRootRegionScanTask task(this);
+    G1CMRootRegionScanTask task(this, concurrent);
     log_debug(gc, ergo)("Running %s using %u workers for %u work units.",
                         task.name(), num_workers, root_regions()->num_root_regions());
-    _concurrent_workers->run_task(&task, num_workers);
+    workers->run_task(&task, num_workers);
 
-    // It's possible that has_aborted() is true here without actually
-    // aborting the survivor scan earlier. This is OK as it's
-    // mainly used for sanity checking.
-    root_regions()->scan_finished();
+    // If we were interrupted by a GC, the scan_in_progress flag has already been cleared.
+    // Do not clear again.
+    if (root_regions()->scan_in_progress()) {
+      root_regions()->scan_finished();
+    }
   }
 }
 
-bool G1ConcurrentMark::wait_until_root_region_scan_finished() {
-  return root_regions()->wait_until_scan_finished();
+void G1ConcurrentMark::scan_root_regions_concurrently() {
+  scan_root_regions(_concurrent_workers, true /* concurrent */);
+}
+
+void G1ConcurrentMark::complete_root_regions_scan_in_safepoint() {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be");
+  scan_root_regions(_g1h->workers(), false /* concurrent */);
 }
 
 void G1ConcurrentMark::add_root_region(G1HeapRegion* r) {
@@ -1169,9 +1179,17 @@ bool G1ConcurrentMark::is_root_region(G1HeapRegion* r) {
   return root_regions()->contains(MemRegion(top_at_mark_start(r), r->top()));
 }
 
-void G1ConcurrentMark::root_region_scan_abort_and_wait() {
+void G1ConcurrentMark::abort_root_region_scan_and_wait() {
+  assert(!SafepointSynchronize::is_at_safepoint(), "should not abort in safepoint");
   root_regions()->abort();
-  root_regions()->wait_until_scan_finished();
+
+  // Wait until we get the notification.
+  {
+    MonitorLocker ml(G1RootRegionScan_lock, Mutex::_no_safepoint_check_flag);
+    while (root_regions()->scan_in_progress()) {
+      ml.wait();
+    }
+  }
 }
 
 void G1ConcurrentMark::concurrent_cycle_start() {
@@ -1950,10 +1968,10 @@ void G1ConcurrentMark::print_stats() {
 bool G1ConcurrentMark::concurrent_cycle_abort() {
   // If we start the compaction before the CM threads finish
   // scanning the root regions we might trip them over as we'll
-  // be moving objects / updating references. So let's wait until
-  // they are done. By telling them to abort, they should complete
-  // early.
-  root_region_scan_abort_and_wait();
+  // be moving objects / updating references. Since the root region
+  // scan synchronized with the safepoint, just tell it to abort.
+  // It will notice when the threads start up again later.
+  root_regions()->abort();
 
   // We haven't started a concurrent cycle no need to do anything; we might have
   // aborted the marking because of shutting down though. In this case the marking
@@ -1983,7 +2001,11 @@ bool G1ConcurrentMark::concurrent_cycle_abort() {
 }
 
 void G1ConcurrentMark::abort_marking_threads() {
-  assert(!_root_regions.scan_in_progress(), "still doing root region scan");
+  // Root region scan may still be active:
+  // * during shutdown it has already been waited for and is not in progress.
+  //assert(!_g1h->is_shutting_down() || !_root_regions.scan_in_progress(), "still doing root region scan during shutdown");
+  //assert(_g1h->is_shutting_down() || _root_regions.should_abort(), "still not aborted during full gc");
+  // * during full gc root region scan may be in progress, just aborted.
   _has_aborted.store_relaxed(true);
   _first_overflow_barrier_sync.abort();
   _second_overflow_barrier_sync.abort();

@@ -251,12 +251,8 @@ void G1YoungCollector::wait_for_root_region_scanning() {
   // root regions as it's the only way to ensure that all the
   // objects on them have been correctly scanned before we start
   // moving them during the GC.
-  bool waited = concurrent_mark()->wait_until_root_region_scan_finished();
-  Tickspan wait_time;
-  if (waited) {
-    wait_time = (Ticks::now() - start);
-  }
-  phase_times()->record_root_region_scan_wait_time(wait_time.seconds() * MILLIUNITS);
+  concurrent_mark()->complete_root_regions_scan_in_safepoint();
+  phase_times()->record_root_region_scan_wait_time((Ticks::now() - start).seconds() * MILLIUNITS);
 }
 
 class G1PrintCollectionSetClosure : public G1HeapRegionClosure {

@@ -311,8 +311,9 @@ public:
   // Reset the claiming / scanning of the root regions.
   void prepare_for_scan();
 
-  // Forces get_next() to return null so that the iteration aborts early.
+  // Forces claim_next() to return null so that the iteration aborts early.
   void abort() { _should_abort.store_relaxed(true); }
+  bool should_abort() const { return _should_abort.load_relaxed(); }
 
   // Return true if the CM thread are actively scanning root regions,
   // false otherwise.
@@ -335,10 +336,6 @@ public:
   // who's waiting on it. If aborted is false, assume that all regions
   // have been claimed.
   void scan_finished();
-
-  // If CM threads are still scanning root regions, wait until they
-  // are done. Return true if we had to wait, false otherwise.
-  bool wait_until_scan_finished();
 };
 
 // This class manages data structures and methods for doing liveness analysis in
@@ -653,15 +650,20 @@ public:
 
   // Scan all the root regions and mark everything reachable from
   // them.
-  void scan_root_regions();
-  bool wait_until_root_region_scan_finished();
   void add_root_region(G1HeapRegion* r);
   bool is_root_region(G1HeapRegion* r);
-  void root_region_scan_abort_and_wait();
+
+  void scan_root_regions_concurrently();
+  void complete_root_regions_scan_in_safepoint();
+
+  void abort_root_region_scan_and_wait();
 
 private:
   G1CMRootMemRegions* root_regions() { return &_root_regions; }
 
+  // Perform root region scan until all root regions have been processed, or
+  // the process has been aborted.
+  void scan_root_regions(WorkerThreads* workers, bool concurrent);
   // Scan a single root MemRegion to mark everything reachable from it.
   void scan_root_region(const MemRegion* region, uint worker_id);
 

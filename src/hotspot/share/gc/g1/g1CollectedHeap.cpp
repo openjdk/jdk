@@ -1652,6 +1652,7 @@ jint G1CollectedHeap::initialize() {
 }
 
 void G1CollectedHeap::stop() {
+  assert_not_at_safepoint();
   // Stop all concurrent threads. We do this to make sure these threads
   // do not continue to execute and access resources (e.g. logging)
   // that are destroyed during shutdown.
