@@ -105,7 +105,7 @@ public:
     // Take snapshot of current pause type at start as it may be modified during gc.
     // The strings for all Concurrent Start pauses are the same, so the parameter
     // does not matter here.
-    _pause_type(_collector->collector_state()->young_gc_pause_type(false /* concurrent_operation_is_full_mark */)),
+    _pause_type(_collector->collector_state()->gc_pause_type(false /* concurrent_operation_is_full_mark */)),
     _pause_cause(cause),
     // Fake a "no cause" and manually add the correct string in update_young_gc_name()
     // to make the string look more natural.
@@ -1180,7 +1180,7 @@ void G1YoungCollector::collect() {
 
     // Need to report the collection pause now since record_collection_pause_end()
     // modifies it to the next state.
-    jtm.report_pause_type(collector_state()->young_gc_pause_type(_concurrent_operation_is_full_mark));
+    jtm.report_pause_type(collector_state()->gc_pause_type(_concurrent_operation_is_full_mark));
 
     policy()->record_young_collection_end(_concurrent_operation_is_full_mark, evacuation_alloc_failed(), _allocation_word_size);
   }

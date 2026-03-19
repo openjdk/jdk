@@ -791,7 +791,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
   double end_time_sec = Ticks::now().seconds();
   double pause_time_ms = (end_time_sec - start_time_sec) * 1000.0;
 
-  G1GCPauseType this_pause = collector_state()->young_gc_pause_type(concurrent_operation_is_full_mark);
+  G1GCPauseType this_pause = collector_state()->gc_pause_type(concurrent_operation_is_full_mark);
   bool is_young_only_pause = G1GCPauseTypeHelper::is_young_only_pause(this_pause);
 
   if (G1GCPauseTypeHelper::is_concurrent_start_pause(this_pause)) {

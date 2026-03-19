@@ -102,7 +102,7 @@ public:
   bool is_in_reset_for_next_cycle() const;
 
   // Calculate GC Pause Type from internal state.
-  G1GCPauseType young_gc_pause_type(bool concurrent_operation_is_full_mark) const;
+  G1GCPauseType gc_pause_type(bool concurrent_operation_is_full_mark) const;
 };
 
 #endif // SHARE_GC_G1_G1COLLECTORSTATE_HPP

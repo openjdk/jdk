@@ -28,7 +28,7 @@
 #include "gc/g1/g1GCPauseType.hpp"
 #include "runtime/safepoint.hpp"
 
-G1GCPauseType G1CollectorState::young_gc_pause_type(bool concurrent_operation_is_full_mark) const {
+G1GCPauseType G1CollectorState::gc_pause_type(bool concurrent_operation_is_full_mark) const {
   assert(SafepointSynchronize::is_at_safepoint(), "must be");
   switch (_phase) {
     case YoungNormal: return G1GCPauseType::YoungGC;
