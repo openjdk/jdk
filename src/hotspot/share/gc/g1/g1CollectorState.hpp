@@ -36,7 +36,7 @@
 // We split the Young-only phase into three parts to cover interesting
 // sub-phases and avoid separate tracking.
 class G1CollectorState {
-  enum Phase {
+  enum class Phase {
     // Indicates that the next GC in the Young-Only phase will (likely) be a "Normal"
     // young GC.
     YoungNormal,
@@ -71,28 +71,28 @@ class G1CollectorState {
 
 public:
   G1CollectorState() :
-    _phase(YoungNormal),
+    _phase(Phase::YoungNormal),
     _initiate_conc_mark_if_possible(false) { }
 
   // Phase setters
-  void set_in_normal_young_gc() { _phase = YoungNormal; }
-  void set_in_space_reclamation_phase() { _phase = Mixed; }
-  void set_in_full_gc() { _phase = FullGC; }
+  void set_in_normal_young_gc() { _phase = Phase::YoungNormal; }
+  void set_in_space_reclamation_phase() { _phase = Phase::Mixed; }
+  void set_in_full_gc() { _phase = Phase::FullGC; }
 
   // Pause setters
-  void set_in_young_gc_before_mixed() { _phase = YoungLastYoung; }
-  void set_in_concurrent_start_gc() { _phase = YoungConcurrentStart; _initiate_conc_mark_if_possible = false; }
+  void set_in_young_gc_before_mixed() { _phase = Phase::YoungLastYoung; }
+  void set_in_concurrent_start_gc() { _phase = Phase::YoungConcurrentStart; _initiate_conc_mark_if_possible = false; }
 
   void set_initiate_conc_mark_if_possible(bool v) { _initiate_conc_mark_if_possible = v; }
 
   // Phase getters
-  bool is_in_young_only_phase() const { return _phase == YoungNormal || _phase == YoungConcurrentStart || _phase == YoungLastYoung; }
-  bool is_in_mixed_phase() const { return _phase == Mixed; }
+  bool is_in_young_only_phase() const { return _phase == Phase::YoungNormal || _phase == Phase::YoungConcurrentStart || _phase == Phase::YoungLastYoung; }
+  bool is_in_mixed_phase() const { return _phase == Phase::Mixed; }
 
   // Specific pauses
-  bool is_in_young_gc_before_mixed() const { return _phase == YoungLastYoung; }
-  bool is_in_full_gc() const { return _phase == FullGC; }
-  bool is_in_concurrent_start_gc() const { return _phase == YoungConcurrentStart; }
+  bool is_in_young_gc_before_mixed() const { return _phase == Phase::YoungLastYoung; }
+  bool is_in_full_gc() const { return _phase == Phase::FullGC; }
+  bool is_in_concurrent_start_gc() const { return _phase == Phase::YoungConcurrentStart; }
 
   bool initiate_conc_mark_if_possible() const { return _initiate_conc_mark_if_possible; }
 
