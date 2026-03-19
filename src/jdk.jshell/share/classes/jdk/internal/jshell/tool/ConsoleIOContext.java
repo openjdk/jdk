@@ -49,6 +49,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -202,6 +203,7 @@ class ConsoleIOContext extends IOContext {
               .filter(key -> key.startsWith(HISTORY_LINE_PREFIX))
               .sorted()
               .map(key -> repl.prefs.get(key))
+              .filter(Objects::nonNull)
               .forEach(loadHistory::add);
 
         for (ListIterator<String> it = loadHistory.listIterator(); it.hasNext(); ) {

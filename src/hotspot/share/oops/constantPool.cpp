@@ -564,7 +564,7 @@ void ConstantPool::remove_resolved_klass_if_non_deterministic(int cp_index) {
   }
 
   LogStreamHandle(Trace, aot, resolve) log;
-  if (log.is_enabled()) {
+  if (log.is_enabled() && !CDSConfig::is_dumping_preimage_static_archive()) {
     ResourceMark rm;
     log.print("%s klass  CP entry [%3d]: %s %s",
               (can_archive ? "archived" : "reverted"),

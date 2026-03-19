@@ -1646,17 +1646,17 @@ public class SwingUtilities2 {
             if (container.isFocusCycleRoot()) {
                 FocusTraversalPolicy policy = container.getFocusTraversalPolicy();
                 Component comp = policy.getDefaultComponent(container);
-                if (comp!=null) {
+                if (comp != null) {
                     comp.requestFocus(FocusEvent.Cause.TRAVERSAL);
                     return comp;
                 }
             }
             Container rootAncestor = container.getFocusCycleRootAncestor();
-            if (rootAncestor!=null) {
+            if (rootAncestor != null) {
                 FocusTraversalPolicy policy = rootAncestor.getFocusTraversalPolicy();
                 Component comp = policy.getComponentAfter(rootAncestor, container);
 
-                if (comp!=null && SwingUtilities.isDescendingFrom(comp, container)) {
+                if (comp != null && SwingUtilities.isDescendingFrom(comp, container)) {
                     comp.requestFocus(FocusEvent.Cause.TRAVERSAL);
                     return comp;
                 }
