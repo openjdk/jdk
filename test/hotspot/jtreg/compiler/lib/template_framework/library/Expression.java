@@ -383,6 +383,23 @@ public class Expression {
     }
 
     /**
+     * {@link Nesting} defines the different ways of selecting {@link Expression}s
+     * to nest based on their types.
+     */
+    public enum Nesting {
+        /**
+         * Only nest {@Expression}s where the argument and return types match exactly
+         * based on the implementation of {@link CodeGenerateionDataNameType#isSubtypeOf}.
+         */
+        EXACT,
+        /**
+         * Only nest {@Expression}s where the return type is a subtype of the argument
+         * type based on the implemetation of {@link CodeGenerateionDataNameType#isSubtypeOf}.
+         */
+        SUBTYPE
+    }
+
+    /**
      * Create a nested {@link Expression} with a specified {@code returnType} from a
      * set of {@code expressions}.
      *
@@ -391,11 +408,13 @@ public class Expression {
      *                    the nested {@link Expression}.
      * @param maxNumberOfUsedExpressions the maximal number of {@link Expression}s from the
      *                                   {@code expressions} are nested.
+     * @param nesting control the {@link Nesting} of the sampled {@link Expression}s.
      * @return a new randomly nested {@link Expression}.
      */
     public static Expression nestRandomly(CodeGenerationDataNameType returnType,
                                           List<Expression> expressions,
-                                          int maxNumberOfUsedExpressions) {
+                                          int maxNumberOfUsedExpressions,
+                                          Nesting nesting) {
         List<Expression> filtered = expressions.stream().filter(e -> e.returnType.isSubtypeOf(returnType)).toList();
 
         if (filtered.isEmpty()) {
@@ -406,7 +425,7 @@ public class Expression {
         Expression expression = filtered.get(r);
 
         for (int i = 1; i < maxNumberOfUsedExpressions; i++) {
-            expression = expression.nestRandomly(expressions);
+            expression = expression.nestRandomly(expressions, nesting);
         }
         return expression;
     }
@@ -416,12 +435,16 @@ public class Expression {
      * {@code this} {@link Expression}, ensuring compatibility of argument and return type.
      *
      * @param nestingExpressions list of expressions we sample from for the inner {@link Expression}.
+     * @param nesting control the {@link Nesting} of the sampled {@link Expression}s.
      * @return a new nested {@link Expression}.
      */
-    public Expression nestRandomly(List<Expression> nestingExpressions) {
+    public Expression nestRandomly(List<Expression> nestingExpressions, Nesting nesting) {
         int argumentIndex = RANDOM.nextInt(this.argumentTypes.size());
         CodeGenerationDataNameType argumentType = this.argumentTypes.get(argumentIndex);
-        List<Expression> filtered = nestingExpressions.stream().filter(e -> e.returnType.isSubtypeOf(argumentType)).toList();
+        List<Expression> filtered = nestingExpressions.stream()
+                                                      .filter(e -> e.returnType.isSubtypeOf(argumentType) &&
+                                                                (nesting == Nesting.EXACT ? argumentType.isSubtypeOf(e.returnType) : true))
+                                                      .toList();
 
         if (filtered.isEmpty()) {
             // Found no expression that has a matching returnType.

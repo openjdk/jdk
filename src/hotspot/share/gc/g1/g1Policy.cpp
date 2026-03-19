@@ -579,9 +579,6 @@ void G1Policy::record_full_collection_end(size_t allocation_word_size) {
   collector_state()->set_in_young_gc_before_mixed(false);
   collector_state()->set_initiate_conc_mark_if_possible(need_to_start_conc_mark("end of Full GC", allocation_word_size));
   collector_state()->set_in_concurrent_start_gc(false);
-  collector_state()->set_mark_in_progress(false);
-  collector_state()->set_mark_or_rebuild_in_progress(false);
-  collector_state()->set_clear_bitmap_in_progress(false);
 
   _eden_surv_rate_group->start_adding_regions();
   // also call this on any additional surv rate groups
@@ -709,7 +706,6 @@ void G1Policy::record_concurrent_mark_remark_end() {
   double elapsed_time_ms = (end_time_sec - start_time_sec) * 1000.0;
   _analytics->report_concurrent_mark_remark_times_ms(elapsed_time_ms);
   record_pause(G1GCPauseType::Remark, start_time_sec, end_time_sec);
-  collector_state()->set_mark_in_progress(false);
 }
 
 G1CollectionSetCandidates* G1Policy::candidates() const {
@@ -739,7 +735,7 @@ double G1Policy::constant_other_time_ms(double pause_time_ms) const {
 }
 
 bool G1Policy::about_to_start_mixed_phase() const {
-  return _g1h->concurrent_mark()->in_progress() || collector_state()->in_young_gc_before_mixed();
+  return collector_state()->is_in_concurrent_cycle() || collector_state()->in_young_gc_before_mixed();
 }
 
 bool G1Policy::need_to_start_conc_mark(const char* source, size_t allocation_word_size) {
@@ -971,12 +967,8 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
 
   _eden_surv_rate_group->start_adding_regions();
 
-  assert(!(G1GCPauseTypeHelper::is_concurrent_start_pause(this_pause) && collector_state()->mark_or_rebuild_in_progress()),
-         "If the last pause has been concurrent start, we should not have been in the marking window");
-  if (G1GCPauseTypeHelper::is_concurrent_start_pause(this_pause)) {
-    collector_state()->set_mark_in_progress(concurrent_operation_is_full_mark);
-    collector_state()->set_mark_or_rebuild_in_progress(concurrent_operation_is_full_mark);
-  }
+  assert(!(G1GCPauseTypeHelper::is_concurrent_start_pause(this_pause) && collector_state()->is_in_concurrent_cycle()),
+         "If the last pause has been concurrent start, we should not have been in the marking cycle");
 
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
 
@@ -1235,7 +1227,7 @@ bool G1Policy::force_concurrent_start_if_outside_cycle(GCCause::Cause gc_cause) 
   // We actually check whether we are marking here and not if we are in a
   // reclamation phase. This means that we will schedule a concurrent mark
   // even while we are still in the process of reclaiming memory.
-  bool during_cycle = _g1h->concurrent_mark()->in_progress();
+  bool during_cycle = collector_state()->is_in_concurrent_cycle();
   if (!during_cycle) {
     log_debug(gc, ergo)("Request concurrent cycle initiation (requested by GC cause). "
                         "GC cause: %s",
@@ -1328,8 +1320,8 @@ void G1Policy::decide_on_concurrent_start_pause() {
   // We do not allow concurrent start to be piggy-backed on a mixed GC.
   assert(!collector_state()->in_concurrent_start_gc() ||
          collector_state()->in_young_only_phase(), "sanity");
-  // We also do not allow mixed GCs during marking.
-  assert(!collector_state()->mark_or_rebuild_in_progress() || collector_state()->in_young_only_phase(), "sanity");
+  // We also do not allow mixed GCs during marking/rebuilding.
+  assert(!collector_state()->is_in_mark_or_rebuild() || collector_state()->in_young_only_phase(), "sanity %d %d", collector_state()->is_in_concurrent_cycle(), collector_state()->in_young_only_phase());
 }
 
 void G1Policy::record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_sets) {
@@ -1349,8 +1341,6 @@ void G1Policy::record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_se
     log_debug(gc, ergo)("request young-only gcs (candidate old regions not available)");
   }
   collector_state()->set_in_young_gc_before_mixed(mixed_gc_pending);
-  collector_state()->set_mark_or_rebuild_in_progress(false);
-  collector_state()->set_clear_bitmap_in_progress(true);
 
   double end_sec = os::elapsedTime();
   double start_sec = cur_pause_start_sec();

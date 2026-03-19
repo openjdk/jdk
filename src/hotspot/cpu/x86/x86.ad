@@ -8852,6 +8852,21 @@ instruct membar_release_lock()
   ins_pipe(empty);
 %}
 
+instruct membar_storeload(rFlagsReg cr) %{
+  match(MemBarStoreLoad);
+  effect(KILL cr);
+  ins_cost(400);
+
+  format %{
+    $$template
+    $$emit$$"lock addl [rsp + #0], 0\t! membar_storeload"
+  %}
+  ins_encode %{
+    __ membar(Assembler::StoreLoad);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct membar_volatile(rFlagsReg cr) %{
   match(MemBarVolatile);
   effect(KILL cr);
@@ -8877,6 +8892,21 @@ instruct unnecessary_membar_volatile()
   format %{ "MEMBAR-volatile (unnecessary so empty encoding)" %}
   ins_encode();
   ins_pipe(empty);
+%}
+
+instruct membar_full(rFlagsReg cr) %{
+  match(MemBarFull);
+  effect(KILL cr);
+  ins_cost(400);
+
+  format %{
+    $$template
+    $$emit$$"lock addl [rsp + #0], 0\t! membar_full"
+  %}
+  ins_encode %{
+    __ membar(Assembler::StoreLoad);
+  %}
+  ins_pipe(pipe_slow);
 %}
 
 instruct membar_storestore() %{
