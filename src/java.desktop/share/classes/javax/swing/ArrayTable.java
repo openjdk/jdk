@@ -145,7 +145,7 @@ class ArrayTable implements Cloneable {
      */
     public Object get(Object key) {
         Object value = null;
-        if (table !=null) {
+        if (table != null) {
             if (isArray()) {
                 Object[] array = (Object[])table;
                 for (int i = 0; i<array.length-1; i+=2) {
@@ -181,7 +181,7 @@ class ArrayTable implements Cloneable {
      */
     public boolean containsKey(Object key) {
         boolean contains = false;
-        if (table !=null) {
+        if (table != null) {
             if (isArray()) {
                 Object[] array = (Object[])table;
                 for (int i = 0; i<array.length-1; i+=2) {
@@ -206,7 +206,7 @@ class ArrayTable implements Cloneable {
         if (key==null) {
             return null;
         }
-        if (table !=null) {
+        if (table != null) {
             if (isArray()){
                 // Is key on the list?
                 int index = -1;

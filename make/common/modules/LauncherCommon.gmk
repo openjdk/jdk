@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,14 @@ include ProcessMarkdown.gmk
 include $(TOPDIR)/make/ToolsJdk.gmk
 
 LAUNCHER_SRC := $(TOPDIR)/src/java.base/share/native/launcher
+
+ifeq ($(call isTargetOs, aix), true)
+  ADD_PLATFORM_INCLUDE_DIR := -I$(TOPDIR)/src/java.base/aix/native/include
+endif
+
 LAUNCHER_CFLAGS += -I$(TOPDIR)/src/java.base/share/native/launcher \
     -I$(TOPDIR)/src/java.base/share/native/libjli \
+    $(ADD_PLATFORM_INCLUDE_DIR) \
     -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjli \
     -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libjli \
     #

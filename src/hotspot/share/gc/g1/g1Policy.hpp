@@ -115,7 +115,7 @@ class G1Policy: public CHeapObj<mtGC> {
   G1ConcurrentStartToMixedTimeTracker _concurrent_start_to_mixed;
 
   bool should_update_surv_rate_group_predictors() {
-    return collector_state()->in_young_only_phase() && !collector_state()->mark_or_rebuild_in_progress();
+    return collector_state()->in_young_only_phase() && !collector_state()->is_in_mark_or_rebuild();
   }
 
   double pending_cards_processing_time() const;

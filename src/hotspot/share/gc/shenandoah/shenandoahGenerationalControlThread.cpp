@@ -55,7 +55,7 @@ ShenandoahGenerationalControlThread::ShenandoahGenerationalControlThread() :
   _heap(ShenandoahGenerationalHeap::heap()),
   _age_period(0) {
   shenandoah_assert_generational();
-  set_name("Shenandoah Control Thread");
+  set_name("ShenControl");
   create_and_start();
 }
 
