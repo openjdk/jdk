@@ -2916,8 +2916,8 @@ void Scheduling::ComputeRegisterAntidependencies(Block *b) {
 
     if (last_safept_node != end_node &&
         m != last_safept_node) {
-      // Add precedence edge from following safepoint to use of derived pointer
       bool need_safept_prec = false;
+      // Add precedence edge from following safepoint to use of derived pointer
       for (uint k = 1; k < m->req(); k++) {
         const Type *t = m->in(k)->bottom_type();
         if (t->isa_oop_ptr() &&
