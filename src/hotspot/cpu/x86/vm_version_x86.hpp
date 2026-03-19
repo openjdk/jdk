@@ -383,6 +383,8 @@ protected:
     decl(HT,                ht                )  \
     decl(3DNOW_PREFETCH,    3dnowpref         )  /* Processor supports 3dnow prefetch and prefetchw instructions */ \
                                                  /* may not necessarily support other 3dnow instructions */ \
+    decl(SSE,               sse               )  \
+    decl(SSE2,              sse2              )  \
     decl(SSE3,              sse3              ) /* SSE3 comes from cpuid 1 (ECX) */ \
     decl(SSSE3,             ssse3             ) \
     decl(SSE4A,             sse4a             ) \
@@ -726,6 +728,15 @@ private:
   static bool os_supports_avx_vectors();
   static bool os_supports_apx_egprs();
   static void get_processor_features();
+  static void set_vendor_agnostic_vm_config();
+  static void set_vendor_specific_vm_config();
+  static void set_config_dependent_on_vendor_config();
+  static void configure_intrinsics();
+  static void log_additional_cpu_info();
+
+  static void zx_config();
+  static void amd_config();
+  static void intel_config();
 
 public:
   // Offsets for cpuid asm stub
