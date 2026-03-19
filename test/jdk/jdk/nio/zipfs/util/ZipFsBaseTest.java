@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  */
 package util;
 
-import org.testng.annotations.DataProvider;
+import org.junit.jupiter.params.provider.Arguments;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,7 +34,6 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.SecureRandom;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -43,7 +42,9 @@ import java.util.zip.ZipFile;
 
 import static java.lang.String.format;
 import static java.util.stream.Collectors.joining;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class ZipFsBaseTest {
 
@@ -53,49 +54,46 @@ public class ZipFsBaseTest {
     private static final SecureRandom random = new SecureRandom();
 
     /**
-     * DataProvider used to specify the Zip FS properties to use when creating
+     * MethodSource used to specify the Zip FS properties to use when creating
      * the Zip File along with the compression method used
      *
      * @return Zip FS properties and compression method used by the tests
      */
-    @DataProvider(name = "zipfsMap")
-    protected Object[][] zipfsMap() {
-        return new Object[][]{
-                {Map.of("create", "true"), ZipEntry.DEFLATED},
-                {Map.of("create", "true", "noCompression", "true"),
-                        ZipEntry.STORED},
-                {Map.of("create", "true", "noCompression", "false"),
-                        ZipEntry.DEFLATED}
-        };
+    protected static Stream<Arguments> zipfsMap() {
+        return Stream.of(
+                Arguments.of(Map.of("create", "true"), ZipEntry.DEFLATED),
+                Arguments.of(Map.of("create", "true", "noCompression", "true"),
+                        ZipEntry.STORED),
+                Arguments.of(Map.of("create", "true", "noCompression", "false"),
+                        ZipEntry.DEFLATED)
+        );
     }
 
     /*
-     * DataProvider used to verify that an entry can be copied or moved within
+     * MethodSource used to verify that an entry can be copied or moved within
      * a Zip file system using a different compression from when the entry
      * was first created
      */
-    @DataProvider(name = "copyMoveMap")
-    protected Object[][] copyMoveMap() {
-        return new Object[][]{
-                {Map.of("create", "true"), ZipEntry.DEFLATED, ZipEntry.STORED},
-                {Map.of("create", "true", "noCompression", "true"),
-                        ZipEntry.STORED, ZipEntry.DEFLATED},
-                {Map.of("create", "true", "noCompression", "false"),
-                        ZipEntry.DEFLATED, ZipEntry.STORED}
-        };
+    protected static Stream<Arguments> copyMoveMap() {
+        return Stream.of(
+                Arguments.of(Map.of("create", "true"), ZipEntry.DEFLATED, ZipEntry.STORED),
+                Arguments.of(Map.of("create", "true", "noCompression", "true"),
+                        ZipEntry.STORED, ZipEntry.DEFLATED),
+                Arguments.of(Map.of("create", "true", "noCompression", "false"),
+                        ZipEntry.DEFLATED, ZipEntry.STORED)
+        );
     }
 
     /**
-     * DataProvider with the compression methods to be used for a given test run
+     * MethodSource with the compression methods to be used for a given test run
      *
      * @return Compression methods to test with
      */
-    @DataProvider(name = "compressionMethods")
-    protected Object[][] compressionMethods() {
-        return new Object[][]{
-                {ZipEntry.DEFLATED},
-                {ZipEntry.STORED}
-        };
+    protected static Stream<Arguments> compressionMethods() {
+        return Stream.of(
+                Arguments.of(ZipEntry.DEFLATED),
+                Arguments.of(ZipEntry.STORED)
+        );
     }
 
     /**
@@ -137,7 +135,7 @@ public class ZipFsBaseTest {
         // check entries with Zip API
         try (ZipFile zf = new ZipFile(zipfile.toFile())) {
             // check entry count
-            assertEquals(entries.length, zf.size());
+            assertEquals(zf.size(), entries.length);
 
             // Check compression method and content of each entry
             for (Entry e : entries) {
@@ -147,7 +145,7 @@ public class ZipFsBaseTest {
                     System.out.printf("Entry Name: %s, method: %s, Expected Method: %s%n",
                             e.name, ze.getMethod(), e.method);
                 }
-                assertEquals(e.method, ze.getMethod());
+                assertEquals(ze.getMethod(), e.method);
                 try (InputStream in = zf.getInputStream(ze)) {
                     byte[] bytes = in.readAllBytes();
                     if (DEBUG) {
@@ -155,7 +153,7 @@ public class ZipFsBaseTest {
                                 new String(bytes), new String(e.bytes));
                     }
 
-                    assertTrue(Arrays.equals(bytes, e.bytes));
+                    assertArrayEquals(bytes, e.bytes);
                 }
             }
         }
@@ -166,7 +164,7 @@ public class ZipFsBaseTest {
             Path top = fs.getPath("/");
             long count = Files.find(top, Integer.MAX_VALUE,
                     (path, attrs) -> attrs.isRegularFile()).count();
-            assertEquals(entries.length, count);
+            assertEquals(count, entries.length);
 
             // Check content of each entry
             for (Entry e : entries) {
@@ -175,7 +173,7 @@ public class ZipFsBaseTest {
                     System.out.printf("Entry name = %s, bytes= %s, actual=%s%n", e.name,
                             new String(Files.readAllBytes(file)), new String(e.bytes));
                 }
-                assertEquals(Files.readAllBytes(file), e.bytes);
+                assertArrayEquals(e.bytes, Files.readAllBytes(file));
             }
         }
     }
@@ -189,7 +187,7 @@ public class ZipFsBaseTest {
      * @param source  The path of the file to add to the Zip File
      * @throws IOException If an error occurs while creating/updating the Zip file
      */
-    protected void zip(Path zipFile, Map<String, String> env, Path source) throws IOException {
+    protected static void zip(Path zipFile, Map<String, String> env, Path source) throws IOException {
         if (DEBUG) {
             System.out.printf("File:%s, adding:%s%n", zipFile.toAbsolutePath(), source);
         }
@@ -208,7 +206,7 @@ public class ZipFsBaseTest {
      * @param entries The entries to add to the Zip File
      * @throws IOException If an error occurs while creating the Zip file
      */
-    protected void zip(Path zipFile, Map<String, ?> env,
+    protected static void zip(Path zipFile, Map<String, ?> env,
                     Entry... entries) throws IOException {
         if (DEBUG) {
             System.out.printf("Creating file: %s, env: %s%n", zipFile, formatMap(env));
