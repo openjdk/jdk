@@ -317,63 +317,60 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
     type = ftype->make_oopptr();
   }
   Node* res = nullptr;
+  Node* base = ac->in(ArrayCopyNode::Src);
+  Node* adr = nullptr;
+  const TypePtr* adr_type = nullptr;
   if (ac->is_clonebasic()) {
     assert(ac->in(ArrayCopyNode::Src) != ac->in(ArrayCopyNode::Dest), "clone source equals destination");
-    Node* base = ac->in(ArrayCopyNode::Src);
-    Node* adr = _igvn.transform(new AddPNode(base, base, _igvn.MakeConX(offset)));
-    const TypePtr* adr_type = _igvn.type(base)->is_ptr()->add_offset(offset);
-    MergeMemNode* mergemen = _igvn.transform(MergeMemNode::make(mem))->as_MergeMem();
-    BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-    res = ArrayCopyNode::load(bs, &_igvn, ctl, mergemen, adr, adr_type, type, bt);
+    adr = _igvn.transform(new AddPNode(base, base, _igvn.MakeConX(offset)));
+    adr_type = _igvn.type(base)->is_ptr()->add_offset(offset);
   } else {
-    if (ac->modifies(offset, offset, &_igvn, true)) {
-      assert(ac->in(ArrayCopyNode::Dest) == alloc->result_cast(), "arraycopy destination should be allocation's result");
-      uint shift = exact_log2(type2aelembytes(bt));
-      Node* src_pos = ac->in(ArrayCopyNode::SrcPos);
-      Node* dest_pos = ac->in(ArrayCopyNode::DestPos);
-      const TypeInt* src_pos_t = _igvn.type(src_pos)->is_int();
-      const TypeInt* dest_pos_t = _igvn.type(dest_pos)->is_int();
+    if (!ac->modifies(offset, offset, &_igvn, true)) {
+      return nullptr;
+    }
+    assert(ac->in(ArrayCopyNode::Dest) == alloc->result_cast(), "arraycopy destination should be allocation's result");
+    uint shift = exact_log2(type2aelembytes(bt));
+    Node* src_pos = ac->in(ArrayCopyNode::SrcPos);
+    Node* dest_pos = ac->in(ArrayCopyNode::DestPos);
+    const TypeInt* src_pos_t = _igvn.type(src_pos)->is_int();
+    const TypeInt* dest_pos_t = _igvn.type(dest_pos)->is_int();
 
-      Node* adr = nullptr;
-      const TypePtr* adr_type = nullptr;
-      if (src_pos_t->is_con() && dest_pos_t->is_con()) {
-        intptr_t off = ((src_pos_t->get_con() - dest_pos_t->get_con()) << shift) + offset;
-        Node* base = ac->in(ArrayCopyNode::Src);
-        adr = _igvn.transform(new AddPNode(base, base, _igvn.MakeConX(off)));
-        adr_type = _igvn.type(base)->is_ptr()->add_offset(off);
-        if (ac->in(ArrayCopyNode::Src) == ac->in(ArrayCopyNode::Dest)) {
-          // Don't emit a new load from src if src == dst but try to get the value from memory instead
-          return value_from_mem(ac, ctl, ft, ftype, adr_type->isa_oopptr(), alloc);
-        }
-      } else {
-        Node* diff = _igvn.transform(new SubINode(ac->in(ArrayCopyNode::SrcPos), ac->in(ArrayCopyNode::DestPos)));
-#ifdef _LP64
-        diff = _igvn.transform(new ConvI2LNode(diff));
-#endif
-        diff = _igvn.transform(new LShiftXNode(diff, _igvn.intcon(shift)));
-
-        Node* off = _igvn.transform(new AddXNode(_igvn.MakeConX(offset), diff));
-        Node* base = ac->in(ArrayCopyNode::Src);
-        adr = _igvn.transform(new AddPNode(base, base, off));
-        adr_type = _igvn.type(base)->is_ptr()->add_offset(Type::OffsetBot);
-        if (ac->in(ArrayCopyNode::Src) == ac->in(ArrayCopyNode::Dest)) {
-          // Non constant offset in the array: we can't statically
-          // determine the value
-          return nullptr;
-        }
+    if (src_pos_t->is_con() && dest_pos_t->is_con()) {
+      intptr_t off = ((src_pos_t->get_con() - dest_pos_t->get_con()) << shift) + offset;
+      adr = _igvn.transform(new AddPNode(base, base, _igvn.MakeConX(off)));
+      adr_type = _igvn.type(base)->is_ptr()->add_offset(off);
+      if (ac->in(ArrayCopyNode::Src) == ac->in(ArrayCopyNode::Dest)) {
+        // Don't emit a new load from src if src == dst but try to get the value from memory instead
+        return value_from_mem(ac, ctl, ft, ftype, adr_type->isa_oopptr(), alloc);
       }
-      // Create the rematerialization load ...
-      MergeMemNode* mergemem = _igvn.transform(MergeMemNode::make(mem))->as_MergeMem();
-      BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-      res = ArrayCopyNode::load(bs, &_igvn, ctl, mergemem, adr, adr_type, type, bt);
-      // ... and ensure that pinning the rematerialization load inside the uncommon path is safe.
-      if (mem != ac->memory() && ctl->is_Proj() && ctl->as_Proj()->is_uncommon_trap_proj() && res != nullptr && res->is_Load() &&
-          has_interfering_store(ac, res->as_Load(), &_igvn)) {
-        // Not safe: use control and memory from the arraycopy to ensure correct memory state.
-        _igvn.remove_dead_node(res); // Clean up the unusable rematerialization load.
-        return make_arraycopy_load(ac, offset, ac->control(), ac->memory(), ft, ftype, alloc);
+    } else {
+      Node* diff = _igvn.transform(new SubINode(ac->in(ArrayCopyNode::SrcPos), ac->in(ArrayCopyNode::DestPos)));
+#ifdef _LP64
+      diff = _igvn.transform(new ConvI2LNode(diff));
+#endif
+      diff = _igvn.transform(new LShiftXNode(diff, _igvn.intcon(shift)));
+
+      Node* off = _igvn.transform(new AddXNode(_igvn.MakeConX(offset), diff));
+      adr = _igvn.transform(new AddPNode(base, base, off));
+      adr_type = _igvn.type(base)->is_ptr()->add_offset(Type::OffsetBot);
+      if (ac->in(ArrayCopyNode::Src) == ac->in(ArrayCopyNode::Dest)) {
+        // Non constant offset in the array: we can't statically
+        // determine the value
+        return nullptr;
       }
     }
+  }
+  assert(adr != nullptr && adr_type != nullptr, "sanity");
+  // Create the rematerialization load ...
+  MergeMemNode* mergemem = _igvn.transform(MergeMemNode::make(mem))->as_MergeMem();
+  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+  res = ArrayCopyNode::load(bs, &_igvn, ctl, mergemem, adr, adr_type, type, bt);
+  // ... and ensure that pinning the rematerialization load inside the uncommon path is safe.
+  if (mem != ac->memory() && ctl->is_Proj() && ctl->as_Proj()->is_uncommon_trap_proj() && res != nullptr && res->is_Load() &&
+      has_interfering_store(ac, res->as_Load(), &_igvn)) {
+    // Not safe: use control and memory from the arraycopy to ensure correct memory state.
+    _igvn.remove_dead_node(res); // Clean up the unusable rematerialization load.
+    return make_arraycopy_load(ac, offset, ac->control(), ac->memory(), ft, ftype, alloc);
   }
   if (res != nullptr) {
     if (ftype->isa_narrowoop()) {

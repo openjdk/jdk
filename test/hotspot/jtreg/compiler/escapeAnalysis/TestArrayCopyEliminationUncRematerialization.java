@@ -215,9 +215,31 @@ public class TestArrayCopyEliminationUncRematerialization {
                 """
             ));
 
+            var testMethodClone = Template.make("testName", "tmp", (String testName, TestTemplates templates) -> scope(
+                let("type", pty),
+                """
+                static #type test#{testName}(#type[] realSrc, boolean flag) {
+                    """,
+                    templates.prelude.asToken(),
+                    """
+                    // Set up a src array with statically known length, so scalar replacement works.
+                    #type[] src = new #type[COPY_LEN];
+                    System.arraycopy(realSrc, COPY_IDX, src, 0, COPY_LEN);
+
+                    // Clone the src array into a dst array to get the clonebasic variant of the ArraycopyNode.
+                    #type[] dst = src.clone();
+                    """,
+                    templates.store.asToken(),
+                    templates.trap.asToken(),
+                    """
+                    return dst[RETURN_IDX];
+                }
+                """
+            ));
+
             // For methods with a constant offset into src, validate that only the necessary rematerialization nodes are
             // in the common path.
-            var testCaseConst = Template.make("testName", "loadCount", "tmp", (String testName, Integer loadCout, TestTemplates templates) -> scope(
+            var testCaseConst = Template.make("testName", "loadCount", "tmp", (String testName, Integer loadCount, TestTemplates templates) -> scope(
                 let("typeAbbrev", pty.abbrev().equals("C") ? "US" : pty.abbrev()),
                 runTestConst.asToken(testName),
                 """
@@ -238,12 +260,24 @@ public class TestArrayCopyEliminationUncRematerialization {
             ));
 
             // For methods with a parametrized offset into src, only validate the correctness of the return value.
-            var testCaseIdx = Template.make("testName", "tmp", (String testName, TestTemplates templates) -> scope(let("ptyShort", pty.abbrev()),
+            var testCaseIdx = Template.make("testName", "tmp", (String testName, TestTemplates templates) -> scope(
                 runTestIdx.asToken(testName),
                 """
                 @Test
                 """,
                 testMethodIdx.asToken(testName, templates)
+            ));
+
+            // Generates tests with the clonebasic variant of the ArraycopyNode.
+            var testCaseClone = Template.make("testName", "loadCount", "tmp", (String testName, Integer loadCount, TestTemplates templates) -> scope(
+                let("typeAbbrev", pty.abbrev().equals("C") ? "US" : pty.abbrev()),
+                runTestConst.asToken(testName),
+                """
+                @Test
+                @IR(counts = { IRNode.LOAD_#{typeAbbrev}, "=#{loadCount}" },
+                    applyIf = { "TieredCompilation", "true"})
+                """,
+                testMethodClone.asToken(testName, templates)
             ));
 
             var storeConst = Template.make(() -> scope(
@@ -257,6 +291,13 @@ public class TestArrayCopyEliminationUncRematerialization {
                 let("typeAbbrev", pty.abbrev()),
                 """
                     src[idx + RETURN_IDX] = WRITE_VAL_#{typeAbbrev};
+                """
+            ));
+
+            var storeClone = Template.make(() -> scope(
+                let("typeAbbrev", pty.abbrev()),
+                """
+                    src[RETURN_IDX] = WRITE_VAL_#{typeAbbrev};
                 """
             ));
 
@@ -275,7 +316,8 @@ public class TestArrayCopyEliminationUncRematerialization {
                 final String testName = "Store" + pty.abbrev();
                 return scope(
                     testCaseConst.asToken("Const" + testName, 2 * config.copyLen - 1, new TestTemplates(storeConst, unstableTrap)),
-                    testCaseIdx.asToken("Idx" + testName, new TestTemplates(storeIdx, unstableTrap))
+                    testCaseIdx.asToken("Idx" + testName, new TestTemplates(storeIdx, unstableTrap)),
+                    testCaseClone.asToken("Clone" + testName, config.copyLen, new TestTemplates(storeClone, unstableTrap))
                 );
             });
 
@@ -300,9 +342,16 @@ public class TestArrayCopyEliminationUncRematerialization {
                              .map(idx -> String.format("src[idx + %d] = WRITE_VAL_#{typeAbbrev};\n", idx))
                              .toList()
                 ));
+                var multiStoresClone = Template.make(() -> scope(
+                    let("typeAbbrev", pty.abbrev()),
+                    storeIdxs.stream()
+                             .map(idx -> String.format("src[%d] = WRITE_VAL_#{typeAbbrev};\n", idx))
+                             .toList()
+                ));
                 return scope(
                     testCaseConst.asToken("Const" + testName, 2 * config.copyLen - numStores, new TestTemplates(multiStoresConst, unstableTrap)),
-                    testCaseIdx.asToken("Idx" + testName, new TestTemplates(multiStoresIdx, unstableTrap))
+                    testCaseIdx.asToken("Idx" + testName, new TestTemplates(multiStoresIdx, unstableTrap)),
+                    testCaseClone.asToken("Clone" + testName, config.copyLen, new TestTemplates(multiStoresClone, unstableTrap))
                 );
             });
 
@@ -322,7 +371,6 @@ public class TestArrayCopyEliminationUncRematerialization {
                 return scope(
                     testCaseConst.asToken("Const" + testName, 2 * config.copyLen - 1, new TestTemplates(storeConst, trapTemplate)),
                     testCaseIdx.asToken("Idx" + testName, new TestTemplates(storeIdx, trapTemplate))
-
                 );
             });
 
