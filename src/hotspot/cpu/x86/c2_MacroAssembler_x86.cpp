@@ -2135,8 +2135,8 @@ void C2_MacroAssembler::mulreduce16B(int opcode, Register dst, Register src1, XM
   } else {
     pmovsxbw(vtmp2, src2);
     reduce8S(opcode, dst, src1, vtmp2, vtmp1, vtmp2);
-    pshufd(vtmp2, src2, 0x1);
-    pmovsxbw(vtmp2, src2);
+    pshufd(vtmp2, src2, 0xe);
+    pmovsxbw(vtmp2, vtmp2);
     reduce8S(opcode, dst, dst, vtmp2, vtmp1, vtmp2);
   }
 }
@@ -2145,7 +2145,7 @@ void C2_MacroAssembler::mulreduce32B(int opcode, Register dst, Register src1, XM
   if (UseAVX > 2 && VM_Version::supports_avx512bw()) {
     int vector_len = Assembler::AVX_512bit;
     vpmovsxbw(vtmp1, src2, vector_len);
-    reduce32S(opcode, dst, src1, vtmp1, vtmp1, vtmp2);
+    reduce32S(opcode, dst, src1, vtmp1, vtmp2, vtmp1);
   } else {
     assert(UseAVX >= 2,"Should not reach here.");
     mulreduce16B(opcode, dst, src1, src2, vtmp1, vtmp2);
@@ -2211,6 +2211,7 @@ void C2_MacroAssembler::reduce16S(int opcode, Register dst, Register src1, XMMRe
 }
 
 void C2_MacroAssembler::reduce32S(int opcode, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2) {
+  assert_different_registers(src2, vtmp1);
   int vector_len = Assembler::AVX_256bit;
   vextracti64x4_high(vtmp1, src2);
   reduce_operation_256(T_SHORT, opcode, vtmp1, vtmp1, src2);
