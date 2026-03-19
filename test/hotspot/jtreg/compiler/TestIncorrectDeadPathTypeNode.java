@@ -31,7 +31,7 @@
  */
 
 
-class TestIncorrectDeadPathTypeNode {
+public class TestIncorrectDeadPathTypeNode {
     boolean ltIndirect(int p0, int p1) {
         return lt(p0, p1);
     }
