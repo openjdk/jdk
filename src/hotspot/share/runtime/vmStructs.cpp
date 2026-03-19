@@ -339,7 +339,7 @@
   nonstatic_field(ThreadLocalAllocBuffer,      _number_of_refills,                            unsigned)                              \
   nonstatic_field(ThreadLocalAllocBuffer,      _refill_waste,                                 unsigned)                              \
   nonstatic_field(ThreadLocalAllocBuffer,      _gc_waste,                                     unsigned)                              \
-  nonstatic_field(ThreadLocalAllocBuffer,      _slow_allocations,                             unsigned)                              \
+  nonstatic_field(ThreadLocalAllocBuffer,      _num_of_slow_alloc,                            unsigned)                              \
   nonstatic_field(VirtualSpace,                _low_boundary,                                 char*)                                 \
   nonstatic_field(VirtualSpace,                _high_boundary,                                char*)                                 \
   nonstatic_field(VirtualSpace,                _low,                                          char*)                                 \

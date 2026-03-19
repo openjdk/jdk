@@ -51,7 +51,7 @@ ThreadLocalAllocBuffer::ThreadLocalAllocBuffer() :
   _number_of_refills(0),
   _refill_waste(0),
   _gc_waste(0),
-  _slow_allocations(0),
+  _num_of_slow_alloc(0),
   _allocated_size(0),
   _allocation_fraction(TLABAllocationWeight) {
 
@@ -107,7 +107,7 @@ void ThreadLocalAllocBuffer::accumulate_and_reset_statistics(ThreadLocalAllocSta
            "tlab stats == 0");
   }
 
-  stats->update_slow_allocations(_slow_allocations);
+  stats->update_num_of_slow_alloc(_num_of_slow_alloc);
 
   reset_statistics();
 }
@@ -166,7 +166,7 @@ void ThreadLocalAllocBuffer::reset_statistics() {
   _number_of_refills = 0;
   _refill_waste      = 0;
   _gc_waste          = 0;
-  _slow_allocations  = 0;
+  _num_of_slow_alloc = 0;
   _allocated_size    = 0;
 }
 
@@ -271,7 +271,7 @@ void ThreadLocalAllocBuffer::print_stats(const char* tag) {
             " slow: %dB",
             tag, p2i(thrd), thrd->osthread()->thread_id(),
             _desired_size / (K / HeapWordSize),
-            _slow_allocations, _refill_waste_limit * HeapWordSize,
+            _num_of_slow_alloc, _refill_waste_limit * HeapWordSize,
             _allocation_fraction.average(),
             _allocation_fraction.average() * tlab_used / K,
             _number_of_refills, waste_percent,
@@ -344,8 +344,8 @@ ThreadLocalAllocStats::ThreadLocalAllocStats() :
     _max_gc_waste(0),
     _total_refill_waste(0),
     _max_refill_waste(0),
-    _total_slow_allocations(0),
-    _max_slow_allocations(0) {}
+    _total_num_of_slow_alloc(0),
+    _max_num_of_slow_alloc(0) {}
 
 unsigned int ThreadLocalAllocStats::allocating_threads_avg() {
   return MAX2((unsigned int)(_allocating_threads_avg.average() + 0.5), 1U);
@@ -365,9 +365,9 @@ void ThreadLocalAllocStats::update_fast_allocations(unsigned int refills,
   _max_refill_waste         = MAX2(_max_refill_waste, refill_waste);
 }
 
-void ThreadLocalAllocStats::update_slow_allocations(unsigned int allocations) {
-  _total_slow_allocations += allocations;
-  _max_slow_allocations    = MAX2(_max_slow_allocations, allocations);
+void ThreadLocalAllocStats::update_num_of_slow_alloc(unsigned int allocations) {
+  _total_num_of_slow_alloc += allocations;
+  _max_num_of_slow_alloc    = MAX2(_max_num_of_slow_alloc, allocations);
 }
 
 void ThreadLocalAllocStats::update(const ThreadLocalAllocStats& other) {
@@ -379,8 +379,8 @@ void ThreadLocalAllocStats::update(const ThreadLocalAllocStats& other) {
   _max_gc_waste             = MAX2(_max_gc_waste, other._max_gc_waste);
   _total_refill_waste      += other._total_refill_waste;
   _max_refill_waste         = MAX2(_max_refill_waste, other._max_refill_waste);
-  _total_slow_allocations  += other._total_slow_allocations;
-  _max_slow_allocations     = MAX2(_max_slow_allocations, other._max_slow_allocations);
+  _total_num_of_slow_alloc += other._total_num_of_slow_alloc;
+  _max_num_of_slow_alloc    = MAX2(_max_num_of_slow_alloc, other._max_num_of_slow_alloc);
 }
 
 void ThreadLocalAllocStats::reset() {
@@ -392,8 +392,8 @@ void ThreadLocalAllocStats::reset() {
   _max_gc_waste            = 0;
   _total_refill_waste      = 0;
   _max_refill_waste        = 0;
-  _total_slow_allocations  = 0;
-  _max_slow_allocations    = 0;
+  _total_num_of_slow_alloc = 0;
+  _max_num_of_slow_alloc   = 0;
 }
 
 void ThreadLocalAllocStats::publish() {
@@ -410,7 +410,7 @@ void ThreadLocalAllocStats::publish() {
                       " gc: %zuB max: %zuB"
                       " slow: %zuB max: %zuB",
                       _allocating_threads, _total_refills, _max_refills,
-                      _total_slow_allocations, _max_slow_allocations, waste_percent,
+                      _total_num_of_slow_alloc, _max_num_of_slow_alloc, waste_percent,
                       _total_gc_waste * HeapWordSize, _max_gc_waste * HeapWordSize,
                       _total_refill_waste * HeapWordSize, _max_refill_waste * HeapWordSize);
 
@@ -423,8 +423,8 @@ void ThreadLocalAllocStats::publish() {
     _perf_max_gc_waste            ->set_value(_max_gc_waste);
     _perf_total_refill_waste      ->set_value(_total_refill_waste);
     _perf_max_refill_waste        ->set_value(_max_refill_waste);
-    _perf_total_slow_allocations  ->set_value(_total_slow_allocations);
-    _perf_max_slow_allocations    ->set_value(_max_slow_allocations);
+    _perf_total_slow_allocations  ->set_value(_total_num_of_slow_alloc);
+    _perf_max_slow_allocations    ->set_value(_max_num_of_slow_alloc);
   }
 }
 
