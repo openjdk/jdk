@@ -27,9 +27,10 @@
  * @bug 8378005
  * @summary Verify that an infinite loop with boxing does not crash when the containing If is broken
  * @library /test/lib /
- * @run driver TestBoxingInfiniteLoopBrokenIf
+ * @run driver ${test.main.class}
  */
 
+package compiler.loopopts;
 import compiler.lib.ir_framework.*;
 import jdk.test.lib.Utils;
 
