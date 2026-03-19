@@ -121,7 +121,7 @@ public class StreamLinesTest {
 
     static Arguments of(String description, IntFunction<String> lineGenerator,
                        IntFunction<LineSeparator> separatorGenerator, int n, Charset cs) {
-        return Arguments.of(description, lineGenerator, separatorGenerator, n, cs);
+        return Arguments.arguments(description, lineGenerator, separatorGenerator, n, cs);
     }
 
     private static final Random random = RandomFactory.getRandom();
@@ -178,8 +178,7 @@ public class StreamLinesTest {
 
     @ParameterizedTest
     @MethodSource("lines")
-    public void test(String description,
-                     IntFunction<String> lineGenerator, IntFunction<LineSeparator> separatorGenerator,
+    public void test(IntFunction<String> lineGenerator, IntFunction<LineSeparator> separatorGenerator,
                      int lines, Charset cs) throws IOException {
         Path p = generateTempFileWithLines(lineGenerator, separatorGenerator, lines, cs, false);
 
