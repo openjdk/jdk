@@ -261,13 +261,15 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         try {
             zc.getBytes(e.name);
         } catch (IllegalArgumentException ex) {
-            throw new ZipException("unmappable character in ZIP entry name");
+            throw (ZipException)
+                    new ZipException("unmappable character in ZIP entry name").initCause(ex);
         }
         if (e.comment != null) {
             try {
                 zc.getBytes(e.comment);
             } catch (IllegalArgumentException ex) {
-                throw new ZipException("unmappable character in ZIP entry comment");
+                throw (ZipException)
+                        new ZipException("unmappable character in ZIP entry comment").initCause(ex);
             }
         }
         if (! names.add(e.name)) {
