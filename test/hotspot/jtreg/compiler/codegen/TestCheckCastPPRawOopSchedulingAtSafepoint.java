@@ -88,7 +88,7 @@ public class TestCheckCastPPRawOopSchedulingAtSafepoint {
         int[] a = new int[10_000];
         int r = 0;
         for (int i = 0; i < 10_000; i++) {
-            r = test8376189(a);         
+            r = test8376189(a);
         }
         Asserts.assertEQ(r, 0);
     }
