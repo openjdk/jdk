@@ -22,6 +22,7 @@
  */
 package jdk.jpackage.test;
 
+import static jdk.jpackage.test.TKit.getSingleItem;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -42,6 +43,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
+import jdk.jpackage.internal.util.PathUtils;
+import jdk.jpackage.test.FileAssociations.FileAssociationDescriptor;
 
 
 final class MsiDatabase {
@@ -80,6 +84,7 @@ final class MsiDatabase {
         DIRECTORY("Directory"),
         FILE("File"),
         PROPERTY("Property"),
+        REGISTRY("Registry"),
         SHORTCUT("Shortcut"),
         ;
 
@@ -95,6 +100,7 @@ final class MsiDatabase {
 
         static final Set<Table> FIND_PROPERTY_REQUIRED_TABLES = Set.of(PROPERTY);
         static final Set<Table> LIST_SHORTCUTS_REQUIRED_TABLES = Set.of(COMPONENT, DIRECTORY, FILE, SHORTCUT);
+        static final Set<Table> FA_REQUIRED_TABLES = Set.of(COMPONENT, DIRECTORY, FILE, REGISTRY);
     }
 
 
@@ -120,12 +126,7 @@ final class MsiDatabase {
     }
 
     Collection<Shortcut> listShortcuts() {
-        var shortcuts = tables.get(Table.SHORTCUT);
-        if (shortcuts == null) {
-            return List.of();
-        }
-        return IntStream.range(0, shortcuts.rowCount()).mapToObj(i -> {
-            var row = shortcuts.row(i);
+        return rows(Table.SHORTCUT).map(row -> {
             var shortcutPath = directoryPath(row.apply("Directory_")).resolve(fileNameFromFieldValue(row.apply("Name")));
             var workDir = directoryPath(row.apply("WkDir"));
             var shortcutTarget = Path.of(expandFormattedString(row.apply("Target")));
@@ -133,6 +134,50 @@ final class MsiDatabase {
         }).toList();
     }
 
+    Collection<FileAssociationDescriptor> fileAssociations() {
+        return rows(Table.REGISTRY).filter(row -> {
+            return row.apply("Name").equals("Content Type");
+        }).map(row -> {
+            var extension = row.apply("Key");
+
+            var mime = row.apply("Value");
+
+            var id = getSingleItem(rows(Table.REGISTRY).filter(row2 -> {
+                return row2.apply("Name").equals("") && row2.apply("Key").equals(extension);
+            }).map(row2 -> {
+                return row2.apply("Value");
+            }));
+
+            var description = getSingleItem(rows(Table.REGISTRY).filter(row2 -> {
+                return row2.apply("Key").equals(id);
+            }).map(row2 -> {
+                return row2.apply("Value");
+            }).map(v -> {
+                if (v.isEmpty()) {
+                    v = null;
+                }
+                return v;
+            }));
+
+            var launcherName = getSingleItem(rows(Table.REGISTRY).filter(row2 -> {
+                return row2.apply("Key").equals(id + "\\shell\\open\\command");
+            }).map(row2 -> {
+                // "[#file10a74e783935359393275e13817c7281]" "%1" %*
+                var cmdline = row2.apply("Value");
+                // [#file10a74e783935359393275e13817c7281]
+                var formattedExecutable = removeQuotes(cmdline.split("\\s+")[0]);
+                var launcherExecutable = Path.of(expandFormattedString(formattedExecutable)).getFileName();
+                return PathUtils.replaceSuffix(launcherExecutable, "");
+            })).toString();
+
+            return new FileAssociationDescriptor(
+                    launcherName,
+                    Optional.ofNullable(description),
+                    mime,
+                    // .foo -> foo
+                    Optional.of(extension.substring(1)));
+        }).toList();
+    }
     record Shortcut(Path path, Path target, Path workDir) {
 
         Shortcut {
@@ -146,6 +191,13 @@ final class MsiDatabase {
             TKit.assertEquals(expected.target, target, "Check the shortcut target");
             TKit.assertEquals(expected.workDir, workDir, "Check the shortcut work directory");
         }
+    }
+
+
+    private Stream<Function<String, String>> rows(Table tableName) {
+        return Optional.ofNullable(tables.get(tableName)).stream().flatMap(table -> {
+            return IntStream.range(0, table.rowCount()).mapToObj(table::row);
+        });
     }
 
     private Path directoryPath(String directoryId) {
@@ -227,6 +279,14 @@ final class MsiDatabase {
         }
         m.appendTail(sb);
         return sb.toString();
+    }
+
+    private static String removeQuotes(String str) {
+        if (str.charAt(0) == '"' && str.charAt(str.length() - 1) == '"') {
+            return str.substring(1, str.length() - 1);
+        } else {
+            return str;
+        }
     }
 
 

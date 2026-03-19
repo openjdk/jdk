@@ -605,6 +605,16 @@ public final class TKit {
         return JtregSkippedExceptionClass.INSTANCE.isInstance(t);
     }
 
+    public static <T> T getSingleItem(Stream<T> stream) {
+        return findZeroOrSingleItem(stream).orElseThrow();
+    }
+
+    public static <T> Optional<T> findZeroOrSingleItem(Stream<T> stream) {
+        return stream.reduce((_, _) -> {
+            throw new IllegalArgumentException("Multiple items in the stream");
+        });
+    }
+
     public static void waitForFileCreated(Path fileToWaitFor,
             Duration timeout, Duration afterCreatedTimeout) throws IOException {
         waitForFileCreated(fileToWaitFor, timeout);

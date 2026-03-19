@@ -172,7 +172,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
                 Launcher::executableNameWithSuffix,
                 WinLauncher::fileAssociations));
 
-        associations.values().stream().flatMap(List::stream).filter(FileAssociation::hasIcon).toList().forEach(fa -> {
+        associations.values().stream().flatMap(Collection::stream).filter(FileAssociation::hasIcon).toList().forEach(fa -> {
             // Need to add fa icon in the image.
             Object key = new Object();
             appImagePathGroup.setPath(key, fa.icon().orElseThrow().toAbsolutePath().normalize());
@@ -968,7 +968,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
     private String programMenuFolderName;
 
-    private Map<String, List<FileAssociation>> associations;
+    private Map<String, Collection<FileAssociation>> associations;
 
     private Set<ShortcutsFolder> shortcutFolders;
 

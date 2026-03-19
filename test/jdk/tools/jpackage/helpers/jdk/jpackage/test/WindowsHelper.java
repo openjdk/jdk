@@ -44,6 +44,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
+import jdk.jpackage.test.FileAssociations.FileAssociationDescriptor;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
 
 public class WindowsHelper {
@@ -274,6 +275,11 @@ public class WindowsHelper {
     public static String getMsiProperty(JPackageCommand cmd, String propertyName) {
         cmd.verifyIsOfType(PackageType.WIN_MSI);
         return MsiDatabaseCache.INSTANCE.findProperty(cmd.outputBundle(), propertyName).orElseThrow();
+    }
+
+    static Collection<FileAssociationDescriptor> fileAssociations(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.WIN_MSI);
+        return MsiDatabaseCache.INSTANCE.fileAssociations(cmd.outputBundle());
     }
 
     static Collection<MsiDatabase.Shortcut> getMsiShortcuts(JPackageCommand cmd) {
@@ -570,6 +576,10 @@ public class WindowsHelper {
 
         Collection<MsiDatabase.Shortcut> listShortcuts(Path msiPath) {
             return ensureTables(msiPath, MsiDatabase.Table.LIST_SHORTCUTS_REQUIRED_TABLES).listShortcuts();
+        }
+
+        Collection<FileAssociationDescriptor> fileAssociations(Path msiPath) {
+            return ensureTables(msiPath, MsiDatabase.Table.FA_REQUIRED_TABLES).fileAssociations();
         }
 
         MsiDatabase ensureTables(Path msiPath, Set<MsiDatabase.Table> tableNames) {

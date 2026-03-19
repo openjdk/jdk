@@ -102,7 +102,6 @@ public class FileAssociationsTest {
         Files.copy(ICON, icon);
 
         new FileAssociations("jptest2")
-                .setFilename("fa2")
                 .setIcon(icon)
                 .applyTo(packageTest);
 

@@ -238,7 +238,7 @@ public non-sealed interface Application extends BundleSpec {
      * @see Launcher#fileAssociations
      */
     default Stream<FileAssociation> fileAssociations() {
-        return launchers().stream().map(Launcher::fileAssociations).flatMap(List::stream);
+        return launchers().stream().map(Launcher::fileAssociations).flatMap(Collection::stream);
     }
 
     /**

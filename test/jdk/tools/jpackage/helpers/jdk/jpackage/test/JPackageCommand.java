@@ -1389,6 +1389,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                 TKit.assertFileExists(libjliPath);
             }
         }),
+        FILE_ASSOCIATIONS(FileAssociations::vallidateFileAssociations),
         MAC_BUNDLE_STRUCTURE(cmd -> {
             if (TKit.isOSX()) {
                 MacHelper.verifyBundleStructure(cmd);

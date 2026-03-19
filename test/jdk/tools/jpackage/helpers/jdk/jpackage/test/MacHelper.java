@@ -23,6 +23,7 @@
 package jdk.jpackage.test;
 
 import static java.util.stream.Collectors.toSet;
+import static jdk.jpackage.internal.util.MemoizingSupplier.runOnce;
 import static jdk.jpackage.internal.util.PListWriter.writeArray;
 import static jdk.jpackage.internal.util.PListWriter.writeBoolean;
 import static jdk.jpackage.internal.util.PListWriter.writeBooleanOptional;
@@ -35,6 +36,7 @@ import static jdk.jpackage.internal.util.XmlUtils.initDocumentBuilder;
 import static jdk.jpackage.internal.util.XmlUtils.toXmlConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
+import static jdk.jpackage.test.TKit.getSingleItem;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -48,6 +50,7 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -62,6 +65,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
@@ -76,6 +80,7 @@ import jdk.jpackage.internal.util.RetryExecutor;
 import jdk.jpackage.internal.util.XmlUtils;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingSupplier;
+import jdk.jpackage.test.FileAssociations.FileAssociationDescriptor;
 import jdk.jpackage.test.MacSign.CertificateHash;
 import jdk.jpackage.test.MacSign.CertificateRequest;
 import jdk.jpackage.test.MacSign.CertificateType;
@@ -402,6 +407,90 @@ public final class MacHelper {
         return MacSignVerify.findSpctlSignOrigin(MacSignVerify.SpctlType.EXEC, bundle.root(), true).isPresent();
     }
 
+    static Collection<FileAssociationDescriptor> fileAssociations(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.MAC_DMG, PackageType.MAC_PKG, PackageType.IMAGE);
+
+        final var infoPlistFile = new MacBundle(cmd.isImagePackageType() ? cmd.outputBundle()
+                : cmd.pathToUnpackedPackageFile(cmd.appInstallationDirectory())).infoPlistFile();
+
+        TKit.trace(String.format("Read file associations data from [%s] file...", infoPlistFile));
+
+        final var plist = MacHelper.readPList(infoPlistFile);
+
+        var bundleIdPrefixGetter = runOnce(() -> {
+            return getPackageId(cmd) + ".";
+        });
+
+        var mainLauncherNameGetter = runOnce(cmd::mainLauncherName);
+
+        var fromUTExportedTypeDeclarations = plist.findArrayValue("UTExportedTypeDeclarations", false).orElseGet(Stream::of)
+                .map(PListReader.class::cast)
+                .map(dict -> {
+                    var description = dict.findValue("UTTypeDescription");
+
+                    dict = dict.findDictValue("UTTypeTagSpecification").orElseThrow();
+
+                    var mimeType = getSingleItem(dict.findStringArrayValue("public.mime-type").orElseThrow().stream());
+                    var extension = getSingleItem(dict.findStringArrayValue("public.filename-extension").orElseThrow().stream());
+
+                    return new FileAssociationDescriptor(mainLauncherNameGetter.get(), description, mimeType, Optional.of(extension));
+                }).toList();
+
+        var fromCFBundleDocumentTypes = plist.findArrayValue("CFBundleDocumentTypes", false).orElseGet(Stream::of)
+                .map(PListReader.class::cast)
+                .flatMap(dict -> {
+                    var description = dict.findValue("CFBundleTypeName");
+                    var extensions = dict.findStringArrayValue("LSItemContentTypes").orElseThrow().stream().map(str -> {
+                        var prefix = bundleIdPrefixGetter.get();
+                        TKit.assertTrue(str.startsWith(prefix), String.format(
+                                "Check [%s] element of 'CFBundleDocumentTypes/LSItemContentTypes' array key starts with [%s] prefix",
+                                str, prefix));
+                        return str.substring(prefix.length());
+                    }).toList();
+                    return extensions.stream().map(extension -> {
+                        return new FileAssociationDescriptor(mainLauncherNameGetter.get(), description, "foo", Optional.of(extension));
+                    });
+                }).toList();
+
+        BiFunction<String, Collection<FileAssociationDescriptor>, Map<String, FileAssociationDescriptor>> toExtensionMap = (dictKey, fas) -> {
+            Objects.requireNonNull(dictKey);
+            return fas.stream().collect(Collectors.toMap(fa -> {
+                return fa.extension().orElseThrow();
+            }, x -> x, (a, _) -> {
+                throw new IllegalStateException(String.format(
+                        "Duplicated FA extension [%s] in '%s' dictionary in [%s] file",
+                        dictKey, a.extension().orElseThrow(), infoPlistFile));
+            }));
+        };
+
+        var fromCFBundleDocumentTypesExtensionMap = toExtensionMap.apply("CFBundleDocumentTypes", fromCFBundleDocumentTypes);
+        var fromUTExportedTypeDeclarationsExtensionMap = toExtensionMap.apply("UTExportedTypeDeclarations", fromUTExportedTypeDeclarations);
+
+        fromUTExportedTypeDeclarations.stream().collect(Collectors.toMap(FileAssociationDescriptor::mimeType, x -> x, (a, _) -> {
+            throw new IllegalStateException(String.format(
+                    "Duplicated FA mime type [%s] in [%s] file", a.extension().orElseThrow(), infoPlistFile));
+        }));
+
+        TKit.assertStringListEquals(
+                fromUTExportedTypeDeclarationsExtensionMap.keySet().stream().sorted().toList(),
+                fromCFBundleDocumentTypesExtensionMap.keySet().stream().sorted().toList(),
+                "Check FA extensions in 'UTExportedTypeDeclarations' and 'CFBundleDocumentTypes' dictionaries match");
+
+        for (var e : fromUTExportedTypeDeclarationsExtensionMap.entrySet()) {
+            var extension = e.getKey();
+            var expectedDescription = e.getValue().description();
+            var actualDescription = fromCFBundleDocumentTypesExtensionMap.get(extension).description();
+            TKit.assertEquals(
+                    expectedDescription,
+                    actualDescription,
+                    String.format(
+                            "Check FA descriptions for [%s] extension in 'UTExportedTypeDeclarations' and 'CFBundleDocumentTypes' dictionaries match",
+                            extension));
+        }
+
+        return fromUTExportedTypeDeclarations;
+    }
+
     private static void createFaPListFragmentFromFaProperties(JPackageCommand cmd, XMLStreamWriter xml)
             throws XMLStreamException, IOException {
 
@@ -534,7 +623,7 @@ public final class MacHelper {
 
         private JPackageCommand.RuntimeImageType type = JPackageCommand.RuntimeImageType.RUNTIME_TYPE_HELLO_APP;
         private Consumer<JPackageCommand> mutator;
-    };
+    }
 
     public static RuntimeBundleBuilder buildRuntimeBundle() {
         return new RuntimeBundleBuilder();
