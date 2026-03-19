@@ -24,12 +24,13 @@
 /*
  * @test
  * @bug 8372649
- * @summary CheckCastPP with RawPtr input can be scheduled below a safepoint during C2 local scheduling,
- *          causing a live raw oop at the safepoint instead of a corresponding oop in the OopMap.
+ * @summary CheckCastPP with RawPtr input can be scheduled below a safepoint during C2
+ *          post-regalloc block-local scheduling, causing a live raw oop at the safepoint
+ *          instead of a corresponding oop in the OopMap.
  * @library /test/lib
  * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:TrackedInitializationLimit=0
  *                   -XX:CompileCommand=compileonly,${test.main.class}::test*
- *                   ${test.main.class}
+ *                   -XX:+OptoScheduling ${test.main.class}
  */
 
 package compiler.codegen;

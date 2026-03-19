@@ -2914,9 +2914,9 @@ void Scheduling::ComputeRegisterAntidependencies(Block *b) {
 
     Node *m = b->get_node(i);
 
-    // Add precedence edge from following safepoint to use of derived pointer
     if (last_safept_node != end_node &&
         m != last_safept_node) {
+      // Add precedence edge from following safepoint to use of derived pointer
       bool need_safept_prec = false;
       for (uint k = 1; k < m->req(); k++) {
         const Type *t = m->in(k)->bottom_type();
@@ -2927,7 +2927,7 @@ void Scheduling::ComputeRegisterAntidependencies(Block *b) {
         }
       }
       // A CheckCastPP whose input is still RawPtr must stay above the following safepoint.
-      // Otherwise block-local scheduling can leave a live raw oop at the safepoint.
+      // Otherwise post-regalloc block-local scheduling can leave a live raw oop at the safepoint.
       if (!need_safept_prec && m->is_Mach() &&
           m->as_Mach()->ideal_Opcode() == Op_CheckCastPP) {
         Node* def = m->in(1);
