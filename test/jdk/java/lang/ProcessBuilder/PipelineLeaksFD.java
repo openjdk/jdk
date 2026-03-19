@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /*
  * @test id=FORK
  * @bug 8289643 8291760 8291986
- * @requires os.family == "mac" | (os.family == "linux" & !vm.musl)
+ * @requires os.family == "mac" | os.family == "linux"
  * @summary File descriptor leak detection with ProcessBuilder.startPipeline
  * @library /test/lib
  * @run junit/othervm/timeout=240 -Djdk.lang.Process.launchMechanism=FORK PipelineLeaksFD
@@ -49,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /*
  * @test id=POSIX_SPAWN
  * @bug 8289643 8291760 8291986 8379182
- * @requires os.family == "mac" | (os.family == "linux" & !vm.musl)
+ * @requires os.family == "mac" | os.family == "linux"
  * @summary File descriptor leak detection with ProcessBuilder.startPipeline
  * @library /test/lib
  * @run junit/othervm/native/timeout=240 -Djdk.lang.Process.launchMechanism=POSIX_SPAWN PipelineLeaksFD
