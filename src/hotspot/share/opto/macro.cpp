@@ -310,6 +310,8 @@ bool has_interfering_store(const ArrayCopyNode* ac, LoadNode* load, PhaseGVN* ph
 // Generate loads from source of the arraycopy for fields of
 // destination needed at a deoptimization point
 Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, Node* ctl, Node* mem, BasicType ft, const Type* ftype, AllocateNode* alloc) {
+  assert((ctl == ac->control() && mem == ac->memory()) != (mem != ac->memory() && ctl->is_Proj() && ctl->as_Proj()->is_uncommon_trap_proj()),
+    "Either the control or memory are the same as for the arraycopy or they are pinned in an uncommon trap.");
   BasicType bt = ft;
   const Type *type = ftype;
   if (ft == T_NARROWOOP) {

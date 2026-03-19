@@ -416,9 +416,9 @@ public class TestArrayCopyEliminationUncRematerialization {
                         private static final VarHandle #handle = MethodHandles.arrayElementVarHandle(#type[].class);
                         """
                     )),
-                    // We cannot look through MemBars emitted by the atomic operations, so all rematerailization loads are
+                    // We cannot look through MemBars emitted by the atomic operations, so all rematerialization loads are
                     // commoned up in the common path.
-                    pty.abbrev().equals("S") ?
+                    pty.abbrev().equals("S") || pty.abbrev().equals("B") || pty.abbrev.equals("C") ?
                         testCaseConstNoVerify.asToken("ConstGetAndSet" + pty.abbrev(), new TestTemplates(getAndSetStoreConst, unstableTrap)) :
                         testCaseConst.asToken("ConstGetAndSet" + pty.abbrev(), config.copyLen, new TestTemplates(getAndSetStoreConst, unstableTrap)),
                     testCaseIdx.asToken("IdxGetAndSet" + pty.abbrev(), new TestTemplates(getAndSetStoreIdx, unstableTrap)),
