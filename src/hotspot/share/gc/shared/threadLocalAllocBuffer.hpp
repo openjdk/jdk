@@ -53,6 +53,10 @@ private:
   HeapWord* _allocation_end;                     // end for allocations (actual TLAB end, excluding alignment_reserve)
 
   size_t    _desired_size;                       // desired size   (including alignment_reserve)
+
+  // We increase this limit if too many slow allocations (outside TLAB)
+  // happen to reduce outside-TLAB allocations, at the expense of
+  // wasting more memory, i.e., the TLAB is discarded sooner.
   size_t    _refill_waste_limit;                 // hold onto tlab if free() is larger than this
   uint64_t  _allocated_before_last_gc;           // total bytes allocated up until the last gc
 
@@ -60,9 +64,20 @@ private:
   static unsigned _target_num_refills;           // expected number of refills between GCs
 
   unsigned  _num_refills;
+  // TLAB retirement is invoked in two different contexts:
+  // 1. TLAB refill:
+  //    The current TLAB is insufficient to satisfy a pending allocation
+  //    request, triggering a refill. The remaining space in the current
+  //    TLAB is treated as waste and tracked in _refill_waste.
+  // 2. Before GC:
+  //    Invoked at the start of a GC cycle to ensure heap parsability.
+  //    The unused space in the current TLAB is treated as waste and
+  //    tracked in _gc_waste.
   unsigned  _refill_waste;
   unsigned  _gc_waste;
   unsigned  _num_slow_allocations;
+
+  // Allocated size for filling TLAB in HeapWords
   size_t    _allocated_size;
 
   AdaptiveWeightedAverage _allocation_fraction;  // fraction of eden allocated in tlabs
@@ -78,8 +93,6 @@ private:
   void set_refill_waste_limit(size_t waste)      { _refill_waste_limit = waste;  }
 
   size_t initial_refill_waste_limit();
-
-  static int    target_num_refills()             { return _target_num_refills; }
   size_t initial_desired_size();
 
   size_t remaining();
@@ -92,9 +105,7 @@ private:
 
   void accumulate_and_reset_statistics(ThreadLocalAllocStats* stats);
 
-  void print_stats(const char* tag);
-
-  Thread* thread();
+  Thread* thread() const;
 
   // statistics
 
@@ -191,11 +202,13 @@ private:
   static PerfVariable* _perf_max_num_slow_allocations;
 
   static AdaptiveWeightedAverage _num_allocating_threads_avg;
+  static AdaptiveWeightedAverage _total_requested_size_fraction;
 
   unsigned int _num_allocating_threads;
   unsigned int _total_num_refills;
   unsigned int _max_num_refills;
   size_t       _total_allocated_size;
+  size_t       _total_requested_bytes;
   size_t       _total_gc_waste;
   size_t       _max_gc_waste;
   size_t       _total_refill_waste;
@@ -206,14 +219,16 @@ private:
 public:
   static void initialize();
   static unsigned int num_allocating_threads_avg();
+  static float total_requested_size_fraction_avg();
 
   ThreadLocalAllocStats();
 
-  void update_fast_allocations(unsigned int num_refills,
-                               size_t allocated_size,
-                               size_t gc_waste,
-                               size_t refill_waste);
-  void update_num_slow_allocations(unsigned int num_slow_allocations);
+  void update_current_thread_stats(unsigned int num_refills,
+                                   size_t requested_bytes,
+                                   size_t alloc_size_for_tlab,
+                                   size_t gc_waste,
+                                   size_t refill_waste,
+                                   unsigned int num_slow_allocations);
   void update(const ThreadLocalAllocStats& other);
 
   void reset();
