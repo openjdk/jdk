@@ -1717,30 +1717,18 @@ enum FP_PREC {
 static inline void emit_fp_ucom(MacroAssembler* masm, enum FP_PREC pt,
                                 XMMRegister p, XMMRegister q) {
   if (pt == fp_prec_hlf) {
-    if (VM_Version::supports_avx10_2()) {
-      __ vucomxsh(p, q);
-    } else {
-      __ vucomish(p, q);
-    }
+    __ evucomish(p, q);
   } else if (pt == fp_prec_flt) {
-    if (VM_Version::supports_avx10_2()) {
-      __ vucomxss(p, q);
-    } else {
-      __ ucomiss(p, q);
-    }
+    __ ucomiss(p, q);
   } else {
-    if (VM_Version::supports_avx10_2()) {
-      __ vucomxsd(p, q);
-    } else {
-      __ ucomisd(p, q);
-    }
+    __ ucomisd(p, q);
   }
 }
 
 static inline void movfp(MacroAssembler* masm, enum FP_PREC pt,
-                         XMMRegister dst, XMMRegister src) {
+                         XMMRegister dst, XMMRegister src, Register scratch) {
   if (pt == fp_prec_hlf) {
-    __ movhlf(dst, src);
+    __ movhlf(dst, src, scratch);
   } else if (pt == fp_prec_flt) {
     __ movflt(dst, src);
   } else {
@@ -1780,7 +1768,7 @@ static void emit_fp_min_max(MacroAssembler* masm, XMMRegister dst,
   emit_fp_ucom(masm, pt, a, xmmt);
 
   __ jccb(Assembler::equal, zero);
-  movfp(masm, pt, dst, a);
+  movfp(masm, pt, dst, a, rt);
 
   __ jmp(done);
 
@@ -1794,14 +1782,14 @@ static void emit_fp_min_max(MacroAssembler* masm, XMMRegister dst,
   __ jmp(done);
 
   __ bind(above);
-  movfp(masm, pt, dst, min ? b : a);
+  movfp(masm, pt, dst, min ? b : a, rt);
 
   __ jmp(done);
 
   __ bind(nan);
   if (pt == fp_prec_hlf) {
     __ movl(rt, 0x00007e00); // Float16.NaN
-    __ vmovw(dst, rt);
+    __ evmovw(dst, rt);
   } else if (pt == fp_prec_flt) {
     __ movl(rt, 0x7fc00000); // Float.NaN
     __ movdl(dst, rt);
@@ -1812,7 +1800,7 @@ static void emit_fp_min_max(MacroAssembler* masm, XMMRegister dst,
   __ jmp(done);
 
   __ bind(below);
-  movfp(masm, pt, dst, min ? a : b);
+  movfp(masm, pt, dst, min ? a : b, rt);
 
   __ bind(done);
 }
@@ -14427,9 +14415,9 @@ instruct cmpF_cc_regCFE(rFlagsRegUCFE cr, regF src1, regF src2) %{
   match(Set cr (CmpF src1 src2));
 
   ins_cost(100);
-  format %{ "vucomxss $src1, $src2" %}
+  format %{ "evucomxss $src1, $src2" %}
   ins_encode %{
-    __ vucomxss($src1$$XMMRegister, $src2$$XMMRegister);
+    __ evucomxss($src1$$XMMRegister, $src2$$XMMRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -14449,9 +14437,9 @@ instruct cmpF_cc_memCFE(rFlagsRegUCFE cr, regF src1, memory src2) %{
   match(Set cr (CmpF src1 (LoadF src2)));
 
   ins_cost(100);
-  format %{ "vucomxss $src1, $src2" %}
+  format %{ "evucomxss $src1, $src2" %}
   ins_encode %{
-    __ vucomxss($src1$$XMMRegister, $src2$$Address);
+    __ evucomxss($src1$$XMMRegister, $src2$$Address);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -14471,9 +14459,9 @@ instruct cmpF_cc_immCFE(rFlagsRegUCFE cr, regF src, immF con) %{
   match(Set cr (CmpF src con));
 
   ins_cost(100);
-  format %{ "vucomxss $src, [$constantaddress]\t# load from constant table: float=$con" %}
+  format %{ "evucomxss $src, [$constantaddress]\t# load from constant table: float=$con" %}
   ins_encode %{
-    __ vucomxss($src$$XMMRegister, $constantaddress($con));
+    __ evucomxss($src$$XMMRegister, $constantaddress($con));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -14512,9 +14500,9 @@ instruct cmpD_cc_regCFE(rFlagsRegUCFE cr, regD src1, regD src2) %{
   match(Set cr (CmpD src1 src2));
 
   ins_cost(100);
-  format %{ "vucomxsd $src1, $src2 test" %}
+  format %{ "evucomxsd $src1, $src2 test" %}
   ins_encode %{
-    __ vucomxsd($src1$$XMMRegister, $src2$$XMMRegister);
+    __ evucomxsd($src1$$XMMRegister, $src2$$XMMRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -14534,9 +14522,9 @@ instruct cmpD_cc_memCFE(rFlagsRegUCFE cr, regD src1, memory src2) %{
   match(Set cr (CmpD src1 (LoadD src2)));
 
   ins_cost(100);
-  format %{ "vucomxsd $src1, $src2" %}
+  format %{ "evucomxsd $src1, $src2" %}
   ins_encode %{
-    __ vucomxsd($src1$$XMMRegister, $src2$$Address);
+    __ evucomxsd($src1$$XMMRegister, $src2$$Address);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -14555,9 +14543,9 @@ instruct cmpD_cc_immCFE(rFlagsRegUCFE cr, regD src, immD con) %{
   match(Set cr (CmpD src con));
 
   ins_cost(100);
-  format %{ "vucomxsd $src, [$constantaddress]\t# load from constant table: double=$con" %}
+  format %{ "evucomxsd $src, [$constantaddress]\t# load from constant table: double=$con" %}
   ins_encode %{
-    __ vucomxsd($src$$XMMRegister, $constantaddress($con));
+    __ evucomxsd($src$$XMMRegister, $constantaddress($con));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -18865,7 +18853,7 @@ instruct ReplHF_reg(vec dst, regF src, rRegI rtmp) %{
   format %{ "replicateHF $dst, $src \t! using $rtmp as TEMP" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
-    __ vmovw($rtmp$$Register, $src$$XMMRegister);
+    __ evmovw($rtmp$$Register, $src$$XMMRegister);
     __ evpbroadcastw($dst$$XMMRegister, $rtmp$$Register, vlen_enc);
   %}
   ins_pipe( pipe_slow );
@@ -25324,9 +25312,9 @@ instruct vector_selectfrom_twovectors_reg_evex(vec index, vec src1, vec src2)
 instruct reinterpretS2HF(regF dst, rRegI src)
 %{
   match(Set dst (ReinterpretS2HF src));
-  format %{ "vmovw $dst, $src" %}
+  format %{ "evmovw $dst, $src" %}
   ins_encode %{
-    __ vmovw($dst$$XMMRegister, $src$$Register);
+    __ evmovw($dst$$XMMRegister, $src$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -25334,9 +25322,9 @@ instruct reinterpretS2HF(regF dst, rRegI src)
 instruct reinterpretHF2S(rRegI dst, regF src)
 %{
   match(Set dst (ReinterpretHF2S src));
-  format %{ "vmovw $dst, $src" %}
+  format %{ "evmovw $dst, $src" %}
   ins_encode %{
-    __ vmovw($dst$$Register, $src$$XMMRegister);
+    __ evmovw($dst$$Register, $src$$XMMRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -25394,7 +25382,7 @@ instruct scalar_minmax_HF_reg_avx10_2(regF dst, regF src1, regF src2)
   format %{ "scalar_min_max_fp16 $dst, $src1, $src2" %}
   ins_encode %{
     int opcode = this->ideal_Opcode();
-    __ scalar_max_min_fp16_avx10_2(opcode, $dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, k0);
+    __ sminmax_fp16_avx10_2(opcode, $dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, k0);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -25409,8 +25397,8 @@ instruct scalar_minmax_HF_reg(regF dst, regF src1, regF src2, kReg ktmp, regF xt
   format %{ "scalar_min_max_fp16 $dst, $src1, $src2\t using $ktmp, $xtmp1 and $xtmp2 as TEMP" %}
   ins_encode %{
     int opcode = this->ideal_Opcode();
-    __ scalar_max_min_fp16(opcode, $dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, $ktmp$$KRegister,
-                           $xtmp1$$XMMRegister, $xtmp2$$XMMRegister);
+    __ sminmax_fp16(opcode, $dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, $ktmp$$KRegister,
+                    $xtmp1$$XMMRegister, $xtmp2$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -25511,8 +25499,8 @@ instruct vector_minmax_HF_mem_avx10_2(vec dst, vec src1, memory src2)
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     int opcode = this->ideal_Opcode();
-    __ vector_max_min_fp16_avx10_2(opcode, $dst$$XMMRegister, $src1$$XMMRegister, $src2$$Address,
-                                   k0, vlen_enc);
+    __ vminmax_fp16_avx10_2(opcode, $dst$$XMMRegister, $src1$$XMMRegister, $src2$$Address,
+                            k0, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -25526,8 +25514,8 @@ instruct vector_minmax_HF_reg_avx10_2(vec dst, vec src1, vec src2)
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     int opcode = this->ideal_Opcode();
-    __ vector_max_min_fp16_avx10_2(opcode, $dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister,
-                                   k0, vlen_enc);
+    __ vminmax_fp16_avx10_2(opcode, $dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister,
+                            k0, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -25542,8 +25530,8 @@ instruct vector_minmax_HF_reg(vec dst, vec src1, vec src2, kReg ktmp, vec xtmp1,
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     int opcode = this->ideal_Opcode();
-    __ vector_max_min_fp16(opcode, $dst$$XMMRegister, $src2$$XMMRegister, $src1$$XMMRegister, $ktmp$$KRegister,
-                           $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, vlen_enc);
+    __ vminmax_fp16(opcode, $dst$$XMMRegister, $src2$$XMMRegister, $src1$$XMMRegister, $ktmp$$KRegister,
+                    $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}

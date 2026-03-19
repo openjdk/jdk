@@ -162,7 +162,7 @@ class MacroAssembler: public Assembler {
 
   void incrementq(AddressLiteral dst, Register rscratch = noreg);
 
-  void movhlf(XMMRegister dst, XMMRegister src);
+  void movhlf(XMMRegister dst, XMMRegister src, Register rscratch = noreg);
 
   // Support optimal SSE move instructions.
   void movflt(XMMRegister dst, XMMRegister src) {
@@ -1311,29 +1311,29 @@ public:
   void subss(XMMRegister dst, Address        src) { Assembler::subss(dst, src); }
   void subss(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
-  void vucomish(XMMRegister dst, XMMRegister    src) { Assembler::vucomish(dst, src); }
-  void vucomish(XMMRegister dst, Address        src) { Assembler::vucomish(dst, src); }
-  void vucomish(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
+  void evucomish(XMMRegister dst, XMMRegister    src) { Assembler::evucomish(dst, src); }
+  void evucomish(XMMRegister dst, Address        src) { Assembler::evucomish(dst, src); }
+  void evucomish(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
-  void vucomxsh(XMMRegister dst, XMMRegister    src) { Assembler::vucomxsh(dst, src); }
-  void vucomxsh(XMMRegister dst, Address        src) { Assembler::vucomxsh(dst, src); }
-  void vucomxsh(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
+  void evucomxsh(XMMRegister dst, XMMRegister    src) { Assembler::evucomxsh(dst, src); }
+  void evucomxsh(XMMRegister dst, Address        src) { Assembler::evucomxsh(dst, src); }
+  void evucomxsh(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
   void ucomiss(XMMRegister dst, XMMRegister    src) { Assembler::ucomiss(dst, src); }
   void ucomiss(XMMRegister dst, Address        src) { Assembler::ucomiss(dst, src); }
   void ucomiss(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
-  void vucomxss(XMMRegister dst, XMMRegister    src) { Assembler::vucomxss(dst, src); }
-  void vucomxss(XMMRegister dst, Address        src) { Assembler::vucomxss(dst, src); }
-  void vucomxss(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
+  void evucomxss(XMMRegister dst, XMMRegister    src) { Assembler::evucomxss(dst, src); }
+  void evucomxss(XMMRegister dst, Address        src) { Assembler::evucomxss(dst, src); }
+  void evucomxss(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
   void ucomisd(XMMRegister dst, XMMRegister    src) { Assembler::ucomisd(dst, src); }
   void ucomisd(XMMRegister dst, Address        src) { Assembler::ucomisd(dst, src); }
   void ucomisd(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
-  void vucomxsd(XMMRegister dst, XMMRegister    src) { Assembler::vucomxsd(dst, src); }
-  void vucomxsd(XMMRegister dst, Address        src) { Assembler::vucomxsd(dst, src); }
-  void vucomxsd(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
+  void evucomxsd(XMMRegister dst, XMMRegister    src) { Assembler::evucomxsd(dst, src); }
+  void evucomxsd(XMMRegister dst, Address        src) { Assembler::evucomxsd(dst, src); }
+  void evucomxsd(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
   // Bitwise Logical XOR of Packed Double-Precision Floating-Point Values
   void xorpd(XMMRegister dst, XMMRegister    src);
