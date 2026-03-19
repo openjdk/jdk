@@ -117,9 +117,6 @@ public class Write {
         baos.writeBytes(b);
         byte[] b3 = baos.toByteArray();
         int len3 = len1 + len2 + b.length;
-        if (b3.length != len1 + len2 + b.length) {
-            throw new RuntimeException("Array length test 3 failed.");
-        }
         assertEquals(len3, b3.length, "Array length test 3 failed.");
         assertArrayEquals(Arrays.copyOfRange(b, off1, off1 + len1),
             Arrays.copyOfRange(b3, 0, len1),
