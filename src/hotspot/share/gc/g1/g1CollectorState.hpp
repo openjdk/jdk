@@ -47,26 +47,17 @@ class G1CollectorState {
     // Indicates that we are about to start or in the last young gc in the Young-Only
     // phase before the Mixed phase. This GC is required to keep pause time requirements.
     YoungLastYoung,
-    // Doing extra old generation cleanups.
+    // Doing extra old generation evacuation.
     Mixed,
     // The Full GC phase (that coincides with the Full GC pause).
     FullGC
   } _phase;
 
-  // If _initiate_conc_mark_if_possible is set at the beginning of a
-  // pause, it is a suggestion that the pause should start a marking
-  // cycle by doing the concurrent start work. However, it is possible
-  // This decision is mostly based on heap occupancy.
+  // _initiate_conc_mark_if_possible indicates that there has been a request to start
+  // a concurrent cycle but we have not been able to fulfill it because another one
+  // has been in progress when the request came in.
   //
-  // If the concurrent marking thread is still finishing up the
-  // previous marking cycle (e.g., clearing the marking bitmap).
-  // If that is the case we cannot start a new cycle and
-  // we'll have to wait for the concurrent marking thread to finish
-  // what it is doing. In this case we will postpone the marking cycle
-  // initiation decision for the next pause. When we eventually decide
-  // to start a cycle, we will set _in_concurrent_start_gc which
-  // will stay true until the end of the concurrent start pause doing the
-  // concurrent start work.
+  // This flag remembers that there is an unfullfilled request.
   volatile bool _initiate_conc_mark_if_possible;
 
 public:
