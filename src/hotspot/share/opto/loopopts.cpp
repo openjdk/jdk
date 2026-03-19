@@ -1478,9 +1478,11 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
 
     // Now split the IF
     C->print_method(PHASE_BEFORE_SPLIT_IF, 4, iff);
-    if (TraceLoopOpts) {
-      tty->print_cr("Split-If");
+#ifndef PRODUCT
+    if (TraceLoopOpts || TraceSplitIf) {
+      tty->print_cr("Split-If: %d %s", iff->_idx, iff->Name());
     }
+#endif
     do_split_if(iff);
     C->print_method(PHASE_AFTER_SPLIT_IF, 4, iff);
     return;
@@ -1590,6 +1592,11 @@ bool PhaseIdealLoop::try_merge_identical_ifs(Node* n) {
     // Now split the IF
     RegionNode* new_false_region;
     RegionNode* new_true_region;
+#ifndef PRODUCT
+    if (TraceLoopOpts || TraceSplitIf) {
+      tty->print_cr("Split-If Merging Identical Ifs: Dom-If: %d %s, If: %d %s", dom_if->_idx, dom_if->Name(), n->_idx, n->Name());
+    }
+#endif
     do_split_if(n, &new_false_region, &new_true_region);
     assert(new_false_region->req() == new_true_region->req(), "");
 #ifdef ASSERT
