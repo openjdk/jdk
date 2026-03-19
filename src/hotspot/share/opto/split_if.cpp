@@ -38,6 +38,11 @@ RegionNode* PhaseIdealLoop::split_thru_region(Node* n, RegionNode* region) {
   assert(n->is_CFG(), "");
   RegionNode* r = new RegionNode(region->req());
   IdealLoopTree* loop = get_loop(n);
+#ifndef PRODUCT
+  if (TraceSplitIf) {
+    tty->print_cr("  Splitting %d %s through %d %s", n->_idx, n->Name(), region->_idx, region->Name());
+  }
+#endif
   for (uint i = 1; i < region->req(); i++) {
     Node* x = n->clone();
     Node* in0 = n->in(0);
@@ -145,6 +150,11 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
   }
 
   // Now actually split-up this guy.  One copy per control path merging.
+#ifndef PRODUCT
+  if (TraceSplitIf) {
+    tty->print_cr("  Splitting up: %d %s", n->_idx, n->Name());
+  }
+#endif
   Node *phi = PhiNode::make_blank(blk1, n);
   for( uint j = 1; j < blk1->req(); j++ ) {
     Node *x = n->clone();
@@ -185,6 +195,11 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
 // AddP and CheckCastPP have the same obj input after split if.
 bool PhaseIdealLoop::clone_cmp_loadklass_down(Node* n, const Node* blk1, const Node* blk2) {
   if (n->Opcode() == Op_AddP && at_relevant_ctrl(n, blk1, blk2)) {
+#ifndef PRODUCT
+    if (TraceSplitIf) {
+      tty->print_cr("  Cloning down (LoadKlass): %d %s", n->_idx, n->Name());
+    }
+#endif
     Node_List cmp_nodes;
     uint old = C->unique();
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
@@ -301,6 +316,11 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
            at_relevant_ctrl(cmov, blk1, blk2)))) {
 
       // Must clone down
+#ifndef PRODUCT
+      if (TraceSplitIf) {
+        tty->print_cr("  Cloning down (Cmp): %d %s", n->_idx, n->Name());
+      }
+#endif
       if (!n->is_FastLock()) {
         // Clone down any block-local BoolNode uses of this CmpNode
         for (DUIterator i = n->outs(); n->has_out(i); i++) {
@@ -401,6 +421,12 @@ void PhaseIdealLoop::clone_template_assertion_expression_down(Node* node) {
     return;
   }
 
+#ifndef PRODUCT
+  if (TraceSplitIf) {
+    tty->print_cr("  Cloning down (Template Assertion Expression): %d %s", node->_idx, node->Name());
+  }
+#endif
+
   TemplateAssertionExpressionNode template_assertion_expression_node(node);
   auto clone_expression = [&](IfNode* template_assertion_predicate) {
     OpaqueTemplateAssertionPredicateNode* opaque_node =
@@ -459,6 +485,11 @@ Node *PhaseIdealLoop::spinup( Node *iff_dom, Node *new_false, Node *new_true, No
   Node *phi_post;
   if( prior_n == new_false || prior_n == new_true ) {
     phi_post = def->clone();
+#ifndef PRODUCT
+    if (TraceSplitIf) {
+      tty->print_cr("  Spinup: cloning def to sink: %d %s -> %d %s", def->_idx, def->Name(), phi_post->_idx, phi_post->Name());
+    }
+#endif
     phi_post->set_req(0, prior_n );
     register_new_node(phi_post, prior_n);
   } else {
@@ -472,6 +503,11 @@ Node *PhaseIdealLoop::spinup( Node *iff_dom, Node *new_false, Node *new_true, No
     } else {
       assert( def->is_Phi(), "" );
       assert( prior_n->is_Region(), "must be a post-dominating merge point" );
+#ifndef PRODUCT
+      if (TraceSplitIf) {
+        tty->print_cr("  Spinup: creating new Phi for merge: %d %s", def->_idx, def->Name());
+      }
+#endif
 
       // Need a Phi here
       phi_post = PhiNode::make_blank(prior_n, def);

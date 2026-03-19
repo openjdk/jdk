@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,14 @@
 
 package javax.xml.transform.ptests;
 
-import static javax.xml.transform.ptests.TransformerTestConst.GOLDEN_DIR;
-import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
-import static jaxp.library.JAXPTestUtilities.USER_DIR;
-import static jaxp.library.JAXPTestUtilities.compareWithGold;
-import static org.testng.Assert.assertTrue;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import org.junit.jupiter.api.Test;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.XMLFilter;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.XMLReaderFactory;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -45,14 +44,17 @@ import javax.xml.transform.sax.TemplatesHandler;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
-import org.testng.annotations.Test;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.xml.sax.InputSource;
-import org.xml.sax.XMLFilter;
-import org.xml.sax.XMLReader;
-import org.xml.sax.helpers.XMLReaderFactory;
+import static javax.xml.transform.ptests.TransformerTestConst.GOLDEN_DIR;
+import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
+import static org.junit.jupiter.api.Assertions.assertLinesMatch;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Test newTransformerhandler() method which takes StreamSource as argument can
@@ -61,7 +63,7 @@ import org.xml.sax.helpers.XMLReaderFactory;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm javax.xml.transform.ptests.SAXTFactoryTest
+ * @run junit/othervm javax.xml.transform.ptests.SAXTFactoryTest
  */
 public class SAXTFactoryTest {
     /**
@@ -84,16 +86,14 @@ public class SAXTFactoryTest {
      * argument can be set to XMLReader. SAXSource has input XML file as its
      * input source. XMLReader has a transformer handler which write out the
      * result to output file. Test verifies output file is same as golden file.
-     *
-     * @throws Exception If any errors occur.
      */
     @Test
     public void testcase01() throws Exception {
-        String outputFile = USER_DIR + "saxtf001.out";
+        String outputFile = "saxtf001.out";
         String goldFile = GOLDEN_DIR + "saxtf001GF.out";
 
         try (FileOutputStream fos = new FileOutputStream(outputFile)) {
-            XMLReader reader = XMLReaderFactory.createXMLReader();
+            XMLReader reader = getXmlReader();
             SAXTransformerFactory saxTFactory
                     = (SAXTransformerFactory) TransformerFactory.newInstance();
             TransformerHandler handler = saxTFactory.newTransformerHandler(new StreamSource(XSLT_FILE));
@@ -102,7 +102,7 @@ public class SAXTFactoryTest {
             reader.setContentHandler(handler);
             reader.parse(XML_FILE);
         }
-        assertTrue(compareWithGold(goldFile, outputFile));
+        assertFileLines(goldFile, outputFile);
     }
 
     /**
@@ -110,17 +110,15 @@ public class SAXTFactoryTest {
      * argument can be set to XMLReader. SAXSource has input XML file as its
      * input source. XMLReader has a content handler which write out the result
      * to output file. Test verifies output file is same as golden file.
-     *
-     * @throws Exception If any errors occur.
      */
     @Test
     public void testcase02() throws Exception {
-        String outputFile = USER_DIR + "saxtf002.out";
+        String outputFile = "saxtf002.out";
         String goldFile = GOLDEN_DIR + "saxtf002GF.out";
 
         try (FileOutputStream fos = new FileOutputStream(outputFile);
-                FileInputStream fis = new FileInputStream(XSLT_FILE)) {
-            XMLReader reader = XMLReaderFactory.createXMLReader();
+             FileInputStream fis = new FileInputStream(XSLT_FILE)) {
+            XMLReader reader = getXmlReader();
             SAXTransformerFactory saxTFactory
                     = (SAXTransformerFactory) TransformerFactory.newInstance();
             SAXSource ss = new SAXSource();
@@ -132,18 +130,16 @@ public class SAXTFactoryTest {
             reader.setContentHandler(handler);
             reader.parse(XML_FILE);
         }
-        assertTrue(compareWithGold(goldFile, outputFile));
+        assertFileLines(goldFile, outputFile);
     }
 
     /**
      * Unit test for newTransformerhandler(Source). DcoumentBuilderFactory is
      * namespace awareness, DocumentBuilder parse xslt file as DOMSource.
-     *
-     * @throws Exception If any errors occur.
      */
     @Test
     public void testcase03() throws Exception {
-        String outputFile = USER_DIR + "saxtf003.out";
+        String outputFile = "saxtf003.out";
         String goldFile = GOLDEN_DIR + "saxtf003GF.out";
 
         try (FileOutputStream fos = new FileOutputStream(outputFile)) {
@@ -151,10 +147,9 @@ public class SAXTFactoryTest {
             dbf.setNamespaceAware(true);
             DocumentBuilder docBuilder = dbf.newDocumentBuilder();
             Document document = docBuilder.parse(new File(XSLT_FILE));
-            Node node = (Node)document;
-            DOMSource domSource= new DOMSource(node);
+            DOMSource domSource = new DOMSource(document);
 
-            XMLReader reader = XMLReaderFactory.createXMLReader();
+            XMLReader reader = getXmlReader();
             SAXTransformerFactory saxTFactory
                     = (SAXTransformerFactory)TransformerFactory.newInstance();
             TransformerHandler handler =
@@ -164,15 +159,13 @@ public class SAXTFactoryTest {
             reader.setContentHandler(handler);
             reader.parse(XML_FILE);
         }
-        assertTrue(compareWithGold(goldFile, outputFile));
+        assertFileLines(goldFile, outputFile);
     }
 
     /**
      * Negative test for newTransformerHandler when relative URI is in XML file.
-     *
-     * @throws Exception If any errors occur.
      */
-    @Test(expectedExceptions = TransformerConfigurationException.class)
+    @Test
     public void transformerHandlerTest04() throws Exception {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         dbf.setNamespaceAware(true);
@@ -180,31 +173,28 @@ public class SAXTFactoryTest {
         Document document = docBuilder.parse(new File(XSLT_INCL_FILE));
         DOMSource domSource= new DOMSource(document);
         SAXTransformerFactory saxTFactory
-                = (SAXTransformerFactory)TransformerFactory.newInstance();
-        saxTFactory.newTransformerHandler(domSource);
+                = (SAXTransformerFactory) TransformerFactory.newInstance();
+        assertThrows(TransformerConfigurationException.class, () -> saxTFactory.newTransformerHandler(domSource));
     }
 
     /**
      * Unit test for XMLReader parsing when relative URI is used in xsl file and
      * SystemId was set.
-     *
-     * @throws Exception If any errors occur.
      */
     @Test
     public void testcase05() throws Exception {
-        String outputFile = USER_DIR + "saxtf005.out";
+        String outputFile = "saxtf005.out";
         String goldFile = GOLDEN_DIR + "saxtf005GF.out";
 
         try (FileOutputStream fos = new FileOutputStream(outputFile)) {
-            XMLReader reader = XMLReaderFactory.createXMLReader();
+            XMLReader reader = getXmlReader();
             SAXTransformerFactory saxTFactory
                     = (SAXTransformerFactory)TransformerFactory.newInstance();
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
             dbf.setNamespaceAware(true);
             DocumentBuilder docBuilder = dbf.newDocumentBuilder();
             Document document = docBuilder.parse(new File(XSLT_INCL_FILE));
-            Node node = (Node)document;
-            DOMSource domSource= new DOMSource(node);
+            DOMSource domSource = new DOMSource(document);
 
             domSource.setSystemId("file:///" + XML_DIR);
 
@@ -216,28 +206,26 @@ public class SAXTFactoryTest {
             reader.setContentHandler(handler);
             reader.parse(XML_FILE);
         }
-        assertTrue(compareWithGold(goldFile, outputFile));
+        assertFileLines(goldFile, outputFile);
     }
 
     /**
      * Unit test newTransformerHandler with a DOMSource.
-     *
-     * @throws Exception If any errors occur.
      */
     @Test
     public void testcase06() throws Exception {
-        String outputFile = USER_DIR + "saxtf006.out";
+        String outputFile = "saxtf006.out";
         String goldFile = GOLDEN_DIR + "saxtf006GF.out";
 
         try (FileOutputStream fos = new FileOutputStream(outputFile)) {
-            XMLReader reader = XMLReaderFactory.createXMLReader();
+            XMLReader reader = getXmlReader();
             SAXTransformerFactory saxTFactory
                     = (SAXTransformerFactory)TransformerFactory.newInstance();
 
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
             dbf.setNamespaceAware(true);
             DocumentBuilder docBuilder = dbf.newDocumentBuilder();
-            Node node = (Node)docBuilder.parse(new File(XSLT_INCL_FILE));
+            Node node = docBuilder.parse(new File(XSLT_INCL_FILE));
 
             DOMSource domSource = new DOMSource(node, "file:///" + XML_DIR);
             TransformerHandler handler =
@@ -248,20 +236,19 @@ public class SAXTFactoryTest {
             reader.setContentHandler(handler);
             reader.parse(XML_FILE);
         }
-        assertTrue(compareWithGold(goldFile, outputFile));
+        assertFileLines(goldFile, outputFile);
     }
 
     /**
      * Test newTransformerHandler with a Template Handler.
-     *
-     * @throws Exception If any errors occur.
      */
+    @Test
     public void testcase08() throws Exception {
-        String outputFile = USER_DIR + "saxtf008.out";
+        String outputFile = "saxtf008.out";
         String goldFile = GOLDEN_DIR + "saxtf008GF.out";
 
         try (FileOutputStream fos = new FileOutputStream(outputFile)) {
-            XMLReader reader = XMLReaderFactory.createXMLReader();
+            XMLReader reader = getXmlReader();
             SAXTransformerFactory saxTFactory
                     = (SAXTransformerFactory)TransformerFactory.newInstance();
 
@@ -277,22 +264,20 @@ public class SAXTFactoryTest {
             reader.setContentHandler(tfhandler);
             reader.parse(XML_FILE);
         }
-        assertTrue(compareWithGold(goldFile, outputFile));
+        assertFileLines(goldFile, outputFile);
     }
 
     /**
      * Test newTransformerHandler with a Template Handler along with a relative
      * URI in the style-sheet file.
-     *
-     * @throws Exception If any errors occur.
      */
     @Test
     public void testcase09() throws Exception {
-        String outputFile = USER_DIR + "saxtf009.out";
+        String outputFile = "saxtf009.out";
         String goldFile = GOLDEN_DIR + "saxtf009GF.out";
 
         try (FileOutputStream fos = new FileOutputStream(outputFile)) {
-            XMLReader reader = XMLReaderFactory.createXMLReader();
+            XMLReader reader = getXmlReader();
             SAXTransformerFactory saxTFactory
                     = (SAXTransformerFactory)TransformerFactory.newInstance();
 
@@ -307,21 +292,19 @@ public class SAXTFactoryTest {
             reader.setContentHandler(tfhandler);
             reader.parse(XML_FILE);
         }
-        assertTrue(compareWithGold(goldFile, outputFile));
+        assertFileLines(goldFile, outputFile);
     }
 
     /**
      * Unit test for contentHandler setter/getter along reader as handler's
      * parent.
-     *
-     * @throws Exception If any errors occur.
      */
     @Test
     public void testcase10() throws Exception {
-        String outputFile = USER_DIR + "saxtf010.out";
+        String outputFile = "saxtf010.out";
         String goldFile = GOLDEN_DIR + "saxtf010GF.out";
         // The transformer will use a SAX parser as it's reader.
-        XMLReader reader = XMLReaderFactory.createXMLReader();
+        XMLReader reader = getXmlReader();
         SAXTransformerFactory saxTFactory
                 = (SAXTransformerFactory)TransformerFactory.newInstance();
         XMLFilter filter =
@@ -333,26 +316,23 @@ public class SAXTFactoryTest {
         // the content handler for the parser object (it's "parent"), and
         // will then call the parse method on the parser.
         filter.parse(new InputSource(XML_FILE));
-        assertTrue(compareWithGold(goldFile, outputFile));
+        assertFileLines(goldFile, outputFile);
     }
 
     /**
      * Unit test for contentHandler setter/getter with parent.
-     *
-     * @throws Exception If any errors occur.
      */
     @Test
     public void testcase11() throws Exception {
-        String outputFile = USER_DIR + "saxtf011.out";
+        String outputFile = "saxtf011.out";
         String goldFile = GOLDEN_DIR + "saxtf011GF.out";
         // The transformer will use a SAX parser as it's reader.
-        XMLReader reader = XMLReaderFactory.createXMLReader();
+        XMLReader reader = getXmlReader();
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         dbf.setNamespaceAware(true);
         DocumentBuilder docBuilder = dbf.newDocumentBuilder();
         Document document = docBuilder.parse(new File(XSLT_FILE));
-        Node node = (Node)document;
-        DOMSource domSource= new DOMSource(node);
+        DOMSource domSource = new DOMSource(document);
 
         SAXTransformerFactory saxTFactory
                 = (SAXTransformerFactory)TransformerFactory.newInstance();
@@ -365,20 +345,18 @@ public class SAXTFactoryTest {
         // the content handler for the parser object (it's "parent"), and
         // will then call the parse method on the parser.
         filter.parse(new InputSource(XML_FILE));
-        assertTrue(compareWithGold(goldFile, outputFile));
+        assertFileLines(goldFile, outputFile);
     }
 
     /**
      * Unit test for contentHandler setter/getter.
-     *
-     * @throws Exception If any errors occur.
      */
     @Test
     public void testcase12() throws Exception {
-        String outputFile = USER_DIR + "saxtf012.out";
+        String outputFile = "saxtf012.out";
         String goldFile = GOLDEN_DIR + "saxtf012GF.out";
         // The transformer will use a SAX parser as it's reader.
-        XMLReader reader = XMLReaderFactory.createXMLReader();
+        XMLReader reader = getXmlReader();
 
         InputSource is = new InputSource(new FileInputStream(XSLT_FILE));
         SAXSource saxSource = new SAXSource();
@@ -394,27 +372,26 @@ public class SAXTFactoryTest {
         // the content handler for the parser object (it's "parent"), and
         // will then call the parse method on the parser.
         filter.parse(new InputSource(XML_FILE));
-        assertTrue(compareWithGold(goldFile, outputFile));
+        assertFileLines(goldFile, outputFile);
     }
 
     /**
      * Unit test for TemplatesHandler setter/getter.
-     *
-     * @throws Exception If any errors occur.
      */
     @Test
     public void testcase13() throws Exception {
-        String outputFile = USER_DIR + "saxtf013.out";
+        String outputFile = "saxtf013.out";
         String goldFile = GOLDEN_DIR + "saxtf013GF.out";
         try(FileInputStream fis = new FileInputStream(XML_FILE)) {
             // The transformer will use a SAX parser as it's reader.
-            XMLReader reader = XMLReaderFactory.createXMLReader();
+            XMLReader reader = getXmlReader();
 
             SAXTransformerFactory saxTFactory
                     = (SAXTransformerFactory) TransformerFactory.newInstance();
             TemplatesHandler thandler = saxTFactory.newTemplatesHandler();
-            // I have put this as it was complaining about systemid
-            thandler.setSystemId("file:///" + USER_DIR);
+            // Set the root directory as the ID so the handler can resolve relative paths.
+            String rootDirUri = Path.of(".").toAbsolutePath().toUri().toASCIIString();
+            thandler.setSystemId(rootDirUri);
 
             reader.setContentHandler(thandler);
             reader.parse(XSLT_FILE);
@@ -425,6 +402,17 @@ public class SAXTFactoryTest {
             filter.setContentHandler(new MyContentHandler(outputFile));
             filter.parse(new InputSource(fis));
         }
-        assertTrue(compareWithGold(goldFile, outputFile));
+        assertFileLines(goldFile, outputFile);
+    }
+
+    @SuppressWarnings("deprecation")
+    private static XMLReader getXmlReader() throws SAXException {
+        return XMLReaderFactory.createXMLReader();
+    }
+
+    private static void assertFileLines(String goldenFile, String actualFile) throws IOException {
+        assertLinesMatch(
+                Files.readAllLines(Path.of(goldenFile)),
+                Files.readAllLines(Path.of(actualFile)));
     }
 }

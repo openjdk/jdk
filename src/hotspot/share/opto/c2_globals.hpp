@@ -249,6 +249,9 @@
   develop(bool, TraceLoopOpts, false,                                       \
           "Trace executed loop optimizations")                              \
                                                                             \
+  develop(bool, TraceSplitIf, false,                                        \
+          "Trace Split-If optimization")                                    \
+                                                                            \
   develop(bool, TraceLoopLimitCheck, false,                                 \
           "Trace generation of loop limits checks")                         \
                                                                             \
@@ -333,6 +336,15 @@
                                                                             \
   product(bool, PartialPeelLoop, true,                                      \
           "Partial peel (rotate) loops")                                    \
+                                                                            \
+  product(uint, LoopPeeling, 1, DIAGNOSTIC,                                 \
+          "Control loop peeling optimization: "                             \
+          "0 = always disable loop peeling, "                               \
+          "1 = enable loop peeling (default), "                             \
+          "2 = disable loop peeling as a standalone optimization but "      \
+          "allow it as a helper to other loop optimizations like removing " \
+          "empty loops")                                                    \
+          range(0, 2)                                                       \
                                                                             \
   product(intx, PartialPeelNewPhiDelta, 0,                                  \
           "Additional phis that can be created by partial peeling")         \

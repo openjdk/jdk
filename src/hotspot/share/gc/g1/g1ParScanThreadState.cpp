@@ -741,7 +741,7 @@ void G1ParScanThreadStateSet::print_partial_array_task_stats() {
     return state_for_worker(i)->partial_array_task_stats();
   };
   PartialArrayTaskStats::log_set(_num_workers, get_stats,
-                                 "Partial Array Task Stats");
+                                 "Young GC Partial Array");
 }
 
 #endif // TASKQUEUE_STATS
