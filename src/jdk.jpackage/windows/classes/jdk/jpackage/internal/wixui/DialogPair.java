@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,46 +22,28 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jpackage.internal.model;
+package jdk.jpackage.internal.wixui;
 
-import java.nio.file.Path;
-import java.util.Optional;
-import java.util.UUID;
+import static java.util.Comparator.comparing;
 
-public interface WinMsiPackageMixin {
+import java.util.Comparator;
+import java.util.Objects;
 
-    DottedVersion msiVersion();
+public record DialogPair(Dialog first, Dialog second) {
 
-    boolean withInstallDirChooser();
+    public DialogPair {
+        Objects.requireNonNull(first);
+        Objects.requireNonNull(second);
+        if (first.equals(second) || first.id().equals(second.id())) {
+            throw new IllegalArgumentException("Dialogs must be different");
+        }
+    }
 
-    boolean withShortcutPrompt();
+    DialogPair flip() {
+        return new DialogPair(second, first);
+    }
 
-    boolean withUI();
-
-    Optional<String> helpURL();
-
-    Optional<String> updateURL();
-
-    String startMenuGroupName();
-
-    boolean isSystemWideInstall();
-
-    UUID upgradeCode();
-
-    UUID productCode();
-
-    Optional<Path> serviceInstaller();
-
-    record Stub(
-            DottedVersion msiVersion,
-            boolean withInstallDirChooser,
-            boolean withShortcutPrompt,
-            boolean withUI,
-            Optional<String> helpURL,
-            Optional<String> updateURL,
-            String startMenuGroupName,
-            boolean isSystemWideInstall,
-            UUID upgradeCode,
-            UUID productCode,
-            Optional<Path> serviceInstaller) implements WinMsiPackageMixin {}
+    public static final Comparator<DialogPair> DEFAULT_COMPARATOR =
+            comparing(DialogPair::first, Dialog.DEFAULT_COMPARATOR)
+                    .thenComparing(comparing(DialogPair::second, Dialog.DEFAULT_COMPARATOR));
 }

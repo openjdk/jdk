@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,46 +22,35 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jpackage.internal.model;
+package jdk.jpackage.internal;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.Objects;
+import jdk.jpackage.internal.resources.ResourceLocator;
 
-public interface WinMsiPackageMixin {
+/**
+ * WSH script altering cooked .msi file.
+ */
+record MsiMutator(String scriptResourceName) {
 
-    DottedVersion msiVersion();
+    MsiMutator {
+        Objects.requireNonNull(scriptResourceName);
+        if (Path.of(scriptResourceName).getNameCount() != 1) {
+            throw new IllegalArgumentException();
+        }
+    }
 
-    boolean withInstallDirChooser();
+    void addToConfigRoot(Path configRoot) throws IOException {
+        var scriptFile = configRoot.resolve(pathInConfigRoot());
+        try (var in = ResourceLocator.class.getResourceAsStream(scriptResourceName)) {
+            Files.createDirectories(scriptFile.getParent());
+            Files.copy(in, scriptFile);
+        }
+    }
 
-    boolean withShortcutPrompt();
-
-    boolean withUI();
-
-    Optional<String> helpURL();
-
-    Optional<String> updateURL();
-
-    String startMenuGroupName();
-
-    boolean isSystemWideInstall();
-
-    UUID upgradeCode();
-
-    UUID productCode();
-
-    Optional<Path> serviceInstaller();
-
-    record Stub(
-            DottedVersion msiVersion,
-            boolean withInstallDirChooser,
-            boolean withShortcutPrompt,
-            boolean withUI,
-            Optional<String> helpURL,
-            Optional<String> updateURL,
-            String startMenuGroupName,
-            boolean isSystemWideInstall,
-            UUID upgradeCode,
-            UUID productCode,
-            Optional<Path> serviceInstaller) implements WinMsiPackageMixin {}
+    Path pathInConfigRoot() {
+        return Path.of(scriptResourceName);
+    }
 }

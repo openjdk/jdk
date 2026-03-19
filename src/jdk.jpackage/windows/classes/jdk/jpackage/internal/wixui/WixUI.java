@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,46 +22,25 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jpackage.internal.model;
+package jdk.jpackage.internal.wixui;
 
-import java.nio.file.Path;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.Objects;
 
-public interface WinMsiPackageMixin {
+/**
+ * Standard WiX UI.
+ */
+public enum WixUI {
+    MINIMAL("WixUI_Minimal"),
+    INSTALL_DIR("WixUI_InstallDir"),
+    ;
 
-    DottedVersion msiVersion();
+    WixUI(String id) {
+        this.id = Objects.requireNonNull(id);
+    }
 
-    boolean withInstallDirChooser();
+    public String id() {
+        return id;
+    }
 
-    boolean withShortcutPrompt();
-
-    boolean withUI();
-
-    Optional<String> helpURL();
-
-    Optional<String> updateURL();
-
-    String startMenuGroupName();
-
-    boolean isSystemWideInstall();
-
-    UUID upgradeCode();
-
-    UUID productCode();
-
-    Optional<Path> serviceInstaller();
-
-    record Stub(
-            DottedVersion msiVersion,
-            boolean withInstallDirChooser,
-            boolean withShortcutPrompt,
-            boolean withUI,
-            Optional<String> helpURL,
-            Optional<String> updateURL,
-            String startMenuGroupName,
-            boolean isSystemWideInstall,
-            UUID upgradeCode,
-            UUID productCode,
-            Optional<Path> serviceInstaller) implements WinMsiPackageMixin {}
+    private final String id;
 }

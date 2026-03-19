@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,46 +22,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jpackage.internal.model;
+package jdk.jpackage.internal.wixui;
 
-import java.nio.file.Path;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.Comparator;
 
-public interface WinMsiPackageMixin {
+/**
+ * WiX Dialog's control.
+ */
+public sealed interface Control permits StandardControl {
+    String id();
 
-    DottedVersion msiVersion();
-
-    boolean withInstallDirChooser();
-
-    boolean withShortcutPrompt();
-
-    boolean withUI();
-
-    Optional<String> helpURL();
-
-    Optional<String> updateURL();
-
-    String startMenuGroupName();
-
-    boolean isSystemWideInstall();
-
-    UUID upgradeCode();
-
-    UUID productCode();
-
-    Optional<Path> serviceInstaller();
-
-    record Stub(
-            DottedVersion msiVersion,
-            boolean withInstallDirChooser,
-            boolean withShortcutPrompt,
-            boolean withUI,
-            Optional<String> helpURL,
-            Optional<String> updateURL,
-            String startMenuGroupName,
-            boolean isSystemWideInstall,
-            UUID upgradeCode,
-            UUID productCode,
-            Optional<Path> serviceInstaller) implements WinMsiPackageMixin {}
+    public static final Comparator<Control> DEFAULT_COMPARATOR = Comparator.comparing(Control::id);
 }
