@@ -32,7 +32,8 @@
  * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:TrackedInitializationLimit=0
  *                   -XX:CompileCommand=compileonly,${test.main.class}::test8372649
  *                   -XX:+OptoScheduling ${test.main.class} 8372649
- * @run main/othervm -XX:+OptoScheduling ${test.main.class} 8376189
+ * @run main/othervm --add-modules=jdk.incubator.vector
+ *                   -XX:+OptoScheduling ${test.main.class} 8376189
  */
 
 package compiler.codegen;
