@@ -2697,7 +2697,7 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   }
   // VectorStoreMaskNode::Identity looks through VectorMaskCast to find
   // VectorLoadMask (Float/Double masks insert a VectorMaskCast).
-  if (use_op == Op_VectorMaskCast) {
+  if (use_op == Op_VectorMaskCast && n->Opcode() == Op_VectorLoadMask) {
     add_users_to_worklist_if(worklist, use, [](Node* u) { return u->Opcode() == Op_VectorStoreMask; });
   }
 

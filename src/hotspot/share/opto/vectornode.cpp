@@ -2037,12 +2037,13 @@ Node* VectorLongToMaskNode::Ideal(PhaseGVN* phase, bool can_reshape) {
        if (src->Opcode() != Op_VectorStoreMask) {
          return nullptr;
        }
-       src = src->in(1);
+       if (src->bottom_type()->is_vect()->length() == vlen) {
+         return src;
+       }
+       return nullptr;
      }
      const TypeVect* src_type = src->bottom_type()->is_vect();
-     if (src_type->length() == vlen &&
-         ((src_type->isa_vectmask() == nullptr && is_mask == nullptr) ||
-          (src_type->isa_vectmask() && is_mask))) {
+     if (src_type->length() == vlen && src_type->isa_vectmask() && is_mask) {
        return new VectorMaskCastNode(src, dst_type);
      }
   }

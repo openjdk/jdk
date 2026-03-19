@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2025, 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * Copyright (c) 2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -356,6 +357,28 @@ public class VectorMaskToLongTest {
         applyIfCPUFeature = { "asimd", "true" })
     public static void testToLongDouble() {
         testToLongGeneral(D_SPECIES);
+    }
+
+    @Test
+    @IR(counts = { IRNode.VECTOR_STORE_MASK, "= 0",
+                   IRNode.VECTOR_MASK_TO_LONG, "= 1" },
+        applyIfCPUFeatureOr = { "avx512", "true", "avx2", "true", "asimd", "true", "rvv", "true" })
+    public static void testCastToLongShortToInt() {
+        long got = VectorMask.fromArray(ShortVector.SPECIES_128, m, 0)
+                             .cast(IntVector.SPECIES_256)
+                             .toLong();
+        verifyMaskToLong(IntVector.SPECIES_256, -1L, got);
+    }
+
+    @Test
+    @IR(counts = { IRNode.VECTOR_STORE_MASK, "= 0",
+                   IRNode.VECTOR_MASK_TO_LONG, "= 1" },
+        applyIfCPUFeatureOr = { "avx512", "true", "avx2", "true", "asimd", "true", "rvv", "true" })
+    public static void testCastToLongIntToLong() {
+        long got = VectorMask.fromArray(IntVector.SPECIES_128, m, 0)
+                             .cast(LongVector.SPECIES_256)
+                             .toLong();
+        verifyMaskToLong(LongVector.SPECIES_256, -1L, got);
     }
 
     public static void main(String[] args) {
