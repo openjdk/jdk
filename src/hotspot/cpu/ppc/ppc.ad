@@ -14362,20 +14362,6 @@ instruct tlsLoadP(threadRegP dst) %{
 
 //---Some PPC specific nodes---------------------------------------------------
 
-// Stop a group.
-instruct endGroup() %{
-  ins_cost(0);
-
-  ins_is_nop(true);
-
-  format %{ "End Bundle (ori r1, r1, 0)" %}
-  size(4);
-  ins_encode %{
-    __ endgroup();
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
 // Nop instructions
 
 instruct fxNop() %{
