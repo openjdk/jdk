@@ -126,7 +126,7 @@ public class StreamLinesTest {
 
     private static final Random random = RandomFactory.getRandom();
 
-    public static Stream<Arguments> lines() {
+    static Stream<Arguments> lines() {
         List<Arguments> l = new ArrayList<>();
 
         // Include the three supported optimal-line charsets and one
