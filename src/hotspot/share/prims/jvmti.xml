@@ -13173,7 +13173,7 @@ myInit() {
          id="ClassLoad" const="JVMTI_EVENT_CLASS_LOAD" filtered="thread" phase="start" num="55">
     <description>
       A class load event is generated
-      <functionlink id="GetLoadedClasses">when a class or interface is created.</functionlink>.
+      <functionlink id="GetLoadedClasses">when a class or interface is created</functionlink>.
       <p/>
       Array class creation does not generate a class load event.
       The creation of a primitive class (for example, java.lang.Integer.TYPE)

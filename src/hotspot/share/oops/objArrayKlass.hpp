@@ -135,17 +135,16 @@ class ObjArrayKlass : public ArrayKlass {
   template <typename T, typename OopClosureType>
   inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
 
-  // Iterate over oop elements within [start, end), and metadata.
-  template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_range(objArrayOop a, OopClosureType* closure, int start, int end);
-
- public:
-  // Iterate over all oop elements.
+  // Iterate over all oop elements, and no metadata.
   template <typename T, class OopClosureType>
   inline void oop_oop_iterate_elements(objArrayOop a, OopClosureType* closure);
 
+  // Iterate over oop elements within index range [start, end), and no metadata.
+  template <typename T, class OopClosureType>
+  inline void oop_oop_iterate_elements_range(objArrayOop a, OopClosureType* closure, int start, int end);
+
  private:
-  // Iterate over all oop elements with indices within mr.
+  // Iterate over all oop elements bounded by addresses [low, high), and no metadata.
   template <typename T, class OopClosureType>
   inline void oop_oop_iterate_elements_bounded(objArrayOop a, OopClosureType* closure, void* low, void* high);
 

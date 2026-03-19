@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -726,12 +726,30 @@ public final class PackageTest extends RunnablePackageTest {
                 }
 
                 case CREATE -> {
-                    Executor.Result result = cmd.execute(expectedJPackageExitCode);
+                    var nullableOutputBundle = cmd.nullableOutputBundle();
+
+                    var oldOutputBundleSnapshot = nullableOutputBundle
+                            .filter(Files::exists)
+                            .filter(_ -> {
+                                return !cmd.isRemoveOldOutputBundle();
+                            })
+                            .map(TKit.PathSnapshot::new);
+
+                    var result = cmd.execute(expectedJPackageExitCode);
+
                     if (expectedJPackageExitCode == 0) {
                         TKit.assertFileExists(cmd.outputBundle());
                     } else {
-                        cmd.nullableOutputBundle().ifPresent(outputBundle -> {
-                            TKit.assertPathExists(outputBundle, false);
+                        nullableOutputBundle.ifPresent(outputBundle -> {
+                            oldOutputBundleSnapshot.ifPresentOrElse(snapshot -> {
+                                // jpackage failed, but the output bundle exists.
+                                // This output bundle existed before the jpackage was invoked.
+                                // Verify jpackage didn't modify it.
+                                new TKit.PathSnapshot(outputBundle).assertEquals(snapshot, String.format(
+                                        "Check jpackage didn't modify the old output bundle [%s]", outputBundle));
+                            }, () -> {
+                                TKit.assertPathExists(outputBundle, false);
+                            });
                         });
                     }
                     verifyPackageBundle(cmd, result, expectedJPackageExitCode);

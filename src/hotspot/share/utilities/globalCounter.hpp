@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "memory/allStatic.hpp"
 #include "memory/padded.hpp"
+#include "runtime/atomic.hpp"
 
 class Thread;
 
@@ -47,7 +48,7 @@ class GlobalCounter : public AllStatic {
   // counter is on a separate cacheline.
   struct PaddedCounter {
     DEFINE_PAD_MINUS_SIZE(0, DEFAULT_PADDING_SIZE, 0);
-    volatile uintx _counter;
+    Atomic<uintx> _counter;
     DEFINE_PAD_MINUS_SIZE(1, DEFAULT_PADDING_SIZE, sizeof(volatile uintx));
   };
 

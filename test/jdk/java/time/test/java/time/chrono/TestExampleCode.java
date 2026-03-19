@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@
 
 package test.java.time.chrono;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -72,13 +72,16 @@ import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.Set;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Test case verify that the example code in the package-info.java compiles
  * and runs.
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestExampleCode {
 
     @Test
@@ -113,14 +116,14 @@ public class TestExampleCode {
     //-----------------------------------------------------------------------
     // Data provider for Hijrah Type names
     //-----------------------------------------------------------------------
-    @DataProvider(name = "HijrahTypeNames")
     Object[][] data_of_ummalqura() {
         return new Object[][]{
             { "Hijrah-umalqura", "islamic-umalqura"},
         };
     }
 
-    @Test(dataProvider= "HijrahTypeNames")
+    @ParameterizedTest
+    @MethodSource("data_of_ummalqura")
     public void test_HijrahTypeViaLocale(String calendarId, String calendarType) {
         Locale.Builder builder = new Locale.Builder();
         builder.setLanguage("en").setRegion("US");
@@ -130,7 +133,7 @@ public class TestExampleCode {
         System.out.printf(" Locale language tag: %s, Chronology ID: %s, type: %s%n",
                 locale.toLanguageTag(), chrono, chrono.getCalendarType());
         Chronology expected = Chronology.of(calendarId);
-        assertEquals(chrono, expected, "Expected chronology not found");
+        assertEquals(expected, chrono, "Expected chronology not found");
     }
 
     @Test

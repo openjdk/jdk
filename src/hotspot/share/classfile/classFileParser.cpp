@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -943,6 +943,7 @@ public:
     _java_lang_Deprecated_for_removal,
     _jdk_internal_vm_annotation_AOTSafeClassInitializer,
     _method_AOTRuntimeSetup,
+    _jdk_internal_vm_annotation_TrustFinalFields,
     _annotation_LIMIT
   };
   const Location _location;
@@ -1016,7 +1017,8 @@ public:
 };
 
 
-static int skip_annotation_value(const u1*, int, int); // fwd decl
+static int skip_annotation_value(const u1* buffer, int limit, int index, int recursion_depth); // fwd decl
+static const int max_recursion_depth = 5;
 
 // Safely increment index by val if does not pass limit
 #define SAFE_ADD(index, limit, val) \
@@ -1024,23 +1026,29 @@ if (index >= limit - val) return limit; \
 index += val;
 
 // Skip an annotation.  Return >=limit if there is any problem.
-static int skip_annotation(const u1* buffer, int limit, int index) {
+static int skip_annotation(const u1* buffer, int limit, int index, int recursion_depth = 0) {
   assert(buffer != nullptr, "invariant");
+  if (recursion_depth > max_recursion_depth) {
+    return limit;
+  }
   // annotation := atype:u2 do(nmem:u2) {member:u2 value}
   // value := switch (tag:u1) { ... }
   SAFE_ADD(index, limit, 4); // skip atype and read nmem
   int nmem = Bytes::get_Java_u2((address)buffer + index - 2);
   while (--nmem >= 0 && index < limit) {
     SAFE_ADD(index, limit, 2); // skip member
-    index = skip_annotation_value(buffer, limit, index);
+    index = skip_annotation_value(buffer, limit, index, recursion_depth + 1);
   }
   return index;
 }
 
 // Skip an annotation value.  Return >=limit if there is any problem.
-static int skip_annotation_value(const u1* buffer, int limit, int index) {
+static int skip_annotation_value(const u1* buffer, int limit, int index, int recursion_depth) {
   assert(buffer != nullptr, "invariant");
 
+  if (recursion_depth > max_recursion_depth) {
+    return limit;
+  }
   // value := switch (tag:u1) {
   //   case B, C, I, S, Z, D, F, J, c: con:u2;
   //   case e: e_class:u2 e_name:u2;
@@ -1072,12 +1080,12 @@ static int skip_annotation_value(const u1* buffer, int limit, int index) {
       SAFE_ADD(index, limit, 2); // read nval
       int nval = Bytes::get_Java_u2((address)buffer + index - 2);
       while (--nval >= 0 && index < limit) {
-        index = skip_annotation_value(buffer, limit, index);
+        index = skip_annotation_value(buffer, limit, index, recursion_depth + 1);
       }
     }
     break;
     case '@':
-      index = skip_annotation(buffer, limit, index);
+      index = skip_annotation(buffer, limit, index, recursion_depth + 1);
       break;
     default:
       return limit;  //  bad tag byte
@@ -1878,6 +1886,11 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
       if (!privileged)              break;  // only allow in privileged code
       return _field_Stable;
     }
+    case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_TrustFinalFields_signature): {
+      if (_location != _in_class)   break;  // only allow for classes
+      if (!privileged)              break;  // only allow in privileged code
+      return _jdk_internal_vm_annotation_TrustFinalFields;
+    }
     case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_Contended_signature): {
       if (_location != _in_field && _location != _in_class) {
         break;  // only allow for fields and classes
@@ -1991,6 +2004,9 @@ void ClassFileParser::ClassAnnotationCollector::apply_to(InstanceKlass* ik) {
   }
   if (has_annotation(_jdk_internal_vm_annotation_AOTSafeClassInitializer)) {
     ik->set_has_aot_safe_initializer();
+  }
+  if (has_annotation(_jdk_internal_vm_annotation_TrustFinalFields)) {
+    ik->set_trust_final_fields(true);
   }
 }
 

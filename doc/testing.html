@@ -72,6 +72,7 @@ id="toc-notes-for-specific-tests">Notes for Specific Tests</a>
 <li><a href="#non-us-locale" id="toc-non-us-locale">Non-US
 locale</a></li>
 <li><a href="#pkcs11-tests" id="toc-pkcs11-tests">PKCS11 Tests</a></li>
+<li><a href="#sctp-tests" id="toc-sctp-tests">SCTP Tests</a></li>
 <li><a href="#testing-ahead-of-time-optimizations"
 id="toc-testing-ahead-of-time-optimizations">Testing Ahead-of-time
 Optimizations</a></li>
@@ -621,6 +622,21 @@ element of the appropriate <code>@Artifact</code> class. (See
     JTREG=&quot;JAVA_OPTIONS=-Djdk.test.lib.artifacts.nsslib-linux_aarch64=/path/to/NSS-libs&quot;</code></pre>
 <p>For more notes about the PKCS11 tests, please refer to
 test/jdk/sun/security/pkcs11/README.</p>
+<h3 id="sctp-tests">SCTP Tests</h3>
+<p>The SCTP tests require the SCTP runtime library, which is often not
+installed by default in popular Linux distributions. Without this
+library, the SCTP tests will be skipped. If you want to enable the SCTP
+tests, you should install the SCTP library before running the tests.</p>
+<p>For distributions using the .deb packaging format and the apt tool
+(such as Debian, Ubuntu, etc.), try this:</p>
+<pre><code>sudo apt install libsctp1
+sudo modprobe sctp
+lsmod | grep sctp</code></pre>
+<p>For distributions using the .rpm packaging format and the dnf tool
+(such as Fedora, Red Hat, etc.), try this:</p>
+<pre><code>sudo dnf install -y lksctp-tools
+sudo modprobe sctp
+lsmod | grep sctp</code></pre>
 <h3 id="testing-ahead-of-time-optimizations">Testing Ahead-of-time
 Optimizations</h3>
 <p>One way to improve test coverage of ahead-of-time (AOT) optimizations

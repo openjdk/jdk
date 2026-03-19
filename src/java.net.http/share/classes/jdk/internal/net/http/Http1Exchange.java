@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -473,11 +473,10 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
 
     @Override
     Http1ResponseBodySubscriber<T> createResponseSubscriber(BodyHandler<T> handler, ResponseInfo response) {
-        BodySubscriber<T> subscriber = handler.apply(response);
         var cancelTimerOnTermination =
                 cancelTimerOnResponseBodySubscriberTermination(
                         exchange.request().isWebSocket(), response.statusCode());
-        return new Http1ResponseBodySubscriber<>(subscriber, cancelTimerOnTermination, this);
+        return new Http1ResponseBodySubscriber<>(handler.apply(response), cancelTimerOnTermination, this);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
 #include "gc/g1/g1EvacFailureRegions.inline.hpp"
 #include "gc/g1/g1EvacInfo.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionPrinter.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
@@ -58,6 +59,7 @@
 #include "gc/shared/workerThread.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/threads.hpp"
 #include "utilities/ticks.hpp"
 
@@ -459,8 +461,8 @@ class G1PrepareEvacuationTask : public WorkerTask {
 
   G1CollectedHeap* _g1h;
   G1HeapRegionClaimer _claimer;
-  volatile uint _humongous_total;
-  volatile uint _humongous_candidates;
+  Atomic<uint> _humongous_total;
+  Atomic<uint> _humongous_candidates;
 
   G1MonotonicArenaMemoryStats _all_card_set_stats;
 
@@ -481,19 +483,19 @@ public:
   }
 
   void add_humongous_candidates(uint candidates) {
-    AtomicAccess::add(&_humongous_candidates, candidates);
+    _humongous_candidates.add_then_fetch(candidates);
   }
 
   void add_humongous_total(uint total) {
-    AtomicAccess::add(&_humongous_total, total);
+    _humongous_total.add_then_fetch(total);
   }
 
   uint humongous_candidates() {
-    return _humongous_candidates;
+    return _humongous_candidates.load_relaxed();
   }
 
   uint humongous_total() {
-    return _humongous_total;
+    return _humongous_total.load_relaxed();
   }
 
   const G1MonotonicArenaMemoryStats all_card_set_stats() const {
@@ -698,7 +700,7 @@ protected:
   virtual void evacuate_live_objects(G1ParScanThreadState* pss, uint worker_id) = 0;
 
 private:
-  volatile bool _pinned_regions_recorded;
+  Atomic<bool> _pinned_regions_recorded;
 
 public:
   G1EvacuateRegionsBaseTask(const char* name,
@@ -722,7 +724,7 @@ public:
       G1ParScanThreadState* pss = _per_thread_states->state_for_worker(worker_id);
       pss->set_ref_discoverer(_g1h->ref_processor_stw());
 
-      if (!AtomicAccess::cmpxchg(&_pinned_regions_recorded, false, true)) {
+      if (_pinned_regions_recorded.compare_set(false, true)) {
         record_pinned_regions(pss, worker_id);
       }
       scan_roots(pss, worker_id);
@@ -894,17 +896,10 @@ public:
     assert(obj != nullptr, "the caller should have filtered out null values");
 
     const G1HeapRegionAttr region_attr =_g1h->region_attr(obj);
-    if (!region_attr.is_in_cset_or_humongous_candidate()) {
-      return;
-    }
+    assert(!region_attr.is_humongous_candidate(), "Humongous candidates should never be considered alive");
     if (region_attr.is_in_cset()) {
       assert(obj->is_forwarded(), "invariant" );
       *p = obj->forwardee();
-    } else {
-      assert(!obj->is_forwarded(), "invariant" );
-      assert(region_attr.is_humongous_candidate(),
-             "Only allowed G1HeapRegionAttr state is IsHumongous, but is %d", region_attr.type());
-     _g1h->set_humongous_is_live(obj);
     }
   }
 };
@@ -930,7 +925,8 @@ public:
   template <class T> void do_oop_work(T* p) {
     oop obj = RawAccess<>::oop_load(p);
 
-    if (_g1h->is_in_cset_or_humongous_candidate(obj)) {
+    assert(!_g1h->region_attr(obj).is_humongous_candidate(), "Humongous candidates should never be considered alive");
+    if (_g1h->is_in_cset(obj)) {
       // If the referent object has been forwarded (either copied
       // to a new location or to itself in the event of an
       // evacuation failure) then we need to update the reference
@@ -1068,6 +1064,7 @@ void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
   allocator()->release_gc_alloc_regions(evacuation_info);
 
 #if TASKQUEUE_STATS
+  _g1h->task_queues()->print_and_reset_taskqueue_stats("Young GC");
   // Logging uses thread states, which are deleted by cleanup, so this must
   // be done before cleanup.
   per_thread_states->print_partial_array_task_stats();
@@ -1187,5 +1184,4 @@ void G1YoungCollector::collect() {
 
     policy()->record_young_collection_end(_concurrent_operation_is_full_mark, evacuation_alloc_failed(), _allocation_word_size);
   }
-  TASKQUEUE_STATS_ONLY(_g1h->task_queues()->print_and_reset_taskqueue_stats("Oop Queue");)
 }

@@ -40,14 +40,15 @@ private:
 
 public:
   // Helper methods roughly modeled after GraphKit:
-  Node* basic_plus_adr(Node* base, int offset) {
-    return (offset == 0)? base: basic_plus_adr(base, MakeConX(offset));
+  Node* basic_plus_adr(Node* ptr, int offset, bool raw_base = false) {
+    return (offset == 0)? ptr: basic_plus_adr(ptr, MakeConX(offset), raw_base);
   }
   Node* basic_plus_adr(Node* base, Node* ptr, int offset) {
     return (offset == 0)? ptr: basic_plus_adr(base, ptr, MakeConX(offset));
   }
-  Node* basic_plus_adr(Node* base, Node* offset) {
-    return basic_plus_adr(base, base, offset);
+  Node* basic_plus_adr(Node* ptr, Node* offset, bool raw_base = false) {
+    Node* base = raw_base ? top() : ptr;
+    return basic_plus_adr(base, ptr, offset);
   }
   Node* basic_plus_adr(Node* base, Node* ptr, Node* offset) {
     Node* adr = new AddPNode(base, ptr, offset);
@@ -58,10 +59,10 @@ public:
     _igvn.register_new_node_with_optimizer(n);
     return n;
   }
-  Node* make_load( Node* ctl, Node* mem, Node* base, int offset,
-                   const Type* value_type, BasicType bt);
-  Node* make_store(Node* ctl, Node* mem, Node* base, int offset,
-                   Node* value, BasicType bt);
+  Node* make_load_raw(Node* ctl, Node* mem, Node* base, int offset,
+                      const Type* value_type, BasicType bt);
+  Node* make_store_raw(Node* ctl, Node* mem, Node* base, int offset,
+                       Node* value, BasicType bt);
 
   Node* make_leaf_call(Node* ctrl, Node* mem,
                        const TypeFunc* call_type, address call_addr,
@@ -109,7 +110,7 @@ private:
 
   // More helper methods modeled after GraphKit for array copy
   void insert_mem_bar(Node** ctrl, Node** mem, int opcode, int alias_idx, Node* precedent = nullptr);
-  Node* array_element_address(Node* ary, Node* idx, BasicType elembt);
+  Node* array_element_address(Node* ary, Node* idx, BasicType elembt, bool raw_base);
   Node* ConvI2L(Node* offset);
 
   // helper methods modeled after LibraryCallKit for array copy
@@ -144,11 +145,10 @@ private:
                             Node* slice_idx,
                             Node* slice_len,
                             Node* dest_size);
-  bool generate_block_arraycopy(Node** ctrl, MergeMemNode** mem, Node* io,
+  bool generate_block_arraycopy(Node** ctrl, MergeMemNode** mem,
                                 const TypePtr* adr_type,
                                 BasicType basic_elem_type,
-                                AllocateNode* alloc,
-                                Node* src,  Node* src_offset,
+                                Node* src, Node* src_offset,
                                 Node* dest, Node* dest_offset,
                                 Node* dest_size, bool dest_uninitialized);
   MergeMemNode* generate_slow_arraycopy(ArrayCopyNode *ac,

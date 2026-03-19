@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -184,9 +184,12 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1Encrypt
 
     if (directIn != 0) {
       inBufP = (CK_BYTE_PTR) jlong_to_ptr(directIn);
-    } else {
+    } else if (jIn != NULL) {
       inBufP = (*env)->GetPrimitiveArrayCritical(env, jIn, NULL);
+      // may happen if out of memory
       if (inBufP == NULL) { return 0; }
+    } else {
+      inBufP = NULL;
     }
 
     if (directOut != 0) {
@@ -194,7 +197,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1Encrypt
     } else {
       outBufP = (*env)->GetPrimitiveArrayCritical(env, jOut, NULL);
       if (outBufP == NULL) {
-        if (directIn == 0) {
+        if (directIn == 0 && inBufP != NULL) {
           (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
         }
         return 0;
@@ -208,7 +211,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1Encrypt
                                     (CK_BYTE_PTR)(outBufP + jOutOfs),
                                     &ckEncryptedLen);
 
-    if (directIn == 0) {
+    if (directIn == 0 && inBufP != NULL) {
         (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
     }
     if (directOut == 0) {
@@ -251,9 +254,12 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1EncryptUpdate
 
     if (directIn != 0) {
       inBufP = (CK_BYTE_PTR) jlong_to_ptr(directIn);
-    } else {
+    } else if (jIn != NULL) {
       inBufP = (*env)->GetPrimitiveArrayCritical(env, jIn, NULL);
+      // may happen if out of memory
       if (inBufP == NULL) { return 0; }
+    } else {
+      inBufP = NULL;
     }
 
     if (directOut != 0) {
@@ -261,7 +267,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1EncryptUpdate
     } else {
       outBufP = (*env)->GetPrimitiveArrayCritical(env, jOut, NULL);
       if (outBufP == NULL) {
-        if (directIn == 0) {
+        if (directIn == 0 && inBufP != NULL) {
           (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
         }
         return 0;
@@ -275,7 +281,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1EncryptUpdate
                                           (CK_BYTE_PTR)(outBufP + jOutOfs),
                                           &ckEncryptedPartLen);
 
-    if (directIn == 0) {
+    if (directIn == 0 && inBufP != NULL) {
         (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
     }
     if (directOut == 0) {
@@ -462,9 +468,12 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1Decrypt
 
     if (directIn != 0) {
       inBufP = (CK_BYTE_PTR) jlong_to_ptr(directIn);
-    } else {
+    } else if (jIn != NULL) {
       inBufP = (*env)->GetPrimitiveArrayCritical(env, jIn, NULL);
+      // may happen if out of memory
       if (inBufP == NULL) { return 0; }
+    } else {
+      inBufP = NULL;
     }
 
     if (directOut != 0) {
@@ -472,7 +481,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1Decrypt
     } else {
       outBufP = (*env)->GetPrimitiveArrayCritical(env, jOut, NULL);
       if (outBufP == NULL) {
-        if (directIn == 0) {
+        if (directIn == 0 && inBufP != NULL) {
           (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
         }
         return 0;
@@ -485,7 +494,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1Decrypt
                                     (CK_BYTE_PTR)(outBufP + jOutOfs),
                                     &ckOutLen);
 
-    if (directIn == 0) {
+    if (directIn == 0 && inBufP != NULL) {
         (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
     }
     if (directOut == 0) {
@@ -528,9 +537,12 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1DecryptUpdate
 
     if (directIn != 0) {
       inBufP = (CK_BYTE_PTR) jlong_to_ptr(directIn);
-    } else {
+    } else if (jIn != NULL) {
       inBufP = (*env)->GetPrimitiveArrayCritical(env, jIn, NULL);
+      // may happen if out of memory
       if (inBufP == NULL) { return 0; }
+    } else {
+      inBufP = NULL;
     }
 
     if (directOut != 0) {
@@ -538,7 +550,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1DecryptUpdate
     } else {
       outBufP = (*env)->GetPrimitiveArrayCritical(env, jOut, NULL);
       if (outBufP == NULL) {
-        if (directIn == 0) {
+        if (directIn == 0 && inBufP != NULL) {
           (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
         }
         return 0;
@@ -551,7 +563,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1DecryptUpdate
                                           (CK_BYTE_PTR)(outBufP + jOutOfs),
                                           &ckDecryptedPartLen);
 
-    if (directIn == 0) {
+    if (directIn == 0 && inBufP != NULL) {
         (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
     }
     if (directOut == 0) {

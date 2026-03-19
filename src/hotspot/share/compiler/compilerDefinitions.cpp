@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,9 +194,6 @@ void CompilerConfig::set_client_emulation_mode_flags() {
   FLAG_SET_ERGO(EnableJVMCI, false);
   FLAG_SET_ERGO(UseJVMCICompiler, false);
 #endif
-  if (FLAG_IS_DEFAULT(NeverActAsServerClassMachine)) {
-    FLAG_SET_ERGO(NeverActAsServerClassMachine, true);
-  }
   if (FLAG_IS_DEFAULT(InitialCodeCacheSize)) {
     FLAG_SET_ERGO(InitialCodeCacheSize, 160*K);
   }
@@ -404,14 +401,12 @@ void CompilerConfig::set_compilation_policy_flags() {
 #endif
 
   if (CompilerConfig::is_tiered() && CompilerConfig::is_c2_enabled()) {
-#ifdef COMPILER2
-    // Some inlining tuning
-#if defined(X86) || defined(AARCH64) || defined(RISCV64)
+#if defined(COMPILER2) && defined(_LP64)
+    // LP64 specific inlining tuning for C2
     if (FLAG_IS_DEFAULT(InlineSmallCode)) {
       FLAG_SET_DEFAULT(InlineSmallCode, 2500);
     }
 #endif
-#endif // COMPILER2
   }
 
 }
@@ -448,9 +443,6 @@ void CompilerConfig::set_jvmci_specific_flags() {
       }
       if (FLAG_IS_DEFAULT(InitialCodeCacheSize)) {
         FLAG_SET_DEFAULT(InitialCodeCacheSize, MAX2(16*M, InitialCodeCacheSize));
-      }
-      if (FLAG_IS_DEFAULT(NewSizeThreadIncrease)) {
-        FLAG_SET_DEFAULT(NewSizeThreadIncrease, MAX2(4*K, NewSizeThreadIncrease));
       }
       if (FLAG_IS_DEFAULT(Tier3DelayOn)) {
         // This effectively prevents the compile broker scheduling tier 2
@@ -553,17 +545,10 @@ bool CompilerConfig::should_set_client_emulation_mode_flags() {
   return false;
 #endif
 
-  if (has_c1()) {
-    if (!is_compilation_mode_selected()) {
-      if (NeverActAsServerClassMachine) {
-        return true;
-      }
-    } else if (!has_c2() && !is_jvmci_compiler()) {
-      return true;
-    }
-  }
-
-  return false;
+  return has_c1() &&
+         is_compilation_mode_selected() &&
+         !has_c2() &&
+         !is_jvmci_compiler();
 }
 
 void CompilerConfig::ergo_initialize() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@
 #include "nmt/memTracker.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomicAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -63,19 +63,24 @@
 #include "utilities/nativeStackPrinter.hpp"
 #include "utilities/unsigned5.hpp"
 #include "utilities/vmError.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
 #include <stdarg.h>
 #include <stdio.h>
 
-// These functions needs to be exported on Windows only
-#define DEBUGEXPORT WINDOWS_ONLY(JNIEXPORT)
+// These functions needs to be exported on Windows
+// On Linux it is also beneficial to export them to avoid
+// losing them e.g. with linktime gc
+#define DEBUGEXPORT JNIEXPORT
 
 // Support for showing register content on asserts/guarantees.
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
 static char g_dummy;
 char* g_assert_poison = &g_dummy;
 const char* g_assert_poison_read_only = &g_dummy;
-static intx g_asserting_thread = 0;
+static Atomic<intx> g_asserting_thread{0};
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
 int DebuggingContext::_enabled = 0; // Initially disabled.
@@ -188,7 +193,7 @@ void report_vm_error(const char* file, int line, const char* error_msg, const ch
   const void* siginfo = nullptr;
 
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
-  if (os::current_thread_id() == g_asserting_thread) {
+  if (os::current_thread_id() == g_asserting_thread.load_relaxed()) {
     context = os::get_saved_assert_context(&siginfo);
   }
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
@@ -215,7 +220,7 @@ void report_fatal(VMErrorType error_type, const char* file, int line, const char
   const void* siginfo = nullptr;
 
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
-  if (os::current_thread_id() == g_asserting_thread) {
+  if (os::current_thread_id() == g_asserting_thread.load_relaxed()) {
     context = os::get_saved_assert_context(&siginfo);
   }
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
@@ -260,13 +265,15 @@ void report_untested(const char* file, int line, const char* message) {
 }
 
 void report_java_out_of_memory(const char* message) {
-  static int out_of_memory_reported = 0;
+  static Atomic<bool> out_of_memory_reported{false};
+
+  JFR_ONLY(Jfr::on_report_java_out_of_memory();)
 
   // A number of threads may attempt to report OutOfMemoryError at around the
   // same time. To avoid dumping the heap or executing the data collection
-  // commands multiple times we just do it once when the first threads reports
+  // commands multiple times we just do it once when the first thread that reports
   // the error.
-  if (AtomicAccess::cmpxchg(&out_of_memory_reported, 0, 1) == 0) {
+  if (out_of_memory_reported.compare_set(false, true)) {
     // create heap dump before OnOutOfMemoryError commands are executed
     if (HeapDumpOnOutOfMemoryError) {
       tty->print_cr("java.lang.OutOfMemoryError: %s", message);
@@ -422,10 +429,8 @@ extern "C" DEBUGEXPORT void pp(void* p) {
     tty->print_cr("null");
     return;
   }
-  if (Universe::heap()->is_in(p)) {
-    oop obj = cast_to_oop(p);
-    obj->print();
-  } else {
+
+  if (!Universe::heap()->print_location(tty, p)) {
     // Ask NMT about this pointer.
     // GDB note: We will be using SafeFetch to access the supposed malloc header. If the address is
     // not readable, this will generate a signal. That signal will trip up the debugger: gdb will
@@ -648,13 +653,12 @@ extern "C" DEBUGEXPORT intptr_t u5p(intptr_t addr,
 void pp(intptr_t p)          { pp((void*)p); }
 void pp(oop p)               { pp((void*)p); }
 
-void help() {
+extern "C" DEBUGEXPORT void help() {
   Command c("help");
   tty->print_cr("basic");
   tty->print_cr("  pp(void* p)         - try to make sense of p");
   tty->print_cr("  ps()                - print current thread stack");
   tty->print_cr("  pss()               - print all thread stacks");
-  tty->print_cr("  pm(int pc)          - print Method* given compiled PC");
   tty->print_cr("  findnm(intptr_t pc) - find nmethod*");
   tty->print_cr("  findm(intptr_t pc)  - find Method*");
   tty->print_cr("  find(intptr_t x)    - find & print nmethod/stub/bytecode/oop based on pointer into it");
@@ -809,7 +813,7 @@ bool handle_assert_poison_fault(const void* ucVoid) {
   if (ucVoid != nullptr) {
     // Save context.
     const intx my_tid = os::current_thread_id();
-    if (AtomicAccess::cmpxchg(&g_asserting_thread, (intx)0, my_tid) == 0) {
+    if (g_asserting_thread.compare_set(0, my_tid)) {
       os::save_assert_context(ucVoid);
     }
   }

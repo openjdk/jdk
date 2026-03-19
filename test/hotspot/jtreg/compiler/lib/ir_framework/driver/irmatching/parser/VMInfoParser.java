@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,31 +23,24 @@
 
 package compiler.lib.ir_framework.driver.irmatching.parser;
 
-import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.shared.TestFrameworkException;
-import compiler.lib.ir_framework.test.VMInfoPrinter;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
- * Class to parse the VMInfo emitted by the test VM and creating {@link VMInfo} objects for each entry.
+ * Class to parse the VMInfo emitted by the Test VM and creating {@link VMInfo} objects for each entry.
  *
  * @see VMInfo
  */
 public class VMInfoParser {
 
-    private static final Pattern VM_INFO_PATTERN =
-            Pattern.compile("(?<=" + VMInfoPrinter.START_VM_INFO + "\r?\n).*\\R([\\s\\S]*)(?=" + VMInfoPrinter.END_VM_INFO + ")");
-
     /**
-     * Extract VMInfo from the irEncoding.
+     * Create a new VMInfo object from the vmInfo string.
      */
-    public static VMInfo parseVMInfo(String irEncoding) {
+    public static VMInfo parseVMInfo(String vmInfo) {
         Map<String, String> map = new HashMap<>();
-        String[] lines = getVMInfoLines(irEncoding);
+        String[] lines = getVMInfoLines(vmInfo);
         for (String s : lines) {
             String line = s.trim();
             String[] splitLine = line.split(":", 2);
@@ -62,16 +55,13 @@ public class VMInfoParser {
     }
 
     /**
-     * Extract the VMInfo from the irEncoding string, strip away the header and return the individual key-value lines.
+     * Extract the VMInfo from the applicableIRRules string, strip away the header and return the individual key-value lines.
      */
-    private static String[] getVMInfoLines(String irEncoding) {
-        Matcher matcher = VM_INFO_PATTERN.matcher(irEncoding);
-        TestFramework.check(matcher.find(), "Did not find VMInfo in:" + System.lineSeparator() + irEncoding);
-        String lines = matcher.group(1).trim();
-        if (lines.isEmpty()) {
+    private static String[] getVMInfoLines(String vmInfo) {
+        if (vmInfo.isEmpty()) {
             // Nothing to IR match.
             return new String[0];
         }
-        return lines.split("\\R");
+        return vmInfo.split("\\R");
     }
 }

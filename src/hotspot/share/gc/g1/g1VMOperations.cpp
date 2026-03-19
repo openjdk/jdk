@@ -85,7 +85,7 @@ void VM_G1TryInitiateConcMark::doit() {
   GCCauseSetter x(g1h, _gc_cause);
 
   _mark_in_progress = g1h->collector_state()->mark_in_progress();
-  _cycle_already_in_progress = g1h->concurrent_mark()->cm_thread()->in_progress();
+  _cycle_already_in_progress = g1h->concurrent_mark()->in_progress();
 
   if (!g1h->policy()->force_concurrent_start_if_outside_cycle(_gc_cause)) {
     // Failure to force the next GC pause to be a concurrent start indicates

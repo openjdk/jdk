@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,8 @@
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/parallel/objectStartArray.hpp"
 #include "gc/parallel/psVirtualspace.hpp"
-#include "gc/parallel/spaceCounters.hpp"
+#include "gc/shared/generationCounters.hpp"
+#include "gc/shared/hSpaceCounters.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 
@@ -43,7 +44,7 @@ class PSOldGen : public CHeapObj<mtGC> {
 
   // Performance Counters
   GenerationCounters*      _gen_counters;
-  SpaceCounters*           _space_counters;
+  HSpaceCounters*          _space_counters;
 
   // Sizing information, in bytes, set in constructor
   const size_t _min_gen_size;

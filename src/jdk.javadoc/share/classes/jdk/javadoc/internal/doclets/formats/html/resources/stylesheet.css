@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/
@@ -163,6 +163,13 @@
     <path d="m8 8 84 84" style="stroke:%23e0e0e0;stroke-width:15"/>\
     <path d="M8 92 92 8" style="stroke:%23e0e0e0;stroke-width:15"/></svg>');
     --current-theme-svg: url("moon.svg");
+    div.block a[href], div.horizontal-scroll a[href], div.inherited-list h3 a[href], header > div a[href],
+    .hierarchy a[href], .index a[href], div.caption a[href], .sub-title a[href], .deprecation-comment a[href],
+    .serialized-class-details a[href] {
+        text-decoration: underline;
+        text-decoration-thickness: 0.02em;
+        text-underline-offset: 0.12em;
+    }
 }
 /*
  * Styles for individual HTML elements.
@@ -1221,7 +1228,7 @@ input::placeholder {
 input:focus::placeholder {
     color: transparent;
 }
-select#search-modules {
+select {
     margin: 0 10px 10px 2px;
     font-size: var(--nav-font-size);
     padding: 3px 5px;
