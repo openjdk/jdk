@@ -40,42 +40,30 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class Write {
     private static void doBoundsTest(byte[] b, int off, int len,
                                      ByteArrayOutputStream baos)
         throws Exception {
         if (b != null) {
-            System.out.println("ByteArrayOutStream.write: b.length = " +
+            System.err.println("ByteArrayOutStream.write: b.length = " +
                                b.length + " off = " + off + " len = " + len);
         } else{
-            System.out.println("ByteArrayOutStream.write: b is null off = " +
+            System.err.println("ByteArrayOutStream.write: b is null off = " +
                                off + " len = " + len);
         }
 
-        try {
-            baos.write(b, off, len);
-        } catch (IndexOutOfBoundsException e) {
-            System.out.println("IndexOutOfBoundsException is thrown: OKAY");
-        } catch (NullPointerException e) {
-            System.out.println("NullPointerException is thrown: OKAY");
-        } catch (Throwable e){
-            throw new RuntimeException("Unexpected Exception is thrown", e);
-        }
+        Class expectedException = (b == null)
+            ? NullPointerException.class : IndexOutOfBoundsException.class;
+        assertThrows(expectedException, () -> baos.write(b, off, len));
 
         if (b != null) {
-            System.out.println("ByteArrayOutStream.writeBytes: b.length = " +
+            System.err.println("ByteArrayOutStream.writeBytes: b.length = " +
                                b.length);
         } else{
-            System.out.println("ByteArrayOutStream.writeBytes: b is null");
-        }
-
-        try {
-            baos.writeBytes(b);
-        } catch (NullPointerException e) {
-            System.out.println("NullPointerException is thrown: OKAY");
-        } catch (Throwable e){
-            throw new RuntimeException("Unexpected Exception is thrown", e);
+            System.err.println("ByteArrayOutStream.writeBytes: b is null");
+            assertThrows(NullPointerException.class, () -> baos.writeBytes(b));
         }
     }
 
@@ -107,7 +95,7 @@ public class Write {
         int off2 = rnd.nextInt(size / 2) + 1;
         int len2 = Math.min(rnd.nextInt(size / 2) + 1, size - off2);
 
-        System.out.format("size: %d, off1: %d, len1: %d, off2: %d, len2: %d%n",
+        System.err.format("size: %d, off1: %d, len1: %d, off2: %d, len2: %d%n",
             size, off1, len1, off2, len2);
 
         baos.write(b, off1, len1);
