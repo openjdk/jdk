@@ -107,6 +107,11 @@ bool OopMapForCacheEntry::compute_map(Thread* current) {
   } else {
     ResourceMark rm;
     if (!GenerateOopMap::compute_map(current)) {
+      // If compute_map fails, print the exception message, which is generated if
+      // this is a JavaThread, otherwise compute_map calls fatal so we don't get here.
+      if (exception() != nullptr) {
+        exception()->print();
+      }
       fatal("Unrecoverable verification or out-of-memory error");
       return false;
     }
@@ -315,6 +320,9 @@ void OopMapCacheEntry::fill(const methodHandle& method, int bci) {
   } else {
     OopMapForCacheEntry gen(method, bci, this);
     if (!gen.compute_map(Thread::current())) {
+      if (gen.exception() != nullptr) {
+        gen.exception()->print();
+      }
       fatal("Unrecoverable verification or out-of-memory error");
     }
   }

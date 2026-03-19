@@ -380,7 +380,7 @@ class GenerateOopMap {
   // Interpretation methods (secondary)
   void  interp1                             (BytecodeStream *itr);
   void  do_exception_edge                   (BytecodeStream *itr);
-  bool  exception_can_trap                  (int bci) const;
+  bool  first_bytecode_in_handler           (int bci) const;
   void  check_type                          (CellTypeState expected, CellTypeState actual);
   void  ppstore                             (CellTypeState *in,  int loc_no);
   void  ppload                              (CellTypeState *out, int loc_no);

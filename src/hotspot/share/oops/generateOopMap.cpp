@@ -1170,7 +1170,7 @@ void GenerateOopMap::interp_bb(BasicBlock *bb) {
 
 // Exception catch clauses can throw recursive exceptions if the catch class has
 // an exception while loading.
-bool GenerateOopMap::exception_can_trap(int bci) const {
+bool GenerateOopMap::first_bytecode_in_handler(int bci) const {
   if (_has_exceptions) {
     ExceptionTable exct(method());
     for(int i = 0; i < exct.length(); i++) {
@@ -1187,44 +1187,15 @@ bool GenerateOopMap::exception_can_trap(int bci) const {
 
 
 void GenerateOopMap::do_exception_edge(BytecodeStream* itr) {
-  // Only check exception edge, if bytecode can trap, but
-  // the first bytecode in exception handlers can trap.
-  if (!exception_can_trap(itr->bci())) {
-    if (!Bytecodes::can_trap(itr->code())) return;
-    switch (itr->code()) {
-      case Bytecodes::_aload_0:
-        // These bytecodes can trap for rewriting.  We need to assume that
-        // they do not throw exceptions to make the monitor analysis work.
-        return;
-
-      case Bytecodes::_ireturn:
-      case Bytecodes::_lreturn:
-      case Bytecodes::_freturn:
-      case Bytecodes::_dreturn:
-      case Bytecodes::_areturn:
-      case Bytecodes::_return:
-        // If the monitor stack height is not zero when we leave the method,
-        // then we are either exiting with a non-empty stack or we have
-        // found monitor trouble earlier in our analysis.  In either case,
-        // assume an exception could be taken here.
-        if (_monitor_top == 0) {
-          return;
-        }
-        break;
-
-      case Bytecodes::_monitorexit:
-        // If the monitor stack height is bad_monitors, then we have detected a
-        // monitor matching problem earlier in the analysis.  If the
-        // monitor stack height is 0, we are about to pop a monitor
-        // off of an empty stack.  In either case, the bytecode
-        // could throw an exception.
-        if (_monitor_top != bad_monitors && _monitor_top != 0) {
-          return;
-        }
-        break;
-
-      default:
-        break;
+  // Only check exception edge, if bytecode can trap, or it is
+  // the first bytecode in exception handlers which also can trap.
+  // If the bytecode can trap, an async exception can be thrown at that bytecode, so must
+  // match an exception handler.
+  if (!first_bytecode_in_handler(itr->bci())) {
+    Bytecodes::Code bc = itr->code();
+    // aload_0 bytecode is marked as can_trap for RewriteFrequentPairs, but it doesn't trap itself.
+    if (!Bytecodes::can_trap(bc) || bc == Bytecodes::_aload_0) {
+      return;
     }
   }
 
