@@ -2002,7 +2002,7 @@ bool CountedLoopConverter::stress_long_counted_loop() {
       Node* n = iv_nodes.at(i);
       Node* clone = old_new[n->_idx];
       if (clone != nullptr) {
-        igvn.remove_dead_node(clone, PhaseIterGVN::NodeOrigin::Speculative);
+        igvn->remove_dead_node(clone, PhaseIterGVN::NodeOrigin::Speculative);
       }
     }
     return false;
