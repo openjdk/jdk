@@ -72,7 +72,6 @@ class G1CollectorState {
 public:
   G1CollectorState() :
     _phase(YoungNormal),
-
     _initiate_conc_mark_if_possible(false) { }
 
   // Phase setters

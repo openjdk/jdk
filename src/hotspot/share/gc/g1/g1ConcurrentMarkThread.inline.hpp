@@ -32,7 +32,7 @@
 
   // Total virtual time so far.
 inline double G1ConcurrentMarkThread::total_mark_cpu_time_s() {
-  return os::thread_cpu_time(this) + worker_threads_cpu_time_s();
+  return static_cast<double>(os::thread_cpu_time(this)) + worker_threads_cpu_time_s();
 }
 
 // Marking virtual time so far
@@ -42,7 +42,7 @@ inline double G1ConcurrentMarkThread::worker_threads_cpu_time_s() {
 
 inline bool G1ConcurrentMarkThread::is_in_full_concurrent_cycle() const {
   ServiceState state = _state;
-  return (state >= FullCycleMarking && state <= FullCycleResetForNextCycle);
+  return (state == FullCycleMarking || state == FullCycleRebuildOrScrub || state == FullCycleResetForNextCycle);
 }
 
 inline void G1ConcurrentMarkThread::set_idle() {

@@ -22,32 +22,43 @@
  */
 
 /*
- * @test
+ * @test id=POSIX_SPAWN
  * @bug 4199068 4738465 4937983 4930681 4926230 4931433 4932663 4986689
  *      5026830 5023243 5070673 4052517 4811767 6192449 6397034 6413313
  *      6464154 6523983 6206031 4960438 6631352 6631966 6850957 6850958
  *      4947220 7018606 7034570 4244896 5049299 8003488 8054494 8058464
  *      8067796 8224905 8263729 8265173 8272600 8231297 8282219 8285517
- *      8352533 8368192
+ *      8352533 8368192 8377907
  * @key intermittent
  * @summary Basic tests for Process and Environment Variable code
  * @modules java.base/java.lang:open
  *          java.base/java.io:open
  * @requires vm.flagless
  * @library /test/lib
- * @run main/othervm/native/timeout=360 Basic
- * @run main/othervm/native/timeout=360 -Djdk.lang.Process.launchMechanism=fork Basic
+ * @run main/othervm/native/timeout=360 -Djdk.lang.Process.launchMechanism=posix_spawn Basic
  * @author Martin Buchholz
  */
 
 /*
- * @test
+ * @test id=FORK
+ * @key intermittent
+ * @summary Basic tests for Process and Environment Variable code
+ * @modules java.base/java.lang:open
+ *          java.base/java.io:open
+ * @requires !vm.musl
+ * @requires vm.flagless
+ * @library /test/lib
+ * @run main/othervm/native/timeout=360 -Djdk.lang.Process.launchMechanism=fork Basic
+ */
+
+/*
+ * @test id=VFORK
  * @modules java.base/java.lang:open
  *          java.base/java.io:open
  *          java.base/jdk.internal.misc
  * @requires (os.family == "linux")
  * @library /test/lib
- * @run main/othervm/timeout=300 -Djdk.lang.Process.launchMechanism=posix_spawn Basic
+ * @run main/othervm/timeout=300 -Djdk.lang.Process.launchMechanism=vfork Basic
  */
 
 import java.lang.ProcessBuilder.Redirect;
@@ -1229,6 +1240,20 @@ public class Basic {
             equal(r.out(), "standard output");
             equal(r.err(), "standard error");
         }
+
+        //----------------------------------------------------------------
+        // Default: should go to pipes (use a fresh ProcessBuilder)
+        //----------------------------------------------------------------
+        {
+            ProcessBuilder pb2 = new ProcessBuilder(childArgs);
+            Process p = pb2.start();
+            new PrintStream(p.getOutputStream()).print("standard input");
+            p.getOutputStream().close();
+            ProcessResults r = run(p);
+            equal(r.exitValue(), 0);
+            equal(r.out, "standard output");
+            equal(r.err, "standard error");
+        }
     }
 
     static void checkProcessPid() {
@@ -1266,6 +1291,8 @@ public class Basic {
             System.out.println("This appears to be a Unix system.");
         if (UnicodeOS.is())
             System.out.println("This appears to be a Unicode-based OS.");
+
+        System.out.println("Using:" + System.getProperty("jdk.lang.Process.launchMechanism"));
 
         try { testIORedirection(); }
         catch (Throwable t) { unexpected(t); }

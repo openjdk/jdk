@@ -174,7 +174,6 @@ void G1CollectionSet::iterate(G1HeapRegionClosure* cl) const {
     G1HeapRegion* r = _g1h->region_at(_regions[i]);
     bool result = cl->do_heap_region(r);
     if (result) {
-      cl->set_incomplete();
       return;
     }
   }

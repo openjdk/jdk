@@ -28,7 +28,9 @@
 #include "cds/cds_globals.hpp"
 #include "cds/serializeClosure.hpp"
 #include "logging/log.hpp"
+#include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
+#include "memory/metaspaceClosureType.hpp"
 #include "memory/virtualspace.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/semaphore.hpp"
@@ -37,6 +39,7 @@
 #include "utilities/macros.hpp"
 
 class BootstrapInfo;
+class DumpAllocStats;
 class ReservedSpace;
 class VirtualSpace;
 
@@ -160,6 +163,18 @@ private:
   void commit_to(char* newtop);
 
 public:
+  // Allocation gaps (due to Klass alignment)
+  class AllocGapTree;
+  class AllocGap;
+  struct AllocGapCmp;
+
+private:
+  static AllocGapTree _gap_tree;
+  static size_t _total_gap_bytes;
+  static size_t _total_gap_bytes_used;
+  static size_t _total_gap_allocs;
+
+public:
   DumpRegion(const char* name)
     : _name(name), _base(nullptr), _top(nullptr), _end(nullptr),
       _is_packed(false),
@@ -167,6 +182,7 @@ public:
 
   char* expand_top_to(char* newtop);
   char* allocate(size_t num_bytes, size_t alignment = 0);
+  char* allocate_metaspace_obj(size_t num_bytes, address src, MetaspaceClosureType type, bool read_only, DumpAllocStats* stats);
 
   void append_intptr_t(intptr_t n, bool need_to_mark = false) NOT_CDS_RETURN;
 
@@ -191,6 +207,8 @@ public:
   bool contains(char* p) {
     return base() <= p && p < top();
   }
+
+  static void report_gaps(DumpAllocStats* stats);
 };
 
 // Closure for serializing initialization data out to a data area to be

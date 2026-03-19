@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2011, 2024, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -35,11 +35,16 @@
 #include <dirent.h>
 
 ExplicitHugePageSupport::ExplicitHugePageSupport() :
-  _initialized(false), _pagesizes(), _default_hugepage_size(SIZE_MAX), _inconsistent(false) {}
+  _initialized(false), _pagesizes(), _pre_allocated_pagesizes(), _default_hugepage_size(SIZE_MAX), _inconsistent(false) {}
 
 os::PageSizes ExplicitHugePageSupport::pagesizes() const {
   assert(_initialized, "Not initialized");
   return _pagesizes;
+}
+
+os::PageSizes ExplicitHugePageSupport::pre_allocated_pagesizes() const {
+  assert(_initialized, "Not initialized");
+  return _pre_allocated_pagesizes;
 }
 
 size_t ExplicitHugePageSupport::default_hugepage_size() const {
@@ -129,6 +134,20 @@ static os::PageSizes scan_hugepages() {
   return pagesizes;
 }
 
+static os::PageSizes filter_pre_allocated_hugepages(os::PageSizes pagesizes) {
+  os::PageSizes pre_allocated{};
+  char filename[PATH_MAX];
+  for (size_t ps = pagesizes.smallest(); ps != 0; ps = pagesizes.next_larger(ps)) {
+    os::snprintf_checked(filename, sizeof(filename), "%s/hugepages-%zukB/nr_hugepages", sys_hugepages, ps / K);
+    size_t pages;
+    bool read_success = read_number_file(filename, &pages);
+    if (read_success && pages > 0) {
+      pre_allocated.add(ps);
+    }
+  }
+  return pre_allocated;
+}
+
 void ExplicitHugePageSupport::print_on(outputStream* os) {
   if (_initialized) {
     os->print_cr("Explicit hugepage support:");
@@ -148,13 +167,14 @@ void ExplicitHugePageSupport::scan_os() {
   _default_hugepage_size = scan_default_hugepagesize();
   if (_default_hugepage_size > 0) {
     _pagesizes = scan_hugepages();
+    _pre_allocated_pagesizes = filter_pre_allocated_hugepages(_pagesizes);
     // See https://www.kernel.org/doc/Documentation/vm/hugetlbpage.txt: /proc/meminfo should match
     // /sys/kernel/mm/hugepages/hugepages-xxxx. However, we may run on a broken kernel (e.g. on WSL)
     // that only exposes /proc/meminfo but not /sys/kernel/mm/hugepages. In that case, we are not
     // sure about the state of hugepage support by the kernel, so we won't use explicit hugepages.
     if (!_pagesizes.contains(_default_hugepage_size)) {
       log_info(pagesize)("Unexpected configuration: default pagesize (%zu) "
-                         "has no associated directory in /sys/kernel/mm/hugepages..", _default_hugepage_size);
+                         "has no associated directory in /sys/kernel/mm/hugepages.", _default_hugepage_size);
       _inconsistent = true;
     }
   }
