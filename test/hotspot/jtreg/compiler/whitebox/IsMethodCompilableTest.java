@@ -30,7 +30,7 @@
  *          java.management
  *
  * @requires vm.opt.DeoptimizeALot != true
- * @requires vm.flavor == "server"
+ * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
