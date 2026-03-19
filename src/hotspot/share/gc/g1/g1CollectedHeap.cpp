@@ -2554,7 +2554,7 @@ HeapWord* G1CollectedHeap::do_collection_pause(size_t word_size,
 
 void G1CollectedHeap::start_concurrent_cycle(bool concurrent_operation_is_full_mark) {
   assert(_cm->is_fully_initialized(), "sanity");
-  assert(!_cm->in_progress(), "Can not start concurrent operation while in progress");
+  assert(!collector_state()->is_in_concurrent_cycle(), "Can not start concurrent cycle when already running");
   MutexLocker x(G1CGC_lock, Mutex::_no_safepoint_check_flag);
   if (concurrent_operation_is_full_mark) {
     _cm->start_full_concurrent_cycle();
