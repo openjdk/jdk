@@ -30,7 +30,7 @@ import java.util.Objects;
 
 /*
  * @test
- * @bug 8277850 8278949 8285793 8346664
+ * @bug 8277850 8278857 8278949 8285793 8346664
  * @key randomness
  * @summary C2: optimize mask checks in counted loops
  * @library /test/lib /
@@ -636,6 +636,208 @@ public class TestShiftAndMask {
         long res = addShiftConvMaskCheckIndex2(i, j, (Integer.max(i, j) << INT_MASK_WIDTH) + 1);
         if (res != 0) {
             throw new RuntimeException("incorrect result: " + res);
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.AND_I})
+    @IR(counts = {IRNode.LSHIFT_I, "1"})
+    public int shiftLeftWithLowMaskInt(int x) {
+      return (x << INT_MASK_WIDTH) & (-1 << INT_MASK_WIDTH); // transformed to: return x << INT_MASK_WIDTH;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.AND_L})
+    @IR(counts = {IRNode.LSHIFT_L, "1"})
+    public long shiftLeftWithLowMaskLong(long x) {
+      return (x << LONG_MASK_WIDTH) & (-1 << LONG_MASK_WIDTH); // transformed to: return x << LONG_MASK_WIDTH;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.AND_I})
+    @IR(counts = {IRNode.LSHIFT_I, "1"})
+    public int shiftLeftWithLowMaskSmallInt(int x) {
+        return (x << INT_MASK_WIDTH) & (-1 << (INT_MASK_WIDTH - 1)); // transformed to: return x << INT_MASK_WIDTH;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.AND_L})
+    @IR(counts = {IRNode.LSHIFT_L, "1"})
+    public long shiftLeftWithLowMaskSmallLong(long x) {
+        return (x << LONG_MASK_WIDTH) & (-1 << (LONG_MASK_WIDTH - 1)); // transformed to: return x << LONG_MASK_WIDTH;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.AND_I})
+    @IR(counts = {IRNode.LSHIFT_I, "1"})
+    public static int shiftLeftWithLowMaskIntReversed(int x) {
+      return (-1 << INT_MASK_WIDTH) & (x << INT_MASK_WIDTH); // transformed to: return x << INT_MASK_WIDTH;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.AND_L})
+    @IR(counts = {IRNode.LSHIFT_L, "1"})
+    public static long shiftLeftWithLowMaskLongReversed(long x) {
+      return (-1 << LONG_MASK_WIDTH) & (x << LONG_MASK_WIDTH); // transformed to: return x << LONG_MASK_WIDTH;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.AND_I})
+    @IR(counts = {IRNode.LSHIFT_I, "1"})
+    public static int shiftLeftWithLowMaskSmallIntReversed(int x) {
+        return (-1 << (INT_MASK_WIDTH - 1)) & (x << INT_MASK_WIDTH); // transformed to: return x << INT_MASK_WIDTH;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.AND_L})
+    @IR(counts = {IRNode.LSHIFT_L, "1"})
+    public static long shiftLeftWithLowMaskSmallLongReversed(long x) {
+        return (-1 << (LONG_MASK_WIDTH - 1)) & (x << LONG_MASK_WIDTH); // transformed to: return x << LONG_MASK_WIDTH;
+    }
+
+    @Test
+    @IR(counts = {IRNode.AND_I, "1"})
+    public int andMaskNonNegativeInt(int x) {
+        return (x & 0x7FFF) & 0xFFFF; // transformed to: return x & 0x7FFF;
+    }
+
+    @Test
+    @IR(counts = {IRNode.AND_L, "1"})
+    public long andMaskNonNegativeLong(long x) {
+        return (x & 0x7FFFL) & 0xFFFFL; // transformed to: return x & 0x7FFFL;
+    }
+
+    @Test
+    @IR(counts = {IRNode.AND_I, "1"})
+    public int andMaskNonNegativeIntReversed(int x) {
+        return 0xFFFF & (x & 0x7FFF); // transformed to: return x & 0x7FFF;
+    }
+
+    @Test
+    @IR(counts = {IRNode.AND_L, "1"})
+    public long andMaskNonNegativeLongReversed(long x) {
+        return 0xFFFFL & (x & 0x7FFFL); // transformed to: return x & 0x7FFFL;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.AND_I})
+    @IR(counts = {IRNode.URSHIFT_I, "1"})
+    public int andAfterURShiftInt(int x) {
+        return (x >>> 8) & 0x00FFFFFF; // transformed to return x >>> 8;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.AND_L})
+    @IR(counts = {IRNode.URSHIFT_L, "1"})
+    public long andAfterURShiftLong(long x) {
+        return (x >>> 16) & 0x0000FFFFFFFFFFFFL; // transformed to return x >>> 16;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.AND_I})
+    @IR(counts = {IRNode.URSHIFT_I, "1"})
+    public int andAfterURShiftIntReversed(int x) {
+        return 0x00FFFFFF & (x >>> 8); // transformed to return x >>> 8;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.AND_L})
+    @IR(counts = {IRNode.URSHIFT_L, "1"})
+    public long andAfterURShiftLongReversed(long x) {
+        return 0x0000FFFFFFFFFFFFL & (x >>> 16); // transformed to return x >>> 16;
+    }
+
+    @Run(test = {"shiftLeftWithLowMaskInt", "shiftLeftWithLowMaskLong",
+                 "shiftLeftWithLowMaskSmallInt", "shiftLeftWithLowMaskSmallLong",
+                 "shiftLeftWithLowMaskIntReversed", "shiftLeftWithLowMaskLongReversed",
+                 "shiftLeftWithLowMaskSmallIntReversed", "shiftLeftWithLowMaskSmallLongReversed",
+                 "andMaskNonNegativeInt", "andMaskNonNegativeLong",
+                 "andMaskNonNegativeIntReversed", "andMaskNonNegativeLongReversed",
+                 "andAfterURShiftInt", "andAfterURShiftLong",
+                 "andAfterURShiftIntReversed", "andAfterURShiftLongReversed",
+    })
+    public void verifyShiftAndMaskTransforms() {
+        int xi = RANDOM.nextInt();
+        long xl = RANDOM.nextLong();
+
+        int res1 = shiftLeftWithLowMaskInt(xi);
+        if (res1 != (xi << INT_MASK_WIDTH)) {
+            throw new RuntimeException("incorrect result: " + res1);
+        }
+
+        long res2 = shiftLeftWithLowMaskLong(xl);
+        if (res2 != (xl << LONG_MASK_WIDTH)) {
+            throw new RuntimeException("incorrect result: " + res2);
+        }
+
+        int res13 = shiftLeftWithLowMaskSmallInt(xi);
+        if (res13 != (xi << INT_MASK_WIDTH)) {
+            throw new RuntimeException("incorrect result: " + res13);
+        }
+
+        long res14 = shiftLeftWithLowMaskSmallLong(xl);
+        if (res14 != (xl << LONG_MASK_WIDTH)) {
+            throw new RuntimeException("incorrect result: " + res14);
+        }
+
+        int res3 = shiftLeftWithLowMaskIntReversed(xi);
+        if (res3 != (xi << INT_MASK_WIDTH)) {
+            throw new RuntimeException("incorrect result: " + res3);
+        }
+
+        long res4 = shiftLeftWithLowMaskLongReversed(xl);
+        if (res4 != (xl << LONG_MASK_WIDTH)) {
+            throw new RuntimeException("incorrect result: " + res4);
+        }
+
+        int res15 = shiftLeftWithLowMaskSmallIntReversed(xi);
+        if (res15 != (xi << INT_MASK_WIDTH)) {
+            throw new RuntimeException("incorrect result: " + res15);
+        }
+
+        long res16 = shiftLeftWithLowMaskSmallLongReversed(xl);
+        if (res16 != (xl << LONG_MASK_WIDTH)) {
+            throw new RuntimeException("incorrect result: " + res16);
+        }
+
+        int res5 = andMaskNonNegativeInt(xi);
+        if (res5 != (xi & 0x7FFF)) {
+            throw new RuntimeException("incorrect result: " + res5);
+        }
+
+        long res6 = andMaskNonNegativeLong(xl);
+        if (res6 != (xl & 0x7FFFL)) {
+            throw new RuntimeException("incorrect result: " + res6);
+        }
+
+        int res7 = andMaskNonNegativeIntReversed(xi);
+        if (res7 != (xi & 0x7FFF)) {
+            throw new RuntimeException("incorrect result: " + res7);
+        }
+
+        long res8 = andMaskNonNegativeLongReversed(xl);
+        if (res8 != (xl & 0x7FFFL)) {
+            throw new RuntimeException("incorrect result: " + res8);
+        }
+
+        int res9 = andAfterURShiftInt(xi);
+        if (res9 != (xi >>> 8)) {
+            throw new RuntimeException("incorrect result: " + res9);
+        }
+
+        long res10 = andAfterURShiftLong(xl);
+        if (res10 != (xl >>> 16)) {
+            throw new RuntimeException("incorrect result: " + res10);
+        }
+
+        int res11 = andAfterURShiftIntReversed(xi);
+        if (res11 != (xi >>> 8)) {
+            throw new RuntimeException("incorrect result: " + res11);
+        }
+
+        long res12 = andAfterURShiftLongReversed(xl);
+        if (res12 != (xl >>> 16)) {
+            throw new RuntimeException("incorrect result: " + res12);
         }
     }
 }
