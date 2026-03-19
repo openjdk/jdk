@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,17 @@ void PhaseVector::optimize_vector_boxes() {
   C->set_inlining_incrementally(false);
 
   do_cleanup();
+
+  C->set_post_vector_phase(true);
+}
+
+void PhaseVector::add_all_nodes_into_igvn_worklist() {
+  ResourceMark rm;
+  Unique_Node_List useful;
+  C->identify_useful_nodes(useful);
+  for (uint i = 0; i < useful.size(); ++i) {
+    C->record_for_igvn(useful.at(i));
+  }
 }
 
 void PhaseVector::do_cleanup() {
@@ -69,6 +80,14 @@ void PhaseVector::do_cleanup() {
     PhaseRemoveUseless pru(C->initial_gvn(), *C->igvn_worklist());
     if (C->failing())  return;
   }
+  // Nodes created during parsing/inlining use PhaseGVN and are not
+  // record_for_igvn'd, so they may never reach the IGVN worklist. Combined with
+  // inline order and box/unbox wrapping, Ideal and Identity optimizations (e.g.,
+  // VectorStoreMask (VectorMaskCast* VectorLoadMask x) => x) can be missed.
+  // Now that incremental inlining and box elimination are done, the tree is now
+  // fully materialized and free of extraneous nodes. Add all nodes to the
+  // worklist so these optimizations get another chance.
+  add_all_nodes_into_igvn_worklist();
   {
     Compile::TracePhase tp(_t_vector_igvn);
     _igvn.reset();
