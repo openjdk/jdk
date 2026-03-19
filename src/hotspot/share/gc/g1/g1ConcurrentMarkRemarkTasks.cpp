@@ -41,10 +41,10 @@ struct G1UpdateRegionLivenessAndSelectForRebuildTask::G1OnRegionClosure : public
   uint _num_old_regions_removed;
   uint _num_humongous_regions_removed;
 
-  GrowableArrayCHeap<G1HeapRegion*, mtGC> _local_old_selected;
-  uint _local_num_humongous_selected;
+  GrowableArrayCHeap<G1HeapRegion*, mtGC> _old_selected_for_rebuild;
+  uint _num_humongous_selected_for_rebuild;
 
-  G1FreeRegionList* _local_cleanup_list;
+  G1FreeRegionList* _cleanup_list;
 
   G1OnRegionClosure(G1CollectedHeap* g1h,
                     G1ConcurrentMark* cm,
@@ -54,9 +54,9 @@ struct G1UpdateRegionLivenessAndSelectForRebuildTask::G1OnRegionClosure : public
     _freed_bytes(0),
     _num_old_regions_removed(0),
     _num_humongous_regions_removed(0),
-    _local_old_selected(16),
-    _local_num_humongous_selected(0),
-    _local_cleanup_list(local_cleanup_list) {}
+    _old_selected_for_rebuild(16),
+    _num_humongous_selected_for_rebuild(0),
+    _cleanup_list(local_cleanup_list) {}
 
   void reclaim_empty_region_common(G1HeapRegion* hr) {
     assert(!hr->has_pinned_objects(), "precondition");
@@ -78,7 +78,7 @@ struct G1UpdateRegionLivenessAndSelectForRebuildTask::G1OnRegionClosure : public
 
       _num_humongous_regions_removed++;
       reclaim_empty_region_common(hr);
-      _g1h->free_humongous_region(hr, _local_cleanup_list);
+      _g1h->free_humongous_region(hr, _cleanup_list);
     };
 
     _g1h->humongous_obj_regions_iterate(hr, on_humongous_region);
@@ -89,7 +89,7 @@ struct G1UpdateRegionLivenessAndSelectForRebuildTask::G1OnRegionClosure : public
 
     _num_old_regions_removed++;
     reclaim_empty_region_common(hr);
-    _g1h->free_region(hr, _local_cleanup_list);
+    _g1h->free_region(hr, _cleanup_list);
   }
 
   bool do_heap_region(G1HeapRegion* hr) override {
@@ -105,7 +105,7 @@ struct G1UpdateRegionLivenessAndSelectForRebuildTask::G1OnRegionClosure : public
 
         auto on_humongous_region = [&] (G1HeapRegion* hr) {
           if (selected_for_rebuild) {
-            _local_num_humongous_selected++;
+            _num_humongous_selected_for_rebuild++;
           }
           _cm->update_top_at_rebuild_start(hr);
         };
@@ -122,7 +122,7 @@ struct G1UpdateRegionLivenessAndSelectForRebuildTask::G1OnRegionClosure : public
       if (is_live) {
         const bool selected_for_rebuild = tracker->update_old_before_rebuild(hr);
         if (selected_for_rebuild) {
-          _local_old_selected.push(hr);
+          _old_selected_for_rebuild.push(hr);
         }
         _cm->update_top_at_rebuild_start(hr);
       } else {
@@ -166,8 +166,8 @@ void G1UpdateRegionLivenessAndSelectForRebuildTask::work(uint worker_id) {
     MutexLocker x(G1RareEvent_lock, Mutex::_no_safepoint_check_flag);
     _g1h->decrement_summary_bytes(on_region_cl._freed_bytes);
 
-    _old_selected_for_rebuild.appendAll(&on_region_cl._local_old_selected);
-    _num_humongous_selected_for_rebuild += on_region_cl._local_num_humongous_selected;
+    _old_selected_for_rebuild.appendAll(&on_region_cl._old_selected_for_rebuild);
+    _num_humongous_selected_for_rebuild += on_region_cl._num_humongous_selected_for_rebuild;
 
     _cleanup_list.add_ordered(&local_cleanup_list);
     assert(local_cleanup_list.is_empty(), "post-condition");

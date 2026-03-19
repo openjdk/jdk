@@ -28,12 +28,9 @@
 #include "gc/g1/g1RemSetTrackingPolicy.hpp"
 #include "runtime/safepoint.hpp"
 
-static size_t mixed_gc_live_threshold_bytes() {
-  return G1HeapRegion::GrainBytes * (size_t)G1MixedGCLiveThresholdPercent / 100;
-}
-
 static bool region_occupancy_low_enough_for_evac(size_t live_bytes) {
-  return live_bytes < mixed_gc_live_threshold_bytes();
+  size_t mixed_gc_live_threshold_bytes = G1HeapRegion::GrainBytes * (size_t)G1MixedGCLiveThresholdPercent / 100;
+  return live_bytes < mixed_gc_live_threshold_bytes;
 }
 
 void G1RemSetTrackingPolicy::update_at_allocate(G1HeapRegion* r) {
