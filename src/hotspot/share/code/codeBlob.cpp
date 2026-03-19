@@ -77,8 +77,10 @@ const BufferBlob::Vptr               BufferBlob::_vpntr;
 const RuntimeStub::Vptr              RuntimeStub::_vpntr;
 const SingletonBlob::Vptr            SingletonBlob::_vpntr;
 const DeoptimizationBlob::Vptr       DeoptimizationBlob::_vpntr;
+const SafepointBlob::Vptr            SafepointBlob::_vpntr;
 #ifdef COMPILER2
 const ExceptionBlob::Vptr            ExceptionBlob::_vpntr;
+const UncommonTrapBlob::Vptr         UncommonTrapBlob::_vpntr;
 #endif // COMPILER2
 const UpcallStub::Vptr               UpcallStub::_vpntr;
 

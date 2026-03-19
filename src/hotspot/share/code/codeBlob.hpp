@@ -488,7 +488,7 @@ class RuntimeStub: public RuntimeBlob {
   address entry_point() const         { return code_begin(); }
 
   void post_restore_impl() {
-    trace_new_stub(this, "RuntimeBlob - ", name());
+    trace_new_stub(this, "RuntimeStub - ", name());
   }
 
   void print_on_impl(outputStream* st) const;
@@ -534,17 +534,10 @@ class SingletonBlob: public RuntimeBlob {
 
   address entry_point()                          { return code_begin(); }
 
-  void post_restore_impl() {
-    trace_new_stub(this, "SingletonBlob - ", name());
-  }
-
   void print_on_impl(outputStream* st) const;
   void print_value_on_impl(outputStream* st) const;
 
   class Vptr : public RuntimeBlob::Vptr {
-    void post_restore(CodeBlob* instance) const override {
-      ((SingletonBlob*)instance)->post_restore_impl();
-    }
     void print_on(const CodeBlob* instance, outputStream* st) const override {
       ((const SingletonBlob*)instance)->print_on_impl(st);
     }
@@ -671,6 +664,16 @@ class UncommonTrapBlob: public SingletonBlob {
     OopMapSet*  oop_maps,
     int         frame_size
   );
+  void post_restore_impl() {
+    trace_new_stub(this, "UncommonTrapBlob");
+  }
+  class Vptr : public SingletonBlob::Vptr {
+    void post_restore(CodeBlob* instance) const override {
+      ((UncommonTrapBlob*)instance)->post_restore_impl();
+    }
+  };
+
+  static const Vptr _vpntr;
 };
 
 
@@ -731,6 +734,17 @@ class SafepointBlob: public SingletonBlob {
     OopMapSet*  oop_maps,
     int         frame_size
   );
+
+  void post_restore_impl() {
+    trace_new_stub(this, "SafepointBlob - ", name());
+  }
+  class Vptr : public SingletonBlob::Vptr {
+    void post_restore(CodeBlob* instance) const override {
+      ((SafepointBlob*)instance)->post_restore_impl();
+    }
+  };
+
+  static const Vptr _vpntr;
 };
 
 //----------------------------------------------------------------------------------------------------
