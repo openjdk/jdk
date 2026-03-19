@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -256,6 +256,19 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
             break;
         default:
             throw new ZipException("unsupported compression method");
+        }
+        // Verify that entry name and comment can be encoded
+        try {
+            zc.getBytes(e.name);
+        } catch (IllegalArgumentException ex) {
+            throw new ZipException("unmappable character in ZIP entry name");
+        }
+        if (e.comment != null) {
+            try {
+                zc.getBytes(e.comment);
+            } catch (IllegalArgumentException ex) {
+                throw new ZipException("unmappable character in ZIP entry comment");
+            }
         }
         if (! names.add(e.name)) {
             throw new ZipException("duplicate entry: " + e.name);
