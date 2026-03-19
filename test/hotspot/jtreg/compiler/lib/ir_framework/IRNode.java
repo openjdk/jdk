@@ -1076,11 +1076,6 @@ public class IRNode {
         loadOfNodes(LOAD_US_OF_CLASS, "LoadUS");
     }
 
-    public static final String LOAD_VECTOR_Z = VECTOR_PREFIX + "LOAD_VECTOR_Z" + POSTFIX;
-    static {
-        vectorNode(LOAD_VECTOR_Z, "LoadVector", TYPE_BOOL);
-    }
-
     public static final String LOAD_VECTOR_B = VECTOR_PREFIX + "LOAD_VECTOR_B" + POSTFIX;
     static {
         vectorNode(LOAD_VECTOR_B, "LoadVector", TYPE_BYTE);
