@@ -34,6 +34,7 @@ package compiler.escapeAnalysis;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -275,6 +276,33 @@ public class TestArrayCopyEliminationUncRematerialization {
                 return scope(
                     testCaseConst.asToken("Const" + testName, 2 * config.copyLen - 1, new TestTemplates(storeConst, unstableTrap)),
                     testCaseIdx.asToken("Idx" + testName, new TestTemplates(storeIdx, unstableTrap))
+                );
+            });
+
+            // This generates tests with multiple interfering stores forcing elements to be put into the common path.
+            var testMultiStore = Template.make(() -> {
+                final String testName = "MultiStore" + pty.abbrev();
+                final int numStores = RANDOM.nextInt(1, config.copyLen - 1);
+                final Set<Integer> storeIdxs = new HashSet<>();
+                storeIdxs.add(config.returnIdx); // Always store at the WRITE_IDX to potentially trigger the bug.
+                while (storeIdxs.size() < numStores) {
+                    storeIdxs.add(RANDOM.nextInt(0, config.copyLen));
+                }
+                var multiStoresConst = Template.make(() -> scope(
+                    let("typeAbbrev", pty.abbrev()),
+                    storeIdxs.stream()
+                             .map(idx -> String.format("src[COPY_IDX + %d] = WRITE_VAL_#{typeAbbrev};\n", idx))
+                             .toList()
+                ));
+                var multiStoresIdx = Template.make(() -> scope(
+                    let("typeAbbrev", pty.abbrev()),
+                    storeIdxs.stream()
+                             .map(idx -> String.format("src[idx + %d] = WRITE_VAL_#{typeAbbrev};\n", idx))
+                             .toList()
+                ));
+                return scope(
+                    testCaseConst.asToken("Const" + testName, 2 * config.copyLen - numStores, new TestTemplates(multiStoresConst, unstableTrap)),
+                    testCaseIdx.asToken("Idx" + testName, new TestTemplates(multiStoresIdx, unstableTrap))
                 );
             });
 
@@ -546,6 +574,7 @@ public class TestArrayCopyEliminationUncRematerialization {
                     """
                 )),
                 List.of(testStore,
+                        testMultiStore,
                         testStoreTrapLoop,
                         testAtomics,
                         testMemorySegments,
