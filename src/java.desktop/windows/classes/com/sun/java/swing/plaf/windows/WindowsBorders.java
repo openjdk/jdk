@@ -43,7 +43,7 @@ import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
  * @author Rich Schiavi
  */
 
-public class WindowsBorders {
+public final class WindowsBorders {
 
     /**
      * Returns a  border instance for a Windows Progress Bar
