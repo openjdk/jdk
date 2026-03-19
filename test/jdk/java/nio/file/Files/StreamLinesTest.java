@@ -121,7 +121,7 @@ public class StreamLinesTest {
 
     static Arguments of(String description, IntFunction<String> lineGenerator,
                        IntFunction<LineSeparator> separatorGenerator, int n, Charset cs) {
-        return Arguments.arguments(description, lineGenerator, separatorGenerator, n, cs);
+        return Arguments.argumentSet(description, lineGenerator, separatorGenerator, n, cs);
     }
 
     private static final Random random = RandomFactory.getRandom();
