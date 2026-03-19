@@ -86,7 +86,7 @@ public:
   void set_initiate_conc_mark_if_possible(bool v) { _initiate_conc_mark_if_possible = v; }
 
   // Phase getters
-  bool is_in_young_only_phase() const { return _phase >= YoungNormal && _phase <= YoungLastYoung; }
+  bool is_in_young_only_phase() const { return _phase == YoungNormal || _phase == YoungConcurrentStart || _phase == YoungLastYoung; }
   bool is_in_mixed_phase() const { return _phase == Mixed; }
 
   // Specific pauses
