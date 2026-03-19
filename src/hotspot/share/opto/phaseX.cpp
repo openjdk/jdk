@@ -1103,7 +1103,7 @@ bool PhaseIterGVN::drain_worklist() {
              increase, max_live_nodes_increase_per_iteration);
       NOT_PRODUCT(trace_PhaseIterGVN(n, nn, oldtype);)
     } else if (!n->is_top()) {
-      remove_dead_node(n);
+      remove_dead_node(n, NodeOrigin::Graph);
     }
     loop_count++;
   }
@@ -1918,10 +1918,10 @@ void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape, bool deep_revisit
   // Ideal implementations speculatively create nodes and kill them before
   // returning nullptr (e.g. split_if clones a Cmp to check is_canonical).
   // unique() is a high-water mark that is not decremented by remove_dead_node,
-  // so it would false-positive. live_nodes() accounts for dead nodes but can
+  // so it would cause false-positives. live_nodes() accounts for dead nodes but can
   // decrease when Ideal removes existing nodes as side effects.
   // made_progress() precisely tracks meaningful transforms, and speculative
-  // work killed via DeathHint::Temp does not increment it.
+  // work killed via NodeOrigin::Speculative does not increment it.
   uint old_progress = made_progress();
   // The hash of a node should not change, this would indicate different inputs
   uint old_hash = n->hash();
@@ -2314,7 +2314,7 @@ const Type* PhaseIterGVN::saturate(const Type* new_type, const Type* old_type,
 //------------------------------remove_globally_dead_node----------------------
 // Kill a globally dead Node.  All uses are also globally dead and are
 // aggressively trimmed.
-void PhaseIterGVN::remove_globally_dead_node(Node* dead, DeathHint hint) {
+void PhaseIterGVN::remove_globally_dead_node(Node* dead, NodeOrigin origin) {
   enum DeleteProgress {
     PROCESS_INPUTS,
     PROCESS_OUTPUTS
@@ -2335,7 +2335,7 @@ void PhaseIterGVN::remove_globally_dead_node(Node* dead, DeathHint hint) {
       // After following inputs, continue to outputs
       stack.set_index(PROCESS_OUTPUTS);
       if (!dead->is_Con()) { // Don't kill cons but uses
-        if (hint != DeathHint::Temp) {
+        if (origin != NodeOrigin::Speculative) {
           set_progress();
         }
         bool recurse = false;
@@ -2447,7 +2447,7 @@ void PhaseIterGVN::subsume_node( Node *old, Node *nn ) {
   // Smash all inputs to 'old', isolating him completely
   Node *temp = new Node(1);
   temp->init_req(0,nn);     // Add a use to nn to prevent him from dying
-  remove_dead_node( old );
+  remove_dead_node( old, NodeOrigin::Graph );
   temp->del_req(0);         // Yank bogus edge
   if (nn != nullptr && nn->outcnt() == 0) {
     _worklist.push(nn);

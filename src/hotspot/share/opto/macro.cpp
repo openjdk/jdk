@@ -973,7 +973,7 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
           }
           k -= (oc2 - use->outcnt());
         }
-        _igvn.remove_dead_node(use);
+        _igvn.remove_dead_node(use, PhaseIterGVN::NodeOrigin::Graph);
       } else if (use->is_ArrayCopy()) {
         // Disconnect ArrayCopy node
         ArrayCopyNode* ac = use->as_ArrayCopy();
@@ -1008,7 +1008,7 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
           // src can be top at this point if src and dest of the
           // arraycopy were the same
           if (src->outcnt() == 0 && !src->is_top()) {
-            _igvn.remove_dead_node(src);
+            _igvn.remove_dead_node(src, PhaseIterGVN::NodeOrigin::Graph);
           }
         }
         _igvn._worklist.push(ac);
@@ -1018,7 +1018,7 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
       j -= (oc1 - res->outcnt());
     }
     assert(res->outcnt() == 0, "all uses of allocated objects must be deleted");
-    _igvn.remove_dead_node(res);
+    _igvn.remove_dead_node(res, PhaseIterGVN::NodeOrigin::Graph);
   }
 
   //
@@ -1502,7 +1502,7 @@ void PhaseMacroExpand::expand_allocate_common(
       transform_later(_callprojs.fallthrough_memproj);
     }
     migrate_outs(_callprojs.catchall_memproj, _callprojs.fallthrough_memproj);
-    _igvn.remove_dead_node(_callprojs.catchall_memproj);
+    _igvn.remove_dead_node(_callprojs.catchall_memproj, PhaseIterGVN::NodeOrigin::Graph);
   }
 
   // An allocate node has separate i_o projections for the uses on the control
@@ -1521,7 +1521,7 @@ void PhaseMacroExpand::expand_allocate_common(
       transform_later(_callprojs.fallthrough_ioproj);
     }
     migrate_outs(_callprojs.catchall_ioproj, _callprojs.fallthrough_ioproj);
-    _igvn.remove_dead_node(_callprojs.catchall_ioproj);
+    _igvn.remove_dead_node(_callprojs.catchall_ioproj, PhaseIterGVN::NodeOrigin::Graph);
   }
 
   // if we generated only a slow call, we are done
@@ -1585,11 +1585,11 @@ void PhaseMacroExpand::yank_alloc_node(AllocateNode* alloc) {
       --i; // back up iterator
     }
     assert(_callprojs.resproj->outcnt() == 0, "all uses must be deleted");
-    _igvn.remove_dead_node(_callprojs.resproj);
+    _igvn.remove_dead_node(_callprojs.resproj, PhaseIterGVN::NodeOrigin::Graph);
   }
   if (_callprojs.fallthrough_catchproj != nullptr) {
     migrate_outs(_callprojs.fallthrough_catchproj, ctrl);
-    _igvn.remove_dead_node(_callprojs.fallthrough_catchproj);
+    _igvn.remove_dead_node(_callprojs.fallthrough_catchproj, PhaseIterGVN::NodeOrigin::Graph);
   }
   if (_callprojs.catchall_catchproj != nullptr) {
     _igvn.rehash_node_delayed(_callprojs.catchall_catchproj);
@@ -1597,16 +1597,16 @@ void PhaseMacroExpand::yank_alloc_node(AllocateNode* alloc) {
   }
   if (_callprojs.fallthrough_proj != nullptr) {
     Node* catchnode = _callprojs.fallthrough_proj->unique_ctrl_out();
-    _igvn.remove_dead_node(catchnode);
-    _igvn.remove_dead_node(_callprojs.fallthrough_proj);
+    _igvn.remove_dead_node(catchnode, PhaseIterGVN::NodeOrigin::Graph);
+    _igvn.remove_dead_node(_callprojs.fallthrough_proj, PhaseIterGVN::NodeOrigin::Graph);
   }
   if (_callprojs.fallthrough_memproj != nullptr) {
     migrate_outs(_callprojs.fallthrough_memproj, mem);
-    _igvn.remove_dead_node(_callprojs.fallthrough_memproj);
+    _igvn.remove_dead_node(_callprojs.fallthrough_memproj, PhaseIterGVN::NodeOrigin::Graph);
   }
   if (_callprojs.fallthrough_ioproj != nullptr) {
     migrate_outs(_callprojs.fallthrough_ioproj, i_o);
-    _igvn.remove_dead_node(_callprojs.fallthrough_ioproj);
+    _igvn.remove_dead_node(_callprojs.fallthrough_ioproj, PhaseIterGVN::NodeOrigin::Graph);
   }
   if (_callprojs.catchall_memproj != nullptr) {
     _igvn.rehash_node_delayed(_callprojs.catchall_memproj);
@@ -1625,7 +1625,7 @@ void PhaseMacroExpand::yank_alloc_node(AllocateNode* alloc) {
     }
   }
 #endif
-  _igvn.remove_dead_node(alloc);
+  _igvn.remove_dead_node(alloc, PhaseIterGVN::NodeOrigin::Graph);
 }
 
 void PhaseMacroExpand::expand_initialize_membar(AllocateNode* alloc, InitializeNode* init,

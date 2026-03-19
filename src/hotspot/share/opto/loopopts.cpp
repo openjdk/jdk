@@ -161,7 +161,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
     }
 
     if (the_clone != x) {
-      _igvn.remove_dead_node(the_clone, PhaseIterGVN::DeathHint::Temp);
+      _igvn.remove_dead_node(the_clone, PhaseIterGVN::NodeOrigin::Speculative);
     } else if (region->is_Loop() && i == LoopNode::LoopBackControl &&
                n->is_Load() && can_move_to_inner_loop(n, region->as_Loop(), x)) {
       // it is not a win if 'x' moved from an outer to an inner loop
@@ -172,7 +172,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
   }
   // Too few wins?
   if (!wins.profitable(policy)) {
-    _igvn.remove_dead_node(phi, PhaseIterGVN::DeathHint::Temp);
+    _igvn.remove_dead_node(phi, PhaseIterGVN::NodeOrigin::Speculative);
     return nullptr;
   }
 
@@ -1859,7 +1859,7 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
             assert(cast != nullptr, "must have added a cast to pin the node");
           }
         }
-        _igvn.remove_dead_node(n);
+        _igvn.remove_dead_node(n, PhaseIterGVN::NodeOrigin::Graph);
       }
       _dom_lca_tags_round = 0;
     }
@@ -2075,7 +2075,7 @@ Node* PhaseIdealLoop::clone_iff(PhiNode* phi) {
   // Register with optimizer
   Node *hit1 = _igvn.hash_find_insert(phi1);
   if (hit1) {                   // Hit, toss just made Phi
-    _igvn.remove_dead_node(phi1, PhaseIterGVN::DeathHint::Temp); // Remove new phi
+    _igvn.remove_dead_node(phi1, PhaseIterGVN::NodeOrigin::Speculative); // Remove new phi
     assert(hit1->is_Phi(), "" );
     phi1 = (PhiNode*)hit1;      // Use existing phi
   } else {                      // Miss
@@ -2083,7 +2083,7 @@ Node* PhaseIdealLoop::clone_iff(PhiNode* phi) {
   }
   Node *hit2 = _igvn.hash_find_insert(phi2);
   if (hit2) {                   // Hit, toss just made Phi
-    _igvn.remove_dead_node(phi2, PhaseIterGVN::DeathHint::Temp); // Remove new phi
+    _igvn.remove_dead_node(phi2, PhaseIterGVN::NodeOrigin::Speculative); // Remove new phi
     assert(hit2->is_Phi(), "" );
     phi2 = (PhiNode*)hit2;      // Use existing phi
   } else {                      // Miss
@@ -2158,7 +2158,7 @@ CmpNode*PhaseIdealLoop::clone_bool(PhiNode* phi) {
   // Register with optimizer
   Node *hit1 = _igvn.hash_find_insert(phi1);
   if( hit1 ) {                  // Hit, toss just made Phi
-    _igvn.remove_dead_node(phi1, PhaseIterGVN::DeathHint::Temp); // Remove new phi
+    _igvn.remove_dead_node(phi1, PhaseIterGVN::NodeOrigin::Speculative); // Remove new phi
     assert( hit1->is_Phi(), "" );
     phi1 = (PhiNode*)hit1;      // Use existing phi
   } else {                      // Miss
@@ -2166,7 +2166,7 @@ CmpNode*PhaseIdealLoop::clone_bool(PhiNode* phi) {
   }
   Node *hit2 = _igvn.hash_find_insert(phi2);
   if( hit2 ) {                  // Hit, toss just made Phi
-    _igvn.remove_dead_node(phi2, PhaseIterGVN::DeathHint::Temp); // Remove new phi
+    _igvn.remove_dead_node(phi2, PhaseIterGVN::NodeOrigin::Speculative); // Remove new phi
     assert( hit2->is_Phi(), "" );
     phi2 = (PhiNode*)hit2;      // Use existing phi
   } else {                      // Miss
@@ -2317,7 +2317,7 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
           _igvn.register_new_node_with_optimizer(phi); // Register new phi
         } else {                                      // or
           // Remove the new phi from the graph and use the hit
-          _igvn.remove_dead_node(phi, phi == prev ? PhaseIterGVN::DeathHint::None : PhaseIterGVN::DeathHint::Temp);
+          _igvn.remove_dead_node(phi, phi == prev ? PhaseIterGVN::NodeOrigin::Graph : PhaseIterGVN::NodeOrigin::Speculative);
           phi = hit;                                  // Use existing phi
         }
         set_ctrl(phi, prev);
@@ -3467,7 +3467,7 @@ void PhaseIdealLoop::insert_phi_for_loop( Node* use, uint idx, Node* lp_entry_va
     set_ctrl(phi, lp);
   } else {
     // Remove the new phi from the graph and use the hit
-    _igvn.remove_dead_node(phi, PhaseIterGVN::DeathHint::Temp);
+    _igvn.remove_dead_node(phi, PhaseIterGVN::NodeOrigin::Speculative);
     phi = hit;
   }
   _igvn.replace_input_of(use, idx, phi);

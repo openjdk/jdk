@@ -208,9 +208,10 @@ public:
 
   // RAII guard for speculative transforms. Restores _count_progress in the destructor
   // unless commit() is called, so that abandoned speculative work does not count as progress.
+  // In case multiple nodes are created and only some are speculative, commit() should still be called.
   class SpeculativeProgressGuard {
     PhaseTransform* _phase;
-    uint _saved_progress;
+    uint64_t _saved_progress;
     bool _committed;
   public:
     SpeculativeProgressGuard(PhaseTransform* phase) :
@@ -565,21 +566,21 @@ public:
   // It is significant only for debugging and profiling.
   Node* register_new_node_with_optimizer(Node* n, Node* orig = nullptr);
 
-  // Hint for dead node removal, about why the node is dying.
-  // Temp: a temporarily created node that was never part of the graph
+  // Origin of a dead node, describing why it is dying.
+  // Speculative: a temporarily created node that was never part of the graph
   // (e.g., a speculative clone in split_if to test constant foldability).
   // Its death does not count as progress for convergence tracking.
-  enum class DeathHint { None, Temp };
+  enum class NodeOrigin { Graph, Speculative };
 
-  // Kill a globally dead Node.  All uses are also globally dead and are
+  // Kill a globally dead Node. All uses are also globally dead and are
   // aggressively trimmed.
-  void remove_globally_dead_node(Node* dead, DeathHint hint = DeathHint::None);
+  void remove_globally_dead_node(Node* dead, NodeOrigin origin);
 
   // Kill all inputs to a dead node, recursively making more dead nodes.
   // The Node must be dead locally, i.e., have no uses.
-  void remove_dead_node(Node* dead, DeathHint hint = DeathHint::None) {
+  void remove_dead_node(Node* dead, NodeOrigin origin) {
     assert(dead->outcnt() == 0 && !dead->is_top(), "node must be dead");
-    remove_globally_dead_node(dead, hint);
+    remove_globally_dead_node(dead, origin);
   }
 
   // Add users of 'n' to worklist
