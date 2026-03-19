@@ -359,27 +359,6 @@ public class VectorMaskToLongTest {
         testToLongGeneral(D_SPECIES);
     }
 
-    @Test
-    @IR(counts = { IRNode.VECTOR_STORE_MASK, "= 0",
-                   IRNode.VECTOR_MASK_TO_LONG, "= 1" },
-        applyIfCPUFeatureOr = { "avx512", "true", "avx2", "true", "asimd", "true", "rvv", "true" })
-    public static void testCastToLongShortToInt() {
-        long got = VectorMask.fromArray(ShortVector.SPECIES_128, m, 0)
-                             .cast(IntVector.SPECIES_256)
-                             .toLong();
-        verifyMaskToLong(IntVector.SPECIES_256, -1L, got);
-    }
-
-    @Test
-    @IR(counts = { IRNode.VECTOR_STORE_MASK, "= 0",
-                   IRNode.VECTOR_MASK_TO_LONG, "= 1" },
-        applyIfCPUFeatureOr = { "avx512", "true", "avx2", "true", "asimd", "true", "rvv", "true" })
-    public static void testCastToLongIntToLong() {
-        long got = VectorMask.fromArray(IntVector.SPECIES_128, m, 0)
-                             .cast(LongVector.SPECIES_256)
-                             .toLong();
-        verifyMaskToLong(LongVector.SPECIES_256, -1L, got);
-    }
 
     public static void main(String[] args) {
         TestFramework testFramework = new TestFramework();

@@ -173,6 +173,14 @@ public:
   static void dump_adr_type(const TypePtr* adr_type, outputStream* st);
   virtual void dump_spec(outputStream *st) const;
 #endif
+
+  MemNode* clone_with_adr_type(const TypePtr* adr_type) const {
+    MemNode* new_node = clone()->as_Mem();
+#ifdef ASSERT
+    new_node->_adr_type = adr_type;
+#endif
+    return new_node;
+  }
 };
 
 // Analyze a MemNode to try to prove that it is independent from other memory accesses
@@ -1313,11 +1321,26 @@ public:
   virtual int Opcode() const;
 };
 
+class MemBarStoreLoadNode : public MemBarNode {
+public:
+  MemBarStoreLoadNode(Compile* C, int alias_idx, Node* precedent)
+    : MemBarNode(C, alias_idx, precedent) {}
+  virtual int Opcode() const;
+};
+
 // Ordering between a volatile store and a following volatile load.
 // Requires multi-CPU visibility?
 class MemBarVolatileNode: public MemBarNode {
 public:
   MemBarVolatileNode(Compile* C, int alias_idx, Node* precedent)
+    : MemBarNode(C, alias_idx, precedent) {}
+  virtual int Opcode() const;
+};
+
+// A full barrier blocks all loads and stores from moving across it
+class MemBarFullNode : public MemBarNode {
+public:
+  MemBarFullNode(Compile* C, int alias_idx, Node* precedent)
     : MemBarNode(C, alias_idx, precedent) {}
   virtual int Opcode() const;
 };

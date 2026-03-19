@@ -63,13 +63,13 @@ class SynthPainterImpl extends SynthPainter {
         if (p != null) {
             if (g instanceof Graphics2D){
                 Graphics2D gfx = (Graphics2D)g;
-                if (transform!=null){
+                if (transform != null) {
                     gfx.transform(transform);
                 }
                 gfx.translate(x, y);
                 p.paint(gfx, ctx.getComponent(), w, h);
                 gfx.translate(-x, -y);
-                if (transform!=null){
+                if (transform != null){
                     try {
                         gfx.transform(transform.createInverse());
                     } catch (NoninvertibleTransformException e) {
@@ -85,7 +85,7 @@ class SynthPainterImpl extends SynthPainter {
                 BufferedImage img = new BufferedImage(w,h,
                         BufferedImage.TYPE_INT_ARGB);
                 Graphics2D gfx = img.createGraphics();
-                if (transform!=null){
+                if (transform != null){
                     gfx.transform(transform);
                 }
                 p.paint(gfx, ctx.getComponent(), w, h);

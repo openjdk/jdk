@@ -99,14 +99,16 @@ ifeq ($(call isTargetOs, windows), true)
       $(TOPDIR)/src/$(MODULE)/windows/native/libawt/windows/awt.rc
 endif
 
-# This is the object file to provide the dladdr API, which is not
-# part of AIX. It occurs several times in the jdk code base.
-# Do not include it. When statically linking the java
-# launcher with all JDK and VM static libraries, we use the
-# --whole-archive linker option. The duplicate objects in different
-# static libraries cause linking errors due to duplicate symbols.
 ifeq ($(call isTargetOs, aix), true)
+  # This is the object file to provide the dladdr API, which is not
+  # part of AIX. It occurs several times in the jdk code base.
+  # Do not include it. When statically linking the java
+  # launcher with all JDK and VM static libraries, we use the
+  # --whole-archive linker option. The duplicate objects in different
+  # static libraries cause linking errors due to duplicate symbols.
   LIBAWT_STATIC_EXCLUDE_OBJS := porting_aix.o
+
+  LIBAWT_CFLAGS += -I$(TOPDIR)/src/java.base/aix/native/include
 endif
 
 # -fgcse-after-reload improves performance of MaskFill in Java2D by 20% for
