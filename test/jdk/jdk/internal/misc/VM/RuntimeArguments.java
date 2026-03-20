@@ -24,7 +24,7 @@
 /**
  * @test
  * @requires vm.flagless
- * @requires test.thread.factory == null
+ * @requires test.thread.factory == ""
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.zipfs
