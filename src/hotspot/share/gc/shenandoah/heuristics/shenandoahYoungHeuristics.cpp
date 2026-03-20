@@ -174,10 +174,8 @@ size_t ShenandoahYoungHeuristics::bytes_of_allocation_runway_before_gc_trigger(s
   size_t usage = _space_info->used();
   size_t available = (capacity > usage)? capacity - usage: 0;
   size_t allocated = _free_set->get_bytes_allocated_since_gc_start();
+  size_t anticipated_available = available + young_regions_to_be_reclaimed * ShenandoahHeapRegion::region_size_bytes();
 
-  size_t available_young_collected = ShenandoahHeap::heap()->collection_set()->get_young_available_bytes_collected();
-  size_t anticipated_available =
-          available + young_regions_to_be_reclaimed * ShenandoahHeapRegion::region_size_bytes() - available_young_collected;
   size_t spike_headroom = capacity * ShenandoahAllocSpikeFactor / 100;
   size_t penalties      = capacity * _gc_time_penalties / 100;
 

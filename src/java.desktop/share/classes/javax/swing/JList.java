@@ -2694,7 +2694,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
                     }
                     Rectangle newFirstRect = getCellBounds(newFirst,newFirst);
                     Rectangle firstRect = getCellBounds(first,first);
-                    if ((newFirstRect != null) && (firstRect!=null)) {
+                    if ((newFirstRect != null) && (firstRect != null)) {
                         while ( (newFirstRect.y + visibleRect.height <
                                  firstRect.y + firstRect.height) &&
                                 (newFirstRect.y < firstRect.y) ) {

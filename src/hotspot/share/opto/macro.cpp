@@ -1372,7 +1372,9 @@ void PhaseMacroExpand::expand_allocate_common(
     initial_slow_test = nullptr;
   }
 
-  bool allocation_has_use = (alloc->result_cast() != nullptr);
+  // ArrayCopyNode right after an allocation operates on the raw result projection for the Allocate node so it's not
+  // safe to remove such an allocation even if it has no result cast.
+  bool allocation_has_use = (alloc->result_cast() != nullptr) || (alloc->initialization() != nullptr && alloc->initialization()->is_complete_with_arraycopy());
   if (!allocation_has_use) {
     InitializeNode* init = alloc->initialization();
     if (init != nullptr) {
@@ -1974,8 +1976,7 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       transform_later(cache_adr);
       cache_adr = new CastP2XNode(needgc_false, cache_adr);
       transform_later(cache_adr);
-      // Address is aligned to execute prefetch to the beginning of cache line size
-      // (it is important when BIS instruction is used on SPARC as prefetch).
+      // Address is aligned to execute prefetch to the beginning of cache line size.
       Node* mask = _igvn.MakeConX(~(intptr_t)(step_size-1));
       cache_adr = new AndXNode(cache_adr, mask);
       transform_later(cache_adr);

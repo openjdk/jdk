@@ -315,8 +315,8 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
     _free_set->prepare_to_rebuild(young_trashed_regions, old_trashed_regions, first_old, last_old, num_old);
     if (heap->mode()->is_generational()) {
       ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
-    size_t allocation_runway =
-      gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_trashed_regions);
+      size_t allocation_runway =
+        gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_trashed_regions);
       gen_heap->compute_old_generation_balance(allocation_runway, old_trashed_regions, young_trashed_regions);
     }
     _free_set->finish_rebuild(young_trashed_regions, old_trashed_regions, num_old);

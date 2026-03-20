@@ -213,7 +213,7 @@ class AncestorNotifier implements ComponentListener, PropertyChangeListener, Ser
     public void propertyChange(PropertyChangeEvent evt) {
         String s = evt.getPropertyName();
 
-        if (s!=null && (s.equals("parent") || s.equals("ancestor"))) {
+        if (s != null && (s.equals("parent") || s.equals("ancestor"))) {
             JComponent component = (JComponent)evt.getSource();
 
             if (evt.getNewValue() != null) {

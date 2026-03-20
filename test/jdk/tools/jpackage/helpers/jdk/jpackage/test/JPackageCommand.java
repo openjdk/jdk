@@ -43,6 +43,7 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -60,7 +61,10 @@ import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.util.MacBundle;
+import jdk.jpackage.internal.util.Result;
+import jdk.jpackage.internal.util.RuntimeReleaseFile;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingFunction;
@@ -102,6 +106,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         executeInDirectory = cmd.executeInDirectory;
         winMsiLogFile = cmd.winMsiLogFile;
         unpackedPackageDirectory = cmd.unpackedPackageDirectory;
+        explicitVersion = cmd.explicitVersion;
     }
 
     JPackageCommand createImmutableCopy() {
@@ -246,22 +251,100 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     public String version() {
         return PropertyFinder.findAppProperty(this,
-                PropertyFinder.cmdlineOptionWithValue("--app-version").or(cmd -> {
-                    if (cmd.isRuntime() && PackageType.MAC.contains(cmd.packageType())) {
-                        // This is a macOS runtime bundle.
-                        var predefinedRuntimeBundle = MacBundle.fromPath(Path.of(cmd.getArgumentValue("--runtime-image")));
-                        if (predefinedRuntimeBundle.isPresent()) {
-                            // This is a macOS runtime bundle created from the predefined runtime bundle (not a predefined runtime directory).
-                            // The version of this bundle should be copied from the Info.plist file of the predefined runtime bundle.
-                            return MacHelper.readPList(predefinedRuntimeBundle.get().infoPlistFile()).findValue("CFBundleVersion");
-                        }
-                    }
-                    return Optional.empty();
-                }),
+                PropertyFinder.<JPackageCommand>of(Optional.ofNullable(explicitVersion))
+                        .or(PropertyFinder.cmdlineOptionWithValue("--app-version"))
+                        .or(JPackageCommand::derivedVersion),
                 PropertyFinder.appImageFile(appImageFile -> {
                     return appImageFile.version();
                 })
-        ).orElse("1.0");
+        ).orElse(DEFAULT_VERSION);
+    }
+
+    private Optional<String> derivedVersion() {
+        if (isRuntime()) {
+            var predefinedRuntimePath = Path.of(getArgumentValue("--runtime-image"));
+            if (TKit.isOSX()) {
+                // This is a macOS runtime bundle.
+                return MacBundle.fromPath(predefinedRuntimePath).map(predefinedRuntimeBundle -> {
+                    return Result.<Optional<String>>of(() -> {
+                        // This is a macOS runtime bundle created from the predefined runtime bundle (not a predefined runtime directory).
+                        // The version of this bundle should be copied from the Info.plist file of the predefined runtime bundle.
+                        return MacHelper.readPList(predefinedRuntimeBundle.infoPlistFile()).findValue("CFBundleVersion");
+                    }).value().flatMap(x -> x).or(() -> {
+                        // Failed to read version from the Info.plist file of the predefined runtime bundle.
+                        // Try to read it from the "release" file of the predefined runtime directory.
+                        return normalizedVersionFromRuntimeReleaseFile(predefinedRuntimeBundle.homeDir());
+                    });
+                }).orElseGet(() -> {
+                    return normalizedVersionFromRuntimeReleaseFile(predefinedRuntimePath);
+                });
+            } else {
+                return normalizedVersionFromRuntimeReleaseFile(predefinedRuntimePath);
+            }
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    private Optional<String> normalizedVersionFromRuntimeReleaseFile(Path runtimeDir) {
+        return Result.of(() -> {
+            return RuntimeReleaseFile.loadFromRuntime(runtimeDir).getJavaVersion().toString();
+        }, Exception.class).value().map(JPackageCommand::normalizeDerivedVersion).map(map -> {
+            return Objects.requireNonNull(map.get(packageType()));
+        });
+    }
+
+    public static Map<PackageType, String> normalizeDerivedVersion(String version) {
+        var dotted = DottedVersion.lazy(version);
+
+        var map = new HashMap<PackageType, String>();
+
+        // Linux
+        map.put(PackageType.LINUX_IMAGE, version);
+        map.put(PackageType.LINUX_DEB, version);
+        if (dotted.getUnprocessedSuffix().contains("-")) {
+            map.put(PackageType.LINUX_RPM, dotted.toComponentsString());
+        } else {
+            map.put(PackageType.LINUX_RPM, version);
+        }
+
+        // macOS
+        PackageType.ALL_MAC.forEach(type -> {
+            map.put(type, dotted.trim(3).pad(1).toComponentsString());
+        });
+
+        // Windows
+        PackageType.ALL_WINDOWS.forEach(type -> {
+            DottedVersion ver;
+            if (dotted.getComponentsCount() < 2) {
+                ver = dotted.pad(2);
+            } else {
+                ver = dotted.trim(4);
+            }
+            map.put(type, ver.toComponentsString());
+        });
+
+        map.put(PackageType.IMAGE, Objects.requireNonNull(map.get(PackageType.appImageForOS(PackageType.IMAGE.os()))));
+
+        return map;
+    }
+
+    /**
+     * Sets application version.
+     * <p>
+     * Use this method to explicitly set the application version. Normally, the
+     * application version can be derived from the command line, but sometimes, when
+     * jpackage derives it from other sources, the {@code JPackageCommand} class
+     * can't get it correctly. Use this method in these uncommon cases.
+     *
+     * @param v the application version or {@code null} to reset previously set
+     *          value
+     * @return this
+     */
+    public JPackageCommand version(String v) {
+        verifyMutable();
+        explicitVersion = v;
+        return this;
     }
 
     public String name() {
@@ -1930,6 +2013,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     private Path executeInDirectory;
     private Path winMsiLogFile;
     private Path unpackedPackageDirectory;
+    private String explicitVersion;
     private Set<ReadOnlyPathAssert> readOnlyPathAsserts = Set.of(ReadOnlyPathAssert.values());
     private Set<StandardAssert> standardAsserts = Set.of(StandardAssert.values());
     private List<Consumer<Executor.Result>> validators = new ArrayList<>();
@@ -1938,7 +2022,9 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         VALUE
     }
 
-    private static final Map<String, PackageType> PACKAGE_TYPES = Stream.of(PackageType.values()).collect(toMap(PackageType::getType, x -> x));
+    private static final Map<String, PackageType> PACKAGE_TYPES = Stream.of(PackageType.values()).filter(type -> {
+        return type.isNative() || type == PackageType.IMAGE;
+    }).collect(toMap(PackageType::getType, x -> x));
 
     // Set the property to the path of run-time image to speed up
     // building app images and platform bundles by avoiding running jlink.
@@ -1946,6 +2032,8 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     // jpackage command line if the command line doesn't have
     // `--runtime-image` parameter set.
     public static final Path DEFAULT_RUNTIME_IMAGE = Optional.ofNullable(TKit.getConfigProperty("runtime-image")).map(Path::of).orElse(null);
+
+    public final static String DEFAULT_VERSION = "1.0";
 
     // [HH:mm:ss.SSS]
     private static final Pattern TIMESTAMP_REGEXP = Pattern.compile(
