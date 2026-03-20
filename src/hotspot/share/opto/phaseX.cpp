@@ -2447,7 +2447,7 @@ void PhaseIterGVN::subsume_node( Node *old, Node *nn ) {
   // Smash all inputs to 'old', isolating him completely
   Node *temp = new Node(1);
   temp->init_req(0,nn);     // Add a use to nn to prevent him from dying
-  remove_dead_node( old, NodeOrigin::Graph );
+  remove_dead_node(old, NodeOrigin::Graph);
   temp->del_req(0);         // Yank bogus edge
   if (nn != nullptr && nn->outcnt() == 0) {
     _worklist.push(nn);

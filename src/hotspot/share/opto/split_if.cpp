@@ -739,7 +739,7 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
         handle_use(use, phi, &phi_cache, region_dom, new_false, new_true, old_false, old_true);
       } // End of while phi has uses
       // Remove the dead Phi
-      _igvn.remove_dead_node( phi, PhaseIterGVN::NodeOrigin::Graph );
+      _igvn.remove_dead_node(phi, PhaseIterGVN::NodeOrigin::Graph);
     } else {
       assert(phi->in(0) == region, "Inconsistent graph");
       // Random memory op guarded by Region.  Compute new DEF for USE.
