@@ -542,7 +542,7 @@ enum SignatureScheme {
                     ECParameterSpec params =
                             x509Possession.getECParameterSpec();
                     if (params != null &&
-                            ss.namedGroup == NamedGroup.valueOf(params)) {
+                            (!version.useTLS13PlusSpec()||ss.namedGroup == NamedGroup.valueOf(params))) {
                         Signature signer = ss.getSigner(signingKey);
                         if (signer != null) {
                             return new SimpleImmutableEntry<>(ss, signer);
