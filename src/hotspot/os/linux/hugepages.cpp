@@ -35,16 +35,16 @@
 #include <dirent.h>
 
 ExplicitHugePageSupport::ExplicitHugePageSupport() :
-  _initialized(false), _pagesizes(), _pre_allocated_pagesizes(), _default_hugepage_size(SIZE_MAX), _inconsistent(false) {}
+  _initialized{false}, _os_supported{}, _pre_allocated{}, _default_hugepage_size{SIZE_MAX}, _inconsistent{false} {}
 
-os::PageSizes ExplicitHugePageSupport::pagesizes() const {
+os::PageSizes ExplicitHugePageSupport::os_supported() const {
   assert(_initialized, "Not initialized");
-  return _pagesizes;
+  return _os_supported;
 }
 
-os::PageSizes ExplicitHugePageSupport::pre_allocated_pagesizes() const {
+os::PageSizes ExplicitHugePageSupport::pre_allocated() const {
   assert(_initialized, "Not initialized");
-  return _pre_allocated_pagesizes;
+  return _pre_allocated;
 }
 
 size_t ExplicitHugePageSupport::default_hugepage_size() const {
@@ -151,7 +151,7 @@ static os::PageSizes filter_pre_allocated_hugepages(os::PageSizes pagesizes) {
 void ExplicitHugePageSupport::print_on(outputStream* os) {
   if (_initialized) {
     os->print_cr("Explicit hugepage support:");
-    for (size_t s = _pagesizes.smallest(); s != 0; s = _pagesizes.next_larger(s)) {
+    for (size_t s = _os_supported.smallest(); s != 0; s = _os_supported.next_larger(s)) {
       os->print_cr("  hugepage size: " EXACTFMT, EXACTFMTARGS(s));
     }
     os->print_cr("  default hugepage size: " EXACTFMT, EXACTFMTARGS(_default_hugepage_size));
@@ -166,13 +166,13 @@ void ExplicitHugePageSupport::print_on(outputStream* os) {
 void ExplicitHugePageSupport::scan_os() {
   _default_hugepage_size = scan_default_hugepagesize();
   if (_default_hugepage_size > 0) {
-    _pagesizes = scan_hugepages();
-    _pre_allocated_pagesizes = filter_pre_allocated_hugepages(_pagesizes);
+    _os_supported = scan_hugepages();
+    _pre_allocated = filter_pre_allocated_hugepages(_os_supported);
     // See https://www.kernel.org/doc/Documentation/vm/hugetlbpage.txt: /proc/meminfo should match
     // /sys/kernel/mm/hugepages/hugepages-xxxx. However, we may run on a broken kernel (e.g. on WSL)
     // that only exposes /proc/meminfo but not /sys/kernel/mm/hugepages. In that case, we are not
     // sure about the state of hugepage support by the kernel, so we won't use explicit hugepages.
-    if (!_pagesizes.contains(_default_hugepage_size)) {
+    if (!_os_supported.contains(_default_hugepage_size)) {
       log_info(pagesize)("Unexpected configuration: default pagesize (%zu) "
                          "has no associated directory in /sys/kernel/mm/hugepages.", _default_hugepage_size);
       _inconsistent = true;

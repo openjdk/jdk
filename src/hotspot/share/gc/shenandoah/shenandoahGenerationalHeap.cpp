@@ -638,9 +638,13 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
                              bound_on_old_reserve:
                              MIN2((young_reserve * ShenandoahOldEvacPercent) / (100 - ShenandoahOldEvacPercent),
                                   bound_on_old_reserve));
-  if (young_reserve > young_available) {
-    young_reserve = young_available;
+  assert(mutator_xfer_limit <= young_available,
+         "Cannot transfer (%zu) memory that is not available (%zu)", mutator_xfer_limit, young_available);
+  // Young reserves are to be taken out of the mutator_xfer_limit.
+  if (young_reserve > mutator_xfer_limit) {
+    young_reserve = mutator_xfer_limit;
   }
+  mutator_xfer_limit -= young_reserve;
 
   // Decide how much old space we should reserve for a mixed collection
   size_t proposed_reserve_for_mixed = 0;
