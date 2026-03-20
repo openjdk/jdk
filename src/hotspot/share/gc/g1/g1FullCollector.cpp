@@ -23,6 +23,7 @@
  */
 
 #include "classfile/classLoaderDataGraph.hpp"
+#include "cppstdlib/new.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCAdjustTask.hpp"
@@ -134,11 +135,12 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
   _compaction_points = NEW_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _num_workers, mtGC);
 
   _live_stats = NEW_C_HEAP_ARRAY(G1RegionMarkStats, _heap->max_num_regions(), mtGC);
-  _compaction_tops = NEW_C_HEAP_ARRAY(Atomic<HeapWord*>, _heap->max_num_regions(), mtGC);
   for (uint j = 0; j < heap->max_num_regions(); j++) {
     _live_stats[j].clear();
-    ::new (&_compaction_tops[j]) Atomic<HeapWord*>{};
   }
+
+  _compaction_tops = NEW_C_HEAP_ARRAY(Atomic<HeapWord*>, _heap->max_num_regions(), mtGC);
+  ::new (_compaction_tops) Atomic<HeapWord*>[heap->max_num_regions()]{};
 
   _partial_array_state_manager = new PartialArrayStateManager(_num_workers);
 
@@ -351,7 +353,13 @@ void G1FullCollector::phase1_mark_live_objects() {
     scope()->tracer()->report_object_count_after_gc(&_is_alive, _heap->workers());
   }
 #if TASKQUEUE_STATS
-  marking_task_queues()->print_and_reset_taskqueue_stats("Marking Task Queue");
+  marking_task_queues()->print_and_reset_taskqueue_stats("Full GC");
+
+  auto get_stats = [&](uint i) {
+    return marker(i)->partial_array_splitter().stats();
+  };
+  PartialArrayTaskStats::log_set(_num_workers, get_stats,
+                                 "Full GC Partial Array");
 #endif
 }
 

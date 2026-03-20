@@ -159,14 +159,14 @@
                 unchecked_nonstatic_field)                                                                                           \
                                                                                                                                      \
   /******************************************************************/                                                               \
-  /* OopDesc and Klass hierarchies (NOTE: MethodData* incomplete)   */                                                               \
+  /* OopDesc and Klass hierarchies                                  */                                                               \
   /******************************************************************/                                                               \
                                                                                                                                      \
   volatile_nonstatic_field(oopDesc,            _mark,                                         markWord)                              \
   volatile_nonstatic_field(oopDesc,            _metadata._klass,                              Klass*)                                \
   volatile_nonstatic_field(oopDesc,            _metadata._compressed_klass,                   narrowKlass)                           \
   static_field(BarrierSet,                     _barrier_set,                                  BarrierSet*)                           \
-  nonstatic_field(ArrayKlass,                  _dimension,                                    int)                                   \
+  nonstatic_field(ArrayKlass,                  _dimension,                                    const int)                             \
   volatile_nonstatic_field(ArrayKlass,         _higher_dimension,                             ObjArrayKlass*)                        \
   volatile_nonstatic_field(ArrayKlass,         _lower_dimension,                              ArrayKlass*)                           \
   nonstatic_field(BSMAttributeEntries,         _offsets,                                      Array<u4>*)                            \
@@ -233,27 +233,7 @@
   nonstatic_field(Klass,                       _vtable_len,                                   int)                                   \
   nonstatic_field(Klass,                       _class_loader_data,                            ClassLoaderData*)                      \
   nonstatic_field(vtableEntry,                 _method,                                       Method*)                               \
-  nonstatic_field(MethodData,                  _size,                                         int)                                   \
   nonstatic_field(MethodData,                  _method,                                       Method*)                               \
-  nonstatic_field(MethodData,                  _data_size,                                    int)                                   \
-  nonstatic_field(MethodData,                  _data[0],                                      intptr_t)                              \
-  nonstatic_field(MethodData,                  _parameters_type_data_di,                      int)                                   \
-  nonstatic_field(MethodData,                  _compiler_counters._nof_decompiles,            uint)                                  \
-  nonstatic_field(MethodData,                  _compiler_counters._nof_overflow_recompiles,   uint)                                  \
-  nonstatic_field(MethodData,                  _compiler_counters._nof_overflow_traps,        uint)                                  \
-  nonstatic_field(MethodData,                  _compiler_counters._trap_hist._array[0],       u1)                                    \
-  nonstatic_field(MethodData,                  _eflags,                                       intx)                                  \
-  nonstatic_field(MethodData,                  _arg_local,                                    intx)                                  \
-  nonstatic_field(MethodData,                  _arg_stack,                                    intx)                                  \
-  nonstatic_field(MethodData,                  _arg_returned,                                 intx)                                  \
-  nonstatic_field(MethodData,                  _tenure_traps,                                 uint)                                  \
-  nonstatic_field(MethodData,                  _invoke_mask,                                  int)                                   \
-  nonstatic_field(MethodData,                  _backedge_mask,                                int)                                   \
-  nonstatic_field(DataLayout,                  _header._struct._tag,                          u1)                                    \
-  nonstatic_field(DataLayout,                  _header._struct._flags,                        u1)                                    \
-  nonstatic_field(DataLayout,                  _header._struct._bci,                          u2)                                    \
-  nonstatic_field(DataLayout,                  _header._struct._traps,                        u4)                                    \
-  nonstatic_field(DataLayout,                  _cells[0],                                     intptr_t)                              \
   nonstatic_field(MethodCounters,              _invoke_mask,                                  int)                                   \
   nonstatic_field(MethodCounters,              _backedge_mask,                                int)                                   \
   COMPILER2_OR_JVMCI_PRESENT(nonstatic_field(MethodCounters, _interpreter_throwout_count,     u2))                                   \
@@ -355,7 +335,6 @@
   nonstatic_field(ThreadLocalAllocBuffer,      _pf_top,                                       HeapWord*)                             \
   nonstatic_field(ThreadLocalAllocBuffer,      _desired_size,                                 size_t)                                \
   nonstatic_field(ThreadLocalAllocBuffer,      _refill_waste_limit,                           size_t)                                \
-     static_field(ThreadLocalAllocBuffer,      _reserve_for_allocation_prefetch,              int)                                   \
      static_field(ThreadLocalAllocBuffer,      _target_refills,                               unsigned)                              \
   nonstatic_field(ThreadLocalAllocBuffer,      _number_of_refills,                            unsigned)                              \
   nonstatic_field(ThreadLocalAllocBuffer,      _refill_waste,                                 unsigned)                              \
@@ -427,6 +406,8 @@
   nonstatic_field(ClassLoaderData,             _next,                                         ClassLoaderData*)                      \
   volatile_nonstatic_field(ClassLoaderData,    _klasses,                                      Klass*)                                \
   nonstatic_field(ClassLoaderData,             _has_class_mirror_holder,                      bool)                                  \
+                                                                                                                                     \
+  static_field(ClassLoaderData,                _the_null_class_loader_data,                   ClassLoaderData*)                      \
                                                                                                                                      \
   volatile_static_field(ClassLoaderDataGraph, _head,                                          ClassLoaderData*)                      \
                                                                                                                                      \
@@ -596,7 +577,7 @@
   nonstatic_field(ThreadShadow,                _exception_file,                               const char*)                           \
   nonstatic_field(ThreadShadow,                _exception_line,                               int)                                   \
   nonstatic_field(Thread,                      _tlab,                                         ThreadLocalAllocBuffer)                \
-  nonstatic_field(Thread,                      _allocated_bytes,                              jlong)                                 \
+  nonstatic_field(Thread,                      _allocated_bytes,                              uint64_t)                              \
   nonstatic_field(JavaThread,                  _lock_stack,                                   LockStack)                             \
   nonstatic_field(LockStack,                   _top,                                          uint32_t)                              \
   nonstatic_field(LockStack,                   _base[0],                                      oop)                                   \
@@ -904,7 +885,6 @@
   /*****************************/                                         \
                                                                           \
   declare_toplevel_type(void*)                                            \
-  declare_toplevel_type(Atomic<HeapWord*>)                                \
   declare_toplevel_type(int*)                                             \
   declare_toplevel_type(char*)                                            \
   declare_toplevel_type(char**)                                           \
@@ -962,8 +942,6 @@
     declare_type(ConstMethod, MetaspaceObj)                               \
     declare_type(Annotations, MetaspaceObj)                               \
                                                                           \
-  declare_toplevel_type(MethodData::CompilerCounters)                     \
-                                                                          \
   declare_toplevel_type(narrowKlass)                                      \
                                                                           \
   declare_toplevel_type(vtableEntry)                                      \
@@ -972,7 +950,6 @@
            declare_toplevel_type(Symbol*)                                 \
   declare_toplevel_type(volatile Metadata*)                               \
                                                                           \
-  declare_toplevel_type(DataLayout)                                       \
   declare_toplevel_type(BSMAttributeEntries)                              \
                                                                           \
   /********/                                                              \
@@ -1311,6 +1288,12 @@
                                                                           \
   VM_INT_CONSTANTS_GC(declare_constant,                                   \
                       declare_constant_with_value)                        \
+                                                                          \
+  /*****************/                                                     \
+  /* CDS constants */                                                     \
+  /*****************/                                                     \
+                                                                          \
+  CDS_ONLY(declare_constant(AOTCompressedPointers::MetadataOffsetShift))  \
                                                                           \
   /******************/                                                    \
   /* Useful globals */                                                    \

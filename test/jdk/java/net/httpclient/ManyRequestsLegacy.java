@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,8 @@
 
 /*
  * @test
- * @modules java.net.http/jdk.internal.net.http.common
- *          java.logging
- *          jdk.httpserver
  * @library /test/lib /test/jdk/java/net/httpclient/lib
- * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestServerConfigurator
- * @compile ../../../com/sun/net/httpserver/LogFilter.java
- * @compile ../../../com/sun/net/httpserver/EchoHandler.java
- * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
+ * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.HttpServerAdapters
  * @run main/othervm/timeout=80 -Dsun.net.httpserver.idleInterval=50000 ManyRequestsLegacy
  * @run main/othervm/timeout=80 -Dtest.insertDelay=true -Dsun.net.httpserver.idleInterval=50000 ManyRequestsLegacy
  * @run main/othervm/timeout=80 -Dtest.chunkSize=64 -Dsun.net.httpserver.idleInterval=50000 ManyRequestsLegacy
@@ -44,16 +38,11 @@
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.HostnameVerifier;
 
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsParameters;
-import com.sun.net.httpserver.HttpsServer;
-import com.sun.net.httpserver.HttpExchange;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
-import java.net.InetAddress;
 import java.net.URI;
 import java.net.URLConnection;
 import java.util.Map;
@@ -62,10 +51,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
@@ -73,22 +64,22 @@ import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
-import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Formatter;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Random;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
-import jdk.httpclient.test.lib.common.TestServerConfigurator;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.test.lib.Platform;
 import jdk.test.lib.RandomFactory;
 import jdk.test.lib.net.SimpleSSLContext;
+import jdk.test.lib.net.URIBuilder;
+
 import static java.net.Proxy.NO_PROXY;
 
-public class ManyRequestsLegacy {
+public class ManyRequestsLegacy implements HttpServerAdapters {
 
     static final int MAX_COUNT = 20;
     static final int MAX_LIMIT = 40;
@@ -112,9 +103,8 @@ public class ManyRequestsLegacy {
                     return true;
                 }
             });
-        InetSocketAddress addr = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-        HttpsServer server = HttpsServer.create(addr, 0);
-        server.setHttpsConfigurator(new Configurator(addr.getAddress(), ctx));
+        ExecutorService executor = executorFor("HTTPS/1.1 Server Thread");
+        HttpTestServer server = HttpTestServer.create(Version.HTTP_1_1, ctx, executor);
 
         LegacyHttpClient client = new LegacyHttpClient();
 
@@ -122,7 +112,7 @@ public class ManyRequestsLegacy {
             test(server, client);
             System.out.println("OK");
         } finally {
-            server.stop(0);
+            server.stop();
         }
     }
 
@@ -210,15 +200,15 @@ public class ManyRequestsLegacy {
         }
     }
 
-    static class TestEchoHandler extends EchoHandler {
+    static class TestEchoHandler extends HttpTestEchoHandler {
         final Random rand = RANDOM;
         @Override
-        public void handle(HttpExchange e) throws IOException {
+        public void handle(HttpTestExchange e) throws IOException {
             System.out.println("Server: received " + e.getRequestURI());
             super.handle(e);
         }
         @Override
-        protected void close(HttpExchange t, OutputStream os) throws IOException {
+        protected void close(HttpTestExchange t, OutputStream os) throws IOException {
             if (INSERT_DELAY) {
                 try { Thread.sleep(rand.nextInt(200)); }
                 catch (InterruptedException e) {}
@@ -227,7 +217,7 @@ public class ManyRequestsLegacy {
             os.close();
         }
         @Override
-        protected void close(HttpExchange t, InputStream is) throws IOException {
+        protected void close(HttpTestExchange t, InputStream is) throws IOException {
             if (INSERT_DELAY) {
                 try { Thread.sleep(rand.nextInt(200)); }
                 catch (InterruptedException e) {}
@@ -253,9 +243,13 @@ public class ManyRequestsLegacy {
         return s;
     }
 
-    static void test(HttpsServer server, LegacyHttpClient client) throws Exception {
+    static void test(HttpTestServer server, LegacyHttpClient client) throws Exception {
         int port = server.getAddress().getPort();
-        URI baseURI = new URI("https://localhost:" + port + "/foo/x");
+        URI baseURI = URIBuilder.newBuilder()
+                .scheme("https")
+                .loopback()
+                .port(port)
+                .path("/foo/x").build();
         server.createContext("/foo", new TestEchoHandler());
         server.start();
 
@@ -279,8 +273,11 @@ public class ManyRequestsLegacy {
                 byte[] buf = new byte[(i + 1) * CHUNK_SIZE + i + 1];  // different size bodies
                 rand.nextBytes(buf);
                 URI uri = new URI(baseURI.toString() + String.valueOf(i + 1));
-                HttpRequest r = HttpRequest.newBuilder(uri)
-                        .header("XFixed", "true")
+                HttpRequest.Builder reqBuilder = HttpRequest.newBuilder(uri);
+                if (XFIXED) {
+                    reqBuilder.header("XFixed", "yes");
+                }
+                HttpRequest r = reqBuilder
                         .POST(BodyPublishers.ofByteArray(buf))
                         .build();
                 bodies.put(r, buf);
@@ -432,19 +429,16 @@ public class ManyRequestsLegacy {
         throw new RuntimeException(sb.toString());
     }
 
-    static class Configurator extends HttpsConfigurator {
-        private final InetAddress serverAddr;
-
-        public Configurator(InetAddress serverAddr, SSLContext ctx) {
-            super(ctx);
-            this.serverAddr = serverAddr;
-        }
-
-        @Override
-        public void configure(HttpsParameters params) {
-            final SSLParameters parameters = getSSLContext().getSupportedSSLParameters();
-            TestServerConfigurator.addSNIMatcher(this.serverAddr, parameters);
-            params.setSSLParameters(parameters);
-        }
+    private static ExecutorService executorFor(String serverThreadName) {
+        ThreadFactory factory = new ThreadFactory() {
+            final AtomicInteger counter = new AtomicInteger();
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r);
+                thread.setName(serverThreadName + "#" + counter.incrementAndGet());
+                return thread;
+            }
+        };
+        return Executors.newCachedThreadPool(factory);
     }
 }

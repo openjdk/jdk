@@ -83,10 +83,10 @@ private:
   ShenandoahReferenceProcessor* ref_processor() { return _ref_processor; }
 
   virtual ShenandoahHeuristics* initialize_heuristics(ShenandoahMode* gc_mode);
+  virtual void post_initialize_heuristics();
 
   virtual void post_initialize(ShenandoahHeap* heap);
 
-  virtual size_t bytes_allocated_since_gc_start() const override = 0;
   virtual size_t used() const override = 0;
   virtual size_t used_regions() const = 0;
   virtual size_t used_regions_size() const = 0;

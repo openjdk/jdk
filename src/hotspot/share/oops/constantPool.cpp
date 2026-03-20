@@ -310,8 +310,9 @@ void ConstantPool::iterate_archivable_resolved_references(Function function) {
     if (method_entries != nullptr) {
       for (int i = 0; i < method_entries->length(); i++) {
         ResolvedMethodEntry* rme = method_entries->adr_at(i);
+        const char* rejection_reason = nullptr;
         if (rme->is_resolved(Bytecodes::_invokehandle) && rme->has_appendix() &&
-            cache()->can_archive_resolved_method(this, rme)) {
+                               cache()->can_archive_resolved_method(this, rme, rejection_reason)) {
           int rr_index = rme->resolved_references_index();
           assert(resolved_reference_at(rr_index) != nullptr, "must exist");
           function(rr_index);
@@ -563,7 +564,7 @@ void ConstantPool::remove_resolved_klass_if_non_deterministic(int cp_index) {
   }
 
   LogStreamHandle(Trace, aot, resolve) log;
-  if (log.is_enabled()) {
+  if (log.is_enabled() && !CDSConfig::is_dumping_preimage_static_archive()) {
     ResourceMark rm;
     log.print("%s klass  CP entry [%3d]: %s %s",
               (can_archive ? "archived" : "reverted"),

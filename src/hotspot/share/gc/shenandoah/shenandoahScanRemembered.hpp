@@ -973,7 +973,7 @@ private:
   const size_t _total_chunks;
 
   shenandoah_padding(0);
-  volatile size_t _index;
+  Atomic<size_t> _index;
   shenandoah_padding(1);
 
   size_t _region_index[_maximum_groups];           // The region index for the first region spanned by this group

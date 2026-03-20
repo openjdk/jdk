@@ -1169,7 +1169,7 @@ public class UIDefaults extends Hashtable<Object,Object>
          */
         private Class<?>[] getClassArray(Object[] args) {
             Class<?>[] types = null;
-            if (args!=null) {
+            if (args != null) {
                 types = new Class<?>[args.length];
                 for (int i = 0; i< args.length; i++) {
                     /* PENDING(ges): At present only the primitive types
@@ -1199,7 +1199,7 @@ public class UIDefaults extends Hashtable<Object,Object>
 
         private String printArgs(Object[] array) {
             String s = "{";
-            if (array !=null) {
+            if (array != null) {
                 for (int i = 0 ; i < array.length-1; i++) {
                     s = s.concat(array[i] + ",");
                 }

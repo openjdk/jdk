@@ -493,7 +493,7 @@ TRACE_REQUEST_FUNC(InitialSystemProperty) {
 TRACE_REQUEST_FUNC(ThreadAllocationStatistics) {
   ResourceMark rm;
   int initial_size = Threads::number_of_threads();
-  GrowableArray<jlong> allocated(initial_size);
+  GrowableArray<uint64_t> allocated(initial_size);
   GrowableArray<traceid> thread_ids(initial_size);
   JfrTicks time_stamp = JfrTicks::now();
   JfrJavaThreadIterator iter;

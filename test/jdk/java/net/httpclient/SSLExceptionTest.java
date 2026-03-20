@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,11 @@
 import java.io.UncheckedIOException;
 import java.net.http.HttpClient;
 import java.security.NoSuchAlgorithmException;
-import org.testng.annotations.Test;
-import static org.testng.Assert.expectThrows;
-import static org.testng.Assert.fail;
+
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.Test;
 
 /*
  * @test
@@ -34,7 +36,7 @@ import static org.testng.Assert.fail;
  * @summary This test verifies exception when resources for
  * SSLcontext used by HttpClient are not available
  * @build SSLExceptionTest
- * @run testng/othervm -Djdk.tls.client.protocols="InvalidTLSv1.4"
+ * @run junit/othervm -Djdk.tls.client.protocols="InvalidTLSv1.4"
  *                      SSLExceptionTest
  */
 
@@ -47,12 +49,12 @@ public class SSLExceptionTest  {
     @Test
     public void testHttpClientsslException() {
         for (int i = 0; i < ITERATIONS; i++) {
-            excp = expectThrows(UncheckedIOException.class, HttpClient.newBuilder()::build);
+            excp = Assertions.assertThrows(UncheckedIOException.class, HttpClient.newBuilder()::build);
             noSuchAlgo = excp.getCause().getCause();
             if ( !(noSuchAlgo instanceof NoSuchAlgorithmException) ) {
                 fail("Test failed due to wrong exception cause : " + noSuchAlgo);
             }
-            excp = expectThrows(UncheckedIOException.class, HttpClient::newHttpClient);
+            excp = Assertions.assertThrows(UncheckedIOException.class, HttpClient::newHttpClient);
             noSuchAlgo = excp.getCause().getCause();
             if ( !(noSuchAlgo instanceof NoSuchAlgorithmException) ) {
                 fail("Test failed due to wrong exception cause : " + noSuchAlgo);

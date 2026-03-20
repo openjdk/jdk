@@ -816,11 +816,7 @@ void ShenandoahHeapRegion::do_commit() {
 void ShenandoahHeapRegion::do_uncommit() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (!heap->is_heap_region_special()) {
-    bool success = os::uncommit_memory((char *) bottom(), RegionSizeBytes);
-    if (!success) {
-      log_warning(gc)("Region uncommit failed: " PTR_FORMAT " (%zu bytes)", p2i(bottom()), RegionSizeBytes);
-      assert(false, "Region uncommit should always succeed");
-    }
+    os::uncommit_memory((char *) bottom(), RegionSizeBytes);
   }
   if (!heap->is_bitmap_region_special()) {
     heap->uncommit_bitmap_slice(this);
