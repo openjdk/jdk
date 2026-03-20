@@ -55,13 +55,11 @@ void Relocation::pd_set_data_value(address x, bool verify_only) {
     break;
   }
 
-  assert(_binding != nullptr, "expect to be called with RelocIterator in use");
-
   if (UseSingleICacheInvalidation) {
-    return;
+    assert(_binding != nullptr, "expect to be called with RelocIterator in use");
+  } else {
+    ICache::invalidate_range(addr(), bytes);
   }
-
-  ICache::invalidate_range(addr(), bytes);
 }
 
 address Relocation::pd_call_destination(address orig_addr) {

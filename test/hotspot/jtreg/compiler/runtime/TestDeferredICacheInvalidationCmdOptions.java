@@ -22,7 +22,7 @@
  *
  */
 
-package gc;
+package compiler.runtime;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -38,7 +38,7 @@ import jtreg.SkippedException;
  * @requires os.family == "linux"
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI gc.TestDeferredICacheInvalidationCmdOptions
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.runtime.TestDeferredICacheInvalidationCmdOptions
  */
 
 public class TestDeferredICacheInvalidationCmdOptions {

@@ -879,11 +879,9 @@ void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format) {
     ShouldNotReachHere();
   }
 
-  if (UseSingleICacheInvalidation) {
-    return;
+  if (!UseSingleICacheInvalidation) {
+    ICache::invalidate_word((address)patch_addr);
   }
-
-  ICache::invalidate_word((address)patch_addr);
 }
 
 #ifdef COMPILER1
