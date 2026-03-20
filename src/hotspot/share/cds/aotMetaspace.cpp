@@ -1187,8 +1187,8 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
     CDSConfig::enable_dumping_aot_code();
     {
       builder.start_ac_region();
-      // Write the contents to AOT code region and close AOTCodeCache before packing the region
-      AOTCodeCache::close();
+      // Write the contents to AOT code region before packing the region
+      AOTCodeCache::dump();
       builder.end_ac_region();
     }
     CDSConfig::disable_dumping_aot_code();

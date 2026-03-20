@@ -108,6 +108,8 @@ void CDSConfig::ergo_initialize() {
   }
 
   AOTMapLogger::ergo_initialize();
+
+  setup_compiler_args();
 }
 
 const char* CDSConfig::default_archive_path() {
@@ -634,8 +636,6 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
     // Using any form of the new AOTMode switch enables enhanced optimizations.
     FLAG_SET_ERGO_IF_DEFAULT(AOTClassLinking, true);
   }
-
-  setup_compiler_args();
 
   if (AOTClassLinking) {
     // If AOTClassLinking is specified, enable all AOT optimizations by default.
