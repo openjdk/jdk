@@ -122,6 +122,30 @@ public:
   frame& get_frame()                             { return _last_frame; }
 };
 
+static bool can_throw_async_exception(Bytecodes::Code bc) {
+  if (!Bytecodes::can_trap(bc)) {
+    return false;
+  } else {
+    // These bytecodes are defined with can_trap attribute but do not always create
+    // exception edges in in GenerateOopMap so they cannot throw async exceptions.
+    // See GenerateOopMap::do_exception_edge().
+    switch (bc) {
+    case Bytecodes::_aload_0:
+    case Bytecodes::_ireturn:
+    case Bytecodes::_lreturn:
+    case Bytecodes::_freturn:
+    case Bytecodes::_dreturn:
+    case Bytecodes::_areturn:
+    case Bytecodes::_return:
+    case Bytecodes::_monitorexit:
+      return false;
+    default:
+      return true;
+    }
+  }
+}
+
+
 //------------------------------------------------------------------------------------------------------------------------
 // State accessors
 
@@ -791,7 +815,7 @@ JRT_END
 
 JRT_BLOCK_ENTRY(void, InterpreterRuntime::_breakpoint(JavaThread* current, Method* method, address bcp))
   Bytecodes::Code code = Bytecodes::code_at(method, bcp);
-  if (Bytecodes::can_trap(code)) {
+  if (can_throw_async_exception(code)) {
     JRT_BLOCK
     JvmtiExport::post_raw_breakpoint(current, method, bcp);
     JRT_BLOCK_END
@@ -1187,7 +1211,7 @@ JRT_BLOCK_ENTRY(void, InterpreterRuntime::at_safepoint(JavaThread* current))
   LastFrameAccessor last_frame(current);
   assert(last_frame.is_interpreted_frame(), "must be");
   Bytecodes::Code code = last_frame.code();
-  if (Bytecodes::can_trap(code)) {
+  if (can_throw_async_exception(code)) {
     JRT_BLOCK
     post_single_step(current);
     JRT_BLOCK_END
