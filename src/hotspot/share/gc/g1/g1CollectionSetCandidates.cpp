@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,7 +264,7 @@ void G1CollectionSetCandidates::set_candidates_from_marking(G1HeapRegion** candi
   // During each Mixed GC, we must collect at least G1Policy::calc_min_old_cset_length regions to meet
   // the G1MixedGCCountTarget. For the first collection in a Mixed GC cycle, we can add all regions
   // required to meet this threshold to the same remset group. We are certain these will be collected in
-  // the same MixedGC.
+  // the same Mixed GC.
   uint group_limit = p->calc_min_old_cset_length(num_candidates);
 
   G1CSetCandidateGroup::reset_next_group_id();
