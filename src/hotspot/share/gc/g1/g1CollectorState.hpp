@@ -25,9 +25,9 @@
 #ifndef SHARE_GC_G1_G1COLLECTORSTATE_HPP
 #define SHARE_GC_G1_G1COLLECTORSTATE_HPP
 
-#include "utilities/globalDefinitions.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/enumIterator.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // State of the G1 collection.
 //
