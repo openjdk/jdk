@@ -27,6 +27,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
+import java.util.concurrent.atomic.AtomicReference;
 
 /*
  * @test
@@ -40,6 +41,7 @@ public class ReuseBuf {
 
         private final DatagramSocket ds;
         private volatile boolean closed;
+        private final AtomicReference<Exception> serverFailure = new AtomicReference<>();
 
         public Server(final InetSocketAddress bindAddr) {
             try {
@@ -64,12 +66,12 @@ public class ReuseBuf {
             try {
                 doRun();
             } catch (Exception e) {
+                // no need to be concerned with the exception
+                // if the server is already closed
                 if (!closed) {
-                    // no need to propagate or print the exception if the server is already
-                    // stopped
+                    this.serverFailure.set(e);
                     System.err.println("server exception: " + e);
                     e.printStackTrace();
-                    throw new RuntimeException(e);
                 }
             } finally {
                 close();
@@ -110,7 +112,8 @@ public class ReuseBuf {
 
     public static void main(String[] args) throws Exception {
         InetSocketAddress loopbackEphemeral = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-        try (Server server = new Server(loopbackEphemeral);
+        Server server;
+        try (var _ = server = new Server(loopbackEphemeral);
              DatagramSocket ds = new DatagramSocket(loopbackEphemeral)) {
 
             InetSocketAddress destAddr = server.getServerAddress();
@@ -132,7 +135,12 @@ public class ReuseBuf {
                             ", actual received: " + actual + " of length: " + dp.getLength());
                 }
             }
-            System.out.println("Test Passed!!!");
+            System.out.println("All " + msgs.length + " replies received from the server");
+        }
+        Exception serverFailure = server.serverFailure.get();
+        if (serverFailure != null) {
+            System.err.println("Unexpected failure on server: " + serverFailure);
+            throw serverFailure;
         }
     }
 }
