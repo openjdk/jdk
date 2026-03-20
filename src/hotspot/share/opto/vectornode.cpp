@@ -2456,9 +2456,25 @@ static Node* MinMaxV_Common_Ideal(MinMaxVNode* n, PhaseGVN* phase, bool can_resh
   // Max (Max(a, b), Min(b, a))  => Max(a, b)
 
   if (min_op != nullptr && max_op != nullptr) {
+    // Skip if predication status is inconsistent across n, min_op, and max_op,
+    // or if predicated operands carry different masks.
+    if (n->is_predicated_vector() != min_op->is_predicated_vector() ||
+        min_op->is_predicated_vector() != max_op->is_predicated_vector()) {
+      return nullptr;
+    }
+    if (min_op->is_predicated_vector() &&
+        !(n->in(3) == min_op->in(3) && min_op->in(3) == max_op->in(3))) {
+      return nullptr;
+    }
+
     if ((min_op->in(1) == max_op->in(1) && min_op->in(2) == max_op->in(2)) ||
         (min_op->in(2) == max_op->in(1) && min_op->in(1) == max_op->in(2))) {
-      return VectorNode::make(vopc, max_op->in(1), max_op->in(2), n->bottom_type()->is_vect());
+      VectorNode* result = VectorNode::make(vopc, max_op->in(1), max_op->in(2), n->bottom_type()->is_vect());
+      if (n->is_predicated_vector()) {
+        result->add_req(n->in(3));
+        result->add_flag(Node::Flag_is_predicated_vector);
+      }
+      return result;
     }
   }
 
