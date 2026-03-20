@@ -93,7 +93,7 @@ public class AvailableProcessors {
                 cmdline.add(String.valueOf(i));
                 ProcessBuilder pb = new ProcessBuilder(cmdline);
                 System.out.println("Final command line: " +
-                                     ProcessTools.getCommandLine(pb));
+                                   ProcessTools.getCommandLine(pb));
                 OutputAnalyzer output = ProcessTools.executeProcess(pb);
                 output.shouldHaveExitValue(0);
                 output.shouldContain(SUCCESS_STRING);
