@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,7 +143,9 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
      * Sets the ZIP file comment.
      * @param     comment the comment string
      * @throws    IllegalArgumentException if the length of the specified
-     *            ZIP file comment is greater than 0xFFFF bytes
+     *            ZIP file comment is greater than 0xFFFF bytes or if the
+     *            comment contains characters not mappable using the Charset
+     *            passed to the constructor of this ZipOutputStream instance.
      */
     public void setComment(String comment) {
         byte[] bytes = null;
