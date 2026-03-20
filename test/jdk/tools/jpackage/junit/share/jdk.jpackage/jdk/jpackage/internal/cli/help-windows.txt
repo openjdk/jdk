@@ -203,3 +203,5 @@ Platform dependent options for creating the application package:
           URL of available application update information
   --win-upgrade-uuid <uuid>
           UUID associated with upgrades for this package
+  --win-with-ui
+          Enforces the installer to have UI
