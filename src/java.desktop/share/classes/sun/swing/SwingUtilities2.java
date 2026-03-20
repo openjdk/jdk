@@ -44,6 +44,7 @@ import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.Toolkit;
+import java.awt.event.FocusEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -795,7 +796,7 @@ public class SwingUtilities2 {
      */
     public static void adjustFocus(JComponent c) {
         if (!c.hasFocus() && c.isRequestFocusEnabled()) {
-            c.requestFocus();
+            c.requestFocus(FocusEvent.Cause.MOUSE_EVENT);
         }
     }
 
@@ -1645,24 +1646,24 @@ public class SwingUtilities2 {
             if (container.isFocusCycleRoot()) {
                 FocusTraversalPolicy policy = container.getFocusTraversalPolicy();
                 Component comp = policy.getDefaultComponent(container);
-                if (comp!=null) {
-                    comp.requestFocus();
+                if (comp != null) {
+                    comp.requestFocus(FocusEvent.Cause.TRAVERSAL);
                     return comp;
                 }
             }
             Container rootAncestor = container.getFocusCycleRootAncestor();
-            if (rootAncestor!=null) {
+            if (rootAncestor != null) {
                 FocusTraversalPolicy policy = rootAncestor.getFocusTraversalPolicy();
                 Component comp = policy.getComponentAfter(rootAncestor, container);
 
-                if (comp!=null && SwingUtilities.isDescendingFrom(comp, container)) {
-                    comp.requestFocus();
+                if (comp != null && SwingUtilities.isDescendingFrom(comp, container)) {
+                    comp.requestFocus(FocusEvent.Cause.TRAVERSAL);
                     return comp;
                 }
             }
         }
         if (component.isFocusable()) {
-            component.requestFocus();
+            component.requestFocus(FocusEvent.Cause.TRAVERSAL);
             return component;
         }
         return null;

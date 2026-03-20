@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -966,12 +966,28 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
     _max_switch_depth = 0;
     _est_switch_depth = log2i_graceful((hi - lo + 1) - 1) + 1;
   }
+  SwitchRange* orig_lo = lo;
+  SwitchRange* orig_hi = hi;
 #endif
 
-  assert(lo <= hi, "must be a non-empty set of ranges");
-  if (lo == hi) {
-    jump_if_always_fork(lo->dest(), trim_ranges && lo->cnt() == 0);
-  } else {
+  // The lower-range processing is done iteratively to avoid O(N) stack depth
+  // when the profiling-based pivot repeatedly selects mid==lo (JDK-8366138).
+  // The upper-range processing remains recursive but is only reached for
+  // balanced splits, bounding its depth to O(log N).
+  // Termination: every iteration either exits or strictly decreases hi-lo:
+  //   lo == mid && mid < hi, increments lo
+  //   lo < mid <= hi, sets hi = mid - 1.
+  for (int depth = switch_depth;; depth++) {
+#ifndef PRODUCT
+    _max_switch_depth = MAX2(depth, _max_switch_depth);
+#endif
+
+    assert(lo <= hi, "must be a non-empty set of ranges");
+    if (lo == hi) {
+      jump_if_always_fork(lo->dest(), trim_ranges && lo->cnt() == 0);
+      break;
+    }
+
     assert(lo->hi() == (lo+1)->lo()-1, "contiguous ranges");
     assert(hi->lo() == (hi-1)->hi()+1, "contiguous ranges");
 
@@ -981,7 +997,12 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
     float total_cnt = sum_of_cnts(lo, hi);
 
     int nr = hi - lo + 1;
-    if (UseSwitchProfiling) {
+    // With total_cnt==0 the profiling pivot degenerates to mid==lo
+    // (0 >= 0/2), producing a linear chain of If nodes instead of a
+    // balanced tree. A balanced tree is strictly better here: all paths
+    // are cold, so a balanced split gives fewer comparisons at runtime
+    // and avoids pathological memory usage in the optimizer.
+    if (UseSwitchProfiling && total_cnt > 0) {
       // Don't keep the binary search tree balanced: pick up mid point
       // that split frequencies in half.
       float cnt = 0;
@@ -1002,7 +1023,7 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
       assert(nr != 2 || mid == hi,   "should pick higher of 2");
       assert(nr != 3 || mid == hi-1, "should pick middle of 3");
     }
-
+    assert(mid != nullptr, "mid must be set");
 
     Node *test_val = _gvn.intcon(mid == lo ? mid->hi() : mid->lo());
 
@@ -1025,7 +1046,7 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
         Node   *iffalse = _gvn.transform( new IfFalseNode(iff_lt) );
         { PreserveJVMState pjvms(this);
           set_control(iffalse);
-          jump_switch_ranges(key_val, mid+1, hi, switch_depth+1);
+          jump_switch_ranges(key_val, mid+1, hi, depth+1);
         }
         set_control(iftrue);
       }
@@ -1043,21 +1064,22 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
         Node *iffalse = _gvn.transform( new IfFalseNode(iff_ge) );
         { PreserveJVMState pjvms(this);
           set_control(iftrue);
-          jump_switch_ranges(key_val, mid == lo ? mid+1 : mid, hi, switch_depth+1);
+          jump_switch_ranges(key_val, mid == lo ? mid+1 : mid, hi, depth+1);
         }
         set_control(iffalse);
       }
     }
 
-    // in any case, process the lower range
+    // Process the lower range: iterate instead of recursing.
     if (mid == lo) {
       if (mid->is_singleton()) {
-        jump_switch_ranges(key_val, lo+1, hi, switch_depth+1);
+        lo++;
       } else {
         jump_if_always_fork(lo->dest(), trim_ranges && lo->cnt() == 0);
+        break;
       }
     } else {
-      jump_switch_ranges(key_val, lo, mid-1, switch_depth+1);
+      hi = mid - 1;
     }
   }
 
@@ -1072,23 +1094,22 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
   }
 
 #ifndef PRODUCT
-  _max_switch_depth = MAX2(switch_depth, _max_switch_depth);
   if (TraceOptoParse && Verbose && WizardMode && switch_depth == 0) {
     SwitchRange* r;
     int nsing = 0;
-    for( r = lo; r <= hi; r++ ) {
+    for (r = orig_lo; r <= orig_hi; r++) {
       if( r->is_singleton() )  nsing++;
     }
     tty->print(">>> ");
     _method->print_short_name();
     tty->print_cr(" switch decision tree");
     tty->print_cr("    %d ranges (%d singletons), max_depth=%d, est_depth=%d",
-                  (int) (hi-lo+1), nsing, _max_switch_depth, _est_switch_depth);
+                  (int) (orig_hi-orig_lo+1), nsing, _max_switch_depth, _est_switch_depth);
     if (_max_switch_depth > _est_switch_depth) {
       tty->print_cr("******** BAD SWITCH DEPTH ********");
     }
     tty->print("   ");
-    for( r = lo; r <= hi; r++ ) {
+    for (r = orig_lo; r <= orig_hi; r++) {
       r->print();
     }
     tty->cr();

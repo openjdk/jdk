@@ -1143,21 +1143,24 @@ const Type* LShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
     return t1;
   }
 
-  // Either input is BOTTOM ==> the result is BOTTOM
-  if ((t1 == TypeInteger::bottom(bt)) || (t2 == TypeInt::INT) ||
-      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM)) {
+  // If nothing is known about the shift amount then the result is BOTTOM
+  if (t2 == TypeInt::INT) {
     return TypeInteger::bottom(bt);
   }
 
   const TypeInteger* r1 = t1->is_integer(bt); // Handy access
-  const TypeInt* r2 = t2->is_int(); // Handy access
+  // Since the shift semantics in Java take into account only the bottom five
+  // bits for ints and the bottom six bits for longs, we can further constrain
+  // the range of values of the shift amount by ANDing with the right mask based
+  // on whether the type is int or long.
+  const TypeInt* mask = TypeInt::make(bits_per_java_integer(bt) - 1);
+  const TypeInt* r2 = RangeInference::infer_and(t2->is_int(), mask);
 
   if (!r2->is_con()) {
     return TypeInteger::bottom(bt);
   }
 
   uint shift = r2->get_con();
-  shift &= bits_per_java_integer(bt) - 1;  // semantics of Java shifts
   // Shift by a multiple of 32/64 does nothing:
   if (shift == 0) {
     return t1;
@@ -1166,22 +1169,20 @@ const Type* LShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
   // If the shift is a constant, shift the bounds of the type,
   // unless this could lead to an overflow.
   if (!r1->is_con()) {
-    jlong lo = r1->lo_as_long(), hi = r1->hi_as_long();
 #ifdef ASSERT
     if (bt == T_INT) {
+      jlong lo = r1->lo_as_long(), hi = r1->hi_as_long();
       jint lo_int = r1->is_int()->_lo, hi_int = r1->is_int()->_hi;
       assert((java_shift_right(java_shift_left(lo, shift, bt),  shift, bt) == lo) == (((lo_int << shift) >> shift) == lo_int), "inconsistent");
       assert((java_shift_right(java_shift_left(hi, shift, bt),  shift, bt) == hi) == (((hi_int << shift) >> shift) == hi_int), "inconsistent");
     }
 #endif
-    if (java_shift_right(java_shift_left(lo, shift, bt),  shift, bt) == lo &&
-        java_shift_right(java_shift_left(hi, shift, bt), shift, bt) == hi) {
-      // No overflow.  The range shifts up cleanly.
-      return TypeInteger::make(java_shift_left(lo, shift, bt),
-                               java_shift_left(hi,  shift, bt),
-                               MAX2(r1->_widen, r2->_widen), bt);
+
+    if (bt == T_INT) {
+        return RangeInference::infer_lshift(r1->is_int(), shift);
     }
-    return TypeInteger::bottom(bt);
+
+    return RangeInference::infer_lshift(r1->is_long(), shift);
   }
 
   return TypeInteger::make(java_shift_left(r1->get_con_as_long(bt), shift, bt), bt);
@@ -1539,15 +1540,20 @@ Node* URShiftINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node *add = in(1);
   if (in1_op == Op_AddI) {
     Node *lshl = add->in(1);
+    Node *y    = add->in(2);
+    if (lshl->Opcode() != Op_LShiftI) {
+      lshl = add->in(2);
+      y    = add->in(1);
+    }
     // Compare shift counts by value, not by node pointer, to also match a not-yet-normalized
     // negative constant (e.g. -1 vs 31)
     int lshl_con = 0;
     if (lshl->Opcode() == Op_LShiftI &&
         const_shift_count(phase, lshl, &lshl_con) &&
         (lshl_con & (BitsPerJavaInteger - 1)) == con) {
-      Node *y_z = phase->transform( new URShiftINode(add->in(2),in(2)) );
-      Node *sum = phase->transform( new AddINode( lshl->in(1), y_z ) );
-      return new AndINode( sum, phase->intcon(mask) );
+      Node *y_z = phase->transform(new URShiftINode(y, in(2)));
+      Node *sum = phase->transform(new AddINode(lshl->in(1), y_z));
+      return new AndINode(sum, phase->intcon(mask));
     }
   }
 
@@ -1699,13 +1705,18 @@ Node* URShiftLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   const TypeInt *t2 = phase->type(in(2))->isa_int();
   if (add->Opcode() == Op_AddL) {
     Node *lshl = add->in(1);
+    Node *y    = add->in(2);
+    if (lshl->Opcode() != Op_LShiftL) {
+      lshl = add->in(2);
+      y    = add->in(1);
+    }
     // Compare shift counts by value, not by node pointer, to also match a not-yet-normalized
     // negative constant (e.g. -1 vs 63)
     int lshl_con = 0;
     if (lshl->Opcode() == Op_LShiftL &&
         const_shift_count(phase, lshl, &lshl_con) &&
         (lshl_con & (BitsPerJavaLong - 1)) == con) {
-      Node* y_z = phase->transform(new URShiftLNode(add->in(2), in(2)));
+      Node* y_z = phase->transform(new URShiftLNode(y, in(2)));
       Node* sum = phase->transform(new AddLNode(lshl->in(1), y_z));
       return new AndLNode(sum, phase->longcon(mask));
     }

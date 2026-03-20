@@ -242,30 +242,12 @@ void AOTStreamedHeapWriter::copy_roots_max_dfs_to_buffer(int roots_length) {
   }
 }
 
-static bool is_interned_string(oop obj) {
-  if (!java_lang_String::is_instance(obj)) {
-    return false;
-  }
-
-  ResourceMark rm;
-  int len;
-  jchar* name = java_lang_String::as_unicode_string_or_null(obj, len);
-  if (name == nullptr) {
-    fatal("Insufficient memory for dumping");
-  }
-  return StringTable::lookup(name, len) == obj;
-}
-
 static BitMap::idx_t bit_idx_for_buffer_offset(size_t buffer_offset) {
   if (UseCompressedOops) {
     return BitMap::idx_t(buffer_offset / sizeof(narrowOop));
   } else {
     return BitMap::idx_t(buffer_offset / sizeof(HeapWord));
   }
-}
-
-bool AOTStreamedHeapWriter::is_dumped_interned_string(oop obj) {
-  return is_interned_string(obj) && HeapShared::get_cached_oop_info(obj) != nullptr;
 }
 
 void AOTStreamedHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtClassShared>* roots) {
@@ -325,7 +307,7 @@ size_t AOTStreamedHeapWriter::copy_one_source_obj_to_buffer(oop src_obj) {
 
   ensure_buffer_space(new_used);
 
-  if (is_interned_string(src_obj)) {
+  if (HeapShared::is_interned_string(src_obj)) {
     java_lang_String::hash_code(src_obj);                   // Sets the hash code field(s)
     java_lang_String::set_deduplication_forbidden(src_obj); // Allows faster interning at runtime
     assert(java_lang_String::hash_is_set(src_obj), "hash must be set");
@@ -402,7 +384,7 @@ void AOTStreamedHeapWriter::update_header_for_buffered_addr(address buffered_add
     mw = mw.copy_set_hash(src_hash);
   }
 
-  if (is_interned_string(src_obj)) {
+  if (HeapShared::is_interned_string(src_obj)) {
     // Mark the mark word of interned string so the loader knows to link these to
     // the string table at runtime.
     mw = mw.set_marked();
