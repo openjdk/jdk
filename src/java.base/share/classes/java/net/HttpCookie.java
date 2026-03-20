@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,6 +90,10 @@ public final class HttpCookie implements Cloneable {
     // Since the positive and zero max-age have their meanings,
     // this value serves as a hint as 'not specify max-age'
     private static final long MAX_AGE_UNSPECIFIED = -1;
+
+    // Returned by expiryDate2DeltaSeconds when none of the date formats
+    // could parse the given expires value
+    private static final long EXPIRY_DATE_PARSE_FAILURE = Long.MIN_VALUE;
 
     // date formats used by Netscape's cookie draft
     // as well as formats seen on various sites
@@ -1008,7 +1012,9 @@ public final class HttpCookie implements Cloneable {
         try {
             if (expiresValue != null) {
                 long delta = cookie.expiryDate2DeltaSeconds(expiresValue);
-                cookie.maxAge = (delta > 0 ? delta : 0);
+                if (delta != EXPIRY_DATE_PARSE_FAILURE) {
+                    cookie.maxAge = (delta > 0 ? delta : 0);
+                }
             }
         } catch (NumberFormatException ignored) {}
     }
@@ -1113,7 +1119,7 @@ public final class HttpCookie implements Cloneable {
                 // Ignore, try the next date format
             }
         }
-        return 0;
+        return EXPIRY_DATE_PARSE_FAILURE;
     }
 
     /*

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,5 +133,26 @@ public class MaxAgeExpires {
         Assert.assertEquals(cookie.getMaxAge(), 200);
         cookie.setMaxAge(-2);
         Assert.assertEquals(cookie.getMaxAge(), -2);
+    }
+
+    @DataProvider(name = "unparseableDates")
+    public Object[][] unparseableDates() {
+        return new Object[][] {
+            { "GARBAGE" },
+            { "2024-01-01T00:00:00Z" },       // ISO 8601, not a cookie date
+            { "January 1, 2099 00:00:00 GMT" } // missing day-of-week prefix
+        };
+    }
+
+    @Test(dataProvider = "unparseableDates")
+    public void testUnparseableExpires(String badDate) {
+        // RFC 6265 section 5.2.1: if the expires value fails to parse,
+        // the cookie-av should be ignored, leaving maxAge at -1
+        HttpCookie cookie = HttpCookie.parse(
+            "Set-Cookie: name=value; expires=" + badDate).get(0);
+        Assert.assertEquals(cookie.getMaxAge(), -1,
+            "Unparseable expires=\"" + badDate + "\" should be ignored");
+        Assert.assertFalse(cookie.hasExpired(),
+            "Cookie with ignored expires should not be expired");
     }
 }
