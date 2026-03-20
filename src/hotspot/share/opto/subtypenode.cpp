@@ -177,7 +177,7 @@ bool SubTypeCheckNode::verify(PhaseGVN* phase) {
       return true;
     }
     const Type* cached_t = Value(phase); // cache the type to validate consistency
-    switch (C->static_subtype_check(superk, subk)) {
+    switch (C->static_subtype_check(superk, subk, false)) {
       case Compile::SSC_easy_test: {
         return verify_helper(phase, load_klass(phase), cached_t);
       }
