@@ -73,7 +73,7 @@ public class AvailableProcessors {
             // Enable logging for easier failure diagnosis
             ProcessBuilder master =
                     ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:os=trace",
-                                                                    "AvailableProcessors");
+                                                                     "AvailableProcessors");
 
             int[] expected = new int[] { 1, available/2, available-1, available };
             int cpuId = getFirstAllowedCpu();
@@ -93,7 +93,7 @@ public class AvailableProcessors {
                 cmdline.add(String.valueOf(i));
                 ProcessBuilder pb = new ProcessBuilder(cmdline);
                 System.out.println("Final command line: " +
-                                    ProcessTools.getCommandLine(pb));
+                                     ProcessTools.getCommandLine(pb));
                 OutputAnalyzer output = ProcessTools.executeProcess(pb);
                 output.shouldHaveExitValue(0);
                 output.shouldContain(SUCCESS_STRING);
