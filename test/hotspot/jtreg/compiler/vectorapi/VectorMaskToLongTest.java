@@ -359,7 +359,6 @@ public class VectorMaskToLongTest {
         testToLongGeneral(D_SPECIES);
     }
 
-
     public static void main(String[] args) {
         TestFramework testFramework = new TestFramework();
         testFramework.setDefaultWarmup(10000)
