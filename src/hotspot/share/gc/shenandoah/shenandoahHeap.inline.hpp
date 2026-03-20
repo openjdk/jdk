@@ -343,8 +343,9 @@ uint ShenandoahHeap::get_object_age(oop obj) {
     return w.age();
   }
   if (w.has_monitor()) {
-    assert(!w.has_displaced_mark_helper(), "Mark word should not be displaced");
     w = w.monitor()->header();
+  } else {
+    assert(!w.has_displaced_mark_helper(), "Mark word should not be displaced");
   }
   assert(w.age() <= markWord::max_age, "Impossible!");
   return w.age();
