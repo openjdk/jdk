@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2008, 2009 Red Hat, Inc.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +22,10 @@
  *
  */
 
-#include "runtime/deoptimization.hpp"
-#include "runtime/frame.inline.hpp"
-#include "runtime/javaThread.hpp"
-#include "runtime/stubRoutines.hpp"
+#include "code/aotPDConfig.hpp"
 
-address StubRoutines::crc_table_addr()    { ShouldNotCallThis(); return nullptr; }
-address StubRoutines::crc32c_table_addr() { ShouldNotCallThis(); return nullptr; }
+void AOTPDConfig::record() {}
 
-#if INCLUDE_CDS
-// nothing to do for zero
-void StubRoutines::init_AOTAddressTable() {
+bool AOTPDConfig::verify(stringStream& failure_msg) const {
+  return true;
 }
-#endif // INCLUDE_CDS

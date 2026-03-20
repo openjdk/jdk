@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2008, 2009 Red Hat, Inc.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +22,26 @@
  *
  */
 
-#include "runtime/deoptimization.hpp"
-#include "runtime/frame.inline.hpp"
-#include "runtime/javaThread.hpp"
-#include "runtime/stubRoutines.hpp"
+#ifndef CPU_X86_AOT_CONFIG_X86_HPP
+#define CPU_X86_AOT_CONFIG_X86_HPP
 
-address StubRoutines::crc_table_addr()    { ShouldNotCallThis(); return nullptr; }
-address StubRoutines::crc32c_table_addr() { ShouldNotCallThis(); return nullptr; }
+// list of VM flags that can affect AOT code
+#define AOT_CODE_VM_FLAGS(decl) \
+  decl(EnableX86ECoreOpts) \
+  decl(UseUnalignedLoadStores)
 
-#if INCLUDE_CDS
-// nothing to do for zero
-void StubRoutines::init_AOTAddressTable() {
-}
-#endif // INCLUDE_CDS
+  enum AOTCodeVMFlags : uint {
+#define DECLARE_AOT_VM_FLAG(flag) VMFlag_##flag,
+    AOT_CODE_VM_FLAGS(DECLARE_AOT_VM_FLAG)
+#undef DECLARE_AOT_VM_FLAG
+  };
+
+// list of VM parameters that can affect AOT code
+#define AOT_CODE_VM_PARAMS(decl) \
+  decl(AVX3Threshold, int)
+
+#define DECLARE_AOT_VM_PARAM(param, type) type VMParam_##param;
+  AOT_CODE_VM_PARAMS(DECLARE_AOT_VM_PARAM)
+#undef DECLARE_AOT_VM_PARAM
+
+#endif // CPU_X86_AOT_CONFIG_X86_HPP

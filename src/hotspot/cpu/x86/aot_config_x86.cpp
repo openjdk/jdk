@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2008, 2009 Red Hat, Inc.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +22,26 @@
  *
  */
 
-#include "runtime/deoptimization.hpp"
-#include "runtime/frame.inline.hpp"
-#include "runtime/javaThread.hpp"
-#include "runtime/stubRoutines.hpp"
+#include "code/aotPDConfig.hpp"
 
-address StubRoutines::crc_table_addr()    { ShouldNotCallThis(); return nullptr; }
-address StubRoutines::crc32c_table_addr() { ShouldNotCallThis(); return nullptr; }
+void AOTPDConfig::record() {
+#define SET_AOT_VM_FLAG(rt_flag) \
+  if (rt_flag) { \
+    set_flag(VMFlag_##rt_flag); \
+  }
+  AOT_CODE_VM_FLAGS(SET_AOT_VM_FLAG)
+#undef SET_AOT_FLAG
 
-#if INCLUDE_CDS
-// nothing to do for zero
-void StubRoutines::init_AOTAddressTable() {
+#define SET_AOT_VM_PARAM(rt_param, type_ignored) VMParam_##rt_param = rt_param;
+  AOT_CODE_VM_PARAMS(SET_AOT_VM_PARAM)
+#undef SET_AOT_VM_PARAM
 }
-#endif // INCLUDE_CDS
+
+bool AOTPDConfig::verify(stringStream& failure_msg) const {
+  AOT_CODE_VM_PARAMS(VERIFY_VM_PARAMETER)
+
+  VERIFY_VM_FLAG_SAME(EnableX86ECoreOpts)
+  VERIFY_VM_FLAG_SET(UseUnalignedLoadStores)
+
+  return true;
+}
