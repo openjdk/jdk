@@ -23,11 +23,12 @@
 
 /* @test
    @bug 4071322
-   @modules java.base/jdk.internal.util
    @summary Basic test for File.listRoots method
+   @run junit ListRoots
  */
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
@@ -36,14 +37,26 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import jdk.internal.util.OperatingSystem;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ListRoots {
 
-    public static void main(String[] args) throws Exception {
+    private static Stream<File> expectedStream;
+    private static Set<File> actualSet;
+
+    @BeforeAll
+    public static void init() throws IOException {
         File[] rs = File.listRoots();
         for (int i = 0; i < rs.length; i++) {
-            System.out.println(i + ": " + rs[i]);
+            System.err.println(i + ": " + rs[i]);
         }
 
         File f = new File(System.getProperty("test.src", "."), "ListRoots.java");
@@ -51,29 +64,32 @@ public class ListRoots {
         boolean found = Stream.of(rs)
                 .map(File::getPath)
                 .anyMatch(p -> cp.startsWith(p));
-        if (!found) {
-            throw new RuntimeException(cp + " does not have a recognized root");
-        }
+        assertTrue(found, cp + " does not have a recognized root");
 
         // the list of roots should match FileSystem::getRootDirectories
-        Set<File> actualSet = Stream.of(rs).collect(Collectors.toSet());
+        actualSet = Stream.of(rs).collect(Collectors.toSet());
         FileSystem fs = FileSystems.getDefault();
-        Stream<File> expectedStream =
+        expectedStream =
             StreamSupport.stream(fs.getRootDirectories().spliterator(), false)
                 .map(Path::toFile);
-
-        if (OperatingSystem.isWindows()) {
-            if (!expectedStream.anyMatch(actualSet::contains)) {
-                System.err.println(actualSet);
-                throw new RuntimeException("Does not intersect FileSystem::getRootDirectories");
-            }
-        } else { // Unix
-            Set<File> expectedSet = expectedStream.collect(Collectors.toSet());
-            if (!actualSet.equals(expectedSet)) {
-                System.err.println(actualSet);
-                throw new RuntimeException("Does not equal FileSystem::getRootDirectories");
-            }
-        }
     }
 
+    @AfterAll
+    public static void cleanup() throws IOException {
+        expectedStream.close();
+    }
+
+    @Test
+    @DisabledOnOs(OS.WINDOWS)
+    public void listRootsUnix() throws IOException {
+        Set<File> expectedSet = expectedStream.collect(Collectors.toSet());
+        assertEquals(expectedSet, actualSet,
+                     "Does not equal FileSystem::getRootDirectories");
+    }
+
+    @Test
+    @EnabledOnOs(OS.WINDOWS)
+    public void listRootsWindows() throws IOException {
+        assertTrue(expectedStream.anyMatch(actualSet::contains));
+    }
 }
