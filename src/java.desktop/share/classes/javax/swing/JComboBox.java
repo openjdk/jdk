@@ -1101,7 +1101,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
             = "the Action instance connected with this ActionEvent source")
     public void setAction(Action a) {
         Action oldValue = getAction();
-        if (action==null || !action.equals(a)) {
+        if (action == null || !action.equals(a)) {
             action = a;
             if (oldValue != null) {
                 removeActionListener(oldValue);

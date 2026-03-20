@@ -1171,7 +1171,7 @@ public class UIDefaults extends Hashtable<Object,Object>
             Class<?>[] types = null;
             if (args != null) {
                 types = new Class<?>[args.length];
-                for (int i = 0; i< args.length; i++) {
+                for (int i = 0; i < args.length; i++) {
                     /* PENDING(ges): At present only the primitive types
                        used are handled correctly; this should eventually
                        handle all primitive types */

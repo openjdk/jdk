@@ -238,7 +238,7 @@ public class BasicMenuBarUI extends MenuBarUI  {
         //
         public void stateChanged(ChangeEvent e) {
             int i,c;
-            for(i=0,c = menuBar.getMenuCount() ; i < c ; i++) {
+            for(i = 0,c = menuBar.getMenuCount() ; i < c ; i++) {
                 JMenu menu = menuBar.getMenu(i);
                 if(menu != null && menu.isSelected()) {
                     menuBar.getSelectionModel().setSelectedIndex(i);
