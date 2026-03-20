@@ -37,39 +37,39 @@
 #include <sys/prctl.h>
 
 #ifndef HWCAP_ISA_I
-#define HWCAP_ISA_I  nth_bit('I' - 'A')
+#define HWCAP_ISA_I  nth_bit<uint64_t>('I' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_M
-#define HWCAP_ISA_M  nth_bit('M' - 'A')
+#define HWCAP_ISA_M  nth_bit<uint64_t>('M' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_A
-#define HWCAP_ISA_A  nth_bit('A' - 'A')
+#define HWCAP_ISA_A  nth_bit<uint64_t>('A' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_F
-#define HWCAP_ISA_F  nth_bit('F' - 'A')
+#define HWCAP_ISA_F  nth_bit<uint64_t>('F' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_D
-#define HWCAP_ISA_D  nth_bit('D' - 'A')
+#define HWCAP_ISA_D  nth_bit<uint64_t>('D' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_C
-#define HWCAP_ISA_C  nth_bit('C' - 'A')
+#define HWCAP_ISA_C  nth_bit<uint64_t>('C' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_Q
-#define HWCAP_ISA_Q  nth_bit('Q' - 'A')
+#define HWCAP_ISA_Q  nth_bit<uint64_t>('Q' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_H
-#define HWCAP_ISA_H  nth_bit('H' - 'A')
+#define HWCAP_ISA_H  nth_bit<uint64_t>('H' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_V
-#define HWCAP_ISA_V  nth_bit('V' - 'A')
+#define HWCAP_ISA_V  nth_bit<uint64_t>('V' - 'A')
 #endif
 
 #define read_csr(csr)                                           \
