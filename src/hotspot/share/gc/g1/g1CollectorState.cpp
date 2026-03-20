@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,9 @@
  *
  */
 
+#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorState.hpp"
+#include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1GCPauseType.hpp"
 
 G1GCPauseType G1CollectorState::young_gc_pause_type(bool concurrent_operation_is_full_mark) const {
@@ -44,3 +46,24 @@ G1GCPauseType G1CollectorState::young_gc_pause_type(bool concurrent_operation_is
     return G1GCPauseType::YoungGC;
   }
 }
+
+bool G1CollectorState::is_in_concurrent_cycle() const {
+  G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
+  return cm->is_in_concurrent_cycle();
+}
+
+bool G1CollectorState::is_in_marking() const {
+  G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
+  return cm->is_in_marking();
+}
+
+bool G1CollectorState::is_in_mark_or_rebuild() const {
+  G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
+  return is_in_marking() || cm->is_in_rebuild_or_scrub();
+}
+
+bool G1CollectorState::is_in_reset_for_next_cycle() const {
+  G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
+  return cm->is_in_reset_for_next_cycle();
+}
+

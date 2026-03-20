@@ -199,19 +199,6 @@ const int ObjectAlignmentInBytes = 8;
           "Granularity to use for NUMA interleaving on Windows OS")         \
           constraint(NUMAInterleaveGranularityConstraintFunc, AtParse)      \
                                                                             \
-  product(uintx, NUMAChunkResizeWeight, 20,                                 \
-          "Percentage (0-100) used to weight the current sample when "      \
-          "computing exponentially decaying average for "                   \
-          "AdaptiveNUMAChunkSizing")                                        \
-          range(0, 100)                                                     \
-                                                                            \
-  product(size_t, NUMASpaceResizeRate, 1*G,                                 \
-          "Do not reallocate more than this amount per collection")         \
-          range(0, max_uintx)                                               \
-                                                                            \
-  product(bool, UseAdaptiveNUMAChunkSizing, true,                           \
-          "Enable adaptive chunk sizing for NUMA")                          \
-                                                                            \
   product(bool, NUMAStats, false,                                           \
           "Print NUMA stats in detailed heap information")                  \
                                                                             \
@@ -811,9 +798,6 @@ const int ObjectAlignmentInBytes = 8;
           "Number of OutOfMemoryErrors preallocated with backtrace")        \
           range(0, 1024)                                                    \
                                                                             \
-  product(bool, UseXMMForArrayCopy, false,                                  \
-          "Use SSE2 MOVQ instruction for Arraycopy")                        \
-                                                                            \
   develop(bool, PrintFieldLayout, false,                                    \
           "Print field layout for each class")                              \
                                                                             \
@@ -884,20 +868,8 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, VerifyDependencies, trueInDebug,                            \
           "Exercise and verify the compilation dependency mechanism")       \
                                                                             \
-  develop(bool, TraceNewOopMapGeneration, false,                            \
-          "Trace OopMapGeneration")                                         \
-                                                                            \
-  develop(bool, TraceNewOopMapGenerationDetailed, false,                    \
-          "Trace OopMapGeneration: print detailed cell states")             \
-                                                                            \
   develop(bool, TimeOopMap, false,                                          \
           "Time calls to GenerateOopMap::compute_map() in sum")             \
-                                                                            \
-  develop(bool, TimeOopMap2, false,                                         \
-          "Time calls to GenerateOopMap::compute_map() individually")       \
-                                                                            \
-  develop(bool, TraceOopMapRewrites, false,                                 \
-          "Trace rewriting of methods during oop map generation")           \
                                                                             \
   develop(bool, TraceFinalizerRegistration, false,                          \
           "Trace registration of final references")                         \

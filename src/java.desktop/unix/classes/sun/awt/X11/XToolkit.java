@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1770,7 +1770,11 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         final int altL = keysymToPrimaryKeycode(XKeySymConstants.XK_Alt_L);
         final int altR = keysymToPrimaryKeycode(XKeySymConstants.XK_Alt_R);
         final int numLock = keysymToPrimaryKeycode(XKeySymConstants.XK_Num_Lock);
-        final int modeSwitch = keysymToPrimaryKeycode(XKeySymConstants.XK_Mode_switch);
+        int modeSwitchTmp = keysymToPrimaryKeycode(XKeySymConstants.XK_Mode_switch);
+        if (modeSwitchTmp == 0) {
+            modeSwitchTmp = keysymToPrimaryKeycode(XKeySymConstants.XK_ISO_Level3_Shift);
+        }
+        final int modeSwitch = modeSwitchTmp;
         final int shiftLock = keysymToPrimaryKeycode(XKeySymConstants.XK_Shift_Lock);
         final int capsLock  = keysymToPrimaryKeycode(XKeySymConstants.XK_Caps_Lock);
 

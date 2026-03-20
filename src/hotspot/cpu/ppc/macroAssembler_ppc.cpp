@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -483,7 +483,7 @@ void MacroAssembler::set_dest_of_bc_far_at(address instruction_addr, address des
     // variant 3, far cond branch to the next instruction, already patched to nops:
     //
     //    nop
-    //    endgroup
+    //    nop
     //  SKIP/DEST:
     //
     return;
@@ -500,7 +500,7 @@ void MacroAssembler::set_dest_of_bc_far_at(address instruction_addr, address des
   if (is_bc_far_variant2_at(instruction_addr) && dest == instruction_addr + 8) {
     // Far branch to next instruction: Optimize it by patching nops (produce variant 3).
     masm.nop();
-    masm.endgroup();
+    masm.nop();
   } else {
     if (is_bc_far_variant1_at(instruction_addr)) {
       // variant 1, the 1st instruction contains the destination address:
@@ -2800,7 +2800,7 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
       // Check if object matches.
       ld(tmp3, in_bytes(ObjectMonitor::object_offset()), monitor);
       BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
-      bs_asm->try_resolve_weak_handle_in_c2(this, tmp3, tmp2, slow_path);
+      bs_asm->try_resolve_weak_handle(this, tmp3, tmp2, slow_path);
       cmpd(CR0, tmp3, obj);
       bne(CR0, slow_path);
 

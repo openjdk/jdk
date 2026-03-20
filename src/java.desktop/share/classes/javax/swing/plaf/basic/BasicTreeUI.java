@@ -943,7 +943,7 @@ public class BasicTreeUI extends TreeUI
         lineTypeDashed = UIManager.getBoolean("Tree.lineTypeDashed");
 
         Long l = (Long)UIManager.get("Tree.timeFactor");
-        timeFactor = (l!=null) ? l.longValue() : 1000L;
+        timeFactor = (l != null) ? l.longValue() : 1000L;
 
         Object showsRootHandles = UIManager.get("Tree.showsRootHandles");
         if (showsRootHandles != null) {
