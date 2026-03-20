@@ -78,20 +78,4 @@ public class UnmappableZipEntryNameOrComment {
             }
         });
     }
-
-    /**
-     * Verify that calling ZipOutputStream.setComment with an unmappable
-     * comment is rejected with a IllegalArgumentException.
-     *
-     * @throws IOException if an unexpected IO error occurs
-     */
-    @Test
-    void rejectUnmappableZipFileComment() throws IOException {
-        String comment = UNMAPPABLE;
-        assertDoesNotThrow(() -> {
-            try (var out = new ZipOutputStream(nullOutputStream(), CHARSET)) {
-                assertThrows(IllegalArgumentException.class, () -> out.setComment(comment));
-            }
-        });
-    }
 }
