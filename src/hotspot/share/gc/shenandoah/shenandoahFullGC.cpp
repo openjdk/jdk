@@ -878,8 +878,11 @@ public:
       Copy::aligned_conjoint_words(compact_from, compact_to, size);
       oop new_obj = cast_to_oop(compact_to);
 
-      ContinuationGCSupport::relativize_stack_chunk(new_obj);
+      // Restore the mark word before transforming the stack chunk. The copy's
+      // mark word contains the full GC forwarding encoding, which would cause
+      // is_stackChunk() to read garbage (especially with compact headers).
       new_obj->init_mark();
+      ContinuationGCSupport::transform_stack_chunk(new_obj);
     }
   }
 };
