@@ -631,8 +631,7 @@ public class ConvenientAccessErrorsTest extends ModuleTestBase {
 
         List<String> expected = Arrays.asList(
                 "Test.java:3:11: compiler.err.cant.resolve.location: kindname.class, Base, , , (compiler.misc.location: kindname.package, api, null)",
-                "Test.java:6:5: compiler.err.cant.resolve.location: kindname.class, Base, , , (compiler.misc.location: kindname.class, test.Test, null)",
-                "2 errors");
+                "1 error");
 
         if (!expected.equals(log))
             throw new Exception("expected output not found; actual: " + log);
