@@ -169,6 +169,11 @@ void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Re
   __ z_lg(obj, 0, obj); // Resolve (untagged) jobject.
 }
 
+void BarrierSetAssembler::try_resolve_weak_handle(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path) {
+  // Load the oop from the weak handle.
+  __ z_lg(obj, Address(obj));
+}
+
 void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
   __ align(4, __ offset() + OFFSET_TO_PATCHABLE_DATA); // must align the following block which requires atomic updates
@@ -204,11 +209,6 @@ OptoReg::Name BarrierSetAssembler::refine_register(const Node* node, OptoReg::Na
   }
 
   return opto_reg;
-}
-
-void BarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path) {
-  // Load the oop from the weak handle.
-  __ z_lg(obj, Address(obj));
 }
 
 #undef __
