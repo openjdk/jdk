@@ -25,6 +25,7 @@
 #ifndef SHARE_OOPS_METHODDATA_HPP
 #define SHARE_OOPS_METHODDATA_HPP
 
+#include "methodData.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/invocationCounter.hpp"
 #include "oops/metadata.hpp"
@@ -1174,7 +1175,8 @@ public:
     assert(layout->tag() == DataLayout::receiver_type_data_tag ||
            layout->tag() == DataLayout::virtual_call_data_tag ||
            layout->tag() == DataLayout::virtual_call_type_data_tag ||
-           layout->tag() == DataLayout::array_store_data_tag, "wrong type");
+           layout->tag() == DataLayout::array_store_data_tag ||
+           layout->tag() == DataLayout::array_load_data_tag, "wrong type");
   }
 
   virtual bool is_ReceiverTypeData() const { return true; }
@@ -1976,28 +1978,21 @@ public:
   virtual void print_data_on(outputStream* st, const char* extra = nullptr) const;
 };
 
-class ArrayLoadData : public BitData {
+class ArrayLoadData : public ReceiverTypeData {
 private:
   enum {
     flat_array_flag = BitData::last_bit_data_flag,
     null_free_array_flag = flat_array_flag + 1,
   };
 
-  SingleTypeEntry _array;
   SingleTypeEntry _element;
 
 public:
   ArrayLoadData(DataLayout* layout) :
-    BitData(layout),
-    _array(0),
+    ReceiverTypeData(layout),
     _element(SingleTypeEntry::static_cell_count()) {
     assert(layout->tag() == DataLayout::array_load_data_tag, "wrong type");
-    _array.set_profile_data(this);
     _element.set_profile_data(this);
-  }
-
-  const SingleTypeEntry* array() const {
-    return &_array;
   }
 
   const SingleTypeEntry* element() const {
@@ -2007,7 +2002,7 @@ public:
   virtual bool is_ArrayLoadData() const { return true; }
 
   static int static_cell_count() {
-    return SingleTypeEntry::static_cell_count() * 2;
+    return SingleTypeEntry::static_cell_count() + ReceiverTypeData::static_cell_count();
   }
 
   virtual int cell_count() const {
@@ -2029,21 +2024,17 @@ public:
     return flag_number_to_constant(null_free_array_flag);
   }
 
-  static ByteSize array_offset() {
-    return cell_offset(0);
-  }
-
   static ByteSize element_offset() {
     return cell_offset(SingleTypeEntry::static_cell_count());
   }
 
   virtual void clean_weak_klass_links(bool always_clean) {
-    _array.clean_weak_klass_links(always_clean);
+    ReceiverTypeData::clean_weak_klass_links(always_clean);
     _element.clean_weak_klass_links(always_clean);
   }
 
   virtual void metaspace_pointers_do(MetaspaceClosure* it) {
-    _array.metaspace_pointers_do(it);
+    ReceiverTypeData::metaspace_pointers_do(it);
     _element.metaspace_pointers_do(it);
   }
 

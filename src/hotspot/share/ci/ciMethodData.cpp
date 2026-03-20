@@ -834,8 +834,7 @@ void ciMethodData::dump_replay_data(outputStream* out) {
         dump_replay_data_receiver_type_helper<ciArrayStoreData>(out, round, count, array_store_data);
       } else if (pdata->is_ArrayLoadData()) {
         ciArrayLoadData* array_load_data = (ciArrayLoadData*)pdata;
-        dump_replay_data_type_helper(out, round, count, array_load_data, ciArrayLoadData::array_offset(),
-                                     array_load_data->array()->valid_type());
+        dump_replay_data_receiver_type_helper<ciArrayLoadData>(out, round, count, array_load_data);
         dump_replay_data_type_helper(out, round, count, array_load_data, ciArrayLoadData::element_offset(),
                                      array_load_data->element()->valid_type());
       } else if (pdata->is_ACmpData()) {
@@ -1019,7 +1018,7 @@ void ciArrayLoadData::print_data_on(outputStream* st, const char* extra) const {
   st->cr();
   tab(st, true);
   st->print("array");
-  array()->print_data_on(st);
+  rtd_super()->print_receiver_data_on(st);
   tab(st, true);
   st->print("element");
   element()->print_data_on(st);

@@ -1640,15 +1640,42 @@ template <class ArrayData> void InterpreterMacroAssembler::profile_array_type(Re
   }
 }
 
-template void InterpreterMacroAssembler::profile_array_type<ArrayLoadData>(Register mdp,
-                                                                           Register array,
-                                                                           Register tmp);
 template void InterpreterMacroAssembler::profile_array_type<ArrayStoreData>(Register mdp,
                                                                             Register array,
                                                                             Register tmp);
 
 
-void InterpreterMacroAssembler::profile_multiple_element_types(Register mdp, Register element, Register tmp, const Register tmp2) {
+void InterpreterMacroAssembler::profile_multiple_array_types(Register mdp,
+                                                             Register array,
+                                                             Register tmp) {
+  if (ProfileInterpreter) {
+    Label profile_continue;
+
+    // If no method data exists, go to profile_continue.
+    test_method_data_pointer(mdp, profile_continue);
+
+    load_klass(tmp, array, rscratch1);
+    profile_receiver_type(array, mdp, 0);
+
+    Label not_flat;
+    test_non_flat_array_oop(array, tmp, not_flat);
+
+    set_mdp_flag_at(mdp, ArrayLoadData::flat_array_byte_constant());
+
+    bind(not_flat);
+
+    Label not_null_free;
+    test_non_null_free_array_oop(array, tmp, not_null_free);
+
+    set_mdp_flag_at(mdp, ArrayLoadData::null_free_array_byte_constant());
+
+    bind(not_null_free);
+
+    bind(profile_continue);
+  }
+}
+
+void InterpreterMacroAssembler::profile_multiple_element_types(Register mdp, Register element, Register tmp) {
   if (ProfileInterpreter) {
     Label profile_continue;
 

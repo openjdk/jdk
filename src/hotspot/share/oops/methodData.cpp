@@ -732,7 +732,7 @@ void ArrayLoadData::print_data_on(outputStream* st, const char* extra) const {
   st->cr();
   tab(st, true);
   st->print("array");
-  _array.print_data_on(st);
+  print_receiver_data_on(st);
   tab(st, true);
   st->print("element");
   _element.print_data_on(st);

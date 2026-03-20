@@ -3081,8 +3081,9 @@ void LIRGenerator::profile_null_free_array(LIRItem array, ciMethodData* md, ciPr
 template <class ArrayData> void LIRGenerator::profile_array_type(AccessIndexed* x, ciMethodData*& md, ArrayData*& load_store) {
   assert(compilation()->profile_array_accesses(), "array access profiling is disabled");
   LIR_Opr mdp = LIR_OprFact::illegalOpr;
-  profile_type(md, md->byte_offset_of_slot(load_store, ArrayData::array_offset()), 0,
-               load_store->array()->type(), x->array(), mdp, true, nullptr, nullptr);
+  ShouldNotReachHere();
+  // profile_type(md, md->byte_offset_of_slot(load_store, ArrayData::array_offset()), 0,
+  //              load_store->array()->type(), x->array(), mdp, true, nullptr, nullptr);
 }
 
 void LIRGenerator::profile_element_type(Value element, ciMethodData* md, ciArrayLoadData* load_data) {

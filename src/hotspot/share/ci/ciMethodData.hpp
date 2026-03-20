@@ -385,18 +385,25 @@ public:
 };
 
 class ciArrayLoadData : public ArrayLoadData {
+  // Fake multiple inheritance...  It's a ciReceiverTypeData also.
+  ciReceiverTypeData* rtd_super() const { return (ciReceiverTypeData*) this; }
+
 public:
   ciArrayLoadData(DataLayout* layout) : ArrayLoadData(layout) {}
 
-  ciSingleTypeEntry* array() const { return (ciSingleTypeEntry*)ArrayLoadData::array(); }
+  // ciSingleTypeEntry* array() const { return (ciSingleTypeEntry*)ArrayLoadData::array(); }
   ciSingleTypeEntry* element() const { return (ciSingleTypeEntry*)ArrayLoadData::element(); }
 
   virtual void translate_from(const ProfileData* data) {
-    array()->translate_type_data_from(data->as_ArrayLoadData()->array());
+    rtd_super()->translate_receiver_data_from(data);
     element()->translate_type_data_from(data->as_ArrayLoadData()->element());
   }
 
-#ifndef PRODUCT
+  ciKlass* receiver(uint row) {
+    return rtd_super()->receiver(row);
+  }
+
+  #ifndef PRODUCT
   void print_data_on(outputStream* st, const char* extra = nullptr) const;
 #endif
 };
