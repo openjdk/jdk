@@ -1542,7 +1542,7 @@ bool FileMapInfo::can_use_heap_region() {
                                        "Please choose a different GC or rebuild AOT cache "
                                        "with -XX:+AOTStreamableObjects");
     return false;
-  } 
+  }
 
   if (CDSConfig::is_using_aot_linked_classes()) {
     assert(!JvmtiExport::should_post_class_file_load_hook(), "already checked");
