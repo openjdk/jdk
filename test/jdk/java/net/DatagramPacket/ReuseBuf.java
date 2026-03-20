@@ -103,7 +103,7 @@ public class ReuseBuf {
                 }
                 this.closed = true;
             }
-            System.out.println("Server closing " + ds);
+            System.out.println("Server closing " + ds.getLocalSocketAddress());
             this.ds.close();
         }
     }
