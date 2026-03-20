@@ -74,10 +74,7 @@ public class TestShiftAndMask {
     public static void checkIntSumAndMask() {
         int j = G.ints().next();
         int i = G.ints().next();
-        int res = intSumAndMask(i, j);
-        if (res != ((j + i << INT_RANDOM_SHIFT + INT_RANDOM_CONST) & INT_RANDOM_MASK)) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
+        Asserts.assertEquals(intSumAndMask(i, j), (j + i << INT_RANDOM_SHIFT + INT_RANDOM_CONST) & INT_RANDOM_MASK);
     }
 
     @Test
@@ -89,9 +86,7 @@ public class TestShiftAndMask {
 
     @Check(test = "shiftMaskInt")
     public static void checkShiftMaskInt(int res) {
-        if (res != 0) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
+        Asserts.assertEquals(res, 0);
     }
 
     @Test
@@ -103,10 +98,7 @@ public class TestShiftAndMask {
     public static void checkLongSumAndMask() {
         long j = G.longs().next();
         long i = G.longs().next();
-        long res = longSumAndMask(i, j);
-        if (res != ((j + i << LONG_RANDOM_SHIFT + LONG_RANDOM_CONST) & LONG_RANDOM_MASK)) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
+        Asserts.assertEquals(longSumAndMask(i, j), (j + i << LONG_RANDOM_SHIFT + LONG_RANDOM_CONST) & LONG_RANDOM_MASK);
     }
 
     @Test
@@ -119,9 +111,7 @@ public class TestShiftAndMask {
 
     @Check(test = "shiftMaskLong")
     public static void checkShiftMaskLong(long res) {
-        if (res != 0) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
+        Asserts.assertEquals(res, 0L);
     }
 
     static volatile int barrier;
@@ -142,9 +132,7 @@ public class TestShiftAndMask {
 
     @Check(test = "shiftNonConstMaskInt")
     public static void checkShiftNonConstMaskInt(int res) {
-        if (res != 0) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
+        Asserts.assertEquals(res, 0);
     }
 
     @Test
@@ -163,9 +151,7 @@ public class TestShiftAndMask {
 
     @Check(test = "shiftNonConstMaskLong")
     public static void checkShiftNonConstMaskLong(long res) {
-        if (res != 0) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
+        Asserts.assertEquals(res, 0L);
     }
 
     @Test
@@ -179,10 +165,7 @@ public class TestShiftAndMask {
     public static void addShiftMaskInt_runner() {
         int i = G.ints().next();
         int j = G.ints().next();
-        int res = addShiftMaskInt(i, j);
-        if (res != (j & INT_MASK)) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
+        Asserts.assertEquals(addShiftMaskInt(i, j), j & INT_MASK);
     }
 
     @Test
@@ -196,10 +179,7 @@ public class TestShiftAndMask {
     public static void addShiftPlusConstMaskInt_runner() {
         int i = G.ints().next();
         int j = G.ints().next();
-        int res = addShiftPlusConstMaskInt(i, j);
-        if (res != (j & INT_MASK)) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
+        Asserts.assertEquals(addShiftPlusConstMaskInt(i, j), j & INT_MASK);
     }
 
     @Test
@@ -234,14 +214,8 @@ public class TestShiftAndMask {
     public static void addSshiftNonConstMaskInt_runner() {
         int i = G.ints().next();
         int j = G.ints().next();
-        int res = addSshiftNonConstMaskInt(i, j, true);
-        if (res != (j & INT_MASK)) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
-        res = addSshiftNonConstMaskInt(i, j, false);
-        if (res != (j & INT_MASK2)) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
+        Asserts.assertEquals(addSshiftNonConstMaskInt(i, j, true), j & INT_MASK);
+        Asserts.assertEquals(addSshiftNonConstMaskInt(i, j, false), j & INT_MASK2);
     }
 
     @Test
@@ -261,14 +235,8 @@ public class TestShiftAndMask {
     @Run(test = "addConstNonConstMaskInt")
     public static void addConstNonConstMaskInt_runner() {
         int j = G.ints().next();
-        int res = addConstNonConstMaskInt(j, true);
-        if (res != (j & INT_MASK)) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
-        res = addConstNonConstMaskInt(j, false);
-        if (res != (j & INT_MASK2)) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
+        Asserts.assertEquals(addConstNonConstMaskInt(j, true), j & INT_MASK);
+        Asserts.assertEquals(addConstNonConstMaskInt(j, false), j & INT_MASK2);
     }
 
     @Test
@@ -282,10 +250,7 @@ public class TestShiftAndMask {
     public static void addShiftMaskLong_runner() {
         long i = G.longs().next();
         long j = G.longs().next();
-        long res = addShiftMaskLong(i, j);
-        if (res != (j & LONG_MASK)) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
+        Asserts.assertEquals(addShiftMaskLong(i, j), j & LONG_MASK);
     }
 
     @Test
@@ -299,10 +264,7 @@ public class TestShiftAndMask {
     public static void addShiftPlusConstMaskLong_runner() {
         long i = G.longs().next();
         long j = G.longs().next();
-        long res = addShiftPlusConstMaskLong(i, j);
-        if (res != (j & LONG_MASK)) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
+        Asserts.assertEquals(addShiftPlusConstMaskLong(i, j), j & LONG_MASK);
     }
 
     @Test
@@ -323,14 +285,8 @@ public class TestShiftAndMask {
     public static void addSshiftNonConstMaskLong_runner() {
         long i = G.longs().next();
         long j = G.longs().next();
-        long res = addSshiftNonConstMaskLong(i, j, true);
-        if (res != (j & LONG_MASK)) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
-        res = addSshiftNonConstMaskLong(i, j, false);
-        if (res != (j & LONG_MASK2)) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
+        Asserts.assertEquals(addSshiftNonConstMaskLong(i, j, true), j & LONG_MASK);
+        Asserts.assertEquals(addSshiftNonConstMaskLong(i, j, false), j & LONG_MASK2);
     }
 
     @Test
@@ -350,14 +306,8 @@ public class TestShiftAndMask {
     @Run(test = "addConstNonConstMaskLong")
     public static void addConstNonConstMaskLong_runner() {
         long j = G.longs().next();
-        long res = addConstNonConstMaskLong(j, true);
-        if (res != (j & LONG_MASK)) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
-        res = addConstNonConstMaskLong(j, false);
-        if (res != (j & LONG_MASK2)) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
+        Asserts.assertEquals(addConstNonConstMaskLong(j, true), j & LONG_MASK);
+        Asserts.assertEquals(addConstNonConstMaskLong(j, false), j & LONG_MASK2);
     }
 
     @Test
@@ -369,9 +319,7 @@ public class TestShiftAndMask {
 
     @Check(test = "addShiftMaskInt2")
     public static void checkAddShiftMaskInt2(int res) {
-        if (res != 0) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
+        Asserts.assertEquals(res, 0);
     }
 
     @Test
@@ -383,9 +331,7 @@ public class TestShiftAndMask {
 
     @Check(test = "addShiftMaskLong2")
     public static void checkAddShiftMaskLong2(long res) {
-        if (res != 0) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
+        Asserts.assertEquals(res, 0L);
     }
 
     // Try to get add inputs swapped compared to other tests
@@ -402,10 +348,7 @@ public class TestShiftAndMask {
     public static void addShiftMaskInt3_runner() {
         int i = G.ints().next();
         int j = G.ints().next();
-        int res = addShiftMaskInt3(i, j);
-        if (res != (j & INT_MASK)) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
+        Asserts.assertEquals(addShiftMaskInt3(i, j), j & INT_MASK);
     }
 
     @Test
@@ -421,10 +364,7 @@ public class TestShiftAndMask {
     public static void addShiftMaskLong3_runner() {
         long i = G.longs().next();
         float j = G.floats().next();
-        long res = addShiftMaskLong3(i, j);
-        if (res != (((long) j) & LONG_MASK)) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
+        Asserts.assertEquals(addShiftMaskLong3(i, j), ((long) j) & LONG_MASK);
     }
 
     @Test
@@ -436,9 +376,7 @@ public class TestShiftAndMask {
 
     @Check(test = "shiftConvMask")
     public static void checkShiftConvMask(long res) {
-        if (res != 0) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
+        Asserts.assertEquals(res, 0L);
     }
 
     @Test
@@ -457,9 +395,7 @@ public class TestShiftAndMask {
 
     @Check(test = "shiftNotConstConvMask")
     public static void checkShiftNotConstConvMask(long res) {
-        if (res != 0) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
+        Asserts.assertEquals(res, 0L);
     }
 
     @Test
@@ -473,10 +409,7 @@ public class TestShiftAndMask {
     public static void addShiftConvMask_runner() {
         int i = G.ints().next();
         long j = G.longs().next();
-        long res = addShiftConvMask(i, j);
-        if (res != (j & INT_MASK)) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
+        Asserts.assertEquals(addShiftConvMask(i, j), j & INT_MASK);
     }
 
     @Test
@@ -488,9 +421,7 @@ public class TestShiftAndMask {
 
     @Check(test = "addShiftConvMask2")
     public static void checkAddShiftConvMask2(long res) {
-        if (res != 0) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
+        Asserts.assertEquals(res, 0L);
     }
 
     @Test
@@ -502,10 +433,7 @@ public class TestShiftAndMask {
     @Run(test = "shiftMaskIntCheckIndex")
     public static void shiftMaskIntCheckIndex_runner() {
         int i = G.ints().restricted(0, ((Integer.MAX_VALUE - 1) >> INT_MASK_WIDTH) - 1).next();
-        int res = shiftMaskIntCheckIndex(i, (i << INT_MASK_WIDTH) + 1);
-        if (res != 0) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
+        Asserts.assertEquals(shiftMaskIntCheckIndex(i, (i << INT_MASK_WIDTH) + 1), 0);
     }
 
     @Test
@@ -517,10 +445,7 @@ public class TestShiftAndMask {
     @Run(test = "shiftMaskLongCheckIndex")
     public static void shiftMaskLongCheckIndex_runner() {
         long i = G.longs().restricted(0L, ((Long.MAX_VALUE - 1) >> LONG_MASK_WIDTH) - 1).next();
-        long res = shiftMaskLongCheckIndex(i, (i << LONG_MASK_WIDTH) + 1);
-        if (res != 0) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
+        Asserts.assertEquals(shiftMaskLongCheckIndex(i, (i << LONG_MASK_WIDTH) + 1), 0L);
     }
 
     @Test
@@ -534,10 +459,7 @@ public class TestShiftAndMask {
     public static void addShiftMaskIntCheckIndex_runner() {
         int i = G.ints().restricted(0, ((Integer.MAX_VALUE - 1) >> INT_MASK_WIDTH) - 1).next();
         int j = G.ints().next();
-        int res = addShiftMaskIntCheckIndex(i, j, (i << INT_MASK_WIDTH) + 1);
-        if (res != (j & INT_MASK)) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
+        Asserts.assertEquals(addShiftMaskIntCheckIndex(i, j, (i << INT_MASK_WIDTH) + 1), j & INT_MASK);
     }
 
     @Test
@@ -551,10 +473,7 @@ public class TestShiftAndMask {
     public static void addShiftMaskLongCheckIndex_runner() {
         long i = G.longs().restricted(0L, ((Long.MAX_VALUE - 1) >> LONG_MASK_WIDTH) - 1).next();
         long j = G.longs().next();
-        long res = addShiftMaskLongCheckIndex(i, j, (i << LONG_MASK_WIDTH) + 1);
-        if (res != (j & LONG_MASK)) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
+        Asserts.assertEquals(addShiftMaskLongCheckIndex(i, j, (i << LONG_MASK_WIDTH) + 1), j & LONG_MASK);
     }
 
     @Test
@@ -568,10 +487,7 @@ public class TestShiftAndMask {
     public static void addShiftMaskIntCheckIndex2_runner() {
         int i = G.ints().restricted(0, ((Integer.MAX_VALUE - 1) >> INT_MASK_WIDTH) - 1).next();
         int j = G.ints().restricted(0, ((Integer.MAX_VALUE - 1) >> INT_MASK_WIDTH) - 1).next();
-        int res = addShiftMaskIntCheckIndex2(i, j, (Integer.max(i, j) << INT_MASK_WIDTH) + 1);
-        if (res != 0) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
+        Asserts.assertEquals(addShiftMaskIntCheckIndex2(i, j, (Integer.max(i, j) << INT_MASK_WIDTH) + 1), 0);
     }
 
     @Test
@@ -584,10 +500,7 @@ public class TestShiftAndMask {
     public static void addShiftMaskLongCheckIndex2_runner() {
         long i = G.longs().restricted(0L, ((Long.MAX_VALUE - 1) >> LONG_MASK_WIDTH) - 1).next();
         long j = G.longs().restricted(0L, ((Long.MAX_VALUE - 1) >> LONG_MASK_WIDTH) - 1).next();
-        long res = addShiftMaskLongCheckIndex2(i, j, (Long.max(i, j) << LONG_MASK_WIDTH) + 1);
-        if (res != 0) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
+        Asserts.assertEquals(addShiftMaskLongCheckIndex2(i, j, (Long.max(i, j) << LONG_MASK_WIDTH) + 1), 0L);
     }
 
     @Test
@@ -599,10 +512,7 @@ public class TestShiftAndMask {
     @Run(test = "shiftConvMaskCheckIndex")
     public static void shiftConvMaskCheckIndex_runner() {
         int i = G.ints().restricted(0, ((Integer.MAX_VALUE - 1) >> INT_MASK_WIDTH) - 1).next();
-        long res = shiftConvMaskCheckIndex(i, (i << INT_MASK_WIDTH) + 1);
-        if (res != 0) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
+        Asserts.assertEquals(shiftConvMaskCheckIndex(i, (i << INT_MASK_WIDTH) + 1), 0L);
     }
 
     @Test
@@ -616,10 +526,7 @@ public class TestShiftAndMask {
     public static void addShiftConvMaskCheckIndex_runner() {
         int i = G.ints().restricted(0, ((Integer.MAX_VALUE - 1) >> INT_MASK_WIDTH) - 1).next();
         long j = G.longs().next();
-        long res = addShiftConvMaskCheckIndex(i, j, (i << INT_MASK_WIDTH) + 1);
-        if (res != (j & INT_MASK)) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
+        Asserts.assertEquals(addShiftConvMaskCheckIndex(i, j, (i << INT_MASK_WIDTH) + 1), j & INT_MASK);
     }
 
     @Test
@@ -632,10 +539,7 @@ public class TestShiftAndMask {
     public static void addShiftConvMaskCheckIndex2_runner() {
         int i = G.ints().restricted(0, ((Integer.MAX_VALUE - 1) >> INT_MASK_WIDTH) - 1).next();
         int j = G.ints().restricted(0, ((Integer.MAX_VALUE - 1) >> INT_MASK_WIDTH) - 1).next();
-        long res = addShiftConvMaskCheckIndex2(i, j, (Integer.max(i, j) << INT_MASK_WIDTH) + 1);
-        if (res != 0) {
-            throw new RuntimeException("incorrect result: " + res);
-        }
+        Asserts.assertEquals(addShiftConvMaskCheckIndex2(i, j, (Integer.max(i, j) << INT_MASK_WIDTH) + 1), 0L);
     }
 
     @Test
