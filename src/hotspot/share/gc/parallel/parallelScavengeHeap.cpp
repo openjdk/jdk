@@ -272,7 +272,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate(size_t size) {
 
 HeapWord* ParallelScavengeHeap::mem_allocate_cas_noexpand(size_t size, bool is_tlab) {
   // Try young-gen first.
-  HeapWord* result = young_gen()->allocate(size);
+  HeapWord* result = young_gen()->cas_allocate(size);
   if (result != nullptr) {
     return result;
   }
