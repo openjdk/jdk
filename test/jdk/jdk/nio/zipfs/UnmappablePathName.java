@@ -46,7 +46,7 @@ public class UnmappablePathName {
     // 'ø' is an unmappable character in US_ASCII
     static final String UNMAPPABLE = "\u00f8";
     // ZIP file created in this test
-    Path zip = Paths.get("file.zip");
+    static final Path ZIP = Paths.get("file.zip");
 
     /**
      * Verify that calling ZipFileSystem.getPath with an unmappable path
@@ -56,14 +56,14 @@ public class UnmappablePathName {
      */
     @Test
     void rejectUnmappablePathName() throws IOException {
-        try (FileSystem fs = createFileSystem(zip)) {
+        try (FileSystem fs = createFileSystem(ZIP)) {
             assertThrows(InvalidPathException.class, () -> fs.getPath(UNMAPPABLE));
         }
     }
 
     @AfterEach
     void cleanup() throws IOException {
-        Files.deleteIfExists(zip);
+        Files.deleteIfExists(ZIP);
     }
 
     // Create a ZipFileSystem using the specified charset
