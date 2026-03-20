@@ -62,7 +62,7 @@ private:
   unsigned  _number_of_refills;
   unsigned  _refill_waste;
   unsigned  _gc_waste;
-  unsigned  _num_of_slow_alloc;
+  unsigned  _number_of_slow_allocations;
   size_t    _allocated_size;
 
   AdaptiveWeightedAverage _allocation_fraction;  // fraction of eden allocated in tlabs
@@ -98,9 +98,9 @@ private:
 
   // statistics
 
-  int number_of_refills() const { return _number_of_refills; }
-  int gc_waste() const          { return _gc_waste; }
-  int num_of_slow_alloc() const { return _num_of_slow_alloc; }
+  int number_of_refills() const          { return _number_of_refills; }
+  int gc_waste() const                   { return _gc_waste; }
+  int number_of_slow_allocations() const { return _number_of_slow_allocations; }
 
 public:
   ThreadLocalAllocBuffer();
@@ -187,8 +187,8 @@ private:
   static PerfVariable* _perf_max_gc_waste;
   static PerfVariable* _perf_total_refill_waste;
   static PerfVariable* _perf_max_refill_waste;
-  static PerfVariable* _perf_total_slow_allocations;
-  static PerfVariable* _perf_max_slow_allocations;
+  static PerfVariable* _perf_total_number_of_slow_allocations;
+  static PerfVariable* _perf_max_number_of_slow_allocations;
 
   static AdaptiveWeightedAverage _allocating_threads_avg;
 
@@ -200,8 +200,8 @@ private:
   size_t       _max_gc_waste;
   size_t       _total_refill_waste;
   size_t       _max_refill_waste;
-  unsigned int _total_num_of_slow_alloc;
-  unsigned int _max_num_of_slow_alloc;
+  unsigned int _total_number_of_slow_allocations;
+  unsigned int _max_number_of_slow_allocations;
 
 public:
   static void initialize();
@@ -213,7 +213,7 @@ public:
                                size_t allocations,
                                size_t gc_waste,
                                size_t refill_waste);
-  void update_num_of_slow_alloc(unsigned int allocations);
+  void update_number_of_slow_allocations(unsigned int allocations);
   void update(const ThreadLocalAllocStats& other);
 
   void reset();

@@ -451,7 +451,7 @@
   nonstatic_field(ThreadLocalAllocBuffer,   _desired_size,                                    size_t)                                \
   nonstatic_field(ThreadLocalAllocBuffer,   _refill_waste_limit,                              size_t)                                \
   nonstatic_field(ThreadLocalAllocBuffer,   _number_of_refills,                               unsigned)                              \
-  nonstatic_field(ThreadLocalAllocBuffer,   _num_of_slow_alloc,                               unsigned)                              \
+  nonstatic_field(ThreadLocalAllocBuffer,   _number_of_slow_allocations,                      unsigned)                              \
                                                                                                                                      \
   nonstatic_field(SafepointMechanism::ThreadData, _polling_word,                              volatile uintptr_t)                    \
   nonstatic_field(SafepointMechanism::ThreadData, _polling_page,                              volatile uintptr_t)                    \
