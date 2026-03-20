@@ -1583,9 +1583,11 @@ void InterpreterRuntime::generate_oop_map_alot() {
   JavaThread* current = JavaThread::current();
   LastFrameAccessor last_frame(current);
   if (last_frame.is_interpreted_frame()) {
+    ResourceMark rm;
     InterpreterOopMap mask;
     methodHandle mh(current, last_frame.method());
     int bci = last_frame.bci();
+    log_info(generateoopmap)("Generating oopmap for method %s at bci %d", mh->name_and_sig_as_C_string(), bci);
     OopMapCache::compute_one_oop_map(mh, bci, &mask);
   }
 }
