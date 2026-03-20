@@ -27,6 +27,7 @@ package jdk.internal.misc;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Objects;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
@@ -104,7 +105,11 @@ public class MethodFinder {
                !Modifier.isPrivate(mainMethodCandidate.getModifiers()) &&
                (Modifier.isPublic(mainMethodCandidate.getModifiers()) ||
                 Modifier.isProtected(mainMethodCandidate.getModifiers()) ||
-                initialClass.getPackage() == mainMethodCandidate.getDeclaringClass().getPackage());
+                isInSameRuntimePackage(initialClass, mainMethodCandidate.getDeclaringClass()));
     }
 
+    private static boolean isInSameRuntimePackage(Class<?> c1, Class<?> c2) {
+        return Objects.equals(c1.getPackageName(), c2.getPackageName()) &&
+               Objects.equals(c1.getClassLoader(), c2.getClassLoader());
+    }
 }

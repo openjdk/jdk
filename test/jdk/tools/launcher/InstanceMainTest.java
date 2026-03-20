@@ -358,9 +358,9 @@ public class InstanceMainTest extends TestHelper {
     }
 
     private static void testInheritance() throws Exception {
-        Path packagePrivateTest = Path.of("packageprivate");
-        Path src = packagePrivateTest.resolve("src");
-        Path classes = packagePrivateTest.resolve("classes");
+        Path testInheritance = Path.of("testInheritance");
+        Path src = testInheritance.resolve("src");
+        Path classes = testInheritance.resolve("classes");
         Path mainClass = src.resolve("Main.java");
         Path libClass = src.resolve("p").resolve("Lib.java");
 
