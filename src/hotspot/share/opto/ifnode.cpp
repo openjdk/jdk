@@ -879,6 +879,11 @@ bool IfNode::has_only_uncommon_traps(IfProjNode* proj, IfProjNode*& success, IfP
         return false;
       }
 
+      if (!dom_unc->safe_for_fold_compare()) {
+        ShouldNotReachHere();
+        return false;
+      }
+
       // See merge_uncommon_traps: the reason of the uncommon trap
       // will be changed and the state of the dominating If will be
       // used. Checked that we didn't apply this transformation in a
