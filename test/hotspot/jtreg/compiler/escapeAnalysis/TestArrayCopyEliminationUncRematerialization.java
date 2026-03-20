@@ -418,7 +418,7 @@ public class TestArrayCopyEliminationUncRematerialization {
                     )),
                     // We cannot look through MemBars emitted by the atomic operations, so all rematerialization loads are
                     // commoned up in the common path.
-                    pty.abbrev().equals("S") || pty.abbrev().equals("B") || pty.abbrev.equals("C") ?
+                    pty.abbrev().equals("S") || pty.abbrev().equals("B") || pty.abbrev().equals("C") ?
                         testCaseConstNoVerify.asToken("ConstGetAndSet" + pty.abbrev(), new TestTemplates(getAndSetStoreConst, unstableTrap)) :
                         testCaseConst.asToken("ConstGetAndSet" + pty.abbrev(), config.copyLen, new TestTemplates(getAndSetStoreConst, unstableTrap)),
                     testCaseIdx.asToken("IdxGetAndSet" + pty.abbrev(), new TestTemplates(getAndSetStoreIdx, unstableTrap)),
@@ -465,15 +465,21 @@ public class TestArrayCopyEliminationUncRematerialization {
                     """
                 ));
                 // Write 8 bytes overlapping multiple array elements.
+                int offsetMut = RANDOM.nextInt(pty.byteSize());
+                if (config.writeIdx * pty.byteSize() - offsetMut + 8 >= config.srcSize * pty.byteSize()) {
+                    // This will not fit. Adjust offset.
+                    offsetMut = (config.writeIdx * pty.byteSize() + 8) - (config.srcSize * pty.byteSize());
+                }
+                final int offset = offsetMut;
                 var memorySegmentStoreOverlappingConst = Template.make(() -> scope(
-                    let("offset", RANDOM.nextInt(pty.byteSize())),
+                    let("offset", offset),
                     let("byteSize", pty.byteSize()),
                     """
                     srcMS.set(ValueLayout.JAVA_LONG_UNALIGNED, WRITE_IDX * #byteSize - #offset, -1);
                     """
                 ));
                 var memorySegmentStoreOverlappingIdx = Template.make(() -> scope(
-                    let("offset", RANDOM.nextInt(pty.byteSize())),
+                    let("offset", offset),
                     let("byteSize", pty.byteSize()),
                     """
                     srcMS.set(ValueLayout.JAVA_LONG_UNALIGNED, (RETURN_IDX + idx) * #byteSize - #offset, -1);
