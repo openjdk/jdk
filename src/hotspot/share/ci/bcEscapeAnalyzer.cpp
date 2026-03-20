@@ -1077,9 +1077,15 @@ void BCEscapeAnalyzer::merge_block_states(StateInfo *blockstates, ciBlock *dest,
   }
 }
 
-bool BCEscapeAnalyzer::datacount_overflow(uint numblocks, uint stkSize, uint numLocals) {
+bool BCEscapeAnalyzer::datacount_overflow(uint numblocks, uint stkSize, uint numLocals, size_t* datacount) {
   uint64_t datacount64 = (uint64_t)(numblocks + 1) * (stkSize + numLocals);
-  return datacount64 > SIZE_MAX / sizeof(ArgumentMap);
+  if (datacount64 > SIZE_MAX / sizeof(ArgumentMap)) {
+    return true;
+  }
+  if (datacount != nullptr) {
+    *datacount = (size_t)datacount64;
+  }
+  return false;
 }
 
 void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
@@ -1088,12 +1094,11 @@ void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
   uint numLocals = _method->max_locals();
   StateInfo state;
 
-  if (datacount_overflow(numblocks, stkSize, numLocals)) {
+  size_t datacount;
+  if (datacount_overflow(numblocks, stkSize, numLocals, &datacount)) {
     _conservative = true;
     return;
   }
-  uint64_t datacount64 = (uint64_t)(numblocks + 1) * (stkSize + numLocals);
-  size_t datacount = (size_t)datacount64;
   size_t datasize = datacount * sizeof(ArgumentMap);
   StateInfo *blockstates = (StateInfo *) arena->Amalloc(numblocks * sizeof(StateInfo));
   ArgumentMap *statedata  = (ArgumentMap *) arena->Amalloc(datasize);
