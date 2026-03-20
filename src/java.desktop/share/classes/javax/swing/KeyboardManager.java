@@ -330,7 +330,7 @@ class KeyboardManager {
             return;
         }
         Hashtable<Object, Object> keyMap = containerMap.get(topContainer);
-        if (keyMap!=null) {
+        if (keyMap != null) {
             Vector<?> v = (Vector)keyMap.get(JMenuBar.class);
             if (v != null) {
                 v.removeElement(mb);

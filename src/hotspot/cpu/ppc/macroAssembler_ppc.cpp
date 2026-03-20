@@ -483,7 +483,7 @@ void MacroAssembler::set_dest_of_bc_far_at(address instruction_addr, address des
     // variant 3, far cond branch to the next instruction, already patched to nops:
     //
     //    nop
-    //    endgroup
+    //    nop
     //  SKIP/DEST:
     //
     return;
@@ -500,7 +500,7 @@ void MacroAssembler::set_dest_of_bc_far_at(address instruction_addr, address des
   if (is_bc_far_variant2_at(instruction_addr) && dest == instruction_addr + 8) {
     // Far branch to next instruction: Optimize it by patching nops (produce variant 3).
     masm.nop();
-    masm.endgroup();
+    masm.nop();
   } else {
     if (is_bc_far_variant1_at(instruction_addr)) {
       // variant 1, the 1st instruction contains the destination address:
