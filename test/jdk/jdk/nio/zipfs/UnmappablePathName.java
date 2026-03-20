@@ -50,7 +50,7 @@ public class UnmappablePathName {
 
     /**
      * Verify that calling ZipFileSystem.getPath with an unmappable path
-     * name is rejected wuth an InvalidPathException.
+     * name is rejected with an InvalidPathException.
      *
      * @throws IOException if an unexpected IO error occurs
      */
