@@ -31,7 +31,6 @@ import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
 
 import static java.io.OutputStream.nullOutputStream;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /* @test
@@ -55,11 +54,9 @@ public class UnmappableZipEntryNameOrComment {
     @Test
     void rejectUnmappableZipEntryName() throws IOException {
         ZipEntry e = new ZipEntry(UNMAPPABLE);
-        assertDoesNotThrow(() -> {
-            try (var out = new ZipOutputStream(nullOutputStream(), CHARSET)) {
-                assertThrows(ZipException.class, () -> out.putNextEntry(e));
-            }
-        });
+        try (var out = new ZipOutputStream(nullOutputStream(), CHARSET)) {
+            assertThrows(ZipException.class, () -> out.putNextEntry(e));
+        }
     }
 
     /**
@@ -72,10 +69,8 @@ public class UnmappableZipEntryNameOrComment {
     void rejectUnmappableZipEntryComment() throws IOException {
         ZipEntry e = new ZipEntry("file.txt");
         e.setComment(UNMAPPABLE);
-        assertDoesNotThrow(() -> {
-            try (var out = new ZipOutputStream(nullOutputStream(), CHARSET)) {
-                assertThrows(ZipException.class, () -> out.putNextEntry(e));
-            }
-        });
+        try (var out = new ZipOutputStream(nullOutputStream(), CHARSET)) {
+            assertThrows(ZipException.class, () -> out.putNextEntry(e));
+        }
     }
 }
