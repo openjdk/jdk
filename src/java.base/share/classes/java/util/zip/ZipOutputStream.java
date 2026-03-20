@@ -258,19 +258,9 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
             throw new ZipException("unsupported compression method");
         }
         // Verify that entry name and comment can be encoded
-        try {
-            zc.getBytes(e.name);
-        } catch (IllegalArgumentException ex) {
-            throw (ZipException)
-                    new ZipException("unmappable character in ZIP entry name").initCause(ex);
-        }
+        checkEncodable(e.name, "unmappable character in ZIP entry name");
         if (e.comment != null) {
-            try {
-                zc.getBytes(e.comment);
-            } catch (IllegalArgumentException ex) {
-                throw (ZipException)
-                        new ZipException("unmappable character in ZIP entry comment").initCause(ex);
-            }
+            checkEncodable(e.comment, "unmappable character in ZIP entry comment");
         }
         if (! names.add(e.name)) {
             throw new ZipException("duplicate entry: " + e.name);
@@ -286,6 +276,15 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         current = new XEntry(e, written);
         xentries.add(current);
         writeLOC(current);
+    }
+
+    // Throws ZipException if the given string cannot be encoded
+    private void checkEncodable(String str, String msg) throws ZipException {
+        try {
+            zc.getBytes(str);
+        } catch (IllegalArgumentException ex) {
+            throw (ZipException) new ZipException(msg).initCause(ex);
+        }
     }
 
     /**
