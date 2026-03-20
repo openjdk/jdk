@@ -29,7 +29,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.zip.ZipOutputStream;
 
 import static java.io.OutputStream.nullOutputStream;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /* @test
