@@ -31,7 +31,7 @@ G1CollectorState::Pause G1CollectorState::gc_pause_type(bool concurrent_operatio
   assert(SafepointSynchronize::is_at_safepoint(), "must be");
   switch (_phase) {
     case Phase::YoungNormal: return Pause::Normal;
-    case Phase::YoungLastYoung: return Pause::LastYoung;
+    case Phase::YoungPrepareMixed: return Pause::PrepareMixed;
     case Phase::YoungConcurrentStart:
         return concurrent_operation_is_full_mark ? Pause::ConcurrentStartFull :
                                                    Pause::ConcurrentStartUndo;
