@@ -113,12 +113,15 @@ public class ReuseBuf {
     public static void main(String[] args) throws Exception {
         InetSocketAddress loopbackEphemeral = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         Server server;
+        Thread serverThread;
         try (var _ = server = new Server(loopbackEphemeral);
              DatagramSocket ds = new DatagramSocket(loopbackEphemeral)) {
 
             InetSocketAddress destAddr = server.getServerAddress();
             // start the server
-            new Thread(server).start();
+            serverThread = new Thread(server);
+            serverThread.start();
+
             byte[] b = new byte[100];
             DatagramPacket dp = new DatagramPacket(b, b.length);
             for (String msg : msgs) {
@@ -137,6 +140,9 @@ public class ReuseBuf {
             }
             System.out.println("All " + msgs.length + " replies received from the server");
         }
+        // wait for the server thread to complete
+        System.out.println("awaiting server thread " + serverThread + " to complete");
+        serverThread.join();
         Exception serverFailure = server.serverFailure.get();
         if (serverFailure != null) {
             System.err.println("Unexpected failure on server: " + serverFailure);
