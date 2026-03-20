@@ -68,7 +68,7 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
 
 /*
  * @test id=withCertificateCompression
- * @bug 8231449
+ * @bug 8231449 8372526
  * @summary This test verifies that the HttpClient works correctly when the server
  *          sends a large certificate. This test will not pass without
  *          the fix for JDK-8231449. To regenerate the certificate, modify the
@@ -95,7 +95,7 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
 
 /*
  * @test id=withoutCertificateCompression
- * @bug 8231449
+ * @bug 8231449 8372526
  * @summary This test verifies that the HttpClient works correctly when the server
  *          sends a large certificate. This test will not pass without
  *          the fix for JDK-8231449. To regenerate the certificate, modify the

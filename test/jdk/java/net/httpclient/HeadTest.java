@@ -23,7 +23,7 @@
 
 /*
  * @test id=withCertificateCompression
- * @bug 8203433 8276559
+ * @bug 8203433 8276559 8372526
  * @summary Tests Client handles HEAD and 304 responses correctly.
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
@@ -33,7 +33,7 @@
 
 /*
  * @test id=withoutCertificateCompression
- * @bug 8203433 8276559
+ * @bug 8203433 8276559 8372526
  * @summary Tests Client handles HEAD and 304 responses correctly.
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
