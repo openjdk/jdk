@@ -46,6 +46,8 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   // with increasing collections.
   uint _young_gen_size_increment_supplement;
 
+  uint _grace_gc_count;
+
   size_t decrease_eden_for_minor_pause_time(size_t current_eden_size);
 
   size_t increase_eden(size_t current_eden_size);
@@ -85,10 +87,11 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
 
   size_t compute_desired_survivor_size(size_t current_survivor_size, size_t max_gen_size);
 
-  size_t compute_old_gen_shrink_bytes(size_t old_gen_free_bytes, size_t max_shrink_bytes);
-
-  uint compute_tenuring_threshold(bool is_survivor_overflowing,
+  uint compute_tenuring_threshold(bool eden_squeezed_by_survivor,
+                                  bool young_can_commit_more,
                                   uint tenuring_threshold);
+
+  size_t compute_old_gen_shrink_bytes(size_t old_gen_free_bytes, size_t max_shrink_bytes);
 
   // Return the maximum size of a survivor space if the young generation were of
   // size gen_size.
