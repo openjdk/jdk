@@ -116,18 +116,23 @@ void AOTLinkedClassBulkLoader::preload_classes_in_table(Array<InstanceKlass*>* c
   }
 }
 
+#ifdef ASSERT
+// true iff we are inside AOTLinkedClassBulkLoader::link_classes(), when
+// we are moving classes into the fully_initialized state before the
+// JVM is able to execute any bytecodes.
 static bool _is_initializing_classes_early = false;
 bool AOTLinkedClassBulkLoader::is_initializing_classes_early() {
   return _is_initializing_classes_early;
 }
+#endif
 
 // Some cached heap objects may hold references to methods in aot-linked
 // classes (via MemberName). We need to make sure all classes are
 // linked before executing any bytecode.
 void AOTLinkedClassBulkLoader::link_classes(JavaThread* current) {
-  _is_initializing_classes_early = true;
+  DEBUG_ONLY(_is_initializing_classes_early = true);
   link_classes_impl(current);
-  _is_initializing_classes_early = false;
+  DEBUG_ONLY(_is_initializing_classes_early = false);
 
   if (current->has_pending_exception()) {
     exit_on_exception(current);

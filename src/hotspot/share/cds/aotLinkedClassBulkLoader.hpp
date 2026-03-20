@@ -73,8 +73,9 @@ public:
   static void init_javabase_classes(JavaThread* current) NOT_CDS_RETURN;
   static void init_non_javabase_classes(JavaThread* current) NOT_CDS_RETURN;
   static void exit_on_exception(JavaThread* current);
-  static bool is_initializing_classes_early();
   static void replay_training_at_init_for_preloaded_classes(TRAPS) NOT_CDS_RETURN;
+
+  static bool is_initializing_classes_early() NOT_DEBUG({return false;});
 };
 
 #endif // SHARE_CDS_AOTLINKEDCLASSBULKLOADER_HPP
