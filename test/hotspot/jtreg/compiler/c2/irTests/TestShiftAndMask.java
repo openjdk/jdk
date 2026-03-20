@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2026, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,14 @@
 package compiler.c2.irTests;
 
 import compiler.lib.ir_framework.*;
+import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 import java.util.Random;
 import java.util.Objects;
 
 /*
  * @test
- * @bug 8277850 8278857 8278949 8285793 8346664
+ * @bug 8277850 8278949 8285793 8346664 8380475
  * @key randomness
  * @summary C2: optimize mask checks in counted loops
  * @library /test/lib /
@@ -760,84 +761,21 @@ public class TestShiftAndMask {
         int xi = RANDOM.nextInt();
         long xl = RANDOM.nextLong();
 
-        int res1 = shiftLeftWithLowMaskInt(xi);
-        if (res1 != (xi << INT_MASK_WIDTH)) {
-            throw new RuntimeException("incorrect result: " + res1);
-        }
-
-        long res2 = shiftLeftWithLowMaskLong(xl);
-        if (res2 != (xl << LONG_MASK_WIDTH)) {
-            throw new RuntimeException("incorrect result: " + res2);
-        }
-
-        int res13 = shiftLeftWithLowMaskSmallInt(xi);
-        if (res13 != (xi << INT_MASK_WIDTH)) {
-            throw new RuntimeException("incorrect result: " + res13);
-        }
-
-        long res14 = shiftLeftWithLowMaskSmallLong(xl);
-        if (res14 != (xl << LONG_MASK_WIDTH)) {
-            throw new RuntimeException("incorrect result: " + res14);
-        }
-
-        int res3 = shiftLeftWithLowMaskIntReversed(xi);
-        if (res3 != (xi << INT_MASK_WIDTH)) {
-            throw new RuntimeException("incorrect result: " + res3);
-        }
-
-        long res4 = shiftLeftWithLowMaskLongReversed(xl);
-        if (res4 != (xl << LONG_MASK_WIDTH)) {
-            throw new RuntimeException("incorrect result: " + res4);
-        }
-
-        int res15 = shiftLeftWithLowMaskSmallIntReversed(xi);
-        if (res15 != (xi << INT_MASK_WIDTH)) {
-            throw new RuntimeException("incorrect result: " + res15);
-        }
-
-        long res16 = shiftLeftWithLowMaskSmallLongReversed(xl);
-        if (res16 != (xl << LONG_MASK_WIDTH)) {
-            throw new RuntimeException("incorrect result: " + res16);
-        }
-
-        int res5 = andMaskNonNegativeInt(xi);
-        if (res5 != (xi & 0x7FFF)) {
-            throw new RuntimeException("incorrect result: " + res5);
-        }
-
-        long res6 = andMaskNonNegativeLong(xl);
-        if (res6 != (xl & 0x7FFFL)) {
-            throw new RuntimeException("incorrect result: " + res6);
-        }
-
-        int res7 = andMaskNonNegativeIntReversed(xi);
-        if (res7 != (xi & 0x7FFF)) {
-            throw new RuntimeException("incorrect result: " + res7);
-        }
-
-        long res8 = andMaskNonNegativeLongReversed(xl);
-        if (res8 != (xl & 0x7FFFL)) {
-            throw new RuntimeException("incorrect result: " + res8);
-        }
-
-        int res9 = andAfterURShiftInt(xi);
-        if (res9 != (xi >>> 8)) {
-            throw new RuntimeException("incorrect result: " + res9);
-        }
-
-        long res10 = andAfterURShiftLong(xl);
-        if (res10 != (xl >>> 16)) {
-            throw new RuntimeException("incorrect result: " + res10);
-        }
-
-        int res11 = andAfterURShiftIntReversed(xi);
-        if (res11 != (xi >>> 8)) {
-            throw new RuntimeException("incorrect result: " + res11);
-        }
-
-        long res12 = andAfterURShiftLongReversed(xl);
-        if (res12 != (xl >>> 16)) {
-            throw new RuntimeException("incorrect result: " + res12);
-        }
+        Asserts.assertEquals(shiftLeftWithLowMaskInt(xi), (xi << INT_MASK_WIDTH));
+        Asserts.assertEquals(shiftLeftWithLowMaskLong(xl), (xl << LONG_MASK_WIDTH));
+        Asserts.assertEquals(shiftLeftWithLowMaskSmallInt(xi), (xi << INT_MASK_WIDTH));
+        Asserts.assertEquals(shiftLeftWithLowMaskSmallLong(xl), (xl << LONG_MASK_WIDTH));
+        Asserts.assertEquals(shiftLeftWithLowMaskIntReversed(xi), (xi << INT_MASK_WIDTH));
+        Asserts.assertEquals(shiftLeftWithLowMaskLongReversed(xl), (xl << LONG_MASK_WIDTH));
+        Asserts.assertEquals(shiftLeftWithLowMaskSmallIntReversed(xi), (xi << INT_MASK_WIDTH));
+        Asserts.assertEquals(shiftLeftWithLowMaskSmallLongReversed(xl), (xl << LONG_MASK_WIDTH));
+        Asserts.assertEquals(andMaskNonNegativeInt(xi), (xi & 0x7FFF));
+        Asserts.assertEquals(andMaskNonNegativeLong(xl), (xl & 0x7FFFL));
+        Asserts.assertEquals(andMaskNonNegativeIntReversed(xi), (xi & 0x7FFF));
+        Asserts.assertEquals(andMaskNonNegativeLongReversed(xl), (xl & 0x7FFFL));
+        Asserts.assertEquals(andAfterURShiftInt(xi), (xi >>> 8));
+        Asserts.assertEquals(andAfterURShiftLong(xl), (xl >>> 16));
+        Asserts.assertEquals(andAfterURShiftIntReversed(xi), (xi >>> 8));
+        Asserts.assertEquals(andAfterURShiftLongReversed(xl), (xl >>> 16));
     }
 }

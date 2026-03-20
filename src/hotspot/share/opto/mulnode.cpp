@@ -651,19 +651,19 @@ Node* AndINode::Identity(PhaseGVN* phase) {
     return in(1);
   }
 
-  const TypeInt* t1 = phase->type(in(1))->isa_int();
-  const TypeInt* t2 = phase->type(in(2))->isa_int();
-  if (t1 != nullptr && t2 != nullptr) {
-    if ((~t1->_bits._ones & ~t2->_bits._zeros) == 0) {
-      // All bits that might be 0 in in1 are known to be 0 in in2
-      return in(2);
-    }
+  const TypeInt* t1 = phase->type(in(1))->is_int();
+  const TypeInt* t2 = phase->type(in(2))->is_int();
 
-    if ((~t2->_bits._ones & ~t1->_bits._zeros) == 0) {
-      // All bits that might be 0 in in2 are known to be 0 in in1
-      return in(1);
-    }
+  if ((~t1->_bits._ones & ~t2->_bits._zeros) == 0) {
+    // All bits that might be 0 in in1 are known to be 0 in in2
+    return in(2);
   }
+
+  if ((~t2->_bits._ones & ~t1->_bits._zeros) == 0) {
+    // All bits that might be 0 in in2 are known to be 0 in in1
+    return in(1);
+  }
+
   return MulNode::Identity(phase);
 }
 
@@ -767,19 +767,19 @@ Node* AndLNode::Identity(PhaseGVN* phase) {
     return in(1);
   }
 
-  const TypeLong* t1 = phase->type(in(1))->isa_long();
-  const TypeLong* t2 = phase->type(in(2))->isa_long();
-  if (t1 != nullptr && t2 != nullptr) {
-    if ((~t1->_bits._ones & ~t2->_bits._zeros) == 0) {
-      // All bits that might be 0 in in1 are known to be 0 in in2
-      return in(2);
-    }
+  const TypeLong* t1 = phase->type(in(1))->is_long();
+  const TypeLong* t2 = phase->type(in(2))->is_long();
 
-    if ((~t2->_bits._ones & ~t1->_bits._zeros) == 0) {
-      // All bits that might be 0 in in2 are known to be 0 in in1
-      return in(1);
-    }
+  if ((~t1->_bits._ones & ~t2->_bits._zeros) == 0) {
+    // All bits that might be 0 in in1 are known to be 0 in in2
+    return in(2);
   }
+
+  if ((~t2->_bits._ones & ~t1->_bits._zeros) == 0) {
+    // All bits that might be 0 in in2 are known to be 0 in in1
+    return in(1);
+  }
+
   return MulNode::Identity(phase);
 }
 
