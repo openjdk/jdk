@@ -31,6 +31,7 @@
 #include "gc/shared/referenceProcessor.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
