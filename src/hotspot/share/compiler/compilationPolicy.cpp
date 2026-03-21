@@ -821,20 +821,20 @@ CompileTask* CompilationPolicy::select_task(CompileQueue* compile_queue, JavaThr
     DirectivesStack::release(directive);
 
     if (max_task->comp_level() == CompLevel_full_profile && TieredStopAtLevel > CompLevel_full_profile &&
-	!excludeLimitedProfile && is_method_profiled(max_method_h) && !Arguments::is_compiler_only()) {
+        !excludeLimitedProfile && is_method_profiled(max_method_h) && !Arguments::is_compiler_only()) {
       max_task->set_comp_level(CompLevel_limited_profile);
 
       if (CompileBroker::compilation_is_complete(max_method_h, max_task->osr_bci(), CompLevel_limited_profile)) {
-	if (PrintTieredEvents) {
-	  print_event(REMOVE_FROM_QUEUE, max_method, max_method, max_task->osr_bci(), (CompLevel)max_task->comp_level());
-	}
-	compile_queue->remove_and_mark_stale(max_task);
-	max_method->clear_queued_for_compilation();
-	return nullptr;
+        if (PrintTieredEvents) {
+          print_event(REMOVE_FROM_QUEUE, max_method, max_method, max_task->osr_bci(), (CompLevel)max_task->comp_level());
+        }
+        compile_queue->remove_and_mark_stale(max_task);
+        max_method->clear_queued_for_compilation();
+        return nullptr;
       }
 
       if (PrintTieredEvents) {
-	print_event(UPDATE_IN_QUEUE, max_method, max_method, max_task->osr_bci(), (CompLevel)max_task->comp_level());
+        print_event(UPDATE_IN_QUEUE, max_method, max_method, max_task->osr_bci(), (CompLevel)max_task->comp_level());
       }
     }
   }
