@@ -173,15 +173,31 @@ template <typename T>
 void InstanceRefKlass::trace_reference_gc(const char *s, oop obj) {
   struct Stream : public LogStream {
     Stream() : LogStream(LogTarget(Trace, gc, ref)()) {}
-    void print_contents_cr(oop* addr)       { print_cr(PTR_FORMAT,   *(uintptr_t*)addr); }
-    void print_contents_cr(narrowOop* addr) { print_cr(UINT32_FORMAT_X_0, *(uint32_t*)addr); }
+    void print_name_cr(oop obj) {
+      if (obj == nullptr) {
+        print_cr("");
+      } else {
+        print_cr(" a %s", obj->klass()->internal_name());
+      }
+    }
+    void print_contents_cr(oop* addr) {
+      print(PTR_FORMAT,   *(uintptr_t*)addr);
+      oop obj = CompressedOops::decode(*addr);
+      print_name_cr(obj);
+    }
+    void print_contents_cr(narrowOop* addr) {
+      print(UINT32_FORMAT_X_0, *(uint32_t*)addr);
+      oop obj = CompressedOops::decode(*addr);
+      print_name_cr(obj);
+    }
   } stream;
 
   if (stream.is_enabled()) {
     T* referent_addr   = (T*) java_lang_ref_Reference::referent_addr_raw(obj);
     T* discovered_addr = (T*) java_lang_ref_Reference::discovered_addr_raw(obj);
 
-    stream.print_cr("InstanceRefKlass %s for obj " PTR_FORMAT, s, p2i(obj));
+    ResourceMark rm;
+    stream.print_cr("InstanceRefKlass %s for obj " PTR_FORMAT " a %s", s, p2i(obj), obj->klass()->internal_name());
     stream.print("     referent_addr/* " PTR_FORMAT " / ", p2i(referent_addr));
     stream.print_contents_cr(referent_addr);
     stream.print("     discovered_addr/* " PTR_FORMAT " / ", p2i(discovered_addr));
