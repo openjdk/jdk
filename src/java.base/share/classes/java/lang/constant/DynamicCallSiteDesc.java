@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import static jdk.internal.constant.ConstantUtils.validateMemberName;
  *
  * @since 12
  */
-public final class DynamicCallSiteDesc {
+public final class DynamicCallSiteDesc implements BootstrapMethodHook {
 
     private final DirectMethodHandleDesc bootstrapMethod;
     private final ConstantDesc[] bootstrapArgs;
@@ -207,12 +207,23 @@ public final class DynamicCallSiteDesc {
     }
 
     /**
-     * Returns a {@link MethodHandleDesc} describing the bootstrap method for
+     * Returns a {@link DirectMethodHandleDesc} describing the bootstrap method for
      * the {@code invokedynamic}.
+     *
+     * @implSpec
+     * The {@code DynamicCallSiteDesc} class must support an invocation
+     * referencing the method with signature {@code MethodHandleDesc
+     * bootstrapMethod()} to support linking from pre-existing binaries.
+     *
+     * @implNote
+     * An implementation of {@code DynamicCallSiteDesc} in Java may declare a
+     * non-exported supertype declaring the method above to support reference
+     * to that method (JLS {@jls 13.4.12}).
      *
      * @return the bootstrap method for the {@code invokedynamic}
      */
-    public MethodHandleDesc bootstrapMethod() { return bootstrapMethod; }
+    @Override
+    public DirectMethodHandleDesc bootstrapMethod() { return bootstrapMethod; }
 
     /**
      * Returns {@link ConstantDesc}s describing the bootstrap arguments for the
@@ -289,4 +300,8 @@ public final class DynamicCallSiteDesc {
                              Stream.of(bootstrapArgs).map(Object::toString).collect(joining(",")),
                              invocationType.displayDescriptor());
     }
+}
+
+sealed interface BootstrapMethodHook {
+    MethodHandleDesc bootstrapMethod();
 }

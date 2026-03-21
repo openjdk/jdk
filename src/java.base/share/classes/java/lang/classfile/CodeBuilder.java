@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2517,7 +2517,7 @@ public sealed interface CodeBuilder
      * @see InvokeDynamicInstruction
      */
     default CodeBuilder invokedynamic(DynamicCallSiteDesc ref) {
-        MethodHandleEntry bsMethod = handleDescToHandleInfo(constantPool(), (DirectMethodHandleDesc) ref.bootstrapMethod());
+        MethodHandleEntry bsMethod = handleDescToHandleInfo(constantPool(), ref.bootstrapMethod());
         var cpArgs = ref.bootstrapArgs();
         List<LoadableConstantEntry> bsArguments = new ArrayList<>(cpArgs.length);
         for (var constantValue : cpArgs) {
