@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,12 +101,10 @@ class ZipCoder {
     byte[] getBytes(String s) {
         try {
             ByteBuffer bb = encoder().encode(CharBuffer.wrap(s));
-            int pos = bb.position();
-            int limit = bb.limit();
-            if (bb.hasArray() && pos == 0 && limit == bb.capacity()) {
+            if (bb.hasArray() && bb.remaining() == bb.capacity()) {
                 return bb.array();
             }
-            byte[] bytes = new byte[bb.limit() - bb.position()];
+            byte[] bytes = new byte[bb.remaining()];
             bb.get(bytes);
             return bytes;
         } catch (CharacterCodingException x) {
