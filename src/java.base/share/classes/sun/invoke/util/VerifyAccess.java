@@ -137,7 +137,7 @@ public class VerifyAccess {
         case PRIVATE:
             // Rules for privates follows access rules for nestmates.
             boolean canAccess = ((allowedModes & PRIVATE) != 0 &&
-                                 Reflection.areNestMates(defc, lookupClass));
+                                 defc.isNestmateOf(lookupClass));
             // for private methods the selected method equals the
             // resolved method - so refc == defc
             assert (canAccess && refc == defc) || !canAccess;
