@@ -1246,11 +1246,7 @@ class ZipFileSystem extends FileSystem {
     private LinkedHashMap<IndexNode, IndexNode> inodes;
 
     final byte[] getBytes(String name) {
-        try {
-            return zc.getBytes(name);
-        } catch (IllegalArgumentException e) {
-            throw new InvalidPathException(name, "unmappable character in path name");
-        }
+        return zc.getBytes(name);
     }
 
     final String getString(byte[] name) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package jdk.nio.zipfs;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
-import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
@@ -78,29 +77,41 @@ class ZipCoder {
     }
 
     String toString(byte[] ba) {
-        return toString(ba, 0, ba.length);
-    }
-
-    String toString(byte[] ba, int off, int length) {
-        try {
-            return decoder().decode(ByteBuffer.wrap(ba, off, length)).toString();
-        } catch (CharacterCodingException x) {
-            throw new IllegalArgumentException(x);
-        }
+        CharsetDecoder cd = decoder().reset();
+        int clen = (int)(ba.length * cd.maxCharsPerByte());
+        char[] ca = new char[clen];
+        if (clen == 0)
+            return new String(ca);
+        ByteBuffer bb = ByteBuffer.wrap(ba, 0, ba.length);
+        CharBuffer cb = CharBuffer.wrap(ca);
+        CoderResult cr = cd.decode(bb, cb, true);
+        if (!cr.isUnderflow())
+            throw new IllegalArgumentException(cr.toString());
+        cr = cd.flush(cb);
+        if (!cr.isUnderflow())
+            throw new IllegalArgumentException(cr.toString());
+        return new String(ca, 0, cb.position());
     }
 
     byte[] getBytes(String s) {
-        try {
-            ByteBuffer bb = encoder().encode(CharBuffer.wrap(s));
-            if (bb.hasArray() && bb.remaining() == bb.capacity()) {
-                return bb.array();
-            }
-            byte[] bytes = new byte[bb.remaining()];
-            bb.get(bytes);
-            return bytes;
-        } catch (CharacterCodingException x) {
-            throw new IllegalArgumentException(x);
-        }
+        CharsetEncoder ce = encoder().reset();
+        char[] ca = s.toCharArray();
+        int len = (int)(ca.length * ce.maxBytesPerChar());
+        byte[] ba = new byte[len];
+        if (len == 0)
+            return ba;
+        ByteBuffer bb = ByteBuffer.wrap(ba);
+        CharBuffer cb = CharBuffer.wrap(ca);
+        CoderResult cr = ce.encode(cb, bb, true);
+        if (!cr.isUnderflow())
+            throw new IllegalArgumentException(cr.toString());
+        cr = ce.flush(bb);
+        if (!cr.isUnderflow())
+            throw new IllegalArgumentException(cr.toString());
+        if (bb.position() == ba.length)  // defensive copy?
+            return ba;
+        else
+            return Arrays.copyOf(ba, bb.position());
     }
 
     boolean isUTF8() {
