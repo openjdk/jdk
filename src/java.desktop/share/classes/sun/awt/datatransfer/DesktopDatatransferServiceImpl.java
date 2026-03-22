@@ -58,7 +58,7 @@ public class DesktopDatatransferServiceImpl implements DesktopDatatransferServic
 
     private FlavorMap fm;
     @Override
-    public FlavorMap getFlavorMap(Supplier<FlavorMap> supplier) {
+    public synchronized FlavorMap getFlavorMap(Supplier<FlavorMap> supplier) {
         if (fm == null) {
             fm = supplier.get();
         }
