@@ -71,7 +71,7 @@ static const char* const default_compile_commands[] = {
 // All C1 levels           | 7
 // All levels              | 15
 inline int comp_level_bitmask(int comp_level) {
-  assert(comp_level > 0 && comp_level < CompLevel_count, "CompLevel out of bounds");
+  assert(comp_level > CompLevel_none && comp_level < CompLevel_count, "CompLevel out of bounds");
   return 1 << (comp_level - 1);
 }
 

@@ -127,7 +127,8 @@ class CompileTask : public CHeapObj<mtCompiler> {
   bool         is_blocking() const               { return _is_blocking; }
   bool         is_success() const                { return _is_success; }
   DirectiveSet* directive() const                { return _directive; }
-  void         release_directive();
+  // We own _directive instance and release it in the destructor. Use set_directive(nullptr) to release it prematurely.
+  void         set_directive(DirectiveSet* directive);
   CodeSection::csize_t nm_content_size() { return _nm_content_size; }
   void         set_nm_content_size(CodeSection::csize_t size) { _nm_content_size = size; }
   CodeSection::csize_t nm_insts_size() { return _nm_insts_size; }

@@ -2402,7 +2402,8 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     }
   }
 
-  task->release_directive();
+  // We don't need directive further, release it
+  task->set_directive(nullptr);
 
   methodHandle method(thread, task->method());
 
