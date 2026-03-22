@@ -668,6 +668,8 @@ public:
   MinMaxVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
   virtual int min_opcode() const = 0;
   virtual int max_opcode() const = 0;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual Node* Identity(PhaseGVN* phase);
 };
 
 // Vector Min
@@ -676,8 +678,6 @@ public:
   MinVNode(Node* in1, Node* in2, const TypeVect* vt) : MinMaxVNode(in1, in2, vt) {}
   virtual int min_opcode() const { return Op_MinV; }
   virtual int max_opcode() const { return Op_MaxV; }
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-  virtual Node* Identity(PhaseGVN* phase);
   virtual int Opcode() const;
 };
 
@@ -703,8 +703,6 @@ class UMinVNode : public MinMaxVNode {
   }
   virtual int min_opcode() const { return Op_UMinV; }
   virtual int max_opcode() const { return Op_UMaxV; }
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-  virtual Node* Identity(PhaseGVN* phase);
   virtual int Opcode() const;
 };
 
@@ -714,8 +712,6 @@ class MaxVNode : public MinMaxVNode {
   MaxVNode(Node* in1, Node* in2, const TypeVect* vt) : MinMaxVNode(in1, in2, vt) {}
   virtual int min_opcode() const { return Op_MinV; }
   virtual int max_opcode() const { return Op_MaxV; }
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-  virtual Node* Identity(PhaseGVN* phase);
   virtual int Opcode() const;
 };
 
@@ -727,8 +723,6 @@ class UMaxVNode : public MinMaxVNode {
   }
   virtual int min_opcode() const { return Op_UMinV; }
   virtual int max_opcode() const { return Op_UMaxV; }
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-  virtual Node* Identity(PhaseGVN* phase);
   virtual int Opcode() const;
 };
 

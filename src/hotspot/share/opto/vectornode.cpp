@@ -2481,60 +2481,14 @@ static Node* MinMaxV_Common_Ideal(MinMaxVNode* n, PhaseGVN* phase, bool can_resh
   return nullptr;
 }
 
-Node* MinVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+Node* MinMaxVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* progress = MinMaxV_Common_Ideal(this, phase, can_reshape);
   if (progress != nullptr) return progress;
 
   return VectorNode::Ideal(phase, can_reshape);
 }
 
-Node* MinVNode::Identity(PhaseGVN* phase) {
-  // MinV (a, a) => a
-  if (in(1) == in(2)) {
-    return in(1);
-  }
-  return this;
-}
-
-Node* MaxVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  Node* progress = MinMaxV_Common_Ideal(this, phase, can_reshape);
-  if (progress != nullptr) return progress;
-
-  return VectorNode::Ideal(phase, can_reshape);
-}
-
-Node* MaxVNode::Identity(PhaseGVN* phase) {
-  // MaxV (a, a) => a
-  if (in(1) == in(2)) {
-    return in(1);
-  }
-  return this;
-}
-
-Node* UMinVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  Node* progress = MinMaxV_Common_Ideal(this, phase, can_reshape);
-  if (progress != nullptr) return progress;
-
-  return VectorNode::Ideal(phase, can_reshape);
-}
-
-Node* UMinVNode::Identity(PhaseGVN* phase) {
-  // UMin (a, a) => a
-  if (in(1) == in(2)) {
-    return in(1);
-  }
-  return this;
-}
-
-Node* UMaxVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  Node* progress = MinMaxV_Common_Ideal(this, phase, can_reshape);
-  if (progress != nullptr) return progress;
-
-  return VectorNode::Ideal(phase, can_reshape);
-}
-
-Node* UMaxVNode::Identity(PhaseGVN* phase) {
-  // UMax (a, a) => a
+Node* MinMaxVNode::Identity(PhaseGVN* phase) {
   if (in(1) == in(2)) {
     return in(1);
   }
