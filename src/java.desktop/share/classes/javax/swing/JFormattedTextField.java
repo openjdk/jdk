@@ -881,24 +881,39 @@ public class JFormattedTextField extends JTextField {
                                                displayFormatter,editFormatter);
         }
         if (type instanceof DateTimeFormatter formatter) {
-            AbstractFormatter abstractFormatter = new AbstractFormatter() {
-                @Override
-                public Object stringToValue(String text) throws ParseException {
-                    return formatter.parse(text);
-                }
-
-                @Override
-                public String valueToString(Object value) throws ParseException {
-                    if (value != null) {
-                        DateTimeFormatter format = (DateTimeFormatter) value;
-                        return format.toString();
-                    }
-                    return "";
-                }
-            };
-            return new DefaultFormatterFactory(abstractFormatter);
+            return new DefaultFormatterFactory(new DTFormatter(formatter));
         }
         return new DefaultFormatterFactory(new DefaultFormatter());
+    }
+
+    /**
+     * Returns a DateTimeFormatter configured with specified format
+     */
+    public static class DTFormatter extends DefaultFormatter {
+        DateTimeFormatter formatter;
+
+        /**
+         * Returns a DateTimeFormatter configured with specified format
+         *
+         * @param format Format used to dictate legal values
+         */
+        public DTFormatter(DateTimeFormatter format) {
+            formatter = format;
+        }
+
+        @Override
+        public Object stringToValue(String text) throws ParseException {
+            return formatter.parse(text);
+        }
+
+        @Override
+        public String valueToString(Object value) throws ParseException {
+            if (value != null) {
+                DateTimeFormatter format = (DateTimeFormatter) value;
+                return format.toString();
+            }
+            return "";
+        }
     }
 
     /**
