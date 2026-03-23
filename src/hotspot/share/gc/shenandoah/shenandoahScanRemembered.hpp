@@ -233,8 +233,6 @@ public:
   inline bool is_write_card_dirty(size_t card_index) const;
   inline void mark_card_as_dirty(size_t card_index);
   inline void mark_range_as_dirty(size_t card_index, size_t num_cards);
-  inline void mark_card_as_clean(size_t card_index);
-  inline void mark_range_as_clean(size_t card_index, size_t num_cards);
   inline bool is_card_dirty(HeapWord* p) const;
   inline bool is_write_card_dirty(HeapWord* p) const;
   inline void mark_card_as_dirty(HeapWord* p);
@@ -975,7 +973,7 @@ private:
   const size_t _total_chunks;
 
   shenandoah_padding(0);
-  volatile size_t _index;
+  Atomic<size_t> _index;
   shenandoah_padding(1);
 
   size_t _region_index[_maximum_groups];           // The region index for the first region spanned by this group

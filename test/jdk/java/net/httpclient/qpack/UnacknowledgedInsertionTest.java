@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,6 @@ import jdk.internal.net.http.http3.Http3Error;
 import jdk.internal.net.http.http3.frames.SettingsFrame;
 import jdk.internal.net.http.qpack.DecodingCallback;
 import jdk.internal.net.http.qpack.Encoder;
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -38,7 +35,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.testng.Assert.assertNotEquals;
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /*
  * @test
@@ -56,11 +57,13 @@ import static org.testng.Assert.assertNotEquals;
  *          java.net.http/jdk.internal.net.http.http3.frames
  *          java.net.http/jdk.internal.net.http.http3
  * @build EncoderDecoderConnector
- * @run testng/othervm -Djdk.internal.httpclient.qpack.log.level=EXTRA UnacknowledgedInsertionTest
+ * @run junit/othervm -Djdk.internal.httpclient.qpack.log.level=EXTRA UnacknowledgedInsertionTest
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class UnacknowledgedInsertionTest {
 
-    @Test(dataProvider = "duplicateEntryInsertions")
+    @ParameterizedTest
+    @MethodSource("duplicateEntryInsertionsData")
     public void unacknowledgedDoubleInsertion(long knownReceiveCount, List<EncodingType> expectedHeadersEncodingType) throws Exception {
         // When knownReceiveCount is set to -1 the Encoder.knownReceiveCount()
         // value is used to encode headers - otherwise the provided value is used
@@ -101,10 +104,10 @@ public class UnacknowledgedInsertionTest {
         }
 
         // Only two entries are expected to be inserted to the dynamic table
-        Assert.assertEquals(ed.decoderTable().insertCount(), 2);
+        Assertions.assertEquals(2, ed.decoderTable().insertCount());
 
         // Check that headers byte buffer is not empty
-        assertNotEquals(headersBb.position(), 0);
+        assertNotEquals(0, headersBb.position());
         headersBb.flip();
         buffers.add(headersBb);
 
@@ -119,11 +122,10 @@ public class UnacknowledgedInsertionTest {
                 .stream()
                 .map(DecodedHeader::encodingType)
                 .toList();
-        Assert.assertEquals(actualHeaderEncodingTypes, expectedHeadersEncodingType);
+        Assertions.assertEquals(expectedHeadersEncodingType, actualHeaderEncodingTypes);
     }
 
 
-    @DataProvider(name = "duplicateEntryInsertions")
     private Object[][] duplicateEntryInsertionsData() {
         return new Object[][]{
                 {0, List.of(EncodingType.LITERAL, EncodingType.LITERAL, EncodingType.LITERAL)},
@@ -167,7 +169,7 @@ public class UnacknowledgedInsertionTest {
 
         @Override
         public void onDecoded(CharSequence name, CharSequence value) {
-            Assert.fail("onDecoded not expected to be called");
+            Assertions.fail("onDecoded not expected to be called");
         }
 
         @Override

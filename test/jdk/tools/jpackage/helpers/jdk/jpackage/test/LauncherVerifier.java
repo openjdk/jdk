@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,12 +39,10 @@ import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import javax.xml.parsers.ParserConfigurationException;
 import jdk.jpackage.internal.resources.ResourceLocator;
 import jdk.jpackage.internal.util.PListReader;
 import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
 import jdk.jpackage.internal.util.function.ThrowingSupplier;
-import jdk.jpackage.test.AdditionalLauncher.PropertyFile;
 import jdk.jpackage.test.LauncherShortcut.StartupDirectory;
 import org.xml.sax.SAXException;
 
@@ -103,7 +101,7 @@ public final class LauncherVerifier {
         EXECUTE_LAUNCHER(LauncherVerifier::executeLauncher),
         ;
 
-        Action(ThrowingBiConsumer<LauncherVerifier, JPackageCommand> action) {
+        Action(ThrowingBiConsumer<LauncherVerifier, JPackageCommand, ? extends Exception> action) {
             this.action = ThrowingBiConsumer.toBiConsumer(action);
         }
 
@@ -368,7 +366,7 @@ public final class LauncherVerifier {
         }
     }
 
-    private void verifyMacEntitlements(JPackageCommand cmd) throws ParserConfigurationException, SAXException, IOException {
+    private void verifyMacEntitlements(JPackageCommand cmd) throws SAXException, IOException {
         Path launcherPath = cmd.appLauncherPath(name);
         var entitlements = MacSignVerify.findEntitlements(launcherPath);
 
@@ -444,7 +442,7 @@ public final class LauncherVerifier {
         return PropertyFinder.findLauncherProperty(cmd, launcherName,
                 PropertyFinder.cmdlineOptionWithValue("--description"),
                 PropertyFinder.launcherPropertyFile("description"),
-                PropertyFinder.nop()
+                PropertyFinder.appImageFileLauncher(cmd, launcherName, "description")
         ).orElseGet(() -> {
             if (cmd.isMainLauncher(launcherName)) {
                 return cmd.mainLauncherName();
@@ -458,8 +456,10 @@ public final class LauncherVerifier {
     private static final class DefaultEntitlements {
         private static Map<String, Object> loadFromResources(String resourceName) {
             return ThrowingSupplier.toSupplier(() -> {
-                var bytes = ResourceLocator.class.getResourceAsStream(resourceName).readAllBytes();
-                return new PListReader(bytes).toMap(true);
+                try (var in = ResourceLocator.class.getResourceAsStream(resourceName)) {
+                    var bytes = in.readAllBytes();
+                    return new PListReader(bytes).toMap(true);
+                }
             }).get();
         }
 

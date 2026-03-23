@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
+import static jdk.jpackage.internal.util.function.ExceptionBox.toUnchecked;
 import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -57,12 +57,11 @@ import jdk.jpackage.internal.PackagingPipeline.TaskID;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLayout;
-import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.PackageType;
-import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.model.RuntimeBuilder;
 import jdk.jpackage.internal.model.RuntimeLayout;
+import jdk.jpackage.internal.util.function.ExceptionBox;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -74,7 +73,7 @@ public class PackagingPipelineTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void testBuildApplication(boolean withRuntimeBuilder, @TempDir Path workDir) throws ConfigException, PackagerException, IOException {
+    void testBuildApplication(boolean withRuntimeBuilder, @TempDir Path workDir) throws IOException {
 
         final var app = createApp(TEST_LAYOUT_1, withRuntimeBuilder ? Optional.of(TestRuntimeBuilder.INSTANCE) : Optional.empty());
         final var env = buildEnv(workDir.resolve("build")).appImageDirFor(app).create();
@@ -115,7 +114,7 @@ public class PackagingPipelineTest {
     }
 
     @Test
-    void testCopyApplication(@TempDir Path workDir) throws ConfigException, PackagerException, IOException {
+    void testCopyApplication(@TempDir Path workDir) throws IOException {
 
         final var srcApp = createApp(TEST_LAYOUT_1, TestRuntimeBuilder.INSTANCE);
 
@@ -170,7 +169,7 @@ public class PackagingPipelineTest {
     }
 
     @Test
-    void testCreatePackage(@TempDir Path workDir) throws ConfigException, PackagerException, IOException {
+    void testCreatePackage(@TempDir Path workDir) throws IOException {
 
         final var outputDir = workDir.resolve("bundles");
         final var pkg = buildPackage(createApp(TEST_LAYOUT_1_WITH_INSTALL_DIR, TestRuntimeBuilder.INSTANCE)).create();
@@ -209,7 +208,7 @@ public class PackagingPipelineTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void testCreateRuntimeInstaller(boolean transformLayout, @TempDir Path workDir) throws ConfigException, PackagerException, IOException {
+    void testCreateRuntimeInstaller(boolean transformLayout, @TempDir Path workDir) throws IOException {
 
         final AppImageLayout srcLayout;
         if (transformLayout) {
@@ -273,7 +272,7 @@ public class PackagingPipelineTest {
 
     @ParameterizedTest
     @EnumSource(ExternalAppImageMode.class)
-    void testCreatePackageFromExternalAppImage(ExternalAppImageMode mode, @TempDir Path workDir) throws ConfigException, PackagerException, IOException {
+    void testCreatePackageFromExternalAppImage(ExternalAppImageMode mode, @TempDir Path workDir) throws IOException {
 
         final ApplicationLayout appLayout;
         final ExpectedAppImage expectedAppImage;
@@ -322,7 +321,7 @@ public class PackagingPipelineTest {
 
     @ParameterizedTest
     @EnumSource(names={"COPY", "COPY_FROM_BUILD_ENV"})
-    void testCreatePackageFromExternalAppImageNoCopyAction(ExternalAppImageMode mode, @TempDir Path workDir) throws ConfigException, PackagerException, IOException {
+    void testCreatePackageFromExternalAppImageNoCopyAction(ExternalAppImageMode mode, @TempDir Path workDir) throws IOException {
 
         final ApplicationLayout appLayout = TEST_LAYOUT_1_WITH_INSTALL_DIR;
 
@@ -379,7 +378,7 @@ public class PackagingPipelineTest {
     }
 
     @Test
-    void testCreatePackageFromExternalAppImageWithoutExternalAppImageError(@TempDir Path workDir) throws ConfigException, PackagerException, IOException {
+    void testCreatePackageFromExternalAppImageWithoutExternalAppImageError(@TempDir Path workDir) throws IOException {
 
         final var env = setupBuildEnvForExternalAppImage(workDir);
         final var pkg = buildPackage(createApp(TEST_LAYOUT_1_WITH_INSTALL_DIR)).create();
@@ -389,7 +388,7 @@ public class PackagingPipelineTest {
     }
 
     @Test
-    void testExceptionRethrow_RuntimeException() throws ConfigException, PackagerException, IOException {
+    void testExceptionRethrow_RuntimeException() throws IOException {
 
         final var expectedException = new RuntimeException("foo");
         final var ex = testExceptionRethrow(expectedException, expectedException.getClass(), () -> {
@@ -399,9 +398,9 @@ public class PackagingPipelineTest {
     }
 
     @Test
-    void testExceptionRethrow_PackagerException() throws ConfigException, PackagerException, IOException {
+    void testExceptionRethrow_PackagerException() throws IOException {
 
-        final var expectedException = new PackagerException("param.vendor.default");
+        final var expectedException = new RuntimeException("param.vendor.default");
         final var ex = testExceptionRethrow(expectedException, expectedException.getClass(), () -> {
             throw expectedException;
         });
@@ -409,17 +408,17 @@ public class PackagingPipelineTest {
     }
 
     @Test
-    void testExceptionRethrow_Exception() throws ConfigException, PackagerException, IOException {
+    void testExceptionRethrow_Exception() throws IOException {
 
         final var expectedException = new Exception("foo");
-        final var ex = testExceptionRethrow(expectedException, PackagerException.class, () -> {
-            rethrowUnchecked(expectedException);
+        final var ex = testExceptionRethrow(expectedException, ExceptionBox.class, () -> {
+            throw toUnchecked(expectedException);
         });
         assertSame(expectedException, ex.getCause());
     }
 
     @Test
-    void testAppImageAction() throws PackagerException, IOException {
+    void testAppImageAction() throws IOException {
 
         final var app = createApp(TEST_LAYOUT_1);
         final var env = dummyBuildEnv();
@@ -439,7 +438,7 @@ public class PackagingPipelineTest {
     }
 
     @Test
-    void testAppImageActionWithPackage() throws PackagerException, IOException {
+    void testAppImageActionWithPackage() throws IOException {
 
         final var pkg = buildPackage(createApp(TEST_LAYOUT_1, TestRuntimeBuilder.INSTANCE)).create();
         final var env = dummyBuildEnv();
@@ -462,7 +461,7 @@ public class PackagingPipelineTest {
     }
 
     @Test
-    void testPackageActionWithApplication() throws PackagerException, IOException {
+    void testPackageActionWithApplication() throws IOException {
 
         final var app = createApp(TEST_LAYOUT_1);
         final var env = dummyBuildEnv();
@@ -480,7 +479,7 @@ public class PackagingPipelineTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void testContextMapper(boolean allowAll) throws PackagerException, IOException {
+    void testContextMapper(boolean allowAll) throws IOException {
 
         var builder = PackagingPipeline.buildStandard().contextMapper(ctx -> {
             return new TaskContext() {
@@ -490,7 +489,7 @@ public class PackagingPipelineTest {
                 }
 
                 @Override
-                public void execute(TaskAction taskAction) throws IOException, PackagerException {
+                public void execute(TaskAction taskAction) throws IOException {
                     if (!allowAll) {
                         throw new AssertionError();
                     }
@@ -538,7 +537,7 @@ public class PackagingPipelineTest {
 
     private static Exception testExceptionRethrow(Exception expectedException,
             Class<? extends Exception> expectedCatchExceptionType,
-            NoArgTaskAction throwAction) throws PackagerException, IOException {
+            NoArgTaskAction throwAction) throws IOException {
 
         final var app = createApp(TEST_LAYOUT_1);
         final var env = dummyBuildEnv();
@@ -551,7 +550,7 @@ public class PackagingPipelineTest {
         return assertThrowsExactly(expectedCatchExceptionType, () -> pipeline.execute(env,  app));
     }
 
-    private static BuildEnv setupBuildEnvForExternalAppImage(Path workDir) throws ConfigException {
+    private static BuildEnv setupBuildEnvForExternalAppImage(Path workDir) {
         // Create an app image in `env.appImageDir()` directory.
         final var env = buildEnv(workDir.resolve("build"))
                 .appImageLayout(TEST_LAYOUT_1.resolveAt(Path.of("a/b/c")).resetRootDirectory())
@@ -565,7 +564,7 @@ public class PackagingPipelineTest {
 
     private static void createAndVerifyPackage(PackagingPipeline.Builder builder, Package pkg,
             BuildEnv env, Path outputDir, String logMsgHeader, ExpectedAppImage expectedAppImage,
-            TaskID... expectedExecutedTaskActions) throws PackagerException, IOException {
+            TaskID... expectedExecutedTaskActions) throws IOException {
         Objects.requireNonNull(logMsgHeader);
 
         final var startupParameters = builder.createStartupParameters(env, pkg, outputDir);
@@ -617,7 +616,7 @@ public class PackagingPipelineTest {
                 "1.0",
                 "Acme",
                 "copyright",
-                Optional.empty(),
+                List.of(),
                 List.of(),
                 appImageLayout,
                 runtimeBuilder,
@@ -634,7 +633,12 @@ public class PackagingPipelineTest {
         Package create() {
             return new Package.Stub(
                     app,
-                    new PackageType() {},
+                    new PackageType() {
+                        @Override
+                        public String label() {
+                            throw new UnsupportedOperationException();
+                        }
+                    },
                     "the-package",
                     "My package",
                     "1.0",

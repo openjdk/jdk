@@ -25,6 +25,7 @@
 
 #if !defined(_WINDOWS) && !defined(__APPLE__)
 
+#include "cppstdlib/new.hpp"
 #include "jvm_io.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
@@ -37,7 +38,6 @@
 #include "utilities/ostream.hpp"
 
 #include <limits.h>
-#include <new>
 #include <stdio.h>
 #include <string.h>
 

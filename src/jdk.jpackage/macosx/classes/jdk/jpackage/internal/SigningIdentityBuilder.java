@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,22 +39,18 @@ import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
 import javax.security.auth.x500.X500Principal;
 import jdk.jpackage.internal.MacCertificateUtils.CertificateHash;
-import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.SigningIdentity;
 
 final class SigningIdentityBuilder {
 
-    static class SigningConfigException extends ConfigException {
-        SigningConfigException(ConfigException ex) {
-            super(ex.getMessage(), ex.getAdvice(), ex.getCause());
+    static class SigningConfigException extends JPackageException {
+        public SigningConfigException(String msg) {
+            super(msg);
         }
 
-        private static final long serialVersionUID = 1L;
-    }
-
-    static class ExpiredCertificateException extends SigningConfigException {
-        ExpiredCertificateException(ConfigException ex) {
-            super(ex);
+        public SigningConfigException(String msg, Throwable cause) {
+            super(msg, cause);
         }
 
         private static final long serialVersionUID = 1L;
@@ -82,19 +78,20 @@ final class SigningIdentityBuilder {
         return this;
     }
 
-    Optional<SigningConfig> create() throws ConfigException {
-        if (signingIdentity == null && certificateSelector == null) {
-            return Optional.empty();
+    SigningConfig create() {
+        if (Objects.isNull(certificateSelector) == Objects.isNull(signingIdentity)) {
+            // Either the signing certificate selector or the signing certificate must be configured.
+            throw new IllegalStateException();
         } else {
-            return Optional.of(new SigningConfig(validatedSigningIdentity(), validatedKeychain()));
+            return new SigningConfig(validatedSigningIdentity(), validatedKeychain());
         }
     }
 
-    private Optional<Keychain> validatedKeychain() throws ConfigException {
+    private Optional<Keychain> validatedKeychain() {
         return Optional.ofNullable(keychain).map(Keychain::new);
     }
 
-    private SigningIdentity validatedSigningIdentity() throws ConfigException {
+    private SigningIdentity validatedSigningIdentity() {
         if (signingIdentity != null) {
             return new SigningIdentityImpl(signingIdentity);
         }
@@ -132,8 +129,9 @@ final class SigningIdentityBuilder {
 
         try {
             cert.checkValidity();
-        } catch (CertificateExpiredException|CertificateNotYetValidException ex) {
-            throw new ExpiredCertificateException(I18N.buildConfigException("error.certificate.expired", findSubjectCNs(cert).getFirst()).create());
+        } catch (CertificateExpiredException | CertificateNotYetValidException ex) {
+            throw new SigningConfigException(I18N.format(
+                    "error.certificate.outside-validity-period", findSubjectCNs(cert).getFirst()), ex);
         }
 
         final var signingIdentityHash = CertificateHash.of(cert);
@@ -142,23 +140,22 @@ final class SigningIdentityBuilder {
     }
 
     private static X509Certificate selectSigningIdentity(List<X509Certificate> certs,
-            CertificateSelector certificateSelector, Optional<Keychain> keychain) throws ConfigException {
+            CertificateSelector certificateSelector, Optional<Keychain> keychain) {
         Objects.requireNonNull(certificateSelector);
         Objects.requireNonNull(keychain);
         switch (certs.size()) {
             case 0 -> {
-                Log.error(I18N.format("error.cert.not.found", certificateSelector.signingIdentities().getFirst(),
+                throw new SigningConfigException(I18N.format("error.cert.not.found",
+                        certificateSelector.signingIdentities().getFirst(),
                         keychain.map(Keychain::name).orElse("")));
-                throw I18N.buildConfigException("error.explicit-sign-no-cert")
-                        .advice("error.explicit-sign-no-cert.advice").create();
             }
             case 1 -> {
                 return certs.getFirst();
             }
             default -> {
-                Log.error(I18N.format("error.multiple.certs.found", certificateSelector.signingIdentities().getFirst(),
+                throw new SigningConfigException(I18N.format("error.multiple.certs.found",
+                        certificateSelector.signingIdentities().getFirst(),
                         keychain.map(Keychain::name).orElse("")));
-                return certs.getFirst();
             }
         }
     }

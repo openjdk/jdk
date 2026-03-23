@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "cds/heapShared.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
+#include "oops/compressedOops.hpp"
 #include "oops/oopHandle.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/exceptions.hpp"
@@ -39,20 +40,6 @@
 class MemRegion;
 
 #if INCLUDE_CDS_JAVA_HEAP
-class DumpedInternedStrings :
-  public ResizeableHashTable<oop, bool,
-                           AnyObj::C_HEAP,
-                           mtClassShared,
-                           HeapShared::string_oop_hash>
-{
-public:
-  DumpedInternedStrings(unsigned size, unsigned max_size) :
-    ResizeableHashTable<oop, bool,
-                                AnyObj::C_HEAP,
-                                mtClassShared,
-                                HeapShared::string_oop_hash>(size, max_size) {}
-};
-
 class AOTMappedHeapWriter : AllStatic {
   friend class HeapShared;
   friend class AOTMappedHeapLoader;
@@ -71,7 +58,7 @@ class AOTMappedHeapWriter : AllStatic {
   //   These are entered into HeapShared::archived_object_cache().
   //
   // - "buffered objects" are copies of the "source objects", and are stored in into
-  //   ArchiveHeapWriter::_buffer, which is a GrowableArray that sits outside of
+  //   AOTMappedHeapWriter::_buffer, which is a GrowableArray that sits outside of
   //   the valid heap range. Therefore we avoid using the addresses of these copies
   //   as oops. They are usually called "buffered_addr" in the code (of the type "address").
   //
@@ -81,26 +68,11 @@ class AOTMappedHeapWriter : AllStatic {
   // - Each archived object has a "requested address" -- at run time, if the object
   //   can be mapped at this address, we can avoid relocation.
   //
-  // The requested address is implemented differently depending on UseCompressedOops:
+  // The requested address of an archived object is essentially its buffered_addr + delta,
+  // where delta is (_requested_bottom - buffer_bottom());
   //
-  // UseCompressedOops == true:
-  //   The archived objects are stored assuming that the runtime COOPS compression
-  //   scheme is exactly the same as in dump time (or else a more expensive runtime relocation
-  //   would be needed.)
-  //
-  //   At dump time, we assume that the runtime heap range is exactly the same as
-  //   in dump time. The requested addresses of the archived objects are chosen such that
-  //   they would occupy the top end of a G1 heap (TBD when dumping is supported by other
-  //   collectors. See JDK-8298614).
-  //
-  // UseCompressedOops == false:
-  //   At runtime, the heap range is usually picked (randomly) by the OS, so we will almost always
-  //   need to perform relocation. Hence, the goal of the "requested address" is to ensure that
-  //   the contents of the archived objects are deterministic. I.e., the oop fields of archived
-  //   objects will always point to deterministic addresses.
-  //
-  //   For G1, the archived heap is written such that the lowest archived object is placed
-  //   at NOCOOPS_REQUESTED_BASE. (TBD after JDK-8298614).
+  // The requested addresses of all archived objects are within [_requested_bottom, _requested_top).
+  // See AOTMappedHeapWriter::set_requested_address_range() for more info.
   // ----------------------------------------------------------------------
 
 public:
@@ -110,6 +82,15 @@ public:
   // G1 heap region size can never be smaller than 1M.
   // Shenandoah heap region size can never be smaller than 256K.
   static constexpr int MIN_GC_REGION_ALIGNMENT = 256 * K;
+
+  // The heap contents are required to be deterministic when dumping "old" CDS archives, in order
+  // to support reproducible lib/server/classes*.jsa when building the JDK.
+  static bool is_writing_deterministic_heap() { return _is_writing_deterministic_heap; }
+
+  // The oop encoding used by the archived heap objects.
+  static CompressedOops::Mode narrow_oop_mode();
+  static address narrow_oop_base();
+  static int narrow_oop_shift();
 
   static const int INITIAL_TABLE_SIZE = 15889; // prime number
   static const int MAX_TABLE_SIZE     = 1000000;
@@ -121,6 +102,7 @@ private:
     int _field_offset;
   };
 
+  static bool _is_writing_deterministic_heap;
   static GrowableArrayCHeap<u1, mtClassShared>* _buffer;
 
   // The number of bytes that have written into _buffer (may be smaller than _buffer->length()).
@@ -130,15 +112,14 @@ private:
   static HeapRootSegments _heap_root_segments;
 
   // The address range of the requested location of the archived heap objects.
-  static address _requested_bottom;
-  static address _requested_top;
+  static address _requested_bottom; // The requested address of the lowest archived heap object
+  static address _requested_top;    // The exclusive end of the highest archived heap object
 
   static GrowableArrayCHeap<NativePointerInfo, mtClassShared>* _native_pointers;
   static GrowableArrayCHeap<oop, mtClassShared>* _source_objs;
-  static DumpedInternedStrings *_dumped_interned_strings;
 
   // We sort _source_objs_order to minimize the number of bits in ptrmap and oopmap.
-  // See comments near the body of ArchiveHeapWriter::compare_objs_by_oop_fields().
+  // See comments near the body of AOTMappedHeapWriter::compare_objs_by_oop_fields().
   // The objects will be written in the order of:
   //_source_objs->at(_source_objs_order->at(0)._index)
   // source_objs->at(_source_objs_order->at(1)._index)
@@ -194,16 +175,17 @@ private:
   static void copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShared>* roots);
   static void copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtClassShared>* roots);
   static size_t copy_one_source_obj_to_buffer(oop src_obj);
+  static void update_stats(oop src_obj);
 
   static void maybe_fill_gc_region_gap(size_t required_byte_size);
   static size_t filler_array_byte_size(int length);
   static int filler_array_length(size_t fill_bytes);
   static HeapWord* init_filler_array_at_buffer_top(int array_length, size_t fill_bytes);
 
-  static void set_requested_address(ArchiveMappedHeapInfo* info);
+  static void set_requested_address_range(AOTMappedHeapInfo* info);
   static void mark_native_pointers(oop orig_obj);
-  static void relocate_embedded_oops(GrowableArrayCHeap<oop, mtClassShared>* roots, ArchiveMappedHeapInfo* info);
-  static void compute_ptrmap(ArchiveMappedHeapInfo *info);
+  static void relocate_embedded_oops(GrowableArrayCHeap<oop, mtClassShared>* roots, AOTMappedHeapInfo* info);
+  static void compute_ptrmap(AOTMappedHeapInfo *info);
   static bool is_in_requested_range(oop o);
   static oop requested_obj_from_buffer_offset(size_t offset);
 
@@ -231,9 +213,7 @@ public:
   static bool is_too_large_to_archive(size_t size);
   static bool is_too_large_to_archive(oop obj);
   static bool is_string_too_large_to_archive(oop string);
-  static bool is_dumped_interned_string(oop o);
-  static void add_to_dumped_interned_strings(oop string);
-  static void write(GrowableArrayCHeap<oop, mtClassShared>*, ArchiveMappedHeapInfo* heap_info);
+  static void write(GrowableArrayCHeap<oop, mtClassShared>*, AOTMappedHeapInfo* heap_info);
   static address requested_address();  // requested address of the lowest achived heap object
   static size_t get_filler_size_at(address buffered_addr);
 
@@ -244,7 +224,7 @@ public:
   static Klass* real_klass_of_buffered_oop(address buffered_addr);
   static size_t size_of_buffered_oop(address buffered_addr);
 
-  static AOTMapLogger::OopDataIterator* oop_iterator(ArchiveMappedHeapInfo* heap_info);
+  static AOTMapLogger::OopDataIterator* oop_iterator(AOTMappedHeapInfo* heap_info);
 };
 #endif // INCLUDE_CDS_JAVA_HEAP
 #endif // SHARE_CDS_AOTMAPPEDHEAPWRITER_HPP

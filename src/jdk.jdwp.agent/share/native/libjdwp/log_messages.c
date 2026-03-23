@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,6 +155,7 @@ standard_logging_format(FILE *fp,
 }
 
 /* End a log entry */
+ATTRIBUTE_PRINTF(1, 2)
 void
 log_message_end(const char *format, ...)
 {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  *          received before a socket exception or eof.
  * @library /test/lib
  * @build jdk.test.lib.net.SimpleSSLContext ShortResponseBody ShortResponseBodyGet
- * @run testng/othervm
+ * @run junit/othervm
  *       -Djdk.httpclient.HttpClient.log=headers,errors,channel
  *       ShortResponseBodyGet
  */
@@ -38,21 +38,24 @@ import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.concurrent.ExecutionException;
-import org.testng.annotations.Test;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import static java.lang.System.out;
 import static java.net.http.HttpResponse.BodyHandlers.ofString;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class ShortResponseBodyGet extends ShortResponseBody {
 
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testSynchronousGET(String urlp, String expectedMsg)
         throws Exception
     {
-        checkSkip();
         String url = uniqueURL(urlp);
         HttpRequest request = HttpRequest.newBuilder(URI.create(url)).build();
-        out.println("Request: " + request);
+        out.printf("%n%s-- testSynchronousGET Request: %s%n%n", now(), request);
         try {
             HttpResponse<String> response = client.send(request, ofString());
             String body = response.body();
@@ -67,14 +70,14 @@ public class ShortResponseBodyGet extends ShortResponseBody {
         }
     }
 
-    @Test(dataProvider = "uris")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testAsynchronousGET(String urlp, String expectedMsg)
         throws Exception
     {
-        checkSkip();
         String url = uniqueURL(urlp);
         HttpRequest request = HttpRequest.newBuilder(URI.create(url)).build();
-        out.println("Request: " + request);
+        out.printf("%n%s-- testAsynchronousGET Request: %s%n%n", now(), request);
         try {
             HttpResponse<String> response = client.sendAsync(request, ofString()).get();
             String body = response.body();

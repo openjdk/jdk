@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,50 +35,50 @@ public class HttpServerImpl extends HttpServer {
 
     ServerImpl server;
 
-    HttpServerImpl () throws IOException {
-        this (new InetSocketAddress(80), 0);
+    HttpServerImpl() throws IOException {
+        this(new InetSocketAddress(80), 0);
     }
 
-    HttpServerImpl (
+    HttpServerImpl(
         InetSocketAddress addr, int backlog
     ) throws IOException {
-        server = new ServerImpl (this, "http", addr, backlog);
+        server = new ServerImpl(this, "http", addr, backlog);
     }
 
-    public void bind (InetSocketAddress addr, int backlog) throws IOException {
-        server.bind (addr, backlog);
+    public void bind(InetSocketAddress addr, int backlog) throws IOException {
+        server.bind(addr, backlog);
     }
 
-    public void start () {
+    public void start() {
         server.start();
     }
 
-    public void setExecutor (Executor executor) {
+    public void setExecutor(Executor executor) {
         server.setExecutor(executor);
     }
 
-    public Executor getExecutor () {
+    public Executor getExecutor() {
         return server.getExecutor();
     }
 
-    public void stop (int delay) {
-        server.stop (delay);
+    public void stop(int delay) {
+        server.stop(delay);
     }
 
-    public HttpContextImpl createContext (String path, HttpHandler handler) {
-        return server.createContext (path, handler);
+    public HttpContextImpl createContext(String path, HttpHandler handler) {
+        return server.createContext(path, handler);
     }
 
-    public HttpContextImpl createContext (String path) {
-        return server.createContext (path);
+    public HttpContextImpl createContext(String path) {
+        return server.createContext(path);
     }
 
-    public void removeContext (String path) throws IllegalArgumentException {
-        server.removeContext (path);
+    public void removeContext(String path) throws IllegalArgumentException {
+        server.removeContext(path);
     }
 
-    public void removeContext (HttpContext context) throws IllegalArgumentException {
-        server.removeContext (context);
+    public void removeContext(HttpContext context) throws IllegalArgumentException {
+        server.removeContext(context);
     }
 
     public InetSocketAddress getAddress() {

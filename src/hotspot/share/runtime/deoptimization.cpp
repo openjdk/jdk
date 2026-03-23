@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,6 +132,7 @@ void DeoptimizationScope::mark(nmethod* nm, bool inc_recompile_counts) {
     return;
   }
 
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
   nmethod::DeoptimizationStatus status =
     inc_recompile_counts ? nmethod::deoptimize : nmethod::deoptimize_noupdate;
   AtomicAccess::store(&nm->_deoptimization_status, status);
@@ -498,6 +499,9 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
                         RegisterMap::WalkContinuation::skip);
   // Now get the deoptee with a valid map
   frame deoptee = stub_frame.sender(&map);
+  if (exec_mode == Unpack_deopt) {
+    assert(deoptee.is_deoptimized_frame(), "frame is not marked for deoptimization");
+  }
   // Set the deoptee nmethod
   assert(current->deopt_compiled_method() == nullptr, "Pending deopt!");
   nmethod* nm = deoptee.cb()->as_nmethod_or_null();
@@ -1682,7 +1686,7 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
         assert(mon_info->owner()->is_locked(), "object must be locked now");
         assert(obj->mark().has_monitor(), "must be");
         assert(!deoptee_thread->lock_stack().contains(obj()), "must be");
-        assert(ObjectSynchronizer::read_monitor(thread, obj(), obj->mark())->has_owner(deoptee_thread), "must be");
+        assert(ObjectSynchronizer::read_monitor(obj(), obj->mark())->has_owner(deoptee_thread), "must be");
       }
     }
   }
@@ -2151,7 +2155,9 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
       // Lock to read ProfileData, and ensure lock is not broken by a safepoint
       // We must do this already now, since we cannot acquire this lock while
       // holding the tty lock (lock ordering by rank).
-      MutexLocker ml(trap_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+      ConditionalMutexLocker ml((trap_mdo != nullptr) ? trap_mdo->extra_data_lock() : nullptr,
+                                (trap_mdo != nullptr),
+                                Mutex::_no_safepoint_check_flag);
 
       ttyLocker ttyl;
 

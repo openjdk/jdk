@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,21 +28,24 @@
  * @library /test/lib
  * @modules jdk.compiler
  * @compile AssignableFrom.java Point.java DefaultValues.java SuperStreamFields.java
- * @run testng DefaultValuesTest
+ * @run junit DefaultValuesTest
  */
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
-import org.testng.annotations.Test;
 import static java.io.ObjectStreamConstants.*;
 import static java.lang.System.out;
-import static org.testng.Assert.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 /**
  * Basic test to check that default primitive / reference values are
  * presented to the record's canonical constructor, for fields not in
  * the stream.
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class DefaultValuesTest extends AbstractTest {
 
     /**
@@ -77,13 +80,13 @@ public class DefaultValuesTest extends AbstractTest {
 
         Point point = deserializeAsPlain(bytes);
         out.println("deserialized: " + point);
-        assertEquals(point.x(), 0);
-        assertEquals(point.y(), 0);
+        assertEquals(0, point.x());
+        assertEquals(0, point.y());
 
         point = deserializeAsRecord(bytes);
         out.println("deserialized: " + point);
-        assertEquals(point.x(), 0);
-        assertEquals(point.y(), 0);
+        assertEquals(0, point.x());
+        assertEquals(0, point.y());
     }
 
     // ---
@@ -115,8 +118,8 @@ public class DefaultValuesTest extends AbstractTest {
         DefaultValues o1 = deserializeAsRecord(bytes);
         out.println("deserialized: " + o1);
 
-        assertEquals(o1.point().x(), point.x());   // sanity
-        assertEquals(o1.point().y(), point.y());   // sanity
+        assertEquals(point.x(), o1.point().x());   // sanity
+        assertEquals(point.y(), o1.point().y());   // sanity
         assertTrue(o1.bool() == Defaults.bool);
         assertTrue(o1.by() == Defaults.by);
         assertTrue(o1.ch() == Defaults.ch);

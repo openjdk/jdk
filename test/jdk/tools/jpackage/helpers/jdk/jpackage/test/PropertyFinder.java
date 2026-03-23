@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  */
 package jdk.jpackage.test;
+
 import static jdk.jpackage.test.AdditionalLauncher.getAdditionalLauncherProperties;
 
 import java.nio.file.Path;
@@ -30,7 +31,6 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
-import jdk.jpackage.test.AdditionalLauncher.PropertyFile;
 
 final class PropertyFinder {
 
@@ -67,8 +67,13 @@ final class PropertyFinder {
     }
 
     static <T> Finder<T> nop() {
+        return of(Optional.empty());
+    }
+
+    static <T> Finder<T> of(Optional<String> v) {
+        Objects.requireNonNull(v);
         return target -> {
-            return Optional.empty();
+            return v;
         };
     }
 
@@ -107,7 +112,11 @@ final class PropertyFinder {
 
     static Finder<JPackageCommand> cmdlineBooleanOption(String optionName) {
         return target -> {
-            return Optional.of(target.hasArgument(optionName)).map(Boolean::valueOf).map(Object::toString);
+            if (target.hasArgument(optionName)) {
+                return Optional.of(Boolean.TRUE.toString());
+            } else {
+                return Optional.empty();
+            }
         };
     }
 

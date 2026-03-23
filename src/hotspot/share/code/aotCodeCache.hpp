@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_CODE_AOTCODECACHE_HPP
 #define SHARE_CODE_AOTCODECACHE_HPP
 
+#include "gc/shared/gc_globals.hpp"
 #include "runtime/stubInfo.hpp"
 
 /*
@@ -151,7 +152,6 @@ public:
     _early_c1_complete(false),
     _complete(false)
   { }
-  ~AOTCodeAddressTable();
   void init_extrs();
   void init_early_stubs();
   void init_shared_blobs();
@@ -185,10 +185,12 @@ protected:
       restrictContendedPadding = 128
     };
     uint _flags;
+    uint _cpu_features_offset; // offset in the cache where cpu features are stored
 
   public:
-    void record();
-    bool verify() const;
+    void record(uint cpu_features_offset);
+    bool verify_cpu_features(AOTCodeCache* cache) const;
+    bool verify(AOTCodeCache* cache) const;
   };
 
   class Header : public CHeapObj<mtCode> {
@@ -206,14 +208,15 @@ protected:
     uint   _shared_blobs_count;
     uint   _C1_blobs_count;
     uint   _C2_blobs_count;
-    Config _config;
+    Config _config; // must be the last element as there is trailing data stored immediately after Config
 
   public:
     void init(uint cache_size,
               uint strings_count,  uint strings_offset,
               uint entries_count,  uint entries_offset,
               uint adapters_count, uint shared_blobs_count,
-              uint C1_blobs_count, uint C2_blobs_count) {
+              uint C1_blobs_count, uint C2_blobs_count,
+              uint cpu_features_offset) {
       _version        = AOT_CODE_VERSION;
       _cache_size     = cache_size;
       _strings_count  = strings_count;
@@ -224,7 +227,7 @@ protected:
       _shared_blobs_count = shared_blobs_count;
       _C1_blobs_count = C1_blobs_count;
       _C2_blobs_count = C2_blobs_count;
-      _config.record();
+      _config.record(cpu_features_offset);
     }
 
 
@@ -239,8 +242,8 @@ protected:
     uint C2_blobs_count() const { return _C2_blobs_count; }
 
     bool verify(uint load_size)  const;
-    bool verify_config() const { // Called after Universe initialized
-      return _config.verify();
+    bool verify_config(AOTCodeCache* cache) const { // Called after Universe initialized
+      return _config.verify(cache);
     }
   };
 
@@ -256,7 +259,6 @@ private:
   uint   _store_size;      // Used when writing cache
   bool   _for_use;         // AOT cache is open for using AOT code
   bool   _for_dump;        // AOT cache is open for dumping AOT code
-  bool   _closing;         // Closing cache file
   bool   _failed;          // Failed read/write to/from cache (cache is broken?)
   bool   _lookup_failed;   // Failed to lookup for info (skip only this code load)
 
@@ -286,7 +288,6 @@ private:
 
 public:
   AOTCodeCache(bool is_dumping, bool is_using);
-  ~AOTCodeCache();
 
   const char* cache_buffer() const { return _load_buffer; }
   bool failed() const { return _failed; }
@@ -310,8 +311,6 @@ public:
   bool for_use()  const { return _for_use  && !_failed; }
   bool for_dump() const { return _for_dump && !_failed; }
 
-  bool closing()          const { return _closing; }
-
   AOTCodeEntry* add_entry() {
     _store_entries_cnt++;
     _store_entries -= 1;
@@ -319,6 +318,8 @@ public:
   }
 
   AOTCodeEntry* find_entry(AOTCodeEntry::Kind kind, uint id);
+
+  void store_cpu_features(char*& buffer, uint buffer_size);
 
   bool finish_write();
 
@@ -361,7 +362,7 @@ private:
   static bool open_cache(bool is_dumping, bool is_using);
   bool verify_config() {
     if (for_use()) {
-      return _load_header->verify_config();
+      return _load_header->verify_config(this);
     }
     return true;
   }
@@ -369,8 +370,8 @@ public:
   static AOTCodeCache* cache() { assert(_passed_init2, "Too early to ask"); return _cache; }
   static void initialize() NOT_CDS_RETURN;
   static void init2() NOT_CDS_RETURN;
-  static void close() NOT_CDS_RETURN;
-  static bool is_on() CDS_ONLY({ return cache() != nullptr && !_cache->closing(); }) NOT_CDS_RETURN_(false);
+  static void dump() NOT_CDS_RETURN;
+  static bool is_on() CDS_ONLY({ return cache() != nullptr; }) NOT_CDS_RETURN_(false);
   static bool is_on_for_use()  CDS_ONLY({ return is_on() && _cache->for_use(); }) NOT_CDS_RETURN_(false);
   static bool is_on_for_dump() CDS_ONLY({ return is_on() && _cache->for_dump(); }) NOT_CDS_RETURN_(false);
   static bool is_dumping_stub() NOT_CDS_RETURN_(false);
@@ -415,6 +416,38 @@ public:
   void read_asm_remarks(AsmRemarks& asm_remarks);
   void read_dbg_strings(DbgStrings& dbg_strings);
 #endif // PRODUCT
+};
+
+// code cache internal runtime constants area used by AOT code
+class AOTRuntimeConstants {
+ friend class AOTCodeCache;
+ private:
+  address _card_table_base;
+  uint    _grain_shift;
+  static address _field_addresses_list[];
+  static AOTRuntimeConstants _aot_runtime_constants;
+  // private constructor for unique singleton
+  AOTRuntimeConstants() { }
+  // private for use by friend class AOTCodeCache
+  static void initialize_from_runtime();
+ public:
+#if INCLUDE_CDS
+  static bool contains(address adr) {
+    address base = (address)&_aot_runtime_constants;
+    address hi = base + sizeof(AOTRuntimeConstants);
+    return (base <= adr && adr < hi);
+  }
+  static address card_table_base_address();
+  static address grain_shift_address() { return (address)&_aot_runtime_constants._grain_shift; }
+  static address* field_addresses_list() {
+    return _field_addresses_list;
+  }
+#else
+  static bool contains(address adr)        { return false; }
+  static address card_table_base_address() { return nullptr; }
+  static address grain_shift_address()     { return nullptr; }
+  static address* field_addresses_list()   { return nullptr; }
+#endif
 };
 
 #endif // SHARE_CODE_AOTCODECACHE_HPP

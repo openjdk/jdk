@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,7 +161,7 @@ public enum CompilePhase {
     static {
         for (CompilePhase phase : CompilePhase.values()) {
             if (phase == PRINT_IDEAL) {
-                PHASES_BY_PARSED_NAME.put("print_ideal", phase);
+                PHASES_BY_PARSED_NAME.put("PrintIdeal", phase);
             } else {
                 PHASES_BY_PARSED_NAME.put(phase.name(), phase);
             }

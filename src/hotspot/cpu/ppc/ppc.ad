@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+// Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2012, 2026 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1795,10 +1795,13 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
     return size;            // Self copy, no move.
 
   if (bottom_type()->isa_vect() != nullptr && ideal_reg() == Op_VecX) {
+    int src_offset = ra_->reg2offset(src_lo);
+    int dst_offset = ra_->reg2offset(dst_lo);
+    DEBUG_ONLY(int algm = MIN2(RegMask::num_registers(ideal_reg()), (int)Matcher::stack_alignment_in_slots()) * VMRegImpl::stack_slot_size);
+    assert((src_lo_rc != rc_stack) || is_aligned(src_offset, algm), "unaligned vector spill sp offset %d (src)", src_offset);
+    assert((dst_lo_rc != rc_stack) || is_aligned(dst_offset, algm), "unaligned vector spill sp offset %d (dst)", dst_offset);
     // Memory->Memory Spill.
     if (src_lo_rc == rc_stack && dst_lo_rc == rc_stack) {
-      int src_offset = ra_->reg2offset(src_lo);
-      int dst_offset = ra_->reg2offset(dst_lo);
       if (masm) {
         __ ld(R0, src_offset, R1_SP);
         __ std(R0, dst_offset, R1_SP);
@@ -1806,26 +1809,20 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
         __ std(R0, dst_offset+8, R1_SP);
       }
       size += 16;
+#ifndef PRODUCT
+      if (st != nullptr) {
+        st->print("%-7s [R1_SP + #%d] -> [R1_SP + #%d] \t// vector spill copy", "SPILL", src_offset, dst_offset);
+      }
+#endif // !PRODUCT
     }
     // VectorRegister->Memory Spill.
     else if (src_lo_rc == rc_vec && dst_lo_rc == rc_stack) {
       VectorSRegister Rsrc = as_VectorRegister(Matcher::_regEncode[src_lo]).to_vsr();
-      int dst_offset = ra_->reg2offset(dst_lo);
       if (PowerArchitecturePPC64 >= 9) {
-        if (is_aligned(dst_offset, 16)) {
-          if (masm) {
-            __ stxv(Rsrc, dst_offset, R1_SP); // matches storeV16_Power9
-          }
-          size += 4;
-        } else {
-          // Other alignment can be used by Vector API (VectorPayload in rearrangeOp,
-          // observed with VectorRearrangeTest.java on Power9).
-          if (masm) {
-            __ addi(R0, R1_SP, dst_offset);
-            __ stxvx(Rsrc, R0); // matches storeV16_Power9 (regarding element ordering)
-          }
-          size += 8;
+        if (masm) {
+          __ stxv(Rsrc, dst_offset, R1_SP); // matches storeV16_Power9
         }
+        size += 4;
       } else {
         if (masm) {
           __ addi(R0, R1_SP, dst_offset);
@@ -1833,24 +1830,25 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
         }
         size += 8;
       }
+#ifndef PRODUCT
+      if (st != nullptr) {
+        if (PowerArchitecturePPC64 >= 9) {
+          st->print("%-7s %s, [R1_SP + #%d] \t// vector spill copy", "STXV", Matcher::regName[src_lo], dst_offset);
+        } else {
+          st->print("%-7s R0, R1_SP, %d \t// vector spill copy\n\t"
+                    "%-7s %s, [R0] \t// vector spill copy", "ADDI", dst_offset, "STXVD2X", Matcher::regName[src_lo]);
+        }
+      }
+#endif // !PRODUCT
     }
     // Memory->VectorRegister Spill.
     else if (src_lo_rc == rc_stack && dst_lo_rc == rc_vec) {
       VectorSRegister Rdst = as_VectorRegister(Matcher::_regEncode[dst_lo]).to_vsr();
-      int src_offset = ra_->reg2offset(src_lo);
       if (PowerArchitecturePPC64 >= 9) {
-        if (is_aligned(src_offset, 16)) {
-          if (masm) {
-            __ lxv(Rdst, src_offset, R1_SP);
-          }
-          size += 4;
-        } else {
-          if (masm) {
-            __ addi(R0, R1_SP, src_offset);
-            __ lxvx(Rdst, R0);
-          }
-          size += 8;
+        if (masm) {
+          __ lxv(Rdst, src_offset, R1_SP);
         }
+        size += 4;
       } else {
         if (masm) {
           __ addi(R0, R1_SP, src_offset);
@@ -1858,6 +1856,16 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
         }
         size += 8;
       }
+#ifndef PRODUCT
+      if (st != nullptr) {
+        if (PowerArchitecturePPC64 >= 9) {
+          st->print("%-7s %s, [R1_SP + #%d] \t// vector spill copy", "LXV", Matcher::regName[dst_lo], src_offset);
+        } else {
+          st->print("%-7s R0, R1_SP, %d \t// vector spill copy\n\t"
+                    "%-7s %s, [R0] \t// vector spill copy", "ADDI", src_offset, "LXVD2X", Matcher::regName[dst_lo]);
+        }
+      }
+#endif // !PRODUCT
     }
     // VectorRegister->VectorRegister.
     else if (src_lo_rc == rc_vec && dst_lo_rc == rc_vec) {
@@ -1867,6 +1875,12 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
         __ xxlor(Rdst, Rsrc, Rsrc);
       }
       size += 4;
+#ifndef PRODUCT
+      if (st != nullptr) {
+        st->print("%-7s %s, %s, %s\t// vector spill copy",
+                  "XXLOR", Matcher::regName[dst_lo], Matcher::regName[src_lo], Matcher::regName[src_lo]);
+      }
+#endif // !PRODUCT
     }
     else {
       ShouldNotReachHere(); // No VR spill.
@@ -2088,17 +2102,11 @@ class HandlerImpl {
 
  public:
 
-  static int emit_exception_handler(C2_MacroAssembler *masm);
   static int emit_deopt_handler(C2_MacroAssembler* masm);
-
-  static uint size_exception_handler() {
-    // The exception_handler is a b64_patchable.
-    return MacroAssembler::b64_patchable_size;
-  }
 
   static uint size_deopt_handler() {
     // The deopt_handler is a bl64_patchable.
-    return MacroAssembler::bl64_patchable_size;
+    return MacroAssembler::bl64_patchable_size + BytesPerInstWord;
   }
 
 };
@@ -2114,22 +2122,6 @@ public:
 
 source %{
 
-int HandlerImpl::emit_exception_handler(C2_MacroAssembler *masm) {
-  address base = __ start_a_stub(size_exception_handler());
-  if (base == nullptr) {
-    ciEnv::current()->record_failure("CodeCache is full");
-    return 0;  // CodeBuffer::expand failed
-  }
-
-  int offset = __ offset();
-  __ b64_patchable((address)OptoRuntime::exception_blob()->content_begin(),
-                       relocInfo::runtime_call_type);
-  assert(__ offset() - offset == (int)size_exception_handler(), "must be fixed size");
-  __ end_a_stub();
-
-  return offset;
-}
-
 // The deopt_handler is like the exception handler, but it calls to
 // the deoptimization blob instead of jumping to the exception blob.
 int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
@@ -2140,12 +2132,23 @@ int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
   }
 
   int offset = __ offset();
+
+  Label start;
+  __ bind(start);
+
   __ bl64_patchable((address)SharedRuntime::deopt_blob()->unpack(),
                         relocInfo::runtime_call_type);
+
+  int entry_offset = __ offset();
+
+  __ b(start);
+
   assert(__ offset() - offset == (int) size_deopt_handler(), "must be fixed size");
+  assert(__ offset() - entry_offset >= NativePostCallNop::first_check_size,
+         "out of bounds read in post-call NOP check");
   __ end_a_stub();
 
-  return offset;
+  return entry_offset;
 }
 
 //=============================================================================
@@ -2230,6 +2233,12 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_FmaVF:
     case Op_FmaVD:
       return (SuperwordUseVSX && UseFMA);
+
+    case Op_MinF:
+    case Op_MaxF:
+    case Op_MinD:
+    case Op_MaxD:
+      return (PowerArchitecturePPC64 >= 9);
 
     case Op_Digit:
       return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_isDigit);
@@ -2394,15 +2403,17 @@ bool Matcher::is_reg2reg_move(MachNode* m) {
   return false;
 }
 
+bool Matcher::is_register_biasing_candidate(const MachNode* mdef, int oper_index) {
+  return false;
+}
+
 bool Matcher::is_generic_vector(MachOper* opnd)  {
   ShouldNotReachHere();  // generic vector operands not supported
   return false;
 }
 
-// Return whether or not this register is ever used as an argument. This
-// function is used on startup to build the trampoline stubs in generateOptoStub.
-// Registers not mentioned will be killed by the VM call in the trampoline, and
-// arguments in those registers not be available to the callee.
+#ifdef ASSERT
+// Return whether or not this register is ever used as an argument.
 bool Matcher::can_be_java_arg(int reg) {
   // We must include the virtual halves in order to get STDs and LDs
   // instead of STWs and LWs in the trampoline stubs.
@@ -2434,10 +2445,7 @@ bool Matcher::can_be_java_arg(int reg) {
 
   return false;
 }
-
-bool Matcher::is_spillable_arg(int reg) {
-  return can_be_java_arg(reg);
-}
+#endif
 
 uint Matcher::int_pressure_limit()
 {
@@ -3017,7 +3025,6 @@ encode %{
   %}
 
   enc_class postalloc_expand_encode_oop(iRegNdst dst, iRegPdst src, flagsReg crx) %{
-    // use isel instruction with Power 7
     cmpP_reg_imm16Node *n_compare  = new cmpP_reg_imm16Node();
     encodeP_subNode    *n_sub_base = new encodeP_subNode();
     encodeP_shiftNode  *n_shift    = new encodeP_shiftNode();
@@ -3092,7 +3099,6 @@ encode %{
     n_shift->_opnds[1] = op_src;
     n_shift->_bottom_type = _bottom_type;
 
-    // use isel instruction with Power 7
     decodeN_addNode *n_add_base = new decodeN_addNode();
     n_add_base->add_req(n_region, n_shift);
     n_add_base->_opnds[0] = op_dst;
@@ -3703,13 +3709,6 @@ frame %{
 
   // Compiled code's Frame Pointer.
   frame_pointer(R1); // R1_SP
-
-  // Interpreter stores its frame pointer in a register which is
-  // stored to the stack by I2CAdaptors. I2CAdaptors convert from
-  // interpreted java to compiled java.
-  //
-  // R14_state holds pointer to caller's cInterpreter.
-  interpreter_frame_pointer(R14); // R14_state
 
   stack_alignment(frame::alignment_in_bytes);
 
@@ -6582,7 +6581,6 @@ instruct cond_sub_base(iRegNdst dst, flagsRegSrc crx, iRegPsrc src1) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Power 7 can use isel instruction
 instruct cond_set_0_oop(iRegNdst dst, flagsRegSrc crx, iRegPsrc src1) %{
   // The match rule is needed to make it a 'MachTypeNode'!
   match(Set dst (EncodeP (Binary crx src1)));
@@ -7136,6 +7134,18 @@ instruct membar_release_lock() %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct membar_storeload() %{
+  match(MemBarStoreLoad);
+  ins_cost(4*MEMORY_REF_COST);
+
+  format %{ "MEMBAR-store-load" %}
+  size(4);
+  ins_encode %{
+    __ fence();
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct membar_volatile() %{
   match(MemBarVolatile);
   ins_cost(4*MEMORY_REF_COST);
@@ -7177,6 +7187,18 @@ instruct membar_volatile() %{
 //  ins_encode( /*empty*/ );
 //  ins_pipe(pipe_class_default);
 //%}
+
+instruct membar_full() %{
+  match(MemBarFull);
+  ins_cost(4*MEMORY_REF_COST);
+
+  format %{ "MEMBAR-full" %}
+  size(4);
+  ins_encode %{
+    __ fence();
+  %}
+  ins_pipe(pipe_class_default);
+%}
 
 instruct membar_CPUOrder() %{
   match(MemBarCPUOrder);
@@ -7257,7 +7279,6 @@ instruct cmovF_reg(cmpOp cmp, flagsRegSrc crx, regF dst, regF src) %{
   ins_variable_size_depending_on_alignment(true);
 
   format %{ "CMOVEF  $cmp, $crx, $dst, $src\n\t" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
   size(8);
   ins_encode %{
     Label done;
@@ -7277,7 +7298,6 @@ instruct cmovD_reg(cmpOp cmp, flagsRegSrc crx, regD dst, regD src) %{
   ins_variable_size_depending_on_alignment(true);
 
   format %{ "CMOVEF  $cmp, $crx, $dst, $src\n\t" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
   size(8);
   ins_encode %{
     Label done;
@@ -7286,6 +7306,70 @@ instruct cmovD_reg(cmpOp cmp, flagsRegSrc crx, regD dst, regD src) %{
     __ bc(cc_to_inverse_boint($cmp$$cmpcode), cc_to_biint($cmp$$cmpcode, $crx$$reg), done);
     __ fmr($dst$$FloatRegister, $src$$FloatRegister);
     __ bind(done);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmovF_cmpF(cmpOp cop, regF op1, regF op2, regF dst, regF false_result, regF true_result, regD tmp) %{
+  match(Set dst (CMoveF (Binary cop (CmpF op1 op2)) (Binary false_result true_result)));
+  predicate(PowerArchitecturePPC64 >= 9);
+  effect(TEMP tmp);
+  ins_cost(2*DEFAULT_COST);
+  format %{ "cmovF_cmpF  $dst = ($op1 $cop $op2) ? $true_result : $false_result\n\t" %}
+  size(8);
+  ins_encode %{
+    __ cmovF($cop$$cmpcode, $dst$$FloatRegister->to_vsr(),
+             $op1$$FloatRegister->to_vsr(), $op2$$FloatRegister->to_vsr(),
+             $true_result$$FloatRegister->to_vsr(), $false_result$$FloatRegister->to_vsr(),
+             $tmp$$FloatRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmovF_cmpD(cmpOp cop, regD op1, regD op2, regF dst, regF false_result, regF true_result, regD tmp) %{
+  match(Set dst (CMoveF (Binary cop (CmpD op1 op2)) (Binary false_result true_result)));
+  predicate(PowerArchitecturePPC64 >= 9);
+  effect(TEMP tmp);
+  ins_cost(2*DEFAULT_COST);
+  format %{ "cmovF_cmpD  $dst = ($op1 $cop $op2) ? $true_result : $false_result\n\t" %}
+  size(8);
+  ins_encode %{
+    __ cmovF($cop$$cmpcode, $dst$$FloatRegister->to_vsr(),
+             $op1$$FloatRegister->to_vsr(), $op2$$FloatRegister->to_vsr(),
+             $true_result$$FloatRegister->to_vsr(), $false_result$$FloatRegister->to_vsr(),
+             $tmp$$FloatRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmovD_cmpD(cmpOp cop, regD op1, regD op2, regD dst, regD false_result, regD true_result, regD tmp) %{
+  match(Set dst (CMoveD (Binary cop (CmpD op1 op2)) (Binary false_result true_result)));
+  predicate(PowerArchitecturePPC64 >= 9);
+  effect(TEMP tmp);
+  ins_cost(2*DEFAULT_COST);
+  format %{ "cmovD_cmpD  $dst = ($op1 $cop $op2) ? $true_result : $false_result\n\t" %}
+  size(8);
+  ins_encode %{
+    __ cmovF($cop$$cmpcode, $dst$$FloatRegister->to_vsr(),
+             $op1$$FloatRegister->to_vsr(), $op2$$FloatRegister->to_vsr(),
+             $true_result$$FloatRegister->to_vsr(), $false_result$$FloatRegister->to_vsr(),
+             $tmp$$FloatRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmovD_cmpF(cmpOp cop, regF op1, regF op2, regD dst, regD false_result, regD true_result, regD tmp) %{
+  match(Set dst (CMoveD (Binary cop (CmpF op1 op2)) (Binary false_result true_result)));
+  predicate(PowerArchitecturePPC64 >= 9);
+  effect(TEMP tmp);
+  ins_cost(2*DEFAULT_COST);
+  format %{ "cmovD_cmpF  $dst = ($op1 $cop $op2) ? $true_result : $false_result\n\t" %}
+  size(8);
+  ins_encode %{
+    __ cmovF($cop$$cmpcode, $dst$$FloatRegister->to_vsr(),
+             $op1$$FloatRegister->to_vsr(), $op2$$FloatRegister->to_vsr(),
+             $true_result$$FloatRegister->to_vsr(), $false_result$$FloatRegister->to_vsr(),
+             $tmp$$FloatRegister->to_vsr());
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -8456,7 +8540,6 @@ instruct cmovI_bne_negI_reg(iRegIdst dst, flagsRegSrc crx, iRegIsrc src1) %{
   ins_variable_size_depending_on_alignment(true);
 
   format %{ "CMOVE   $dst, neg($src1), $crx" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
   size(8);
   ins_encode %{
     Label done;
@@ -8515,7 +8598,6 @@ instruct cmovL_bne_negL_reg(iRegLdst dst, flagsRegSrc crx, iRegLsrc src1) %{
   ins_variable_size_depending_on_alignment(true);
 
   format %{ "CMOVE   $dst, neg($src1), $crx" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
   size(8);
   ins_encode %{
     Label done;
@@ -10225,8 +10307,7 @@ instruct cmovI_bso_stackSlotL(iRegIdst dst, flagsRegSrc crx, stackSlotL src) %{
 
   ins_variable_size_depending_on_alignment(true);
 
-  format %{ "cmovI   $crx, $dst, $src" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
+  format %{ "CMOVI   $crx, $dst, $src" %}
   size(8);
   ins_encode( enc_cmove_bso_stackSlotL(dst, crx, src) );
   ins_pipe(pipe_class_default);
@@ -10239,8 +10320,7 @@ instruct cmovI_bso_reg(iRegIdst dst, flagsRegSrc crx, regD src) %{
 
   ins_variable_size_depending_on_alignment(true);
 
-  format %{ "cmovI   $crx, $dst, $src" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
+  format %{ "CMOVI   $crx, $dst, $src" %}
   size(8);
   ins_encode( enc_cmove_bso_reg(dst, crx, src) );
   ins_pipe(pipe_class_default);
@@ -10252,7 +10332,7 @@ instruct cmovI_bso_reg_conLvalue0_Ex(iRegIdst dst, flagsRegSrc crx, regD src) %{
   effect(DEF dst, USE crx, USE src);
   predicate(false);
 
-  format %{ "CmovI   $dst, $crx, $src \t// postalloc expanded" %}
+  format %{ "CMOVI   $dst, $crx, $src \t// postalloc expanded" %}
   postalloc_expand %{
     //
     // replaces
@@ -10402,8 +10482,7 @@ instruct cmovL_bso_stackSlotL(iRegLdst dst, flagsRegSrc crx, stackSlotL src) %{
 
   ins_variable_size_depending_on_alignment(true);
 
-  format %{ "cmovL   $crx, $dst, $src" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
+  format %{ "CMOVL   $crx, $dst, $src" %}
   size(8);
   ins_encode( enc_cmove_bso_stackSlotL(dst, crx, src) );
   ins_pipe(pipe_class_default);
@@ -10416,8 +10495,7 @@ instruct cmovL_bso_reg(iRegLdst dst, flagsRegSrc crx, regD src) %{
 
   ins_variable_size_depending_on_alignment(true);
 
-  format %{ "cmovL   $crx, $dst, $src" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
+  format %{ "CMOVL   $crx, $dst, $src" %}
   size(8);
   ins_encode( enc_cmove_bso_reg(dst, crx, src) );
   ins_pipe(pipe_class_default);
@@ -10429,7 +10507,7 @@ instruct cmovL_bso_reg_conLvalue0_Ex(iRegLdst dst, flagsRegSrc crx, regD src) %{
   effect(DEF dst, USE crx, USE src);
   predicate(false);
 
-  format %{ "CmovL   $dst, $crx, $src \t// postalloc expanded" %}
+  format %{ "CMOVL   $dst, $crx, $src \t// postalloc expanded" %}
   postalloc_expand %{
     //
     // replaces
@@ -10630,9 +10708,9 @@ instruct convF2HF_reg_reg(iRegIdst dst, regF src, regF tmp) %{
   effect(TEMP tmp);
   ins_cost(3 * DEFAULT_COST);
   size(12);
-  format %{ "xscvdphp $tmp, $src\t# convert to half precision\n\t"
-            "mffprd $dst, $tmp\t# move result from $tmp to $dst\n\t"
-            "extsh $dst, $dst\t# make it a proper short"
+  format %{ "XSCVDPHP $tmp, $src\t# convert to half precision\n\t"
+            "MFFPRD $dst, $tmp\t# move result from $tmp to $dst\n\t"
+            "EXTSH $dst, $dst\t# make it a proper short"
   %}
   ins_encode %{
     __ f2hf($dst$$Register, $src$$FloatRegister, $tmp$$FloatRegister);
@@ -10644,8 +10722,8 @@ instruct convHF2F_reg_reg(regF dst, iRegIsrc src) %{
   match(Set dst (ConvHF2F src));
   ins_cost(2 * DEFAULT_COST);
   size(8);
-  format %{ "mtfprd $dst, $src\t# move source from $src to $dst\n\t"
-            "xscvhpdp $dst, $dst\t# convert from half precision"
+  format %{ "MTFPRD $dst, $src\t# move source from $src to $dst\n\t"
+            "XSCVHPDP $dst, $dst\t# convert from half precision"
   %}
   ins_encode %{
     __ hf2f($dst$$FloatRegister, $src$$Register);
@@ -11043,8 +11121,7 @@ instruct cmov_bns_less(flagsReg crx) %{
 
   ins_variable_size_depending_on_alignment(true);
 
-  format %{ "cmov    $crx" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
+  format %{ "CMOV    $crx" %}
   size(12);
   ins_encode %{
     Label done;
@@ -11072,7 +11149,7 @@ instruct cmpF_reg_reg_Ex(flagsReg crx, regF src1, regF src2) %{
   match(Set crx (CmpF src1 src2));
   ins_cost(DEFAULT_COST+BRANCH_COST);
 
-  format %{ "CmpF    $crx, $src1, $src2 \t// postalloc expanded" %}
+  format %{ "CMPF    $crx, $src1, $src2 \t// postalloc expanded" %}
   postalloc_expand %{
     //
     // replaces
@@ -12221,6 +12298,58 @@ instruct maxI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegC
   ins_encode %{
     __ cmpw(CR0, $src1$$Register, $src2$$Register);
     __ isel($dst$$Register, CR0, Assembler::greater, /*invert*/false, $src1$$Register, $src2$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct minF(regF dst, regF src1, regF src2) %{
+  match(Set dst (MinF src1 src2));
+  predicate(PowerArchitecturePPC64 >= 9);
+  ins_cost(DEFAULT_COST);
+
+  format %{ "XSMINJDP $dst, $src1, $src2\t// MinF" %}
+  size(4);
+  ins_encode %{
+    __ xsminjdp($dst$$FloatRegister->to_vsr(), $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct minD(regD dst, regD src1, regD src2) %{
+  match(Set dst (MinD src1 src2));
+  predicate(PowerArchitecturePPC64 >= 9);
+  ins_cost(DEFAULT_COST);
+
+  format %{ "XSMINJDP $dst, $src1, $src2\t// MinD" %}
+  size(4);
+  ins_encode %{
+    __ xsminjdp($dst$$FloatRegister->to_vsr(), $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct maxF(regF dst, regF src1, regF src2) %{
+  match(Set dst (MaxF src1 src2));
+  predicate(PowerArchitecturePPC64 >= 9);
+  ins_cost(DEFAULT_COST);
+
+  format %{ "XSMAXJDP $dst, $src1, $src2\t// MaxF" %}
+  size(4);
+  ins_encode %{
+    __ xsmaxjdp($dst$$FloatRegister->to_vsr(), $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct maxD(regD dst, regD src1, regD src2) %{
+  match(Set dst (MaxD src1 src2));
+  predicate(PowerArchitecturePPC64 >= 9);
+  ins_cost(DEFAULT_COST);
+
+  format %{ "XSMAXJDP $dst, $src1, $src2\t// MaxD" %}
+  size(4);
+  ins_encode %{
+    __ xsmaxjdp($dst$$FloatRegister->to_vsr(), $src1$$FloatRegister->to_vsr(), $src2$$FloatRegister->to_vsr());
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -13747,7 +13876,7 @@ instruct vfma2D_neg2(vecX dst, vecX src1, vecX src2) %{
 instruct overflowAddL_reg_reg(flagsRegCR0 cr0, iRegLsrc op1, iRegLsrc op2) %{
   match(Set cr0 (OverflowAddL op1 op2));
 
-  format %{ "add_    $op1, $op2\t# overflow check long" %}
+  format %{ "ADD_    $op1, $op2\t# overflow check long" %}
   size(12);
   ins_encode %{
     __ li(R0, 0);
@@ -13760,7 +13889,7 @@ instruct overflowAddL_reg_reg(flagsRegCR0 cr0, iRegLsrc op1, iRegLsrc op2) %{
 instruct overflowSubL_reg_reg(flagsRegCR0 cr0, iRegLsrc op1, iRegLsrc op2) %{
   match(Set cr0 (OverflowSubL op1 op2));
 
-  format %{ "subfo_  R0, $op2, $op1\t# overflow check long" %}
+  format %{ "SUBFO_  R0, $op2, $op1\t# overflow check long" %}
   size(12);
   ins_encode %{
     __ li(R0, 0);
@@ -13773,7 +13902,7 @@ instruct overflowSubL_reg_reg(flagsRegCR0 cr0, iRegLsrc op1, iRegLsrc op2) %{
 instruct overflowNegL_reg(flagsRegCR0 cr0, immL_0 zero, iRegLsrc op2) %{
   match(Set cr0 (OverflowSubL zero op2));
 
-  format %{ "nego_   R0, $op2\t# overflow check long" %}
+  format %{ "NEGO_   R0, $op2\t# overflow check long" %}
   size(12);
   ins_encode %{
     __ li(R0, 0);
@@ -13786,7 +13915,7 @@ instruct overflowNegL_reg(flagsRegCR0 cr0, immL_0 zero, iRegLsrc op2) %{
 instruct overflowMulL_reg_reg(flagsRegCR0 cr0, iRegLsrc op1, iRegLsrc op2) %{
   match(Set cr0 (OverflowMulL op1 op2));
 
-  format %{ "mulldo_ R0, $op1, $op2\t# overflow check long" %}
+  format %{ "MULLDO_ R0, $op1, $op2\t# overflow check long" %}
   size(12);
   ins_encode %{
     __ li(R0, 0);
@@ -14163,7 +14292,7 @@ instruct ForwardExceptionjmp()
   match(ForwardException);
   ins_cost(CALL_COST);
 
-  format %{ "Jmp     forward_exception_stub" %}
+  format %{ "JMP     forward_exception_stub" %}
   ins_encode %{
     __ set_inst_mark();
     __ b64_patchable(StubRoutines::forward_exception_entry(), relocInfo::runtime_call_type);
@@ -14191,7 +14320,7 @@ instruct RethrowException() %{
   match(Rethrow);
   ins_cost(CALL_COST);
 
-  format %{ "Jmp     rethrow_stub" %}
+  format %{ "JMP     rethrow_stub" %}
   ins_encode %{
     __ set_inst_mark();
     __ b64_patchable((address)OptoRuntime::rethrow_stub(), relocInfo::runtime_call_type);
@@ -14232,20 +14361,6 @@ instruct tlsLoadP(threadRegP dst) %{
 %}
 
 //---Some PPC specific nodes---------------------------------------------------
-
-// Stop a group.
-instruct endGroup() %{
-  ins_cost(0);
-
-  ins_is_nop(true);
-
-  format %{ "End Bundle (ori r1, r1, 0)" %}
-  size(4);
-  ins_encode %{
-    __ endgroup();
-  %}
-  ins_pipe(pipe_class_default);
-%}
 
 // Nop instructions
 

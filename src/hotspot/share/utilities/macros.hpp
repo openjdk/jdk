@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -548,6 +548,9 @@
 #endif
 
 #define MACOS_AARCH64_ONLY(x) MACOS_ONLY(AARCH64_ONLY(x))
+#if defined(__APPLE__) && defined(AARCH64)
+#define MACOS_AARCH64 1
+#endif
 
 #if defined(RISCV32) || defined(RISCV64)
 #define RISCV

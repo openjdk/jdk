@@ -114,7 +114,7 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 // -Djava.security.debug=all
 class H3QuicVTTest implements HttpServerAdapters {
 
-    private static SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
     private static HttpTestServer h3Server;
     private static String requestURI;
 
@@ -139,10 +139,6 @@ class H3QuicVTTest implements HttpServerAdapters {
 
     @BeforeAll
     static void beforeClass() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null) {
-            throw new AssertionError("Unexpected null sslContext");
-        }
         // create an H3 only server
         h3Server = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         h3Server.addHandler((exchange) -> exchange.sendResponseHeaders(200, 0), "/hello");
@@ -196,6 +192,15 @@ class H3QuicVTTest implements HttpServerAdapters {
         }
     }
 
+    // This method attempts to determine whether the quic selector thread
+    // is a platform thread or a virtual thread, and throws if expectations
+    // are not met.
+    // Since we don't have access to the quic selector thread, the method
+    // uses a roundabout way to figure this out: it enumerates all
+    // platform threads, and if it finds a thread whose name matches
+    // the expected name of the quic selector thread it concludes that the
+    // selector thread is a platform thread. Otherwise, it assumes
+    // that the thread is virtual.
     private static void assertSelectorThread(HttpClient client) {
         String clientId = client.toString().substring(client.toString().indexOf('('));
         String name = "Thread(QuicSelector(HttpClientImpl" + clientId + "))";

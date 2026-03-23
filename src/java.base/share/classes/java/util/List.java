@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1207,7 +1207,7 @@ public interface List<E> extends SequencedCollection<E> {
      * The provided computing function is guaranteed to be successfully
      * invoked at most once per list index, even in a multi-threaded environment.
      * Competing threads accessing an element already under computation will block until
-     * an element is computed or the computing function completes abnormally
+     * an element is computed or the computing function completes abnormally.
      * <p>
      * If invoking the provided computing function throws an exception, it is rethrown
      * to the initial caller and no value for the element is recorded.
@@ -1224,7 +1224,7 @@ public interface List<E> extends SequencedCollection<E> {
      * The returned list and its {@link List#subList(int, int) subList()} or
      * {@link List#reversed()} views implement the {@link RandomAccess} interface.
      * <p>
-     * If the provided computing function recursively calls itself or the returned
+     * If the provided computing function recursively calls itself via the returned
      * lazy list for the same index, an {@linkplain IllegalStateException}
      * will be thrown.
      * <p>
@@ -1235,7 +1235,7 @@ public interface List<E> extends SequencedCollection<E> {
      * one or more lazy elements.
      * <p>
      * The returned lazy list strongly references its computing
-     * function used to compute elements at least so long as there are uninitialized
+     * function used to compute elements at least as long as there are uninitialized
      * elements.
      * <p>
      * The returned List is <em>not</em> {@linkplain Serializable}.

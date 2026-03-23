@@ -87,7 +87,7 @@ class HttpResponseConnectionLabelTest {
 
     private static final String SERVER_ID_HEADER_NAME = "X-Server-Id";
 
-    private static final SSLContext SSL_CONTEXT = createSslContext();
+    private static final SSLContext SSL_CONTEXT = SimpleSSLContext.findSSLContext();
 
     // For each test instance, start with a fresh client having no connections in the pool
     private final HttpClient client = HttpServerAdapters
@@ -119,14 +119,6 @@ class HttpResponseConnectionLabelTest {
     private static final ServerRequestPair SEC_HTTPS2 = ServerRequestPair.of(Version.HTTP_2, true);
 
     private static final ServerRequestPair SEC_HTTP3 = ServerRequestPair.of(Version.HTTP_3, true);
-
-    private static SSLContext createSslContext() {
-        try {
-            return new SimpleSSLContext().get();
-        } catch (IOException exception) {
-            throw new UncheckedIOException(exception);
-        }
-    }
 
     private record ServerRequestPair(
             HttpTestServer server,

@@ -258,12 +258,28 @@ public abstract class HttpRequest {
          * {@link HttpClient#sendAsync(java.net.http.HttpRequest,
          * java.net.http.HttpResponse.BodyHandler) HttpClient::sendAsync}
          * completes exceptionally with an {@code HttpTimeoutException}. The effect
-         * of not setting a timeout is the same as setting an infinite Duration,
-         * i.e. block forever.
+         * of not setting a timeout is the same as setting an infinite
+         * {@code Duration}, i.e., block forever.
+         *
+         * @implSpec
+         * A timeout applies to the duration measured from the instant the
+         * request execution starts to, <em>at least</em>, the instant an
+         * {@link HttpResponse} is constructed. The elapsed time includes
+         * obtaining a connection for transport and retrieving the response
+         * headers.
+         *
+         * @implNote
+         * The JDK built-in implementation applies timeout over the duration
+         * measured from the instant the request execution starts to <b>the
+         * instant the response body is consumed</b>, if present. This is
+         * implemented by stopping the timer after the response body subscriber
+         * completion.
          *
          * @param duration the timeout duration
          * @return this builder
          * @throws IllegalArgumentException if the duration is non-positive
+         * @see HttpClient.Builder#connectTimeout(Duration) Configuring
+         * timeout for connection establishment
          */
         public abstract Builder timeout(Duration duration);
 

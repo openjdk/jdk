@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
  * @run main/othervm Compliance
  */
 import jdk.test.lib.Asserts;
-import jdk.test.lib.Utils;
 
 import javax.crypto.DecapsulateException;
 import javax.crypto.KEM;
@@ -41,9 +40,7 @@ import java.security.*;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.*;
 import java.util.Arrays;
-import java.util.Objects;
 import java.util.Random;
-import java.util.function.Consumer;
 
 import com.sun.crypto.provider.DHKEM;
 
@@ -66,12 +63,10 @@ public class Compliance {
     private static void conform() {
         new KEM.Encapsulated(new SecretKeySpec(new byte[1], "X"), new byte[0], new byte[0]);
         new KEM.Encapsulated(new SecretKeySpec(new byte[1], "X"), new byte[0], null);
-        Utils.runAndCheckException(
-                () -> new KEM.Encapsulated(null, new byte[0], null),
-                NullPointerException.class);
-        Utils.runAndCheckException(
-                () -> new KEM.Encapsulated(new SecretKeySpec(new byte[1], "X"), null, null),
-                NullPointerException.class);
+        Asserts.assertThrows(NullPointerException.class,
+                () -> new KEM.Encapsulated(null, new byte[0], null));
+        Asserts.assertThrows(NullPointerException.class,
+                () -> new KEM.Encapsulated(new SecretKeySpec(new byte[1], "X"), null, null));
     }
 
     // basic should and shouldn't behaviors
@@ -86,37 +81,33 @@ public class Compliance {
         KEM.getInstance("DHKEM", (String) null);
         KEM.getInstance("DHKEM", (Provider) null);
         KEM kem = KEM.getInstance("DHKEM");
-        Utils.runAndCheckException(
-                () -> KEM.getInstance("OLALA"),
-                NoSuchAlgorithmException.class);
-        Utils.runAndCheckException(
-                () -> KEM.getInstance("DHKEM", "NoWhere"),
-                NoSuchProviderException.class);
-        Utils.runAndCheckException(
-                () -> KEM.getInstance("DHKEM", "SunRsaSign"),
-                NoSuchAlgorithmException.class);
+        Asserts.assertThrows(NoSuchAlgorithmException.class,
+                () -> KEM.getInstance("OLALA"));
+        Asserts.assertThrows(NoSuchProviderException.class,
+                () -> KEM.getInstance("DHKEM", "NoWhere"));
+        Asserts.assertThrows(NoSuchAlgorithmException.class,
+                () -> KEM.getInstance("DHKEM", "SunRsaSign"));
 
-        Utils.runAndCheckException(
-                () -> kem.newEncapsulator(null),
-                InvalidKeyException.class);
-        Utils.runAndCheckException(
-                () -> kem.newDecapsulator(null),
-                InvalidKeyException.class);
+        Asserts.assertThrows(InvalidKeyException.class,
+                () -> kem.newEncapsulator(null));
+        Asserts.assertThrows(InvalidKeyException.class,
+                () -> kem.newDecapsulator(null));
 
         // Still an EC key, rejected by implementation
-        Utils.runAndCheckException(
-                () -> kem.newEncapsulator(badECKey()),
-                ExChecker.of(InvalidKeyException.class).by(DHKEM.class));
+        checkThrownBy(Asserts.assertThrows(
+                InvalidKeyException.class,
+                () -> kem.newEncapsulator(badECKey())),
+                DHKEM.class.getName());
 
         // Not an EC key at all, rejected by framework coz it's not
         // listed in "SupportedKeyClasses" in SunJCE.java.
-        Utils.runAndCheckException(
-                () -> kem.newEncapsulator(kpRSA.getPublic()),
-                ExChecker.of(InvalidKeyException.class).by(KEM.class.getName() + "$DelayedKEM"));
+        checkThrownBy(Asserts.assertThrows(
+                InvalidKeyException.class,
+                () -> kem.newEncapsulator(kpRSA.getPublic())),
+                KEM.class.getName() + "$DelayedKEM");
 
-        Utils.runAndCheckException(
-                () -> kem.newDecapsulator(kpRSA.getPrivate()),
-                InvalidKeyException.class);
+        Asserts.assertThrows(InvalidKeyException.class,
+                () -> kem.newDecapsulator(kpRSA.getPrivate()));
 
         kem.newEncapsulator(kpX.getPublic(), null);
         kem.newEncapsulator(kpX.getPublic(), null, null);
@@ -125,15 +116,12 @@ public class Compliance {
         Asserts.assertEQ(enc1.key().getEncoded().length, e2.secretSize());
         Asserts.assertEQ(enc1.key().getAlgorithm(), "AES");
 
-        Utils.runAndCheckException(
-                () -> e2.encapsulate(-1, 12, "AES"),
-                IndexOutOfBoundsException.class);
-        Utils.runAndCheckException(
-                () -> e2.encapsulate(0, e2.secretSize() + 1, "AES"),
-                IndexOutOfBoundsException.class);
-        Utils.runAndCheckException(
-                () -> e2.encapsulate(0, e2.secretSize(), null),
-                NullPointerException.class);
+        Asserts.assertThrows(IndexOutOfBoundsException.class,
+                () -> e2.encapsulate(-1, 12, "AES"));
+        Asserts.assertThrows(IndexOutOfBoundsException.class,
+                () -> e2.encapsulate(0, e2.secretSize() + 1, "AES"));
+        Asserts.assertThrows(NullPointerException.class,
+                () -> e2.encapsulate(0, e2.secretSize(), null));
 
         KEM.Encapsulated enc = e2.encapsulate();
         Asserts.assertEQ(enc.key().getEncoded().length, e2.secretSize());
@@ -162,29 +150,23 @@ public class Compliance {
                 d.secretSize() - 16, d.secretSize(), "AES");
         Asserts.assertEQ(encTail.key(), decTail);
 
-        Utils.runAndCheckException(
-                () -> d.decapsulate(null),
-                NullPointerException.class);
-        Utils.runAndCheckException(
-                () -> d.decapsulate(enc.encapsulation(), -1, 12, "AES"),
-                IndexOutOfBoundsException.class);
-        Utils.runAndCheckException(
-                () -> d.decapsulate(enc.encapsulation(), 0, d.secretSize() + 1, "AES"),
-                IndexOutOfBoundsException.class);
-        Utils.runAndCheckException(
-                () -> d.decapsulate(enc.encapsulation(), 0, d.secretSize(), null),
-                NullPointerException.class);
+        Asserts.assertThrows(NullPointerException.class,
+                () -> d.decapsulate(null));
+        Asserts.assertThrows(IndexOutOfBoundsException.class,
+                () -> d.decapsulate(enc.encapsulation(), -1, 12, "AES"));
+        Asserts.assertThrows(IndexOutOfBoundsException.class,
+                () -> d.decapsulate(enc.encapsulation(), 0, d.secretSize() + 1, "AES"));
+        Asserts.assertThrows(NullPointerException.class,
+                () -> d.decapsulate(enc.encapsulation(), 0, d.secretSize(), null));
 
         KEM.Encapsulator e3 = kem.newEncapsulator(kpEC.getPublic());
         KEM.Encapsulated enc2 = e3.encapsulate();
         KEM.Decapsulator d3 = kem.newDecapsulator(kpX.getPrivate());
-        Utils.runAndCheckException(
-                () -> d3.decapsulate(enc2.encapsulation()),
-                DecapsulateException.class);
+        Asserts.assertThrows(DecapsulateException.class,
+                () -> d3.decapsulate(enc2.encapsulation()));
 
-        Utils.runAndCheckException(
-                () -> d3.decapsulate(new byte[100]),
-                DecapsulateException.class);
+        Asserts.assertThrows(DecapsulateException.class,
+                () -> d3.decapsulate(new byte[100]));
     }
 
     static class MySecureRandom extends SecureRandom {
@@ -273,34 +255,8 @@ public class Compliance {
         };
     }
 
-    // Used by Utils.runAndCheckException. Checks for type and final thrower.
-    record ExChecker(Class<? extends Throwable> ex, String caller)
-            implements Consumer<Throwable> {
-        ExChecker {
-            Objects.requireNonNull(ex);
-        }
-        static ExChecker of(Class<? extends Throwable> ex) {
-            return new ExChecker(ex, null);
-        }
-        ExChecker by(String caller) {
-            return new ExChecker(ex(), caller);
-        }
-        ExChecker by(Class<?> caller) {
-            return new ExChecker(ex(), caller.getName());
-        }
-        @Override
-        public void accept(Throwable t) {
-            if (t == null) {
-                throw new AssertionError("no exception thrown");
-            } else if (!ex.isAssignableFrom(t.getClass())) {
-                throw new AssertionError("exception thrown is " + t.getClass());
-            } else if (caller == null) {
-                return;
-            } else if (t.getStackTrace()[0].getClassName().equals(caller)) {
-                return;
-            } else {
-                throw new AssertionError("thrown by " + t.getStackTrace()[0].getClassName());
-            }
-        }
+    // Ensures `t` is thrown by `caller`
+    static <T extends Throwable> void checkThrownBy(T t, String caller) {
+        Asserts.assertEquals(caller, t.getStackTrace()[0].getClassName());
     }
 }

@@ -25,7 +25,6 @@
 package jdk.jpackage.internal;
 
 import static jdk.jpackage.internal.I18N.buildConfigException;
-import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -34,33 +33,33 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import jdk.internal.util.OperatingSystem;
-import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.CustomLauncherIcon;
-import jdk.jpackage.internal.model.DefaultLauncherIcon;
 import jdk.jpackage.internal.model.FileAssociation;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.Launcher.Stub;
-import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.model.LauncherIcon;
 import jdk.jpackage.internal.model.LauncherStartupInfo;
-import jdk.jpackage.internal.model.ResourceDirLauncherIcon;
+import jdk.jpackage.internal.util.PathUtils;
 
 final class LauncherBuilder {
 
-    Launcher create() throws ConfigException {
+    Launcher create() {
         CustomLauncherIcon.fromLauncherIcon(icon)
                 .map(CustomLauncherIcon::path)
-                .ifPresent(toConsumer(LauncherBuilder::validateIcon));
+                .ifPresent(LauncherBuilder::validateIcon);
 
         final var fa = createFileAssociations(faSources, Optional.ofNullable(faTraits).orElse(DEFAULT_FA_TRAITS));
 
-        Objects.requireNonNull(defaultIconResourceName);
-
         final var nonNullName = deriveNonNullName();
 
-        return new Stub(nonNullName, Optional.ofNullable(startupInfo), fa,
-                isService, Optional.ofNullable(description).orElse(nonNullName),
-                Optional.ofNullable(icon), defaultIconResourceName,
+        return new Stub(
+                nonNullName,
+                Optional.ofNullable(startupInfo),
+                fa,
+                isService,
+                Optional.ofNullable(description).orElse(nonNullName),
+                Optional.ofNullable(icon),
+                Optional.ofNullable(defaultIconResourceName).orElseGet(LauncherBuilder::defaultIconResourceName),
                 Optional.ofNullable(extraAppImageFileData).orElseGet(Map::of));
     }
 
@@ -123,7 +122,7 @@ final class LauncherBuilder {
                     .setCategory("icon");
     }
 
-    static void validateIcon(Path icon) throws ConfigException {
+    static Path validateIcon(Path icon) {
         switch (OperatingSystem.current()) {
             case WINDOWS -> {
                 if (!icon.getFileName().toString().toLowerCase().endsWith(".ico")) {
@@ -144,13 +143,15 @@ final class LauncherBuilder {
                 throw new UnsupportedOperationException();
             }
         }
+
+        return icon;
     }
 
     record FileAssociationTraits() {
     }
 
     private static List<FileAssociation> createFileAssociations(
-            List<FileAssociationGroup> groups, FileAssociationTraits faTraits) throws ConfigException {
+            List<FileAssociationGroup> groups, FileAssociationTraits faTraits) {
 
         Objects.requireNonNull(groups);
         Objects.requireNonNull(faTraits);
@@ -170,6 +171,23 @@ final class LauncherBuilder {
         }
 
         return FileAssociationGroup.flatMap(groups.stream()).toList();
+    }
+
+    private static String defaultIconResourceName() {
+        switch (OperatingSystem.current()) {
+            case WINDOWS -> {
+                return "JavaApp.ico";
+            }
+            case LINUX -> {
+                return "JavaApp.png";
+            }
+            case MACOS -> {
+                return "JavaApp.icns";
+            }
+            default -> {
+                throw new UnsupportedOperationException();
+            }
+        }
     }
 
     private String name;

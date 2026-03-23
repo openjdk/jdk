@@ -35,6 +35,7 @@
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
@@ -240,6 +241,8 @@ void vmClasses::resolve_shared_class(InstanceKlass* klass, ClassLoaderData* load
     return;
   }
 
+  EventClassLoad class_load_event;
+
   // add super and interfaces first
   InstanceKlass* super = klass->super();
   if (super != nullptr && super->class_loader_data() == nullptr) {
@@ -261,6 +264,10 @@ void vmClasses::resolve_shared_class(InstanceKlass* klass, ClassLoaderData* load
   dictionary->add_klass(THREAD, klass->name(), klass);
   klass->add_to_hierarchy(THREAD);
   assert(klass->is_loaded(), "Must be in at least loaded state");
+
+  if (class_load_event.should_commit()) {
+    JFR_ONLY(SystemDictionary::post_class_load_event(&class_load_event, klass, loader_data);)
+  }
 }
 
 #endif // INCLUDE_CDS

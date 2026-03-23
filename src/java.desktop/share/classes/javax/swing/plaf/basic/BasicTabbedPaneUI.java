@@ -293,6 +293,16 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         installDefaults();
         installListeners();
         installKeyboardActions();
+        setFocusIndex(tabPane.getSelectedIndex(), false);
+
+        if (tabPane.getLayout() instanceof TabbedPaneScrollLayout) {
+            ensureCurrentLayout();
+            int index = tabPane.getSelectedIndex();
+            if (index < rects.length && index != -1) {
+                tabScroller.tabPanel.scrollRectToVisible(
+                            (Rectangle)rects[index].clone());
+            }
+        }
     }
 
     public void uninstallUI(JComponent c) {
@@ -518,7 +528,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         }
 
         tabPane.removeContainerListener(getHandler());
-        if (htmlViews!=null) {
+        if (htmlViews != null) {
             htmlViews.removeAllElements();
             htmlViews = null;
         }
@@ -4080,7 +4090,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
                     setHtmlView(v, inserted, index);
                 }
             } else {                             // Not HTML
-                if (htmlViews!=null) {           // Add placeholder
+                if (htmlViews != null) {           // Add placeholder
                     setHtmlView(null, inserted, index);
                 }                                // else nada!
             }
