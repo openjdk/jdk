@@ -1812,15 +1812,10 @@ MapArchiveResult AOTMetaspace::map_archives(FileMapInfo* static_mapinfo, FileMap
       } else {
         FileMapRegion* r = static_mapinfo->region_at(AOTMetaspace::hp);
         if (r->used() > 0) {
-          if (static_mapinfo->object_streaming_mode()) {
-            AOTMetaspace::report_loading_error("Cannot use CDS heap data.");
-          } else {
-            if (!UseCompressedOops && !AOTMappedHeapLoader::can_map()) {
-              AOTMetaspace::report_loading_error("Cannot use CDS heap data. Selected GC not compatible -XX:-UseCompressedOops");
-            } else {
-              AOTMetaspace::report_loading_error("Cannot use CDS heap data. UseEpsilonGC, UseG1GC, UseSerialGC, UseParallelGC, or UseShenandoahGC are required.");
-            }
-          }
+          AOTMetaspace::report_loading_error("Cannot use CDS heap data.");
+        }
+        if (!CDSConfig::is_dumping_static_archive()) {
+          CDSConfig::stop_using_full_module_graph("No CDS heap data");
         }
       }
     }
