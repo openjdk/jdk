@@ -1990,7 +1990,7 @@ private:
 public:
   ArrayLoadData(DataLayout* layout) :
     ReceiverTypeData(layout),
-    _element(SingleTypeEntry::static_cell_count()) {
+    _element(ReceiverTypeData::static_cell_count()) {
     assert(layout->tag() == DataLayout::array_load_data_tag, "wrong type");
     _element.set_profile_data(this);
   }
