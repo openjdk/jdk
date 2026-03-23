@@ -70,7 +70,7 @@
 class G1YoungGCTraceTime {
   G1YoungCollector* _collector;
 
-  G1GCPauseType _pause_type;
+  G1CollectorState::Pause _pause_type;
   GCCause::Cause _pause_cause;
 
   static const uint MaxYoungGCNameLength = 128;
@@ -93,7 +93,7 @@ class G1YoungGCTraceTime {
     os::snprintf_checked(_young_gc_name_data,
                          MaxYoungGCNameLength,
                          "Pause Young (%s) (%s)%s",
-                         G1GCPauseTypeHelper::to_string(_pause_type),
+                         G1CollectorState::to_string(_pause_type),
                          GCCause::to_string(_pause_cause),
                          evacuation_failed_string);
     return _young_gc_name_data;
@@ -142,7 +142,7 @@ public:
   G1YoungGCJFRTracerMark(STWGCTimer* gc_timer_stw, G1NewTracer* gc_tracer_stw, GCCause::Cause cause) :
     G1JFRTracerMark(gc_timer_stw, gc_tracer_stw), _evacuation_info() { }
 
-  void report_pause_type(G1GCPauseType type) {
+  void report_pause_type(G1CollectorState::Pause type) {
     tracer()->report_young_gc_pause(type);
   }
 
