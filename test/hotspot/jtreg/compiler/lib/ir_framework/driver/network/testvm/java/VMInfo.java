@@ -21,7 +21,7 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.parser;
+package compiler.lib.ir_framework.driver.network.testvm.java;
 
 import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.shared.TestFrameworkException;
@@ -32,31 +32,27 @@ import java.util.regex.Pattern;
 
 /**
  * This class stores the key value mapping from the VMInfo.
- *
- * @see ApplicableIRRulesParser
  */
-public class VMInfo {
+public class VMInfo implements JavaMessage {
+    private static final Pattern CPU_SKYLAKE_PATTERN =
+            Pattern.compile("family 6 model 85 stepping (\\d+) ");
+
     /**
      * Stores the key-value mapping.
      */
     private final Map<String, String> keyValueMap;
 
-    private static final Pattern CPU_SKYLAKE_PATTERN =
-            Pattern.compile("family 6 model 85 stepping (\\d+) ");
-
-    public VMInfo(Map<String, String> map) {
-        this.keyValueMap = map;
-
-        TestFramework.check(isKey("cpuFeatures"),   "VMInfo does not contain cpuFeatures");
-        TestFramework.check(isKey("MaxVectorSize"), "VMInfo does not contain MaxVectorSize");
-        TestFramework.check(isKey("MaxVectorSizeIsDefault"), "VMInfo does not contain MaxVectorSizeIsDefault");
-        TestFramework.check(isKey("LoopMaxUnroll"), "VMInfo does not contain LoopMaxUnroll");
-        TestFramework.check(isKey("UseAVX"), "VMInfo does not contain UseAVX");
-        TestFramework.check(isKey("UseAVXIsDefault"), "VMInfo does not contain UseAVXIsDefault");
+    public VMInfo(Map<String, String> keyValueMap) {
+        this.keyValueMap = keyValueMap;
     }
 
-    public String getStringValue(String key) {
-        TestFramework.check(isKey(key), "VMInfo does not contain \"" + key + "\"");
+    public boolean hasCPUFeature(String feature) {
+        String features = getStringValue("cpuFeatures") + ",";
+        return features.contains(" " + feature + ",");
+    }
+
+    private String getStringValue(String key) {
+        TestFramework.check(keyValueMap.containsKey(key), "VMInfo does not contain \"" + key + "\"");
         return keyValueMap.get(key);
     }
 
@@ -66,28 +62,6 @@ public class VMInfo {
         } catch (NumberFormatException e) {
             throw new TestFrameworkException("VMInfo value for \"" + key + "\" is not a long, got \"" + getStringValue(key) + "\"");
         }
-    }
-
-    public boolean hasCPUFeature(String feature) {
-        String features = getStringValue("cpuFeatures") + ",";
-        return features.contains(" " + feature + ",");
-    }
-
-    public boolean isCascadeLake() {
-        Matcher matcher = CPU_SKYLAKE_PATTERN.matcher(getStringValue("cpuFeatures"));
-        if (!matcher.find()) {
-            return false; // skylake pattern not found
-        }
-        String stepping = matcher.group(1).trim();
-        return Long.parseLong(stepping) >= 5; // this makes it Cascade Lake
-    }
-
-    public boolean isDefaultCascadeLake() {
-        // See VM_Version::is_default_intel_cascade_lake
-        return isCascadeLake() &&
-               getLongValue("MaxVectorSizeIsDefault") == 1 &&
-               getLongValue("UseAVXIsDefault") == 1 &&
-               getLongValue("UseAVX") > 2;
     }
 
     /**
@@ -101,7 +75,36 @@ public class VMInfo {
         return !isDefaultCascadeLake();
     }
 
-    public boolean isKey(String key) {
-        return keyValueMap.containsKey(key);
+    private boolean isDefaultCascadeLake() {
+        // See VM_Version::is_default_intel_cascade_lake
+        return isCascadeLake() &&
+               getLongValue("MaxVectorSizeIsDefault") == 1 &&
+               getLongValue("UseAVXIsDefault") == 1 &&
+               getLongValue("UseAVX") > 2;
+    }
+
+    private boolean isCascadeLake() {
+        Matcher matcher = CPU_SKYLAKE_PATTERN.matcher(getStringValue("cpuFeatures"));
+        if (!matcher.find()) {
+            return false; // skylake pattern not found
+        }
+        String stepping = matcher.group(1).trim();
+        return Long.parseLong(stepping) >= 5; // this makes it Cascade Lake
+    }
+
+    @Override
+    public void print() {
+        if (!TestFramework.VERBOSE) {
+            return;
+        }
+
+        System.out.println();
+        System.out.println("VM Info");
+        System.out.println("--------");
+        for (var entry : keyValueMap.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            System.out.println("- Key: " + key + ", Value: " + value);
+        }
     }
 }
