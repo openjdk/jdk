@@ -54,7 +54,7 @@
   // PowerPC requires masked shift counts.
   static const bool need_masked_shift_count = true;
 
-  // Power6 requires postalloc expand (see block.cpp for description of postalloc expand).
+  // PPC64 requires postalloc expand (see block.cpp for description of postalloc expand).
   static const bool require_postalloc_expand = true;
 
   // No support for generic vector operands.

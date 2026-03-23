@@ -766,10 +766,6 @@ inline void Assembler::frin( FloatRegister d, FloatRegister b) { emit_int32( FRI
 inline void Assembler::frip( FloatRegister d, FloatRegister b) { emit_int32( FRIP_OPCODE | frt(d) | frb(b) | rc(0)); }
 inline void Assembler::frim( FloatRegister d, FloatRegister b) { emit_int32( FRIM_OPCODE | frt(d) | frb(b) | rc(0)); }
 
-// These are special Power6 opcodes, reused for "lfdepx" and "stfdepx"
-// on Power7.  Do not use.
-//inline void Assembler::mffgpr( FloatRegister d, Register b)   { emit_int32( MFFGPR_OPCODE | frt(d) | rb(b) | rc(0)); }
-//inline void Assembler::mftgpr( Register d, FloatRegister b)   { emit_int32( MFTGPR_OPCODE | rt(d) | frb(b) | rc(0)); }
 // add cmpb and popcntb to detect ppc power version.
 inline void Assembler::cmpb(   Register a, Register s, Register b) { emit_int32( CMPB_OPCODE    | rta(a) | rs(s) | rb(b) | rc(0)); }
 inline void Assembler::popcntb(Register a, Register s)             { emit_int32( POPCNTB_OPCODE | rta(a) | rs(s)); };
@@ -837,7 +833,7 @@ inline void Assembler::fcmpu( ConditionRegister crx, FloatRegister a, FloatRegis
 inline void Assembler::fsqrt( FloatRegister d, FloatRegister b) { emit_int32( FSQRT_OPCODE  | frt(d) | frb(b) | rc(0)); }
 inline void Assembler::fsqrts(FloatRegister d, FloatRegister b) { emit_int32( FSQRTS_OPCODE | frt(d) | frb(b) | rc(0)); }
 
-// Vector instructions for >= Power6.
+// Vector instructions.
 inline void Assembler::lvebx( VectorRegister d, Register s1, Register s2) { emit_int32( LVEBX_OPCODE  | vrt(d) | ra0mem(s1) | rb(s2)); }
 inline void Assembler::lvehx( VectorRegister d, Register s1, Register s2) { emit_int32( LVEHX_OPCODE  | vrt(d) | ra0mem(s1) | rb(s2)); }
 inline void Assembler::lvewx( VectorRegister d, Register s1, Register s2) { emit_int32( LVEWX_OPCODE  | vrt(d) | ra0mem(s1) | rb(s2)); }
