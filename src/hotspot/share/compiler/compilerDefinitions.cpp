@@ -346,6 +346,10 @@ void CompilerConfig::set_compilation_policy_flags() {
     if (!is_c2_enabled()) {
       vm_exit_during_initialization("HotCodeHeap requires C2 enabled");
     }
+
+    if (HotCodeMinSamplingMs > HotCodeMaxSamplingMs) {
+      vm_exit_during_initialization("HotCodeMinSamplingMs cannot be larger than HotCodeMaxSamplingMs");
+    }
   } else if (HotCodeHeapSize > 0) {
     vm_exit_during_initialization("HotCodeHeapSize requires HotCodeHeap enabled");
   }

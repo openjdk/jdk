@@ -33,7 +33,8 @@
 
 // Generate a random sampling period between min and max
 static inline uint rand_sampling_period_ms() {
-  return os::random() % (HotCodeMaxSamplingMs - HotCodeMinSamplingMs + 1) + HotCodeMinSamplingMs;
+  julong range = (julong)HotCodeMaxSamplingMs - (julong)HotCodeMinSamplingMs + 1;
+  return (uint)(os::random() % range) + HotCodeMinSamplingMs;
 }
 
 class GetPCTask : public SuspendedThreadTask {
@@ -92,6 +93,10 @@ class ThreadSampler : public StackObj {
 
   // Get ratio of C2 samples from hot code heap
   double get_hot_sample_percent() {
+    if (_hot_sample_count + _non_profiled_sample_count == 0) {
+      return 0;
+    }
+
     return 100.0 * _hot_sample_count / (_hot_sample_count + _non_profiled_sample_count);
   }
 
