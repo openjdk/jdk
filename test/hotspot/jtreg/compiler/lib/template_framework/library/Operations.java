@@ -129,8 +129,17 @@ public final class Operations {
             ops.add(Expression.make(type, "(", type, " + ", type, ")"));
             ops.add(Expression.make(type, "(", type, " - ", type, ")"));
             ops.add(Expression.make(type, "(", type, " * ", type, ")"));
-            ops.add(Expression.make(type, "(", type, " / ", type, ")"));
-            ops.add(Expression.make(type, "(", type, " % ", type, ")"));
+            // Because of subtyping, we can sample an expression like `(float)((int)(3) / (int)(0))`. Floating point
+            // division and modulo do not throw an ArithmeticException on division by zero, integer division and modulo
+            // do. In the expression above, the division has an integer on both sides, so it is executed as an integer
+            // division and throws an ArithmeticException even though we would expect the float division not to do so.
+            // To prevent this issue, we provide two versions of floating point division operations: one that casts
+            // its operands and one that expects that an ArithmeticException might be thrown when we get unlucky when
+            // sampling subtypes.
+            ops.add(Expression.make(type, "((" + type.name() + ")(", type, ") / (" + type.name() +")(", type, "))"));
+            ops.add(Expression.make(type, "((" + type.name() + ")(", type, ") % (" + type.name() +")(", type, "))"));
+            ops.add(Expression.make(type, "(", type, " / ", type, ")", WITH_ARITHMETIC_EXCEPTION));
+            ops.add(Expression.make(type, "(", type, " % ", type, ")", WITH_ARITHMETIC_EXCEPTION));
 
             // Relational / Comparison Operators
             ops.add(Expression.make(BOOLEANS, "(", type, " == ", type, ")"));
@@ -274,6 +283,7 @@ public final class Operations {
         ops.add(Expression.make(BOOLEANS, "Boolean.logicalXor(", BOOLEANS, ", ", BOOLEANS, ")"));
 
         // TODO: Math and other classes.
+        // Note: Math.copySign is non-deterministic because of NaN having encoding with sign bit set and unset.
 
         // Make sure the list is not modifiable.
         return List.copyOf(ops);
@@ -294,7 +304,8 @@ public final class Operations {
         ops.add(Expression.make(INTS, "Float16.compare(", FLOAT16, ",", FLOAT16, ")"));
         addComparisonOperations(ops, "Float16.compare", FLOAT16);
         ops.add(Expression.make(INTS, "(", FLOAT16, ").compareTo(",  FLOAT16, ")"));
-        ops.add(Expression.make(FLOAT16, "Float16.copySign(", FLOAT16, ",", FLOAT16, ")"));
+        // Note: There are NaN encodings with bit set or unset.
+        ops.add(Expression.make(FLOAT16, "Float16.copySign(", FLOAT16, ",", FLOAT16, ")", WITH_NONDETERMINISTIC_RESULT));
         ops.add(Expression.make(FLOAT16, "Float16.divide(", FLOAT16, ",", FLOAT16, ")"));
         ops.add(Expression.make(BOOLEANS, "", FLOAT16, ".equals(", FLOAT16, ")"));
         // Note: there are multiple NaN values with different bit representations.

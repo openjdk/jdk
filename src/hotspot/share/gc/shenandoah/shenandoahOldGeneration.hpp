@@ -64,10 +64,10 @@ private:
   // is therefore always accessed through atomic operations. This is increased when a
   // PLAB is allocated for promotions. The value is decreased by the amount of memory
   // remaining in a PLAB when it is retired.
-  size_t _promoted_expended;
+  Atomic<size_t> _promoted_expended;
 
-  // Represents the quantity of live bytes we expect to promote during the next evacuation
-  // cycle. This value is used by the young heuristic to trigger mixed collections.
+  // Represents the quantity of live bytes we expect to promote during the next GC cycle, either by
+  // evacuation or by promote-in-place.  This value is used by the young heuristic to trigger mixed collections.
   // It is also used when computing the optimum size for the old generation.
   size_t _promotion_potential;
 
@@ -75,11 +75,6 @@ private:
   // in to prevent additional allocations (preventing premature promotion of newly allocated
   // objects). This field records the total amount of padding used for such regions.
   size_t _pad_for_promote_in_place;
-
-  // Keep track of the number and size of promotions that failed. Perhaps we should use this to increase
-  // the size of the old generation for the next collection cycle.
-  size_t _promotion_failure_count;
-  size_t _promotion_failure_words;
 
   // During construction of the collection set, we keep track of regions that are eligible
   // for promotion in place. These fields track the count of those humongous and regular regions.
@@ -125,9 +120,8 @@ public:
   // This is used on the allocation path to gate promotions that would exceed the reserve
   size_t get_promoted_expended() const;
 
-  // Return the count and size (in words) of failed promotions since the last reset
-  size_t get_promotion_failed_count() const { return AtomicAccess::load(&_promotion_failure_count); }
-  size_t get_promotion_failed_words() const { return AtomicAccess::load(&_promotion_failure_words); }
+  // Aggregate and log promotion failure stats if logging is enabled
+  void maybe_log_promotion_failure_stats(bool concurrent) const;
 
   // Test if there is enough memory reserved for this promotion
   bool can_promote(size_t requested_bytes) const {
@@ -175,7 +169,7 @@ public:
   void handle_failed_evacuation();
 
   // Increment promotion failure counters, optionally log a more detailed message
-  void handle_failed_promotion(Thread* thread, size_t size);
+  void handle_failed_promotion(Thread* thread, size_t size) const;
   void log_failed_promotion(LogStream& ls, Thread* thread, size_t size) const;
 
   // A successful evacuation re-dirties the cards and registers the object with the remembered set

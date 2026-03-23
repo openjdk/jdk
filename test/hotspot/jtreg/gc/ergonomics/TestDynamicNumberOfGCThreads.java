@@ -70,14 +70,6 @@ public class TestDynamicNumberOfGCThreads {
     // Base test with gc and +UseDynamicNumberOfGCThreads:
     OutputAnalyzer output = ProcessTools.executeLimitedTestJava(baseArgs);
     verifyDynamicNumberOfGCThreads(output);
-
-    // Turn on parallel reference processing
-    String[] parRefProcArg = {"-XX:+ParallelRefProcEnabled", "-XX:-ShowMessageBoxOnError"};
-    String[] parRefArgs = new String[baseArgs.length + parRefProcArg.length];
-    System.arraycopy(parRefProcArg, 0, parRefArgs, 0,                parRefProcArg.length);
-    System.arraycopy(baseArgs,  0, parRefArgs, parRefProcArg.length, baseArgs.length);
-    output = ProcessTools.executeLimitedTestJava(parRefArgs);
-    verifyDynamicNumberOfGCThreads(output);
   }
 
   static class GCTest {

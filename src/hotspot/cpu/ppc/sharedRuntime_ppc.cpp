@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -775,7 +775,6 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
   return stk;
 }
 
-#if defined(COMPILER1) || defined(COMPILER2)
 // Calling convention for calling C code.
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
                                         VMRegPair *regs,
@@ -913,7 +912,6 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
   return MAX2(arg, 8) * 2 + additional_frame_header_slots;
 #endif
 }
-#endif // COMPILER2
 
 int SharedRuntime::vector_calling_convention(VMRegPair *regs,
                                              uint num_bits,
@@ -1237,26 +1235,24 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
 
   // Class initialization barrier for static methods
   entry_address[AdapterBlob::C2I_No_Clinit_Check] = nullptr;
-  if (VM_Version::supports_fast_class_init_checks()) {
-    Label L_skip_barrier;
+  assert(VM_Version::supports_fast_class_init_checks(), "sanity");
+  Label L_skip_barrier;
 
-    { // Bypass the barrier for non-static methods
-      __ lhz(R0, in_bytes(Method::access_flags_offset()), R19_method);
-      __ andi_(R0, R0, JVM_ACC_STATIC);
-      __ beq(CR0, L_skip_barrier); // non-static
-    }
+  // Bypass the barrier for non-static methods
+  __ lhz(R0, in_bytes(Method::access_flags_offset()), R19_method);
+  __ andi_(R0, R0, JVM_ACC_STATIC);
+  __ beq(CR0, L_skip_barrier); // non-static
 
-    Register klass = R11_scratch1;
-    __ load_method_holder(klass, R19_method);
-    __ clinit_barrier(klass, R16_thread, &L_skip_barrier /*L_fast_path*/);
+  Register klass = R11_scratch1;
+  __ load_method_holder(klass, R19_method);
+  __ clinit_barrier(klass, R16_thread, &L_skip_barrier /*L_fast_path*/);
 
-    __ load_const_optimized(klass, SharedRuntime::get_handle_wrong_method_stub(), R0);
-    __ mtctr(klass);
-    __ bctr();
+  __ load_const_optimized(klass, SharedRuntime::get_handle_wrong_method_stub(), R0);
+  __ mtctr(klass);
+  __ bctr();
 
-    __ bind(L_skip_barrier);
-    entry_address[AdapterBlob::C2I_No_Clinit_Check] = __ pc();
-  }
+  __ bind(L_skip_barrier);
+  entry_address[AdapterBlob::C2I_No_Clinit_Check] = __ pc();
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->c2i_entry_barrier(masm, /* tmp register*/ ic_klass, /* tmp register*/ receiver_klass, /* tmp register*/ code);
@@ -2210,7 +2206,8 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // --------------------------------------------------------------------------
   vep_start_pc = (intptr_t)__ pc();
 
-  if (VM_Version::supports_fast_class_init_checks() && method->needs_clinit_barrier()) {
+  if (method->needs_clinit_barrier()) {
+    assert(VM_Version::supports_fast_class_init_checks(), "sanity");
     Label L_skip_barrier;
     Register klass = r_temp_1;
     // Notify OOP recorder (don't need the relocation)
@@ -2875,7 +2872,6 @@ void SharedRuntime::generate_deopt_blob() {
   CodeBuffer buffer(name, 2048, 1024);
   InterpreterMacroAssembler* masm = new InterpreterMacroAssembler(&buffer);
   Label exec_mode_initialized;
-  int frame_size_in_words;
   OopMap* map = nullptr;
   OopMapSet *oop_maps = new OopMapSet();
 
@@ -2887,6 +2883,9 @@ void SharedRuntime::generate_deopt_blob() {
   const Register exec_mode_reg = R21_tmp1;
 
   const address start = __ pc();
+  int exception_offset = 0;
+  int exception_in_tls_offset = 0;
+  int reexecute_offset = 0;
 
 #if defined(COMPILER1) || defined(COMPILER2)
   // --------------------------------------------------------------------------
@@ -2926,7 +2925,7 @@ void SharedRuntime::generate_deopt_blob() {
   // - R3_ARG1: exception oop
   // - R4_ARG2: exception pc
 
-  int exception_offset = __ pc() - start;
+  exception_offset = __ pc() - start;
 
   BLOCK_COMMENT("Prolog for exception case");
 
@@ -2937,7 +2936,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ std(R4_ARG2, _abi0(lr), R1_SP);
 
   // Vanilla deoptimization with an exception pending in exception_oop.
-  int exception_in_tls_offset = __ pc() - start;
+  exception_in_tls_offset = __ pc() - start;
 
   // Push the "unpack frame".
   // Save everything in sight.
@@ -2950,8 +2949,6 @@ void SharedRuntime::generate_deopt_blob() {
   __ li(exec_mode_reg, Deoptimization::Unpack_exception);
 
   // fall through
-
-  int reexecute_offset = 0;
 #ifdef COMPILER1
   __ b(exec_mode_initialized);
 
@@ -3069,11 +3066,12 @@ void SharedRuntime::generate_deopt_blob() {
 
   // Return to the interpreter entry point.
   __ blr();
-  __ flush();
-#else // COMPILER2
+#else // !defined(COMPILER1) && !defined(COMPILER2)
   __ unimplemented("deopt blob needed only with compiler");
-  int exception_offset = __ pc() - start;
-#endif // COMPILER2
+#endif
+
+  // Make sure all code is generated
+  __ flush();
 
   _deopt_blob = DeoptimizationBlob::create(&buffer, oop_maps, 0, exception_offset,
                                            reexecute_offset, first_frame_size_in_bytes / wordSize);

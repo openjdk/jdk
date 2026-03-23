@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ abstract public class AbstractInfo {
     }
 
     /**
-     * Returns a boolean indicating if the test VM runs with flags that allow C2 compilations.
+     * Returns a boolean indicating if the Test VM runs with flags that allow C2 compilations.
      *
      * @return {@code true} if C2 compilations are allowed;
      *         {@code false} otherwise (run with {@code -XX:TieredStopAtLevel={1,2,3}, -XX:-UseCompiler}).

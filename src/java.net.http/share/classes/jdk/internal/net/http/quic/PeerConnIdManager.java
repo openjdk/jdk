@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.NavigableSet;
@@ -271,6 +272,28 @@ final class PeerConnIdManager {
                     statelessResetToken));
             // register with the endpoint
             connection.endpoint().associateStatelessResetToken(statelessResetToken, connection);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * {@return the list of stateless reset tokens associated with active peer connection IDs}
+     */
+    public List<byte[]> activeResetTokens() {
+        lock.lock();
+        try {
+            // we only support one active connection ID at the time
+            PeerConnectionId cid = peerConnectionIds.get(activeConnIdSeq);
+            byte[] statelessResetToken = null;
+            if (cid != null) {
+                statelessResetToken = cid.getStatelessResetToken();
+            }
+            if (statelessResetToken != null) {
+                return List.of(statelessResetToken);
+            } else {
+                return List.of();
+            }
         } finally {
             lock.unlock();
         }

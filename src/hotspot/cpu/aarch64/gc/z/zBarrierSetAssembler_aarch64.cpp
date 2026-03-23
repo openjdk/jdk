@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1324,6 +1324,23 @@ void ZStoreBarrierStubC2Aarch64::emit_code(MacroAssembler& masm) {
   // Defer emission of store barriers so that trampolines are emitted first
   _deferred_emit = true;
   register_stub(this);
+}
+
+#undef __
+#define __ masm->
+
+void ZBarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path) {
+  // Resolve weak handle using the standard implementation.
+  BarrierSetAssembler::try_resolve_weak_handle_in_c2(masm, obj, tmp, slow_path);
+
+  // Check if the oop is bad, in which case we need to take the slow path.
+  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadBeforeMov);
+  __ movzw(tmp, barrier_Relocation::unpatched);
+  __ tst(obj, tmp);
+  __ br(Assembler::NE, slow_path);
+
+  // Oop is okay, so we uncolor it.
+  __ lsr(obj, obj, ZPointerLoadShift);
 }
 
 #undef __
