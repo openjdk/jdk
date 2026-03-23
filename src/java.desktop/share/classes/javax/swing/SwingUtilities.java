@@ -903,6 +903,15 @@ public class SwingUtilities implements SwingConstants
     }
 
     /**
+     * Returns the system mnemonic key mask
+     *
+     * @return the system mnemonic key mask
+     */
+    public static int getSystemMnemonicKeyMask() {
+        return SwingUtilities2.getSystemMnemonicKeyMask();
+    }
+
+    /**
      * Compute the width of the string using a font with the specified
      * "metrics" (sizes).
      *
