@@ -23,7 +23,6 @@
 
 package datatype;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -35,6 +34,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /*
  * @test
@@ -89,7 +89,7 @@ public class XMLGregorianCalendarTest {
 
                 // was this expected to fail?
                 if (TEST_VALUES[onTestValue + 3] == TEST_VALUE_FAIL) {
-                    Assertions.fail("the values: (" + TEST_VALUES[onTestValue] + ", " + TEST_VALUES[onTestValue + 1] + ", " + TEST_VALUES[onTestValue + 2]
+                    fail("the values: (" + TEST_VALUES[onTestValue] + ", " + TEST_VALUES[onTestValue + 1] + ", " + TEST_VALUES[onTestValue + 2]
                             + ") are invalid, " + "yet it created the XMLGregorianCalendar \"" + xmlGregorianCalendar + "\"");
                 }
             } catch (Exception exception) {
@@ -100,7 +100,7 @@ public class XMLGregorianCalendarTest {
 
                 // was this expected to succed?
                 if (TEST_VALUES[onTestValue + 3] == TEST_VALUE_PASS) {
-                    Assertions.fail("the values: (" + TEST_VALUES[onTestValue] + ", " + TEST_VALUES[onTestValue + 1] + ", " + TEST_VALUES[onTestValue + 2]
+                    fail("the values: (" + TEST_VALUES[onTestValue] + ", " + TEST_VALUES[onTestValue + 1] + ", " + TEST_VALUES[onTestValue + 2]
                             + ") are valid yet it failed with \"" + exception + "\"");
                 }
                 // expected failure
@@ -145,7 +145,7 @@ public class XMLGregorianCalendarTest {
 
                 // was this expected to fail?
                 if (TEST_VALUES[onTestValue + 4] == TEST_VALUE_FAIL) {
-                    Assertions.fail("the values: (" + TEST_VALUES[onTestValue] + ", " + TEST_VALUES[onTestValue + 1] + ", " + TEST_VALUES[onTestValue + 2] + ", "
+                    fail("the values: (" + TEST_VALUES[onTestValue] + ", " + TEST_VALUES[onTestValue + 1] + ", " + TEST_VALUES[onTestValue + 2] + ", "
                             + TEST_VALUES[onTestValue + 3] + ") are invalid, " + "yet it created the XMLGregorianCalendar \"" + xmlGregorianCalendar
                             + "\"");
                 }
@@ -157,7 +157,7 @@ public class XMLGregorianCalendarTest {
 
                 // was this expected to succed?
                 if (TEST_VALUES[onTestValue + 4] == TEST_VALUE_PASS) {
-                    Assertions.fail("the values: (" + TEST_VALUES[onTestValue] + ", " + TEST_VALUES[onTestValue + 1] + ", " + TEST_VALUES[onTestValue + 2] + ", "
+                    fail("the values: (" + TEST_VALUES[onTestValue] + ", " + TEST_VALUES[onTestValue + 1] + ", " + TEST_VALUES[onTestValue + 2] + ", "
                             + TEST_VALUES[onTestValue + 3] + ") are valid yet it failed with \"" + exception + "\"");
                 }
                 // expected failure

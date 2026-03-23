@@ -23,9 +23,12 @@
 
 package sax;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.XMLReaderFactory;
+
+import javax.xml.datatype.DatatypeConfigurationException;
+
+import static org.junit.jupiter.api.Assertions.fail;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 
@@ -51,7 +54,7 @@ public class Bug6925410Test {
             System.out.println(speed + "ms");
         } catch (Throwable e) {
             e.printStackTrace();
-            Assertions.fail(e.toString());
+            fail(e.toString());
         }
 
     }

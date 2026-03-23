@@ -23,7 +23,6 @@
 
 package datatype;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import javax.xml.datatype.DatatypeConfigurationException;
@@ -34,6 +33,8 @@ import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+
+import static org.junit.jupiter.api.Assertions.fail;
 
 /*
  * @test
@@ -119,7 +120,7 @@ public class DatatypeFactoryTest {
         try {
             datatypeFactory = DatatypeFactory.newInstance();
         } catch (DatatypeConfigurationException datatypeConfigurationException) {
-            Assertions.fail(datatypeConfigurationException.toString());
+            fail(datatypeConfigurationException.toString());
         }
 
         if (DEBUG) {
@@ -143,20 +144,20 @@ public class DatatypeFactoryTest {
 
                 // was this expected to fail?
                 if (TEST_VALUES_MILLISECONDS_RESULTS[onTestValue].equals(TEST_VALUE_FAIL)) {
-                    Assertions.fail("the value \"" + TEST_VALUES_MILLISECONDS[onTestValue] + "\" is invalid yet it created the Duration \"" + duration.toString()
+                    fail("the value \"" + TEST_VALUES_MILLISECONDS[onTestValue] + "\" is invalid yet it created the Duration \"" + duration.toString()
                             + "\"");
                 }
 
                 // right XMLSchemaType?
                 QName xmlSchemaType = duration.getXMLSchemaType();
                 if (!xmlSchemaType.equals(DatatypeConstants.DURATION)) {
-                    Assertions.fail("Duration created with XMLSchemaType of\"" + xmlSchemaType + "\" was expected to be \"" + DatatypeConstants.DURATION
+                    fail("Duration created with XMLSchemaType of\"" + xmlSchemaType + "\" was expected to be \"" + DatatypeConstants.DURATION
                             + "\" and has the value \"" + duration.toString() + "\"");
                 }
 
                 // does it have the right value?
                 if (!TEST_VALUES_MILLISECONDS_RESULTS[onTestValue].equals(duration.toString())) {
-                    Assertions.fail("Duration created with \"" + TEST_VALUES_MILLISECONDS[onTestValue] + "\" was expected to be \""
+                    fail("Duration created with \"" + TEST_VALUES_MILLISECONDS[onTestValue] + "\" was expected to be \""
                             + TEST_VALUES_MILLISECONDS_RESULTS[onTestValue] + "\" and has the value \"" + duration.toString() + "\"");
                 }
 
@@ -169,7 +170,7 @@ public class DatatypeFactoryTest {
 
                 // was this expected to succed?
                 if (!TEST_VALUES_MILLISECONDS_RESULTS[onTestValue].equals(TEST_VALUE_FAIL)) {
-                    Assertions.fail("the value \"" + TEST_VALUES_MILLISECONDS[onTestValue] + "\" is valid yet it failed with \"" + exception.toString() + "\"");
+                    fail("the value \"" + TEST_VALUES_MILLISECONDS[onTestValue] + "\" is valid yet it failed with \"" + exception.toString() + "\"");
                 }
                 // expected failure
             }
@@ -194,7 +195,7 @@ public class DatatypeFactoryTest {
         try {
             datatypeFactory = DatatypeFactory.newInstance();
         } catch (DatatypeConfigurationException datatypeConfigurationException) {
-            Assertions.fail(datatypeConfigurationException.toString());
+            fail(datatypeConfigurationException.toString());
         }
 
         if (DEBUG) {
@@ -217,7 +218,7 @@ public class DatatypeFactoryTest {
 
                 // was this expected to fail?
                 if (TEST_VALUES_LEXICAL[onTestValue + 1].equals(TEST_VALUE_FAIL)) {
-                    Assertions.fail("the value \"" + TEST_VALUES_LEXICAL[onTestValue] + "\" is invalid yet it created the Duration \"" + duration.toString() + "\"");
+                    fail("the value \"" + TEST_VALUES_LEXICAL[onTestValue] + "\" is invalid yet it created the Duration \"" + duration.toString() + "\"");
                 }
 
                 // right XMLSchemaType?
@@ -226,7 +227,7 @@ public class DatatypeFactoryTest {
                 try {
                     QName xmlSchemaType = duration.getXMLSchemaType();
                     if (!xmlSchemaType.equals(DatatypeConstants.DURATION_YEARMONTH)) {
-                        Assertions.fail("Duration created with XMLSchemaType of\"" + xmlSchemaType + "\" was expected to be \""
+                        fail("Duration created with XMLSchemaType of\"" + xmlSchemaType + "\" was expected to be \""
                                 + DatatypeConstants.DURATION_YEARMONTH + "\" and has the value \"" + duration.toString() + "\"");
                     }
                 } catch (IllegalStateException illegalStateException) {
@@ -236,7 +237,7 @@ public class DatatypeFactoryTest {
 
                 // does it have the right value?
                 if (!TEST_VALUES_LEXICAL[onTestValue + 1].equals(duration.toString())) {
-                    Assertions.fail("Duration created with \"" + TEST_VALUES_LEXICAL[onTestValue] + "\" was expected to be \""
+                    fail("Duration created with \"" + TEST_VALUES_LEXICAL[onTestValue] + "\" was expected to be \""
                             + TEST_VALUES_LEXICAL[onTestValue + 1] + "\" and has the value \"" + duration.toString() + "\"");
                 }
 
@@ -249,7 +250,7 @@ public class DatatypeFactoryTest {
 
                 // was this expected to succed?
                 if (!TEST_VALUES_LEXICAL[onTestValue + 1].equals(TEST_VALUE_FAIL)) {
-                    Assertions.fail("the value \"" + TEST_VALUES_LEXICAL[onTestValue] + "\" is valid yet it failed with \"" + exception.toString() + "\"");
+                    fail("the value \"" + TEST_VALUES_LEXICAL[onTestValue] + "\" is valid yet it failed with \"" + exception.toString() + "\"");
                 }
                 // expected failure
             }
@@ -286,7 +287,7 @@ public class DatatypeFactoryTest {
         try {
             datatypeFactory = DatatypeFactory.newInstance();
         } catch (DatatypeConfigurationException datatypeConfigurationException) {
-            Assertions.fail(datatypeConfigurationException.toString());
+            fail(datatypeConfigurationException.toString());
         }
 
         if (DEBUG) {
@@ -310,20 +311,20 @@ public class DatatypeFactoryTest {
 
                 // was this expected to fail?
                 if (TEST_VALUES_MILLISECONDS_RESULTS[onTestValue].equals(TEST_VALUE_FAIL)) {
-                    Assertions.fail("the value \"" + TEST_VALUES_MILLISECONDS[onTestValue] + "\" is invalid yet it created the Duration \"" + duration.toString()
+                    fail("the value \"" + TEST_VALUES_MILLISECONDS[onTestValue] + "\" is invalid yet it created the Duration \"" + duration.toString()
                             + "\"");
                 }
 
                 // right XMLSchemaType?
                 QName xmlSchemaType = duration.getXMLSchemaType();
                 if (!xmlSchemaType.equals(DatatypeConstants.DURATION_YEARMONTH)) {
-                    Assertions.fail("Duration created with XMLSchemaType of\"" + xmlSchemaType + "\" was expected to be \"" + DatatypeConstants.DURATION_YEARMONTH
+                    fail("Duration created with XMLSchemaType of\"" + xmlSchemaType + "\" was expected to be \"" + DatatypeConstants.DURATION_YEARMONTH
                             + "\" and has the value \"" + duration.toString() + "\"");
                 }
 
                 // does it have the right value?
                 if (!TEST_VALUES_MILLISECONDS_RESULTS[onTestValue].equals(duration.toString())) {
-                    Assertions.fail("Duration created with \"" + TEST_VALUES_MILLISECONDS[onTestValue] + "\" was expected to be \""
+                    fail("Duration created with \"" + TEST_VALUES_MILLISECONDS[onTestValue] + "\" was expected to be \""
                             + TEST_VALUES_MILLISECONDS_RESULTS[onTestValue] + "\" and has the value \"" + duration.toString() + "\"");
                 }
 
@@ -332,7 +333,7 @@ public class DatatypeFactoryTest {
                 int hours = duration.getHours();
                 int minutes = duration.getMinutes();
                 if (days != 0 || hours != 0 || minutes != 0) {
-                    Assertions.fail("xdt:yearMonthDuration created without discarding remaining milliseconds: " + " days = " + days + ", hours = " + hours
+                    fail("xdt:yearMonthDuration created without discarding remaining milliseconds: " + " days = " + days + ", hours = " + hours
                             + ", minutess = " + minutes);
                 }
 
@@ -345,7 +346,7 @@ public class DatatypeFactoryTest {
 
                 // was this expected to succed?
                 if (!TEST_VALUES_MILLISECONDS_RESULTS[onTestValue].equals(TEST_VALUE_FAIL)) {
-                    Assertions.fail("the value \"" + TEST_VALUES_MILLISECONDS[onTestValue] + "\" is valid yet it failed with \"" + exception.toString() + "\"");
+                    fail("the value \"" + TEST_VALUES_MILLISECONDS[onTestValue] + "\" is valid yet it failed with \"" + exception.toString() + "\"");
                 }
                 // expected failure
             }
@@ -381,7 +382,7 @@ public class DatatypeFactoryTest {
         try {
             datatypeFactory = DatatypeFactory.newInstance();
         } catch (DatatypeConfigurationException datatypeConfigurationException) {
-            Assertions.fail(datatypeConfigurationException.toString());
+            fail(datatypeConfigurationException.toString());
         }
 
         if (DEBUG) {
@@ -405,7 +406,7 @@ public class DatatypeFactoryTest {
 
                 // was this expected to fail?
                 if (TEST_VALUES_MILLISECONDS_RESULTS[onTestValue].equals(TEST_VALUE_FAIL)) {
-                    Assertions.fail("the value \"" + TEST_VALUES_MILLISECONDS[onTestValue] + "\" is invalid yet it created the Duration \"" + duration.toString()
+                    fail("the value \"" + TEST_VALUES_MILLISECONDS[onTestValue] + "\" is invalid yet it created the Duration \"" + duration.toString()
                             + "\"");
                 }
 
@@ -413,7 +414,7 @@ public class DatatypeFactoryTest {
                 if (!TEST_VALUES_MILLISECONDS_RESULTS[onTestValue].equals(duration.toString())) {
                     // TODO: this is bug that should be fixed
                     if (false) {
-                        Assertions.fail("Duration created with \"" + TEST_VALUES_MILLISECONDS[onTestValue] + "\" was expected to be \""
+                        fail("Duration created with \"" + TEST_VALUES_MILLISECONDS[onTestValue] + "\" was expected to be \""
                                 + TEST_VALUES_MILLISECONDS_RESULTS[onTestValue] + "\" and has the value \"" + duration.toString() + "\"");
                     } else {
                         System.err.println("Please fix this bug: " + "Duration created with \"" + TEST_VALUES_MILLISECONDS[onTestValue]
@@ -430,7 +431,7 @@ public class DatatypeFactoryTest {
                 if (!xmlSchemaType.equals(DatatypeConstants.DURATION_DAYTIME) || years != 0 || months != 0) {
                     // TODO: this is bug that should be fixed
                     if (false) {
-                        Assertions.fail("xdt:dayTimeDuration created without discarding remaining milliseconds: " + " XMLSchemaType = " + xmlSchemaType
+                        fail("xdt:dayTimeDuration created without discarding remaining milliseconds: " + " XMLSchemaType = " + xmlSchemaType
                                 + ", years = " + years + ", months = " + months);
                     } else {
                         System.err.println("Please fix this bug: " + "xdt:dayTimeDuration created without discarding remaining milliseconds: "
@@ -447,7 +448,7 @@ public class DatatypeFactoryTest {
 
                 // was this expected to succed?
                 if (!TEST_VALUES_MILLISECONDS_RESULTS[onTestValue].equals(TEST_VALUE_FAIL)) {
-                    Assertions.fail("the value \"" + TEST_VALUES_MILLISECONDS[onTestValue] + "\" is valid yet it failed with \"" + exception.toString() + "\"");
+                    fail("the value \"" + TEST_VALUES_MILLISECONDS[onTestValue] + "\" is valid yet it failed with \"" + exception.toString() + "\"");
                 }
                 // expected failure
             }
@@ -481,7 +482,7 @@ public class DatatypeFactoryTest {
         try {
             datatypeFactory = DatatypeFactory.newInstance();
         } catch (DatatypeConfigurationException datatypeConfigurationException) {
-            Assertions.fail(datatypeConfigurationException.toString());
+            fail(datatypeConfigurationException.toString());
         }
 
         if (DEBUG) {
@@ -504,13 +505,13 @@ public class DatatypeFactoryTest {
 
                 // was this expected to fail?
                 if (TEST_VALUES_LEXICAL[onTestValue + 1].equals(TEST_VALUE_FAIL)) {
-                    Assertions.fail("the value \"" + TEST_VALUES_LEXICAL[onTestValue] + "\" is invalid yet it created the XMLGregorianCalendar \""
+                    fail("the value \"" + TEST_VALUES_LEXICAL[onTestValue] + "\" is invalid yet it created the XMLGregorianCalendar \""
                             + xmlGregorianCalendar.toString() + "\"");
                 }
 
                 // does it have the right value?
                 if (!TEST_VALUES_LEXICAL[onTestValue + 1].equals(xmlGregorianCalendar.toString())) {
-                    Assertions.fail("XMLGregorianCalendar created with \"" + TEST_VALUES_LEXICAL[onTestValue] + "\" was expected to be \""
+                    fail("XMLGregorianCalendar created with \"" + TEST_VALUES_LEXICAL[onTestValue] + "\" was expected to be \""
                             + TEST_VALUES_LEXICAL[onTestValue + 1] + "\" and has the value \"" + xmlGregorianCalendar.toString() + "\"");
                 }
 
@@ -523,7 +524,7 @@ public class DatatypeFactoryTest {
 
                 // was this expected to succed?
                 if (!TEST_VALUES_LEXICAL[onTestValue + 1].equals(TEST_VALUE_FAIL)) {
-                    Assertions.fail("the value \"" + TEST_VALUES_LEXICAL[onTestValue] + "\" is valid yet it failed with \"" + exception.toString() + "\"");
+                    fail("the value \"" + TEST_VALUES_LEXICAL[onTestValue] + "\" is valid yet it failed with \"" + exception.toString() + "\"");
                 }
                 // expected failure
             }
@@ -562,7 +563,7 @@ public class DatatypeFactoryTest {
         try {
             datatypeFactory = DatatypeFactory.newInstance();
         } catch (DatatypeConfigurationException datatypeConfigurationException) {
-            Assertions.fail(datatypeConfigurationException.toString());
+            fail(datatypeConfigurationException.toString());
         }
 
         if (DEBUG) {
@@ -590,7 +591,7 @@ public class DatatypeFactoryTest {
                 }
 
                 // unexpected success, should have failed
-                Assertions.fail("expected IllegalArgumentException " + "for DatatypeFactory.newXMLGregorianCalendar(" + invalidDates[valueIndex][0] + ", "
+                fail("expected IllegalArgumentException " + "for DatatypeFactory.newXMLGregorianCalendar(" + invalidDates[valueIndex][0] + ", "
                         + invalidDates[valueIndex][1] + ", " + invalidDates[valueIndex][2] + ", " + invalidDates[valueIndex][3] + ", "
                         + invalidDates[valueIndex][4] + ", " + invalidDates[valueIndex][5] + ", " + invalidDates[valueIndex][6] + ", "
                         + invalidDates[valueIndex][7] + ").  " + "Instead, XMLGregorianCalendar: \"" + xmlGregorianCalendar.toString() + "\" was created.");
@@ -623,7 +624,7 @@ public class DatatypeFactoryTest {
                 }
 
                 // unexpected success, should have failed
-                Assertions.fail("expected IllegalArgumentException " + "for DatatypeFactory.newXMLGregorianCalendar(" + invalidDates[valueIndex][0] + ", "
+                fail("expected IllegalArgumentException " + "for DatatypeFactory.newXMLGregorianCalendar(" + invalidDates[valueIndex][0] + ", "
                         + invalidDates[valueIndex][1] + ", " + invalidDates[valueIndex][2] + ", " + invalidDates[valueIndex][3] + ", "
                         + invalidDates[valueIndex][4] + ", " + invalidDates[valueIndex][5] + ", " + invalidDates[valueIndex][6] + ", "
                         + invalidDates[valueIndex][7] + ").  " + "Instead, XMLGregorianCalendar: \"" + xmlGregorianCalendar.toString() + "\" was created.");
