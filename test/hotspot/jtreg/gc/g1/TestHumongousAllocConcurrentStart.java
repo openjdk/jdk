@@ -51,7 +51,7 @@ public class TestHumongousAllocConcurrentStart {
             "-Xms" + heapSize + "m",
             "-Xmx" + heapSize + "m",
             "-XX:G1HeapRegionSize=" + heapRegionSize + "m",
-            "-XX:InitiatingHeapOccupancyPercent=" + initiatingHeapOccupancyPercent,
+            "-XX:G1IHOP=" + initiatingHeapOccupancyPercent,
             "-Xlog:gc",
             HumongousObjectAllocator.class.getName());
 

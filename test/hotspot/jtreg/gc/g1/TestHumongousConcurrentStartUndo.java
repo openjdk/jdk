@@ -51,7 +51,7 @@ public class TestHumongousConcurrentStartUndo {
     // fulfill alignment constraints.
     private static final int HeapSize                       = 224; // MB
     private static final int HeapRegionSize                 = 1;   // MB
-    private static final int InitiatingHeapOccupancyPercent = 50;  // %
+    private static final int G1IHOP = 50;                          // %
     private static final int YoungSize                      = HeapSize / 8;
 
     public static void main(String[] args) throws Exception {
@@ -62,7 +62,7 @@ public class TestHumongousConcurrentStartUndo {
             "-Xmx" + HeapSize + "m",
             "-Xmn" + YoungSize + "m",
             "-XX:G1HeapRegionSize=" + HeapRegionSize + "m",
-            "-XX:InitiatingHeapOccupancyPercent=" + InitiatingHeapOccupancyPercent,
+            "-XX:G1IHOP=" + G1IHOP,
             "-XX:-G1UseAdaptiveIHOP",
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+WhiteBoxAPI",
