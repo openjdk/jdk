@@ -52,8 +52,11 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.QualifiedNameable;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.ErrorType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
@@ -623,7 +626,6 @@ public class AttrRecovery {
         Files.createDirectories(libOut);
 
         new JavacTask(tb)
-            .options("-XDrawDiagnostics", "-XDdev")
             .sources("""
                      package lib;
                      public class Lib {
@@ -670,7 +672,14 @@ public class AttrRecovery {
                                     public Void visitVariable(VariableTree tree, Void p) {
                                         VariableElement var = (VariableElement) trees.getElement(getCurrentPath());
 
-                                        foundTypes.add(var.asType().toString());
+                                        assertEquals(TypeKind.ERROR, var.asType().getKind());
+
+                                        Element el = ((ErrorType) var.asType()).asElement();
+
+                                        assertNotNull(el);
+                                        assertEquals(ElementKind.CLASS, el.getKind());
+
+                                        foundTypes.add(((QualifiedNameable) el).getQualifiedName().toString());
 
                                         return super.visitVariable(tree, p);
                                     }
@@ -698,6 +707,87 @@ public class AttrRecovery {
             "C.java:3:15: compiler.err.cant.access: lib.Lib.Unknown3, (compiler.misc.class.file.not.found: lib.Lib$Unknown3)",
             "C.java:8:12: compiler.err.doesnt.exist: unknown",
             "4 errors"
+        );
+
+        assertEquals(expected, actual);
+    }
+
+
+    @Test
+    public void testUnresolvableNamedResolvableOnDemandImport() throws Exception {
+        Path libOut = base.resolve("lib");
+
+        Files.createDirectories(libOut);
+
+        new JavacTask(tb)
+            .sources("""
+                     package lib;
+                     public class Unknown {
+                     }
+                     """)
+                .outdir(libOut)
+                .run()
+                .writeAll();
+
+        String code = """
+                      import unknown.Unknown;
+                      import lib.*;
+                      public class C {
+                          Unknown u;
+                      }
+                      """;
+        Path out = base.resolve("out");
+
+        Files.createDirectories(out);
+
+        List<String> foundTypes = new ArrayList<>();
+        List<String> actual = new JavacTask(tb)
+                .options("-XDrawDiagnostics",
+                         "-XDdev",
+                         "-classpath", libOut.toString())
+                .sources(code)
+                .outdir(out)
+                .callback(task -> {
+                    task.addTaskListener(new TaskListener() {
+                        @Override
+                        public void finished(TaskEvent e) {
+                            Trees trees = Trees.instance(task);
+
+                            if (e.getKind() == TaskEvent.Kind.ANALYZE) {
+                                new TreePathScanner<Void, Void>() {
+                                    @Override
+                                    public Void visitVariable(VariableTree tree, Void p) {
+                                        VariableElement var = (VariableElement) trees.getElement(getCurrentPath());
+
+                                        assertEquals(TypeKind.ERROR, var.asType().getKind());
+
+                                        Element el = ((ErrorType) var.asType()).asElement();
+
+                                        assertNotNull(el);
+                                        assertEquals(ElementKind.CLASS, el.getKind());
+
+                                        foundTypes.add(((QualifiedNameable) el).getQualifiedName().toString());
+
+                                        return super.visitVariable(tree, p);
+                                    }
+                                }.scan(e.getCompilationUnit(), null);
+                            }
+                        }
+                    });
+                })
+                .run(Expect.FAIL)
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+
+        List<String> expectedTypes = List.of(
+            "unknown.Unknown"
+        );
+
+        assertEquals(expectedTypes, foundTypes);
+
+        List<String> expected = List.of(
+            "C.java:1:15: compiler.err.doesnt.exist: unknown",
+            "1 error"
         );
 
         assertEquals(expected, actual);

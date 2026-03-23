@@ -2359,7 +2359,6 @@ public class Resolve {
                 return new AmbiguityError(bestSoFar, sym);
             } else if (env.toplevel.namedImportScope == scope &&
                     (sym == typeNotFound || (sym.kind == ERR && s.kind == ERR))) {
-                //TODO: consider: should we allow the search to continue, instead of providing an "existing" answer?
                 bestSoFar = bestOf(bestSoFar, new UnresolvableGobalSymbolError(s));
             } else
                 bestSoFar = bestOf(bestSoFar, sym);
