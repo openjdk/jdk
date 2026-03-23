@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ class G1IHOPControl : public CHeapObj<mtGC> {
 
   const G1Predictions* _predictor;
   TruncatedSeq _marking_times_s;
-  TruncatedSeq _allocation_rate_s;
+  TruncatedSeq _old_gen_alloc_rate_s;
 
   // The most recent unrestrained size of the young gen. This is used as an additional
   // factor in the calculation of the threshold, as the threshold is based on
@@ -68,7 +68,7 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   // Since we cannot know what young gen sizes are used in the future, we will just
   // use the current one. We expect that this one will be one with a fairly large size,
   // as there is no marking or mixed gc that could impact its size too much.
-  size_t _last_unrestrained_young_size;
+  size_t _expected_young_gen_at_first_mixed_gc;
 
   // Get a new prediction bounded below by zero from the given sequence.
   double predict(const TruncatedSeq* seq) const;
@@ -76,10 +76,10 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   bool have_enough_data_for_prediction() const;
   double last_marking_length_s() const;
 
-  // The "actual" target threshold the algorithm wants to keep during and at the
-  // end of marking. This is typically lower than the requested threshold, as the
+  // The "effective" target occupancy the algorithm wants to keep during and at the
+  // end of marking. This is typically lower than the target occupancy, as the
   // algorithm needs to consider restrictions by the environment.
-  size_t actual_target_threshold() const;
+  size_t effective_target_occupancy() const;
 
  void print_log(size_t non_young_occupancy);
  void send_trace_event(G1NewTracer* tracer, size_t non_young_occupancy);
@@ -95,6 +95,7 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   // Adjust target occupancy.
   void update_target_occupancy(size_t new_target_occupancy);
 
+  size_t target_occupancy() const { return _target_occupancy; }
   // Update information about time during which allocations in the Java heap occurred,
   // how large these allocations were in bytes, and an additional buffer.
   // The allocations should contain any amount of space made unusable for further
@@ -110,7 +111,7 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   void update_marking_length(double marking_length_s);
 
   // Get the current non-young occupancy at which concurrent marking should start.
-  size_t get_conc_mark_start_threshold();
+  size_t old_gen_threshold_for_conc_mark_start();
 
   void report_statistics(G1NewTracer* tracer, size_t non_young_occupancy);
 };

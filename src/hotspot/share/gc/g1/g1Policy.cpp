@@ -164,7 +164,11 @@ void G1Policy::record_new_heap_size(uint new_number_of_regions) {
 
   _young_gen_sizer.heap_size_changed(new_number_of_regions);
 
-  _ihop_control->update_target_occupancy(new_number_of_regions * G1HeapRegion::GrainBytes);
+  if (!is_init_completed() || !_g1h->collector_state()->is_in_marking()) {
+    // If Marking is already in progress, then we have no reason to update the
+    // thresholds.
+    _ihop_control->update_target_occupancy(new_number_of_regions * G1HeapRegion::GrainBytes);
+  }
 }
 
 uint G1Policy::calculate_desired_eden_length_by_mmu() const {
@@ -692,6 +696,21 @@ void G1Policy::record_young_collection_start() {
   _eden_surv_rate_group->stop_adding_regions();
   _survivors_age_table.clear();
 
+  G1GCPauseType gc_type = collector_state()->young_gc_pause_type(false);
+  if (gc_type == G1GCPauseType::LastYoungGC) {
+    // Check validity of our occupancy predictions
+    size_t current_used = _g1h->used();
+    size_t target_used_at_end_of_marking = _ihop_control->target_occupancy();
+    log_debug(gc, ihop) ("Basic IHOP Information (check prediction), current used: %zuMB, target used %zuMB, missed the target: %s",
+                         current_used / M,
+                         target_used_at_end_of_marking / M,
+                         BOOL_TO_STR(current_used > target_used_at_end_of_marking));
+    // Capacity may have changed during marking. Update the ihop target.
+    if (target_used_at_end_of_marking != _g1h->capacity()) {
+      _ihop_control->update_target_occupancy(_g1h->capacity());
+    }
+  }
+
   assert(_g1h->collection_set()->verify_young_ages(), "region age verification failed");
 }
 
@@ -743,15 +762,15 @@ bool G1Policy::need_to_start_conc_mark(const char* source, size_t allocation_wor
     return false;
   }
 
-  size_t marking_initiating_used_threshold = _ihop_control->get_conc_mark_start_threshold();
+  size_t marking_initiating_old_gen_threshold = _ihop_control->old_gen_threshold_for_conc_mark_start();
   size_t non_young_occupancy = _g1h->non_young_occupancy_after_allocation(allocation_word_size);
 
   bool result = false;
-  if (non_young_occupancy > marking_initiating_used_threshold) {
+  if (non_young_occupancy > marking_initiating_old_gen_threshold) {
     result = collector_state()->in_young_only_phase();
-    log_debug(gc, ergo, ihop)("%s non-young occupancy: %zuB allocation request: %zuB threshold: %zuB (%1.2f) source: %s",
+    log_debug(gc, ergo, ihop)("%s non-young occupancy: %zuMB allocation request: %zuMB threshold: %zuMB (%1.2f) source: %s",
                               result ? "Request concurrent cycle initiation (occupancy higher than threshold)" : "Do not request concurrent cycle initiation (still doing mixed collections)",
-                              non_young_occupancy, allocation_word_size * HeapWordSize, marking_initiating_used_threshold, (double) marking_initiating_used_threshold / _g1h->capacity() * 100, source);
+                              non_young_occupancy / M, allocation_word_size * HeapWordSize / M, marking_initiating_old_gen_threshold / M, (double) marking_initiating_old_gen_threshold / _g1h->capacity() * 100, source);
   }
   return result;
 }
@@ -978,8 +997,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
     update_young_length_bounds();
 
     _old_gen_alloc_tracker.reset_after_gc(_g1h->humongous_regions_count() * G1HeapRegion::GrainBytes);
-    if (update_ihop_prediction(app_time_ms / 1000.0,
-                               G1GCPauseTypeHelper::is_young_only_pause(this_pause))) {
+    if (update_ihop_prediction(app_time_ms / 1000.0, is_young_only_pause)) {
       _ihop_control->report_statistics(_g1h->gc_tracer_stw(), _g1h->non_young_occupancy_after_allocation(allocation_word_size));
     }
   } else {
@@ -1036,9 +1054,8 @@ bool G1Policy::update_ihop_prediction(double mutator_time_s,
 
   bool report = false;
 
-  double marking_to_mixed_time = -1.0;
   if (!this_gc_was_young_only && _concurrent_start_to_mixed.has_result()) {
-    marking_to_mixed_time = _concurrent_start_to_mixed.last_marking_time();
+    double marking_to_mixed_time = _concurrent_start_to_mixed.get_and_reset_last_marking_time();
     assert(marking_to_mixed_time > 0.0,
            "Concurrent start to mixed time must be larger than zero but is %.3f",
            marking_to_mixed_time);
