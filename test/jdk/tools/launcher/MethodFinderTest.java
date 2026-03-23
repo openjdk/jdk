@@ -111,4 +111,86 @@ public class MethodFinderTest {
             assertEquals("p.Main", mainMethod.getDeclaringClass().getName());
         }
     }
+
+    @Test
+    public void testWrongEquals() throws Exception {
+        Path base = Path.of("testDistinctClassLoaders");
+        Path libSrc = base.resolve("libSrc");
+        Path libClasses = base.resolve("libClasses");
+        Path libJava = libSrc.resolve("p").resolve("Lib.java");
+
+        Files.createDirectories(libJava.getParent());
+
+        Files.writeString(libJava,
+                          """
+                          package p;
+                          public class Lib {
+                              void main(String... args) {
+                                  System.err.println("Lib!");
+                              }
+                          }
+                          """);
+
+        TestHelper.compile("--release", JAVA_VERSION, "-d", libClasses.toString(), libJava.toString());
+
+        Path mainSrc = base.resolve("mainSrc");
+        Path mainClasses = base.resolve("mainClasses");
+        Path mainJava = mainSrc.resolve("p").resolve("Main.java");
+
+        Files.createDirectories(mainJava.getParent());
+
+        Files.writeString(mainJava,
+                          """
+                          package p;
+
+                          public class Main extends Lib {
+                              public void main() {
+                                  System.err.println("Main!");
+                              }
+                          }
+                          """);
+
+        TestHelper.compile("--release", JAVA_VERSION, "--class-path", libClasses.toString(), "-d", mainClasses.toString(), mainJava.toString());
+
+        {
+            ClassLoader cl = new URLClassLoader(new URL[] {
+                libClasses.toUri().toURL(),
+                mainClasses.toUri().toURL()
+            });
+            Class<?> mainClass = cl.loadClass("p.Main");
+            Method mainMethod = MethodFinder.findMainMethod(mainClass);
+
+            //p.Main and p.Lib are in the same runtime package:
+            assertEquals("p.Lib", mainMethod.getDeclaringClass().getName());
+        }
+
+        {
+            class WrongEquals extends URLClassLoader {
+
+                public WrongEquals(URL[] urls) {
+                    super(urls);
+                }
+
+                public WrongEquals(URL[] urls, ClassLoader parent) {
+                    super(urls, parent);
+                }
+
+                @Override
+                public boolean equals(Object obj) {
+                    return obj instanceof WrongEquals;
+                }
+            }
+            ClassLoader libCl = new WrongEquals(new URL[] {
+                libClasses.toUri().toURL(),
+            });
+            ClassLoader mainCl = new WrongEquals(new URL[] {
+                mainClasses.toUri().toURL()
+            }, libCl);
+            Class<?> mainClass = mainCl.loadClass("p.Main");
+            Method mainMethod = MethodFinder.findMainMethod(mainClass);
+
+            //p.Main and p.Lib are in the different runtime packages:
+            assertEquals("p.Main", mainMethod.getDeclaringClass().getName());
+        }
+    }
 }

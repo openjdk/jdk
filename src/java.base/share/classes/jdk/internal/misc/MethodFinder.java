@@ -110,6 +110,6 @@ public class MethodFinder {
 
     private static boolean isInSameRuntimePackage(Class<?> c1, Class<?> c2) {
         return Objects.equals(c1.getPackageName(), c2.getPackageName()) &&
-               Objects.equals(c1.getClassLoader(), c2.getClassLoader());
+               c1.getClassLoader() == c2.getClassLoader();
     }
 }
