@@ -2545,15 +2545,6 @@ void AOTCodeAddressTable::set_stubgen_stubs_complete() {
   log_debug(aot, codecache, init)("StubGen stubs closed");
 }
 
-AOTCodeAddressTable::~AOTCodeAddressTable() {
-  if (_extrs_addr != nullptr) {
-    FREE_C_HEAP_ARRAY(address, _extrs_addr);
-  }
-  if (_stubs_addr != nullptr) {
-    FREE_C_HEAP_ARRAY(address, _stubs_addr);
-  }
-}
-
 #ifdef PRODUCT
 #define MAX_STR_COUNT 200
 #else
