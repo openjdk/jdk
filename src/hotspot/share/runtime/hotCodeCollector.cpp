@@ -33,7 +33,7 @@
 #include "runtime/hotCodeSampler.hpp"
 #include "runtime/java.hpp"
 
-// Initalize static variables
+// Initialize static variables
 bool      HotCodeCollector::_is_initialized = false;
 int       HotCodeCollector::_new_c2_nmethods_count = 0;
 int       HotCodeCollector::_total_c2_nmethods_count = 0;
@@ -85,8 +85,16 @@ void HotCodeCollector::thread_entry(JavaThread* thread, TRAPS) {
 
     // Sample application and group hot nmethods if nmethod count is steady
     if (is_nmethod_count_steady()) {
+      log_info(hotcode)("Sampling...");
+
       ThreadSampler sampler;
-      sampler.do_sampling(thread);
+      uint64_t start_time = os::javaTimeMillis();
+      while (os::javaTimeMillis() - start_time <= HotCodeSampleSeconds * 1000) {
+        sampler.sample_all_java_threads();
+        thread->sleep(rand_sampling_period_ms());
+      }
+
+      sampler.finalize();
       do_grouping(sampler);
     }
 
@@ -139,7 +147,7 @@ int HotCodeCollector::do_relocation(ThreadSampler& sampler, void* candidate, uin
   // Retrieve the latest nmethod from the Method
   nm = nm->method()->code();
 
-  // Verify the nmethod is stil valid for relocation
+  // Verify the nmethod is still valid for relocation
   if (nm == nullptr || !nm->is_in_use() || !nm->is_compiled_by_c2()) {
     return 0;
   }
@@ -184,9 +192,9 @@ int HotCodeCollector::do_relocation(ThreadSampler& sampler, void* candidate, uin
     // Loop over relocations to relocate callees
     RelocIterator relocIter(hot_nm);
     while (relocIter.next()) {
-      // Check is a call
+      // Check if this is a call
       Relocation* reloc = relocIter.reloc();
-      if(!reloc->is_call()) {
+      if (!reloc->is_call()) {
         continue;
       }
 

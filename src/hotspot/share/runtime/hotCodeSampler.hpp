@@ -40,7 +40,7 @@ class GetPCTask : public SuspendedThreadTask {
  private:
   address _pc;
 
-  void do_task(const SuspendedThreadTaskContext& context) override{
+  void do_task(const SuspendedThreadTaskContext& context) override {
     JavaThread* jt = JavaThread::cast(context.thread());
     if (jt->thread_state() != _thread_in_native && jt->thread_state() != _thread_in_Java) {
       return;
@@ -57,7 +57,7 @@ class GetPCTask : public SuspendedThreadTask {
 };
 
 class ThreadSampler : public StackObj {
- public:
+ private:
   static const int INITIAL_TABLE_SIZE = 109;
 
   static ThreadSampler* _current_sampler;
@@ -71,9 +71,6 @@ class ThreadSampler : public StackObj {
   // List of nmethods from profiling that are candidates for grouping
   GrowableArray<nmethod*> _sorted_candidate_list;
 
-  // Find candidate nmethods for grouping
-  void generate_sorted_candidate_list();
-
   static ThreadSampler* get_current_sampler() {
     return _current_sampler;
   }
@@ -81,8 +78,11 @@ class ThreadSampler : public StackObj {
  public:
   ThreadSampler() : _samples(INITIAL_TABLE_SIZE, HotCodeSampleSeconds * 1000 / HotCodeMaxSamplingMs), _hot_sample_count(0), _non_profiled_sample_count(0) {}
 
-  // Sample and generate the candidate nmethods for grouping
-  void do_sampling(JavaThread* thread);
+  // Iterate over and sample all Java threads
+  void sample_all_java_threads();
+
+  // Finalize candidate nmethods list for grouping
+  void finalize();
 
   // Get number of samples for nmethod. Returns zero if not found
   int get_sample_count(nmethod* nm) {
