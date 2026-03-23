@@ -339,6 +339,8 @@ public:
 
   static bool vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen);
 
+  static bool vector_is_same_const_value(const MachNode* node1, const MachNode* node2);
+
   // Identify if a vector mask operation prefers the input/output mask to be
   // saved with a predicate type or not.
   // - Return true if it prefers a predicate type (i.e. TypeVectMask).

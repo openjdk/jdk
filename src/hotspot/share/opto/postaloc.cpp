@@ -118,6 +118,10 @@ static bool expected_yanked_node(Node *old, Node *orig_old) {
     return true;
   } else if (old->is_MachConstantBase()) {
     return (orig_old->is_Con() && orig_old->is_MachConstant());
+  } else if (old->is_Mach()) {
+    /* Same node is supplied twice so this is only to check if "old" is
+     * a initializer of a vector with a constant value */
+    return Matcher::vector_is_same_const_value(old->as_Mach(), old->as_Mach());
   }
   return false;
 }
@@ -744,15 +748,25 @@ void PhaseChaitin::post_allocate_copy_removal() {
         // then 'n' is a useless copy.  Do not update the register->node
         // mapping so 'n' will go dead.
         if (!register_contains_value(val, nreg, n_regs, value)) {
-          // Update the mapping: record new Node defined by the register
-          regnd.map(nreg,n);
-          // Update mapping for defined *value*, which is the defined
-          // Node after skipping all copies.
-          value.map(nreg,val);
-          for (int l = 1; l < n_regs; l++) {
-            OptoReg::Name nreg_lo = OptoReg::add(nreg,-l);
-            regnd.map(nreg_lo, n );
-            value.map(nreg_lo,val);
+          MachNode* m_val = val->isa_Mach();
+          MachNode* m_value = (value[nreg] != nullptr) ? value[nreg]->isa_Mach() : nullptr;
+          if (m_val != nullptr &&
+              m_value != nullptr &&
+              register_contains_value(value[nreg], nreg, n_regs, value) &&
+              register_contains_value(regnd[nreg], nreg, n_regs, regnd) &&
+              Matcher::vector_is_same_const_value(m_val, m_value)) {
+            j -= replace_and_yank_if_dead(n, nreg, block, value, regnd);
+          } else {
+            // Update the mapping: record new Node defined by the register
+            regnd.map(nreg,n);
+            // Update mapping for defined *value*, which is the defined
+            // Node after skipping all copies.
+            value.map(nreg,val);
+            for (int l = 1; l < n_regs; l++) {
+              OptoReg::Name nreg_lo = OptoReg::add(nreg,-l);
+              regnd.map(nreg_lo, n );
+              value.map(nreg_lo,val);
+            }
           }
         } else if (n->is_Copy()) {
           // Note: vector can't be constant and can't be copy of calee.

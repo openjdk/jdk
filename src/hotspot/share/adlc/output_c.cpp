@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2642,6 +2643,148 @@ void ArchDesc::define_postalloc_expand(FILE *fp, InstructForm &inst) {
   assert(ec_name == nullptr, "Postalloc expand may only have one encoding.");
 }
 
+// define_is_vector_same_const_value ------------------------------------------
+void ArchDesc::buildVectorIsSameConstValue(FILE* fp) {
+  fprintf(fp, "bool Matcher::vector_is_same_const_value(const MachNode* node1, const MachNode* node2) {\n");
+  fprintf(fp, "  assert(node1 != nullptr, \"node1 is unexpectedly nullptr\");\n");
+  fprintf(fp, "  assert(node2 != nullptr, \"node2 is unexpectedly nullptr\");\n");
+  fprintf(fp, "\n");
+  fprintf(fp, "  if (node1->rule() != node2->rule()) {\n");
+  fprintf(fp, "    return false;\n");
+  fprintf(fp, "  }\n");
+  fprintf(fp, "\n");
+  fprintf(fp, "  assert(node1->num_opnds() == node2->num_opnds(),\n");
+  fprintf(fp, "         \"the same rule, so the same number of operands\");\n");
+  fprintf(fp, "\n");
+  fprintf(fp, "  const Type* node1_type = node1->bottom_type();\n");
+  fprintf(fp, "  const Type* node2_type = node2->bottom_type();\n");
+  fprintf(fp, "  if (node1_type != node2_type) {\n");
+  fprintf(fp, "    return false;\n");
+  fprintf(fp, "  }\n");
+  fprintf(fp, "\n");
+  fprintf(fp, "  MachOper* opnd1, *opnd2;\n");
+  fprintf(fp, "  switch ( node1->rule() ) {\n");
+
+  InstructForm* instr;
+  _instructions.reset();
+  while ( (instr = (InstructForm*)_instructions.iter()) != nullptr ) {
+    if ( instr->ideal_only() ) continue;
+    if ( !instr->sets_result() ) continue;
+    if ( !instr->is_vector() ) continue;
+
+    // At least one non-result operand
+    if ( instr->num_opnds() <= 1 ) continue;
+
+    bool all_operands_suitable = true;
+    Component* comp = nullptr;
+
+    instr->_components.reset();
+    while( (comp = instr->_components.iter()) != nullptr ) {
+      Form* form = (Form*)_globalNames[comp->_type];
+      assert(form != nullptr, "component type must be a defined form");
+      OperandForm* op = form->is_operand();
+
+      if ( op == nullptr ) {
+        // Not an OperandForm - conservatively reject.
+        all_operands_suitable = false;
+        break;
+      }
+
+      if ( comp->isa(Component::DEF) ) {
+        if ( comp->isa(Component::USE) ) {
+          // Result register is also an input.
+          all_operands_suitable = false;
+          break;
+        }
+
+        const char* result_type = op->ideal_type(_globalNames);
+
+        // Only consider operations writing to a vector operand.
+        if ( strncmp(result_type, "Vec", 3) != 0 ) {
+          all_operands_suitable = false;
+          break;
+        }
+
+        continue;
+      }
+
+      if ( op->_interface == nullptr ||
+           op->_interface->is_ConstInterface() == nullptr ||
+           op->num_edges(_globalNames) != 0) {
+        // Not a constant OperandForm.
+        all_operands_suitable = false;
+        break;
+      }
+
+      Form::DataType dtype = op->is_base_constant(_globalNames);
+      switch ( dtype ) {
+        case Form::idealH:
+        case Form::idealI:
+        case Form::idealL:
+        case Form::idealF:
+        case Form::idealD:
+          break;
+
+        default:
+          all_operands_suitable = false;
+          break;
+      }
+    }
+
+    if ( !all_operands_suitable ) continue;
+
+    fprintf(fp, "    case %s_rule:\n", instr->_ident);
+    instr->_components.reset();
+    while( (comp = instr->_components.iter()) != nullptr ) {
+      if (comp->isa(Component::DEF)) continue;
+
+      Form* form = (Form*)_globalNames[comp->_type];
+      assert(form != nullptr, "component type must be a defined form");
+      OperandForm* op = form->is_operand();
+      assert(op != nullptr, "component type must be OperandForm");
+
+      Form::DataType dtype = op->is_base_constant(_globalNames);
+      const char* get_const = "";
+      const char* cast = "";
+      switch ( dtype ) {
+        case Form::idealH:
+          get_const = "constantH";
+          break;
+        case Form::idealI:
+          get_const = "constant";
+          break;
+        case Form::idealL:
+          get_const = "constantL";
+          break;
+        case Form::idealF:
+          get_const = "constantF";
+          cast = "jint_cast";
+          break;
+        case Form::idealD:
+          get_const = "constantD";
+          cast = "jlong_cast";
+          break;
+
+        default:
+          assert(false, "all other types should have been filtered out above.");
+          break;
+      }
+
+      int opnd_index = instr->operand_position(comp->_name, Component::USE);
+      fprintf(fp, "      opnd1 = node1->_opnds[%d];\n", opnd_index);
+      fprintf(fp, "      opnd2 = node2->_opnds[%d];\n", opnd_index);
+      fprintf(fp, "      if (%s(opnd1->%s()) != %s(opnd2->%s())) return false;\n",
+        cast, get_const, cast, get_const);
+    }
+    fprintf(fp, "      return true;\n");
+  }
+
+  fprintf(fp, "    default:\n");
+  fprintf(fp, "      return false;\n");
+  fprintf(fp, "  }\n");
+  fprintf(fp, "}\n");
+}
+
 // defineEmit -----------------------------------------------------------------
 void ArchDesc::defineEmit(FILE* fp, InstructForm& inst) {
   InsEncode* encode = inst._insencode;
@@ -4170,7 +4313,7 @@ void ArchDesc::buildInstructMatchCheck(FILE *fp_cpp) const {
   fprintf(fp_cpp, "    %-5s   // %s\n",
           _has_match_rule[i] ? "true" : "false",
           NodeClassNames[i]);
-  fprintf(fp_cpp, "};\n");
+  fprintf(fp_cpp, "};\n\n");
 }
 
 //---------------------------buildFrameMethods---------------------------------

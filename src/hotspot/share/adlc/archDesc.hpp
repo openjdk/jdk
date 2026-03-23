@@ -343,6 +343,9 @@ public:
   // Generator for has_match_rule methods
   void buildInstructMatchCheck(FILE *fp_cpp) const;
 
+  // Generator of helper for identical vector values deduplication
+  void buildVectorIsSameConstValue(FILE *fp);
+
   // Generator for Frame Methods
   void buildFrameMethods(FILE *fp_cpp);
 
