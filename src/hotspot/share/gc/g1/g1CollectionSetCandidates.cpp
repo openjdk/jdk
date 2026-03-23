@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  */
 
 #include "gc/g1/g1CollectionSetCandidates.inline.hpp"
-#include "gc/g1/g1CollectionSetChooser.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -250,8 +249,9 @@ void G1CollectionSetCandidates::sort_marking_by_efficiency() {
   _from_marking_groups.verify();
 }
 
-void G1CollectionSetCandidates::set_candidates_from_marking(G1HeapRegion** candidates,
-                                                            uint num_candidates) {
+void G1CollectionSetCandidates::set_candidates_from_marking(GrowableArrayCHeap<G1HeapRegion*, mtGC>* candidates) {
+  uint num_candidates = candidates->length();
+
   if (num_candidates == 0) {
     log_debug(gc, ergo, cset) ("No regions selected from marking.");
     return;
@@ -273,7 +273,7 @@ void G1CollectionSetCandidates::set_candidates_from_marking(G1HeapRegion** candi
   current = new G1CSetCandidateGroup();
 
   for (uint i = 0; i < num_candidates; i++) {
-    G1HeapRegion* r = candidates[i];
+    G1HeapRegion* r = candidates->at(i);
     assert(!contains(r), "must not contain region %u", r->hrm_index());
     _contains_map[r->hrm_index()] = CandidateOrigin::Marking;
 

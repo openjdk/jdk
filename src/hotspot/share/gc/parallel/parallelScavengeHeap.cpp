@@ -932,7 +932,7 @@ void ParallelScavengeHeap::resize_after_full_gc() {
 }
 
 HeapWord* ParallelScavengeHeap::allocate_loaded_archive_space(size_t size) {
-  return _old_gen->allocate(size);
+  return _old_gen->cas_allocate_with_expansion(size);
 }
 
 void ParallelScavengeHeap::complete_loaded_archive_space(MemRegion archive_space) {

@@ -325,7 +325,7 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
   guarantee(target_pause_time_ms > 0.0,
             "target_pause_time_ms = %1.6lf should be positive", target_pause_time_ms);
 
-  bool in_young_only_phase = _policy->collector_state()->in_young_only_phase();
+  bool in_young_only_phase = _policy->collector_state()->is_in_young_only_phase();
   size_t pending_cards = _policy->analytics()->predict_pending_cards(in_young_only_phase);
 
   log_trace(gc, ergo, cset)("Start choosing CSet. Pending cards: %zu target pause time: %1.2fms",
@@ -378,7 +378,7 @@ void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
   if (!candidates()->is_empty()) {
     candidates()->verify();
 
-    if (collector_state()->in_mixed_phase()) {
+    if (collector_state()->is_in_mixed_phase()) {
       time_remaining_ms = select_candidates_from_marking(time_remaining_ms);
     } else {
       log_debug(gc, ergo, cset)("Do not add marking candidates to collection set due to pause type.");
