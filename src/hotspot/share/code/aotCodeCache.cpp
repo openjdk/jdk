@@ -1798,6 +1798,9 @@ CodeBlob* AOTCodeReader::compile_code_blob(const char* name, AOTCodeEntry::Kind 
     fix_relocations(code_blob, reloc_iter);
   }
 
+  // ensure that all patches are visible via both data and code cache
+  ICache::invalidate_range(code_blob->code_begin(), code_blob->code_size());
+
 #ifdef ASSERT
   LogStreamHandle(Trace, aot, codecache, stubs) log;
   if (log.is_enabled()) {
