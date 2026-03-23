@@ -78,10 +78,10 @@
   using Assembler::sve_cpy;
 
   // jdk.internal.util.ArraysSupport.vectorizedHashCode
-  address arrays_hashcode(Register ary, Register cnt, Register result, FloatRegister vdata0,
-                          FloatRegister vdata1, FloatRegister vdata2, FloatRegister vdata3,
-                          FloatRegister vmul0, FloatRegister vmul1, FloatRegister vmul2,
-                          FloatRegister vmul3, FloatRegister vpow, FloatRegister vpowm,
+  address arrays_hashcode(Register ary, Register cnt, Register result, Register blocks,
+                          Register tail, Register sum, FloatRegister v_block0, FloatRegister v_block1,
+                          FloatRegister v_block2, FloatRegister v_block3, FloatRegister v_p0, FloatRegister v_p1,
+                          FloatRegister v_p2, FloatRegister v_p3, FloatRegister v_input1, FloatRegister v_input2,
                           BasicType eltype);
 
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.

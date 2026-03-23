@@ -28,7 +28,9 @@
  *     --add-opens java.base/jdk.internal.util=ALL-UNNAMED -Xcomp -Xbatch HashCode
  */
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 
 public class HashCode {
@@ -47,12 +49,109 @@ public class HashCode {
     private static int[] expected = { 1, 63, 128, 536518979, -1174896354, -1357593156, 428276276};
     private static int[] expectedUnsigned = { 1, 63, 128, 536518979, -1174896354, 584369596, -2025326028};
 
+    private static int[] lengths = {0, 1, 7, 8, 9, 15, 16, 17, 24, 25};
+
+    private static byte[] paddedBytes = {
+            99, 98, 97, 96, 95,
+            0, 1, 2, 3, 4, 5, 6, 7, 127, -1, -2, -128, 55, -73, 99, -100, 11, 12, 13,
+            77, 78, 79, 80, 81, 82, 83, 84
+    };
+
+    private static char[] paddedChars = {
+            999, 998, 997, 996, 995,
+            0, 1, 2, 3, 4, 5, 6, 7, 127, 128, 255, 256, 511, 1024, 4096, 65535, 11, 12, 13,
+            777, 778, 779, 780, 781, 782, 783, 784
+    };
+
+    private static short[] paddedShorts = {
+            999, 998, 997, 996, 995,
+            0, 1, 2, 3, 4, 5, 6, 7, 127, -1, -2, -128, 255, -255, 1024, -1024, 11, 12, 13,
+            777, 778, 779, 780, -781, 782, -783, 784
+    };
+
+    private static int[] paddedInts = {
+            999, 998, 997, 996, 995,
+            0, 1, 2, 3, 4, 5, 6, 7, 127, -1, -2, -128, 255, -255, 65536, -65536, 11, 12, 13,
+            777, 778, 779, 780, -781, 65537, -65537, 123456
+    };
+
+    // Same logical content as paddedChars, but stored as UTF-16 code units in byte[] form.
+    // This exercises the T_CHAR + byte[] -> utf16hashCode(...) path.
+    private static byte[] paddedUtf16Bytes = toNativeUtf16Bytes(paddedChars);
+
+    private static byte[] toNativeUtf16Bytes(char[] chars) {
+        byte[] bytes = new byte[chars.length * 2];
+        boolean little = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN;
+        for (int i = 0; i < chars.length; i++) {
+            char c = chars[i];
+            if (little) {
+                bytes[2 * i] = (byte) (c & 0xFF);
+                bytes[2 * i + 1] = (byte) ((c >>> 8) & 0xFF);
+            } else {
+                bytes[2 * i] = (byte) ((c >>> 8) & 0xFF);
+                bytes[2 * i + 1] = (byte) (c & 0xFF);
+            }
+        }
+        return bytes;
+    }
+
+    private static int getIntConstant(Class<?> holder, String name) throws Exception {
+        Field f = holder.getDeclaredField(name);
+        f.setAccessible(true);
+        return f.getInt(null);
+    }
+
+    private static int signedByteHash(byte[] a, int from, int len, int initial) {
+        int h = initial;
+        for (int i = 0; i < len; i++) {
+            h = 31 * h + a[from + i];
+        }
+        return h;
+    }
+
+    private static int unsignedByteHash(byte[] a, int from, int len, int initial) {
+        int h = initial;
+        for (int i = 0; i < len; i++) {
+            h = 31 * h + (a[from + i] & 0xFF);
+        }
+        return h;
+    }
+
+    private static int charHash(char[] a, int from, int len, int initial) {
+        int h = initial;
+        for (int i = 0; i < len; i++) {
+            h = 31 * h + a[from + i];
+        }
+        return h;
+    }
+
+    private static int shortHash(short[] a, int from, int len, int initial) {
+        int h = initial;
+        for (int i = 0; i < len; i++) {
+            h = 31 * h + a[from + i];
+        }
+        return h;
+    }
+
+    private static int intHash(int[] a, int from, int len, int initial) {
+        int h = initial;
+        for (int i = 0; i < len; i++) {
+            h = 31 * h + a[from + i];
+        }
+        return h;
+    }
+
     public static void main(String[] args) throws Exception {
 
         // Deep introspection into range-based hash functions
         Class<?> arraysSupport = Class.forName("jdk.internal.util.ArraysSupport");
         Method vectorizedHashCode = arraysSupport.getDeclaredMethod("vectorizedHashCode", Object.class, int.class, int.class, int.class, int.class);
         vectorizedHashCode.setAccessible(true);
+        int T_BOOLEAN = getIntConstant(arraysSupport, "T_BOOLEAN");
+        int T_BYTE = getIntConstant(arraysSupport, "T_BYTE");
+        int T_CHAR = getIntConstant(arraysSupport, "T_CHAR");
+        int T_SHORT = getIntConstant(arraysSupport, "T_SHORT");
+        int T_INT = getIntConstant(arraysSupport, "T_INT");
 
         for (int i = 0; i < tests.length; i++) {
             testBytes[i] = tests[i].getBytes("UTF-8");
@@ -81,7 +180,7 @@ public class HashCode {
                                 + ", hashCode = " + hashCode
                                 + ", repetition = " + j);
                     }
-                    hashCode = (int) vectorizedHashCode.invoke(null, extraZeroes, 17, i, 1, /* ArraysSupport.T_BYTE */ 8);
+                    hashCode = (int) vectorizedHashCode.invoke(null, extraZeroes, 17, i, 1, T_BYTE);
                     if (hashCode != zeroResult) {
                         throw new RuntimeException("byte[] subrange \"" + Arrays.toString(extraZeroes)
                                 + "\" at offset 17, limit " + i + ": "
@@ -162,6 +261,64 @@ public class HashCode {
                 }
             }
             System.out.println("char[] tests passed");
+        } catch (RuntimeException e) {
+            System.out.println(e.getMessage());
+            failed = true;
+        }
+        try {
+            int initial = 1;
+            int from = 5;
+
+            for (int len : lengths) {
+                int hashCode = (int) vectorizedHashCode.invoke(null, paddedBytes, from, len, initial, T_BYTE);
+                int e = signedByteHash(paddedBytes, from, len, initial);
+                if (hashCode != e) {
+                    throw new RuntimeException("T_BYTE subrange failed: len = " + len
+                            + ", e = " + e
+                            + ", hashCode = " + hashCode);
+                }
+
+                hashCode = (int) vectorizedHashCode.invoke(null, paddedBytes, from, len, initial, T_BOOLEAN);
+                e = unsignedByteHash(paddedBytes, from, len, initial);
+                if (hashCode != e) {
+                    throw new RuntimeException("T_BOOLEAN subrange failed: len = " + len
+                            + ", e = " + e
+                            + ", hashCode = " + hashCode);
+                }
+
+                hashCode = (int) vectorizedHashCode.invoke(null, paddedChars, from, len, initial, T_CHAR);
+                e = charHash(paddedChars, from, len, initial);
+                if (hashCode != e) {
+                    throw new RuntimeException("T_CHAR subrange failed: len = " + len
+                            + ", e = " + e
+                            + ", hashCode = " + hashCode);
+                }
+
+                hashCode = (int) vectorizedHashCode.invoke(null, paddedUtf16Bytes, from, len, initial, T_CHAR);
+                e = charHash(paddedChars, from, len, initial);
+                if (hashCode != e) {
+                    throw new RuntimeException("T_CHAR byte[] UTF-16 subrange failed: len = " + len
+                            + ", e = " + e
+                            + ", hashCode = " + hashCode);
+                }
+
+                hashCode = (int) vectorizedHashCode.invoke(null, paddedShorts, from, len, initial, T_SHORT);
+                e = shortHash(paddedShorts, from, len, initial);
+                if (hashCode != e) {
+                    throw new RuntimeException("T_SHORT subrange failed: len = " + len
+                            + ", e = " + e
+                            + ", hashCode = " + hashCode);
+                }
+
+                hashCode = (int) vectorizedHashCode.invoke(null, paddedInts, from, len, initial, T_INT);
+                e = intHash(paddedInts, from, len, initial);
+                if (hashCode != e) {
+                    throw new RuntimeException("T_INT subrange failed: len = " + len
+                            + ", e = " + e
+                            + ", hashCode = " + hashCode);
+                }
+            }
+            System.out.println("vectorizedHashCode subrange tests passed");
         } catch (RuntimeException e) {
             System.out.println(e.getMessage());
             failed = true;

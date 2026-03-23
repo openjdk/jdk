@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, 2024, Red Hat, Inc. All rights reserved.
-// Copyright 2025 Arm Limited and/or its affiliates.
+// Copyright 2025, 2026 Arm Limited and/or its affiliates.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -545,6 +545,9 @@ reg_class int_r3_reg(R3);
 
 // Singleton class for R4 int register
 reg_class int_r4_reg(R4);
+
+// Singleton class for R5 int register
+reg_class int_r5_reg(R5);
 
 // Singleton class for R31 int register
 reg_class int_r31_reg(R31);
@@ -4882,6 +4885,18 @@ operand iRegI_R3()
 operand iRegI_R4()
 %{
   constraint(ALLOC_IN_RC(int_r4_reg));
+  match(RegI);
+  match(iRegINoSp);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+
+// Register R5 only
+operand iRegI_R5()
+%{
+  constraint(ALLOC_IN_RC(int_r5_reg));
   match(RegI);
   match(iRegINoSp);
   op_cost(0);
@@ -16123,19 +16138,22 @@ instruct array_equalsC(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
 %}
 
 instruct arrays_hashcode(iRegP_R1 ary, iRegI_R2 cnt, iRegI_R0 result, immI basic_type,
+                         iRegI_R3 blocks, iRegI_R4 tail, iRegI_R5 sum,
                          vRegD_V0 vtmp0, vRegD_V1 vtmp1, vRegD_V2 vtmp2, vRegD_V3 vtmp3,
                          vRegD_V4 vtmp4, vRegD_V5 vtmp5, vRegD_V6 vtmp6, vRegD_V7 vtmp7,
                          vRegD_V12 vtmp8, vRegD_V13 vtmp9, rFlagsReg cr)
 %{
   match(Set result (VectorizedHashCode (Binary ary cnt) (Binary result basic_type)));
-  effect(TEMP vtmp0, TEMP vtmp1, TEMP vtmp2, TEMP vtmp3, TEMP vtmp4, TEMP vtmp5, TEMP vtmp6,
+  effect(TEMP blocks, TEMP tail, TEMP sum,
+         TEMP vtmp0, TEMP vtmp1, TEMP vtmp2, TEMP vtmp3, TEMP vtmp4, TEMP vtmp5, TEMP vtmp6,
          TEMP vtmp7, TEMP vtmp8, TEMP vtmp9, USE_KILL ary, USE_KILL cnt, USE basic_type, KILL cr);
 
   format %{ "Array HashCode array[] $ary,$cnt,$result,$basic_type -> $result   // KILL all" %}
   ins_encode %{
     address tpc = __ arrays_hashcode($ary$$Register, $cnt$$Register, $result$$Register,
-                                     $vtmp3$$FloatRegister, $vtmp2$$FloatRegister,
-                                     $vtmp1$$FloatRegister, $vtmp0$$FloatRegister,
+                                     $blocks$$Register, $tail$$Register, $sum$$Register,
+                                     $vtmp0$$FloatRegister, $vtmp1$$FloatRegister,
+                                     $vtmp2$$FloatRegister, $vtmp3$$FloatRegister,
                                      $vtmp4$$FloatRegister, $vtmp5$$FloatRegister,
                                      $vtmp6$$FloatRegister, $vtmp7$$FloatRegister,
                                      $vtmp8$$FloatRegister, $vtmp9$$FloatRegister,

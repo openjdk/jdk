@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2025, Red Hat Inc. All rights reserved.
+ * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -9116,7 +9117,23 @@ class StubGenerator: public StubCodeGenerator {
   // result = r0 - return value. Contains initial hashcode value on entry.
   // ary = r1 - array address
   // cnt = r2 - elements count
-  // Clobbers: v0-v13, rscratch1, rscratch2
+  // Clobbers (must match ad rule):
+  // r3 (blocks) : number of 16-element blocks = cnt / 16
+  // r4 (tail)   : remaining elements   = cnt % 16
+  // r5 (sum) : scalar temporary for horizontal-reduce results and
+  //            Horner multipliers used by P16/P8/P7 accumulation.
+  // rscratch1    : temporary scratch
+  // rscratch2    : pow16 (31^16 mod 2^32); loaded only when blocks != 0
+  // SIMD regs    : v0-v7, v12-v13
+  //
+  // Notes:
+  //  - All counts are element counts (not byte counts).
+  //  - v12/v13 are input halves; v0..v3 hold block accumulators used in the vector multiply/reduction.
+  //  - The AD rule must list the same temps; the ARRAYS_HASHCODE_REGISTERS assert enforces that.
+  //  - Algorithm uses Horner method:
+  //      * P16: vector polynomial for each 16-element block
+  //      * P8 : single 8-element block in tail (if present)
+  //      * P7 : scalar unrolled loop for remaining <= 7 elements
   address generate_large_arrays_hashcode(BasicType eltype) {
     StubId stub_id;
     switch (eltype) {
@@ -9145,46 +9162,74 @@ class StubGenerator: public StubCodeGenerator {
     if (start != nullptr) {
       return start;
     }
-    const Register result = r0, ary = r1, cnt = r2;
-    const FloatRegister vdata0 = v3, vdata1 = v2, vdata2 = v1, vdata3 = v0;
-    const FloatRegister vmul0 = v4, vmul1 = v5, vmul2 = v6, vmul3 = v7;
-    const FloatRegister vpow = v12;  // powers of 31: <31^3, ..., 31^0>
-    const FloatRegister vpowm = v13;
+
+    const Register result = r0;
+    const Register ary    = r1;
+    const Register cnt    = r2;
+
+    const Register blocks = r3;
+    const Register tail   = r4;
+    const Register sum    = r5;
+
+    const Register tmp    = rscratch1;
+    const Register pow16  = rscratch2;
+
+    const FloatRegister v_input1  = v12;
+    const FloatRegister v_input2  = v13;
+
+    const FloatRegister v_block0 = v0;
+    const FloatRegister v_block1 = v1;
+    const FloatRegister v_block2 = v2;
+    const FloatRegister v_block3 = v3;
+
+    const FloatRegister v_p0 = v4;
+    const FloatRegister v_p1 = v5;
+    const FloatRegister v_p2 = v6;
+    const FloatRegister v_p3 = v7;
 
     ARRAYS_HASHCODE_REGISTERS;
 
-    Label SMALL_LOOP, LARGE_LOOP_PREHEADER, LARGE_LOOP, TAIL, TAIL_SHORTCUT, BR_BASE;
+    Label L_loop, L_tail_setup, L_tail_lt8, L_done, L_pow_table, L_after_table, L_br_base;
 
-    unsigned int vf; // vectorization factor
-    bool multiply_by_halves;
-    Assembler::SIMD_Arrangement load_arrangement;
+    int  elem_bytes = 0;
+    bool widen_signed = false;
+
+    auto widen = [this](FloatRegister dst1,
+                        FloatRegister dst2,
+                        FloatRegister src,
+                        Assembler::SIMD_Arrangement dst_arr,
+                        Assembler::SIMD_Arrangement src_arr1,
+                        Assembler::SIMD_Arrangement src_arr2,
+                        bool is_signed) {
+      if (is_signed) {
+        __ sxtl(dst1, dst_arr, src, src_arr1);
+        __ sshll2(dst2, dst_arr, src, src_arr2, 0);
+      } else {
+        __ uxtl(dst1, dst_arr, src, src_arr1);
+        __ ushll2(dst2, dst_arr, src, src_arr2, 0);
+      }
+    };
+
+    auto widen_low = [this](FloatRegister dst,
+                            FloatRegister src,
+                            Assembler::SIMD_Arrangement dst_arr,
+                            Assembler::SIMD_Arrangement src_arr,
+                            bool is_signed) {
+      if (is_signed) {
+        __ sxtl(dst, dst_arr, src, src_arr);
+      } else {
+        __ uxtl(dst, dst_arr, src, src_arr);
+      }
+    };
+
     switch (eltype) {
-    case T_BOOLEAN:
-    case T_BYTE:
-      load_arrangement = Assembler::T8B;
-      multiply_by_halves = true;
-      vf = 8;
-      break;
-    case T_CHAR:
-    case T_SHORT:
-      load_arrangement = Assembler::T8H;
-      multiply_by_halves = true;
-      vf = 8;
-      break;
-    case T_INT:
-      load_arrangement = Assembler::T4S;
-      multiply_by_halves = false;
-      vf = 4;
-      break;
-    default:
-      ShouldNotReachHere();
+      case T_BOOLEAN: elem_bytes = 1; widen_signed = false; break;
+      case T_BYTE:    elem_bytes = 1; widen_signed = true;  break;
+      case T_CHAR:    elem_bytes = 2; widen_signed = false; break;
+      case T_SHORT:   elem_bytes = 2; widen_signed = true;  break;
+      case T_INT:     elem_bytes = 4; widen_signed = false; break;
+      default:        ShouldNotReachHere();
     }
-
-    // Unroll factor
-    const unsigned uf = 4;
-
-    // Effective vectorization factor
-    const unsigned evf = vf * uf;
 
     __ align(CodeEntryAlignment);
 
@@ -9193,231 +9238,183 @@ class StubGenerator: public StubCodeGenerator {
     address entry = __ pc();
     __ enter();
 
-    // Put 0-3'th powers of 31 into a single SIMD register together. The register will be used in
-    // the SMALL and LARGE LOOPS' epilogues. The initialization is hoisted here and the register's
-    // value shouldn't change throughout both loops.
-    __ movw(rscratch1, intpow(31U, 3));
-    __ mov(vpow, Assembler::S, 0, rscratch1);
-    __ movw(rscratch1, intpow(31U, 2));
-    __ mov(vpow, Assembler::S, 1, rscratch1);
-    __ movw(rscratch1, intpow(31U, 1));
-    __ mov(vpow, Assembler::S, 2, rscratch1);
-    __ movw(rscratch1, intpow(31U, 0));
-    __ mov(vpow, Assembler::S, 3, rscratch1);
+    // blocks = cnt >> 4 ; tail = cnt & 15
+    __ lsr(blocks, cnt, 4);
+    __ andr(tail, cnt, 15);
 
-    __ mov(vmul0, Assembler::T16B, 0);
-    __ mov(vmul0, Assembler::S, 3, result);
+    // -----------------------------
+    // Load pow table; if blocks != 0 load pow16.
+    // -----------------------------
+    __ adr(tmp, L_pow_table);
+    __ ld1(v_p0, v_p1, v_p2, v_p3, Assembler::T4S, Address(tmp));
 
-    __ andr(rscratch2, cnt, (uf - 1) * vf);
-    __ cbz(rscratch2, LARGE_LOOP_PREHEADER);
+    __ cbz(blocks, L_tail_setup);
+    // pow16 = 31^16 mod 2^32 = 0x50A9DE01
+    __ movw(pow16, 1353309697);
 
-    __ movw(rscratch1, intpow(31U, multiply_by_halves ? vf / 2 : vf));
-    __ mov(vpowm, Assembler::S, 0, rscratch1);
+    // -----------------------------
+    // Main loop over 16 elements to calculate P16
+    // -----------------------------
 
-    // SMALL LOOP
-    __ bind(SMALL_LOOP);
+    __ bind(L_loop);
 
-    __ ld1(vdata0, load_arrangement, Address(__ post(ary, vf * type2aelembytes(eltype))));
-    __ mulvs(vmul0, Assembler::T4S, vmul0, vpowm, 0);
-    __ subsw(rscratch2, rscratch2, vf);
+    if (elem_bytes == 1) {
+      __ ld1(v_input1, Assembler::T16B, Address(__ post(ary, 16)));
 
-    if (load_arrangement == Assembler::T8B) {
-      // Extend 8B to 8H to be able to use vector multiply
-      // instructions
-      assert(load_arrangement == Assembler::T8B, "expected to extend 8B to 8H");
-      if (is_signed_subword_type(eltype)) {
-        __ sxtl(vdata0, Assembler::T8H, vdata0, load_arrangement);
-      } else {
-        __ uxtl(vdata0, Assembler::T8H, vdata0, load_arrangement);
-      }
+      // byte -> half
+      widen(v_input2, v_input1, v_input1, Assembler::T8H, Assembler::T8B, Assembler::T16B, widen_signed);
+      // first half -> int
+      widen(v_block3, v_block0, v_input2, Assembler::T4S, Assembler::T4H, Assembler::T8H, widen_signed);
+      __ mulv(v_block3, Assembler::T4S, v_block3, v_p0);
+      __ mulv(v_block0, Assembler::T4S, v_block0, v_p1);
+      __ addv(v_block3, Assembler::T4S, v_block3, v_block0);
+
+      // second half -> int
+      widen(v_block0, v_block1, v_input1, Assembler::T4S, Assembler::T4H, Assembler::T8H, widen_signed);
+      __ mulv(v_block0, Assembler::T4S, v_block0, v_p2);
+      __ mulv(v_block1, Assembler::T4S, v_block1, v_p3);
+      __ addv(v_block0, Assembler::T4S, v_block0, v_block1);
+
+      __ addv(v_block3, Assembler::T4S, v_block3, v_block0);
+
+      __ addv(v_block3, Assembler::T4S, v_block3);
+      __ umov(sum, v_block3, Assembler::S, 0);
+      __ maddw(result, result, pow16, sum);
+
+    } else if (elem_bytes == 2) {
+      __ ld1(v_input2, Assembler::T8H, Address(__ post(ary, 16)));
+      __ ld1(v_input1, Assembler::T8H, Address(__ post(ary, 16)));
+
+      widen(v_block3, v_block0, v_input2, Assembler::T4S, Assembler::T4H, Assembler::T8H, widen_signed);
+      __ mulv(v_block3, Assembler::T4S, v_block3, v_p0);
+      __ mulv(v_block0, Assembler::T4S, v_block0, v_p1);
+      __ addv(v_block3, Assembler::T4S, v_block3, v_block0);
+
+      widen(v_block0, v_block1, v_input1, Assembler::T4S, Assembler::T4H, Assembler::T8H, widen_signed);
+      __ mulv(v_block0, Assembler::T4S, v_block0, v_p2);
+      __ mulv(v_block1, Assembler::T4S, v_block1, v_p3);
+      __ addv(v_block0, Assembler::T4S, v_block0, v_block1);
+
+      __ addv(v_block3, Assembler::T4S, v_block3, v_block0);
+
+      __ addv(v_block3, Assembler::T4S, v_block3);
+      __ umov(sum, v_block3, Assembler::S, 0);
+      __ maddw(result, result, pow16, sum);
+
+    } else {
+      __ ld1(v_block0, v_block1, v_block2, v_block3, Assembler::T4S, Address(__ post(ary, 64)));
+
+      __ mulv(v_block0, Assembler::T4S, v_block0, v_p0);
+      __ mulv(v_block1, Assembler::T4S, v_block1, v_p1);
+      __ mulv(v_block2, Assembler::T4S, v_block2, v_p2);
+      __ mulv(v_block3, Assembler::T4S, v_block3, v_p3);
+
+      __ addv(v_block0, Assembler::T4S, v_block0, v_block1);
+      __ addv(v_block2, Assembler::T4S, v_block2, v_block3);
+      __ addv(v_block0, Assembler::T4S, v_block0, v_block2);
+
+      __ addv(v_block0, Assembler::T4S, v_block0);
+      __ umov(sum, v_block0, Assembler::S, 0);
+      __ maddw(result, result, pow16, sum);
     }
 
-    switch (load_arrangement) {
-    case Assembler::T4S:
-      __ addv(vmul0, load_arrangement, vmul0, vdata0);
-      break;
-    case Assembler::T8B:
-    case Assembler::T8H:
-      assert(is_subword_type(eltype), "subword type expected");
-      if (is_signed_subword_type(eltype)) {
-        __ saddwv(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T4H);
-      } else {
-        __ uaddwv(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T4H);
-      }
-      break;
-    default:
-      __ should_not_reach_here();
+    __ subs(blocks, blocks, 1);
+    __ br(Assembler::HI, L_loop);
+
+    __ bind(L_tail_setup);
+    __ cbz(tail, L_done);
+
+    // If (tail & 8) do P8, then do <8 computed-branch.
+    __ tbz(tail, 3, L_tail_lt8);
+
+    // P8: result = result * 31^8 + Horner hash of next 8 elements
+    __ umov(sum, v_p1, Assembler::S, 3);   // sum = 31^8
+
+    if (elem_bytes == 1) {
+      __ ld1(v_input1, Assembler::T8B, Address(__ post(ary, 8)));
+      // 8B -> 8H (low half only)
+      widen_low(v_input2, v_input1, Assembler::T8H, Assembler::T8B, widen_signed);
+      // 8H -> two 4S
+      widen(v_block0, v_block1, v_input2, Assembler::T4S, Assembler::T4H, Assembler::T8H, widen_signed);
+
+      __ mulv(v_block0, Assembler::T4S, v_block0, v_p2);
+      __ mulv(v_block1, Assembler::T4S, v_block1, v_p3);
+      __ addv(v_block0, Assembler::T4S, v_block0, v_block1);
+
+      __ addv(v_block0, Assembler::T4S, v_block0);
+      __ umov(tmp, v_block0, Assembler::S, 0);
+      __ maddw(result, result, sum, tmp);
+
+    } else if (elem_bytes == 2) {
+      __ ld1(v_input2, Assembler::T8H, Address(__ post(ary, 16)));
+
+      // 8H -> two 4S
+      widen(v_block0, v_block1, v_input2, Assembler::T4S, Assembler::T4H, Assembler::T8H, widen_signed);
+
+      __ mulv(v_block0, Assembler::T4S, v_block0, v_p2);
+      __ mulv(v_block1, Assembler::T4S, v_block1, v_p3);
+      __ addv(v_block0, Assembler::T4S, v_block0, v_block1);
+
+      __ addv(v_block0, Assembler::T4S, v_block0);
+      __ umov(tmp, v_block0, Assembler::S, 0);
+      __ maddw(result, result, sum, tmp);
+
+    } else {
+      __ ld1(v_block0, Assembler::T4S, Address(__ post(ary, 16)));
+      __ ld1(v_block1, Assembler::T4S, Address(__ post(ary, 16)));
+
+      __ mulv(v_block0, Assembler::T4S, v_block0, v_p2);
+      __ mulv(v_block1, Assembler::T4S, v_block1, v_p3);
+      __ addv(v_block0, Assembler::T4S, v_block0, v_block1);
+
+      __ addv(v_block0, Assembler::T4S, v_block0);
+      __ umov(tmp, v_block0, Assembler::S, 0);
+      __ maddw(result, result, sum, tmp);
     }
 
-    // Process the upper half of a vector
-    if (load_arrangement == Assembler::T8B || load_arrangement == Assembler::T8H) {
-      __ mulvs(vmul0, Assembler::T4S, vmul0, vpowm, 0);
-      if (is_signed_subword_type(eltype)) {
-        __ saddwv2(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T8H);
-      } else {
-        __ uaddwv2(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T8H);
-      }
-    }
+    // tail -= 8 after P8
+    __ subw(tail, tail, 8);
+    __ cbz(tail, L_done);
 
-    __ br(Assembler::HI, SMALL_LOOP);
+    // -----------------------------
+    // Tail < 8: HotSpot-style P7 scalar tail
+    // -----------------------------
+    __ bind(L_tail_lt8);
+    // tail in [1..7] here
 
-    // SMALL LOOP'S EPILOQUE
-    __ lsr(rscratch2, cnt, exact_log2(evf));
-    __ cbnz(rscratch2, LARGE_LOOP_PREHEADER);
-
-    __ mulv(vmul0, Assembler::T4S, vmul0, vpow);
-    __ addv(vmul0, Assembler::T4S, vmul0);
-    __ umov(result, vmul0, Assembler::S, 0);
-
-    // TAIL
-    __ bind(TAIL);
-
-    // The andr performs cnt % vf. The subtract shifted by 3 offsets past vf - 1 - (cnt % vf) pairs
-    // of load + madd insns i.e. it only executes cnt % vf load + madd pairs.
-    assert(is_power_of_2(vf), "can't use this value to calculate the jump target PC");
-    __ andr(rscratch2, cnt, vf - 1);
-    __ bind(TAIL_SHORTCUT);
-    __ adr(rscratch1, BR_BASE);
+    __ adr(tmp, L_br_base);
     // For Cortex-A53 offset is 4 because 2 nops are generated.
-    __ sub(rscratch1, rscratch1, rscratch2, ext::uxtw, VM_Version::supports_a53mac() ? 4 : 3);
-    __ movw(rscratch2, 0x1f);
-    __ br(rscratch1);
+    __ sub(tmp, tmp, tail, ext::uxtw,
+           VM_Version::supports_a53mac() ? 4 : 3);
+    __ movw(sum, 0x1f);  // 31
+    __ br(tmp);
 
-    for (size_t i = 0; i < vf - 1; ++i) {
-      __ load(rscratch1, Address(__ post(ary, type2aelembytes(eltype))),
-                                   eltype);
-      __ maddw(result, result, rscratch2, rscratch1);
-      // maddw generates an extra nop for Cortex-A53 (see maddw definition in macroAssembler).
+    __ align(8);
+
+    // Unrolled scalar Horner for up to 7 elements
+    for (int i = 0; i < 7; i++) {
+      __ load(tmp, Address(__ post(ary, elem_bytes)), eltype);
+      __ maddw(result, result, sum, tmp);
+      // maddw generates an extra nop for Cortex-A53 (see maddw definition).
       // Generate 2nd nop to have 4 instructions per iteration.
       if (VM_Version::supports_a53mac()) {
         __ nop();
       }
     }
-    __ bind(BR_BASE);
 
-    __ leave();
-    __ ret(lr);
+    __ bind(L_br_base);
 
-    // LARGE LOOP
-    __ bind(LARGE_LOOP_PREHEADER);
+    __ bind(L_done);
+    __ b(L_after_table);
 
-    __ lsr(rscratch2, cnt, exact_log2(evf));
+    __ align(16);
+    __ bind(L_pow_table);
 
-    if (multiply_by_halves) {
-      // 31^4 - multiplier between lower and upper parts of a register
-      __ movw(rscratch1, intpow(31U, vf / 2));
-      __ mov(vpowm, Assembler::S, 1, rscratch1);
-      // 31^28 - remainder of the iteraion multiplier, 28 = 32 - 4
-      __ movw(rscratch1, intpow(31U, evf - vf / 2));
-      __ mov(vpowm, Assembler::S, 0, rscratch1);
-    } else {
-      // 31^16
-      __ movw(rscratch1, intpow(31U, evf));
-      __ mov(vpowm, Assembler::S, 0, rscratch1);
+    for (int i = 15; i >= 0; i--) {
+      __ emit_int32(intpow(31U, i));
     }
 
-    __ mov(vmul3, Assembler::T16B, 0);
-    __ mov(vmul2, Assembler::T16B, 0);
-    __ mov(vmul1, Assembler::T16B, 0);
-
-    __ bind(LARGE_LOOP);
-
-    __ mulvs(vmul3, Assembler::T4S, vmul3, vpowm, 0);
-    __ mulvs(vmul2, Assembler::T4S, vmul2, vpowm, 0);
-    __ mulvs(vmul1, Assembler::T4S, vmul1, vpowm, 0);
-    __ mulvs(vmul0, Assembler::T4S, vmul0, vpowm, 0);
-
-    __ ld1(vdata3, vdata2, vdata1, vdata0, load_arrangement,
-           Address(__ post(ary, evf * type2aelembytes(eltype))));
-
-    if (load_arrangement == Assembler::T8B) {
-      // Extend 8B to 8H to be able to use vector multiply
-      // instructions
-      assert(load_arrangement == Assembler::T8B, "expected to extend 8B to 8H");
-      if (is_signed_subword_type(eltype)) {
-        __ sxtl(vdata3, Assembler::T8H, vdata3, load_arrangement);
-        __ sxtl(vdata2, Assembler::T8H, vdata2, load_arrangement);
-        __ sxtl(vdata1, Assembler::T8H, vdata1, load_arrangement);
-        __ sxtl(vdata0, Assembler::T8H, vdata0, load_arrangement);
-      } else {
-        __ uxtl(vdata3, Assembler::T8H, vdata3, load_arrangement);
-        __ uxtl(vdata2, Assembler::T8H, vdata2, load_arrangement);
-        __ uxtl(vdata1, Assembler::T8H, vdata1, load_arrangement);
-        __ uxtl(vdata0, Assembler::T8H, vdata0, load_arrangement);
-      }
-    }
-
-    switch (load_arrangement) {
-    case Assembler::T4S:
-      __ addv(vmul3, load_arrangement, vmul3, vdata3);
-      __ addv(vmul2, load_arrangement, vmul2, vdata2);
-      __ addv(vmul1, load_arrangement, vmul1, vdata1);
-      __ addv(vmul0, load_arrangement, vmul0, vdata0);
-      break;
-    case Assembler::T8B:
-    case Assembler::T8H:
-      assert(is_subword_type(eltype), "subword type expected");
-      if (is_signed_subword_type(eltype)) {
-        __ saddwv(vmul3, vmul3, Assembler::T4S, vdata3, Assembler::T4H);
-        __ saddwv(vmul2, vmul2, Assembler::T4S, vdata2, Assembler::T4H);
-        __ saddwv(vmul1, vmul1, Assembler::T4S, vdata1, Assembler::T4H);
-        __ saddwv(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T4H);
-      } else {
-        __ uaddwv(vmul3, vmul3, Assembler::T4S, vdata3, Assembler::T4H);
-        __ uaddwv(vmul2, vmul2, Assembler::T4S, vdata2, Assembler::T4H);
-        __ uaddwv(vmul1, vmul1, Assembler::T4S, vdata1, Assembler::T4H);
-        __ uaddwv(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T4H);
-      }
-      break;
-    default:
-      __ should_not_reach_here();
-    }
-
-    // Process the upper half of a vector
-    if (load_arrangement == Assembler::T8B || load_arrangement == Assembler::T8H) {
-      __ mulvs(vmul3, Assembler::T4S, vmul3, vpowm, 1);
-      __ mulvs(vmul2, Assembler::T4S, vmul2, vpowm, 1);
-      __ mulvs(vmul1, Assembler::T4S, vmul1, vpowm, 1);
-      __ mulvs(vmul0, Assembler::T4S, vmul0, vpowm, 1);
-      if (is_signed_subword_type(eltype)) {
-        __ saddwv2(vmul3, vmul3, Assembler::T4S, vdata3, Assembler::T8H);
-        __ saddwv2(vmul2, vmul2, Assembler::T4S, vdata2, Assembler::T8H);
-        __ saddwv2(vmul1, vmul1, Assembler::T4S, vdata1, Assembler::T8H);
-        __ saddwv2(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T8H);
-      } else {
-        __ uaddwv2(vmul3, vmul3, Assembler::T4S, vdata3, Assembler::T8H);
-        __ uaddwv2(vmul2, vmul2, Assembler::T4S, vdata2, Assembler::T8H);
-        __ uaddwv2(vmul1, vmul1, Assembler::T4S, vdata1, Assembler::T8H);
-        __ uaddwv2(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T8H);
-      }
-    }
-
-    __ subsw(rscratch2, rscratch2, 1);
-    __ br(Assembler::HI, LARGE_LOOP);
-
-    __ mulv(vmul3, Assembler::T4S, vmul3, vpow);
-    __ addv(vmul3, Assembler::T4S, vmul3);
-    __ umov(result, vmul3, Assembler::S, 0);
-
-    __ mov(rscratch2, intpow(31U, vf));
-
-    __ mulv(vmul2, Assembler::T4S, vmul2, vpow);
-    __ addv(vmul2, Assembler::T4S, vmul2);
-    __ umov(rscratch1, vmul2, Assembler::S, 0);
-    __ maddw(result, result, rscratch2, rscratch1);
-
-    __ mulv(vmul1, Assembler::T4S, vmul1, vpow);
-    __ addv(vmul1, Assembler::T4S, vmul1);
-    __ umov(rscratch1, vmul1, Assembler::S, 0);
-    __ maddw(result, result, rscratch2, rscratch1);
-
-    __ mulv(vmul0, Assembler::T4S, vmul0, vpow);
-    __ addv(vmul0, Assembler::T4S, vmul0);
-    __ umov(rscratch1, vmul0, Assembler::S, 0);
-    __ maddw(result, result, rscratch2, rscratch1);
-
-    __ andr(rscratch2, cnt, vf - 1);
-    __ cbnz(rscratch2, TAIL_SHORTCUT);
+    __ bind(L_after_table);
 
     __ leave();
     __ ret(lr);

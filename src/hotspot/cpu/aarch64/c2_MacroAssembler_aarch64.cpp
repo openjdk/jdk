@@ -51,11 +51,12 @@ typedef void (MacroAssembler::* chr_insn)(Register Rt, const Address &adr);
 
 // jdk.internal.util.ArraysSupport.vectorizedHashCode
 address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register result,
-                                           FloatRegister vdata0, FloatRegister vdata1,
-                                           FloatRegister vdata2, FloatRegister vdata3,
-                                           FloatRegister vmul0, FloatRegister vmul1,
-                                           FloatRegister vmul2, FloatRegister vmul3,
-                                           FloatRegister vpow, FloatRegister vpowm,
+                                           Register blocks, Register tail, Register sum,
+                                           FloatRegister v_block0, FloatRegister v_block1,
+                                           FloatRegister v_block2, FloatRegister v_block3,
+                                           FloatRegister v_p0, FloatRegister v_p1,
+                                           FloatRegister v_p2, FloatRegister v_p3,
+                                           FloatRegister v_input1, FloatRegister v_input2,
                                            BasicType eltype) {
   ARRAYS_HASHCODE_REGISTERS;
 
@@ -95,9 +96,8 @@ address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register 
     ShouldNotReachHere();
   }
 
-  // large_arrays_hashcode(T_INT) performs worse than the scalar loop below when the Neon loop
-  // implemented by the stub executes just once. Call the stub only if at least two iterations will
-  // be executed.
+  // large_arrays_hashcode(T_INT) uses SIMD for >= 8 elements.
+  // For lower lengths we use an unrolled loop.
   const size_t large_threshold = eltype == T_INT ? vf * 2 : vf;
   cmpw(cnt, large_threshold);
   br(Assembler::HS, LARGE);
