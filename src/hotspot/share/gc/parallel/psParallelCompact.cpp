@@ -233,7 +233,17 @@ bool ParallelCompactData::initialize(MemRegion reserved_heap)
   assert(region_align_down(_heap_start) == _heap_start,
          "region start not aligned");
 
-  return initialize_region_data(heap_size);
+  assert(is_aligned(heap_size, RegionSize), "precondition");
+
+  const size_t count = heap_size >> Log2RegionSize;
+  _region_vspace = create_vspace(count, sizeof(RegionData));
+  if (_region_vspace != nullptr) {
+    _region_data = (RegionData*)_region_vspace->reserved_low_addr();
+    _region_count = count;
+    return true;
+  }
+
+  return false;
 }
 
 PSVirtualSpace*
@@ -275,20 +285,6 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
   }
 
   return vspace;
-}
-
-bool ParallelCompactData::initialize_region_data(size_t heap_size)
-{
-  assert(is_aligned(heap_size, RegionSize), "precondition");
-
-  const size_t count = heap_size >> Log2RegionSize;
-  _region_vspace = create_vspace(count, sizeof(RegionData));
-  if (_region_vspace != nullptr) {
-    _region_data = (RegionData*)_region_vspace->reserved_low_addr();
-    _region_count = count;
-    return true;
-  }
-  return false;
 }
 
 void ParallelCompactData::clear_range(size_t beg_region, size_t end_region) {
