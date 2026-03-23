@@ -154,19 +154,35 @@ int HotCodeCollector::do_relocation(ThreadSampler& sampler, void* candidate, uin
   // Number of nmethods relocated (candidate + callees)
   int num_relocated = 0;
 
-  // Perform relocation
+  // Pointer to nmethod in hot heap
+  nmethod* hot_nm = nullptr;
+
   if (CodeCache::get_code_blob_type(nm) != CodeBlobType::MethodHot) {
     CompiledICLocker ic_locker(nm);
-    if (nm->relocate(CodeBlobType::MethodHot) != nullptr) {
-      log_debug(hotcode)("Relocated: nmethod (%p), method (%s), call level (%d)", nm, nm->method()->name_and_sig_as_C_string(), call_level);
+    hot_nm = nm->relocate(CodeBlobType::MethodHot);
+
+    if (hot_nm != nullptr) {
+      // Successfully relocated nmethod. Update counts and proceed to callee relocation.
+      log_debug(hotcode)("Successful relocation: nmethod (%p), method (%s), call level (%d)", nm, hot_nm->method()->name_and_sig_as_C_string(), call_level);
       sampler.update_sample_count(nm);
       num_relocated++;
+    } else {
+      // Relocation failed so return and do not attempt to relocate callees
+      log_debug(hotcode)("Failed relocation: nmethod (%p), call level (%d)", nm, call_level);
+      return 0;
     }
+  } else {
+    // Skip relocation since already in hot heap, but still relocate callees
+    // since they may not have been compiled when this method was first relocated
+    log_debug(hotcode)("Already relocated: nmethod (%p), method (%s), call level (%d)", nm, nm->method()->name_and_sig_as_C_string(), call_level);
+    hot_nm = nm;
   }
+
+  assert(hot_nm != nullptr, "unable to relocate callees");
 
   if (call_level < HotCodeCallLevel) {
     // Loop over relocations to relocate callees
-    RelocIterator relocIter(nm);
+    RelocIterator relocIter(hot_nm);
     while (relocIter.next()) {
       // Check is a call
       Relocation* reloc = relocIter.reloc();
