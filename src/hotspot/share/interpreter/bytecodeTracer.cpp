@@ -150,7 +150,8 @@ class BytecodePrinter {
   // BytecodeStream, which will skip wide bytecodes.
   void trace(const methodHandle& method, address bcp, outputStream* st) {
     _current_method = method();
-    _is_linked = method->method_holder()->is_linked();
+    // This may be called during linking after bytecodes are rewritten to point to the cpCache.
+    _is_linked = method->constants()->cache() != nullptr;
     ResourceMark rm;
     Bytecodes::Code code = Bytecodes::code_at(method(), bcp);
     // Set is_wide
