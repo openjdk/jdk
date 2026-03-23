@@ -1416,7 +1416,11 @@ void ObjectSynchronizer::chk_in_use_entry(ObjectMonitor* n, outputStream* out,
   }
 
   const markWord mark = obj->mark();
-  if (!mark.has_monitor()) {
+  // Note: When using ObjectMonitorTable we may observe an intermediate state,
+  // where the monitor is globally visible, but no thread has yet transitioned
+  // the markWord. To avoid reporting a false positive during this transition, we
+  // skip the `!mark.has_monitor()` test if we are using the ObjectMonitorTable.
+  if (!UseObjectMonitorTable && !mark.has_monitor()) {
     out->print_cr("ERROR: monitor=" INTPTR_FORMAT ": in-use monitor's "
                   "object does not think it has a monitor: obj="
                   INTPTR_FORMAT ", mark=" INTPTR_FORMAT, p2i(n),

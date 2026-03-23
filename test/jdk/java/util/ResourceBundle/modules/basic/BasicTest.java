@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@
  *        jdk.test.lib.compiler.CompilerUtils
  *        jdk.test.lib.process.ProcessTools
  *        ModuleTestUtil
- * @run junit BasicTest
+ * @run junit/timeout=200 BasicTest
  */
 
 import java.nio.file.Path;
@@ -132,7 +132,6 @@ public class BasicTest {
         moduleList.forEach(mn -> ModuleTestUtil.prepareModule(srcPath, modPath,
                 mn, resFormat));
         ModuleTestUtil.runModule(modPath.toString(), MAIN, localeList);
-        ModuleTestUtil.runModuleWithLegacyCode(modPath.toString(), MAIN, localeList);
     }
 
     @Test

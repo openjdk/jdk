@@ -2087,7 +2087,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
             value = expandedState.get(path);
             if (value == null || !value)
                 return false;
-        } while( (path=path.getParentPath())!=null );
+        } while( (path=path.getParentPath()) != null );
 
         return true;
     }

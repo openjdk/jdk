@@ -39,6 +39,7 @@ import static jdk.jpackage.internal.cli.StandardOption.WIN_SHORTCUT_HINT;
 import static jdk.jpackage.internal.cli.StandardOption.WIN_SHORTCUT_PROMPT;
 import static jdk.jpackage.internal.cli.StandardOption.WIN_UPDATE_URL;
 import static jdk.jpackage.internal.cli.StandardOption.WIN_UPGRADE_UUID;
+import static jdk.jpackage.internal.cli.StandardOption.WIN_WITH_UI;
 import static jdk.jpackage.internal.model.StandardPackageType.WIN_MSI;
 
 import jdk.jpackage.internal.cli.Options;
@@ -93,6 +94,7 @@ final class WinFromOptions {
         WIN_UPDATE_URL.ifPresentIn(options, pkgBuilder::updateURL);
         WIN_INSTALLDIR_CHOOSER.ifPresentIn(options, pkgBuilder::withInstallDirChooser);
         WIN_SHORTCUT_PROMPT.ifPresentIn(options, pkgBuilder::withShortcutPrompt);
+        WIN_WITH_UI.ifPresentIn(options, pkgBuilder::withUi);
 
         if (app.isService()) {
             RESOURCE_DIR.ifPresentIn(options, resourceDir -> {

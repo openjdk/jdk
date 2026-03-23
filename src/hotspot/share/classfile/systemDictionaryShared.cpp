@@ -373,11 +373,6 @@ bool SystemDictionaryShared::is_jfr_event_class(InstanceKlass *k) {
   return false;
 }
 
-bool SystemDictionaryShared::is_early_klass(InstanceKlass* ik) {
-  DumpTimeClassInfo* info = _dumptime_table->get(ik);
-  return (info != nullptr) ? info->is_early_klass() : false;
-}
-
 bool SystemDictionaryShared::check_self_exclusion(InstanceKlass* k) {
   bool log_warning = false;
   const char* error = check_self_exclusion_helper(k, log_warning);
