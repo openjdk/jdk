@@ -375,7 +375,7 @@ static bool is_early_init_possible(InstanceKlass* ik) {
       // is_runtime_setup_required() == true for this interface
       if (log_is_enabled(Debug, aot, init)) {
         ResourceMark rm;
-        log_debug(aot, init)("No early init %s: super type %s not initialized",
+        log_debug(aot, init)("No early init %s: interface type %s not initialized",
                              ik->external_name(), intf->external_name());
       }
       return false;
