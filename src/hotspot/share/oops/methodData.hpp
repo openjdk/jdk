@@ -1985,7 +1985,20 @@ private:
     null_free_array_flag = flat_array_flag + 1,
   };
 
+  enum {
+    not_flat_count_off_in_extra_cells,
+    extra_cells_count
+  };
+
   SingleTypeEntry _element;
+
+  static int extra_cells_off() {
+    return ReceiverTypeData::static_cell_count() + SingleTypeEntry::static_cell_count();
+  }
+  
+  static int not_flat_count_off() {
+    return extra_cells_off() + not_flat_count_off_in_extra_cells;
+  }
 
 public:
   ArrayLoadData(DataLayout* layout) :
@@ -2002,7 +2015,7 @@ public:
   virtual bool is_ArrayLoadData() const { return true; }
 
   static int static_cell_count() {
-    return SingleTypeEntry::static_cell_count() + ReceiverTypeData::static_cell_count();
+    return extra_cells_off() + extra_cells_count;
   }
 
   virtual int cell_count() const {
@@ -2015,6 +2028,10 @@ public:
   void set_null_free_array() { set_flag_at(null_free_array_flag); }
   bool null_free_array() const { return flag_at(null_free_array_flag); }
 
+  int not_flat_count() const {
+    return uint_at(not_flat_count_off());
+  }
+
   // Code generation support
   static int flat_array_byte_constant() {
     return flag_number_to_constant(flat_array_flag);
@@ -2026,6 +2043,10 @@ public:
 
   static ByteSize element_offset() {
     return cell_offset(ReceiverTypeData::static_cell_count());
+  }
+
+  static ByteSize not_flat_count_offset() {
+    return cell_offset(not_flat_count_off());
   }
 
   virtual void clean_weak_klass_links(bool always_clean) {

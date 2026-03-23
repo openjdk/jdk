@@ -1654,16 +1654,19 @@ void InterpreterMacroAssembler::profile_multiple_array_types(Register mdp,
     // If no method data exists, go to profile_continue.
     test_method_data_pointer(mdp, profile_continue);
 
+    Label not_flat, null_free_check;
+    test_non_flat_array_oop(array, tmp, not_flat);
+
     load_klass(tmp, array, rscratch1);
     profile_receiver_type(tmp, mdp, 0);
 
-    Label not_flat;
-    test_non_flat_array_oop(array, tmp, not_flat);
-
     set_mdp_flag_at(mdp, ArrayLoadData::flat_array_byte_constant());
 
+    jmp(null_free_check);
     bind(not_flat);
+    increment_mdp_data_at(mdp, in_bytes(ArrayLoadData::not_flat_count_offset()));
 
+    bind(null_free_check);
     Label not_null_free;
     test_non_null_free_array_oop(array, tmp, not_null_free);
 
