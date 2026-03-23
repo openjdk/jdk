@@ -438,8 +438,9 @@ public class JFormattedTextField extends JTextField {
      * <code>AbstractFormatter</code> will be used based on the
      * <code>Class</code> of the value. <code>NumberFormatter</code> will
      * be used for <code>Number</code>s, <code>DateFormatter</code> will
-     * be used for <code>Dates</code>, otherwise <code>DefaultFormatter</code>
-     * will be used.
+     * be used for <code>Dates</code>, <code>DTFormatter</code> will be
+     * used for <code></code>DateTimeFormatter</code>,
+     * </code>otherwise <code>DefaultFormatter</code> will be used.
      * <p>
      * This is a JavaBeans bound property.
      *
