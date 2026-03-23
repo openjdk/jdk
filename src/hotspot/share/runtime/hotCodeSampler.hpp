@@ -31,19 +31,9 @@
 #include "runtime/threadSMR.hpp"
 #include "utilities/resizableHashTable.hpp"
 
-// Minumum amount of time between samples
-static inline uint min_sampling_period_ms() {
-  return HotCodeMinSamplingMs;
-}
-
-// Maximum amount of time between samples
-static inline uint max_sampling_period_ms() {
-  return HotCodeMaxSamplingMs;
-}
-
 // Generate a random sampling period between min and max
 static inline uint rand_sampling_period_ms() {
-  return os::random() % (max_sampling_period_ms() - min_sampling_period_ms() + 1) + min_sampling_period_ms();
+  return os::random() % (HotCodeMaxSamplingMs - HotCodeMinSamplingMs + 1) + HotCodeMinSamplingMs;
 }
 
 class GetPCTask : public SuspendedThreadTask {
@@ -89,7 +79,7 @@ class ThreadSampler : public StackObj {
   }
 
  public:
-  ThreadSampler() : _samples(INITIAL_TABLE_SIZE, HotCodeSampleSeconds * 1000 / max_sampling_period_ms()), _hot_sample_count(0), _non_profiled_sample_count(0) {}
+  ThreadSampler() : _samples(INITIAL_TABLE_SIZE, HotCodeSampleSeconds * 1000 / HotCodeMaxSamplingMs), _hot_sample_count(0), _non_profiled_sample_count(0) {}
 
   // Sample and generate the candidate nmethods for grouping
   void do_sampling(JavaThread* thread);

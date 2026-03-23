@@ -27,7 +27,6 @@
 #include "code/codeCache.hpp"
 #include "logging/log.hpp"
 #include "runtime/hotCodeSampler.hpp"
-#include "runtime/javaThread.inline.hpp"
 
 ThreadSampler* ThreadSampler::_current_sampler = nullptr;
 
@@ -38,50 +37,43 @@ void ThreadSampler::do_sampling(JavaThread* thread) {
 
   uint64_t start_time = os::javaTimeMillis();
 
-  while (true) {
-    { // Collect sample for each JavaThread
-      MutexLocker ml(Threads_lock);
+  // Collect samples for each JavaThread for HotCodeSampleSeconds
+  while (os::javaTimeMillis() - start_time < HotCodeSampleSeconds * 1000) {
+    for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
+      if (jt->is_hidden_from_external_view() ||
+          jt->in_deopt_handler() ||
+          (jt->thread_state() != _thread_in_native && jt->thread_state() != _thread_in_Java)) {
+        continue;
+      }
 
-      for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
-        if (jt->is_hidden_from_external_view() ||
-            jt->in_deopt_handler() ||
-            (jt->thread_state() != _thread_in_native && jt->thread_state() != _thread_in_Java)) {
-          continue;
-        }
+      GetPCTask task(jt);
+      task.run();
+      address pc = task.pc();
+      if (pc == nullptr) {
+        continue;
+      }
 
-        GetPCTask task(jt);
-        task.run();
-        address pc = task.pc();
-        if (pc == nullptr) {
-          continue;
-        }
+      total_samples++;
 
-        total_samples++;
-
-        if (CodeCache::contains(pc)) {
-          nmethod* nm = CodeCache::find_blob(pc)->as_nmethod_or_null();
-          if (nm != nullptr) {
-            bool created = false;
-            int *count = _samples.put_if_absent(nm, 0, &created);
-            (*count)++;
-            if (created) {
-              _samples.maybe_grow();
-            }
-            nm->mark_as_maybe_on_stack();
+      if (CodeCache::contains(pc)) {
+        nmethod* nm = CodeCache::find_blob(pc)->as_nmethod_or_null();
+        if (nm != nullptr) {
+          bool created = false;
+          int *count = _samples.put_if_absent(nm, 0, &created);
+          (*count)++;
+          if (created) {
+            _samples.maybe_grow();
           }
+          nm->mark_as_maybe_on_stack();
         }
       }
     }
 
-    // Check if we have sampled long enough
-    if (os::javaTimeMillis() - start_time > HotCodeSampleSeconds * 1000) {
-      log_info(hotcode)("Profiling complete: collected %d samples corresponding to %d nmethods", total_samples, _samples.number_of_entries());
-      generate_sorted_candidate_list();
-      return;
-    }
-
     thread->sleep(rand_sampling_period_ms());
   }
+
+  log_info(hotcode)("Profiling complete: collected %d samples corresponding to %d nmethods", total_samples, _samples.number_of_entries());
+  generate_sorted_candidate_list();
 }
 
 void ThreadSampler::generate_sorted_candidate_list() {
