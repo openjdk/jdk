@@ -2882,7 +2882,7 @@ void PhaseCCP::analyze_step(Unique_Node_List& worklist, Node* n) {
     _maybe_top_type_nodes.push(n);
   }
   if (new_type == Type::TOP && ((n->is_div_or_mod(T_INT) && type(n->in(2)) == TypeInt::ZERO) || (n->is_div_or_mod(T_LONG) && type(n->in(2)) == TypeLong::ZERO))) {
-    assert(type(n->in(0)) == Type::TOP || type(n->in(1)) == Type::TOP, "");
+    _maybe_top_type_nodes.push(n);
   }
 }
 
@@ -3182,6 +3182,7 @@ Node *PhaseCCP::transform( Node *n ) {
     for (uint i = 0; i < _maybe_top_type_nodes.size(); ++i) {
       Node* type_node = _maybe_top_type_nodes.at(i);
       if (type(type_node) == Type::TOP) {
+        assert(!type_node->is_div_or_mod(T_INT) && !type_node->is_div_or_mod(T_LONG), "");
         ResourceMark rm;
         type_node->make_paths_from_here_dead(this, nullptr, "ccp");
       }
