@@ -45,7 +45,6 @@
  * @summary Basic tests for Process and Environment Variable code
  * @modules java.base/java.lang:open
  *          java.base/java.io:open
- * @requires !vm.musl
  * @requires vm.flagless
  * @library /test/lib
  * @run main/othervm/native/timeout=360 -Djdk.lang.Process.launchMechanism=fork Basic

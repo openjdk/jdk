@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,22 +21,22 @@
  * questions.
  */
 
+import static jdk.jpackage.test.WindowsHelper.getWixTypeFromVerboseJPackageOutput;
+import static jdk.jpackage.test.WindowsHelper.WixType.WIX3;
+
 import java.io.IOException;
 import java.nio.file.Path;
-import jdk.jpackage.test.TKit;
-import jdk.jpackage.test.PackageTest;
-import jdk.jpackage.test.PackageType;
-import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Annotations.Parameters;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.jpackage.test.Annotations.Parameters;
+import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Executor;
-import static jdk.jpackage.test.WindowsHelper.WixType.WIX3;
-import static jdk.jpackage.test.WindowsHelper.getWixTypeFromVerboseJPackageOutput;
+import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.PackageType;
+import jdk.jpackage.test.TKit;
 
 /*
  * @test
@@ -124,8 +124,17 @@ public class WinL10nTest {
         var toolFileName = wixToolName + ".exe";
         return (s) -> {
             s = s.trim();
-            return s.startsWith(toolFileName) || ((s.contains(String.format("\\%s ", toolFileName)) && s.
-                    contains(" -out ")));
+
+            if (s.startsWith(toolFileName)) {
+                return true;
+            }
+
+            // Accommodate for:
+            //     'C:\Program Files (x86)\WiX Toolset v3.14\bin\light.exe' ...
+            //     light.exe ...
+            return Stream.of("\\%s ", "\\%s' ").map(format -> {
+                return String.format(format, toolFileName);
+            }).anyMatch(s::contains) && s.contains(" -out ");
         };
     }
 
