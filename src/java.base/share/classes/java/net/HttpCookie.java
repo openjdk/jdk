@@ -1009,14 +1009,12 @@ public final class HttpCookie implements Cloneable {
             }
         } catch (NumberFormatException ignored) {}
 
-        try {
-            if (expiresValue != null) {
-                long delta = cookie.expiryDate2DeltaSeconds(expiresValue);
-                if (delta != EXPIRY_DATE_PARSE_FAILURE) {
-                    cookie.maxAge = (delta > 0 ? delta : 0);
-                }
+        if (expiresValue != null) {
+            long delta = cookie.expiryDate2DeltaSeconds(expiresValue);
+            if (delta != EXPIRY_DATE_PARSE_FAILURE) {
+                cookie.maxAge = (delta > 0 ? delta : 0);
             }
-        } catch (NumberFormatException ignored) {}
+        }
     }
 
     private static void assignAttribute(HttpCookie cookie,
