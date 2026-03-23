@@ -26,6 +26,7 @@
 #define SHARE_UTILITIES_STRINGUTILS_HPP
 
 #include "memory/allStatic.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class StringUtils : AllStatic {
 public:
