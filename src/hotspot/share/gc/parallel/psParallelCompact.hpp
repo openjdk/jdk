@@ -395,8 +395,6 @@ public:
 #endif  // #ifdef ASSERT
 
 private:
-  PSVirtualSpace* create_vspace(size_t count, size_t element_size);
-
   HeapWord*       _heap_start;
 #ifdef  ASSERT
   HeapWord*       _heap_end;
