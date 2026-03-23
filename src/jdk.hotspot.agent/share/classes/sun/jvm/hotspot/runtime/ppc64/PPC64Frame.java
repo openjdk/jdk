@@ -376,7 +376,7 @@ public class PPC64Frame extends Frame {
       // We assume WalkContinuation is "WalkContinuation::skip".
       // It is same with c'tor arguments of RegisterMap in frame::next_frame().
       //
-      // HotSpot code in cpu/riscv/frame_riscv.inline.hpp:
+      // HotSpot code in cpu/ppc/frame_ppc.inline.hpp:
       //
       //   if (Continuation::is_return_barrier_entry(sender_pc)) {
       //     if (map->walk_cont()) { // about to walk into an h-stack
