@@ -191,9 +191,6 @@ void AOTCodeCache::initialize() {
     return; // AOTCache must be specified to dump and use AOT code
   }
 
-  // Disable stubs caching until JDK-8357398 is fixed.
-  // FLAG_SET_ERGO(AOTStubCaching, false);
-
   if (VerifyOops) {
     // Disable AOT stubs caching when VerifyOops flag is on.
     // Verify oops code generated a lot of C strings which overflow
@@ -1404,11 +1401,6 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
   if (AOTCodeEntry::is_blob(entry_kind) && !is_dumping_stub()) {
     return false;
   }
-  // we do not currently store C2 stubs because we are seeing weird
-  // memory errors when loading them -- see JDK-8357593
-  if (entry_kind == AOTCodeEntry::C2Blob) {
-    return false;
-  }
   log_debug(aot, codecache, stubs)("Writing blob '%s' (id=%u, kind=%s) to AOT Code Cache", name, id, aot_code_entry_kind_name[entry_kind]);
 
 #ifdef ASSERT
@@ -1675,11 +1667,6 @@ CodeBlob* AOTCodeCache::load_code_blob(AOTCodeEntry::Kind entry_kind, uint id, c
     return nullptr;
   }
   if (AOTCodeEntry::is_blob(entry_kind) && !is_using_stub()) {
-    return nullptr;
-  }
-  // we cannot currently load C2 stubs because we are seeing weird
-  // memory errors -- see JDK-8357593
-  if (entry_kind == AOTCodeEntry::C2Blob) {
     return nullptr;
   }
   log_debug(aot, codecache, stubs)("Reading blob '%s' (id=%u, kind=%s) from AOT Code Cache", name, id, aot_code_entry_kind_name[entry_kind]);
