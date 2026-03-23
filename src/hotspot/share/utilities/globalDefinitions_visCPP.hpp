@@ -70,7 +70,7 @@ inline int strncasecmp(const char *s1, const char *s2, size_t n) {
 // under the name strtok_s_l.  Make strtok_r a synonym so we can use that name
 // in shared code.
 inline char* strtok_r(char* str, const char* delim, char** saveptr) {
-    return strtok_s(str, delim, saveptr);
+  return strtok_s(str, delim, saveptr);
 }
 
 // VS doesn't provide POSIX macros S_ISFIFO or S_IFIFO.  It doesn't even
