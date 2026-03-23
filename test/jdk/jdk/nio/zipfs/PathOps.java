@@ -21,7 +21,6 @@
  * questions.
  */
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -55,47 +54,45 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class PathOps {
 
-    static FileSystem fs;
+    // create empty JAR file, testing doesn't require any contents
+    static Path emptyJar;
 
-    // This test uses a static file system since some ops tested on
-    // Path depend on the same underlying `fs` instance
     @BeforeAll
     static void setup() throws IOException {
-        // create empty JAR file, test doesn't require any contents
-        Path emptyJar = Utils.createJarFile("empty.jar");
-        fs = FileSystems.newFileSystem(emptyJar);
-    }
-
-    @AfterAll
-    static void cleanup() throws IOException {
-        fs.close();
+        emptyJar = Utils.createJarFile("empty.jar");
     }
 
     @Test
-    void nullPointerTest() {
-        Path path = fs.getPath("foo");
-        assertThrows(NullPointerException.class, () -> path.resolve((String) null));
-        assertThrows(NullPointerException.class, () -> path.relativize(null));
-        assertThrows(NullPointerException.class, () -> path.compareTo(null));
-        assertThrows(NullPointerException.class, () -> path.startsWith((Path) null));
-        assertThrows(NullPointerException.class, () -> path.endsWith((Path) null));
+    void nullPointerTest() throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            Path path = fs.getPath("foo");
+            assertThrows(NullPointerException.class, () -> path.resolve((String) null));
+            assertThrows(NullPointerException.class, () -> path.relativize(null));
+            assertThrows(NullPointerException.class, () -> path.compareTo(null));
+            assertThrows(NullPointerException.class, () -> path.startsWith((Path) null));
+            assertThrows(NullPointerException.class, () -> path.endsWith((Path) null));
+        }
     }
 
     @Test
-    void mismatchedProvidersTest() {
-        Path path = fs.getPath("foo");
-        Path other = Paths.get("foo");
-        assertThrows(ProviderMismatchException.class, () -> path.compareTo(other));
-        assertThrows(ProviderMismatchException.class, () -> path.resolve(other));
-        assertThrows(ProviderMismatchException.class, () -> path.relativize(other));
-        assertFalse(path.startsWith(other), "providerMismatched startsWith() returns true ");
-        assertFalse(path.endsWith(other), "providerMismatched endsWith() returns true ");
+    void mismatchedProvidersTest() throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            Path path = fs.getPath("foo");
+            Path other = Paths.get("foo");
+            assertThrows(ProviderMismatchException.class, () -> path.compareTo(other));
+            assertThrows(ProviderMismatchException.class, () -> path.resolve(other));
+            assertThrows(ProviderMismatchException.class, () -> path.relativize(other));
+            assertFalse(path.startsWith(other), "providerMismatched startsWith() returns true ");
+            assertFalse(path.endsWith(other), "providerMismatched endsWith() returns true ");
+        }
     }
 
     @ParameterizedTest
     @MethodSource
-    void constructionTest(String first, String[] more, String expected) {
-        string(getPath(first, more), expected);
+    void constructionTest(String first, String[] more, String expected) throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            string(fs.getPath(first, more), expected);
+        }
     }
 
     static Stream<Arguments> constructionTest() {
@@ -113,21 +110,25 @@ public class PathOps {
     }
 
     @Test
-    void allComponentsTest() {
-        var path = getPath("/a/b/c");
-        root(path, "/");
-        parent(path, "/a/b");
-        name(path, "c");
+    void allComponentsTest() throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            var path = fs.getPath("/a/b/c");
+            root(path, "/");
+            parent(path, "/a/b");
+            name(path, "c");
+        }
     }
 
     @ParameterizedTest
     @MethodSource
-    void nameCountTest(String first, String root, String parent, String name, int nameCount) {
-        var path = getPath(first);
-        root(path, root);
-        parent(path, parent);
-        name(path, name);
-        nameCount(path, nameCount);
+    void nameCountTest(String first, String root, String parent, String name, int nameCount) throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            var path = fs.getPath(first);
+            root(path, root);
+            parent(path, parent);
+            name(path, name);
+            nameCount(path, nameCount);
+        }
     }
 
     static Stream<Arguments> nameCountTest() {
@@ -141,11 +142,13 @@ public class PathOps {
 
     @ParameterizedTest
     @MethodSource
-    void parentNameTest(String first, String root, String parent, String name) {
-        var path = getPath(first);
-        root(path, root);
-        parent(path, parent);
-        name(path, name);
+    void parentNameTest(String first, String root, String parent, String name) throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            var path = fs.getPath(first);
+            root(path, root);
+            parent(path, parent);
+            name(path, name);
+        }
     }
 
     static Stream<Arguments> parentNameTest() {
@@ -159,8 +162,10 @@ public class PathOps {
 
     @ParameterizedTest
     @MethodSource
-    void startsWithTest(String first, String prefix) {
-        starts(getPath(first), prefix);
+    void startsWithTest(String first, String prefix) throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            starts(fs.getPath(first), prefix, fs);
+        }
     }
 
     static Stream<Arguments> startsWithTest() {
@@ -182,8 +187,10 @@ public class PathOps {
 
     @ParameterizedTest
     @MethodSource
-    void notStartsWithTest(String first, String prefix) {
-        notStarts(getPath(first), prefix);
+    void notStartsWithTest(String first, String prefix) throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            notStarts(fs.getPath(first), prefix, fs);
+        }
     }
 
     static Stream<Arguments> notStartsWithTest() {
@@ -205,8 +212,10 @@ public class PathOps {
 
     @ParameterizedTest
     @MethodSource
-    void endsWithTest(String first, String suffix) {
-        ends(getPath(first), suffix);
+    void endsWithTest(String first, String suffix) throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            ends(fs.getPath(first), suffix, fs);
+        }
     }
 
     static Stream<Arguments> endsWithTest() {
@@ -233,8 +242,10 @@ public class PathOps {
 
     @ParameterizedTest
     @MethodSource
-    void notEndsWithTest(String first, String suffix) {
-        notEnds(getPath(first), suffix);
+    void notEndsWithTest(String first, String suffix) throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            notEnds(fs.getPath(first), suffix, fs);
+        }
     }
 
     static Stream<Arguments> notEndsWithTest() {
@@ -250,8 +261,10 @@ public class PathOps {
 
     @ParameterizedTest
     @MethodSource
-    void elementTest(int index, String expected) {
-        element(getPath("a/b/c"), index, expected);
+    void elementTest(int index, String expected) throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            element(fs.getPath("a/b/c"), index, expected);
+        }
     }
 
     static Stream<Arguments> elementTest() {
@@ -264,20 +277,26 @@ public class PathOps {
 
     @ParameterizedTest
     @ValueSource(strings = {"/", "/tmp"} )
-    void isAbsoluteTest(String first) {
-        absolute(getPath(first));
+    void isAbsoluteTest(String first) throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            absolute(fs.getPath(first));
+        }
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"tmp", ""} )
-    void notAbsoluteTest(String first) {
-        notAbsolute(getPath(first));
+    void notAbsoluteTest(String first) throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            notAbsolute(fs.getPath(first));
+        }
     }
 
     @ParameterizedTest
     @MethodSource
-    void resolveTest(String first, String other, String expected) {
-        resolve(getPath(first), other, expected);
+    void resolveTest(String first, String other, String expected) throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            resolve(fs.getPath(first), other, expected);
+        }
     }
 
     static Stream<Arguments> resolveTest() {
@@ -300,8 +319,10 @@ public class PathOps {
 
     @ParameterizedTest
     @MethodSource
-    void resolvePathTest(String first, String other, String expected) {
-        resolvePath(getPath(first), other, expected);
+    void resolvePathTest(String first, String other, String expected) throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            resolvePath(fs.getPath(first), other, expected, fs);
+        }
     }
 
     static Stream<Arguments> resolvePathTest() {
@@ -324,8 +345,10 @@ public class PathOps {
 
     @ParameterizedTest
     @MethodSource
-    void resolveSiblingTest(String first, String other, String expected) {
-        resolveSibling(getPath(first), other, expected);
+    void resolveSiblingTest(String first, String other, String expected) throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            resolveSibling(fs.getPath(first), other, expected);
+        }
     }
 
     static Stream<Arguments> resolveSiblingTest() {
@@ -346,17 +369,21 @@ public class PathOps {
     }
 
     @Test
-    void resolveSiblingAndResolveTest() {
-        var path = getPath("");
-        resolveSibling(path, "foo", "foo");
-        resolveSibling(path, "/foo", "/foo");
-        resolve(path, "", "");
+    void resolveSiblingAndResolveTest() throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            var path = fs.getPath("");
+            resolveSibling(path, "foo", "foo");
+            resolveSibling(path, "/foo", "/foo");
+            resolve(path, "", "");
+        }
     }
 
     @ParameterizedTest
     @MethodSource
-    void relativizeTest(String first, String other, String expected) {
-        relativize(getPath(first), other, expected);
+    void relativizeTest(String first, String other, String expected) throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            relativize(fs.getPath(first), other, expected, fs);
+        }
     }
 
     static Stream<Arguments> relativizeTest() {
@@ -382,8 +409,10 @@ public class PathOps {
 
     @ParameterizedTest
     @MethodSource
-    void normalizeTest(String first, String expected) {
-        normalize(getPath(first), expected);
+    void normalizeTest(String first, String expected) throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            normalize(fs.getPath(first), expected);
+        }
     }
 
     static Stream<Arguments> normalizeTest() {
@@ -411,8 +440,10 @@ public class PathOps {
 
     @ParameterizedTest
     @MethodSource
-    void invalidTest(String first) {
-        assertThrows(InvalidPathException.class, () -> getPath(first));
+    void invalidTest(String first) throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            assertThrows(InvalidPathException.class, () -> fs.getPath(first));
+        }
     }
 
     static Stream<String> invalidTest() {
@@ -427,25 +458,31 @@ public class PathOps {
     }
 
     @Test
-    void normalizationTest() {
-        var path = getPath("//foo//bar");
-        string(path, "/foo/bar");
-        root(path, "/");
-        parent(path, "/foo");
-        name(path, "bar");
+    void normalizationTest() throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            var path = fs.getPath("//foo//bar");
+            string(path, "/foo/bar");
+            root(path, "/");
+            parent(path, "/foo");
+            name(path, "bar");
+        }
     }
 
     @Test
-    void isSameFileTest() {
-        isSameFile(getPath("/fileDoesNotExist"), "/fileDoesNotExist");
+    void isSameFileTest() throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            isSameFile(fs.getPath("/fileDoesNotExist"), "/fileDoesNotExist", fs);
+        }
     }
 
     @Test
-    void getNameCountTest() {
+    void getNameCountTest() throws IOException {
         // 8139956
-        System.out.println("check getNameCount");
-        int nc = fs.getPath("/").relativize(fs.getPath("/")).getNameCount();
-        assertEquals(1, nc, "getNameCount of empty path failed");
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            System.out.println("check getNameCount");
+            int nc = fs.getPath("/").relativize(fs.getPath("/")).getNameCount();
+            assertEquals(1, nc, "getNameCount of empty path failed");
+        }
     }
 
     // Utilities for testing
@@ -462,7 +499,7 @@ public class PathOps {
             if (expected != null && result.toString().equals(expected))
                 return;
         }
-        fail();
+        fail("Expected " + expected + " but instead got : " + result);
     }
 
     static void check(Object result, boolean expected) {
@@ -509,28 +546,28 @@ public class PathOps {
         check(path.subpath(startIndex, endIndex), expected);
     }
 
-    static void starts(Path path, String prefix) {
+    static void starts(Path path, String prefix, FileSystem fs) {
         System.out.format("test startsWith with %s\n", prefix);
         checkPath(path);
         Path s = fs.getPath(prefix);
         check(path.startsWith(s), true);
     }
 
-    static void notStarts(Path path, String prefix) {
+    static void notStarts(Path path, String prefix, FileSystem fs) {
         System.out.format("test not startsWith with %s\n", prefix);
         checkPath(path);
         Path s = fs.getPath(prefix);
         check(path.startsWith(s), false);
     }
 
-    static void ends(Path path, String suffix) {
+    static void ends(Path path, String suffix, FileSystem fs) {
         System.out.format("test endsWith %s\n", suffix);
         checkPath(path);
         Path s = fs.getPath(suffix);
         check(path.endsWith(s), true);
     }
 
-    static void notEnds(Path path, String suffix) {
+    static void notEnds(Path path, String suffix, FileSystem fs) {
         System.out.format("test not endsWith %s\n", suffix);
         checkPath(path);
         Path s = fs.getPath(suffix);
@@ -555,7 +592,7 @@ public class PathOps {
         check(path.resolve(other), expected);
     }
 
-    static void resolvePath(Path path, String other, String expected) {
+    static void resolvePath(Path path, String other, String expected, FileSystem fs) {
         System.out.format("test resolve %s\n", other);
         checkPath(path);
         check(path.resolve(fs.getPath(other)), expected);
@@ -568,12 +605,11 @@ public class PathOps {
 
     }
 
-    static void relativize(Path path, String other, String expected) {
+    static void relativize(Path path, String other, String expected, FileSystem fs) {
         System.out.format("test relativize %s\n", other);
         checkPath(path);
         Path that = fs.getPath(other);
         check(path.relativize(that), expected);
-
     }
 
     static void normalize(Path path, String expected) {
@@ -589,21 +625,13 @@ public class PathOps {
         check(path, expected);
     }
 
-    static void isSameFile(Path path, String target) {
+    static void isSameFile(Path path, String target, FileSystem fs) {
         try {
             System.out.println("check two paths are same");
             checkPath(path);
             check(Files.isSameFile(path, fs.getPath(target)), true);
         } catch (IOException ioe) {
-            fail();
+            fail(ioe);
         }
-    }
-
-    static Path getPath(String s) {
-        return fs.getPath(s);
-    }
-
-    static Path getPath(String first, String... more) {
-        return fs.getPath(first, more);
     }
 }
