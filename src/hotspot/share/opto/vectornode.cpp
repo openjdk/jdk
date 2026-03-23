@@ -2469,7 +2469,10 @@ static Node* MinMaxV_Common_Ideal(MinMaxVNode* n, PhaseGVN* phase, bool can_resh
 
     if ((min_op->in(1) == max_op->in(1) && min_op->in(2) == max_op->in(2)) ||
         (min_op->in(2) == max_op->in(1) && min_op->in(1) == max_op->in(2))) {
-      VectorNode* result = VectorNode::make(vopc, max_op->in(1), max_op->in(2), n->bottom_type()->is_vect());
+      // Use n->in(1) inputs for the result to preserve correct merge-masking
+      // passthrough: inactive lanes use in(1), so result->in(1) must equal
+      // n->in(1)->in(1) to maintain the original passthrough semantics.
+      VectorNode* result = VectorNode::make(vopc, n->in(1)->in(1), n->in(1)->in(2), n->bottom_type()->is_vect());
       if (n->is_predicated_vector()) {
         result->add_req(n->in(3));
         result->add_flag(Node::Flag_is_predicated_vector);
