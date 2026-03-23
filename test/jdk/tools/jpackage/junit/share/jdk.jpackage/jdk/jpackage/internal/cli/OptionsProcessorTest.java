@@ -60,6 +60,7 @@ import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -124,24 +125,43 @@ public class OptionsProcessorTest {
         }).create("--add-launcher", "foo=" + propFile).execute();
     }
 
-    @Test
-    public void testFa(@TempDir Path workDir) throws IOException {
+    @ParameterizedTest
+    @CsvSource({
+        "MACOS,true",
+        "WINDOWS,false",
+        "LINUX,false"
+    })
+    public void testFa(OperatingSystem os, boolean accepted, @TempDir Path workDir) throws IOException {
 
         final var propFile = workDir.resolve("fa.properties");
         Files.write(propFile, List.of("description=Hello"));
 
-        build().createAppImageByDefault().withMockupMainJar(workDir).createBundleCallback(cmdline -> {
-            assertFalse(StandardOption.FILE_ASSOCIATIONS_INTERNAL.containsIn(cmdline));
+        var validator = build().os(os).createAppImageByDefault().withMockupMainJar(workDir).mutate(builder -> {
+            if (accepted) {
+                builder.createBundleCallback(cmdline -> {
+                    assertFalse(StandardOption.FILE_ASSOCIATIONS_INTERNAL.containsIn(cmdline));
 
-            var fas = StandardOption.FILE_ASSOCIATIONS.getFrom(cmdline);
-            assertEquals(1, fas.size());
+                    var fas = StandardOption.FILE_ASSOCIATIONS.getFrom(cmdline);
+                    assertEquals(1, fas.size());
 
-            var fa = fas.getFirst();
+                    var fa = fas.getFirst();
 
-            assertEquals("Hello", StandardFaOption.DESCRIPTION.getFrom(fa));
-            assertEquals(propFile, StandardOption.SOURCE_PROPERY_FILE.getFrom(fa));
+                    assertEquals("Hello", StandardFaOption.DESCRIPTION.getFrom(fa));
+                    assertEquals(propFile, StandardOption.SOURCE_PROPERY_FILE.getFrom(fa));
+                });
+            } else {
+                builder.expectValidationErrors(
+                        new JPackageException(I18N.format("ERR_InvalidTypeOptionOnPlatform",
+                                "--file-associations", "app-image", operatingSystemLabel(os)))
+                );
+            }
+        }).create("--file-associations=" + propFile);
 
-        }).create("--file-associations=" + propFile).execute();
+        if (accepted) {
+            validator.execute();
+        } else {
+            validator.validate();
+        }
     }
 
     /**
@@ -821,6 +841,11 @@ public class OptionsProcessorTest {
 
         OptionsProcessorValidatorBuilder validationErrorsOrdered(boolean v) {
             expectedValidationErrorsOrdered = v;
+            return this;
+        }
+
+        OptionsProcessorValidatorBuilder mutate(Consumer<OptionsProcessorValidatorBuilder> mutator) {
+            mutator.accept(this);
             return this;
         }
 

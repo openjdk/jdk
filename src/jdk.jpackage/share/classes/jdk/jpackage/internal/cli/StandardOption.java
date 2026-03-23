@@ -27,8 +27,10 @@ package jdk.jpackage.internal.cli;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 import static jdk.jpackage.internal.cli.OptionSpecBuilder.pathSeparator;
 import static jdk.jpackage.internal.cli.OptionSpecBuilder.toList;
+import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_APP_IMAGE;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_MAC_PKG;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_NATIVE;
+import static jdk.jpackage.internal.cli.StandardBundlingOperation.MACOS_CREATE_BUNDLE;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.SIGN_MAC_APP_IMAGE;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.fromOptionName;
 import static jdk.jpackage.internal.cli.StandardOptionContext.createOptionSpecBuilderMutator;
@@ -221,6 +223,8 @@ public final class StandardOption {
     static final OptionValue<Path[]> FILE_ASSOCIATIONS_INTERNAL = fileOption("file-associations")
             .tokenizer(pathSeparator())
             .outOfScope(BundlingOperationModifier.BUNDLE_RUNTIME)
+            .outOfScope(CREATE_APP_IMAGE)
+            .inScope(MACOS_CREATE_BUNDLE)
             .createArray();
 
     static final OptionValue<AdditionalLauncher[]> ADD_LAUNCHER_INTERNAL = createAddLauncherOption("add-launcher");

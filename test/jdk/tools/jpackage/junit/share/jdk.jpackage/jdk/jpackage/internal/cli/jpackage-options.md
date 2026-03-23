@@ -10,7 +10,7 @@
 | --copyright | bundle | x | x |  | USE_LAST |
 | --description | bundle | x | x | x | USE_LAST |
 | --dest, -d | bundle | x | x |  | USE_LAST |
-| --file-associations | bundle |  | x |  | CONCATENATE |
+| --file-associations | app-image-mac, native-bundle |  | x |  | CONCATENATE |
 | --help, -h, -? | all | x | x |  | USE_LAST |
 | --icon | bundle | x | x | x | USE_LAST |
 | --input, -i | bundle |  |  |  | USE_LAST |

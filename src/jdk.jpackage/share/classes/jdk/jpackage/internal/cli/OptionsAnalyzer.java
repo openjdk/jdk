@@ -25,6 +25,10 @@
 
 package jdk.jpackage.internal.cli;
 
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 import static jdk.jpackage.internal.cli.StandardOption.ADD_MODULES;
 import static jdk.jpackage.internal.cli.StandardOption.INPUT;
 import static jdk.jpackage.internal.cli.StandardOption.JLINK_OPTIONS;
@@ -45,6 +49,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -251,7 +256,11 @@ final class OptionsAnalyzer {
             return error("ERR_NoInstallerEntryPoint", mapFormatArguments(optionSpec));
         }
 
-        return error("ERR_InvalidTypeOption", mapFormatArguments(optionSpec, bundlingOperation.bundleTypeValue()));
+        if (MULTI_OS_BUNDLE_TYPES.contains(bundlingOperation.bundleTypeValue()) && isMultiOS(optionSpec)) {
+            return error("ERR_InvalidTypeOptionOnPlatform", mapFormatArguments(optionSpec, bundlingOperation.bundleTypeValue(), os));
+        } else {
+            return error("ERR_InvalidTypeOption", mapFormatArguments(optionSpec, bundlingOperation.bundleTypeValue()));
+        }
     }
 
     private Object[] mapFormatArguments(Object... args) {
@@ -368,6 +377,13 @@ final class OptionsAnalyzer {
         return matchOS(List.of(scope));
     }
 
+    private static boolean isMultiOS(OptionSpec<?> optionSpec) {
+        return optionSpec.scope().stream()
+                .filter(StandardBundlingOperation.class::isInstance)
+                .map(StandardBundlingOperation.class::cast)
+                .map(StandardBundlingOperation::os).distinct().count() > 1;
+    }
+
     private static List<Option> asOptionList(OptionValue<?>... options) {
         return Stream.of(options).map(OptionValue::getOption).toList();
     }
@@ -424,6 +440,14 @@ final class OptionsAnalyzer {
     private final boolean isRuntimeInstaller;
 
     private static final List<MutualExclusiveOptions> MUTUAL_EXCLUSIVE_OPTIONS;
+
+    private static final Set<String> MULTI_OS_BUNDLE_TYPES = Stream.of(StandardBundlingOperation.values())
+            .collect(groupingBy(
+                    StandardBundlingOperation::bundleTypeValue,
+                    mapping(StandardBundlingOperation::os, toSet())
+            )).entrySet().stream().filter(e -> {
+                return e.getValue().size() > 1;
+            }).map(Map.Entry::getKey).collect(toUnmodifiableSet());
 
     static {
         final List<MutualExclusiveOptions> config = new ArrayList<>();
