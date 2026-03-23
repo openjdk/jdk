@@ -45,7 +45,7 @@ public class TestArrayLoadProfiling {
     static Object[] array5 = { new Object() };
     
     @Test
-    public static void test1(Object[] array) {
+    public static Object test1(Object[] array) {
         return array[0];
     }
 
@@ -55,7 +55,7 @@ public class TestArrayLoadProfiling {
     }
 
     @Test
-    public static void test2(Object[] array) {
+    public static Object test2(Object[] array) {
         return array[0];
     }
 
@@ -65,7 +65,7 @@ public class TestArrayLoadProfiling {
     }
 
     @Test
-    public static void test3(Object[] array) {
+    public static Object test3(Object[] array) {
         return array[0];
     }
 
@@ -77,12 +77,12 @@ public class TestArrayLoadProfiling {
     }
     
     @Test
-    public static void test4(Object[] array) {
+    public static Object test4(Object[] array) {
         return array[0];
     }
 
     @Run(test = "test4")
-    public static void test3Runner() {
+    public static void test4Runner() {
         test4(array1);
         test4(array2);
         test4(array3);
