@@ -9123,7 +9123,7 @@ class StubGenerator: public StubCodeGenerator {
   // r5 (sum) : scalar temporary for horizontal-reduce results and
   //            Horner multipliers used by P16/P8/P7 accumulation.
   // rscratch1    : temporary scratch
-  // rscratch2    : pow16 (31^16 mod 2^32); loaded only when blocks != 0
+  // rscratch2    : 31^16 mod 2^32; loaded only when blocks != 0
   // SIMD regs    : v0-v7, v12-v13
   //
   // Notes:
@@ -9134,7 +9134,7 @@ class StubGenerator: public StubCodeGenerator {
   //      * P16: vector polynomial for each 16-element block
   //      * P8 : single 8-element block in tail (if present)
   //      * P7 : scalar unrolled loop for remaining <= 7 elements
-  address generate_large_arrays_hashcode(BasicType eltype) {
+  address generate_large_arrays_hashcode(BasicType eltype, Label& L_pow_table) {
     StubId stub_id;
     switch (eltype) {
     case T_BOOLEAN:
@@ -9171,9 +9171,6 @@ class StubGenerator: public StubCodeGenerator {
     const Register tail   = r4;
     const Register sum    = r5;
 
-    const Register tmp    = rscratch1;
-    const Register pow16  = rscratch2;
-
     const FloatRegister v_input1  = v12;
     const FloatRegister v_input2  = v13;
 
@@ -9189,7 +9186,7 @@ class StubGenerator: public StubCodeGenerator {
 
     ARRAYS_HASHCODE_REGISTERS;
 
-    Label L_loop, L_tail_setup, L_tail_lt8, L_done, L_pow_table, L_after_table, L_br_base;
+    Label L_loop, L_tail_setup, L_tail_lt8, L_done;
 
     int  elem_bytes = 0;
     bool widen_signed = false;
@@ -9243,14 +9240,14 @@ class StubGenerator: public StubCodeGenerator {
     __ andr(tail, cnt, 15);
 
     // -----------------------------
-    // Load pow table; if blocks != 0 load pow16.
+    // Load pow table; if blocks != 0 load rscratch2 with 31^16.
     // -----------------------------
-    __ adr(tmp, L_pow_table);
-    __ ld1(v_p0, v_p1, v_p2, v_p3, Assembler::T4S, Address(tmp));
+    __ adr(rscratch1, L_pow_table);
+    __ ld1(v_p0, v_p1, v_p2, v_p3, Assembler::T4S, Address(rscratch1));
 
     __ cbz(blocks, L_tail_setup);
-    // pow16 = 31^16 mod 2^32 = 0x50A9DE01
-    __ movw(pow16, 1353309697);
+    // rscratch2 = 31^16 mod 2^32 = 0x50A9DE01
+    __ movw(rscratch2, intpow(31U, 16));
 
     // -----------------------------
     // Main loop over 16 elements to calculate P16
@@ -9279,7 +9276,7 @@ class StubGenerator: public StubCodeGenerator {
 
       __ addv(v_block3, Assembler::T4S, v_block3);
       __ umov(sum, v_block3, Assembler::S, 0);
-      __ maddw(result, result, pow16, sum);
+      __ maddw(result, result, rscratch2, sum);
 
     } else if (elem_bytes == 2) {
       __ ld1(v_input2, Assembler::T8H, Address(__ post(ary, 16)));
@@ -9299,7 +9296,7 @@ class StubGenerator: public StubCodeGenerator {
 
       __ addv(v_block3, Assembler::T4S, v_block3);
       __ umov(sum, v_block3, Assembler::S, 0);
-      __ maddw(result, result, pow16, sum);
+      __ maddw(result, result, rscratch2, sum);
 
     } else {
       __ ld1(v_block0, v_block1, v_block2, v_block3, Assembler::T4S, Address(__ post(ary, 64)));
@@ -9315,7 +9312,7 @@ class StubGenerator: public StubCodeGenerator {
 
       __ addv(v_block0, Assembler::T4S, v_block0);
       __ umov(sum, v_block0, Assembler::S, 0);
-      __ maddw(result, result, pow16, sum);
+      __ maddw(result, result, rscratch2, sum);
     }
 
     __ subs(blocks, blocks, 1);
@@ -9342,8 +9339,8 @@ class StubGenerator: public StubCodeGenerator {
       __ addv(v_block0, Assembler::T4S, v_block0, v_block1);
 
       __ addv(v_block0, Assembler::T4S, v_block0);
-      __ umov(tmp, v_block0, Assembler::S, 0);
-      __ maddw(result, result, sum, tmp);
+      __ umov(rscratch1, v_block0, Assembler::S, 0);
+      __ maddw(result, result, sum, rscratch1);
 
     } else if (elem_bytes == 2) {
       __ ld1(v_input2, Assembler::T8H, Address(__ post(ary, 16)));
@@ -9356,8 +9353,8 @@ class StubGenerator: public StubCodeGenerator {
       __ addv(v_block0, Assembler::T4S, v_block0, v_block1);
 
       __ addv(v_block0, Assembler::T4S, v_block0);
-      __ umov(tmp, v_block0, Assembler::S, 0);
-      __ maddw(result, result, sum, tmp);
+      __ umov(rscratch1, v_block0, Assembler::S, 0);
+      __ maddw(result, result, sum, rscratch1);
 
     } else {
       __ ld1(v_block0, Assembler::T4S, Address(__ post(ary, 16)));
@@ -9368,8 +9365,8 @@ class StubGenerator: public StubCodeGenerator {
       __ addv(v_block0, Assembler::T4S, v_block0, v_block1);
 
       __ addv(v_block0, Assembler::T4S, v_block0);
-      __ umov(tmp, v_block0, Assembler::S, 0);
-      __ maddw(result, result, sum, tmp);
+      __ umov(rscratch1, v_block0, Assembler::S, 0);
+      __ maddw(result, result, sum, rscratch1);
     }
 
     // tail -= 8 after P8
@@ -9382,19 +9379,19 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(L_tail_lt8);
     // tail in [1..7] here
 
-    __ adr(tmp, L_br_base);
+    __ adr(rscratch1, L_done);
     // For Cortex-A53 offset is 4 because 2 nops are generated.
-    __ sub(tmp, tmp, tail, ext::uxtw,
+    __ sub(rscratch1, rscratch1, tail, ext::uxtw,
            VM_Version::supports_a53mac() ? 4 : 3);
     __ movw(sum, 0x1f);  // 31
-    __ br(tmp);
+    __ br(rscratch1);
 
     __ align(8);
 
     // Unrolled scalar Horner for up to 7 elements
     for (int i = 0; i < 7; i++) {
-      __ load(tmp, Address(__ post(ary, elem_bytes)), eltype);
-      __ maddw(result, result, sum, tmp);
+      __ load(rscratch1, Address(__ post(ary, elem_bytes)), eltype);
+      __ maddw(result, result, sum, rscratch1);
       // maddw generates an extra nop for Cortex-A53 (see maddw definition).
       // Generate 2nd nop to have 4 instructions per iteration.
       if (VM_Version::supports_a53mac()) {
@@ -9402,19 +9399,7 @@ class StubGenerator: public StubCodeGenerator {
       }
     }
 
-    __ bind(L_br_base);
-
     __ bind(L_done);
-    __ b(L_after_table);
-
-    __ align(16);
-    __ bind(L_pow_table);
-
-    for (int i = 15; i >= 0; i--) {
-      __ emit_int32(intpow(31U, i));
-    }
-
-    __ bind(L_after_table);
 
     __ leave();
     __ ret(lr);
@@ -12650,6 +12635,23 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::aarch64::set_completed(); // Inidicate that arraycopy and zero_blocks stubs are generated
   }
 
+  // Generate the shared table of powers of 31 used by the large
+  // Arrays.hashCode stubs. The table is emitted once and referenced by
+  // each element-type-specific stub.
+  void generate_large_arrays_hashcode_pow_table(Label& L_pow_table) {
+    _masm->align(16);
+    _masm->bind(L_pow_table);
+
+    uint32_t* pow_table = (uint32_t*)  _masm->pc();
+    _masm->code_section()->set_end(address(pow_table + 16));
+
+    // Fill the table in memory order as 31^15, 31^14, ..., 31^0.
+    uint32_t n = 1;
+    for (int i = 15; i >= 0; i--, n *= 31) {
+      pow_table[i] = n;
+    }
+  }
+
   void generate_compiler_stubs() {
 #ifdef COMPILER2
 
@@ -12662,12 +12664,15 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::aarch64::_large_array_equals = generate_large_array_equals();
     }
 
-    // arrays_hascode stub for large arrays.
-    StubRoutines::aarch64::_large_arrays_hashcode_boolean = generate_large_arrays_hashcode(T_BOOLEAN);
-    StubRoutines::aarch64::_large_arrays_hashcode_byte = generate_large_arrays_hashcode(T_BYTE);
-    StubRoutines::aarch64::_large_arrays_hashcode_char = generate_large_arrays_hashcode(T_CHAR);
-    StubRoutines::aarch64::_large_arrays_hashcode_int = generate_large_arrays_hashcode(T_INT);
-    StubRoutines::aarch64::_large_arrays_hashcode_short = generate_large_arrays_hashcode(T_SHORT);
+    // arrays_hashcode stubs for large arrays. They all use the same 16-word table of powers of 31.
+    Label L_large_arrays_hashcode_pow_table;
+    StubRoutines::aarch64::_large_arrays_hashcode_boolean = generate_large_arrays_hashcode(T_BOOLEAN, L_large_arrays_hashcode_pow_table);
+    StubRoutines::aarch64::_large_arrays_hashcode_byte = generate_large_arrays_hashcode(T_BYTE, L_large_arrays_hashcode_pow_table);
+    StubRoutines::aarch64::_large_arrays_hashcode_char = generate_large_arrays_hashcode(T_CHAR, L_large_arrays_hashcode_pow_table);
+    StubRoutines::aarch64::_large_arrays_hashcode_int = generate_large_arrays_hashcode(T_INT, L_large_arrays_hashcode_pow_table);
+    StubRoutines::aarch64::_large_arrays_hashcode_short = generate_large_arrays_hashcode(T_SHORT, L_large_arrays_hashcode_pow_table);
+
+    generate_large_arrays_hashcode_pow_table(L_large_arrays_hashcode_pow_table);
 
     // byte_array_inflate stub for large arrays.
     StubRoutines::aarch64::_large_byte_array_inflate = generate_large_byte_array_inflate();
