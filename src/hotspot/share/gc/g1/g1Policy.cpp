@@ -690,8 +690,7 @@ void G1Policy::record_young_collection_start() {
   _eden_surv_rate_group->stop_adding_regions();
   _survivors_age_table.clear();
 
-  G1GCPauseType gc_type = collector_state()->young_gc_pause_type(false);
-  if (gc_type == G1GCPauseType::LastYoungGC) {
+  if (collector_state()->is_in_young_gc_before_mixed()) {
     // Check validity of our occupancy predictions
     size_t current_used = _g1h->used();
     size_t target_used_at_end_of_marking = _ihop_control->target_occupancy();
