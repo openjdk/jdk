@@ -28,6 +28,7 @@
 #include "oops/instanceRefKlass.hpp"
 
 #include "classfile/javaClasses.inline.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -174,22 +175,28 @@ template <typename T>
 void InstanceRefKlass::trace_reference_gc(const char *s, oop obj) {
   struct Stream : public LogStream {
     Stream() : LogStream(LogTarget(Trace, gc, ref)()) {}
-    void print_name_cr(oop obj) {
-      if (obj == nullptr) {
-        print_cr("");
-      } else {
-        print_cr(" a %s", obj->klass()->internal_name());
+    void print_name(oop obj) {
+      if (obj != nullptr) {
+        print(" a %s", obj->klass()->internal_name());
       }
     }
     void print_contents_cr(oop* addr) {
-      print(PTR_FORMAT,   *(uintptr_t*)addr);
-      oop obj = CompressedOops::decode(*addr);
-      print_name_cr(obj);
+      print(PTR_FORMAT, *(uintptr_t*)addr);
+      if (!UseZGC) {
+        // ZGC can't read raw oops without load barriers.
+        oop obj = CompressedOops::decode(*addr);
+        print_name(obj);
+      }
+      print_cr("");
     }
     void print_contents_cr(narrowOop* addr) {
       print(UINT32_FORMAT_X_0, *(uint32_t*)addr);
-      oop obj = CompressedOops::decode(*addr);
-      print_name_cr(obj);
+      if (!UseZGC) {
+        // ZGC can't read raw oops without load barriers.
+        oop obj = CompressedOops::decode(*addr);
+        print_name(obj);
+      }
+      print_cr("");
     }
   } stream;
 
