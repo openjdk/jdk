@@ -250,6 +250,19 @@ public class TestArrayCopyEliminationUncRematerialization {
                 testMethodConst.asToken(testName, templates)
             ));
 
+            var testCaseConstPlusOne = Template.make("testName", "loadCount", "tmp", (String testName, Integer loadCount, TestTemplates templates) -> scope(
+                let("typeAbbrev", pty.abbrev().equals("C") ? "US" : pty.abbrev()),
+                runTestConst.asToken(testName),
+                let("countPlusOne", loadCount + 1),
+                """
+                @Test
+                @IR(counts = { IRNode.LOAD_#{typeAbbrev}, ">=#{loadCount}",
+                               IRNode.LOAD_#{typeAbbrev}, "<=#{countPlusOne}" },
+                    applyIf = { "TieredCompilation", "true"})
+                """,
+                testMethodConst.asToken(testName, templates)
+            ));
+
             // Some test cases can not be reliably verified due to varying numbers of loads generated from run to run.
             var testCaseConstNoVerify = Template.make("testName", "tmp", (String testName, TestTemplates templates) -> scope(
                 runTestConst.asToken(testName),
@@ -325,6 +338,7 @@ public class TestArrayCopyEliminationUncRematerialization {
             var testMultiStore = Template.make(() -> {
                 final String testName = "MultiStore" + pty.abbrev();
                 final int numStores = RANDOM.nextInt(1, config.copyLen - 1);
+                // Get numStores different store locations.
                 final Set<Integer> storeIdxs = new HashSet<>();
                 storeIdxs.add(config.returnIdx); // Always store at the WRITE_IDX to potentially trigger the bug.
                 while (storeIdxs.size() < numStores) {
@@ -349,7 +363,7 @@ public class TestArrayCopyEliminationUncRematerialization {
                              .toList()
                 ));
                 return scope(
-                    testCaseConst.asToken("Const" + testName, 2 * config.copyLen - numStores, new TestTemplates(multiStoresConst, unstableTrap)),
+                    testCaseConstPlusOne.asToken("Const" + testName, 2 * config.copyLen - numStores, new TestTemplates(multiStoresConst, unstableTrap)),
                     testCaseIdx.asToken("Idx" + testName, new TestTemplates(multiStoresIdx, unstableTrap)),
                     testCaseClone.asToken("Clone" + testName, config.copyLen, new TestTemplates(multiStoresClone, unstableTrap))
                 );
