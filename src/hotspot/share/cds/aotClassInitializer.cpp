@@ -234,8 +234,8 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
 }
 
 void AOTClassInitializer::call_runtime_setup(JavaThread* current, InstanceKlass* ik) {
-  assert(ik->has_aot_initialized_mirror(), "sanity");
-  assert(!AOTLinkedClassBulkLoader::is_initializing_classes_early(), "sanity");
+  precond(ik->has_aot_initialized_mirror());
+  precond(!AOTLinkedClassBulkLoader::is_initializing_classes_early());
   if (ik->is_runtime_setup_required()) {
     if (log_is_enabled(Info, aot, init)) {
       ResourceMark rm;
