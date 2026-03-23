@@ -142,7 +142,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
     /**
      * Sets the ZIP file comment.
      *
-     * @param     comment the comment string. Passing {@code null} or the empty string
+     * @param     comment the comment string. Passing {@code null} or an empty string
      *                    will result in the output having no ZIP file comment
      *
      * @throws    IllegalArgumentException if the length of the specified
