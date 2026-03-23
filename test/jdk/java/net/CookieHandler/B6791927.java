@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 6791927 8233886
- * @summary Wrong Locale in HttpCookie::expiryDate2DeltaSeconds
+ * @summary Wrong Locale in HttpCookie::parseExpires
  * @run main/othervm B6791927
  */
 

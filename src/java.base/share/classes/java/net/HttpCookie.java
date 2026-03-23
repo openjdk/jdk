@@ -91,10 +91,6 @@ public final class HttpCookie implements Cloneable {
     // this value serves as a hint as 'not specify max-age'
     private static final long MAX_AGE_UNSPECIFIED = -1;
 
-    // Returned by expiryDate2DeltaSeconds when none of the date formats
-    // could parse the given expires value
-    private static final long EXPIRY_DATE_PARSE_FAILURE = Long.MIN_VALUE;
-
     // date formats used by Netscape's cookie draft
     // as well as formats seen on various sites
     private static final String[] COOKIE_DATE_FORMATS = {
@@ -1010,8 +1006,9 @@ public final class HttpCookie implements Cloneable {
         } catch (NumberFormatException ignored) {}
 
         if (expiresValue != null) {
-            long delta = cookie.expiryDate2DeltaSeconds(expiresValue);
-            if (delta != EXPIRY_DATE_PARSE_FAILURE) {
+            Calendar cal = parseExpires(expiresValue);
+            if (cal != null) {
+                long delta = (cal.getTimeInMillis() - cookie.whenCreated) / 1000;
                 cookie.maxAge = (delta > 0 ? delta : 0);
             }
         }
@@ -1086,10 +1083,10 @@ public final class HttpCookie implements Cloneable {
      * @param  dateString
      *         a date string in one of the formats defined in Netscape cookie spec
      *
-     * @return  delta seconds between this cookie's creation time and the time
-     *          specified by dateString
+     * @return  the parsed date as a Calendar, or null if none of the
+     *          formats could parse the given date string
      */
-    private long expiryDate2DeltaSeconds(String dateString) {
+    private static Calendar parseExpires(String dateString) {
         Calendar cal = new GregorianCalendar(GMT);
         for (int i = 0; i < COOKIE_DATE_FORMATS.length; i++) {
             SimpleDateFormat df = new SimpleDateFormat(COOKIE_DATE_FORMATS[i],
@@ -1112,12 +1109,12 @@ public final class HttpCookie implements Cloneable {
                     }
                     cal.set(Calendar.YEAR, year);
                 }
-                return (cal.getTimeInMillis() - whenCreated) / 1000;
+                return cal;
             } catch (Exception e) {
                 // Ignore, try the next date format
             }
         }
-        return EXPIRY_DATE_PARSE_FAILURE;
+        return null;
     }
 
     /*
