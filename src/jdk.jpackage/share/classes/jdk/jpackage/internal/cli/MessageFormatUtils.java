@@ -25,10 +25,12 @@
 
 package jdk.jpackage.internal.cli;
 
+import static jdk.jpackage.internal.util.OperatingSystemUtils.operatingSystemLabel;
+
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import jdk.internal.util.OperatingSystem;
 
 final class MessageFormatUtils {
 
@@ -59,21 +61,26 @@ final class MessageFormatUtils {
     private static Object[] mapFormatArguments(Function<OptionSpec<?>, String> optionSpecFormatter, Object... args) {
         Objects.requireNonNull(optionSpecFormatter);
         return Stream.of(args).map(arg -> {
-            return asOptionSpec(arg).map(optionSpecFormatter).orElseGet(() -> {
-                return Optional.ofNullable(arg).map(Object::toString).orElse(null);
-            });
+            return switch (arg) {
+                case null -> {
+                    yield null;
+                }
+                case OptionSpec<?> optionSpec -> {
+                    yield optionSpecFormatter.apply(optionSpec);
+                }
+                case OptionValue<?> ov -> {
+                    yield optionSpecFormatter.apply(ov.getSpec());
+                }
+                case Option option -> {
+                    yield optionSpecFormatter.apply(option.spec());
+                }
+                case OperatingSystem os -> {
+                    yield operatingSystemLabel(os);
+                }
+                default -> {
+                    yield arg.toString();
+                }
+            };
         }).toArray();
-    }
-
-    private static Optional<OptionSpec<?>> asOptionSpec(Object v) {
-        if (v instanceof OptionSpec<?> optionSpec) {
-            return Optional.of(optionSpec);
-        } else if (v instanceof OptionValue<?> ov) {
-            return asOptionSpec(ov.getSpec());
-        } else if (v instanceof Option option) {
-            return asOptionSpec(option.spec());
-        } else {
-            return Optional.empty();
-        }
     }
 }
