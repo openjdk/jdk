@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2024, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -320,7 +320,7 @@ public:
     DEBUG_ONLY(_reserved = 0; )
   }
 
-  void clear_claimed() { _claimed_index = 0; }
+  void clear_claimed() { _claimed_index.store_relaxed(0); }
   T*   claim_next();
 
   // reserve queues that not for parallel claiming
