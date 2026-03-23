@@ -816,7 +816,7 @@ CompileTask* CompilationPolicy::select_task(CompileQueue* compile_queue, JavaThr
 
   if (max_task != nullptr && max_method != nullptr) {
     methodHandle max_method_h(THREAD, max_method);
-    DirectiveSet * limited_profile_directive = DirectivesStack::getMatchingDirective(max_method_h, CompLevel_limited_profile);
+    DirectiveSet* limited_profile_directive = DirectivesStack::getMatchingDirective(max_method_h, CompLevel_limited_profile);
     bool excludeLimitedProfile = limited_profile_directive->ExcludeOption;
 
     if (max_task->comp_level() == CompLevel_full_profile && TieredStopAtLevel > CompLevel_full_profile &&
