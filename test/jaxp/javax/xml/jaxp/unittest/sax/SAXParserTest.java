@@ -34,12 +34,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 /*
  * @test
  * @bug 8213734
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @run junit sax.SAXParserTest
- * @summary Tests functionalities for SAXParser.
+ * @summary Tests that failed parsing closes the file correctly.
  */
 public class SAXParserTest {
 
@@ -50,30 +52,22 @@ public class SAXParserTest {
      */
     @Test
     public void testCloseReaders() throws Exception {
-        if (!System.getProperty("os.name").contains("Windows")) {
-            System.out.println("This test only needs to be run on Windows.");
-            return;
-        }
-        Path testFile = createTestFile(null, "Test");
+        Path testFile = createTestFile("Test");
         System.out.println("Test file: " + testFile.toString());
         SAXParserFactory factory = SAXParserFactory.newDefaultInstance();
         SAXParser parser = factory.newSAXParser();
-        try {
-            parser.parse(testFile.toFile(), new DefaultHandler() {
-                @Override
-                public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
-                    throw new SAXException("Stop the parser.");
-                }
-            });
-        } catch (SAXException e) {
-            // Do nothing
-        }
-
-        // deletion failes on Windows when the file is not closed
-        Files.deleteIfExists(testFile);
+        DefaultHandler explodingHandler = new DefaultHandler() {
+            @Override
+            public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+                throw new SAXException("Stop the parser.");
+            }
+        };
+        assertThrows(SAXException.class, () -> parser.parse(testFile.toFile(), explodingHandler));
+        // Deletion would fail on Windows if the file was not closed.
+        Files.delete(testFile);
     }
 
-    private static Path createTestFile(Path dir, String name) throws IOException {
+    private static Path createTestFile(String name) throws IOException {
         Path path = Files.createTempFile(name, ".xml");
         Files.writeString(path, "<?xml version=\"1.0\"?><test a1=\"x\" a2=\"y\"/>");
         return path;

@@ -60,7 +60,7 @@ public class Bug6937964Test {
     public void test() throws DatatypeConfigurationException {
         DatatypeFactory dtf = DatatypeFactory.newInstance();
         Duration d = dtf.newDurationYearMonth("P20Y15M");
-        System.out.println(d.getYears() == 21 ? "pass" : "fail");
+        assertEquals(21, d.getYears());
     }
 
     @Test

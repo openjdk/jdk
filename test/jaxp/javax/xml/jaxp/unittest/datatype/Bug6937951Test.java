@@ -23,12 +23,13 @@
 
 package datatype;
 
+import org.junit.jupiter.api.Test;
+
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /*
  * @test
@@ -44,13 +45,10 @@ public class Bug6937951Test {
         DatatypeFactory dtf = DatatypeFactory.newInstance();
         XMLGregorianCalendar c1 = dtf.newXMLGregorianCalendar("1999-12-31T24:00:00");
         XMLGregorianCalendar c2 = dtf.newXMLGregorianCalendar("2000-01-01T00:00:00");
-        System.out.println("c1: " + c1.getYear() + "-" + c1.getMonth() + "-" + c1.getDay() + "T" + c1.getHour());
-        System.out.println(c1.equals(c2) ? "pass" : "fail"); // fails
-        if (!c1.equals(c2))
-            Assertions.fail("hour 24 needs to be treated as equal to hour 0 of the next day");
-        if (c1.getYear() != 2000 && c1.getHour() != 0)
-            Assertions.fail("hour 24 needs to be treated as equal to hour 0 of the next day");
 
+        assertEquals(2000, c1.getYear());
+        assertEquals(0, c1.getHour());
+        assertEquals(c1, c2, "hour 24 should treated as equal to hour 0 of the next day");
     }
 
 }

@@ -36,6 +36,7 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
@@ -96,18 +97,9 @@ public class DefaultHandler2Test {
         // From https://docs.oracle.com/javase/7/docs/api,
         // ParserAdapter.setProperty() and ParserAdapter.getProperty() does
         // not support any property currently.
-        try {
-            ParserAdapter adapter = new ParserAdapter(parser.getParser());
-            System.out.println("ParserAdapter : " + adapter.getProperty("http://xml.org/sax/properties/declaration-handler"));
-        } catch (SAXNotRecognizedException e) {
-            System.out.println("Expected  SAXNotRecognizedException since ParserAdapter.getProperty() does not support any property currently");
-        }
-        try {
-            ParserAdapter adapter = new ParserAdapter(parser.getParser());
-            adapter.setProperty("http://xml.org/sax/properties/declaration-handler", handler);
-        } catch (SAXNotRecognizedException e) {
-            System.out.println("Expected  SAXNotRecognizedException since ParserAdapter.setProperty() does not support any property currently");
-        }
+        ParserAdapter adapter = new ParserAdapter(parser.getParser());
+        assertThrows(SAXNotRecognizedException.class, () -> adapter.getProperty("http://xml.org/sax/properties/declaration-handler"));
+        assertThrows(SAXNotRecognizedException.class, () -> adapter.setProperty("http://xml.org/sax/properties/declaration-handler", handler));
     }
 
     @Test

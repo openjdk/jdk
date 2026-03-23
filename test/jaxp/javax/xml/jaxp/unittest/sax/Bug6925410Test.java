@@ -23,11 +23,11 @@
 
 package sax;
 
-import javax.xml.datatype.DatatypeConfigurationException;
-
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.XMLReaderFactory;
+
+import javax.xml.datatype.DatatypeConfigurationException;
 
 /*
  * @test

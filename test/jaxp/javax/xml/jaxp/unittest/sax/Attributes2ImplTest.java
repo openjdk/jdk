@@ -28,6 +28,7 @@ import org.xml.sax.ext.Attributes2Impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
@@ -58,30 +59,13 @@ public class Attributes2ImplTest {
         impl.setDeclared(2, false);
         assertFalse(impl.isDeclared(2));
 
-        try {
-            impl.isDeclared(3);
-        } catch (ArrayIndexOutOfBoundsException e) {
-            System.out.println("Expected ArrayIndexOutOfBoundsException");
-        }
+        assertThrows(ArrayIndexOutOfBoundsException.class, () -> impl.isDeclared(3));
 
-        try {
-            impl.isDeclared("wrongQname");
-        } catch (IllegalArgumentException e) {
-            System.out.println("Expected IllegalArgumentException");
-        }
-
-        try {
-            impl.isDeclared("http://www.cars.com/xml", "attr4");
-        } catch (IllegalArgumentException e) {
-            System.out.println("Expected IllegalArgumentException");
-        }
+        assertThrows(IllegalArgumentException.class, () -> impl.isDeclared("wrongQname"));
+        assertThrows(IllegalArgumentException.class, () -> impl.isDeclared("http://www.cars.com/xml", "attr4"));
 
         impl.removeAttribute(2);
-        try {
-            impl.isDeclared(2);
-        } catch (ArrayIndexOutOfBoundsException e) {
-            System.out.println("Expected ArrayIndexOutOfBoundsException on index=2 after removing");
-        }
+        assertThrows(ArrayIndexOutOfBoundsException.class, () -> impl.isDeclared(2));
     }
 
     @Test
@@ -104,30 +88,13 @@ public class Attributes2ImplTest {
         impl.setSpecified(2, false);
         assertFalse(impl.isSpecified(2));
 
-        try {
-            impl.isSpecified(3);
-        } catch (ArrayIndexOutOfBoundsException e) {
-            System.out.println("Expected ArrayIndexOutOfBoundsException");
-        }
+        assertThrows(ArrayIndexOutOfBoundsException.class, () -> impl.isSpecified(3));
 
-        try {
-            impl.isSpecified("wrongQname");
-        } catch (IllegalArgumentException e) {
-            System.out.println("Expected IllegalArgumentException");
-        }
-
-        try {
-            impl.isSpecified("http://www.cars.com/xml", "attr4");
-        } catch (IllegalArgumentException e) {
-            System.out.println("Expected IllegalArgumentException");
-        }
+        assertThrows(IllegalArgumentException.class, () -> impl.isSpecified("wrongQname"));
+        assertThrows(IllegalArgumentException.class, () -> impl.isSpecified("http://www.cars.com/xml", "attr4"));
 
         impl.removeAttribute(2);
-        try {
-            impl.isSpecified(2);
-        } catch (ArrayIndexOutOfBoundsException e) {
-            System.out.println("Expected ArrayIndexOutOfBoundsException on index=2 after removing");
-        }
+        assertThrows(ArrayIndexOutOfBoundsException.class, () -> impl.isSpecified(2));
     }
 
     @Test

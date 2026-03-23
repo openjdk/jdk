@@ -24,28 +24,18 @@
 package sax;
 
 import org.junit.jupiter.api.Test;
-import org.xml.sax.Attributes;
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.ext.DefaultHandler2;
 
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-import java.io.Writer;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
@@ -55,133 +45,21 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @summary Test the file can be deleted after SAXParser.parse(File, DefaultHandler).
  */
 public class Bug7057778Test {
-
-    static final String xml = "Bug7057778.xml";
-    static final String xml1 = "Bug7057778_1.xml";
-
     @Test
-    public void testParse() {
-        File src = new File(getClass().getResource(xml).getFile());
-        File dst = new File(xml1);
-        try {
-            copyFile(src, dst);
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            SAXParser parser = spf.newSAXParser();
-            XMLReader xmlReader = parser.getXMLReader();
-            xmlReader.setProperty("http://xml.org/sax/properties/lexical-handler", new MyHandler1());
-            parser.parse(dst, new MyHandler1());
-        } catch (SAXException ex) {
-            ex.printStackTrace();
-        } catch (IOException ex) {
-            // shouldn't happen
-        } catch (ParserConfigurationException ex) {
-            // shouldn't happen
-        } catch (Exception ex) {
-        }
-        if (dst != null) {
-            if (dst.delete()) {
-                System.out.println("Delete: OK");
-            } else {
-                System.out.println("Delete: NG");
-                fail("Error: denied to delete the file");
-            }
-        }
+    public void testParse() throws Exception {
+        Path badXml = Path.of("bad.xml");
+        Files.writeString(badXml, "\n\n\n\n");
 
-    }
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        SAXParser parser = spf.newSAXParser();
+        XMLReader xmlReader = parser.getXMLReader();
+        DefaultHandler2 noopHandler = new DefaultHandler2();
+        xmlReader.setProperty("http://xml.org/sax/properties/lexical-handler", noopHandler);
 
-    private void copyFile(File src, File dst) throws IOException {
-        InputStream in = new FileInputStream(src);
-        OutputStream out = new FileOutputStream(dst);
-        // Transfer bytes
-        byte[] buf = new byte[1024];
-        int len;
-        while ((len = in.read(buf)) > 0) {
-            out.write(buf, 0, len);
-        }
-        in.close();
-        out.close();
-    }
-
-    public class MyHandler1 extends DefaultHandler2 implements ErrorHandler {
-        private Writer out;
-
-        StringBuffer textBuffer;
-        private String indentString = "    "; // Amount to indent
-        private int indentLevel = 0;
-
-        public MyHandler1() {
-            try {
-                out = new OutputStreamWriter(System.out, "UTF8");
-            } catch (UnsupportedEncodingException ex) {
-                ex.printStackTrace();
-            }
-        }
-
-        public void startDocument() throws SAXException {
-        }
-
-        public void endDocument() throws SAXException {
-        }
-
-        public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
-            try {
-                System.out.println("uri: " + uri);
-                System.out.println("localName: " + localName);
-                System.out.println("qName: " + qName);
-            } catch (Exception e) {
-                throw new SAXException(e);
-            }
-
-        }
-
-        public void comment(char[] ch, int start, int length) {
-            String text = new String(ch, start, length);
-            // System.out.println(text);
-            try {
-                nl();
-                emit("COMMENT: " + text);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-        public void error(SAXParseException exception) {
-            exception.printStackTrace();
-        }
-
-        public void fatalError(SAXParseException exception) {
-            exception.printStackTrace();
-        }
-
-        public void warning(SAXParseException exception) {
-            exception.printStackTrace();
-        }
-
-        // Wrap I/O exceptions in SAX exceptions, to
-        // suit handler signature requirements
-        private void emit(String s) throws SAXException {
-            try {
-                out.write(s);
-                out.flush();
-            } catch (IOException e) {
-                throw new SAXException("I/O error", e);
-            }
-        }
-
-        // Start a new line
-        // and indent the next line appropriately
-        private void nl() throws SAXException {
-            String lineEnd = System.lineSeparator();
-
-            try {
-                out.write(lineEnd);
-
-                for (int i = 0; i < indentLevel; i++)
-                    out.write(indentString);
-            } catch (IOException e) {
-                throw new SAXException("I/O error", e);
-            }
-        }
-
+        // Test file is empty and fails parsing.
+        File dst = badXml.toFile();
+        assertThrows(SAXParseException.class, () -> parser.parse(dst, noopHandler));
+        // But parse failure should not keep the destination file open.
+        assertTrue(dst.delete(), "could not delete the file");
     }
 }

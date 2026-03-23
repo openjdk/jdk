@@ -24,9 +24,9 @@
 package bcel;
 
 import com.sun.org.apache.bcel.internal.classfile.Utility;
-import java.util.Base64;
-
 import org.junit.jupiter.api.Test;
+
+import java.util.Base64;
 
 /*
  * @test

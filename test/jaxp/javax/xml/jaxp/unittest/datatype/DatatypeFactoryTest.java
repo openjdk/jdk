@@ -23,8 +23,8 @@
 
 package datatype;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeConstants;
@@ -32,9 +32,8 @@ import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.Duration;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
-
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 
 /*
  * @test

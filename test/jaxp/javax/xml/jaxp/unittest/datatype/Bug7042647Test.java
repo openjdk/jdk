@@ -23,15 +23,15 @@
 
 package datatype;
 
-import java.util.Calendar;
-import java.util.GregorianCalendar;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /*
  * @test
@@ -49,11 +49,7 @@ public class Bug7042647Test {
         int firstDayOfWeek = calendar.getFirstDayOfWeek();
         Calendar defaultCalendar = Calendar.getInstance();
         int defaultFirstDayOfWeek = defaultCalendar.getFirstDayOfWeek();
-        if (firstDayOfWeek != defaultFirstDayOfWeek) {
-            Assertions.fail("Failed firstDayOfWeek=" + firstDayOfWeek + " != defaultFirstDayOfWeek=" + defaultFirstDayOfWeek);
-        } else {
-            System.out.println("Success firstDayOfWeek=" + firstDayOfWeek + " == defaultFirstDayOfWeek=" + defaultFirstDayOfWeek);
-        }
+        assertEquals(defaultFirstDayOfWeek, firstDayOfWeek);
     }
 
 }

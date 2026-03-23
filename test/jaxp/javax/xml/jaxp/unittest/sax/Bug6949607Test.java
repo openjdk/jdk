@@ -32,7 +32,9 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import java.io.ByteArrayInputStream;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
@@ -42,38 +44,31 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * @summary Test Attributes.getValue returns null when parameter uri is empty.
  */
 public class Bug6949607Test {
-
-    final String MSG = "Failed to parse XML";
-    String textXML = "<prefix:rootElem xmlns:prefix=\"something\" prefix:attr=\"attrValue\" />";
+    private static final String TEXT_XML =
+            "<prefix:rootElem xmlns:prefix=\"something\" prefix:attr=\"attrValue\" />";
 
     @Test
-    public void testException() {
-        try {
-            SAXParserFactory factory = SAXParserFactory.newInstance();
-            factory.setNamespaceAware(true);
-            factory.setValidating(true);
-            SAXParser saxParser = factory.newSAXParser();
+    public void testException() throws Exception {
+        SAXParserFactory factory = SAXParserFactory.newInstance();
+        factory.setNamespaceAware(true);
+        factory.setValidating(true);
+        SAXParser saxParser = factory.newSAXParser();
 
-            saxParser.parse(new ByteArrayInputStream(textXML.getBytes()), new TestFilter());
-
-        } catch (Throwable t) {
-            t.printStackTrace();
-        }
+        TestFilter filter = new TestFilter();
+        saxParser.parse(new ByteArrayInputStream(TEXT_XML.getBytes()), filter);
+        assertTrue(filter.wasTested);
     }
 
-    class TestFilter extends DefaultHandler {
+    static class TestFilter extends DefaultHandler {
+        boolean wasTested = false;
+
         @Override
         public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
             super.startElement(uri, localName, qName, atts);
 
-            String attr_WithNs = atts.getValue("something", "attr");
-            String attr_NoNs = atts.getValue("", "attr");
-
-            System.out.println("withNs: " + attr_WithNs);
-            System.out.println("NoNs: " + attr_NoNs);
-
-            assertNull(attr_NoNs, "Should return null when uri is empty.");
-
+            assertEquals("attrValue", atts.getValue("something", "attr"));
+            assertNull(atts.getValue("", "attr"), "Should return null when uri is empty.");
+            wasTested = true;
         }
     }
 
