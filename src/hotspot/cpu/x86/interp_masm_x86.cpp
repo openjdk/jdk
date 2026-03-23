@@ -1655,7 +1655,7 @@ void InterpreterMacroAssembler::profile_multiple_array_types(Register mdp,
     test_method_data_pointer(mdp, profile_continue);
 
     load_klass(tmp, array, rscratch1);
-    profile_receiver_type(array, mdp, 0);
+    profile_receiver_type(tmp, mdp, 0);
 
     Label not_flat;
     test_non_flat_array_oop(array, tmp, not_flat);

@@ -2025,7 +2025,7 @@ public:
   }
 
   static ByteSize element_offset() {
-    return cell_offset(SingleTypeEntry::static_cell_count());
+    return cell_offset(ReceiverTypeData::static_cell_count());
   }
 
   virtual void clean_weak_klass_links(bool always_clean) {
