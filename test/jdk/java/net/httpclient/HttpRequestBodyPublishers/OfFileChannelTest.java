@@ -55,6 +55,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublisher;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.nio.ByteBuffer;
@@ -662,7 +663,7 @@ class OfFileChannelTest extends ReplayTestSupport {
         try {
             Files.write(filePath, fileBytes, StandardOpenOption.CREATE);
             FileChannel fileChannel = FileChannel.open(filePath);
-            HttpRequest.BodyPublisher publisher = BodyPublishers.ofFileChannel(fileChannel, 0, fileLength);
+            BodyPublisher publisher = BodyPublishers.ofFileChannel(fileChannel, 0, fileLength);
             ByteBuffer expectedBuffer = ByteBuffer.wrap(fileBytes);
             return List.of(new ReplayTarget(expectedBuffer, fileLength, publisher, fileChannel));
         } catch (IOException ioe) {

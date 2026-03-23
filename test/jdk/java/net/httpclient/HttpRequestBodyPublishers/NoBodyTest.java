@@ -23,7 +23,8 @@
 
 import org.junit.jupiter.api.Test;
 
-import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublisher;
+import java.net.http.HttpRequest.BodyPublishers;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.Flow;
@@ -46,7 +47,7 @@ class NoBodyTest extends ReplayTestSupport {
     void test() throws InterruptedException {
 
         // Create the publisher
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
+        BodyPublisher publisher = BodyPublishers.noBody();
 
         // Subscribe
         RecordingSubscriber subscriber = new RecordingSubscriber();
@@ -61,7 +62,7 @@ class NoBodyTest extends ReplayTestSupport {
     @Override
     Iterable<ReplayTarget> createReplayTargets() {
         ByteBuffer expectedBuffer = ByteBuffer.wrap(new byte[0]);
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.noBody();
+        BodyPublisher publisher = BodyPublishers.noBody();
         return List.of(new ReplayTarget(expectedBuffer, publisher));
     }
 

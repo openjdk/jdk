@@ -24,9 +24,9 @@
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.ValueSource;
 
-import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublisher;
+import java.net.http.HttpRequest.BodyPublishers;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -66,8 +66,8 @@ public class OfByteArrayTest extends ReplayTestSupport {
 
     @Test
     void testNullContent() {
-        assertThrows(NullPointerException.class, () -> HttpRequest.BodyPublishers.ofByteArray(null));
-        assertThrows(NullPointerException.class, () -> HttpRequest.BodyPublishers.ofByteArray(null, 1, 2));
+        assertThrows(NullPointerException.class, () -> BodyPublishers.ofByteArray(null));
+        assertThrows(NullPointerException.class, () -> BodyPublishers.ofByteArray(null, 1, 2));
     }
 
     @ParameterizedTest
@@ -83,14 +83,14 @@ public class OfByteArrayTest extends ReplayTestSupport {
         byte[] content = contentText.getBytes(CHARSET);
         assertThrows(
                 IndexOutOfBoundsException.class,
-                () -> HttpRequest.BodyPublishers.ofByteArray(content, offset, length));
+                () -> BodyPublishers.ofByteArray(content, offset, length));
     }
 
     @Override
     Iterable<ReplayTarget> createReplayTargets() {
         byte[] content = "this content needs to be replayed again and again".getBytes(CHARSET);
         ByteBuffer expectedBuffer = ByteBuffer.wrap(content);
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofByteArray(content);
+        BodyPublisher publisher = BodyPublishers.ofByteArray(content);
         return List.of(new ReplayTarget(expectedBuffer, publisher));
     }
 
@@ -118,7 +118,7 @@ public class OfByteArrayTest extends ReplayTestSupport {
 
         // Create the publisher
         byte[] content = contentText.getBytes(CHARSET);
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofByteArray(content, offset, length);
+        BodyPublisher publisher = BodyPublishers.ofByteArray(content, offset, length);
 
         // Subscribe
         RecordingSubscriber subscriber = new RecordingSubscriber();

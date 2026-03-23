@@ -24,7 +24,7 @@
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublisher;
 import java.nio.ByteBuffer;
 import java.util.concurrent.Flow;
 
@@ -64,7 +64,7 @@ public abstract class ReplayTestSupport {
 
         // Create the publisher
         ByteBuffer expectedBuffer = replayTarget.expectedBuffer;
-        HttpRequest.BodyPublisher publisher = replayTarget.publisher;
+        BodyPublisher publisher = replayTarget.publisher;
         assertEquals(replayTarget.expectedContentLength, publisher.contentLength());
 
         // Execute the specified operations
@@ -114,11 +114,11 @@ public abstract class ReplayTestSupport {
     public record ReplayTarget(
             ByteBuffer expectedBuffer,
             int expectedContentLength,
-            HttpRequest.BodyPublisher publisher,
+            BodyPublisher publisher,
             AutoCloseable resource)
             implements AutoCloseable {
 
-        public ReplayTarget(ByteBuffer expectedBuffer, HttpRequest.BodyPublisher publisher) {
+        public ReplayTarget(ByteBuffer expectedBuffer, BodyPublisher publisher) {
             this(expectedBuffer, expectedBuffer.limit(), publisher, null);
         }
 

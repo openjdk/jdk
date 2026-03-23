@@ -31,7 +31,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
-import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublisher;
+import java.net.http.HttpRequest.BodyPublishers;
 import java.nio.ByteBuffer;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -92,14 +93,14 @@ public class OfFileTest extends ReplayTestSupport {
 
     @Test
     void testNullPath() {
-        assertThrows(NullPointerException.class, () -> HttpRequest.BodyPublishers.ofFile(null));
+        assertThrows(NullPointerException.class, () -> BodyPublishers.ofFile(null));
     }
 
     @ParameterizedTest
     @MethodSource("parentDirs")
     void testNonExistentPath(Path parentDir) {
         Path nonExistentPath = createFilePath(parentDir, "testNonExistentPath");
-        assertThrows(FileNotFoundException.class, () -> HttpRequest.BodyPublishers.ofFile(nonExistentPath));
+        assertThrows(FileNotFoundException.class, () -> BodyPublishers.ofFile(nonExistentPath));
     }
 
     @ParameterizedTest
@@ -109,7 +110,7 @@ public class OfFileTest extends ReplayTestSupport {
         // Create the publisher
         byte[] fileBytes = ByteBufferUtils.byteArrayOfLength(3);
         Path filePath = createFile(parentDir, "testNonExistentPathAtSubscribe", fileBytes);
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofFile(filePath);
+        BodyPublisher publisher = BodyPublishers.ofFile(filePath);
 
         // Delete the file
         Files.delete(filePath);
@@ -134,7 +135,7 @@ public class OfFileTest extends ReplayTestSupport {
     void testIrregularFile(Path parentDir) throws Exception {
 
         // Create the publisher
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofFile(parentDir);
+        BodyPublisher publisher = BodyPublishers.ofFile(parentDir);
 
         // Subscribe
         RecordingSubscriber subscriber = new RecordingSubscriber();
@@ -170,7 +171,7 @@ public class OfFileTest extends ReplayTestSupport {
         // Create the publisher
         byte[] fileBytes = ByteBufferUtils.byteArrayOfLength(BIG_FILE_LENGTH);
         Path filePath = createFile(parentDir, "testFileModificationWhileReading", fileBytes);
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofFile(filePath);
+        BodyPublisher publisher = BodyPublishers.ofFile(filePath);
 
         // Subscribe
         RecordingSubscriber subscriber = new RecordingSubscriber();
@@ -213,7 +214,7 @@ public class OfFileTest extends ReplayTestSupport {
         // Create the publisher
         byte[] fileBytes = ByteBufferUtils.byteArrayOfLength(fileLength);
         Path filePath = createFile(parentDir, "testFileOfLength", fileBytes);
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofFile(filePath);
+        BodyPublisher publisher = BodyPublishers.ofFile(filePath);
 
         // Subscribe
         RecordingSubscriber subscriber = new RecordingSubscriber();
@@ -234,7 +235,7 @@ public class OfFileTest extends ReplayTestSupport {
                 .map(parentDir -> {
                     try {
                         Path filePath = createFile(parentDir, "replayTest", fileBytes);
-                        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofFile(filePath);
+                        BodyPublisher publisher = BodyPublishers.ofFile(filePath);
                         return new ReplayTarget(expectedBuffer, publisher);
                     } catch (IOException ioe) {
                         throw new UncheckedIOException(ioe);
@@ -269,7 +270,7 @@ public class OfFileTest extends ReplayTestSupport {
         // Create the publisher
         int fileLength = ByteBufferUtils.findLengthExceedingMaxMemory();
         Path filePath = createFileOfLength(parentDir, "testOOM", fileLength);
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofFile(filePath);
+        BodyPublisher publisher = BodyPublishers.ofFile(filePath);
 
         // Subscribe
         RecordingSubscriber subscriber = new RecordingSubscriber();

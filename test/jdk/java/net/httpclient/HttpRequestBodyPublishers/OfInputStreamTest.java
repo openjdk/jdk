@@ -28,7 +28,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublisher;
+import java.net.http.HttpRequest.BodyPublishers;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.Flow;
@@ -57,7 +58,7 @@ public class OfInputStreamTest extends ReplayTestSupport {
 
     @Test
     void testNullInputStreamSupplier() {
-        assertThrows(NullPointerException.class, () -> HttpRequest.BodyPublishers.ofInputStream(null));
+        assertThrows(NullPointerException.class, () -> BodyPublishers.ofInputStream(null));
     }
 
     @Test
@@ -65,7 +66,7 @@ public class OfInputStreamTest extends ReplayTestSupport {
 
         // Create the publisher
         RuntimeException exception = new RuntimeException();
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofInputStream(() -> { throw exception; });
+        BodyPublisher publisher = BodyPublishers.ofInputStream(() -> { throw exception; });
 
         // Subscribe
         RecordingSubscriber subscriber = new RecordingSubscriber();
@@ -84,7 +85,7 @@ public class OfInputStreamTest extends ReplayTestSupport {
     void testNullInputStream() throws InterruptedException {
 
         // Create the publisher
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofInputStream(() -> null);
+        BodyPublisher publisher = BodyPublishers.ofInputStream(() -> null);
 
         // Subscribe
         RecordingSubscriber subscriber = new RecordingSubscriber();
@@ -111,7 +112,7 @@ public class OfInputStreamTest extends ReplayTestSupport {
                     case 2 -> new ByteArrayInputStream(buffer2);
                     default -> throw new AssertionError();
                 };
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofInputStream(inputStreamSupplier);
+        BodyPublisher publisher = BodyPublishers.ofInputStream(inputStreamSupplier);
 
         // Subscribe
         RecordingSubscriber subscriber = new RecordingSubscriber();
@@ -133,7 +134,7 @@ public class OfInputStreamTest extends ReplayTestSupport {
         // Create the publisher
         byte[] content = ByteBufferUtils.byteArrayOfLength(length);
         InputStream inputStream = new ByteArrayInputStream(content);
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofInputStream(() -> inputStream);
+        BodyPublisher publisher = BodyPublishers.ofInputStream(() -> inputStream);
 
         // Subscribe
         RecordingSubscriber subscriber = new RecordingSubscriber();
@@ -152,7 +153,7 @@ public class OfInputStreamTest extends ReplayTestSupport {
         // Create the publisher
         RuntimeException exception = new RuntimeException("failure for `read`");
         InputStream inputStream = new InputStreamThrowingOnCompletion(exceptionIndex, exception);
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofInputStream(() -> inputStream);
+        BodyPublisher publisher = BodyPublishers.ofInputStream(() -> inputStream);
 
         // Subscribe
         RecordingSubscriber subscriber = new RecordingSubscriber();
@@ -193,9 +194,7 @@ public class OfInputStreamTest extends ReplayTestSupport {
     Iterable<ReplayTarget> createReplayTargets() {
         byte[] content = ByteBufferUtils.byteArrayOfLength(10);
         ByteBuffer expectedBuffer = ByteBuffer.wrap(content);
-        HttpRequest.BodyPublisher publisher =
-                HttpRequest.BodyPublishers.ofInputStream(
-                        () -> new ByteArrayInputStream(content));
+        BodyPublisher publisher = BodyPublishers.ofInputStream(() -> new ByteArrayInputStream(content));
         return List.of(new ReplayTarget(expectedBuffer, -1, publisher, null));
     }
 
@@ -214,8 +213,8 @@ public class OfInputStreamTest extends ReplayTestSupport {
 
         // Create the publisher using an `InputStream` that emits content exceeding the maximum memory
         int length = ByteBufferUtils.findLengthExceedingMaxMemory();
-        HttpRequest.BodyPublisher publisher =
-                HttpRequest.BodyPublishers.ofInputStream(() -> new InputStream() {
+        BodyPublisher publisher =
+                BodyPublishers.ofInputStream(() -> new InputStream() {
 
                     private int position;
 

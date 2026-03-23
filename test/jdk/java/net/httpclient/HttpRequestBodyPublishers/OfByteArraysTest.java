@@ -27,7 +27,8 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublisher;
+import java.net.http.HttpRequest.BodyPublishers;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -68,7 +69,7 @@ public class OfByteArraysTest extends ReplayTestSupport {
                 .range(0, length)
                 .mapToObj(i -> new byte[]{(byte) i})
                 .toList();
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofByteArrays(buffers::iterator);
+        BodyPublisher publisher = BodyPublishers.ofByteArrays(buffers::iterator);
 
         // Subscribe
         RecordingSubscriber subscriber = new RecordingSubscriber();
@@ -98,7 +99,7 @@ public class OfByteArraysTest extends ReplayTestSupport {
             case 2 -> List.of(buffer2).iterator();
             default -> throw new AssertionError();
         };
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofByteArrays(iterable);
+        BodyPublisher publisher = BodyPublishers.ofByteArrays(iterable);
 
         // Subscribe twice (to force two `Iterable::iterator` invocations)
         RecordingSubscriber subscriber = new RecordingSubscriber();
@@ -115,14 +116,14 @@ public class OfByteArraysTest extends ReplayTestSupport {
 
     @Test
     void testNullIterable() {
-        assertThrows(NullPointerException.class, () -> HttpRequest.BodyPublishers.ofByteArrays(null));
+        assertThrows(NullPointerException.class, () -> BodyPublishers.ofByteArrays(null));
     }
 
     @Test
     void testNullIterator() throws InterruptedException {
 
         // Create the publisher
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofByteArrays(() -> null);
+        BodyPublisher publisher = BodyPublishers.ofByteArrays(() -> null);
 
         // Subscribe
         RecordingSubscriber subscriber = new RecordingSubscriber();
@@ -141,7 +142,7 @@ public class OfByteArraysTest extends ReplayTestSupport {
         // Create the publisher
         List<byte[]> iterable = new ArrayList<>();
         iterable.add(null);
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofByteArrays(iterable);
+        BodyPublisher publisher = BodyPublishers.ofByteArrays(iterable);
 
         // Subscribe
         RecordingSubscriber subscriber = new RecordingSubscriber();
@@ -159,7 +160,7 @@ public class OfByteArraysTest extends ReplayTestSupport {
 
         // Create the publisher
         RuntimeException exception = new RuntimeException("failure for `testIteratorCreationException`");
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofByteArrays(() -> {
+        BodyPublisher publisher = BodyPublishers.ofByteArrays(() -> {
             throw exception;
         });
 
@@ -195,7 +196,7 @@ public class OfByteArraysTest extends ReplayTestSupport {
         // Create the publisher
         IteratorThrowingAtEnd iterator =
                 new IteratorThrowingAtEnd(exceptionIndex, hasNextException, nextException);
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofByteArrays(() -> iterator);
+        BodyPublisher publisher = BodyPublishers.ofByteArrays(() -> iterator);
 
         // Subscribe
         RecordingSubscriber subscriber = new RecordingSubscriber();
@@ -264,7 +265,7 @@ public class OfByteArraysTest extends ReplayTestSupport {
     Iterable<ReplayTarget> createReplayTargets() {
         byte[] byteArray = ByteBufferUtils.byteArrayOfLength(9);
         ByteBuffer expectedBuffer = ByteBuffer.wrap(byteArray);
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofByteArrays(List.of(byteArray));
+        BodyPublisher publisher = BodyPublishers.ofByteArrays(List.of(byteArray));
         return List.of(new ReplayTarget(expectedBuffer, -1, publisher, null));
     }
 
@@ -284,7 +285,7 @@ public class OfByteArraysTest extends ReplayTestSupport {
         // Create the publisher
         int length = ByteBufferUtils.findLengthExceedingMaxMemory();
         Iterable<byte[]> iterable = createIterableOfLength(length);
-        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofByteArrays(iterable);
+        BodyPublisher publisher = BodyPublishers.ofByteArrays(iterable);
 
         // Subscribe
         RecordingSubscriber subscriber = new RecordingSubscriber();
