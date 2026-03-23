@@ -52,11 +52,11 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.model.BundleType;
 import jdk.jpackage.internal.model.BundlingEnvironment;
 import jdk.jpackage.internal.model.BundlingOperationDescriptor;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.JPackageException;
-import jdk.jpackage.internal.model.BundleType;
 
 /**
  * Analyzes jpackage command line structure.
@@ -64,15 +64,16 @@ import jdk.jpackage.internal.model.BundleType;
 final class OptionsAnalyzer {
 
     OptionsAnalyzer(Options cmdline, OperatingSystem os, BundlingEnvironment bundlingEnv) {
-        this(cmdline, getBundlingOperation(cmdline, os, bundlingEnv), false);
+        this(cmdline, os, getBundlingOperation(cmdline, os, bundlingEnv), false);
     }
 
-    OptionsAnalyzer(Options cmdline, StandardBundlingOperation bundlingOperation) {
-        this(cmdline, bundlingOperation, true);
+    OptionsAnalyzer(Options cmdline, OperatingSystem os, StandardBundlingOperation bundlingOperation) {
+        this(cmdline, os, bundlingOperation, true);
     }
 
-    private OptionsAnalyzer(Options cmdline, StandardBundlingOperation bundlingOperation, boolean typedOptions) {
+    private OptionsAnalyzer(Options cmdline, OperatingSystem os, StandardBundlingOperation bundlingOperation, boolean typedOptions) {
         this.cmdline = Objects.requireNonNull(cmdline);
+        this.os = Objects.requireNonNull(os);
         this.bundlingOperation = Objects.requireNonNull(bundlingOperation);
         this.typedOptions = typedOptions;
         hasAppImage = PREDEFINED_APP_IMAGE.containsIn(cmdline);
@@ -236,22 +237,20 @@ final class OptionsAnalyzer {
     private RuntimeException onOutOfScopeOption(OptionSpec<?> optionSpec) {
         Objects.requireNonNull(optionSpec);
 
-        if (optionSpec.scope().stream()
-                .filter(StandardBundlingOperation.class::isInstance)
-                .map(StandardBundlingOperation.class::cast)
-                .map(StandardBundlingOperation::os).noneMatch(bundlingOperation.os()::equals)) {
-            // The option is for different OS.
-            return error("ERR_UnsupportedOption", mapFormatArguments(optionSpec));
+        if (!matchOS(bundlingOperation.os()).test(optionSpec)) {
+            // The option is for different OS than the OS of the bundling operation.
+            if (os.equals(bundlingOperation.os())) {
+                return error("ERR_UnsupportedOption", mapFormatArguments(optionSpec, bundlingOperation.os()));
+            }
         } else if (StandardBundlingOperation.SIGN_MAC_APP_IMAGE.equals(bundlingOperation)) {
             // The option is not applicable when signing a predefined app image.
             return error("ERR_InvalidOptionWithAppImageSigning", mapFormatArguments(optionSpec));
         } else if (StandardBundlingOperation.CREATE_NATIVE.contains(bundlingOperation) && isRuntimeInstaller) {
             // The option is not applicable when packaging of a runtime in a native bundle.
             return error("ERR_NoInstallerEntryPoint", mapFormatArguments(optionSpec));
-        } else {
-            return error("ERR_InvalidTypeOption", mapFormatArguments(
-                    optionSpec, bundlingOperation.bundleTypeValue()));
         }
+
+        return error("ERR_InvalidTypeOption", mapFormatArguments(optionSpec, bundlingOperation.bundleTypeValue()));
     }
 
     private Object[] mapFormatArguments(Object... args) {
@@ -354,6 +353,20 @@ final class OptionsAnalyzer {
         return matchInScope(List.of(scope));
     }
 
+    private static Predicate<OptionSpec<?>> matchOS(Collection<OperatingSystem> scope) {
+        Objects.requireNonNull(scope);
+        return optionSpec -> {
+            return optionSpec.scope().stream()
+                    .filter(StandardBundlingOperation.class::isInstance)
+                    .map(StandardBundlingOperation.class::cast)
+                    .map(StandardBundlingOperation::os).toList().containsAll(scope);
+        };
+    }
+
+    private static Predicate<OptionSpec<?>> matchOS(OperatingSystem... scope) {
+        return matchOS(List.of(scope));
+    }
+
     private static List<Option> asOptionList(OptionValue<?>... options) {
         return Stream.of(options).map(OptionValue::getOption).toList();
     }
@@ -403,6 +416,7 @@ final class OptionsAnalyzer {
 
 
     private final Options cmdline;
+    private final OperatingSystem os;
     private final StandardBundlingOperation bundlingOperation;
     private final boolean typedOptions;
     private final boolean hasAppImage;
