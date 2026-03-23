@@ -4993,7 +4993,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
   // chains as is done in split_memory_phi() since they  will
   // also be processed here.
   for (unsigned int j = 0; j < orig_phis.size(); j++) {
-    PhiNode *phi = orig_phis.at(j)->as_Phi();
+    PhiNode* phi = orig_phis.at(j)->as_Phi();
     int alias_idx = _compile->get_alias_index(phi->adr_type());
     igvn->hash_delete(phi);
     for (uint i = 1; i < phi->req(); i++) {
