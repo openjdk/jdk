@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2021, 2026, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -432,7 +432,7 @@ public class TestShiftAndMask {
 
     @Run(test = "shiftMaskIntCheckIndex")
     public static void shiftMaskIntCheckIndex_runner() {
-        int i = G.ints().restricted(0, ((Integer.MAX_VALUE - 1) >> INT_MASK_WIDTH) - 1).next();
+        int i = G.uniformInts(0, ((Integer.MAX_VALUE - 1) >> INT_MASK_WIDTH) - 1).next();
         Asserts.assertEquals(shiftMaskIntCheckIndex(i, (i << INT_MASK_WIDTH) + 1), 0);
     }
 
@@ -444,7 +444,7 @@ public class TestShiftAndMask {
 
     @Run(test = "shiftMaskLongCheckIndex")
     public static void shiftMaskLongCheckIndex_runner() {
-        long i = G.longs().restricted(0L, ((Long.MAX_VALUE - 1) >> LONG_MASK_WIDTH) - 1).next();
+        long i = G.uniformLongs(0L, ((Long.MAX_VALUE - 1) >> LONG_MASK_WIDTH) - 1).next();
         Asserts.assertEquals(shiftMaskLongCheckIndex(i, (i << LONG_MASK_WIDTH) + 1), 0L);
     }
 
@@ -457,7 +457,7 @@ public class TestShiftAndMask {
 
     @Run(test = "addShiftMaskIntCheckIndex")
     public static void addShiftMaskIntCheckIndex_runner() {
-        int i = G.ints().restricted(0, ((Integer.MAX_VALUE - 1) >> INT_MASK_WIDTH) - 1).next();
+        int i = G.uniformInts(0, ((Integer.MAX_VALUE - 1) >> INT_MASK_WIDTH) - 1).next();
         int j = G.ints().next();
         Asserts.assertEquals(addShiftMaskIntCheckIndex(i, j, (i << INT_MASK_WIDTH) + 1), j & INT_MASK);
     }
@@ -471,7 +471,7 @@ public class TestShiftAndMask {
 
     @Run(test = "addShiftMaskLongCheckIndex")
     public static void addShiftMaskLongCheckIndex_runner() {
-        long i = G.longs().restricted(0L, ((Long.MAX_VALUE - 1) >> LONG_MASK_WIDTH) - 1).next();
+        long i = G.uniformLongs(0L, ((Long.MAX_VALUE - 1) >> LONG_MASK_WIDTH) - 1).next();
         long j = G.longs().next();
         Asserts.assertEquals(addShiftMaskLongCheckIndex(i, j, (i << LONG_MASK_WIDTH) + 1), j & LONG_MASK);
     }
@@ -485,8 +485,8 @@ public class TestShiftAndMask {
 
     @Run(test = "addShiftMaskIntCheckIndex2")
     public static void addShiftMaskIntCheckIndex2_runner() {
-        int i = G.ints().restricted(0, ((Integer.MAX_VALUE - 1) >> INT_MASK_WIDTH) - 1).next();
-        int j = G.ints().restricted(0, ((Integer.MAX_VALUE - 1) >> INT_MASK_WIDTH) - 1).next();
+        int i = G.uniformInts(0, ((Integer.MAX_VALUE - 1) >> INT_MASK_WIDTH) - 1).next();
+        int j = G.uniformInts(0, ((Integer.MAX_VALUE - 1) >> INT_MASK_WIDTH) - 1).next();
         Asserts.assertEquals(addShiftMaskIntCheckIndex2(i, j, (Integer.max(i, j) << INT_MASK_WIDTH) + 1), 0);
     }
 
@@ -498,8 +498,8 @@ public class TestShiftAndMask {
 
     @Run(test = "addShiftMaskLongCheckIndex2")
     public static void addShiftMaskLongCheckIndex2_runner() {
-        long i = G.longs().restricted(0L, ((Long.MAX_VALUE - 1) >> LONG_MASK_WIDTH) - 1).next();
-        long j = G.longs().restricted(0L, ((Long.MAX_VALUE - 1) >> LONG_MASK_WIDTH) - 1).next();
+        long i = G.uniformLongs(0L, ((Long.MAX_VALUE - 1) >> LONG_MASK_WIDTH) - 1).next();
+        long j = G.uniformLongs(0L, ((Long.MAX_VALUE - 1) >> LONG_MASK_WIDTH) - 1).next();
         Asserts.assertEquals(addShiftMaskLongCheckIndex2(i, j, (Long.max(i, j) << LONG_MASK_WIDTH) + 1), 0L);
     }
 
@@ -511,7 +511,7 @@ public class TestShiftAndMask {
 
     @Run(test = "shiftConvMaskCheckIndex")
     public static void shiftConvMaskCheckIndex_runner() {
-        int i = G.ints().restricted(0, ((Integer.MAX_VALUE - 1) >> INT_MASK_WIDTH) - 1).next();
+        int i = G.uniformInts(0, ((Integer.MAX_VALUE - 1) >> INT_MASK_WIDTH) - 1).next();
         Asserts.assertEquals(shiftConvMaskCheckIndex(i, (i << INT_MASK_WIDTH) + 1), 0L);
     }
 
@@ -524,7 +524,7 @@ public class TestShiftAndMask {
 
     @Run(test = "addShiftConvMaskCheckIndex")
     public static void addShiftConvMaskCheckIndex_runner() {
-        int i = G.ints().restricted(0, ((Integer.MAX_VALUE - 1) >> INT_MASK_WIDTH) - 1).next();
+        int i = G.uniformInts(0, ((Integer.MAX_VALUE - 1) >> INT_MASK_WIDTH) - 1).next();
         long j = G.longs().next();
         Asserts.assertEquals(addShiftConvMaskCheckIndex(i, j, (i << INT_MASK_WIDTH) + 1), j & INT_MASK);
     }
@@ -537,8 +537,8 @@ public class TestShiftAndMask {
 
     @Run(test = "addShiftConvMaskCheckIndex2")
     public static void addShiftConvMaskCheckIndex2_runner() {
-        int i = G.ints().restricted(0, ((Integer.MAX_VALUE - 1) >> INT_MASK_WIDTH) - 1).next();
-        int j = G.ints().restricted(0, ((Integer.MAX_VALUE - 1) >> INT_MASK_WIDTH) - 1).next();
+        int i = G.uniformInts(0, ((Integer.MAX_VALUE - 1) >> INT_MASK_WIDTH) - 1).next();
+        int j = G.uniformInts(0, ((Integer.MAX_VALUE - 1) >> INT_MASK_WIDTH) - 1).next();
         Asserts.assertEquals(addShiftConvMaskCheckIndex2(i, j, (Integer.max(i, j) << INT_MASK_WIDTH) + 1), 0L);
     }
 
