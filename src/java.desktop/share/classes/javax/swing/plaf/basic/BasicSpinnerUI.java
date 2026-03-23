@@ -688,7 +688,7 @@ public class BasicSpinnerUI extends SpinnerUI
                     arrowButton = (JButton)e.getSource();
                 }
             } else {
-                if (arrowButton!=null && !arrowButton.getModel().isPressed()
+                if (arrowButton != null && !arrowButton.getModel().isPressed()
                     && autoRepeatTimer.isRunning()) {
                     autoRepeatTimer.stop();
                     spinner = null;

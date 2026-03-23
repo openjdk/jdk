@@ -4440,6 +4440,18 @@ instruct membar_release_lock() %{
   ins_pipe(empty);
 %}
 
+instruct membar_storeload() %{
+  match(MemBarStoreLoad);
+  ins_cost(4*MEMORY_REF_COST);
+
+  size(4);
+  format %{ "MEMBAR-storeload" %}
+  ins_encode %{
+    __ membar(MacroAssembler::StoreLoad, noreg);
+  %}
+  ins_pipe(long_memory_op);
+%}
+
 instruct membar_volatile() %{
   match(MemBarVolatile);
   ins_cost(4*MEMORY_REF_COST);
@@ -4461,6 +4473,18 @@ instruct unnecessary_membar_volatile() %{
   format %{ "!MEMBAR-volatile (unnecessary so empty encoding)" %}
   ins_encode( );
   ins_pipe(empty);
+%}
+
+instruct membar_full() %{
+  match(MemBarFull);
+  ins_cost(4*MEMORY_REF_COST);
+
+  size(4);
+  format %{ "MEMBAR-full" %}
+  ins_encode %{
+    __ membar(MacroAssembler::StoreLoad, noreg);
+  %}
+  ins_pipe(long_memory_op);
 %}
 
 //----------Register Move Instructions-----------------------------------------

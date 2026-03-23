@@ -69,7 +69,7 @@
 // allocate a new table (twice as large as the old one), and then copy all the
 // old monitor pointers from the old table to the new.
 //
-// But since the OMT is a concurrent hash table and things needs to work for
+// But since the OMT is a concurrent hash table and things need to work for
 // other clients of the OMT while we grow it, it gets a bit more
 // complicated.
 //
@@ -125,7 +125,7 @@ class ObjectMonitorTable::Table : public CHeapObj<mtObjectMonitor> {
 
   DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
   const size_t _capacity_mask;       // One less than its power-of-two capacity
-  Atomic<Table*> _prev;              // Set while rehashing
+  Atomic<Table*> _prev;              // Set while growing/rebuilding
   Atomic<Entry>* _buckets;           // The payload
   DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(_capacity_mask) + sizeof(_prev) + sizeof(_buckets));
   Atomic<size_t> _items_count;
@@ -251,8 +251,8 @@ public:
       assert(index != start_index, "invariant");
     }
 
-    // Rehashing could have started by now, but if a monitor has been inserted in a
-    // newer table, it was inserted after the get linearization point.
+    // Rebuilding could have started by now, but if a monitor has been inserted
+    // in a newer table, it was inserted after the get linearization point.
     return nullptr;
   }
 
@@ -278,7 +278,7 @@ public:
         // To avoid concurrent inserts succeeding, place a tombstone here.
         Entry result = bucket.compare_exchange(entry, tombstone(), memory_order_relaxed);
         if (result == entry) {
-          // Success! Nobody will try to insert here again, except reinsert from rehashing.
+          // Success! Nobody will try to insert here again, except reinsert from rebuilding.
           return nullptr;
         }
         entry = result;
@@ -333,11 +333,11 @@ public:
           dec_items_count();
           entry = result;
         } else {
-          // Out of allowance; leaving place for rehashing to succeed.
+          // Out of allowance; leave space for rebuilding to succeed.
           // To avoid concurrent inserts succeeding, place a tombstone here.
           Entry result = bucket.compare_exchange(entry, tombstone(), memory_order_acq_rel);
           if (result == entry) {
-            // Success; nobody will try to insert here again, except reinsert from rehashing.
+            // Success; nobody will try to insert here again, except reinsert from rebuilding.
             return nullptr;
           }
           entry = result;
@@ -558,7 +558,7 @@ ObjectMonitorTable::Table* ObjectMonitorTable::grow_table(Table* curr) {
     }
   }
 
-  // Somebody else started rehashing; restart in new table.
+  // Somebody else started rebuilding; restart in their new table.
   delete new_table;
 
   return result;
@@ -591,7 +591,7 @@ void ObjectMonitorTable::remove_monitor_entry(ObjectMonitor* monitor) {
   assert(monitor_get(obj) != monitor, "should have been removed");
 }
 
-// Before handshake; rehash and unlink tables.
+// Before handshake; rebuild and unlink tables.
 void ObjectMonitorTable::rebuild(GrowableArray<Table*>* delete_list) {
   Table* new_table;
   {
@@ -629,7 +629,7 @@ void ObjectMonitorTable::rebuild(GrowableArray<Table*>* delete_list) {
     new_table = new Table(new_capacity, curr);
     Table* result = _curr.compare_exchange(curr, new_table, memory_order_acq_rel);
     if (result != curr) {
-      // Somebody else racingly started rehashing. Delete the
+      // Somebody else racingly started rebuilding. Delete the
       // new_table and treat somebody else's table as the new one.
       delete new_table;
       new_table = result;

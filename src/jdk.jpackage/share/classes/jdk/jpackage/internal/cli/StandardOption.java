@@ -400,6 +400,8 @@ public final class StandardOption {
 
     public static final OptionValue<Boolean> WIN_INSTALLDIR_CHOOSER = booleanOption("win-dir-chooser").scope(nativeBundling()).create();
 
+    public static final OptionValue<Boolean> WIN_WITH_UI = booleanOption("win-with-ui").scope(nativeBundling()).create();
+
     public static final OptionValue<UUID> WIN_UPGRADE_UUID = uuidOption("win-upgrade-uuid").scope(nativeBundling()).create();
 
     public static final OptionValue<Boolean> WIN_CONSOLE_HINT = booleanOption("win-console")

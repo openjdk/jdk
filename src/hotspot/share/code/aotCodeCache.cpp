@@ -301,11 +301,11 @@ void AOTCodeCache::init3() {
   table->init_extrs2();
 }
 
-void AOTCodeCache::close() {
+void AOTCodeCache::dump() {
   if (is_on()) {
-    delete _cache; // Free memory
-    _cache = nullptr;
-    opened_cache = nullptr;
+    assert(is_on_for_dump(), "should be called only when dumping AOT code");
+    MutexLocker ml(Compile_lock);
+    _cache->finish_write();
   }
 }
 
@@ -321,7 +321,6 @@ AOTCodeCache::AOTCodeCache(bool is_dumping, bool is_using) :
   _store_size(0),
   _for_use(is_using),
   _for_dump(is_dumping),
-  _closing(false),
   _failed(false),
   _lookup_failed(false),
   _table(nullptr),
@@ -431,30 +430,6 @@ void AOTCodeCache::set_stubgen_stubs_complete() {
   AOTCodeAddressTable* table = addr_table();
   if (table != nullptr) {
     table->set_stubgen_stubs_complete();
-  }
-}
-
-AOTCodeCache::~AOTCodeCache() {
-  if (_closing) {
-    return; // Already closed
-  }
-  // Stop any further access to cache.
-  _closing = true;
-
-  MutexLocker ml(Compile_lock);
-  if (for_dump()) { // Finalize cache
-    finish_write();
-  }
-  _load_buffer = nullptr;
-  if (_C_store_buffer != nullptr) {
-    FREE_C_HEAP_ARRAY(char, _C_store_buffer);
-    _C_store_buffer = nullptr;
-    _store_buffer = nullptr;
-  }
-  if (_table != nullptr) {
-    MutexLocker ml(AOTCodeCStrings_lock, Mutex::_no_safepoint_check_flag);
-    delete _table;
-    _table = nullptr;
   }
 }
 

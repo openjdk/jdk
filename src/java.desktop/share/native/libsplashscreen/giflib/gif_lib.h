@@ -39,7 +39,7 @@ extern "C" {
 
 #define GIFLIB_MAJOR 6
 #define GIFLIB_MINOR 1
-#define GIFLIB_RELEASE 1
+#define GIFLIB_RELEASE 2
 
 #define GIF_ERROR 0
 #define GIF_OK 1
