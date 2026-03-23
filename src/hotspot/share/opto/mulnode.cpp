@@ -651,31 +651,19 @@ Node* AndINode::Identity(PhaseGVN* phase) {
     return in(1);
   }
 
-  Node* in1 = in(1);
-  uint op = in1->Opcode();
-  const TypeInt* t2 = phase->type(in(2))->isa_int();
-  if (t2 && t2->is_con()) {
-    int con = t2->get_con();
-    // Masking off high bits which are always zero is useless.
-    const TypeInt* t1 = phase->type(in(1))->isa_int();
-    if (t1 != nullptr && t1->_lo >= 0) {
-      jint t1_support = right_n_bits(1 + log2i_graceful(t1->_hi));
-      if ((t1_support & con) == t1_support)
-        return in1;
-    }
-    // Masking off the high bits of a unsigned-shift-right is not
-    // needed either.
-    if (op == Op_URShiftI) {
-      const TypeInt* t12 = phase->type(in1->in(2))->isa_int();
-      if (t12 && t12->is_con()) {  // Shift is by a constant
-        int shift = t12->get_con();
-        shift &= BitsPerJavaInteger - 1;  // semantics of Java shifts
-        int mask = max_juint >> shift;
-        if ((mask & con) == mask)  // If AND is useless, skip it
-          return in1;
-      }
-    }
+  const TypeInt* t1 = phase->type(in(1))->is_int();
+  const TypeInt* t2 = phase->type(in(2))->is_int();
+
+  if ((~t1->_bits._ones & ~t2->_bits._zeros) == 0) {
+    // All bits that might be 0 in in1 are known to be 0 in in2
+    return in(2);
   }
+
+  if ((~t2->_bits._ones & ~t1->_bits._zeros) == 0) {
+    // All bits that might be 0 in in2 are known to be 0 in in1
+    return in(1);
+  }
+
   return MulNode::Identity(phase);
 }
 
@@ -779,32 +767,19 @@ Node* AndLNode::Identity(PhaseGVN* phase) {
     return in(1);
   }
 
-  Node *usr = in(1);
-  const TypeLong *t2 = phase->type( in(2) )->isa_long();
-  if( t2 && t2->is_con() ) {
-    jlong con = t2->get_con();
-    // Masking off high bits which are always zero is useless.
-    const TypeLong* t1 = phase->type( in(1) )->isa_long();
-    if (t1 != nullptr && t1->_lo >= 0) {
-      int bit_count = log2i_graceful(t1->_hi) + 1;
-      jlong t1_support = jlong(max_julong >> (BitsPerJavaLong - bit_count));
-      if ((t1_support & con) == t1_support)
-        return usr;
-    }
-    uint lop = usr->Opcode();
-    // Masking off the high bits of a unsigned-shift-right is not
-    // needed either.
-    if( lop == Op_URShiftL ) {
-      const TypeInt *t12 = phase->type( usr->in(2) )->isa_int();
-      if( t12 && t12->is_con() ) {  // Shift is by a constant
-        int shift = t12->get_con();
-        shift &= BitsPerJavaLong - 1;  // semantics of Java shifts
-        jlong mask = max_julong >> shift;
-        if( (mask&con) == mask )  // If AND is useless, skip it
-          return usr;
-      }
-    }
+  const TypeLong* t1 = phase->type(in(1))->is_long();
+  const TypeLong* t2 = phase->type(in(2))->is_long();
+
+  if ((~t1->_bits._ones & ~t2->_bits._zeros) == 0) {
+    // All bits that might be 0 in in1 are known to be 0 in in2
+    return in(2);
   }
+
+  if ((~t2->_bits._ones & ~t1->_bits._zeros) == 0) {
+    // All bits that might be 0 in in2 are known to be 0 in in1
+    return in(1);
+  }
+
   return MulNode::Identity(phase);
 }
 
