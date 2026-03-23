@@ -110,6 +110,18 @@
           "of the optimal occupancy to start marking.")                     \
           range(1, max_intx)                                                \
                                                                             \
+  product(uint, G1IHOP, 45,                                                 \
+          "The percent occupancy (IHOP) of the current old generation "     \
+          "capacity above which a concurrent mark cycle will be initiated " \
+          "Its value may change over time if adaptive IHOP is enabled, "    \
+          "otherwise the value remains constant. "                          \
+          "In the latter case a value of 0 will result as frequent as "     \
+          "possible concurrent marking cycles. A value of 100 disables "    \
+          "concurrent marking. "                                            \
+          "Fragmentation waste in the old generation is not considered "    \
+          "free space in this calculation.")                                \
+          range(0, 100)                                                     \
+                                                                            \
   product(uint, G1ConfidencePercent, 50,                                    \
           "Confidence level for MMU/pause predictions. A higher value "     \
           "means that G1 will use less safety margin for its predictions.") \
