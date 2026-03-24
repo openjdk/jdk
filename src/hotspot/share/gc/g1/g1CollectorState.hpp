@@ -25,7 +25,8 @@
 #ifndef SHARE_GC_G1_G1COLLECTORSTATE_HPP
 #define SHARE_GC_G1_G1COLLECTORSTATE_HPP
 
-#include "gc/g1/g1GCPauseType.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/enumIterator.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // State of the G1 collection.
@@ -92,8 +93,66 @@ public:
   bool is_in_mark_or_rebuild() const;
   bool is_in_reset_for_next_cycle() const;
 
+  enum class Pause : uint {
+    Normal,
+    LastYoung,
+    ConcurrentStartFull,
+    ConcurrentStartUndo,
+    Cleanup,
+    Remark,
+    Mixed,
+    Full
+  };
+
   // Calculate GC Pause Type from internal state.
-  G1GCPauseType gc_pause_type(bool concurrent_operation_is_full_mark) const;
+  Pause gc_pause_type(bool concurrent_operation_is_full_mark) const;
+
+  static const char* to_string(Pause type) {
+    static const char* pause_strings[] = { "Normal",
+                                           "Prepare Mixed",
+                                           "Concurrent Start", // Do not distinguish between the different
+                                           "Concurrent Start", // Concurrent Start pauses.
+                                           "Cleanup",
+                                           "Remark",
+                                           "Mixed",
+                                           "Full" };
+    return pause_strings[static_cast<uint>(type)];
+  }
+
+  static void assert_is_young_pause(Pause type) {
+    assert(type != Pause::Full, "must be");
+    assert(type != Pause::Remark, "must be");
+    assert(type != Pause::Cleanup, "must be");
+  }
+
+  static bool is_young_only_pause(Pause type) {
+    assert_is_young_pause(type);
+    return type == Pause::ConcurrentStartUndo ||
+           type == Pause::ConcurrentStartFull ||
+           type == Pause::LastYoung ||
+           type == Pause::Normal;
+  }
+
+  static bool is_mixed_pause(Pause type) {
+    assert_is_young_pause(type);
+    return type == Pause::Mixed;
+  }
+
+  static bool is_last_young_pause(Pause type) {
+    assert_is_young_pause(type);
+    return type == Pause::LastYoung;
+  }
+
+  static bool is_concurrent_start_pause(Pause type) {
+    assert_is_young_pause(type);
+    return type == Pause::ConcurrentStartFull || type == Pause::ConcurrentStartUndo;
+  }
+
+  static bool is_concurrent_cycle_pause(Pause type) {
+    return type == Pause::Cleanup || type == Pause::Remark;
+  }
 };
+
+ENUMERATOR_RANGE(G1CollectorState::Pause, G1CollectorState::Pause::Normal, G1CollectorState::Pause::Full)
 
 #endif // SHARE_GC_G1_G1COLLECTORSTATE_HPP
