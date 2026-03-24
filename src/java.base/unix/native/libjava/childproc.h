@@ -107,13 +107,6 @@ typedef struct _SpawnInfo {
     int parentPathvBytes; /* total number of bytes in parentPathv array */
 } SpawnInfo;
 
-/* If ChildStuff.sendAlivePing is true, child shall signal aliveness to
- * the parent the moment it gains consciousness, before any subsequent
- * pre-exec errors could happen.
- * This code must fit into an int and not be a valid errno value on any of
- * our platforms. */
-#define CHILD_IS_ALIVE      65535
-
 /**
  * The cached and split version of the JDK's effective PATH.
  * (We don't support putenv("PATH=...") in native code)

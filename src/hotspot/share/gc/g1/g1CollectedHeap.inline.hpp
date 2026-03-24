@@ -47,9 +47,9 @@
 #include "utilities/bitMap.inline.hpp"
 
 inline bool G1STWIsAliveClosure::do_object_b(oop p) {
-  // An object is reachable if it is outside the collection set,
-  // or is inside and copied.
-  return !_g1h->is_in_cset(p) || p->is_forwarded();
+  // An object is reachable if it is outside the collection set and not a
+  // humongous candidate, or is inside and copied.
+  return !_g1h->is_in_cset_or_humongous_candidate(p) || p->is_forwarded();
 }
 
 inline JavaThread* const* G1JavaThreadsListClaimer::claim(uint& count) {
