@@ -1610,9 +1610,9 @@ void InterpreterMacroAssembler::profile_switch_case(Register index,
   }
 }
 
-template <class ArrayData> void InterpreterMacroAssembler::profile_array_type(Register mdp,
-                                                                              Register array,
-                                                                              Register tmp) {
+void InterpreterMacroAssembler::profile_array_type(Register mdp,
+                                                   Register array,
+                                                   Register tmp) {
   if (ProfileInterpreter) {
     Label profile_continue;
 
@@ -1620,30 +1620,25 @@ template <class ArrayData> void InterpreterMacroAssembler::profile_array_type(Re
     test_method_data_pointer(mdp, profile_continue);
 
     mov(tmp, array);
-    profile_obj_type(tmp, Address(mdp, in_bytes(ArrayData::array_offset())));
+    profile_obj_type(tmp, Address(mdp, in_bytes(ArrayStoreData::array_offset())));
 
     Label not_flat;
     test_non_flat_array_oop(array, tmp, not_flat);
 
-    set_mdp_flag_at(mdp, ArrayData::flat_array_byte_constant());
+    set_mdp_flag_at(mdp, ArrayStoreData::flat_array_byte_constant());
 
     bind(not_flat);
 
     Label not_null_free;
     test_non_null_free_array_oop(array, tmp, not_null_free);
 
-    set_mdp_flag_at(mdp, ArrayData::null_free_array_byte_constant());
+    set_mdp_flag_at(mdp, ArrayStoreData::null_free_array_byte_constant());
 
     bind(not_null_free);
 
     bind(profile_continue);
   }
 }
-
-template void InterpreterMacroAssembler::profile_array_type<ArrayStoreData>(Register mdp,
-                                                                            Register array,
-                                                                            Register tmp);
-
 
 void InterpreterMacroAssembler::profile_multiple_array_types(Register mdp,
                                                              Register array,

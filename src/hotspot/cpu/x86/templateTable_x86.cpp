@@ -1092,7 +1092,7 @@ void TemplateTable::aastore() {
 
   index_check_without_pop(rdx, rcx);     // kills rbx
 
-  __ profile_array_type<ArrayStoreData>(rdi, rdx, rbx);
+  __ profile_array_type(rdi, rdx, rbx);
   __ profile_multiple_element_types(rdi, rax, rbx);
 
   __ testptr(rax, rax);
