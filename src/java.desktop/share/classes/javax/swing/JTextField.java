@@ -581,13 +581,13 @@ public class JTextField extends JTextComponent implements SwingConstants {
         Action oldValue = getAction();
         if (action==null || !action.equals(a)) {
             action = a;
-            if (oldValue!=null) {
+            if (oldValue != null) {
                 removeActionListener(oldValue);
                 oldValue.removePropertyChangeListener(actionPropertyChangeListener);
                 actionPropertyChangeListener = null;
             }
             configurePropertiesFromAction(action);
-            if (action!=null) {
+            if (action != null) {
                 // Don't add if it is already a listener
                 if (!isListener(ActionListener.class, action)) {
                     addActionListener(action);
