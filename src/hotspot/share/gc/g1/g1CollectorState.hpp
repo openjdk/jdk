@@ -73,7 +73,7 @@ public:
 
   // Pause setters
   void set_in_concurrent_start_gc() { _phase = Phase::YoungConcurrentStart; _initiate_conc_mark_if_possible = false; }
-  void set_prepare_mixed_gc() { _phase = Phase::YoungPrepareMixed; }
+  void set_in_prepare_mixed_gc() { _phase = Phase::YoungPrepareMixed; }
 
   void set_initiate_conc_mark_if_possible(bool v) { _initiate_conc_mark_if_possible = v; }
 
