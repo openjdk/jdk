@@ -53,7 +53,9 @@ inline void G1CollectorState::set_initiate_conc_mark_if_possible(bool v) {
 }
 
 inline bool G1CollectorState::is_in_young_only_phase() const {
-  return _phase == Phase::YoungNormal || _phase == Phase::YoungConcurrentStart || _phase == Phase::YoungPrepareMixed;
+  return _phase == Phase::YoungNormal ||
+         _phase == Phase::YoungConcurrentStart ||
+         _phase == Phase::YoungPrepareMixed;
 }
 inline bool G1CollectorState::is_in_mixed_phase() const {
   return _phase == Phase::Mixed;
