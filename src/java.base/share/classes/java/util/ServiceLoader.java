@@ -1086,8 +1086,8 @@ public final class ServiceLoader<S>
             String cn = pending.next();
             try {
                 return Class.forName(cn, false, loader);
-            } catch (ClassNotFoundException x) {
-                fail(service, "Provider " + cn + " not found");
+            } catch (ClassNotFoundException | LinkageError e) {
+                fail(service, "Provider " + cn + " not found", e);
                 return null;
             }
         }

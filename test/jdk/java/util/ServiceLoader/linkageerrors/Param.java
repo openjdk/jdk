@@ -22,13 +22,6 @@
  */
 
 /**
- * Service provider implementation.
+ * Param for a public constructor in Provider2.
  */
-public class Provider2 implements Service {
-    public Provider2() {}
-
-    /**
-     * Constructor with a parameter of a type that may not be visible.
-     */
-    public Provider2(Arg arg) { }
-}
+public class Param { }

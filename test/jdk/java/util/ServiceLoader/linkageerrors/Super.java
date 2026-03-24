@@ -22,6 +22,7 @@
  */
 
 /**
- * Constructor with a parameter of a type that may not be visible.
+ * Super class of Provider2.
  */
-public class Arg { }
+class Super {
+}
