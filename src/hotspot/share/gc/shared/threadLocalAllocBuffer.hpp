@@ -182,7 +182,7 @@ private:
   static PerfVariable* _perf_allocating_threads;
   static PerfVariable* _perf_total_refills;
   static PerfVariable* _perf_max_refills;
-  static PerfVariable* _perf_total_allocation_size;
+  static PerfVariable* _perf_total_allocated_size;
   static PerfVariable* _perf_total_gc_waste;
   static PerfVariable* _perf_max_gc_waste;
   static PerfVariable* _perf_total_refill_waste;
@@ -195,7 +195,7 @@ private:
   unsigned int _allocating_threads;
   unsigned int _total_refills;
   unsigned int _max_refills;
-  size_t       _total_allocation_size;
+  size_t       _total_allocated_size;
   size_t       _total_gc_waste;
   size_t       _max_gc_waste;
   size_t       _total_refill_waste;
