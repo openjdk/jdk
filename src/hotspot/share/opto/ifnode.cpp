@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -604,7 +604,7 @@ static void adjust_check(IfProjNode* proj, Node* range, Node* index,
   // at the lowest/nearest dominating check in the graph. To ensure that these Loads/Casts do not float above any of the
   // dominating checks (even when the lowest dominating check is later replaced by yet another dominating check), we
   // need to pin them at the lowest dominating check.
-  proj->pin_array_access_nodes(igvn);
+  proj->pin_dependent_nodes(igvn);
 }
 
 //------------------------------up_one_dom-------------------------------------
@@ -1539,7 +1539,7 @@ Node* IfNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 }
 
 //------------------------------dominated_by-----------------------------------
-Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool pin_array_access_nodes) {
+Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool prev_dom_not_imply_this) {
 #ifndef PRODUCT
   if (TraceIterativeGVN) {
     tty->print("   Removing IfNode: "); this->dump();
@@ -1570,20 +1570,16 @@ Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool pin_array_ac
     // Loop ends when projection has no more uses.
     for (DUIterator_Last jmin, j = ifp->last_outs(jmin); j >= jmin; --j) {
       Node* s = ifp->last_out(j);   // Get child of IfTrue/IfFalse
-      if (s->depends_only_on_test() && igvn->no_dependent_zero_check(s)) {
-        // For control producers.
-        // Do not rewire Div and Mod nodes which could have a zero divisor to avoid skipping their zero check.
+      if (s->depends_only_on_test()) {
+        // For control producers
         igvn->replace_input_of(s, 0, data_target); // Move child to data-target
-        if (pin_array_access_nodes && data_target != top) {
-          // As a result of range check smearing, Loads and range check Cast nodes that are control dependent on this
-          // range check (that is about to be removed) now depend on multiple dominating range checks. After the removal
-          // of this range check, these control dependent nodes end up at the lowest/nearest dominating check in the
-          // graph. To ensure that these Loads/Casts do not float above any of the dominating checks (even when the
-          // lowest dominating check is later replaced by yet another dominating check), we need to pin them at the
-          // lowest dominating check.
-          Node* clone = s->pin_array_access_node();
+        if (prev_dom_not_imply_this && data_target != top) {
+          // If prev_dom_not_imply_this, s now depends on multiple tests with prev_dom being the
+          // lowest dominating one. As a result, it must be pinned there. Otherwise, it can be
+          // incorrectly moved to a dominating test equivalent to the lowest one here.
+          Node* clone = s->pin_node_under_control();
           if (clone != nullptr) {
-            clone = igvn->transform(clone);
+            igvn->register_new_node_with_optimizer(clone, s);
             igvn->replace_node(s, clone);
           }
         }
@@ -1831,16 +1827,15 @@ bool IfNode::is_zero_trip_guard() const {
   return false;
 }
 
-void IfProjNode::pin_array_access_nodes(PhaseIterGVN* igvn) {
+void IfProjNode::pin_dependent_nodes(PhaseIterGVN* igvn) {
   for (DUIterator i = outs(); has_out(i); i++) {
     Node* u = out(i);
     if (!u->depends_only_on_test()) {
       continue;
     }
-    Node* clone = u->pin_array_access_node();
+    Node* clone = u->pin_node_under_control();
     if (clone != nullptr) {
-      clone = igvn->transform(clone);
-      assert(clone != u, "shouldn't common");
+      igvn->register_new_node_with_optimizer(clone, u);
       igvn->replace_node(u, clone);
       --i;
     }

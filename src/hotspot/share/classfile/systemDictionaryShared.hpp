@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,7 +199,6 @@ private:
   static void iterate_verification_constraint_names(InstanceKlass* k, DumpTimeClassInfo* info, Function func);
 
 public:
-  static bool is_early_klass(InstanceKlass* k);   // Was k loaded while JvmtiExport::is_early_phase()==true
   static bool has_archived_enum_objs(InstanceKlass* ik);
   static void set_has_archived_enum_objs(InstanceKlass* ik);
 

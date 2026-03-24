@@ -84,8 +84,8 @@ public abstract class LongVector extends AbstractVector<Long> {
     // The various shape-specific subclasses
     // also specialize them by wrapping
     // them in a call like this:
-    //    return (Byte128Vector)
-    //       super.bOp((Byte128Vector) o);
+    //    return (ByteVector128)
+    //       super.bOp((ByteVector128) o);
     // The purpose of that is to forcibly inline
     // the generic definition from this file
     // into a sharply-typed and size-specific
@@ -2964,7 +2964,7 @@ public abstract class LongVector extends AbstractVector<Long> {
         // Index vector: vix[0:n] = k -> offset + indexMap[mapOffset + k]
         IntVector vix;
         if (isp.laneCount() != vsp.laneCount()) {
-            // For LongMaxVector,  if vector length is non-power-of-two or
+            // For LongVectorMax,  if vector length is non-power-of-two or
             // 2048 bits, indexShape of Long species is S_MAX_BIT.
             // Assume that vector length is 2048, then the lane count of Long
             // vector is 32. When converting Long species to int species,
@@ -2972,7 +2972,7 @@ public abstract class LongVector extends AbstractVector<Long> {
             // is 64. So when loading index vector (IntVector), only lower half
             // of index data is needed.
             vix = IntVector
-                .fromArray(isp, indexMap, mapOffset, IntMaxVector.IntMaxMask.LOWER_HALF_TRUE_MASK)
+                .fromArray(isp, indexMap, mapOffset, IntVectorMax.IntMaskMax.LOWER_HALF_TRUE_MASK)
                 .add(offset);
         } else {
             vix = IntVector
@@ -3255,14 +3255,14 @@ public abstract class LongVector extends AbstractVector<Long> {
         // Index vector: vix[0:n] = i -> offset + indexMap[mo + i]
         IntVector vix;
         if (isp.laneCount() != vsp.laneCount()) {
-            // For LongMaxVector,  if vector length  is 2048 bits, indexShape
+            // For LongVectorMax,  if vector length  is 2048 bits, indexShape
             // of Long species is S_MAX_BIT. and the lane count of Long
             // vector is 32. When converting Long species to int species,
             // indexShape is still S_MAX_BIT, but the lane count of int vector
             // is 64. So when loading index vector (IntVector), only lower half
             // of index data is needed.
             vix = IntVector
-                .fromArray(isp, indexMap, mapOffset, IntMaxVector.IntMaxMask.LOWER_HALF_TRUE_MASK)
+                .fromArray(isp, indexMap, mapOffset, IntVectorMax.IntMaskMax.LOWER_HALF_TRUE_MASK)
                 .add(offset);
         } else {
             vix = IntVector
@@ -3449,7 +3449,7 @@ public abstract class LongVector extends AbstractVector<Long> {
         // Index vector: vix[0:n] = k -> offset + indexMap[mapOffset + k]
         IntVector vix;
         if (isp.laneCount() != vsp.laneCount()) {
-            // For LongMaxVector,  if vector length is non-power-of-two or
+            // For LongVectorMax,  if vector length is non-power-of-two or
             // 2048 bits, indexShape of Long species is S_MAX_BIT.
             // Assume that vector length is 2048, then the lane count of Long
             // vector is 32. When converting Long species to int species,
@@ -3457,7 +3457,7 @@ public abstract class LongVector extends AbstractVector<Long> {
             // is 64. So when loading index vector (IntVector), only lower half
             // of index data is needed.
             vix = IntVector
-                .fromArray(isp, indexMap, mapOffset, IntMaxVector.IntMaxMask.LOWER_HALF_TRUE_MASK)
+                .fromArray(isp, indexMap, mapOffset, IntVectorMax.IntMaskMax.LOWER_HALF_TRUE_MASK)
                 .add(offset);
         } else {
             vix = IntVector
@@ -3565,14 +3565,14 @@ public abstract class LongVector extends AbstractVector<Long> {
         // Index vector: vix[0:n] = i -> offset + indexMap[mo + i]
         IntVector vix;
         if (isp.laneCount() != vsp.laneCount()) {
-            // For LongMaxVector,  if vector length  is 2048 bits, indexShape
+            // For LongVectorMax,  if vector length  is 2048 bits, indexShape
             // of Long species is S_MAX_BIT. and the lane count of Long
             // vector is 32. When converting Long species to int species,
             // indexShape is still S_MAX_BIT, but the lane count of int vector
             // is 64. So when loading index vector (IntVector), only lower half
             // of index data is needed.
             vix = IntVector
-                .fromArray(isp, indexMap, mapOffset, IntMaxVector.IntMaxMask.LOWER_HALF_TRUE_MASK)
+                .fromArray(isp, indexMap, mapOffset, IntVectorMax.IntMaskMax.LOWER_HALF_TRUE_MASK)
                 .add(offset);
         } else {
             vix = IntVector
@@ -4010,13 +4010,13 @@ public abstract class LongVector extends AbstractVector<Long> {
         @Override
         @ForceInline
         public final LongVector zero() {
-            if ((Class<?>) vectorType() == LongMaxVector.class)
-                return LongMaxVector.ZERO;
+            if ((Class<?>) vectorType() == LongVectorMax.class)
+                return LongVectorMax.ZERO;
             switch (vectorBitSize()) {
-                case 64: return Long64Vector.ZERO;
-                case 128: return Long128Vector.ZERO;
-                case 256: return Long256Vector.ZERO;
-                case 512: return Long512Vector.ZERO;
+                case 64: return LongVector64.ZERO;
+                case 128: return LongVector128.ZERO;
+                case 256: return LongVector256.ZERO;
+                case 512: return LongVector512.ZERO;
             }
             throw new AssertionError();
         }
@@ -4024,13 +4024,13 @@ public abstract class LongVector extends AbstractVector<Long> {
         @Override
         @ForceInline
         public final LongVector iota() {
-            if ((Class<?>) vectorType() == LongMaxVector.class)
-                return LongMaxVector.IOTA;
+            if ((Class<?>) vectorType() == LongVectorMax.class)
+                return LongVectorMax.IOTA;
             switch (vectorBitSize()) {
-                case 64: return Long64Vector.IOTA;
-                case 128: return Long128Vector.IOTA;
-                case 256: return Long256Vector.IOTA;
-                case 512: return Long512Vector.IOTA;
+                case 64: return LongVector64.IOTA;
+                case 128: return LongVector128.IOTA;
+                case 256: return LongVector256.IOTA;
+                case 512: return LongVector512.IOTA;
             }
             throw new AssertionError();
         }
@@ -4039,13 +4039,13 @@ public abstract class LongVector extends AbstractVector<Long> {
         @Override
         @ForceInline
         public final VectorMask<Long> maskAll(boolean bit) {
-            if ((Class<?>) vectorType() == LongMaxVector.class)
-                return LongMaxVector.LongMaxMask.maskAll(bit);
+            if ((Class<?>) vectorType() == LongVectorMax.class)
+                return LongVectorMax.LongMaskMax.maskAll(bit);
             switch (vectorBitSize()) {
-                case 64: return Long64Vector.Long64Mask.maskAll(bit);
-                case 128: return Long128Vector.Long128Mask.maskAll(bit);
-                case 256: return Long256Vector.Long256Mask.maskAll(bit);
-                case 512: return Long512Vector.Long512Mask.maskAll(bit);
+                case 64: return LongVector64.LongMask64.maskAll(bit);
+                case 128: return LongVector128.LongMask128.maskAll(bit);
+                case 256: return LongVector256.LongMask256.maskAll(bit);
+                case 512: return LongVector512.LongMask512.maskAll(bit);
             }
             throw new AssertionError();
         }
@@ -4073,42 +4073,42 @@ public abstract class LongVector extends AbstractVector<Long> {
     /** Species representing {@link LongVector}s of {@link VectorShape#S_64_BIT VectorShape.S_64_BIT}. */
     public static final VectorSpecies<Long> SPECIES_64
         = new LongSpecies(VectorShape.S_64_BIT,
-                            Long64Vector.class,
-                            Long64Vector.Long64Mask.class,
-                            Long64Vector.Long64Shuffle.class,
-                            Long64Vector::new);
+                            LongVector64.class,
+                            LongVector64.LongMask64.class,
+                            LongVector64.LongShuffle64.class,
+                            LongVector64::new);
 
     /** Species representing {@link LongVector}s of {@link VectorShape#S_128_BIT VectorShape.S_128_BIT}. */
     public static final VectorSpecies<Long> SPECIES_128
         = new LongSpecies(VectorShape.S_128_BIT,
-                            Long128Vector.class,
-                            Long128Vector.Long128Mask.class,
-                            Long128Vector.Long128Shuffle.class,
-                            Long128Vector::new);
+                            LongVector128.class,
+                            LongVector128.LongMask128.class,
+                            LongVector128.LongShuffle128.class,
+                            LongVector128::new);
 
     /** Species representing {@link LongVector}s of {@link VectorShape#S_256_BIT VectorShape.S_256_BIT}. */
     public static final VectorSpecies<Long> SPECIES_256
         = new LongSpecies(VectorShape.S_256_BIT,
-                            Long256Vector.class,
-                            Long256Vector.Long256Mask.class,
-                            Long256Vector.Long256Shuffle.class,
-                            Long256Vector::new);
+                            LongVector256.class,
+                            LongVector256.LongMask256.class,
+                            LongVector256.LongShuffle256.class,
+                            LongVector256::new);
 
     /** Species representing {@link LongVector}s of {@link VectorShape#S_512_BIT VectorShape.S_512_BIT}. */
     public static final VectorSpecies<Long> SPECIES_512
         = new LongSpecies(VectorShape.S_512_BIT,
-                            Long512Vector.class,
-                            Long512Vector.Long512Mask.class,
-                            Long512Vector.Long512Shuffle.class,
-                            Long512Vector::new);
+                            LongVector512.class,
+                            LongVector512.LongMask512.class,
+                            LongVector512.LongShuffle512.class,
+                            LongVector512::new);
 
     /** Species representing {@link LongVector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
     public static final VectorSpecies<Long> SPECIES_MAX
         = new LongSpecies(VectorShape.S_Max_BIT,
-                            LongMaxVector.class,
-                            LongMaxVector.LongMaxMask.class,
-                            LongMaxVector.LongMaxShuffle.class,
-                            LongMaxVector::new);
+                            LongVectorMax.class,
+                            LongVectorMax.LongMaskMax.class,
+                            LongVectorMax.LongShuffleMax.class,
+                            LongVectorMax::new);
 
     /**
      * Preferred species for {@link LongVector}s.

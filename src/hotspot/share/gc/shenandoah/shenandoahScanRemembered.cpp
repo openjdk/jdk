@@ -1063,7 +1063,7 @@ ShenandoahRegionChunkIterator::ShenandoahRegionChunkIterator(ShenandoahHeap* hea
 }
 
 void ShenandoahRegionChunkIterator::reset() {
-  _index = 0;
+  _index.store_relaxed(0);
 }
 
 ShenandoahReconstructRememberedSetTask::ShenandoahReconstructRememberedSetTask(ShenandoahRegionIterator* regions)

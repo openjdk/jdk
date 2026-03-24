@@ -96,7 +96,7 @@ struct core_data {
    int                classes_jsa_fd; // file descriptor of class share archive
    uintptr_t          dynamic_addr;  // address of dynamic section of a.out
    uintptr_t          vdso_addr;     // address of vDSO
-   off64_t            vdso_offset;   // offset of vDSO in core
+   off_t              vdso_offset;   // offset of vDSO in core
    size_t             vdso_size;     // size of vDSO
    uintptr_t          ld_base_addr;  // base address of ld.so
    size_t             num_maps;  // number of maps.

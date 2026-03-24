@@ -56,7 +56,7 @@ class GCPolicyCounters;
 class STWGCTimer;
 
 class G1Policy: public CHeapObj<mtGC> {
- private:
+  using Pause = G1CollectorState::Pause;
 
   static G1IHOPControl* create_ihop_control(const G1OldGenAllocationTracker* old_gen_alloc_tracker,
                                             const G1Predictions* predictor);
@@ -115,7 +115,7 @@ class G1Policy: public CHeapObj<mtGC> {
   G1ConcurrentStartToMixedTimeTracker _concurrent_start_to_mixed;
 
   bool should_update_surv_rate_group_predictors() {
-    return collector_state()->in_young_only_phase() && !collector_state()->mark_or_rebuild_in_progress();
+    return collector_state()->is_in_young_only_phase() && !collector_state()->is_in_mark_or_rebuild();
   }
 
   double pending_cards_processing_time() const;
@@ -268,13 +268,13 @@ private:
   // Sets up marking if proper conditions are met.
   void maybe_start_marking(size_t allocation_word_size);
   // Manage time-to-mixed tracking.
-  void update_time_to_mixed_tracking(G1GCPauseType gc_type, double start, double end);
+  void update_time_to_mixed_tracking(Pause gc_type, double start, double end);
   // Record the given STW pause with the given start and end times (in s).
-  void record_pause(G1GCPauseType gc_type,
+  void record_pause(Pause gc_type,
                     double start,
                     double end);
 
-  void update_gc_pause_time_ratios(G1GCPauseType gc_type, double start_sec, double end_sec);
+  void update_gc_pause_time_ratios(Pause gc_type, double start_sec, double end_sec);
 
   // Indicate that we aborted marking before doing any mixed GCs.
   void abort_time_to_mixed_tracking();
