@@ -2077,7 +2077,6 @@ bool PhaseIdealLoop::try_convert_to_counted_loop(Node* head, IdealLoopTree*& loo
       return false;
     }
 #endif
-
     loop = converter.convert();
     return true;
   }
@@ -2118,6 +2117,7 @@ bool CountedLoopConverter::is_counted_loop() {
   if (is_iv_overflowing(init_t, stride_con, _structure.iv_incr().phi_incr(), _structure.exit_test().mask())) {
     return false;
   }
+
   // =================================================
   // ---- SUCCESS!   Found A Trip-Counted Loop!  -----
 
@@ -2135,14 +2135,7 @@ bool CountedLoopConverter::is_counted_loop() {
     return false;
   }
 
-  #ifndef PRODUCT
-  if (StressCountedLoop && (_phase->C->random() % 2 == 0)) {
-    return false;
-  }
-  #endif
-
   assert(_head->Opcode() == Op_Loop || _head->Opcode() == Op_LongCountedLoop, "regular loops only");
-  _phase->C->print_method(PHASE_BEFORE_CLOOPS, 3, _head);
 
   // ===================================================
   // We can only convert this loop to a counted loop if we can guarantee that the iv phi will never overflow at runtime.
@@ -2416,6 +2409,12 @@ bool CountedLoopConverter::is_counted_loop() {
   _checked_for_counted_loop = true;
 #endif
 
+#ifndef PRODUCT
+  if (StressCountedLoop && (_phase->C->random() % 2 == 0)) {
+    return false;
+  }
+#endif
+
   return true;
 }
 
@@ -2557,6 +2556,8 @@ IdealLoopTree* CountedLoopConverter::convert() {
 #endif
 
   PhaseIterGVN* igvn = &_phase->igvn();
+
+  _phase->C->print_method(PHASE_BEFORE_CLOOPS, 3, _head);
 
   if (_should_insert_stride_overflow_limit_check) {
     insert_stride_overflow_limit_check();
