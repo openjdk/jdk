@@ -2880,11 +2880,10 @@ void PhaseCCP::analyze_step(Unique_Node_List& worklist, Node* n) {
   if (KillPathsReachableByDeadTypeNode && n->is_Type() && new_type == Type::TOP) {
     // Keep track of Type nodes to kill CFG paths that use Type
     // nodes that become dead.
-    _maybe_top_type_nodes.push(n);
+    _maybe_top_type_or_div_mod_nodes.push(n);
   }
   if (new_type == Type::TOP && n->is_DivModInteger() && type(n->in(2)) == n->as_DivModInteger()->zero()) {
-    ShouldNotReachHere();
-    _maybe_top_type_nodes.push(n);
+    _maybe_top_type_or_div_mod_nodes.push(n);
   }
 }
 
@@ -3181,16 +3180,15 @@ Node *PhaseCCP::transform( Node *n ) {
   Unique_Node_List useful;
 
   if (KillPathsReachableByDeadTypeNode) {
-    for (uint i = 0; i < _maybe_top_type_nodes.size(); ++i) {
-      Node* type_node = _maybe_top_type_nodes.at(i);
+    for (uint i = 0; i < _maybe_top_type_or_div_mod_nodes.size(); ++i) {
+      Node* type_node = _maybe_top_type_or_div_mod_nodes.at(i);
       if (type(type_node) == Type::TOP) {
-        assert(!type_node->is_DivModInteger(), "");
         ResourceMark rm;
         type_node->make_paths_from_here_dead(this, nullptr, "ccp");
       }
     }
   } else {
-    assert(_maybe_top_type_nodes.size() == 0, "we don't need type nodes");
+    assert(_maybe_top_type_or_div_mod_nodes.size() == 0, "we don't need type nodes");
   }
 
   // Initialize the traversal.
