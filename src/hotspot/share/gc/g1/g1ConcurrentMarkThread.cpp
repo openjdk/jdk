@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,22 +112,22 @@ class G1ConcPhaseTimer : public GCTraceConcTimeImpl<LogLevel::Info, LOG_TAGS(gc,
 
 void G1ConcurrentMarkThread::run_service() {
   while (wait_for_next_cycle()) {
-    assert(in_progress(), "must be");
+    assert(is_in_progress(), "must be");
 
     GCIdMark gc_id_mark;
-    FormatBuffer<128> title("Concurrent %s Cycle", _state == FullMark ? "Mark" : "Undo");
+    FormatBuffer<128> title("Concurrent %s Cycle", is_in_full_concurrent_cycle() ? "Mark" : "Undo");
     GCTraceConcTime(Info, gc) tt(title);
 
     concurrent_cycle_start();
 
-    if (_state == FullMark) {
+    if (_state == FullCycleMarking) {
       concurrent_mark_cycle_do();
     } else {
-      assert(_state == UndoMark, "Must do undo mark but is %d", _state);
+      assert(_state == UndoCycleResetForNextCycle, "Must do undo mark but is %d", _state);
       concurrent_undo_cycle_do();
     }
 
-    concurrent_cycle_end(_state == FullMark && !_cm->has_aborted());
+    concurrent_cycle_end(is_in_full_concurrent_cycle() && !_cm->has_aborted());
 
     update_perf_counter_cpu_time();
   }
@@ -135,7 +135,7 @@ void G1ConcurrentMarkThread::run_service() {
 }
 
 void G1ConcurrentMarkThread::stop_service() {
-  if (in_progress()) {
+  if (is_in_progress()) {
     // We are not allowed to abort the marking threads during root region scan.
     // Needs to be done separately.
     _cm->root_region_scan_abort_and_wait();
@@ -149,7 +149,7 @@ void G1ConcurrentMarkThread::stop_service() {
 
 bool G1ConcurrentMarkThread::wait_for_next_cycle() {
   MonitorLocker ml(G1CGC_lock, Mutex::_no_safepoint_check_flag);
-  while (!in_progress() && !should_terminate()) {
+  while (!is_in_progress() && !should_terminate()) {
     ml.wait();
   }
 

@@ -2524,10 +2524,6 @@ uint Matcher::float_pressure_limit()
   return (FLOATPRESSURE == -1) ? _FLOAT_REG_mask.size() : FLOATPRESSURE;
 }
 
-bool Matcher::use_asm_for_ldiv_by_con(jlong divisor) {
-  return false;
-}
-
 const RegMask& Matcher::divI_proj_mask() {
   ShouldNotReachHere();
   return RegMask::EMPTY;

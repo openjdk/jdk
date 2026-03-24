@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_G1_G1TRACE_HPP
 #define SHARE_GC_G1_G1TRACE_HPP
 
-#include "gc/g1/g1GCPauseType.hpp"
+#include "gc/g1/g1CollectorState.hpp"
 #include "gc/shared/gcTrace.hpp"
 
 class G1EvacInfo;
@@ -33,17 +33,17 @@ class G1HeapSummary;
 class G1EvacSummary;
 
 class G1NewTracer : public YoungGCTracer, public CHeapObj<mtGC> {
-  G1GCPauseType _pause;
+  G1CollectorState::Pause _pause;
 
 public:
   G1NewTracer() :
     YoungGCTracer(G1New),
-    _pause(G1GCPauseType::FullGC) // Initialize to something invalid. For this event, which
+    _pause(G1CollectorState::Pause::Full) // Initialize to something invalid. For this event, which
                                   // is about young collections, FullGC is not a valid value.
   { }
 
   void initialize();
-  void report_young_gc_pause(G1GCPauseType pause);
+  void report_young_gc_pause(G1CollectorState::Pause pause);
   void report_gc_end_impl(const Ticks& timestamp, TimePartitions* time_partitions);
   void report_evacuation_info(G1EvacInfo* info);
   void report_evacuation_failed(EvacuationFailedInfo& ef_info);

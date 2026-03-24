@@ -896,11 +896,11 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
     // Loop is strip mined: use the safepoint of the outer strip mined loop
     OuterStripMinedLoopNode* outer_loop = head->as_CountedLoop()->outer_loop();
     assert(outer_loop != nullptr, "no outer loop");
-    safepoint = outer_loop->outer_safepoint();
+    safepoint = LoopPeeling == 0 ? nullptr : outer_loop->outer_safepoint();
     outer_loop->transform_to_counted_loop(&_igvn, this);
     exit_test = head->loopexit();
   } else {
-    safepoint = find_safepoint(back_control, x, loop);
+    safepoint = LoopPeeling == 0 ? nullptr : find_safepoint(back_control, x, loop);
   }
 
   IfFalseNode* exit_branch = exit_test->false_proj();
@@ -1074,8 +1074,8 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   // Peel one iteration of the loop and use the safepoint at the end
   // of the peeled iteration to insert Parse Predicates. If no well
   // positioned safepoint peel to guarantee a safepoint in the outer
-  // loop.
-  if (safepoint != nullptr || !loop->_has_call) {
+  // loop.  When loop peeling is disabled, skip the peeling step altogether.
+  if (LoopPeeling != 0 && (safepoint != nullptr || !loop->_has_call)) {
     old_new.clear();
     do_peeling(loop, old_new);
   } else {
