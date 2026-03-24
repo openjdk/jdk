@@ -24,9 +24,9 @@
 /*
  * @test
  * @bug 8350481
- * @summary Test ServiceLoader when finding the provider's public constructor fails with LinkageError
+ * @summary Test ServiceLoader locating a provider when Class.getConstructor throws a LinkageError
  * @compile Provider1.java Provider2.java
- * @run main/othervm LinkageError1
+ * @run main/othervm ${test.main.class}
  */
 
 import java.net.URI;
@@ -37,11 +37,15 @@ import java.util.List;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 
-public class LinkageError1 {
+public class GetConstructorThrowsTest {
     public static void main(String[] args) throws Exception {
 
-        // create the services configuration file that lists two providers
-        URI u = LinkageError1.class.getProtectionDomain().getCodeSource().getLocation().toURI();
+        // create services configuration file that lists two providers
+        URI u = GetConstructorThrowsTest.class
+                .getProtectionDomain()
+                .getCodeSource()
+                .getLocation()
+                .toURI();
         Path dir = Path.of(u);
         Path configFile = dir.resolve("META-INF", "services", "Service");
         Files.createDirectories(configFile.getParent());
@@ -50,7 +54,7 @@ public class LinkageError1 {
         // delete class file for a parameter in one of Provider2's constructors
         Files.delete(dir.resolve("Arg.class"));
 
-        // iterate over all providers in the "keep on tricking" way
+        // iterate over all providers, expecting ServiceConfigurationError
         Iterator<Service> iterator = ServiceLoader.load(Service.class).iterator();
         int count = 0;
         boolean done = false;
