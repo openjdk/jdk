@@ -383,28 +383,28 @@ void AOTCodeCache::init_early_c1_table() {
 void AOTCodeCache::Config::record(uint cpu_features_offset) {
   _flags = 0;
 #ifdef ASSERT
-  _flags |= debugVM;
+  set_flag(debugVM);
 #endif
   if (UseCompressedOops) {
-    _flags |= compressedOops;
+    set_flag(compressedOops);
   }
   if (UseCompressedClassPointers) {
-    _flags |= compressedClassPointers;
+    set_flag(compressedClassPointers);
   }
   if (UseTLAB) {
-    _flags |= useTLAB;
+    set_flag(useTLAB);
   }
   if (JavaAssertions::systemClassDefault()) {
-    _flags |= systemClassAssertions;
+    set_flag(systemClassAssertions);
   }
   if (JavaAssertions::userClassDefault()) {
-    _flags |= userClassAssertions;
+    set_flag(userClassAssertions);
   }
   if (EnableContended) {
-    _flags |= enableContendedPadding;
+    set_flag(enableContendedPadding);
   }
   if (RestrictContended) {
-    _flags |= restrictContendedPadding;
+    set_flag(restrictContendedPadding);
   }
   _compressedOopShift    = CompressedOops::shift();
   _compressedOopBase     = CompressedOops::base();
