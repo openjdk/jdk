@@ -470,7 +470,7 @@ public final class ThreadDump {
             }
         }
         if (root == null) {
-            throw new RuntimeException("Not root container");
+            throw new RuntimeException("No root container");
         }
 
         return new ThreadDump(root, map, threadDumpObj);
