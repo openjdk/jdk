@@ -210,7 +210,7 @@ public:
   ThreadLocalAllocStats();
 
   void update_fast_allocations(unsigned int refills,
-                               size_t allocations,
+                               size_t allocated_size,
                                size_t gc_waste,
                                size_t refill_waste);
   void update_slow_allocations(unsigned int allocations);

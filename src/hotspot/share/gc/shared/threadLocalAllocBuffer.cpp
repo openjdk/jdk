@@ -352,13 +352,13 @@ unsigned int ThreadLocalAllocStats::allocating_threads_avg() {
 }
 
 void ThreadLocalAllocStats::update_fast_allocations(unsigned int refills,
-                                       size_t allocations,
-                                       size_t gc_waste,
-                                       size_t refill_waste) {
+                                                    size_t allocated_size,
+                                                    size_t gc_waste,
+                                                    size_t refill_waste) {
   _allocating_threads      += 1;
   _total_refills           += refills;
   _max_refills              = MAX2(_max_refills, refills);
-  _total_allocated_size    += allocations;
+  _total_allocated_size    += allocated_size;
   _total_gc_waste          += gc_waste;
   _max_gc_waste             = MAX2(_max_gc_waste, gc_waste);
   _total_refill_waste      += refill_waste;
