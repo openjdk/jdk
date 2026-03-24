@@ -34,9 +34,8 @@ import java.util.function.IntUnaryOperator;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
 
-import static jdk.internal.vm.vector.VectorSupport.*;
-
 import static jdk.incubator.vector.VectorOperators.*;
+import static jdk.internal.vm.vector.VectorSupport.*;
 
 // -- This file was mechanically generated: Do not edit! -- //
 
@@ -366,7 +365,7 @@ final class LongVector64 extends LongVector {
     @Override
     @ForceInline
     public final LongShuffle64 toShuffle() {
-        return (LongShuffle64) toShuffle(vspecies(), false);
+        return (LongShuffle64) toShuffle(VSPECIES, false);
     }
 
     // Specialized unary testing
@@ -606,7 +605,7 @@ final class LongVector64 extends LongVector {
 
         @Override
         LongMask64 uOp(MUnOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             for (int i = 0; i < res.length; i++) {
                 res[i] = f.apply(i, bits[i]);
@@ -616,7 +615,7 @@ final class LongVector64 extends LongVector {
 
         @Override
         LongMask64 bOp(VectorMask<Long> m, MBinOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             boolean[] mbits = ((LongMask64)m).getBits();
             for (int i = 0; i < res.length; i++) {
@@ -766,16 +765,16 @@ final class LongVector64 extends LongVector {
         @ForceInline
         public boolean anyTrue() {
             return VectorSupport.test(BT_ne, LongMask64.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> anyTrueHelper(((LongMask64)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> anyTrueHelper(((LongMask64)m).getBits()));
         }
 
         @Override
         @ForceInline
         public boolean allTrue() {
             return VectorSupport.test(BT_overflow, LongMask64.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> allTrueHelper(((LongMask64)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> allTrueHelper(((LongMask64)m).getBits()));
         }
 
         @ForceInline
@@ -783,7 +782,7 @@ final class LongVector64 extends LongVector {
         static LongMask64 maskAll(boolean bit) {
             return VectorSupport.fromBitsCoerced(LongMask64.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
-                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+                                                 (v, _) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final LongMask64  TRUE_MASK = new LongMask64(true);
         private static final LongMask64 FALSE_MASK = new LongMask64(false);
@@ -843,7 +842,7 @@ final class LongVector64 extends LongVector {
 
         @Override
         LongVector64 toBitsVector0() {
-            return ((LongVector64) vspecies().asIntegral().dummyVector()).vectorFactory(indices());
+            return ((LongVector64) VSPECIES.asIntegral().dummyVector()).vectorFactory(indices());
         }
 
         @Override
@@ -917,7 +916,7 @@ final class LongVector64 extends LongVector {
         @ForceInline
         public final LongMask64 laneIsValid() {
             return (LongMask64) toBitsVector().compare(VectorOperators.GE, 0)
-                    .cast(vspecies());
+                    .cast(VSPECIES);
         }
 
         @ForceInline
@@ -925,7 +924,7 @@ final class LongVector64 extends LongVector {
         public final LongShuffle64 rearrange(VectorShuffle<Long> shuffle) {
             LongShuffle64 concreteShuffle = (LongShuffle64) shuffle;
             return (LongShuffle64) toBitsVector().rearrange(concreteShuffle)
-                    .toShuffle(vspecies(), false);
+                    .toShuffle(VSPECIES, false);
         }
 
         @ForceInline
@@ -938,7 +937,7 @@ final class LongVector64 extends LongVector {
                 v = (LongVector64) v.blend(v.lanewise(VectorOperators.ADD, length()),
                             v.compare(VectorOperators.LT, 0));
             }
-            return (LongShuffle64) v.toShuffle(vspecies(), false);
+            return (LongShuffle64) v.toShuffle(VSPECIES, false);
         }
 
         private static long[] prepare(int[] indices, int offset) {

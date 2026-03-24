@@ -25,7 +25,6 @@
 package jdk.incubator.vector;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Objects;
@@ -34,9 +33,8 @@ import java.util.function.IntUnaryOperator;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
 
-import static jdk.internal.vm.vector.VectorSupport.*;
-
 import static jdk.incubator.vector.VectorOperators.*;
+import static jdk.internal.vm.vector.VectorSupport.*;
 
 // -- This file was mechanically generated: Do not edit! -- //
 
@@ -371,7 +369,7 @@ final class ByteVectorMax extends ByteVector {
     @Override
     @ForceInline
     public final ByteShuffleMax toShuffle() {
-        return (ByteShuffleMax) toShuffle(vspecies(), false);
+        return (ByteShuffleMax) toShuffle(VSPECIES, false);
     }
 
     // Specialized unary testing
@@ -616,7 +614,7 @@ final class ByteVectorMax extends ByteVector {
 
         @Override
         ByteMaskMax uOp(MUnOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             for (int i = 0; i < res.length; i++) {
                 res[i] = f.apply(i, bits[i]);
@@ -626,7 +624,7 @@ final class ByteVectorMax extends ByteVector {
 
         @Override
         ByteMaskMax bOp(VectorMask<Byte> m, MBinOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             boolean[] mbits = ((ByteMaskMax)m).getBits();
             for (int i = 0; i < res.length; i++) {
@@ -776,16 +774,16 @@ final class ByteVectorMax extends ByteVector {
         @ForceInline
         public boolean anyTrue() {
             return VectorSupport.test(BT_ne, ByteMaskMax.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> anyTrueHelper(((ByteMaskMax)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> anyTrueHelper(((ByteMaskMax)m).getBits()));
         }
 
         @Override
         @ForceInline
         public boolean allTrue() {
             return VectorSupport.test(BT_overflow, ByteMaskMax.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> allTrueHelper(((ByteMaskMax)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> allTrueHelper(((ByteMaskMax)m).getBits()));
         }
 
         @ForceInline
@@ -793,7 +791,7 @@ final class ByteVectorMax extends ByteVector {
         static ByteMaskMax maskAll(boolean bit) {
             return VectorSupport.fromBitsCoerced(ByteMaskMax.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
-                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+                                                 (v, _) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final ByteMaskMax  TRUE_MASK = new ByteMaskMax(true);
         private static final ByteMaskMax FALSE_MASK = new ByteMaskMax(false);
@@ -853,7 +851,7 @@ final class ByteVectorMax extends ByteVector {
 
         @Override
         ByteVectorMax toBitsVector0() {
-            return ((ByteVectorMax) vspecies().asIntegral().dummyVector()).vectorFactory(indices());
+            return ((ByteVectorMax) VSPECIES.asIntegral().dummyVector()).vectorFactory(indices());
         }
 
         @Override
@@ -904,7 +902,7 @@ final class ByteVectorMax extends ByteVector {
         @ForceInline
         public final ByteMaskMax laneIsValid() {
             return (ByteMaskMax) toBitsVector().compare(VectorOperators.GE, 0)
-                    .cast(vspecies());
+                    .cast(VSPECIES);
         }
 
         @ForceInline
@@ -912,7 +910,7 @@ final class ByteVectorMax extends ByteVector {
         public final ByteShuffleMax rearrange(VectorShuffle<Byte> shuffle) {
             ByteShuffleMax concreteShuffle = (ByteShuffleMax) shuffle;
             return (ByteShuffleMax) toBitsVector().rearrange(concreteShuffle)
-                    .toShuffle(vspecies(), false);
+                    .toShuffle(VSPECIES, false);
         }
 
         @ForceInline
@@ -925,7 +923,7 @@ final class ByteVectorMax extends ByteVector {
                 v = (ByteVectorMax) v.blend(v.lanewise(VectorOperators.ADD, length()),
                             v.compare(VectorOperators.LT, 0));
             }
-            return (ByteShuffleMax) v.toShuffle(vspecies(), false);
+            return (ByteShuffleMax) v.toShuffle(VSPECIES, false);
         }
 
         private static byte[] prepare(int[] indices, int offset) {

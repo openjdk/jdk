@@ -34,7 +34,7 @@ import static jdk.incubator.vector.Float16.SIZE;
  * {@code Float16} type.
  */
 
-class Float16Consts {
+final class Float16Consts {
     /**
      * Don't let anyone instantiate this class.
      */

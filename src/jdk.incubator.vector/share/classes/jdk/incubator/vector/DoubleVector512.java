@@ -34,9 +34,8 @@ import java.util.function.IntUnaryOperator;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
 
-import static jdk.internal.vm.vector.VectorSupport.*;
-
 import static jdk.incubator.vector.VectorOperators.*;
+import static jdk.internal.vm.vector.VectorSupport.*;
 
 // -- This file was mechanically generated: Do not edit! -- //
 
@@ -358,7 +357,7 @@ final class DoubleVector512 extends DoubleVector {
     @Override
     @ForceInline
     public final DoubleShuffle512 toShuffle() {
-        return (DoubleShuffle512) toShuffle(vspecies(), false);
+        return (DoubleShuffle512) toShuffle(VSPECIES, false);
     }
 
     // Specialized unary testing
@@ -619,7 +618,7 @@ final class DoubleVector512 extends DoubleVector {
 
         @Override
         DoubleMask512 uOp(MUnOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             for (int i = 0; i < res.length; i++) {
                 res[i] = f.apply(i, bits[i]);
@@ -629,7 +628,7 @@ final class DoubleVector512 extends DoubleVector {
 
         @Override
         DoubleMask512 bOp(VectorMask<Double> m, MBinOp f) {
-            boolean[] res = new boolean[vspecies().laneCount()];
+            boolean[] res = new boolean[VSPECIES.laneCount()];
             boolean[] bits = getBits();
             boolean[] mbits = ((DoubleMask512)m).getBits();
             for (int i = 0; i < res.length; i++) {
@@ -779,16 +778,16 @@ final class DoubleVector512 extends DoubleVector {
         @ForceInline
         public boolean anyTrue() {
             return VectorSupport.test(BT_ne, DoubleMask512.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> anyTrueHelper(((DoubleMask512)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> anyTrueHelper(((DoubleMask512)m).getBits()));
         }
 
         @Override
         @ForceInline
         public boolean allTrue() {
             return VectorSupport.test(BT_overflow, DoubleMask512.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> allTrueHelper(((DoubleMask512)m).getBits()));
+                                         this, VSPECIES.maskAll(true),
+                                         (m, _) -> allTrueHelper(((DoubleMask512)m).getBits()));
         }
 
         @ForceInline
@@ -796,7 +795,7 @@ final class DoubleVector512 extends DoubleVector {
         static DoubleMask512 maskAll(boolean bit) {
             return VectorSupport.fromBitsCoerced(DoubleMask512.class, LANEBITS_TYPE_ORDINAL, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
-                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+                                                 (v, _) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final DoubleMask512  TRUE_MASK = new DoubleMask512(true);
         private static final DoubleMask512 FALSE_MASK = new DoubleMask512(false);
@@ -845,7 +844,7 @@ final class DoubleVector512 extends DoubleVector {
         @Override
         @ForceInline
         public DoubleVector512 toVector() {
-            return (DoubleVector512) toBitsVector().castShape(vspecies(), 0);
+            return (DoubleVector512) toBitsVector().castShape(VSPECIES, 0);
         }
 
         @Override
@@ -856,7 +855,7 @@ final class DoubleVector512 extends DoubleVector {
 
         @Override
         LongVector512 toBitsVector0() {
-            return ((LongVector512) vspecies().asIntegral().dummyVector()).vectorFactory(indices());
+            return ((LongVector512) VSPECIES.asIntegral().dummyVector()).vectorFactory(indices());
         }
 
         @Override
@@ -930,7 +929,7 @@ final class DoubleVector512 extends DoubleVector {
         @ForceInline
         public final DoubleMask512 laneIsValid() {
             return (DoubleMask512) toBitsVector().compare(VectorOperators.GE, 0)
-                    .cast(vspecies());
+                    .cast(VSPECIES);
         }
 
         @ForceInline
@@ -938,7 +937,7 @@ final class DoubleVector512 extends DoubleVector {
         public final DoubleShuffle512 rearrange(VectorShuffle<Double> shuffle) {
             DoubleShuffle512 concreteShuffle = (DoubleShuffle512) shuffle;
             return (DoubleShuffle512) toBitsVector().rearrange(concreteShuffle.cast(LongVector.SPECIES_512))
-                    .toShuffle(vspecies(), false);
+                    .toShuffle(VSPECIES, false);
         }
 
         @ForceInline
@@ -951,7 +950,7 @@ final class DoubleVector512 extends DoubleVector {
                 v = (LongVector512) v.blend(v.lanewise(VectorOperators.ADD, length()),
                             v.compare(VectorOperators.LT, 0));
             }
-            return (DoubleShuffle512) v.toShuffle(vspecies(), false);
+            return (DoubleShuffle512) v.toShuffle(VSPECIES, false);
         }
 
         private static long[] prepare(int[] indices, int offset) {
