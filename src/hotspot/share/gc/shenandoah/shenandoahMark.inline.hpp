@@ -78,8 +78,7 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
     if (obj->is_instance()) {
       // Case 1: Normal oop, process as usual.
       if (obj->is_stackChunk()) {
-        // Loom doesn't support mixing of weak marking and strong marking of
-        // stack chunks.
+        // Loom doesn't support mixing of weak marking and strong marking of stack chunks.
         cl->set_weak(false);
       }
 

@@ -1355,13 +1355,13 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
 
   oop copy_val = cast_to_oop(copy);
 
-  // Transform stack chunks before publishing the copy. After the forwarding CAS,
+  // Relativize stack chunks before publishing the copy. After the forwarding CAS,
   // mutators can see the copy and thaw it via the fast path if flags == 0. We must
   // relativize derived pointers and set gc_mode before that happens. Skip if the
   // copy's mark word is already a forwarding pointer (another thread won the race
   // and overwrote the original's header before we copied it).
   if (!ShenandoahForwarding::is_forwarded(copy_val)) {
-    ContinuationGCSupport::transform_stack_chunk(copy_val);
+    ContinuationGCSupport::relativize_stack_chunk(copy_val);
   }
 
   // Try to install the new forwarding pointer.
