@@ -239,7 +239,7 @@ Symbol* ClassLoader::package_from_class_name(const Symbol* name, bool* bad_class
 // This is done to make it easy to reason about the JImage file state (exists vs initialized etc.).
 
 // Opens the named JImage file and sets the JImage file reference.
-// Returns true if opening the JImage file was successful (see also jimage_exists()).
+// Returns true if opening the JImage file was successful (see also jimage_is_open()).
 static bool jimage_open(const char* modules_path) {
   // Currently 'error' is not set to anything useful, so ignore it here.
   jint error;
@@ -260,13 +260,13 @@ static void jimage_close() {
 }
 
 // Returns whether a JImage file was opened (but NOT whether it was initialized yet).
-static bool jimage_exists() {
+static bool jimage_is_open() {
   return JImage_file != nullptr;
 }
 
 // Returns the JImage file reference (which may or may not be initialized).
 static JImageFile* jimage_non_null() {
-  assert(jimage_exists(), "should have been opened by ClassLoader::lookup_vm_options "
+  assert(jimage_is_open(), "should have been opened by ClassLoader::lookup_vm_options "
                           "and remains open throughout normal JVM lifetime");
   return JImage_file;
 }
@@ -274,7 +274,7 @@ static JImageFile* jimage_non_null() {
 // Returns true if jimage_init() has been called. Once the JImage file is initialized,
 // jimage_is_preview_enabled() can be called to correctly determine the access mode.
 static bool jimage_is_initialized() {
-  return jimage_exists() && Preview_mode != PREVIEW_MODE_UNINITIALIZED;
+  return jimage_is_open() && Preview_mode != PREVIEW_MODE_UNINITIALIZED;
 }
 
 // Returns the access mode for an initialized JImage file (reflects --enable-preview).
@@ -663,7 +663,7 @@ void ClassLoader::setup_bootstrap_search_path_impl(JavaThread* current, const ch
       struct stat st;
       if (os::stat(path, &st) == 0) {
         // Directory found
-        if (jimage_exists()) {
+        if (jimage_is_open()) {
           assert(Arguments::has_jimage(), "sanity check");
           const char* canonical_path = get_canonical_path(path, current);
           assert(canonical_path != nullptr, "canonical_path issue");
@@ -1477,7 +1477,7 @@ void ClassLoader::set_preview_mode(bool enable_preview) {
 
 bool ClassLoader::is_module_observable(const char* module_name) {
   assert(JImageOpen != nullptr, "jimage library should have been opened");
-  if (!jimage_exists()) {
+  if (!jimage_is_open()) {
     struct stat st;
     const char *path = get_exploded_module_path(module_name, true);
     bool res = os::stat(path, &st) == 0;
