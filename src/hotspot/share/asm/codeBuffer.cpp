@@ -25,6 +25,7 @@
 #include "asm/codeBuffer.hpp"
 #include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
+#include "code/nmethod.hpp"
 #include "code/oopRecorder.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "logging/log.hpp"
@@ -738,6 +739,10 @@ void CodeBuffer::copy_code_to(CodeBlob* dest_blob) {
   dest_blob->set_ctable_begin(dest.consts()->start());
 
   relocate_code_to(&dest);
+
+  if (dest_blob->is_nmethod()) {
+    dest_blob->as_nmethod()->finalize_relocations();
+  }
 
   // Share assembly remarks and debug strings with the blob.
   NOT_PRODUCT(dest_blob->use_remarks(_asm_remarks));

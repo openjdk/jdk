@@ -1251,8 +1251,6 @@ void nmethod::init_defaults(CodeBuffer *code_buffer, CodeOffsets* offsets) {
 void nmethod::post_init() {
   clear_unloading_state();
 
-  finalize_relocations();
-
   Universe::heap()->register_nmethod(this);
   DEBUG_ONLY(Universe::heap()->verify_nmethod(this));
 
@@ -1524,6 +1522,9 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
 
     iter.reloc()->fix_relocation_after_move(&src, &dst);
   }
+  // Finalize relocations here because CodeBuffer::copy_code_to()
+  // is not called when nmethod is relocated.
+  finalize_relocations();
 
   {
     MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
