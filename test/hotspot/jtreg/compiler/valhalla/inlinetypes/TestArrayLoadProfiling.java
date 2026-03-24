@@ -42,52 +42,62 @@ public class TestArrayLoadProfiling {
     static MyValue2[] array2 = { new MyValue2(42) };
     static MyValue1[] array3 = (MyValue1[])ValueClass.newNullRestrictedNonAtomicArray(MyValue1.class, 1, new MyValue1(42));
     static MyValue2[] array4 = (MyValue2[])ValueClass.newNullRestrictedNonAtomicArray(MyValue2.class, 1, new MyValue2(42));
-    static Object[] array5 = { new Object() };
+    static A[] array5 = { new A() };
     
     @Test
-    public static Object test1(Object[] array) {
-        return array[0];
+    @IR(failOn = {IRNode.CALL_OF_METHOD}, count = { IRNode.IF, "3" })
+    public static void test1(I[] array) {
+        return test1Inline(array[0]);
     }
 
     @Run(test = "test1")
     public static void test1Runner() {
         test1(array1);
+        test1Inline(array2);
+        test1Inline(array3);
+        test1Inline(array4);
+        test1Inline(array5);
     }
 
-    @Test
-    public static Object test2(Object[] array) {
-        return array[0];
+    @Inline
+    void test1Inline(Interface i) {
+        i.m();
     }
 
-    @Run(test = "test2")
-    public static void test2Runner() {
-        test2(array5);
-    }
+    // @Test
+    // public static Object test2(Object[] array) {
+    //     return array[0];
+    // }
 
-    @Test
-    public static Object test3(Object[] array) {
-        return array[0];
-    }
+    // @Run(test = "test2")
+    // public static void test2Runner() {
+    //     test2(array5);
+    // }
 
-    @Run(test = "test3")
-    public static void test3Runner() {
-        test3(array1);
-        test3(array2);
-        test3(array5);
-    }
+    // @Test
+    // public static Object test3(Object[] array) {
+    //     return array[0];
+    // }
+
+    // @Run(test = "test3")
+    // public static void test3Runner() {
+    //     test3(array1);
+    //     test3(array2);
+    //     test3(array5);
+    // }
     
-    @Test
-    public static Object test4(Object[] array) {
-        return array[0];
-    }
+    // @Test
+    // public static Object test4(Object[] array) {
+    //     return array[0];
+    // }
 
-    @Run(test = "test4")
-    public static void test4Runner() {
-        test4(array1);
-        test4(array2);
-        test4(array3);
-        test4(array4);
-    }
+    // @Run(test = "test4")
+    // public static void test4Runner() {
+    //     test4(array1);
+    //     test4(array2);
+    //     test4(array3);
+    //     test4(array4);
+    // }
     
     interface I {
         void m();
@@ -111,6 +121,11 @@ public class TestArrayLoadProfiling {
             this.intField = intField;
         }
 
+        public void m() {
+        }
+    }
+
+    static class A implements I {
         public void m() {
         }
     }
