@@ -108,6 +108,8 @@ void CDSConfig::ergo_initialize() {
   }
 
   AOTMapLogger::ergo_initialize();
+
+  setup_compiler_args();
 }
 
 const char* CDSConfig::default_archive_path() {
@@ -635,8 +637,6 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
     FLAG_SET_ERGO_IF_DEFAULT(AOTClassLinking, true);
   }
 
-  setup_compiler_args();
-
   if (AOTClassLinking) {
     // If AOTClassLinking is specified, enable all AOT optimizations by default.
     FLAG_SET_ERGO_IF_DEFAULT(AOTInvokeDynamicLinking, true);
@@ -972,17 +972,27 @@ bool CDSConfig::is_loading_heap() {
 }
 
 bool CDSConfig::is_dumping_klass_subgraphs() {
-  if (is_dumping_classic_static_archive() || is_dumping_final_static_archive()) {
+  if (is_dumping_aot_linked_classes()) {
     // KlassSubGraphs (see heapShared.cpp) is a legacy mechanism for archiving oops. It
     // has been superceded by AOT class linking. This feature is used only when
     // AOT class linking is disabled.
-    //
-    // KlassSubGraphs are disabled in the preimage static archive, which contains a very
-    // limited set of oops.
-    return is_dumping_heap() && !is_dumping_aot_linked_classes();
-  } else {
     return false;
   }
+
+  if (is_dumping_preimage_static_archive()) {
+    // KlassSubGraphs are disabled in the preimage static archive, which contains a very
+    // limited set of oops.
+    return false;
+  }
+
+  if (!is_dumping_full_module_graph()) {
+    // KlassSubGraphs cannot be partially disabled. Since some of the KlassSubGraphs
+    // are used for (legacy support) of the archived full module graph, if
+    // is_dumping_full_module_graph() is calse, we must disable all KlassSubGraphs.
+    return false;
+  }
+
+  return is_dumping_heap();
 }
 
 bool CDSConfig::is_using_klass_subgraphs() {

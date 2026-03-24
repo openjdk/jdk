@@ -110,7 +110,7 @@ class PSOldGen : public CHeapObj<mtGC> {
   void shrink(size_t bytes);
 
   // Used by GC-workers during GC or for CDS at startup.
-  HeapWord* allocate(size_t word_size) {
+  HeapWord* cas_allocate_with_expansion(size_t word_size) {
     HeapWord* res;
     do {
       res = cas_allocate_noexpand(word_size);

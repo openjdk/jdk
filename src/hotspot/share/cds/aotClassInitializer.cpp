@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -234,7 +234,8 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
 }
 
 void AOTClassInitializer::call_runtime_setup(JavaThread* current, InstanceKlass* ik) {
-  assert(ik->has_aot_initialized_mirror(), "sanity");
+  precond(ik->has_aot_initialized_mirror());
+  precond(!AOTLinkedClassBulkLoader::is_initializing_classes_early());
   if (ik->is_runtime_setup_required()) {
     if (log_is_enabled(Info, aot, init)) {
       ResourceMark rm;

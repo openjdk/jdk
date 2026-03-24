@@ -2480,7 +2480,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           }
           phase->is_IterGVN()->register_new_node_with_optimizer(offset);
         }
-        return new AddPNode(base, address, offset);
+        return AddPNode::make_with_base(base, address, offset);
       }
     }
   }

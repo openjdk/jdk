@@ -1306,9 +1306,7 @@ nmethod::nmethod(
     _deopt_handler_entry_offset    = 0;
     _unwind_handler_offset   = 0;
 
-    CHECKED_CAST(_oops_size, uint16_t, align_up(code_buffer->total_oop_size(), oopSize));
-    uint16_t metadata_size;
-    CHECKED_CAST(metadata_size, uint16_t, align_up(code_buffer->total_metadata_size(), wordSize));
+    int metadata_size = align_up(code_buffer->total_metadata_size(), wordSize);
     JVMCI_ONLY( _metadata_size = metadata_size; )
     assert(_mutable_data_size == _relocation_size + metadata_size,
            "wrong mutable data size: %d != %d + %d",
@@ -1446,7 +1444,6 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
   _deopt_handler_entry_offset   = nm._deopt_handler_entry_offset;
   _unwind_handler_offset        = nm._unwind_handler_offset;
   _num_stack_arg_slots          = nm._num_stack_arg_slots;
-  _oops_size                    = nm._oops_size;
 #if INCLUDE_JVMCI
   _metadata_size                = nm._metadata_size;
 #endif
@@ -1749,9 +1746,7 @@ nmethod::nmethod(
       _unwind_handler_offset = -1;
     }
 
-    CHECKED_CAST(_oops_size, uint16_t, align_up(code_buffer->total_oop_size(), oopSize));
-    uint16_t metadata_size;
-    CHECKED_CAST(metadata_size, uint16_t, align_up(code_buffer->total_metadata_size(), wordSize));
+    int metadata_size = align_up(code_buffer->total_metadata_size(), wordSize);
     JVMCI_ONLY( _metadata_size = metadata_size; )
     int jvmci_data_size = 0 JVMCI_ONLY( + align_up(compiler->is_jvmci() ? jvmci_data->size() : 0, oopSize));
     assert(_mutable_data_size == _relocation_size + metadata_size + jvmci_data_size,
