@@ -57,7 +57,6 @@ void ThreadSampler::sample_all_java_threads() {
         if (created) {
           _samples.maybe_grow();
         }
-        nm->mark_as_maybe_on_stack();
       }
     }
   }
