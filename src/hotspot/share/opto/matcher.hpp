@@ -429,10 +429,6 @@ public:
   // Register for MODL projection of divmodL
   static const RegMask& modL_proj_mask();
 
-  // Use hardware DIV instruction when it is faster than
-  // a code which use multiply for division by constant.
-  static bool use_asm_for_ldiv_by_con( jlong divisor );
-
   // Java-Interpreter calling convention
   // (what you use when calling between compiled-Java and Interpreted-Java
 

@@ -152,7 +152,6 @@ public:
     _early_c1_complete(false),
     _complete(false)
   { }
-  ~AOTCodeAddressTable();
   void init_extrs();
   void init_early_stubs();
   void init_shared_blobs();
@@ -260,7 +259,6 @@ private:
   uint   _store_size;      // Used when writing cache
   bool   _for_use;         // AOT cache is open for using AOT code
   bool   _for_dump;        // AOT cache is open for dumping AOT code
-  bool   _closing;         // Closing cache file
   bool   _failed;          // Failed read/write to/from cache (cache is broken?)
   bool   _lookup_failed;   // Failed to lookup for info (skip only this code load)
 
@@ -290,7 +288,6 @@ private:
 
 public:
   AOTCodeCache(bool is_dumping, bool is_using);
-  ~AOTCodeCache();
 
   const char* cache_buffer() const { return _load_buffer; }
   bool failed() const { return _failed; }
@@ -313,8 +310,6 @@ public:
 
   bool for_use()  const { return _for_use  && !_failed; }
   bool for_dump() const { return _for_dump && !_failed; }
-
-  bool closing()          const { return _closing; }
 
   AOTCodeEntry* add_entry() {
     _store_entries_cnt++;
@@ -375,8 +370,8 @@ public:
   static AOTCodeCache* cache() { assert(_passed_init2, "Too early to ask"); return _cache; }
   static void initialize() NOT_CDS_RETURN;
   static void init2() NOT_CDS_RETURN;
-  static void close() NOT_CDS_RETURN;
-  static bool is_on() CDS_ONLY({ return cache() != nullptr && !_cache->closing(); }) NOT_CDS_RETURN_(false);
+  static void dump() NOT_CDS_RETURN;
+  static bool is_on() CDS_ONLY({ return cache() != nullptr; }) NOT_CDS_RETURN_(false);
   static bool is_on_for_use()  CDS_ONLY({ return is_on() && _cache->for_use(); }) NOT_CDS_RETURN_(false);
   static bool is_on_for_dump() CDS_ONLY({ return is_on() && _cache->for_dump(); }) NOT_CDS_RETURN_(false);
   static bool is_dumping_stub() NOT_CDS_RETURN_(false);

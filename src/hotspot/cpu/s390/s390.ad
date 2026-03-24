@@ -1929,10 +1929,6 @@ uint Matcher::float_pressure_limit()
   return (FLOATPRESSURE == -1) ? 15 : FLOATPRESSURE;
 }
 
-bool Matcher::use_asm_for_ldiv_by_con(jlong divisor) {
-  return false;
-}
-
 // Register for DIVI projection of divmodI
 const RegMask& Matcher::divI_proj_mask() {
   return _Z_RARG4_INT_REG_mask;
@@ -5239,6 +5235,15 @@ instruct membar_release_lock() %{
   ins_pipe(pipe_class_dummy);
 %}
 
+instruct membar_storeload() %{
+  match(MemBarStoreLoad);
+  ins_cost(4 * MEMORY_REF_COST);
+  size(2);
+  format %{ "MEMBAR-storeload" %}
+  ins_encode %{ __ z_fence(); %}
+  ins_pipe(pipe_class_dummy);
+%}
+
 instruct membar_volatile() %{
   match(MemBarVolatile);
   ins_cost(4 * MEMORY_REF_COST);
@@ -5255,6 +5260,15 @@ instruct unnecessary_membar_volatile() %{
   size(0);
   format %{ "# MEMBAR-volatile (empty)" %}
   ins_encode(/*empty*/);
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct membar_full() %{
+  match(MemBarFull);
+  ins_cost(4 * MEMORY_REF_COST);
+  size(2);
+  format %{ "MEMBAR-full" %}
+  ins_encode %{ __ z_fence(); %}
   ins_pipe(pipe_class_dummy);
 %}
 

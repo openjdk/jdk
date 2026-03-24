@@ -28,7 +28,6 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectionSetCandidates.inline.hpp"
-#include "gc/g1/g1CollectionSetChooser.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
@@ -177,7 +176,7 @@ uint G1Policy::calculate_desired_eden_length_by_mmu() const {
 
 void G1Policy::update_young_length_bounds() {
   assert(!Universe::is_fully_initialized() || SafepointSynchronize::is_at_safepoint(), "must be");
-  bool for_young_only_phase = collector_state()->in_young_only_phase();
+  bool for_young_only_phase = collector_state()->is_in_young_only_phase();
   update_young_length_bounds(_analytics->predict_pending_cards(for_young_only_phase),
                              _analytics->predict_card_rs_length(for_young_only_phase),
                              _analytics->predict_code_root_rs_length(for_young_only_phase));
@@ -505,7 +504,7 @@ uint G1Policy::calculate_desired_eden_length_before_mixed(double base_time_ms,
 double G1Policy::predict_survivor_regions_evac_time() const {
   double survivor_regions_evac_time = predict_young_region_other_time_ms(_g1h->survivor()->length());
   for (G1HeapRegion* r : _g1h->survivor()->regions()) {
-    survivor_regions_evac_time += predict_region_copy_time_ms(r, _g1h->collector_state()->in_young_only_phase());
+    survivor_regions_evac_time += predict_region_copy_time_ms(r, _g1h->collector_state()->is_in_young_only_phase());
   }
 
   return survivor_regions_evac_time;
@@ -561,8 +560,7 @@ void G1Policy::revise_young_list_target_length(size_t pending_cards, size_t card
 void G1Policy::record_full_collection_start() {
   record_pause_start_time();
   // Release the future to-space so that it is available for compaction into.
-  collector_state()->set_in_young_only_phase(false);
-  collector_state()->set_in_full_gc(true);
+  collector_state()->set_in_full_gc();
   _collection_set->abandon_all_candidates();
 }
 
@@ -571,17 +569,10 @@ void G1Policy::record_full_collection_end(size_t allocation_word_size) {
   // since last pause.
   double end_sec = os::elapsedTime();
 
-  collector_state()->set_in_full_gc(false);
-
   // "Nuke" the heuristics that control the young/mixed GC
   // transitions and make sure we start with young GCs after the Full GC.
-  collector_state()->set_in_young_only_phase(true);
-  collector_state()->set_in_young_gc_before_mixed(false);
+  collector_state()->set_in_normal_young_gc();
   collector_state()->set_initiate_conc_mark_if_possible(need_to_start_conc_mark("end of Full GC", allocation_word_size));
-  collector_state()->set_in_concurrent_start_gc(false);
-  collector_state()->set_mark_in_progress(false);
-  collector_state()->set_mark_or_rebuild_in_progress(false);
-  collector_state()->set_clear_bitmap_in_progress(false);
 
   _eden_surv_rate_group->start_adding_regions();
   // also call this on any additional surv rate groups
@@ -593,7 +584,7 @@ void G1Policy::record_full_collection_end(size_t allocation_word_size) {
   _old_gen_alloc_tracker.reset_after_gc(_g1h->humongous_regions_count() * G1HeapRegion::GrainBytes);
 
   double start_time_sec = cur_pause_start_sec();
-  record_pause(G1GCPauseType::FullGC, start_time_sec, end_sec);
+  record_pause(Pause::Full, start_time_sec, end_sec);
 }
 
 static void log_refinement_stats(const G1ConcurrentRefineStats& stats) {
@@ -700,7 +691,7 @@ void G1Policy::record_young_collection_start() {
 
 void G1Policy::record_concurrent_mark_init_end() {
   assert(!collector_state()->initiate_conc_mark_if_possible(), "we should have cleared it by now");
-  collector_state()->set_in_concurrent_start_gc(false);
+  collector_state()->set_in_normal_young_gc();
 }
 
 void G1Policy::record_concurrent_mark_remark_end() {
@@ -708,8 +699,7 @@ void G1Policy::record_concurrent_mark_remark_end() {
   double start_time_sec = cur_pause_start_sec();
   double elapsed_time_ms = (end_time_sec - start_time_sec) * 1000.0;
   _analytics->report_concurrent_mark_remark_times_ms(elapsed_time_ms);
-  record_pause(G1GCPauseType::Remark, start_time_sec, end_time_sec);
-  collector_state()->set_mark_in_progress(false);
+  record_pause(Pause::Remark, start_time_sec, end_time_sec);
 }
 
 G1CollectionSetCandidates* G1Policy::candidates() const {
@@ -739,7 +729,7 @@ double G1Policy::constant_other_time_ms(double pause_time_ms) const {
 }
 
 bool G1Policy::about_to_start_mixed_phase() const {
-  return _g1h->concurrent_mark()->in_progress() || collector_state()->in_young_gc_before_mixed();
+  return collector_state()->is_in_concurrent_cycle() || collector_state()->is_in_young_gc_before_mixed();
 }
 
 bool G1Policy::need_to_start_conc_mark(const char* source, size_t allocation_word_size) {
@@ -752,7 +742,7 @@ bool G1Policy::need_to_start_conc_mark(const char* source, size_t allocation_wor
 
   bool result = false;
   if (non_young_occupancy > marking_initiating_used_threshold) {
-    result = collector_state()->in_young_only_phase();
+    result = collector_state()->is_in_young_only_phase();
     log_debug(gc, ergo, ihop)("%s non-young occupancy: %zuB allocation request: %zuB threshold: %zuB (%1.2f) source: %s",
                               result ? "Request concurrent cycle initiation (occupancy higher than threshold)" : "Do not request concurrent cycle initiation (still doing mixed collections)",
                               non_young_occupancy, allocation_word_size * HeapWordSize, marking_initiating_used_threshold, (double) marking_initiating_used_threshold / _g1h->capacity() * 100, source);
@@ -761,7 +751,7 @@ bool G1Policy::need_to_start_conc_mark(const char* source, size_t allocation_wor
 }
 
 bool G1Policy::concurrent_operation_is_full_mark(const char* msg, size_t allocation_word_size) {
-  return collector_state()->in_concurrent_start_gc() &&
+  return collector_state()->is_in_concurrent_start_gc() &&
     ((_g1h->gc_cause() != GCCause::_g1_humongous_allocation) || need_to_start_conc_mark(msg, allocation_word_size));
 }
 
@@ -800,10 +790,10 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
   double end_time_sec = Ticks::now().seconds();
   double pause_time_ms = (end_time_sec - start_time_sec) * 1000.0;
 
-  G1GCPauseType this_pause = collector_state()->young_gc_pause_type(concurrent_operation_is_full_mark);
-  bool is_young_only_pause = G1GCPauseTypeHelper::is_young_only_pause(this_pause);
+  Pause this_pause = collector_state()->gc_pause_type(concurrent_operation_is_full_mark);
+  bool is_young_only_pause = G1CollectorState::is_young_only_pause(this_pause);
 
-  if (G1GCPauseTypeHelper::is_concurrent_start_pause(this_pause)) {
+  if (G1CollectorState::is_concurrent_start_pause(this_pause)) {
     record_concurrent_mark_init_end();
   } else {
     maybe_start_marking(allocation_word_size);
@@ -945,20 +935,19 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
 
   record_pause(this_pause, start_time_sec, end_time_sec);
 
-  if (G1GCPauseTypeHelper::is_last_young_pause(this_pause)) {
-    assert(!G1GCPauseTypeHelper::is_concurrent_start_pause(this_pause),
+  if (G1CollectorState::is_last_young_pause(this_pause)) {
+    assert(!G1CollectorState::is_concurrent_start_pause(this_pause),
            "The young GC before mixed is not allowed to be concurrent start GC");
     // This has been the young GC before we start doing mixed GCs. We already
     // decided to start mixed GCs much earlier, so there is nothing to do except
     // advancing the state.
-    collector_state()->set_in_young_only_phase(false);
-    collector_state()->set_in_young_gc_before_mixed(false);
-  } else if (G1GCPauseTypeHelper::is_mixed_pause(this_pause)) {
+    collector_state()->set_in_space_reclamation_phase();
+  } else if (G1CollectorState::is_mixed_pause(this_pause)) {
     // This is a mixed GC. Here we decide whether to continue doing more
     // mixed GCs or not.
     if (!next_gc_should_be_mixed()) {
       log_debug(gc, ergo)("do not continue mixed GCs (candidate old regions not available)");
-      collector_state()->set_in_young_only_phase(true);
+      collector_state()->set_in_normal_young_gc();
 
       assert(!candidates()->has_more_marking_candidates(),
              "only end mixed if all candidates from marking were processed");
@@ -971,12 +960,8 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
 
   _eden_surv_rate_group->start_adding_regions();
 
-  assert(!(G1GCPauseTypeHelper::is_concurrent_start_pause(this_pause) && collector_state()->mark_or_rebuild_in_progress()),
-         "If the last pause has been concurrent start, we should not have been in the marking window");
-  if (G1GCPauseTypeHelper::is_concurrent_start_pause(this_pause)) {
-    collector_state()->set_mark_in_progress(concurrent_operation_is_full_mark);
-    collector_state()->set_mark_or_rebuild_in_progress(concurrent_operation_is_full_mark);
-  }
+  assert(!(G1CollectorState::is_concurrent_start_pause(this_pause) && collector_state()->is_in_concurrent_cycle()),
+         "If the last pause has been concurrent start, we should not have been in the marking cycle");
 
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
 
@@ -987,7 +972,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
 
     _old_gen_alloc_tracker.reset_after_gc(_g1h->humongous_regions_count() * G1HeapRegion::GrainBytes);
     if (update_ihop_prediction(app_time_ms / 1000.0,
-                               G1GCPauseTypeHelper::is_young_only_pause(this_pause))) {
+                               G1CollectorState::is_young_only_pause(this_pause))) {
       _ihop_control->report_statistics(_g1h->gc_tracer_stw(), _g1h->non_young_occupancy_after_allocation(allocation_word_size));
     }
   } else {
@@ -1081,7 +1066,7 @@ void G1Policy::record_young_gc_pause_end(bool evacuation_failed) {
 double G1Policy::predict_base_time_ms(size_t pending_cards,
                                       size_t card_rs_length,
                                       size_t code_root_rs_length) const {
-  bool in_young_only_phase = collector_state()->in_young_only_phase();
+  bool in_young_only_phase = collector_state()->is_in_young_only_phase();
 
   // Cards from the refinement table and the cards from the young gen remset are
   // unique to each other as they are located on the card table.
@@ -1105,7 +1090,7 @@ double G1Policy::predict_base_time_ms(size_t pending_cards,
 }
 
 double G1Policy::predict_base_time_ms(size_t pending_cards, size_t card_rs_length) const {
-  bool for_young_only_phase = collector_state()->in_young_only_phase();
+  bool for_young_only_phase = collector_state()->is_in_young_only_phase();
   size_t code_root_rs_length = _analytics->predict_code_root_rs_length(for_young_only_phase);
   return predict_base_time_ms(pending_cards, card_rs_length, code_root_rs_length);
 }
@@ -1145,7 +1130,7 @@ double G1Policy::predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy) co
   if (bytes_to_copy != nullptr) {
     *bytes_to_copy = expected_bytes;
   }
-  return _analytics->predict_object_copy_time_ms(expected_bytes, collector_state()->in_young_only_phase());
+  return _analytics->predict_object_copy_time_ms(expected_bytes, collector_state()->is_in_young_only_phase());
 }
 
 double G1Policy::predict_region_copy_time_ms(G1HeapRegion* hr, bool for_young_only_phase) const {
@@ -1235,7 +1220,7 @@ bool G1Policy::force_concurrent_start_if_outside_cycle(GCCause::Cause gc_cause) 
   // We actually check whether we are marking here and not if we are in a
   // reclamation phase. This means that we will schedule a concurrent mark
   // even while we are still in the process of reclaiming memory.
-  bool during_cycle = _g1h->concurrent_mark()->in_progress();
+  bool during_cycle = collector_state()->is_in_concurrent_cycle();
   if (!during_cycle) {
     log_debug(gc, ergo)("Request concurrent cycle initiation (requested by GC cause). "
                         "GC cause: %s",
@@ -1251,8 +1236,7 @@ bool G1Policy::force_concurrent_start_if_outside_cycle(GCCause::Cause gc_cause) 
 }
 
 void G1Policy::initiate_conc_mark() {
-  collector_state()->set_in_concurrent_start_gc(true);
-  collector_state()->set_initiate_conc_mark_if_possible(false);
+  collector_state()->set_in_concurrent_start_gc();
 }
 
 static const char* requester_for_mixed_abort(GCCause::Cause cause) {
@@ -1274,7 +1258,7 @@ void G1Policy::decide_on_concurrent_start_pause() {
   // will set it here if we have to. However, it should be cleared by
   // the end of the pause (it's only set for the duration of a
   // concurrent start pause).
-  assert(!collector_state()->in_concurrent_start_gc(), "pre-condition");
+  assert(!collector_state()->is_in_concurrent_start_gc(), "pre-condition");
 
   if (collector_state()->initiate_conc_mark_if_possible()) {
     // We had noticed on a previous pause that the heap occupancy has
@@ -1287,7 +1271,7 @@ void G1Policy::decide_on_concurrent_start_pause() {
     if ((cause != GCCause::_wb_breakpoint) &&
         ConcurrentGCBreakpoints::is_controlled()) {
       log_debug(gc, ergo)("Do not initiate concurrent cycle (whitebox controlled)");
-    } else if (!about_to_start_mixed_phase() && collector_state()->in_young_only_phase()) {
+    } else if (!about_to_start_mixed_phase() && collector_state()->is_in_young_only_phase()) {
       // Initiate a new concurrent start if there is no marking or reclamation going on.
       initiate_conc_mark();
       log_debug(gc, ergo)("Initiate concurrent cycle (concurrent cycle initiation requested)");
@@ -1296,8 +1280,7 @@ void G1Policy::decide_on_concurrent_start_pause() {
                (cause == GCCause::_wb_breakpoint)) {
       // Initiate a concurrent start.  A concurrent start must be a young only
       // GC, so the collector state must be updated to reflect this.
-      collector_state()->set_in_young_only_phase(true);
-      collector_state()->set_in_young_gc_before_mixed(false);
+      collector_state()->set_in_normal_young_gc();
 
       // We might have ended up coming here about to start a mixed phase with a collection set
       // active. The following remark might change the change the "evacuation efficiency" of
@@ -1326,10 +1309,10 @@ void G1Policy::decide_on_concurrent_start_pause() {
   }
   // Result consistency checks.
   // We do not allow concurrent start to be piggy-backed on a mixed GC.
-  assert(!collector_state()->in_concurrent_start_gc() ||
-         collector_state()->in_young_only_phase(), "sanity");
-  // We also do not allow mixed GCs during marking.
-  assert(!collector_state()->mark_or_rebuild_in_progress() || collector_state()->in_young_only_phase(), "sanity");
+  assert(!collector_state()->is_in_concurrent_start_gc() ||
+         collector_state()->is_in_young_only_phase(), "sanity");
+  // We also do not allow mixed GCs during marking/rebuilding.
+  assert(!collector_state()->is_in_mark_or_rebuild() || collector_state()->is_in_young_only_phase(), "sanity %d %d", collector_state()->is_in_concurrent_cycle(), collector_state()->is_in_young_only_phase());
 }
 
 void G1Policy::record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_sets) {
@@ -1348,16 +1331,16 @@ void G1Policy::record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_se
     abort_time_to_mixed_tracking();
     log_debug(gc, ergo)("request young-only gcs (candidate old regions not available)");
   }
-  collector_state()->set_in_young_gc_before_mixed(mixed_gc_pending);
-  collector_state()->set_mark_or_rebuild_in_progress(false);
-  collector_state()->set_clear_bitmap_in_progress(true);
+  if (mixed_gc_pending) {
+    collector_state()->set_in_young_gc_before_mixed();
+  }
 
   double end_sec = os::elapsedTime();
   double start_sec = cur_pause_start_sec();
   double elapsed_time_ms = (end_sec - start_sec) * 1000.0;
   _analytics->report_concurrent_mark_cleanup_times_ms(elapsed_time_ms);
 
-  record_pause(G1GCPauseType::Cleanup, start_sec, end_sec);
+  record_pause(Pause::Cleanup, start_sec, end_sec);
 }
 
 void G1Policy::abandon_collection_set_candidates() {
@@ -1373,25 +1356,25 @@ void G1Policy::maybe_start_marking(size_t allocation_word_size) {
   }
 }
 
-void G1Policy::update_gc_pause_time_ratios(G1GCPauseType gc_type, double start_time_sec, double end_time_sec) {
+void G1Policy::update_gc_pause_time_ratios(Pause gc_type, double start_time_sec, double end_time_sec) {
 
   double pause_time_sec = end_time_sec - start_time_sec;
   double pause_time_ms = pause_time_sec * 1000.0;
 
   _analytics->update_gc_time_ratios(end_time_sec, pause_time_ms);
 
-  if (gc_type == G1GCPauseType::Cleanup || gc_type == G1GCPauseType::Remark) {
+  if (G1CollectorState::is_concurrent_cycle_pause(gc_type)) {
     _analytics->append_prev_collection_pause_end_ms(pause_time_ms);
   } else {
     _analytics->set_prev_collection_pause_end_ms(end_time_sec * 1000.0);
   }
 }
 
-void G1Policy::record_pause(G1GCPauseType gc_type,
+void G1Policy::record_pause(Pause gc_type,
                             double start,
                             double end) {
   // Manage the MMU tracker. For some reason it ignores Full GCs.
-  if (gc_type != G1GCPauseType::FullGC) {
+  if (gc_type != Pause::Full) {
     _mmu_tracker->add_pause(start, end);
   }
 
@@ -1403,21 +1386,21 @@ void G1Policy::record_pause(G1GCPauseType gc_type,
   _analytics->set_gc_cpu_time_at_pause_end_ms(elapsed_gc_cpu_time);
 }
 
-void G1Policy::update_time_to_mixed_tracking(G1GCPauseType gc_type,
+void G1Policy::update_time_to_mixed_tracking(Pause gc_type,
                                              double start,
                                              double end) {
   // Manage the mutator time tracking from concurrent start to first mixed gc.
   switch (gc_type) {
-    case G1GCPauseType::FullGC:
+    case Pause::Full:
       abort_time_to_mixed_tracking();
       break;
-    case G1GCPauseType::Cleanup:
-    case G1GCPauseType::Remark:
-    case G1GCPauseType::YoungGC:
-    case G1GCPauseType::LastYoungGC:
+    case Pause::Cleanup:
+    case Pause::Remark:
+    case Pause::Normal:
+    case Pause::LastYoung:
       _concurrent_start_to_mixed.add_pause(end - start);
       break;
-    case G1GCPauseType::ConcurrentStartMarkGC:
+    case Pause::ConcurrentStartFull:
       // Do not track time-to-mixed time for periodic collections as they are likely
       // to be not representative to regular operation as the mutators are idle at
       // that time. Also only track full concurrent mark cycles.
@@ -1425,12 +1408,12 @@ void G1Policy::update_time_to_mixed_tracking(G1GCPauseType gc_type,
         _concurrent_start_to_mixed.record_concurrent_start_end(end);
       }
       break;
-    case G1GCPauseType::ConcurrentStartUndoGC:
+    case Pause::ConcurrentStartUndo:
       assert(_g1h->gc_cause() == GCCause::_g1_humongous_allocation,
              "GC cause must be humongous allocation but is %d",
              _g1h->gc_cause());
       break;
-    case G1GCPauseType::MixedGC:
+    case Pause::Mixed:
       _concurrent_start_to_mixed.record_mixed_gc_start(start);
       break;
     default:
