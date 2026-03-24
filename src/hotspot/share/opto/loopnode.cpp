@@ -2077,6 +2077,7 @@ bool PhaseIdealLoop::try_convert_to_counted_loop(Node* head, IdealLoopTree*& loo
       return false;
     }
 #endif
+
     loop = converter.convert();
     return true;
   }
