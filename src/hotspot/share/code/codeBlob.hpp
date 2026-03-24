@@ -487,10 +487,17 @@ class RuntimeStub: public RuntimeBlob {
 
   address entry_point() const         { return code_begin(); }
 
+  void post_restore_impl() {
+    trace_new_stub(this, "RuntimeStub - ", name());
+  }
+
   void print_on_impl(outputStream* st) const;
   void print_value_on_impl(outputStream* st) const;
 
   class Vptr : public RuntimeBlob::Vptr {
+    void post_restore(CodeBlob* instance) const override {
+      instance->as_runtime_stub()->post_restore_impl();
+    }
     void print_on(const CodeBlob* instance, outputStream* st) const override {
       instance->as_runtime_stub()->print_on_impl(st);
     }
@@ -606,19 +613,27 @@ class DeoptimizationBlob: public SingletonBlob {
     _uncommon_trap_offset = offset;
     assert(contains(code_begin() + _uncommon_trap_offset), "must be PC inside codeblob");
   }
-  address uncommon_trap() const                  { return code_begin() + _uncommon_trap_offset; }
+  address uncommon_trap() const                  { return (EnableJVMCI ? code_begin() + _uncommon_trap_offset : nullptr); }
 
   void set_implicit_exception_uncommon_trap_offset(int offset) {
     _implicit_exception_uncommon_trap_offset = offset;
     assert(contains(code_begin() + _implicit_exception_uncommon_trap_offset), "must be PC inside codeblob");
   }
-  address implicit_exception_uncommon_trap() const { return code_begin() + _implicit_exception_uncommon_trap_offset; }
+  address implicit_exception_uncommon_trap() const { return (EnableJVMCI ? code_begin() + _implicit_exception_uncommon_trap_offset : nullptr); }
 #endif // INCLUDE_JVMCI
+
+  void post_restore_impl() {
+    trace_new_stub(this, "DeoptimizationBlob");
+  }
 
   void print_value_on_impl(outputStream* st) const;
 
   class Vptr : public SingletonBlob::Vptr {
-    void print_value_on(const CodeBlob* instance, outputStream* st) const override {
+    void post_restore(CodeBlob* instance) const override {
+      ((DeoptimizationBlob*)instance)->post_restore_impl();
+    }
+
+   void print_value_on(const CodeBlob* instance, outputStream* st) const override {
       ((const DeoptimizationBlob*)instance)->print_value_on_impl(st);
     }
   };
@@ -649,6 +664,16 @@ class UncommonTrapBlob: public SingletonBlob {
     OopMapSet*  oop_maps,
     int         frame_size
   );
+  void post_restore_impl() {
+    trace_new_stub(this, "UncommonTrapBlob");
+  }
+  class Vptr : public SingletonBlob::Vptr {
+    void post_restore(CodeBlob* instance) const override {
+      ((UncommonTrapBlob*)instance)->post_restore_impl();
+    }
+  };
+
+  static const Vptr _vpntr;
 };
 
 
@@ -709,6 +734,17 @@ class SafepointBlob: public SingletonBlob {
     OopMapSet*  oop_maps,
     int         frame_size
   );
+
+  void post_restore_impl() {
+    trace_new_stub(this, "SafepointBlob - ", name());
+  }
+  class Vptr : public SingletonBlob::Vptr {
+    void post_restore(CodeBlob* instance) const override {
+      ((SafepointBlob*)instance)->post_restore_impl();
+    }
+  };
+
+  static const Vptr _vpntr;
 };
 
 //----------------------------------------------------------------------------------------------------

@@ -77,8 +77,10 @@ const BufferBlob::Vptr               BufferBlob::_vpntr;
 const RuntimeStub::Vptr              RuntimeStub::_vpntr;
 const SingletonBlob::Vptr            SingletonBlob::_vpntr;
 const DeoptimizationBlob::Vptr       DeoptimizationBlob::_vpntr;
+const SafepointBlob::Vptr            SafepointBlob::_vpntr;
 #ifdef COMPILER2
 const ExceptionBlob::Vptr            ExceptionBlob::_vpntr;
+const UncommonTrapBlob::Vptr         UncommonTrapBlob::_vpntr;
 #endif // COMPILER2
 const UpcallStub::Vptr               UpcallStub::_vpntr;
 
@@ -741,7 +743,7 @@ SafepointBlob::SafepointBlob(
   OopMapSet*  oop_maps,
   int         frame_size
 )
-: SingletonBlob("SafepointBlob", CodeBlobKind::Safepoint, cb,
+  : SingletonBlob(cb->name(), CodeBlobKind::Safepoint, cb,
                 size, sizeof(SafepointBlob), frame_size, oop_maps)
 {}
 
@@ -759,7 +761,7 @@ SafepointBlob* SafepointBlob::create(
     blob = new (size) SafepointBlob(cb, size, oop_maps, frame_size);
   }
 
-  trace_new_stub(blob, "SafepointBlob");
+  trace_new_stub(blob, "SafepointBlob - ", blob->name());
 
   return blob;
 }
