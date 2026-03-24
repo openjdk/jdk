@@ -27,9 +27,8 @@ public super class JsrLogging version 49:0
     static Field i:I;
 
     public static Method test:"()V"
-    stack 1 locals 1
+    stack 3 locals 1
     {
-        return;
         nop;
         jsr LABEL;
         bipush            66;
