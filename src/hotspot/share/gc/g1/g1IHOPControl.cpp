@@ -88,8 +88,8 @@ G1IHOPControl::G1IHOPControl(double ihop_percent,
 }
 
 void G1IHOPControl::update_target_occupancy(size_t new_target_occupancy) {
-  log_debug(gc, ihop)("Target occupancy update: old: %zuMB, new: %zuMB",
-                      _target_occupancy / M, new_target_occupancy / M);
+  log_debug(gc, ihop)("Target occupancy update: old: %zuB, new: %zuB",
+                      _target_occupancy, new_target_occupancy);
   _target_occupancy = new_target_occupancy;
 }
 
@@ -150,14 +150,14 @@ size_t G1IHOPControl::old_gen_threshold_for_conc_mark_start() {
 void G1IHOPControl::print_log(size_t non_young_occupancy) {
   assert(_target_occupancy > 0, "Target occupancy still not updated yet.");
   size_t old_gen_mark_start_threshold = old_gen_threshold_for_conc_mark_start();
-  log_debug(gc, ihop)("Basic information (value update), old-gen threshold: %zuMB (%1.2f%%), target occupancy: %zuMB, old-gen occupancy: %zu%sB (%1.2f%%), "
-                      "recent old-gen allocation size: %zu%sB, recent allocation duration: %1.2fms, recent old-gen allocation rate: %1.2fB/s, recent marking phase length: %1.2fms",
-                      old_gen_mark_start_threshold / M,
+  log_debug(gc, ihop)("Basic information (value update), old-gen threshold: %zuB (%1.2f%%), target occupancy: %zuB, old-gen occupancy: %zuB (%1.2f%%), "
+                      "recent old-gen allocation size: %zuB, recent allocation duration: %1.2fms, recent old-gen allocation rate: %1.2fB/s, recent marking phase length: %1.2fms",
+                      old_gen_mark_start_threshold,
                       percent_of(old_gen_mark_start_threshold, _target_occupancy),
-                      _target_occupancy / M,
-                      byte_size_in_proper_unit(non_young_occupancy), proper_unit_for_byte_size(non_young_occupancy),
+                      _target_occupancy,
+                      non_young_occupancy,
                       percent_of(non_young_occupancy, _target_occupancy),
-                      byte_size_in_proper_unit(_old_gen_alloc_tracker->last_period_old_gen_bytes()), proper_unit_for_byte_size(_old_gen_alloc_tracker->last_period_old_gen_bytes()),
+                      _old_gen_alloc_tracker->last_period_old_gen_bytes(),
                       _last_allocation_time_s * 1000.0,
                       _last_allocation_time_s > 0.0 ? _old_gen_alloc_tracker->last_period_old_gen_bytes() / _last_allocation_time_s : 0.0,
                       last_marking_length_s() * 1000.0);
@@ -167,15 +167,15 @@ void G1IHOPControl::print_log(size_t non_young_occupancy) {
   }
 
   size_t effective_threshold = effective_target_occupancy();
-  log_debug(gc, ihop)("Adaptive IHOP information (value update), prediction active: %s, old-gen threshold: %zuMB (%1.2f%%), internal target occupancy: %zuMB, "
-                      "old-gen occupancy: %zu%sB, additional buffer size: %zuMB, predicted old-gen allocation rate: %1.2fB/s, "
+  log_debug(gc, ihop)("Adaptive IHOP information (value update), prediction active: %s, old-gen threshold: %zuB (%1.2f%%), internal target occupancy: %zuB, "
+                      "old-gen occupancy: %zuB, additional buffer size: %zuB, predicted old-gen allocation rate: %1.2fB/s, "
                       "predicted marking phase length: %1.2fms",
                       BOOL_TO_STR(have_enough_data_for_prediction()),
-                      old_gen_mark_start_threshold / M,
+                      old_gen_mark_start_threshold,
                       percent_of(old_gen_mark_start_threshold, effective_threshold),
-                      effective_threshold / M,
-                      byte_size_in_proper_unit(non_young_occupancy), proper_unit_for_byte_size(non_young_occupancy),
-                      _expected_young_gen_at_first_mixed_gc / M,
+                      effective_threshold,
+                      non_young_occupancy,
+                      _expected_young_gen_at_first_mixed_gc,
                       predict(&_old_gen_alloc_rate_s),
                       predict(&_marking_times_s) * 1000.0);
 }

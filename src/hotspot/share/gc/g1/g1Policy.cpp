@@ -694,9 +694,9 @@ void G1Policy::record_young_collection_start() {
     // Check validity of our occupancy predictions
     size_t current_used = _g1h->used();
     size_t target_used_at_end_of_marking = _ihop_control->target_occupancy();
-    log_debug(gc, ihop) ("Basic IHOP Information (check prediction), current used: %zuMB, target used %zuMB, missed the target: %s",
-                         current_used / M,
-                         target_used_at_end_of_marking / M,
+    log_debug(gc, ihop) ("Basic IHOP Information (check prediction), current used: %zuB, target used %zuB, missed the target: %s",
+                         current_used,
+                         target_used_at_end_of_marking,
                          BOOL_TO_STR(current_used > target_used_at_end_of_marking));
     // Capacity may have changed during marking. Update the ihop target.
     if (target_used_at_end_of_marking != _g1h->capacity()) {
@@ -761,9 +761,9 @@ bool G1Policy::need_to_start_conc_mark(const char* source, size_t allocation_wor
   bool result = false;
   if (non_young_occupancy > marking_initiating_old_gen_threshold) {
     result = collector_state()->is_in_young_only_phase();
-    log_debug(gc, ergo, ihop)("%s non-young occupancy: %zuMB allocation request: %zuMB threshold: %zuMB (%1.2f) source: %s",
+    log_debug(gc, ergo, ihop)("%s non-young occupancy: %zuB allocation request: %zuB threshold: %zuB (%1.2f) source: %s",
                               result ? "Request concurrent cycle initiation (occupancy higher than threshold)" : "Do not request concurrent cycle initiation (still doing mixed collections)",
-                              non_young_occupancy / M, allocation_word_size * HeapWordSize / M, marking_initiating_old_gen_threshold / M, (double) marking_initiating_old_gen_threshold / _g1h->capacity() * 100, source);
+                              non_young_occupancy, allocation_word_size * HeapWordSize, marking_initiating_old_gen_threshold, (double) marking_initiating_old_gen_threshold / _g1h->capacity() * 100, source);
   }
   return result;
 }
