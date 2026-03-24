@@ -40,7 +40,9 @@ import jdk.test.lib.json.JSONValue;
 /**
  * Represents a thread dump that is obtained by parsing JSON text. A thread dump in JSON
  * format is generated with the {@code com.sun.management.HotSpotDiagnosticMXBean} API or
- * using {@code jcmd <pid> Thread.dump_to_file -format=json <file>}.
+ * using {@code jcmd <pid> Thread.dump_to_file -format=json <file>}. The thread dump
+ * format is documented in {@code
+ * src/jdk.management/share/classes/com/sun/management/doc-files/threadDump.schema.json}.
  *
  * <p> The following is an example thread dump that is parsed by this class. Many of the
  * objects are collapsed to reduce the size.
