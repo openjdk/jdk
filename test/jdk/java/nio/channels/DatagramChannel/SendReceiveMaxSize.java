@@ -29,7 +29,7 @@
  *          maximum size on macOS.
  * @library /test/lib
  * @build jdk.test.lib.net.IPSupport
- * @run testng/othervm SendReceiveMaxSize
+ * @run junit/othervm SendReceiveMaxSize
  */
 /*
  * @test id=preferIPv4Stack
@@ -38,7 +38,7 @@
  *          maximum size on macOS, using an IPv4 only socket.
  * @library /test/lib
  * @build jdk.test.lib.net.IPSupport
- * @run testng/othervm -Djava.net.preferIPv4Stack=true SendReceiveMaxSize
+ * @run junit/othervm -Djava.net.preferIPv4Stack=true SendReceiveMaxSize
  */
 /*
  * @test id=preferIPv6Loopback
@@ -48,7 +48,7 @@
  *          interface.
  * @library /test/lib
  * @build jdk.test.lib.net.IPSupport
- * @run testng/othervm -Dtest.preferLoopback=true SendReceiveMaxSize
+ * @run junit/othervm -Dtest.preferLoopback=true SendReceiveMaxSize
  */
 /*
  * @test id=preferIPv4Loopback
@@ -58,16 +58,13 @@
  *          loopback interface
  * @library /test/lib
  * @build jdk.test.lib.net.IPSupport
- * @run testng/othervm -Dtest.preferLoopback=true -Djava.net.preferIPv4Stack=true SendReceiveMaxSize
+ * @run junit/othervm -Dtest.preferLoopback=true -Djava.net.preferIPv4Stack=true SendReceiveMaxSize
  */
 
 import jdk.test.lib.RandomFactory;
 import jdk.test.lib.NetworkConfiguration;
 import jdk.test.lib.Platform;
 import jdk.test.lib.net.IPSupport;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.net.Inet4Address;
@@ -78,6 +75,7 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.function.Predicate;
 
@@ -88,9 +86,14 @@ import static java.net.StandardSocketOptions.SO_RCVBUF;
 import static jdk.test.lib.net.IPSupport.hasIPv4;
 import static jdk.test.lib.net.IPSupport.hasIPv6;
 import static jdk.test.lib.net.IPSupport.preferIPv4Stack;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertThrows;
-import static org.testng.Assert.assertTrue;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SendReceiveMaxSize {
     private final static Class<IOException> IOE = IOException.class;
@@ -102,14 +105,13 @@ public class SendReceiveMaxSize {
     }
     static DatagramChannelSupplier supplier(DatagramChannelSupplier supplier) { return supplier; }
 
-    @BeforeTest
-    public void setUp() {
+    @BeforeAll
+    public static void setUp() {
         IPSupport.throwSkippedExceptionIfNonOperational();
     }
 
-    @DataProvider
-    public Object[][] invariants() throws IOException {
-        var testcases = new ArrayList<Object[]>();
+    public static List<Arguments> testCases() throws IOException {
+        var testcases = new ArrayList<Arguments>();
         var nc = NetworkConfiguration.probe();
         var ipv4Loopback = (Inet4Address) InetAddress.getByName("127.0.0.1");
         var ipv6Loopback = (Inet6Address) InetAddress.getByName("::1");
@@ -119,16 +121,16 @@ public class SendReceiveMaxSize {
                     .filter(Predicate.not(InetAddress::isLoopbackAddress))
                     .findFirst()
                     .orElse(ipv4Loopback);
-            testcases.add(new Object[]{
+            testcases.add(Arguments.of(
                     supplier(() -> DatagramChannel.open()),
                     IPSupport.getMaxUDPSendBufSizeIPv4(),
                     IPv4Addr
-            });
-            testcases.add(new Object[]{
+            ));
+            testcases.add(Arguments.of(
                     supplier(() -> DatagramChannel.open(INET)),
                     IPSupport.getMaxUDPSendBufSizeIPv4(),
                     IPv4Addr
-            });
+            ));
         }
         if (!preferIPv4Stack() && hasIPv6()) {
             InetAddress IPv6Addr = PREFER_LOOPBACK ? ipv6Loopback
@@ -136,21 +138,22 @@ public class SendReceiveMaxSize {
                     .filter(Predicate.not(InetAddress::isLoopbackAddress))
                     .findFirst()
                     .orElse(ipv6Loopback);
-            testcases.add(new Object[]{
+            testcases.add(Arguments.of(
                     supplier(() -> DatagramChannel.open()),
                     IPSupport.getMaxUDPSendBufSizeIPv6(),
                     IPv6Addr
-            });
-            testcases.add(new Object[]{
+            ));
+            testcases.add(Arguments.of(
                     supplier(() -> DatagramChannel.open(INET6)),
                     IPSupport.getMaxUDPSendBufSizeIPv6(),
                     IPv6Addr
-            });
+            ));
         }
-        return testcases.toArray(Object[][]::new);
+        return testcases;
     }
 
-    @Test(dataProvider = "invariants")
+    @ParameterizedTest
+    @MethodSource("testCases")
     public void testGetOption(DatagramChannelSupplier supplier, int capacity, InetAddress host)
             throws IOException {
         if (Platform.isOSX()) {
@@ -160,7 +163,8 @@ public class SendReceiveMaxSize {
         }
     }
 
-    @Test(dataProvider = "invariants")
+    @ParameterizedTest
+    @MethodSource("testCases")
     public void testSendReceiveMaxSize(DatagramChannelSupplier supplier, int capacity, InetAddress host)
             throws IOException {
         try (var receiver = DatagramChannel.open()) {
@@ -205,8 +209,8 @@ public class SendReceiveMaxSize {
                 // check that data has been fragmented and re-assembled correctly at receiver
                 System.out.println("sendBuf:    " + sendBuf);
                 System.out.println("receiveBuf: " + receiveBuf);
-                assertEquals(sendBuf, receiveBuf);
-                assertEquals(sendBuf.compareTo(receiveBuf), 0);
+                assertEquals(receiveBuf, sendBuf);
+                assertEquals(0, sendBuf.compareTo(receiveBuf));
 
                 testData = new byte[capacity - 1];
                 random.nextBytes(testData);
@@ -232,8 +236,8 @@ public class SendReceiveMaxSize {
                 // check that data has been fragmented and re-assembled correctly at receiver
                 System.out.println("sendBuf:    " + sendBuf);
                 System.out.println("receiveBuf: " + receiveBuf);
-                assertEquals(sendBuf, receiveBuf);
-                assertEquals(sendBuf.compareTo(receiveBuf), 0);
+                assertEquals(receiveBuf, sendBuf);
+                assertEquals(0, sendBuf.compareTo(receiveBuf));
 
                 var failSendBuf = ByteBuffer.allocate(capacity + 1);
                 assertThrows(IOE, () ->  sender.send(failSendBuf, addr));
