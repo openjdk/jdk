@@ -3818,8 +3818,8 @@ static int hugetlbfs_page_size_flag(size_t page_size) {
 }
 
 static bool hugetlbfs_sanity_check(size_t page_size) {
-  const os::PageSizes page_sizes = HugePages::explicit_hugepage_info().pagesizes();
-  assert(page_sizes.contains(page_size), "Invalid page sizes passed (%zu)", page_size);
+  const os::PageSizes os_supported = HugePages::explicit_hugepage_info().os_supported();
+  assert(os_supported.contains(page_size), "Invalid page sizes passed (%zu)", page_size);
 
   // Include the page size flag to ensure we sanity check the correct page size.
   int flags = MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | hugetlbfs_page_size_flag(page_size);
@@ -3833,16 +3833,16 @@ static bool hugetlbfs_sanity_check(size_t page_size) {
       log_info(pagesize)("Large page size (" EXACTFMT ") failed sanity check, "
                          "checking if smaller large page sizes are usable",
                          EXACTFMTARGS(page_size));
-      for (size_t page_size_ = page_sizes.next_smaller(page_size);
-          page_size_ > os::vm_page_size();
-          page_size_ = page_sizes.next_smaller(page_size_)) {
-        flags = MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | hugetlbfs_page_size_flag(page_size_);
-        p = mmap(nullptr, page_size_, PROT_READ|PROT_WRITE, flags, -1, 0);
+      for (size_t size = os_supported.next_smaller(page_size);
+          size > os::vm_page_size();
+          size = os_supported.next_smaller(size)) {
+        flags = MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | hugetlbfs_page_size_flag(size);
+        p = mmap(nullptr, size, PROT_READ|PROT_WRITE, flags, -1, 0);
         if (p != MAP_FAILED) {
           // Mapping succeeded, sanity check passed.
-          munmap(p, page_size_);
+          munmap(p, size);
           log_info(pagesize)("Large page size (" EXACTFMT ") passed sanity check",
-                             EXACTFMTARGS(page_size_));
+                             EXACTFMTARGS(size));
           return true;
         }
       }
@@ -4024,7 +4024,7 @@ void os::Linux::large_page_init() {
     // - os::large_page_size() is the default explicit hugepage size (/proc/meminfo "Hugepagesize")
     // - os::pagesizes() contains all hugepage sizes the kernel supports, regardless whether there
     //   are pages configured in the pool or not (from /sys/kernel/hugepages/hugepage-xxxx ...)
-    os::PageSizes all_large_pages = HugePages::explicit_hugepage_info().pagesizes();
+    os::PageSizes all_large_pages = HugePages::explicit_hugepage_info().os_supported();
     const size_t default_large_page_size = HugePages::default_explicit_hugepage_size();
 
     // 3) Consistency check and post-processing
@@ -4068,7 +4068,7 @@ void os::Linux::large_page_init() {
 
     // Populate _page_sizes with _large_page_size (default large page size) even if not pre-allocated.
     // Then, populate _page_sizes with all smaller large page sizes that have been pre-allocated.
-    os::PageSizes pre_allocated = HugePages::explicit_hugepage_info().pre_allocated_pagesizes();
+    os::PageSizes pre_allocated = HugePages::explicit_hugepage_info().pre_allocated();
     for (size_t page_size = _large_page_size; page_size != 0; page_size = pre_allocated.next_smaller(page_size)) {
       _page_sizes.add(page_size);
     }
@@ -4133,12 +4133,12 @@ static char* reserve_memory_special_huge_tlbfs(size_t bytes,
                                                size_t page_size,
                                                char* req_addr,
                                                bool exec) {
-  const os::PageSizes page_sizes = HugePages::explicit_hugepage_info().pagesizes();
+  const os::PageSizes os_supported = HugePages::explicit_hugepage_info().os_supported();
   assert(UseLargePages, "only for Huge TLBFS large pages");
   assert(is_aligned(req_addr, alignment), "Must be");
   assert(is_aligned(req_addr, page_size), "Must be");
   assert(is_aligned(alignment, os::vm_allocation_granularity()), "Must be");
-  assert(page_sizes.contains(page_size), "Must be a valid page size");
+  assert(os_supported.contains(page_size), "Must be a valid page size");
   assert(page_size > os::vm_page_size(), "Must be a large page size");
   assert(bytes >= page_size, "Shouldn't allocate large pages for small sizes");
 
@@ -5461,5 +5461,3 @@ void os::print_open_file_descriptors(outputStream* st) {
     st->print_cr("Open File Descriptors: %d", fds);
   }
 }
-
-
