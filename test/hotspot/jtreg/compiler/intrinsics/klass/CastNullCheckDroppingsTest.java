@@ -26,7 +26,7 @@
  * @bug 8054492
  * @summary Casting can result in redundant null checks in generated code
  * @requires vm.hasJFR
- * @requires vm.flavor == "server" & !vm.emulatedClient & !vm.graal.enabled
+ * @requires vm.flavor == "server" & !vm.graal.enabled
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -93,8 +93,8 @@ public class CastNullCheckDroppingsTest {
     int[]   asink;
 
     public static void main(String[] args) throws Exception {
-        if (!Platform.isServer() || Platform.isEmulatedClient()) {
-            throw new Error("TESTBUG: Not server mode");
+        if (!Platform.isServer()) {
+            throw new Error("TESTBUG: Not server VM");
         }
         // Make sure background compilation is disabled
         if (WHITE_BOX.getBooleanVMFlag("BackgroundCompilation")) {

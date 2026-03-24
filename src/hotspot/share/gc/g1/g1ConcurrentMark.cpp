@@ -30,7 +30,6 @@
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1CardTableClaimTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1CollectionSetChooser.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkRemarkTasks.hpp"
@@ -573,8 +572,20 @@ void G1ConcurrentMark::fully_initialize() {
   reset_at_marking_complete();
 }
 
-bool G1ConcurrentMark::in_progress() const {
-  return is_fully_initialized() ? _cm_thread->in_progress() : false;
+bool G1ConcurrentMark::is_in_concurrent_cycle() const {
+  return is_fully_initialized() ? _cm_thread->is_in_progress() : false;
+}
+
+bool G1ConcurrentMark::is_in_marking() const {
+  return is_fully_initialized() ? cm_thread()->is_in_marking() : false;
+}
+
+bool G1ConcurrentMark::is_in_rebuild_or_scrub() const {
+  return cm_thread()->is_in_rebuild_or_scrub();
+}
+
+bool G1ConcurrentMark::is_in_reset_for_next_cycle() const {
+  return cm_thread()->is_in_reset_for_next_cycle();
 }
 
 PartialArrayStateManager* G1ConcurrentMark::partial_array_state_manager() const {
@@ -622,7 +633,7 @@ void G1ConcurrentMark::humongous_object_eagerly_reclaimed(G1HeapRegion* r) {
   // Need to clear mark bit of the humongous object. Doing this unconditionally is fine.
   mark_bitmap()->clear(r->bottom());
 
-  if (!_g1h->collector_state()->mark_or_rebuild_in_progress()) {
+  if (!_g1h->collector_state()->is_in_mark_or_rebuild()) {
     return;
   }
 
@@ -682,14 +693,14 @@ void G1ConcurrentMark::set_concurrency_and_phase(uint active_tasks, bool concurr
 #if TASKQUEUE_STATS
 void G1ConcurrentMark::print_and_reset_taskqueue_stats() {
 
-  _task_queues->print_and_reset_taskqueue_stats("G1ConcurrentMark Oop Queue");
+  _task_queues->print_and_reset_taskqueue_stats("Concurrent Mark");
 
   auto get_pa_stats = [&](uint i) {
     return _tasks[i]->partial_array_task_stats();
   };
 
   PartialArrayTaskStats::log_set(_max_num_tasks, get_pa_stats,
-                                 "G1ConcurrentMark Partial Array Task Stats");
+                                 "Concurrent Mark Partial Array");
 
   for (uint i = 0; i < _max_num_tasks; ++i) {
     get_pa_stats(i)->reset();
@@ -729,7 +740,7 @@ private:
     }
 
     bool is_clear_concurrent_undo() {
-      return suspendible() && _cm->cm_thread()->in_undo_mark();
+      return suspendible() && _cm->cm_thread()->is_in_undo_cycle();
     }
 
     bool has_aborted() {
@@ -785,8 +796,7 @@ private:
         // as asserts here to minimize their overhead on the product. However, we
         // will have them as guarantees at the beginning / end of the bitmap
         // clearing to get some checking in the product.
-        assert(!suspendible() || _cm->in_progress(), "invariant");
-        assert(!suspendible() || !G1CollectedHeap::heap()->collector_state()->mark_or_rebuild_in_progress(), "invariant");
+        assert(!suspendible() || _cm->is_in_reset_for_next_cycle(), "invariant");
 
         // Abort iteration if necessary.
         if (has_aborted()) {
@@ -817,10 +827,6 @@ public:
     SuspendibleThreadSetJoiner sts_join(_suspendible);
     G1CollectedHeap::heap()->heap_region_par_iterate_from_worker_offset(&_cl, &_hr_claimer, worker_id);
   }
-
-  bool is_complete() {
-    return _cl.is_complete();
-  }
 };
 
 void G1ConcurrentMark::clear_bitmap(WorkerThreads* workers, bool may_yield) {
@@ -835,29 +841,19 @@ void G1ConcurrentMark::clear_bitmap(WorkerThreads* workers, bool may_yield) {
 
   log_debug(gc, ergo)("Running %s with %u workers for %zu work units.", cl.name(), num_workers, num_chunks);
   workers->run_task(&cl, num_workers);
-  guarantee(may_yield || cl.is_complete(), "Must have completed iteration when not yielding.");
 }
 
 void G1ConcurrentMark::cleanup_for_next_mark() {
   // Make sure that the concurrent mark thread looks to still be in
   // the current cycle.
-  guarantee(is_fully_initialized(), "should be initializd");
-  guarantee(in_progress(), "invariant");
-
-  // We are finishing up the current cycle by clearing the next
-  // marking bitmap and getting it ready for the next cycle. During
-  // this time no other cycle can start. So, let's make sure that this
-  // is the case.
-  guarantee(!_g1h->collector_state()->mark_or_rebuild_in_progress(), "invariant");
+  guarantee(is_in_reset_for_next_cycle(), "invariant");
 
   clear_bitmap(_concurrent_workers, true);
 
   reset_partial_array_state_manager();
 
-  // Repeat the asserts from above.
-  guarantee(is_fully_initialized(), "should be initializd");
-  guarantee(in_progress(), "invariant");
-  guarantee(!_g1h->collector_state()->mark_or_rebuild_in_progress(), "invariant");
+  // Should not have changed state yet (even if a Full GC interrupted us).
+  guarantee(is_in_reset_for_next_cycle(), "invariant");
 }
 
 void G1ConcurrentMark::reset_partial_array_state_manager() {
@@ -982,14 +978,14 @@ void G1ConcurrentMark::start_full_concurrent_cycle() {
   // during it. No need to call it here.
 
   // Signal the thread to start work.
-  cm_thread()->start_full_mark();
+  cm_thread()->start_full_cycle();
 }
 
 void G1ConcurrentMark::start_undo_concurrent_cycle() {
   root_regions()->cancel_scan();
 
   // Signal the thread to start work.
-  cm_thread()->start_undo_mark();
+  cm_thread()->start_undo_cycle();
 }
 
 void G1ConcurrentMark::notify_concurrent_cycle_completed() {
@@ -1191,8 +1187,6 @@ uint G1ConcurrentMark::completed_mark_cycles() const {
 }
 
 void G1ConcurrentMark::concurrent_cycle_end(bool mark_cycle_completed) {
-  _g1h->collector_state()->set_clear_bitmap_in_progress(false);
-
   _g1h->trace_heap_after_gc(_gc_tracer_cm);
 
   if (mark_cycle_completed) {
@@ -1333,14 +1327,13 @@ void G1ConcurrentMark::remark() {
       _g1h->workers()->run_task(&cl, num_workers);
 
       log_debug(gc, remset, tracking)("Remembered Set Tracking update regions total %u, selected %u",
-                                        _g1h->num_committed_regions(), cl.total_selected_for_rebuild());
+                                      _g1h->num_committed_regions(), cl.total_selected_for_rebuild());
 
       _needs_remembered_set_rebuild = (cl.total_selected_for_rebuild() > 0);
 
       if (_needs_remembered_set_rebuild) {
-        // Prune rebuild candidates based on G1HeapWastePercent.
-        // Improves rebuild time in addition to remembered set memory usage.
-        G1CollectionSetChooser::build(_g1h->workers(), _g1h->num_committed_regions(), _g1h->policy()->candidates());
+        GrowableArrayCHeap<G1HeapRegion*, mtGC>* selected = cl.sort_and_prune_old_selected();
+        _g1h->policy()->candidates()->set_candidates_from_marking(selected);
       }
     }
 
@@ -1377,6 +1370,9 @@ void G1ConcurrentMark::remark() {
       G1ObjectCountIsAliveClosure is_alive(_g1h);
       _gc_tracer_cm->report_object_count_after_gc(&is_alive, _g1h->workers());
     }
+
+    // Successfully completed marking, advance state.
+    cm_thread()->set_full_cycle_rebuild_and_scrub();
   } else {
     // We overflowed.  Restart concurrent marking.
     _restart_for_overflow.store_relaxed(true);
@@ -1397,6 +1393,8 @@ void G1ConcurrentMark::remark() {
   _g1h->update_perf_counter_cpu_time();
 
   policy->record_concurrent_mark_remark_end();
+
+  return;
 }
 
 void G1ConcurrentMark::compute_new_sizes() {
@@ -1459,6 +1457,10 @@ void G1ConcurrentMark::cleanup() {
     GCTraceTime(Debug, gc, phases) debug("Finalize Concurrent Mark Cleanup", _gc_timer_cm);
     policy->record_concurrent_mark_cleanup_end(needs_remembered_set_rebuild());
   }
+
+  // Advance state.
+  cm_thread()->set_full_cycle_reset_for_next_cycle();
+  return;
 }
 
 // 'Keep Alive' oop closure used by both serial parallel reference processing.
@@ -1885,7 +1887,7 @@ public:
 void G1ConcurrentMark::verify_no_collection_set_oops() {
   assert(SafepointSynchronize::is_at_safepoint() || !is_init_completed(),
          "should be at a safepoint or initializing");
-  if (!_g1h->collector_state()->mark_or_rebuild_in_progress()) {
+  if (!is_fully_initialized() || !_g1h->collector_state()->is_in_mark_or_rebuild()) {
     return;
   }
 
@@ -1963,7 +1965,7 @@ bool G1ConcurrentMark::concurrent_cycle_abort() {
   // has been signalled is already rare), and this work should be negligible compared
   // to actual full gc work.
 
-  if (!is_fully_initialized() || (!cm_thread()->in_progress() && !cm_thread()->should_terminate())) {
+  if (!is_fully_initialized() || (!cm_thread()->is_in_progress() && !cm_thread()->should_terminate())) {
     return false;
   }
 

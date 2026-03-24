@@ -395,7 +395,7 @@ public:
     {
       ResourceMark rm;
       bool allocated_after_mark_start = r->bottom() == _g1h->concurrent_mark()->top_at_mark_start(r);
-      bool mark_in_progress = _g1h->collector_state()->mark_in_progress();
+      bool mark_in_progress = _g1h->collector_state()->is_in_marking();
       guarantee(obj->is_typeArray() || (allocated_after_mark_start || !mark_in_progress),
                 "Only eagerly reclaiming primitive arrays is supported, other humongous objects only if allocated after mark start, but the object "
                 PTR_FORMAT " (%s) is not (mark %d allocated after mark: %d).",
@@ -501,7 +501,7 @@ class G1PostEvacuateCollectionSetCleanupTask2::ProcessEvacuationFailedRegionsTas
       // Concurrent mark does not mark through regions that we retain (they are root
       // regions wrt to marking), so we must clear their mark data (tams, bitmap, ...)
       // set eagerly or during evacuation failure.
-      bool clear_mark_data = !g1h->collector_state()->in_concurrent_start_gc() ||
+      bool clear_mark_data = !g1h->collector_state()->is_in_concurrent_start_gc() ||
                              g1h->policy()->should_retain_evac_failed_region(r);
 
       if (clear_mark_data) {

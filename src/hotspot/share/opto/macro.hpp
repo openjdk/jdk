@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,19 +40,32 @@ private:
 
 public:
   // Helper methods roughly modeled after GraphKit:
-  Node* basic_plus_adr(Node* base, int offset) {
-    return (offset == 0)? base: basic_plus_adr(base, MakeConX(offset));
+  Node* basic_plus_adr(Node* ptr, int offset, bool raw_base = false) {
+    return basic_plus_adr(ptr, MakeConX(offset), raw_base);
   }
+
   Node* basic_plus_adr(Node* base, Node* ptr, int offset) {
-    return (offset == 0)? ptr: basic_plus_adr(base, ptr, MakeConX(offset));
+    return basic_plus_adr(base, ptr, MakeConX(offset));
   }
-  Node* basic_plus_adr(Node* base, Node* offset) {
-    return basic_plus_adr(base, base, offset);
+
+  Node* basic_plus_adr(Node* ptr, Node* offset, bool raw_base = false) {
+    Node* base = raw_base ? top() : ptr;
+    return basic_plus_adr(base, ptr, offset);
   }
+
   Node* basic_plus_adr(Node* base, Node* ptr, Node* offset) {
-    Node* adr = new AddPNode(base, ptr, offset);
-    return transform_later(adr);
+    return (offset == MakeConX(0)) ?
+           ptr : transform_later(AddPNode::make_with_base(base, ptr, offset));
   }
+
+  Node* off_heap_plus_addr(Node* ptr, int offset) {
+    return basic_plus_adr(top(), ptr, MakeConX(offset));
+  }
+
+  Node* off_heap_plus_addr(Node* ptr, Node* offset) {
+    return basic_plus_adr(top(), ptr, offset);
+  }
+
   Node* transform_later(Node* n) {
     // equivalent to _gvn.transform in GraphKit, Ideal, etc.
     _igvn.register_new_node_with_optimizer(n);
@@ -109,7 +122,7 @@ private:
 
   // More helper methods modeled after GraphKit for array copy
   void insert_mem_bar(Node** ctrl, Node** mem, int opcode, int alias_idx, Node* precedent = nullptr);
-  Node* array_element_address(Node* ary, Node* idx, BasicType elembt);
+  Node* array_element_address(Node* ary, Node* idx, BasicType elembt, bool raw_base);
   Node* ConvI2L(Node* offset);
 
   // helper methods modeled after LibraryCallKit for array copy
