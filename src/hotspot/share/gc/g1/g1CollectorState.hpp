@@ -72,8 +72,8 @@ public:
   void set_in_full_gc() { _phase = Phase::FullGC; }
 
   // Pause setters
-  void set_in_young_gc_before_mixed() { _phase = Phase::YoungPrepareMixed; }
   void set_in_concurrent_start_gc() { _phase = Phase::YoungConcurrentStart; _initiate_conc_mark_if_possible = false; }
+  void set_prepare_mixed_gc() { _phase = Phase::YoungPrepareMixed; }
 
   void set_initiate_conc_mark_if_possible(bool v) { _initiate_conc_mark_if_possible = v; }
 
@@ -82,9 +82,9 @@ public:
   bool is_in_mixed_phase() const { return _phase == Phase::Mixed; }
 
   // Specific pauses
+  bool is_in_concurrent_start_gc() const { return _phase == Phase::YoungConcurrentStart; }
   bool is_in_prepare_mixed_gc() const { return _phase == Phase::YoungPrepareMixed; }
   bool is_in_full_gc() const { return _phase == Phase::FullGC; }
-  bool is_in_concurrent_start_gc() const { return _phase == Phase::YoungConcurrentStart; }
 
   bool initiate_conc_mark_if_possible() const { return _initiate_conc_mark_if_possible; }
 
@@ -95,9 +95,9 @@ public:
 
   enum class Pause : uint {
     Normal,
-    PrepareMixed,
     ConcurrentStartFull,
     ConcurrentStartUndo,
+    PrepareMixed,
     Cleanup,
     Remark,
     Mixed,
@@ -109,9 +109,9 @@ public:
 
   static const char* to_string(Pause type) {
     static const char* pause_strings[] = { "Normal",
-                                           "Prepare Mixed",
                                            "Concurrent Start", // Do not distinguish between the different
                                            "Concurrent Start", // Concurrent Start pauses.
+                                           "Prepare Mixed",
                                            "Cleanup",
                                            "Remark",
                                            "Mixed",

@@ -1332,7 +1332,7 @@ void G1Policy::record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_se
     log_debug(gc, ergo)("request young-only gcs (candidate old regions not available)");
   }
   if (mixed_gc_pending) {
-    collector_state()->set_in_young_gc_before_mixed();
+    collector_state()->set_prepare_mixed_gc();
   }
 
   double end_sec = os::elapsedTime();
