@@ -29,6 +29,7 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/suspendedThreadTask.hpp"
 #include "runtime/threadSMR.hpp"
+#include "utilities/pair.hpp"
 #include "utilities/resizableHashTable.hpp"
 
 // Generate a random sampling period between min and max
@@ -36,6 +37,27 @@ static inline uint rand_sampling_period_ms() {
   julong range = (julong)HotCodeMaxSamplingMs - (julong)HotCodeMinSamplingMs + 1;
   return (uint)(os::random() % range) + HotCodeMinSamplingMs;
 }
+
+class ThreadSampler;
+
+class Candidates : public StackObj {
+ private:
+  GrowableArray<Pair<nmethod*, int>> _candidates;
+  int _hot_sample_count;
+  int _non_profiled_sample_count;
+
+ public:
+  Candidates(ThreadSampler& sampler);
+
+  void add_candidate(nmethod* nm, int count);
+  void add_hot_sample_count(int count);
+  void add_non_profiled_sample_count(int count);
+  void sort();
+
+  bool has_candidates();
+  nmethod* get_candidate();
+  double get_hot_sample_percent();
+};
 
 class GetPCTask : public SuspendedThreadTask {
  private:
@@ -61,61 +83,19 @@ class ThreadSampler : public StackObj {
  private:
   static const int INITIAL_TABLE_SIZE = 109;
 
-  static ThreadSampler* _current_sampler;
-
   // Table of nmethods found during profiling with sample count
   ResizeableHashTable<nmethod*, int, AnyObj::C_HEAP, mtInternal> _samples;
 
-  int _hot_sample_count;
-  int _non_profiled_sample_count;
-
-  // List of nmethods from profiling that are candidates for grouping
-  GrowableArray<nmethod*> _sorted_candidate_list;
-
-  static ThreadSampler* get_current_sampler() {
-    return _current_sampler;
-  }
-
  public:
-  ThreadSampler() : _samples(INITIAL_TABLE_SIZE, HotCodeSampleSeconds * 1000 / HotCodeMaxSamplingMs), _hot_sample_count(0), _non_profiled_sample_count(0) {}
+  ThreadSampler() : _samples(INITIAL_TABLE_SIZE, HotCodeSampleSeconds * 1000 / HotCodeMaxSamplingMs) {}
 
   // Iterate over and sample all Java threads
   void sample_all_java_threads();
 
-  // Finalize candidate nmethods list for grouping
-  void finalize();
-
-  // Get number of samples for nmethod. Returns zero if not found
-  int get_sample_count(nmethod* nm) {
-    int* num = _samples.get(nm);
-    return num == nullptr ? 0 : *num;
-  }
-
-  // Get ratio of C2 samples from hot code heap
-  double get_hot_sample_percent() {
-    if (_hot_sample_count + _non_profiled_sample_count == 0) {
-      return 0;
-    }
-
-    return 100.0 * _hot_sample_count / (_hot_sample_count + _non_profiled_sample_count);
-  }
-
-  // Update the number of samples from hot code heap after relocating nmethod
-  void update_sample_count(nmethod* nm) {
-    int samples = get_sample_count(nm);
-    _hot_sample_count += samples;
-    _non_profiled_sample_count -= samples;
-  }
-
-  // Returns true if we still have candidates for grouping
-  bool has_candidates() {
-    return !_sorted_candidate_list.is_empty();
-  }
-
-  // Get next candidate nmethod for grouping
-  nmethod* get_candidate() {
-    assert(has_candidates(), "must not be empty");
-    return _sorted_candidate_list.pop();
+  // Iterate over all samples with a callback function
+  template<typename Function>
+  void iterate_samples(Function func) {
+    _samples.iterate_all(func);
   }
 };
 

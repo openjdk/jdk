@@ -29,7 +29,7 @@
 #include "code/codeCache.hpp"
 #include "runtime/javaThread.hpp"
 
-class ThreadSampler;
+class Candidates;
 
 class HotCodeCollector : public JavaThread {
  private:
@@ -40,12 +40,11 @@ class HotCodeCollector : public JavaThread {
 
   HotCodeCollector();
 
-  static void do_grouping(ThreadSampler& sampler);
+  static void do_grouping(Candidates& candidates);
 
-  static int do_relocation(ThreadSampler& sampler, void* candidate, uint call_level);
+  static int do_relocation(void* candidate, uint call_level);
 
  public:
-
   static void initialize();
   static void thread_entry(JavaThread* thread, TRAPS);
   static void unregister_nmethod(nmethod* nm);

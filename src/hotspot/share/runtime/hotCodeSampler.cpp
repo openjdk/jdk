@@ -28,8 +28,6 @@
 #include "logging/log.hpp"
 #include "runtime/hotCodeSampler.hpp"
 
-ThreadSampler* ThreadSampler::_current_sampler = nullptr;
-
 void ThreadSampler::sample_all_java_threads() {
   uint64_t start_time = os::javaTimeMillis();
 
@@ -62,34 +60,63 @@ void ThreadSampler::sample_all_java_threads() {
   }
 }
 
-void ThreadSampler::finalize() {
-  assert(_sorted_candidate_list.is_empty(), "should only generate once");
-
-  // Add every C2 nmethod not in hot code heap to array
-  auto func = [&](nmethod* nm, uint64_t count) {
+Candidates::Candidates(ThreadSampler& sampler)
+  : _hot_sample_count(0), _non_profiled_sample_count(0) {
+  auto func = [&](nmethod* nm, int count) {
     if (CodeCache::get_code_blob_type(nm) == CodeBlobType::MethodNonProfiled) {
-      _non_profiled_sample_count += count;
-      _sorted_candidate_list.append(nm);
+      _candidates.append(Pair<nmethod*, int>(nm, count));
+      add_non_profiled_sample_count(count);
     } else if (CodeCache::get_code_blob_type(nm) == CodeBlobType::MethodHot) {
-      _hot_sample_count += count;
+      add_hot_sample_count(count);
     }
   };
-  _samples.iterate_all(func);
+  sampler.iterate_samples(func);
 
-  // Sort nmethods by increasing sample count
-  assert(_current_sampler == nullptr, "not thread safe");
-  _current_sampler = this;
-  _sorted_candidate_list.sort(
-    [](nmethod** a, nmethod** b) {
-      ThreadSampler* self = get_current_sampler();
-      if (*(self->_samples.get(*a)) > *(self->_samples.get(*b))) return 1;
-      if (*(self->_samples.get(*a)) < *(self->_samples.get(*b))) return -1;
+  log_info(hotcode)("Generated candidate list from %d samples corresponding to %d nmethods", _non_profiled_sample_count + _hot_sample_count, _candidates.length());
+}
+
+void Candidates::add_candidate(nmethod* nm, int count) {
+  _candidates.append(Pair<nmethod*, int>(nm, count));
+}
+
+void Candidates::add_hot_sample_count(int count) {
+  _hot_sample_count += count;
+}
+
+void Candidates::add_non_profiled_sample_count(int count) {
+  _non_profiled_sample_count += count;
+}
+
+void Candidates::sort() {
+  _candidates.sort(
+    [](Pair<nmethod*, int>* a, Pair<nmethod*, int>* b) {
+      if (a->second > b->second) return 1;
+      if (a->second < b->second) return -1;
       return 0;
     }
   );
-  _current_sampler = nullptr;
+}
 
-  log_info(hotcode)("Profiling complete: collected %d samples corresponding to %d nmethods", _non_profiled_sample_count + _hot_sample_count, _samples.number_of_entries());
+bool Candidates::has_candidates() {
+  return !_candidates.is_empty();
+}
+
+nmethod* Candidates::get_candidate() {
+  assert(has_candidates(), "must not be empty");
+  Pair<nmethod*, int> candidate = _candidates.pop();
+
+  _hot_sample_count += candidate.second;
+  _non_profiled_sample_count -= candidate.second;
+
+  return candidate.first;
+}
+
+double Candidates::get_hot_sample_percent() {
+  if (_hot_sample_count + _non_profiled_sample_count == 0) {
+    return 0;
+  }
+
+  return 100.0 * _hot_sample_count / (_hot_sample_count + _non_profiled_sample_count);
 }
 
 #endif // COMPILER2

@@ -94,39 +94,42 @@ void HotCodeCollector::thread_entry(JavaThread* thread, TRAPS) {
         thread->sleep(rand_sampling_period_ms());
       }
 
-      sampler.finalize();
-      do_grouping(sampler);
+      Candidates candidates(sampler);
+      do_grouping(candidates);
     }
 
     thread->sleep(HotCodeIntervalSeconds * 1000);
   }
 }
 
-void HotCodeCollector::do_grouping(ThreadSampler& sampler) {
+void HotCodeCollector::do_grouping(Candidates& candidates) {
   int num_relocated = 0;
 
-  while (sampler.has_candidates()) {
+  // Sort nmethods by increasing sample count so pop() returns the hottest
+  candidates.sort();
 
-    double percent_from_hot = sampler.get_hot_sample_percent();
+  while (candidates.has_candidates()) {
+
+    double percent_from_hot = candidates.get_hot_sample_percent();
     log_debug(hotcode)("Percentage of samples from hot code heap: %f", percent_from_hot);
     if (percent_from_hot >= HotCodeSamplePercent) {
       log_info(hotcode)("Percentage of samples from hot nmethods over threshold. Done collecting hot code");
       break;
     }
 
-    nmethod* candidate = sampler.get_candidate();
+    nmethod* candidate = candidates.get_candidate();
 
     MutexLocker ml_Compile_lock(Compile_lock);
     MutexLocker ml_CompiledIC_lock(CompiledIC_lock, Mutex::_no_safepoint_check_flag);
     MutexLocker ml_CodeCache_lock(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
-    num_relocated += do_relocation(sampler, candidate, 0);
+    num_relocated += do_relocation(candidate, 0);
   }
 
   log_info(hotcode)("Collection done. Relocated %d nmethods to the MethodHot heap", num_relocated);
 }
 
-int HotCodeCollector::do_relocation(ThreadSampler& sampler, void* candidate, uint call_level) {
+int HotCodeCollector::do_relocation(void* candidate, uint call_level) {
   if (candidate == nullptr) {
     return 0;
   }
@@ -172,7 +175,6 @@ int HotCodeCollector::do_relocation(ThreadSampler& sampler, void* candidate, uin
     if (hot_nm != nullptr) {
       // Successfully relocated nmethod. Update counts and proceed to callee relocation.
       log_debug(hotcode)("Successful relocation: nmethod (%p), method (%s), call level (%d)", nm, hot_nm->method()->name_and_sig_as_C_string(), call_level);
-      sampler.update_sample_count(nm);
       num_relocated++;
     } else {
       // Relocation failed so return and do not attempt to relocate callees
@@ -202,7 +204,7 @@ int HotCodeCollector::do_relocation(ThreadSampler& sampler, void* candidate, uin
       address dest = ((CallRelocation*) reloc)->destination();
 
       // Recursively relocate callees
-      num_relocated += do_relocation(sampler, dest, call_level + 1);
+      num_relocated += do_relocation(dest, call_level + 1);
     }
   }
 
