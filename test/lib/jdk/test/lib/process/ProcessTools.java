@@ -575,7 +575,7 @@ public final class ProcessTools {
      * "test.vm.opts" and "test.java.opts"</b> and this method will
      * not do that.
      *
-     * <p>If you still chose to use
+     * <p>If you still choose to use
      * createLimitedTestJavaProcessBuilder() you should probably use
      * it in combination with <b>@requires vm.flagless</b> JTREG
      * anotation as to not waste energy and test resources.
@@ -609,7 +609,7 @@ public final class ProcessTools {
      * "test.vm.opts" and "test.java.opts"</b> and this method will
      * not do that.
      *
-     * <p>If you still chose to use
+     * <p>If you still choose to use
      * createLimitedTestJavaProcessBuilder() you should probably use
      * it in combination with <b>@requires vm.flagless</b> JTREG
      * anotation as to not waste energy and test resources.

@@ -29,9 +29,11 @@
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
+#include "ci/ciUtilities.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "code/aotCodeCache.hpp"
 #include "code/codeCache.hpp"
+#include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/gcConfig.hpp"
 #include "logging/logStream.hpp"
 #include "memory/memoryReserver.hpp"
@@ -53,6 +55,7 @@
 #endif
 #if INCLUDE_G1GC
 #include "gc/g1/g1BarrierSetRuntime.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #endif
 #if INCLUDE_SHENANDOAHGC
 #include "gc/shenandoah/shenandoahRuntime.hpp"
@@ -258,6 +261,9 @@ void AOTCodeCache::init2() {
     return;
   }
 
+  // initialize aot runtime constants as appropriate to this runtime
+  AOTRuntimeConstants::initialize_from_runtime();
+
   // initialize the table of external routines so we can save
   // generated code blobs that reference them
   AOTCodeAddressTable* table = opened_cache->_table;
@@ -278,11 +284,11 @@ bool AOTCodeCache::open_cache(bool is_dumping, bool is_using) {
   return true;
 }
 
-void AOTCodeCache::close() {
+void AOTCodeCache::dump() {
   if (is_on()) {
-    delete _cache; // Free memory
-    _cache = nullptr;
-    opened_cache = nullptr;
+    assert(is_on_for_dump(), "should be called only when dumping AOT code");
+    MutexLocker ml(Compile_lock);
+    _cache->finish_write();
   }
 }
 
@@ -298,7 +304,6 @@ AOTCodeCache::AOTCodeCache(bool is_dumping, bool is_using) :
   _store_size(0),
   _for_use(is_using),
   _for_dump(is_dumping),
-  _closing(false),
   _failed(false),
   _lookup_failed(false),
   _table(nullptr),
@@ -372,30 +377,6 @@ void AOTCodeCache::init_early_c1_table() {
   AOTCodeAddressTable* table = addr_table();
   if (table != nullptr) {
     table->init_early_c1();
-  }
-}
-
-AOTCodeCache::~AOTCodeCache() {
-  if (_closing) {
-    return; // Already closed
-  }
-  // Stop any further access to cache.
-  _closing = true;
-
-  MutexLocker ml(Compile_lock);
-  if (for_dump()) { // Finalize cache
-    finish_write();
-  }
-  _load_buffer = nullptr;
-  if (_C_store_buffer != nullptr) {
-    FREE_C_HEAP_ARRAY(char, _C_store_buffer);
-    _C_store_buffer = nullptr;
-    _store_buffer = nullptr;
-  }
-  if (_table != nullptr) {
-    MutexLocker ml(AOTCodeCStrings_lock, Mutex::_no_safepoint_check_flag);
-    delete _table;
-    _table = nullptr;
   }
 }
 
@@ -1447,6 +1428,12 @@ void AOTCodeAddressTable::init_extrs() {
 #endif
 #endif // ZERO
 
+  // addresses of fields in AOT runtime constants area
+  address* p = AOTRuntimeConstants::field_addresses_list();
+  while (*p != nullptr) {
+    SET_ADDRESS(_extrs, *p++);
+  }
+
   _extrs_complete = true;
   log_debug(aot, codecache, init)("External addresses recorded");
 }
@@ -1532,18 +1519,6 @@ void AOTCodeAddressTable::init_early_c1() {
 }
 
 #undef SET_ADDRESS
-
-AOTCodeAddressTable::~AOTCodeAddressTable() {
-  if (_extrs_addr != nullptr) {
-    FREE_C_HEAP_ARRAY(address, _extrs_addr);
-  }
-  if (_stubs_addr != nullptr) {
-    FREE_C_HEAP_ARRAY(address, _stubs_addr);
-  }
-  if (_shared_blobs_addr != nullptr) {
-    FREE_C_HEAP_ARRAY(address, _shared_blobs_addr);
-  }
-}
 
 #ifdef PRODUCT
 #define MAX_STR_COUNT 200
@@ -1729,6 +1704,11 @@ int AOTCodeAddressTable::id_for_address(address addr, RelocIterator reloc, CodeB
   if (addr == (address)-1) { // Static call stub has jump to itself
     return id;
   }
+  // Check card_table_base address first since it can point to any address
+  BarrierSet* bs = BarrierSet::barrier_set();
+  bool is_const_card_table_base = !UseG1GC && !UseShenandoahGC && bs->is_a(BarrierSet::CardTableBarrierSet);
+  guarantee(!is_const_card_table_base || addr != ci_card_table_address_const(), "sanity");
+
   // Seach for C string
   id = id_for_C_string(addr);
   if (id >= 0) {
@@ -1796,6 +1776,44 @@ int AOTCodeAddressTable::id_for_address(address addr, RelocIterator reloc, CodeB
     }
   }
   return id;
+}
+
+AOTRuntimeConstants AOTRuntimeConstants::_aot_runtime_constants;
+
+void AOTRuntimeConstants::initialize_from_runtime() {
+  BarrierSet* bs = BarrierSet::barrier_set();
+  address card_table_base = nullptr;
+  uint grain_shift = 0;
+#if INCLUDE_G1GC
+  if (bs->is_a(BarrierSet::G1BarrierSet)) {
+    grain_shift = G1HeapRegion::LogOfHRGrainBytes;
+  } else
+#endif
+#if INCLUDE_SHENANDOAHGC
+  if (bs->is_a(BarrierSet::ShenandoahBarrierSet)) {
+    grain_shift = 0;
+  } else
+#endif
+  if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
+    CardTable::CardValue* base = ci_card_table_address_const();
+    assert(base != nullptr, "unexpected byte_map_base");
+    card_table_base = base;
+    CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
+    grain_shift = ctbs->grain_shift();
+  }
+  _aot_runtime_constants._card_table_base = card_table_base;
+  _aot_runtime_constants._grain_shift = grain_shift;
+}
+
+address AOTRuntimeConstants::_field_addresses_list[] = {
+  ((address)&_aot_runtime_constants._card_table_base),
+  ((address)&_aot_runtime_constants._grain_shift),
+  nullptr
+};
+
+address AOTRuntimeConstants::card_table_base_address() {
+  assert(UseSerialGC || UseParallelGC, "Only these GCs have constant card table base");
+  return (address)&_aot_runtime_constants._card_table_base;
 }
 
 // This is called after initialize() but before init2()

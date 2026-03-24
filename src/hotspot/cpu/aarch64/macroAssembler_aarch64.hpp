@@ -1476,6 +1476,9 @@ public:
   // Load the base of the cardtable byte map into reg.
   void load_byte_map_base(Register reg);
 
+  // Load a constant address in the AOT Runtime Constants area
+  void load_aotrc_address(Register reg, address a);
+
   // Prolog generator routines to support switch between x86 code and
   // generated ARM code
 

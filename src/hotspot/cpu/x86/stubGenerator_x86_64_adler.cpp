@@ -144,7 +144,7 @@ address StubGenerator::generate_updateBytesAdler32() {
   __ align32();
   if (VM_Version::supports_avx512vl()) {
     // AVX2 performs better for smaller inputs because of leaner post loop reduction sequence..
-    __ cmpl(s, MAX2(128, VM_Version::avx3_threshold()));
+    __ cmpl(s, MAX2(128, CopyAVX3Threshold));
     __ jcc(Assembler::belowEqual, SLOOP1A_AVX2);
     __ lea(end, Address(s, data, Address::times_1, - (2*CHUNKSIZE -1)));
 

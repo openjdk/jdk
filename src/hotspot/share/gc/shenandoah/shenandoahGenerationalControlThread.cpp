@@ -55,7 +55,7 @@ ShenandoahGenerationalControlThread::ShenandoahGenerationalControlThread() :
   _heap(ShenandoahGenerationalHeap::heap()),
   _age_period(0) {
   shenandoah_assert_generational();
-  set_name("Shenandoah Control Thread");
+  set_name("ShenControl");
   create_and_start();
 }
 
@@ -186,7 +186,7 @@ ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread:
   global_heuristics->record_requested_gc();
 
   if (ShenandoahCollectorPolicy::should_run_full_gc(request.cause)) {
-    return stw_full;;
+    return stw_full;
   } else {
     // Unload and clean up everything. Note that this is an _explicit_ request and so does not use
     // the same `should_unload_classes` call as the regulator's concurrent gc request.
@@ -622,10 +622,11 @@ void ShenandoahGenerationalControlThread::service_stw_full_cycle(GCCause::Cause 
 
 void ShenandoahGenerationalControlThread::service_stw_degenerated_cycle(const ShenandoahGCRequest& request) {
   assert(_degen_point != ShenandoahGC::_degenerated_unset, "Degenerated point should be set");
+  request.generation->heuristics()->record_degenerated_cycle_start(ShenandoahGC::ShenandoahDegenPoint::_degenerated_outside_cycle
+                                                                  == _degen_point);
   _heap->increment_total_collections(false);
 
   ShenandoahGCSession session(request.cause, request.generation);
-
   ShenandoahDegenGC gc(_degen_point, request.generation);
   gc.collect(request.cause);
   _degen_point = ShenandoahGC::_degenerated_unset;

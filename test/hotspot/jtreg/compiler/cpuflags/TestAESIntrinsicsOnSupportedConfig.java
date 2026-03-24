@@ -76,7 +76,7 @@ public class TestAESIntrinsicsOnSupportedConfig extends AESIntrinsicsBase {
                 prepareArguments(prepareBooleanFlag(AESIntrinsicsBase
                         .USE_AES, true)));
         final String errorMessage = "Case testUseAES failed";
-        if (Platform.isServer() && !Platform.isEmulatedClient() && isTieredLevelGreaterThan(3)) {
+        if (Platform.isServer() && isTieredLevelGreaterThan(3)) {
             verifyOutput(new String[]{AESIntrinsicsBase.CIPHER_INTRINSIC,
                     AESIntrinsicsBase.AES_INTRINSIC}, null, errorMessage,
                     outputAnalyzer);

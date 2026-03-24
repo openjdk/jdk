@@ -23,6 +23,7 @@
  */
 
 #include "asm/macroAssembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
@@ -111,7 +112,15 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
   __ shrptr(end, CardTable::card_shift());
   __ subptr(end, addr); // end --> cards count
 
-  __ mov64(tmp, (intptr_t)ctbs->card_table_base_const());
+#if INCLUDE_CDS
+  if (AOTCodeCache::is_on_for_dump()) {
+    __ lea(tmp, ExternalAddress(AOTRuntimeConstants::card_table_base_address()));
+    __ movq(tmp, Address(tmp, 0));
+  } else
+#endif
+  {
+    __ mov64(tmp, (intptr_t)ctbs->card_table_base_const());
+  }
   __ addptr(addr, tmp);
 __ BIND(L_loop);
   __ movb(Address(addr, count, Address::times_1), 0);
@@ -121,7 +130,7 @@ __ BIND(L_loop);
 __ BIND(L_done);
 }
 
-void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register obj, Address dst) {
+void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register obj, Address dst, Register rscratch) {
   // Does a store check for the oop in register obj. The content of
   // register obj is destroyed afterwards.
   CardTableBarrierSet* ctbs = CardTableBarrierSet::barrier_set();
@@ -136,6 +145,13 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
   // never need to be relocated. On 64bit however the value may be too
   // large for a 32bit displacement.
   intptr_t byte_map_base = (intptr_t)ctbs->card_table_base_const();
+#if INCLUDE_CDS
+  if (AOTCodeCache::is_on_for_dump()) {
+    __ lea(rscratch, ExternalAddress(AOTRuntimeConstants::card_table_base_address()));
+    __ movq(rscratch, Address(rscratch, 0));
+    card_addr = Address(rscratch, obj, Address::times_1, 0);
+  } else
+#endif
   if (__ is_simm32(byte_map_base)) {
     card_addr = Address(noreg, obj, Address::times_1, byte_map_base);
   } else {
@@ -174,10 +190,10 @@ void CardTableBarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorS
   if (needs_post_barrier) {
     // flatten object address if needed
     if (!precise || (dst.index() == noreg && dst.disp() == 0)) {
-      store_check(masm, dst.base(), dst);
+      store_check(masm, dst.base(), dst, tmp2);
     } else {
       __ lea(tmp1, dst);
-      store_check(masm, tmp1, dst);
+      store_check(masm, tmp1, dst, tmp2);
     }
   }
 }
