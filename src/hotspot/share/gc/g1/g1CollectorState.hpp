@@ -71,7 +71,6 @@ public:
   inline void set_in_space_reclamation_phase();
   inline void set_in_full_gc();
 
-  // Pause setters
   inline void set_in_concurrent_start_gc();
   inline void set_in_prepare_mixed_gc();
 
