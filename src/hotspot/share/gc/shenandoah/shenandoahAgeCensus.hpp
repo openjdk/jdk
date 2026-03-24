@@ -97,6 +97,8 @@ struct ShenandoahNoiseStats {
 // once the per-worker data is consolidated into the appropriate population vector
 // per minor collection. The _local_age_table is thus C x N, for N GC workers.
 class ShenandoahAgeCensus: public CHeapObj<mtGC> {
+  friend class ShenandoahTenuringOverride;
+
   AgeTable** _global_age_tables;      // Global age tables used for adapting tenuring threshold, one per snapshot
   AgeTable** _local_age_tables;       // Local scratch age tables to track object ages, one per worker
 
@@ -148,6 +150,10 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
     return _tenuring_threshold[prev];
   }
 
+  // Override the tenuring threshold for the current epoch. This is used to 
+  // cause everything to be promoted for a whitebox full gc request.
+  void set_tenuring_threshold(uint threshold) { _tenuring_threshold[_epoch] = threshold; }
+
 #ifndef PRODUCT
   // Return the sum of size of objects of all ages recorded in the
   // census at snapshot indexed by snap.
@@ -181,9 +187,6 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
   // Return the most recently computed tenuring threshold.
   // Visible for testing. Use is_tenurable for consistent tenuring comparisons.
   uint tenuring_threshold() const { return _tenuring_threshold[_epoch]; }
-
-  // Override the tenuring threshold for the current epoch.
-  void set_tenuring_threshold(uint threshold) { _tenuring_threshold[_epoch] = threshold; }
 
   // Return true if this age is at or above the tenuring threshold.
   bool is_tenurable(uint age) const {
