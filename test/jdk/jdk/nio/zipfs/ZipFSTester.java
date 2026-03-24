@@ -21,6 +21,7 @@
  * questions.
  */
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -105,6 +106,11 @@ public class ZipFSTester {
                 "dir1/foo",
                 "dir2/bar",
                 "dir1/dir3/fooo");
+    }
+
+    @AfterAll
+    static void cleanup() throws IOException {
+        Files.deleteIfExists(jarFile);
     }
 
     @Test
@@ -583,8 +589,9 @@ public class ZipFSTester {
     // test file stamp
     @Test
     void testTime() throws Exception {
+        var jar = Utils.createJarFile(System.currentTimeMillis() + ".jar");
         BasicFileAttributes attrs = Files
-                        .getFileAttributeView(jarFile, BasicFileAttributeView.class)
+                        .getFileAttributeView(jar, BasicFileAttributeView.class)
                         .readAttributes();
         // create a new filesystem, copy this file into it
         Map<String, Object> env = new HashMap<String, Object>();
@@ -594,8 +601,8 @@ public class ZipFSTester {
             System.out.println("test copy with timestamps...");
             // copyin
             Path dst = getPathWithParents(fs, "me");
-            Files.copy(jarFile, dst, COPY_ATTRIBUTES);
-            checkEqual(jarFile, dst);
+            Files.copy(jar, dst, COPY_ATTRIBUTES);
+            checkEqual(jar, dst);
             System.out.println("mtime: " + attrs.lastModifiedTime());
             System.out.println("ctime: " + attrs.creationTime());
             System.out.println("atime: " + attrs.lastAccessTime());
@@ -608,14 +615,15 @@ public class ZipFSTester {
             System.out.println("atime: " + dstAttrs.lastAccessTime());
 
             // 1-second granularity
-            assertFalse(attrs.lastModifiedTime().to(TimeUnit.SECONDS) !=
-                dstAttrs.lastModifiedTime().to(TimeUnit.SECONDS) ||
-                attrs.lastAccessTime().to(TimeUnit.SECONDS) !=
-                dstAttrs.lastAccessTime().to(TimeUnit.SECONDS) ||
-                attrs.creationTime().to(TimeUnit.SECONDS) !=
-                dstAttrs.creationTime().to(TimeUnit.SECONDS), "Timestamp Copy Failed!");
+            assertEquals(attrs.lastModifiedTime().to(TimeUnit.SECONDS),
+                    dstAttrs.lastModifiedTime().to(TimeUnit.SECONDS), "Last modified time incorrect");
+            assertEquals(attrs.lastAccessTime().to(TimeUnit.SECONDS),
+                    dstAttrs.lastAccessTime().to(TimeUnit.SECONDS), "Last access time incorrect");
+            assertEquals(attrs.creationTime().to(TimeUnit.SECONDS),
+                    dstAttrs.creationTime().to(TimeUnit.SECONDS), "Last creation time incorrect");
         } finally {
-            Files.delete(fsPath);
+            Files.deleteIfExists(fsPath);
+            Files.deleteIfExists(jar);
         }
     }
 
