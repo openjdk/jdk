@@ -224,7 +224,7 @@ public:
                                                             Symbol* super_name,  bool is_superclass);
 
   static void initialize() NOT_CDS_RETURN;
-  static void init_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
+  static void init_dumptime_info(InstanceKlass* k, bool is_loaded_from_file) NOT_CDS_RETURN;
   static void init_dumptime_info_from_preimage(InstanceKlass* k) NOT_CDS_RETURN;
   static void handle_class_unloading(InstanceKlass* k) NOT_CDS_RETURN;
 

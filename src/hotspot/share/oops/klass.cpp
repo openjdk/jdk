@@ -114,6 +114,13 @@ uint8_t Klass::compute_hash_slot(Symbol* n) {
 }
 
 void Klass::set_name(Symbol* n) {
+  // If we don't know the source, assume it is loaded from a file
+  // because we don't care at this point and
+  // we don't want it to be a reason to reject this class on the AOT cache
+  set_name_and_source(n, true);
+}
+
+void Klass::set_name_and_source(Symbol *n, bool is_loaded_from_file) {
   _name = n;
 
   if (_name != nullptr) {
@@ -134,7 +141,7 @@ void Klass::set_name(Symbol* n) {
   }
 
   if (CDSConfig::is_dumping_archive() && is_instance_klass()) {
-    SystemDictionaryShared::init_dumptime_info(InstanceKlass::cast(this));
+    SystemDictionaryShared::init_dumptime_info(InstanceKlass::cast(this), is_loaded_from_file);
   }
 }
 

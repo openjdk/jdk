@@ -123,6 +123,7 @@ public:
   InstanceKlass*               _nest_host;
   bool                         _failed_verification;
   bool                         _is_registered_lambda_proxy;
+  bool                         _is_loaded_from_file;
   int                          _id;
   int                          _clsfile_size;
   int                          _clsfile_crc32;
@@ -136,6 +137,7 @@ public:
     _nest_host = nullptr;
     _failed_verification = false;
     _is_registered_lambda_proxy = false;
+    _is_loaded_from_file = false;
     _has_checked_exclusion = false;
     _id = -1;
     _clsfile_size = -1;
@@ -225,6 +227,8 @@ public:
   void set_failed_verification()                    { _failed_verification = true; }
   InstanceKlass* nest_host() const                  { return _nest_host; }
   void set_nest_host(InstanceKlass* nest_host)      { _nest_host = nest_host; }
+  bool is_loaded_from_file() const                   { return _is_loaded_from_file; }
+  void set_is_loaded_from_file()                     { _is_loaded_from_file = true; }
 
   size_t runtime_info_bytesize() const;
 };

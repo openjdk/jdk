@@ -5069,7 +5069,9 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   // Set name and CLD before adding to CLD
   ik->set_class_loader_data(_loader_data);
   ik->set_class_loader_type();
-  ik->set_name(_class_name);
+
+  //If the stream source is null, it means there is no directory name or ZIP/JAR associated
+  ik->set_name_and_source(_class_name, (_stream != nullptr && _stream->source() != nullptr));
 
   // Add all classes to our internal class loader list here,
   // including classes in the bootstrap (null) class loader.

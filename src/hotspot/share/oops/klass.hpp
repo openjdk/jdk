@@ -748,6 +748,11 @@ public:
   Symbol* name() const                   { return _name; }
   void set_name(Symbol* n);
 
+  // Source is important to detect dynamic classes and prevent them to be
+  // stored on the AOT cache during training phase.
+  // that's why we have a bool is_loaded_from_file
+  void set_name_and_source(Symbol *n, bool is_loaded_from_file);
+
   virtual void release_C_heap_structures(bool release_constant_pool = true);
 
  public:

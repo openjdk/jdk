@@ -189,7 +189,9 @@ void FinalImageRecipes::load_all_classes(TRAPS) {
     if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
       if (ik->defined_by_other_loaders()) {
-        SystemDictionaryShared::init_dumptime_info(ik);
+        // is_loaded_from_file is true because we don't care at this point and
+        // we don't want it to be a reason to reject this class on the AOT cache
+        SystemDictionaryShared::init_dumptime_info(ik, true);
         SystemDictionaryShared::add_unregistered_class(THREAD, ik);
         SystemDictionaryShared::copy_unregistered_class_size_and_crc32(ik);
       } else if (!ik->is_hidden()) {
