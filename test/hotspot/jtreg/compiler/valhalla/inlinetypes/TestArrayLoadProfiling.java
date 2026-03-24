@@ -45,22 +45,22 @@ public class TestArrayLoadProfiling {
     static A[] array5 = { new A() };
     
     @Test
-    @IR(failOn = {IRNode.CALL_OF_METHOD}, count = { IRNode.IF, "3" })
+    @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.CALL, "4" })
     public static void test1(I[] array) {
-        return test1Inline(array[0]);
+        test1Inline(array[0]);
     }
 
     @Run(test = "test1")
     public static void test1Runner() {
         test1(array1);
-        test1Inline(array2);
-        test1Inline(array3);
-        test1Inline(array4);
-        test1Inline(array5);
+        test1Inline(array2[0]);
+        test1Inline(array3[0]);
+        test1Inline(array4[0]);
+        test1Inline(array5[0]);
     }
 
-    @Inline
-    void test1Inline(Interface i) {
+    @ForceInline
+    static void test1Inline(I i) {
         i.m();
     }
 
