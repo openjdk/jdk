@@ -1266,11 +1266,8 @@ void InterpreterMacroAssembler::profile_virtual_call(Register receiver,
     // If no method data exists, go to profile_continue.
     test_method_data_pointer(mdp, profile_continue);
 
-    NearLabel skip_receiver_profile;
-
     // Record the receiver type.
     record_klass_in_profile(receiver, mdp, reg2);
-    bind(skip_receiver_profile);
 
     // The method data pointer needs to be updated to reflect the new target.
     update_mdp_by_constant(mdp, in_bytes(VirtualCallData::virtual_call_data_size()));
