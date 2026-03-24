@@ -200,7 +200,6 @@ bool VectorSupport::is_unsigned_op(jint id) {
 }
 
 const char* VectorSupport::lanetype2name(LaneType lane_type) {
-  assert(lane_type >= LT_FLOAT && lane_type <= LT_LONG, "");
   const char* lanetype2name[] = {
     "float",
     "double",
@@ -212,6 +211,7 @@ const char* VectorSupport::lanetype2name(LaneType lane_type) {
   if (lane_type >= LT_FLOAT && lane_type <= LT_LONG) {
     return lanetype2name[lane_type];
   }
+  assert(false, "unknown lane type: %d", (int)lane_type);
   return "illegal";
 }
 
