@@ -29,7 +29,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.IOException;
-import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -62,6 +61,7 @@ public class PathOps {
         emptyJar = Utils.createJarFile("empty.jar");
     }
 
+    // Ensure NPEs are thrown for null inputs on Path ops
     @Test
     void nullPointerTest() throws IOException {
         try (var fs = FileSystems.newFileSystem(emptyJar)) {
@@ -74,11 +74,12 @@ public class PathOps {
         }
     }
 
+    // Ensure correct behavior when paths are provided by mismatched providers
     @Test
     void mismatchedProvidersTest() throws IOException {
+        Path other = Paths.get("foo");
         try (var fs = FileSystems.newFileSystem(emptyJar)) {
             Path path = fs.getPath("foo");
-            Path other = Paths.get("foo");
             assertThrows(ProviderMismatchException.class, () -> path.compareTo(other));
             assertThrows(ProviderMismatchException.class, () -> path.resolve(other));
             assertThrows(ProviderMismatchException.class, () -> path.relativize(other));
@@ -87,6 +88,7 @@ public class PathOps {
         }
     }
 
+    // Ensure correct construction of paths when given sequence of strings
     @ParameterizedTest
     @MethodSource
     void constructionTest(String first, String[] more, String expected) throws IOException {
@@ -109,6 +111,7 @@ public class PathOps {
         );
     }
 
+    // Ensure proper root, parent, and name components
     @Test
     void allComponentsTest() throws IOException {
         try (var fs = FileSystems.newFileSystem(emptyJar)) {
@@ -119,6 +122,7 @@ public class PathOps {
         }
     }
 
+    // Ensure correct name count for root only and empty name
     @ParameterizedTest
     @MethodSource
     void nameCountTest(String first, String root, String parent, String name, int nameCount) throws IOException {
@@ -127,7 +131,8 @@ public class PathOps {
             root(path, root);
             parent(path, parent);
             name(path, name);
-            nameCount(path, nameCount);
+            checkPath(path);
+            check(path.getNameCount(), Integer.toString(nameCount));
         }
     }
 
@@ -140,6 +145,7 @@ public class PathOps {
         );
     }
 
+    // Ensure correct parent and name behavior for no root and name only
     @ParameterizedTest
     @MethodSource
     void parentNameTest(String first, String root, String parent, String name) throws IOException {
@@ -160,11 +166,15 @@ public class PathOps {
         );
     }
 
+    // Ensure correct (positive) `startsWith` behavior
     @ParameterizedTest
     @MethodSource
     void startsWithTest(String first, String prefix) throws IOException {
         try (var fs = FileSystems.newFileSystem(emptyJar)) {
-            starts(fs.getPath(first), prefix, fs);
+            var path = fs.getPath(first);
+            checkPath(path);
+            Path s = fs.getPath(prefix);
+            check(path.startsWith(s), true);
         }
     }
 
@@ -185,11 +195,15 @@ public class PathOps {
         );
     }
 
+    // Ensure correct (negative) `startsWith` behavior
     @ParameterizedTest
     @MethodSource
     void notStartsWithTest(String first, String prefix) throws IOException {
         try (var fs = FileSystems.newFileSystem(emptyJar)) {
-            notStarts(fs.getPath(first), prefix, fs);
+            var path = fs.getPath(first);
+            checkPath(path);
+            Path s = fs.getPath(prefix);
+            check(path.startsWith(s), false);
         }
     }
 
@@ -210,11 +224,15 @@ public class PathOps {
         );
     }
 
+    // Ensure correct (positive) `endsWith` behavior
     @ParameterizedTest
     @MethodSource
     void endsWithTest(String first, String suffix) throws IOException {
         try (var fs = FileSystems.newFileSystem(emptyJar)) {
-            ends(fs.getPath(first), suffix, fs);
+            var path = fs.getPath(first);
+            checkPath(path);
+            Path s = fs.getPath(suffix);
+            check(path.endsWith(s), true);
         }
     }
 
@@ -240,11 +258,15 @@ public class PathOps {
         );
     }
 
+    // Ensure correct (negative) `endsWith` behavior
     @ParameterizedTest
     @MethodSource
     void notEndsWithTest(String first, String suffix) throws IOException {
         try (var fs = FileSystems.newFileSystem(emptyJar)) {
-            notEnds(fs.getPath(first), suffix, fs);
+            var path = fs.getPath(first);
+            checkPath(path);
+            Path s = fs.getPath(suffix);
+            check(path.endsWith(s), false);
         }
     }
 
@@ -259,11 +281,14 @@ public class PathOps {
         );
     }
 
+    // Ensure `getName` returns correct String at index
     @ParameterizedTest
     @MethodSource
     void elementTest(int index, String expected) throws IOException {
         try (var fs = FileSystems.newFileSystem(emptyJar)) {
-            element(fs.getPath("a/b/c"), index, expected);
+            var path = fs.getPath("a/b/c");
+            checkPath(path);
+            check(path.getName(index), expected);
         }
     }
 
@@ -275,22 +300,29 @@ public class PathOps {
         );
     }
 
+    // Ensure expected behavior for absolute paths
     @ParameterizedTest
     @ValueSource(strings = {"/", "/tmp"} )
     void isAbsoluteTest(String first) throws IOException {
         try (var fs = FileSystems.newFileSystem(emptyJar)) {
-            absolute(fs.getPath(first));
+            var path = fs.getPath(first);
+            checkPath(path);
+            check(path.isAbsolute(), true);
         }
     }
 
+    // Ensure expected behavior for non-absolute paths
     @ParameterizedTest
     @ValueSource(strings = {"tmp", ""} )
     void notAbsoluteTest(String first) throws IOException {
         try (var fs = FileSystems.newFileSystem(emptyJar)) {
-            notAbsolute(fs.getPath(first));
+            var path = fs.getPath(first);
+            checkPath(path);
+            check(path.isAbsolute(), false);
         }
     }
 
+    // Ensure correct append and replacement behavior for `resolve(String)`
     @ParameterizedTest
     @MethodSource
     void resolveTest(String first, String other, String expected) throws IOException {
@@ -317,11 +349,14 @@ public class PathOps {
         );
     }
 
+    // Ensure correct append and replacement behavior for `resolve(Path)`
     @ParameterizedTest
     @MethodSource
     void resolvePathTest(String first, String other, String expected) throws IOException {
         try (var fs = FileSystems.newFileSystem(emptyJar)) {
-            resolvePath(fs.getPath(first), other, expected, fs);
+            var path = fs.getPath(first);
+            checkPath(path);
+            check(path.resolve(fs.getPath(other)), expected);
         }
     }
 
@@ -343,6 +378,7 @@ public class PathOps {
         );
     }
 
+    // Ensure correct behavior for `resolveSibling`
     @ParameterizedTest
     @MethodSource
     void resolveSiblingTest(String first, String other, String expected) throws IOException {
@@ -368,6 +404,7 @@ public class PathOps {
         );
     }
 
+    // Checking `resolve` and `resolveSibling` behavior for empty path
     @Test
     void resolveSiblingAndResolveTest() throws IOException {
         try (var fs = FileSystems.newFileSystem(emptyJar)) {
@@ -378,11 +415,16 @@ public class PathOps {
         }
     }
 
+    // Ensure correct behavior of `relativize`. i.e. Relative path should be
+    // produced between two given paths
     @ParameterizedTest
     @MethodSource
     void relativizeTest(String first, String other, String expected) throws IOException {
         try (var fs = FileSystems.newFileSystem(emptyJar)) {
-            relativize(fs.getPath(first), other, expected, fs);
+            var path = fs.getPath(first);
+            checkPath(path);
+            Path that = fs.getPath(other);
+            check(path.relativize(that), expected);
         }
     }
 
@@ -407,11 +449,14 @@ public class PathOps {
         );
     }
 
+    // Ensure correct behavior of `normalize`. i.e. redundant elements should be removed.
     @ParameterizedTest
     @MethodSource
     void normalizeTest(String first, String expected) throws IOException {
         try (var fs = FileSystems.newFileSystem(emptyJar)) {
-            normalize(fs.getPath(first), expected);
+            var path = fs.getPath(first);
+            checkPath(path);
+            check(path.normalize(), expected);
         }
     }
 
@@ -438,6 +483,7 @@ public class PathOps {
         );
     }
 
+    // Check IPE is thrown for invalid path Strings
     @ParameterizedTest
     @MethodSource
     void invalidTest(String first) throws IOException {
@@ -457,6 +503,7 @@ public class PathOps {
         );
     }
 
+    // Check that repeated forward slash is normalized correctly
     @Test
     void normalizationTest() throws IOException {
         try (var fs = FileSystems.newFileSystem(emptyJar)) {
@@ -468,18 +515,20 @@ public class PathOps {
         }
     }
 
-    @Test
+    @Test // Check that identical paths refer to the same file
     void isSameFileTest() throws IOException {
         try (var fs = FileSystems.newFileSystem(emptyJar)) {
-            isSameFile(fs.getPath("/fileDoesNotExist"), "/fileDoesNotExist", fs);
+            var path = fs.getPath("/fileDoesNotExist");
+            checkPath(path);
+            check(Files.isSameFile(path, fs.getPath("/fileDoesNotExist")), true);
         }
     }
 
+    // Regression test for 8139956: Ensure `relativize` of equivalent paths
+    // produces an empty path -> `getNameCount` returns 1
     @Test
     void getNameCountTest() throws IOException {
-        // 8139956
         try (var fs = FileSystems.newFileSystem(emptyJar)) {
-            System.out.println("check getNameCount");
             int nc = fs.getPath("/").relativize(fs.getPath("/")).getNameCount();
             assertEquals(1, nc, "getNameCount of empty path failed");
         }
@@ -506,132 +555,33 @@ public class PathOps {
         check(result, Boolean.toString(expected));
     }
 
-    static void check(Object result, int expected) {
-        check(result, Integer.toString(expected));
-    }
-
     static void root(Path path, String expected) {
-        System.out.println("check root");
         checkPath(path);
         check(path.getRoot(), expected);
     }
 
     static void parent(Path path, String expected) {
-        System.out.println("check parent");
         checkPath(path);
         check(path.getParent(), expected);
     }
 
     static void name(Path path, String expected) {
-        System.out.println("check name");
         checkPath(path);
         check(path.getFileName(), expected);
     }
 
-    static void nameCount(Path path, int expected) {
-        System.out.println("check nameCount");
-        checkPath(path);
-        check(path.getNameCount(), expected);
-    }
-
-    static void element(Path path, int index, String expected) {
-        System.out.format("check element %d\n", index);
-        checkPath(path);
-        check(path.getName(index), expected);
-    }
-
-    static void subpath(Path path, int startIndex, int endIndex, String expected) {
-        System.out.format("test subpath(%d,%d)\n", startIndex, endIndex);
-        checkPath(path);
-        check(path.subpath(startIndex, endIndex), expected);
-    }
-
-    static void starts(Path path, String prefix, FileSystem fs) {
-        System.out.format("test startsWith with %s\n", prefix);
-        checkPath(path);
-        Path s = fs.getPath(prefix);
-        check(path.startsWith(s), true);
-    }
-
-    static void notStarts(Path path, String prefix, FileSystem fs) {
-        System.out.format("test not startsWith with %s\n", prefix);
-        checkPath(path);
-        Path s = fs.getPath(prefix);
-        check(path.startsWith(s), false);
-    }
-
-    static void ends(Path path, String suffix, FileSystem fs) {
-        System.out.format("test endsWith %s\n", suffix);
-        checkPath(path);
-        Path s = fs.getPath(suffix);
-        check(path.endsWith(s), true);
-    }
-
-    static void notEnds(Path path, String suffix, FileSystem fs) {
-        System.out.format("test not endsWith %s\n", suffix);
-        checkPath(path);
-        Path s = fs.getPath(suffix);
-        check(path.endsWith(s), false);
-    }
-
-    static void absolute(Path path) {
-        System.out.println("check path is absolute");
-        checkPath(path);
-        check(path.isAbsolute(), true);
-    }
-
-    static void notAbsolute(Path path) {
-        System.out.println("check path is not absolute");
-        checkPath(path);
-        check(path.isAbsolute(), false);
-    }
-
     static void resolve(Path path, String other, String expected) {
-        System.out.format("test resolve %s\n", other);
         checkPath(path);
         check(path.resolve(other), expected);
     }
 
-    static void resolvePath(Path path, String other, String expected, FileSystem fs) {
-        System.out.format("test resolve %s\n", other);
-        checkPath(path);
-        check(path.resolve(fs.getPath(other)), expected);
-    }
-
     static void resolveSibling(Path path, String other, String expected) {
-        System.out.format("test resolveSibling %s\n", other);
         checkPath(path);
         check(path.resolveSibling(other), expected);
-
-    }
-
-    static void relativize(Path path, String other, String expected, FileSystem fs) {
-        System.out.format("test relativize %s\n", other);
-        checkPath(path);
-        Path that = fs.getPath(other);
-        check(path.relativize(that), expected);
-    }
-
-    static void normalize(Path path, String expected) {
-        System.out.println("check normalized path");
-        checkPath(path);
-        check(path.normalize(), expected);
-
     }
 
     static void string(Path path, String expected) {
-        System.out.println("check string representation");
         checkPath(path);
         check(path, expected);
-    }
-
-    static void isSameFile(Path path, String target, FileSystem fs) {
-        try {
-            System.out.println("check two paths are same");
-            checkPath(path);
-            check(Files.isSameFile(path, fs.getPath(target)), true);
-        } catch (IOException ioe) {
-            fail(ioe);
-        }
     }
 }
