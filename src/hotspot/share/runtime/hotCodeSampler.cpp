@@ -67,7 +67,6 @@ void ThreadSampler::do_sampling(JavaThread* thread) {
             if (created) {
               _samples.maybe_grow();
             }
-            nm->mark_as_maybe_on_stack();
           }
         }
       }
