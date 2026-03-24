@@ -32,7 +32,6 @@
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/perfData.inline.hpp"
 #include "utilities/defaultStream.hpp"
 
@@ -106,8 +105,8 @@ void ShenandoahHeapRegionCounters::write_snapshot(PerfLongVariable** regions,
 void ShenandoahHeapRegionCounters::update() {
   if (ShenandoahRegionSampling) {
     jlong current = nanos_to_millis(os::javaTimeNanos());
-    jlong last = _last_sample_millis;
-    if (current - last > ShenandoahRegionSamplingRate && AtomicAccess::cmpxchg(&_last_sample_millis, last, current) == last) {
+    jlong last = _last_sample_millis.load_relaxed();
+    if (current - last > ShenandoahRegionSamplingRate && _last_sample_millis.compare_exchange(last, current) == last) {
 
       ShenandoahHeap* heap = ShenandoahHeap::heap();
       _status->set_value(encode_heap_status(heap));

@@ -2726,11 +2726,8 @@ bool Matcher::is_short_branch_offset(int rule, int br_size, int offset) {
   return (-128 <= offset && offset <= 127);
 }
 
+#ifdef ASSERT
 // Return whether or not this register is ever used as an argument.
-// This function is used on startup to build the trampoline stubs in
-// generateOptoStub.  Registers not mentioned will be killed by the VM
-// call in the trampoline, and arguments in those registers not be
-// available to the callee.
 bool Matcher::can_be_java_arg(int reg)
 {
   return
@@ -2750,11 +2747,7 @@ bool Matcher::can_be_java_arg(int reg)
     reg == XMM6_num || reg == XMM6b_num ||
     reg == XMM7_num || reg == XMM7b_num;
 }
-
-bool Matcher::is_spillable_arg(int reg)
-{
-  return can_be_java_arg(reg);
-}
+#endif
 
 uint Matcher::int_pressure_limit()
 {
@@ -2768,13 +2761,6 @@ uint Matcher::float_pressure_limit()
   uint dec_count  = VM_Version::supports_evex() ? 4 : 2;
   uint default_float_pressure_threshold = _FLOAT_REG_mask.size() - dec_count;
   return (FLOATPRESSURE == -1) ? default_float_pressure_threshold : FLOATPRESSURE;
-}
-
-bool Matcher::use_asm_for_ldiv_by_con( jlong divisor ) {
-  // In 64 bit mode a code which use multiply when
-  // devisor is constant is faster than hardware
-  // DIV instruction (it uses MulHiL).
-  return false;
 }
 
 // Register for DIVI projection of divmodI
@@ -3338,6 +3324,18 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
     case Op_UMinV:
     case Op_UMaxV:
       if (UseAVX == 0) {
+        return false;
+      }
+      break;
+    case Op_UMinReductionV:
+    case Op_UMaxReductionV:
+      if (UseAVX == 0) {
+        return false;
+      }
+      if (bt == T_LONG && !VM_Version::supports_avx512vl()) {
+        return false;
+      }
+      if (UseAVX > 2 && size_in_bits == 512 && !VM_Version::supports_avx512vl()) {
         return false;
       }
       break;
@@ -4679,11 +4677,6 @@ frame
   // Compiled code's Frame Pointer
   frame_pointer(RSP);
 
-  // Interpreter stores its frame pointer in a register which is
-  // stored to the stack by I2CAdaptors.
-  // I2CAdaptors convert from interpreted java to compiled java.
-  interpreter_frame_pointer(RBP);
-
   // Stack alignment requirement
   stack_alignment(StackAlignmentInBytes); // Alignment size in bytes (128-bit -> 16 bytes)
 
@@ -5183,6 +5176,18 @@ operand immL_65535()
   predicate(n->get_long() == 65535);
   match(ConL);
 
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// AOT Runtime Constants Address
+operand immAOTRuntimeConstantsAddress()
+%{
+  // Check if the address is in the range of AOT Runtime Constants
+  predicate(AOTRuntimeConstants::contains((address)(n->get_ptr())));
+  match(ConP);
+
+  op_cost(0);
   format %{ %}
   interface(CONST_INTER);
 %}
@@ -7332,6 +7337,19 @@ instruct loadD(regD dst, memory mem)
   ins_pipe(pipe_slow); // XXX
 %}
 
+instruct loadAOTRCAddress(rRegP dst, immAOTRuntimeConstantsAddress con)
+%{
+  match(Set dst con);
+
+  format %{ "leaq  $dst, $con\t# AOT Runtime Constants Address" %}
+
+  ins_encode %{
+    __ load_aotrc_address($dst$$Register, (address)$con$$constant);
+  %}
+
+  ins_pipe(ialu_reg_fat);
+%}
+
 // max = java.lang.Math.max(float a, float b)
 instruct maxF_reg_avx10_2(regF dst, regF a, regF b) %{
   predicate(VM_Version::supports_avx10_2());
@@ -8827,6 +8845,21 @@ instruct membar_release_lock()
   ins_pipe(empty);
 %}
 
+instruct membar_storeload(rFlagsReg cr) %{
+  match(MemBarStoreLoad);
+  effect(KILL cr);
+  ins_cost(400);
+
+  format %{
+    $$template
+    $$emit$$"lock addl [rsp + #0], 0\t! membar_storeload"
+  %}
+  ins_encode %{
+    __ membar(Assembler::StoreLoad);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct membar_volatile(rFlagsReg cr) %{
   match(MemBarVolatile);
   effect(KILL cr);
@@ -8852,6 +8885,21 @@ instruct unnecessary_membar_volatile()
   format %{ "MEMBAR-volatile (unnecessary so empty encoding)" %}
   ins_encode();
   ins_pipe(empty);
+%}
+
+instruct membar_full(rFlagsReg cr) %{
+  match(MemBarFull);
+  effect(KILL cr);
+  ins_cost(400);
+
+  format %{
+    $$template
+    $$emit$$"lock addl [rsp + #0], 0\t! membar_full"
+  %}
+  ins_encode %{
+    __ membar(Assembler::StoreLoad);
+  %}
+  ins_pipe(pipe_slow);
 %}
 
 instruct membar_storestore() %{
@@ -19346,6 +19394,8 @@ instruct reductionI(rRegI dst, rRegI src1, legVec src2, legVec vtmp1, legVec vtm
   match(Set dst (XorReductionV  src1 src2));
   match(Set dst (MinReductionV  src1 src2));
   match(Set dst (MaxReductionV  src1 src2));
+  match(Set dst (UMinReductionV  src1 src2));
+  match(Set dst (UMaxReductionV  src1 src2));
   effect(TEMP vtmp1, TEMP vtmp2);
   format %{ "vector_reduction_int $dst,$src1,$src2 ; using $vtmp1, $vtmp2 as TEMP" %}
   ins_encode %{
@@ -19367,6 +19417,8 @@ instruct reductionL(rRegL dst, rRegL src1, legVec src2, legVec vtmp1, legVec vtm
   match(Set dst (XorReductionV  src1 src2));
   match(Set dst (MinReductionV  src1 src2));
   match(Set dst (MaxReductionV  src1 src2));
+  match(Set dst (UMinReductionV  src1 src2));
+  match(Set dst (UMaxReductionV  src1 src2));
   effect(TEMP vtmp1, TEMP vtmp2);
   format %{ "vector_reduction_long $dst,$src1,$src2 ; using $vtmp1, $vtmp2 as TEMP" %}
   ins_encode %{
@@ -19386,6 +19438,8 @@ instruct reductionL_avx512dq(rRegL dst, rRegL src1, vec src2, vec vtmp1, vec vtm
   match(Set dst (XorReductionV  src1 src2));
   match(Set dst (MinReductionV  src1 src2));
   match(Set dst (MaxReductionV  src1 src2));
+  match(Set dst (UMinReductionV  src1 src2));
+  match(Set dst (UMaxReductionV  src1 src2));
   effect(TEMP vtmp1, TEMP vtmp2);
   format %{ "vector_reduction_long $dst,$src1,$src2 ; using $vtmp1, $vtmp2 as TEMP" %}
   ins_encode %{
@@ -19614,6 +19668,8 @@ instruct reductionB(rRegI dst, rRegI src1, legVec src2, legVec vtmp1, legVec vtm
   match(Set dst (XorReductionV  src1 src2));
   match(Set dst (MinReductionV  src1 src2));
   match(Set dst (MaxReductionV  src1 src2));
+  match(Set dst (UMinReductionV  src1 src2));
+  match(Set dst (UMaxReductionV  src1 src2));
   effect(TEMP vtmp1, TEMP vtmp2);
   format %{ "vector_reduction_byte $dst,$src1,$src2 ; using $vtmp1, $vtmp2 as TEMP" %}
   ins_encode %{
@@ -19632,6 +19688,8 @@ instruct reductionB_avx512bw(rRegI dst, rRegI src1, vec src2, vec vtmp1, vec vtm
   match(Set dst (XorReductionV  src1 src2));
   match(Set dst (MinReductionV  src1 src2));
   match(Set dst (MaxReductionV  src1 src2));
+  match(Set dst (UMinReductionV  src1 src2));
+  match(Set dst (UMaxReductionV  src1 src2));
   effect(TEMP vtmp1, TEMP vtmp2);
   format %{ "vector_reduction_byte $dst,$src1,$src2 ; using $vtmp1, $vtmp2 as TEMP" %}
   ins_encode %{
@@ -19653,6 +19711,8 @@ instruct reductionS(rRegI dst, rRegI src1, legVec src2, legVec vtmp1, legVec vtm
   match(Set dst (XorReductionV  src1 src2));
   match(Set dst (MinReductionV  src1 src2));
   match(Set dst (MaxReductionV  src1 src2));
+  match(Set dst (UMinReductionV  src1 src2));
+  match(Set dst (UMaxReductionV  src1 src2));
   effect(TEMP vtmp1, TEMP vtmp2);
   format %{ "vector_reduction_short $dst,$src1,$src2 ; using $vtmp1, $vtmp2 as TEMP" %}
   ins_encode %{

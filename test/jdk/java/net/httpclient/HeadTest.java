@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,10 @@
  * @summary Tests Client handles HEAD and 304 responses correctly.
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=trace,headers,requests HeadTest
+ * @run junit/othervm -Djdk.httpclient.HttpClient.log=trace,headers,requests HeadTest
  */
 
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -55,19 +51,24 @@ import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpOption.H3_DISCOVERY;
 import static jdk.httpclient.test.lib.common.HttpServerAdapters.createClientBuilderForH3;
-import static org.testng.Assert.assertEquals;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class HeadTest implements HttpServerAdapters {
 
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
-    HttpTestServer httpTestServer;        // HTTP/1.1
-    HttpTestServer httpsTestServer;       // HTTPS/1.1
-    HttpTestServer http2TestServer;       // HTTP/2 ( h2c )
-    HttpTestServer https2TestServer;      // HTTP/2 ( h2  )
-    HttpTestServer https3TestServer;      // HTTP/3
-    String httpURI, httpsURI;
-    String http2URI, https2URI;
-    String https3URI;
+    private static HttpTestServer httpTestServer;        // HTTP/1.1
+    private static HttpTestServer httpsTestServer;       // HTTPS/1.1
+    private static HttpTestServer http2TestServer;       // HTTP/2 ( h2c )
+    private static HttpTestServer https2TestServer;      // HTTP/2 ( h2  )
+    private static HttpTestServer https3TestServer;      // HTTP/3
+    private static String httpURI, httpsURI;
+    private static String http2URI, https2URI;
+    private static String https3URI;
 
     static final String CONTENT_LEN = "300";
 
@@ -80,8 +81,7 @@ public class HeadTest implements HttpServerAdapters {
     static final int HTTP_OK = 200;
     static final PrintStream out = System.out;
 
-    @DataProvider(name = "positive")
-    public Object[][] positive() {
+    public static Object[][] positive() {
         return new Object[][] {
                 // HTTP/1.1
                 { httpURI, "GET", HTTP_NOT_MODIFIED, HTTP_1_1  },
@@ -103,7 +103,8 @@ public class HeadTest implements HttpServerAdapters {
         };
     }
 
-    @Test(dataProvider = "positive")
+    @ParameterizedTest
+    @MethodSource("positive")
     void test(String uriString, String method,
                         int expResp, Version version) throws Exception {
         out.printf("%n---- starting (%s) ----%n", uriString);
@@ -136,17 +137,17 @@ public class HeadTest implements HttpServerAdapters {
 
             out.println("  Got response: " + response);
 
-            assertEquals(response.statusCode(), expResp);
-            assertEquals(response.body(), "");
-            assertEquals(response.headers().firstValue("Content-length").get(), CONTENT_LEN);
-            assertEquals(response.version(), request.version().get());
+            assertEquals(expResp, response.statusCode());
+            assertEquals("", response.body());
+            assertEquals(CONTENT_LEN, response.headers().firstValue("Content-length").get());
+            assertEquals(request.version().get(), response.version());
         }
     }
 
     // -- Infrastructure
     // TODO: See if test performs better with Vthreads, see H3SimplePost and H3SimpleGet
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         httpTestServer = HttpTestServer.create(HTTP_1_1);
         httpTestServer.addHandler(new HeadHandler(), "/");
         httpURI = "http://" + httpTestServer.serverAuthority() + "/";
@@ -173,8 +174,8 @@ public class HeadTest implements HttpServerAdapters {
         https3TestServer.start();
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         httpTestServer.stop();
         httpsTestServer.stop();
         http2TestServer.stop();

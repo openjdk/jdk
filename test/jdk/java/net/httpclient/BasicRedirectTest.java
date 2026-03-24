@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @summary Basic test for redirect and redirect policies
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
- * @run testng/othervm
+ * @run junit/othervm
  *       -Djdk.httpclient.HttpClient.log=trace,headers,requests
  *       -Djdk.internal.httpclient.debug=true
  *       BasicRedirectTest
@@ -49,10 +49,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.net.ssl.SSLContext;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
@@ -61,39 +57,42 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
 import static java.net.http.HttpOption.Http3DiscoveryMode.ANY;
 import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
 
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class BasicRedirectTest implements HttpServerAdapters {
 
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
-    HttpTestServer httpTestServer;        // HTTP/1.1    [ 4 servers ]
-    HttpTestServer httpsTestServer;       // HTTPS/1.1
-    HttpTestServer http2TestServer;       // HTTP/2 ( h2c )
-    HttpTestServer https2TestServer;      // HTTP/2 ( h2  )
-    HttpTestServer http3TestServer;       // HTTP/3 ( h3  )
-    String httpURI;
-    String httpURIToMoreSecure;   // redirects HTTP to HTTPS
-    String httpURIToH3MoreSecure; // redirects HTTP to HTTPS/3
-    String httpsURI;
-    String httpsURIToLessSecure; // redirects HTTPS to HTTP
-    String http2URI;
-    String http2URIToMoreSecure; // redirects HTTP to HTTPS
-    String http2URIToH3MoreSecure; // redirects HTTP to HTTPS/3
-    String https2URI;
-    String https2URIToLessSecure; // redirects HTTPS to HTTP
-    String https3URI;
-    String https3HeadURI;
-    String http3URIToLessSecure; // redirects HTTP3 to HTTP
-    String http3URIToH2cLessSecure; // redirects HTTP3 to h2c
+    private static HttpTestServer httpTestServer;        // HTTP/1.1    [ 4 servers ]
+    private static HttpTestServer httpsTestServer;       // HTTPS/1.1
+    private static HttpTestServer http2TestServer;       // HTTP/2 ( h2c )
+    private static HttpTestServer https2TestServer;      // HTTP/2 ( h2  )
+    private static HttpTestServer http3TestServer;       // HTTP/3 ( h3  )
+    private static String httpURI;
+    private static String httpURIToMoreSecure;   // redirects HTTP to HTTPS
+    private static String httpURIToH3MoreSecure; // redirects HTTP to HTTPS/3
+    private static String httpsURI;
+    private static String httpsURIToLessSecure; // redirects HTTPS to HTTP
+    private static String http2URI;
+    private static String http2URIToMoreSecure; // redirects HTTP to HTTPS
+    private static String http2URIToH3MoreSecure; // redirects HTTP to HTTPS/3
+    private static String https2URI;
+    private static String https2URIToLessSecure; // redirects HTTPS to HTTP
+    private static String https3URI;
+    private static String https3HeadURI;
+    private static String http3URIToLessSecure; // redirects HTTP3 to HTTP
+    private static String http3URIToH2cLessSecure; // redirects HTTP3 to h2c
 
     static final String MESSAGE = "Is fearr Gaeilge briste, na Bearla cliste";
     static final int ITERATIONS = 3;
 
-    @DataProvider(name = "positive")
-    public Object[][] positive() {
+    public static Object[][] positive() {
         return new Object[][] {
                 { httpURI,                 Redirect.ALWAYS, Optional.empty()    },
                 { httpsURI,                Redirect.ALWAYS, Optional.empty()    },
@@ -121,8 +120,8 @@ public class BasicRedirectTest implements HttpServerAdapters {
         };
     }
 
-    HttpClient createClient(Redirect redirectPolicy, Optional<Version> version) throws Exception {
-        var clientBuilder = newClientBuilderForH3()
+    static HttpClient createClient(Redirect redirectPolicy, Optional<Version> version) throws Exception {
+        var clientBuilder = HttpServerAdapters.createClientBuilderForH3()
                 .followRedirects(redirectPolicy)
                 .sslContext(sslContext);
         HttpClient client = version.map(clientBuilder::version)
@@ -135,23 +134,24 @@ public class BasicRedirectTest implements HttpServerAdapters {
             var get = builder.copy().GET().build();
             out.printf("%n---- sending initial head request (%s) -----%n", head.uri());
             var resp = client.send(head, BodyHandlers.ofString());
-            assertEquals(resp.statusCode(), 200);
-            assertEquals(resp.version(), HTTP_2);
+            assertEquals(200, resp.statusCode());
+            assertEquals(HTTP_2, resp.version());
             out.println("HEADERS: " + resp.headers());
             var length = resp.headers().firstValueAsLong("Content-Length")
                     .orElseThrow(AssertionError::new);
             if (length < 0) throw new AssertionError("negative length " + length);
             out.printf("%n---- sending initial HTTP/3 GET request (%s) -----%n", get.uri());
             resp = client.send(get, BodyHandlers.ofString());
-            assertEquals(resp.statusCode(), 200);
-            assertEquals(resp.version(), HTTP_3);
-            assertEquals(resp.body().getBytes(UTF_8).length, length,
+            assertEquals(200, resp.statusCode());
+            assertEquals(HTTP_3, resp.version());
+            assertEquals(length, resp.body().getBytes(UTF_8).length,
                     "body \"" + resp.body() + "\": ");
         }
         return client;
     }
 
-    @Test(dataProvider = "positive")
+    @ParameterizedTest
+    @MethodSource("positive")
     void test(String uriString, Redirect redirectPolicy, Optional<Version> clientVersion) throws Exception {
         out.printf("%n---- starting positive (%s, %s, %s) ----%n", uriString, redirectPolicy,
                 clientVersion.map(Version::name).orElse("empty"));
@@ -169,8 +169,8 @@ public class BasicRedirectTest implements HttpServerAdapters {
             out.println("  Got body Path: " + response.body());
             out.println("  Got response.request: " + response.request());
 
-            assertEquals(response.statusCode(), 200);
-            assertEquals(response.body(), MESSAGE);
+            assertEquals(200, response.statusCode());
+            assertEquals(MESSAGE, response.body());
             // asserts redirected URI in response.request().uri()
             assertTrue(response.uri().getPath().endsWith("message"));
             assertPreviousRedirectResponses(request, response, clientVersion);
@@ -193,7 +193,7 @@ public class BasicRedirectTest implements HttpServerAdapters {
             versions.add(response.version());
             assertTrue(300 <= response.statusCode() && response.statusCode() <= 309,
                        "Expected 300 <= code <= 309, got:" + response.statusCode());
-            assertEquals(response.body(), null, "Unexpected body: " + response.body());
+            assertEquals(null, response.body(), "Unexpected body: " + response.body());
             String locationHeader = response.headers().firstValue("Location")
                       .orElseThrow(() -> new RuntimeException("no previous Location"));
             assertTrue(uri.toString().endsWith(locationHeader),
@@ -202,7 +202,7 @@ public class BasicRedirectTest implements HttpServerAdapters {
         } while (response.previousResponse().isPresent());
 
         // initial
-        assertEquals(initialRequest, response.request(),
+        assertEquals(response.request(), initialRequest,
                 String.format("Expected initial request [%s] to equal last prev req [%s]",
                               initialRequest, response.request()));
         if (clientVersion.stream().anyMatch(HTTP_3::equals)) {
@@ -214,8 +214,7 @@ public class BasicRedirectTest implements HttpServerAdapters {
 
     // --  negatives
 
-    @DataProvider(name = "negative")
-    public Object[][] negative() {
+    public static Object[][] negative() {
         return new Object[][] {
                 { httpURI,                 Redirect.NEVER,  Optional.empty()    },
                 { httpsURI,                Redirect.NEVER,  Optional.empty()    },
@@ -238,7 +237,8 @@ public class BasicRedirectTest implements HttpServerAdapters {
         };
     }
 
-    @Test(dataProvider = "negative")
+    @ParameterizedTest
+    @MethodSource("negative")
     void testNegatives(String uriString, Redirect redirectPolicy, Optional<Version> clientVersion)
             throws Exception {
         out.printf("%n---- starting negative (%s, %s, %s) ----%n", uriString, redirectPolicy,
@@ -257,8 +257,8 @@ public class BasicRedirectTest implements HttpServerAdapters {
             out.println("  Got body Path: " + response.body());
             out.println("  Got response.request: " + response.request());
 
-            assertEquals(response.statusCode(), 302);
-            assertEquals(response.body(), "XY");
+            assertEquals(302, response.statusCode());
+            assertEquals("XY", response.body());
             // asserts original URI in response.request().uri()
             assertTrue(response.uri().equals(uri));
             assertFalse(response.previousResponse().isPresent());
@@ -268,8 +268,8 @@ public class BasicRedirectTest implements HttpServerAdapters {
 
     // -- Infrastructure
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         httpTestServer = HttpTestServer.create(HTTP_1_1);
         httpTestServer.addHandler(new BasicHttpRedirectHandler(), "/http1/same/");
         httpURI = "http://" + httpTestServer.serverAuthority() + "/http1/same/redirect";
@@ -325,8 +325,8 @@ public class BasicRedirectTest implements HttpServerAdapters {
         createClient(Redirect.NEVER, Optional.of(HTTP_3));
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         httpTestServer.stop();
         httpsTestServer.stop();
         http2TestServer.stop();
