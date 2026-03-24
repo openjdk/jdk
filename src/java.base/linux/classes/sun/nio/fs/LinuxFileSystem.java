@@ -134,23 +134,12 @@ class LinuxFileSystem extends UnixFileSystem {
 
     // --- file copying ---
 
-    private static void fadvise(int fd) throws UnixException {
-        // sequential data access
-        posix_fadvise(fd, 0, 0, POSIX_FADV_SEQUENTIAL);
-
-        // will access only once
-        posix_fadvise(fd, 0, 0, POSIX_FADV_NOREUSE);
-
-        // will access in near future
-        posix_fadvise(fd, 0, 0, POSIX_FADV_WILLNEED);
-    }
-
     @Override
     void bufferedCopy(int dst, int src, long address,
                       int size, long addressToPollForCancel)
         throws UnixException
     {
-        fadvise(src);
+        posix_fadvise(src, 0, 0, POSIX_FADV_SEQUENTIAL);
 
         super.bufferedCopy(dst, src, address, size, addressToPollForCancel);
     }
@@ -159,7 +148,7 @@ class LinuxFileSystem extends UnixFileSystem {
     int directCopy(int dst, int src, long addressToPollForCancel)
         throws UnixException
     {
-        fadvise(src);
+        posix_fadvise(src, 0, 0, POSIX_FADV_SEQUENTIAL);
 
         return directCopy0(dst, src, addressToPollForCancel);
     }
