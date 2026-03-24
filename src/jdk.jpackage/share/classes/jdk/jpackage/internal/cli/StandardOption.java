@@ -342,7 +342,7 @@ public final class StandardOption {
 
     public static final OptionValue<Boolean> MAC_SIGN = booleanOption("mac-sign").scope(MAC_SIGNING).addAliases("s").create();
 
-    public static final OptionValue<Boolean> MAC_APP_STORE = booleanOption("mac-app-store").create();
+    public static final OptionValue<Boolean> MAC_APP_STORE = booleanOption("mac-app-store").scope(MAC_SIGNING).create();
 
     public static final OptionValue<String> MAC_APP_CATEGORY = stringOption("mac-app-category").create();
 
@@ -399,6 +399,8 @@ public final class StandardOption {
     public static final OptionValue<Boolean> WIN_PER_USER_INSTALLATION = booleanOption("win-per-user-install").scope(nativeBundling()).create();
 
     public static final OptionValue<Boolean> WIN_INSTALLDIR_CHOOSER = booleanOption("win-dir-chooser").scope(nativeBundling()).create();
+
+    public static final OptionValue<Boolean> WIN_WITH_UI = booleanOption("win-with-ui").scope(nativeBundling()).create();
 
     public static final OptionValue<UUID> WIN_UPGRADE_UUID = uuidOption("win-upgrade-uuid").scope(nativeBundling()).create();
 

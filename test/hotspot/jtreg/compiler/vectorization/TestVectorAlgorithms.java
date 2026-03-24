@@ -79,6 +79,12 @@ public class TestVectorAlgorithms {
 
     VectorAlgorithmsImpl.Data d;
 
+    // We should test with a wide range of probabilities, to ensure correctness,
+    // and also to ensure we get all branches compiled, so IR matching compiles
+    // also for branches that require a very extreme probability.
+    private static final float[] BRANCH_PROBABILITIES = new float[] {0f, 0.1f, 0.3f, 0.5f, 0.7f, 0.9f, 1f};
+    private static int branch_probabilities_idx = 0;
+
     public static void main(String[] args) {
         TestFramework framework = new TestFramework();
         framework.addFlags("--add-modules=jdk.incubator.vector",
@@ -133,16 +139,19 @@ public class TestVectorAlgorithms {
         testGroups.get("findMinIndexI").put("findMinIndexI_VectorAPI", i -> { return findMinIndexI_VectorAPI(d.aI); });
 
         testGroups.put("findI", new HashMap<String,TestFunction>());
-        testGroups.get("findI").put("findI_loop",      i -> { return findI_loop(d.aI, d.eI[i]); });
-        testGroups.get("findI").put("findI_VectorAPI", i -> { return findI_VectorAPI(d.aI, d.eI[i]); });
+        testGroups.get("findI").put("findI_loop",      i -> { return findI_loop(d.aI, d.eI_findI[i]); });
+        testGroups.get("findI").put("findI_VectorAPI", i -> { return findI_VectorAPI(d.aI, d.eI_findI[i]); });
 
         testGroups.put("reverseI", new HashMap<String,TestFunction>());
         testGroups.get("reverseI").put("reverseI_loop",      i -> { return reverseI_loop(d.aI, d.rI1); });
         testGroups.get("reverseI").put("reverseI_VectorAPI", i -> { return reverseI_VectorAPI(d.aI, d.rI2); });
 
         testGroups.put("filterI", new HashMap<String,TestFunction>());
-        testGroups.get("filterI").put("filterI_loop",      i -> { return filterI_loop(d.aI, d.rI1, d.eI[i]); });
-        testGroups.get("filterI").put("filterI_VectorAPI", i -> { return filterI_VectorAPI(d.aI, d.rI2, d.eI[i]); });
+        testGroups.get("filterI").put("filterI_loop",            i -> { return filterI_loop(d.aI_filterI, d.rI1, d.eI_filterI); });
+        testGroups.get("filterI").put("filterI_VectorAPI_v1",    i -> { return filterI_VectorAPI_v1(d.aI_filterI, d.rI2, d.eI_filterI); });
+        testGroups.get("filterI").put("filterI_VectorAPI_v2_l2", i -> { return filterI_VectorAPI_v2_l2(d.aI_filterI, d.rI3, d.eI_filterI); });
+        testGroups.get("filterI").put("filterI_VectorAPI_v2_l4", i -> { return filterI_VectorAPI_v2_l4(d.aI_filterI, d.rI4, d.eI_filterI); });
+        testGroups.get("filterI").put("filterI_VectorAPI_v2_l8", i -> { return filterI_VectorAPI_v2_l8(d.aI_filterI, d.rI5, d.eI_filterI); });
 
         testGroups.put("reduceAddIFieldsX4", new HashMap<String,TestFunction>());
         testGroups.get("reduceAddIFieldsX4").put("reduceAddIFieldsX4_loop",      i -> { return reduceAddIFieldsX4_loop(d.oopsX4, d.memX4); });
@@ -152,6 +161,17 @@ public class TestVectorAlgorithms {
         testGroups.get("lowerCaseB").put("lowerCaseB_loop",         i -> { return lowerCaseB_loop(d.strB, d.rB1); });
         testGroups.get("lowerCaseB").put("lowerCaseB_VectorAPI_v1", i -> { return lowerCaseB_VectorAPI_v1(d.strB, d.rB2); });
         testGroups.get("lowerCaseB").put("lowerCaseB_VectorAPI_v2", i -> { return lowerCaseB_VectorAPI_v2(d.strB, d.rB3); });
+
+        testGroups.put("conditionalSumB", new HashMap<String,TestFunction>());
+        testGroups.get("conditionalSumB").put("conditionalSumB_loop",         i -> { return conditionalSumB_loop(d.strB); });
+        testGroups.get("conditionalSumB").put("conditionalSumB_VectorAPI_v1", i -> { return conditionalSumB_VectorAPI_v1(d.strB); });
+        testGroups.get("conditionalSumB").put("conditionalSumB_VectorAPI_v2", i -> { return conditionalSumB_VectorAPI_v2(d.strB); });
+
+
+        testGroups.put("pieceWise2FunctionF", new HashMap<String,TestFunction>());
+        testGroups.get("pieceWise2FunctionF").put("pieceWise2FunctionF_loop",         _ -> { return pieceWise2FunctionF_loop(d.xF, d.rF1); });
+        testGroups.get("pieceWise2FunctionF").put("pieceWise2FunctionF_VectorAPI_v1", _ -> { return pieceWise2FunctionF_VectorAPI_v1(d.xF, d.rF2); });
+        testGroups.get("pieceWise2FunctionF").put("pieceWise2FunctionF_VectorAPI_v2", _ -> { return pieceWise2FunctionF_VectorAPI_v2(d.xF, d.rF3); });
     }
 
     @Warmup(100)
@@ -186,12 +206,21 @@ public class TestVectorAlgorithms {
                  "reverseI_loop",
                  "reverseI_VectorAPI",
                  "filterI_loop",
-                 "filterI_VectorAPI",
+                 "filterI_VectorAPI_v1",
+                 "filterI_VectorAPI_v2_l2",
+                 "filterI_VectorAPI_v2_l4",
+                 "filterI_VectorAPI_v2_l8",
                  "reduceAddIFieldsX4_loop",
                  "reduceAddIFieldsX4_VectorAPI",
                  "lowerCaseB_loop",
                  "lowerCaseB_VectorAPI_v1",
-                 "lowerCaseB_VectorAPI_v2"})
+                 "lowerCaseB_VectorAPI_v2",
+                 "conditionalSumB_loop",
+                 "conditionalSumB_VectorAPI_v1",
+                 "conditionalSumB_VectorAPI_v2",
+                 "pieceWise2FunctionF_loop",
+                 "pieceWise2FunctionF_VectorAPI_v1",
+                 "pieceWise2FunctionF_VectorAPI_v2"})
     public void runTests(RunInfo info) {
         // Repeat many times, so that we also have multiple iterations for post-warmup to potentially recompile
         int iters = info.isWarmUp() ? 1 : 20;
@@ -200,7 +229,9 @@ public class TestVectorAlgorithms {
             int size = 100_000 + RANDOM.nextInt(10_000);
             int seed = RANDOM.nextInt();
             int numXObjects = 10_000;
-            d = new VectorAlgorithmsImpl.Data(size, seed, numXObjects);
+            branch_probabilities_idx = (branch_probabilities_idx + 1) % BRANCH_PROBABILITIES.length;
+            float branchProbability = BRANCH_PROBABILITIES[branch_probabilities_idx];
+            d = new VectorAlgorithmsImpl.Data(size, seed, numXObjects, branchProbability);
 
             // Run all tests
             for (Map.Entry<String, Map<String,TestFunction>> group_entry : testGroups.entrySet()) {
@@ -231,11 +262,11 @@ public class TestVectorAlgorithms {
     @Test
     @IR(counts = {IRNode.REPLICATE_I,  "= 1",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"},
         applyIfAnd = {"UseSuperWord", "true", "OptimizeFill", "false"})
     @IR(counts = {".*CallLeafNoFP.*jint_fill.*", "= 1"},
         phase = CompilePhase.BEFORE_MATCHING,
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"},
         applyIf = {"OptimizeFill", "true"})
     // By default, the fill intrinsic "jint_fill" is used, but we can disable
     // the detection of the fill loop, and then we auto vectorize.
@@ -246,7 +277,7 @@ public class TestVectorAlgorithms {
     @Test
     @IR(counts = {IRNode.REPLICATE_I,  "= 1",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     public Object fillI_VectorAPI(int[] r) {
         return VectorAlgorithmsImpl.fillI_VectorAPI(r);
     }
@@ -261,7 +292,7 @@ public class TestVectorAlgorithms {
     @Test
     @IR(counts = {IRNode.POPULATE_INDEX, "> 0",
                   IRNode.STORE_VECTOR,   "> 0"},
-        applyIfCPUFeatureOr = {"avx2", "true", "sve", "true"},
+        applyIfCPUFeatureOr = {"avx2", "true", "sve", "true", "rvv", "true"},
         applyIf = {"UseSuperWord", "true"})
     // Note: the Vector API example below can also vectorize for AVX,
     //       because it does not use a PopulateIndex.
@@ -272,7 +303,7 @@ public class TestVectorAlgorithms {
     @Test
     @IR(counts = {IRNode.ADD_VI,       "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"},
         applyIf = {"TieredCompilation", "true"})
     // IR check only works with TieredCompilation. Needs to make it
     // work with -XX:-TieredCompilation in future (see JDK-8378640).
@@ -283,7 +314,7 @@ public class TestVectorAlgorithms {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"},
         applyIf = {"UseSuperWord", "true"})
     public Object copyI_loop(int[] a, int[] r) {
         return VectorAlgorithmsImpl.copyI_loop(a, r);
@@ -292,7 +323,7 @@ public class TestVectorAlgorithms {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     public Object copyI_VectorAPI(int[] a, int[] r) {
         return VectorAlgorithmsImpl.copyI_VectorAPI(a, r);
     }
@@ -300,7 +331,7 @@ public class TestVectorAlgorithms {
     @Test
     @IR(counts = {".*CallLeafNoFP.*jint_disjoint_arraycopy.*", "= 1"},
         phase = CompilePhase.BEFORE_MATCHING,
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     public Object copyI_System_arraycopy(int[] a, int[] r) {
         return VectorAlgorithmsImpl.copyI_System_arraycopy(a, r);
     }
@@ -309,7 +340,7 @@ public class TestVectorAlgorithms {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
                   IRNode.MUL_VI,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"},
         applyIf = {"UseSuperWord", "true"})
     public Object mapI_loop(int[] a, int[] r) {
         return VectorAlgorithmsImpl.mapI_loop(a, r);
@@ -319,7 +350,7 @@ public class TestVectorAlgorithms {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
                   IRNode.MUL_VI,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     public Object mapI_VectorAPI(int[] a, int[] r) {
         return VectorAlgorithmsImpl.mapI_VectorAPI(a, r);
     }
@@ -328,7 +359,7 @@ public class TestVectorAlgorithms {
     @IR(counts = {IRNode.LOAD_VECTOR_I,    "> 0",
                   IRNode.ADD_REDUCTION_VI, "> 0",
                   IRNode.ADD_VI,           "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"},
         applyIf = {"UseSuperWord", "true"})
     public int reduceAddI_loop(int[] a) {
         return VectorAlgorithmsImpl.reduceAddI_loop(a);
@@ -342,7 +373,7 @@ public class TestVectorAlgorithms {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_I,    "> 0",
                   IRNode.ADD_REDUCTION_VI, "> 0"}, // reduceLanes inside loop
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     public int reduceAddI_VectorAPI_naive(int[] a) {
         return VectorAlgorithmsImpl.reduceAddI_VectorAPI_naive(a);
     }
@@ -362,7 +393,7 @@ public class TestVectorAlgorithms {
     @IR(counts = {IRNode.LOAD_VECTOR_F,   "> 0",
                   IRNode.ADD_REDUCTION_V, "> 0",
                   IRNode.MUL_VF,          "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"},
         applyIf = {"UseSuperWord", "true"})
     public float dotProductF_VectorAPI_naive(float[] a, float[] b) {
         return VectorAlgorithmsImpl.dotProductF_VectorAPI_naive(a, b);
@@ -372,7 +403,7 @@ public class TestVectorAlgorithms {
     @IR(counts = {IRNode.LOAD_VECTOR_F,   "> 0",
                   IRNode.ADD_REDUCTION_V, "> 0",
                   IRNode.MUL_VF,          "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"},
         applyIf = {"UseSuperWord", "true"})
     public float dotProductF_VectorAPI_reduction_after_loop(float[] a, float[] b) {
         return VectorAlgorithmsImpl.dotProductF_VectorAPI_reduction_after_loop(a, b);
@@ -394,7 +425,7 @@ public class TestVectorAlgorithms {
                   IRNode.MUL_VI,           IRNode.VECTOR_SIZE_8, "> 0",
                   IRNode.ADD_VI,           IRNode.VECTOR_SIZE_8, "> 0",
                   IRNode.ADD_REDUCTION_VI,                       "> 0"},
-        applyIfCPUFeatureOr = {"avx2", "true", "sve", "true"},
+        applyIfCPUFeatureOr = {"avx2", "true", "sve", "true", "rvv", "true"},
         applyIf = {"MaxVectorSize", ">=32"})
     public int hashCodeB_VectorAPI_v1(byte[] a) {
         return VectorAlgorithmsImpl.hashCodeB_VectorAPI_v1(a);
@@ -405,7 +436,7 @@ public class TestVectorAlgorithms {
                   IRNode.MUL_VI,           "> 0",
                   IRNode.ADD_VI,           "> 0",
                   IRNode.ADD_REDUCTION_VI, "> 0"},
-        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     public int hashCodeB_VectorAPI_v2(byte[] a) {
         return VectorAlgorithmsImpl.hashCodeB_VectorAPI_v2(a);
     }
@@ -414,7 +445,7 @@ public class TestVectorAlgorithms {
     @IR(counts = {IRNode.LOAD_VECTOR_I,    "> 0",
                   IRNode.ADD_REDUCTION_VI, "> 0",
                   IRNode.ADD_VI,           "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     public int reduceAddI_VectorAPI_reduction_after_loop(int[] a) {
         return VectorAlgorithmsImpl.reduceAddI_VectorAPI_reduction_after_loop(a);
     }
@@ -438,7 +469,7 @@ public class TestVectorAlgorithms {
                   IRNode.AND_VI,           "> 0",
                   IRNode.ADD_VI,           "> 0",
                   IRNode.STORE_VECTOR,     "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"},
         applyIf = {"MaxVectorSize", ">=64"})
     public Object scanAddI_VectorAPI_permute_add(int[] a, int[] r) {
         return VectorAlgorithmsImpl.scanAddI_VectorAPI_permute_add(a, r);
@@ -457,7 +488,7 @@ public class TestVectorAlgorithms {
                   IRNode.VECTOR_BLEND_I,  "> 0",
                   IRNode.MIN_REDUCTION_V, "> 0",
                   IRNode.ADD_VI,          "> 0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     public int findMinIndexI_VectorAPI(int[] a) {
         return VectorAlgorithmsImpl.findMinIndexI_VectorAPI(a);
     }
@@ -473,7 +504,7 @@ public class TestVectorAlgorithms {
     @IR(counts = {IRNode.LOAD_VECTOR_I,   "> 0",
                   IRNode.VECTOR_MASK_CMP, "> 0",
                   IRNode.VECTOR_TEST,     "> 0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     public int findI_VectorAPI(int[] a, int e) {
         return VectorAlgorithmsImpl.findI_VectorAPI(a, e);
     }
@@ -491,7 +522,7 @@ public class TestVectorAlgorithms {
                   IRNode.REARRANGE_VI,     "> 0",
                   IRNode.AND_VI,           "> 0",
                   IRNode.STORE_VECTOR,     "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     public Object reverseI_VectorAPI(int[] a, int[] r) {
         return VectorAlgorithmsImpl.reverseI_VectorAPI(a, r);
     }
@@ -509,9 +540,46 @@ public class TestVectorAlgorithms {
                   IRNode.VECTOR_TEST,         "> 0",
                   IRNode.COMPRESS_VI,         "> 0",
                   IRNode.STORE_VECTOR_MASKED, "> 0"},
-        applyIfCPUFeatureOr = {"avx2", "true", "sve", "true"})
-    public Object filterI_VectorAPI(int[] a, int[] r, int threshold) {
-        return VectorAlgorithmsImpl.filterI_VectorAPI(a, r, threshold);
+        applyIfCPUFeatureOr = {"avx2", "true", "sve", "true", "rvv", "true"})
+    public Object filterI_VectorAPI_v1(int[] a, int[] r, int threshold) {
+        return VectorAlgorithmsImpl.filterI_VectorAPI_v1(a, r, threshold);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.VECTOR_MASK_CMP,                     "= 0", // not implemented
+                  IRNode.VECTOR_TEST,                         "= 0", // not implemented
+                  IRNode.STORE_VECTOR,                        "> 0"},
+        applyIfCPUFeature = {"sse4.1", "true"})
+    // x86 seems to have a limitation with 2-element VectorStoreMask, this blocks intrinsification
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.VECTOR_MASK_CMP,                     "> 0",
+                  IRNode.VECTOR_TEST,                         "> 0",
+                  IRNode.STORE_VECTOR,                        "> 0"},
+        applyIfCPUFeatureOr = {"asimd", "true", "rvv", "true"})
+    public Object filterI_VectorAPI_v2_l2(int[] a, int[] r, int threshold) {
+        return VectorAlgorithmsImpl.filterI_VectorAPI_v2_l2(a, r, threshold);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.VECTOR_MASK_CMP,                     "> 0",
+                  IRNode.VECTOR_TEST,                         "> 0",
+                  IRNode.STORE_VECTOR,                        "> 0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
+    public Object filterI_VectorAPI_v2_l4(int[] a, int[] r, int threshold) {
+        return VectorAlgorithmsImpl.filterI_VectorAPI_v2_l4(a, r, threshold);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_8, "> 0",
+                  IRNode.VECTOR_MASK_CMP,                     "> 0",
+                  IRNode.VECTOR_TEST,                         "> 0",
+                  IRNode.STORE_VECTOR,                        "> 0"},
+        applyIfCPUFeatureOr = {"avx2", "true"})
+    // Note: need 8int = 256bit vector. NEON only has 128bit.
+    public Object filterI_VectorAPI_v2_l8(int[] a, int[] r, int threshold) {
+        return VectorAlgorithmsImpl.filterI_VectorAPI_v2_l8(a, r, threshold);
     }
 
     @Test
@@ -529,7 +597,7 @@ public class TestVectorAlgorithms {
                   IRNode.OR_V_MASK,                 "> 0",
                   IRNode.ADD_VI,                    "> 0",
                   IRNode.ADD_REDUCTION_VI,          "> 0"},
-        applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"},
+        applyIfCPUFeatureOr = {"avx512", "true", "sve", "true", "rvv", "true"},
         applyIf = {"TieredCompilation", "true"})
     // IR check only works with TieredCompilation. Needs to make it
     // work with -XX:-TieredCompilation in future (see JDK-8378640).
@@ -547,7 +615,7 @@ public class TestVectorAlgorithms {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
                   IRNode.ADD_VB,        "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     public Object lowerCaseB_VectorAPI_v1(byte[] a, byte[] r) {
         return VectorAlgorithmsImpl.lowerCaseB_VectorAPI_v1(a, r);
     }
@@ -555,8 +623,57 @@ public class TestVectorAlgorithms {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
                   IRNode.ADD_VB,        "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     public Object lowerCaseB_VectorAPI_v2(byte[] a, byte[] r) {
         return VectorAlgorithmsImpl.lowerCaseB_VectorAPI_v2(a, r);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0"})
+    // Currently does not vectorize, but might in the future.
+    public Object conditionalSumB_loop(byte[] a) {
+        return VectorAlgorithmsImpl.conditionalSumB_loop(a);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE + "min(max_int, max_byte)", "> 0",
+                  IRNode.ADD_VI,        IRNode.VECTOR_SIZE + "min(max_int, max_byte)", "> 0"},
+        applyIfCPUFeature = {"avx2", "true"})
+    // Note: we need at least a 256bit int vector. NEON only has 128bit.
+    public Object conditionalSumB_VectorAPI_v1(byte[] a) {
+        return VectorAlgorithmsImpl.conditionalSumB_VectorAPI_v1(a);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.ADD_VI,        "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    public Object conditionalSumB_VectorAPI_v2(byte[] a) {
+        return VectorAlgorithmsImpl.conditionalSumB_VectorAPI_v2(a);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_F, "= 0"})
+    // Currently does not vectorize, but might in the future.
+    public Object pieceWise2FunctionF_loop(float[] a, float[] r) {
+        return VectorAlgorithmsImpl.pieceWise2FunctionF_loop(a, r);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0",
+                  IRNode.MUL_VF,        "> 0",
+                  IRNode.SQRT_VF,       "> 0"},
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
+    public Object pieceWise2FunctionF_VectorAPI_v1(float[] a, float[] r) {
+        return VectorAlgorithmsImpl.pieceWise2FunctionF_VectorAPI_v1(a, r);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0",
+                  IRNode.MUL_VF,        "> 0",
+                  IRNode.SQRT_VF,       "> 0"},
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
+    public Object pieceWise2FunctionF_VectorAPI_v2(float[] a, float[] r) {
+        return VectorAlgorithmsImpl.pieceWise2FunctionF_VectorAPI_v2(a, r);
     }
 }

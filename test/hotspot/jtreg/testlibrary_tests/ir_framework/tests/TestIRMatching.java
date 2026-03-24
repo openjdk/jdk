@@ -329,7 +329,7 @@ public class TestIRMatching {
         System.out.flush();
         String output = baos.toString();
         findIrIds(output, "testMatchAllIf50", 1, 22);
-        findIrIds(output, "testMatchNoneIf50", -1, -1);
+        assertNoIds(output, "testMatchNoneIf50");
 
         runWithArguments(FlagComparisons.class, "-XX:TLABRefillWasteFraction=49");
         System.out.flush();
@@ -431,18 +431,27 @@ public class TestIRMatching {
 
     private static void findIrIds(String output, String method, int... numbers) {
         StringBuilder builder = new StringBuilder();
-        builder.append(method);
+        builder.append(method).append(": ");
         for (int i = 0; i < numbers.length; i+=2) {
             int start = numbers[i];
             int endIncluded = numbers[i + 1];
             for (int j = start; j <= endIncluded; j++) {
-                builder.append(",");
+                if (j != numbers[0]) {
+                    builder.append(", ");
+                }
                 builder.append(j);
             }
         }
         if (!output.contains(builder.toString())) {
             addException(new RuntimeException("Could not find line in Applicable IR Rules: \"" + builder +
                                                       System.lineSeparator()));
+        }
+    }
+
+    private static void assertNoIds(String output, String methodName) {
+        String applicableIRRules = output.split("Applicable IR Rules")[1];
+        if (applicableIRRules.contains(methodName)) {
+            addException(new RuntimeException("Should not find ids for \"" + methodName + "\"" + System.lineSeparator()));
         }
     }
 }

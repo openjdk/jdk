@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,11 @@ import java.io.Serial;
 import java.util.LinkedList;
 
 import sun.awt.AWTAccessor;
-import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 
 /**
  * A mechanism for ensuring that a series of AWTEvents are executed in a
- * precise order, even across multiple AppContexts. The nested events will be
+ * precise order. The nested events will be
  * dispatched in the order in which their wrapping SequencedEvents were
  * constructed. The only exception to this rule is if the peer of the target of
  * the nested event was destroyed (with a call to Component.removeNotify)
@@ -57,7 +56,6 @@ class SequencedEvent extends AWTEvent implements ActiveEvent {
 
     private final AWTEvent nested;
     @SuppressWarnings("serial") // Not statically typed as Serializable
-    private AppContext appContext;
     private boolean disposed;
     private final LinkedList<AWTEvent> pendingEvents = new LinkedList<>();
 
@@ -145,7 +143,6 @@ class SequencedEvent extends AWTEvent implements ActiveEvent {
      * dispatched or disposed. If this method is invoked before all previous nested events
      * have been dispatched, then this method blocks until such a point is
      * reached.
-     * While waiting disposes nested events to disposed AppContext
      *
      * NOTE: Locking protocol.  Since dispose() can get EventQueue lock,
      * dispatch() shall never call dispose() while holding the lock on the list,
@@ -154,8 +151,6 @@ class SequencedEvent extends AWTEvent implements ActiveEvent {
      */
     public final void dispatch() {
         try {
-            appContext = AppContext.getAppContext();
-
             if (getFirst() != this) {
                 if (EventQueue.isDispatchThread()) {
                     if (Thread.currentThread() instanceof EventDispatchThread) {
@@ -202,19 +197,6 @@ class SequencedEvent extends AWTEvent implements ActiveEvent {
     }
 
     /**
-     * true only if event exists and nested source appContext is disposed.
-     */
-    private static final boolean isOwnerAppContextDisposed(SequencedEvent se) {
-        if (se != null) {
-            Object target = se.nested.getSource();
-            if (target instanceof Component) {
-                return ((Component)target).appContext.isDisposed();
-            }
-        }
-        return false;
-    }
-
-    /**
      * Sequenced events are dispatched in order, so we cannot dispatch
      * until we are the first sequenced event in the queue (i.e. it's our
      * turn).  But while we wait for our turn to dispatch, the event
@@ -224,24 +206,11 @@ class SequencedEvent extends AWTEvent implements ActiveEvent {
         if (disposed) {
             return true;
         }
-        // getFirstWithContext can dispose this
-        return this == getFirstWithContext() || disposed;
+        return this == getFirst();
     }
 
     private static final synchronized SequencedEvent getFirst() {
         return list.getFirst();
-    }
-
-    /* Disposes all events from disposed AppContext
-     * return first valid event
-     */
-    private static final SequencedEvent getFirstWithContext() {
-        SequencedEvent first = getFirst();
-        while(isOwnerAppContextDisposed(first)) {
-            first.dispose();
-            first = getFirst();
-        }
-        return first;
     }
 
     /**
@@ -283,12 +252,12 @@ class SequencedEvent extends AWTEvent implements ActiveEvent {
           }
       }
         // Wake up waiting threads
-        if (next != null && next.appContext != null) {
-            SunToolkit.postEvent(next.appContext, new SentEvent());
+        if (next != null) {
+            SunToolkit.postEvent(new SentEvent());
         }
 
         for(AWTEvent e : pendingEvents) {
-            SunToolkit.postEvent(appContext, e);
+            SunToolkit.postEvent(e);
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,9 +43,9 @@ import jdk.test.lib.RandomFactory;
 import static java.lang.String.format;
 import static java.nio.file.StandardOpenOption.*;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertThrows;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TransferToBase {
     static final int MIN_SIZE      = 10_000;
@@ -88,7 +88,7 @@ class TransferToBase {
             long reported = in.transferTo(out);
             int count = inBytes.length - posIn;
 
-            assertEquals(reported, count, format("reported %d bytes but should report %d", reported, count));
+            assertEquals(count, reported);
 
             byte[] outBytes = recorder.get().get();
             assertTrue(Arrays.equals(inBytes, posIn, posIn + count, outBytes, posOut, posOut + count),
@@ -238,11 +238,11 @@ class TransferToBase {
 
                     // compare reported transferred bytes, must be 3 GB
                     // less the value of the initial position
-                    assertEquals(count, BYTES_WRITTEN - initPos);
+                    assertEquals(BYTES_WRITTEN - initPos, count);
                 }
 
                 // compare content of both files, failing if different
-                assertEquals(Files.mismatch(sourceFile, targetFile), -1);
+                assertEquals(-1, Files.mismatch(sourceFile, targetFile));
 
             } finally {
                  Files.delete(targetFile);

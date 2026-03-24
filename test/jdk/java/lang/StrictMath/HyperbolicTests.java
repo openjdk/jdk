@@ -595,6 +595,13 @@ public class HyperbolicTests {
                 {0x1.fffffffffff92p+1,  0x1.0c1f8a6e80edp+1},
                 {0x1.0108b83c4bbc8p-1,  0x1.ee9c256f3947ep-2},
                 {-0x1.c41e527b70f43p-3, -0x1.c0863c7dece22p-3},
+
+                // Julia worst case
+                {-0x1.02657ff36d5f3p-2, -0x1.ff75bb69b0bf6p-3},
+
+                // Empirical worst-case points in other libraries with
+                // larger worst-case errors than FDLIBM
+                {0x1.0ab3fc30267c2p-1, 0x1.ffd39fc024fbp-2},
         };
 
         for (double[] testCase: testCases) {
@@ -643,6 +650,15 @@ public class HyperbolicTests {
                 {0x1.ff66e0de4dc6fp+1023,   0x1.633cc2ae1c934p+9},
                 {0x1.f97ccb0aef314p+11,     0x1.1ff088806d82ep+3},
                 {0x1.fdf28623ef923p+1021,   0x1.628af341989dap+9},
+
+                // Julia worst case
+                {0x1.0001ff6afc4bap+0, 0x1.ffb5238940116p-8},
+
+                // Empirical worst-case points in other libraries with
+                // larger worst-case errors than FDLIBM
+                {0x1.0007fd4307b75p+0, 0x1.ffa704d280935p-7},
+                {0x1.071334daf83adp+0, 0x1.e063ca7176ffdp-3},
+                {0x1.1d7bc19163966p+0, 0x1.e6db4d68a00dcp-2},
         };
 
         for (double[] testCase: testCases) {
@@ -709,6 +725,15 @@ public class HyperbolicTests {
             {0x1.ffffffffffffep-2, 0x1.193ea7aad0309p-1},
             {0x1.ffffffffffffbp-1, 0x1.1e9067763b478p+4},
             {0x1.ffffffffffffep-1, 0x1.25e4f7b2737fap+4},
+
+            // Julia worst case
+            {-0x1.f97fabc0650c4p-4, -0x1.fc16bb2fd3672p-4},
+
+            // Empirical worst-case points in other libraries with
+            // larger worst-case errors than FDLIBM
+            {0x1.ffd834a270fp-10, 0x1.ffd85f432fed2p-10},
+            {-0x1.ffbe8dd88527fp-9, -0x1.ffbf38422c2dbp-9},
+            {-0x1.e7c1f36602014p-4, -0x1.ea153d6c96817p-4},
         };
 
         for (double[] testCase: testCases)

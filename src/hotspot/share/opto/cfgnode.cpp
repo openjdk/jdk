@@ -2480,7 +2480,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           }
           phase->is_IterGVN()->register_new_node_with_optimizer(offset);
         }
-        return new AddPNode(base, address, offset);
+        return AddPNode::make_with_base(base, address, offset);
       }
     }
   }
@@ -2675,6 +2675,10 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     for( uint i=1; i<req(); ++i ) {// For all paths in
       Node *ii = in(i);
       Node *new_in = MemNode::optimize_memory_chain(ii, at, nullptr, phase);
+      // MemNode::optimize_memory_chain above may kill us!
+      if (outcnt() == 0) {
+        return top;
+      }
       if (ii != new_in ) {
         set_req_X(i, new_in, phase);
         progress = this;

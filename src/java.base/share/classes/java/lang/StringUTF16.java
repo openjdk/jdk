@@ -67,30 +67,61 @@ final class StringUTF16 {
 
     // Check the size of a UTF16-coded string
     // Throw an exception if out of range
-    static int newBytesLength(int len) {
-        if (len < 0) {
-            throw new NegativeArraySizeException();
-        }
-        if (len >= MAX_LENGTH) {
-            throw new OutOfMemoryError("UTF16 String size is " + len +
-                                       ", should be less than " + MAX_LENGTH);
-        }
+    private static int newBytesLength(int len) {
+        checkBytesLength(len);
         return len << 1;
     }
 
+    /**
+     * Checks if the provided length is a valid UTF-16 string byte array length.
+     *
+     * @param length a UTF-16 string byte array length
+     *
+     * @throws NegativeArraySizeException if {@code length < 0}
+     * @throws OutOfMemoryError if {@code length > (Integer.MAX_VALUE / 2)}
+     */
+    private static void checkBytesLength(int length) {
+        if (length < 0) {
+            throw new NegativeArraySizeException();
+        }
+        if (length >= MAX_LENGTH) {
+            throw new OutOfMemoryError("UTF16 String size is " + length +
+                    ", should be less than " + MAX_LENGTH);
+        }
+    }
+
+    /**
+     * Writes the given code point to the specified position of the provided
+     * UTF-16 string byte array.
+     * <p>
+     * <b>WARNING: This method does not perform any input validations.</b>
+     *
+     * @param val a UTF-16 string byte array
+     * @param index the index of the character to write the code point to
+     * @param c a code point
+     */
+    // vmIntrinsics::_putCharStringU
     @IntrinsicCandidate
-    // intrinsic performs no bounds checks
     static void putChar(byte[] val, int index, int c) {
-        assert index >= 0 && index < length(val) : "Trusted caller missed bounds check";
+        assert val != null && index >= 0 && index < length(val) : "Trusted caller violated input constraints";
         index <<= 1;
         val[index++] = (byte)(c >> HI_BYTE_SHIFT);
         val[index]   = (byte)(c >> LO_BYTE_SHIFT);
     }
 
+    /**
+     * {@return the code point at the the specified position of the provided
+     * UTF-16 string byte array}
+     * <p>
+     * <b>WARNING: This method does not perform any input validations.</b>
+     *
+     * @param val a UTF-16 string byte array
+     * @param index the index of the character to get the code point from
+     */
+    // vmIntrinsics::_getCharStringU
     @IntrinsicCandidate
-    // intrinsic performs no bounds checks
     static char getChar(byte[] val, int index) {
-        assert index >= 0 && index < length(val) : "Trusted caller missed bounds check";
+        assert val != null && index >= 0 && index < length(val) : "Trusted caller violated input constraints";
         index <<= 1;
         return (char)(((val[index++] & 0xff) << HI_BYTE_SHIFT) |
                       ((val[index]   & 0xff) << LO_BYTE_SHIFT));
@@ -173,14 +204,27 @@ final class StringUTF16 {
     }
 
     /**
-     * {@return an encoded byte[] for the UTF16 characters in char[]}
-     * No checking is done on the characters, some may or may not be latin1.
-     * @param value a char array
-     * @param off an offset
-     * @param len a length
+     * {@return a UTF-16 string byte array produced by encoding the characters
+     * in the provided character array sub-range}
+     *
+     * @param value a character array to encode
+     * @param off the index of the character to start encoding from
+     * @param len the number of characters to encode
+     *
+     * @throws NegativeArraySizeException if {@code len < 0}
+     * @throws NullPointerException if {@code value} is null
+     * @throws OutOfMemoryError if {@code len > (Integer.MAX_VALUE / 2)}
+     * @throws StringIndexOutOfBoundsException if the sub-range is out of bounds
      */
-    @IntrinsicCandidate
     static byte[] toBytes(char[] value, int off, int len) {
+        checkBytesLength(len);
+        String.checkBoundsOffCount(off, len, value.length);     // Implicit null check on `value`
+        return toBytes0(value, off, len);
+    }
+
+    // vmIntrinsics::_toBytesStringU
+    @IntrinsicCandidate
+    private static byte[] toBytes0(char[] value, int off, int len) {
         byte[] val = newBytesFor(len);
         for (int i = 0; i < len; i++) {
             putChar(val, i, value[off]);
@@ -495,12 +539,28 @@ final class StringUTF16 {
         return result;
     }
 
-    @IntrinsicCandidate
+    /**
+     * Copies the specified sub-range of characters from a UTF-16 string byte
+     * array to the specified character array sub-range.
+     *
+     * @param value the source UTF-16 string byte array to copy from
+     * @param srcBegin the index (inclusive) of the first character in the source sub-range
+     * @param srcEnd the index (exclusive) of the last character in the source sub-range
+     * @param dst the target character array to copy to
+     * @param dstBegin the index (inclusive) of the first character in the target sub-range
+     *
+     * @throws NullPointerException if {@code value} or {@code dst} is null
+     * @throws StringIndexOutOfBoundsException if the sub-ranges are out of bounds
+     */
     static void getChars(byte[] value, int srcBegin, int srcEnd, char[] dst, int dstBegin) {
-        // We need a range check here because 'getChar' has no checks
-        if (srcBegin < srcEnd) {
-            String.checkBoundsOffCount(srcBegin, srcEnd - srcBegin, length(value));
-        }
+        checkBoundsBeginEnd(srcBegin, srcEnd, value);                           // Implicit null check on `value` via `checkBoundsBeginEnd()`
+        String.checkBoundsOffCount(dstBegin, srcEnd - srcBegin, dst.length);    // Implicit null check on `dst`
+        getChars0(value, srcBegin, srcEnd, dst, dstBegin);
+    }
+
+    // vmIntrinsics::_getCharsStringU
+    @IntrinsicCandidate
+    private static void getChars0(byte[] value, int srcBegin, int srcEnd, char[] dst, int dstBegin) {
         for (int i = srcBegin; i < srcEnd; i++) {
             dst[dstBegin++] = getChar(value, i);
         }
@@ -721,7 +781,7 @@ final class StringUTF16 {
         return -StringLatin1.compareToCI_UTF16(other, value);
     }
 
-    public static int compareToFC_Latin1(byte[] value, byte[] other) {
+    static int compareToFC_Latin1(byte[] value, byte[] other) {
         return -StringLatin1.compareToFC_UTF16(other, value);
     }
 
@@ -769,7 +829,7 @@ final class StringUTF16 {
         return 0;
     }
 
-    public static int compareToFC(byte[] value, byte[] other) {
+    static int compareToFC(byte[] value, byte[] other) {
         int tlast = length(value);
         int olast = length(other);
         int lim = Math.min(tlast, olast);
@@ -1970,13 +2030,13 @@ final class StringUTF16 {
         }
     }
 
-    static final int MAX_LENGTH = Integer.MAX_VALUE >> 1;
+    private static final int MAX_LENGTH = Integer.MAX_VALUE >> 1;
 
-    static void checkIndex(int off, byte[] val) {
+    private static void checkIndex(int off, byte[] val) {
         String.checkIndex(off, length(val));
     }
 
-    static void checkOffset(int off, byte[] val) {
+    private static void checkOffset(int off, byte[] val) {
         String.checkOffset(off, length(val));
     }
 

@@ -225,7 +225,7 @@ public class SynthScrollPaneUI extends BasicScrollPaneUI
 
     private int getComponentState(JComponent c) {
         int baseState = SynthLookAndFeel.getComponentState(c);
-        if (viewportViewFocusHandler!=null && viewportViewHasFocus){
+        if (viewportViewFocusHandler != null && viewportViewHasFocus) {
             baseState = baseState | FOCUSED;
         }
         return baseState;
