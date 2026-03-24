@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ import java.util.List;
 public final class InternalSignatureParameterSpec implements AlgorithmParameterSpec {
 
     /**
-     * The "pure" parameters with no preHash or context string.
+     * The "pure" parameters with no pre-hash or context string.
      */
     public static final InternalSignatureParameterSpec PURE
             = new InternalSignatureParameterSpec(null, null);
@@ -74,16 +74,14 @@ public final class InternalSignatureParameterSpec implements AlgorithmParameterS
 
     /**
      * Creates a new {@code SignatureParameterSpec} using the specified
-     * preHash algorithm, the context string, and optional algorithm-specific
+     * pre-hash algorithm, the context string, and optional algorithm-specific
      * feature strings.
      *
-     * @param preHash the preHash algorithm to use; {@code null} if none.
+     * @param preHash the pre-hash algorithm to use; {@code null} if none.
      * @param context the context string; {@code null} or empty if none.
      * @param features the algorithm-specific features; empty if none.
      *
-     * @throws IllegalArgumentException if {@code context} is longer than 255 bytes,
-     *      or if no {@code preHash} is provided but {@code preHashParams} is
-     *      not {@code null};
+     * @throws IllegalArgumentException if {@code context} is longer than 255 bytes
      * @throws NullPointerException if any of {@code features} is {@code null}
      */
     public InternalSignatureParameterSpec(String preHash, byte[] context, String... features) {
@@ -117,8 +115,8 @@ public final class InternalSignatureParameterSpec implements AlgorithmParameterS
     }
 
     /**
-     * Returns the preHash algorithm.
-     * @return the preHash algorithm; {@code null} if none.
+     * Returns the pre-hash algorithm.
+     * @return the pre-hash algorithm; {@code null} if none.
      */
     public String preHash() {
         return preHash;

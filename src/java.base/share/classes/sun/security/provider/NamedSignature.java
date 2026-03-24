@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import java.security.spec.AlgorithmParameterSpec;
 /// configured with a named parameter set. See [NamedKeyPairGenerator]
 /// for more details.
 ///
-/// This class does not work with preHash signatures.
+/// This class does not work with pre-hash signatures.
 public abstract class NamedSignature extends SignatureSpi {
 
     private final String fname; // family name
@@ -55,7 +55,7 @@ public abstract class NamedSignature extends SignatureSpi {
     // Default value; never null
     protected InternalSignatureParameterSpec sps = InternalSignatureParameterSpec.PURE;
 
-    // Default no preHash
+    // Default no pre-hash
     private SignatureMessageAccumulator accu = new SignatureMessageAccumulator();
 
     // init with...
@@ -175,7 +175,7 @@ public abstract class NamedSignature extends SignatureSpi {
     /// @param pname parameter name
     /// @param sk private key in raw bytes
     /// @param sk2 parsed private key, `null` if none. See [#implCheckPrivateKey].
-    /// @param msg the message; might be preHashed
+    /// @param msg the message; might be pre-hashed
     /// @param sr SecureRandom object, `null` if not initialized
     /// @return the signature
     /// @throws ProviderException if there is an internal error
@@ -188,7 +188,7 @@ public abstract class NamedSignature extends SignatureSpi {
     /// @param pname parameter name
     /// @param pk public key in raw bytes
     /// @param pk2 parsed public key, `null` if none. See [#implCheckPublicKey].
-    /// @param msg the message; might be preHashed
+    /// @param msg the message; might be pre-hashed
     /// @param sig the signature
     /// @return true if verified
     /// @throws ProviderException if there is an internal error
