@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,26 +20,25 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef CPU_PPC_REGISTERMAP_PPC_HPP
-#define CPU_PPC_REGISTERMAP_PPC_HPP
+#include "runtime/registerMap.hpp"
 
-// machine-dependent implementation for register maps
-  friend class frame;
-
- private:
-  // This is the hook for finding a register in an "well-known" location,
-  // such as a register block of a predetermined format.
-  // Since there is none, we just return null.
-  address pd_location(VMReg reg) const { return nullptr; }
-
-  address pd_location(VMReg base_reg, int slot_idx) const;
-
-  // no PD state to clear or copy:
-  void pd_clear() {}
-  void pd_initialize() {}
-  void pd_initialize_from(const RegisterMap* map) {}
-
-#endif // CPU_PPC_REGISTERMAP_PPC_HPP
+address RegisterMap::pd_location(VMReg base_reg, int slot_idx) const {
+  if (base_reg->is_VectorRegister()) {
+    // Not all physical slots of a VectorRegister have corresponding
+    // VMRegs. However they are always saved to the stack in a
+    // contiguous region of memory so we can calculate the address of
+    // the upper slots by offsetting from the base address.
+    assert(base_reg->is_concrete(), "must pass base reg");
+    intptr_t offset_in_bytes = slot_idx * VMRegImpl::stack_slot_size;
+    address base_location = location(base_reg, nullptr);
+    if (base_location != nullptr) {
+      return base_location + offset_in_bytes;
+    } else {
+      return nullptr;
+    }
+  } else {
+    return location(base_reg->next(slot_idx), nullptr);
+  }
+}
