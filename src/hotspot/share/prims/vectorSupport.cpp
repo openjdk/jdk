@@ -209,7 +209,10 @@ const char* VectorSupport::lanetype2name(LaneType lane_type) {
     "int",
     "long"
   };
-  return lanetype2name[lane_type];
+  if (lane_type >= LT_FLOAT && lane_type <= LT_LONG) {
+    return lanetype2name[lane_type];
+  }
+  return "illegal";
 }
 
 int VectorSupport::vop2ideal(jint id, LaneType lt) {
