@@ -89,8 +89,8 @@ void G1YoungGCAllocationFailureInjector::arm_if_needed() {
 
     // Now check if evacuation failure injection should be enabled for the current GC.
     G1CollectorState* collector_state = g1h->collector_state();
-    const bool in_young_only_phase = collector_state->in_young_only_phase();
-    const bool in_concurrent_start_gc = collector_state->in_concurrent_start_gc();
+    const bool in_young_only_phase = collector_state->is_in_young_only_phase();
+    const bool in_concurrent_start_gc = collector_state->is_in_concurrent_start_gc();
     const bool in_concurrent_cycle = collector_state->is_in_concurrent_cycle();
 
     _inject_allocation_failure_for_current_gc &=

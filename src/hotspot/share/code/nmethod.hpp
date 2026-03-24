@@ -235,11 +235,10 @@ class nmethod : public CodeBlob {
   // Number of arguments passed on the stack
   uint16_t _num_stack_arg_slots;
 
-  uint16_t _oops_size;
 #if INCLUDE_JVMCI
   // _metadata_size is not specific to JVMCI. In the non-JVMCI case, it can be derived as:
   // _metadata_size = mutable_data_size - relocation_size
-  uint16_t _metadata_size;
+  int _metadata_size;
 #endif
 
   // Offset in immutable data section

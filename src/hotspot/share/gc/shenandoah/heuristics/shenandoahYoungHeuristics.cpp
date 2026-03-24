@@ -60,7 +60,7 @@ void ShenandoahYoungHeuristics::choose_collection_set_from_regiondata(Shenandoah
   // enough consolidated garbage to make effective use of young-gen evacuation reserve.  If there is still
   // young-gen reserve available following selection of the young-gen collection set, see if we can use
   // this memory to expand the old-gen evacuation collection set.
-  need_to_finalize_mixed |= heap->old_generation()->heuristics()->top_off_collection_set(_add_regions_to_old);
+  need_to_finalize_mixed |= heap->old_generation()->heuristics()->top_off_collection_set(cset, _add_regions_to_old);
   if (need_to_finalize_mixed) {
     heap->old_generation()->heuristics()->finalize_mixed_evacs();
   }
@@ -90,7 +90,10 @@ void ShenandoahYoungHeuristics::choose_young_collection_set(ShenandoahCollection
 
   for (size_t idx = 0; idx < size; idx++) {
     ShenandoahHeapRegion* r = data[idx].get_region();
-    assert(!cset->is_in(r), "Region %zu should not already be in the collection set", idx);
+    if (cset->is_in(r) || r->get_top_before_promote() != nullptr) {
+      assert(heap->is_tenurable(r), "Region %zu already selected for promotion must be tenurable", idx);
+      continue;
+    }
 
     // Note that we do not add tenurable regions if they were not pre-selected.  They were not selected
     // because there is insufficient room in old-gen to hold their to-be-promoted live objects or because
