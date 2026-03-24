@@ -82,6 +82,7 @@ class CountedLoopEndNode;
 class DecodeNarrowPtrNode;
 class DecodeNNode;
 class DecodeNKlassNode;
+class DivModIntegerNode;
 class EncodeNarrowPtrNode;
 class EncodePNode;
 class EncodePKlassNode;
@@ -824,8 +825,9 @@ public:
     DEFINE_CLASS_ID(Move,     Node, 20)
     DEFINE_CLASS_ID(LShift,   Node, 21)
     DEFINE_CLASS_ID(Neg,      Node, 22)
+    DEFINE_CLASS_ID(DivModInteger, Node, 23)
 
-    _max_classes  = ClassMask_Neg
+    _max_classes  = ClassMask_DivModInteger
   };
   #undef DEFINE_CLASS_ID
 
@@ -942,6 +944,7 @@ public:
   DEFINE_CLASS_QUERY(DecodeNarrowPtr)
   DEFINE_CLASS_QUERY(DecodeN)
   DEFINE_CLASS_QUERY(DecodeNKlass)
+  DEFINE_CLASS_QUERY(DivModInteger)
   DEFINE_CLASS_QUERY(EncodeNarrowPtr)
   DEFINE_CLASS_QUERY(EncodeP)
   DEFINE_CLASS_QUERY(EncodePKlass)
