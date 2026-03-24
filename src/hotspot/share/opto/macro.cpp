@@ -274,7 +274,7 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
   if (ac->is_clonebasic()) {
     assert(ac->in(ArrayCopyNode::Src) != ac->in(ArrayCopyNode::Dest), "clone source equals destination");
     Node* base = ac->in(ArrayCopyNode::Src);
-    Node* adr = _igvn.transform(new AddPNode(base, base, _igvn.MakeConX(offset)));
+    Node* adr = _igvn.transform(AddPNode::make_with_base(base, _igvn.MakeConX(offset)));
     const TypePtr* adr_type = _igvn.type(base)->is_ptr()->add_offset(offset);
     MergeMemNode* mergemen = _igvn.transform(MergeMemNode::make(mem))->as_MergeMem();
     BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
@@ -293,7 +293,7 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
       if (src_pos_t->is_con() && dest_pos_t->is_con()) {
         intptr_t off = ((src_pos_t->get_con() - dest_pos_t->get_con()) << shift) + offset;
         Node* base = ac->in(ArrayCopyNode::Src);
-        adr = _igvn.transform(new AddPNode(base, base, _igvn.MakeConX(off)));
+        adr = _igvn.transform(AddPNode::make_with_base(base, _igvn.MakeConX(off)));
         adr_type = _igvn.type(base)->is_ptr()->add_offset(off);
         if (ac->in(ArrayCopyNode::Src) == ac->in(ArrayCopyNode::Dest)) {
           // Don't emit a new load from src if src == dst but try to get the value from memory instead
@@ -308,7 +308,7 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
 
         Node* off = _igvn.transform(new AddXNode(_igvn.MakeConX(offset), diff));
         Node* base = ac->in(ArrayCopyNode::Src);
-        adr = _igvn.transform(new AddPNode(base, base, off));
+        adr = _igvn.transform(AddPNode::make_with_base(base, off));
         adr_type = _igvn.type(base)->is_ptr()->add_offset(Type::OffsetBot);
         if (ac->in(ArrayCopyNode::Src) == ac->in(ArrayCopyNode::Dest)) {
           // Non constant offset in the array: we can't statically
@@ -1199,7 +1199,7 @@ bool PhaseMacroExpand::eliminate_boxing_node(CallStaticJavaNode *boxing) {
 
 
 Node* PhaseMacroExpand::make_load_raw(Node* ctl, Node* mem, Node* base, int offset, const Type* value_type, BasicType bt) {
-  Node* adr = basic_plus_adr(top(), base, offset);
+  Node* adr = off_heap_plus_addr(base, offset);
   const TypePtr* adr_type = adr->bottom_type()->is_ptr();
   Node* value = LoadNode::make(_igvn, ctl, mem, adr, adr_type, value_type, bt, MemNode::unordered);
   transform_later(value);
@@ -1208,7 +1208,7 @@ Node* PhaseMacroExpand::make_load_raw(Node* ctl, Node* mem, Node* base, int offs
 
 
 Node* PhaseMacroExpand::make_store_raw(Node* ctl, Node* mem, Node* base, int offset, Node* value, BasicType bt) {
-  Node* adr = basic_plus_adr(top(), base, offset);
+  Node* adr = off_heap_plus_addr(base, offset);
   mem = StoreNode::make(_igvn, ctl, mem, adr, nullptr, value, bt, MemNode::unordered);
   transform_later(mem);
   return mem;
@@ -1834,7 +1834,7 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       Node* thread = new ThreadLocalNode();
       transform_later(thread);
 
-      Node* eden_pf_adr = new AddPNode(top()/*not oop*/, thread,
+      Node* eden_pf_adr = AddPNode::make_off_heap(thread,
                    _igvn.MakeConX(in_bytes(JavaThread::tlab_pf_top_offset())));
       transform_later(eden_pf_adr);
 
@@ -1860,8 +1860,8 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       Node* need_pf_false = new IfFalseNode(need_pf_iff);
       transform_later(need_pf_false);
 
-      Node* new_pf_wmt = new AddPNode(top(), old_pf_wm,
-                                    _igvn.MakeConX(AllocatePrefetchDistance));
+      Node* new_pf_wmt = AddPNode::make_off_heap(old_pf_wm,
+                                                 _igvn.MakeConX(AllocatePrefetchDistance));
       transform_later(new_pf_wmt);
       new_pf_wmt->set_req(0, need_pf_true);
 
@@ -1880,8 +1880,8 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       uint distance = 0;
 
       for (intx i = 0; i < lines; i++) {
-        prefetch_adr = new AddPNode(top(), new_pf_wmt,
-                                            _igvn.MakeConX(distance));
+        prefetch_adr = AddPNode::make_off_heap(new_pf_wmt,
+                                               _igvn.MakeConX(distance));
         transform_later(prefetch_adr);
         prefetch = new PrefetchAllocationNode(i_o, prefetch_adr);
         transform_later(prefetch);
@@ -1912,8 +1912,8 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       uint distance = AllocatePrefetchDistance;
 
       // Next cache address.
-      Node* cache_adr = new AddPNode(top(), old_eden_top,
-                                     _igvn.MakeConX(step_size + distance));
+      Node* cache_adr = AddPNode::make_off_heap(old_eden_top,
+                                                _igvn.MakeConX(step_size + distance));
       transform_later(cache_adr);
       cache_adr = new CastP2XNode(needgc_false, cache_adr);
       transform_later(cache_adr);
@@ -1932,8 +1932,8 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       Node* prefetch_adr;
       distance = step_size;
       for (intx i = 1; i < lines; i++) {
-        prefetch_adr = new AddPNode(top(), cache_adr,
-                                            _igvn.MakeConX(distance));
+        prefetch_adr = AddPNode::make_off_heap(cache_adr,
+                                               _igvn.MakeConX(distance));
         transform_later(prefetch_adr);
         prefetch = new PrefetchAllocationNode(contended_phi_rawmem, prefetch_adr);
         transform_later(prefetch);
@@ -1948,8 +1948,8 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       uint step_size = AllocatePrefetchStepSize;
       uint distance = AllocatePrefetchDistance;
       for (intx i = 0; i < lines; i++) {
-        prefetch_adr = new AddPNode(top(), new_eden_top,
-                                            _igvn.MakeConX(distance));
+        prefetch_adr = AddPNode::make_off_heap(new_eden_top,
+                                               _igvn.MakeConX(distance));
         transform_later(prefetch_adr);
         prefetch = new PrefetchAllocationNode(i_o, prefetch_adr);
         // Do not let it float too high, since if eden_top == eden_end,

@@ -1525,10 +1525,6 @@ void VM_Version::get_processor_features() {
       // Use it on new AMD cpus starting from Opteron.
       UseAddressNop = true;
     }
-    if (supports_sse2() && FLAG_IS_DEFAULT(UseNewLongLShift)) {
-      // Use it on new AMD cpus starting from Opteron.
-      UseNewLongLShift = true;
-    }
     if (FLAG_IS_DEFAULT(UseXmmLoadAndClearUpper)) {
       if (supports_sse4a()) {
         UseXmmLoadAndClearUpper = true; // use movsd only on '10h' Opteron

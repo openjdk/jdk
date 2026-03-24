@@ -342,7 +342,7 @@ public final class StandardOption {
 
     public static final OptionValue<Boolean> MAC_SIGN = booleanOption("mac-sign").scope(MAC_SIGNING).addAliases("s").create();
 
-    public static final OptionValue<Boolean> MAC_APP_STORE = booleanOption("mac-app-store").create();
+    public static final OptionValue<Boolean> MAC_APP_STORE = booleanOption("mac-app-store").scope(MAC_SIGNING).create();
 
     public static final OptionValue<String> MAC_APP_CATEGORY = stringOption("mac-app-category").create();
 

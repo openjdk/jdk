@@ -30,7 +30,6 @@
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1CardTableClaimTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1CollectionSetChooser.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkRemarkTasks.hpp"
@@ -1328,14 +1327,13 @@ void G1ConcurrentMark::remark() {
       _g1h->workers()->run_task(&cl, num_workers);
 
       log_debug(gc, remset, tracking)("Remembered Set Tracking update regions total %u, selected %u",
-                                        _g1h->num_committed_regions(), cl.total_selected_for_rebuild());
+                                      _g1h->num_committed_regions(), cl.total_selected_for_rebuild());
 
       _needs_remembered_set_rebuild = (cl.total_selected_for_rebuild() > 0);
 
       if (_needs_remembered_set_rebuild) {
-        // Prune rebuild candidates based on G1HeapWastePercent.
-        // Improves rebuild time in addition to remembered set memory usage.
-        G1CollectionSetChooser::build(_g1h->workers(), _g1h->num_committed_regions(), _g1h->policy()->candidates());
+        GrowableArrayCHeap<G1HeapRegion*, mtGC>* selected = cl.sort_and_prune_old_selected();
+        _g1h->policy()->candidates()->set_candidates_from_marking(selected);
       }
     }
 
