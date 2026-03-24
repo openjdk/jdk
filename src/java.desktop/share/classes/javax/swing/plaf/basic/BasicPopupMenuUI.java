@@ -908,7 +908,7 @@ public class BasicPopupMenuUI extends PopupMenuUI {
         }
 
         boolean isInPopup(Component src) {
-            for (Component c=src; c!=null; c=c.getParent()) {
+            for (Component c=src; c != null; c=c.getParent()) {
                 if (c instanceof Window) {
                     break;
                 } else if (c instanceof JPopupMenu) {

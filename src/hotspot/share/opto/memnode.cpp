@@ -1010,6 +1010,7 @@ bool LoadNode::is_immutable_value(Node* adr) {
 Node* LoadNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, const Type* rt, BasicType bt, MemOrd mo,
                      ControlDependency control_dependency, bool require_atomic_access, bool unaligned, bool mismatched, bool unsafe, uint8_t barrier_data) {
   Compile* C = gvn.C;
+  assert(adr->is_top() || C->get_alias_index(gvn.type(adr)->is_ptr()) == C->get_alias_index(adr_type), "adr and adr_type must agree");
 
   // sanity check the alias category against the created node type
   assert(!(adr_type->isa_oopptr() &&
@@ -1411,8 +1412,12 @@ Node* LoadNode::convert_to_unsigned_load(PhaseGVN& gvn) {
       assert(false, "no unsigned variant: %s", Name());
       return nullptr;
   }
+  const Type* mem_t = gvn.type(in(MemNode::Address));
+  if (mem_t == Type::TOP) {
+    return gvn.C->top();
+  }
   return LoadNode::make(gvn, in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address),
-                        raw_adr_type(), rt, bt, _mo, _control_dependency,
+                        mem_t->is_ptr(), rt, bt, _mo, _control_dependency,
                         false /*require_atomic_access*/, is_unaligned_access(), is_mismatched_access());
 }
 
@@ -1431,8 +1436,12 @@ Node* LoadNode::convert_to_signed_load(PhaseGVN& gvn) {
       assert(false, "no signed variant: %s", Name());
       return nullptr;
   }
+  const Type* mem_t = gvn.type(in(MemNode::Address));
+  if (mem_t == Type::TOP) {
+    return gvn.C->top();
+  }
   return LoadNode::make(gvn, in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address),
-                        raw_adr_type(), rt, bt, _mo, _control_dependency,
+                        mem_t->is_ptr(), rt, bt, _mo, _control_dependency,
                         false /*require_atomic_access*/, is_unaligned_access(), is_mismatched_access());
 }
 
@@ -1459,8 +1468,12 @@ Node* LoadNode::convert_to_reinterpret_load(PhaseGVN& gvn, const Type* rt) {
   const int op = Opcode();
   bool require_atomic_access = (op == Op_LoadL && ((LoadLNode*)this)->require_atomic_access()) ||
                                (op == Op_LoadD && ((LoadDNode*)this)->require_atomic_access());
+  const Type* mem_t = gvn.type(in(MemNode::Address));
+  if (mem_t == Type::TOP) {
+    return gvn.C->top();
+  }
   return LoadNode::make(gvn, in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address),
-                        raw_adr_type(), rt, bt, _mo, _control_dependency,
+                        mem_t->is_ptr(), rt, bt, _mo, _control_dependency,
                         require_atomic_access, is_unaligned_access(), is_mismatched);
 }
 
@@ -1482,8 +1495,12 @@ Node* StoreNode::convert_to_reinterpret_store(PhaseGVN& gvn, Node* val, const Ty
   const int op = Opcode();
   bool require_atomic_access = (op == Op_StoreL && ((StoreLNode*)this)->require_atomic_access()) ||
                                (op == Op_StoreD && ((StoreDNode*)this)->require_atomic_access());
+  const Type* mem_t = gvn.type(in(MemNode::Address));
+  if (mem_t == Type::TOP) {
+    return gvn.C->top();
+  }
   StoreNode* st = StoreNode::make(gvn, in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address),
-                                  raw_adr_type(), val, bt, _mo, require_atomic_access);
+                                  mem_t->is_ptr(), val, bt, _mo, require_atomic_access);
 
   bool is_mismatched = is_mismatched_access();
   const TypeRawPtr* raw_type = gvn.type(in(MemNode::Memory))->isa_rawptr();
@@ -1829,7 +1846,7 @@ Node* LoadNode::split_through_phi(PhaseGVN* phase, bool ignore_missing_instance_
       }
       if (base_is_phi && (base->in(0) == region)) {
         Node* base_x = base->in(i); // Clone address for loads from boxed objects.
-        Node* adr_x = phase->transform(new AddPNode(base_x,base_x,address->in(AddPNode::Offset)));
+        Node* adr_x = phase->transform(AddPNode::make_with_base(base_x, address->in(AddPNode::Offset)));
         x->set_req(Address, adr_x);
       }
     }
@@ -2778,6 +2795,7 @@ Node* LoadRangeNode::Identity(PhaseGVN* phase) {
 StoreNode* StoreNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, BasicType bt, MemOrd mo, bool require_atomic_access) {
   assert((mo == unordered || mo == release), "unexpected");
   Compile* C = gvn.C;
+  assert(adr_type == nullptr || adr->is_top() || C->get_alias_index(gvn.type(adr)->is_ptr()) == C->get_alias_index(adr_type), "adr and adr_type must agree");
   assert(C->get_alias_index(adr_type) != Compile::AliasIdxRaw ||
          ctl != nullptr, "raw memory operations should have control edge");
 
@@ -4173,10 +4191,10 @@ Node *ClearArrayNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node *off  = phase->MakeConX(BytesPerLong);
   mem = new StoreLNode(in(0),mem,adr,atp,zero,MemNode::unordered,false);
   count--;
-  while( count-- ) {
+  while (count--) {
     mem = phase->transform(mem);
-    adr = phase->transform(new AddPNode(base,adr,off));
-    mem = new StoreLNode(in(0),mem,adr,atp,zero,MemNode::unordered,false);
+    adr = phase->transform(AddPNode::make_with_base(base, adr, off));
+    mem = new StoreLNode(in(0), mem, adr, atp, zero, MemNode::unordered, false);
   }
   return mem;
 }
@@ -4213,7 +4231,7 @@ Node* ClearArrayNode::make_address(Node* dest, Node* offset, bool raw_base, Phas
     // May be called as part of the initialization of a just allocated object
     base = phase->C->top();
   }
-  return phase->transform(new AddPNode(base, dest, offset));
+  return phase->transform(AddPNode::make_with_base(base, dest, offset));
 }
 
 //----------------------------clear_memory-------------------------------------
@@ -4331,7 +4349,9 @@ MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn) {
   case Op_StoreStoreFence:   return new StoreStoreFenceNode(C, atp, pn);
   case Op_MemBarAcquireLock: return new MemBarAcquireLockNode(C, atp, pn);
   case Op_MemBarReleaseLock: return new MemBarReleaseLockNode(C, atp, pn);
+  case Op_MemBarStoreLoad:   return new MemBarStoreLoadNode(C, atp, pn);
   case Op_MemBarVolatile:    return new MemBarVolatileNode(C, atp, pn);
+  case Op_MemBarFull:        return new MemBarFullNode(C, atp, pn);
   case Op_MemBarCPUOrder:    return new MemBarCPUOrderNode(C, atp, pn);
   case Op_OnSpinWait:        return new OnSpinWaitNode(C, atp, pn);
   case Op_Initialize:        return new InitializeNode(C, atp, pn);
@@ -5022,8 +5042,7 @@ Node* InitializeNode::make_raw_address(intptr_t offset,
   Node* addr = in(RawAddress);
   if (offset != 0) {
     Compile* C = phase->C;
-    addr = phase->transform( new AddPNode(C->top(), addr,
-                                                 phase->MakeConX(offset)) );
+    addr = phase->transform(AddPNode::make_off_heap(addr, phase->MakeConX(offset)));
   }
   return addr;
 }
@@ -5070,7 +5089,7 @@ Node* InitializeNode::capture_store(StoreNode* st, intptr_t start,
     else
       ins_req(i, C->top());     // build a new edge
   }
-  Node* new_st = st->clone();
+  Node* new_st = st->clone_with_adr_type(TypeRawPtr::BOTTOM);
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   new_st->set_req(MemNode::Control, in(Control));
   new_st->set_req(MemNode::Memory,  prev_mem);

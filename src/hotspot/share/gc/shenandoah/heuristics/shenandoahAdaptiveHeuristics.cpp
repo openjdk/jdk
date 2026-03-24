@@ -273,7 +273,7 @@ void ShenandoahAdaptiveHeuristics::add_gc_time(double timestamp, double gc_time)
 }
 
 double ShenandoahAdaptiveHeuristics::predict_gc_time(double timestamp_at_start) {
-  return _gc_time_m * timestamp_at_start + _gc_time_b + _gc_time_sd * _margin_of_error_sd;;
+  return _gc_time_m * timestamp_at_start + _gc_time_b + _gc_time_sd * _margin_of_error_sd;
 }
 
 void ShenandoahAdaptiveHeuristics::add_rate_to_acceleration_history(double timestamp, double rate) {
@@ -739,7 +739,7 @@ size_t ShenandoahAdaptiveHeuristics::accelerated_consumption(double& acceleratio
       if (i > 0) {
         // first sample not included in weighted average because it has no weight.
         double sample_weight = x_array[i] - x_array[i-1];
-        weighted_y_sum = y_array[i] * sample_weight;
+        weighted_y_sum += y_array[i] * sample_weight;
         total_weight += sample_weight;
       }
       y_sum += y_array[i];

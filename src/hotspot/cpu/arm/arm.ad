@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1110,10 +1110,6 @@ uint Matcher::int_pressure_limit()
 uint Matcher::float_pressure_limit()
 {
   return (FLOATPRESSURE == -1) ? 30 : FLOATPRESSURE;
-}
-
-bool Matcher::use_asm_for_ldiv_by_con( jlong divisor ) {
-  return false;
 }
 
 // Register for DIVI projection of divmodI
@@ -4440,6 +4436,18 @@ instruct membar_release_lock() %{
   ins_pipe(empty);
 %}
 
+instruct membar_storeload() %{
+  match(MemBarStoreLoad);
+  ins_cost(4*MEMORY_REF_COST);
+
+  size(4);
+  format %{ "MEMBAR-storeload" %}
+  ins_encode %{
+    __ membar(MacroAssembler::StoreLoad, noreg);
+  %}
+  ins_pipe(long_memory_op);
+%}
+
 instruct membar_volatile() %{
   match(MemBarVolatile);
   ins_cost(4*MEMORY_REF_COST);
@@ -4461,6 +4469,18 @@ instruct unnecessary_membar_volatile() %{
   format %{ "!MEMBAR-volatile (unnecessary so empty encoding)" %}
   ins_encode( );
   ins_pipe(empty);
+%}
+
+instruct membar_full() %{
+  match(MemBarFull);
+  ins_cost(4*MEMORY_REF_COST);
+
+  size(4);
+  format %{ "MEMBAR-full" %}
+  ins_encode %{
+    __ membar(MacroAssembler::StoreLoad, noreg);
+  %}
+  ins_pipe(long_memory_op);
 %}
 
 //----------Register Move Instructions-----------------------------------------

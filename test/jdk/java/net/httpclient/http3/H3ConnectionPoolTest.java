@@ -25,11 +25,13 @@
  * @test
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer
- *        jdk.test.lib.Asserts
  *        jdk.test.lib.Utils
  *        jdk.test.lib.net.SimpleSSLContext
  * @run junit/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors,http3,quic:hs
  *                     -Djdk.internal.httpclient.debug=false
+ *                     -Djdk.httpclient.keepalive.timeout.h3=480
+ *                     -Djdk.httpclient.quic.idleTimeout=480
+ *                     -Djdk.test.server.quic.idleTimeout=480
  *                     H3ConnectionPoolTest
  */
 
@@ -44,7 +46,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.function.Supplier;
 
 import javax.net.ssl.SSLContext;
@@ -60,11 +61,11 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
 import static java.net.http.HttpOption.Http3DiscoveryMode.ANY;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
-import static jdk.test.lib.Asserts.assertEquals;
-import static jdk.test.lib.Asserts.assertNotEquals;
-import static jdk.test.lib.Asserts.assertTrue;
 
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class H3ConnectionPoolTest implements HttpServerAdapters {
 
@@ -257,7 +258,7 @@ public class H3ConnectionPoolTest implements HttpServerAdapters {
                 HttpResponse<String> response2 = client.send(request2, BodyHandlers.ofString());
                 assertEquals(HTTP_3, response2.version());
                 checkStatus(200, response2.statusCode());
-                assertNotEquals(response2.connectionLabel().get(), response1.connectionLabel().get());
+                assertNotEquals(response1.connectionLabel().get(), response2.connectionLabel().get());
 
                 // second request with HTTP3_URI_ONLY should reuse a created connection
                 // It should reuse the advertised connection (from response2) if same
@@ -295,8 +296,8 @@ public class H3ConnectionPoolTest implements HttpServerAdapters {
                 HttpResponse<String> response2 = client.send(request2, BodyHandlers.ofString());
                 assertEquals(HTTP_3, response2.version());
                 checkStatus(200, response2.statusCode());
-                assertNotEquals(response2.connectionLabel().get(), h2resp2.connectionLabel().get());
-                assertNotEquals(response2.connectionLabel().get(), response1.connectionLabel().get());
+                assertNotEquals(h2resp2.connectionLabel().get(), response2.connectionLabel().get());
+                assertNotEquals(response1.connectionLabel().get(), response2.connectionLabel().get());
 
                 // third request with ALT_SVC should reuse the same advertised
                 // connection (from response2), regardless of same origin...
@@ -304,16 +305,16 @@ public class H3ConnectionPoolTest implements HttpServerAdapters {
                 HttpResponse<String> response3 = client.send(request3, BodyHandlers.ofString());
                 assertEquals(HTTP_3, response3.version());
                 checkStatus(200, response3.statusCode());
-                assertEquals(response3.connectionLabel().get(), response2.connectionLabel().get());
-                assertNotEquals(response3.connectionLabel().get(), response1.connectionLabel().get());
+                assertEquals(response2.connectionLabel().get(), response3.connectionLabel().get());
+                assertNotEquals(response1.connectionLabel().get(), response3.connectionLabel().get());
 
                 // fourth request with HTTP_3_URI_ONLY should reuse the first connection,
                 // and not reuse the second.
                 HttpRequest request4 = req1Builder.copy().build();
                 HttpResponse<String> response4 = client.send(request4, BodyHandlers.ofString());
                 assertEquals(HTTP_3, response4.version());
-                assertEquals(response4.connectionLabel().get(), response1.connectionLabel().get());
-                assertNotEquals(response4.connectionLabel().get(), response3.connectionLabel().get());
+                assertEquals(response1.connectionLabel().get(), response4.connectionLabel().get());
+                assertNotEquals(response3.connectionLabel().get(), response4.connectionLabel().get());
                 checkStatus(200, response1.statusCode());
             } else {
                 System.out.println("WARNING: Couldn't create HTTP/3 server on same port! Can't test all...");
@@ -329,7 +330,7 @@ public class H3ConnectionPoolTest implements HttpServerAdapters {
                 HttpResponse<String> response2 = client.send(request2, BodyHandlers.ofString());
                 assertEquals(HTTP_3, response2.version());
                 checkStatus(200, response2.statusCode());
-                assertNotEquals(response2.connectionLabel().get(), h2resp2.connectionLabel().get());
+                assertNotEquals(h2resp2.connectionLabel().get(), response2.connectionLabel().get());
 
                 // third request with ALT_SVC should reuse the same advertised
                 // connection (from response2), regardless of same origin...
@@ -337,7 +338,7 @@ public class H3ConnectionPoolTest implements HttpServerAdapters {
                 HttpResponse<String> response3 = client.send(request3, BodyHandlers.ofString());
                 assertEquals(HTTP_3, response3.version());
                 checkStatus(200, response3.statusCode());
-                assertEquals(response3.connectionLabel().get(), response2.connectionLabel().get());
+                assertEquals(response2.connectionLabel().get(), response3.connectionLabel().get());
             }
         } finally {
             http3OnlyServer.stop();
@@ -417,7 +418,7 @@ public class H3ConnectionPoolTest implements HttpServerAdapters {
                             response2);
                     assertEquals(HTTP_3, response2.version());
                     checkStatus(200, response2.statusCode());
-                    assertNotEquals(response2.connectionLabel().get(), c1Label);
+                    assertNotEquals(c1Label, response2.connectionLabel().get());
                     if (i == 0) {
                         c2Label = response2.connectionLabel().get();
                     }
@@ -494,8 +495,8 @@ public class H3ConnectionPoolTest implements HttpServerAdapters {
                     if (i == 0) {
                         c2Label = response2.connectionLabel().get();
                     }
-                    assertNotEquals(response2.connectionLabel().get(), h2resp2.connectionLabel().get());
-                    assertNotEquals(response2.connectionLabel().get(), c1Label);
+                    assertNotEquals(h2resp2.connectionLabel().get(), response2.connectionLabel().get());
+                    assertNotEquals(c1Label, response2.connectionLabel().get());
                     assertEquals(c2Label, response2.connectionLabel().orElse(null));
                 }
                 var expectedLabels = Set.of(c1Label, c2Label);
@@ -507,7 +508,7 @@ public class H3ConnectionPoolTest implements HttpServerAdapters {
                             response3);
                     assertEquals(HTTP_3, response3.version());
                     checkStatus(200, response3.statusCode());
-                    assertNotEquals(response3.connectionLabel().get(), h2resp2.connectionLabel().get());
+                    assertNotEquals(h2resp2.connectionLabel().get(), response3.connectionLabel().get());
                     var label = response3.connectionLabel().orElse("");
                     assertTrue(expectedLabels.contains(label), "Unexpected label: %s not in %s"
                             .formatted(label, expectedLabels));
@@ -526,7 +527,7 @@ public class H3ConnectionPoolTest implements HttpServerAdapters {
                 HttpResponse<String> response2 = client.send(request2, BodyHandlers.ofString());
                 assertEquals(HTTP_3, response2.version());
                 checkStatus(200, response2.statusCode());
-                assertNotEquals(response2.connectionLabel().get(), h2resp2.connectionLabel().get());
+                assertNotEquals(h2resp2.connectionLabel().get(), response2.connectionLabel().get());
 
                 // third request with ALT_SVC should reuse the same advertised
                 // connection (from response2), regardless of same origin...
@@ -558,23 +559,6 @@ public class H3ConnectionPoolTest implements HttpServerAdapters {
                     expected, found);
             throw new RuntimeException("Test failed");
         }
-    }
-
-    static void checkStrings(String expected, String found) throws Exception {
-        if (!expected.equals(found)) {
-            System.err.printf("Test failed: wrong string %s/%s\n",
-                    expected, found);
-            throw new RuntimeException("Test failed");
-        }
-    }
-
-
-    static <T> T logExceptionally(String desc, Throwable t) {
-        System.out.println(desc + " failed: " + t);
-        System.err.println(desc + " failed: " + t);
-        if (t instanceof RuntimeException r) throw r;
-        if (t instanceof Error e) throw e;
-        throw new CompletionException(t);
     }
 
 }

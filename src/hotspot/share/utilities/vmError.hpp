@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,7 @@
 #define SHARE_UTILITIES_VMERROR_HPP
 
 #include "memory/allStatic.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
@@ -73,7 +74,7 @@ class VMError : public AllStatic {
 
   // Thread id of the first error. We must be able to handle native thread,
   // so use thread id instead of Thread* to identify thread.
-  static volatile intptr_t _first_error_tid;
+  static Atomic<intptr_t> _first_error_tid;
 
   // Core dump status, false if we have been unable to write a core/minidump for some reason
   static bool coredump_status;
@@ -85,16 +86,16 @@ class VMError : public AllStatic {
 
   // Timeout handling:
   // Timestamp at which error reporting started; -1 if no error reporting in progress.
-  static volatile jlong _reporting_start_time;
+  static Atomic<jlong> _reporting_start_time;
   // Whether or not error reporting did timeout.
-  static volatile bool _reporting_did_timeout;
+  static Atomic<bool> _reporting_did_timeout;
   // Timestamp at which the last error reporting step started; -1 if no error reporting
   //   in progress.
-  static volatile jlong _step_start_time;
+  static Atomic<jlong> _step_start_time;
   // Whether or not the last error reporting step did timeout.
-  static volatile bool _step_did_timeout;
+  static Atomic<bool> _step_did_timeout;
   // Whether or not the last error reporting step did succeed.
-  static volatile bool _step_did_succeed;
+  static Atomic<bool> _step_did_succeed;
 
   // Install secondary signal handler to handle secondary faults during error reporting
   // (see VMError::crash_handler)
@@ -143,8 +144,8 @@ class VMError : public AllStatic {
   static void clear_step_start_time();
 
   // Handshake/safepoint timed out threads
-  static Thread* volatile _handshake_timed_out_thread;
-  static Thread* volatile _safepoint_timed_out_thread;
+  static Atomic<Thread*> _handshake_timed_out_thread;
+  static Atomic<Thread*> _safepoint_timed_out_thread;
 
   WINDOWS_ONLY([[noreturn]] static void raise_fail_fast(const void* exrecord, const void* context);)
 
