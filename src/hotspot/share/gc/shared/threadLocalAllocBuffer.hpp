@@ -56,8 +56,8 @@ private:
   size_t    _refill_waste_limit;                 // hold onto tlab if free() is larger than this
   uint64_t  _allocated_before_last_gc;           // total bytes allocated up until the last gc
 
-  static size_t   _max_size;                          // maximum size of any TLAB
-  static unsigned _target_num_refills;                // expected number of refills between GCs
+  static size_t   _max_size;                     // maximum size of any TLAB
+  static unsigned _target_num_refills;           // expected number of refills between GCs
 
   unsigned  _num_refills;
   unsigned  _refill_waste;
@@ -179,7 +179,7 @@ public:
 
 class ThreadLocalAllocStats : public StackObj {
 private:
-  static PerfVariable* _perf_allocating_threads;
+  static PerfVariable* _perf_num_allocating_threads;
   static PerfVariable* _perf_total_num_refills;
   static PerfVariable* _perf_max_num_refills;
   static PerfVariable* _perf_total_allocated_size;
@@ -190,9 +190,9 @@ private:
   static PerfVariable* _perf_total_num_slow_allocations;
   static PerfVariable* _perf_max_num_slow_allocations;
 
-  static AdaptiveWeightedAverage _allocating_threads_avg;
+  static AdaptiveWeightedAverage _num_allocating_threads_avg;
 
-  unsigned int _allocating_threads;
+  unsigned int _num_allocating_threads;
   unsigned int _total_num_refills;
   unsigned int _max_num_refills;
   size_t       _total_allocated_size;
@@ -205,7 +205,7 @@ private:
 
 public:
   static void initialize();
-  static unsigned int allocating_threads_avg();
+  static unsigned int num_allocating_threads_avg();
 
   ThreadLocalAllocStats();
 

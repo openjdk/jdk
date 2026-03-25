@@ -220,7 +220,7 @@ void ThreadLocalAllocBuffer::startup_initialization() {
   // Assuming each thread's active tlab is, on average,
   // 1/2 full at a GC
   _target_num_refills = 100 / (2 * TLABWasteTargetPercent);
-  // We need to set initial target refills to 2 to avoid a GC which causes VM
+  // We need to set the initial target number of refills to 2 to avoid a GC which causes VM
   // abort during VM initialization.
   _target_num_refills = MAX2(_target_num_refills, 2U);
 
@@ -240,10 +240,10 @@ size_t ThreadLocalAllocBuffer::initial_desired_size() {
     init_sz = TLABSize / HeapWordSize;
   } else {
     // Initial size is a function of the average number of allocating threads.
-    unsigned int nof_threads = ThreadLocalAllocStats::allocating_threads_avg();
+    unsigned int num_threads = ThreadLocalAllocStats::num_allocating_threads_avg();
 
     init_sz  = (Universe::heap()->tlab_capacity() / HeapWordSize) /
-                      (nof_threads * target_num_refills());
+                      (num_threads * target_num_refills());
     init_sz = align_object_size(init_sz);
   }
   // We can't use clamp() between min_size() and max_size() here because some
@@ -299,7 +299,7 @@ HeapWord* ThreadLocalAllocBuffer::hard_end() {
   return _allocation_end + alignment_reserve();
 }
 
-PerfVariable* ThreadLocalAllocStats::_perf_allocating_threads;
+PerfVariable* ThreadLocalAllocStats::_perf_num_allocating_threads;
 PerfVariable* ThreadLocalAllocStats::_perf_total_num_refills;
 PerfVariable* ThreadLocalAllocStats::_perf_max_num_refills;
 PerfVariable* ThreadLocalAllocStats::_perf_total_allocated_size;
@@ -309,7 +309,7 @@ PerfVariable* ThreadLocalAllocStats::_perf_total_refill_waste;
 PerfVariable* ThreadLocalAllocStats::_perf_max_refill_waste;
 PerfVariable* ThreadLocalAllocStats::_perf_total_num_slow_allocations;
 PerfVariable* ThreadLocalAllocStats::_perf_max_num_slow_allocations;
-AdaptiveWeightedAverage ThreadLocalAllocStats::_allocating_threads_avg(0);
+AdaptiveWeightedAverage ThreadLocalAllocStats::_num_allocating_threads_avg(0);
 
 static PerfVariable* create_perf_variable(const char* name, PerfData::Units unit, TRAPS) {
   ResourceMark rm;
@@ -317,12 +317,12 @@ static PerfVariable* create_perf_variable(const char* name, PerfData::Units unit
 }
 
 void ThreadLocalAllocStats::initialize() {
-  _allocating_threads_avg = AdaptiveWeightedAverage(TLABAllocationWeight);
-  _allocating_threads_avg.sample(1); // One allocating thread at startup
+  _num_allocating_threads_avg = AdaptiveWeightedAverage(TLABAllocationWeight);
+  _num_allocating_threads_avg.sample(1); // One allocating thread at startup
 
   if (UsePerfData) {
     EXCEPTION_MARK;
-    _perf_allocating_threads         = create_perf_variable("allocThreads",   PerfData::U_None,  CHECK);
+    _perf_num_allocating_threads     = create_perf_variable("allocThreads",   PerfData::U_None,  CHECK);
     _perf_total_num_refills          = create_perf_variable("fills",          PerfData::U_None,  CHECK);
     _perf_max_num_refills            = create_perf_variable("maxFills",       PerfData::U_None,  CHECK);
     _perf_total_allocated_size       = create_perf_variable("alloc",          PerfData::U_Bytes, CHECK);
@@ -336,7 +336,7 @@ void ThreadLocalAllocStats::initialize() {
 }
 
 ThreadLocalAllocStats::ThreadLocalAllocStats() :
-    _allocating_threads(0),
+    _num_allocating_threads(0),
     _total_num_refills(0),
     _max_num_refills(0),
     _total_allocated_size(0),
@@ -347,15 +347,15 @@ ThreadLocalAllocStats::ThreadLocalAllocStats() :
     _total_num_slow_allocations(0),
     _max_num_slow_allocations(0) {}
 
-unsigned int ThreadLocalAllocStats::allocating_threads_avg() {
-  return MAX2((unsigned int)(_allocating_threads_avg.average() + 0.5), 1U);
+unsigned int ThreadLocalAllocStats::num_allocating_threads_avg() {
+  return MAX2((unsigned int)(_num_allocating_threads_avg.average() + 0.5), 1U);
 }
 
 void ThreadLocalAllocStats::update_fast_allocations(unsigned int num_refills,
                                                     size_t allocated_size,
                                                     size_t gc_waste,
                                                     size_t refill_waste) {
-  _allocating_threads      += 1;
+  _num_allocating_threads  += 1;
   _total_num_refills       += num_refills;
   _max_num_refills          = MAX2(_max_num_refills, num_refills);
   _total_allocated_size    += allocated_size;
@@ -371,7 +371,7 @@ void ThreadLocalAllocStats::update_num_slow_allocations(unsigned int num_slow_al
 }
 
 void ThreadLocalAllocStats::update(const ThreadLocalAllocStats& other) {
-  _allocating_threads         += other._allocating_threads;
+  _num_allocating_threads     += other._num_allocating_threads;
   _total_num_refills          += other._total_num_refills;
   _max_num_refills             = MAX2(_max_num_refills, other._max_num_refills);
   _total_allocated_size       += other._total_allocated_size;
@@ -384,7 +384,7 @@ void ThreadLocalAllocStats::update(const ThreadLocalAllocStats& other) {
 }
 
 void ThreadLocalAllocStats::reset() {
-  _allocating_threads         = 0;
+  _num_allocating_threads     = 0;
   _total_num_refills          = 0;
   _max_num_refills            = 0;
   _total_allocated_size       = 0;
@@ -401,7 +401,7 @@ void ThreadLocalAllocStats::publish() {
     return;
   }
 
-  _allocating_threads_avg.sample(_allocating_threads);
+  _num_allocating_threads_avg.sample(_num_allocating_threads);
 
   const size_t waste = _total_gc_waste + _total_refill_waste;
   const double waste_percent = percent_of(waste, _total_allocated_size);
@@ -409,13 +409,13 @@ void ThreadLocalAllocStats::publish() {
                       " slow allocs: %d max %d waste: %4.1f%%"
                       " gc: %zuB max: %zuB"
                       " slow: %zuB max: %zuB",
-                      _allocating_threads, _total_num_refills, _max_num_refills,
+                      _num_allocating_threads, _total_num_refills, _max_num_refills,
                       _total_num_slow_allocations, _max_num_slow_allocations, waste_percent,
                       _total_gc_waste * HeapWordSize, _max_gc_waste * HeapWordSize,
                       _total_refill_waste * HeapWordSize, _max_refill_waste * HeapWordSize);
 
   if (UsePerfData) {
-    _perf_allocating_threads          ->set_value(_allocating_threads);
+    _perf_num_allocating_threads      ->set_value(_num_allocating_threads);
     _perf_total_num_refills           ->set_value(_total_num_refills);
     _perf_max_num_refills             ->set_value(_max_num_refills);
     _perf_total_allocated_size        ->set_value(_total_allocated_size);
