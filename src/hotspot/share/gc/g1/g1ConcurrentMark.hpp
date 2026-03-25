@@ -353,6 +353,7 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   friend class G1CMRootRegionScanTask;
   friend class G1CMTask;
   friend class G1ClearBitMapTask;
+  friend class G1CollectorState;
   friend class G1ConcurrentMarkThread;
 
   G1ConcurrentMarkThread* _cm_thread;     // The thread doing the work
@@ -528,6 +529,12 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
 
   G1ConcurrentMarkThread* cm_thread() const;
 
+  // Concurrent cycle state queries.
+  bool is_in_concurrent_cycle() const;
+  bool is_in_marking() const;
+  bool is_in_rebuild_or_scrub() const;
+  bool is_in_reset_for_next_cycle() const;
+
 public:
   // To be called when an object is marked the first time, e.g. after a successful
   // mark_in_bitmap call. Updates various statistics data.
@@ -561,7 +568,7 @@ public:
 
   void fully_initialize();
   bool is_fully_initialized() const { return _cm_thread != nullptr; }
-  bool in_progress() const;
+
   uint max_num_tasks() const {return _max_num_tasks; }
 
   // Clear statistics gathered during the concurrent cycle for the given region after
@@ -666,8 +673,10 @@ public:
   // Do concurrent preclean work.
   void preclean();
 
+  // Executes the Remark pause.
   void remark();
 
+  // Executes the Cleanup pause.
   void cleanup();
 
   // Mark in the marking bitmap. Used during evacuation failure to

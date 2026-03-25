@@ -249,6 +249,9 @@
   develop(bool, TraceLoopOpts, false,                                       \
           "Trace executed loop optimizations")                              \
                                                                             \
+  develop(bool, TraceSplitIf, false,                                        \
+          "Trace Split-If optimization")                                    \
+                                                                            \
   develop(bool, TraceLoopLimitCheck, false,                                 \
           "Trace generation of loop limits checks")                         \
                                                                             \
@@ -904,6 +907,9 @@
                                                                             \
   develop(bool, StressLoopPeeling, false,                                   \
           "Randomize loop peeling decision")                                \
+                                                                            \
+  develop(bool, StressCountedLoop, false,                                   \
+          "Randomly delay conversion to counted loops")                     \
 
 // end of C2_FLAGS
 
