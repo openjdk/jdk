@@ -2457,10 +2457,6 @@ uint Matcher::float_pressure_limit()
   return (FLOATPRESSURE == -1) ? 28 : FLOATPRESSURE;
 }
 
-bool Matcher::use_asm_for_ldiv_by_con(jlong divisor) {
-  return false;
-}
-
 // Register for DIVI projection of divmodI.
 const RegMask& Matcher::divI_proj_mask() {
   ShouldNotReachHere();

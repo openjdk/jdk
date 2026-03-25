@@ -185,46 +185,6 @@ intx CompilerConfig::scaled_freq_log(intx freq_log, double scale) {
   }
 }
 
-void CompilerConfig::set_client_emulation_mode_flags() {
-  assert(has_c1(), "Must have C1 compiler present");
-  CompilationModeFlag::set_quick_only();
-
-  FLAG_SET_ERGO(ProfileInterpreter, false);
-#if INCLUDE_JVMCI
-  FLAG_SET_ERGO(EnableJVMCI, false);
-  FLAG_SET_ERGO(UseJVMCICompiler, false);
-#endif
-  if (FLAG_IS_DEFAULT(InitialCodeCacheSize)) {
-    FLAG_SET_ERGO(InitialCodeCacheSize, 160*K);
-  }
-  if (FLAG_IS_DEFAULT(ReservedCodeCacheSize)) {
-    FLAG_SET_ERGO(ReservedCodeCacheSize, 32*M);
-  }
-  if (FLAG_IS_DEFAULT(NonProfiledCodeHeapSize)) {
-    FLAG_SET_ERGO(NonProfiledCodeHeapSize, 27*M);
-  }
-  if (FLAG_IS_DEFAULT(ProfiledCodeHeapSize)) {
-    FLAG_SET_ERGO(ProfiledCodeHeapSize, 0);
-  }
-  if (FLAG_IS_DEFAULT(NonNMethodCodeHeapSize)) {
-    FLAG_SET_ERGO(NonNMethodCodeHeapSize, 5*M);
-  }
-  if (FLAG_IS_DEFAULT(CodeCacheExpansionSize)) {
-    FLAG_SET_ERGO(CodeCacheExpansionSize, 32*K);
-  }
-  if (FLAG_IS_DEFAULT(CICompilerCount)) {
-    FLAG_SET_ERGO(CICompilerCount, 1);
-  }
-}
-
-bool CompilerConfig::is_compilation_mode_selected() {
-  return !FLAG_IS_DEFAULT(TieredCompilation) ||
-         !FLAG_IS_DEFAULT(TieredStopAtLevel) ||
-         !FLAG_IS_DEFAULT(CompilationMode)
-         JVMCI_ONLY(|| !FLAG_IS_DEFAULT(EnableJVMCI)
-                    || !FLAG_IS_DEFAULT(UseJVMCICompiler));
-}
-
 static bool check_legacy_flags() {
   JVMFlag* compile_threshold_flag = JVMFlag::flag_from_enum(FLAG_MEMBER_ENUM(CompileThreshold));
   if (JVMFlagAccess::check_constraint(compile_threshold_flag, JVMFlagLimit::get_constraint(compile_threshold_flag)->constraint_func(), false) != JVMFlag::SUCCESS) {
@@ -540,28 +500,10 @@ bool CompilerConfig::check_args_consistency(bool status) {
   return status;
 }
 
-bool CompilerConfig::should_set_client_emulation_mode_flags() {
-#if !COMPILER1_OR_COMPILER2
-  return false;
-#endif
-
-  return has_c1() &&
-         is_compilation_mode_selected() &&
-         !has_c2() &&
-         !is_jvmci_compiler();
-}
-
 void CompilerConfig::ergo_initialize() {
 #if !COMPILER1_OR_COMPILER2
   return;
 #endif
-
-  // This property is also checked when selecting the heap size. Since client
-  // emulation mode influences Java heap memory usage, part of the logic must
-  // occur before choosing the heap size.
-  if (should_set_client_emulation_mode_flags()) {
-    set_client_emulation_mode_flags();
-  }
 
   set_legacy_emulation_flags();
   set_compilation_policy_flags();
@@ -581,9 +523,6 @@ void CompilerConfig::ergo_initialize() {
   }
 
   if (ProfileInterpreter && CompilerConfig::is_c1_simple_only()) {
-    if (!FLAG_IS_DEFAULT(ProfileInterpreter)) {
-        warning("ProfileInterpreter disabled due to client emulation mode");
-    }
     FLAG_SET_CMDLINE(ProfileInterpreter, false);
   }
 
