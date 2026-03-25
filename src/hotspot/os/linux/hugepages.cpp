@@ -63,7 +63,7 @@ static size_t scan_default_hugepagesize() {
   // format has been changed), we'll set largest page size to 0
 
   FILE *fp = os::fopen("/proc/meminfo", "r");
-  if (fp) {
+  if (fp != nullptr) {
     while (!feof(fp)) {
       int x = 0;
       char buf[16];
@@ -76,7 +76,7 @@ static size_t scan_default_hugepagesize() {
         // skip to next line
         for (;;) {
           int ch = fgetc(fp);
-          if (ch == EOF || ch == (int)'\n') break;
+          if (ch == EOF || ch == '\n') break;
         }
       }
     }
