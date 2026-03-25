@@ -1367,7 +1367,7 @@ JvmtiEnvBase::set_frame_pop(JvmtiThreadState* state, javaVFrame* jvf, jint depth
 
   JavaThread* thread = state->is_virtual() ?
                        state->get_thread() :
-                       state->get_thread_or_saved(); // saved is needed for a carrier thread
+                       state->get_thread(); // saved is needed for a carrier thread
   frame fr = jvf->fr();
 
   if (jvf->is_compiled_frame()) {
