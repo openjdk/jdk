@@ -98,9 +98,9 @@ private:
 
   // statistics
 
-  int num_refills() const                { return _num_refills; }
-  int gc_waste() const                   { return _gc_waste; }
-  int num_slow_allocations() const       { return _num_slow_allocations; }
+  int num_refills() const                        { return _num_refills; }
+  int gc_waste() const                           { return _gc_waste; }
+  int num_slow_allocations() const               { return _num_slow_allocations; }
 
 public:
   ThreadLocalAllocBuffer();
