@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary General tests for SealedGraph block tag
+ * @bug 8380913
  * @library /tools/lib /jdk/javadoc/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
