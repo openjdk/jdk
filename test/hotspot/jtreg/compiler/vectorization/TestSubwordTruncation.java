@@ -74,7 +74,7 @@ public class TestSubwordTruncation {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0" },
-        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true" })
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true", "zvbb", "true" })
     @Arguments(setup = "setupShortArray")
     public Object[] testShortLeadingZeros(short[] in) {
         short[] res = new short[SIZE];
@@ -100,7 +100,7 @@ public class TestSubwordTruncation {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0" },
-        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true" })
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true", "zvbb", "true" })
     @Arguments(setup = "setupShortArray")
     public Object[] testShortTrailingZeros(short[] in) {
         short[] res = new short[SIZE];
@@ -126,7 +126,7 @@ public class TestSubwordTruncation {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0" },
-        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true" })
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true", "zvbb", "true" })
     @Arguments(setup = "setupShortArray")
     public Object[] testShortReverse(short[] in) {
         short[] res = new short[SIZE];
@@ -152,7 +152,7 @@ public class TestSubwordTruncation {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE + "min(max_int, max_short)", "> 0" },
-        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true" })
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true", "zvbb", "true" })
     @Arguments(setup = "setupShortArray")
     public Object[] testShortBitCount(short[] in) {
         short[] res = new short[SIZE];
@@ -282,7 +282,7 @@ public class TestSubwordTruncation {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE + "min(max_int, max_byte)", "> 0" },
-        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true" })
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true", "zvbb", "true" })
     @Arguments(setup = "setupByteArray")
     public Object[] testByteLeadingZeros(byte[] in) {
         byte[] res = new byte[SIZE];
@@ -308,7 +308,7 @@ public class TestSubwordTruncation {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE + "min(max_int, max_byte)", "> 0" },
-        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true" })
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true", "zvbb", "true" })
     @Arguments(setup = "setupByteArray")
     public Object[] testByteTrailingZeros(byte[] in) {
         byte[] res = new byte[SIZE];
@@ -334,7 +334,7 @@ public class TestSubwordTruncation {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE + "min(max_int, max_byte)", "> 0" },
-        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true" })
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true", "zvbb", "true" })
     @Arguments(setup = "setupByteArray")
     public Object[] testByteReverse(byte[] in) {
         byte[] res = new byte[SIZE];
@@ -411,7 +411,7 @@ public class TestSubwordTruncation {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE + "min(max_int, max_byte)", "> 0" },
-        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true" })
+        applyIfCPUFeatureOr = { "avx2", "true", "asimd", "true", "zvbb", "true" })
     @Arguments(setup = "setupByteArray")
     public Object[] testByteBitCount(byte[] in) {
         byte[] res = new byte[SIZE];

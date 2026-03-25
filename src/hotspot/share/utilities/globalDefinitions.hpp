@@ -168,6 +168,29 @@ class oopDesc;
 #define SIZE_FORMAT_X_0          "0x%08"      PRIxPTR
 #endif  // _LP64
 
+
+template<size_t N>
+constexpr auto sizeof_auto_impl() {
+  if constexpr (N <= std::numeric_limits<uint8_t>::max()) return uint8_t(N);
+  else if constexpr (N <= std::numeric_limits<uint16_t>::max()) return uint16_t(N);
+  else if constexpr (N <= std::numeric_limits<uint32_t>::max()) return uint32_t(N);
+  else return uint64_t(N);
+}
+
+// Yields the size (in bytes) of the operand, using the smallest
+// unsigned type that can represent the size value. The operand may be
+// an expression, which is an unevaluated operand, or it may be a
+// type. All of the restrictions for sizeof operands apply to the
+// operand. The result is a constant expression.
+//
+// Example of correct usage of sizeof/sizeof_auto:
+//   // this will wrap using sizeof_auto, use sizeof to ensure computation using size_t
+//   size_t size = std::numeric_limits<uint32_t>::max() * sizeof(uint16_t);
+//   // implicit narrowing conversion or compiler warning/error using stricter compiler flags when using sizeof
+//   int count = 42 / sizeof_auto(uint16_t);
+
+#define sizeof_auto(...) sizeof_auto_impl<sizeof(__VA_ARGS__)>()
+
 // Convert pointer to intptr_t, for use in printing pointers.
 inline intptr_t p2i(const volatile void* p) {
   return (intptr_t) p;
@@ -1049,18 +1072,26 @@ const intptr_t NoBits     =  0; // no bits set in a word
 const jlong    NoLongBits =  0; // no bits set in a long
 const intptr_t OneBit     =  1; // only right_most bit set in a word
 
-// get a word with the n.th or the right-most or left-most n bits set
-// (note: #define used only so that they can be used in enum constant definitions)
-#define nth_bit(n)        (((n) >= BitsPerWord) ? 0 : (OneBit << (n)))
-#define right_n_bits(n)   (nth_bit(n) - 1)
-
-// same as nth_bit(n), but allows handing in a type as template parameter. Allows
-// us to use nth_bit with 64-bit types on 32-bit platforms
-template<class T> inline T nth_bit_typed(int n) {
-  return ((T)1) << n;
+// Return a value of type T with the n.th bit set and all other bits zero.
+// T must be an integral or enum type. n must be non-negative. If n is at
+// least the bitwise size of T then all bits in the result are zero.
+template<typename T = intptr_t>
+constexpr T nth_bit(int n) {
+  assert(n >= 0, "n must be non-negative");
+  using U = std::make_unsigned_t<T>;
+  constexpr size_t size = sizeof(U) * BitsPerByte;
+  return T((size_t(n) >= size) ? U(0) : (U(1) << n));
 }
-template<class T> inline T right_n_bits_typed(int n) {
-  return nth_bit_typed<T>(n) - 1;
+
+// Return a value of type T with all bits below the n.th bit set and all
+// other bits zero. T must be an integral or enum type. n must be
+// non-negative. If n is at least the bitwise size of T then all bits in
+// the result are set.
+template<typename T = intptr_t>
+constexpr T right_n_bits(int n) {
+  assert(n >= 0, "n must be non-negative");
+  using U = std::make_unsigned_t<T>;
+  return T(nth_bit<U>(n) - 1);
 }
 
 // bit-operations using a mask m
