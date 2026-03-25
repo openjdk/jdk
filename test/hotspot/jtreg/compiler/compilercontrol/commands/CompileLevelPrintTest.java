@@ -27,7 +27,9 @@
  * @bug 8313713
  * @summary Test -XX:CompileCommand=exclude and compileonly with different compilation levels,
  *          monitoring compilation events in VM -XX:+PrintCompilation and -XX:+PrintTieredEvents output
- * @requires vm.compMode != "Xint" & vm.flavor == "server" & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
+ * @requires vm.compMode != "Xint" & vm.flavor == "server"
+ *          & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
+ *          & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
  * @build compiler.compilercontrol.commands.CompileLevelPrintTest
  * @run driver compiler.compilercontrol.commands.CompileLevelPrintTest runner
@@ -36,6 +38,7 @@
 package compiler.compilercontrol.commands;
 
 import jdk.test.lib.Asserts;
+import jdk.test.lib.management.InputArguments;
 import jdk.test.lib.process.ProcessTools;
 
 import java.io.BufferedReader;
@@ -44,8 +47,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.Method;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -61,6 +63,7 @@ import java.util.regex.Pattern;
 
 public class CompileLevelPrintTest {
     static final Method TEST_METHOD;
+
     static {
         try {
             TEST_METHOD = Testee.class.getDeclaredMethod("compiledMethod", new Class[] {int.class});
@@ -81,6 +84,8 @@ public class CompileLevelPrintTest {
 
     static final boolean DEBUG_OUTPUT = false;
 
+    static int TIMEOUT_SEC = 30;
+
     static class TesteeState {
         final CountDownLatch waitingForStartTest = new CountDownLatch(1);
         final AtomicInteger compiler1QueueSize = new AtomicInteger();
@@ -93,19 +98,38 @@ public class CompileLevelPrintTest {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException, ExecutionException {
+        // Use the same launcher to avoid double launch cost compared to multiple jtreg @test annotations
         if (args.length > 0 && "runner".equals(args[0])) {
-            // Use the same launcher to avoid double launch cost compared to multiple jtreg @test annotations
-            Runner.run("compileonly", "1", "1", "1", Set.of("1"), Set.of(), false);
-            Runner.run("compileonly", "2", "2", "2", Set.of("2"), Set.of(), true);
-            Runner.run("compileonly", "4", "4", "3", Set.of("3"), Set.of(), true);
-            Runner.run("compileonly", "8", "8", "4", Set.of("4"), Set.of("3"), true);
-            Runner.run("compileonly", "12", "12", "4", Set.of("3", "4"), Set.of(), true);
+            if (Arrays.asList(InputArguments.getVmInputArgs()).contains("-Xcomp")) {
+                TIMEOUT_SEC *= 3;
+            }
 
-            Runner.run("exclude", "14", "1", "1", Set.of("1"), Set.of(), false);
-            Runner.run("exclude", "13", "2", "2", Set.of("2"), Set.of(), true);
-            Runner.run("exclude", "11", "4", "3", Set.of("3"), Set.of(), true);
-            Runner.run("exclude", "7", "8", "4", Set.of("4"), Set.of("3"), true);
-            Runner.run("exclude", "3", "12", "4", Set.of("3", "4"), Set.of(), true);
+            if (Arrays.asList(InputArguments.getVmInputArgs()).contains("-XX:-TieredCompilation")) {
+                // If we have -XX:-TieredCompilation, we check only for C2 compilation
+                // A space is printed instead of compile level
+                Runner.run("compileonly", "1", "1", "1", Set.of(), Set.of("4"), true, false);
+                Runner.run("compileonly", "2", "1", "1", Set.of(), Set.of("4"), true, false);
+                Runner.run("compileonly", "4", "1", "1", Set.of(), Set.of("4"), true, false);
+                Runner.run("compileonly", "8", "8", "4", Set.of(" "), Set.of(), true, false);
+                Runner.run("compileonly", "12", "12", "4", Set.of(" "), Set.of(), true, false);
+
+                Runner.run("exclude", "14", "1", "1", Set.of(), Set.of(), false, false);
+                Runner.run("exclude", "13", "2", "2", Set.of(), Set.of(), false, false);
+                Runner.run("exclude", "11", "4", "3", Set.of(), Set.of(), false, false);
+                Runner.run("exclude", "7", "8", "4", Set.of(" "), Set.of(), true, false);
+            } else {
+                // -XX:+TieredCompilation
+                Runner.run("compileonly", "1", "1", "1", Set.of("1"), Set.of(), false, true);
+                Runner.run("compileonly", "2", "2", "2", Set.of("2"), Set.of(), true, true);
+                Runner.run("compileonly", "4", "4", "3", Set.of("3"), Set.of(), true, true);
+                Runner.run("compileonly", "8", "8", "4", Set.of("4"), Set.of("3"), true, true);
+                Runner.run("compileonly", "12", "12", "4", Set.of("3", "4"), Set.of(), true, true);
+
+                Runner.run("exclude", "14", "1", "1", Set.of("1"), Set.of(), false, true);
+                Runner.run("exclude", "13", "2", "2", Set.of("2"), Set.of(), true, true);
+                Runner.run("exclude", "11", "4", "3", Set.of("3"), Set.of(), true, true);
+                Runner.run("exclude", "7", "8", "4", Set.of("4"), Set.of("3"), true, true);
+            }
         } else {
             Testee.run();
         }
@@ -120,12 +144,12 @@ public class CompileLevelPrintTest {
                 "[0-9.]+: \\[(call|loop|compile|force-compile|remove-from-queue|update-in-queue|reprofile|make-not-entrant) "
                       + "level=\\d \\[([^]]+)] @-?\\d+ queues=(\\d+),(\\d+).*]");
         private static final Pattern reCompilation = Pattern.compile(
-                "(\\d+) (C1|C2|no compiler): +(\\d+) ([ %][ s][ !][ b][ n]) ([-0-4]) +([^ ]+).*");
+                "(\\d+) (C1|C2|no compiler): *(\\d+) ([ %][ s][ !][ b][ n]) ([-0-4 ]) +([^ ]+).*");
         private static final Pattern reExcludeCompile = Pattern.compile(
                 "made not compilable on level (\\d) +([^ ]+) .* excluded by CompileCommand");
         private static final Pattern reCompiledMethod = Pattern.compile(
-                ".*\\n-{35} Assembly -{35}\\n\\nCompiled method \\((?:c1|c2)\\) (\\d+) (C1|C2): +"
-                      + "(\\d+) ([ %][ s][ !][ b][ n]) ([-0-4]) +([^ ]+) \\(\\d+ bytes\\)", Pattern.DOTALL);
+                ".*\\n-{35} Assembly -{35}\\n(?:\\[[0-9.]+s]\\[warning]\\[os] Loading hsdis library failed\\n)?\\nCompiled method \\((?:c1|c2)\\) (\\d+) (C1|C2): *"
+                      + "(\\d+) ([ %][ s][ !][ b][ n]) ([-0-4 ]) +([^ ]+) \\(\\d+ bytes\\)", Pattern.DOTALL);
         private static final Pattern reMethodData = Pattern.compile(
                 ".*\\n-{72}\\nstatic ([^\\n]+)\\ninterpreter_invocation_count: *\\d+", Pattern.DOTALL);
 
@@ -135,7 +159,7 @@ public class CompileLevelPrintTest {
                                String tieredStopAtLevel,
                                Set<String> expectedCompLevel,
                                Set<String> expectExcludedAtLevels,
-                               boolean expectMDOPrinted)
+                               boolean expectMDOPrinted, boolean tieredCompilation)
                 throws IOException, InterruptedException {
 
             System.out.println("\n########> Testing " + compileCmd + " " + cmdCompLevel);
@@ -145,17 +169,19 @@ public class CompileLevelPrintTest {
                     "-XX:+PrintCompilation",
                     "-XX:+CIPrintCompilerName",
                     "-XX:+PrintTieredEvents",
-                    "-XX:+TieredCompilation",
+                    "-XX:" + (tieredCompilation ? "+" : "-") + "TieredCompilation",
                     "-XX:TieredStopAtLevel=" + tieredStopAtLevel,
                     "-XX:CompileCommand=" + compileCmd + "," + TEST_METHOD_NAME_DBL_COLON + "," + cmdCompLevel,
                     "-XX:CompileCommand=print," + TEST_METHOD_NAME_DBL_COLON + "," + printCmdCompLevel,
                     CompileLevelPrintTest.class.getName());
 
             try (Process process = pb.start();
-                 BufferedWriter processInput = process.outputWriter();
-                 BufferedReader processOutput = process.inputReader();
-                 BufferedReader processErrOut = process.errorReader()) {
+                    BufferedWriter processInput = process.outputWriter();
+                    BufferedReader processOutput = process.inputReader();
+                    BufferedReader processErrOut = process.errorReader()) {
+                long startNanos = System.nanoTime();
                 try {
+                    IO.println("##> Testee PID: " + process.pid());
                     TesteeState testeeState = new TesteeState();
 
                     Thread stdoutParser = startDaemonThread(() ->
@@ -164,12 +190,13 @@ public class CompileLevelPrintTest {
                             testeeErrorOutputMonitor(processErrOut, testeeState, "testee-" + process.pid() + ".err"));
 
                     System.out.println("##> Waiting for testee to get ready for the start command");
-                    if (!testeeState.waitingForStartTest.await(30, TimeUnit.SECONDS)) {
+                    if (!testeeState.waitingForStartTest.await(TIMEOUT_SEC, TimeUnit.SECONDS)) {
                         throw new RuntimeException("No start signal from testee");
                     }
 
-                    Asserts.assertTrue(waitUntil(() -> testeeState.compiler1QueueSize.get() < 5
-                            && testeeState.compiler2QueueSize.get() < 5),
+                    Asserts.assertTrue(waitUntil(() -> !process.isAlive()
+                            || (testeeState.compiler1QueueSize.get() < 5
+                                    && testeeState.compiler2QueueSize.get() < 5)),
                             "Compiler queue is still not empty");
                     Asserts.assertTrue(testeeState.compileCommandsReported.contains(
                             compileCmd + " " + TEST_METHOD_NAME_DOT + " intx " + compileCmd + " = " + cmdCompLevel),
@@ -181,30 +208,37 @@ public class CompileLevelPrintTest {
                     System.out.println("##> Order testee to start");
                     processInput.write(START_CMD); processInput.newLine(); processInput.flush();
 
-                    Asserts.assertTrue(waitUntil(() ->
-                            expectedCompLevel.equals(testeeState.testMethodCompiledAtLevel)
-                            && expectedCompLevel.equals(testeeState.testMethodPrintedAtLevel)
-                            && expectExcludedAtLevels.equals(testeeState.testMethodExcludedAtLevel)),
-                            "Test method was not compiled at required level (" + expectedCompLevel + "), "
-                               + " or its method assembly was not printed, "
-                               + " or method was compiled at incorrect level (" + expectExcludedAtLevels + ")");
+                    waitUntil(() -> !process.isAlive()
+                            || (expectedCompLevel.equals(testeeState.testMethodCompiledAtLevel)
+                                    && expectedCompLevel.equals(testeeState.testMethodPrintedAtLevel)
+                                    && expectExcludedAtLevels.equals(testeeState.testMethodExcludedAtLevel)));
+
+                    Asserts.assertEquals(expectedCompLevel, testeeState.testMethodCompiledAtLevel,
+                            "Test method was not compiled at required level (" + expectedCompLevel + ")");
+                    Asserts.assertEquals(expectedCompLevel, testeeState.testMethodPrintedAtLevel,
+                            "Test method assembly was not printed at required level (" + expectedCompLevel + ")");
+                    Asserts.assertEquals(expectExcludedAtLevels, testeeState.testMethodExcludedAtLevel,
+                            "Test method compilation was not excluded at required levels (" + expectExcludedAtLevels + ")");
 
                     System.out.println("##> Test method compiled, now stop");
                     processInput.write(STOP_CMD); processInput.newLine(); processInput.flush();
                     processInput.close();
 
-                    Asserts.assertEquals(process.waitFor(), 0);
+                    Asserts.assertEquals(0, process.waitFor());
                     stdoutParser.join();
                     stderrParser.join();
 
                     Asserts.assertEquals(expectMDOPrinted, testeeState.testMethodMDOPrinted,
                             "Test method MDO was" + (expectMDOPrinted ? " NOT" : "") + " printed");
 
-                    System.out.println("########> Test passed");
+                    IO.println("########> Test passed");
                 } catch (Exception ex) {
+                    IO.println("########> Test failed");
                     ex.printStackTrace();
                     process.destroyForcibly();
                     throw ex;
+                } finally {
+                    IO.println("########> Elapsed " + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos) + " ms");
                 }
             }
         }
@@ -339,7 +373,7 @@ public class CompileLevelPrintTest {
 
                 // Print 3 times, since the output can be intermixed with
                 System.err.println(TESTEE_WAITING_FOR_START_CMD);
-                if (!startCmd.await(33, TimeUnit.SECONDS)) {
+                if (!startCmd.await(TIMEOUT_SEC + 1, TimeUnit.SECONDS)) {
                     System.err.println("==> 'start' command was not given in stdin");
                     return;
                 }
@@ -394,7 +428,7 @@ public class CompileLevelPrintTest {
 
         private static boolean longLoop() {
             // To trigger compilation, 100-200 should be enough for C1 and 600-700 for C2
-            for (int i = 0; i < 1500; i++) {
+            for (int i = 0; i < 10000; i++) {
                 compiledMethod(i);
                 if ((i & 0xf) == 0 && stopCmd.getCount() == 0) {
                     System.err.println("==> compiledMethod() has been compiled at iteration " + i);
@@ -421,7 +455,7 @@ public class CompileLevelPrintTest {
     }
 
     static boolean waitUntil(BooleanSupplier condition) {
-        for (int maxWait = 300; maxWait > 0; --maxWait) {
+        for (int maxWait = TIMEOUT_SEC * 5; maxWait > 0; --maxWait) {
             if (condition.getAsBoolean()) {
                 return true;
             }
