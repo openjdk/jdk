@@ -1310,17 +1310,24 @@ Node* VectorNode::reassociate_vector_operation(PhaseGVN* phase) {
   Node* in1 = in(1);
   Node* in2 = in(2);
   if (in2->Opcode() == Op_Replicate && in1->Opcode() == Opcode()) {
-     swap(in1, in2);
+    swap(in1, in2);
   }
 
-  if (in1->Opcode() == Op_Replicate && in2->Opcode() == Opcode()) {
-    Node* in2_1 = in2->in(1);
-    Node* in2_2 = in2->in(2);
-    if (in2_1->Opcode() == Op_Replicate) {
-      return create_reassociated_node(this, in2, in1, in2_1, in2_2, phase);
-    } else if (in2_2->Opcode() == Op_Replicate) {
-      return create_reassociated_node(this, in2, in1, in2_2, in2_1, phase);
-    }
+  if (in1->Opcode() != Op_Replicate || in2->Opcode() != Opcode()) {
+    return nullptr;
+  }
+
+  // Skip predicated vector operations, mask semantics prevent reassociation.
+  if (is_predicated_vector() || in2->as_Vector()->is_predicated_vector()) {
+    return nullptr;
+  }
+
+  Node* in2_1 = in2->in(1);
+  Node* in2_2 = in2->in(2);
+  if (in2_1->Opcode() == Op_Replicate) {
+    return create_reassociated_node(this, in2, in1, in2_1, in2_2, phase);
+  } else if (in2_2->Opcode() == Op_Replicate) {
+    return create_reassociated_node(this, in2, in1, in2_2, in2_1, phase);
   }
 
   return nullptr;
@@ -1334,46 +1341,50 @@ Node* VectorNode::reassociate_vector_operation(PhaseGVN* phase) {
 //
 Node* VectorNode::push_through_broadcast(PhaseGVN* phase) {
   BasicType bt = vect_type()->element_basic_type();
-  if (can_push_through_broadcast(bt)) {
-
-    Node* sinp1 = nullptr;
-    Node* sinp2 = nullptr;
-    Node* sinp3 = nullptr;
-
-    assert(in(1)->Opcode() == Op_Replicate, "");
-    sinp1 = in(1)->in(1);
-
-    if (req() > 2) {
-      assert(in(2)->Opcode() == Op_Replicate, "");
-      sinp2 = in(2)->in(1);
-    }
-
-    if (req() > 3) {
-      assert(req() < 4 || in(3)->Opcode() == Op_Replicate, "");
-      sinp3 = in(3)->in(1);
-    }
-
-    Node* sop = make_scalar(phase->C, Opcode(), bt, in(0), sinp1, sinp2, sinp3);
-    if (sop != nullptr) {
-      sop = phase->transform(sop);
-
-      // For subword types, ADD/SUB/MUL scalar operations compute at int width and may
-      // produce values outside the subword range. Insert explicit truncatation logic
-      // before feeding the result of computation to Replicate.
-      // This prevents non-truncated int values from leaking into downstream IR if the
-      // Replicate is later disconnected by other transformations.
-      int sopc = scalar_opcode(Opcode(), bt);
-      if (is_subword_type(bt) && (sopc == Op_AddI || sopc == Op_SubI || sopc == Op_MulI)) {
-        int shift_count = (BitsPerInt - BitsPerByte * type2aelembytes(bt));
-        Node* con_shift = phase->intcon(shift_count);
-        sop = phase->transform(new LShiftINode(sop, con_shift));
-        sop = phase->transform(new RShiftINode(sop, con_shift));
-      }
-
-      return new ReplicateNode(sop, vect_type());
-    }
+  if (!can_push_through_broadcast(bt)) {
+    return nullptr;
   }
-  return nullptr;
+
+  assert(req() >= 2 && req() <= 4, "unexpected req() %u for %s", req(), NodeClassNames[Opcode()]);
+
+  Node* sinp1 = nullptr;
+  Node* sinp2 = nullptr;
+  Node* sinp3 = nullptr;
+
+  assert(in(1)->Opcode() == Op_Replicate, "");
+  sinp1 = in(1)->in(1);
+
+  if (req() > 2) {
+    assert(in(2)->Opcode() == Op_Replicate, "");
+    sinp2 = in(2)->in(1);
+  }
+
+  if (req() > 3) {
+    assert(in(3)->Opcode() == Op_Replicate, "");
+    sinp3 = in(3)->in(1);
+  }
+
+  Node* sop = make_scalar(phase->C, Opcode(), bt, in(0), sinp1, sinp2, sinp3);
+  if (sop == nullptr) {
+    return nullptr;
+  }
+
+  sop = phase->transform(sop);
+
+  // For subword types, ADD/SUB/MUL scalar operations compute at int width and may
+  // produce values outside the subword range. Insert explicit truncation logic
+  // before feeding the result of computation to Replicate.
+  // This prevents non-truncated int values from leaking into downstream IR if the
+  // Replicate is later disconnected by other transformations.
+  int sopc = scalar_opcode(Opcode(), bt);
+  if (is_subword_type(bt) && (sopc == Op_AddI || sopc == Op_SubI || sopc == Op_MulI)) {
+    int shift_count = (BitsPerInt - BitsPerByte * type2aelembytes(bt));
+    Node* con_shift = phase->intcon(shift_count);
+    sop = phase->transform(new LShiftINode(sop, con_shift));
+    sop = phase->transform(new RShiftINode(sop, con_shift));
+  }
+
+  return new ReplicateNode(sop, vect_type());
 }
 
 Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
