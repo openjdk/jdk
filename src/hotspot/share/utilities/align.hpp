@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,9 @@
 
 #include "cppstdlib/type_traits.hpp"
 #include "metaprogramming/enableIf.hpp"
-#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/integerCast.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // Compute mask to use for aligning to or testing alignment.
@@ -79,7 +79,7 @@ constexpr bool can_align_up(T size, A alignment) {
 template<typename T, typename A, ENABLE_IF(std::is_integral<T>::value)>
 constexpr T align_up(T size, A alignment) {
   assert(can_align_up(size, alignment), "precondition");
-  T adjusted = checked_cast<T>(size + alignment_mask(alignment));
+  T adjusted = integer_cast_permit_tautology<T>(size + alignment_mask(alignment));
   return align_down(adjusted, alignment);
 }
 

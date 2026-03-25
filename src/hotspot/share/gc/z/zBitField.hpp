@@ -27,6 +27,7 @@
 #include "memory/allStatic.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/integerCast.hpp"
 
 //
 //  Example
@@ -74,7 +75,7 @@ public:
 
   static ContainerType encode(ValueType value) {
     assert(((ContainerType)value & (FieldMask << ValueShift)) == (ContainerType)value, "Invalid value");
-    return checked_cast<ContainerType>(((ContainerType)value >> ValueShift) << FieldShift);
+    return integer_cast_permit_tautology<ContainerType>(((ContainerType)value >> ValueShift) << FieldShift);
   }
 };
 

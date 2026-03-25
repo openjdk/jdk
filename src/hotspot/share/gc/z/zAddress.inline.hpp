@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 #include "utilities/align.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/integerCast.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include CPU_HEADER_INLINE(gc/z/zAddress)
@@ -47,18 +48,21 @@
   /* Arithmetic operators for offset_type */                                              \
                                                                                           \
 inline offset_type operator+(offset_type offset, size_t size) {                           \
-  const auto size_value = checked_cast<std::underlying_type_t<offset_type>>(size);        \
+  using U = std::underlying_type_t<offset_type>;                                          \
+  const auto size_value = integer_cast_permit_tautology<U>(size);                         \
   return to_##offset_type(untype(offset) + size_value);                                   \
 }                                                                                         \
                                                                                           \
 inline offset_type& operator+=(offset_type& offset, size_t size) {                        \
-  const auto size_value = checked_cast<std::underlying_type_t<offset_type>>(size);        \
+  using U = std::underlying_type_t<offset_type>;                                          \
+  const auto size_value = integer_cast_permit_tautology<U>(size);                         \
   offset = to_##offset_type(untype(offset) + size_value);                                 \
   return offset;                                                                          \
 }                                                                                         \
                                                                                           \
 inline offset_type operator-(offset_type offset, size_t size) {                           \
-  const auto size_value = checked_cast<std::underlying_type_t<offset_type>>(size);        \
+  using U = std::underlying_type_t<offset_type>;                                          \
+  const auto size_value = integer_cast_permit_tautology<U>(size);                         \
   return to_##offset_type(untype(offset) - size_value);                                   \
 }                                                                                         \
                                                                                           \
@@ -67,7 +71,8 @@ inline size_t operator-(offset_type first, offset_type second) {                
 }                                                                                         \
                                                                                           \
 inline offset_type& operator-=(offset_type& offset, size_t size) {                        \
-  const auto size_value = checked_cast<std::underlying_type_t<offset_type>>(size);        \
+  using U = std::underlying_type_t<offset_type>;                                          \
+  const auto size_value = integer_cast_permit_tautology<U>(size);                         \
   offset = to_##offset_type(untype(offset) - size_value);                                 \
   return offset;                                                                          \
 }                                                                                         \
@@ -75,18 +80,21 @@ inline offset_type& operator-=(offset_type& offset, size_t size) {              
   /* Arithmetic operators for offset_type##_end */                                        \
                                                                                           \
 inline offset_type##_end operator+(offset_type##_end offset, size_t size) {               \
-  const auto size_value = checked_cast<std::underlying_type_t<offset_type##_end>>(size);  \
+  using U = std::underlying_type_t<offset_type##_end>;                                    \
+  const auto size_value = integer_cast_permit_tautology<U>(size);                         \
   return to_##offset_type##_end(untype(offset) + size_value);                             \
 }                                                                                         \
                                                                                           \
 inline offset_type##_end& operator+=(offset_type##_end& offset, size_t size) {            \
-  const auto size_value = checked_cast<std::underlying_type_t<offset_type##_end>>(size);  \
+  using U = std::underlying_type_t<offset_type##_end>;                                    \
+  const auto size_value = integer_cast_permit_tautology<U>(size);                         \
   offset = to_##offset_type##_end(untype(offset) + size_value);                           \
   return offset;                                                                          \
 }                                                                                         \
                                                                                           \
 inline offset_type##_end operator-(offset_type##_end first, size_t size) {                \
-  const auto size_value = checked_cast<std::underlying_type_t<offset_type##_end>>(size);  \
+  using U = std::underlying_type_t<offset_type##_end>;                                    \
+  const auto size_value = integer_cast_permit_tautology<U>(size);                         \
   return to_##offset_type##_end(untype(first) - size_value);                              \
 }                                                                                         \
                                                                                           \
@@ -95,7 +103,8 @@ inline size_t operator-(offset_type##_end first, offset_type##_end second) {    
 }                                                                                         \
                                                                                           \
 inline offset_type##_end& operator-=(offset_type##_end& offset, size_t size) {            \
-  const auto size_value = checked_cast<std::underlying_type_t<offset_type##_end>>(size);  \
+  using U = std::underlying_type_t<offset_type##_end>;                                    \
+  const auto size_value = integer_cast_permit_tautology<U>(size);                         \
   offset = to_##offset_type##_end(untype(offset) - size_value);                           \
   return offset;                                                                          \
 }                                                                                         \

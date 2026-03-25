@@ -27,9 +27,9 @@
 
 #include "cppstdlib/type_traits.hpp"
 #include "metaprogramming/enableIf.hpp"
-#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/integerCast.hpp"
 
 // Returns the population count of x, i.e., the number of bits set in x.
 //
@@ -64,7 +64,8 @@ constexpr unsigned population_count(T x) {
   // The preceding multiply by z_ones is the only place where the intermediate
   // calculations can exceed the range of T. We need to discard any such excess
   // before the right-shift, hence the conversion back to T.
-  return checked_cast<unsigned>(static_cast<T>(r) >> (((sizeof(T) - 1) * BitsPerByte)));
+  T res = static_cast<T>(r) >> ((sizeof(T) - 1) * BitsPerByte);
+  return integer_cast_permit_tautology<unsigned>(res);
 }
 
 #endif // SHARE_UTILITIES_POPULATION_COUNT_HPP
