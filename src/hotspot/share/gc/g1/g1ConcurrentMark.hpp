@@ -599,7 +599,7 @@ public:
 
   // Notifies marking threads to abort. This is a best-effort notification. Does not
   // guarantee or update any state after the call. Root region scan must not be
-  // running.
+  // running or being aborted.
   void abort_marking_threads();
 
   // Total cpu time spent in mark worker threads in seconds.
