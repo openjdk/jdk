@@ -94,7 +94,7 @@ class CondyNestedTest_Code {
     Utf8 "BootstrapMethods"; // #65    
   } // Constant Pool
 
-  0x0000; // access
+  0x0020; // access
   #17;// this_cpx
   #2;// super_cpx
 
@@ -143,7 +143,7 @@ class CondyNestedTest_Code {
           } // end Traps
           [] { // Attributes
             Attr(#29) { // StackMapTable
-              [] { // 
+              [] { //
                 252b, 17, []z{O,9}; // append_frame 1
                 9b; // same_frame
                 9b; // same_frame
@@ -171,7 +171,7 @@ class CondyNestedTest_Code {
           } // end Traps
           [] { // Attributes
             Attr(#29) { // StackMapTable
-              [] { // 
+              [] { //
                 22b; // same_frame
               }
             } // end StackMapTable

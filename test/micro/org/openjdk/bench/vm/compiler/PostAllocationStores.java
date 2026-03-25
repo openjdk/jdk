@@ -95,6 +95,7 @@ public class PostAllocationStores {
         int intField2;
         long longField1;
 
+        @SuppressWarnings("initialization")
         public TestWithNonNullStores() {
             objectField1 = this;
             objectField2 = this;

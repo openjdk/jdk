@@ -204,7 +204,7 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
       // Adjust JVMS from post-call to pre-call state: put args on stack
       uint nargs = call->method()->arg_size();
       kit.ensure_stack(kit.sp() + nargs);
-      for (uint i = TypeFunc::Parms; i < call->tf()->domain()->cnt(); i++) {
+      for (uint i = TypeFunc::Parms; i < call->tf()->domain_sig()->cnt(); i++) {
         kit.push(call->in(i));
       }
       jvms = kit.sync_jvms();

@@ -23,6 +23,9 @@
  */
 
 #include "ci/ciCallSite.hpp"
+#include "ci/ciFlatArray.hpp"
+#include "ci/ciFlatArrayKlass.hpp"
+#include "ci/ciInlineKlass.hpp"
 #include "ci/ciInstance.hpp"
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciMemberName.hpp"
@@ -35,6 +38,7 @@
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciObject.hpp"
 #include "ci/ciObjectFactory.hpp"
+#include "ci/ciRefArrayKlass.hpp"
 #include "ci/ciReplay.hpp"
 #include "ci/ciSymbol.hpp"
 #include "ci/ciSymbols.hpp"
@@ -144,7 +148,7 @@ void ciObjectFactory::init_shared_objects() {
 
   for (int i = T_BOOLEAN; i <= T_CONFLICT; i++) {
     BasicType t = (BasicType)i;
-    if (type2name(t) != nullptr && !is_reference_type(t) &&
+    if (type2name(t) != nullptr && t != T_FLAT_ELEMENT && !is_reference_type(t) &&
         t != T_NARROWOOP && t != T_NARROWKLASS) {
       ciType::_basic_types[t] = new (_arena) ciType(t);
       init_ident_of(ciType::_basic_types[t]);
@@ -375,12 +379,15 @@ ciObject* ciObjectFactory::create_new_object(oop o) {
       return new (arena()) ciMethodType(h_i);
     else
       return new (arena()) ciInstance(h_i);
-  } else if (o->is_objArray()) {
+  } else if (o->is_refArray()) {
     objArrayHandle h_oa(THREAD, (objArrayOop)o);
     return new (arena()) ciObjArray(h_oa);
   } else if (o->is_typeArray()) {
     typeArrayHandle h_ta(THREAD, (typeArrayOop)o);
     return new (arena()) ciTypeArray(h_ta);
+  } else if (o->is_flatArray()) {
+    flatArrayHandle h_ta(THREAD, (flatArrayOop)o);
+    return new (arena()) ciFlatArray(h_ta);
   }
 
   // The oop is of some type not supported by the compiler interface.
@@ -400,11 +407,19 @@ ciMetadata* ciObjectFactory::create_new_metadata(Metadata* o) {
 
   if (o->is_klass()) {
     Klass* k = (Klass*)o;
-    if (k->is_instance_klass()) {
+    if (k->is_inline_klass()) {
+      return new (arena()) ciInlineKlass(k);
+    } else if (k->is_instance_klass()) {
       assert(!ReplayCompiles || ciReplay::no_replay_state() || !ciReplay::is_klass_unresolved((InstanceKlass*)k), "must be whitelisted for replay compilation");
       return new (arena()) ciInstanceKlass(k);
     } else if (k->is_objArray_klass()) {
-      return new (arena()) ciObjArrayKlass(k);
+      if (k->is_flatArray_klass()) {
+        return new (arena()) ciFlatArrayKlass(k);
+      } else if (k->is_refArray_klass()) {
+        return new (arena()) ciRefArrayKlass(k);
+      } else {
+        return new (arena()) ciObjArrayKlass(k);
+      }
     } else if (k->is_typeArray_klass()) {
       return new (arena()) ciTypeArrayKlass(k);
     }
@@ -637,6 +652,18 @@ ciReturnAddress* ciObjectFactory::get_return_address(int bci) {
   init_ident_of(new_ret_addr);
   _return_addresses.append(new_ret_addr);
   return new_ret_addr;
+}
+
+ciWrapper* ciObjectFactory::make_early_larval_wrapper(ciType* type) {
+  ciWrapper* wrapper = new (arena()) ciWrapper(type, ciWrapper::EarlyLarval);
+  init_ident_of(wrapper);
+  return wrapper;
+}
+
+ciWrapper* ciObjectFactory::make_null_free_wrapper(ciType* type) {
+  ciWrapper* wrapper = new (arena()) ciWrapper(type, ciWrapper::NullFree);
+  init_ident_of(wrapper);
+  return wrapper;
 }
 
 // ------------------------------------------------------------------

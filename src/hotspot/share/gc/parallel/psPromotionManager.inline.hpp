@@ -204,13 +204,13 @@ inline HeapWord* PSPromotionManager::allocate_in_old_gen(Klass* klass,
   // Do we allocate directly, or flush and refill?
   if (obj_size > (OldPLABSize / 2)) {
     // Allocate this object directly
-    result = old_gen()->cas_allocate_with_expansion(obj_size);
+    result = old_gen()->allocate(obj_size);
     promotion_trace_event(cast_to_oop(result), klass, obj_size, age, true, nullptr);
   } else {
     // Flush and fill
     _old_lab.flush();
 
-    HeapWord* lab_base = old_gen()->cas_allocate_with_expansion(OldPLABSize);
+    HeapWord* lab_base = old_gen()->allocate(OldPLABSize);
     if (lab_base != nullptr) {
       _old_lab.initialize(MemRegion(lab_base, OldPLABSize));
       // Try the old lab allocation again.
@@ -297,9 +297,9 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
     // Do the size comparison first with new_obj_size, which we
     // already have. Hopefully, only a few objects are larger than
     // _min_array_size_for_chunking, and most of them will be arrays.
-    // So, the objArray test would be very infrequent.
+    // So, the is_array_with_oops test would be very infrequent.
     if (new_obj_size > _min_array_size_for_chunking &&
-        klass->is_objArray_klass()) {
+        new_obj->is_array_with_oops()) {
       push_objArray(o, new_obj);
     } else {
       // we'll just push its contents

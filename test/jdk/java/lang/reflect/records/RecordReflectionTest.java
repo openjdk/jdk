@@ -23,11 +23,12 @@
 
 /*
  * @test
- * @bug 8235369 8235550 8247444 8320575
+ * @bug 8235369 8235550 8247444 8326879 8320575
  * @summary reflection test for records
  * @build R10
  * @compile RecordReflectionTest.java
  * @run junit/othervm RecordReflectionTest
+ * @run junit/othervm --enable-preview RecordReflectionTest
  */
 
 import java.lang.annotation.*;

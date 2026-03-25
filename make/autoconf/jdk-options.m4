@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -101,13 +101,6 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
       DESC: [only build headless (no GUI) support],
       CHECKING_MSG: [if we should build headless-only (no GUI)])
   AC_SUBST(ENABLE_HEADLESS_ONLY)
-
-  # Avoid headless-only on macOS and Windows, it is not supported there
-  if test "x$ENABLE_HEADLESS_ONLY" = xtrue; then
-    if test "x$OPENJDK_TARGET_OS" = xwindows || test "x$OPENJDK_TARGET_OS" = xmacosx; then
-      AC_MSG_ERROR([headless-only is not supported on macOS and Windows])
-    fi
-  fi
 
   # should we linktime gc unused code sections in the JDK build ?
   if test "x$OPENJDK_TARGET_OS" = "xlinux"; then
@@ -777,6 +770,8 @@ AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE],
 ################################################################################
 #
 # Enable or disable the default CDS archive generation for Compact Object Headers
+#
+# Default disabled within Valhalla until support added (JDK-8348568)
 #
 AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE_COH],
 [

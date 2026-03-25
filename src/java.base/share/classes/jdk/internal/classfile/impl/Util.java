@@ -28,6 +28,8 @@ import java.lang.classfile.*;
 import java.lang.classfile.attribute.CodeAttribute;
 import jdk.internal.classfile.components.ClassPrinter;
 import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ConstantPool;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.ModuleEntry;
 import java.lang.classfile.constantpool.PoolEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
@@ -43,10 +45,12 @@ import java.util.function.Function;
 
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.constant.ClassOrInterfaceDescImpl;
+import jdk.internal.reflect.PreviewAccessFlags;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 import static java.lang.classfile.ClassFile.ACC_STATIC;
+import static java.lang.constant.ConstantDescs.INIT_NAME;
 import static jdk.internal.constant.PrimitiveClassDescImpl.CD_double;
 import static jdk.internal.constant.PrimitiveClassDescImpl.CD_long;
 import static jdk.internal.constant.PrimitiveClassDescImpl.CD_void;
@@ -57,6 +61,8 @@ import static jdk.internal.constant.PrimitiveClassDescImpl.CD_void;
  * name strings
  */
 public final class Util {
+
+    public static final int VALUE_OBJECTS_MAJOR = ClassFile.latestMajorVersion();
 
     private Util() {
     }
@@ -252,7 +258,7 @@ public final class Util {
     public static int flagsToBits(AccessFlag.Location location, AccessFlag... flags) {
         int i = 0;
         for (AccessFlag f : flags) {
-            if (!f.locations().contains(location)) {
+            if (!f.locations().contains(location) && !PreviewAccessFlags.locations(f).contains(location)) {
                 throw new IllegalArgumentException("unexpected flag: " + f + " use in target location: " + location);
             }
             i |= f.mask();
@@ -261,7 +267,8 @@ public final class Util {
     }
 
     public static boolean has(AccessFlag.Location location, int flagsMask, AccessFlag flag) {
-        return (flag.mask() & flagsMask) == flag.mask() && flag.locations().contains(location);
+        return (flag.mask() & flagsMask) == flag.mask() && (flag.locations().contains(location)
+                || PreviewAccessFlags.locations(flag).contains(location));
     }
 
     public static ClassDesc fieldTypeSymbol(Utf8Entry utf8) {
@@ -314,6 +321,14 @@ public final class Util {
         return desc == CD_double || desc == CD_long;
     }
 
+    public static boolean checkConstantPoolsCompatible(ConstantPool one, ConstantPool two) {
+        if (one.equals(two))
+            return true;
+        if (one instanceof ConstantPoolBuilder cpb && cpb.canWriteDirect(two))
+            return true;
+        return two instanceof ConstantPoolBuilder cpb && cpb.canWriteDirect(one);
+    }
+
     public static void dumpMethod(SplitConstantPool cp,
                                   ClassDesc cls,
                                   String methodName,
@@ -355,6 +370,17 @@ public final class Util {
             }
             dump.accept(" %02x".formatted(bytes[i]));
         }
+    }
+
+    public static boolean canSkipMethodInflation(ClassReader cr, MethodInfo method, BufWriterImpl buf) {
+        if (!buf.canWriteDirect(cr)) {
+            return false;
+        }
+        if (method.methodName().equalsString(INIT_NAME) &&
+                !buf.strictFieldsMatch(((ClassReaderImpl) cr).getContainedClass())) {
+            return false;
+        }
+        return true;
     }
 
     public static void writeListIndices(BufWriter writer, List<? extends PoolEntry> list) {

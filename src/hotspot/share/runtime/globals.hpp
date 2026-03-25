@@ -199,6 +199,19 @@ const int ObjectAlignmentInBytes = 8;
           "Granularity to use for NUMA interleaving on Windows OS")         \
           constraint(NUMAInterleaveGranularityConstraintFunc, AtParse)      \
                                                                             \
+  product(uintx, NUMAChunkResizeWeight, 20,                                 \
+          "Percentage (0-100) used to weight the current sample when "      \
+          "computing exponentially decaying average for "                   \
+          "AdaptiveNUMAChunkSizing")                                        \
+          range(0, 100)                                                     \
+                                                                            \
+  product(size_t, NUMASpaceResizeRate, 1*G,                                 \
+          "Do not reallocate more than this amount per collection")         \
+          range(0, max_uintx)                                               \
+                                                                            \
+  product(bool, UseAdaptiveNUMAChunkSizing, true,                           \
+          "Enable adaptive chunk sizing for NUMA")                          \
+                                                                            \
   product(bool, NUMAStats, false,                                           \
           "Print NUMA stats in detailed heap information")                  \
                                                                             \
@@ -798,8 +811,41 @@ const int ObjectAlignmentInBytes = 8;
           "Number of OutOfMemoryErrors preallocated with backtrace")        \
           range(0, 1024)                                                    \
                                                                             \
-  develop(bool, PrintFieldLayout, false,                                    \
+  product(bool, UseXMMForArrayCopy, false,                                  \
+          "Use SSE2 MOVQ instruction for Arraycopy")                        \
+                                                                            \
+  product(bool, PrintFieldLayout, false, DIAGNOSTIC,                        \
           "Print field layout for each class")                              \
+                                                                            \
+  product(bool, PrintInlineLayout, false, DIAGNOSTIC,                       \
+          "Print field layout for each inline type or class with inline fields") \
+                                                                            \
+  product(bool, PrintFlatArrayLayout, false, DIAGNOSTIC,                    \
+          "Print array layout for each inline type array")                  \
+                                                                            \
+  product(bool, UseArrayFlattening, true,                                   \
+          "Allow the VM to flatten arrays")                                 \
+                                                                            \
+  product(bool, UseFieldFlattening, true,                                   \
+          "Allow the VM to flatten value fields")                           \
+                                                                            \
+  product(bool, UseNonAtomicValueFlattening, true,                          \
+          "Allow the JVM to flatten some non-atomic null-free values")      \
+                                                                            \
+  product(bool, UseNullableValueFlattening, true,                           \
+          "Allow the JVM to flatten some nullable values")                  \
+                                                                            \
+  product(bool, UseAtomicValueFlattening, true,                             \
+          "Allow the JVM to flatten some atomic values")                    \
+                                                                            \
+  product(bool, UseNullableNonAtomicValueFlattening, true,                  \
+          "Allow the JVM to flatten some strict final non-static fields")   \
+                                                                            \
+  product(intx, FlatArrayElementMaxOops, 4,                                 \
+          "Max nof embedded object references in an inline type to flatten, <0 no limit")  \
+                                                                            \
+  develop(ccstrlist, PrintInlineKlassFields, "",                            \
+          "Print fields collected by InlineKlass::collect_fields")          \
                                                                             \
   /* Need to limit the extent of the padding to reasonable size.          */\
   /* 8K is well beyond the reasonable HW cache line size, even with       */\
@@ -868,8 +914,20 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, VerifyDependencies, trueInDebug,                            \
           "Exercise and verify the compilation dependency mechanism")       \
                                                                             \
+  develop(bool, TraceNewOopMapGeneration, false,                            \
+          "Trace OopMapGeneration")                                         \
+                                                                            \
+  develop(bool, TraceNewOopMapGenerationDetailed, false,                    \
+          "Trace OopMapGeneration: print detailed cell states")             \
+                                                                            \
   develop(bool, TimeOopMap, false,                                          \
           "Time calls to GenerateOopMap::compute_map() in sum")             \
+                                                                            \
+  develop(bool, TimeOopMap2, false,                                         \
+          "Time calls to GenerateOopMap::compute_map() individually")       \
+                                                                            \
+  develop(bool, TraceOopMapRewrites, false,                                 \
+          "Trace rewriting of methods during oop map generation")           \
                                                                             \
   develop(bool, TraceFinalizerRegistration, false,                          \
           "Trace registration of final references")                         \
@@ -1750,6 +1808,9 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, VerifyMethodHandles, trueInDebug, DIAGNOSTIC,               \
           "perform extra checks when constructing method handles")          \
                                                                             \
+  product(bool, IgnoreAssertUnsetFields, false, DIAGNOSTIC,                           \
+          "Ignore assert_unset_fields")                                     \
+                                                                            \
   product(bool, ShowHiddenFrames, false, DIAGNOSTIC,                        \
           "show method handle implementation frames (usually hidden)")      \
                                                                             \
@@ -1921,6 +1982,23 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseFastUnorderedTimeStamps, false, EXPERIMENTAL,            \
           "Use platform unstable time where supported for timestamps only") \
                                                                             \
+  product_pd(bool, InlineTypePassFieldsAsArgs,                              \
+          "Pass each inline type field as an argument at calls")            \
+                                                                            \
+  product_pd(bool, InlineTypeReturnedAsFields,                              \
+          "Return fields instead of an inline type reference")              \
+                                                                            \
+  develop(bool, StressCallingConvention, false,                             \
+          "Stress the scalarized calling convention.")                      \
+                                                                            \
+  develop(bool, PreloadClasses, true,                                       \
+          "Preloading all classes from the LoadableDescriptors attribute")  \
+                                                                            \
+  product(ccstrlist, ForceNonTearable, "", DIAGNOSTIC,                      \
+          "List of inline classes which are forced to be atomic "           \
+          "(whitespace and commas separate names, "                         \
+          "and leading and trailing stars '*' are wildcards)")              \
+                                                                            \
   product(bool, DeoptimizeNMethodBarriersALot, false, DIAGNOSTIC,           \
                 "Make nmethod barriers deoptimise a lot.")                  \
                                                                             \
@@ -1929,7 +2007,7 @@ const int ObjectAlignmentInBytes = 8;
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
                                                                             \
-  product(bool, UseObjectMonitorTable, true, DIAGNOSTIC,                    \
+  product(bool, UseObjectMonitorTable, false, DIAGNOSTIC,                   \
           "Use a table to record inflated monitors rather than the first "  \
           "word of the object.")                                            \
                                                                             \
@@ -1978,9 +2056,6 @@ const int ObjectAlignmentInBytes = 8;
   develop(uint, BinarySearchThreshold, 16,                                  \
           "Minimal number of elements in a sorted collection to prefer"     \
           "binary search over simple linear search." )                      \
-  product(bool, UseSingleICacheInvalidation, false, DIAGNOSTIC,             \
-          "Defer multiple ICache invalidation to single invalidation")      \
-                                                                            \
 
 // end of RUNTIME_FLAGS
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,10 @@
  * questions.
  */
 
+import org.testng.annotations.AfterTest;
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -34,15 +38,7 @@ import static jdk.test.lib.net.IPSupport.hasIPv6;
 import static jdk.test.lib.net.IPSupport.hasIPv4;
 import static java.net.StandardProtocolFamily.INET;
 import static java.net.StandardProtocolFamily.INET6;
-
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.testng.Assert.assertThrows;
 
 /*
  * @test
@@ -50,54 +46,51 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @library /test/lib
  * @build jdk.test.lib.net.IPSupport
  * @summary Check that DatagramChannel throws expected Exception when connecting to port 0
- * @run junit ConnectPortZero
- * @run junit/othervm -Djava.net.preferIPv4Stack=true ConnectPortZero
+ * @run testng ConnectPortZero
+ * @run testng/othervm -Djava.net.preferIPv4Stack=true ConnectPortZero
  */
 
 public class ConnectPortZero {
-    private static InetSocketAddress loopbackZeroAddr, wildcardZeroAddr;
-    private static DatagramChannel datagramChannel, datagramChannelIPv4, datagramChannelIPv6;
-    private static List<DatagramChannel> channels;
+    private InetSocketAddress loopbackZeroAddr, wildcardZeroAddr;
+    private DatagramChannel datagramChannel, datagramChannelIPv4, datagramChannelIPv6;
+    private List<Object[]> channels;
 
     private static final Class<SocketException> SE = SocketException.class;
 
-    @BeforeAll
-    public static void setUp() throws IOException {
+    @BeforeTest
+    public void setUp() throws IOException {
         wildcardZeroAddr = new InetSocketAddress(0);
         loopbackZeroAddr = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
 
         channels = new ArrayList<>();
 
         datagramChannel = DatagramChannel.open();
-        channels.add(datagramChannel);
+        channels.add(new Object[]{datagramChannel});
         if (hasIPv4()) {
             datagramChannelIPv4 = DatagramChannel.open(INET);
-            channels.add(datagramChannelIPv4);
+            channels.add(new Object[]{datagramChannelIPv4});
         }
         if (hasIPv6()) {
             datagramChannelIPv6 = DatagramChannel.open(INET6);
-            channels.add(datagramChannelIPv6);
+            channels.add(new Object[]{datagramChannelIPv6});
         }
     }
 
-    @AfterAll
-    public static void tearDown() throws IOException {
-        for(DatagramChannel ch : channels) {
-            ch.close();
-        }
+    @DataProvider(name = "data")
+    public Object[][] variants() {
+        return channels.toArray(Object[][]::new);
     }
 
-    public static List<DatagramChannel> channels() {
-        return channels;
-    }
-
-    @ParameterizedTest
-    @MethodSource("channels")
+    @Test(dataProvider = "data")
     public void testChannelConnect(DatagramChannel dc) {
-        assertTrue(dc.isOpen());
-        assertFalse(dc.isConnected());
         assertThrows(SE, () -> dc.connect(loopbackZeroAddr));
         assertThrows(SE, () -> dc.connect(wildcardZeroAddr));
     }
 
+    @AfterTest
+    public void tearDown() throws IOException {
+        for(Object[] ch : channels) {
+            ((DatagramChannel)ch[0]).close();
+        }
+    }
 }

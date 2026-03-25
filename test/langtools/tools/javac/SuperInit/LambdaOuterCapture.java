@@ -24,6 +24,9 @@
  * @test
  * @bug 8334252
  * @summary Test lambda declared in early construction context
+ * @run main LambdaOuterCapture
+ * @build InitializationWarningTester
+ * @run main InitializationWarningTester LambdaOuterCapture
  */
 
 public class LambdaOuterCapture {

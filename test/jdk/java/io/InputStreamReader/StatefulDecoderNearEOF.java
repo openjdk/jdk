@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 8292043
- * @run junit StatefulDecoderNearEOF
+ * @run testng StatefulDecoderNearEOF
  * @summary Check MalformedInputException is thrown with stateful decoders
  *      with malformed input before EOF
  */
@@ -36,30 +36,29 @@ import java.nio.charset.CodingErrorAction;
 import java.nio.charset.MalformedInputException;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertThrows;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
+@Test
 public class StatefulDecoderNearEOF {
 
-    public static Stream<Arguments> inputs() {
-        return Stream.of(
+    @DataProvider
+    public Object[][] inputs() {
+        return new Object[][] {
             // BOM, followed by High surrogate (in UTF-16LE).
             // First read() should throw an exception.
-            Arguments.of(new byte[] {(byte)0xff, (byte)0xfe, 0, (byte)0xd8}, 0),
+            {new byte[] {(byte)0xff, (byte)0xfe, 0, (byte)0xd8}, 0},
 
             // BOM, followed by 'A', 'B', 'C', then by High surrogate (in UTF-16LE).
             // Fourth read() should throw an exception.
-            Arguments.of(new byte[] {(byte)0xff, (byte)0xfe, (byte)0x41, 0, (byte)0x42, 0, (byte)0x43, 0, 0, (byte)0xd8}, 3));
+            {new byte[] {(byte)0xff, (byte)0xfe, (byte)0x41, 0, (byte)0x42, 0, (byte)0x43, 0, 0, (byte)0xd8}, 3},
+        };
     }
 
-    @ParameterizedTest
-    @MethodSource("inputs")
+    @Test (dataProvider = "inputs")
     public void testStatefulDecoderNearEOF(byte[] ba, int numSucessReads) throws IOException {
         try (var r = new InputStreamReader(
                 new ByteArrayInputStream(ba),

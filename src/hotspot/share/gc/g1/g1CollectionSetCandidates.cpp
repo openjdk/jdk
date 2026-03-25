@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "gc/g1/g1CollectionSetCandidates.inline.hpp"
+#include "gc/g1/g1CollectionSetChooser.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -249,9 +250,8 @@ void G1CollectionSetCandidates::sort_marking_by_efficiency() {
   _from_marking_groups.verify();
 }
 
-void G1CollectionSetCandidates::set_candidates_from_marking(GrowableArrayCHeap<G1HeapRegion*, mtGC>* candidates) {
-  uint num_candidates = candidates->length();
-
+void G1CollectionSetCandidates::set_candidates_from_marking(G1HeapRegion** candidates,
+                                                            uint num_candidates) {
   if (num_candidates == 0) {
     log_debug(gc, ergo, cset) ("No regions selected from marking.");
     return;
@@ -264,7 +264,7 @@ void G1CollectionSetCandidates::set_candidates_from_marking(GrowableArrayCHeap<G
   // During each Mixed GC, we must collect at least G1Policy::calc_min_old_cset_length regions to meet
   // the G1MixedGCCountTarget. For the first collection in a Mixed GC cycle, we can add all regions
   // required to meet this threshold to the same remset group. We are certain these will be collected in
-  // the same Mixed GC.
+  // the same MixedGC.
   uint group_limit = p->calc_min_old_cset_length(num_candidates);
 
   G1CSetCandidateGroup::reset_next_group_id();
@@ -273,7 +273,7 @@ void G1CollectionSetCandidates::set_candidates_from_marking(GrowableArrayCHeap<G
   current = new G1CSetCandidateGroup();
 
   for (uint i = 0; i < num_candidates; i++) {
-    G1HeapRegion* r = candidates->at(i);
+    G1HeapRegion* r = candidates[i];
     assert(!contains(r), "must not contain region %u", r->hrm_index());
     _contains_map[r->hrm_index()] = CandidateOrigin::Marking;
 

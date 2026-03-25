@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ public class AccessFlags implements /* imports */ ClassConstants {
   public boolean isFinal       () { return (flags & JVM_ACC_FINAL       ) != 0; }
   public boolean isSynchronized() { return (flags & JVM_ACC_SYNCHRONIZED) != 0; }
   public boolean isSuper       () { return (flags & JVM_ACC_SUPER       ) != 0; }
+  public boolean isIdentity    () { return (flags & JVM_ACC_IDENTITY    ) != 0; }
   public boolean isVolatile    () { return (flags & JVM_ACC_VOLATILE    ) != 0; }
   public boolean isBridge      () { return (flags & JVM_ACC_BRIDGE      ) != 0; }
   public boolean isTransient   () { return (flags & JVM_ACC_TRANSIENT   ) != 0; }
@@ -51,7 +52,7 @@ public class AccessFlags implements /* imports */ ClassConstants {
   public boolean isAnnotation  () { return (flags & JVM_ACC_ANNOTATION  ) != 0; }
   public boolean isInterface   () { return (flags & JVM_ACC_INTERFACE   ) != 0; }
   public boolean isAbstract    () { return (flags & JVM_ACC_ABSTRACT    ) != 0; }
-  public boolean isStrict      () { return (flags & JVM_ACC_STRICT      ) != 0; }
+  public boolean isStrict      () { return (flags & JVM_ACC_STRICT_INIT ) != 0; }
   public boolean isSynthetic   () { return (flags & JVM_ACC_SYNTHETIC   ) != 0; }
 
   public long getValue         () { return flags; }
@@ -64,6 +65,7 @@ public class AccessFlags implements /* imports */ ClassConstants {
     if (isStatic      ()) tty.print("static "      );
     if (isFinal       ()) tty.print("final "       );
     if (isSynchronized()) tty.print("synchronized ");
+    if (isIdentity    ()) tty.print("identity "    );
     if (isVolatile    ()) tty.print("volatile "    );
     if (isBridge      ()) tty.print("bridge "      );
     if (isTransient   ()) tty.print("transient "   );

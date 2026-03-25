@@ -30,6 +30,7 @@ public class IntegerSumProblem {
 
     private final Integer[] data = new Integer[DATA_SIZE];
 
+    @SuppressWarnings("initialization")
     public IntegerSumProblem() {
         // use fixed seed to reduce run-to-run variance
         Random rand = new Random(0x30052012);

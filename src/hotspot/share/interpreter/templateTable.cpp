@@ -229,6 +229,7 @@ void TemplateTable::initialize() {
   const int  disp = 1 << Template::does_dispatch_bit;
   const int  clvm = 1 << Template::calls_vm_bit;
   const int  iswd = 1 << Template::wide_bit;
+
   //                                    interpr. templates
   // Java spec bytecodes                ubcp|disp|clvm|iswd  in    out   generator             argument
   def(Bytecodes::_nop                 , ____|____|____|____, vtos, vtos, nop                 ,  _           );
@@ -281,7 +282,7 @@ void TemplateTable::initialize() {
   def(Bytecodes::_laload              , ____|____|____|____, itos, ltos, laload              ,  _           );
   def(Bytecodes::_faload              , ____|____|____|____, itos, ftos, faload              ,  _           );
   def(Bytecodes::_daload              , ____|____|____|____, itos, dtos, daload              ,  _           );
-  def(Bytecodes::_aaload              , ____|____|____|____, itos, atos, aaload              ,  _           );
+  def(Bytecodes::_aaload              , ____|____|clvm|____, itos, atos, aaload              ,  _           );
   def(Bytecodes::_baload              , ____|____|____|____, itos, itos, baload              ,  _           );
   def(Bytecodes::_caload              , ____|____|____|____, itos, itos, caload              ,  _           );
   def(Bytecodes::_saload              , ____|____|____|____, itos, itos, saload              ,  _           );
@@ -433,6 +434,7 @@ void TemplateTable::initialize() {
   def(Bytecodes::_ifnonnull           , ubcp|____|clvm|____, atos, vtos, if_nullcmp          , not_equal    );
   def(Bytecodes::_goto_w              , ubcp|____|clvm|____, vtos, vtos, goto_w              ,  _           );
   def(Bytecodes::_jsr_w               , ubcp|____|____|____, vtos, vtos, jsr_w               ,  _           );
+  def(Bytecodes::_breakpoint          , ubcp|disp|clvm|____, vtos, vtos, _breakpoint         ,  _           );
 
   // wide Java spec bytecodes
   def(Bytecodes::_iload               , ubcp|____|____|iswd, vtos, itos, wide_iload          ,  _           );
@@ -451,6 +453,7 @@ void TemplateTable::initialize() {
 
   // JVM bytecodes
   def(Bytecodes::_fast_agetfield      , ubcp|____|____|____, atos, atos, fast_accessfield    ,  atos        );
+  def(Bytecodes::_fast_vgetfield      , ubcp|____|clvm|____, atos, atos, fast_accessfield    ,  atos        );
   def(Bytecodes::_fast_bgetfield      , ubcp|____|____|____, atos, itos, fast_accessfield    ,  itos        );
   def(Bytecodes::_fast_cgetfield      , ubcp|____|____|____, atos, itos, fast_accessfield    ,  itos        );
   def(Bytecodes::_fast_dgetfield      , ubcp|____|____|____, atos, dtos, fast_accessfield    ,  dtos        );
@@ -460,6 +463,7 @@ void TemplateTable::initialize() {
   def(Bytecodes::_fast_sgetfield      , ubcp|____|____|____, atos, itos, fast_accessfield    ,  itos        );
 
   def(Bytecodes::_fast_aputfield      , ubcp|____|____|____, atos, vtos, fast_storefield ,   atos        );
+  def(Bytecodes::_fast_vputfield      , ubcp|____|clvm|____, atos, vtos, fast_storefield ,   atos        );
   def(Bytecodes::_fast_bputfield      , ubcp|____|____|____, itos, vtos, fast_storefield ,   itos        );
   def(Bytecodes::_fast_zputfield      , ubcp|____|____|____, itos, vtos, fast_storefield ,   itos        );
   def(Bytecodes::_fast_cputfield      , ubcp|____|____|____, itos, vtos, fast_storefield  ,  itos        );
@@ -495,6 +499,7 @@ void TemplateTable::initialize() {
 
   def(Bytecodes::_nofast_aload_0      , ____|____|clvm|____, vtos, atos, nofast_aload_0      ,  _           );
   def(Bytecodes::_nofast_iload        , ubcp|____|clvm|____, vtos, itos, nofast_iload        ,  _           );
+
 
   def(Bytecodes::_shouldnotreachhere   , ____|____|____|____, vtos, vtos, shouldnotreachhere ,  _           );
 }

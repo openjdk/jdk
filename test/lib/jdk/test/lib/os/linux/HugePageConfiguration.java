@@ -121,6 +121,7 @@ public class HugePageConfiguration {
         return _explicitDefaultHugePageSize > 0 && _explicitHugePageConfigurations.size() > 0;
     }
 
+    @SuppressWarnings("initialization")
     public HugePageConfiguration(Set<ExplicitHugePageConfig> explicitHugePageConfigurations, long explicitDefaultHugePageSize, long explicitAvailableHugePageNumber, THPMode _thpMode, long _thpPageSize, ShmemTHPMode _shmemThpMode) {
         this._explicitHugePageConfigurations = explicitHugePageConfigurations;
         this._explicitDefaultHugePageSize = explicitDefaultHugePageSize;

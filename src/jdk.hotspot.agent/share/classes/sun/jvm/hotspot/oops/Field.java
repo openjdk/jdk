@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,8 @@ public class Field {
     int initialValueIndex;
     int genericSignatureIndex;
     int contendedGroup;
+    int layoutKind;
+    int nullMarkerOffset;
   }
 
   // The format of the stream, after decompression, is a series of
@@ -102,6 +104,12 @@ public class Field {
     }
     if (fieldIsContended(fieldInfoValues.fieldFlags)) {
         fieldInfoValues.contendedGroup = crs.readInt();        // read contended group
+    }
+    if (fieldIsFlat(fieldInfoValues.fieldFlags)) {
+        fieldInfoValues.layoutKind = crs.readInt();            // read LayoutKind as int
+    }
+    if (fieldHasNullMarker(fieldInfoValues.fieldFlags)) {
+        fieldInfoValues.nullMarkerOffset = crs.readInt();      // read null marker offset
     }
     return fieldInfoValues;
   }
@@ -203,7 +211,9 @@ public class Field {
   private static boolean fieldIsGeneric(int flags)     { return ((flags >> InstanceKlass.FIELD_FLAG_IS_GENERIC    ) & 1 ) != 0; }
   private static boolean fieldIsStable(int flags)      { return ((flags >> InstanceKlass.FIELD_FLAG_IS_STABLE     ) & 1 ) != 0; }
   private static boolean fieldIsContended(int flags)   { return ((flags >> InstanceKlass.FIELD_FLAG_IS_CONTENDED  ) & 1 ) != 0; }
-
+  private static boolean fieldIsNullFreeInlineType(int flags) { return ((flags >> InstanceKlass.FIELD_FLAG_IS_NULL_FREE_INLINE) & 1 ) != 0; }
+  private static boolean fieldIsFlat(int flags)               { return ((flags >> InstanceKlass.FIELD_FLAG_IS_FLAT) & 1 ) != 0; }
+  private static boolean fieldHasNullMarker(int flags)         { return ((flags >> InstanceKlass.FIELD_FLAG_IS_NULL_MARKER) & 1 ) != 0; }
 
   public boolean isInitialized()             { return fieldIsInitialized(values.fieldFlags); }
   public boolean isInjected()                { return fieldIsInjected(values.fieldFlags); }

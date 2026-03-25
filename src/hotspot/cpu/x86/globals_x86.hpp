@@ -86,6 +86,9 @@ define_pd_global(bool, PreserveFramePointer, false);
 
 define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
 
+define_pd_global(bool, InlineTypePassFieldsAsArgs, LP64_ONLY(true) NOT_LP64(false));
+define_pd_global(bool, InlineTypeReturnedAsFields, LP64_ONLY(true) NOT_LP64(false));
+
 #define ARCH_FLAGS(develop,                                                 \
                    product,                                                 \
                    range,                                                   \
@@ -116,6 +119,9 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
                                                                             \
   product(bool, UseIncDec, true, DIAGNOSTIC,                                \
           "Use INC, DEC instructions on x86")                               \
+                                                                            \
+  product(bool, UseNewLongLShift, false,                                    \
+          "Use optimized bitwise shift left")                               \
                                                                             \
   product(bool, UseAddressNop, false,                                       \
           "Use '0F 1F [addr]' NOP instructions on x86 cpus")                \
@@ -165,26 +171,15 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
           "Perform Ecore Optimization")                                     \
                                                                             \
   /* Minimum array size in bytes to use AVX512 intrinsics */                \
-  /* for inflate and fill which don't bail out early based on any */        \
+  /* for copy, inflate and fill which don't bail out early based on any */  \
   /* condition. When this value is set to zero compare operations like */   \
   /* compare, vectorizedMismatch, compress can also use AVX512 intrinsics.*/\
   product(int, AVX3Threshold, 4096, DIAGNOSTIC,                             \
              "Minimum array size in bytes to use AVX512 intrinsics"         \
-             "for inflate and fill. When this value is set as zero"         \
+             "for copy, inflate and fill. When this value is set as zero"   \
              "compare operations can also use AVX512 intrinsics.")          \
              range(0, max_jint)                                             \
              constraint(AVX3ThresholdConstraintFunc,AfterErgo)              \
-                                                                            \
-  /* Minimum array size in bytes to use AVX512 intrinsics */                \
-  /* for copy and fill which don't bail out early based on any */           \
-  /* condition. When this value is set to zero clear operations that */     \
-  /* work on memory blocks can also use AVX512 intrinsics. */               \
-  product(int, CopyAVX3Threshold, 4096, DIAGNOSTIC,                         \
-             "Minimum array size in bytes to use AVX512 intrinsics"         \
-             "for copy and fill. When this value is set as zero"            \
-             "clear operations can also use AVX512 intrinsics.")            \
-             range(0, max_jint)                                             \
-             constraint(CopyAVX3ThresholdConstraintFunc,AfterErgo)          \
                                                                             \
   product(bool, IntelJccErratumMitigation, true, DIAGNOSTIC,                \
              "Turn off JVM mitigations related to Intel micro code "        \

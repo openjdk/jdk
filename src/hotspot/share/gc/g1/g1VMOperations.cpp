@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,9 +84,8 @@ void VM_G1TryInitiateConcMark::doit() {
 
   GCCauseSetter x(g1h, _gc_cause);
 
-  G1CollectorState* state = g1h->collector_state();
-  _mark_in_progress = state->is_in_marking();
-  _cycle_already_in_progress =  state->is_in_concurrent_cycle();
+  _mark_in_progress = g1h->collector_state()->mark_in_progress();
+  _cycle_already_in_progress = g1h->concurrent_mark()->in_progress();
 
   if (!g1h->policy()->force_concurrent_start_if_outside_cycle(_gc_cause)) {
     // Failure to force the next GC pause to be a concurrent start indicates
@@ -167,11 +166,11 @@ void VM_G1PauseConcurrent::doit_epilogue() {
 }
 
 void VM_G1PauseRemark::work() {
-  G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
-  cm->remark();
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  g1h->concurrent_mark()->remark();
 }
 
 void VM_G1PauseCleanup::work() {
-  G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
-  cm->cleanup();
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  g1h->concurrent_mark()->cleanup();
 }

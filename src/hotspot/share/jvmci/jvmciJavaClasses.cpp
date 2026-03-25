@@ -218,10 +218,10 @@ void HotSpotJVMCI::compute_offsets(TRAPS) {
 #define FLOAT_FIELD(className, name) FIELD(className, name, jfloat, float_field, EMPTY_CAST)
 
 #define OBJECT_FIELD(className, name, signature) FIELD(className, name, oop, obj_field, EMPTY_CAST)
-#define OBJECTARRAY_FIELD(className, name, signature) FIELD(className, name, objArrayOop, obj_field, (objArrayOop))
+#define OBJECTARRAY_FIELD(className, name, signature) FIELD(className, name, refArrayOop, obj_field, (refArrayOop))
 #define PRIMARRAY_FIELD(className, name, signature) FIELD(className, name, typeArrayOop, obj_field, (typeArrayOop))
 #define STATIC_OBJECT_FIELD(className, name, signature) STATIC_OOPISH_FIELD(className, name, oop)
-#define STATIC_OBJECTARRAY_FIELD(className, name, signature) STATIC_OOPISH_FIELD(className, name, objArrayOop)
+#define STATIC_OBJECTARRAY_FIELD(className, name, signature) STATIC_OOPISH_FIELD(className, name, refArrayOop)
 #define STATIC_OOPISH_FIELD(className, name, type)                                                                        \
     type HotSpotJVMCI::className::name(JVMCIEnv* env) {                                                                   \
       assert(className::klass() != nullptr && className::klass()->is_linked(), "Class not yet linked: " #className);      \

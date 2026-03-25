@@ -265,6 +265,8 @@ public:
   // Helper for match
   OptoReg::Name warp_incoming_stk_arg( VMReg reg );
 
+  RegMask* return_values_mask(const TypeFunc* tf);
+
   // Transform, then walk.  Does implicit DCE while walking.
   // Name changed from "transform" to avoid it being virtual.
   Node *xform( Node *old_space_node, int Nodes );
@@ -414,7 +416,7 @@ public:
   // Return value register.  On Intel it is EAX.
   static OptoRegPair   return_value(uint ideal_reg);
   static OptoRegPair c_return_value(uint ideal_reg);
-  RegMask                     _return_value_mask;
+  RegMask*            _return_values_mask;
   // Inline Cache Register
   static OptoReg::Name  inline_cache_reg();
   static int            inline_cache_reg_encode();
@@ -428,6 +430,10 @@ public:
   static const RegMask& divL_proj_mask();
   // Register for MODL projection of divmodL
   static const RegMask& modL_proj_mask();
+
+  // Use hardware DIV instruction when it is faster than
+  // a code which use multiply for division by constant.
+  static bool use_asm_for_ldiv_by_con( jlong divisor );
 
   // Java-Interpreter calling convention
   // (what you use when calling between compiled-Java and Interpreted-Java

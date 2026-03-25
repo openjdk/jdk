@@ -63,11 +63,3 @@
  *    jdk/jpackage/internal/ActiveKeychainListTest.java
  * @run junit jdk.jpackage/jdk.jpackage.internal.ActiveKeychainListTest
  */
-
-/* @test
- * @summary Test MacApplicationBuilderTest
- * @requires (os.family == "mac")
- * @compile/module=jdk.jpackage -Xlint:all -Werror
- *    jdk/jpackage/internal/MacApplicationBuilderTest.java
- * @run junit jdk.jpackage/jdk.jpackage.internal.MacApplicationBuilderTest
- */

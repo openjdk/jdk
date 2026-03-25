@@ -28,6 +28,8 @@
 package com.sun.tools.javac.comp;
 
 import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import com.sun.source.tree.LambdaExpressionTree.BodyKind;
@@ -209,6 +211,8 @@ public class Flow {
     private final JCDiagnostic.Factory diags;
     private final ExhaustivenessComputer exhaustiveness;
     private Env<AttrContext> attrEnv;
+    private final UnsetFieldsInfo unsetFieldsInfo;
+    private final boolean allowValueClasses;
 
     public static Flow instance(Context context) {
         Flow instance = context.get(flowKey);
@@ -332,6 +336,11 @@ public class Flow {
         chk = Check.instance(context);
         rs = Resolve.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
+        unsetFieldsInfo = UnsetFieldsInfo.instance(context);
+        Preview preview = Preview.instance(context);
+        Source source = Source.instance(context);
+        allowValueClasses = (!preview.isPreview(Source.Feature.VALUE_CLASSES) || preview.isEnabled()) &&
+                Source.Feature.VALUE_CLASSES.allowedInSource(source);
         exhaustiveness = ExhaustivenessComputer.instance(context);
     }
 
@@ -469,8 +478,18 @@ public class Flow {
             }
         }
 
-        // Do something with all static or non-static field initializers and initialization blocks.
+        // Do something with static or non-static field initializers and initialization blocks.
         protected void forEachInitializer(JCClassDecl classDef, boolean isStatic, Consumer<? super JCTree> handler) {
+            forEachInitializer(classDef, isStatic, false, handler);
+        }
+
+        /* Do something with static or non-static field initializers and initialization blocks.
+         * the `earlyOnly` argument will determine if we will deal or not with early variable instance
+         * initializers we want to process only those before a super() invocation and ignore them after
+         * it.
+         */
+        protected void forEachInitializer(JCClassDecl classDef, boolean isStatic, boolean earlyOnly,
+                                          Consumer<? super JCTree> handler) {
             if (classDef == initScanClass)          // avoid infinite loops
                 return;
             JCClassDecl initScanClassPrev = initScanClass;
@@ -488,8 +507,18 @@ public class Flow {
                      * code
                      */
                     boolean isDefStatic = ((TreeInfo.flags(def) | (TreeInfo.symbolFor(def) == null ? 0 : TreeInfo.symbolFor(def).flags_field)) & STATIC) != 0;
-                    if (!def.hasTag(METHODDEF) && (isDefStatic == isStatic))
-                        handler.accept(def);
+                    if (!def.hasTag(METHODDEF) && (isDefStatic == isStatic)) {
+                        if (def instanceof JCVariableDecl varDecl) {
+                            boolean isEarly = varDecl.init != null &&
+                                    varDecl.sym.isStrict() &&
+                                    !varDecl.sym.isStatic();
+                            if (isEarly == earlyOnly) {
+                                handler.accept(def);
+                            }
+                        } else if (!earlyOnly) {
+                            handler.accept(def);
+                        }
+                    }
                 }
             } finally {
                 initScanClass = initScanClassPrev;
@@ -1746,6 +1775,7 @@ public class Flow {
         }
 
         private boolean isConstructor;
+        private boolean isCompactOrGeneratedRecordConstructor;
 
         @Override
         protected void markDead() {
@@ -1762,12 +1792,13 @@ public class Flow {
             return
                 sym.pos >= startPos &&
                 ((sym.owner.kind == MTH || sym.owner.kind == VAR ||
-                isFinalUninitializedField(sym)));
+                isFinalOrStrictUninitializedField(sym)));
         }
 
-        boolean isFinalUninitializedField(VarSymbol sym) {
+        boolean isFinalOrStrictUninitializedField(VarSymbol sym) {
             return sym.owner.kind == TYP &&
-                   ((sym.flags() & (FINAL | HASINIT | PARAMETER)) == FINAL &&
+                   (((sym.flags() & (FINAL | HASINIT | PARAMETER)) == FINAL ||
+                     (sym.flags() & (STRICT | HASINIT | PARAMETER)) == STRICT) &&
                    classDef.sym.isEnclosedBy((ClassSymbol)sym.owner));
         }
 
@@ -1839,11 +1870,21 @@ public class Flow {
          *  record an initialization of the variable.
          */
         void letInit(JCTree tree) {
+            letInit(tree, (JCAssign) null);
+        }
+
+        void letInit(JCTree tree, JCAssign assign) {
             tree = TreeInfo.skipParens(tree);
             if (tree.hasTag(IDENT) || tree.hasTag(SELECT)) {
                 Symbol sym = TreeInfo.symbol(tree);
                 if (sym.kind == VAR) {
                     letInit(tree.pos(), (VarSymbol)sym);
+                    if (isConstructor && sym.isStrict()) {
+                        /* we are initializing a strict field inside of a constructor, we now need to find which fields
+                         * haven't been initialized yet
+                         */
+                        unsetFieldsInfo.addUnsetFieldsInfo(classDef.sym, assign != null ? assign : tree, findUninitStrictFields());
+                    }
                 }
             }
         }
@@ -1859,7 +1900,7 @@ public class Flow {
                 trackable(sym) &&
                 !inits.isMember(sym.adr) &&
                 (sym.flags_field & CLASH) == 0) {
-                    log.error(pos, errkey);
+                log.error(pos, errkey);
                 inits.incl(sym.adr);
             }
         }
@@ -2048,8 +2089,11 @@ public class Flow {
 
             Assert.check(pendingExits.isEmpty());
             boolean isConstructorPrev = isConstructor;
+            boolean isCompactOrGeneratedRecordConstructorPrev = isCompactOrGeneratedRecordConstructor;
             try {
                 isConstructor = TreeInfo.isConstructor(tree);
+                isCompactOrGeneratedRecordConstructor = isConstructor && ((tree.sym.flags() & Flags.COMPACT_RECORD_CONSTRUCTOR) != 0 ||
+                         (tree.sym.flags() & (GENERATEDCONSTR | RECORD)) == (GENERATEDCONSTR | RECORD));
 
                 // We only track field initialization inside constructors
                 if (!isConstructor) {
@@ -2066,12 +2110,17 @@ public class Flow {
                      */
                     initParam(def);
                 }
+                if (isConstructor) {
+                    Set<VarSymbol> unsetFields = findUninitStrictFields();
+                    if (unsetFields != null && !unsetFields.isEmpty()) {
+                        unsetFieldsInfo.addUnsetFieldsInfo(classDef.sym, tree.body, unsetFields);
+                    }
+                }
+
                 // else we are in an instance initializer block;
                 // leave caught unchanged.
                 scan(tree.body);
 
-                boolean isCompactOrGeneratedRecordConstructor = (tree.sym.flags() & Flags.COMPACT_RECORD_CONSTRUCTOR) != 0 ||
-                        (tree.sym.flags() & (GENERATEDCONSTR | RECORD)) == (GENERATEDCONSTR | RECORD);
                 if (isConstructor) {
                     boolean isSynthesized = (tree.sym.flags() &
                                              GENERATEDCONSTR) != 0;
@@ -2115,7 +2164,18 @@ public class Flow {
                 firstadr = firstadrPrev;
                 returnadr = returnadrPrev;
                 isConstructor = isConstructorPrev;
+                isCompactOrGeneratedRecordConstructor = isCompactOrGeneratedRecordConstructorPrev;
             }
+        }
+
+        Set<VarSymbol> findUninitStrictFields() {
+            Set<VarSymbol> unsetFields = new LinkedHashSet<>();
+            for (int i = firstadr; i < nextadr; i++) {
+                if (uninits.isMember(i) && vardecls[i].sym.isStrict()) {
+                    unsetFields.add(vardecls[i].sym);
+                }
+            }
+            return unsetFields;
         }
 
         private void clearPendingExits(boolean inMethod) {
@@ -2574,6 +2634,14 @@ public class Flow {
         }
 
         public void visitApply(JCMethodInvocation tree) {
+            Name name = TreeInfo.name(tree.meth);
+            // let's process early initializers
+            if (name == names._super) {
+                forEachInitializer(classDef, false, true, def -> {
+                    scan(def);
+                    clearPendingExits(false);
+                });
+            }
             scanExpr(tree.meth);
             scanExprs(tree.args);
 
@@ -2581,8 +2649,16 @@ public class Flow {
             if (isConstructor) {
 
                 // If super(): at this point all initialization blocks will execute
-                Name name = TreeInfo.name(tree.meth);
+
                 if (name == names._super) {
+                    // strict fields should have been initialized at this point
+                    for (int i = firstadr; i < nextadr; i++) {
+                        JCVariableDecl vardecl = vardecls[i];
+                        VarSymbol var = vardecl.sym;
+                        if (allowValueClasses && (var.owner == classDef.sym && !var.isStatic() && (var.isStrict() || ((var.flags_field & RECORD) != 0)) && !isCompactOrGeneratedRecordConstructor)) {
+                            checkInit(TreeInfo.diagEndPos(tree), var, Errors.StrictFieldNotHaveBeenInitializedBeforeSuper(var));
+                        }
+                    }
                     forEachInitializer(classDef, false, def -> {
                         scan(def);
                         clearPendingExits(false);
@@ -2593,7 +2669,7 @@ public class Flow {
                 else if (name == names._this) {
                     for (int address = firstadr; address < nextadr; address++) {
                         VarSymbol sym = vardecls[address].sym;
-                        if (isFinalUninitializedField(sym) && !sym.isStatic())
+                        if (isFinalOrStrictUninitializedField(sym) && !sym.isStatic())
                             letInit(tree.pos(), sym);
                     }
                 }
@@ -2667,7 +2743,7 @@ public class Flow {
             if (!TreeInfo.isIdentOrThisDotIdent(tree.lhs))
                 scanExpr(tree.lhs);
             scanExpr(tree.rhs);
-            letInit(tree.lhs);
+            letInit(tree.lhs, tree);
         }
 
         // check fields accessed through this.<field> are definitely

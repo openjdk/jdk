@@ -24,16 +24,25 @@
  */
 package jdk.internal.classfile.impl.verifier;
 
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassHierarchyResolver;
 import java.lang.classfile.ClassModel;
-import jdk.internal.classfile.components.ClassPrinter;
+import java.lang.classfile.FieldModel;
+import java.lang.classfile.constantpool.NameAndTypeEntry;
+import java.lang.constant.ConstantDescs;
+import java.lang.reflect.AccessFlag;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 
+import jdk.internal.classfile.components.ClassPrinter;
 import jdk.internal.classfile.impl.ClassHierarchyImpl;
 import jdk.internal.classfile.impl.RawBytecodeHelper;
+import jdk.internal.classfile.impl.TemporaryConstantPool;
+import jdk.internal.classfile.impl.Util;
 import jdk.internal.classfile.impl.verifier.VerificationSignature.BasicType;
 import jdk.internal.classfile.impl.verifier.VerificationWrapper.ConstantPoolWrapper;
 
@@ -105,6 +114,7 @@ public final class VerifierImpl {
     static final int STACKMAP_ATTRIBUTE_MAJOR_VERSION = 50;
     static final int INVOKEDYNAMIC_MAJOR_VERSION = 51;
     static final int NOFAILOVER_MAJOR_VERSION = 51;
+    static final int VALUE_TYPES_MAJOR_VERSION = Util.VALUE_OBJECTS_MAJOR;
     static final int MAX_CODE_SIZE = 65535;
 
     public static List<VerifyError> verify(ClassModel classModel, Consumer<String> logger) {
@@ -242,6 +252,12 @@ public final class VerifierImpl {
         return VerificationType.reference_type(java_lang_Object);
     }
 
+    static boolean supports_strict_fields(VerificationWrapper klass) {
+        int ver = klass.majorVersion();
+        return ver > VALUE_TYPES_MAJOR_VERSION ||
+                (ver == VALUE_TYPES_MAJOR_VERSION && klass.clm.minorVersion() == ClassFile.PREVIEW_MINOR_VERSION);
+    }
+
     List<VerifyError> verify_class() {
         log_info("Verifying class %s with new format", _klass.thisClassName());
         var errors = new ArrayList<VerifyError>();
@@ -303,7 +319,19 @@ public final class VerifierImpl {
         byte[] stackmap_data = m.stackMapTableRawData();
         var cp = m.constantPool();
         if (!VerificationSignature.isValidMethodSignature(m.descriptor())) verifyError("Invalid method signature");
-        VerificationFrame current_frame = new VerificationFrame(max_locals, max_stack, this);
+
+        // Collect the initial strict instance fields
+        Set<NameAndTypeEntry> strict_fields = new HashSet<>();
+        if (m.name().equals(ConstantDescs.INIT_NAME)) {
+            for (var fs : current_class().clm.fields()) {
+                if (fs.flags().has(AccessFlag.STRICT_INIT) && !fs.flags().has(AccessFlag.STATIC)) {
+                    var new_field = TemporaryConstantPool.INSTANCE.nameAndTypeEntry(fs.fieldName(), fs.fieldType());
+                    strict_fields.add(new_field);
+                }
+            }
+        }
+
+        VerificationFrame current_frame = new VerificationFrame(max_locals, max_stack, strict_fields, this);
         VerificationType return_type = current_frame.set_locals_from_arg(m, current_type());
         int stackmap_index = 0;
         int code_length = m.codeLength();
@@ -317,7 +345,7 @@ public final class VerifierImpl {
         verify_local_variable_table(code_length, code_data);
 
         var reader = new VerificationTable.StackMapReader(stackmap_data, code_data, code_length, current_frame,
-                (char) max_locals, (char) max_stack, cp, this);
+                (char) max_locals, (char) max_stack, strict_fields, cp, this);
         VerificationTable stackmap_table = new VerificationTable(reader, cp, this);
 
         var bcs = code.start();
@@ -1497,10 +1525,24 @@ public final class VerifierImpl {
                     current_frame.pop_stack(field_type[i]);
                 }
                 stack_object_type = current_frame.pop_stack();
-                if (stack_object_type.is_uninitialized_this(this) &&
-                        target_class_type.equals(current_type()) &&
-                        _klass.findField(field_name, field_sig)) {
-                    stack_object_type = current_type();
+                FieldModel fd = _klass.findField(field_name, field_sig);
+                boolean is_local_field = fd != null &&
+                        target_class_type.equals(current_type());
+                if (stack_object_type.is_uninitialized_this(this)) {
+                    if (is_local_field) {
+                        // Set the type to the current type so the is_assignable check passes.
+                        stack_object_type = current_type();
+
+                        if (fd.flags().has(AccessFlag.STRICT_INIT)) {
+                            current_frame.satisfy_unset_field(fd.fieldName(), fd.fieldType());
+                        }
+                    }
+                } else if (supports_strict_fields(_klass)) {
+                    // `strict` fields are not writable, but only local fields produce verification errors
+                    if (is_local_field && fd.flags().has(AccessFlag.STRICT_INIT) && fd.flags().has(AccessFlag.FINAL)) {
+                        verifyError("Bad code %d %s".formatted(bci,
+                                "Illegal use of putfield on a strict field: %s:%s".formatted(fd.fieldName(), fd.fieldType())));
+                    }
                 }
                 is_assignable = target_class_type.is_assignable_from(stack_object_type, this);
                 if (!is_assignable) {
@@ -1521,6 +1563,11 @@ public final class VerifierImpl {
             if (!current_class().thisClassName().equals(ref_class_type.name()) &&
                     !superk_name.equals(ref_class_type.name())) {
                 verifyError("Bad <init> method call");
+            } else if (ref_class_type.name().equals(superk_name)) {
+                // Strict final fields must be satisfied by this point
+                if (!current_frame.verify_unset_fields_satisfied()) {
+                    current_frame.unsatisfied_strict_fields_error(current_class(), bci);
+                }
             }
             if (in_try_block) {
                 verify_exception_handler_targets(bci, true, current_frame, stackmap_table);

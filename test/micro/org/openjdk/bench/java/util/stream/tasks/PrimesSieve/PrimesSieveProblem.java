@@ -28,6 +28,7 @@ public class PrimesSieveProblem {
 
     private final Integer[] data = new Integer[DATA_SIZE];
 
+    @SuppressWarnings("initialization")
     public PrimesSieveProblem() {
         for (int i = 0; i < data.length; i++) {
             data[i] = i;

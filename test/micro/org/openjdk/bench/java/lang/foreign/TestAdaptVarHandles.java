@@ -90,6 +90,7 @@ public class TestAdaptVarHandles extends JavaLayouts {
     static final MethodHandle MH_BOX_INT = MethodHandles.filterReturnValue(MH_INT, INT_TO_INTBOX);
 
     int[] base = new int[ELEM_SIZE];
+    @SuppressWarnings("initialization")
     MemorySegment segment = MemorySegment.ofArray(base);
 
     @Setup

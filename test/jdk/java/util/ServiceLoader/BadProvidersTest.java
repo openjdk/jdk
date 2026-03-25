@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @enablePreview
  * @library /test/lib
  * @modules jdk.compiler
  * @build jdk.test.lib.compiler.CompilerUtils
@@ -196,7 +197,7 @@ public class BadProvidersTest {
 
         var bytes = ClassFile.of().build(ClassDesc.of("p", "ProviderFactory"), clb -> {
             clb.withSuperclass(CD_Object);
-            clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
+            clb.withFlags(AccessFlag.PUBLIC, AccessFlag.IDENTITY);
 
             var providerFactory$1 = ClassDesc.of("p", "ProviderFactory$1");
 

@@ -158,6 +158,29 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void get_cache_index_at_bcp(Register index, int bcp_offset, size_t index_size = sizeof(u2));
   void get_method_counters(Register method, Register mcs, Label& skip);
 
+  // Kills t1 and t2, perserves klass, return allocation in new_obj
+  void allocate_instance(Register klass, Register new_obj,
+                         Register t1, Register t2,
+                         bool clear_fields, Label& alloc_failed);
+
+  // Allocate instance in "obj" and read in the content of the inline field
+  // NOTES:
+  //   - input holder object via "obj", which must be r0,
+  //     will return new instance via the same reg
+  void read_flat_field(Register entry, Register obj);
+
+  void write_flat_field(Register entry, Register field_offset,
+                        Register tmp1, Register tmp2,
+                        Register obj);
+
+  // Allocate value buffer in "obj" and read in flat element at the given index
+  // NOTES:
+  //   - Return via "obj" must be r0
+  //   - kills all given regs
+  void read_flat_element(Register array, Register index,
+                         Register t1, Register t2,
+                         Register obj = r0);
+
   // load cpool->resolved_references(index);
   void load_resolved_reference_at_index(Register result, Register index, Register tmp = r5);
 
@@ -202,7 +225,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // Generate a subtype check: branch to ok_is_subtype if sub_klass is
   // a subtype of super_klass.
-  void gen_subtype_check( Register sub_klass, Label &ok_is_subtype );
+  void gen_subtype_check( Register sub_klass, Label &ok_is_subtype, bool profile = true);
 
   // Dispatching
   void dispatch_prolog(TosState state, int step = 0);
@@ -282,7 +305,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void narrow(Register result);
 
   void profile_taken_branch(Register mdp);
-  void profile_not_taken_branch(Register mdp);
+  void profile_not_taken_branch(Register mdp, bool acmp = false);
   void profile_call(Register mdp);
   void profile_final_call(Register mdp);
   void profile_virtual_call(Register receiver, Register mdp,
@@ -294,6 +317,10 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void profile_switch_default(Register mdp);
   void profile_switch_case(Register index_in_scratch, Register mdp,
                            Register scratch2);
+  template <class ArrayData> void profile_array_type(Register mdp, Register array, Register tmp);
+  void profile_multiple_element_types(Register mdp, Register element, Register tmp, Register tmp2);
+  void profile_element_type(Register mdp, Register element, Register tmp);
+  void profile_acmp(Register mdp, Register left, Register right, Register tmp);
 
   void profile_obj_type(Register obj, const Address& mdo_addr);
   void profile_arguments_type(Register mdp, Register callee, Register tmp, bool is_virtual);

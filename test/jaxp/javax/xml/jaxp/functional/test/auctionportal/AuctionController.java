@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,22 @@
  */
 package test.auctionportal;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
-import org.w3c.dom.Attr;
-import org.w3c.dom.DOMConfiguration;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.TypeInfo;
-import org.w3c.dom.bootstrap.DOMImplementationRegistry;
-import org.w3c.dom.ls.DOMImplementationLS;
-import org.w3c.dom.ls.LSSerializer;
+import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
+import static jaxp.library.JAXPTestUtilities.bomStream;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
+import static test.auctionportal.HiBidConstants.JAXP_SCHEMA_LANGUAGE;
+import static test.auctionportal.HiBidConstants.JAXP_SCHEMA_SOURCE;
+import static test.auctionportal.HiBidConstants.PORTAL_ACCOUNT_NS;
+import static test.auctionportal.HiBidConstants.XML_DIR;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.math.BigInteger;
+import java.nio.file.Paths;
+import java.util.GregorianCalendar;
 
 import javax.xml.datatype.DatatypeConstants;
 import javax.xml.datatype.DatatypeFactory;
@@ -47,28 +51,17 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.GregorianCalendar;
 
-import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static test.auctionportal.HiBidConstants.JAXP_SCHEMA_LANGUAGE;
-import static test.auctionportal.HiBidConstants.JAXP_SCHEMA_SOURCE;
-import static test.auctionportal.HiBidConstants.PORTAL_ACCOUNT_NS;
-import static test.auctionportal.HiBidConstants.XML_DIR;
+import org.testng.annotations.Test;
+import org.w3c.dom.Attr;
+import org.w3c.dom.DOMConfiguration;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.TypeInfo;
+import org.w3c.dom.bootstrap.DOMImplementationRegistry;
+import org.w3c.dom.ls.DOMImplementationLS;
+import org.w3c.dom.ls.LSSerializer;
 
 /**
  * This is the user controller  class for the Auction portal HiBid.com.
@@ -76,13 +69,14 @@ import static test.auctionportal.HiBidConstants.XML_DIR;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run junit/othervm test.auctionportal.AuctionController
+ * @run testng/othervm test.auctionportal.AuctionController
  */
 public class AuctionController {
     /**
      * Check for DOMErrorHandler handling DOMError. Before fix of bug 4890927
      * DOMConfiguration.setParameter("well-formed",true) throws an exception.
      *
+     * @throws Exception If any errors occur.
      */
     @Test
     public void testCreateNewItem2Sell() throws Exception {
@@ -105,6 +99,7 @@ public class AuctionController {
      * Check for DOMErrorHandler handling DOMError. Before fix of bug 4896132
      * test throws DOM Level 1 node error.
      *
+     * @throws Exception If any errors occur.
      */
     @Test
     public void testCreateNewItem2SellRetry() throws Exception  {
@@ -136,6 +131,7 @@ public class AuctionController {
      * Check if setting the attribute to be of type ID works. This will affect
      * the Attr.isID method according to the spec.
      *
+     * @throws Exception If any errors occur.
      */
     @Test
     public void testCreateID() throws Exception {
@@ -156,6 +152,7 @@ public class AuctionController {
     /**
      * Check the user data on the node.
      *
+     * @throws Exception If any errors occur.
      */
     @Test
     public void testCheckingUserData() throws Exception {
@@ -167,44 +164,45 @@ public class AuctionController {
         DocumentBuilder docBuilder = dbf.newDocumentBuilder();
         Document document = docBuilder.parse(xmlFile);
 
-        Element account = (Element) document.getElementsByTagNameNS(PORTAL_ACCOUNT_NS, "Account").item(0);
-        assertEquals("acc:Account", account.getNodeName());
+        Element account = (Element)document.getElementsByTagNameNS(PORTAL_ACCOUNT_NS, "Account").item(0);
+        assertEquals(account.getNodeName(), "acc:Account");
         Element firstName = (Element) document.getElementsByTagNameNS(PORTAL_ACCOUNT_NS, "FirstName").item(0);
-        assertEquals("FirstName", firstName.getNodeName());
+        assertEquals(firstName.getNodeName(), "FirstName");
 
         Document doc1 = docBuilder.newDocument();
         Element someName = doc1.createElement("newelem");
 
         someName.setUserData("mykey", "dd",
-                (operation, key, data, src, dst) -> {
-                    System.err.println("In UserDataHandler" + key);
-                    System.out.println("In UserDataHandler");
-                });
-        Element impAccount = (Element) document.importNode(someName, true);
-        assertEquals("newelem", impAccount.getNodeName());
+            (operation, key,  data, src,  dst) ->  {
+                System.err.println("In UserDataHandler" + key);
+                System.out.println("In UserDataHandler");
+            });
+        Element impAccount = (Element)document.importNode(someName, true);
+        assertEquals(impAccount.getNodeName(), "newelem");
         document.normalizeDocument();
         String data = (someName.getUserData("mykey")).toString();
-        assertEquals("dd", data);
+        assertEquals(data, "dd");
     }
 
 
     /**
      * Check the UTF-16 XMLEncoding xml file.
      *
-     * @see <a href="content/movies-utf16.xml">movies-utf16.xml</a>
+     * @throws Exception If any errors occur.
+     * @see <a href="content/movies.xml">movies.xml</a>
      */
-    @ParameterizedTest
-    @EnumSource(value=ByteOrder.class)
-    public void testCheckingEncoding(ByteOrder byteOrder) throws Exception {
-        String xmlFile = XML_DIR + "movies-utf16.xml";
+    @Test
+    public void testCheckingEncoding() throws Exception {
+        // Note since movies.xml is UTF-16 encoding. We're not using stanard XML
+        // file suffix.
+        String xmlFile = XML_DIR + "movies.xml.data";
 
-        // File is stored as UTF-8, but declares itself as UTF-16 for testing.
-        try (InputStream source = utf16Stream(xmlFile, byteOrder)) {
+        try (InputStream source = bomStream("UTF-16", xmlFile)) {
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
             dbf.setNamespaceAware(true);
             Document document = dbf.newDocumentBuilder().parse(source);
-            assertEquals("UTF-16", document.getXmlEncoding());
-            assertTrue(document.getXmlStandalone());
+            assertEquals(document.getXmlEncoding(), "UTF-16");
+            assertEquals(document.getXmlStandalone(), true);
         }
     }
 
@@ -212,6 +210,7 @@ public class AuctionController {
      * Check validation API features. A schema which is including in Bug 4909119
      * used to be testing for the functionalities.
      *
+     * @throws Exception If any errors occur.
      * @see <a href="content/userDetails.xsd">userDetails.xsd</a>
      */
     @Test
@@ -245,6 +244,7 @@ public class AuctionController {
     /**
      * Check grammar caching with imported schemas.
      *
+     * @throws Exception If any errors occur.
      * @see <a href="content/coins.xsd">coins.xsd</a>
      * @see <a href="content/coinsImportMe.xsd">coinsImportMe.xsd</a>
      */
@@ -279,6 +279,7 @@ public class AuctionController {
      * parsing using the SAXParser. SCHEMA_SOURCE attribute is using for this
      * test.
      *
+     * @throws Exception If any errors occur.
      * @see <a href="content/coins.xsd">coins.xsd</a>
      * @see <a href="content/coinsImportMe.xsd">coinsImportMe.xsd</a>
      */
@@ -303,6 +304,7 @@ public class AuctionController {
     /**
      * Check usage of javax.xml.datatype.Duration class.
      *
+     * @throws Exception If any errors occur.
      */
     @Test
     public void testGetItemDuration() throws Exception {
@@ -324,17 +326,18 @@ public class AuctionController {
         Duration sellDuration = DatatypeFactory.newInstance().newDuration(childList.item(0).getNodeValue());
         assertFalse(sellDuration.isShorterThan(duration));
         assertFalse(sellDuration.isLongerThan(duration));
-        assertEquals(BigInteger.valueOf(365), sellDuration.getField(DatatypeConstants.DAYS));
-        assertEquals(duration, sellDuration.normalizeWith(new GregorianCalendar(1999, 2, 22)));
+        assertEquals(sellDuration.getField(DatatypeConstants.DAYS), BigInteger.valueOf(365));
+        assertEquals(sellDuration.normalizeWith(new GregorianCalendar(1999, 2, 22)), duration);
 
         Duration myDuration = sellDuration.add(duration);
-        assertEquals(DatatypeFactory.newInstance().newDuration("P730D"),
-                myDuration.normalizeWith(new GregorianCalendar(2003, 2, 22)));
+        assertEquals(myDuration.normalizeWith(new GregorianCalendar(2003, 2, 22)),
+                DatatypeFactory.newInstance().newDuration("P730D"));
     }
 
     /**
      * Check usage of TypeInfo interface introduced in DOM L3.
      *
+     * @throws Exception If any errors occur.
      */
     @Test
     public void testGetTypeInfo() throws Exception {
@@ -351,36 +354,12 @@ public class AuctionController {
         Document document = docBuilder.parse(xmlFile);
         Element userId = (Element)document.getElementsByTagNameNS(PORTAL_ACCOUNT_NS, "UserID").item(0);
         TypeInfo typeInfo = userId.getSchemaTypeInfo();
-        assertEquals("nonNegativeInteger", typeInfo.getTypeName());
-        assertEquals(W3C_XML_SCHEMA_NS_URI, typeInfo.getTypeNamespace());
+        assertTrue(typeInfo.getTypeName().equals("nonNegativeInteger"));
+        assertTrue(typeInfo.getTypeNamespace().equals(W3C_XML_SCHEMA_NS_URI));
 
         Element role = (Element)document.getElementsByTagNameNS(PORTAL_ACCOUNT_NS, "Role").item(0);
         TypeInfo roletypeInfo = role.getSchemaTypeInfo();
-        assertEquals("BuyOrSell", roletypeInfo.getTypeName());
-        assertEquals(PORTAL_ACCOUNT_NS, roletypeInfo.getTypeNamespace());
-    }
-
-    /** Convert file contents to a given character set with BOM marker. */
-    public static InputStream utf16Stream(String file, ByteOrder byteOrder)
-            throws IOException {
-        Charset charset;
-        byte[] head;
-        switch (byteOrder) {
-            case BIG_ENDIAN:
-                charset = StandardCharsets.UTF_16BE;
-                head = new byte[] { (byte) 0xFE, (byte) 0xFF };
-                break;
-            case LITTLE_ENDIAN:
-                charset = StandardCharsets.UTF_16LE;
-                head = new byte[] { (byte) 0xFF, (byte) 0xFE };
-                break;
-            default:
-                throw new AssertionError("Unsupported byte order: " + byteOrder);
-        }
-        byte[] content = Files.readString(Paths.get(file)).getBytes(charset);
-        ByteBuffer bb = ByteBuffer.allocate(head.length + content.length);
-        bb.put(head);
-        bb.put(content);
-        return new ByteArrayInputStream(bb.array());
+        assertTrue(roletypeInfo.getTypeName().equals("BuyOrSell"));
+        assertTrue(roletypeInfo.getTypeNamespace().equals(PORTAL_ACCOUNT_NS));
     }
 }

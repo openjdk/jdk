@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package sun.awt.datatransfer;
 
+import sun.awt.AppContext;
 import sun.datatransfer.DesktopDatatransferService;
 
 import java.awt.EventQueue;
@@ -42,6 +43,8 @@ import java.util.function.Supplier;
  */
 public class DesktopDatatransferServiceImpl implements DesktopDatatransferService {
 
+    private static final Object FLAVOR_MAP_KEY = new Object();
+
     @Override
     public void invokeOnEventThread(Runnable r) {
         EventQueue.invokeLater(r);
@@ -56,11 +59,13 @@ public class DesktopDatatransferServiceImpl implements DesktopDatatransferServic
         return null;
     }
 
-    private FlavorMap fm;
     @Override
-    public synchronized FlavorMap getFlavorMap(Supplier<FlavorMap> supplier) {
+    public FlavorMap getFlavorMap(Supplier<FlavorMap> supplier) {
+        AppContext context = AppContext.getAppContext();
+        FlavorMap fm = (FlavorMap) context.get(FLAVOR_MAP_KEY);
         if (fm == null) {
             fm = supplier.get();
+            context.put(FLAVOR_MAP_KEY, fm);
         }
         return fm;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,14 +42,55 @@ import static jdk.internal.misc.UnsafeConstants.*;
  * Although the class and all methods are public, use of this class is
  * limited because only trusted code can obtain instances of it.
  *
- * <em>Note:</em> It is the responsibility of the caller to make sure
- * arguments are checked before methods of this class are
- * called. While some rudimentary checks are performed on the input,
- * the checks are best effort and when performance is an overriding
- * priority, as when methods of this class are optimized by the
- * runtime compiler, some or all checks (if any) may be elided. Hence,
- * the caller must not rely on the checks and corresponding
- * exceptions!
+ * <h2><a id="undefined-behavior">Undefined Behavior</a></h2>
+ * For performance reasons, {@code Unsafe} is allowed to work outside the
+ * restrictions enforced by the JVM. As a result, it is the responsibility of
+ * the caller to ensure that an invocation of an {@code Unsafe} method is
+ * conformant, and failure to do so will result in undefined behavior. The
+ * runtime and the JIT compiler may assume that undefined behavior never
+ * happens, and operate accordingly. For example, the runtime assumes that each
+ * object has a header with a particular layout, and if the users use
+ * {@code Unsafe} to overwrite this header with invalid data, the behavior of
+ * the runtime becomes unpredictable. Another example is that the JIT compiler
+ * may assume that accesses on separate objects are unrelated, and schedule
+ * each of them without taking into consideration the others. If there is an
+ * {@code Unsafe} access that is out of bounds and points to object different
+ * from the declared base, the program may execute in a way that a variable
+ * seems to have multiple values at the same time. As a result, when a program
+ * exhibits undefined behavior, there is no restrictions on its behaviors. Such
+ * behaviors may include but not be limited to:
+ *
+ * <ul>
+ * <li>Working as expected.
+ * <li>Crashing the VM.
+ * <li>Corruption of the heap or JVM memory.
+ * <li>Nonsensical variable value. E.g. an {@code int} may appear to be
+ * simultaneously 0 and 1.
+ * <li>Impossible code execution. E.g. the branches of an {@code if} are
+ * both executed or both not executed.
+ * <li>Wiping out the hard drive.
+ * </ul>
+ *
+ * Undefined behavior, as described in this class, is analogous to the
+ * terminology with the same name in the C++ language.
+ * <p>
+ * Some methods (e.g. {@link #getInt}) exhibit undefined behavior if they
+ * are invoked at runtime with illegal arguments. This means that they will
+ * never exhibit undefined behavior if they are not actually reachable at
+ * runtime. On the other hands, other methods (e.g.
+ * {@link #allocateInstance(Class)}) exhibit undefined behavior if they are
+ * used incorrectly, even if the invocation may not be reachable at runtime.
+ * The analogous terminology in C++ is that such programs are ill-formed.
+ * <p>
+ * For methods exhibiting undefined behavior if they are invoked at runtime
+ * with illegal arguments, undefined behavior may time travel. That is, if a
+ * control path may eventually reach an invocation of an {@code Unsafe} method
+ * with illegal arguments, the symptoms of undefined behavior may be present
+ * even before the invocation of the {@code Unsafe} method. This is because the
+ * JIT compiler may have certain assumptions about the inputs of an
+ * {@code Unsafe} invocation, these assumptions may propagate backward to
+ * previous statements, leading to wrong executions if the assumptions are
+ * invalid.
  *
  * @author John R. Rose
  * @see #getUnsafe
@@ -187,7 +228,90 @@ public final class Unsafe {
     public native void putInt(Object o, long offset, int x);
 
     /**
+     * Returns true if the given field is flattened.
+     */
+    public boolean isFlatField(Field f) {
+        if (f == null) {
+            throw new NullPointerException();
+        }
+        return isFlatField0(f);
+    }
+
+    private native boolean isFlatField0(Object o);
+
+    /* Returns true if the given field has a null marker
+     * <p>
+     * Nullable flat fields are stored in a flattened representation
+     * and have an associated null marker to indicate if the the field value is
+     * null or the one stored with the flat representation
+     */
+
+    public boolean hasNullMarker(Field f) {
+        if (f == null) {
+            throw new NullPointerException();
+        }
+        return hasNullMarker0(f);
+    }
+
+    private native boolean hasNullMarker0(Object o);
+
+    /* Returns the offset of the null marker of the field,
+    * or -1 if the field doesn't have a null marker
+    */
+
+    public int nullMarkerOffset(Field f) {
+        if (f == null) {
+            throw new NullPointerException();
+        }
+        return nullMarkerOffset0(f);
+    }
+
+    private native int nullMarkerOffset0(Object o);
+
+    public static final int NON_FLAT_LAYOUT = 0;
+
+    /* Reports the kind of layout used for an element in the storage
+     * allocation of the given array. Do not expect to perform any logic
+     * or layout control with this value, it is just an opaque token
+     * used for performance reasons.
+     *
+     * A layout of 0 indicates this array is not flat.
+     */
+    public int arrayLayout(Object[] array) {
+        if (array == null) {
+            throw new NullPointerException();
+        }
+        return arrayLayout0(array);
+    }
+
+    @IntrinsicCandidate
+    private native int arrayLayout0(Object[] array);
+
+
+    /* Reports the kind of layout used for a given field in the storage
+     * allocation of its class.  Do not expect to perform any logic
+     * or layout control with this value, it is just an opaque token
+     * used for performance reasons.
+     *
+     * A layout of 0 indicates this field is not flat.
+     */
+    public int fieldLayout(Field f) {
+        if (f == null) {
+            throw new NullPointerException();
+        }
+        return fieldLayout0(f);
+    }
+
+    private native int fieldLayout0(Object o);
+
+    public native Object[] newSpecialArray(Class<?> componentType,
+                                                  int length, int layoutKind);
+
+    /**
      * Fetches a reference value from a given Java variable.
+     * This method can return a reference to either an object or value
+     * or a null reference.
+     *
      * @see #getInt(Object, long)
      */
     @IntrinsicCandidate
@@ -195,6 +319,8 @@ public final class Unsafe {
 
     /**
      * Stores a reference value into a given Java variable.
+     * This method can store a reference to either an object or value
+     * or a null reference.
      * <p>
      * Unless the reference {@code x} being stored is either null
      * or matches the field type, the results are undefined.
@@ -205,6 +331,64 @@ public final class Unsafe {
      */
     @IntrinsicCandidate
     public native void putReference(Object o, long offset, Object x);
+
+    /**
+     * Fetches a value of type {@code <V>} from a given Java variable.
+     * More specifically, fetches a field or array element within the given
+     * {@code o} object at the given offset, or (if {@code o} is null)
+     * from the memory address whose numerical value is the given offset.
+     *
+     * @apiNote
+     * The returned object is newly allocated into the heap, because flat
+     * values lack object headers and thus can't be used as objects directly.
+     *
+     * @param o Java heap object in which the variable resides, if any, else
+     *        null
+     * @param offset indication of where the variable resides in a Java heap
+     *        object, if any, else a memory address locating the variable
+     *        statically
+     * @param layoutKind opaque value used by the VM to know the layout
+     *        the field or array element. This value must be retrieved with
+     *        {@link #fieldLayout} or {@link #arrayLayout}.
+     * @param valueType value type
+     * @param <V> the type of a value
+     * @return the value fetched from the indicated Java variable
+     * @throws RuntimeException No defined exceptions are thrown, not even
+     *         {@link NullPointerException}
+     */
+    @IntrinsicCandidate
+    public native <V> V getFlatValue(Object o, long offset, int layoutKind, Class<?> valueType);
+
+    /**
+     * Stores the given value into a given Java variable.
+     *
+     * Unless the reference {@code o} being stored is either null
+     * or matches the field type, the results are undefined.
+     *
+     * @param o Java heap object in which the variable resides, if any, else
+     *        null
+     * @param offset indication of where the variable resides in a Java heap
+     *        object, if any, else a memory address locating the variable
+     *        statically
+     * @param layoutKind opaque value used by the VM to know the layout
+     *        the field or array element. This value must be retrieved with
+     *        {@link #fieldLayout} or {@link #arrayLayout}.
+     * @param valueType value type
+     * @param v the value to store into the indicated Java variable
+     * @param <V> the type of a value
+     * @throws RuntimeException No defined exceptions are thrown, not even
+     *         {@link NullPointerException}
+     */
+    @IntrinsicCandidate
+    public native <V> void putFlatValue(Object o, long offset, int layoutKind, Class<?> valueType, V v);
+
+    /**
+     * Returns the header size of the given value type.
+     *
+     * @param valueType value type
+     * @return the header size of the value type
+     */
+    public native <V> long valueHeaderSize(Class<V> valueType);
 
     /** @see #getInt(Object, long) */
     @IntrinsicCandidate
@@ -1196,6 +1380,21 @@ public final class Unsafe {
     }
 
     /**
+     * The reading or writing of strict static fields may require
+     * special processing.  Notify the VM that such an event is about
+     * to happen.  The VM may respond by throwing an exception, in the
+     * case of a read of an uninitialized field.  If the VM allows the
+     * method to return normally, no further calls are needed, with
+     * the same arguments.
+     */
+    public void notifyStrictStaticAccess(Class<?> c, long staticFieldOffset, boolean writing) {
+        if (c == null) {
+            throw new NullPointerException();
+        }
+        notifyStrictStaticAccess0(c, staticFieldOffset, writing);
+    }
+
+    /**
      * Reports the offset of the first element in the storage allocation of a
      * given array class.  If {@link #arrayIndexScale} returns a non-zero value
      * for the same class, you may use that scale factor, together with this
@@ -1205,6 +1404,11 @@ public final class Unsafe {
      * The return value is in the range of a {@code int}.  The return type is
      * {@code long} to emphasize that long arithmetic should always be used
      * for offset calculations to avoid overflows.
+     * <p>
+     * This method doesn't support arrays with an element type that is
+     * a value class, because this type of array can have multiple layouts.
+     * For these arrays, {@code arrayInstanceBaseOffset(Object[] array)}
+     * must be used instead.
      *
      * @see #getInt(Object, long)
      * @see #putInt(Object, long, int)
@@ -1217,6 +1421,13 @@ public final class Unsafe {
         return arrayBaseOffset0(arrayClass);
     }
 
+    public long arrayInstanceBaseOffset(Object[] array) {
+        if (array == null) {
+            throw new NullPointerException();
+        }
+
+        return arrayInstanceBaseOffset0(array);
+    }
 
     /** The value of {@code arrayBaseOffset(boolean[].class)} */
     public static final long ARRAY_BOOLEAN_BASE_OFFSET
@@ -1263,6 +1474,11 @@ public final class Unsafe {
      * <p>
      * The computation of the actual memory offset should always use {@code
      * long} arithmetic to avoid overflows.
+     * <p>
+     * This method doesn't support arrays with an element type that is
+     * a value class, because this type of array can have multiple layouts.
+     * For these arrays, {@code arrayInstanceIndexScale(Object[] array)}
+     * must be used instead.
      *
      * @see #arrayBaseOffset
      * @see #getInt(Object, long)
@@ -1276,6 +1492,48 @@ public final class Unsafe {
         return arrayIndexScale0(arrayClass);
     }
 
+    public int arrayInstanceIndexScale(Object[] array) {
+        if (array == null) {
+            throw new NullPointerException();
+        }
+
+        return arrayInstanceIndexScale0(array);
+    }
+
+    /**
+     * Returns the acmp map of this class, which must be a concrete value class.
+     * Intended to be used by substitutability test in ValueObjectMethods only.
+     * The format is subject to change.
+     */
+    public int[] getFieldMap(Class<?> c) {
+        if (c == null) {
+            throw new NullPointerException();
+        }
+        return getFieldMap0(c);
+    }
+
+    /**
+     * For a field of type {@code c}, returns true if and only if there is
+     * a possible flat layout that contains no oop.
+     * Required for numerical CAS safety.
+     */
+    public boolean isFlatPayloadBinary(Class<?> c) {
+        int[] map = getFieldMap(c);
+        int nbNonRef = map[0];
+        return nbNonRef * 2 + 1 == map.length;
+    }
+
+    /**
+     * Return the size of the object in the heap.
+     * @param o an object
+     * @return the objects's size
+     * @since Valhalla
+     */
+    public long getObjectSize(Object o) {
+        if (o == null)
+            throw new NullPointerException();
+        return getObjectSize0(o);
+    }
 
     /** The value of {@code arrayIndexScale(boolean[].class)} */
     public static final int ARRAY_BOOLEAN_INDEX_SCALE
@@ -1379,6 +1637,11 @@ public final class Unsafe {
     /**
      * Allocates an instance but does not run any constructor.
      * Initializes the class if it has not yet been.
+     * <p>
+     * This method returns an uninitialized instance. In general, this is undefined behavior, this
+     * method is treated specially by the JVM to allow this behavior. The returned value must be
+     * passed into a constructor using {@link MethodHandle#linkToSpecial} before any other
+     * operation can be performed on it. Otherwise, the program is ill-formed.
      */
     @IntrinsicCandidate
     public native Object allocateInstance(Class<?> cls)
@@ -1454,16 +1717,101 @@ public final class Unsafe {
                                                        Object expected,
                                                        Object x);
 
+    private final boolean isValueObject(Object o) {
+        return o != null && o.getClass().isValue();
+    }
+
+    /*
+     * For value type, CAS should do substitutability test as opposed
+     * to two pointers comparison.
+     */
+    @ForceInline
+    public final <V> boolean compareAndSetReference(Object o, long offset,
+                                                    Class<?> type,
+                                                    V expected,
+                                                    V x) {
+        if (type.isValue() || isValueObject(expected)) {
+            while (true) {
+                Object witness = getReferenceVolatile(o, offset);
+                if (witness != expected) {
+                    return false;
+                }
+                if (compareAndSetReference(o, offset, witness, x)) {
+                    return true;
+                }
+            }
+        } else {
+            return compareAndSetReference(o, offset, expected, x);
+        }
+    }
+
+    @ForceInline
+    public final <V> boolean compareAndSetFlatValue(Object o, long offset,
+                                                int layout,
+                                                Class<?> valueType,
+                                                V expected,
+                                                V x) {
+        Object[] array = newSpecialArray(valueType, 2, layout);
+        return compareAndSetFlatValueAsBytes(array, o, offset, layout, valueType, expected, x);
+    }
+
     @IntrinsicCandidate
     public final native Object compareAndExchangeReference(Object o, long offset,
                                                            Object expected,
                                                            Object x);
+
+    @ForceInline
+    public final <V> Object compareAndExchangeReference(Object o, long offset,
+                                                        Class<?> valueType,
+                                                        V expected,
+                                                        V x) {
+        if (valueType.isValue() || isValueObject(expected)) {
+            while (true) {
+                Object witness = getReferenceVolatile(o, offset);
+                if (witness != expected) {
+                    return witness;
+                }
+                if (compareAndSetReference(o, offset, witness, x)) {
+                    return witness;
+                }
+            }
+        } else {
+            return compareAndExchangeReference(o, offset, expected, x);
+        }
+    }
+
+    @ForceInline
+    public final <V> Object compareAndExchangeFlatValue(Object o, long offset,
+                                                    int layout,
+                                                    Class<?> valueType,
+                                                    V expected,
+                                                    V x) {
+        Object[] array = newSpecialArray(valueType, 2, layout);
+        compareAndSetFlatValueAsBytes(array, o, offset, layout, valueType, expected, x);
+        return array[0];
+    }
 
     @IntrinsicCandidate
     public final Object compareAndExchangeReferenceAcquire(Object o, long offset,
                                                            Object expected,
                                                            Object x) {
         return compareAndExchangeReference(o, offset, expected, x);
+    }
+
+    public final <V> Object compareAndExchangeReferenceAcquire(Object o, long offset,
+                                                               Class<?> valueType,
+                                                               V expected,
+                                                               V x) {
+        return compareAndExchangeReference(o, offset, valueType, expected, x);
+    }
+
+    @ForceInline
+    public final <V> Object compareAndExchangeFlatValueAcquire(Object o, long offset,
+                                                           int layout,
+                                                           Class<?> valueType,
+                                                           V expected,
+                                                           V x) {
+        return compareAndExchangeFlatValue(o, offset, layout, valueType, expected, x);
     }
 
     @IntrinsicCandidate
@@ -1473,11 +1821,47 @@ public final class Unsafe {
         return compareAndExchangeReference(o, offset, expected, x);
     }
 
+    public final <V> Object compareAndExchangeReferenceRelease(Object o, long offset,
+                                                               Class<?> valueType,
+                                                               V expected,
+                                                               V x) {
+        return compareAndExchangeReference(o, offset, valueType, expected, x);
+    }
+
+    @ForceInline
+    public final <V> Object compareAndExchangeFlatValueRelease(Object o, long offset,
+                                                           int layout,
+                                                           Class<?> valueType,
+                                                           V expected,
+                                                           V x) {
+        return compareAndExchangeFlatValue(o, offset, layout, valueType, expected, x);
+    }
+
     @IntrinsicCandidate
     public final boolean weakCompareAndSetReferencePlain(Object o, long offset,
                                                          Object expected,
                                                          Object x) {
         return compareAndSetReference(o, offset, expected, x);
+    }
+
+    public final <V> boolean weakCompareAndSetReferencePlain(Object o, long offset,
+                                                             Class<?> valueType,
+                                                             V expected,
+                                                             V x) {
+        if (valueType.isValue() || isValueObject(expected)) {
+            return compareAndSetReference(o, offset, valueType, expected, x);
+        } else {
+            return weakCompareAndSetReferencePlain(o, offset, expected, x);
+        }
+    }
+
+    @ForceInline
+    public final <V> boolean weakCompareAndSetFlatValuePlain(Object o, long offset,
+                                                         int layout,
+                                                         Class<?> valueType,
+                                                         V expected,
+                                                         V x) {
+        return compareAndSetFlatValue(o, offset, layout, valueType, expected, x);
     }
 
     @IntrinsicCandidate
@@ -1487,6 +1871,26 @@ public final class Unsafe {
         return compareAndSetReference(o, offset, expected, x);
     }
 
+    public final <V> boolean weakCompareAndSetReferenceAcquire(Object o, long offset,
+                                                               Class<?> valueType,
+                                                               V expected,
+                                                               V x) {
+        if (valueType.isValue() || isValueObject(expected)) {
+            return compareAndSetReference(o, offset, valueType, expected, x);
+        } else {
+            return weakCompareAndSetReferencePlain(o, offset, expected, x);
+        }
+    }
+
+    @ForceInline
+    public final <V> boolean weakCompareAndSetFlatValueAcquire(Object o, long offset,
+                                                           int layout,
+                                                           Class<?> valueType,
+                                                           V expected,
+                                                           V x) {
+        return compareAndSetFlatValue(o, offset, layout, valueType, expected, x);
+    }
+
     @IntrinsicCandidate
     public final boolean weakCompareAndSetReferenceRelease(Object o, long offset,
                                                            Object expected,
@@ -1494,11 +1898,51 @@ public final class Unsafe {
         return compareAndSetReference(o, offset, expected, x);
     }
 
+    public final <V> boolean weakCompareAndSetReferenceRelease(Object o, long offset,
+                                                               Class<?> valueType,
+                                                               V expected,
+                                                               V x) {
+        if (valueType.isValue() || isValueObject(expected)) {
+            return compareAndSetReference(o, offset, valueType, expected, x);
+        } else {
+            return weakCompareAndSetReferencePlain(o, offset, expected, x);
+        }
+    }
+
+    @ForceInline
+    public final <V> boolean weakCompareAndSetFlatValueRelease(Object o, long offset,
+                                                           int layout,
+                                                           Class<?> valueType,
+                                                           V expected,
+                                                           V x) {
+        return compareAndSetFlatValue(o, offset, layout, valueType, expected, x);
+    }
+
     @IntrinsicCandidate
     public final boolean weakCompareAndSetReference(Object o, long offset,
                                                     Object expected,
                                                     Object x) {
         return compareAndSetReference(o, offset, expected, x);
+    }
+
+    public final <V> boolean weakCompareAndSetReference(Object o, long offset,
+                                                        Class<?> valueType,
+                                                        V expected,
+                                                        V x) {
+        if (valueType.isValue() || isValueObject(expected)) {
+            return compareAndSetReference(o, offset, valueType, expected, x);
+        } else {
+            return weakCompareAndSetReferencePlain(o, offset, expected, x);
+        }
+    }
+
+    @ForceInline
+    public final <V> boolean weakCompareAndSetFlatValue(Object o, long offset,
+                                                    int layout,
+                                                    Class<?> valueType,
+                                                    V expected,
+                                                    V x) {
+        return compareAndSetFlatValue(o, offset, layout, valueType, expected, x);
     }
 
     /**
@@ -2116,12 +2560,27 @@ public final class Unsafe {
     @IntrinsicCandidate
     public native Object getReferenceVolatile(Object o, long offset);
 
+    @ForceInline
+    public final <V> Object getFlatValueVolatile(Object o, long offset, int layout, Class<?> valueType) {
+        // we translate using fences (see: https://gee.cs.oswego.edu/dl/html/j9mm.html)
+        Object res = getFlatValue(o, offset, layout, valueType);
+        fullFence();
+        return res;
+    }
+
     /**
      * Stores a reference value into a given Java variable, with
      * volatile store semantics. Otherwise identical to {@link #putReference(Object, long, Object)}
      */
     @IntrinsicCandidate
     public native void putReferenceVolatile(Object o, long offset, Object x);
+
+    @ForceInline
+    public final <V> void putFlatValueVolatile(Object o, long offset, int layout, Class<?> valueType, V x) {
+        // we translate using fences (see: https://gee.cs.oswego.edu/dl/html/j9mm.html)
+        putFlatValueRelease(o, offset, layout, valueType, x);
+        fullFence();
+    }
 
     /** Volatile version of {@link #getInt(Object, long)}  */
     @IntrinsicCandidate
@@ -2195,6 +2654,14 @@ public final class Unsafe {
         return getReferenceVolatile(o, offset);
     }
 
+    @ForceInline
+    public final <V> Object getFlatValueAcquire(Object o, long offset, int layout, Class<?> valueType) {
+        // we translate using fences (see: https://gee.cs.oswego.edu/dl/html/j9mm.html)
+        Object res = getFlatValue(o, offset, layout, valueType);
+        loadFence();
+        return res;
+    }
+
     /** Acquire version of {@link #getBooleanVolatile(Object, long)} */
     @IntrinsicCandidate
     public final boolean getBooleanAcquire(Object o, long offset) {
@@ -2259,6 +2726,13 @@ public final class Unsafe {
         putReferenceVolatile(o, offset, x);
     }
 
+    @ForceInline
+    public final <V> void putFlatValueRelease(Object o, long offset, int layout, Class<?> valueType, V x) {
+        // we translate using fences (see: https://gee.cs.oswego.edu/dl/html/j9mm.html)
+        storeFence();
+        putFlatValue(o, offset, layout, valueType, x);
+    }
+
     /** Release version of {@link #putBooleanVolatile(Object, long, boolean)} */
     @IntrinsicCandidate
     public final void putBooleanRelease(Object o, long offset, boolean x) {
@@ -2315,6 +2789,12 @@ public final class Unsafe {
         return getReferenceVolatile(o, offset);
     }
 
+    @ForceInline
+    public final <V> Object getFlatValueOpaque(Object o, long offset, int layout, Class<?> valueType) {
+        // this is stronger than opaque semantics
+        return getFlatValueAcquire(o, offset, layout, valueType);
+    }
+
     /** Opaque version of {@link #getBooleanVolatile(Object, long)} */
     @IntrinsicCandidate
     public final boolean getBooleanOpaque(Object o, long offset) {
@@ -2369,6 +2849,12 @@ public final class Unsafe {
         putReferenceVolatile(o, offset, x);
     }
 
+    @ForceInline
+    public final <V> void putFlatValueOpaque(Object o, long offset, int layout, Class<?> valueType, V x) {
+        // this is stronger than opaque semantics
+        putFlatValueRelease(o, offset, layout, valueType, x);
+    }
+
     /** Opaque version of {@link #putBooleanVolatile(Object, long, boolean)} */
     @IntrinsicCandidate
     public final void putBooleanOpaque(Object o, long offset, boolean x) {
@@ -2415,6 +2901,83 @@ public final class Unsafe {
     @IntrinsicCandidate
     public final void putDoubleOpaque(Object o, long offset, double x) {
         putDoubleVolatile(o, offset, x);
+    }
+
+    @ForceInline
+    private boolean compareAndSetFlatValueAsBytes(Object[] array, Object o, long offset, int layout, Class<?> valueType, Object expected, Object x) {
+        // We can convert between a value object and a binary value (of suitable size) using array elements.
+        // This only works if the payload contains no oops (see VarHandles::isAtomicFlat).
+        // Thus, we can implement the CAS with a plain numeric CAS.
+
+        // array[0]: witness (put as binary, get as object), at base
+        // array[1]: x (put as object, get as binary), at base + scale
+        // When witness == expected, the witness binary may be different from the expected binary.
+        // This happens when compiler does not zero unused positions in the witness.
+        // So we must obtain the witness binary and use it as expected binary for the numeric CAS.
+        long base = arrayInstanceBaseOffset(array);
+        int scale = arrayInstanceIndexScale(array);
+        putFlatValue(array, base + scale, layout, valueType, x); // put x as object
+        switch (scale) {
+            case 1: {
+                do {
+                    byte witnessByte = getByteVolatile(o, offset);
+                    putByte(array, base, witnessByte); // put witness as binary
+                    Object witness = getFlatValue(array, base, layout, valueType); // get witness as object
+                    if (witness != expected) {
+                        return false;
+                    }
+                    byte xByte = getByte(array, base + scale); // get x as binary
+                    if (compareAndSetByte(o, offset, witnessByte, xByte)) {
+                        return true;
+                    }
+                } while (true);
+            }
+            case 2: {
+                do {
+                    short witnessShort = getShortVolatile(o, offset);
+                    putShort(array, base, witnessShort); // put witness as binary
+                    Object witness = getFlatValue(array, base, layout, valueType); // get witness as object
+                    if (witness != expected) {
+                        return false;
+                    }
+                    short xShort = getShort(array, base + scale); // get x as binary
+                    if (compareAndSetShort(o, offset, witnessShort, xShort)) {
+                        return true;
+                    }
+                } while (true);
+            }
+            case 4: {
+                do {
+                    int witnessInt = getIntVolatile(o, offset);
+                    putInt(array, base, witnessInt); // put witness as binary
+                    Object witness = getFlatValue(array, base, layout, valueType); // get witness as object
+                    if (witness != expected) {
+                        return false;
+                    }
+                    int xInt = getInt(array, base + scale); // get x as binary
+                    if (compareAndSetInt(o, offset, witnessInt, xInt)) {
+                        return true;
+                    }
+                } while (true);
+            }
+            case 8: {
+                do {
+                    long witnessLong = getLongVolatile(o, offset);
+                    putLong(array, base, witnessLong); // put witness as binary
+                    Object witness = getFlatValue(array, base, layout, valueType);
+                    if (witness != expected) {
+                        return false;
+                    }
+                    long xLong = getLong(array, base + scale); // get x as binary
+                    if (compareAndSetLong(o, offset, witnessLong, xLong)) {
+                        return true;
+                    }
+                } while (true);
+            }
+            default: {
+                throw new UnsupportedOperationException();
+            }
+        }
     }
 
     /**
@@ -2804,6 +3367,24 @@ public final class Unsafe {
     }
 
     @ForceInline
+    public final Object getAndSetReference(Object o, long offset, Class<?> valueType, Object newValue) {
+        Object v;
+        do {
+            v = getReferenceVolatile(o, offset);
+        } while (!compareAndSetReference(o, offset, valueType, v, newValue));
+        return v;
+    }
+
+    @ForceInline
+    public Object getAndSetFlatValue(Object o, long offset, int layoutKind, Class<?> valueType, Object newValue) {
+        Object v;
+        do {
+            v = getFlatValueVolatile(o, offset, layoutKind, valueType);
+        } while (!compareAndSetFlatValue(o, offset, layoutKind, valueType, v, newValue));
+        return v;
+    }
+
+    @ForceInline
     public final Object getAndSetReferenceRelease(Object o, long offset, Object newValue) {
         Object v;
         do {
@@ -2813,12 +3394,32 @@ public final class Unsafe {
     }
 
     @ForceInline
+    public final Object getAndSetReferenceRelease(Object o, long offset, Class<?> valueType, Object newValue) {
+        return getAndSetReference(o, offset, valueType, newValue);
+    }
+
+    @ForceInline
+    public Object getAndSetFlatValueRelease(Object o, long offset, int layoutKind, Class<?> valueType, Object x) {
+        return getAndSetFlatValue(o, offset, layoutKind, valueType, x);
+    }
+
+    @ForceInline
     public final Object getAndSetReferenceAcquire(Object o, long offset, Object newValue) {
         Object v;
         do {
             v = getReferenceAcquire(o, offset);
         } while (!weakCompareAndSetReferenceAcquire(o, offset, v, newValue));
         return v;
+    }
+
+    @ForceInline
+    public final Object getAndSetReferenceAcquire(Object o, long offset, Class<?> valueType, Object newValue) {
+        return getAndSetReference(o, offset, valueType, newValue);
+    }
+
+    @ForceInline
+    public Object getAndSetFlatValueAcquire(Object o, long offset, int layoutKind, Class<?> valueType, Object x) {
+        return getAndSetFlatValue(o, offset, layoutKind, valueType, x);
     }
 
     @IntrinsicCandidate
@@ -3876,9 +4477,17 @@ public final class Unsafe {
     private native Object staticFieldBase0(Field f); // throws IAE
     private native boolean shouldBeInitialized0(Class<?> c);
     private native void ensureClassInitialized0(Class<?> c);
+    private native void notifyStrictStaticAccess0(Class<?> c, long staticFieldOffset, boolean writing);
     private native int arrayBaseOffset0(Class<?> arrayClass); // public version returns long to promote correct arithmetic
+    @IntrinsicCandidate
+    private native int arrayInstanceBaseOffset0(Object[] array);
     private native int arrayIndexScale0(Class<?> arrayClass);
+    @IntrinsicCandidate
+    private native int arrayInstanceIndexScale0(Object[] array);
+    private native long getObjectSize0(Object o);
     private native int getLoadAverage0(double[] loadavg, int nelems);
+    @IntrinsicCandidate
+    private native int[] getFieldMap0(Class <?> c);
 
 
     /**

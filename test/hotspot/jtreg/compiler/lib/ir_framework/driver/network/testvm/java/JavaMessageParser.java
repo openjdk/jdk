@@ -24,9 +24,6 @@
 package compiler.lib.ir_framework.driver.network.testvm.java;
 
 import compiler.lib.ir_framework.TestFramework;
-import compiler.lib.ir_framework.driver.network.testvm.java.multiline.ApplicableIRRulesStrategy;
-import compiler.lib.ir_framework.driver.network.testvm.java.multiline.MultiLineParser;
-import compiler.lib.ir_framework.driver.network.testvm.java.multiline.VMInfoStrategy;
 import compiler.lib.ir_framework.shared.TestFrameworkException;
 import compiler.lib.ir_framework.test.network.MessageTag;
 
@@ -46,18 +43,18 @@ public class JavaMessageParser {
     private final List<String> stdoutMessages;
     private final List<String> executedTests;
     private final Map<String, Long> methodTimes;
-    private final MultiLineParser<VMInfo> vmInfoParser;
-    private final MultiLineParser<ApplicableIRRules> applicableIRRulesParser;
+    private final StringBuilder vmInfoBuilder;
+    private final StringBuilder applicableIrRules;
 
-    private MultiLineParser<? extends JavaMessage> currentMultiLineParser;
+    private StringBuilder currentBuilder;
 
     public JavaMessageParser() {
         this.stdoutMessages = new ArrayList<>();
         this.methodTimes = new HashMap<>();
         this.executedTests = new ArrayList<>();
-        this.vmInfoParser = new MultiLineParser<>(new VMInfoStrategy());
-        this.applicableIRRulesParser = new MultiLineParser<>(new ApplicableIRRulesStrategy());
-        this.currentMultiLineParser = null;
+        this.vmInfoBuilder = new StringBuilder();
+        this.applicableIrRules = new StringBuilder();
+        this.currentBuilder = null;
     }
 
     public void parseLine(String line) {
@@ -77,11 +74,12 @@ public class JavaMessageParser {
             return;
         }
 
-        currentMultiLineParser.parseLine(line);
+        // Multi-line message for single tag.
+        currentBuilder.append(line).append(System.lineSeparator());
     }
 
     private void assertNoActiveParser() {
-        TestFramework.check(currentMultiLineParser == null, "Unexpected new tag while parsing block");
+        TestFramework.check(currentBuilder == null, "Unexpected new tag while parsing block");
     }
 
     private void parseTagLine(Matcher tagLineMatcher) {
@@ -91,8 +89,8 @@ public class JavaMessageParser {
             case STDOUT -> stdoutMessages.add(message);
             case TEST_LIST -> executedTests.add(message);
             case PRINT_TIMES -> parsePrintTimes(message);
-            case VM_INFO -> currentMultiLineParser = vmInfoParser;
-            case APPLICABLE_IR_RULES -> currentMultiLineParser = applicableIRRulesParser;
+            case VM_INFO -> currentBuilder = vmInfoBuilder;
+            case APPLICABLE_IR_RULES -> currentBuilder = applicableIrRules;
             default -> throw new TestFrameworkException("unknown tag");
         }
     }
@@ -110,19 +108,18 @@ public class JavaMessageParser {
     }
 
     private void assertActiveParser() {
-        TestFramework.check(currentMultiLineParser != null, "Received non-tag line outside of any tag block");
+        TestFramework.check(currentBuilder != null, "Received non-tag line outside of any tag block");
     }
 
     private void parseEndTag() {
-        currentMultiLineParser.markFinished();
-        currentMultiLineParser = null;
+        currentBuilder = null;
     }
 
     public JavaMessages output() {
         return new JavaMessages(new StdoutMessages(stdoutMessages),
                                 new ExecutedTests(executedTests),
                                 new MethodTimes(methodTimes),
-                                applicableIRRulesParser.output(),
-                                vmInfoParser.output());
+                                applicableIrRules.toString(),
+                                vmInfoBuilder.toString());
     }
 }

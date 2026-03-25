@@ -58,11 +58,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 import jdk.internal.jimage.ImageReader.Node;
+import jdk.internal.jimage.PreviewMode;
 
 /**
  * jrt file system implementation built on System jimage files.
@@ -81,13 +81,34 @@ class JrtFileSystem extends FileSystem {
     private volatile boolean isClosable;
     private SystemImage image;
 
-    JrtFileSystem(JrtFileSystemProvider provider, Map<String, ?> env)
-            throws IOException
-    {
+    /**
+     * Special constructor for the singleton system jrt file system. This creates
+     * a non-closable instance, and should only be called once by {@link
+     * JrtFileSystemProvider}.
+     *
+     * @param provider the provider opening the file system.
+     */
+    JrtFileSystem(JrtFileSystemProvider provider)
+            throws IOException {
         this.provider = provider;
-        this.image = SystemImage.open();  // open image file
+        this.image = SystemImage.open(PreviewMode.FOR_RUNTIME);  // open image file
         this.isOpen = true;
-        this.isClosable = env != null;
+        // Only the system singleton jrt file system is "unclosable".
+        this.isClosable = false;
+    }
+
+    /**
+     * Creates a new, non-system, instance of the jrt file system.
+     *
+     * @param provider the provider opening the file system.
+     * @param mode controls whether preview resources are visible.
+     */
+    JrtFileSystem(JrtFileSystemProvider provider, PreviewMode mode)
+            throws IOException {
+        this.provider = provider;
+        this.image = SystemImage.open(mode);  // open image file
+        this.isOpen = true;
+        this.isClosable = true;
     }
 
     // FileSystem method implementations

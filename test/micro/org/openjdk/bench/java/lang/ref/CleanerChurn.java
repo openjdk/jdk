@@ -48,6 +48,7 @@ public class CleanerChurn {
 
     static class Target {
         private static final Cleaner CLEANER = Cleaner.create();
+        @SuppressWarnings("initialization")
         public Target(boolean register) {
             if (register) {
                 CLEANER.register(this, () -> {});

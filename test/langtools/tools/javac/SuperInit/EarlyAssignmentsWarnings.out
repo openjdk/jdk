@@ -1,0 +1,23 @@
+EarlyAssignments.java:159:13: compiler.err.cant.assign.val.to.var: final, x
+EarlyAssignments.java:33:26: compiler.warn.would.not.be.allowed.in.prologue: x
+EarlyAssignments.java:34:21: compiler.warn.would.not.be.allowed.in.prologue: x
+EarlyAssignments.java:35:26: compiler.warn.would.not.be.allowed.in.prologue: x
+EarlyAssignments.java:36:34: compiler.warn.would.not.be.allowed.in.prologue: x
+EarlyAssignments.java:38:36: compiler.warn.would.not.be.allowed.in.prologue: this
+EarlyAssignments.java:42:17: compiler.warn.would.not.be.allowed.in.prologue: x
+EarlyAssignments.java:46:21: compiler.warn.would.not.be.allowed.in.prologue: x
+EarlyAssignments.java:50:22: compiler.warn.would.not.be.allowed.in.prologue: x
+EarlyAssignments.java:68:13: compiler.warn.would.not.be.allowed.in.prologue: x
+EarlyAssignments.java:69:17: compiler.warn.would.not.be.allowed.in.prologue: x
+EarlyAssignments.java:70:25: compiler.warn.would.not.be.allowed.in.prologue: this
+EarlyAssignments.java:71:31: compiler.warn.would.not.be.allowed.in.prologue: this
+EarlyAssignments.java:121:17: compiler.warn.would.not.be.allowed.in.prologue: x
+EarlyAssignments.java:126:22: compiler.warn.would.not.be.allowed.in.prologue: x
+EarlyAssignments.java:131:29: compiler.warn.would.not.be.allowed.in.prologue: x
+EarlyAssignments.java:136:22: compiler.warn.would.not.be.allowed.in.prologue: x
+EarlyAssignments.java:141:28: compiler.warn.would.not.be.allowed.in.prologue: x
+EarlyAssignments.java:150:13: compiler.warn.would.not.be.allowed.in.prologue: x
+EarlyAssignments.java:159:13: compiler.warn.would.not.be.allowed.in.prologue: x
+EarlyAssignments.java:170:13: compiler.warn.would.not.be.allowed.in.prologue: this
+EarlyAssignments.java:170:18: compiler.warn.would.not.be.allowed.in.prologue: EarlyAssignments.Inner8
+EarlyAssignments.java:179:17: compiler.warn.would.not.be.allowed.in.prologue: x

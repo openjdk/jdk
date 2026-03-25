@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,18 @@
  */
 package org.xml.sax.ptests;
 
-import org.junit.jupiter.api.Test;
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
+import static jaxp.library.JAXPTestUtilities.compareWithGold;
+import static org.testng.Assert.assertTrue;
+import static org.xml.sax.ptests.SAXTestConst.GOLDEN_DIR;
+import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
+
+import java.io.File;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
-import static org.junit.jupiter.api.Assertions.assertLinesMatch;
-import static org.xml.sax.ptests.SAXTestConst.GOLDEN_DIR;
-import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
+import org.testng.annotations.Test;
 
 /**
  * This tests the Attributes interface. Here the startElement() callback of
@@ -45,7 +46,7 @@ import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run junit/othervm org.xml.sax.ptests.AttributesTest
+ * @run testng/othervm org.xml.sax.ptests.AttributesTest
  */
 public class AttributesTest {
     /**
@@ -56,7 +57,7 @@ public class AttributesTest {
      */
     @Test
     public void testcase01() throws Exception {
-        String outputFile = "Attributes.out";
+        String outputFile = USER_DIR + "Attributes.out";
         String goldFile = GOLDEN_DIR + "AttributesGF.out";
         String xmlFile = XML_DIR + "family.xml";
 
@@ -69,8 +70,6 @@ public class AttributesTest {
         MyAttrCHandler myAttrCHandler = new MyAttrCHandler(outputFile);
         saxParser.parse(new File(xmlFile), myAttrCHandler);
         myAttrCHandler.flushAndClose();
-        assertLinesMatch(
-                Files.readAllLines(Path.of(goldFile)),
-                Files.readAllLines(Path.of(outputFile)));
+        assertTrue(compareWithGold(goldFile, outputFile));
     }
 }

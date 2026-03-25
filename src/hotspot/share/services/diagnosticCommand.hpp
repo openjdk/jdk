@@ -325,6 +325,26 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
+class PrintClassLayoutDCmd : public DCmdWithParser {
+protected:
+  DCmdArgument<char*> _classname; // lass name whose layout should be printed.
+public:
+  PrintClassLayoutDCmd(outputStream* output, bool heap);
+  static const char* name() {
+    return "VM.class_print_layout";
+  }
+  static const char* description() {
+    return "Print the layout of an instance of a class, including flat fields. "
+           "The name of each class is followed by the ClassLoaderData* of its ClassLoader, "
+           "or \"null\" if loaded by the bootstrap class loader.";
+  }
+  static const char* impact() {
+      return "Medium: Depends on number of loaded classes.";
+  }
+  static int num_arguments();
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
 #if INCLUDE_CDS
 class AOTEndRecordingDCmd : public DCmd {
 public:

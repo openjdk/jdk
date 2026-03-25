@@ -37,10 +37,12 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
+#include "utilities/exceptions.hpp"
 
 // frequently used constants
 // Allocate them with new so they are never destroyed (otherwise, a
@@ -63,7 +65,8 @@ oop HotSpotCompiledCodeStream::get_oop(int id, JVMCI_TRAPS) const {
     JVMCI_ERROR_NULL("object pool is null%s", context());
   }
   if (!_object_pool.is_null() && 0 <= id && id < _object_pool->length()) {
-    return _object_pool->obj_at(id);
+    JavaThread* THREAD = JavaThread::current(); // For exception macros.
+    return _object_pool->obj_at(id, CHECK_NULL);
   }
   JVMCI_ERROR_NULL("unknown direct object id %d%s", id, context());
 }
@@ -1182,10 +1185,11 @@ void CodeInstaller::record_scope(jint pc_offset, HotSpotCompiledCodeStream* stre
       }
 
       // has_ea_local_in_scope and arg_escape should be added to JVMCI
+      const bool return_scalarized     = false;
       const bool has_ea_local_in_scope = false;
       const bool arg_escape            = false;
       _debug_recorder->describe_scope(pc_offset, method, nullptr, bci, reexecute, rethrow_exception, return_oop,
-                                      has_ea_local_in_scope, arg_escape,
+                                      return_scalarized, has_ea_local_in_scope, arg_escape,
                                       locals_token, stack_token, monitors_token);
     }
   }
@@ -1323,6 +1327,8 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, HotSpotCompile
       break;
     case VERIFIED_ENTRY:
       _offsets.set_value(CodeOffsets::Verified_Entry, pc_offset);
+      _offsets.set_value(CodeOffsets::Verified_Inline_Entry, pc_offset);
+      _offsets.set_value(CodeOffsets::Verified_Inline_Entry_RO, pc_offset);
       break;
     case OSR_ENTRY:
       _offsets.set_value(CodeOffsets::OSR_Entry, pc_offset);

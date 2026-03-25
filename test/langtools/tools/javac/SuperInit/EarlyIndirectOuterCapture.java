@@ -2,7 +2,8 @@
  * @test /nodynamiccopyright/
  * @bug 8334248
  * @summary Invalid error for early construction local class constructor method reference
- * @compile/fail/ref=EarlyIndirectOuterCapture.out -XDrawDiagnostics EarlyIndirectOuterCapture.java
+ * @build InitializationWarningTester
+ * @run main InitializationWarningTester EarlyIndirectOuterCapture
  */
 
 public class EarlyIndirectOuterCapture {
@@ -18,7 +19,7 @@ public class EarlyIndirectOuterCapture {
     static class InnerOuter extends EarlyIndirectOuterCapture {     // accessible
         class InnerInnerOuter extends EarlyIndirectOuterCapture {   // not accessible
             InnerInnerOuter() {
-                super(/* which enclosing instance here ? */new InnerSuperclass() { });
+                super(new InnerSuperclass() { }); // should this be accepted?, InnerSuperclass is not an inner class of InnerInnerOuter
             }
 
             InnerInnerOuter(boolean b) {

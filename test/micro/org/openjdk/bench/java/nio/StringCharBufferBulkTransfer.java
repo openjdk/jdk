@@ -45,6 +45,7 @@ public class StringCharBufferBulkTransfer {
     private static final int LENGTH = 16384;
 
     char[] buf = new char[LENGTH];
+    @SuppressWarnings("initialization")
     CharBuffer cb = CharBuffer.wrap(new String(buf));
     char[] dst = new char[LENGTH];
     CharBuffer cbw = CharBuffer.allocate(LENGTH);

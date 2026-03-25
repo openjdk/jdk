@@ -22,8 +22,11 @@
  */
 /*
  * @test
- * @bug 8194743 8345438 8356551 8349754
+ * @bug 8194743 8345438 8356551 8349754 8379833
  * @summary Test valid placements of super()/this() in constructors
+ * @run main SuperInitGood
+ * @build InitializationWarningTester
+ * @run main InitializationWarningTester SuperInitGood SuperInitGoodWarnings.out
  */
 
 import java.util.concurrent.atomic.AtomicReference;
@@ -44,6 +47,7 @@ public class SuperInitGood {
     static class Test1 {
         Test1() {
         }
+
         Test1(int a) {
             this.hashCode();
         }
@@ -421,11 +425,6 @@ public class SuperInitGood {
             Test20.this.x = x;
             super();
         }
-        public Test20(byte y) {
-            x = y;
-            this((int)y);
-            this.x++;
-        }
     }
 
     // allow creating and using local and anonymous classes before super()
@@ -512,6 +511,34 @@ public class SuperInitGood {
         }
     }
 
+    public static class Test25 {
+        public Test25(Object o) {}
+
+        class Sub extends Test25 {
+            public Sub() {
+                super(new Object() {
+                    void foo() {
+                        getClass();
+                    }
+                });
+            }
+        }
+    }
+
+    public static class Test26 {
+        Test26(Test26 t) {}
+
+        Test26(String s) {
+            this(new Test26());
+        }
+
+        Test26() {}
+
+        public static void main(String[] args) {
+            new Test26("test");
+        }
+    }
+
     public static void main(String[] args) {
         new Test0();
         new Test1();
@@ -559,5 +586,7 @@ public class SuperInitGood {
         new Test22('x');
         new Test23();
         new Test24();
+        new Test25(null);
+        new Test26("");
     }
 }

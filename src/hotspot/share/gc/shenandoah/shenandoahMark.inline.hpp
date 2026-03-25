@@ -77,14 +77,15 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
   if (task->is_not_chunked()) {
     if (obj->is_instance()) {
       // Case 1: Normal oop, process as usual.
-      if (obj->is_stackChunk()) {
-        // Loom doesn't support mixing of weak marking and strong marking of stack chunks.
-        cl->set_weak(false);
+      if (ContinuationGCSupport::relativize_stack_chunk(obj)) {
+          // Loom doesn't support mixing of weak marking and strong marking of
+          // stack chunks.
+          cl->set_weak(false);
       }
 
       obj->oop_iterate(cl);
       dedup_string<STRING_DEDUP>(obj, req);
-    } else if (obj->is_objArray()) {
+    } else if (obj->is_refArray()) {
       // Case 2: Object array instance and no chunk is set. Must be the first
       // time we visit it, start the chunked processing.
       do_chunked_array_start<T>(q, cl, obj, weak);
@@ -117,11 +118,13 @@ inline void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop ob
   // Age census for objects in the young generation
   if (GENERATION == YOUNG || (GENERATION == GLOBAL && region->is_young())) {
     assert(heap->mode()->is_generational(), "Only if generational");
-    assert(region->is_young(), "Only for young objects");
-    const uint age = ShenandoahHeap::get_object_age(obj);
-    ShenandoahAgeCensus* const census = ShenandoahGenerationalHeap::heap()->age_census();
-    CENSUS_NOISE(census->add(age, region->age(), region->youth(), size, worker_id);)
-    NO_CENSUS_NOISE(census->add(age, region->age(), size, worker_id);)
+    if (ShenandoahGenerationalAdaptiveTenuring) {
+      assert(region->is_young(), "Only for young objects");
+      uint age = ShenandoahHeap::get_object_age(obj);
+      ShenandoahAgeCensus* const census = ShenandoahGenerationalHeap::heap()->age_census();
+      CENSUS_NOISE(census->add(age, region->age(), region->youth(), size, worker_id);)
+      NO_CENSUS_NOISE(census->add(age, region->age(), size, worker_id);)
+    }
   }
 
   if (!region->is_humongous_start()) {
@@ -153,7 +156,7 @@ inline void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop ob
 
 template <class T>
 inline void ShenandoahMark::do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, oop obj, bool weak) {
-  assert(obj->is_objArray(), "expect object array");
+  assert(obj->is_refArray(), "expect object array");
   objArrayOop array = objArrayOop(obj);
   int len = array->length();
 
@@ -220,7 +223,7 @@ inline void ShenandoahMark::do_chunked_array_start(ShenandoahObjToScanQueue* q, 
 
 template <class T>
 inline void ShenandoahMark::do_chunked_array(ShenandoahObjToScanQueue* q, T* cl, oop obj, int chunk, int pow, bool weak) {
-  assert(obj->is_objArray(), "expect object array");
+  assert(obj->is_refArray(), "expect object array");
   objArrayOop array = objArrayOop(obj);
 
   // Split out tasks, as suggested in ShenandoahMarkTask docs. Avoid pushing tasks that

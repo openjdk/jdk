@@ -58,6 +58,7 @@ import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.main.OptionHelper.GrumpyHelper;
+import com.sun.tools.javac.platform.JDKPlatformProvider;
 import com.sun.tools.javac.platform.PlatformDescription;
 import com.sun.tools.javac.platform.PlatformUtils;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
@@ -317,8 +318,12 @@ public class Arguments {
                 Option.SYSTEM, Option.UPGRADE_MODULE_PATH);
 
         if (platformString != null) {
+            String platformAndOptions = platformString;
+            if (options.isSet(Option.PREVIEW)) {
+                platformAndOptions += ":" + JDKPlatformProvider.PREVIEW_OPTION;
+            }
             PlatformDescription platformDescription =
-                    PlatformUtils.lookupPlatformDescription(platformString);
+                    PlatformUtils.lookupPlatformDescription(platformAndOptions);
 
             if (platformDescription == null) {
                 reportDiag(Errors.UnsupportedReleaseVersion(platformString));

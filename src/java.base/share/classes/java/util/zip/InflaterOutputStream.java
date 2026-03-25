@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,14 +31,14 @@ import java.io.OutputStream;
 import java.util.Objects;
 
 /**
- * Implements an output stream filter for decompressing data stored in the
+ * Implements an output stream filter for uncompressing data stored in the
  * "deflate" compression format.
  *
  * <h2 id="decompressor-usage">Decompressor Usage</h2>
  * An {@code InflaterOutputStream} created without
  * specifying a {@linkplain Inflater decompressor} will create a decompressor
  * at construction time, and close the decompressor when the output stream
- * is {@linkplain #close closed} or when {@link #finish()} is called.
+ * is {@linkplain #close closed}.
  * <p>
  * If a decompressor is specified when creating a {@code InflaterOutputStream}, it is the
  * responsibility of the caller to {@linkplain Inflater#close close} the
@@ -49,6 +49,7 @@ import java.util.Objects;
  * stream, either directly, or with the {@code try}-with-resources statement.
  *
  * @since       1.6
+ * @author      David R Tribble (david@tribble.com)
  *
  * @see InflaterInputStream
  * @see DeflaterInputStream
@@ -59,7 +60,7 @@ public class InflaterOutputStream extends FilterOutputStream {
     /** Decompressor for this stream. */
     protected final Inflater inf;
 
-    /** Output buffer for writing decompressed data. */
+    /** Output buffer for writing uncompressed data. */
     protected final byte[] buf;
 
     /** Temporary write buffer. */
@@ -70,10 +71,6 @@ public class InflaterOutputStream extends FilterOutputStream {
 
     /** true iff {@link #close()} has been called. */
     private boolean closed = false;
-
-    // set to true if finish() was called and this InflaterOutputStream
-    // had created its own Inflater at construction time.
-    private boolean defaultInflaterClosed;
 
     /**
      * Checks to make sure that this stream has not been closed.
@@ -91,7 +88,7 @@ public class InflaterOutputStream extends FilterOutputStream {
      * The decompressor will be closed when this output stream
      * is {@linkplain #close() closed}.
      *
-     * @param out output stream to write the decompressed data to
+     * @param out output stream to write the uncompressed data to
      * @throws NullPointerException if {@code out} is null
      */
     public InflaterOutputStream(OutputStream out) {
@@ -107,7 +104,7 @@ public class InflaterOutputStream extends FilterOutputStream {
      * {@linkplain ##decompressor-usage will not close} the given
      * {@linkplain Inflater decompressor}.
      *
-     * @param out output stream to write the decompressed data to
+     * @param out output stream to write the uncompressed data to
      * @param infl decompressor ("inflater") for this stream
      * @throws NullPointerException if {@code out} or {@code infl} is null
      */
@@ -123,7 +120,7 @@ public class InflaterOutputStream extends FilterOutputStream {
      * {@linkplain ##decompressor-usage will not close} the given
      * {@linkplain Inflater decompressor}.
      *
-     * @param out output stream to write the decompressed data to
+     * @param out output stream to write the uncompressed data to
      * @param infl decompressor ("inflater") for this stream
      * @param bufLen decompression buffer size
      * @throws IllegalArgumentException if {@code bufLen <= 0}
@@ -146,45 +143,27 @@ public class InflaterOutputStream extends FilterOutputStream {
     }
 
     /**
-     * Writes any remaining decompressed data to the output stream and closes
+     * Writes any remaining uncompressed data to the output stream and closes
      * the underlying output stream.
-     *
-     * @implSpec If not already closed, this method calls {@link #finish()} before
-     * closing the underlying output stream.
      *
      * @throws IOException if an I/O error occurs
      */
     @Override
     public void close() throws IOException {
-        if (closed) {
-            return;
-        }
-        IOException toThrow = null;
-        // Complete the decompressed output
-        try {
-            finish();
-        } catch (IOException ioe) {
-            toThrow = ioe;
-        } finally {
+        if (!closed) {
+            // Complete the uncompressed output
             try {
+                finish();
+            } finally {
                 out.close();
-            } catch (IOException ioe) {
-                if (toThrow == null) {
-                    toThrow = ioe;
-                } else if (toThrow != ioe) {
-                    toThrow.addSuppressed(ioe);
-                }
+                closed = true;
             }
-            closed = true;
-        }
-        if (toThrow != null) {
-            throw toThrow;
         }
     }
 
     /**
-     * Flushes this output stream, writing any pending buffered decompressed data to
-     * the underlying output stream.
+     * Flushes this output stream, forcing any pending buffered output bytes to be
+     * written.
      *
      * @throws IOException if an I/O error occurs or this stream is already
      * closed
@@ -205,7 +184,7 @@ public class InflaterOutputStream extends FilterOutputStream {
                         break;
                     }
 
-                    // Write the decompressed output data block
+                    // Write the uncompressed output data block
                     out.write(buf, 0, n);
                 }
                 super.flush();
@@ -221,18 +200,12 @@ public class InflaterOutputStream extends FilterOutputStream {
     }
 
     /**
-     * Writes any pending buffered decompressed data to the underlying output stream,
-     * without closing the underlying stream.
+     * Finishes writing uncompressed data to the output stream without closing
+     * the underlying stream.  Use this method when applying multiple filters in
+     * succession to the same output stream.
      *
-     * @implSpec This method calls {@link #flush()} to write any pending buffered
-     * decompressed data.
-     * <p>
-     * If this {@code InflaterOutputStream} was created without specifying
-     * a {@linkplain Inflater decompressor}, then this method closes the decompressor
-     * that was created at construction time. The {@code InflaterOutputStream} cannot
-     * then be used for any further writes.
-     *
-     * @throws IOException if an I/O error occurs or this stream is already closed
+     * @throws IOException if an I/O error occurs or this stream is already
+     * closed
      */
     public void finish() throws IOException {
         ensureOpen();
@@ -241,12 +214,11 @@ public class InflaterOutputStream extends FilterOutputStream {
         flush();
         if (usesDefaultInflater) {
             inf.end();
-            this.defaultInflaterClosed = true;
         }
     }
 
     /**
-     * Writes a byte to the decompressed output stream.
+     * Writes a byte to the uncompressed output stream.
      *
      * @param b a single byte of compressed data to decompress and write to
      * the output stream
@@ -262,7 +234,7 @@ public class InflaterOutputStream extends FilterOutputStream {
     }
 
     /**
-     * Writes an array of bytes to the decompressed output stream.
+     * Writes an array of bytes to the uncompressed output stream.
      *
      * @param b buffer containing compressed data to decompress and write to
      * the output stream
@@ -279,22 +251,15 @@ public class InflaterOutputStream extends FilterOutputStream {
     public void write(byte[] b, int off, int len) throws IOException {
         // Sanity checks
         ensureOpen();
-        // check if this InflaterOutputStream had constructed its own
-        // Inflater at construction time and has been
-        // rendered unusable for writes due to finish() being called
-        // on it.
-        if (usesDefaultInflater && defaultInflaterClosed) {
-            throw new IOException("Inflater closed");
-        }
         if (b == null) {
-            throw new NullPointerException("Null input buffer");
+            throw new NullPointerException("Null buffer for read");
         }
         Objects.checkFromIndexSize(off, len, b.length);
         if (len == 0) {
             return;
         }
 
-        // Write decompressed data to the output stream
+        // Write uncompressed data to the output stream
         try {
             for (;;) {
                 int n;

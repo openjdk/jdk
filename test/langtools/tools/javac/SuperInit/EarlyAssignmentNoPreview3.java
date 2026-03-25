@@ -2,20 +2,17 @@
  * @test /nodynamiccopyright/
  * @bug 8334258
  * @summary Disallow early assignment if FLEXIBLE_CONSTRUCTORS preview feature is not enabled
- * @compile/fail/ref=EarlyAssignmentNoPreview3.out --release 24 -XDrawDiagnostics EarlyAssignmentNoPreview3.java
+ * @compile/fail/ref=EarlyAssignmentNoPreview3.out -source 24 -XDrawDiagnostics EarlyAssignmentNoPreview3.java
  */
 public class EarlyAssignmentNoPreview3 {
 
     Runnable r;
 
     public EarlyAssignmentNoPreview3() {
-        this(EarlyAssignmentNoPreview3.this.r = () -> System.out.println("hello"));
+        EarlyAssignmentNoPreview3.this.r = () -> System.out.println("hello");
+        this(EarlyAssignmentNoPreview3.this.r);
     }
 
     public EarlyAssignmentNoPreview3(Runnable r) {
-    }
-
-    public static void main(String[] args) {
-        new EarlyAssignmentNoPreview3();
     }
 }

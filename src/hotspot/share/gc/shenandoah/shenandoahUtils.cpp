@@ -40,22 +40,6 @@
 
 ShenandoahPhaseTimings::Phase ShenandoahTimingsTracker::_current_phase = ShenandoahPhaseTimings::_invalid_phase;
 
-const char* ShenandoahGCSession::cycle_end_message(ShenandoahGenerationType type) {
-  switch (type) {
-    case NON_GEN:
-      return "end of GC cycle";
-    case GLOBAL:
-      return "end of Global GC cycle";
-    case YOUNG:
-      return "end of Young GC cycle";
-    case OLD:
-      return "end of Old GC cycle";
-    default:
-      ShouldNotReachHere();
-      return "end of GC cycle";
-  }
-}
-
 ShenandoahGCSession::ShenandoahGCSession(GCCause::Cause cause, ShenandoahGeneration* generation) :
   _heap(ShenandoahHeap::heap()),
   _generation(generation),
@@ -70,7 +54,7 @@ ShenandoahGCSession::ShenandoahGCSession(GCCause::Cause cause, ShenandoahGenerat
   _heap->trace_heap_before_gc(_tracer);
 
   _trace_cycle.initialize(_heap->cycle_memory_manager(), cause,
-          cycle_end_message(_generation->type()),
+          "end of GC cycle",
           /* allMemoryPoolsAffected */    true,
           /* recordGCBeginTime = */       true,
           /* recordPreGCUsage = */        true,

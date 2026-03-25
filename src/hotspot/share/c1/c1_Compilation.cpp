@@ -577,6 +577,7 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _code(buffer_blob)
 , _has_access_indexed(false)
 , _interpreter_frame_size(0)
+, _compiled_entry_signature(method->get_Method())
 , _immediate_oops_patched(0)
 , _current_instruction(nullptr)
 #ifndef PRODUCT
@@ -594,8 +595,13 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
     _cfg_printer_output = new CFGPrinterOutput(this);
   }
 #endif
-
   CompilationMemoryStatisticMark cmsm(directive);
+
+  {
+    ResetNoHandleMark rnhm;
+    // TODO 8284443 Should only be computed once
+    _compiled_entry_signature.compute_calling_conventions(false);
+  }
 
   compile_method();
   if (bailed_out()) {

@@ -500,12 +500,15 @@ public class PrintingProcessor extends AbstractProcessor {
             case METHOD:
             case FIELD:
                 Element enclosingElement = e.getEnclosingElement();
-                if (enclosingElement != null &&
-                    enclosingElement.getKind().isInterface()) {
-                    modifiers.remove(Modifier.PUBLIC);
-                    modifiers.remove(Modifier.ABSTRACT); // only for methods
-                    modifiers.remove(Modifier.STATIC);   // only for fields
-                    modifiers.remove(Modifier.FINAL);    // only for fields
+                if (enclosingElement != null) {
+                    if (enclosingElement.getKind().isInterface()) {
+                        modifiers.remove(Modifier.PUBLIC);
+                        modifiers.remove(Modifier.ABSTRACT); // only for methods
+                        modifiers.remove(Modifier.STATIC);   // only for fields
+                        modifiers.remove(Modifier.FINAL);    // only for fields
+                    } else if (enclosingElement.getKind() == RECORD) {
+                        modifiers.remove(Modifier.STRICTFP);
+                    }
                 }
                 break;
 

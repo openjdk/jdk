@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,27 +25,23 @@
  * @bug 4849277 7183800
  * @summary Test DatagramChannel send while connected
  * @library ..
- * @run junit ConnectedSend
+ * @run testng ConnectedSend
  * @author Mike McCloskey
  */
 
-
-import java.net.DatagramPacket;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.channels.DatagramChannel;
-import java.nio.charset.StandardCharsets;
-
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
+import java.io.*;
+import java.net.*;
+import java.nio.*;
+import java.nio.channels.*;
+import java.nio.charset.*;
+import org.testng.annotations.Test;
+import static org.testng.Assert.*;
 
 public class ConnectedSend {
     // Check if DatagramChannel.send while connected can include
     // address without throwing
     @Test
-    public void sendToConnectedAddress() throws Exception {
+    public static void sendToConnectedAddress() throws Exception {
         DatagramChannel sndChannel = DatagramChannel.open();
         sndChannel.bind(null);
         InetAddress address = InetAddress.getLocalHost();
@@ -72,7 +68,7 @@ public class ConnectedSend {
         bb.clear();
         rcvChannel.receive(bb);
         bb.flip();
-        CharBuffer cb = StandardCharsets.US_ASCII.newDecoder().decode(bb);
+        CharBuffer cb = Charset.forName("US-ASCII").newDecoder().decode(bb);
         assertTrue(cb.toString().startsWith("h"), "Unexpected message content");
 
         rcvChannel.close();
@@ -83,7 +79,7 @@ public class ConnectedSend {
     // that has not been initialized with an address; the legacy
     // datagram socket will send in this case
     @Test
-    public void sendAddressedPacket() throws Exception {
+    public static void sendAddressedPacket() throws Exception {
         DatagramChannel sndChannel = DatagramChannel.open();
         sndChannel.bind(null);
         InetAddress address = InetAddress.getLocalHost();
@@ -103,19 +99,19 @@ public class ConnectedSend {
         rcvChannel.connect(sender);
         sndChannel.connect(receiver);
 
-        byte[] b = "hello".getBytes(StandardCharsets.UTF_8);
+        byte b[] = "hello".getBytes("UTF-8");
         DatagramPacket pkt = new DatagramPacket(b, b.length);
         sndChannel.socket().send(pkt);
 
         ByteBuffer bb = ByteBuffer.allocate(256);
         rcvChannel.receive(bb);
         bb.flip();
-        CharBuffer cb = StandardCharsets.US_ASCII.newDecoder().decode(bb);
+        CharBuffer cb = Charset.forName("US-ASCII").newDecoder().decode(bb);
         assertTrue(cb.toString().startsWith("h"), "Unexpected message content");
 
         // Check that the pkt got set with the target address;
         // This is legacy behavior
-        assertEquals(receiver, pkt.getSocketAddress(),
+        assertEquals(pkt.getSocketAddress(), receiver,
             "Unexpected address set on packet");
 
         rcvChannel.close();

@@ -1,2 +1,2 @@
-MethodReferenceNoThisTest.java:22:15: compiler.err.cant.ref.before.ctor.called: this
+MethodReferenceNoThisTest.java:22:15: compiler.err.cant.ref.before.ctor.called: MethodReferenceNoThisTest
 1 error

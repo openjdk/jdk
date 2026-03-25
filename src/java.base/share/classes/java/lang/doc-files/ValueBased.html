@@ -32,6 +32,8 @@
 
 Some classes, such as {@code java.lang.Integer} and
 {@code java.time.LocalDate}, are <em>value-based</em>.
+The compiler and runtime enforce the value based properties below if it is declared
+as {@code value class} and preview features are enabled.
 A value-based class has the following properties:
 <ul>
     <li>the class declares only final instance fields (though these may contain references
@@ -52,8 +54,7 @@ A value-based class has the following properties:
         instances are equal according to {@code equals()}, they may also be
         equal according to {@code ==};</li>
     <li>the class is final, and extends either {@code Object} or a hierarchy of
-        abstract classes that declare no instance fields or instance initializers
-        and whose constructors are empty.</li>
+        abstract value classes.</li>
 </ul>
 
 <p>When two instances of a value-based class are equal (according to `equals`), a program
@@ -65,8 +66,13 @@ A value-based class has the following properties:
     because the programmer cannot guarantee exclusive ownership of the
     associated monitor.</p>
 
-<p>Identity-related behavior of value-based classes may change in a future release.
-    For example, synchronization may fail.</p>
+<p>Identity-related behavior of value-based classes may change when implemented as a value class.
+</p>
+<ul>
+    <li>The class may choose to allocate/cache instances differently.
+    <li>The use of the value class for synchronization or with
+    {@linkplain java.lang.ref.Reference object references} result in {@link IdentityException}.
+</ul>
 
 </body>
 </html>

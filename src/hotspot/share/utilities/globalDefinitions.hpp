@@ -635,6 +635,15 @@ const bool support_IRIW_for_not_multiple_copy_atomic_cpu = PPC64_ONLY(true) NOT_
 
 
 //----------------------------------------------------------------------------------------------------
+// Prototyping
+// "Code Missing Here" macro, un-define when integrating back from prototyping stage and break
+// compilation on purpose (i.e. "forget me not")
+#define PROTOTYPE
+#ifdef PROTOTYPE
+#define CMH(m)
+#endif
+
+//----------------------------------------------------------------------------------------------------
 // Miscellaneous
 
 // 6302670 Eliminate Hotspot __fabsf dependency
@@ -712,11 +721,12 @@ enum BasicType : u1 {
   T_OBJECT      = 12,
   T_ARRAY       = 13,
   T_VOID        = 14,
-  T_ADDRESS     = 15,
-  T_NARROWOOP   = 16,
-  T_METADATA    = 17,
-  T_NARROWKLASS = 18,
-  T_CONFLICT    = 19, // for stack value type with conflicting contents
+  T_FLAT_ELEMENT = 15, // Not a true BasicType, only used in layout helpers of flat arrays
+  T_ADDRESS     = 16,
+  T_NARROWOOP   = 17,
+  T_METADATA    = 18,
+  T_NARROWKLASS = 19,
+  T_CONFLICT    = 20, // for stack value type with conflicting contents
   T_ILLEGAL     = 99
 };
 
@@ -760,6 +770,7 @@ inline bool is_double_word_type(BasicType t) {
 }
 
 inline bool is_reference_type(BasicType t, bool include_narrow_oop = false) {
+  assert(t != T_FLAT_ELEMENT, "");  // Strong assert to detect misuses of T_FLAT_ELEMENT
   return (t == T_OBJECT || t == T_ARRAY || (include_narrow_oop && t == T_NARROWOOP));
 }
 
@@ -834,7 +845,8 @@ enum BasicTypeSize {
   T_ARRAY_size       = 1,
   T_NARROWOOP_size   = 1,
   T_NARROWKLASS_size = 1,
-  T_VOID_size        = 0
+  T_VOID_size        = 0,
+  T_FLAT_ELEMENT_size = 0
 };
 
 // this works on valid parameter types but not T_VOID, T_CONFLICT, etc.
@@ -870,7 +882,8 @@ enum ArrayElementSize {
 #endif
   T_NARROWOOP_aelem_bytes   = 4,
   T_NARROWKLASS_aelem_bytes = 4,
-  T_VOID_aelem_bytes        = 0
+  T_VOID_aelem_bytes        = 0,
+  T_FLAT_ELEMENT_aelem_bytes = 0
 };
 
 extern int _type2aelembytes[T_CONFLICT+1]; // maps a BasicType to nof bytes used by its array element
@@ -960,7 +973,7 @@ enum TosState {         // describes the tos cache contents
   ftos = 6,             // float tos cached
   dtos = 7,             // double tos cached
   atos = 8,             // object cached
-  vtos = 9,             // tos not cached
+  vtos = 9,             // tos not cached,
   number_of_states,
   ilgl                  // illegal state: should not occur
 };
@@ -977,7 +990,7 @@ inline TosState as_TosState(BasicType type) {
     case T_FLOAT  : return ftos;
     case T_DOUBLE : return dtos;
     case T_VOID   : return vtos;
-    case T_ARRAY  : // fall through
+    case T_ARRAY  :   // fall through
     case T_OBJECT : return atos;
     default       : return ilgl;
   }
@@ -1055,6 +1068,7 @@ const int      badCodeHeapNewVal  = 0xCC;                   // value used to zap
 const int      badCodeHeapFreeVal = 0xDD;                   // value used to zap Code heap at deallocation
 const intptr_t badDispHeaderDeopt = 0xDE0BD000;             // value to fill unused displaced header during deoptimization
 const intptr_t badDispHeaderOSR   = 0xDEAD05A0;             // value to fill unused displaced header during OSR
+const juint    badRegWordVal      = 0xDEADDA7A;             // value used to zap registers
 
 // (These must be implemented as #defines because C++ compilers are
 // not obligated to inline non-integral constants!)
@@ -1072,26 +1086,18 @@ const intptr_t NoBits     =  0; // no bits set in a word
 const jlong    NoLongBits =  0; // no bits set in a long
 const intptr_t OneBit     =  1; // only right_most bit set in a word
 
-// Return a value of type T with the n.th bit set and all other bits zero.
-// T must be an integral or enum type. n must be non-negative. If n is at
-// least the bitwise size of T then all bits in the result are zero.
-template<typename T = intptr_t>
-constexpr T nth_bit(int n) {
-  assert(n >= 0, "n must be non-negative");
-  using U = std::make_unsigned_t<T>;
-  constexpr size_t size = sizeof(U) * BitsPerByte;
-  return T((size_t(n) >= size) ? U(0) : (U(1) << n));
-}
+// get a word with the n.th or the right-most or left-most n bits set
+// (note: #define used only so that they can be used in enum constant definitions)
+#define nth_bit(n)        (((n) >= BitsPerWord) ? 0 : (OneBit << (n)))
+#define right_n_bits(n)   (nth_bit(n) - 1)
 
-// Return a value of type T with all bits below the n.th bit set and all
-// other bits zero. T must be an integral or enum type. n must be
-// non-negative. If n is at least the bitwise size of T then all bits in
-// the result are set.
-template<typename T = intptr_t>
-constexpr T right_n_bits(int n) {
-  assert(n >= 0, "n must be non-negative");
-  using U = std::make_unsigned_t<T>;
-  return T(nth_bit<U>(n) - 1);
+// same as nth_bit(n), but allows handing in a type as template parameter. Allows
+// us to use nth_bit with 64-bit types on 32-bit platforms
+template<class T> inline T nth_bit_typed(int n) {
+  return ((T)1) << n;
+}
+template<class T> inline T right_n_bits_typed(int n) {
+  return nth_bit_typed<T>(n) - 1;
 }
 
 // bit-operations using a mask m

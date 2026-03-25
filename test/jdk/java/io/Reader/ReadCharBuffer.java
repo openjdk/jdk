@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,38 +25,40 @@
  * @test
  * @bug 4926314 8266014
  * @summary Test for Reader#read(CharBuffer).
- * @run junit ReadCharBuffer
+ * @run testng ReadCharBuffer
  */
 
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
+
+import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.CharArrayReader;
-import java.io.IOException;
 import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.stream.Stream;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import static org.testng.Assert.assertEquals;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
+@Test(groups = "unit")
 public class ReadCharBuffer {
 
     private static final int BUFFER_SIZE = 8 + 8192 + 2;
 
-    public static Stream<CharBuffer> buffers() {
+    @DataProvider(name = "buffers")
+    public Object[][] createBuffers() {
         // test both on-heap and off-heap buffers as they make use different code paths
-        return Stream.of(CharBuffer.allocate(BUFFER_SIZE),
-            ByteBuffer.allocateDirect(BUFFER_SIZE * 2).asCharBuffer());
+        return new Object[][]{
+                new Object[]{CharBuffer.allocate(BUFFER_SIZE)},
+                new Object[]{ByteBuffer.allocateDirect(BUFFER_SIZE * 2).asCharBuffer()}
+        };
     }
 
-    @ParameterizedTest
-    @MethodSource("buffers")
+    @Test(dataProvider = "buffers")
     public void read(CharBuffer buffer) throws IOException {
         fillBuffer(buffer);
 
@@ -72,21 +74,21 @@ public class ReadCharBuffer {
             int limit = 1 + 6;
             buffer.limit(limit);
             buffer.position(1);
-            assertEquals(6, reader.read(buffer));
-            assertEquals(limit, buffer.position());
-            assertEquals(limit, buffer.limit());
+            assertEquals(reader.read(buffer), 6);
+            assertEquals(buffer.position(), limit);
+            assertEquals(buffer.limit(), limit);
 
             // read the full temporary buffer
             // and then accurately reduce the next #read call
             limit = 8 + 8192 + 1;
             buffer.limit(8 + 8192 + 1);
             buffer.position(8);
-            assertEquals(8192 + 1, reader.read(buffer));
-            assertEquals(limit, buffer.position());
-            assertEquals(limit, buffer.limit());
+            assertEquals(reader.read(buffer), 8192 + 1);
+            assertEquals(buffer.position(), limit);
+            assertEquals(buffer.limit(), limit);
 
-            assertEquals('H', reader.read());
-            assertEquals(-1, reader.read());
+            assertEquals(reader.read(), 'H');
+            assertEquals(reader.read(), -1);
         }
 
         buffer.clear();
@@ -96,15 +98,20 @@ public class ReadCharBuffer {
             expected.append('y');
         }
         expected.append("Gx");
-        assertEquals(expected.toString(), buffer.toString());
+        assertEquals(buffer.toString(), expected.toString());
     }
 
     @Test
-    public void readZeroLength() throws IOException {
+    public void readZeroLength() {
         char[] buf = new char[] {1, 2, 3};
         BufferedReader r = new BufferedReader(new CharArrayReader(buf));
-        int n = r.read(CharBuffer.allocate(0));
-        assertEquals(0, n);
+        int n = -1;
+        try {
+            n = r.read(CharBuffer.allocate(0));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        assertEquals(n, 0);
     }
 
     private void fillBuffer(CharBuffer buffer) {

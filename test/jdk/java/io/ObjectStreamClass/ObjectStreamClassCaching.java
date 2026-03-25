@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,9 @@ import java.lang.ref.WeakReference;
 import java.io.ObjectStreamClass;
 import java.io.Serializable;
 import java.util.ArrayList;
-
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.testng.annotations.Test;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 
 /*
  * @test id=G1
@@ -37,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @bug 8277072
  * @library /test/lib/
  * @summary ObjectStreamClass caches keep ClassLoaders alive (G1 GC)
- * @run junit/othervm -Xmx64m -XX:+UseG1GC ObjectStreamClassCaching
+ * @run testng/othervm -Xmx64m -XX:+UseG1GC ObjectStreamClassCaching
  */
 
 /*
@@ -46,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @bug 8277072
  * @library /test/lib/
  * @summary ObjectStreamClass caches keep ClassLoaders alive (Parallel GC)
- * @run junit/othervm -Xmx64m -XX:+UseParallelGC ObjectStreamClassCaching
+ * @run testng/othervm -Xmx64m -XX:+UseParallelGC ObjectStreamClassCaching
  */
 
 /*
@@ -55,7 +54,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @bug 8277072 8327180
  * @library /test/lib/
  * @summary ObjectStreamClass caches keep ClassLoaders alive (ZGC)
- * @run junit/othervm -Xmx64m -XX:+UseZGC ObjectStreamClassCaching
+ * @run testng/othervm -Xmx64m -XX:+UseZGC ObjectStreamClassCaching
  */
 
 /*
@@ -64,7 +63,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @bug 8277072
  * @library /test/lib/
  * @summary ObjectStreamClass caches keep ClassLoaders alive (Shenandoah GC)
- * @run junit/othervm -Xmx64m -XX:+UseShenandoahGC ObjectStreamClassCaching
+ * @run testng/othervm -Xmx64m -XX:+UseShenandoahGC ObjectStreamClassCaching
  */
 
 /*
@@ -73,7 +72,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @bug 8277072 8327180
  * @library /test/lib/
  * @summary ObjectStreamClass caches keep ClassLoaders alive (Serial GC)
- * @run junit/othervm -Xmx64m -XX:+UseSerialGC ObjectStreamClassCaching
+ * @run testng/othervm -Xmx64m -XX:+UseSerialGC ObjectStreamClassCaching
  */
 public class ObjectStreamClassCaching {
 

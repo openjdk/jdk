@@ -334,14 +334,14 @@ public:
              type_at_tos()->is_array_klass(), "must be array type");
       pop();
     }
-    // pop_objArray and pop_typeArray narrow the tos to ciObjArrayKlass
-    // or ciTypeArrayKlass (resp.).  In the rare case that an explicit
+    // pop_objOrFlatArray and pop_typeArray narrow the tos to ciObjArrayKlass,
+    // ciFlatArrayKlass or ciTypeArrayKlass (resp.). In the rare case that an explicit
     // null is popped from the stack, we return null.  Caller beware.
-    ciObjArrayKlass* pop_objArray() {
+    ciArrayKlass* pop_objOrFlatArray() {
       ciType* array = pop_value();
       if (array == null_type())  return nullptr;
-      assert(array->is_obj_array_klass(), "must be object array type");
-      return array->as_obj_array_klass();
+      assert(array->is_obj_array_klass(), "must be an object array type");
+      return array->as_array_klass();
     }
     ciTypeArrayKlass* pop_typeArray() {
       ciType* array = pop_value();
@@ -355,7 +355,7 @@ public:
     void      do_null_assert(ciKlass* unloaded_klass);
 
     // Helper convenience routines.
-    void do_aaload(ciBytecodeStream* str);
+    void do_aload(ciBytecodeStream* str);
     void do_checkcast(ciBytecodeStream* str);
     void do_getfield(ciBytecodeStream* str);
     void do_getstatic(ciBytecodeStream* str);
@@ -851,6 +851,9 @@ public:
   Block* rpo_at(int rpo) const      { assert(0 <= rpo && rpo < block_count(), "out of bounds");
                                       return _block_map[rpo]; }
   int inc_next_pre_order()          { return _next_pre_order++; }
+
+  ciType* mark_as_early_larval(ciType* type);
+  ciType* mark_as_null_free(ciType* type);
 
 private:
   // A work list used during flow analysis.

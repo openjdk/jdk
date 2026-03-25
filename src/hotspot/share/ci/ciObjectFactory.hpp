@@ -141,6 +141,9 @@ public:
 
   ciReturnAddress* get_return_address(int bci);
 
+  ciWrapper* make_early_larval_wrapper(ciType* type);
+  ciWrapper* make_null_free_wrapper(ciType* type);
+
   GrowableArray<ciMetadata*>* get_ci_metadata() { return &_ci_metadata; }
   // RedefineClasses support
   void metadata_do(MetadataClosure* f);

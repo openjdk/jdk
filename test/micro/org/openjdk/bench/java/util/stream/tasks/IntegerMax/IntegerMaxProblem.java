@@ -30,6 +30,7 @@ public class IntegerMaxProblem {
 
     private final Integer[] data = new Integer[DATA_SIZE];
 
+    @SuppressWarnings("initialization")
     public IntegerMaxProblem() {
         // use fixed seed to reduce run-to-run variance
         Random rand = new Random(0x30052012);

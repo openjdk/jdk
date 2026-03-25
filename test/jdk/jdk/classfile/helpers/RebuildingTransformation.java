@@ -105,6 +105,7 @@ class RebuildingTransformation {
                             ici.outerClass().map(ClassEntry::asSymbol),
                             ici.innerName().map(Utf8Entry::stringValue),
                             ici.flagsMask())).toArray(InnerClassInfo[]::new)));
+                    case LoadableDescriptorsAttribute a -> clb.with(LoadableDescriptorsAttribute.of(a.loadableDescriptors()));
                     case ModuleAttribute a -> clb.with(ModuleAttribute.of(a.moduleName().asSymbol(), mob -> {
                         mob.moduleFlags(a.moduleFlagsMask());
                         a.moduleVersion().ifPresent(v -> mob.moduleVersion(v.stringValue()));

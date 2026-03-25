@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,10 @@ void* C2ParseAccess::barrier_set_state() const {
 }
 
 PhaseGVN& C2ParseAccess::gvn() const { return _kit->gvn(); }
+
+Node* C2ParseAccess::control() const {
+  return _ctl == nullptr ? _kit->control() : _ctl;
+}
 
 bool C2Access::needs_cpu_membar() const {
   bool mismatched   = (_decorators & C2_MISMATCHED) != 0;
@@ -201,7 +205,7 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
   if (access.is_parse_access()) {
     C2ParseAccess& parse_access = static_cast<C2ParseAccess&>(access);
     GraphKit* kit = parse_access.kit();
-    Node* control = control_dependent ? kit->control() : nullptr;
+    Node* control = control_dependent ? parse_access.control() : nullptr;
 
     if (immutable) {
       Compile* C = Compile::current();
@@ -758,8 +762,8 @@ Node* BarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* mem, Node* toobi
   assert(UseTLAB, "Only for TLAB enabled allocations");
 
   Node* thread = macro->transform_later(new ThreadLocalNode());
-  Node* tlab_top_adr = macro->off_heap_plus_addr(thread, in_bytes(JavaThread::tlab_top_offset()));
-  Node* tlab_end_adr = macro->off_heap_plus_addr(thread, in_bytes(JavaThread::tlab_end_offset()));
+  Node* tlab_top_adr = macro->basic_plus_adr(macro->top()/*not oop*/, thread, in_bytes(JavaThread::tlab_top_offset()));
+  Node* tlab_end_adr = macro->basic_plus_adr(macro->top()/*not oop*/, thread, in_bytes(JavaThread::tlab_end_offset()));
 
   // Load TLAB end.
   //
@@ -778,7 +782,7 @@ Node* BarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* mem, Node* toobi
   macro->transform_later(old_tlab_top);
 
   // Add to heap top to get a new TLAB top
-  Node* new_tlab_top = AddPNode::make_off_heap(old_tlab_top, size_in_bytes);
+  Node* new_tlab_top = new AddPNode(macro->top(), old_tlab_top, size_in_bytes);
   macro->transform_later(new_tlab_top);
 
   // Check against TLAB end
@@ -813,10 +817,7 @@ Node* BarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* mem, Node* toobi
   return old_tlab_top;
 }
 
-const TypeFunc* BarrierSetC2::_clone_type_Type = nullptr;
-
-void BarrierSetC2::make_clone_type() {
-  assert(BarrierSetC2::_clone_type_Type == nullptr, "should be");
+static const TypeFunc* clone_type() {
   // Create input type (domain)
   int argcnt = NOT_LP64(3) LP64_ONLY(4);
   const Type** const domain_fields = TypeTuple::fields(argcnt);
@@ -832,12 +833,7 @@ void BarrierSetC2::make_clone_type() {
   const Type** const range_fields = TypeTuple::fields(0);
   const TypeTuple* const range = TypeTuple::make(TypeFunc::Parms + 0, range_fields);
 
-  BarrierSetC2::_clone_type_Type = TypeFunc::make(domain, range);
-}
-
-inline const TypeFunc* BarrierSetC2::clone_type() {
-  assert(BarrierSetC2::_clone_type_Type != nullptr, "should be initialized");
-  return BarrierSetC2::_clone_type_Type;
+  return TypeFunc::make(domain, range);
 }
 
 #define XTOP LP64_ONLY(COMMA phase->top())
@@ -870,7 +866,7 @@ void BarrierSetC2::clone_in_runtime(PhaseMacroExpand* phase, ArrayCopyNode* ac,
                                            TypeRawPtr::BOTTOM,
                                            src, dst, full_size_in_heap_words XTOP);
   phase->transform_later(call);
-  phase->igvn().replace_node(ac, call);
+  phase->replace_node(ac, call);
 }
 
 void BarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac) const {
@@ -894,7 +890,7 @@ void BarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac
   Node* call = phase->make_leaf_call(ctrl, mem, call_type, copyfunc_addr, copyfunc_name, raw_adr_type, payload_src, payload_dst, length XTOP);
   phase->transform_later(call);
 
-  phase->igvn().replace_node(ac, call);
+  phase->replace_node(ac, call);
 }
 
 #undef XTOP

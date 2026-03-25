@@ -53,6 +53,7 @@ public class LoggingRuntimeMicros {
         private final java.util.logging.Logger logger;
         private volatile LogRecord record;
 
+        @SuppressWarnings("initialization")
         public TestHandler() {
             // Each instance uses its own logger
             logger = java.util.logging.Logger.getLogger("StackWalkBench" + serialNum.incrementAndGet());

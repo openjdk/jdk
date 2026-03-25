@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,7 +264,8 @@ public abstract class SunDragSourceContextPeer implements DragSourceContextPeer 
                                     modifiers, x, y);
         EventDispatcher dispatcher = new EventDispatcher(dispatchType, event);
 
-        SunToolkit.invokeLater(dispatcher);
+        SunToolkit.invokeLaterOnAppContext(
+            SunToolkit.targetToAppContext(getComponent()), dispatcher);
 
         startSecondaryEventLoop();
     }
@@ -309,7 +310,8 @@ public abstract class SunDragSourceContextPeer implements DragSourceContextPeer 
         EventDispatcher dispatcher =
             new EventDispatcher(DISPATCH_EXIT, event);
 
-        SunToolkit.invokeLater(dispatcher);
+        SunToolkit.invokeLaterOnAppContext(
+            SunToolkit.targetToAppContext(getComponent()), dispatcher);
 
         startSecondaryEventLoop();
     }
@@ -339,7 +341,8 @@ public abstract class SunDragSourceContextPeer implements DragSourceContextPeer 
         EventDispatcher dispatcher =
             new EventDispatcher(DISPATCH_FINISH, event);
 
-        SunToolkit.invokeLater(dispatcher);
+        SunToolkit.invokeLaterOnAppContext(
+            SunToolkit.targetToAppContext(getComponent()), dispatcher);
 
         startSecondaryEventLoop();
         setNativeContext(0);

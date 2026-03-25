@@ -24,8 +24,10 @@
 
 #include "memory/allocation.inline.hpp"
 #include "oops/constantPool.hpp"
+#include "oops/inlineKlass.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.hpp"
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 package jdk.vm.ci.hotspot;
+
+import jdk.internal.misc.PreviewFeatures;
 
 import static java.lang.reflect.Modifier.ABSTRACT;
 import static java.lang.reflect.Modifier.FINAL;
@@ -53,7 +55,8 @@ public class HotSpotModifiers {
     // @formatter:on
 
     public static int jvmClassModifiers() {
-        return PUBLIC | FINAL | INTERFACE | ABSTRACT | ANNOTATION | ENUM | SYNTHETIC;
+        return PUBLIC | FINAL | INTERFACE | ABSTRACT | ANNOTATION | ENUM | SYNTHETIC |
+                (PreviewFeatures.isEnabled() ? 0x0020 : 0); // ACC_IDENTITY temp constant to avoid preview dependency
     }
 
     public static int jvmMethodModifiers() {

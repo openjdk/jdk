@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,9 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/objLayout.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
+#include "oops/refArrayKlass.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "prims/resolvedMethodTable.hpp"
 #include "runtime/arguments.hpp"
@@ -113,10 +115,12 @@ static LatestMethodCache _loader_addClass_cache;            // ClassLoader.addCl
 static LatestMethodCache _throw_illegal_access_error_cache; // Unsafe.throwIllegalAccessError()
 static LatestMethodCache _throw_no_such_method_error_cache; // Unsafe.throwNoSuchMethodError()
 static LatestMethodCache _do_stack_walk_cache;              // AbstractStackWalker.doStackWalk()
+static LatestMethodCache _is_substitutable_cache;           // ValueObjectMethods.isSubstitutable()
+static LatestMethodCache _value_object_hash_code_cache;     // ValueObjectMethods.valueObjectHashCode()
 
 // Known objects
 TypeArrayKlass* Universe::_typeArrayKlasses[T_LONG+1] = { nullptr /*, nullptr...*/ };
-ObjArrayKlass* Universe::_objectArrayKlass            = nullptr;
+RefArrayKlass* Universe::_objectArrayKlass            = nullptr;
 Klass* Universe::_fillerArrayKlass                    = nullptr;
 OopHandle Universe::_basic_type_mirrors[T_VOID+1];
 #if INCLUDE_CDS_JAVA_HEAP
@@ -391,7 +395,7 @@ static void initialize_basic_type_klass(Klass* k, TRAPS) {
     if (k->is_instance_klass()) {
       InstanceKlass::cast(k)->restore_unshareable_info(loader_data, Handle(), nullptr, CHECK);
     } else {
-      ArrayKlass::cast(k)->restore_unshareable_info(loader_data, Handle(), CHECK);
+      TypeArrayKlass::cast(k)->restore_unshareable_info(loader_data, Handle(), CHECK);
     }
   } else
 #endif
@@ -509,16 +513,13 @@ void Universe::genesis(TRAPS) {
   // SystemDictionary::initialize(CHECK); is run. See the extra check
   // for Object_klass_is_loaded in ObjArrayKlass::allocate_objArray_klass.
   {
-    Klass* oak = vmClasses::Object_klass()->array_klass(CHECK);
-    _objectArrayKlass = ObjArrayKlass::cast(oak);
+    ArrayKlass* oak = vmClasses::Object_klass()->array_klass(CHECK);
+    oak->append_to_sibling_list();
+
+    // Create a RefArrayKlass (which is the default) and initialize.
+    ObjArrayKlass* rak = ObjArrayKlass::cast(oak)->klass_with_properties(ArrayProperties::Default(), CHECK);
+    _objectArrayKlass = RefArrayKlass::cast(rak);
   }
-  // OLD
-  // Add the class to the class hierarchy manually to make sure that
-  // its vtable is initialized after core bootstrapping is completed.
-  // ---
-  // New
-  // Have already been initialized.
-  _objectArrayKlass->append_to_sibling_list();
 
   #ifdef ASSERT
   if (FullGCALot) {
@@ -653,6 +654,9 @@ static void reinitialize_vtables() {
     Klass* sub = iter.klass();
     sub->vtable().initialize_vtable();
   }
+
+  // This isn't added to the subclass list, so need to reinitialize vtables directly.
+  Universe::objectArrayKlass()->vtable().initialize_vtable();
 }
 
 static void reinitialize_itables() {
@@ -676,11 +680,11 @@ bool Universe::on_page_boundary(void* addr) {
 }
 
 // the array of preallocated errors with backtraces
-objArrayOop Universe::preallocated_out_of_memory_errors() {
-  return (objArrayOop)_preallocated_out_of_memory_error_array.resolve();
+refArrayOop Universe::preallocated_out_of_memory_errors() {
+  return oop_cast<refArrayOop>(_preallocated_out_of_memory_error_array.resolve());
 }
 
-objArrayOop Universe::out_of_memory_errors() { return (objArrayOop)_out_of_memory_errors.resolve(); }
+refArrayOop Universe::out_of_memory_errors() { return oop_cast<refArrayOop>(_out_of_memory_errors.resolve()); }
 
 oop Universe::out_of_memory_error_java_heap() {
   return gen_out_of_memory_error(out_of_memory_errors()->obj_at(_oom_java_heap));
@@ -725,7 +729,7 @@ bool Universe::should_fill_in_stack_trace(Handle throwable) {
   // preallocated errors with backtrace have been consumed. Also need to avoid
   // a potential loop which could happen if an out of memory occurs when attempting
   // to allocate the backtrace.
-  objArrayOop preallocated_oom = out_of_memory_errors();
+  refArrayOop preallocated_oom = out_of_memory_errors();
   for (int i = 0; i < _oom_count; i++) {
     if (throwable() == preallocated_oom->obj_at(i)) {
       return false;
@@ -785,8 +789,8 @@ bool Universe::is_out_of_memory_error_class_metaspace(oop ex_obj) {
 // Setup preallocated OutOfMemoryError errors
 void Universe::create_preallocated_out_of_memory_errors(TRAPS) {
   InstanceKlass* ik = vmClasses::OutOfMemoryError_klass();
-  objArrayOop oa = oopFactory::new_objArray(ik, _oom_count, CHECK);
-  objArrayHandle oom_array(THREAD, oa);
+  refArrayOop ra = oopFactory::new_refArray(ik, _oom_count, CHECK);
+  refArrayHandle oom_array(THREAD, ra);
 
   for (int i = 0; i < _oom_count; i++) {
     oop oom_obj = ik->allocate_instance(CHECK);
@@ -819,9 +823,9 @@ void Universe::create_preallocated_out_of_memory_errors(TRAPS) {
 
   // Setup the array of errors that have preallocated backtrace
   int len = (StackTraceInThrowable) ? (int)PreallocatedOutOfMemoryErrorCount : 0;
-  objArrayOop instance = oopFactory::new_objArray(ik, len, CHECK);
+  refArrayOop instance = oopFactory::new_refArray(ik, len, CHECK);
   _preallocated_out_of_memory_error_array = OopHandle(vm_global(), instance);
-  objArrayHandle preallocated_oom_array(THREAD, instance);
+  refArrayHandle preallocated_oom_array(THREAD, instance);
 
   for (int i=0; i<len; i++) {
     oop err = ik->allocate_instance(CHECK);
@@ -1077,11 +1081,13 @@ Method* LatestMethodCache::get_method() {
   }
 }
 
-Method* Universe::finalizer_register_method()     { return _finalizer_register_cache.get_method(); }
-Method* Universe::loader_addClass_method()        { return _loader_addClass_cache.get_method(); }
-Method* Universe::throw_illegal_access_error()    { return _throw_illegal_access_error_cache.get_method(); }
-Method* Universe::throw_no_such_method_error()    { return _throw_no_such_method_error_cache.get_method(); }
-Method* Universe::do_stack_walk_method()          { return _do_stack_walk_cache.get_method(); }
+Method* Universe::finalizer_register_method()        { return _finalizer_register_cache.get_method(); }
+Method* Universe::loader_addClass_method()           { return _loader_addClass_cache.get_method(); }
+Method* Universe::throw_illegal_access_error()       { return _throw_illegal_access_error_cache.get_method(); }
+Method* Universe::throw_no_such_method_error()       { return _throw_no_such_method_error_cache.get_method(); }
+Method* Universe::do_stack_walk_method()             { return _do_stack_walk_cache.get_method(); }
+Method* Universe::is_substitutable_method()          { return _is_substitutable_cache.get_method(); }
+Method* Universe::value_object_hash_code_method()    { return _value_object_hash_code_cache.get_method(); }
 
 void Universe::initialize_known_methods(JavaThread* current) {
   // Set up static method for registering finalizers
@@ -1111,6 +1117,17 @@ void Universe::initialize_known_methods(JavaThread* current) {
                           vmClasses::AbstractStackWalker_klass(),
                           "doStackWalk",
                           vmSymbols::doStackWalk_signature(), false);
+
+  // Set up substitutability testing
+  ResourceMark rm(current);
+  _is_substitutable_cache.init(current,
+                          vmClasses::ValueObjectMethods_klass(),
+                          vmSymbols::isSubstitutable_name()->as_C_string(),
+                          vmSymbols::object_object_boolean_signature(), true);
+  _value_object_hash_code_cache.init(current,
+                          vmClasses::ValueObjectMethods_klass(),
+                          vmSymbols::valueObjectHashCode_name()->as_C_string(),
+                          vmSymbols::object_int_signature(), true);
 }
 
 void universe2_init() {

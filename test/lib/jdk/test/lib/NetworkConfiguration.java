@@ -57,6 +57,7 @@ public class NetworkConfiguration {
     private boolean has_linklocaladdress = false;
     private boolean has_globaladdress = false;
 
+    @SuppressWarnings("initialization")
     private NetworkConfiguration(
             Map<NetworkInterface,List<Inet4Address>> ip4Interfaces,
             Map<NetworkInterface,List<Inet6Address>> ip6Interfaces) {

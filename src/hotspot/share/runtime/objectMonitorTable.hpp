@@ -27,7 +27,6 @@
 
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/sizes.hpp"
 
@@ -45,7 +44,7 @@ public:
   class Table;
 
 private:
-  static Atomic<Table*> _curr;
+  static Table* volatile _curr;
   static Table* grow_table(Table* curr);
 
   enum class Entry : uintptr_t {

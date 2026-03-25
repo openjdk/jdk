@@ -1230,10 +1230,10 @@ void klassItable::initialize_itable_and_check_constraints(TRAPS) {
 }
 
 inline bool interface_method_needs_itable_index(Method* m) {
-  if (m->is_static())             return false; // e.g., Stream.empty
-  if (m->is_object_initializer()) return false; // <init>
-  if (m->is_static_initializer()) return false; // <clinit>
-  if (m->is_private())            return false; // uses direct call
+  if (m->is_static())             return false;   // e.g., Stream.empty
+  if (m->is_private())            return false;   // uses direct call
+  if (m->is_object_constructor()) return false;   // <init>(...)V
+  if (m->is_class_initializer())  return false;   // <clinit>()V
   // If an interface redeclares a method from java.lang.Object,
   // it should already have a vtable index, don't touch it.
   // e.g., CharSequence.toString (from initialize_vtable)
@@ -1439,6 +1439,18 @@ class InterfaceVisiterClosure : public StackObj {
  public:
   virtual void doit(InstanceKlass* intf, int method_count) = 0;
 };
+
+int count_interface_methods_needing_itable_index(Array<Method*>* methods) {
+  int method_count = 0;
+  if (methods->length() > 0) {
+    for (int i = methods->length(); --i >= 0; ) {
+      if (interface_method_needs_itable_index(methods->at(i))) {
+        method_count++;
+      }
+    }
+  }
+  return method_count;
+}
 
 // Visit all interfaces with at least one itable method
 static void visit_all_interfaces(Array<InstanceKlass*>* transitive_intf, InterfaceVisiterClosure *blk) {

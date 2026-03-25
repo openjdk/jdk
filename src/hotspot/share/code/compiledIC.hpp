@@ -109,8 +109,8 @@ private:
   bool is_speculated_klass(Klass* receiver_klass);
 
   // Inline cache states
-  void set_to_monomorphic();
-  void set_to_megamorphic(CallInfo* call_info);
+  void set_to_monomorphic(bool caller_is_c1);
+  void set_to_megamorphic(CallInfo* call_info, bool caller_is_c1);
 
 public:
   // conversion (machine PC to CompiledIC*)
@@ -131,7 +131,7 @@ public:
   // MT-safe patching of inline caches. Note: Only safe to call is_xxx when holding the CompiledICLocker
   // so you are guaranteed that no patching takes place. The same goes for verify.
   void set_to_clean();
-  void update(CallInfo* call_info, Klass* receiver_klass);
+  void update(CallInfo* call_info, Klass* receiver_klass, bool caller_is_c1);
 
   // GC support
   void clean_metadata();
@@ -158,7 +158,7 @@ CompiledIC* CompiledIC_at(RelocIterator* reloc_iter);
 //           -----<----- Clean ----->-----
 //          /                             \
 //         /                               \
-//    compilled code <------------> interpreted code
+//    compiled code <------------> interpreted code
 //
 //  Clean:            Calls directly to runtime method for fixup
 //  Compiled code:    Calls directly to compiled code
@@ -213,7 +213,7 @@ private:
   // Clean static call (will force resolving on next use)
   void set_to_clean();
 
-  void set(const methodHandle& callee_method);
+  void set(const methodHandle& callee_method, bool caller_is_c1);
 
   // State
   bool is_clean() const;

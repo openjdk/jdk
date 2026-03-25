@@ -57,6 +57,7 @@ private:
   uint64_t  _allocated_before_last_gc;           // total bytes allocated up until the last gc
 
   static size_t   _max_size;                          // maximum size of any TLAB
+  static int      _reserve_for_allocation_prefetch;   // Reserve at the end of the TLAB
   static unsigned _target_refills;                    // expected number of refills between GCs
 
   unsigned  _number_of_refills;
@@ -182,7 +183,7 @@ private:
   static PerfVariable* _perf_allocating_threads;
   static PerfVariable* _perf_total_refills;
   static PerfVariable* _perf_max_refills;
-  static PerfVariable* _perf_total_allocated_size;
+  static PerfVariable* _perf_total_allocations;
   static PerfVariable* _perf_total_gc_waste;
   static PerfVariable* _perf_max_gc_waste;
   static PerfVariable* _perf_total_refill_waste;
@@ -195,7 +196,7 @@ private:
   unsigned int _allocating_threads;
   unsigned int _total_refills;
   unsigned int _max_refills;
-  size_t       _total_allocated_size;
+  size_t       _total_allocations;
   size_t       _total_gc_waste;
   size_t       _max_gc_waste;
   size_t       _total_refill_waste;
@@ -210,7 +211,7 @@ public:
   ThreadLocalAllocStats();
 
   void update_fast_allocations(unsigned int refills,
-                               size_t allocated_size,
+                               size_t allocations,
                                size_t gc_waste,
                                size_t refill_waste);
   void update_slow_allocations(unsigned int allocations);

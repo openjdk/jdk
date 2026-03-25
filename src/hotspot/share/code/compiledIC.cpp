@@ -201,7 +201,7 @@ void CompiledIC::set_to_clean() {
   _call->set_destination_mt_safe(SharedRuntime::get_resolve_virtual_call_stub());
 }
 
-void CompiledIC::set_to_monomorphic() {
+void CompiledIC::set_to_monomorphic(bool caller_is_c1) {
   assert(data()->is_initialized(), "must be initialized");
   Method* method = data()->speculated_method();
   nmethod* code = method->code();
@@ -209,9 +209,9 @@ void CompiledIC::set_to_monomorphic() {
   bool to_compiled = code != nullptr && code->is_in_use() && !code->is_unloading();
 
   if (to_compiled) {
-    entry = code->entry_point();
+    entry = caller_is_c1 ? code->inline_entry_point() : code->entry_point();
   } else {
-    entry = method->get_c2i_unverified_entry();
+    entry = caller_is_c1 ? method->get_c2i_unverified_inline_entry() : method->get_c2i_unverified_entry();
   }
 
   log_trace(inlinecache)("IC@" INTPTR_FORMAT ": monomorphic to %s: %s",
@@ -222,7 +222,7 @@ void CompiledIC::set_to_monomorphic() {
   _call->set_destination_mt_safe(entry);
 }
 
-void CompiledIC::set_to_megamorphic(CallInfo* call_info) {
+void CompiledIC::set_to_megamorphic(CallInfo* call_info, bool caller_is_c1) {
   assert(data()->is_initialized(), "must be initialized");
 
   address entry;
@@ -233,7 +233,7 @@ void CompiledIC::set_to_megamorphic(CallInfo* call_info) {
     return;
   } else if (call_info->call_kind() == CallInfo::itable_call) {
     int itable_index = call_info->itable_index();
-    entry = VtableStubs::find_itable_stub(itable_index);
+    entry = VtableStubs::find_itable_stub(itable_index, caller_is_c1);
     if (entry == nullptr) {
       return;
     }
@@ -249,7 +249,7 @@ void CompiledIC::set_to_megamorphic(CallInfo* call_info) {
     // Can be different than selected_method->vtable_index(), due to package-private etc.
     int vtable_index = call_info->vtable_index();
     assert(call_info->resolved_klass()->verify_vtable_index(vtable_index), "sanity check");
-    entry = VtableStubs::find_vtable_stub(vtable_index);
+    entry = VtableStubs::find_vtable_stub(vtable_index, caller_is_c1);
     if (entry == nullptr) {
       return;
     }
@@ -263,7 +263,7 @@ void CompiledIC::set_to_megamorphic(CallInfo* call_info) {
   assert(is_megamorphic(), "sanity check");
 }
 
-void CompiledIC::update(CallInfo* call_info, Klass* receiver_klass) {
+void CompiledIC::update(CallInfo* call_info, Klass* receiver_klass, bool caller_is_c1) {
   // If this is the first time we fix the inline cache, we ensure it's initialized
   ensure_initialized(call_info, receiver_klass);
 
@@ -275,11 +275,11 @@ void CompiledIC::update(CallInfo* call_info, Klass* receiver_klass) {
   if (is_speculated_klass(receiver_klass)) {
     // If the speculated class matches the receiver klass, we can speculate that will
     // continue to be the case with a monomorphic inline cache
-    set_to_monomorphic();
+    set_to_monomorphic(caller_is_c1);
   } else {
     // If the dynamic type speculation fails, we try to transform to a megamorphic state
     // for the inline cache using stubs to dispatch in tables
-    set_to_megamorphic(call_info);
+    set_to_megamorphic(call_info, caller_is_c1);
   }
 }
 
@@ -344,7 +344,7 @@ void CompiledDirectCall::set_to_clean() {
   log_debug(inlinecache)("DC@" INTPTR_FORMAT ": set to clean", p2i(_call->instruction_address()));
 }
 
-void CompiledDirectCall::set(const methodHandle& callee_method) {
+void CompiledDirectCall::set(const methodHandle& callee_method, bool caller_is_c1) {
   nmethod* code = callee_method->code();
   nmethod* caller = CodeCache::find_nmethod(instruction_address());
   assert(caller != nullptr, "did not find caller nmethod");
@@ -355,13 +355,13 @@ void CompiledDirectCall::set(const methodHandle& callee_method) {
   bool to_compiled = !to_interp_cont_enter && code != nullptr && code->is_in_use() && !code->is_unloading();
 
   if (to_compiled) {
-    _call->set_destination_mt_safe(code->verified_entry_point());
+    _call->set_destination_mt_safe(caller_is_c1 ? code->verified_inline_entry_point() : code->verified_entry_point());
     assert(is_call_to_compiled(), "should be compiled after set to compiled");
   } else {
     // Patch call site to C2I adapter if code is deoptimized or unloaded.
     // We also need to patch the static call stub to set the rmethod register
     // to the callee_method so the c2i adapter knows how to build the frame
-    set_to_interpreted(callee_method, callee_method->get_c2i_entry());
+    set_to_interpreted(callee_method, caller_is_c1 ? callee_method->get_c2i_inline_entry() : callee_method->get_c2i_entry());
     assert(is_call_to_interpreted(), "should be interpreted after set to interpreted");
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,10 @@
 
 package javax.xml.transform.ptests;
 
-import org.junit.jupiter.api.Test;
-import org.w3c.dom.Document;
+import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -33,16 +35,15 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
 
-import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
+import org.testng.annotations.Test;
+import org.w3c.dom.Document;
 
 /*
  * @test
  * @bug 6384418
  * @library /javax/xml/jaxp/libs
- * @run junit/othervm javax.xml.transform.ptests.Bug6384418Test
+ * @run testng/othervm javax.xml.transform.ptests.Bug6384418Test
  * @summary verify the transforming won't throw any exception
  */
 public class Bug6384418Test {

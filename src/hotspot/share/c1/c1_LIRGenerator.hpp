@@ -169,6 +169,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 #endif
   BitMap2D      _vreg_flags; // flags which can be set on a per-vreg basis
   LIR_List*     _lir;
+  bool          _in_conditional_code;
 
   LIRGenerator* gen() {
     return this;
@@ -195,6 +196,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 
   friend class PhiResolver;
 
+  void set_in_conditional_code(bool v);
  public:
   // unified bailout support
   void bailout(const char* msg) const            { compilation()->bailout(msg); }
@@ -214,6 +216,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   LIR_Opr load_constant(Constant* x);
   LIR_Opr load_constant(LIR_Const* constant);
 
+  bool in_conditional_code() { return _in_conditional_code; }
   // Given an immediate value, return an operand usable in logical ops.
   LIR_Opr load_immediate(jlong x, BasicType type);
 
@@ -272,6 +275,19 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void do_vectorizedMismatch(Intrinsic* x);
   void do_blackhole(Intrinsic* x);
 
+  void access_flat_array(bool is_load, LIRItem& array, LIRItem& index, LIRItem& obj_item, ciField* field = nullptr, size_t offset = 0);
+  void access_sub_element(LIRItem& array, LIRItem& index, LIR_Opr& result, ciField* field, size_t sub_offset);
+  LIR_Opr get_and_load_element_address(LIRItem& array, LIRItem& index);
+  bool needs_flat_array_store_check(StoreIndexed* x);
+  void check_flat_array(LIR_Opr array, LIR_Opr value, CodeStub* slow_path);
+  bool needs_null_free_array_store_check(StoreIndexed* x);
+  void check_null_free_array(LIRItem& array, LIRItem& value,  CodeEmitInfo* info);
+  void substitutability_check(IfOp* x, LIRItem& left, LIRItem& right, LIRItem& t_val, LIRItem& f_val);
+  void substitutability_check(If* x, LIRItem& left, LIRItem& right);
+  void substitutability_check_common(Value left_val, Value right_val, LIRItem& left, LIRItem& right,
+                                     LIR_Opr equal_result, LIR_Opr not_equal_result, LIR_Opr result, CodeEmitInfo* info);
+  void init_temps_for_substitutability_check(LIR_Opr& tmp1, LIR_Opr& tmp2);
+
  public:
   LIR_Opr call_runtime(BasicTypeArray* signature, LIRItemList* args, address entry, ValueType* result_type, CodeEmitInfo* info);
   LIR_Opr call_runtime(BasicTypeArray* signature, LIR_OprList* args, address entry, ValueType* result_type, CodeEmitInfo* info);
@@ -288,7 +304,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
  public:
   void access_store_at(DecoratorSet decorators, BasicType type,
                        LIRItem& base, LIR_Opr offset, LIR_Opr value,
-                       CodeEmitInfo* patch_info = nullptr, CodeEmitInfo* store_emit_info = nullptr);
+                       CodeEmitInfo* patch_info = nullptr, CodeEmitInfo* store_emit_info = nullptr, ciInlineKlass* vk = nullptr);
 
   void access_load_at(DecoratorSet decorators, BasicType type,
                       LIRItem& base, LIR_Opr offset, LIR_Opr result,
@@ -325,7 +341,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 
   LIRItemList* invoke_visit_arguments(Invoke* x);
   void invoke_load_arguments(Invoke* x, LIRItemList* args, const LIR_OprList* arg_list);
-
+  void invoke_load_one_argument(LIRItem* param, LIR_Opr loc);
   void trace_block_entry(BlockBegin* block);
 
   // volatile field operations are never patchable because a klass
@@ -361,10 +377,10 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 
   void logic_op   (Bytecodes::Code code, LIR_Opr dst_reg, LIR_Opr left, LIR_Opr right);
 
-  void monitor_enter (LIR_Opr object, LIR_Opr lock, LIR_Opr hdr, LIR_Opr scratch, int monitor_no, CodeEmitInfo* info_for_exception, CodeEmitInfo* info);
+  void monitor_enter (LIR_Opr object, LIR_Opr lock, LIR_Opr hdr, LIR_Opr scratch, int monitor_no, CodeEmitInfo* info_for_exception, CodeEmitInfo* info, CodeStub* throw_ie_stub);
   void monitor_exit  (LIR_Opr object, LIR_Opr lock, LIR_Opr hdr, LIR_Opr scratch, int monitor_no);
 
-  void new_instance    (LIR_Opr  dst, ciInstanceKlass* klass, bool is_unresolved, LIR_Opr  scratch1, LIR_Opr  scratch2, LIR_Opr  scratch3,  LIR_Opr scratch4, LIR_Opr  klass_reg, CodeEmitInfo* info);
+  void new_instance(LIR_Opr dst, ciInstanceKlass* klass, bool is_unresolved, bool allow_inline, LIR_Opr scratch1, LIR_Opr scratch2, LIR_Opr scratch3, LIR_Opr scratch4, LIR_Opr klass_reg, CodeEmitInfo* info);
 
   // machine dependent
   void cmp_mem_int(LIR_Condition condition, LIR_Opr base, int disp, int c, CodeEmitInfo* info);
@@ -476,6 +492,11 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void profile_arguments(ProfileCall* x);
   void profile_parameters(Base* x);
   void profile_parameters_at_call(ProfileCall* x);
+  void profile_flags(ciMethodData* md, ciProfileData* load_store, int flag, LIR_Condition condition = lir_cond_always);
+  void profile_null_free_array(LIRItem array, ciMethodData* md, ciProfileData* load_store);
+  template <class ArrayData> void profile_array_type(AccessIndexed* x, ciMethodData*& md, ArrayData*& load_store);
+  void profile_element_type(Value element, ciMethodData* md, ciArrayLoadData* load_store);
+  bool profile_inline_klass(ciMethodData* md, ciProfileData* data, Value value, int flag);
   LIR_Opr mask_boolean(LIR_Opr array, LIR_Opr value, CodeEmitInfo*& null_check_info);
 
  public:
@@ -503,6 +524,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
     , _method(method)
     , _virtual_register_number(LIR_Opr::vreg_base)
     , _vreg_flags(num_vreg_flags)
+    , _in_conditional_code(false)
     , _barrier_set(BarrierSet::barrier_set()->barrier_set_c1()) {
   }
 
@@ -584,6 +606,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   virtual void do_ProfileCall    (ProfileCall*     x);
   virtual void do_ProfileReturnType (ProfileReturnType* x);
   virtual void do_ProfileInvoke  (ProfileInvoke*   x);
+  virtual void do_ProfileACmpTypes(ProfileACmpTypes* x);
   virtual void do_RuntimeCall    (RuntimeCall*     x);
   virtual void do_MemBar         (MemBar*          x);
   virtual void do_RangeCheckPredicate(RangeCheckPredicate* x);

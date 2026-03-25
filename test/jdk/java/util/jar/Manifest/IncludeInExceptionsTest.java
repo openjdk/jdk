@@ -21,6 +21,9 @@
  * questions.
  */
 
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -31,23 +34,17 @@ import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.stream.Stream;
 
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
-
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
-import static sun.security.util.SecurityProperties.INCLUDE_JAR_NAME_IN_EXCEPTIONS;
 
 /*
  * @test
  * @bug 8216362
- * @summary Verify that the property jdk.includeInExceptions works as expected
- *          when an error occurs while reading an invalid Manifest file.
- * @modules java.base/sun.security.util
  * @run junit/othervm -Djdk.includeInExceptions=jar IncludeInExceptionsTest
- * @run junit/othervm -Djdk.includeInExceptions= IncludeInExceptionsTest
  * @run junit/othervm IncludeInExceptionsTest
+ * @summary Verify that the property jdk.includeInExceptions works as expected
+ * when an error occurs while reading an invalid Manifest file.
  */
 
 /*
@@ -55,6 +52,8 @@ import static sun.security.util.SecurityProperties.INCLUDE_JAR_NAME_IN_EXCEPTION
  * @see Manifest#getErrorPosition
  */
 public class IncludeInExceptionsTest {
+
+    private static final boolean includeInExceptions = System.getProperty("jdk.includeInExceptions") != null;
 
     static final String FILENAME = "Unique-Filename-Expected-In_Msg.jar";
 
@@ -80,9 +79,9 @@ public class IncludeInExceptionsTest {
     void testInvalidManifest(Callable<?> attempt) {
         var ioException = assertThrows(IOException.class, attempt::call);
         boolean foundFileName = ioException.getMessage().contains(FILENAME);
-        if (INCLUDE_JAR_NAME_IN_EXCEPTIONS && !foundFileName) {
+        if (includeInExceptions && !foundFileName) {
             fail("JAR file name expected but not found in error message");
-        } else if (foundFileName && !INCLUDE_JAR_NAME_IN_EXCEPTIONS) {
+        } else if (foundFileName && !includeInExceptions) {
             fail("JAR file name found but should not be in error message");
         }
     }
@@ -97,3 +96,4 @@ public class IncludeInExceptionsTest {
         );
     }
 }
+

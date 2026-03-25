@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.lang.classfile.AttributeMapper.AttributeStability;
 import java.lang.classfile.attribute.*;
 
 import jdk.internal.classfile.impl.AbstractAttributeMapper.*;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Attribute mappers for predefined (JVMS {@jvms 4.7}) and JDK-specific
@@ -80,6 +81,14 @@ public final class Attributes {
 
     /** LineNumberTable */
     public static final String NAME_LINE_NUMBER_TABLE = "LineNumberTable";
+
+    /**
+     * LoadableDescriptors
+     *
+     * @since Valhalla
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.VALUE_OBJECTS, reflective = true)
+    public static final String NAME_LOADABLE_DESCRIPTORS = "LoadableDescriptors";
 
     /** LocalVariableTable */
     public static final String NAME_LOCAL_VARIABLE_TABLE = "LocalVariableTable";
@@ -243,6 +252,16 @@ public final class Attributes {
      */
     public static AttributeMapper<LineNumberTableAttribute> lineNumberTable() {
         return LineNumberTableMapper.INSTANCE;
+    }
+
+    /**
+     * {@return the mapper for the {@code LoadableDescriptors} attribute}
+     *
+     * @since Valhalla
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.VALUE_OBJECTS, reflective = true)
+    public static AttributeMapper<LoadableDescriptorsAttribute> loadableDescriptors() {
+        return LoadableDescriptorsMapper.INSTANCE;
     }
 
     /**

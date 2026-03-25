@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,25 @@
  *
  */
 
+#include "ci/ciConstant.hpp"
 #include "ci/ciField.hpp"
+#include "ci/ciInlineKlass.hpp"
 #include "ci/ciInstanceKlass.hpp"
+#include "ci/ciSymbol.hpp"
 #include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmClasses.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "jvm_io.h"
 #include "oops/klass.inline.hpp"
+#include "oops/layoutKind.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/reflection.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // ciField
 //
@@ -70,7 +76,7 @@
 // ------------------------------------------------------------------
 // ciField::ciField
 ciField::ciField(ciInstanceKlass* klass, int index, Bytecodes::Code bc) :
-    _known_to_link_with_put(nullptr), _known_to_link_with_get(nullptr) {
+  _original_holder(nullptr), _is_flat(false), _known_to_link_with_put(nullptr), _known_to_link_with_get(nullptr) {
   ASSERT_IN_VM;
   CompilerThread *THREAD = CompilerThread::current();
 
@@ -101,6 +107,9 @@ ciField::ciField(ciInstanceKlass* klass, int index, Bytecodes::Code bc) :
   } else {
     _type = ciType::make(field_type);
   }
+
+  _is_null_free = false;
+  _null_marker_offset = -1;
 
   // Get the field's declared holder.
   //
@@ -213,6 +222,63 @@ ciField::ciField(fieldDescriptor *fd) :
          "bootstrap classes must not create & cache unshared fields");
 }
 
+// Special copy constructor used to flatten inline type fields by
+// copying the fields of the inline type to a new holder klass.
+ciField::ciField(ciField* declared_field, ciField* subfield) {
+  assert(subfield->holder()->is_inlinetype() || subfield->holder()->is_abstract(), "should only be used for inline type field flattening");
+  assert(!subfield->is_flat(), "subfield must not be flat");
+  assert(declared_field->is_flat(), "declared field must be flat");
+
+  _flags = declared_field->flags();
+  _holder = declared_field->holder();
+  _offset = declared_field->offset_in_bytes() + (subfield->offset_in_bytes() - declared_field->type()->as_inline_klass()->payload_offset());
+
+  char buffer[256];
+  jio_snprintf(buffer, sizeof(buffer), "%s.%s", declared_field->name()->as_utf8(), subfield->name()->as_utf8());
+  _name = ciSymbol::make(buffer);
+
+  _signature = subfield->_signature;
+  _type = subfield->_type;
+  _is_constant = (declared_field->is_strict() && declared_field->is_final()) || declared_field->is_constant();
+  _known_to_link_with_put = subfield->_known_to_link_with_put;
+  _known_to_link_with_get = subfield->_known_to_link_with_get;
+  _constant_value = ciConstant();
+
+  _is_flat = false;
+  _is_null_free = false;
+  _null_marker_offset = -1;
+  _original_holder = (subfield->_original_holder != nullptr) ? subfield->_original_holder : subfield->_holder;
+  _layout_kind = LayoutKind::UNKNOWN;
+}
+
+// Constructor for the ciField of a null marker
+ciField::ciField(ciField* declared_field) {
+  assert(declared_field->is_flat(), "declared field must be flat");
+  assert(!declared_field->is_null_free(), "must have a null marker");
+
+  _flags = declared_field->flags();
+  _holder = declared_field->holder();
+  _offset = declared_field->null_marker_offset();
+
+  char buffer[256];
+  jio_snprintf(buffer, sizeof(buffer), "%s.$nullMarker$", declared_field->name()->as_utf8());
+  _name = ciSymbol::make(buffer);
+
+  _signature = ciSymbols::bool_signature();
+  _type = ciType::make(T_BOOLEAN);
+
+  _is_constant = (declared_field->is_strict() && declared_field->is_final()) || declared_field->is_constant();
+  _known_to_link_with_put = nullptr;
+  _known_to_link_with_get = nullptr;
+  _constant_value = ciConstant();
+
+  _is_flat = false;
+  _is_null_free = false;
+  _null_marker_offset = -1;
+  _original_holder = nullptr;
+  _layout_kind = LayoutKind::UNKNOWN;
+}
+
 static bool trust_final_nonstatic_fields(ciInstanceKlass* holder) {
   if (holder == nullptr)
     return false;
@@ -231,6 +297,9 @@ static bool trust_final_nonstatic_fields(ciInstanceKlass* holder) {
   // can't be serialized, so there is no hacking of finals going on with them.
   if (holder->is_hidden())
     return true;
+  // Trust final fields in inline type buffers
+  if (holder->is_inlinetype())
+    return true;
   // Trust final fields in records
   if (holder->is_record())
     return true;
@@ -241,9 +310,19 @@ void ciField::initialize_from(fieldDescriptor* fd) {
   // Get the flags, offset, and canonical holder of the field.
   _flags = ciFlags(fd->access_flags(), fd->field_flags().is_stable(), fd->field_status().is_initialized_final_update());
   _offset = fd->offset();
-  Klass* field_holder = fd->field_holder();
+  InstanceKlass* field_holder = fd->field_holder();
   assert(field_holder != nullptr, "null field_holder");
   _holder = CURRENT_ENV->get_instance_klass(field_holder);
+  _is_flat = fd->is_flat();
+  _is_null_free = fd->is_null_free_inline_type();
+  if (fd->has_null_marker()) {
+    InlineLayoutInfo* li = field_holder->inline_layout_info_adr(fd->index());
+    _null_marker_offset = li->null_marker_offset();
+  } else {
+    _null_marker_offset = -1;
+  }
+  _original_holder = nullptr;
+  _layout_kind = fd->is_flat() ? fd->layout_kind() : LayoutKind::UNKNOWN;
 
   // Check to see if the field is constant.
   Klass* k = _holder->get_Klass();
@@ -286,7 +365,7 @@ ciConstant ciField::constant_value() {
   if (_constant_value.basic_type() == T_ILLEGAL) {
     // Static fields are placed in mirror objects.
     ciInstance* mirror = _holder->java_mirror();
-    _constant_value = mirror->field_value_impl(type()->basic_type(), offset_in_bytes());
+    _constant_value = mirror->field_value_impl(this);
   }
   if (FoldStableValues && is_stable() && _constant_value.is_null_or_zero()) {
     return ciConstant();
@@ -316,7 +395,9 @@ ciType* ciField::compute_type() {
 }
 
 ciType* ciField::compute_type_impl() {
-  ciKlass* type = CURRENT_ENV->get_klass_by_name_impl(_holder, constantPoolHandle(), _signature, false);
+  // Use original holder for fields that came in through flattening
+  ciKlass* accessing_klass = (_original_holder != nullptr) ? _original_holder : _holder;
+  ciKlass* type = CURRENT_ENV->get_klass_by_name_impl(accessing_klass, constantPoolHandle(), _signature, false);
   if (!type->is_primitive_type() && is_shared()) {
     // We must not cache a pointer to an unshared type, in a shared field.
     bool type_is_also_shared = false;
@@ -335,6 +416,10 @@ ciType* ciField::compute_type_impl() {
   return type;
 }
 
+bool ciField::is_atomic() {
+  assert(is_flat(), "should not ask this property for non-flat field %s.%s", holder()->name()->as_utf8(), name()->as_utf8());
+  return LayoutKindHelper::is_atomic_flat(_layout_kind) && !type()->as_inline_klass()->is_naturally_atomic(is_null_free());
+}
 
 // ------------------------------------------------------------------
 // ciField::will_link
@@ -379,6 +464,18 @@ bool ciField::will_link(ciMethod* accessing_method,
   fieldDescriptor result;
   LinkResolver::resolve_field(result, link_info, bc, ClassInitMode::dont_init, CHECK_AND_CLEAR_(false));
 
+  // Strict statics may require tracking if their class is not fully initialized.
+  // For now we can bail out of the compiler and let the interpreter handle it.
+  if (is_static && result.is_strict_static_unset()) {
+    // If we left out this logic, we would get (a) spurious <clinit>
+    // failures for C2 code because compiled putstatic would not write
+    // the "unset" bits, and (b) missed failures for too-early reads,
+    // since the compiled getstatic would not check the "unset" bits.
+    // Test C1 on <clinit> with "-XX:TieredStopAtLevel=2 -Xcomp -Xbatch".
+    // Test C2 on <clinit> with "-XX:-TieredCompilation -Xcomp -Xbatch".
+    return false;
+  }
+
   // update the hit-cache, unless there is a problem with memory scoping:
   if (accessing_method->holder()->is_shared() || !is_shared()) {
     if (is_put) {
@@ -411,7 +508,7 @@ bool ciField::is_autobox_cache() {
 
 // ------------------------------------------------------------------
 // ciField::print
-void ciField::print() {
+void ciField::print() const {
   tty->print("<ciField name=");
   _holder->print_name();
   tty->print(".");
@@ -429,6 +526,9 @@ void ciField::print() {
     tty->print(" constant_value=");
     _constant_value.print();
   }
+  tty->print(" is_flat=%s", bool_to_str(_is_flat));
+  tty->print(" is_null_free=%s", bool_to_str(_is_null_free));
+  tty->print(" null_marker_offset=%d", _null_marker_offset);
   tty->print(">");
 }
 

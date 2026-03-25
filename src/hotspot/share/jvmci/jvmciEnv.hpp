@@ -278,7 +278,7 @@ public:
 
   int get_length(JVMCIArray array);
 
-  JVMCIObject get_object_at(JVMCIObjectArray array, int index);
+  JVMCIObject get_object_at(JVMCIObjectArray array, int index, JVMCI_TRAPS);
   void put_object_at(JVMCIObjectArray array, int index, JVMCIObject value);
 
   jboolean get_bool_at(JVMCIPrimitiveArray array, int index);
@@ -413,7 +413,7 @@ public:
   ConstantPool* asConstantPool(jobject constant_pool)  { return asConstantPool(wrap(constant_pool)); }
 
   JVMCIObject get_jvmci_constant_pool(const constantPoolHandle& cp, JVMCI_TRAPS);
-  JVMCIObject get_jvmci_primitive_type(BasicType type);
+  JVMCIObject get_jvmci_primitive_type(BasicType type, JVMCI_TRAPS);
 
   Handle asConstant(JVMCIObject object, JVMCI_TRAPS);
   JVMCIObject get_object_constant(oop objOop, bool compressed = false, bool dont_register = false);

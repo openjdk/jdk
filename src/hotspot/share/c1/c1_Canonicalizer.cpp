@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -280,7 +280,7 @@ void Canonicalizer::do_LoadIndexed    (LoadIndexed*     x) {
   assert(array == nullptr || FoldStableValues, "not enabled");
 
   // Constant fold loads from stable arrays.
-  if (!x->mismatched() && array != nullptr && index != nullptr) {
+  if (!x->should_profile() && !x->mismatched() && array != nullptr && index != nullptr) {
     jint idx = index->value();
     if (idx < 0 || idx >= array->value()->length()) {
       // Leave the load as is. The range check will handle it.
@@ -468,11 +468,8 @@ void Canonicalizer::do_CompareOp      (CompareOp*       x) {
 
 
 void Canonicalizer::do_IfOp(IfOp* x) {
-  // Currently, Canonicalizer is only used by GraphBuilder,
-  // and IfOp is not created by GraphBuilder but only later
-  // when eliminating conditional expressions with CE_Eliminator,
-  // so this method will not be called.
-  ShouldNotReachHere();
+  // Currently, Canonicalizer is only used by GraphBuilder, and IfOp is only created by
+  // GraphBuilder when loading/storing flat fields, do nothing for now.
 }
 
 
@@ -648,13 +645,14 @@ void Canonicalizer::do_CheckCast      (CheckCast*       x) {
                           klass->as_instance_klass()->is_interface();
       // Interface casts can't be statically optimized away since verifier doesn't
       // enforce interface types in bytecode.
-      if (!is_interface && klass->is_subtype_of(x->klass())) {
+      if (!is_interface && klass->is_subtype_of(x->klass()) && (!x->is_null_free() || obj->is_null_free())) {
+        assert(!x->klass()->is_inlinetype() || x->klass() == klass, "Inline klasses can't have subtypes");
         set_canonical(obj);
         return;
       }
     }
-    // checkcast of null returns null
-    if (obj->as_Constant() && obj->type()->as_ObjectType()->constant_value()->is_null_object()) {
+    // checkcast of null returns null for non null-free klasses
+    if (!x->is_null_free() && obj->is_null_obj()) {
       set_canonical(obj);
     }
   }
@@ -668,7 +666,7 @@ void Canonicalizer::do_InstanceOf     (InstanceOf*      x) {
       return;
     }
     // instanceof null returns false
-    if (obj->as_Constant() && obj->type()->as_ObjectType()->constant_value()->is_null_object()) {
+    if (obj->as_Constant() && obj->is_null_obj()) {
       set_constant(0);
     }
   }
@@ -845,8 +843,9 @@ void Canonicalizer::do_UnsafePut      (UnsafePut*       x) {}
 void Canonicalizer::do_UnsafeGetAndSet(UnsafeGetAndSet* x) {}
 void Canonicalizer::do_ProfileCall    (ProfileCall*     x) {}
 void Canonicalizer::do_ProfileReturnType(ProfileReturnType* x) {}
-void Canonicalizer::do_ProfileInvoke  (ProfileInvoke*   x) {}
-void Canonicalizer::do_RuntimeCall    (RuntimeCall*     x) {}
+void Canonicalizer::do_ProfileInvoke    (ProfileInvoke* x) {}
+void Canonicalizer::do_ProfileACmpTypes (ProfileACmpTypes* x) {}
+void Canonicalizer::do_RuntimeCall      (RuntimeCall* x) {}
 void Canonicalizer::do_RangeCheckPredicate(RangeCheckPredicate* x) {}
 #ifdef ASSERT
 void Canonicalizer::do_Assert         (Assert*          x) {}

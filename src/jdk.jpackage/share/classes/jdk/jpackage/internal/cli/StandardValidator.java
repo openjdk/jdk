@@ -36,12 +36,11 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.regex.Pattern;
 import jdk.jpackage.internal.cli.Validator.ValidatingConsumerException;
 import jdk.jpackage.internal.util.FileUtils;
 import jdk.jpackage.internal.util.MacBundle;
 
-public final class StandardValidator {
+final public class StandardValidator {
 
     private StandardValidator() {
     }
@@ -143,9 +142,6 @@ public final class StandardValidator {
     public static Predicate<Path> IS_VALID_MAC_BUNDLE = path -> {
         return MacBundle.fromPath(path).isPresent();
     };
-
-    // https://developer.apple.com/documentation/BundleResources/Information-Property-List/CFBundleIdentifier
-    public static final Predicate<String> IS_VALID_MAC_BUNDLE_IDENTIFIER = Pattern.compile("[\\p{Alnum}-\\.]+").asMatchPredicate();
 
 
     public static final class DirectoryListingIOException extends RuntimeException {

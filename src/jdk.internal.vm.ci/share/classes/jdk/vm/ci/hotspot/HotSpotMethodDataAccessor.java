@@ -57,7 +57,7 @@ abstract class HotSpotMethodDataAccessor {
 
     static int readTag(HotSpotVMConfig config, HotSpotMethodData data, int position) {
         final int tag = data.readUnsignedByte(position, config.dataLayoutTagOffset);
-        assert tag >= config.dataLayoutNoTag && tag <= config.dataLayoutSpeculativeTrapDataTag : "profile data tag out of bounds: " + tag;
+        assert tag >= config.dataLayoutNoTag && tag <= config.dataLayoutACmpDataTag : "profile data tag out of bounds: " + tag;
         return tag;
     }
 

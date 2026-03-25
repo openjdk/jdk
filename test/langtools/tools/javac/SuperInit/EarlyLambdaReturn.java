@@ -24,6 +24,9 @@
  * @test
  * @bug 8345438
  * @summary Verify 'return' allowed in a lambda declared in an early construction context
+ * @run main EarlyLambdaReturn
+ * @build InitializationWarningTester
+ * @run main InitializationWarningTester EarlyLambdaReturn
  */
 public class EarlyLambdaReturn {
 

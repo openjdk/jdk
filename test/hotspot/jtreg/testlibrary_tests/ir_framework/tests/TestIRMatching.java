@@ -329,7 +329,7 @@ public class TestIRMatching {
         System.out.flush();
         String output = baos.toString();
         findIrIds(output, "testMatchAllIf50", 1, 22);
-        assertNoIds(output, "testMatchNoneIf50");
+        findIrIds(output, "testMatchNoneIf50", -1, -1);
 
         runWithArguments(FlagComparisons.class, "-XX:TLABRefillWasteFraction=49");
         System.out.flush();
@@ -431,27 +431,18 @@ public class TestIRMatching {
 
     private static void findIrIds(String output, String method, int... numbers) {
         StringBuilder builder = new StringBuilder();
-        builder.append(method).append(": ");
+        builder.append(method);
         for (int i = 0; i < numbers.length; i+=2) {
             int start = numbers[i];
             int endIncluded = numbers[i + 1];
             for (int j = start; j <= endIncluded; j++) {
-                if (j != numbers[0]) {
-                    builder.append(", ");
-                }
+                builder.append(",");
                 builder.append(j);
             }
         }
         if (!output.contains(builder.toString())) {
             addException(new RuntimeException("Could not find line in Applicable IR Rules: \"" + builder +
                                                       System.lineSeparator()));
-        }
-    }
-
-    private static void assertNoIds(String output, String methodName) {
-        String applicableIRRules = output.split("Applicable IR Rules")[1];
-        if (applicableIRRules.contains(methodName)) {
-            addException(new RuntimeException("Should not find ids for \"" + methodName + "\"" + System.lineSeparator()));
         }
     }
 }
@@ -785,8 +776,17 @@ class GoodCount {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_OF_FIELD, "myClassEmpty", "1", IRNode.STORE_OF_CLASS, "GoodCount", "1",
-                  IRNode.STORE_OF_CLASS, "/GoodCount", "1", IRNode.STORE_OF_CLASS, "MyClassEmpty", "0"},
+    @IR(counts = {
+            IRNode.STORE_OF_FIELD, "myClassEmpty", "1",
+            IRNode.STORE_OF_CLASS, "oodCount", "0",
+            IRNode.STORE_OF_CLASS, "GoodCount", "1",
+            IRNode.STORE_OF_CLASS, "/GoodCount", "1",
+            IRNode.STORE_OF_CLASS, "tests/GoodCount", "1",
+            IRNode.STORE_OF_CLASS, "/tests/GoodCount", "1",
+            IRNode.STORE_OF_CLASS, "ir_framework/tests/GoodCount", "1",
+            IRNode.STORE_OF_CLASS, "/ir_framework/tests/GoodCount", "0",
+            IRNode.STORE_OF_CLASS, "MyClassEmpty", "0"
+        },
         failOn = {IRNode.STORE_OF_CLASS, "MyClassEmpty"})
     public void good6() {
         myClassEmpty = new MyClassEmpty();

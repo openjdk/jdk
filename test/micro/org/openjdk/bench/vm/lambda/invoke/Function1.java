@@ -199,24 +199,33 @@ public class Function1 {
 
 
     public final FunctionII mref_II2II  = Function1::fooStaticII;
+    @SuppressWarnings("initialization")
     public final FunctionII mref_II2II_bound = this::fooInstanceII;
     public final FunctionIL mref_II2IL  = Function1::fooStaticII;
+    @SuppressWarnings("initialization")
     public final FunctionIL mref_II2IL_bound = this::fooInstanceII;
     public final FunctionLL mref_II2LL  = Function1::fooStaticII;
+    @SuppressWarnings("initialization")
     public final FunctionLL mref_II2LL_bound = this::fooInstanceII;
 
     public final FunctionII mref_IL2II  = Function1::fooStaticIL;
+    @SuppressWarnings("initialization")
     public final FunctionII mref_IL2II_bound = this::fooInstanceIL;
     public final FunctionIL mref_IL2IL  = Function1::fooStaticIL;
+    @SuppressWarnings("initialization")
     public final FunctionIL mref_IL2IL_bound = this::fooInstanceIL;
     public final FunctionLL mref_IL2LL  = Function1::fooStaticIL;
+    @SuppressWarnings("initialization")
     public final FunctionLL mref_IL2LL_bound = this::fooInstanceIL;
 
     public final FunctionII mref_LL2II  = Function1::fooStaticLL;
+    @SuppressWarnings("initialization")
     public final FunctionII mref_LL2II_bound = this::fooInstanceLL;
     public final FunctionIL mref_LL2IL  = Function1::fooStaticLL;
+    @SuppressWarnings("initialization")
     public final FunctionIL mref_LL2IL_bound = this::fooInstanceLL;
     public final FunctionLL mref_LL2LL  = Function1::fooStaticLL;
+    @SuppressWarnings("initialization")
     public final FunctionLL mref_LL2LL_bound = this::fooInstanceLL;
 
 

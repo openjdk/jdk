@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.hpp"
@@ -112,9 +113,8 @@ static void handle_pending_exception(outputStream* output, bool startup, oop thr
 }
 
 static void print_message(outputStream* output, oop content, TRAPS) {
-  objArrayOop lines = objArrayOop(content);
-  assert(lines != nullptr, "invariant");
-  assert(lines->is_array(), "must be array");
+  assert(content != nullptr, "invariant");
+  refArrayOop lines = oop_cast<refArrayOop>(content);
   const int length = lines->length();
   for (int i = 0; i < length; ++i) {
     const char* text = JfrJavaSupport::c_str(lines->obj_at(i), THREAD);
@@ -128,9 +128,8 @@ static void print_message(outputStream* output, oop content, TRAPS) {
 
 static void log(oop content, TRAPS) {
   LogMessage(jfr,startup) msg;
-  objArrayOop lines = objArrayOop(content);
-  assert(lines != nullptr, "invariant");
-  assert(lines->is_array(), "must be array");
+  assert(content != nullptr, "invariant");
+  refArrayOop lines = oop_cast<refArrayOop>(content);
   const int length = lines->length();
   for (int i = 0; i < length; ++i) {
     const char* text = JfrJavaSupport::c_str(lines->obj_at(i), THREAD);
@@ -352,9 +351,9 @@ GrowableArray<DCmdArgumentInfo*>* JfrDCmd::argument_info_array() const {
     assert(array->length() == _num_arguments, "invariant");
     return array;
   }
-  objArrayOop arguments = objArrayOop(result.get_oop());
-  assert(arguments != nullptr, "invariant");
-  assert(arguments->is_array(), "must be array");
+  oop oop_args = result.get_oop();
+  assert(oop_args != nullptr, "invariant");
+  refArrayOop arguments = oop_cast<refArrayOop>(oop_args);
   const int num_arguments = arguments->length();
   assert(num_arguments == _num_arguments, "invariant");
   prepare_dcmd_string_arena(thread);

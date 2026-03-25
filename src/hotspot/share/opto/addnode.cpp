@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -816,7 +816,7 @@ Node *AddPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         offset  = phase->MakeConX(t2->get_con() + t12->get_con());
       } else {
         // Else move the constant to the right.  ((A+con)+B) into ((A+B)+con)
-        address = phase->transform(AddPNode::make_with_base(in(Base), addp->in(Address), in(Offset)));
+        address = phase->transform(new AddPNode(in(Base),addp->in(Address),in(Offset)));
         offset  = addp->in(Offset);
       }
       set_req_X(Address, address, phase);
@@ -838,11 +838,11 @@ Node *AddPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Convert: (ptr + (offset+con)) into (ptr+offset)+con.
   // The idea is to merge array_base+scaled_index groups together,
   // and only have different constant offsets from the same base.
-  const Node* add = in(Offset);
-  if (add->Opcode() == Op_AddX && add->in(1) != add) {
-    const Type* t22 = phase->type(add->in(2));
-    if (t22->singleton() && (t22 != Type::TOP)) {  // Right input is an add of a constant?
-      set_req(Address, phase->transform(AddPNode::make_with_base(in(Base), in(Address), add->in(1))));
+  const Node *add = in(Offset);
+  if( add->Opcode() == Op_AddX && add->in(1) != add ) {
+    const Type *t22 = phase->type( add->in(2) );
+    if( t22->singleton() && (t22 != Type::TOP) ) {  // Right input is an add of a constant?
+      set_req(Address, phase->transform(new AddPNode(in(Base),in(Address),add->in(1))));
       set_req_X(Offset, add->in(2), phase); // puts add on igvn worklist if needed
       return this;              // Made progress
     }
@@ -866,6 +866,12 @@ const Type *AddPNode::bottom_type() const {
   if (tx->is_con()) {   // Left input is an add of a constant?
     txoffset = tx->get_con();
   }
+  if (tp->isa_aryptr()) {
+    // In the case of a flat inline type array, each field has its
+    // own slice so we need to extract the field being accessed from
+    // the address computation
+    return tp->is_aryptr()->add_field_offset_and_offset(txoffset);
+  }
   return tp->add_offset(txoffset);
 }
 
@@ -885,6 +891,12 @@ const Type* AddPNode::Value(PhaseGVN* phase) const {
   intptr_t p2offset = Type::OffsetBot;
   if (p2->is_con()) {   // Left input is an add of a constant?
     p2offset = p2->get_con();
+  }
+  if (p1->isa_aryptr()) {
+    // In the case of a flat inline type array, each field has its
+    // own slice so we need to extract the field being accessed from
+    // the address computation
+    return p1->is_aryptr()->add_field_offset_and_offset(p2offset);
   }
   return p1->add_offset(p2offset);
 }

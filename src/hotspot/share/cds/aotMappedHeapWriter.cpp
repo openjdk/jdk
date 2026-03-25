@@ -43,6 +43,7 @@
 #include "oops/oopHandle.inline.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -64,17 +65,14 @@ HeapRootSegments AOTMappedHeapWriter::_heap_root_segments;
 address AOTMappedHeapWriter::_requested_bottom;
 address AOTMappedHeapWriter::_requested_top;
 
-static size_t _num_strings = 0;
-static size_t _string_bytes = 0;
-static size_t _num_packages = 0;
-static size_t _num_protection_domains = 0;
-
 GrowableArrayCHeap<AOTMappedHeapWriter::NativePointerInfo, mtClassShared>* AOTMappedHeapWriter::_native_pointers;
 GrowableArrayCHeap<oop, mtClassShared>* AOTMappedHeapWriter::_source_objs;
 GrowableArrayCHeap<AOTMappedHeapWriter::HeapObjOrder, mtClassShared>* AOTMappedHeapWriter::_source_objs_order;
 
 AOTMappedHeapWriter::BufferOffsetToSourceObjectTable*
 AOTMappedHeapWriter::_buffer_offset_to_source_obj_table = nullptr;
+
+DumpedInternedStrings *AOTMappedHeapWriter::_dumped_interned_strings = nullptr;
 
 typedef HashTable<
       size_t,    // offset of a filler from AOTMappedHeapWriter::buffer_bottom()
@@ -90,6 +88,7 @@ void AOTMappedHeapWriter::init() {
     Universe::heap()->collect(GCCause::_java_lang_system_gc);
 
     _buffer_offset_to_source_obj_table = new (mtClassShared) BufferOffsetToSourceObjectTable(/*size (prime)*/36137, /*max size*/1 * M);
+    _dumped_interned_strings = new (mtClass)DumpedInternedStrings(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE);
     _fillers = new (mtClassShared) FillersTable();
     _requested_bottom = nullptr;
     _requested_top = nullptr;
@@ -143,6 +142,9 @@ int AOTMappedHeapWriter::narrow_oop_shift() {
 void AOTMappedHeapWriter::delete_tables_with_raw_oops() {
   delete _source_objs;
   _source_objs = nullptr;
+
+  delete _dumped_interned_strings;
+  _dumped_interned_strings = nullptr;
 }
 
 void AOTMappedHeapWriter::add_source_obj(oop src_obj) {
@@ -178,6 +180,25 @@ bool AOTMappedHeapWriter::is_too_large_to_archive(size_t size) {
   } else {
     return false;
   }
+}
+
+// Keep track of the contents of the archived interned string table. This table
+// is used only by CDSHeapVerifier.
+void AOTMappedHeapWriter::add_to_dumped_interned_strings(oop string) {
+  assert_at_safepoint(); // DumpedInternedStrings uses raw oops
+  assert(!is_string_too_large_to_archive(string), "must be");
+  bool created;
+  _dumped_interned_strings->put_if_absent(string, true, &created);
+  if (created) {
+    // Prevent string deduplication from changing the value field to
+    // something not in the archive.
+    java_lang_String::set_deduplication_forbidden(string);
+    _dumped_interned_strings->maybe_grow();
+  }
+}
+
+bool AOTMappedHeapWriter::is_dumped_interned_string(oop o) {
+  return _dumped_interned_strings->get(o) != nullptr;
 }
 
 // Various lookup functions between source_obj, buffered_obj and requested_obj
@@ -274,12 +295,13 @@ void AOTMappedHeapWriter::ensure_buffer_space(size_t min_bytes) {
 
 objArrayOop AOTMappedHeapWriter::allocate_root_segment(size_t offset, int element_count) {
   HeapWord* mem = offset_to_buffered_address<HeapWord *>(offset);
-  memset(mem, 0, objArrayOopDesc::object_size(element_count));
+  memset(mem, 0, refArrayOopDesc::object_size(element_count));
 
   // The initialization code is copied from MemAllocator::finish and ObjArrayAllocator::initialize.
   if (UseCompactObjectHeaders) {
     oopDesc::release_set_mark(mem, Universe::objectArrayKlass()->prototype_header());
   } else {
+    assert(!Arguments::is_valhalla_enabled() || Universe::objectArrayKlass()->prototype_header() == markWord::prototype(), "should be the same");
     oopDesc::set_mark(mem, markWord::prototype());
     oopDesc::release_set_klass(mem, Universe::objectArrayKlass());
   }
@@ -310,7 +332,7 @@ void AOTMappedHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassSh
          "Pre-condition: Roots start at aligned boundary: %zu", _buffer_used);
 
   int max_elem_count = ((MIN_GC_REGION_ALIGNMENT - arrayOopDesc::header_size_in_bytes()) / heapOopSize);
-  assert(objArrayOopDesc::object_size(max_elem_count)*HeapWordSize == MIN_GC_REGION_ALIGNMENT,
+  assert(refArrayOopDesc::object_size(max_elem_count)*HeapWordSize == MIN_GC_REGION_ALIGNMENT,
          "Should match exactly");
 
   HeapRootSegments segments(_buffer_used,
@@ -410,7 +432,6 @@ void AOTMappedHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtC
     assert(info != nullptr, "must be");
     size_t buffer_offset = copy_one_source_obj_to_buffer(src_obj);
     info->set_buffer_offset(buffer_offset);
-    assert(buffer_offset <= 0x7fffffff, "sanity");
 
     OopHandle handle(Universe::vm_global(), src_obj);
     _buffer_offset_to_source_obj_table->put_when_absent(buffer_offset, handle);
@@ -423,13 +444,10 @@ void AOTMappedHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtC
 
   log_info(aot)("Size of heap region = %zu bytes, %d objects, %d roots, %d native ptrs",
                 _buffer_used, _source_objs->length() + 1, roots->length(), _num_native_ptrs);
-  log_info(aot)("   strings            = %8zu (%zu bytes)", _num_strings, _string_bytes);
-  log_info(aot)("   packages           = %8zu", _num_packages);
-  log_info(aot)("   protection domains = %8zu", _num_protection_domains);
 }
 
 size_t AOTMappedHeapWriter::filler_array_byte_size(int length) {
-  size_t byte_size = objArrayOopDesc::object_size(length) * HeapWordSize;
+  size_t byte_size = refArrayOopDesc::object_size(length) * HeapWordSize;
   return byte_size;
 }
 
@@ -458,6 +476,7 @@ HeapWord* AOTMappedHeapWriter::init_filler_array_at_buffer_top(int array_length,
   if (UseCompactObjectHeaders) {
     oopDesc::release_set_mark(mem, markWord::prototype().set_narrow_klass(nk));
   } else {
+    assert(!Arguments::is_valhalla_enabled() || Universe::objectArrayKlass()->prototype_header() == markWord::prototype(), "should be the same");
     oopDesc::set_mark(mem, markWord::prototype());
     cast_to_oop(mem)->set_narrow_klass(nk);
   }
@@ -514,25 +533,7 @@ void update_buffered_object_field(address buffered_obj, int field_offset, T valu
   *field_addr = value;
 }
 
-void AOTMappedHeapWriter::update_stats(oop src_obj) {
-  if (java_lang_String::is_instance(src_obj)) {
-    _num_strings ++;
-    _string_bytes += src_obj->size() * HeapWordSize;
-    _string_bytes += java_lang_String::value(src_obj)->size() * HeapWordSize;
-  } else {
-    Klass* k = src_obj->klass();
-    Symbol* name = k->name();
-    if (name->equals("java/lang/NamedPackage") || name->equals("java/lang/Package")) {
-      _num_packages ++;
-    } else if (name->equals("java/security/ProtectionDomain")) {
-      _num_protection_domains ++;
-    }
-  }
-}
-
 size_t AOTMappedHeapWriter::copy_one_source_obj_to_buffer(oop src_obj) {
-  update_stats(src_obj);
-
   assert(!is_too_large_to_archive(src_obj), "already checked");
   size_t byte_size = src_obj->size() * HeapWordSize;
   assert(byte_size > 0, "no zero-size objects");
@@ -730,7 +731,8 @@ void AOTMappedHeapWriter::update_header_for_requested_obj(oop requested_obj, oop
 
   oop fake_oop = cast_to_oop(buffered_addr);
   if (UseCompactObjectHeaders) {
-    fake_oop->set_mark(markWord::prototype().set_narrow_klass(nk));
+    markWord prototype_header = src_klass->prototype_header().set_narrow_klass(nk);
+    fake_oop->set_mark(prototype_header);
   } else {
     fake_oop->set_narrow_klass(nk);
   }
@@ -740,10 +742,12 @@ void AOTMappedHeapWriter::update_header_for_requested_obj(oop requested_obj, oop
   }
   // We need to retain the identity_hash, because it may have been used by some hashtables
   // in the shared heap.
-  if (!src_obj->fast_no_hash_check()) {
+  if (!src_obj->fast_no_hash_check() && (!(Arguments::is_valhalla_enabled() && src_obj->mark().is_inline_type()))) {
     intptr_t src_hash = src_obj->identity_hash();
     if (UseCompactObjectHeaders) {
-      fake_oop->set_mark(markWord::prototype().set_narrow_klass(nk).copy_set_hash(src_hash));
+      fake_oop->set_mark(fake_oop->mark().copy_set_hash(src_hash));
+    } else if (Arguments::is_valhalla_enabled()) {
+      fake_oop->set_mark(src_klass->prototype_header().copy_set_hash(src_hash));
     } else {
       fake_oop->set_mark(markWord::prototype().copy_set_hash(src_hash));
     }
@@ -898,14 +902,8 @@ void AOTMappedHeapWriter::compute_ptrmap(AOTMappedHeapInfo* heap_info) {
       native_ptr = RegeneratedClasses::get_regenerated_object(native_ptr);
     }
 
-    if (!ArchiveBuilder::current()->has_been_archived((address)native_ptr)) {
-      ResourceMark rm;
-      LogStreamHandle(Error, aot) log;
-      log.print("Marking native pointer for oop %p (type = %s, offset = %d)",
-                cast_from_oop<void*>(src_obj), src_obj->klass()->external_name(), field_offset);
-      src_obj->print_on(&log);
-      fatal("Metadata %p should have been archived", native_ptr);
-    }
+    guarantee(ArchiveBuilder::current()->has_been_archived((address)native_ptr),
+              "Metadata %p should have been archived", native_ptr);
 
     address buffered_native_ptr = ArchiveBuilder::current()->get_buffered_addr((address)native_ptr);
     address requested_native_ptr = ArchiveBuilder::current()->to_requested(buffered_native_ptr);

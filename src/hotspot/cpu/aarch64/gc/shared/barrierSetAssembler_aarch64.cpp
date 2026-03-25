@@ -26,6 +26,7 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
+#include "gc/shared/barrierSetRuntime.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "memory/universe.hpp"
@@ -49,6 +50,7 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
   bool in_heap = (decorators & IN_HEAP) != 0;
   bool in_native = (decorators & IN_NATIVE) != 0;
   bool is_not_null = (decorators & IS_NOT_NULL) != 0;
+
   switch (type) {
   case T_OBJECT:
   case T_ARRAY: {
@@ -86,22 +88,35 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
                                    Address dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
   bool in_heap = (decorators & IN_HEAP) != 0;
   bool in_native = (decorators & IN_NATIVE) != 0;
+  bool is_not_null = (decorators & IS_NOT_NULL) != 0;
+
   switch (type) {
   case T_OBJECT:
   case T_ARRAY: {
-    val = val == noreg ? zr : val;
     if (in_heap) {
-      if (UseCompressedOops) {
-        assert(!dst.uses(val), "not enough registers");
-        if (val != zr) {
-          __ encode_heap_oop(val);
+      if (val == noreg) {
+        assert(!is_not_null, "inconsistent access");
+        if (UseCompressedOops) {
+          __ strw(zr, dst);
+        } else {
+          __ str(zr, dst);
         }
-        __ strw(val, dst);
       } else {
-        __ str(val, dst);
+        if (UseCompressedOops) {
+          assert(!dst.uses(val), "not enough registers");
+          if (is_not_null) {
+            __ encode_heap_oop_not_null(val);
+          } else {
+            __ encode_heap_oop(val);
+          }
+          __ strw(val, dst);
+        } else {
+          __ str(val, dst);
+        }
       }
     } else {
       assert(in_native, "why else?");
+      assert(val != noreg, "not supported");
       __ str(val, dst);
     }
     break;
@@ -119,6 +134,19 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
   case T_FLOAT:   __ strs(v0,  dst); break;
   case T_DOUBLE:  __ strd(v0,  dst); break;
   default: Unimplemented();
+  }
+}
+
+void BarrierSetAssembler::flat_field_copy(MacroAssembler* masm, DecoratorSet decorators,
+                                     Register src, Register dst, Register inline_layout_info) {
+  // flat_field_copy implementation is fairly complex, and there are not any
+  // "short-cuts" to be made from asm. What there is, appears to have the same
+  // cost in C++, so just "call_VM_leaf" for now rather than maintain hundreds
+  // of hand-rolled instructions...
+  if (decorators & IS_DEST_UNINITIALIZED) {
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetRuntime::value_copy_is_dest_uninitialized), src, dst, inline_layout_info);
+  } else {
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetRuntime::value_copy), src, dst, inline_layout_info);
   }
 }
 

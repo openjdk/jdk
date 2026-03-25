@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,20 @@
  */
 package org.xml.sax.ptests;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.InputSource;
-import org.xml.sax.XMLReader;
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
+import static jaxp.library.JAXPTestUtilities.compareWithGold;
+import static org.testng.Assert.assertTrue;
+import static org.xml.sax.ptests.SAXTestConst.GOLDEN_DIR;
+import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
+
+import java.io.FileInputStream;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
-import static org.xml.sax.ptests.SAXTestConst.GOLDEN_DIR;
-import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
+import org.testng.annotations.Test;
+import org.xml.sax.InputSource;
+import org.xml.sax.XMLReader;
 
 /** This class contains the testcases to test XMLReader with regard to
   * Namespace Table defined at
@@ -44,8 +44,9 @@ import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run junit/othervm org.xml.sax.ptests.XMLReaderNSTableTest
+ * @run testng/othervm org.xml.sax.ptests.XMLReaderNSTableTest
  */
+@Test
 public class XMLReaderNSTableTest {
     /**
      * XML file that used to be parsed.
@@ -61,10 +62,11 @@ public class XMLReaderNSTableTest {
      * namespace processing is enabled. namespace-prefix is also is enabled.
      * So it is a True-True combination.
      * The test is to test XMLReader with these conditions.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test
     public void testWithTrueTrue() throws Exception {
-        String outputFile = "XRNSTableTT.out";
+        String outputFile = USER_DIR + "XRNSTableTT.out";
         String goldFile = GOLDEN_DIR + "NSTableTTGF.out";
 
         SAXParserFactory spf = SAXParserFactory.newInstance();
@@ -77,17 +79,18 @@ public class XMLReaderNSTableTest {
             xmlReader.setContentHandler(handler);
             xmlReader.parse(new InputSource(fis));
         }
-        assertLinesMatch(goldFile, outputFile);
+        assertTrue(compareWithGold(goldFile, outputFile));
     }
 
     /**
      * Namespace processing is enabled. Hence namespace-prefix is
      * expected to be automatically off. So it is a True-False combination.
      * The test is to test XMLReader with these conditions.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test
     public void testWithTrueFalse() throws Exception {
-        String outputFile = "XRNSTableTF.out";
+        String outputFile = USER_DIR + "XRNSTableTF.out";
         String goldFile = GOLDEN_DIR + "NSTableTFGF.out";
 
         SAXParserFactory spf = SAXParserFactory.newInstance();
@@ -100,17 +103,18 @@ public class XMLReaderNSTableTest {
             xmlReader.setContentHandler(handler);
             xmlReader.parse(new InputSource(fis));
         }
-        assertLinesMatch(goldFile, outputFile);
+        assertTrue(compareWithGold(goldFile, outputFile));
     }
 
     /**
      * namespace processing is not enabled. Hence namespace-prefix is
      * expected to be automaically on. So it is a False-True combination.
      * The test is to test XMLReader with these conditions.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test
-    public void testWithFalseTrue() throws Exception {
-        String outputFile = "XRNSTableFT.out";
+    public void testWithFalseTrue()throws Exception {
+        String outputFile = USER_DIR + "XRNSTableFT.out";
         String goldFile = GOLDEN_DIR + "NSTableFTGF.out";
 
         SAXParserFactory spf = SAXParserFactory.newInstance();
@@ -121,12 +125,6 @@ public class XMLReaderNSTableTest {
             xmlReader.setContentHandler(handler);
             xmlReader.parse(new InputSource(fis));
         }
-        assertLinesMatch(goldFile, outputFile);
-    }
-
-    private static void assertLinesMatch(String goldenFile, String actual) throws IOException {
-        Assertions.assertLinesMatch(
-                Files.readAllLines(Path.of(goldenFile)),
-                Files.readAllLines(Path.of(actual)));
+        assertTrue(compareWithGold(goldFile, outputFile));
     }
 }

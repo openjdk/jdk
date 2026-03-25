@@ -164,7 +164,7 @@ class JavaArgumentUnboxer : public SignatureIterator {
 
 Handle JavaArgumentUnboxer::next_arg(BasicType expectedType) {
   assert(_index < _args->length(), "out of bounds");
-  oop arg=((objArrayOop) (_args))->obj_at(_index++);
+  oop arg = refArrayOop(_args)->obj_at(_index++);
   assert(expectedType == T_OBJECT || java_lang_boxing_object::is_instance(arg, expectedType), "arg type mismatch");
   return Handle(Thread::current(), arg);
 }
@@ -804,7 +804,7 @@ C2V_VMENTRY_NULL(jobject, lookupConstantInPool, (JNIEnv* env, jobject, ARGUMENT_
       Handle garbage;
       while (true) {
         // Trigger an OutOfMemoryError
-        objArrayOop next = oopFactory::new_objectArray(0x7FFFFFFF, CHECK_NULL);
+        refArrayOop next = oopFactory::new_objectArray(0x7FFFFFFF, CHECK_NULL);
         next->obj_at_put(0, garbage());
         garbage = Handle(THREAD, next);
       }
@@ -883,7 +883,7 @@ C2V_VMENTRY_NULL(jobjectArray, resolveBootstrapMethod, (JNIEnv* env, jobject, AR
       JVMCIObjectArray arguments = JVMCIENV->new_JavaConstant_array(len, JVMCI_CHECK_NULL);
       JVMCIENV->put_object_at(bsmi, 3, arguments);
       for (int i = 0; i < len; i++) {
-        oop x = args_array->obj_at(i);
+        oop x = args_array->obj_at(i, CHECK_NULL);
         if (x != nullptr) {
           JVMCIENV->put_object_at(arguments, i, JVMCIENV->get_object_constant(x));
         } else {
@@ -1296,7 +1296,12 @@ C2V_VMENTRY_NULL(jobject, executeHotSpotNmethod, (JNIEnv* env, jobject, jobject 
   Symbol* signature = mh->signature();
   JavaCallArguments jca(mh->size_of_parameters());
 
-  JavaArgumentUnboxer jap(signature, &jca, (arrayOop) JNIHandles::resolve(args), mh->is_static());
+  arrayOop args_array = (arrayOop) JNIHandles::resolve(args);
+  if (args_array->is_flatArray()) {
+    JVMCI_THROW_MSG_NULL(IllegalStateException, "executeHotSpotNmethod cannot handle flat args arrays");
+  }
+
+  JavaArgumentUnboxer jap(signature, &jca, args_array, mh->is_static());
   JavaValue result(jap.return_type());
   jca.set_alternative_target(Handle(THREAD, JNIHandles::resolve(nmethod_mirror.as_jobject())));
   JavaCalls::call(&result, mh, &jca, CHECK_NULL);
@@ -1471,7 +1476,7 @@ C2V_END
  * Used by matches() to convert a ResolvedJavaMethod[] to an array of Method*.
  */
 static GrowableArray<Method*>* init_resolved_methods(jobjectArray methods, JVMCIEnv* JVMCIENV) {
-  objArrayOop methods_oop = (objArrayOop) JNIHandles::resolve(methods);
+  refArrayOop methods_oop = (refArrayOop) JNIHandles::resolve(methods);
   GrowableArray<Method*>* resolved_methods = new GrowableArray<Method*>(methods_oop->length());
   for (int i = 0; i < methods_oop->length(); i++) {
     oop resolved = methods_oop->obj_at(i);
@@ -1500,7 +1505,7 @@ static bool matches(jobjectArray methods, Method* method, GrowableArray<Method*>
   for (int i = 0; i < resolved_methods->length(); i++) {
     Method* m = resolved_methods->at(i);
     if (m == method) {
-      *matched_jvmci_method_ref = Handle(THREAD, ((objArrayOop) JNIHandles::resolve(methods))->obj_at(i));
+      *matched_jvmci_method_ref = Handle(THREAD, refArrayOop(JNIHandles::resolve(methods))->obj_at(i));
       return true;
     }
   }
@@ -1627,7 +1632,7 @@ C2V_VMENTRY_NULL(jobject, iterateFrames, (JNIEnv* env, jobject compilerToVM, job
             if (objects != nullptr) {
               RegisterMap reg_map(vf->register_map());
               bool realloc_failures = Deoptimization::realloc_objects(thread, vf->frame_pointer(), &reg_map, objects, CHECK_NULL);
-              Deoptimization::reassign_fields(vf->frame_pointer(), &reg_map, objects, realloc_failures, false);
+              Deoptimization::reassign_fields(vf->frame_pointer(), &reg_map, objects, realloc_failures, false, CHECK_NULL);
               realloc_called = true;
             }
 
@@ -1671,8 +1676,8 @@ C2V_VMENTRY_NULL(jobject, iterateFrames, (JNIEnv* env, jobject compilerToVM, job
         HotSpotJVMCI::HotSpotStackFrameReference::set_frameNumber(JVMCIENV, frame_reference(), frame_number);
 
         // initialize the locals array
-        objArrayOop array_oop = oopFactory::new_objectArray(locals->size(), CHECK_NULL);
-        objArrayHandle array(THREAD, array_oop);
+        refArrayOop array_oop = oopFactory::new_objectArray(locals->size(), CHECK_NULL);
+        refArrayHandle array(THREAD, array_oop);
         for (int i = 0; i < locals->size(); i++) {
           StackValue* var = locals->at(i);
           if (var->type() == T_OBJECT) {
@@ -1878,7 +1883,7 @@ C2V_VMENTRY(void, materializeVirtualObjects, (JNIEnv* env, jobject, jobject _hs_
   }
 
   bool realloc_failures = Deoptimization::realloc_objects(thread, fstAfterDeopt.current(), fstAfterDeopt.register_map(), objects, CHECK);
-  Deoptimization::reassign_fields(fstAfterDeopt.current(), fstAfterDeopt.register_map(), objects, realloc_failures, false);
+  Deoptimization::reassign_fields(fstAfterDeopt.current(), fstAfterDeopt.register_map(), objects, realloc_failures, false, THREAD);
 
   for (int frame_index = 0; frame_index < virtualFrames->length(); frame_index++) {
     compiledVFrame* cvf = virtualFrames->at(frame_index);
@@ -2043,7 +2048,7 @@ C2V_VMENTRY_NULL(jobject, getComponentType, (JNIEnv* env, jobject, ARGUMENT_PAIR
     return JVMCIENV->get_jobject(result);
   }
   BasicType type = java_lang_Class::primitive_type(component_mirror);
-  JVMCIObject result = JVMCIENV->get_jvmci_primitive_type(type);
+  JVMCIObject result = JVMCIENV->get_jvmci_primitive_type(type, JVMCI_CHECK_NULL);
   return JVMCIENV->get_jobject(result);
 C2V_END
 
@@ -2206,7 +2211,7 @@ C2V_VMENTRY_NULL(jobjectArray, getDeclaredConstructors, (JNIEnv* env, jobject, A
   GrowableArray<Method*> constructors_array;
   for (int i = 0; i < iklass->methods()->length(); i++) {
     Method* m = iklass->methods()->at(i);
-    if (m->is_object_initializer()) {
+    if (m->is_object_constructor()) {
       constructors_array.append(m);
     }
   }
@@ -2233,7 +2238,7 @@ C2V_VMENTRY_NULL(jobjectArray, getDeclaredMethods, (JNIEnv* env, jobject, ARGUME
   GrowableArray<Method*> methods_array;
   for (int i = 0; i < iklass->methods()->length(); i++) {
     Method* m = iklass->methods()->at(i);
-    if (!m->is_object_initializer() && !m->is_static_initializer() && !m->is_overpass()) {
+    if (!(m->is_object_constructor() || m->is_class_initializer()) && !m->is_overpass()) {
       methods_array.append(m);
     }
   }
@@ -2458,7 +2463,7 @@ C2V_VMENTRY_NULL(jobject, asJavaType, (JNIEnv* env, jobject, jobject object))
   Handle obj = JVMCIENV->asConstant(JVMCIENV->wrap(object), JVMCI_CHECK_NULL);
   if (java_lang_Class::is_instance(obj())) {
     if (java_lang_Class::is_primitive(obj())) {
-      JVMCIObject type = JVMCIENV->get_jvmci_primitive_type(java_lang_Class::primitive_type(obj()));
+      JVMCIObject type = JVMCIENV->get_jvmci_primitive_type(java_lang_Class::primitive_type(obj()), JVMCI_CHECK_NULL);
       return JVMCIENV->get_jobject(type);
     }
     Klass* klass = java_lang_Class::as_Klass(obj());
@@ -2526,7 +2531,8 @@ C2V_VMENTRY_NULL(jobject, readArrayElement, (JNIEnv* env, jobject, jobject x, in
     JVMCIObject result;
 
     if (element_type == T_OBJECT) {
-      result = JVMCIENV->get_object_constant(objArrayOop(xobj())->obj_at(index));
+      oop element = objArrayOop(xobj())->obj_at(index, CHECK_NULL);
+      result = JVMCIENV->get_object_constant(element);
       if (result.is_null()) {
         result = JVMCIENV->get_JavaConstant_NULL_POINTER();
       }
@@ -2864,7 +2870,7 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle, jbool
     result = PEER_JVMCIENV->get_jvmci_type(klass_handle, JVMCI_CHECK_0);
   } else if (thisEnv->isa_HotSpotResolvedPrimitiveType(obj)) {
     BasicType type = JVMCIENV->kindToBasicType(JVMCIENV->get_HotSpotResolvedPrimitiveType_kind(obj), JVMCI_CHECK_0);
-    result = PEER_JVMCIENV->get_jvmci_primitive_type(type);
+    result = PEER_JVMCIENV->get_jvmci_primitive_type(type, JVMCI_CHECK_0);
   } else if (thisEnv->isa_IndirectHotSpotObjectConstantImpl(obj) ||
              thisEnv->isa_DirectHotSpotObjectConstantImpl(obj)) {
     Handle constant = thisEnv->asConstant(obj, JVMCI_CHECK_0);
@@ -2973,11 +2979,12 @@ C2V_VMENTRY_NULL(jobject, asReflectionExecutable, (JNIEnv* env, jobject, ARGUMEN
   requireInHotSpot("asReflectionExecutable", JVMCI_CHECK_NULL);
   methodHandle m(THREAD, UNPACK_PAIR(Method, method));
   oop executable;
-  if (m->is_object_initializer()) {
+  if (m->is_class_initializer()) {
+      JVMCI_THROW_MSG_NULL(IllegalArgumentException,
+          "Cannot create java.lang.reflect.Method for class initializer");
+  }
+  else if (m->is_object_constructor()) {
     executable = Reflection::new_constructor(m, CHECK_NULL);
-  } else if (m->is_static_initializer()) {
-    JVMCI_THROW_MSG_NULL(IllegalArgumentException,
-        "Cannot create java.lang.reflect.Method for class initializer");
   } else {
     executable = Reflection::new_method(m, false, CHECK_NULL);
   }
@@ -3121,7 +3128,7 @@ C2V_VMENTRY_NULL(jobjectArray, getFailedSpeculations, (JNIEnv* env, jobject, jlo
     assert(fs != nullptr, "npe");
     JVMCIPrimitiveArray entry;
     if (result_index < current_length) {
-      entry = (JVMCIPrimitiveArray) JVMCIENV->get_object_at(current_array, result_index);
+      entry = (JVMCIPrimitiveArray) JVMCIENV->get_object_at(current_array, result_index, JVMCI_CHECK_NULL);
     } else {
       entry = JVMCIENV->new_byteArray(fs->data_len(), JVMCI_CHECK_NULL);
       JVMCIENV->copy_bytes_from((jbyte*) fs->data(), entry, 0, fs->data_len());

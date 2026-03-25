@@ -55,7 +55,7 @@ public class TestInitialGCThreadLogging {
 
     if (GC.Shenandoah.isSupported()) {
       noneGCSupported = false;
-      testInitialGCThreadLogging("UseShenandoahGC", "ShenWorker");
+      testInitialGCThreadLogging("UseShenandoahGC", "Shenandoah GC Thread");
     }
 
     if (noneGCSupported) {

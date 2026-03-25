@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  *
  */
 
+import org.testng.SkipException;
+import org.testng.annotations.*;
 
 import java.io.IOException;
 import java.nio.file.FileSystem;
@@ -34,21 +36,9 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import static java.nio.file.attribute.PosixFilePermission.*;
-
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import org.junit.jupiter.api.Assumptions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.NullSource;
+import static org.testng.Assert.assertEquals;
 
 /**
  * @test
@@ -56,7 +46,7 @@ import org.junit.jupiter.params.provider.NullSource;
  * @summary Updating an existing zip file does not preserve original permissions
  * @library /test/lib
  * @modules jdk.zipfs
- * @run junit/othervm ZipFSPermissionsTest
+ * @run testng/othervm ZipFSPermissionsTest
  */
 public class ZipFSPermissionsTest {
 
@@ -72,14 +62,18 @@ public class ZipFSPermissionsTest {
     /**
      * Create the files used by the test
      */
-    @BeforeAll
-    public static void setUp() throws Exception {
+    @BeforeSuite
+    public void setUp() throws Exception {
         boolean supportsPosix = FileSystems.getDefault()
                 .supportedFileAttributeViews().contains("posix");
-        // Check to see if File System supports POSIX permissions
 
-        Assumptions.assumeTrue(supportsPosix, "Cannot set permissions on this File Store");
-        System.out.println("File Store Supports Posix");
+        // Check to see if File System supports POSIX permissions
+        if (supportsPosix) {
+            System.out.println("File Store Supports Posix");
+        } else {
+            // As there is no POSIX permission support, skip running the test
+            throw new SkipException("Cannot set permissions on this File Store");
+        }
         Files.writeString(entry0, "Tennis Pro");
         Files.writeString(entry1, "Tennis is a lifetime sport!");
     }
@@ -87,7 +81,7 @@ public class ZipFSPermissionsTest {
     /**
      * Re-create the initial Zip file prior to each run.
      */
-    @BeforeEach
+    @BeforeMethod
     public void before() throws Exception {
         Files.deleteIfExists(zipFile);
         zip(zipFile, Map.of("create", "true"), entry0);
@@ -96,7 +90,7 @@ public class ZipFSPermissionsTest {
     /**
      * Remove Zip file used by test after each run.
      */
-    @AfterEach
+    @AfterMethod
     public void tearDown() throws Exception {
         Files.deleteIfExists(zipFile);
     }
@@ -104,8 +98,8 @@ public class ZipFSPermissionsTest {
     /**
      * Remove files used by test as part of final test run clean-up
      */
-    @AfterAll
-    public static void suiteCleanUp() throws Exception {
+    @AfterSuite
+    public void suiteCleanUp() throws Exception {
         Files.deleteIfExists(zipFile);
         Files.deleteIfExists(entry0);
         Files.deleteIfExists(entry1);
@@ -118,9 +112,7 @@ public class ZipFSPermissionsTest {
      *                 file
      * @throws Exception If an error occurs
      */
-    @ParameterizedTest
-    @MethodSource("posixPermissions")
-    @NullSource
+    @Test(dataProvider = "posixPermissions")
     public void testZipPerms(Set<PosixFilePermission> newPerms) throws Exception {
         if (DEBUG) {
             System.out.printf("Test Run with perms= %s%n", newPerms);
@@ -146,7 +138,7 @@ public class ZipFSPermissionsTest {
         // Zip file
         PosixFileAttributes afterAttrs = getPosixAttributes(zipFile);
         displayPermissions("Permissions after updating the Zip File", zipFile);
-        assertEquals(newPerms, afterAttrs.permissions(),
+        assertEquals(afterAttrs.permissions(), newPerms,
                 "Permissions were not updated as expected!");
     }
 
@@ -214,21 +206,23 @@ public class ZipFSPermissionsTest {
     }
 
     /*
-     * MethodSource used to verify the permissions on a Zip file
+     * DataProvider used to verify the permissions on a Zip file
      * are as expected after updating the Zip file
      */
-    private static Stream<Arguments> posixPermissions() {
-        return Stream.of(
-                Arguments.of(Set.of(OWNER_READ, OWNER_WRITE, OTHERS_READ)),
-                Arguments.of(Set.of(OWNER_READ, OWNER_WRITE, OWNER_EXECUTE)),
-                Arguments.of(Set.of(OWNER_READ, OWNER_WRITE, OTHERS_READ, OTHERS_WRITE)),
-                Arguments.of(Set.of(OWNER_READ, OWNER_WRITE, OWNER_EXECUTE, OTHERS_READ,
-                        OTHERS_WRITE, OTHERS_EXECUTE)),
-                Arguments.of(Set.of(OWNER_READ, OWNER_WRITE, OWNER_EXECUTE,
+    @DataProvider(name = "posixPermissions")
+    private Object[][] posixPermissions() {
+        return new Object[][]{
+                {null},
+                {Set.of(OWNER_READ, OWNER_WRITE, OTHERS_READ)},
+                {Set.of(OWNER_READ, OWNER_WRITE, OWNER_EXECUTE)},
+                {Set.of(OWNER_READ, OWNER_WRITE, OTHERS_READ, OTHERS_WRITE)},
+                {Set.of(OWNER_READ, OWNER_WRITE, OWNER_EXECUTE, OTHERS_READ,
+                        OTHERS_WRITE, OTHERS_EXECUTE)},
+                {Set.of(OWNER_READ, OWNER_WRITE, OWNER_EXECUTE,
                         GROUP_READ, GROUP_WRITE,GROUP_EXECUTE, OTHERS_READ,
-                        OTHERS_WRITE, OTHERS_EXECUTE)),
-                Arguments.of(Set.of(OWNER_READ, OWNER_WRITE, GROUP_READ, GROUP_WRITE,
-                        OTHERS_READ, OTHERS_WRITE))
-        );
+                        OTHERS_WRITE, OTHERS_EXECUTE)},
+                {Set.of(OWNER_READ, OWNER_WRITE, GROUP_READ, GROUP_WRITE,
+                        OTHERS_READ, OTHERS_WRITE)},
+        };
     }
 }

@@ -78,6 +78,7 @@ public abstract class WriteBarrier {
     // For field references
     public class Referencer {
         Referencer next = null;
+        @SuppressWarnings("initialization")
         Referencer() {
             this.next = null;
         }

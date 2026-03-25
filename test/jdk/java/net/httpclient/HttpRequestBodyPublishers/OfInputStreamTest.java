@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.http.HttpRequest.BodyPublisher;
-import java.net.http.HttpRequest.BodyPublishers;
-import java.nio.ByteBuffer;
+import java.net.http.HttpRequest;
 import java.util.List;
 import java.util.concurrent.Flow;
 import java.util.function.Supplier;
@@ -43,22 +41,19 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @test
  * @bug 8364733
  * @summary Verify all specified `HttpRequest.BodyPublishers::ofInputStream` behavior
- *
  * @build ByteBufferUtils
  *        RecordingSubscriber
- *        ReplayTestSupport
- *
- * @run junit ${test.main.class}
+ * @run junit OfInputStreamTest
  *
  * @comment Using `main/othervm` to initiate tests that depend on a custom-configured JVM
- * @run main/othervm -Xmx64m ${test.main.class} testOOM
+ * @run main/othervm -Xmx64m OfInputStreamTest testOOM
  */
 
-public class OfInputStreamTest extends ReplayTestSupport {
+public class OfInputStreamTest {
 
     @Test
     void testNullInputStreamSupplier() {
-        assertThrows(NullPointerException.class, () -> BodyPublishers.ofInputStream(null));
+        assertThrows(NullPointerException.class, () -> HttpRequest.BodyPublishers.ofInputStream(null));
     }
 
     @Test
@@ -66,7 +61,7 @@ public class OfInputStreamTest extends ReplayTestSupport {
 
         // Create the publisher
         RuntimeException exception = new RuntimeException();
-        BodyPublisher publisher = BodyPublishers.ofInputStream(() -> { throw exception; });
+        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofInputStream(() -> { throw exception; });
 
         // Subscribe
         RecordingSubscriber subscriber = new RecordingSubscriber();
@@ -85,7 +80,7 @@ public class OfInputStreamTest extends ReplayTestSupport {
     void testNullInputStream() throws InterruptedException {
 
         // Create the publisher
-        BodyPublisher publisher = BodyPublishers.ofInputStream(() -> null);
+        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofInputStream(() -> null);
 
         // Subscribe
         RecordingSubscriber subscriber = new RecordingSubscriber();
@@ -112,7 +107,7 @@ public class OfInputStreamTest extends ReplayTestSupport {
                     case 2 -> new ByteArrayInputStream(buffer2);
                     default -> throw new AssertionError();
                 };
-        BodyPublisher publisher = BodyPublishers.ofInputStream(inputStreamSupplier);
+        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofInputStream(inputStreamSupplier);
 
         // Subscribe
         RecordingSubscriber subscriber = new RecordingSubscriber();
@@ -134,7 +129,7 @@ public class OfInputStreamTest extends ReplayTestSupport {
         // Create the publisher
         byte[] content = ByteBufferUtils.byteArrayOfLength(length);
         InputStream inputStream = new ByteArrayInputStream(content);
-        BodyPublisher publisher = BodyPublishers.ofInputStream(() -> inputStream);
+        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofInputStream(() -> inputStream);
 
         // Subscribe
         RecordingSubscriber subscriber = new RecordingSubscriber();
@@ -153,7 +148,7 @@ public class OfInputStreamTest extends ReplayTestSupport {
         // Create the publisher
         RuntimeException exception = new RuntimeException("failure for `read`");
         InputStream inputStream = new InputStreamThrowingOnCompletion(exceptionIndex, exception);
-        BodyPublisher publisher = BodyPublishers.ofInputStream(() -> inputStream);
+        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofInputStream(() -> inputStream);
 
         // Subscribe
         RecordingSubscriber subscriber = new RecordingSubscriber();
@@ -190,14 +185,6 @@ public class OfInputStreamTest extends ReplayTestSupport {
 
     }
 
-    @Override
-    Iterable<ReplayTarget> createReplayTargets() {
-        byte[] content = ByteBufferUtils.byteArrayOfLength(10);
-        ByteBuffer expectedBuffer = ByteBuffer.wrap(content);
-        BodyPublisher publisher = BodyPublishers.ofInputStream(() -> new ByteArrayInputStream(content));
-        return List.of(new ReplayTarget(expectedBuffer, -1, publisher, null));
-    }
-
     /**
      * Initiates tests that depend on a custom-configured JVM.
      */
@@ -213,8 +200,8 @@ public class OfInputStreamTest extends ReplayTestSupport {
 
         // Create the publisher using an `InputStream` that emits content exceeding the maximum memory
         int length = ByteBufferUtils.findLengthExceedingMaxMemory();
-        BodyPublisher publisher =
-                BodyPublishers.ofInputStream(() -> new InputStream() {
+        HttpRequest.BodyPublisher publisher =
+                HttpRequest.BodyPublishers.ofInputStream(() -> new InputStream() {
 
                     private int position;
 

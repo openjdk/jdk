@@ -89,3 +89,4 @@ vmTestbase/nsk/jdi/ThreadReference/isSuspended/issuspended002/TestDescription.ja
 
 #############################################################################
 
+# Valhalla failures start here:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,14 @@
  *
  */
 
+#include "ci/ciFlatArrayKlass.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "gc/shared/c2/cardTableBarrierSetC2.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/graphKit.hpp"
+#include "opto/inlinetypenode.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 const TypeFunc* ArrayCopyNode::_arraycopy_type_Type = nullptr;
@@ -113,10 +115,14 @@ intptr_t ArrayCopyNode::get_length_if_constant(PhaseGVN *phase) const {
 }
 
 int ArrayCopyNode::get_count(PhaseGVN *phase) const {
-  Node* src = in(ArrayCopyNode::Src);
-  const Type* src_type = phase->type(src);
-
   if (is_clonebasic()) {
+    Node* src = in(ArrayCopyNode::Src);
+    const Type* src_type = phase->type(src);
+
+    if (src_type == Type::TOP) {
+      return -1;
+    }
+
     if (src_type->isa_instptr()) {
       const TypeInstPtr* inst_src = src_type->is_instptr();
       ciInstanceKlass* ik = inst_src->instance_klass();
@@ -139,6 +145,7 @@ int ArrayCopyNode::get_count(PhaseGVN *phase) const {
       // 3 or 4 elements) might lead to the same length input
       // (e.g. 2 double-words).
       assert(!ary_src->size()->is_con() || (get_length_if_constant(phase) >= 0) ||
+             (UseArrayFlattening && ary_src->elem()->make_oopptr() != nullptr && ary_src->elem()->make_oopptr()->can_be_inline_type()) ||
              phase->is_IterGVN() || phase->C->inlining_incrementally() || StressReflectiveCode, "inconsistent");
       if (ary_src->size()->is_con()) {
         return ary_src->size()->get_con();
@@ -192,6 +199,7 @@ Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int c
   }
 
   MergeMemNode* mem = phase->transform(MergeMemNode::make(in_mem))->as_MergeMem();
+  phase->record_for_igvn(mem);
   if (can_reshape) {
     phase->is_IterGVN()->_worklist.push(mem);
   }
@@ -226,8 +234,8 @@ Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int c
     ciField* field = ik->nonstatic_field_at(i);
     const TypePtr* adr_type = phase->C->alias_type(field)->adr_type();
     Node* off = phase->MakeConX(field->offset_in_bytes());
-    Node* next_src = phase->transform(AddPNode::make_with_base(base_src, off));
-    Node* next_dest = phase->transform(AddPNode::make_with_base(base_dest, off));
+    Node* next_src = phase->transform(new AddPNode(base_src,base_src,off));
+    Node* next_dest = phase->transform(new AddPNode(base_dest,base_dest,off));
     assert(phase->C->get_alias_index(adr_type) == phase->C->get_alias_index(phase->type(next_src)->isa_ptr()),
       "slice of address and input slice don't match");
     assert(phase->C->get_alias_index(adr_type) == phase->C->get_alias_index(phase->type(next_dest)->isa_ptr()),
@@ -291,22 +299,31 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
     if (is_reference_type(src_elem, true)) src_elem = T_OBJECT;
     if (is_reference_type(dest_elem, true)) dest_elem = T_OBJECT;
 
-    if (src_elem != dest_elem || dest_elem == T_VOID) {
+    // TODO 8350865 What about atomicity?
+    if (src_elem != dest_elem || ary_src->is_null_free() != ary_dest->is_null_free() || ary_src->is_flat() != ary_dest->is_flat() || dest_elem == T_VOID) {
       // We don't know if arguments are arrays of the same type
       return false;
     }
 
     BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-    if (bs->array_copy_requires_gc_barriers(is_alloc_tightly_coupled(), dest_elem, false, false, BarrierSetC2::Optimization)) {
-      // It's an object array copy but we can't emit the card marking
-      // that is needed
+    if ((!ary_dest->is_flat() && bs->array_copy_requires_gc_barriers(is_alloc_tightly_coupled(), dest_elem, false, false, BarrierSetC2::Optimization)) ||
+        (ary_dest->is_flat() && ary_src->elem()->inline_klass()->contains_oops() &&
+         bs->array_copy_requires_gc_barriers(is_alloc_tightly_coupled(), T_OBJECT, false, false, BarrierSetC2::Optimization))) {
+      // It's an object array copy but we can't emit the card marking that is needed
       return false;
     }
 
     value_type = ary_src->elem();
 
     uint shift  = exact_log2(type2aelembytes(dest_elem));
-    uint header = arrayOopDesc::base_offset_in_bytes(dest_elem);
+    if (ary_dest->is_flat()) {
+      assert(ary_src->is_flat(), "src and dest must be flat");
+      shift = ary_src->flat_log_elem_size();
+      src_elem = T_FLAT_ELEMENT;
+      dest_elem = T_FLAT_ELEMENT;
+    }
+
+    const uint header = arrayOopDesc::base_offset_in_bytes(dest_elem);
 
     src_offset = Compile::conv_I2X_index(phase, src_offset, ary_src->size());
     if (src_offset->is_top()) {
@@ -332,11 +349,11 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
 
     Node* dest_scale = phase->transform(new LShiftXNode(dest_offset, phase->intcon(shift)));
 
-    adr_src = phase->transform(AddPNode::make_with_base(base_src, src_scale));
-    adr_dest = phase->transform(AddPNode::make_with_base(base_dest, dest_scale));
+    adr_src          = phase->transform(new AddPNode(base_src, base_src, src_scale));
+    adr_dest         = phase->transform(new AddPNode(base_dest, base_dest, dest_scale));
 
-    adr_src = phase->transform(AddPNode::make_with_base(base_src, adr_src, phase->MakeConX(header)));
-    adr_dest = phase->transform(AddPNode::make_with_base(base_dest, adr_dest, phase->MakeConX(header)));
+    adr_src          = phase->transform(new AddPNode(base_src, adr_src, phase->MakeConX(header)));
+    adr_dest         = phase->transform(new AddPNode(base_dest, adr_dest, phase->MakeConX(header)));
 
     copy_type = dest_elem;
   } else {
@@ -345,18 +362,26 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
 
     disjoint_bases = true;
 
+    if (ary_src->elem()->make_oopptr() != nullptr &&
+        ary_src->elem()->make_oopptr()->can_be_inline_type()) {
+      return false;
+    }
+
     BasicType elem = ary_src->isa_aryptr()->elem()->array_element_basic_type();
     if (is_reference_type(elem, true)) {
       elem = T_OBJECT;
     }
 
     BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-    if (bs->array_copy_requires_gc_barriers(true, elem, true, is_clone_inst(), BarrierSetC2::Optimization)) {
+    if ((!ary_src->is_flat() && bs->array_copy_requires_gc_barriers(true, elem, true, is_clone_inst(), BarrierSetC2::Optimization)) ||
+        (ary_src->is_flat() && ary_src->elem()->inline_klass()->contains_oops() &&
+         bs->array_copy_requires_gc_barriers(true, T_OBJECT, true, is_clone_inst(), BarrierSetC2::Optimization))) {
+      // It's an object array copy but we can't emit the card marking that is needed
       return false;
     }
 
-    adr_src = phase->transform(AddPNode::make_with_base(base_src, src_offset));
-    adr_dest = phase->transform(AddPNode::make_with_base(base_dest, dest_offset));
+    adr_src  = phase->transform(new AddPNode(base_src, base_src, src_offset));
+    adr_dest = phase->transform(new AddPNode(base_dest, base_dest, dest_offset));
 
     // The address is offsetted to an aligned address where a raw copy would start.
     // If the clone copy is decomposed into load-stores - the address is adjusted to
@@ -366,8 +391,8 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
     int diff = arrayOopDesc::base_offset_in_bytes(elem) - offset;
     assert(diff >= 0, "clone should not start after 1st array element");
     if (diff > 0) {
-      adr_src = phase->transform(AddPNode::make_with_base(base_src, adr_src, phase->MakeConX(diff)));
-      adr_dest = phase->transform(AddPNode::make_with_base(base_dest, adr_dest, phase->MakeConX(diff)));
+      adr_src = phase->transform(new AddPNode(base_src, adr_src, phase->MakeConX(diff)));
+      adr_dest = phase->transform(new AddPNode(base_dest, adr_dest, phase->MakeConX(diff)));
     }
     copy_type = elem;
     value_type = ary_src->elem();
@@ -375,39 +400,102 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
   return true;
 }
 
-const TypePtr* ArrayCopyNode::get_address_type(PhaseGVN* phase, const TypePtr* atp, Node* n) {
+const TypeAryPtr* ArrayCopyNode::get_address_type(PhaseGVN* phase, const TypePtr* atp, Node* n) {
   if (atp == TypeOopPtr::BOTTOM) {
     atp = phase->type(n)->isa_ptr();
   }
   // adjust atp to be the correct array element address type
-  return atp->add_offset(Type::OffsetBot);
+  return atp->add_offset(Type::OffsetBot)->is_aryptr();
 }
 
-void ArrayCopyNode::array_copy_test_overlap(PhaseGVN *phase, bool can_reshape, bool disjoint_bases, int count, Node*& forward_ctl, Node*& backward_ctl) {
-  Node* ctl = in(TypeFunc::Control);
+void ArrayCopyNode::array_copy_test_overlap(GraphKit& kit, bool disjoint_bases, int count, Node*& backward_ctl) {
+  Node* ctl = kit.control();
   if (!disjoint_bases && count > 1) {
+    PhaseGVN& gvn = kit.gvn();
     Node* src_offset = in(ArrayCopyNode::SrcPos);
     Node* dest_offset = in(ArrayCopyNode::DestPos);
     assert(src_offset != nullptr && dest_offset != nullptr, "should be");
-    Node* cmp = phase->transform(new CmpINode(src_offset, dest_offset));
-    Node *bol = phase->transform(new BoolNode(cmp, BoolTest::lt));
+    Node* cmp = gvn.transform(new CmpINode(src_offset, dest_offset));
+    Node *bol = gvn.transform(new BoolNode(cmp, BoolTest::lt));
     IfNode *iff = new IfNode(ctl, bol, PROB_FAIR, COUNT_UNKNOWN);
 
-    phase->transform(iff);
+    gvn.transform(iff);
 
-    forward_ctl = phase->transform(new IfFalseNode(iff));
-    backward_ctl = phase->transform(new IfTrueNode(iff));
-  } else {
-    forward_ctl = ctl;
+    kit.set_control(gvn.transform(new IfFalseNode(iff)));
+    backward_ctl = gvn.transform(new IfTrueNode(iff));
   }
 }
 
-Node* ArrayCopyNode::array_copy_forward(PhaseGVN *phase,
+void ArrayCopyNode::copy(GraphKit& kit,
+                         const TypeAryPtr* atp_src,
+                         const TypeAryPtr* atp_dest,
+                         int i,
+                         Node* base_src,
+                         Node* base_dest,
+                         Node* adr_src,
+                         Node* adr_dest,
+                         BasicType copy_type,
+                         const Type* value_type) {
+  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+  Node* ctl = kit.control();
+  if (atp_dest->is_flat()) {
+    ciInlineKlass* vk = atp_src->elem()->inline_klass();
+    for (int j = 0; j < vk->nof_nonstatic_fields(); j++) {
+      ciField* field = vk->nonstatic_field_at(j);
+      int off_in_vt = field->offset_in_bytes() - vk->payload_offset();
+      Node* off  = kit.MakeConX(off_in_vt + i * atp_src->flat_elem_size());
+      ciType* ft = field->type();
+      BasicType bt = type2field[ft->basic_type()];
+      assert(!field->is_flat(), "flat field encountered");
+      const Type* rt = Type::get_const_type(ft);
+      const TypePtr* adr_type = atp_src->with_field_offset(off_in_vt)->add_offset(Type::OffsetBot);
+      assert(!bs->array_copy_requires_gc_barriers(is_alloc_tightly_coupled(), bt, false, false, BarrierSetC2::Optimization), "GC barriers required");
+      Node* next_src = kit.gvn().transform(new AddPNode(base_src, adr_src, off));
+      Node* next_dest = kit.gvn().transform(new AddPNode(base_dest, adr_dest, off));
+      Node* v = load(bs, &kit.gvn(), ctl, kit.merged_memory(), next_src, adr_type, rt, bt);
+      store(bs, &kit.gvn(), ctl, kit.merged_memory(), next_dest, adr_type, v, rt, bt);
+    }
+  } else {
+    Node* off = kit.MakeConX(type2aelembytes(copy_type) * i);
+    Node* next_src = kit.gvn().transform(new AddPNode(base_src, adr_src, off));
+    Node* next_dest = kit.gvn().transform(new AddPNode(base_dest, adr_dest, off));
+    Node* v = load(bs, &kit.gvn(), ctl, kit.merged_memory(), next_src, atp_src, value_type, copy_type);
+    store(bs, &kit.gvn(), ctl, kit.merged_memory(), next_dest, atp_dest, v, value_type, copy_type);
+  }
+  kit.set_control(ctl);
+}
+
+
+void ArrayCopyNode::array_copy_forward(GraphKit& kit,
+                                       bool can_reshape,
+                                       const TypeAryPtr* atp_src,
+                                       const TypeAryPtr* atp_dest,
+                                       Node* adr_src,
+                                       Node* base_src,
+                                       Node* adr_dest,
+                                       Node* base_dest,
+                                       BasicType copy_type,
+                                       const Type* value_type,
+                                       int count) {
+  if (!kit.stopped()) {
+    // copy forward
+    if (count > 0) {
+      for (int i = 0; i < count; i++) {
+        copy(kit, atp_src, atp_dest, i, base_src, base_dest, adr_src, adr_dest, copy_type, value_type);
+      }
+    } else if (can_reshape) {
+      PhaseGVN& gvn = kit.gvn();
+      assert(gvn.is_IterGVN(), "");
+      gvn.record_for_igvn(adr_src);
+      gvn.record_for_igvn(adr_dest);
+    }
+  }
+}
+
+void ArrayCopyNode::array_copy_backward(GraphKit& kit,
                                         bool can_reshape,
-                                        Node*& forward_ctl,
-                                        Node* mem,
-                                        const TypePtr* atp_src,
-                                        const TypePtr* atp_dest,
+                                        const TypeAryPtr* atp_src,
+                                        const TypeAryPtr* atp_dest,
                                         Node* adr_src,
                                         Node* base_src,
                                         Node* adr_dest,
@@ -415,80 +503,21 @@ Node* ArrayCopyNode::array_copy_forward(PhaseGVN *phase,
                                         BasicType copy_type,
                                         const Type* value_type,
                                         int count) {
-  if (!forward_ctl->is_top()) {
-    // copy forward
-    MergeMemNode* mm = MergeMemNode::make(mem);
-
-    if (count > 0) {
-      BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-      Node* v = load(bs, phase, forward_ctl, mm, adr_src, atp_src, value_type, copy_type);
-      store(bs, phase, forward_ctl, mm, adr_dest, atp_dest, v, value_type, copy_type);
-      for (int i = 1; i < count; i++) {
-        Node* off  = phase->MakeConX(type2aelembytes(copy_type) * i);
-        Node* next_src = phase->transform(AddPNode::make_with_base(base_src,adr_src,off));
-        // We may have narrowed the type of next_src right before calling this method but because this runs with
-        // PhaseIterGVN::_delay_transform true, explicitly update the type of the AddP so it's consistent  with its
-        // base and load() picks the right memory slice.
-        phase->set_type(next_src, next_src->Value(phase));
-        Node* next_dest = phase->transform(AddPNode::make_with_base(base_dest,adr_dest,off));
-        // Same as above
-        phase->set_type(next_dest, next_dest->Value(phase));
-        v = load(bs, phase, forward_ctl, mm, next_src, atp_src, value_type, copy_type);
-        store(bs, phase, forward_ctl, mm, next_dest, atp_dest, v, value_type, copy_type);
-      }
-    } else if (can_reshape) {
-      PhaseIterGVN* igvn = phase->is_IterGVN();
-      igvn->_worklist.push(adr_src);
-      igvn->_worklist.push(adr_dest);
-    }
-    return mm;
-  }
-  return phase->C->top();
-}
-
-Node* ArrayCopyNode::array_copy_backward(PhaseGVN *phase,
-                                         bool can_reshape,
-                                         Node*& backward_ctl,
-                                         Node* mem,
-                                         const TypePtr* atp_src,
-                                         const TypePtr* atp_dest,
-                                         Node* adr_src,
-                                         Node* base_src,
-                                         Node* adr_dest,
-                                         Node* base_dest,
-                                         BasicType copy_type,
-                                         const Type* value_type,
-                                         int count) {
-  if (!backward_ctl->is_top()) {
+  if (!kit.stopped()) {
     // copy backward
-    MergeMemNode* mm = MergeMemNode::make(mem);
-
-    BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-    assert(copy_type != T_OBJECT || !bs->array_copy_requires_gc_barriers(false, T_OBJECT, false, false, BarrierSetC2::Optimization), "only tightly coupled allocations for object arrays");
+    PhaseGVN& gvn = kit.gvn();
 
     if (count > 0) {
-      for (int i = count-1; i >= 1; i--) {
-        Node* off  = phase->MakeConX(type2aelembytes(copy_type) * i);
-        Node* next_src = phase->transform(AddPNode::make_with_base(base_src,adr_src,off));
-        // We may have narrowed the type of next_src right before calling this method but because this runs with
-        // PhaseIterGVN::_delay_transform true, explicitly update the type of the AddP so it's consistent  with its
-        // base and store() picks the right memory slice.
-        phase->set_type(next_src, next_src->Value(phase));
-        Node* next_dest = phase->transform(AddPNode::make_with_base(base_dest,adr_dest,off));
-        phase->set_type(next_dest, next_dest->Value(phase));
-        Node* v = load(bs, phase, backward_ctl, mm, next_src, atp_src, value_type, copy_type);
-        store(bs, phase, backward_ctl, mm, next_dest, atp_dest, v, value_type, copy_type);
+      for (int i = count-1; i >= 0; i--) {
+        copy(kit, atp_src, atp_dest, i, base_src, base_dest, adr_src, adr_dest, copy_type, value_type);
       }
-      Node* v = load(bs, phase, backward_ctl, mm, adr_src, atp_src, value_type, copy_type);
-      store(bs, phase, backward_ctl, mm, adr_dest, atp_dest, v, value_type, copy_type);
-    } else if (can_reshape) {
-      PhaseIterGVN* igvn = phase->is_IterGVN();
-      igvn->_worklist.push(adr_src);
-      igvn->_worklist.push(adr_dest);
+    } else if(can_reshape) {
+      PhaseGVN& gvn = kit.gvn();
+      assert(gvn.is_IterGVN(), "");
+      gvn.record_for_igvn(adr_src);
+      gvn.record_for_igvn(adr_dest);
     }
-    return phase->transform(mm);
   }
-  return phase->C->top();
 }
 
 bool ArrayCopyNode::finish_transform(PhaseGVN *phase, bool can_reshape,
@@ -513,17 +542,16 @@ bool ArrayCopyNode::finish_transform(PhaseGVN *phase, bool can_reshape,
     } else {
       // replace fallthrough projections of the ArrayCopyNode by the
       // new memory, control and the input IO.
-      CallProjections callprojs;
-      extract_projections(&callprojs, true, false);
+      CallProjections* callprojs = extract_projections(true, false);
 
-      if (callprojs.fallthrough_ioproj != nullptr) {
-        igvn->replace_node(callprojs.fallthrough_ioproj, in(TypeFunc::I_O));
+      if (callprojs->fallthrough_ioproj != nullptr) {
+        igvn->replace_node(callprojs->fallthrough_ioproj, in(TypeFunc::I_O));
       }
-      if (callprojs.fallthrough_memproj != nullptr) {
-        igvn->replace_node(callprojs.fallthrough_memproj, mem);
+      if (callprojs->fallthrough_memproj != nullptr) {
+        igvn->replace_node(callprojs->fallthrough_memproj, mem);
       }
-      if (callprojs.fallthrough_catchproj != nullptr) {
-        igvn->replace_node(callprojs.fallthrough_catchproj, ctl);
+      if (callprojs->fallthrough_catchproj != nullptr) {
+        igvn->replace_node(callprojs->fallthrough_catchproj, ctl);
       }
 
       // The ArrayCopyNode is not disconnected. It still has the
@@ -548,7 +576,11 @@ bool ArrayCopyNode::finish_transform(PhaseGVN *phase, bool can_reshape,
 
 
 Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if (remove_dead_region(phase, can_reshape))  return this;
+  // Perform any generic optimizations first
+  Node* result = SafePointNode::Ideal(phase, can_reshape);
+  if (result != nullptr) {
+    return result;
+  }
 
   if (StressArrayCopyMacroNode && !can_reshape) {
     phase->record_for_igvn(this);
@@ -590,6 +622,17 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return nullptr;
   }
 
+  Node* src = in(ArrayCopyNode::Src);
+  Node* dest = in(ArrayCopyNode::Dest);
+  const Type* src_type = phase->type(src);
+  const Type* dest_type = phase->type(dest);
+
+  if (src_type->isa_aryptr() && dest_type->isa_instptr()) {
+    // clone used for load of unknown inline type can't be optimized at
+    // this point
+    return nullptr;
+  }
+
   Node* mem = try_clone_instance(phase, can_reshape, count);
   if (mem != nullptr) {
     return (mem == NodeSentinel) ? nullptr : mem;
@@ -603,17 +646,6 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   const Type* value_type = nullptr;
   bool disjoint_bases = false;
 
-  Node* src = in(ArrayCopyNode::Src);
-  Node* dest = in(ArrayCopyNode::Dest);
-  // EA may have moved an input to a new slice. EA stores the new address types in the ArrayCopy node itself
-  // (_src_type/_dest_type). phase->type(src) and _src_type or phase->type(dest) and _dest_type may be different
-  // when this transformation runs if igvn hasn't had a chance to propagate the new types yet. Make sure the new
-  // types are taken into account so new Load/Store nodes are created on the right slice.
-  const TypePtr* atp_src = get_address_type(phase, _src_type, src);
-  const TypePtr* atp_dest = get_address_type(phase, _dest_type, dest);
-  phase->set_type(src, phase->type(src)->join_speculative(atp_src));
-  phase->set_type(dest, phase->type(dest)->join_speculative(atp_dest));
-
   if (!prepare_array_copy(phase, can_reshape,
                           adr_src, base_src, adr_dest, base_dest,
                           copy_type, value_type, disjoint_bases)) {
@@ -622,54 +654,77 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return nullptr;
   }
 
-  Node* in_mem = in(TypeFunc::Memory);
+  JVMState* new_jvms = nullptr;
+  SafePointNode* new_map = nullptr;
+  if (!is_clonebasic()) {
+    new_jvms = jvms()->clone_shallow(phase->C);
+    new_map = new SafePointNode(req(), new_jvms);
+    for (uint i = TypeFunc::FramePtr; i < req(); i++) {
+      new_map->init_req(i, in(i));
+    }
+    new_jvms->set_map(new_map);
+  } else {
+    new_jvms = new (phase->C) JVMState(0);
+    new_map = new SafePointNode(TypeFunc::Parms, new_jvms);
+    new_jvms->set_map(new_map);
+  }
+  new_map->set_control(in(TypeFunc::Control));
+  new_map->set_memory(MergeMemNode::make(in(TypeFunc::Memory)));
+  new_map->set_i_o(in(TypeFunc::I_O));
+  phase->record_for_igvn(new_map);
+
+  const TypeAryPtr* atp_src = get_address_type(phase, _src_type, src);
+  const TypeAryPtr* atp_dest = get_address_type(phase, _dest_type, dest);
 
   if (can_reshape) {
     assert(!phase->is_IterGVN()->delay_transform(), "cannot delay transforms");
     phase->is_IterGVN()->set_delay_transform(true);
   }
 
+  GraphKit kit(new_jvms, phase);
+
+  SafePointNode* backward_map = nullptr;
+  SafePointNode* forward_map = nullptr;
   Node* backward_ctl = phase->C->top();
-  Node* forward_ctl = phase->C->top();
-  array_copy_test_overlap(phase, can_reshape, disjoint_bases, count, forward_ctl, backward_ctl);
 
-  Node* forward_mem = array_copy_forward(phase, can_reshape, forward_ctl,
-                                         in_mem,
-                                         atp_src, atp_dest,
-                                         adr_src, base_src, adr_dest, base_dest,
-                                         copy_type, value_type, count);
+  array_copy_test_overlap(kit, disjoint_bases, count, backward_ctl);
 
-  Node* backward_mem = array_copy_backward(phase, can_reshape, backward_ctl,
-                                           in_mem,
-                                           atp_src, atp_dest,
-                                           adr_src, base_src, adr_dest, base_dest,
-                                           copy_type, value_type, count);
+  {
+    PreserveJVMState pjvms(&kit);
 
-  Node* ctl = nullptr;
-  if (!forward_ctl->is_top() && !backward_ctl->is_top()) {
-    ctl = new RegionNode(3);
-    ctl->init_req(1, forward_ctl);
-    ctl->init_req(2, backward_ctl);
-    ctl = phase->transform(ctl);
-    MergeMemNode* forward_mm = forward_mem->as_MergeMem();
-    MergeMemNode* backward_mm = backward_mem->as_MergeMem();
-    for (MergeMemStream mms(forward_mm, backward_mm); mms.next_non_empty2(); ) {
-      if (mms.memory() != mms.memory2()) {
-        Node* phi = new PhiNode(ctl, Type::MEMORY, phase->C->get_adr_type(mms.alias_idx()));
-        phi->init_req(1, mms.memory());
-        phi->init_req(2, mms.memory2());
-        phi = phase->transform(phi);
-        mms.set_memory(phi);
-      }
-    }
-    mem = forward_mem;
-  } else if (!forward_ctl->is_top()) {
-    ctl = forward_ctl;
-    mem = forward_mem;
+    array_copy_forward(kit, can_reshape,
+                       atp_src, atp_dest,
+                       adr_src, base_src, adr_dest, base_dest,
+                       copy_type, value_type, count);
+
+    forward_map = kit.stop();
+  }
+
+  kit.set_control(backward_ctl);
+  array_copy_backward(kit, can_reshape,
+                      atp_src, atp_dest,
+                      adr_src, base_src, adr_dest, base_dest,
+                      copy_type, value_type, count);
+
+  backward_map = kit.stop();
+
+  if (!forward_map->control()->is_top() && !backward_map->control()->is_top()) {
+    assert(forward_map->i_o() == backward_map->i_o(), "need a phi on IO?");
+    Node* ctl = new RegionNode(3);
+    Node* mem = new PhiNode(ctl, Type::MEMORY, TypePtr::BOTTOM);
+    kit.set_map(forward_map);
+    ctl->init_req(1, kit.control());
+    mem->init_req(1, kit.reset_memory());
+    kit.set_map(backward_map);
+    ctl->init_req(2, kit.control());
+    mem->init_req(2, kit.reset_memory());
+    kit.set_control(phase->transform(ctl));
+    kit.set_all_memory(phase->transform(mem));
+  } else if (!forward_map->control()->is_top()) {
+    kit.set_map(forward_map);
   } else {
-    assert(!backward_ctl->is_top(), "no copy?");
-    ctl = backward_ctl;
-    mem = backward_mem;
+    assert(!backward_map->control()->is_top(), "no copy?");
+    kit.set_map(backward_map);
   }
 
   if (can_reshape) {
@@ -677,8 +732,11 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     phase->is_IterGVN()->set_delay_transform(false);
   }
 
-  if (!finish_transform(phase, can_reshape, ctl, mem)) {
-    if (can_reshape) {
+  mem = kit.map()->memory();
+  if (!finish_transform(phase, can_reshape, kit.control(), mem)) {
+    if (!can_reshape) {
+      phase->record_for_igvn(this);
+    } else {
       // put in worklist, so that if it happens to be dead it is removed
       phase->is_IterGVN()->_worklist.push(mem);
     }
@@ -775,13 +833,20 @@ bool ArrayCopyNode::modifies(intptr_t offset_lo, intptr_t offset_hi, PhaseValues
   BasicType ary_elem = ary_t->isa_aryptr()->elem()->array_element_basic_type();
   if (is_reference_type(ary_elem, true)) ary_elem = T_OBJECT;
 
-  uint header = arrayOopDesc::base_offset_in_bytes(ary_elem);
-  uint elemsize = type2aelembytes(ary_elem);
+  uint header;
+  uint elem_size;
+  if (ary_t->is_flat()) {
+    header = arrayOopDesc::base_offset_in_bytes(T_FLAT_ELEMENT);
+    elem_size = ary_t->flat_elem_size();
+  } else {
+    header = arrayOopDesc::base_offset_in_bytes(ary_elem);
+    elem_size = type2aelembytes(ary_elem);
+  }
 
-  jlong dest_pos_plus_len_lo = (((jlong)dest_pos_t->_lo) + len_t->_lo) * elemsize + header;
-  jlong dest_pos_plus_len_hi = (((jlong)dest_pos_t->_hi) + len_t->_hi) * elemsize + header;
-  jlong dest_pos_lo = ((jlong)dest_pos_t->_lo) * elemsize + header;
-  jlong dest_pos_hi = ((jlong)dest_pos_t->_hi) * elemsize + header;
+  jlong dest_pos_plus_len_lo = (((jlong)dest_pos_t->_lo) + len_t->_lo) * elem_size + header;
+  jlong dest_pos_plus_len_hi = (((jlong)dest_pos_t->_hi) + len_t->_hi) * elem_size + header;
+  jlong dest_pos_lo = ((jlong)dest_pos_t->_lo) * elem_size + header;
+  jlong dest_pos_hi = ((jlong)dest_pos_t->_hi) * elem_size + header;
 
   if (must_modify) {
     if (offset_lo >= dest_pos_hi && offset_hi < dest_pos_plus_len_lo) {

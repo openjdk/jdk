@@ -1,0 +1,88 @@
+/*
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/*
+class TryCatchChild extends Parent {
+    @Strict int x;
+    @Strict int y;
+
+    TryCatchChild() {
+        try {
+            x = 0;
+            int[] a = new int[1];
+            System.out.println(a[2]);
+        } catch (java.lang.ArrayIndexOutOfBoundsException e) {
+            y = 0;
+        }
+        super();
+    }
+}
+*/
+
+identity class TryCatchChildBad extends Parent version 71:65535
+{
+  strict Field x:I;
+  strict Field y:I;
+
+  Method       "<init>":"()V"
+    stack 4  locals 2
+  {
+         try               T0, T1;
+         aload_0;
+         iconst_0;
+         putfield          Field x:"I";
+         iconst_1;
+         newarray          int;
+         astore_1;
+         getstatic         Field java/lang/System.out:"Ljava/io/PrintStream;";
+         aload_1;
+         iconst_2;
+         iaload;
+         invokevirtual     Method java/io/PrintStream.println:"(I)V";
+         endtry            T0,T1;
+         goto              L63;
+         catch             T0 java/lang/ArrayIndexOutOfBoundsException;
+         try               T2;
+         stack_frame_type  stack1;
+           stack_map       class java/lang/ArrayIndexOutOfBoundsException;
+         astore_1;
+         aload_0;
+         iconst_0;
+         putfield          Field y:"I";
+         endtry            T2;
+         goto              L63;
+         catch             T1 #0;
+         catch             T2 #0;
+         stack_frame_type  stack1;
+           stack_map       class java/lang/Throwable;
+         astore_2;
+         aload_2;
+         athrow;
+  L63:   stack_frame_type  early_larval;
+           unset_fields;
+           frame_type      same;
+         aload_0;
+         invokespecial     Method Parent."<init>":"()V";
+         return;
+  }
+} // end Class TryCatchChildBad

@@ -25,6 +25,7 @@
  * @test
  * @bug 8335935 8336588 8372047
  * @summary Testing ClassFile transformations.
+ * @enablePreview
  * @run junit TransformTests
  */
 

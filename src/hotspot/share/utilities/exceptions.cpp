@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
@@ -202,7 +203,7 @@ void Exceptions::_throw(JavaThread* thread, const char* file, int line, Handle h
   }
 
   if (h_exception->is_a(vmClasses::LinkageError_klass())) {
-    _linkage_errors.add_then_fetch(1, memory_order_relaxed);
+    AtomicAccess::inc(&_linkage_errors, memory_order_relaxed);
   }
 
   assert(h_exception->is_a(vmClasses::Throwable_klass()), "exception is not a subclass of java/lang/Throwable");
@@ -267,10 +268,6 @@ void Exceptions::_throw_cause(JavaThread* thread, const char* file, int line, Sy
 }
 
 
-void Exceptions::increment_stack_overflow_errors() {
-  Exceptions::_stack_overflow_errors.add_then_fetch(1, memory_order_relaxed);
-}
-
 void Exceptions::throw_stack_overflow_exception(JavaThread* THREAD, const char* file, int line, const methodHandle& method) {
   Handle exception;
   if (!THREAD->has_pending_exception()) {
@@ -282,7 +279,7 @@ void Exceptions::throw_stack_overflow_exception(JavaThread* THREAD, const char* 
       java_lang_Throwable::fill_in_stack_trace(exception, method);
     }
     // Increment counter for hs_err file reporting
-    increment_stack_overflow_errors();
+    AtomicAccess::inc(&Exceptions::_stack_overflow_errors, memory_order_relaxed);
   } else {
     // if prior exception, throw that one instead
     exception = Handle(THREAD, THREAD->pending_exception());
@@ -521,20 +518,20 @@ void Exceptions::wrap_dynamic_exception(bool is_indy, JavaThread* THREAD) {
 }
 
 // Exception counting for hs_err file
-Atomic<int> Exceptions::_stack_overflow_errors{0};
-Atomic<int> Exceptions::_linkage_errors{0};
-Atomic<int> Exceptions::_out_of_memory_error_java_heap_errors{0};
-Atomic<int> Exceptions::_out_of_memory_error_metaspace_errors{0};
-Atomic<int> Exceptions::_out_of_memory_error_class_metaspace_errors{0};
+volatile int Exceptions::_stack_overflow_errors = 0;
+volatile int Exceptions::_linkage_errors = 0;
+volatile int Exceptions::_out_of_memory_error_java_heap_errors = 0;
+volatile int Exceptions::_out_of_memory_error_metaspace_errors = 0;
+volatile int Exceptions::_out_of_memory_error_class_metaspace_errors = 0;
 
 void Exceptions::count_out_of_memory_exceptions(Handle exception) {
   if (Universe::is_out_of_memory_error_metaspace(exception())) {
-    _out_of_memory_error_metaspace_errors.add_then_fetch(1, memory_order_relaxed);
+     AtomicAccess::inc(&_out_of_memory_error_metaspace_errors, memory_order_relaxed);
   } else if (Universe::is_out_of_memory_error_class_metaspace(exception())) {
-    _out_of_memory_error_class_metaspace_errors.add_then_fetch(1, memory_order_relaxed);
+     AtomicAccess::inc(&_out_of_memory_error_class_metaspace_errors, memory_order_relaxed);
   } else {
-    // everything else reported as java heap OOM
-    _out_of_memory_error_java_heap_errors.add_then_fetch(1, memory_order_relaxed);
+     // everything else reported as java heap OOM
+     AtomicAccess::inc(&_out_of_memory_error_java_heap_errors, memory_order_relaxed);
   }
 }
 
@@ -545,24 +542,19 @@ static void print_oom_count(outputStream* st, const char *err, int count) {
 }
 
 bool Exceptions::has_exception_counts() {
-  return (_stack_overflow_errors.load_relaxed() +
-          _out_of_memory_error_java_heap_errors.load_relaxed() +
-          _out_of_memory_error_metaspace_errors.load_relaxed() +
-          _out_of_memory_error_class_metaspace_errors.load_relaxed()) > 0;
+  return (_stack_overflow_errors + _out_of_memory_error_java_heap_errors +
+         _out_of_memory_error_metaspace_errors + _out_of_memory_error_class_metaspace_errors) > 0;
 }
 
 void Exceptions::print_exception_counts_on_error(outputStream* st) {
-  print_oom_count(st, "java_heap_errors",
-                  _out_of_memory_error_java_heap_errors.load_relaxed());
-  print_oom_count(st, "metaspace_errors",
-                  _out_of_memory_error_metaspace_errors.load_relaxed());
-  print_oom_count(st, "class_metaspace_errors",
-                  _out_of_memory_error_class_metaspace_errors.load_relaxed());
-  if (_stack_overflow_errors.load_relaxed() > 0) {
-    st->print_cr("StackOverflowErrors=%d", _stack_overflow_errors.load_relaxed());
+  print_oom_count(st, "java_heap_errors", _out_of_memory_error_java_heap_errors);
+  print_oom_count(st, "metaspace_errors", _out_of_memory_error_metaspace_errors);
+  print_oom_count(st, "class_metaspace_errors", _out_of_memory_error_class_metaspace_errors);
+  if (_stack_overflow_errors > 0) {
+    st->print_cr("StackOverflowErrors=%d", _stack_overflow_errors);
   }
-  if (_linkage_errors.load_relaxed() > 0) {
-    st->print_cr("LinkageErrors=%d", _linkage_errors.load_relaxed());
+  if (_linkage_errors > 0) {
+    st->print_cr("LinkageErrors=%d", _linkage_errors);
   }
 }
 

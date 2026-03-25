@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,17 @@
  * questions.
  *
  */
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import org.junit.jupiter.api.Test;
+import static org.testng.Assert.assertThrows;
 
 /**
  * @test
@@ -37,7 +39,7 @@ import org.junit.jupiter.api.Test;
  * @summary Validate the correct Exception is thrown if the Zip/JAR is not found
  *
  * @modules jdk.zipfs
- * @run junit/othervm NonExistentPathTests
+ * @run testng/othervm NonExistentPathTests
  */
 public class NonExistentPathTests {
     private static final String ZIPFS_SCHEME = "jar";

@@ -159,7 +159,7 @@ public:
     }
 
     if (has_mode(_flags, ClassPrinter::PRINT_CLASS_DETAILS)) {
-      _st->print("InstanceKlass: ");
+      _st->print("InstanceKlass (kind=%d): ", ik->kind());
       ik->print_on(_st);
       oop mirror = ik->java_mirror();
       if (mirror != nullptr) {
@@ -224,7 +224,6 @@ void ClassPrinter::print_flags_help(outputStream* os) {
   os->print_cr("   0x%02x  - print info for invokehandle",  PRINT_METHOD_HANDLE);
   os->print_cr("   0x%02x  - print details of the C++ and Java objects that represent classes",  PRINT_CLASS_DETAILS);
   os->print_cr("   0x%02x  - print details of the C++ objects that represent methods",  PRINT_METHOD_DETAILS);
-  os->print_cr("   0x%02x  - print MethodData",  PRINT_METHOD_DATA);
   os->cr();
 }
 

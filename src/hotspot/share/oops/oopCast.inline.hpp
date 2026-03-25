@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,10 @@ template<>
 inline bool is_oop_type<arrayOop>(oop theOop) { return theOop->is_array(); }
 template<>
 inline bool is_oop_type<objArrayOop>(oop theOop) { return theOop->is_objArray(); }
+template<>
+inline bool is_oop_type<refArrayOop>(oop theOop) { return theOop->is_refArray(); }
+template<>
+inline bool is_oop_type<flatArrayOop>(oop theOop) { return theOop->is_flatArray(); }
 template<>
 inline bool is_oop_type<typeArrayOop>(oop theOop) { return theOop->is_typeArray(); }
 

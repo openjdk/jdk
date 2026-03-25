@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,19 @@
 
 package javax.xml.parsers.ptests;
 
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.xml.sax.SAXException;
+import static javax.xml.parsers.ptests.ParserTestConst.XML_DIR;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
+
+import java.io.File;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-import java.io.File;
 
-import static javax.xml.parsers.ptests.ParserTestConst.XML_DIR;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+import org.xml.sax.SAXException;
 
 /**
  * Class contains the test cases for SAXParser API
@@ -42,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run junit/othervm javax.xml.parsers.ptests.SAXParserTest03
+ * @run testng/othervm javax.xml.parsers.ptests.SAXParserTest03
  */
 public class SAXParserTest03 {
 
@@ -51,7 +52,8 @@ public class SAXParserTest03 {
      *
      * @return a dimensional contains.
      */
-    public static Object[][] getFactory() {
+    @DataProvider(name = "input-provider")
+    public Object[][] getFactory() {
         SAXParserFactory spf = SAXParserFactory.newInstance();
         spf.setValidating(true);
         return new Object[][] { { spf, MyErrorHandler.newInstance() } };
@@ -65,8 +67,7 @@ public class SAXParserTest03 {
      * @param handler an error handler for capturing events.
      * @throws Exception If any errors occur.
      */
-    @ParameterizedTest
-    @MethodSource("getFactory")
+    @Test(dataProvider = "input-provider")
     public void testParseValidate01(SAXParserFactory spf, MyErrorHandler handler)
             throws Exception {
             spf.newSAXParser().parse(new File(XML_DIR, "parsertest.xml"), handler);
@@ -81,8 +82,7 @@ public class SAXParserTest03 {
      * @param handler an error handler for capturing events.
      * @throws Exception If any errors occur.
      */
-    @ParameterizedTest
-    @MethodSource("getFactory")
+    @Test(dataProvider = "input-provider")
     public void testParseValidate02(SAXParserFactory spf, MyErrorHandler handler)
             throws Exception {
             spf.setNamespaceAware(true);
@@ -99,13 +99,17 @@ public class SAXParserTest03 {
      * @param handler an error handler for capturing events.
      * @throws Exception If any errors occur.
      */
-    @ParameterizedTest
-    @MethodSource("getFactory")
+    @Test(dataProvider = "input-provider")
     public void testParseValidate03(SAXParserFactory spf, MyErrorHandler handler)
             throws Exception {
-        spf.setNamespaceAware(true);
-        SAXParser saxparser = spf.newSAXParser();
-        assertThrows(SAXException.class, () -> saxparser.parse(new File(XML_DIR, "invalidns.xml"), handler));
-        assertTrue(handler.isErrorOccured());
+        try {
+            spf.setNamespaceAware(true);
+            SAXParser saxparser = spf.newSAXParser();
+            saxparser.parse(new File(XML_DIR, "invalidns.xml"), handler);
+            fail("Expecting SAXException here");
+        } catch (SAXException e) {
+            assertTrue(handler.isErrorOccured());
+        }
     }
+
 }

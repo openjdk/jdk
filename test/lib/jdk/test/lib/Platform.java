@@ -75,6 +75,10 @@ public class Platform {
         return vmInfo.contains("static");
     }
 
+    public static boolean isEmulatedClient() {
+        return vmInfo.contains(" emulated-client");
+    }
+
     public static boolean isTieredSupported() {
         return (compiler != null) && compiler.contains("Tiered Compilers");
     }

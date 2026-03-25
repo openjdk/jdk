@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "oops/oop.inline.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "utilities/accessFlags.hpp"
 
@@ -41,6 +42,10 @@ void AccessFlags::print_on(outputStream* st) const {
   if (is_interface   ()) st->print("interface "   );
   if (is_abstract    ()) st->print("abstract "    );
   if (is_synthetic   ()) st->print("synthetic "   );
+  if (Arguments::is_valhalla_enabled()) {
+    if (is_identity_class()) st->print("identity ");
+    if (!is_identity_class()) st->print("value "  );
+  }
 }
 
 #endif // !PRODUCT || INCLUDE_JVMTI

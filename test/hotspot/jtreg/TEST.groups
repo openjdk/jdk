@@ -46,7 +46,7 @@ hotspot_gc = \
 
 # By design this group should include ALL tests under runtime sub-directory
 hotspot_runtime = \
-  runtime
+  runtime \
 
 hotspot_runtime_no_cds = \
   runtime \
@@ -61,6 +61,14 @@ hotspot_handshake = \
 
 hotspot_serviceability = \
   serviceability
+
+hotspot_valhalla = \
+  runtime/valhalla \
+  compiler/valhalla \
+  serviceability/jvmti/valhalla
+
+hotspot_valhalla_runtime = \
+  runtime/valhalla
 
 hotspot_resourcehogs = \
   resourcehogs
@@ -204,6 +212,7 @@ tier1_compiler_3 = \
   compiler/types/ \
   compiler/uncommontrap/ \
   compiler/unsafe/ \
+  compiler/valhalla/ \
   compiler/vectorization/ \
   -compiler/intrinsics/bmi \
   -compiler/intrinsics/mathexact \
@@ -244,6 +253,13 @@ tier3_compiler = \
   :hotspot_compiler \
   -:tier1_compiler \
   -:tier2_compiler
+
+
+tier1_compiler_no_valhalla = \
+  :tier1_compiler_1 \
+  :tier1_compiler_2 \
+  :tier1_compiler_3 \
+  -compiler/valhalla
 
 ctw_1 = \
   applications/ctw/modules/ \
@@ -398,6 +414,10 @@ tier1_runtime = \
  -runtime/signal \
  -runtime/stack
 
+tier1_runtime_no_valhalla = \
+  :tier1_runtime \
+  -runtime/valhalla
+
 hotspot_cds = \
   runtime/cds/ \
   runtime/CompressedOops/
@@ -458,7 +478,6 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/TestEpsilonGCWithCDS.java \
  -runtime/cds/appcds/TestParallelGCWithCDS.java \
  -runtime/cds/appcds/TestSerialGCWithCDS.java \
- -runtime/cds/appcds/TestZGCWithAOTHeap.java \
  -runtime/cds/appcds/TestZGCWithCDS.java \
  -runtime/cds/appcds/UnusedCPDuringDump.java \
  -runtime/cds/appcds/VerifierTest_1B.java
@@ -516,6 +535,7 @@ hotspot_aot_classlinking = \
  -runtime/cds/appcds/aotFlags \
  -runtime/cds/appcds/aotProfile \
  -runtime/cds/appcds/BadBSM.java \
+ -runtime/cds/appcds/cacheObject/ArchivedFlatArrayTest.java \
  -runtime/cds/appcds/cacheObject/ArchiveHeapTestClass.java \
  -runtime/cds/appcds/cacheObject/ArchivedIntegerCacheTest.java \
  -runtime/cds/appcds/cacheObject/ArchivedModuleCompareTest.java \
@@ -558,6 +578,7 @@ hotspot_aot_classlinking = \
  -runtime/cds/appcds/resolvedConstants/AOTLinkedLambdas.java \
  -runtime/cds/appcds/resolvedConstants/AOTLinkedVarHandles.java \
  -runtime/cds/appcds/resolvedConstants/ResolvedConstants.java \
+ -runtime/cds/appcds/RewriteBytecodesInlineTest.java \
  -runtime/cds/appcds/RewriteBytecodesTest.java \
  -runtime/cds/appcds/SignedJar.java \
  -runtime/cds/appcds/SpecifySysLoaderProp.java \
@@ -625,6 +646,10 @@ tier1_serviceability = \
   -serviceability/sa/ClhsdbJstackXcompStress.java \
   -serviceability/sa/TestJmapCore.java \
   -serviceability/sa/TestJmapCoreMetaspace.java
+
+tier1_serviceability_no_valhalla = \
+  :tier1_serviceability \
+  -serviceability/jvmti/valhalla
 
 tier1 = \
   :tier1_common \

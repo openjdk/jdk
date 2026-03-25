@@ -29,6 +29,7 @@ extern "C" {
 
 static const char* EXP_INTERF_SIG = "LP/Q/HCInterf;";
 static const char* SIG_START      = "LP/Q/HiddenClassSig";
+static const char* IDENTITYOBJECT_IF = "Ljava/lang/IdentityObject;";
 static const size_t SIG_START_LEN = strlen(SIG_START);
 static const int    ACC_INTERFACE = 0x0200; // Interface class modifiers bit
 
@@ -196,20 +197,26 @@ check_hidden_class_impl_interf(jvmtiEnv* jvmti, JNIEnv* jni, jclass klass) {
   jclass* interfaces = nullptr;
   jvmtiError err;
 
-  // check that hidden class implements just one interface
+  // check that hidden class implements just one interface (or two if IdentityObject has been injected)
   err = jvmti->GetImplementedInterfaces(klass, &count, &interfaces);
   CHECK_JVMTI_ERROR(jni, err, "check_hidden_class_impl_interf: Error in JVMTI GetImplementedInterfaces");
-  if (count != 1) {
-    LOG1("check_hidden_class_impl_interf: FAIL: implemented interfaces count: %d, expected to be 1\n", count);
+  if (count != 1 && count != 2) {
+    LOG1("check_hidden_class_impl_interf: FAIL: implemented interfaces count: %d, expected to be in [1-2] range\n", count);
     failed = true;
     return;
   }
-  // get interface signature
-  err = jvmti->GetClassSignature(interfaces[0], &sig, nullptr);
-  CHECK_JVMTI_ERROR(jni, err, "check_hidden_class_impl_interf: Error in JVMTI GetClassSignature for implemented interface");
+  bool found = false;
+  for (int i = 0; i < count; i++) {
+    // get interface signature
+    err = jvmti->GetClassSignature(interfaces[i], &sig, nullptr);
+    CHECK_JVMTI_ERROR(jni, err, "check_hidden_class_impl_interf: Error in JVMTI GetClassSignature for implemented interface");
+    // check the interface signature is matching the expected
+    if (strcmp(sig, EXP_INTERF_SIG) == 0) {
+      found = true;
+    }
+  }
 
-  // check the interface signature is matching the expected
-  if (strcmp(sig, EXP_INTERF_SIG) != 0) {
+  if (!found) {
     LOG2("check_hidden_class_impl_interf: FAIL: implemented interface signature: %s, expected to be: %s\n",
            sig, EXP_INTERF_SIG);
     failed = true;

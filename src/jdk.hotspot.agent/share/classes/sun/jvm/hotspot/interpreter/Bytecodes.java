@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,45 +246,47 @@ public class Bytecodes {
 
   // JVM bytecodes
   public static final int _fast_agetfield       = number_of_java_codes;
-  public static final int _fast_bgetfield       = 204;
-  public static final int _fast_cgetfield       = 205;
-  public static final int _fast_dgetfield       = 206;
-  public static final int _fast_fgetfield       = 207;
-  public static final int _fast_igetfield       = 208;
-  public static final int _fast_lgetfield       = 209;
-  public static final int _fast_sgetfield       = 210;
-  public static final int _fast_aputfield       = 211;
-  public static final int _fast_bputfield       = 212;
-  public static final int _fast_zputfield       = 213;
-  public static final int _fast_cputfield       = 214;
-  public static final int _fast_dputfield       = 215;
-  public static final int _fast_fputfield       = 216;
-  public static final int _fast_iputfield       = 217;
-  public static final int _fast_lputfield       = 218;
-  public static final int _fast_sputfield       = 219;
-  public static final int _fast_aload_0         = 220;
-  public static final int _fast_iaccess_0       = 221;
-  public static final int _fast_aaccess_0       = 222;
-  public static final int _fast_faccess_0       = 223;
-  public static final int _fast_iload           = 224;
-  public static final int _fast_iload2          = 225;
-  public static final int _fast_icaload         = 226;
-  public static final int _fast_invokevfinal    = 227;
-  public static final int _fast_linearswitch    = 228;
-  public static final int _fast_binaryswitch    = 229;
-  public static final int _fast_aldc            = 230;
-  public static final int _fast_aldc_w          = 231;
-  public static final int _return_register_finalizer = 232;
-  public static final int _invokehandle         = 233;
+  public static final int _fast_vgetfield       = 204;
+  public static final int _fast_bgetfield       = 205;
+  public static final int _fast_cgetfield       = 206;
+  public static final int _fast_dgetfield       = 207;
+  public static final int _fast_fgetfield       = 208;
+  public static final int _fast_igetfield       = 209;
+  public static final int _fast_lgetfield       = 210;
+  public static final int _fast_sgetfield       = 211;
+  public static final int _fast_aputfield       = 212;
+  public static final int _fast_vputfield       = 213;
+  public static final int _fast_bputfield       = 214;
+  public static final int _fast_zputfield       = 215;
+  public static final int _fast_cputfield       = 216;
+  public static final int _fast_dputfield       = 217;
+  public static final int _fast_fputfield       = 218;
+  public static final int _fast_iputfield       = 219;
+  public static final int _fast_lputfield       = 220;
+  public static final int _fast_sputfield       = 221;
+  public static final int _fast_aload_0         = 222;
+  public static final int _fast_iaccess_0       = 223;
+  public static final int _fast_aaccess_0       = 224;
+  public static final int _fast_faccess_0       = 225;
+  public static final int _fast_iload           = 226;
+  public static final int _fast_iload2          = 227;
+  public static final int _fast_icaload         = 228;
+  public static final int _fast_invokevfinal    = 229;
+  public static final int _fast_linearswitch    = 230;
+  public static final int _fast_binaryswitch    = 231;
+  public static final int _fast_aldc            = 232;
+  public static final int _fast_aldc_w          = 233;
+  public static final int _return_register_finalizer = 234;
+  public static final int _invokehandle         = 235;
 
   // Bytecodes rewritten at CDS dump time
-  public static final int _nofast_getfield      = 234;
-  public static final int _nofast_putfield      = 235;
-  public static final int _nofast_aload_0       = 236;
-  public static final int _nofast_iload         = 237;
-  public static final int _shouldnotreachhere   = 238; // For debugging
+  public static final int _nofast_getfield      = 236;
+  public static final int _nofast_putfield      = 237;
+  public static final int _nofast_aload_0       = 238;
+  public static final int _nofast_iload         = 239;
+  public static final int _shouldnotreachhere   = 240; // For debugging
 
-  public static final int number_of_codes       = 239;
+  public static final int number_of_codes       = 241;
 
   // Flag bits derived from format strings, can_trap, can_rewrite, etc.:
   // semantic flags:
@@ -776,6 +778,7 @@ public class Bytecodes {
     //  bytecode               bytecode name           format   wide f.   result tp               stk traps  std code
 
     def(_fast_agetfield      , "fast_agetfield"      , "bJJ"  , null    , BasicType.getTObject() ,  0, true , _getfield       );
+    def(_fast_vgetfield      , "fast_vgetfield"      , "bJJ"  , null    , BasicType.getTObject() ,  0, true , _getfield       );
     def(_fast_bgetfield      , "fast_bgetfield"      , "bJJ"  , null    , BasicType.getTInt()    ,  0, true , _getfield       );
     def(_fast_cgetfield      , "fast_cgetfield"      , "bJJ"  , null    , BasicType.getTChar()   ,  0, true , _getfield       );
     def(_fast_dgetfield      , "fast_dgetfield"      , "bJJ"  , null    , BasicType.getTDouble() ,  0, true , _getfield       );
@@ -785,6 +788,7 @@ public class Bytecodes {
     def(_fast_sgetfield      , "fast_sgetfield"      , "bJJ"  , null    , BasicType.getTShort()  ,  0, true , _getfield       );
 
     def(_fast_aputfield      , "fast_aputfield"      , "bJJ"  , null    , BasicType.getTObject() ,  0, true , _putfield       );
+    def(_fast_vputfield      , "fast_vputfield"      , "bJJ"  , null    , BasicType.getTObject() ,  0, true , _putfield       );
     def(_fast_bputfield      , "fast_bputfield"      , "bJJ"  , null    , BasicType.getTInt()    ,  0, true , _putfield       );
     def(_fast_zputfield      , "fast_zputfield"      , "bJJ"  , null    , BasicType.getTInt()    ,  0, true , _putfield       );
     def(_fast_cputfield      , "fast_cputfield"      , "bJJ"  , null    , BasicType.getTChar()   ,  0, true , _putfield       );

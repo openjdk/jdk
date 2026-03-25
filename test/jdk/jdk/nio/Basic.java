@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8198372
  * @modules jdk.net java.base/sun.nio.ch:+open
- * @run junit Basic
+ * @run testng Basic
  * @summary Basic tests for jdk.nio.Channels
  */
 
@@ -48,14 +48,10 @@ import jdk.nio.Channels.SelectableChannelCloser;
 
 import sun.nio.ch.IOUtil;
 
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import org.testng.annotations.Test;
+import static org.testng.Assert.*;
 
+@Test
 public class Basic {
 
     /**
@@ -123,7 +119,6 @@ public class Basic {
     /**
      * Basic test of channel registered with Selector
      */
-    @Test
     public void testSelect() throws IOException {
         Selector sel = Selector.open();
         try (Connection connection = Connection.open()) {
@@ -136,7 +131,7 @@ public class Basic {
             ch.configureBlocking(false);
             SelectionKey key = ch.register(sel, SelectionKey.OP_READ);
             int n = sel.selectNow();
-            assertEquals(0, n);
+            assertTrue(n == 0);
 
             // write bytes to other end of connection
             SocketChannel peer = connection.channel2();
@@ -146,7 +141,7 @@ public class Basic {
 
             // channel should be selected
             n = sel.select();
-            assertEquals(1, n);
+            assertTrue(n == 1);
             assertTrue(sel.selectedKeys().contains(key));
             assertTrue(key.isReadable());
             assertFalse(key.isWritable());
@@ -155,7 +150,7 @@ public class Basic {
             // change interest set for writing, channel should be selected
             key.interestOps(SelectionKey.OP_WRITE);
             n = sel.select();
-            assertEquals(1, n);
+            assertTrue(n == 1);
             assertTrue(sel.selectedKeys().contains(key));
             assertTrue(key.isWritable());
             assertFalse(key.isReadable());
@@ -164,7 +159,7 @@ public class Basic {
             // change interest set for reading + writing, channel should be selected
             key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
             n = sel.select();
-            assertEquals(1, n);
+            assertTrue(n == 1);
             assertTrue(sel.selectedKeys().contains(key));
             assertTrue(key.isWritable());
             assertTrue(key.isReadable());
@@ -173,7 +168,7 @@ public class Basic {
             // change interest set to 0 to deregister, channel should not be selected
             key.interestOps(0);
             n = sel.selectNow();
-            assertEquals(0, n);
+            assertTrue(n == 0);
 
         } finally {
             sel.close();
@@ -183,7 +178,6 @@ public class Basic {
     /**
      * Test that the SelectableChannelCloser implCloseChannel method is invoked.
      */
-    @Test
     public void testImplCloseChannel() throws IOException {
         try (Connection connection = Connection.open()) {
             FileDescriptor fd = getFD(connection.channel1());
@@ -195,11 +189,11 @@ public class Basic {
                 ch.close();
 
                 // implCloseChannel should been invoked once
-                assertEquals(1, closer.closeCount);
-                assertSame(ch, closer.invokedToClose);
+                assertTrue(closer.closeCount == 1);
+                assertTrue(closer.invokedToClose == ch);
 
                 // implReleaseChannel should not have been invoked
-                assertEquals(0, closer.releaseCount);
+                assertTrue(closer.releaseCount == 0);
             }
         }
     }
@@ -207,7 +201,6 @@ public class Basic {
     /**
      * Test that the SelectableChannelCloser implReleaseChannel method is invoked.
      */
-    @Test
     public void testImplReleaseChannel() throws IOException {
         Selector sel = Selector.open();
         try (Connection connection = Connection.open()) {
@@ -224,53 +217,50 @@ public class Basic {
             ch.close();
 
             // implCloseChannel should have been invoked
-            assertEquals(1, closer.closeCount);
-            assertSame(ch, closer.invokedToClose);
+            assertTrue(closer.closeCount == 1);
+            assertTrue(closer.invokedToClose == ch);
 
             // implReleaseChannel should not have been invoked
-            assertEquals(0, closer.releaseCount);
+            assertTrue(closer.releaseCount == 0);
 
             // flush the selector
             sel.selectNow();
 
             // implReleaseChannel should have been invoked
-            assertEquals(1, closer.releaseCount);
-            assertSame(ch, closer.invokedToRelease);
+            assertTrue(closer.releaseCount == 1);
+            assertTrue(closer.invokedToRelease == ch);
 
         } finally {
             sel.close();
         }
     }
 
-    @Test
+    @Test(expectedExceptions = IllegalArgumentException.class)
     public void testInvalidFileDescriptor() throws IOException {
         FileDescriptor fd = IOUtil.newFD(-1);
-        assertThrows
-            (IllegalArgumentException.class,
-             () -> Channels.readWriteSelectableChannel(fd, new SelectableChannelCloser() {
-                     @Override
-                     public void implCloseChannel(SelectableChannel sc) { }
-                     @Override
-                     public void implReleaseChannel(SelectableChannel sc) { }}));
+        Channels.readWriteSelectableChannel(fd, new SelectableChannelCloser() {
+            @Override
+            public void implCloseChannel(SelectableChannel sc) { }
+            @Override
+            public void implReleaseChannel(SelectableChannel sc) { }
+        });
     }
 
-    @Test
+    @Test(expectedExceptions = NullPointerException.class)
     public void testNullFileDescriptor() throws IOException {
-        assertThrows
-            (NullPointerException.class,
-             () -> Channels.readWriteSelectableChannel(null, new SelectableChannelCloser() {
-                     @Override
-                     public void implCloseChannel(SelectableChannel sc) { }
-                     @Override
-                     public void implReleaseChannel(SelectableChannel sc) { }}));
+        Channels.readWriteSelectableChannel(null, new SelectableChannelCloser() {
+            @Override
+            public void implCloseChannel(SelectableChannel sc) { }
+            @Override
+            public void implReleaseChannel(SelectableChannel sc) { }
+        });
     }
 
-    @Test
+    @Test(expectedExceptions = NullPointerException.class)
     public void testNullCloser() throws IOException {
         try (Connection connection = Connection.open()) {
             FileDescriptor fd = getFD(connection.channel1());
-            assertThrows(NullPointerException.class,
-                         () -> Channels.readWriteSelectableChannel(fd, null));
+            Channels.readWriteSelectableChannel(fd, null);
         }
     }
 
@@ -281,8 +271,7 @@ public class Basic {
             f.setAccessible(true);
             return (FileDescriptor) f.get(sc);
         } catch (Exception e) {
-            fail(e);
-            return null; // appease compiler
+            throw new Error(e);
         }
     }
 }

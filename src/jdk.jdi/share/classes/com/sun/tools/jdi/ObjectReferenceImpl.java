@@ -145,17 +145,42 @@ public class ObjectReferenceImpl extends ValueImpl
         }
     }
 
+    boolean isValueObject() {
+        if (referenceType() instanceof ClassTypeImpl classType) {
+            return classType.isValueClass();
+        }
+        return false;
+    }
+
     public boolean equals(Object obj) {
         if (obj instanceof ObjectReferenceImpl other) {
-            return (ref() == other.ref()) &&
-                   super.equals(obj);
-        } else {
-            return false;
+            if (!super.equals(obj)) { // checks if the references belong to the same VM
+                return false;
+            }
+            if (ref() == other.ref()) {
+                return true;
+            }
+            // We can get equal value objects with different IDs.
+            if (isValueObject()) {
+                try {
+                    return JDWP.ObjectReference.IsSameObject.process(vm, this, other).isSameObject;
+                } catch (JDWPException exc) {
+                    throw exc.toJDIException();
+                }
+            }
         }
+        return false;
     }
 
     @Override
     public int hashCode() {
+        if (isValueObject()) {
+            try {
+                return JDWP.ObjectReference.ObjectHashCode.process(vm, this).hashCode;
+            } catch (JDWPException exc) {
+                throw exc.toJDIException();
+            }
+        }
         return Long.hashCode(ref());
     }
 

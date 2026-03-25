@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -782,6 +782,11 @@ struct JNINativeInterface_ {
 
     jlong (JNICALL *GetStringUTFLengthAsLong)
       (JNIEnv *env, jstring str);
+
+    /* Value classes */
+
+    jboolean (JNICALL *IsValueObject)
+      (JNIEnv* env, jobject obj);
 
 };
 
@@ -1888,6 +1893,12 @@ struct JNIEnv_ {
 
     jboolean IsVirtualThread(jobject obj) {
         return functions->IsVirtualThread(this, obj);
+    }
+
+    /* Value classes */
+
+    jboolean IsValueObject(jobject obj) {
+        return functions->IsValueObject(this, obj);
     }
 
 #endif /* __cplusplus */

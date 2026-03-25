@@ -30,3 +30,6 @@
 #
 #############################################################################
 
+# Valhalla failures start here:
+com/sun/jdi/EATests.java#id0                                       8372831 generic-all
+java/lang/Thread/virtual/stress/Skynet.java#Z                      8342977 generic-all

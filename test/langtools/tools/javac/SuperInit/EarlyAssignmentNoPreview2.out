@@ -1,2 +1,4 @@
-EarlyAssignmentNoPreview2.java:12:14: compiler.err.feature.not.supported.in.source: (compiler.misc.feature.flexible.constructors), 24, 25
+- compiler.warn.source.no.system.modules.path: 24, (compiler.misc.source.no.system.modules.path: 24)
+EarlyAssignmentNoPreview2.java:12:13: compiler.err.feature.not.supported.in.source: (compiler.misc.feature.flexible.constructors), 24, 25
 1 error
+1 warning

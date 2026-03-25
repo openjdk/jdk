@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,9 @@ Annotations* Annotations::allocate(ClassLoaderData* loader_data, TRAPS) {
 void Annotations::free_contents(ClassLoaderData* loader_data, Array<AnnotationArray*>* p) {
   if (p != nullptr) {
     for (int i = 0; i < p->length(); i++) {
-      MetadataFactory::free_array<u1>(loader_data, p->at(i));
+      if (p->at(i) != nullptr) {
+        MetadataFactory::free_array<u1>(loader_data, p->at(i));
+      }
     }
     MetadataFactory::free_array<AnnotationArray*>(loader_data, p);
   }

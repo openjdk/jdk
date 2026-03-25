@@ -26,6 +26,8 @@
 package java.lang;
 
 import jdk.internal.misc.CDS;
+import jdk.internal.misc.PreviewFeatures;
+import jdk.internal.value.DeserializeConstructor;
 import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
@@ -50,14 +52,23 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * dealing with a {@code short}.
  *
  * <p>This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; programmers should treat instances that are
- * {@linkplain #equals(Object) equal} as interchangeable and should not
- * use instances for synchronization, or unpredictable behavior may
- * occur. For example, in a future release, synchronization may fail.
+ * class; programmers should treat instances that are {@linkplain #equals(Object) equal}
+ * as interchangeable and should not use instances for synchronization, mutexes, or
+ * with {@linkplain java.lang.ref.Reference object references}.
+ *
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          When preview features are enabled, {@code Short} is a {@linkplain Class#isValue value class}.
+ *          Use of value class instances for synchronization, mutexes, or with
+ *          {@linkplain java.lang.ref.Reference object references} result in
+ *          {@link IdentityException}.
+ *      </div>
+ * </div>
  *
  * @see     java.lang.Number
  * @since   1.1
  */
+@jdk.internal.MigratedValueClass
 @jdk.internal.ValueBased
 public final class Short extends Number implements Comparable<Short>, Constable {
 
@@ -259,25 +270,39 @@ public final class Short extends Number implements Comparable<Short>, Constable 
     /**
      * Returns a {@code Short} instance representing the specified
      * {@code short} value.
-     * If a new {@code Short} instance is not required, this method
-     * should generally be used in preference to the constructor
-     * {@link #Short(short)}, as this method is likely to yield
-     * significantly better space and time performance by caching
-     * frequently requested values.
-     *
-     * This method will always cache values in the range -128 to 127,
-     * inclusive, and may cache other values outside of this range.
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          <p>
+     *              - When preview features are NOT enabled, {@code Short} is an identity class.
+     *              If a new {@code Short} instance is not required, this method
+     *              should generally be used in preference to the constructor
+     *              {@link #Short(short)}, as this method is likely to yield
+     *              significantly better space and time performance by caching
+     *              frequently requested values.
+     *              This method will always cache values in the range -128 to 127,
+     *              inclusive, and may cache other values outside of this range.
+     *          </p>
+     *          <p>
+     *              - When preview features are enabled, {@code Short} is a {@linkplain Class#isValue value class}.
+     *              The {@code valueOf} behavior is the same as invoking the constructor,
+     *              whether cached or not.
+     *          </p>
+     *      </div>
+     * </div>
      *
      * @param  s a short value.
      * @return a {@code Short} instance representing {@code s}.
      * @since  1.5
      */
     @IntrinsicCandidate
+    @DeserializeConstructor
     public static Short valueOf(short s) {
-        final int offset = 128;
-        int sAsInt = s;
-        if (sAsInt >= -128 && sAsInt <= 127) { // must cache
-            return ShortCache.cache[sAsInt + offset];
+        if (!PreviewFeatures.isEnabled()) {
+            final int offset = 128;
+            int sAsInt = s;
+            if (sAsInt >= -128 && sAsInt <= 127) { // must cache
+                return ShortCache.cache[sAsInt + offset];
+            }
         }
         return new Short(s);
     }

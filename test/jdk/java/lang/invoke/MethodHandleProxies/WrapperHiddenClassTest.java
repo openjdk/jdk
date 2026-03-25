@@ -40,12 +40,16 @@ import static java.lang.constant.ConstantDescs.*;
 import static java.lang.invoke.MethodHandleProxies.*;
 import static java.lang.invoke.MethodType.methodType;
 import static java.lang.classfile.ClassFile.*;
+
+import jdk.internal.misc.PreviewFeatures;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /*
  * @test
  * @bug 6983726
  * @library /test/lib
+ * @modules java.base/jdk.internal.misc
  * @summary Tests on implementation hidden classes spinned by MethodHandleProxies
  * @build WrapperHiddenClassTest Client jdk.test.lib.util.ForceGC
  * @run junit WrapperHiddenClassTest
@@ -85,7 +89,7 @@ public class WrapperHiddenClassTest {
         var cf = ClassFile.of();
         var bytes = cf.build(CD_HostileWrapper, clb -> {
             clb.withSuperclass(CD_Object);
-            clb.withFlags(ACC_FINAL | ACC_SYNTHETIC);
+            clb.withFlags((PreviewFeatures.isEnabled() ? ACC_IDENTITY : 0) | ACC_FINAL | ACC_SYNTHETIC);
             clb.withInterfaceSymbols(CD_Comparator);
 
             // static and instance fields

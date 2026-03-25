@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  *
  */
 
+import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,6 +32,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.spi.ToolProvider;
 import java.util.zip.CRC32;
@@ -38,16 +40,16 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
-import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.Test;
+import static org.testng.Assert.*;
 
 /**
  * @test
  * @bug 8229887
  * @summary Validate ZIP FileSystem can replace existing STORED and DEFLATED entries
  * @modules jdk.zipfs
- * @run junit UpdateEntryTest
+ * @run testng UpdateEntryTest
  */
+@Test
 public class UpdateEntryTest {
 
     private static final Path HERE = Path.of(".");
@@ -107,7 +109,6 @@ public class UpdateEntryTest {
      * Validate that you can replace an existing entry in a JAR file that
      * was added with the STORED(no-compression) option
      */
-    @Test
     public void testReplaceStoredEntry() throws IOException {
         String jarFileName = "updateStoredEntry.jar";
         String storedFileName = "storedFile.txt";
@@ -131,7 +132,6 @@ public class UpdateEntryTest {
     /**
      * Test updating an entry that is STORED (not compressed)
      */
-    @Test
     public void test1() throws IOException {
         Entry e1 = Entry.of("foo", ZipEntry.STORED, "hello");
         Entry e2 = Entry.of("bar", ZipEntry.STORED, "world");
@@ -141,7 +141,6 @@ public class UpdateEntryTest {
     /**
      * Test updating an entry that is DEFLATED (compressed)
      */
-    @Test
     public void test2() throws IOException {
         Entry e1 = Entry.of("foo", ZipEntry.DEFLATED, "hello");
         Entry e2 = Entry.of("bar", ZipEntry.STORED, "world");
@@ -184,16 +183,16 @@ public class UpdateEntryTest {
         // check entries with zip API
         try (ZipFile zf = new ZipFile(zipfile.toFile())) {
             // check entry count
-            assertEquals(zf.size(), entries.length);
+            assertTrue(zf.size() == entries.length);
 
             // check compression method and content of each entry
             for (Entry e : entries) {
                 ZipEntry ze = zf.getEntry(e.name);
-                assertNotNull(ze);
-                assertEquals(ze.getMethod(), e.method);
+                assertTrue(ze != null);
+                assertTrue(ze.getMethod() == e.method);
                 try (InputStream in = zf.getInputStream(ze)) {
                     byte[] bytes = in.readAllBytes();
-                    assertArrayEquals(bytes, e.bytes);
+                    assertTrue(Arrays.equals(bytes, e.bytes));
                 }
             }
         }
@@ -204,13 +203,13 @@ public class UpdateEntryTest {
             Path top = fs.getPath("/");
             long count = Files.find(top, Integer.MAX_VALUE,
                     (path, attrs) -> attrs.isRegularFile()).count();
-            assertEquals(count, entries.length);
+            assertTrue(count == entries.length);
 
             // check content of each entry
             for (Entry e : entries) {
                 Path file = fs.getPath(e.name);
                 byte[] bytes = Files.readAllBytes(file);
-                assertArrayEquals(bytes, e.bytes);
+                assertTrue(Arrays.equals(bytes, e.bytes));
             }
         }
     }

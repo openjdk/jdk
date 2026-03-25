@@ -37,13 +37,6 @@
 class RegisterMap;
 class SmallRegisterMap;
 
-template StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* reg_map, ScopeValue* sv);
-template StackValue* StackValue::create_stack_value(const frame* fr, const SmallRegisterMapNoArgs* reg_map, ScopeValue* sv);
-
-template<typename RegisterMapT>
-StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMapT* reg_map, ScopeValue* sv) {
-  return create_stack_value(sv, stack_value_address(fr, reg_map, sv), reg_map);
-}
 
 static oop oop_from_oop_location(stackChunkOop chunk, void* addr) {
   if (addr == nullptr) {
@@ -144,8 +137,13 @@ StackValue* StackValue::create_stack_value_from_narrowOop_location(stackChunkOop
   return new StackValue(h);
 }
 
+
+template StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* reg_map, ScopeValue* sv);
+template StackValue* StackValue::create_stack_value(const frame* fr, const SmallRegisterMapNoArgs* reg_map, ScopeValue* sv);
+
 template<typename RegisterMapT>
-StackValue* StackValue::create_stack_value(ScopeValue* sv, address value_addr, const RegisterMapT* reg_map) {
+StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMapT* reg_map, ScopeValue* sv) {
+  address value_addr = stack_value_address(fr, reg_map, sv);
   stackChunkOop chunk = reg_map->stack_chunk()();
   if (sv->is_location()) {
     // Stack or register value
@@ -246,7 +244,16 @@ StackValue* StackValue::create_stack_value(ScopeValue* sv, address value_addr, c
   } else if (sv->is_object()) { // Scalar replaced object in compiled frame
     ObjectValue* ov = (ObjectValue *)sv;
     Handle hdl = ov->value();
-    return new StackValue(hdl, hdl.is_null() && ov->is_scalar_replaced() ? 1 : 0);
+    bool scalar_replaced = hdl.is_null() && ov->is_scalar_replaced();
+    if (ov->has_properties()) {
+      Klass* k = java_lang_Class::as_Klass(ov->klass()->as_ConstantOopReadValue()->value()());
+      if (!k->is_array_klass()) {
+        // Don't treat inline type as scalar replaced if it is null
+        jint null_marker = StackValue::create_stack_value(fr, reg_map, ov->properties())->get_jint();
+        scalar_replaced &= (null_marker != 0);
+      }
+    }
+    return new StackValue(hdl, scalar_replaced ? 1 : 0);
   } else if (sv->is_marker()) {
     // Should never need to directly construct a marker.
     ShouldNotReachHere();

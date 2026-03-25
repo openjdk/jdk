@@ -32,7 +32,6 @@ import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
 import java.util.function.ToIntBiFunction;
-import java.util.function.ToIntFunction;
 
 import static com.sun.tools.javac.code.TypeTag.ARRAY;
 import static com.sun.tools.javac.code.TypeTag.BOT;
@@ -41,20 +40,12 @@ import static com.sun.tools.javac.code.TypeTag.INT;
 import static com.sun.tools.javac.code.TypeTag.LONG;
 import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
 import static com.sun.tools.javac.jvm.ByteCodes.*;
-import static com.sun.tools.javac.jvm.ClassFile.CONSTANT_Class;
-import static com.sun.tools.javac.jvm.ClassFile.CONSTANT_Double;
-import static com.sun.tools.javac.jvm.ClassFile.CONSTANT_Fieldref;
-import static com.sun.tools.javac.jvm.ClassFile.CONSTANT_Float;
-import static com.sun.tools.javac.jvm.ClassFile.CONSTANT_Integer;
-import static com.sun.tools.javac.jvm.ClassFile.CONSTANT_InterfaceMethodref;
-import static com.sun.tools.javac.jvm.ClassFile.CONSTANT_Long;
-import static com.sun.tools.javac.jvm.ClassFile.CONSTANT_MethodHandle;
-import static com.sun.tools.javac.jvm.ClassFile.CONSTANT_MethodType;
-import static com.sun.tools.javac.jvm.ClassFile.CONSTANT_Methodref;
-import static com.sun.tools.javac.jvm.ClassFile.CONSTANT_String;
 import static com.sun.tools.javac.jvm.UninitializedType.*;
 import static com.sun.tools.javac.jvm.ClassWriter.StackMapTableFrame;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Set;
 
 /** An internal structure that corresponds to the code attribute of
  *  methods in a classfile. The class also provides some utility operations to
@@ -199,6 +190,14 @@ public class Code {
 
     private int letExprStackPos = 0;
 
+    private Map<Integer, Set<VarSymbol>> cpToUnsetFieldsMap = new HashMap<>();
+
+    public Set<VarSymbol> initialUnsetFields;
+
+    public Set<VarSymbol> currentUnsetFields;
+
+    boolean generateEarlyLarvalFrame;
+
     /** Construct a code object, given the settings of the fatcode,
      *  debugging info switches and the CharacterRangeTable.
      */
@@ -211,7 +210,8 @@ public class Code {
                 CRTable crt,
                 Symtab syms,
                 Types types,
-                PoolWriter poolWriter) {
+                PoolWriter poolWriter,
+                boolean generateEarlyLarvalFrame) {
         this.meth = meth;
         this.fatcode = fatcode;
         this.lineMap = lineMap;
@@ -233,6 +233,7 @@ public class Code {
         }
         state = new State();
         lvar = new LocalVar[20];
+        this.generateEarlyLarvalFrame = generateEarlyLarvalFrame;
     }
 
 
@@ -1083,7 +1084,6 @@ public class Code {
         }
         // postop();
     }
-
     /** Emit an opcode with a four-byte operand field.
      */
     public void emitop4(int op, int od) {
@@ -1230,6 +1230,7 @@ public class Code {
         int pc;
         Type[] locals;
         Type[] stack;
+        Set<VarSymbol> unsetFields;
     }
 
     /** A buffer of cldc stack map entries. */
@@ -1325,13 +1326,17 @@ public class Code {
         StackMapFrame frame = new StackMapFrame();
         frame.pc = pc;
 
+        boolean hasUninitalizedThis = false;
         int localCount = 0;
         Type[] locals = new Type[localsSize];
         for (int i=0; i<localsSize; i++, localCount++) {
             if (state.defined.isMember(i) && lvar[i] != null) {
                 Type vtype = lvar[i].sym.type;
-                if (!(vtype instanceof UninitializedType))
+                if (!(vtype instanceof UninitializedType)) {
                     vtype = types.erasure(vtype);
+                } else if (vtype.hasTag(TypeTag.UNINITIALIZED_THIS)) {
+                    hasUninitalizedThis = true;
+                }
                 locals[i] = vtype;
                 if (width(vtype) > 1) i++;
             }
@@ -1357,6 +1362,10 @@ public class Code {
             }
         }
 
+        Set<VarSymbol> unsetFieldsAtPC = cpToUnsetFieldsMap.get(pc);
+        boolean encloseWithEarlyLarvalFrame = unsetFieldsAtPC != null && generateEarlyLarvalFrame && hasUninitalizedThis
+                && !lastFrame.unsetFields.equals(unsetFieldsAtPC);
+
         if (stackMapTableBuffer == null) {
             stackMapTableBuffer = new StackMapTableFrame[20];
         } else {
@@ -1364,11 +1373,22 @@ public class Code {
                                     stackMapTableBuffer,
                                     stackMapBufferSize);
         }
-        stackMapTableBuffer[stackMapBufferSize++] =
-                StackMapTableFrame.getInstance(frame, lastFrame.pc, lastFrame.locals, types);
+
+        StackMapTableFrame tableFrame = StackMapTableFrame.getInstance(frame, lastFrame, types, pc);
+        if (encloseWithEarlyLarvalFrame) {
+            tableFrame = new StackMapTableFrame.EarlyLarvalFrame(tableFrame, unsetFieldsAtPC);
+            frame.unsetFields = unsetFieldsAtPC;
+        } else {
+            frame.unsetFields = lastFrame.unsetFields;
+        }
+        stackMapTableBuffer[stackMapBufferSize++] = tableFrame;
 
         frameBeforeLast = lastFrame;
         lastFrame = frame;
+    }
+
+    public void addUnsetFieldsAtPC(int pc, Set<VarSymbol> unsetFields) {
+        cpToUnsetFieldsMap.put(pc, unsetFields);
     }
 
     StackMapFrame getInitialFrame() {
@@ -1392,6 +1412,7 @@ public class Code {
         }
         frame.pc = -1;
         frame.stack = null;
+        frame.unsetFields = initialUnsetFields;
         return frame;
     }
 
@@ -1470,6 +1491,9 @@ public class Code {
             result = new Chain(emitJump(opcode),
                                result,
                                state.dup());
+            if (currentUnsetFields != null) {
+                addUnsetFieldsAtPC(result.pc, currentUnsetFields);
+            }
             fixedPc = fatcode;
             if (opcode == goto_) alive = false;
         }
@@ -1481,6 +1505,7 @@ public class Code {
     public void resolve(Chain chain, int target) {
         boolean changed = false;
         State newState = state;
+        int originalTarget = target;
         for (; chain != null; chain = chain.next) {
             Assert.check(state != chain.state
                     && (target > chain.pc || isStatementStart()));
@@ -1507,13 +1532,21 @@ public class Code {
                     break;
                 }
             } else {
-                if (fatcode)
+                if (fatcode) {
                     put4(chain.pc + 1, target - chain.pc);
+                    if (cpToUnsetFieldsMap.get(chain.pc) != null) {
+                        addUnsetFieldsAtPC(originalTarget, cpToUnsetFieldsMap.get(chain.pc));
+                    }
+                }
                 else if (target - chain.pc < Short.MIN_VALUE ||
                          target - chain.pc > Short.MAX_VALUE)
                     fatcode = true;
-                else
+                else {
                     put2(chain.pc + 1, target - chain.pc);
+                    if (cpToUnsetFieldsMap.get(chain.pc) != null) {
+                        addUnsetFieldsAtPC(originalTarget, cpToUnsetFieldsMap.get(chain.pc));
+                    }
+                }
                 Assert.check(!alive ||
                     chain.state.stacksize == newState.stacksize &&
                     chain.state.nlocks == newState.nlocks);

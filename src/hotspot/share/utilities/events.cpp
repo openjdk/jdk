@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,14 @@
 #include "memory/allocation.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/symbol.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/timer.hpp"
 #include "utilities/events.hpp"
 
-static Atomic<EventLog*> event_logs_list{};
-
+EventLog* Events::_logs = nullptr;
 StringEventLog* Events::_messages = nullptr;
 StringEventLog* Events::_memprotect_messages = nullptr;
 StringEventLog* Events::_nmethod_flush_messages = nullptr;
@@ -52,15 +51,15 @@ EventLog::EventLog() {
   // but use lock free add because there are some events that are created later.
   EventLog* old_head;
   do {
-    old_head = event_logs_list.load_relaxed();
+    old_head = AtomicAccess::load(&Events::_logs);
     _next = old_head;
-  } while (!event_logs_list.compare_set(old_head, this));
+  } while (AtomicAccess::cmpxchg(&Events::_logs, old_head, this) != old_head);
 }
 
 // For each registered event logger, print out the current contents of
 // the buffer.
 void Events::print_all(outputStream* out, int max) {
-  EventLog* log = event_logs_list.load_relaxed();
+  EventLog* log = AtomicAccess::load(&Events::_logs);
   while (log != nullptr) {
     log->print_log_on(out, max);
     log = log->next();
@@ -69,7 +68,7 @@ void Events::print_all(outputStream* out, int max) {
 
 // Print a single event log specified by name.
 void Events::print_one(outputStream* out, const char* log_name, int max) {
-  EventLog* log = event_logs_list.load_relaxed();
+  EventLog* log = AtomicAccess::load(&Events::_logs);
   int num_printed = 0;
   while (log != nullptr) {
     if (log->matches_name_or_handle(log_name)) {
@@ -82,7 +81,7 @@ void Events::print_one(outputStream* out, const char* log_name, int max) {
   if (num_printed == 0) {
     out->print_cr("The name \"%s\" did not match any known event log. "
                   "Valid event log names are:", log_name);
-    EventLog* log = event_logs_list.load_relaxed();
+    EventLog* log = AtomicAccess::load(&Events::_logs);
     while (log != nullptr) {
       log->print_names(out);
       out->cr();

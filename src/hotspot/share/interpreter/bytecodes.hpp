@@ -26,6 +26,7 @@
 #define SHARE_INTERPRETER_BYTECODES_HPP
 
 #include "memory/allStatic.hpp"
+#include "runtime/globals.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // Bytecodes specifies all bytecodes used in the VM and
@@ -248,6 +249,7 @@ class Bytecodes: AllStatic {
 
     // JVM bytecodes
     _fast_agetfield       = number_of_java_codes,
+    _fast_vgetfield       ,
     _fast_bgetfield       ,
     _fast_cgetfield       ,
     _fast_dgetfield       ,
@@ -257,6 +259,7 @@ class Bytecodes: AllStatic {
     _fast_sgetfield       ,
 
     _fast_aputfield       ,
+    _fast_vputfield       ,
     _fast_bputfield       ,
     _fast_zputfield       ,
     _fast_cputfield       ,
@@ -419,7 +422,9 @@ class Bytecodes: AllStatic {
                                                            || code == _fconst_0 || code == _dconst_0); }
   static bool        is_return      (Code code)    { return (_ireturn <= code && code <= _return); }
   static bool        is_invoke      (Code code)    { return (_invokevirtual <= code && code <= _invokedynamic); }
-  static bool        is_field_code  (Code code)    { return (_getstatic <= java_code(code) && java_code(code) <= _putfield); }
+  static bool        is_field_code  (Code code)    {
+    return (_getstatic <= java_code(code) && java_code(code) <= _putfield);
+  }
   static bool        has_receiver   (Code code)    { assert(is_invoke(code), "");  return code == _invokevirtual ||
                                                                                           code == _invokespecial ||
                                                                                           code == _invokeinterface; }

@@ -25,14 +25,18 @@ package nsk.share.gc.gp;
 
 import java.util.List;
 import java.util.ArrayList;
+
+import nsk.share.gc.Memory;
 import nsk.share.gc.gp.array.*;
 import nsk.share.gc.gp.string.*;
+import nsk.share.test.LocalRandom;
 
 /**
  * Factory for garbage producers
  */
 public class GarbageProducers {
         private List<GarbageProducer> primitiveArrayProducers;
+        private List<GarbageProducer> valueArrayProducers;
         private List<GarbageProducer> arrayProducers;
         private List<GarbageProducer<String>> stringProducers;
         private List<GarbageProducer> allProducers;
@@ -56,6 +60,18 @@ public class GarbageProducers {
         }
 
         /**
+         * Get all primitive array producers.
+         */
+        public List<GarbageProducer> getValueArrayProducers() {
+            if (valueArrayProducers == null) {
+                valueArrayProducers = new ArrayList<GarbageProducer>();
+                valueArrayProducers.add(new ByteObjArrayProducer());
+                valueArrayProducers.add(new BooleanObjArrayProducer());
+                valueArrayProducers.add(new IntegerObjArrayProducer());
+            }
+            return primitiveArrayProducers;
+        }
+        /**
          * Get all array producers.
          */
         public List<GarbageProducer> getArrayProducers() {
@@ -63,6 +79,9 @@ public class GarbageProducers {
                         arrayProducers = new ArrayList<GarbageProducer>();
                         arrayProducers.addAll(getPrimitiveArrayProducers());
                         arrayProducers.add(new ObjectArrayProducer());
+                        if (Memory.isValhallaEnabled()) {
+                            arrayProducers.addAll(getValueArrayProducers());
+                        }
                 }
                 return arrayProducers;
         }
@@ -87,4 +106,46 @@ public class GarbageProducers {
                 }
                 return allProducers;
         }
+}
+
+ class IntegerObjArrayProducer implements GarbageProducer<Integer[]> {
+    public Integer[] create(long memory) {
+        int size = Memory.getIntegerArrayElementSize();
+        if (!Memory.isValhallaEnabled()) {
+            // Let assume that every Integer is new object
+            size += Memory.getObjectExtraSize();
+        }
+        Integer[] arr = new Integer[Memory.getArrayLength(memory, size)];
+        LocalRandom.nextInts(arr);
+        return arr;
+    }
+
+    public void validate(Integer[] arr) {
+        LocalRandom.validate(arr);
+    }
+}
+
+
+class ByteObjArrayProducer implements GarbageProducer<Byte[]> {
+    public Byte[] create(long memory) {
+        Byte[] arr = new Byte[Memory.getArrayLength(memory, Memory.getByteArrayElementSize())];
+        LocalRandom.nextBytes(arr);
+        return arr;
+    }
+
+    public void validate(Byte[] arr) {
+        LocalRandom.validate(arr);
+    }
+}
+
+class BooleanObjArrayProducer implements GarbageProducer<Boolean[]> {
+    public Boolean[] create(long memory) {
+        Boolean[] arr = new Boolean[Memory.getArrayLength(memory, Memory.getBooleanArrayElementSize())];
+        LocalRandom.nextBooleans(arr);
+        return arr;
+    }
+
+    public void validate(Boolean[] arr) {
+        LocalRandom.validate(arr);
+    }
 }

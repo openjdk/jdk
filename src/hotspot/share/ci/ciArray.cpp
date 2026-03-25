@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,11 @@
 #include "ci/ciConstant.hpp"
 #include "ci/ciKlass.hpp"
 #include "ci/ciUtilities.inline.hpp"
+#include "oops/flatArrayKlass.hpp"
+#include "oops/layoutKind.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -37,6 +40,7 @@
 // This class represents an arrayOop in the HotSpot virtual
 // machine.
 static BasicType fixup_element_type(BasicType bt) {
+  if (bt == T_FLAT_ELEMENT) return T_OBJECT;
   if (is_reference_type(bt))  return T_OBJECT;
   if (bt == T_BOOLEAN)  return T_BYTE;
   return bt;
@@ -59,10 +63,22 @@ ciConstant ciArray::element_value_impl(BasicType elembt,
   case T_ARRAY:
   case T_OBJECT:
     {
-      assert(ary->is_objArray(), "");
-      objArrayOop objary = (objArrayOop) ary;
-      oop elem = objary->obj_at(index);
-      return ciConstant(elembt, CURRENT_ENV->get_object(elem));
+      if (ary->is_refArray()) {
+        refArrayOop refary = oop_cast<refArrayOop>(ary);
+        oop elem = refary->obj_at(index);
+        return ciConstant(elembt, CURRENT_ENV->get_object(elem));
+      } else {
+        assert(ary->is_flatArray(), "");
+        flatArrayOop flatary = oop_cast<flatArrayOop>(ary);
+        assert(CompilerThread::current()->thread_state() == _thread_in_vm, "");
+        JavaThread* THREAD = CompilerThread::current();
+        oop elem = flatary->obj_at(index, THREAD);
+        if (HAS_PENDING_EXCEPTION) {
+          CLEAR_PENDING_EXCEPTION;
+          return ciConstant();
+        }
+        return ciConstant(elembt, CURRENT_ENV->get_object(elem));
+      }
     }
   default:
     break;
@@ -117,6 +133,17 @@ ciConstant ciArray::element_value_by_offset(intptr_t element_offset) {
     return ciConstant();
   }
   return element_value((jint) index);
+}
+
+bool ciArray::is_null_free() {
+  VM_ENTRY_MARK;
+  return get_oop()->is_null_free_array();
+}
+
+bool ciArray::is_atomic() {
+  VM_ENTRY_MARK;
+  arrayOop oop = get_arrayOop();
+  return !oop->is_flatArray() || LayoutKindHelper::is_atomic_flat(FlatArrayKlass::cast(oop->klass())->layout_kind());
 }
 
 // ------------------------------------------------------------------

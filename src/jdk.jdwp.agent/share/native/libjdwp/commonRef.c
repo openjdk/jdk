@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,8 @@
  * as the object id prevents ambiguity in the object id when the weak ref
  * is reused. The RefNode* is stored with the object as it's JVMTI Tag.
  *
+ * References to value objects are always strong.
+ *
  * The ref member is changed from weak to strong when
  * gc of the object is to be prevented.
  * Whether or not it is strong, it is never exported from this module.
@@ -87,7 +89,7 @@ newSeqNum(void)
 static jboolean
 isStrong(RefNode* node)
 {
-    return node->isPinAll || node->isCommonPin;
+    return node->isValueObject || node->isPinAll || node->isCommonPin;
 }
 
 /* Create a fresh RefNode structure, create a weak ref and tag the object */
@@ -98,6 +100,7 @@ createNode(JNIEnv *env, jobject ref)
     jobject    strongOrWeakRef;
     jvmtiError error;
     jboolean   pinAll = gdata->pinAllCount != 0;
+    jboolean   isValueObject;
 
     /* Could allocate RefNode's in blocks, not sure it would help much */
     node = (RefNode*)jvmtiAllocate((int)sizeof(RefNode));
@@ -105,7 +108,9 @@ createNode(JNIEnv *env, jobject ref)
         return NULL;
     }
 
-    if (pinAll) {
+    isValueObject = JNI_FUNC_PTR(env,IsValueObject)(env, ref);
+
+    if (pinAll || isValueObject) {
         /* Create strong reference to make sure we have a reference */
         strongOrWeakRef = JNI_FUNC_PTR(env,NewGlobalRef)(env, ref);
     } else {
@@ -136,6 +141,7 @@ createNode(JNIEnv *env, jobject ref)
     /* Fill in RefNode */
     node->ref         = strongOrWeakRef;
     node->count       = 1;
+    node->isValueObject = isValueObject;
     node->isPinAll    = pinAll;
     node->isCommonPin = JNI_FALSE;
     node->seqNum      = newSeqNum();
@@ -201,7 +207,7 @@ strengthenNode(JNIEnv *env, RefNode *node, jboolean isPinAll)
 static jweak
 weakenNode(JNIEnv *env, RefNode *node, jboolean isUnpinAll)
 {
-    jboolean willStillBeStrong = (node->isPinAll && !isUnpinAll) || (node->isCommonPin && isUnpinAll);
+    jboolean willStillBeStrong = node->isValueObject || (node->isPinAll && !isUnpinAll) || (node->isCommonPin && isUnpinAll);
 
     // If the node is strong, but the reason(s) for it being strong
     // will no longer exist, then weaken it.

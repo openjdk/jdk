@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ const RegMask &MultiNode::out_RegMask() const {
   return RegMask::EMPTY;
 }
 
-Node *MultiNode::match( const ProjNode *proj, const Matcher *m ) { return proj->clone(); }
+Node *MultiNode::match(const ProjNode *proj, const Matcher *m, const RegMask* mask) { return proj->clone(); }
 
 //------------------------------proj_out---------------------------------------
 // Get a named projection or null if not found
@@ -152,7 +152,10 @@ const TypePtr *ProjNode::adr_type() const {
       // Jumping over Tuples: the i-th projection of a Tuple is the i-th input of the Tuple.
       ctrl = ctrl->in(_con);
     }
-    if (ctrl == nullptr)  return nullptr; // node is dead
+    // node is dead or we are in the process of removing a dead subgraph
+    if (ctrl == nullptr || ctrl->is_top()) {
+      return nullptr;
+    }
     const TypePtr* adr_type = ctrl->adr_type();
     #ifdef ASSERT
     if (!VMError::is_error_reported() && !Node::in_dump())

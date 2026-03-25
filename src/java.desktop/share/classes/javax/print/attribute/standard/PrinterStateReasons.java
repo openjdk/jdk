@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,7 +165,6 @@ public final class PrinterStateReasons
      *         {@link Severity Severity}
      * @since 1.5
      */
-    @Override
     public Severity put(PrinterStateReason reason, Severity severity) {
         if (reason == null) {
             throw new NullPointerException("reason is null");
@@ -186,7 +185,6 @@ public final class PrinterStateReasons
      * @return printing attribute class (category), an instance of class
      *         {@link Class java.lang.Class}
      */
-    @Override
     public final Class<? extends Attribute> getCategory() {
         return PrinterStateReasons.class;
     }
@@ -200,7 +198,6 @@ public final class PrinterStateReasons
      *
      * @return attribute category name
      */
-    @Override
     public final String getName() {
         return "printer-state-reasons";
     }
@@ -243,7 +240,6 @@ public final class PrinterStateReasons
             myEntrySet = entrySet;
         }
 
-        @Override
         public int size() {
             int result = 0;
             for (PrinterStateReason ignored : this) {
@@ -252,7 +248,6 @@ public final class PrinterStateReasons
             return result;
         }
 
-        @Override
         public Iterator<PrinterStateReason> iterator() {
             return new PrinterStateReasonSetIterator(mySeverity,
                                                      myEntrySet.iterator());
@@ -281,12 +276,10 @@ public final class PrinterStateReasons
             }
         }
 
-        @Override
         public boolean hasNext() {
             return myEntry != null;
         }
 
-        @Override
         public PrinterStateReason next() {
             if (myEntry == null) {
                 throw new NoSuchElementException();
@@ -296,7 +289,6 @@ public final class PrinterStateReasons
             return result;
         }
 
-        @Override
         public void remove() {
             throw new UnsupportedOperationException();
         }

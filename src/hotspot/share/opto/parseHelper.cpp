@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,14 @@
  *
  */
 
+#include "ci/ciInlineKlass.hpp"
 #include "ci/ciSymbols.hpp"
 #include "compiler/compileLog.hpp"
+#include "oops/flatArrayKlass.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "opto/addnode.hpp"
+#include "opto/castnode.hpp"
+#include "opto/inlinetypenode.hpp"
 #include "opto/memnode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/parse.hpp"
@@ -64,7 +68,6 @@ void GraphKit::make_dtrace_method_entry_exit(ciMethod* method, bool is_entry) {
 void Parse::do_checkcast() {
   bool will_link;
   ciKlass* klass = iter().get_klass(will_link);
-
   Node *obj = peek();
 
   // Throw uncommon trap if class is not loaded or the value we are casting
@@ -137,8 +140,7 @@ void Parse::do_instanceof() {
 
 //------------------------------array_store_check------------------------------
 // pull array from stack and check that the store is valid
-void Parse::array_store_check() {
-
+Node* Parse::array_store_check(Node*& adr, const Type*& elemtype) {
   // Shorthand access to array store elements without popping them.
   Node *obj = peek(0);
   Node *idx = peek(1);
@@ -149,27 +151,47 @@ void Parse::array_store_check() {
     // This cutout lets us avoid the uncommon_trap(Reason_array_check)
     // below, which turns into a performance liability if the
     // gen_checkcast folds up completely.
-    return;
+    if (_gvn.type(ary)->is_aryptr()->is_null_free()) {
+      null_check(obj);
+    }
+    return obj;
   }
 
   // Extract the array klass type
-  int klass_offset = oopDesc::klass_offset_in_bytes();
-  Node* p = basic_plus_adr( ary, ary, klass_offset );
-  // p's type is array-of-OOPS plus klass_offset
-  Node* array_klass = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), p, TypeInstPtr::KLASS));
+  Node* array_klass = load_object_klass(ary);
   // Get the array klass
-  const TypeKlassPtr *tak = _gvn.type(array_klass)->is_klassptr();
+  const TypeKlassPtr* tak = _gvn.type(array_klass)->is_klassptr();
 
   // The type of array_klass is usually INexact array-of-oop.  Heroically
   // cast array_klass to EXACT array and uncommon-trap if the cast fails.
   // Make constant out of the inexact array klass, but use it only if the cast
   // succeeds.
-  if (MonomorphicArrayCheck &&
-      !too_many_traps(Deoptimization::Reason_array_check) &&
-      !tak->klass_is_exact() &&
-      tak->isa_aryklassptr()) {
-      // Regarding the fourth condition in the if-statement from above:
-      //
+  if (MonomorphicArrayCheck && !tak->klass_is_exact()) {
+    // Make a constant out of the inexact array klass
+    const TypeAryKlassPtr* extak = nullptr;
+    const TypeOopPtr* ary_t = _gvn.type(ary)->is_oopptr();
+    ciKlass* ary_spec = ary_t->speculative_type();
+    Deoptimization::DeoptReason reason = Deoptimization::Reason_none;
+    // Try to cast the array to an exact type from profile data. First
+    // check the speculative type.
+    if (ary_spec != nullptr && !too_many_traps(Deoptimization::Reason_speculate_class_check)) {
+      extak = TypeKlassPtr::make(ary_spec)->is_aryklassptr();
+      reason = Deoptimization::Reason_speculate_class_check;
+    } else if (UseArrayLoadStoreProfile) {
+      // No speculative type: check profile data at this bci.
+      reason = Deoptimization::Reason_class_check;
+      if (!too_many_traps(reason)) {
+        ciKlass* array_type = nullptr;
+        ciKlass* element_type = nullptr;
+        ProfilePtrKind element_ptr = ProfileMaybeNull;
+        bool flat_array = true;
+        bool null_free_array = true;
+        method()->array_access_profiled_type(bci(), array_type, element_type, element_ptr, flat_array, null_free_array);
+        if (array_type != nullptr) {
+          extak = TypeKlassPtr::make(array_type)->is_aryklassptr();
+        }
+      }
+    } else if (!too_many_traps(Deoptimization::Reason_array_check) && tak->isa_aryklassptr()) {
       // If the compiler has determined that the type of array 'ary' (represented
       // by 'array_klass') is java/lang/Object, the compiler must not assume that
       // the array 'ary' is monomorphic.
@@ -188,30 +210,40 @@ void Parse::array_store_check() {
       // 'array_klass' to be ObjArrayKlass, which can result in invalid memory accesses.
       //
       // See issue JDK-8057622 for details.
+      extak = tak->cast_to_exactness(true)->is_aryklassptr();
+      reason = Deoptimization::Reason_array_check;
+    }
+    if (extak != nullptr && extak->exact_klass(true) != nullptr) {
+      // For a direct pointer comparison, we need the refined array klass pointer
+      extak = extak->cast_to_refined_array_klass_ptr();
 
-    // Make a constant out of the exact array klass
-    const TypeAryKlassPtr* extak = tak->cast_to_exactness(true)->is_aryklassptr();
-    if (extak->exact_klass(true) != nullptr) {
       Node* con = makecon(extak);
       Node* cmp = _gvn.transform(new CmpPNode(array_klass, con));
       Node* bol = _gvn.transform(new BoolNode(cmp, BoolTest::eq));
-      Node* ctrl= control();
-      { BuildCutout unless(this, bol, PROB_MAX);
-        uncommon_trap(Deoptimization::Reason_array_check,
-                      Deoptimization::Action_maybe_recompile,
-                      extak->exact_klass());
-      }
-      if (stopped()) {          // MUST uncommon-trap?
-        set_control(ctrl);      // Then Don't Do It, just fall into the normal checking
-      } else {                  // Cast array klass to exactness:
-        // Use the exact constant value we know it is.
+      // Only do it if the check does not always pass/fail
+      if (!bol->is_Con()) {
+        { BuildCutout unless(this, bol, PROB_MAX);
+          uncommon_trap(reason,
+                        Deoptimization::Action_maybe_recompile,
+                        extak->exact_klass());
+        }
+        // Cast array klass to exactness
         replace_in_map(array_klass, con);
+        array_klass = con;
+        Node* cast = _gvn.transform(new CheckCastPPNode(control(), ary, extak->as_instance_type()));
+        replace_in_map(ary, cast);
+        ary = cast;
+
+        // Recompute element type and address
+        const TypeAryPtr* arytype = _gvn.type(ary)->is_aryptr();
+        elemtype = arytype->elem();
+        adr = array_element_address(ary, idx, T_OBJECT, arytype->size(), control());
+
         CompileLog* log = C->log();
         if (log != nullptr) {
           log->elem("cast_up reason='monomorphic_array' from='%d' to='(exact)'",
                     log->identify(extak->exact_klass()));
         }
-        array_klass = con;      // Use cast value moving forward
       }
     }
   }
@@ -220,13 +252,46 @@ void Parse::array_store_check() {
 
   // Extract the array element class
   int element_klass_offset = in_bytes(ObjArrayKlass::element_klass_offset());
-  Node* p2 = off_heap_plus_addr(array_klass, element_klass_offset);
+  Node* p2 = basic_plus_adr(top(), array_klass, element_klass_offset);
   Node* a_e_klass = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), p2, tak));
-  assert(array_klass->is_Con() == a_e_klass->is_Con() || StressReflectiveCode, "a constant array type must come with a constant element type");
+
+  // If we statically know that this is an inline type array, use precise element klass for checkcast
+  const TypeAryPtr* arytype = _gvn.type(ary)->is_aryptr();
+  const TypePtr* elem_ptr = elemtype->make_ptr();
+  bool null_free = arytype->is_null_free();
+  if (elem_ptr->is_inlinetypeptr()) {
+    // We statically know that this is an inline type array, use precise klass ptr
+    a_e_klass = makecon(TypeKlassPtr::make(elemtype->inline_klass()));
+  }
+#ifdef ASSERT
+  if (!StressReflectiveCode && array_klass->is_Con() != a_e_klass->is_Con()) {
+    // When the element type is exact, the array type also needs to be exact. There is one exception, though:
+    // Nullable arrays are not exact because the null-free array is a subtype while the element type being a
+    // concrete value class (i.e. final) is always exact.
+    assert(!array_klass->is_Con() && a_e_klass->is_Con() && elem_ptr->is_inlinetypeptr() && !null_free,
+           "a constant element type either matches a constant array type or a non-constant nullable value class array");
+  }
+
+  // If the element type is exact, the array can be null-free (i.e. the element type is NotNull) if:
+  //   - The elements are inline types
+  //   - The array is from an autobox cache.
+  // If the element type is inexact, it could represent multiple null-free arrays. Since autobox cache arrays
+  // are local to very few cache classes and are only used in the valueOf() methods, they are always exact and are not
+  // merged or hidden behind super types. Therefore, an inexact null-free array always represents some kind of
+  // inline type array - either of an abstract value class or Object.
+  if (null_free) {
+    ciKlass* klass = elem_ptr->is_instptr()->instance_klass();
+    if (klass->exact_klass()) {
+      assert(elem_ptr->is_inlinetypeptr() || arytype->is_autobox_cache(), "elements must be inline type or autobox cache");
+    } else {
+      assert(!arytype->is_autobox_cache() && elem_ptr->can_be_inline_type() &&
+             (klass->is_java_lang_Object() || klass->is_abstract()), "cannot have inexact non-inline type elements");
+    }
+  }
+#endif // ASSERT
 
   // Check (the hard way) and throw if not a subklass.
-  // Result is ignored, we just need the CFG effects.
-  gen_checkcast(obj, a_e_klass);
+  return gen_checkcast(obj, a_e_klass, nullptr, null_free);
 }
 
 

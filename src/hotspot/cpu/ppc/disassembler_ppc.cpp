@@ -119,6 +119,9 @@ address Disassembler::decode_instruction0(address here, outputStream * st, addre
   } else if (instruction == 0xbadbabe) {
     st->print(".data 0xbadbabe");
     next = here + Assembler::instr_len(here);
+  } else if (Assembler::is_endgroup(instruction)) {
+    st->print("endgroup");
+    next = here + Assembler::instr_len(here);
   } else {
     next = here;
   }

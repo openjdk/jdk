@@ -50,3 +50,5 @@ compiler/jvmci/jdk.vm.ci.code.test/src/jdk/vm/ci/code/test/VirtualObjectDebugInf
 
 #############################################################################
 
+# Valhalla failures start here:
+

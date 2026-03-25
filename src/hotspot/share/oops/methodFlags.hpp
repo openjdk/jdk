@@ -58,6 +58,8 @@ class MethodFlags {
    status(has_loops_flag              , 1 << 13) /* Method has loops */ \
    status(has_loops_flag_init         , 1 << 14) /* The loop flag has been initialized */ \
    status(on_stack_flag               , 1 << 15) /* RedefineClasses support to keep Metadata from being cleaned */ \
+   status(has_scalarized_args         , 1 << 16) \
+   status(has_scalarized_return       , 1 << 17) \
    /* end of list */
 
 #define M_STATUS_ENUM_NAME(name, value)    _misc_##name = value,
@@ -85,6 +87,8 @@ class MethodFlags {
   }
   M_STATUS_DO(M_STATUS_GET_SET)
 #undef M_STATUS_GET_SET
+
+  static u4 has_scalarized_return_flag() { return _misc_has_scalarized_return; }
 
   int as_int() const { return _status; }
   void atomic_set_bits(u4 bits)   { AtomicAccess::fetch_then_or(&_status, bits); }

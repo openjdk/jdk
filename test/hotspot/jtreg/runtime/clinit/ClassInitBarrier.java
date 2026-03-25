@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @library /test/lib
  *
  * @requires !vm.graal.enabled
+ * @enablePreview
  *
  * @run main/othervm/native -Xbatch -XX:CompileCommand=dontinline,*::test* -Xint                   -DTHROW=false -Xcheck:jni ClassInitBarrier
  * @run main/othervm/native -Xbatch -XX:CompileCommand=dontinline,*::test* -Xint                   -DTHROW=true  -Xcheck:jni ClassInitBarrier
@@ -67,7 +68,16 @@ public class ClassInitBarrier {
 
     static final boolean THROW = Boolean.getBoolean("THROW");
 
+    static value class MyValue {
+        int x = 42;
+
+        void verify() {
+            Asserts.assertEquals(x, 42);
+        }
+    }
+
     static class Test {
+
         static class A {
             static {
                 if (!init(B.class)) {
@@ -85,9 +95,9 @@ public class ClassInitBarrier {
                 changePhase(Phase.FINISHED);
             }
 
-            static              void staticM(Runnable action) { action.run(); }
-            static synchronized void staticS(Runnable action) { action.run(); }
-            static native       void staticN(Runnable action);
+            static              void staticM(Runnable action, MyValue val) { action.run(); val.verify(); }
+            static synchronized void staticS(Runnable action, MyValue val) { action.run(); val.verify(); }
+            static native       void staticN(Runnable action, MyValue val);
 
             static int staticF;
 
@@ -99,31 +109,31 @@ public class ClassInitBarrier {
 
         static class B extends A {}
 
-        static void testInvokeStatic(Runnable action)       { A.staticM(action); }
-        static void testInvokeStaticSync(Runnable action)   { A.staticS(action); }
-        static void testInvokeStaticNative(Runnable action) { A.staticN(action); }
+        static void testInvokeStatic(Runnable action, MyValue val)       { A.staticM(action, val); }
+        static void testInvokeStaticSync(Runnable action, MyValue val)   { A.staticS(action, val); }
+        static void testInvokeStaticNative(Runnable action, MyValue val) { A.staticN(action, val); }
 
-        static int  testGetStatic(Runnable action)    { int v = A.staticF; action.run(); return v;   }
-        static void testPutStatic(Runnable action)    { A.staticF = 1;     action.run(); }
-        static A    testNewInstanceA(Runnable action) { A obj = new A();   action.run(); return obj; }
-        static B    testNewInstanceB(Runnable action) { B obj = new B();   action.run(); return obj; }
+        static int  testGetStatic(Runnable action, MyValue val)    { int v = A.staticF; action.run(); val.verify(); return v;   }
+        static void testPutStatic(Runnable action, MyValue val)    { A.staticF = 1;     action.run(); val.verify(); }
+        static A    testNewInstanceA(Runnable action, MyValue val) { A obj = new A();   action.run(); val.verify(); return obj; }
+        static B    testNewInstanceB(Runnable action, MyValue val) { B obj = new B();   action.run(); val.verify(); return obj; }
 
-        static int  testGetField(A recv, Runnable action)      { int v = recv.f; action.run(); return v; }
-        static void testPutField(A recv, Runnable action)      { recv.f = 1;     action.run(); }
-        static void testInvokeVirtual(A recv, Runnable action) { recv.m();       action.run(); }
+        static int  testGetField(A recv, Runnable action, MyValue val)      { int v = recv.f; action.run(); val.verify(); return v; }
+        static void testPutField(A recv, Runnable action, MyValue val)      { recv.f = 1;     action.run(); val.verify(); }
+        static void testInvokeVirtual(A recv, Runnable action, MyValue val) { recv.m();       action.run(); val.verify(); }
 
-        static native void testInvokeStaticJNI(Runnable action);
-        static native void testInvokeStaticSyncJNI(Runnable action);
-        static native void testInvokeStaticNativeJNI(Runnable action);
+        static native void testInvokeStaticJNI(Runnable action, MyValue val);
+        static native void testInvokeStaticSyncJNI(Runnable action, MyValue val);
+        static native void testInvokeStaticNativeJNI(Runnable action, MyValue val);
 
-        static native int  testGetStaticJNI(Runnable action);
-        static native void testPutStaticJNI(Runnable action);
-        static native A    testNewInstanceAJNI(Runnable action);
-        static native B    testNewInstanceBJNI(Runnable action);
+        static native int  testGetStaticJNI(Runnable action, MyValue val);
+        static native void testPutStaticJNI(Runnable action, MyValue val);
+        static native A    testNewInstanceAJNI(Runnable action, MyValue val);
+        static native B    testNewInstanceBJNI(Runnable action, MyValue val);
 
-        static native int  testGetFieldJNI(A recv, Runnable action);
-        static native void testPutFieldJNI(A recv, Runnable action);
-        static native void testInvokeVirtualJNI(A recv, Runnable action);
+        static native int  testGetFieldJNI(A recv, Runnable action, MyValue val);
+        static native void testPutFieldJNI(A recv, Runnable action, MyValue val);
+        static native void testInvokeVirtualJNI(A recv, Runnable action, MyValue val);
 
         static void runTests() {
             checkBlockingAction(Test::testInvokeStatic);       // invokestatic
@@ -140,7 +150,7 @@ public class ClassInitBarrier {
             checkNonBlockingAction(Test::testPutStaticJNI);          // putstatic
             checkBlockingAction(Test::testNewInstanceAJNI);          // new
 
-            A recv = testNewInstanceB(NON_BLOCKING.get());  // trigger B initialization
+            A recv = testNewInstanceB(NON_BLOCKING.get(), new MyValue());  // trigger B initialization
             checkNonBlockingAction(Test::testNewInstanceB); // new: NO BLOCKING: same thread: A being initialized, B fully initialized
 
             checkNonBlockingAction(recv, Test::testGetField);      // getfield
@@ -154,18 +164,19 @@ public class ClassInitBarrier {
         }
 
         static void warmup() {
+            MyValue val = new MyValue();
             for (int i = 0; i < 20_000; i++) {
-                testInvokeStatic(      NON_BLOCKING_WARMUP);
-                testInvokeStaticNative(NON_BLOCKING_WARMUP);
-                testInvokeStaticSync(  NON_BLOCKING_WARMUP);
-                testGetStatic(         NON_BLOCKING_WARMUP);
-                testPutStatic(         NON_BLOCKING_WARMUP);
-                testNewInstanceA(      NON_BLOCKING_WARMUP);
-                testNewInstanceB(      NON_BLOCKING_WARMUP);
+                testInvokeStatic(      NON_BLOCKING_WARMUP, val);
+                testInvokeStaticNative(NON_BLOCKING_WARMUP, val);
+                testInvokeStaticSync(  NON_BLOCKING_WARMUP, val);
+                testGetStatic(         NON_BLOCKING_WARMUP, val);
+                testPutStatic(         NON_BLOCKING_WARMUP, val);
+                testNewInstanceA(      NON_BLOCKING_WARMUP, val);
+                testNewInstanceB(      NON_BLOCKING_WARMUP, val);
 
-                testGetField(new B(),      NON_BLOCKING_WARMUP);
-                testPutField(new B(),      NON_BLOCKING_WARMUP);
-                testInvokeVirtual(new B(), NON_BLOCKING_WARMUP);
+                testGetField(new B(),      NON_BLOCKING_WARMUP, val);
+                testPutField(new B(),      NON_BLOCKING_WARMUP, val);
+                testInvokeVirtual(new B(), NON_BLOCKING_WARMUP, val);
             }
         }
 
@@ -265,11 +276,11 @@ public class ClassInitBarrier {
     }
 
     interface TestCase0 {
-        void run(Runnable runnable);
+        void run(Runnable runnable, MyValue val);
     }
 
     interface TestCase1<T> {
-        void run(T arg, Runnable runnable);
+        void run(T arg, Runnable runnable, MyValue val);
     }
 
     enum Phase { BEFORE_INIT, IN_PROGRESS, FINISHED, INIT_FAILURE }
@@ -339,24 +350,25 @@ public class ClassInitBarrier {
     static final Factory<Runnable> BLOCKING     = () -> disposableAction(Phase.FINISHED, BLOCKING_COUNTER, BLOCKING_ACTIONS);
 
     static void checkBlockingAction(TestCase0 r) {
+        MyValue val = new MyValue();
         switch (phase) {
             case IN_PROGRESS: {
                 // Barrier during class initalization.
-                r.run(NON_BLOCKING.get());             // initializing thread
+                r.run(NON_BLOCKING.get(), val);             // initializing thread
                 checkBlocked(ON_BLOCK, ON_FAILURE, r); // different thread
                 break;
             }
             case FINISHED: {
                 // No barrier after class initalization is over.
-                r.run(NON_BLOCKING.get()); // initializing thread
+                r.run(NON_BLOCKING.get(), val); // initializing thread
                 checkNotBlocked(r);        // different thread
                 break;
             }
             case INIT_FAILURE: {
                 // Exception is thrown after class initialization failed.
-                TestCase0 test = action -> execute(NoClassDefFoundError.class, () -> r.run(action));
+                TestCase0 test = (action, valarg) -> execute(NoClassDefFoundError.class, () -> r.run(action, valarg));
 
-                test.run(NON_BLOCKING.get()); // initializing thread
+                test.run(NON_BLOCKING.get(), val); // initializing thread
                 checkNotBlocked(test);        // different thread
                 break;
             }
@@ -365,17 +377,17 @@ public class ClassInitBarrier {
     }
 
     static void checkNonBlockingAction(TestCase0 r) {
-        r.run(NON_BLOCKING.get()); // initializing thread
+        r.run(NON_BLOCKING.get(), new MyValue()); // initializing thread
         checkNotBlocked(r);        // different thread
     }
 
     static <T> void checkNonBlockingAction(T recv, TestCase1<T> r) {
-        r.run(recv, NON_BLOCKING.get());                  // initializing thread
-        checkNotBlocked((action) -> r.run(recv, action)); // different thread
+        r.run(recv, NON_BLOCKING.get(), new MyValue());                  // initializing thread
+        checkNotBlocked((action, val) -> r.run(recv, action, val)); // different thread
     }
 
     static void checkFailingAction(TestCase0 r) {
-        r.run(NON_BLOCKING.get()); // initializing thread
+        r.run(NON_BLOCKING.get(), new MyValue()); // initializing thread
         checkNotBlocked(r);        // different thread
     }
 
@@ -393,7 +405,7 @@ public class ClassInitBarrier {
     static void checkBlocked(Consumer<Thread> onBlockHandler, Thread.UncaughtExceptionHandler onException, TestCase0 r) {
         Thread thr = new Thread(() -> {
             try {
-                r.run(BLOCKING.get());
+                r.run(BLOCKING.get(), new MyValue());
                 System.out.println("Thread " + Thread.currentThread() + ": Finished successfully");
             } catch(Throwable e) {
                 System.out.println("Thread " + Thread.currentThread() + ": Exception thrown: " + e);
@@ -421,7 +433,7 @@ public class ClassInitBarrier {
     }
 
     static void checkNotBlocked(TestCase0 r) {
-        final Thread thr = new Thread(() -> r.run(NON_BLOCKING.get()));
+        final Thread thr = new Thread(() -> r.run(NON_BLOCKING.get(), new MyValue()));
         final Throwable[] ex = new Throwable[1];
         thr.setUncaughtExceptionHandler((t, e) -> {
             if (thr != t) {

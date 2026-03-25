@@ -143,7 +143,16 @@ package java.io;
  * by the <a href="{@docRoot}/../specs/serialization/serial-arch.html#serialization-of-records">
  * <cite>Java Object Serialization Specification,</cite> Section 1.13,
  * "Serialization of Records"</a>. Any declarations of the special
- * handling methods discussed above are ignored for record types.<p>
+ * handling methods discussed above, except {@code writeReplace},
+ * are ignored for record types.<p>
+ *
+ * Value classes can implement {@code Serializble} and receive the treatment defined
+ * by the <a href="{@docRoot}/../specs/serialization/serial-arch.html#serialization-of-value-objects">
+ * <cite>Java Object Serialization Specification,</cite> Section 1.14,
+ * "Serialization of Value Objects"</a>. Any declarations of the special
+ * handling methods discussed above, except {@code writeReplace},
+ * are ignored for value classes. Value classes implementing {@link Externalizable}
+ * and not using {@code writeReplace} are not supported.<p>
  *
  * The serialization runtime associates with each serializable class a version
  * number, called a serialVersionUID, which is used during deserialization to

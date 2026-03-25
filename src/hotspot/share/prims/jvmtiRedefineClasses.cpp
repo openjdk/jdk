@@ -617,8 +617,7 @@ void VM_RedefineClasses::append_entry(const constantPoolHandle& scratch_cp,
     // At this stage, String could be here, but not StringIndex
     case JVM_CONSTANT_StringIndex: // fall through
 
-    // At this stage JVM_CONSTANT_UnresolvedClassInError should not be
-    // here
+    // At this stage JVM_CONSTANT_UnresolvedClassInError should not be here
     case JVM_CONSTANT_UnresolvedClassInError: // fall through
 
     default:
@@ -1481,8 +1480,6 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
       } else {
         return JVMTI_ERROR_INTERNAL;
       }
-    } else if (res != JVMTI_ERROR_NONE) {
-      return res;
     }
 
 #ifdef ASSERT
@@ -1923,6 +1920,12 @@ bool VM_RedefineClasses::rewrite_cp_refs(InstanceKlass* scratch_class) {
     return false;
   }
 
+  // rewrite constant pool references in the LoadableDescriptors attribute:
+  if (!rewrite_cp_refs_in_loadable_descriptors_attribute(scratch_class)) {
+    // propagate failure back to caller
+    return false;
+  }
+
   // rewrite constant pool references in the methods:
   if (!rewrite_cp_refs_in_methods(scratch_class)) {
     // propagate failure back to caller
@@ -2047,7 +2050,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_record_attribute(InstanceKlass* scra
       AnnotationArray* type_annotations = component->type_annotations();
       if (type_annotations != nullptr && type_annotations->length() != 0) {
         int byte_i = 0;  // byte index into annotations
-        if (!rewrite_cp_refs_in_type_annotations_typeArray(type_annotations, byte_i, "record_info")) {
+        if (!rewrite_cp_refs_in_annotations_typeArray(type_annotations, byte_i)) {
           log_debug(redefine, class, annotation)("bad record_component_type_annotations at %d", i);
           // propagate failure back to caller
           return false;
@@ -2067,6 +2070,19 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_permitted_subclasses_attribute(
   for (int i = 0; i < permitted_subclasses->length(); i++) {
     u2 cp_index = permitted_subclasses->at(i);
     permitted_subclasses->at_put(i, find_new_index(cp_index));
+  }
+  return true;
+}
+
+// Rewrite constant pool references in the LoadableDescriptors attribute.
+bool VM_RedefineClasses::rewrite_cp_refs_in_loadable_descriptors_attribute(
+       InstanceKlass* scratch_class) {
+
+  Array<u2>* loadable_descriptors = scratch_class->loadable_descriptors();
+  assert(loadable_descriptors != nullptr, "unexpected null loadable_descriptors");
+  for (int i = 0; i < loadable_descriptors->length(); i++) {
+    u2 cp_index = loadable_descriptors->at(i);
+    loadable_descriptors->at_put(i, find_new_index(cp_index));
   }
   return true;
 }
@@ -3258,6 +3274,14 @@ void VM_RedefineClasses::rewrite_cp_refs_in_stack_map_table(
     u1 frame_type = *stackmap_p;
     stackmap_p++;
 
+   if (frame_type == 246) {  // EARLY_LARVAL
+     // rewrite_cp_refs in  unset fields and fall through.
+     rewrite_cp_refs_in_early_larval_stackmaps(stackmap_p, stackmap_end, calc_number_of_entries, frame_type);
+     // The larval frames point to the next frame, so advance to the next frame and fall through.
+     frame_type = *stackmap_p;
+     stackmap_p++;
+   }
+
     // same_frame {
     //   u1 frame_type = SAME; /* 0-63 */
     // }
@@ -3466,6 +3490,29 @@ void VM_RedefineClasses::rewrite_cp_refs_in_verification_type_info(
   } // end switch (tag)
 } // end rewrite_cp_refs_in_verification_type_info()
 
+
+void VM_RedefineClasses::rewrite_cp_refs_in_early_larval_stackmaps(
+       address& stackmap_p_ref, address stackmap_end, u2 frame_i,
+       u1 frame_type) {
+
+    u2 num_early_larval_stackmaps = Bytes::get_Java_u2(stackmap_p_ref);
+    stackmap_p_ref += 2;
+
+    for (u2 i = 0; i < num_early_larval_stackmaps; i++) {
+
+      u2 name_and_ref_index = Bytes::get_Java_u2(stackmap_p_ref);
+      u2 new_cp_index = find_new_index(name_and_ref_index);
+      if (new_cp_index != 0) {
+        log_debug(redefine, class, stackmap)("mapped old name_and_ref_index=%d", name_and_ref_index);
+        Bytes::put_Java_u2(stackmap_p_ref, new_cp_index);
+        name_and_ref_index = new_cp_index;
+      }
+      log_debug(redefine, class, stackmap)
+        ("frame_i=%u, frame_type=%u, name_and_ref_index=%d", frame_i, frame_type, name_and_ref_index);
+
+      stackmap_p_ref += 2;
+    }
+} // rewrite_cp_refs_in_early_larval_stackmaps
 
 // Change the constant pool associated with klass scratch_class to scratch_cp.
 // scratch_cp_length elements are copied from scratch_cp to a smaller constant pool

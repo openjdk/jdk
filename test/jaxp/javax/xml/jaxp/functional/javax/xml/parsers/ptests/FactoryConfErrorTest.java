@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,16 @@
 
 package javax.xml.parsers.ptests;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.parallel.Execution;
-import org.junit.jupiter.api.parallel.ExecutionMode;
+import static jaxp.library.JAXPTestUtilities.setSystemProperty;
+import static jaxp.library.JAXPTestUtilities.clearSystemProperty;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.FactoryConfigurationError;
 import javax.xml.parsers.SAXParserFactory;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.testng.annotations.AfterTest;
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Test;
 
 /**
  * Class containing the test cases for SAXParserFactory/DocumentBuilderFactory
@@ -42,46 +41,45 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run junit/othervm javax.xml.parsers.ptests.FactoryConfErrorTest
+ * @run testng/othervm javax.xml.parsers.ptests.FactoryConfErrorTest
  */
-@Execution(ExecutionMode.SAME_THREAD)
 public class FactoryConfErrorTest {
 
     /**
      * Set properties DocumentBuilderFactory and SAXParserFactory to invalid
      * value before any test run.
      */
-    @BeforeAll
-    public static void setup() {
-        System.setProperty("javax.xml.parsers.DocumentBuilderFactory", "xx");
-        System.setProperty("javax.xml.parsers.SAXParserFactory", "xx");
+    @BeforeTest
+    public void setup() {
+        setSystemProperty("javax.xml.parsers.DocumentBuilderFactory", "xx");
+        setSystemProperty("javax.xml.parsers.SAXParserFactory", "xx");
     }
 
     /**
      * Restore properties DocumentBuilderFactory and SAXParserFactory to default
      * value after all tests run.
      */
-    @AfterAll
-    public static void cleanup() {
-        System.clearProperty("javax.xml.parsers.DocumentBuilderFactory");
-        System.clearProperty("javax.xml.parsers.SAXParserFactory");
+    @AfterTest
+    public void cleanup() {
+        clearSystemProperty("javax.xml.parsers.DocumentBuilderFactory");
+        clearSystemProperty("javax.xml.parsers.SAXParserFactory");
     }
 
     /**
      * To test exception thrown if javax.xml.parsers.SAXParserFactory property
      * is invalid.
      */
-    @Test
+    @Test(expectedExceptions = FactoryConfigurationError.class)
     public void testNewInstance01() {
-        assertThrows(FactoryConfigurationError.class, SAXParserFactory::newInstance);
+        SAXParserFactory.newInstance();
     }
 
     /**
      * To test exception thrown if javax.xml.parsers.DocumentBuilderFactory is
      * invalid.
      */
-    @Test
+    @Test(expectedExceptions = FactoryConfigurationError.class)
     public void testNewInstance02() {
-        assertThrows(FactoryConfigurationError.class, DocumentBuilderFactory::newInstance);
+        DocumentBuilderFactory.newInstance();
     }
 }

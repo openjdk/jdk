@@ -511,12 +511,12 @@ void StubGenerator::copy_bytes_backward(Register from, Register dest,
 // - If target supports AVX3 features (BW+VL+F) then implementation uses 32 byte vectors (YMMs)
 //   for both special cases (various small block sizes) and aligned copy loop. This is the
 //   default configuration.
-// - If copy length is above CopyAVX3Threshold, then implementation use 64 byte vectors (ZMMs)
+// - If copy length is above AVX3Threshold, then implementation use 64 byte vectors (ZMMs)
 //   for main copy loop (and subsequent tail) since bulk of the cycles will be consumed in it.
 // - If user forces MaxVectorSize=32 then above 4096 bytes its seen that REP MOVs shows a
 //   better performance for disjoint copies. For conjoint/backward copy vector based
 //   copy performs better.
-// - If user sets CopyAVX3Threshold=0, then special cases for small blocks sizes operate over
+// - If user sets AVX3Threshold=0, then special cases for small blocks sizes operate over
 //   64 byte vector registers (ZMMs).
 
 // Inputs:
@@ -575,7 +575,8 @@ address StubGenerator::generate_disjoint_copy_avx3_masked(StubId stub_id, addres
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
-  bool use64byteVector = (MaxVectorSize > 32) && (CopyAVX3Threshold == 0);
+  int avx3threshold = VM_Version::avx3_threshold();
+  bool use64byteVector = (MaxVectorSize > 32) && (avx3threshold == 0);
   const int large_threshold = 2621440; // 2.5 MB
   Label L_main_loop, L_main_loop_64bytes, L_tail, L_tail64, L_exit, L_entry;
   Label L_repmovs, L_main_pre_loop, L_main_pre_loop_64bytes, L_pre_main_post_64;
@@ -646,7 +647,7 @@ address StubGenerator::generate_disjoint_copy_avx3_masked(StubId stub_id, addres
       __ cmpq(temp2, large_threshold);
       __ jcc(Assembler::greaterEqual, L_copy_large);
     }
-    if (CopyAVX3Threshold != 0) {
+    if (avx3threshold != 0) {
       __ cmpq(count, threshold[shift]);
       if (MaxVectorSize == 64) {
         // Copy using 64 byte vectors.
@@ -658,7 +659,7 @@ address StubGenerator::generate_disjoint_copy_avx3_masked(StubId stub_id, addres
       }
     }
 
-    if ((MaxVectorSize < 64)  || (CopyAVX3Threshold != 0)) {
+    if ((MaxVectorSize < 64)  || (avx3threshold != 0)) {
       // Partial copy to make dst address 32 byte aligned.
       __ movq(temp2, to);
       __ andq(temp2, 31);
@@ -912,7 +913,8 @@ address StubGenerator::generate_conjoint_copy_avx3_masked(StubId stub_id, addres
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
-  bool use64byteVector = (MaxVectorSize > 32) && (CopyAVX3Threshold == 0);
+  int avx3threshold = VM_Version::avx3_threshold();
+  bool use64byteVector = (MaxVectorSize > 32) && (avx3threshold == 0);
 
   Label L_main_pre_loop, L_main_pre_loop_64bytes, L_pre_main_post_64;
   Label L_main_loop, L_main_loop_64bytes, L_tail, L_tail64, L_exit, L_entry;
@@ -977,12 +979,12 @@ address StubGenerator::generate_conjoint_copy_avx3_masked(StubId stub_id, addres
     // PRE-MAIN-POST loop for aligned copy.
     __ BIND(L_entry);
 
-    if ((MaxVectorSize > 32) && (CopyAVX3Threshold != 0)) {
+    if ((MaxVectorSize > 32) && (avx3threshold != 0)) {
       __ cmpq(temp1, threshold[shift]);
       __ jcc(Assembler::greaterEqual, L_pre_main_post_64);
     }
 
-    if ((MaxVectorSize < 64)  || (CopyAVX3Threshold != 0)) {
+    if ((MaxVectorSize < 64)  || (avx3threshold != 0)) {
       // Partial copy to make dst address 32 byte aligned.
       __ leaq(temp2, Address(to, temp1, (Address::ScaleFactor)(shift), 0));
       __ andq(temp2, 31);
@@ -1197,7 +1199,7 @@ void StubGenerator::arraycopy_avx3_special_cases_conjoint(XMMRegister xmm, KRegi
                                                            bool use64byteVector, Label& L_entry, Label& L_exit) {
   Label L_entry_64, L_entry_96, L_entry_128;
   Label L_entry_160, L_entry_192;
-  bool avx3 = (MaxVectorSize > 32) && (CopyAVX3Threshold == 0);
+  bool avx3 = (MaxVectorSize > 32) && (VM_Version::avx3_threshold() == 0);
 
   int size_mat[][6] = {
   /* T_BYTE */ {32 , 64,  96 , 128 , 160 , 192 },
@@ -3079,8 +3081,18 @@ address StubGenerator::generate_generic_copy(address byte_copy_entry, address sh
   __ cmpq(r10_src_klass, rax);
   __ jcc(Assembler::notEqual, L_failed);
 
+  // Check for flat inline type array -> return -1
+  __ test_flat_array_oop(src, rax, L_failed);
+
+  // Check for null-free (non-flat) inline type array -> handle as object array
+  __ test_null_free_array_oop(src, rax, L_objArray);
+
   const Register rax_lh = rax;  // layout helper
   __ movl(rax_lh, Address(r10_src_klass, lh_offset));
+
+  // Check for flat inline type array -> return -1
+  __ testl(rax_lh, Klass::_lh_array_tag_flat_value_bit_inplace);
+  __ jcc(Assembler::notZero, L_failed);
 
   //  if (!src->is_Array()) return -1;
   __ cmpl(rax_lh, Klass::_lh_neutral_value);
@@ -3091,8 +3103,10 @@ address StubGenerator::generate_generic_copy(address byte_copy_entry, address sh
   {
     BLOCK_COMMENT("assert primitive array {");
     Label L;
-    __ cmpl(rax_lh, (Klass::_lh_array_tag_type_value << Klass::_lh_array_tag_shift));
-    __ jcc(Assembler::greaterEqual, L);
+    __ movl(rklass_tmp, rax_lh);
+    __ sarl(rklass_tmp, Klass::_lh_array_tag_shift);
+    __ cmpl(rklass_tmp, Klass::_lh_array_tag_type_value);
+    __ jcc(Assembler::equal, L);
     __ stop("must be a primitive array");
     __ bind(L);
     BLOCK_COMMENT("} assert primitive array done");
@@ -3200,8 +3214,20 @@ __ BIND(L_checkcast_copy);
   // live at this point:  r10_src_klass, r11_length, rax (dst_klass)
   {
     // Before looking at dst.length, make sure dst is also an objArray.
+    // This check also fails for flat arrays which are not supported.
     __ cmpl(Address(rax, lh_offset), objArray_lh);
     __ jcc(Assembler::notEqual, L_failed);
+
+#ifdef ASSERT
+    {
+      BLOCK_COMMENT("assert not null-free array {");
+      Label L;
+      __ test_non_null_free_array_oop(dst, rklass_tmp, L);
+      __ stop("unexpected null-free array");
+      __ bind(L);
+      BLOCK_COMMENT("} assert not null-free array");
+    }
+#endif
 
     // It is safe to examine both src.length and dst.length.
     arraycopy_range_checks(src, src_pos, dst, dst_pos, r11_length,

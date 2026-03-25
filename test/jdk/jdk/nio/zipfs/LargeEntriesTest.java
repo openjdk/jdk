@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,37 +22,32 @@
  *
  */
 
+import org.testng.annotations.*;
+
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.*;
 import java.security.SecureRandom;
+import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import static java.lang.Boolean.TRUE;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.joining;
+import static org.testng.Assert.*;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-
-/*
+/**
  * @test
  * @bug 8230870
  * @summary Test ZIP Filesystem behavior with ~64k entries
  * @modules jdk.zipfs
- * @run junit/othervm LargeEntriesTest
+ * @run testng LargeEntriesTest
  */
 public class LargeEntriesTest {
 
@@ -91,41 +86,34 @@ public class LargeEntriesTest {
     private static final SecureRandom random = new SecureRandom();
 
     /**
-     * Fields used for timing runs.
-     * Toggle on by running with "-Dtiming.enabled=true".
+     * Fields used for timing runs
      */
     private static int testNumberRunning;
     private static long runningTestTime;
     private static long startTestRunTime;
     private static final double NANOS_IN_SECOND = 1_000_000_000.0;
-    private static final boolean TIMING_ENABLED =
-            Boolean.getBoolean("timing.enabled");
 
-    @BeforeAll
-    public static void beforeTest() {
-        if (!TIMING_ENABLED) return;
+    @BeforeTest(enabled = false)
+    public void beforeTest() {
         startTestRunTime = System.nanoTime();
     }
 
-    @AfterAll
-    public static void afterTest() {
-        if (!TIMING_ENABLED) return;
+    @AfterTest(enabled = false)
+    public void afterTest() {
         long endTestRunTime = System.nanoTime();
         long duration = endTestRunTime - startTestRunTime;
         System.out.printf("#### Completed test run, total running time: %.4f in seconds%n",
                 duration / NANOS_IN_SECOND);
     }
 
-    @BeforeEach
-    public void beforeMethod() {
-        if (!TIMING_ENABLED) return;
+    @BeforeMethod(enabled = false)
+    public static void beforeMethod() {
         runningTestTime = System.nanoTime();
         System.out.printf("**** Starting test number: %s%n", testNumberRunning);
     }
 
-    @AfterEach
+    @AfterMethod(enabled = false)
     public void afterMethod() {
-        if (!TIMING_ENABLED) return;
         long endRunningTestTime = System.nanoTime();
         long duration = endRunningTestTime - runningTestTime;
         System.out.printf("**** Completed test number: %s, Time: %.4f%n",
@@ -144,8 +132,7 @@ public class LargeEntriesTest {
      * @throws Exception If an error occurs during the creation, verification or
      *                   deletion of the ZIP file
      */
-    @ParameterizedTest
-    @MethodSource("zipfsMap")
+    @Test(dataProvider = "zipfsMap", enabled = true)
     public void testZip(Map<String, String> env, int compression) throws Exception {
 
         System.out.printf("ZIP FS Map = %s, Compression mode= %s%n ",
@@ -171,8 +158,7 @@ public class LargeEntriesTest {
      * @throws Exception If an error occurs during the creation, verification or
      *                   deletion of the ZIP file
      */
-    @ParameterizedTest
-    @MethodSource("zip64Map")
+    @Test(dataProvider = "zip64Map", enabled = true)
     public void testForceZIP64End(Map<String, String> env, int compression) throws Exception {
 
         System.out.printf("ZIP FS Map = %s, Compression mode= %s%n ",
@@ -197,8 +183,7 @@ public class LargeEntriesTest {
      * @throws Exception If an error occurs during the creation, verification or
      *                   deletion of the JAR file
      */
-    @ParameterizedTest
-    @MethodSource("zipfsMap")
+    @Test(dataProvider = "zipfsMap", enabled = true)
     public void testJar(Map<String, String> env, int compression) throws Exception {
         for (int entries = ZIP64_ENTRIES - 1; entries < ZIP64_ENTRIES + 2; entries++) {
             Path jar = generatePath(HERE, "test", ".jar");
@@ -286,34 +271,36 @@ public class LargeEntriesTest {
     }
 
     /*
-     * MethodSource used to validate that you can create a ZIP file with and
+     * DataProvider used to validate that you can create a ZIP file with and
      * without compression.
      */
-    private static Stream<Arguments> zipfsMap() {
-        return Stream.of(
-                Arguments.of(Map.of("create", "true"), ZipEntry.DEFLATED),
-                Arguments.of(Map.of("create", "true", "noCompression", "true"),
-                        ZipEntry.STORED),
-                Arguments.of(Map.of("create", "true", "noCompression", "false"),
-                        ZipEntry.DEFLATED)
-        );
+    @DataProvider(name = "zipfsMap")
+    private Object[][] zipfsMap() {
+        return new Object[][]{
+                {Map.of("create", "true"), ZipEntry.DEFLATED},
+                {Map.of("create", "true", "noCompression", "true"),
+                        ZipEntry.STORED},
+                {Map.of("create", "true", "noCompression", "false"),
+                        ZipEntry.DEFLATED}
+        };
     }
 
     /*
-     * MethodSource used to validate that you can create a ZIP file with/without
+     * DataProvider used to validate that you can create a ZIP file with/without
      * ZIP64 format extensions
      */
-    private static Stream<Arguments> zip64Map() {
-        return Stream.of(
-                Arguments.of(Map.of("create", "true", "forceZIP64End", "true"),
-                        ZipEntry.DEFLATED),
-                Arguments.of(Map.of("create", "true", "noCompression", "true",
-                        "forceZIP64End", "true"), ZipEntry.STORED),
-                Arguments.of(Map.of("create", "true", "noCompression", "false",
-                        "forceZIP64End", "false"), ZipEntry.DEFLATED),
-                Arguments.of(Map.of("create", "true", "noCompression", "true",
-                        "forceZIP64End", "false"), ZipEntry.STORED)
-        );
+    @DataProvider(name = "zip64Map")
+    private Object[][] zip64Map() {
+        return new Object[][]{
+                {Map.of("create", "true", "forceZIP64End", "true"),
+                        ZipEntry.DEFLATED},
+                {Map.of("create", "true", "noCompression", "true",
+                        "forceZIP64End", "true"), ZipEntry.STORED},
+                {Map.of("create", "true", "noCompression", "false",
+                        "forceZIP64End", "false"), ZipEntry.DEFLATED},
+                {Map.of("create", "true", "noCompression", "true",
+                        "forceZIP64End", "false"), ZipEntry.STORED}
+        };
     }
 
     /**
@@ -332,16 +319,16 @@ public class LargeEntriesTest {
         // check entries with ZIP API
         try (ZipFile zf = new ZipFile(zipfile.toFile())) {
             // check entry count
-            assertEquals(zf.size(), entries);
+            assertEquals(entries, zf.size());
 
             // check compression method and content of each entry
             for (int i = start; i < entries; i++) {
                 ZipEntry ze = zf.getEntry("Entry-" + i);
                 assertNotNull(ze);
-                assertEquals(ze.getMethod(), method);
+                assertEquals(method, ze.getMethod());
                 try (InputStream is = zf.getInputStream(ze)) {
                     byte[] bytes = is.readAllBytes();
-                    assertArrayEquals(ZIP_FILE_ENTRY, bytes);
+                    assertTrue(Arrays.equals(bytes, ZIP_FILE_ENTRY));
                 }
             }
         }
@@ -355,13 +342,13 @@ public class LargeEntriesTest {
                             path.getFileName() != null &&
                             path.getFileName().toString().equals("META-INF")))
                     .count();
-            assertEquals(count, entries);
+            assertEquals(entries, count);
 
             // check content of each entry
             for (int i = start; i < entries; i++) {
                 Path file = fs.getPath("Entry-" + i);
                 byte[] bytes = Files.readAllBytes(file);
-                assertArrayEquals(ZIP_FILE_ENTRY, bytes);
+                assertTrue(Arrays.equals(bytes, ZIP_FILE_ENTRY));
             }
         }
 
@@ -372,7 +359,7 @@ public class LargeEntriesTest {
         boolean requireZip64 = entries >= ZIP64_ENTRIES || isZip64Forced;
         System.out.printf(" isZip64Forced = %s, foundZip64= %s, requireZip64= %s%n",
                 isZip64Forced, foundZip64, requireZip64);
-        assertEquals(foundZip64, requireZip64);
+        assertEquals(requireZip64, foundZip64);
 
 
     }
@@ -528,7 +515,7 @@ public class LargeEntriesTest {
          * @return This Result object
          */
         Result assertSuccess() {
-            assertEquals(0, ec, format("Expected ec 0, received: %s, output [%s]", ec, output));
+            assertEquals(ec, 0, format("Expected ec 0, received: %s, output [%s]", ec, output));
             return this;
         }
 

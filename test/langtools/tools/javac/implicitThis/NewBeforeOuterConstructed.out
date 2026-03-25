@@ -1,2 +1,2 @@
-NewBeforeOuterConstructed.java:27:21: compiler.err.cant.ref.before.ctor.called: this
+NewBeforeOuterConstructed.java:27:21: compiler.err.cant.ref.before.ctor.called: NewBeforeOuterConstructed
 1 error

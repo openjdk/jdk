@@ -120,6 +120,12 @@ public enum Modifier {
             return "non-sealed";
         }
     },
+
+    /**
+     * The modifier {@code value}
+     * @since Valhalla
+     */
+    VALUE,
     /**
      * The modifier {@code final}
      *

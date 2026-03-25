@@ -33,10 +33,12 @@
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/compressedKlass.inline.hpp"
+#include "oops/flatArrayKlass.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/markWord.inline.hpp"
 #include "oops/objLayout.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/align.hpp"
@@ -83,7 +85,7 @@ markWord oopDesc::cas_set_mark(markWord new_mark, markWord old_mark, atomic_memo
 }
 
 markWord oopDesc::prototype_mark() const {
-  if (UseCompactObjectHeaders) {
+  if (UseCompactObjectHeaders || Arguments::is_valhalla_enabled()) {
     return klass()->prototype_header();
   } else {
     return markWord::prototype();
@@ -235,12 +237,39 @@ size_t oopDesc::size_given_klass(Klass* klass)  {
   return s;
 }
 
-bool oopDesc::is_instance()    const { return klass()->is_instance_klass();             }
-bool oopDesc::is_instanceRef() const { return klass()->is_reference_instance_klass();   }
-bool oopDesc::is_stackChunk()  const { return klass()->is_stack_chunk_instance_klass(); }
-bool oopDesc::is_array()       const { return klass()->is_array_klass();                }
-bool oopDesc::is_objArray()    const { return klass()->is_objArray_klass();             }
-bool oopDesc::is_typeArray()   const { return klass()->is_typeArray_klass();            }
+bool oopDesc::is_instance()         const { return klass()->is_instance_klass();             }
+bool oopDesc::is_inline()           const { return klass()->is_inline_klass();               }
+bool oopDesc::is_instanceRef()      const { return klass()->is_reference_instance_klass();   }
+bool oopDesc::is_stackChunk()       const { return klass()->is_stack_chunk_instance_klass(); }
+bool oopDesc::is_array()            const { return klass()->is_array_klass();                }
+bool oopDesc::is_objArray()         const { return klass()->is_objArray_klass();             }
+bool oopDesc::is_refArray()         const { return klass()->is_refArray_klass();             }
+bool oopDesc::is_typeArray()        const { return klass()->is_typeArray_klass();            }
+bool oopDesc::is_refined_objArray() const { return klass()->is_refined_objArray_klass();     }
+
+bool oopDesc::is_array_with_oops() const {
+  if (!is_objArray()) {
+    return false;
+  }
+
+  assert(is_refined_objArray(), "Must be");
+  return is_refArray() || FlatArrayKlass::cast(klass())->contains_oops();
+}
+
+bool oopDesc::is_inline_type() const { return mark().is_inline_type(); }
+#ifdef _LP64
+bool oopDesc::is_flatArray() const {
+  markWord mrk = mark();
+  return (mrk.is_unlocked()) ? mrk.is_flat_array() : klass()->is_flatArray_klass();
+}
+bool oopDesc::is_null_free_array() const {
+  markWord mrk = mark();
+  return (mrk.is_unlocked()) ? mrk.is_null_free_array() : klass()->is_null_free_array_klass();
+}
+#else
+bool oopDesc::is_flatArray()       const { return klass()->is_flatArray_klass(); }
+bool oopDesc::is_null_free_array() const { return klass()->is_null_free_array_klass(); }
+#endif
 
 template<typename T>
 T*       oopDesc::field_addr(int offset)     const { return reinterpret_cast<T*>(cast_from_oop<intptr_t>(as_oop()) + offset); }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @bug 8006884 8019526 8132539
  * @library ..
  * @build PassThroughFileSystem FaultyFileSystem
- * @run junit StreamTest
+ * @run testng StreamTest
  * @summary Unit test for java.nio.file.Files methods that return a Stream
  */
 
@@ -35,9 +35,9 @@ import java.nio.charset.Charset;
 import java.nio.charset.MalformedInputException;
 import java.nio.file.DirectoryIteratorException;
 import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
 import java.nio.file.FileSystemLoopException;
 import java.nio.file.FileVisitOption;
+import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -51,23 +51,14 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.function.BiPredicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.Collectors;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+import static org.testng.Assert.*;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledOnOs;
-import org.junit.jupiter.api.condition.OS;
-
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-
+@Test(groups = "unit")
 public class StreamTest {
     /**
      * Default test folder
@@ -86,8 +77,8 @@ public class StreamTest {
     static Path[] all;
     static Path[] allFollowLinks;
 
-    @BeforeAll
-    static void setupTestFolder() throws IOException {
+    @BeforeClass
+    void setupTestFolder() throws IOException {
         testFolder = TestUtil.createTemporaryDirectory();
         supportsSymbolicLinks = TestUtil.supportsSymbolicLinks(testFolder);
         TreeSet<Path> set = new TreeSet<>();
@@ -142,57 +133,53 @@ public class StreamTest {
         allFollowLinks = set.toArray(new Path[0]);
     }
 
-    @AfterAll
-    static void cleanupTestFolder() throws IOException {
+    @AfterClass
+    void cleanupTestFolder() throws IOException {
         TestUtil.removeAll(testFolder);
     }
 
-    @Test
     public void testBasic() {
         try (Stream<Path> s = Files.list(testFolder)) {
             Object[] actual = s.sorted().toArray();
-            assertArrayEquals(level1, actual);
+            assertEquals(actual, level1);
         } catch (IOException ioe) {
             fail("Unexpected IOException");
         }
 
         try (Stream<Path> s = Files.list(testFolder.resolve("empty"))) {
             int count = s.mapToInt(p -> 1).reduce(0, Integer::sum);
-            assertEquals(0, count, "Expect empty stream.");
+            assertEquals(count, 0, "Expect empty stream.");
         } catch (IOException ioe) {
             fail("Unexpected IOException");
         }
     }
 
-    @Test
     public void testWalk() {
         try (Stream<Path> s = Files.walk(testFolder)) {
             Object[] actual = s.sorted().toArray();
-            assertArrayEquals(all, actual);
+            assertEquals(actual, all);
         } catch (IOException ioe) {
             fail("Unexpected IOException");
         }
     }
 
-    @Test
     public void testWalkOneLevel() {
         try (Stream<Path> s = Files.walk(testFolder, 1)) {
             Object[] actual = s.filter(path -> ! path.equals(testFolder))
                                .sorted()
                                .toArray();
-            assertArrayEquals(level1, actual);
+            assertEquals(actual, level1);
         } catch (IOException ioe) {
             fail("Unexpected IOException");
         }
     }
 
-    @Test
     public void testWalkFollowLink() {
         // If link is not supported, the directory structure won't have link.
         // We still want to test the behavior with FOLLOW_LINKS option.
         try (Stream<Path> s = Files.walk(testFolder, FileVisitOption.FOLLOW_LINKS)) {
             Object[] actual = s.sorted().toArray();
-            assertArrayEquals(allFollowLinks, actual);
+            assertEquals(actual, allFollowLinks);
         } catch (IOException ioe) {
             fail("Unexpected IOException");
         }
@@ -224,7 +211,6 @@ public class StreamTest {
         }
     }
 
-    @Test
     public void testWalkFollowLinkLoop() {
         if (!supportsSymbolicLinks) {
             return;
@@ -271,7 +257,6 @@ public class StreamTest {
                     dir2.resolve(Paths.get("lnDir", "lnDir2")));
             validateFileSystemLoopException(linkdir,
                     linkdir.resolve(Paths.get("lnDir2", "lnDir")));
-            Files.delete(cause);
         } catch(IOException ioe) {
             fail("Unexpected IOException " + ioe);
         }
@@ -295,46 +280,44 @@ public class StreamTest {
         }
     }
 
-    @Test
     public void testFind() throws IOException {
         PathBiPredicate pred = new PathBiPredicate((path, attrs) -> true);
 
         try (Stream<Path> s = Files.find(testFolder, Integer.MAX_VALUE, pred)) {
             Set<Path> result = s.collect(Collectors.toCollection(TreeSet::new));
-            assertArrayEquals(all, pred.visited());
-            assertArrayEquals(pred.visited(), result.toArray(new Path[0]));
+            assertEquals(pred.visited(), all);
+            assertEquals(result.toArray(new Path[0]), pred.visited());
         }
 
         pred = new PathBiPredicate((path, attrs) -> attrs.isSymbolicLink());
         try (Stream<Path> s = Files.find(testFolder, Integer.MAX_VALUE, pred)) {
             s.forEach(path -> assertTrue(Files.isSymbolicLink(path)));
-            assertArrayEquals(all, pred.visited());
+            assertEquals(pred.visited(), all);
         }
 
         pred = new PathBiPredicate((path, attrs) ->
             path.getFileName().toString().startsWith("e"));
         try (Stream<Path> s = Files.find(testFolder, Integer.MAX_VALUE, pred)) {
             s.forEach(path -> assertEquals(path.getFileName().toString(), "empty"));
-            assertArrayEquals(all, pred.visited());
+            assertEquals(pred.visited(), all);
         }
 
         pred = new PathBiPredicate((path, attrs) ->
             path.getFileName().toString().startsWith("l") && attrs.isRegularFile());
         try (Stream<Path> s = Files.find(testFolder, Integer.MAX_VALUE, pred)) {
             s.forEach(path -> fail("Expect empty stream"));
-            assertArrayEquals(all, pred.visited());
+            assertEquals(pred.visited(), all);
         }
     }
 
     // Test borrowed from BytesAndLines
-    @Test
     public void testLines() throws IOException {
         final Charset US_ASCII = Charset.forName("US-ASCII");
         Path tmpfile = Files.createTempFile("blah", "txt");
 
         try {
             // zero lines
-            assertEquals(0, Files.size(tmpfile), "File should be empty");
+            assertTrue(Files.size(tmpfile) == 0, "File should be empty");
             try (Stream<String> s = Files.lines(tmpfile)) {
                 checkLines(s, Collections.emptyList());
             }
@@ -384,21 +367,31 @@ public class StreamTest {
 
     private void checkLines(Stream<String> s, List<String> expected) {
         List<String> lines = s.collect(Collectors.toList());
-        assertEquals(expected.size(), lines.size(), "Unexpected number of lines");
+        assertTrue(lines.size() == expected.size(), "Unexpected number of lines");
         assertTrue(lines.equals(expected), "Unexpected content");
     }
 
     private void checkMalformedInputException(Stream<String> s) {
-            assertThrows(UncheckedIOException.class,
-                         () -> s.collect(Collectors.toList()),
-                         "MalformedInputException expected");
+        try {
+            List<String> lines = s.collect(Collectors.toList());
+            fail("UncheckedIOException expected");
+        } catch (UncheckedIOException ex) {
+            IOException cause = ex.getCause();
+            assertTrue(cause instanceof MalformedInputException,
+                "MalformedInputException expected");
+        }
     }
 
     private void checkNullPointerException(Callable<?> c) {
-        assertThrows(NullPointerException.class, () -> c.call());
+        try {
+            c.call();
+            fail("NullPointerException expected");
+        } catch (NullPointerException ignore) {
+        } catch (Exception e) {
+            fail(e + " not expected");
+        }
     }
 
-    @Test
     public void testDirectoryIteratorException() throws IOException {
         Path dir = testFolder.resolve("dir2");
         Path trigger = dir.resolve("DirectoryIteratorException");
@@ -411,21 +404,22 @@ public class StreamTest {
             Path fakeRoot = fs.getRoot();
             try {
                 try (Stream<Path> s = Files.list(fakeRoot)) {
-                    s.forEach(path -> assertEquals("DirectoryIteratorException", path.getFileName().toString()));
+                    s.forEach(path -> assertEquals(path.getFileName().toString(), "DirectoryIteratorException"));
                 }
             } catch (UncheckedIOException uioe) {
                 fail("Unexpected exception.");
             }
 
             fsp.setFaultyMode(true);
-            try (DirectoryStream<Path> ds = Files.newDirectoryStream(fakeRoot)) {
-                Iterator<Path> itor = ds.iterator();
-                assertThrows(DirectoryIteratorException.class,
-                             () -> {
-                                 while (itor.hasNext()) {
-                                     itor.next();
-                                 }
-                             });
+            try {
+                try (DirectoryStream<Path> ds = Files.newDirectoryStream(fakeRoot)) {
+                    Iterator<Path> itor = ds.iterator();
+                    while (itor.hasNext()) {
+                        itor.next();
+                    }
+                }
+                fail("Shoule throw DirectoryIteratorException");
+            } catch (DirectoryIteratorException die) {
             }
 
             try {
@@ -433,8 +427,7 @@ public class StreamTest {
                     s.forEach(path -> fail("should not get here"));
                 }
             } catch (UncheckedIOException uioe) {
-                assertInstanceOf(FaultyFileSystem.FaultyException.class,
-                                 uioe.getCause());
+                assertTrue(uioe.getCause() instanceof FaultyFileSystem.FaultyException);
             } catch (DirectoryIteratorException die) {
                 fail("Should have been converted into UncheckedIOException.");
             }
@@ -447,7 +440,6 @@ public class StreamTest {
         }
     }
 
-    @Test
     public void testUncheckedIOException() throws IOException {
         Path triggerFile = testFolder.resolve(Paths.get("dir2", "IOException"));
         Files.createFile(triggerFile);
@@ -462,22 +454,21 @@ public class StreamTest {
             Path fakeRoot = fs.getRoot();
             try (Stream<Path> s = Files.list(fakeRoot.resolve("dir2"))) {
                 // only one file
-                s.forEach(path -> assertEquals("IOException", path.getFileName().toString()));
+                s.forEach(path -> assertEquals(path.getFileName().toString(), "IOException"));
             }
 
             try (Stream<Path> s = Files.walk(fakeRoot.resolve("empty"))) {
                 String[] result = s.map(path -> path.getFileName().toString())
                                    .toArray(String[]::new);
                 // ordered as depth-first
-                assertArrayEquals(new String[] { "empty", "IOException", "file"}, result);
+                assertEquals(result, new String[] { "empty", "IOException", "file"});
             }
 
             fsp.setFaultyMode(true);
             try (Stream<Path> s = Files.list(fakeRoot.resolve("dir2"))) {
                 s.forEach(path -> fail("should have caused exception"));
             } catch (UncheckedIOException uioe) {
-                assertInstanceOf(FaultyFileSystem.FaultyException.class,
-                                 uioe.getCause());
+                assertTrue(uioe.getCause() instanceof FaultyFileSystem.FaultyException);
             }
 
             try (Stream<Path> s = Files.walk(fakeRoot.resolve("empty"))) {
@@ -485,8 +476,7 @@ public class StreamTest {
                                    .toArray(String[]::new);
                 fail("should not reach here due to IOException");
             } catch (UncheckedIOException uioe) {
-                assertInstanceOf(FaultyFileSystem.FaultyException.class,
-                                 uioe.getCause());
+                assertTrue(uioe.getCause() instanceof FaultyFileSystem.FaultyException);
             }
 
             try (Stream<Path> s = Files.walk(
@@ -496,7 +486,7 @@ public class StreamTest {
                                    .toArray(String[]::new);
                 fail("should not reach here due to IOException");
             } catch (IOException ioe) {
-                assertInstanceOf(FaultyFileSystem.FaultyException.class, ioe);
+                assertTrue(ioe instanceof FaultyFileSystem.FaultyException);
             } catch (UncheckedIOException ex) {
                 fail("Top level should be repored as is");
             }
@@ -510,47 +500,52 @@ public class StreamTest {
         }
     }
 
-    @Test
     public void testConstructException() {
         try (Stream<String> s = Files.lines(testFolder.resolve("notExist"), Charset.forName("UTF-8"))) {
-            s.forEach(l -> fail("File does not even exist!"));
+            s.forEach(l -> fail("File is not even exist!"));
         } catch (IOException ioe) {
-            assertInstanceOf(NoSuchFileException.class, ioe);
+            assertTrue(ioe instanceof NoSuchFileException);
         }
     }
 
-    @Test
     public void testClosedStream() throws IOException {
         try (Stream<Path> s = Files.list(testFolder)) {
             s.close();
-            assertThrows(IllegalStateException.class,
-                         () -> s.sorted().toArray());
+            Object[] actual = s.sorted().toArray();
+            fail("Operate on closed stream should throw IllegalStateException");
+        } catch (IllegalStateException ex) {
+            // expected
         }
 
         try (Stream<Path> s = Files.walk(testFolder)) {
             s.close();
-            assertThrows(IllegalStateException.class,
-                         () -> s.sorted().toArray());
+            Object[] actual = s.sorted().toArray();
+            fail("Operate on closed stream should throw IllegalStateException");
+        } catch (IllegalStateException ex) {
+            // expected
         }
 
         try (Stream<Path> s = Files.find(testFolder, Integer.MAX_VALUE,
                     (p, attr) -> true)) {
             s.close();
-            assertThrows(IllegalStateException.class,
-                         () -> s.sorted().toArray());
+            Object[] actual = s.sorted().toArray();
+            fail("Operate on closed stream should throw IllegalStateException");
+        } catch (IllegalStateException ex) {
+            // expected
         }
     }
 
-    @Test
-    @EnabledOnOs(OS.LINUX)
     public void testProcFile() throws IOException {
-        Path path = Paths.get("/proc/cpuinfo");
-        if (Files.exists(path)) {
-            String NEW_LINE = System.getProperty("line.separator");
-            String s =
-                Files.lines(path).collect(Collectors.joining(NEW_LINE));
-            assertNotEquals(0, s.length(),
-                            "Files.lines(\"" + path + "\") returns no data");
+        if (System.getProperty("os.name").equals("Linux")) {
+            Path path = Paths.get("/proc/cpuinfo");
+            if (Files.exists(path)) {
+                String NEW_LINE = System.getProperty("line.separator");
+                String s =
+                    Files.lines(path).collect(Collectors.joining(NEW_LINE));
+                if (s.length() == 0) {
+                    fail("Files.lines(\"" + path + "\") returns no data");
+                }
+            }
         }
     }
 }

@@ -31,6 +31,7 @@
  *
  * @requires vm.opt.DeoptimizeALot != true
  * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
+ * @requires !vm.emulatedClient
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -83,8 +84,8 @@ public class IsMethodCompilableTest extends CompilerWhiteBoxTest {
     protected void test() throws Exception {
 
         // Only c2 compilations can be disabled through PerMethodRecompilationCutoff
-        if (!Platform.isServer()) {
-            throw new Error("TESTBUG: Not server VM");
+        if (!Platform.isServer() || Platform.isEmulatedClient()) {
+            throw new Error("TESTBUG: Not server mode");
         }
 
         if (skipXcompOSR()) {

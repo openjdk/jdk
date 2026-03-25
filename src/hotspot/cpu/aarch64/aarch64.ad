@@ -1690,6 +1690,9 @@ int MachCallRuntimeNode::ret_addr_offset() {
   CodeBlob *cb = CodeCache::find_blob(_entry_point);
   if (cb) {
     return 1 * NativeInstruction::instruction_size;
+  } else if (_entry_point == nullptr) {
+    // See CallLeafNoFPIndirect
+    return 1 * NativeInstruction::instruction_size;
   } else {
     return 6 * NativeInstruction::instruction_size;
   }
@@ -1798,49 +1801,15 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
 void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
 
-  // n.b. frame size includes space for return pc and rfp
-  const int framesize = C->output()->frame_size_in_bytes();
 
-  if (C->clinit_barrier_on_entry()) {
-    assert(!C->method()->holder()->is_not_initialized(), "initialization should have been started");
-
-    Label L_skip_barrier;
-
-    __ mov_metadata(rscratch2, C->method()->holder()->constant_encoding());
-    __ clinit_barrier(rscratch2, rscratch1, &L_skip_barrier);
-    __ far_jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
-    __ bind(L_skip_barrier);
-  }
-
-  if (C->max_vector_size() > 0) {
-    __ reinitialize_ptrue();
-  }
-
-  int bangsize = C->output()->bang_size_in_bytes();
-  if (C->output()->need_stack_bang(bangsize))
-    __ generate_stack_overflow_check(bangsize);
-
-  __ build_frame(framesize);
+  __ verified_entry(C, 0);
 
   if (C->stub_function() == nullptr) {
-    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    // Dummy labels for just measuring the code size
-    Label dummy_slow_path;
-    Label dummy_continuation;
-    Label dummy_guard;
-    Label* slow_path = &dummy_slow_path;
-    Label* continuation = &dummy_continuation;
-    Label* guard = &dummy_guard;
-    if (!Compile::current()->output()->in_scratch_emit_size()) {
-      // Use real labels from actual stub when not emitting code for the purpose of measuring its size
-      C2EntryBarrierStub* stub = new (Compile::current()->comp_arena()) C2EntryBarrierStub();
-      Compile::current()->output()->add_stub(stub);
-      slow_path = &stub->entry();
-      continuation = &stub->continuation();
-      guard = &stub->guard();
-    }
-    // In the C2 code, we move the non-hot part of nmethod entry barriers out-of-line to a stub.
-    bs->nmethod_entry_barrier(masm, slow_path, continuation, guard);
+    __ entry_barrier();
+  }
+
+  if (!Compile::current()->output()->in_scratch_emit_size()) {
+    __ bind(*_verified_entry);
   }
 
   if (VerifyStackAtCalls) {
@@ -1855,12 +1824,6 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
     ConstantTable& constant_table = C->output()->constant_table();
     constant_table.set_table_base_offset(constant_table.calculate_table_base_offset());
   }
-}
-
-uint MachPrologNode::size(PhaseRegAlloc* ra_) const
-{
-  return MachNode::size(ra_); // too many variables; just compute it
-                              // the hard way
 }
 
 int MachPrologNode::reloc() const
@@ -1905,7 +1868,7 @@ void MachEpilogNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
   int framesize = C->output()->frame_slots() << LogBytesPerInt;
 
-  __ remove_frame(framesize);
+  __ remove_frame(framesize, C->needs_stack_repair());
 
   if (StackReservedPages > 0 && C->has_reserved_stack_access()) {
     __ reserved_stack_check();
@@ -1922,11 +1885,6 @@ void MachEpilogNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
     __ relocate(relocInfo::poll_return_type);
     __ safepoint_poll(*code_stub, true /* at_return */, true /* in_nmethod */);
   }
-}
-
-uint MachEpilogNode::size(PhaseRegAlloc *ra_) const {
-  // Variable size. Determine dynamically.
-  return MachNode::size(ra_);
 }
 
 int MachEpilogNode::reloc() const {
@@ -2227,8 +2185,46 @@ uint BoxLockNode::size(PhaseRegAlloc *ra_) const {
   }
 }
 
-//=============================================================================
+///=============================================================================
+#ifndef PRODUCT
+void MachVEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
+{
+  st->print_cr("# MachVEPNode");
+  if (!_verified) {
+    st->print_cr("\t load_class");
+  } else {
+    st->print_cr("\t unpack_inline_arg");
+  }
+}
+#endif
 
+void MachVEPNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc* ra_) const
+{
+  if (!_verified) {
+    __ ic_check(1);
+  } else {
+    // TODO 8284443 Avoid creation of temporary frame
+    if (ra_->C->stub_function() == nullptr) {
+      __ verified_entry(ra_->C, 0);
+      __ entry_barrier();
+      int framesize = ra_->C->output()->frame_slots() << LogBytesPerInt;
+      __ remove_frame(framesize, false);
+    }
+    // Unpack inline type args passed as oop and then jump to
+    // the verified entry point (skipping the unverified entry).
+    int sp_inc = __ unpack_inline_args(ra_->C, _receiver_only);
+    // Emit code for verified entry and save increment for stack repair on return
+    __ verified_entry(ra_->C, sp_inc);
+    if (Compile::current()->output()->in_scratch_emit_size()) {
+      Label dummy_verified_entry;
+      __ b(dummy_verified_entry);
+    } else {
+      __ b(*_verified_entry);
+    }
+  }
+}
+
+//=============================================================================
 #ifndef PRODUCT
 void MachUEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 {
@@ -2249,11 +2245,6 @@ void MachUEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 void MachUEPNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const
 {
   __ ic_check(InteriorEntryAlignment);
-}
-
-uint MachUEPNode::size(PhaseRegAlloc* ra_) const
-{
-  return MachNode::size(ra_);
 }
 
 // REQUIRED EMIT CODE
@@ -2522,6 +2513,10 @@ uint Matcher::float_pressure_limit()
 {
   // _FLOAT_REG_mask is generated by adlc from the float_reg register class.
   return (FLOATPRESSURE == -1) ? _FLOAT_REG_mask.size() : FLOATPRESSURE;
+}
+
+bool Matcher::use_asm_for_ldiv_by_con(jlong divisor) {
+  return false;
 }
 
 const RegMask& Matcher::divI_proj_mask() {
@@ -3672,6 +3667,37 @@ encode %{
       // Check that stack depth is unchanged: find majik cookie on stack
       __ call_Unimplemented();
     }
+    if (tf()->returns_inline_type_as_fields() && !_method->is_method_handle_intrinsic() && _method->return_type()->is_loaded()) {
+      // The last return value is not set by the callee but used to pass the null marker to compiled code.
+      // Search for the corresponding projection, get the register and emit code that initialized it.
+      uint con = (tf()->range_cc()->cnt() - 1);
+      for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
+        ProjNode* proj = fast_out(i)->as_Proj();
+        if (proj->_con == con) {
+          // Set null marker if r0 is non-null (a non-null value is returned buffered or scalarized)
+          OptoReg::Name optoReg = ra_->get_reg_first(proj);
+          VMReg reg = OptoReg::as_VMReg(optoReg, ra_->_framesize, OptoReg::reg2stack(ra_->_matcher._new_SP));
+          Register toReg = reg->is_reg() ? reg->as_Register() : rscratch1;
+          __ cmp(r0, zr);
+          __ cset(toReg, Assembler::NE);
+          if (reg->is_stack()) {
+            int st_off = reg->reg2stack() * VMRegImpl::stack_slot_size;
+            __ str(toReg, Address(sp, st_off));
+          }
+          break;
+        }
+      }
+      if (return_value_is_used()) {
+        // An inline type is returned as fields in multiple registers.
+        // R0 either contains an oop if the inline type is buffered or a pointer
+        // to the corresponding InlineKlass with the lowest bit set to 1. Zero r0
+        // if the lowest bit is set to allow C2 to use the oop after null checking.
+        // r0 &= (r0 & 1) - 1
+        __ andr(rscratch1, r0, 0x1);
+        __ sub(rscratch1, rscratch1, 0x1);
+        __ andr(r0, r0, rscratch1);
+      }
+    }
   %}
 
   enc_class aarch64_enc_java_to_runtime(method meth) %{
@@ -3954,6 +3980,16 @@ operand immI_gt_1()
 operand immI_le_4()
 %{
   predicate(n->get_int() <= 4);
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immI_4()
+%{
+  predicate(n->get_int() == 4);
   match(ConI);
 
   op_cost(0);
@@ -6860,7 +6896,7 @@ instruct loadConP(iRegPNoSp dst, immP con)
 
   ins_cost(INSN_COST * 4);
   format %{
-    "mov  $dst, $con\t# ptr\n\t"
+    "mov  $dst, $con\t# ptr"
   %}
 
   ins_encode(aarch64_enc_mov_p(dst, con));
@@ -8020,21 +8056,6 @@ instruct membar_release_lock() %{
   ins_pipe(pipe_serial);
 %}
 
-instruct membar_storeload() %{
-  match(MemBarStoreLoad);
-  ins_cost(VOLATILE_REF_COST*100);
-
-  format %{ "MEMBAR-store-load\n\t"
-            "dmb ish" %}
-
-  ins_encode %{
-    __ block_comment("membar_storeload");
-    __ membar(Assembler::StoreLoad);
-  %}
-
-  ins_pipe(pipe_serial);
-%}
-
 instruct unnecessary_membar_volatile() %{
   predicate(unnecessary_volatile(n));
   match(MemBarVolatile);
@@ -8064,20 +8085,6 @@ instruct membar_volatile() %{
   ins_pipe(pipe_serial);
 %}
 
-instruct membar_full() %{
-  match(MemBarFull);
-  ins_cost(VOLATILE_REF_COST*100);
-
-  format %{ "membar_full\n\t"
-            "dmb ish" %}
-  ins_encode %{
-    __ block_comment("membar_full");
-    __ membar(Assembler::AnyAny);
-  %}
-
-  ins_pipe(pipe_serial);
-%}
-
 // ============================================================================
 // Cast/Convert Instructions
 
@@ -8086,6 +8093,36 @@ instruct castX2P(iRegPNoSp dst, iRegL src) %{
 
   ins_cost(INSN_COST);
   format %{ "mov $dst, $src\t# long -> ptr" %}
+
+  ins_encode %{
+    if ($dst$$reg != $src$$reg) {
+      __ mov(as_Register($dst$$reg), as_Register($src$$reg));
+    }
+  %}
+
+  ins_pipe(ialu_reg);
+%}
+
+instruct castI2N(iRegNNoSp dst, iRegI src) %{
+  match(Set dst (CastI2N src));
+
+  ins_cost(INSN_COST);
+  format %{ "mov $dst, $src\t# int -> narrow ptr" %}
+
+  ins_encode %{
+    if ($dst$$reg != $src$$reg) {
+      __ mov(as_Register($dst$$reg), as_Register($src$$reg));
+    }
+  %}
+
+  ins_pipe(ialu_reg);
+%}
+
+instruct castN2X(iRegLNoSp dst, iRegN src) %{
+  match(Set dst (CastP2X src));
+
+  ins_cost(INSN_COST);
+  format %{ "mov $dst, $src\t# ptr -> long" %}
 
   ins_encode %{
     if ($dst$$reg != $src$$reg) {
@@ -14084,9 +14121,9 @@ instruct MoveL2D_reg_reg(vRegD dst, iRegL src) %{
 // ============================================================================
 // clearing of an array
 
-instruct clearArray_reg_reg(iRegL_R11 cnt, iRegP_R10 base, Universe dummy, rFlagsReg cr)
+instruct clearArray_reg_reg_immL0(iRegL_R11 cnt, iRegP_R10 base, immL0 zero, Universe dummy, rFlagsReg cr)
 %{
-  match(Set dummy (ClearArray cnt base));
+  match(Set dummy (ClearArray (Binary cnt base) zero));
   effect(USE_KILL cnt, USE_KILL base, KILL cr);
 
   ins_cost(4 * INSN_COST);
@@ -14103,10 +14140,27 @@ instruct clearArray_reg_reg(iRegL_R11 cnt, iRegP_R10 base, Universe dummy, rFlag
   ins_pipe(pipe_class_memory);
 %}
 
+instruct clearArray_reg_reg(iRegL_R11 cnt, iRegP_R10 base, iRegL val, Universe dummy, rFlagsReg cr)
+%{
+  predicate(((ClearArrayNode*)n)->word_copy_only());
+  match(Set dummy (ClearArray (Binary cnt base) val));
+  effect(USE_KILL cnt, USE_KILL base, KILL cr);
+
+  ins_cost(4 * INSN_COST);
+  format %{ "ClearArray $cnt, $base, $val" %}
+
+  ins_encode %{
+    __ fill_words($base$$Register, $cnt$$Register, $val$$Register);
+  %}
+
+  ins_pipe(pipe_class_memory);
+%}
+
 instruct clearArray_imm_reg(immL cnt, iRegP_R10 base, iRegL_R11 temp, Universe dummy, rFlagsReg cr)
 %{
   predicate((uint64_t)n->in(2)->get_long()
-            < (uint64_t)(BlockZeroingLowLimit >> LogBytesPerWord));
+            < (uint64_t)(BlockZeroingLowLimit >> LogBytesPerWord)
+            && !((ClearArrayNode*)n)->word_copy_only());
   match(Set dummy (ClearArray cnt base));
   effect(TEMP temp, USE_KILL base, KILL cr);
 
@@ -15423,8 +15477,28 @@ instruct CallLeafDirectVector(method meth)
 
 // Call Runtime Instruction
 
+// entry point is null, target holds the address to call
+instruct CallLeafNoFPIndirect(iRegP target)
+%{
+  predicate(n->as_Call()->entry_point() == nullptr);
+
+  match(CallLeafNoFP target);
+
+  ins_cost(CALL_COST);
+
+  format %{ "CALL, runtime leaf nofp indirect $target" %}
+
+  ins_encode %{
+    __ blr($target$$Register);
+  %}
+
+  ins_pipe(pipe_class_call);
+%}
+
 instruct CallLeafNoFPDirect(method meth)
 %{
+  predicate(n->as_Call()->entry_point() != nullptr);
+
   match(CallLeafNoFP);
 
   effect(USE meth);

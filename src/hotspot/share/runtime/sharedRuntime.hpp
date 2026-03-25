@@ -25,12 +25,14 @@
 #ifndef SHARE_RUNTIME_SHAREDRUNTIME_HPP
 #define SHARE_RUNTIME_SHAREDRUNTIME_HPP
 
+#include "asm/codeBuffer.hpp"
 #include "code/codeBlob.hpp"
 #include "code/vmreg.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/allStatic.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/safepointVerifiers.hpp"
+#include "runtime/signature.hpp"
 #include "runtime/stubInfo.hpp"
 #include "utilities/macros.hpp"
 
@@ -39,6 +41,7 @@ class AdapterFingerPrint;
 class MetaspaceClosure;
 class SerializeClosure;
 class vframeStream;
+class SigEntry;
 
 // Runtime is the base class for various runtime interfaces
 // (InterpreterRuntime, CompilerRuntime, etc.). It provides
@@ -368,9 +371,11 @@ class SharedRuntime: AllStatic {
   //
   static char* generate_class_cast_message(Klass* caster_klass, Klass* target_klass, Symbol* target_klass_name = nullptr);
 
+  static char* generate_identity_exception_message(JavaThread* thr, Klass* klass);
+
   // Resolves a call site- may patch in the destination of the call into the
   // compiled code.
-  static methodHandle resolve_helper(bool is_virtual, bool is_optimized, TRAPS);
+  static methodHandle resolve_helper(bool is_virtual, bool is_optimized, bool& caller_does_not_scalarize, TRAPS);
 
  private:
   // deopt blob
@@ -380,14 +385,14 @@ class SharedRuntime: AllStatic {
   static DeoptimizationBlob* deopt_blob(void)      { return _deopt_blob; }
 
   // Resets a call-site in compiled code so it will get resolved again.
-  static methodHandle reresolve_call_site(TRAPS);
+  static methodHandle reresolve_call_site(bool& is_optimized, bool& caller_does_not_scalarize, TRAPS);
 
   // In the code prolog, if the klass comparison fails, the inline cache
   // misses and the call site is patched to megamorphic
-  static methodHandle handle_ic_miss_helper(TRAPS);
+  static methodHandle handle_ic_miss_helper(bool& caller_does_not_scalarize, TRAPS);
 
   // Find the method that called us.
-  static methodHandle find_callee_method(TRAPS);
+  static methodHandle find_callee_method(bool& caller_does_not_scalarize, TRAPS);
 
   static void monitor_enter_helper(oopDesc* obj, BasicLock* lock, JavaThread* thread);
 
@@ -415,6 +420,14 @@ class SharedRuntime: AllStatic {
   // 4-bytes higher.
   // return value is the maximum number of VMReg stack slots the convention will use.
   static int java_calling_convention(const BasicType* sig_bt, VMRegPair* regs, int total_args_passed);
+  static int java_calling_convention(const GrowableArray<SigEntry>* sig, VMRegPair* regs) {
+    BasicType* sig_bt = NEW_RESOURCE_ARRAY(BasicType, sig->length());
+    int total_args_passed = SigEntry::fill_sig_bt(sig, sig_bt);
+    return java_calling_convention(sig_bt, regs, total_args_passed);
+  }
+  static int java_return_convention(const BasicType* sig_bt, VMRegPair* regs, int total_args_passed);
+  static const uint java_return_convention_max_int;
+  static const uint java_return_convention_max_float;
 
   static void check_member_name_argument_is_last_argument(const methodHandle& method,
                                                           const BasicType* sig_bt,
@@ -461,17 +474,21 @@ class SharedRuntime: AllStatic {
   // pointer as needed. This means the i2c adapter code doesn't need any special
   // handshaking path with compiled code to keep the stack walking correct.
 
-  static void generate_i2c2i_adapters(MacroAssembler *_masm,
+  static void generate_i2c2i_adapters(MacroAssembler* _masm,
                                       int total_args_passed,
-                                      int max_arg,
-                                      const BasicType *sig_bt,
-                                      const VMRegPair *regs,
-                                      address entry_address[AdapterBlob::ENTRY_COUNT]);
+                                      const GrowableArray<SigEntry>* sig,
+                                      const VMRegPair* regs,
+                                      const GrowableArray<SigEntry>* sig_cc,
+                                      const VMRegPair* regs_cc,
+                                      const GrowableArray<SigEntry>* sig_cc_ro,
+                                      const VMRegPair* regs_cc_ro,
+                                      address entry_address[AdapterBlob::ENTRY_COUNT],
+                                      AdapterBlob*& new_adapter,
+                                      bool allocate_code_blob);
 
   static void gen_i2c_adapter(MacroAssembler *_masm,
-                              int total_args_passed,
                               int comp_args_on_stack,
-                              const BasicType *sig_bt,
+                              const GrowableArray<SigEntry>* sig,
                               const VMRegPair *regs);
 
   // OSR support
@@ -543,10 +560,14 @@ class SharedRuntime: AllStatic {
   static void complete_monitor_unlocking_C(oopDesc* obj, BasicLock* lock, JavaThread* current);
 
   // Resolving of calls
-  static address get_resolved_entry        (JavaThread* current, methodHandle callee_method);
+  static address get_resolved_entry        (JavaThread* current, methodHandle callee_method,
+                                            bool is_static_call, bool is_optimized, bool caller_does_not_scalarize);
   static address resolve_static_call_C     (JavaThread* current);
   static address resolve_virtual_call_C    (JavaThread* current);
   static address resolve_opt_virtual_call_C(JavaThread* current);
+
+  static void load_inline_type_fields_in_regs(JavaThread* current, oopDesc* res);
+  static void store_inline_type_fields_to_buf(JavaThread* current, intptr_t res);
 
   // arraycopy, the non-leaf version.  (See StubRoutines for all the leaf calls.)
   static void slow_arraycopy_C(oopDesc* src,  jint src_pos,
@@ -558,9 +579,12 @@ class SharedRuntime: AllStatic {
   static address handle_wrong_method(JavaThread* current);
   static address handle_wrong_method_abstract(JavaThread* current);
   static address handle_wrong_method_ic_miss(JavaThread* current);
+  static void allocate_inline_types(JavaThread* current, Method* callee, bool allocate_receiver);
+  static oop allocate_inline_types_impl(JavaThread* current, methodHandle callee, bool allocate_receiver, TRAPS);
 
   static address handle_unsafe_access(JavaThread* thread, address next_pc);
 
+  static BufferedInlineTypeBlob* generate_buffered_inline_type_adapter(const InlineKlass* vk);
 #ifndef PRODUCT
 
   // Collect and print inline cache miss statistics
@@ -699,7 +723,7 @@ class AdapterHandlerEntry : public MetaspaceObj {
   friend class AdapterHandlerLibrary;
 
  public:
-  static const int ENTRIES_COUNT = 4;
+  static const int ENTRIES_COUNT = 7;
 
  private:
   AdapterFingerPrint* _fingerprint;
@@ -708,6 +732,9 @@ class AdapterHandlerEntry : public MetaspaceObj {
   bool _linked;
 
   static const char *_entry_names[];
+
+  // Support for scalarized inline type calling convention
+  const GrowableArray<SigEntry>* _sig_cc;
 
 #ifdef ASSERT
   // Captures code and signature used to generate this adapter when
@@ -720,7 +747,8 @@ class AdapterHandlerEntry : public MetaspaceObj {
     _fingerprint(fingerprint),
     _adapter_blob(nullptr),
     _id(id),
-    _linked(false)
+    _linked(false),
+    _sig_cc(nullptr)
 #ifdef ASSERT
     , _saved_code(nullptr),
     _saved_code_length(0)
@@ -771,10 +799,37 @@ class AdapterHandlerEntry : public MetaspaceObj {
 #endif // ZERO
   }
 
+  address get_c2i_inline_entry() const {
+#ifndef ZERO
+    assert(_adapter_blob != nullptr, "must be");
+    return _adapter_blob->c2i_inline_entry();
+#else
+    return nullptr;
+#endif // ZERO
+  }
+
+  address get_c2i_inline_ro_entry() const {
+#ifndef ZERO
+    assert(_adapter_blob != nullptr, "must be");
+    return _adapter_blob->c2i_inline_ro_entry();
+#else
+    return nullptr;
+#endif // ZERO
+  }
+
   address get_c2i_unverified_entry() const {
 #ifndef ZERO
     assert(_adapter_blob != nullptr, "must be");
     return _adapter_blob->c2i_unverified_entry();
+#else
+    return nullptr;
+#endif // ZERO
+  }
+
+  address get_c2i_unverified_inline_entry() const {
+#ifndef ZERO
+    assert(_adapter_blob != nullptr, "must be");
+    return _adapter_blob->c2i_unverified_inline_entry();
 #else
     return nullptr;
 #endif // ZERO
@@ -791,6 +846,10 @@ class AdapterHandlerEntry : public MetaspaceObj {
 
   AdapterBlob* adapter_blob() const { return _adapter_blob; }
   bool is_linked() const { return _linked; }
+
+  // Support for scalarized inline type calling convention
+  void set_sig_cc(const GrowableArray<SigEntry>* sig)  { _sig_cc = sig; }
+  const GrowableArray<SigEntry>* get_sig_cc()    const { return _sig_cc; }
 
   uint id() const { return _id; }
   AdapterFingerPrint* fingerprint() const { return _fingerprint; }
@@ -816,6 +875,8 @@ class AdapterHandlerEntry : public MetaspaceObj {
 class ArchivedAdapterTable;
 #endif // INCLUDE_CDS
 
+class CompiledEntrySignature;
+
 class AdapterHandlerLibrary: public AllStatic {
   friend class SharedRuntime;
  private:
@@ -834,8 +895,8 @@ class AdapterHandlerLibrary: public AllStatic {
   static void initialize();
   static AdapterHandlerEntry* get_simple_adapter(const methodHandle& method);
   static void lookup_aot_cache(AdapterHandlerEntry* handler);
-  static AdapterHandlerEntry* create_adapter(int total_args_passed,
-                                             BasicType* sig_bt,
+  static AdapterHandlerEntry* create_adapter(CompiledEntrySignature& ces,
+                                             bool allocate_code_blob,
                                              bool is_transient = false);
   static void lookup_simple_adapters() NOT_CDS_RETURN;
 #ifndef PRODUCT
@@ -846,14 +907,14 @@ class AdapterHandlerLibrary: public AllStatic {
   static AdapterHandlerEntry* new_entry(AdapterFingerPrint* fingerprint);
   static void create_native_wrapper(const methodHandle& method);
   static AdapterHandlerEntry* get_adapter(const methodHandle& method);
-  static AdapterHandlerEntry* lookup(int total_args_passed, BasicType* sig_bt);
+  static AdapterHandlerEntry* lookup(const GrowableArray<SigEntry>* sig, bool has_ro_adapter = false);
   static bool generate_adapter_code(AdapterHandlerEntry* handler,
-                                    int total_args_passed,
-                                    BasicType* sig_bt,
+                                    CompiledEntrySignature& ces,
+                                    bool allocate_code_blob,
                                     bool is_transient);
 
 #ifdef ASSERT
-  static void verify_adapter_sharing(int total_args_passed, BasicType* sig_bt, AdapterHandlerEntry* cached);
+  static void verify_adapter_sharing(CompiledEntrySignature& ces, AdapterHandlerEntry* cached_entry);
 #endif // ASSERT
 
   static void print_handler(const CodeBlob* b) { print_handler_on(tty, b); }
@@ -869,6 +930,66 @@ class AdapterHandlerLibrary: public AllStatic {
   static void serialize_shared_table_header(SerializeClosure* soc) NOT_CDS_RETURN;
   static void link_aot_adapters() NOT_CDS_RETURN;
   static void address_to_offset(address entry_address[AdapterBlob::ENTRY_COUNT], int entry_offset[AdapterBlob::ENTRY_COUNT]);
+};
+
+// Utility class for computing the calling convention of the 3 types
+// of compiled method entries:
+//     Method::_from_compiled_entry               - sig_cc
+//     Method::_from_compiled_inline_ro_entry     - sig_cc_ro
+//     Method::_from_compiled_inline_entry        - sig
+class CompiledEntrySignature : public StackObj {
+  Method* _method;
+  int  _num_inline_args;
+  bool _has_inline_recv;
+  GrowableArray<SigEntry>* _sig;
+  GrowableArray<SigEntry>* _sig_cc;
+  GrowableArray<SigEntry>* _sig_cc_ro;
+  VMRegPair* _regs;
+  VMRegPair* _regs_cc;
+  VMRegPair* _regs_cc_ro;
+
+  int _args_on_stack;
+  int _args_on_stack_cc;
+  int _args_on_stack_cc_ro;
+
+  bool _c1_needs_stack_repair;
+  bool _c2_needs_stack_repair;
+
+  GrowableArray<Method*>* _supers;
+
+public:
+  Method* method()                     const { return _method; }
+
+  // Used by Method::_from_compiled_inline_entry
+  GrowableArray<SigEntry>* sig()       const { return _sig; }
+
+  // Used by Method::_from_compiled_entry
+  GrowableArray<SigEntry>* sig_cc()    const { return _sig_cc; }
+
+  // Used by Method::_from_compiled_inline_ro_entry
+  GrowableArray<SigEntry>* sig_cc_ro() const { return _sig_cc_ro; }
+
+  VMRegPair* regs()                    const { return _regs; }
+  VMRegPair* regs_cc()                 const { return _regs_cc; }
+  VMRegPair* regs_cc_ro()              const { return _regs_cc_ro; }
+
+  int args_on_stack()                  const { return _args_on_stack; }
+  int args_on_stack_cc()               const { return _args_on_stack_cc; }
+  int args_on_stack_cc_ro()            const { return _args_on_stack_cc_ro; }
+
+  int  num_inline_args()               const { return _num_inline_args; }
+  bool has_inline_recv()               const { return _has_inline_recv; }
+
+  bool has_scalarized_args()           const { return _sig != _sig_cc; }
+  bool c1_needs_stack_repair()         const { return _c1_needs_stack_repair; }
+  bool c2_needs_stack_repair()         const { return _c2_needs_stack_repair; }
+  CodeOffsets::Entries c1_inline_ro_entry_type() const;
+
+  GrowableArray<Method*>* get_supers();
+
+  CompiledEntrySignature(Method* method = nullptr);
+  void compute_calling_conventions(bool init = true);
+  void initialize_from_fingerprint(AdapterFingerPrint* fingerprint);
 };
 
 #endif // SHARE_RUNTIME_SHAREDRUNTIME_HPP

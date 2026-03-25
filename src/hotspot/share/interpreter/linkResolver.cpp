@@ -1001,7 +1001,8 @@ void LinkResolver::resolve_field(fieldDescriptor& fd,
          (byte == Bytecodes::_nop && !link_info.check_access()), "bad field access bytecode");
 
   bool is_static = (byte == Bytecodes::_getstatic || byte == Bytecodes::_putstatic);
-  bool is_put    = (byte == Bytecodes::_putfield  || byte == Bytecodes::_putstatic || byte == Bytecodes::_nofast_putfield);
+  bool is_put    = (byte == Bytecodes::_putfield  || byte == Bytecodes::_putstatic ||
+                    byte == Bytecodes::_nofast_putfield);
   // Check if there's a resolved klass containing the field
   Klass* resolved_klass = link_info.resolved_klass();
   Symbol* field = link_info.name();
@@ -1044,8 +1045,8 @@ void LinkResolver::resolve_field(fieldDescriptor& fd,
         ResourceMark rm(THREAD);
         stringStream ss;
         ss.print("Update to %s final field %s.%s attempted from a different class (%s) than the field's declaring class",
-                 is_static ? "static" : "non-static", resolved_klass->external_name(), fd.name()->as_C_string(),
-                current_klass->external_name());
+                  is_static ? "static" : "non-static", resolved_klass->external_name(), fd.name()->as_C_string(),
+                  current_klass->external_name());
         THROW_MSG(vmSymbols::java_lang_IllegalAccessError(), ss.as_string());
       }
 
@@ -1054,10 +1055,10 @@ void LinkResolver::resolve_field(fieldDescriptor& fd,
         assert(m != nullptr, "information about the current method must be available for 'put' bytecodes");
         bool is_initialized_static_final_update = (byte == Bytecodes::_putstatic &&
                                                    fd.is_static() &&
-                                                   !m->is_static_initializer());
+                                                   !m->is_class_initializer());
         bool is_initialized_instance_final_update = ((byte == Bytecodes::_putfield || byte == Bytecodes::_nofast_putfield) &&
                                                      !fd.is_static() &&
-                                                     !m->is_object_initializer());
+                                                     !m->is_object_constructor());
 
         if (is_initialized_static_final_update || is_initialized_instance_final_update) {
           ResourceMark rm(THREAD);
@@ -1194,6 +1195,8 @@ Method* LinkResolver::linktime_resolve_special_method(const LinkInfo& link_info,
   }
 
   // check if method name is <init>, that it is found in same klass as static type
+  // Since this method is never inherited from a super, any appearance here under
+  // the wrong class would be an error.
   if (resolved_method->name() == vmSymbols::object_initializer_name() &&
       resolved_method->method_holder() != resolved_klass) {
     ResourceMark rm(THREAD);
@@ -1260,7 +1263,7 @@ void LinkResolver::runtime_resolve_special_method(CallInfo& result,
   methodHandle sel_method(THREAD, resolved_method());
 
   if (link_info.check_access() &&
-      // check if the method is not <init>
+      // check if the method is not <init>, which is never inherited
       resolved_method->name() != vmSymbols::object_initializer_name()) {
 
     Klass* current_klass = link_info.current_klass();
@@ -1724,20 +1727,21 @@ void LinkResolver::resolve_invoke(CallInfo& result, Handle recv, const constantP
 }
 
 void LinkResolver::resolve_invoke(CallInfo& result, Handle& recv,
-                             const methodHandle& attached_method,
-                             Bytecodes::Code byte, TRAPS) {
+                                  const methodHandle& attached_method,
+                                  Bytecodes::Code byte, bool check_null_and_abstract, TRAPS) {
   Klass* defc = attached_method->method_holder();
   Symbol* name = attached_method->name();
   Symbol* type = attached_method->signature();
   LinkInfo link_info(defc, name, type);
+  Klass* recv_klass = recv.is_null() ? defc : recv->klass();
   switch(byte) {
     case Bytecodes::_invokevirtual:
-      resolve_virtual_call(result, recv, recv->klass(), link_info,
-                           /*check_null_and_abstract=*/true, CHECK);
+      resolve_virtual_call(result, recv, recv_klass, link_info,
+                           check_null_and_abstract, CHECK);
       break;
     case Bytecodes::_invokeinterface:
-      resolve_interface_call(result, recv, recv->klass(), link_info,
-                             /*check_null_and_abstract=*/true, CHECK);
+      resolve_interface_call(result, recv, recv_klass, link_info,
+                             check_null_and_abstract, CHECK);
       break;
     case Bytecodes::_invokestatic:
       resolve_static_call(result, link_info, ClassInitMode::dont_init, CHECK);

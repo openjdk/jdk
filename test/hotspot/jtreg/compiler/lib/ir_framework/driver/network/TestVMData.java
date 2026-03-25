@@ -24,9 +24,7 @@
 package compiler.lib.ir_framework.driver.network;
 
 import compiler.lib.ir_framework.driver.irmatching.IRMatcher;
-import compiler.lib.ir_framework.driver.network.testvm.java.ApplicableIRRules;
 import compiler.lib.ir_framework.driver.network.testvm.java.JavaMessages;
-import compiler.lib.ir_framework.driver.network.testvm.java.VMInfo;
 import compiler.lib.ir_framework.shared.TestFrameworkSocket;
 
 /**
@@ -44,11 +42,11 @@ public class TestVMData {
         this.allowNotCompilable = allowNotCompilable;
     }
 
-    public ApplicableIRRules applicableIRRules() {
+    public String applicableIRRules() {
         return javaMessages.applicableIRRules();
     }
 
-    public VMInfo vmInfo() {
+    public String vmInfo() {
         return javaMessages.vmInfo();
     }
 

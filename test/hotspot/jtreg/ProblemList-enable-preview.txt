@@ -30,3 +30,15 @@
 #
 #############################################################################
 
+# Valhalla failures start here:
+
+# Compiler:
+compiler/jvmci/jdk.vm.ci.runtime.test/src/jdk/vm/ci/runtime/test/TestResolvedJavaField.java      8372605 generic-all
+compiler/jvmci/jdk.vm.ci.runtime.test/src/jdk/vm/ci/runtime/test/TestResolvedJavaType.java       8372605 generic-all
+
+# Runtime:
+
+# Serviceability:
+vmTestbase/nsk/jdi/Accessible/modifiers/modifiers001/TestDescription.java                        8375069 generic-all
+
+serviceability/sa/TestHeapDumpForInvokeDynamic.java                                              8377387 generic-all

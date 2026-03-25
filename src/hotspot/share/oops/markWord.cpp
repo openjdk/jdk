@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ void markWord::print_on(outputStream* st, bool print_monitor_info) const {
     st->print(" marked(" INTPTR_FORMAT ")", value());
   } else if (has_monitor()) {  // last bits = 10
     // have to check has_monitor() before is_locked()
+    // Valhalla: inline types/arrays can't be monitored
     st->print(" monitor(" INTPTR_FORMAT ")=", value());
     if (print_monitor_info && !UseObjectMonitorTable) {
       ObjectMonitor* mon = monitor();
@@ -66,19 +67,46 @@ void markWord::print_on(outputStream* st, bool print_monitor_info) const {
     }
   } else if (is_locked()) {  // last bits != 01 => 00
     // thin locked
+    // Valhalla: inline types can not possess an object monitor
     st->print(" locked(" INTPTR_FORMAT ")", value());
   } else {
     st->print(" mark(");
     if (is_unlocked()) {   // last bits = 01
       st->print("is_unlocked");
+      if (is_inline_type()) {
+        st->print(" inline_type");
+        if (is_larval_state()) {
+          st->print("=larval");
+        }
+      }
       if (has_no_hash()) {
         st->print(" no_hash");
       } else {
         st->print(" hash=" INTPTR_FORMAT, hash());
       }
+#ifdef _LP64 // 64 bit encodings have array information
+      // flat or null-free do not imply each other
+      bool flat = is_flat_array();
+      bool null_free = is_null_free_array();
+      if (flat && !null_free) {
+        st->print(" flat_array");
+      } else if (!flat && null_free) {
+        st->print(" null_free_array");
+      } else if (flat && null_free) {
+        st->print(" flat_null_free_array");
+      }
+#endif
     } else {
       st->print("??");
     }
     st->print(" age=%d)", age());
+  }
+}
+
+markWord markWord::flat_array_prototype(bool null_free) {
+  if (null_free) {
+    return markWord(null_free_flat_array_pattern);
+  } else {
+    return markWord(nullable_flat_array_pattern);
   }
 }

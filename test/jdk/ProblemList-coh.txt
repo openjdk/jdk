@@ -39,3 +39,8 @@
 
 #############################################################################
 
+# Valhalla failures start here:
+
+# The following test failures DID NOT reproduce during Tier[1-8] testing 
+# done for 8377828. Further analysis is being done with 8376235:
+sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java 8378881 windows-x64

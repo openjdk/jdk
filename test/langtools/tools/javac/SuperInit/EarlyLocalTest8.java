@@ -24,6 +24,9 @@
  * @test
  * @bug 8333313
  * @summary Verify references to local classes declared in early construction contexts
+ * @run main EarlyLocalTest8
+ * @build InitializationWarningTester
+ * @run main InitializationWarningTester EarlyLocalTest8
  */
 import java.util.concurrent.atomic.AtomicReference;
 

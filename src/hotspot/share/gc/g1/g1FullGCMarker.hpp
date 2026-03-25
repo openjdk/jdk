@@ -89,7 +89,6 @@ public:
   ~G1FullGCMarker();
 
   G1MarkTasksQueue* task_queue() { return &_task_queue; }
-  PartialArraySplitter& partial_array_splitter() { return _partial_array_splitter; }
 
   // Marking entry points
   template <class T> inline void mark_and_push(T* p);

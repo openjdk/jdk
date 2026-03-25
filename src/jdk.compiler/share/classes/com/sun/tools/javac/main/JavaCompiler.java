@@ -1623,8 +1623,8 @@ public class JavaCompiler {
         ScanNested scanner = new ScanNested();
         scanner.scan(env.tree);
         for (Env<AttrContext> dep: scanner.dependencies) {
-        if (!compileStates.isDone(dep, CompileState.WARN))
-            desugaredEnvs.put(dep, desugar(warn(flow(attribute(dep)))));
+            if (!compileStates.isDone(dep, CompileState.WARN))
+                desugaredEnvs.put(dep, desugar(warn(flow(attribute(dep)))));
         }
 
         //We need to check for error another time as more classes might
@@ -1703,6 +1703,13 @@ public class JavaCompiler {
                 }
                 compileStates.put(env, CompileState.UNLAMBDA);
             }
+
+            if (shouldStop(CompileState.STRICT_FIELDS_PROXIES))
+                return;
+            for (JCTree def : cdefs) {
+                LocalProxyVarsGen.instance(context).translateTopLevelClass(def, localMake);
+            }
+            compileStates.put(env, CompileState.STRICT_FIELDS_PROXIES);
 
             //generate code for each class
             for (List<JCTree> l = cdefs; l.nonEmpty(); l = l.tail) {

@@ -166,6 +166,51 @@ void Matcher::verify_new_nodes_only(Node* xroot) {
 }
 #endif
 
+// Array of RegMask, one per returned values (inline type instances can
+// be returned as multiple return values, one per field)
+RegMask* Matcher::return_values_mask(const TypeFunc* tf) {
+  const TypeTuple* range = tf->range_cc();
+  uint cnt = range->cnt() - TypeFunc::Parms;
+  if (cnt == 0) {
+    return nullptr;
+  }
+  RegMask* mask = NEW_RESOURCE_ARRAY(RegMask, cnt);
+  BasicType* sig_bt = NEW_RESOURCE_ARRAY(BasicType, cnt);
+  VMRegPair* vm_parm_regs = NEW_RESOURCE_ARRAY(VMRegPair, cnt);
+  for (uint i = 0; i < cnt; i++) {
+    sig_bt[i] = range->field_at(i+TypeFunc::Parms)->basic_type();
+    new (mask + i) RegMask();
+  }
+
+  int regs = SharedRuntime::java_return_convention(sig_bt, vm_parm_regs, cnt);
+  if (regs <= 0) {
+    // We ran out of registers to store the null marker for a nullable inline type return.
+    // Since it is only set in the 'call_epilog', we can simply put it on the stack.
+    assert(tf->returns_inline_type_as_fields(), "should have been tested during graph construction");
+    // TODO 8284443 Can we teach the register allocator to reserve a stack slot instead?
+    // mask[--cnt] = STACK_ONLY_mask does not work (test with -XX:+StressGCM)
+    int slot = C->fixed_slots() - 2;
+    if (C->needs_stack_repair()) {
+      slot -= 2; // Account for stack increment value
+    }
+    mask[--cnt].clear();
+    mask[cnt].insert(OptoReg::stack2reg(slot));
+  }
+  for (uint i = 0; i < cnt; i++) {
+    mask[i].clear();
+
+    OptoReg::Name reg1 = OptoReg::as_OptoReg(vm_parm_regs[i].first());
+    if (OptoReg::is_valid(reg1)) {
+      mask[i].insert(reg1);
+    }
+    OptoReg::Name reg2 = OptoReg::as_OptoReg(vm_parm_regs[i].second());
+    if (OptoReg::is_valid(reg2)) {
+      mask[i].insert(reg2);
+    }
+  }
+
+  return mask;
+}
 
 //---------------------------match---------------------------------------------
 void Matcher::match( ) {
@@ -186,21 +231,9 @@ void Matcher::match( ) {
   _return_addr_mask.insert(OptoReg::add(return_addr(), 1));
 #endif
 
-  // Map a Java-signature return type into return register-value
-  // machine registers for 0, 1 and 2 returned values.
-  const TypeTuple *range = C->tf()->range();
-  if( range->cnt() > TypeFunc::Parms ) { // If not a void function
-    // Get ideal-register return type
-    uint ireg = range->field_at(TypeFunc::Parms)->ideal_reg();
-    // Get machine return register
-    uint sop = C->start()->Opcode();
-    OptoRegPair regs = return_value(ireg);
-
-    // And mask for same
-    _return_value_mask.assignFrom(RegMask(regs.first()));
-    if( OptoReg::is_valid(regs.second()) )
-      _return_value_mask.insert(regs.second());
-  }
+  // Map Java-signature return types into return register-value
+  // machine registers.
+  _return_values_mask = return_values_mask(C->tf());
 
   // ---------------
   // Frame Layout
@@ -208,7 +241,7 @@ void Matcher::match( ) {
   // Need the method signature to determine the incoming argument types,
   // because the types determine which registers the incoming arguments are
   // in, and this affects the matched code.
-  const TypeTuple *domain = C->tf()->domain();
+  const TypeTuple *domain = C->tf()->domain_cc();
   uint             argcnt = domain->cnt() - TypeFunc::Parms;
   BasicType *sig_bt        = NEW_RESOURCE_ARRAY( BasicType, argcnt );
   VMRegPair *vm_parm_regs  = NEW_RESOURCE_ARRAY( VMRegPair, argcnt );
@@ -479,6 +512,7 @@ void Matcher::init_first_stack_mask() {
   for (OptoReg::Name i = init_in; i < _in_arg_limit; i = OptoReg::add(i, 1)) {
     C->FIRST_STACK_mask().insert(i);
   }
+
   // Add in all bits past the outgoing argument area
   C->FIRST_STACK_mask().set_all_from(_out_arg_limit);
 
@@ -699,12 +733,10 @@ void Matcher::Fixup_Save_On_Entry( ) {
   // Input RegMask array shared by all Returns.
   // The type for doubles and longs has a count of 2, but
   // there is only 1 returned value
-  uint ret_edge_cnt = TypeFunc::Parms + ((C->tf()->range()->cnt() == TypeFunc::Parms) ? 0 : 1);
+  uint ret_edge_cnt = C->tf()->range_cc()->cnt();
   RegMask *ret_rms  = init_input_masks( ret_edge_cnt + soe_cnt, _return_addr_mask, c_frame_ptr_mask );
-  // Returns have 0 or 1 returned values depending on call signature.
-  // Return register is specified by return_value in the AD file.
-  if (ret_edge_cnt > TypeFunc::Parms) {
-    ret_rms[TypeFunc::Parms + 0].assignFrom(_return_value_mask);
+  for (i = TypeFunc::Parms; i < ret_edge_cnt; i++) {
+    ret_rms[i].assignFrom(_return_values_mask[i-TypeFunc::Parms]);
   }
 
   // Input RegMask array shared by all ForwardExceptions
@@ -777,7 +809,7 @@ void Matcher::Fixup_Save_On_Entry( ) {
   }
 
   // Next unused projection number from Start.
-  int proj_cnt = C->tf()->domain()->cnt();
+  int proj_cnt = C->tf()->domain_cc()->cnt();
 
   // Do all the save-on-entry registers.  Make projections from Start for
   // them, and give them a use at the exit points.  To the allocator, they
@@ -1057,7 +1089,11 @@ Node *Matcher::xform( Node *n, int max_stack ) {
               }
               if (m == nullptr) {
                 // Convert to machine-dependent projection
-                m = n->in(0)->as_Multi()->match( n->as_Proj(), this );
+                RegMask* mask = nullptr;
+                if (n->in(0)->is_Call() && n->in(0)->as_Call()->tf()->returns_inline_type_as_fields()) {
+                  mask = return_values_mask(n->in(0)->as_Call()->tf());
+                }
+                m = n->in(0)->as_Multi()->match(n->as_Proj(), this, mask);
                 NOT_PRODUCT(record_new2old(m, n);)
               }
               if (m->in(0) != nullptr) // m might be top
@@ -1193,7 +1229,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
   ciMethod*        method = nullptr;
   if( sfpt->is_Call() ) {
     call = sfpt->as_Call();
-    domain = call->tf()->domain();
+    domain = call->tf()->domain_cc();
     cnt = domain->cnt();
 
     // Match just the call, nothing else
@@ -1269,13 +1305,16 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
 
 
   // Do the normal argument list (parameters) register masks
-  int argcnt = cnt - TypeFunc::Parms;
+  // Null entry point is a special cast where the target of the call
+  // is in a register.
+  int adj = (call != nullptr && call->entry_point() == nullptr) ? 1 : 0;
+  int argcnt = cnt - TypeFunc::Parms - adj;
   if( argcnt > 0 ) {          // Skip it all if we have no args
     BasicType *sig_bt  = NEW_RESOURCE_ARRAY( BasicType, argcnt );
     VMRegPair *parm_regs = NEW_RESOURCE_ARRAY( VMRegPair, argcnt );
     int i;
     for( i = 0; i < argcnt; i++ ) {
-      sig_bt[i] = domain->field_at(i+TypeFunc::Parms)->basic_type();
+      sig_bt[i] = domain->field_at(i+TypeFunc::Parms+adj)->basic_type();
     }
     // V-call to pick proper calling convention
     call->calling_convention( sig_bt, parm_regs, argcnt );
@@ -1316,7 +1355,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
     // and over the entire method.
     for( i = 0; i < argcnt; i++ ) {
       // Address of incoming argument mask to fill in
-      RegMask *rm = &mcall->_in_rms[i+TypeFunc::Parms];
+      RegMask *rm = &mcall->_in_rms[i+TypeFunc::Parms+adj];
       VMReg first = parm_regs[i].first();
       VMReg second = parm_regs[i].second();
       if(!first->is_valid() &&
@@ -1334,12 +1373,14 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
       }
       // Grab first register, adjust stack slots and insert in mask.
       OptoReg::Name reg1 = warp_outgoing_stk_arg(first, begin_out_arg_area, out_arg_limit_per_call );
-      if (OptoReg::is_valid(reg1))
-        rm->insert(reg1);
+      if (OptoReg::is_valid(reg1)) {
+        rm->insert( reg1 );
+      }
       // Grab second register (if any), adjust stack slots and insert in mask.
       OptoReg::Name reg2 = warp_outgoing_stk_arg(second, begin_out_arg_area, out_arg_limit_per_call );
-      if (OptoReg::is_valid(reg2))
-        rm->insert(reg2);
+      if (OptoReg::is_valid(reg2)) {
+        rm->insert( reg2 );
+      }
     } // End of for all arguments
   }
 
@@ -1355,8 +1396,8 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
     // Since the max-per-method covers the max-per-call-site and debug info
     // is excluded on the max-per-method basis, debug info cannot land in
     // this killed area.
-    uint r_cnt = mcall->tf()->range()->cnt();
-    MachProjNode* proj = new MachProjNode(mcall, r_cnt + 10000, RegMask::EMPTY, MachProjNode::fat_proj);
+    uint r_cnt = mcall->tf()->range_sig()->cnt();
+    MachProjNode *proj = new MachProjNode( mcall, r_cnt+10000, RegMask::EMPTY, MachProjNode::fat_proj );
     for (int i = begin_out_arg_area; i < out_arg_limit_per_call; i++) {
       proj->_rout.insert(OptoReg::Name(i));
     }
@@ -1373,7 +1414,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
 
   // Debug inputs begin just after the last incoming parameter
   assert((mcall == nullptr) || (mcall->jvms() == nullptr) ||
-         (mcall->jvms()->debug_start() + mcall->_jvmadj == mcall->tf()->domain()->cnt()), "");
+         (mcall->jvms()->debug_start() + mcall->_jvmadj == mcall->tf()->domain_cc()->cnt()), "");
 
   // Add additional edges.
   if (msfpt->mach_constant_base_node_input() != (uint)-1 && !msfpt->is_MachCallLeaf()) {
@@ -2062,7 +2103,7 @@ void Matcher::find_shared(Node* n) {
       if (find_shared_visit(mstack, n, nop, mem_op, mem_addr_idx)) {
         continue;
       }
-      for (int i = n->req() - 1; i >= 0; --i) { // For my children
+      for (int i = n->len() - 1; i >= 0; --i) { // For my children
         Node* m = n->in(i); // Get ith input
         if (m == nullptr) {
           continue;  // Ignore nulls
@@ -2373,6 +2414,13 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->del_req(3);
       break;
     }
+    case Op_ClearArray: {
+      Node* pair = new BinaryNode(n->in(2), n->in(3));
+      n->set_req(2, pair);
+      n->set_req(3, n->in(4));
+      n->del_req(4);
+      break;
+    }
     case Op_VectorCmpMasked:
     case Op_CopySignD:
     case Op_SignumVF:
@@ -2419,6 +2467,14 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
         // PartialSubtypeCheck uses both constant and register operands for superclass input.
         n->set_req(2, new BinaryNode(n->in(2), n->in(2)));
         break;
+      }
+      break;
+    }
+    case Op_StoreLSpecial: {
+      if (n->req() > (MemNode::ValueIn + 1) && n->in(MemNode::ValueIn + 1) != nullptr) {
+        Node* pair = new BinaryNode(n->in(MemNode::ValueIn), n->in(MemNode::ValueIn + 1));
+        n->set_req(MemNode::ValueIn, pair);
+        n->del_req(MemNode::ValueIn + 1);
       }
       break;
     }

@@ -3066,6 +3066,10 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   }
 }
 
+void LIR_Assembler::emit_profile_inline_type(LIR_OpProfileInlineType* op) {
+  Unimplemented();
+}
+
 void LIR_Assembler::emit_updatecrc32(LIR_OpUpdateCRC32* op) {
   assert(op->crc()->is_single_cpu(), "crc must be register");
   assert(op->val()->is_single_cpu(), "byte value must be register");

@@ -32,7 +32,9 @@
 
 class JvmtiEnv;
 class JvmtiTagMapTable;
+class JvmtiFlatTagMapTable;
 class JvmtiTagMapKeyClosure;
+class JvmtiHeapwalkObject;
 
 class JvmtiTagMap :  public CHeapObj<mtServiceability> {
  private:
@@ -40,10 +42,14 @@ class JvmtiTagMap :  public CHeapObj<mtServiceability> {
   JvmtiEnv*             _env;                       // the jvmti environment
   Monitor               _lock;                      // lock for this tag map
   JvmtiTagMapTable*     _hashmap;                   // the hashmap for tags
+  JvmtiFlatTagMapTable* _flat_hashmap;
+
   bool                  _needs_cleaning;
   bool                  _posting_events;
 
   static bool           _has_object_free_events;
+
+  bool                  _converting_flat_object;
 
   // create a tag map
   JvmtiTagMap(JvmtiEnv* env);
@@ -53,19 +59,25 @@ class JvmtiTagMap :  public CHeapObj<mtServiceability> {
 
   void check_hashmap(GrowableArray<jlong>* objects);
 
-  void entry_iterate(JvmtiTagMapKeyClosure* closure);
+  // moves entries from _flat_hashmap to _hashmap
+  void convert_flat_object_entries();
+
+ public:
+  // for inernal use
+  jlong find(const JvmtiHeapwalkObject& obj) const;
+  void add(const JvmtiHeapwalkObject& obj, jlong tag);
+  void remove(const JvmtiHeapwalkObject& obj);
 
  public:
   // indicates if this tag map is locked
-  bool is_locked()                          { return lock()->is_locked(); }
+  bool is_locked() const                    { return lock()->is_locked(); }
+  inline const Monitor* lock() const        { return &_lock; }
   inline Monitor* lock()                    { return &_lock; }
 
-  JvmtiTagMapTable* hashmap() { return _hashmap; }
-
   // returns true if the hashmaps are empty
-  bool is_empty();
+  bool is_empty() const;
 
-  // return tag for the given environment
+  // return tag map for the given environment
   static JvmtiTagMap* tag_map_for(JvmtiEnv* env);
 
   // destroy tag map
@@ -118,7 +130,7 @@ class JvmtiTagMap :  public CHeapObj<mtServiceability> {
   static void gc_notification(size_t num_dead_entries) NOT_JVMTI_RETURN;
 
   void flush_object_free_events();
-  void clear();  // Clear tagmap table after the env is disposed.
+  void clear();  // Clear hash tables after the env is disposed.
 
   // For ServiceThread
   static void flush_all_object_free_events() NOT_JVMTI_RETURN;

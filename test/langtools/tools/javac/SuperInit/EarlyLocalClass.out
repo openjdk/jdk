@@ -1,2 +1,2 @@
-EarlyLocalClass.java:11:32: compiler.err.cant.ref.before.ctor.called: this
+EarlyLocalClass.java:13:37: compiler.err.cant.ref.before.ctor.called: hashCode()
 1 error

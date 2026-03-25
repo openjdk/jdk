@@ -43,6 +43,10 @@
  *                   -XX:CompileCommand=compileonly,jdk.internal.reflect.GeneratedMethodAccessor*::invoke
  *                   -XX:CompileCommand=compileonly,*::invokeVirtual
  *                   compiler.arraycopy.TestObjectArrayClone
+ * @run main/othervm -Xbatch -XX:-UseTypeProfile -XX:-ReduceInitialCardMarks
+ *                   -XX:CompileCommand=compileonly,compiler.arraycopy.TestObjectArrayClone::testClone*
+ *                   -XX:CompileCommand=compileonly,jdk.internal.reflect.GeneratedMethodAccessor*::invoke
+ *                   compiler.arraycopy.TestObjectArrayClone
  */
 
 package compiler.arraycopy;

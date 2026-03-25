@@ -127,7 +127,10 @@ public:
     call_type_data_tag,
     virtual_call_type_data_tag,
     parameters_type_data_tag,
-    speculative_trap_data_tag
+    speculative_trap_data_tag,
+    array_store_data_tag,
+    array_load_data_tag,
+    acmp_data_tag
   };
 
   enum {
@@ -287,15 +290,18 @@ class     CounterData;
 class       ReceiverTypeData;
 class         VirtualCallData;
 class           VirtualCallTypeData;
+class         ArrayStoreData;
 class       RetData;
 class       CallTypeData;
 class   JumpData;
 class     BranchData;
+class       ACmpData;
 class   ArrayData;
 class     MultiBranchData;
 class     ArgInfoData;
 class     ParametersTypeData;
 class   SpeculativeTrapData;
+class   ArrayLoadData;
 
 // ProfileData
 //
@@ -303,7 +309,7 @@ class   SpeculativeTrapData;
 // data in a structured way.
 class ProfileData : public ResourceObj {
   friend class TypeEntries;
-  friend class ReturnTypeEntry;
+  friend class SingleTypeEntry;
   friend class TypeStackSlotEntries;
 private:
   enum {
@@ -422,6 +428,9 @@ public:
   virtual bool is_VirtualCallTypeData()const { return false; }
   virtual bool is_ParametersTypeData() const { return false; }
   virtual bool is_SpeculativeTrapData()const { return false; }
+  virtual bool is_ArrayStoreData() const { return false; }
+  virtual bool is_ArrayLoadData() const { return false; }
+  virtual bool is_ACmpData()           const { return false; }
 
 
   BitData* as_BitData() const {
@@ -480,6 +489,18 @@ public:
     assert(is_SpeculativeTrapData(), "wrong type");
     return is_SpeculativeTrapData() ? (SpeculativeTrapData*)this : nullptr;
   }
+  ArrayStoreData* as_ArrayStoreData() const {
+    assert(is_ArrayStoreData(), "wrong type");
+    return is_ArrayStoreData() ? (ArrayStoreData*)this : nullptr;
+  }
+  ArrayLoadData* as_ArrayLoadData() const {
+    assert(is_ArrayLoadData(), "wrong type");
+    return is_ArrayLoadData() ? (ArrayLoadData*)this : nullptr;
+  }
+  ACmpData* as_ACmpData() const {
+    assert(is_ACmpData(), "wrong type");
+    return is_ACmpData() ? (ACmpData*)this : nullptr;
+  }
 
 
   // Subclass specific initialization
@@ -525,6 +546,7 @@ protected:
     // bytecode threw any exception
     , exception_seen_flag             = deprecated_method_callsite_flag + 1
 #endif
+    , last_bit_data_flag
   };
   enum { bit_cell_count = 0 };  // no additional data fields needed.
 public:
@@ -545,7 +567,7 @@ public:
 
   // The null_seen flag bit is specially known to the interpreter.
   // Consulting it allows the compiler to avoid setting up null_check traps.
-  bool null_seen()     { return flag_at(null_seen_flag); }
+  bool null_seen() const  { return flag_at(null_seen_flag); }
   void set_null_seen()    { set_flag_at(null_seen_flag); }
   bool deprecated_method_call_site() const { return flag_at(deprecated_method_callsite_flag); }
   bool set_deprecated_method_call_site() { return data()->set_flag_at(deprecated_method_callsite_flag); }
@@ -646,7 +668,8 @@ protected:
 public:
   JumpData(DataLayout* layout) : ProfileData(layout) {
     assert(layout->tag() == DataLayout::jump_data_tag ||
-      layout->tag() == DataLayout::branch_data_tag, "wrong type");
+      layout->tag() == DataLayout::branch_data_tag ||
+      layout->tag() == DataLayout::acmp_data_tag, "wrong type");
   }
 
   virtual bool is_JumpData() const { return true; }
@@ -890,7 +913,7 @@ public:
 
 // Type entry used for return from a call. A single cell to record the
 // type.
-class ReturnTypeEntry : public TypeEntries {
+class SingleTypeEntry : public TypeEntries {
 
 private:
   enum {
@@ -898,7 +921,7 @@ private:
   };
 
 public:
-  ReturnTypeEntry(int base_off)
+  SingleTypeEntry(int base_off)
     : TypeEntries(base_off) {}
 
   void post_initialize() {
@@ -939,7 +962,7 @@ public:
 };
 
 // Entries to collect type information at a call: contains arguments
-// (TypeStackSlotEntries), a return type (ReturnTypeEntry) and a
+// (TypeStackSlotEntries), a return type (SingleTypeEntry) and a
 // number of cells. Because the number of cells for the return type is
 // smaller than the number of cells for the type of an arguments, the
 // number of cells is used to tell how many arguments are profiled and
@@ -993,7 +1016,7 @@ public:
   }
 
   static ByteSize return_only_size() {
-    return ReturnTypeEntry::size() + in_ByteSize(header_cell_count() * DataLayout::cell_size);
+    return SingleTypeEntry::size() + in_ByteSize(header_cell_count() * DataLayout::cell_size);
   }
 
 };
@@ -1008,7 +1031,7 @@ private:
   // entries for arguments if any
   TypeStackSlotEntries _args;
   // entry for return type if any
-  ReturnTypeEntry _ret;
+  SingleTypeEntry _ret;
 
   int cell_count_global_offset() const {
     return CounterData::static_cell_count() + TypeEntriesAtCall::cell_count_local_offset();
@@ -1027,7 +1050,7 @@ public:
   CallTypeData(DataLayout* layout) :
     CounterData(layout),
     _args(CounterData::static_cell_count()+TypeEntriesAtCall::header_cell_count(), number_of_arguments()),
-    _ret(cell_count() - ReturnTypeEntry::static_cell_count())
+    _ret(cell_count() - SingleTypeEntry::static_cell_count())
   {
     assert(layout->tag() == DataLayout::call_type_data_tag, "wrong type");
     // Some compilers (VC++) don't want this passed in member initialization list
@@ -1040,7 +1063,7 @@ public:
     return &_args;
   }
 
-  const ReturnTypeEntry* ret() const {
+  const SingleTypeEntry* ret() const {
     assert(has_return(), "no profiling of return value");
     return &_ret;
   }
@@ -1164,7 +1187,8 @@ public:
   ReceiverTypeData(DataLayout* layout) : CounterData(layout) {
     assert(layout->tag() == DataLayout::receiver_type_data_tag ||
            layout->tag() == DataLayout::virtual_call_data_tag ||
-           layout->tag() == DataLayout::virtual_call_type_data_tag, "wrong type");
+           layout->tag() == DataLayout::virtual_call_type_data_tag ||
+           layout->tag() == DataLayout::array_store_data_tag, "wrong type");
   }
 
   virtual bool is_ReceiverTypeData() const { return true; }
@@ -1297,7 +1321,7 @@ private:
   // entries for arguments if any
   TypeStackSlotEntries _args;
   // entry for return type if any
-  ReturnTypeEntry _ret;
+  SingleTypeEntry _ret;
 
   int cell_count_global_offset() const {
     return VirtualCallData::static_cell_count() + TypeEntriesAtCall::cell_count_local_offset();
@@ -1316,7 +1340,7 @@ public:
   VirtualCallTypeData(DataLayout* layout) :
     VirtualCallData(layout),
     _args(VirtualCallData::static_cell_count()+TypeEntriesAtCall::header_cell_count(), number_of_arguments()),
-    _ret(cell_count() - ReturnTypeEntry::static_cell_count())
+    _ret(cell_count() - SingleTypeEntry::static_cell_count())
   {
     assert(layout->tag() == DataLayout::virtual_call_type_data_tag, "wrong type");
     // Some compilers (VC++) don't want this passed in member initialization list
@@ -1329,7 +1353,7 @@ public:
     return &_args;
   }
 
-  const ReturnTypeEntry* ret() const {
+  const SingleTypeEntry* ret() const {
     assert(has_return(), "no profiling of return value");
     return &_ret;
   }
@@ -1542,7 +1566,7 @@ protected:
 
 public:
   BranchData(DataLayout* layout) : JumpData(layout) {
-    assert(layout->tag() == DataLayout::branch_data_tag, "wrong type");
+    assert(layout->tag() == DataLayout::branch_data_tag || layout->tag() == DataLayout::acmp_data_tag, "wrong type");
   }
 
   virtual bool is_BranchData() const { return true; }
@@ -1899,6 +1923,229 @@ public:
 
   // CDS support
   virtual void metaspace_pointers_do(MetaspaceClosure* it);
+
+  virtual void print_data_on(outputStream* st, const char* extra = nullptr) const;
+};
+
+class ArrayStoreData : public ReceiverTypeData {
+private:
+  enum {
+    flat_array_flag = BitData::last_bit_data_flag,
+    null_free_array_flag = flat_array_flag + 1,
+  };
+
+  SingleTypeEntry _array;
+
+public:
+  ArrayStoreData(DataLayout* layout) :
+    ReceiverTypeData(layout),
+    _array(ReceiverTypeData::static_cell_count()) {
+    assert(layout->tag() == DataLayout::array_store_data_tag, "wrong type");
+    _array.set_profile_data(this);
+  }
+
+  const SingleTypeEntry* array() const {
+    return &_array;
+  }
+
+  virtual bool is_ArrayStoreData() const { return true; }
+
+  static int static_cell_count() {
+    return ReceiverTypeData::static_cell_count() + SingleTypeEntry::static_cell_count();
+  }
+
+  virtual int cell_count() const {
+    return static_cell_count();
+  }
+
+  void set_flat_array() { set_flag_at(flat_array_flag); }
+  bool flat_array() const { return flag_at(flat_array_flag); }
+
+  void set_null_free_array() { set_flag_at(null_free_array_flag); }
+  bool null_free_array() const { return flag_at(null_free_array_flag); }
+
+  // Code generation support
+  static int flat_array_byte_constant() {
+    return flag_number_to_constant(flat_array_flag);
+  }
+
+  static int null_free_array_byte_constant() {
+    return flag_number_to_constant(null_free_array_flag);
+  }
+
+  static ByteSize array_offset() {
+    return cell_offset(ReceiverTypeData::static_cell_count());
+  }
+
+  virtual void clean_weak_klass_links(bool always_clean) {
+    ReceiverTypeData::clean_weak_klass_links(always_clean);
+    _array.clean_weak_klass_links(always_clean);
+  }
+
+  virtual void metaspace_pointers_do(MetaspaceClosure* it) {
+    ReceiverTypeData::metaspace_pointers_do(it);
+    _array.metaspace_pointers_do(it);
+  }
+
+  static ByteSize array_store_data_size() {
+    return cell_offset(static_cell_count());
+  }
+
+  virtual void print_data_on(outputStream* st, const char* extra = nullptr) const;
+};
+
+class ArrayLoadData : public BitData {
+private:
+  enum {
+    flat_array_flag = BitData::last_bit_data_flag,
+    null_free_array_flag = flat_array_flag + 1,
+  };
+
+  SingleTypeEntry _array;
+  SingleTypeEntry _element;
+
+public:
+  ArrayLoadData(DataLayout* layout) :
+    BitData(layout),
+    _array(0),
+    _element(SingleTypeEntry::static_cell_count()) {
+    assert(layout->tag() == DataLayout::array_load_data_tag, "wrong type");
+    _array.set_profile_data(this);
+    _element.set_profile_data(this);
+  }
+
+  const SingleTypeEntry* array() const {
+    return &_array;
+  }
+
+  const SingleTypeEntry* element() const {
+    return &_element;
+  }
+
+  virtual bool is_ArrayLoadData() const { return true; }
+
+  static int static_cell_count() {
+    return SingleTypeEntry::static_cell_count() * 2;
+  }
+
+  virtual int cell_count() const {
+    return static_cell_count();
+  }
+
+  void set_flat_array() { set_flag_at(flat_array_flag); }
+  bool flat_array() const { return flag_at(flat_array_flag); }
+
+  void set_null_free_array() { set_flag_at(null_free_array_flag); }
+  bool null_free_array() const { return flag_at(null_free_array_flag); }
+
+  // Code generation support
+  static int flat_array_byte_constant() {
+    return flag_number_to_constant(flat_array_flag);
+  }
+
+  static int null_free_array_byte_constant() {
+    return flag_number_to_constant(null_free_array_flag);
+  }
+
+  static ByteSize array_offset() {
+    return cell_offset(0);
+  }
+
+  static ByteSize element_offset() {
+    return cell_offset(SingleTypeEntry::static_cell_count());
+  }
+
+  virtual void clean_weak_klass_links(bool always_clean) {
+    _array.clean_weak_klass_links(always_clean);
+    _element.clean_weak_klass_links(always_clean);
+  }
+
+  virtual void metaspace_pointers_do(MetaspaceClosure* it) {
+    _array.metaspace_pointers_do(it);
+    _element.metaspace_pointers_do(it);
+  }
+
+  static ByteSize array_load_data_size() {
+    return cell_offset(static_cell_count());
+  }
+
+  virtual void print_data_on(outputStream* st, const char* extra = nullptr) const;
+};
+
+class ACmpData : public BranchData {
+private:
+  enum {
+    left_inline_type_flag = DataLayout::first_flag,
+    right_inline_type_flag
+  };
+
+  SingleTypeEntry _left;
+  SingleTypeEntry _right;
+
+public:
+  ACmpData(DataLayout* layout) :
+    BranchData(layout),
+    _left(BranchData::static_cell_count()),
+    _right(BranchData::static_cell_count() + SingleTypeEntry::static_cell_count()) {
+    assert(layout->tag() == DataLayout::acmp_data_tag, "wrong type");
+    _left.set_profile_data(this);
+    _right.set_profile_data(this);
+  }
+
+  const SingleTypeEntry* left() const {
+    return &_left;
+  }
+
+  const SingleTypeEntry* right() const {
+    return &_right;
+  }
+
+  virtual bool is_ACmpData() const { return true; }
+
+  static int static_cell_count() {
+    return BranchData::static_cell_count() + SingleTypeEntry::static_cell_count() * 2;
+  }
+
+  virtual int cell_count() const {
+    return static_cell_count();
+  }
+
+  void set_left_inline_type() { set_flag_at(left_inline_type_flag); }
+  bool left_inline_type() const { return flag_at(left_inline_type_flag); }
+
+  void set_right_inline_type() { set_flag_at(right_inline_type_flag); }
+  bool right_inline_type() const { return flag_at(right_inline_type_flag); }
+
+  // Code generation support
+  static int left_inline_type_byte_constant() {
+    return flag_number_to_constant(left_inline_type_flag);
+  }
+
+  static int right_inline_type_byte_constant() {
+    return flag_number_to_constant(right_inline_type_flag);
+  }
+
+  static ByteSize left_offset() {
+    return cell_offset(BranchData::static_cell_count());
+  }
+
+  static ByteSize right_offset() {
+    return cell_offset(BranchData::static_cell_count() + SingleTypeEntry::static_cell_count());
+  }
+
+  virtual void clean_weak_klass_links(bool always_clean) {
+    _left.clean_weak_klass_links(always_clean);
+    _right.clean_weak_klass_links(always_clean);
+  }
+
+  virtual void metaspace_pointers_do(MetaspaceClosure* it) {
+    _left.metaspace_pointers_do(it);
+    _right.metaspace_pointers_do(it);
+  }
+
+  static ByteSize acmp_data_size() {
+    return cell_offset(static_cell_count());
+  }
 
   virtual void print_data_on(outputStream* st, const char* extra = nullptr) const;
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 
 #include "jvm_io.h"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/semaphore.inline.hpp"
@@ -51,10 +50,10 @@ static ZIP_GZip_InitParams_t ZIP_GZip_InitParams = nullptr;
 static ZIP_GZip_Fully_t ZIP_GZip_Fully = nullptr;
 
 static void* _zip_handle = nullptr;
-static Atomic<bool> _loaded{false};
+static bool _loaded = false;
 
 static inline bool is_loaded() {
-  return _loaded.load_acquire();
+  return AtomicAccess::load_acquire(&_loaded);
 }
 
 static inline bool not_loaded() {
@@ -112,7 +111,7 @@ static void load_zip_library(bool vm_exit_on_failure) {
   }
 
   store_function_pointers(&path[0], vm_exit_on_failure);
-  _loaded.release_store(true);
+  AtomicAccess::release_store(&_loaded, true);
   assert(is_loaded(), "invariant");
 }
 

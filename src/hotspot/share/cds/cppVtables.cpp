@@ -30,13 +30,17 @@
 #include "cds/cppVtables.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/flatArrayKlass.hpp"
+#include "oops/inlineKlass.hpp"
 #include "oops/instanceClassLoaderKlass.hpp"
+#include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/instanceStackChunkKlass.hpp"
 #include "oops/methodCounters.hpp"
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "oops/refArrayKlass.hpp"
 #include "oops/trainingData.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "runtime/arguments.hpp"
@@ -69,6 +73,7 @@ using GrowableArray_ModuleEntry_ptr = AOTGrowableArray<ModuleEntry*>;
 #endif
 
 // Currently, the archive contains ONLY the following types of objects that have C++ vtables.
+// NOTE: this table must be in-sync with sun.jvm.hotspot.memory.FileMapInfo::populateMetadataTypeArray().
 #define CPP_VTABLE_TYPES_DO(f) \
   f(ConstantPool) \
   f(InstanceKlass) \
@@ -79,8 +84,11 @@ using GrowableArray_ModuleEntry_ptr = AOTGrowableArray<ModuleEntry*>;
   f(Method) \
   f(MethodData) \
   f(MethodCounters) \
-  f(ObjArrayKlass) \
   f(TypeArrayKlass) \
+  f(ObjArrayKlass) \
+  f(RefArrayKlass) \
+  f(FlatArrayKlass) \
+  f(InlineKlass) \
   f(KlassTrainingData) \
   f(MethodTrainingData) \
   f(CompileTrainingData) \

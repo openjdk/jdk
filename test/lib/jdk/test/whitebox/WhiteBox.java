@@ -159,6 +159,20 @@ public class WhiteBox {
     return encodeConstantPoolIndyIndex0(index);
   }
 
+  private native Object[] getObjectsViaKlassOopMaps0(Object thing);
+  public Object[] getObjectsViaKlassOopMaps(Object thing) {
+    Objects.requireNonNull(thing);
+    return getObjectsViaKlassOopMaps0(thing);
+  }
+
+  private native Object[] getObjectsViaOopIterator0(Object thing);
+  public Object[] getObjectsViaOopIterator(Object thing) {
+    Objects.requireNonNull(thing);
+    return getObjectsViaOopIterator0(thing);
+  }
+
+  public native Object[] getObjectsViaFrameOopIterator(int depth);
+
   private native int getFieldEntriesLength0(Class<?> aClass);
   public         int getFieldEntriesLength(Class<?> aClass) {
     Objects.requireNonNull(aClass);
@@ -737,10 +751,13 @@ public class WhiteBox {
   public native Long    getSizeTVMFlag(String name);
   public native String  getStringVMFlag(String name);
   public native Double  getDoubleVMFlag(String name);
-  private final List<Function<String,Object>> flagsGetters = Arrays.asList(
-    this::getBooleanVMFlag, this::getIntVMFlag, this::getUintVMFlag,
-    this::getIntxVMFlag, this::getUintxVMFlag, this::getUint64VMFlag,
-    this::getSizeTVMFlag, this::getStringVMFlag, this::getDoubleVMFlag);
+  private final List<Function<String,Object>> flagsGetters;
+  {
+      flagsGetters = Arrays.asList(
+          this::getBooleanVMFlag, this::getIntVMFlag, this::getUintVMFlag,
+          this::getIntxVMFlag, this::getUintxVMFlag, this::getUint64VMFlag,
+          this::getSizeTVMFlag, this::getStringVMFlag, this::getDoubleVMFlag);
+  }
 
   public Object getVMFlag(String name) {
     return flagsGetters.stream()
@@ -779,6 +796,7 @@ public class WhiteBox {
   public native Long    getMethodUintxOption(Executable method, String name);
   public native Double  getMethodDoubleOption(Executable method, String name);
   public native String  getMethodStringOption(Executable method, String name);
+  @SuppressWarnings("initialization")
   private final List<BiFunction<Executable,String,Object>> methodOptionGetters
       = Arrays.asList(this::getMethodBooleanOption, this::getMethodIntxOption,
           this::getMethodUintxOption, this::getMethodDoubleOption,

@@ -41,6 +41,7 @@ import jdk.internal.classfile.impl.RawBytecodeHelper;
 import jdk.internal.classfile.impl.SplitConstantPool;
 import jdk.internal.classfile.impl.StackCounter;
 import jdk.internal.classfile.impl.StackMapGenerator;
+import jdk.internal.classfile.impl.WritableField;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -110,6 +111,7 @@ public class CodeAttributeTools {
                 d.bytecode(),
                 (SplitConstantPool)d.constantPool(),
                 (ClassFileImpl)ClassFile.of(),
+                WritableField.UnsetField.EMPTY_ARRAY,
                 d.handlers()));
     }
 

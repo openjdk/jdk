@@ -1,0 +1,1258 @@
+/*
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+// Simple class generated from the following source:
+// public class SimpleClass { }
+// The jcod version has been altered to create a class without any of ACC_IDENTITY, ACC_ABSTRACT or ACC_FINAL flags,
+// which is illegal according to JVMS 4.1.
+
+class InvalidClassFlags {
+  0xCAFEBABE;
+  65535; // minor version
+  71; // version
+  [] { // Constant Pool
+    ; // first element is empty
+    Method #2 #3; // #1
+    class #4; // #2
+    NameAndType #5 #6; // #3
+    Utf8 "java/lang/Object"; // #4
+    Utf8 "<init>"; // #5
+    Utf8 "()V"; // #6
+    class #8; // #7
+    Utf8 "InvalidClassFlags"; // #8
+    Utf8 "Code"; // #9
+    Utf8 "LineNumberTable"; // #10
+    Utf8 "SourceFile"; // #11
+    Utf8 "InvalidClassFlags.java"; // #12
+  } // Constant Pool
+
+  0x0001; // access
+  #7;// this_cpx
+  #2;// super_cpx
+
+  [] { // Interfaces
+  } // Interfaces
+
+  [] { // Fields
+  } // Fields
+
+  [] { // Methods
+    {  // method
+      0x0001; // access
+      #5; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+        Attr(#9) { // Code
+          1; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x2AB70001B1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#10) { // LineNumberTable
+              [] { // line_number_table
+                0  1;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+  } // Methods
+
+  [] { // Attributes
+    Attr(#11) { // SourceFile
+      #12;
+    } // end SourceFile
+  } // Attributes
+} // end class InvalidClassFlags
+
+// Valid class with access flags ACC_PUBLIC, ACC_ABSTRACT and no ACC_IDENTITY
+class AbstractValue {
+  0xCAFEBABE;
+  65535; // minor version
+  71; // version
+  [] { // Constant Pool
+    ; // first element is empty
+    Method #2 #3; // #1
+    class #4; // #2
+    NameAndType #5 #6; // #3
+    Utf8 "java/lang/Object"; // #4
+    Utf8 "<init>"; // #5
+    Utf8 "()V"; // #6
+    class #8; // #7
+    Utf8 "AbstractValue"; // #8
+    Utf8 "Code"; // #9
+    Utf8 "LineNumberTable"; // #10
+    Utf8 "SourceFile"; // #11
+    Utf8 "AbstractValue.java"; // #12
+  } // Constant Pool
+
+  0x0401; // access
+  #7;// this_cpx
+  #2;// super_cpx
+
+  [] { // Interfaces
+  } // Interfaces
+
+  [] { // Fields
+  } // Fields
+
+  [] { // Methods
+    {  // method
+      0x0001; // access
+      #5; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+        Attr(#9) { // Code
+          1; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x2AB70001B1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#10) { // LineNumberTable
+              [] { // line_number_table
+                0  1;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+  } // Methods
+
+  [] { // Attributes
+    Attr(#11) { // SourceFile
+      #12;
+    } // end SourceFile
+  } // Attributes
+} // end class AbstractValue
+
+// Valid class with access flags ACC_PUBLIC, ACC_FINAL and no ACC_IDENTITY
+class FinalValue {
+  0xCAFEBABE;
+  65535; // minor version
+  71; // version
+  [] { // Constant Pool
+    ; // first element is empty
+    Method #2 #3; // #1
+    class #4; // #2
+    NameAndType #5 #6; // #3
+    Utf8 "java/lang/Object"; // #4
+    Utf8 "<init>"; // #5
+    Utf8 "()V"; // #6
+    class #8; // #7
+    Utf8 "FinalValue"; // #8
+    Utf8 "Code"; // #9
+    Utf8 "LineNumberTable"; // #10
+    Utf8 "SourceFile"; // #11
+    Utf8 "FinalValue.java"; // #12
+  } // Constant Pool
+
+  0x0011; // access
+  #7;// this_cpx
+  #2;// super_cpx
+
+  [] { // Interfaces
+  } // Interfaces
+
+  [] { // Fields
+  } // Fields
+
+  [] { // Methods
+    {  // method
+      0x0001; // access
+      #5; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+        Attr(#9) { // Code
+          1; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x2AB70001B1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#10) { // LineNumberTable
+              [] { // line_number_table
+                0  1;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+  } // Methods
+
+  [] { // Attributes
+    Attr(#11) { // SourceFile
+      #12;
+    } // end SourceFile
+  } // Attributes
+} // end class FinalValue
+
+// Abstract class with ACC_IDENTITY flag added to its access flags
+class AbstractClass {
+  0xCAFEBABE;
+  65535; // minor version
+  71; // version
+  [] { // Constant Pool
+    ; // first element is empty
+    Method #2 #3; // #1
+    class #4; // #2
+    NameAndType #5 #6; // #3
+    Utf8 "java/lang/Object"; // #4
+    Utf8 "<init>"; // #5
+    Utf8 "()V"; // #6
+    class #8; // #7
+    Utf8 "AbstractClass"; // #8
+    Utf8 "Code"; // #9
+    Utf8 "LineNumberTable"; // #10
+    Utf8 "SourceFile"; // #11
+    Utf8 "AbstractClass.java"; // #12
+  } // Constant Pool
+
+  0x0421; // access
+  #7;// this_cpx
+  #2;// super_cpx
+
+  [] { // Interfaces
+  } // Interfaces
+
+  [] { // Fields
+  } // Fields
+
+  [] { // Methods
+    {  // method
+      0x0001; // access
+      #5; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+        Attr(#9) { // Code
+          1; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x2AB70001B1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#10) { // LineNumberTable
+              [] { // line_number_table
+                0  1;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+  } // Methods
+
+  [] { // Attributes
+    Attr(#11) { // SourceFile
+      #12;
+    } // end SourceFile
+  } // Attributes
+} // end class AbstractClass
+
+// Value class extending the abstract (with identity) class define above
+class ValueClass {
+  0xCAFEBABE;
+  65535; // minor version
+  71; // version
+  [] { // Constant Pool
+    ; // first element is empty
+    Method #2 #3; // #1
+    class #4; // #2
+    NameAndType #5 #6; // #3
+    Utf8 "AbstractClass"; // #4
+    Utf8 "<init>"; // #5
+    Utf8 "()V"; // #6
+    class #8; // #7
+    Utf8 "ValueClass"; // #8
+    Utf8 "Code"; // #9
+    Utf8 "LineNumberTable"; // #10
+    Utf8 "SourceFile"; // #11
+    Utf8 "ValueClass.java"; // #12
+  } // Constant Pool
+
+  0x0011; // access
+  #7;// this_cpx
+  #2;// super_cpx
+
+  [] { // Interfaces
+  } // Interfaces
+
+  [] { // Fields
+  } // Fields
+
+  [] { // Methods
+    {  // method
+      0x0001; // access
+      #5; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+        Attr(#9) { // Code
+          1; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x2AB70001B1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#10) { // LineNumberTable
+              [] { // line_number_table
+                0  1;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+  } // Methods
+
+  [] { // Attributes
+    Attr(#11) { // SourceFile
+      #12;
+    } // end SourceFile
+  } // Attributes
+} // end class ValueClass
+
+// Concrete identity class from old class file without ACC_IDENTITY extending the abstract (with identity) class define above
+class IdentityClass {
+  0xCAFEBABE;
+  0; // minor version
+  71; // version
+  [] { // Constant Pool
+    ; // first element is empty
+    Method #2 #3; // #1
+    class #4; // #2
+    NameAndType #5 #6; // #3
+    Utf8 "AbstractClass"; // #4
+    Utf8 "<init>"; // #5
+    Utf8 "()V"; // #6
+    class #8; // #7
+    Utf8 "IdentityClass"; // #8
+    Utf8 "Code"; // #9
+    Utf8 "LineNumberTable"; // #10
+    Utf8 "SourceFile"; // #11
+    Utf8 "IdentityClass.java"; // #12
+  } // Constant Pool
+
+  0x0011; // access
+  #7;// this_cpx
+  #2;// super_cpx
+
+  [] { // Interfaces
+  } // Interfaces
+
+  [] { // Fields
+  } // Fields
+
+  [] { // Methods
+    {  // method
+      0x0001; // access
+      #5; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+        Attr(#9) { // Code
+          1; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x2AB70001B1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#10) { // LineNumberTable
+              [] { // line_number_table
+                0  1;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+  } // Methods
+
+  [] { // Attributes
+    Attr(#11) { // SourceFile
+      #12;
+    } // end SourceFile
+  } // Attributes
+} // end class ValueClass
+
+// Concrete value class extending a final value class
+class ValueClass2 {
+  0xCAFEBABE;
+  65535; // minor version
+  71; // version
+  [] { // Constant Pool
+    ; // first element is empty
+    Method #2 #3; // #1
+    class #4; // #2
+    NameAndType #5 #6; // #3
+    Utf8 "FinalValue"; // #4
+    Utf8 "<init>"; // #5
+    Utf8 "()V"; // #6
+    class #8; // #7
+    Utf8 "ValueClass2"; // #8
+    Utf8 "Code"; // #9
+    Utf8 "LineNumberTable"; // #10
+    Utf8 "SourceFile"; // #11
+    Utf8 "ValueClass2.java"; // #12
+  } // Constant Pool
+
+  0x0011; // access
+  #7;// this_cpx
+  #2;// super_cpx
+
+  [] { // Interfaces
+  } // Interfaces
+
+  [] { // Fields
+  } // Fields
+
+  [] { // Methods
+    {  // method
+      0x0001; // access
+      #5; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+        Attr(#9) { // Code
+          1; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x2AB70001B1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#10) { // LineNumberTable
+              [] { // line_number_table
+                0  1;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+  } // Methods
+
+  [] { // Attributes
+    Attr(#11) { // SourceFile
+      #12;
+    } // end SourceFile
+  } // Attributes
+} // end class ValueClass2
+
+// Abstract value class extending an abstract (with identity) class
+class AbstractValueClass2 {
+  0xCAFEBABE;
+  65535; // minor version
+  71; // version
+  [] { // Constant Pool
+    ; // first element is empty
+    Method #2 #3; // #1
+    class #4; // #2
+    NameAndType #5 #6; // #3
+    Utf8 "AbstractClass"; // #4
+    Utf8 "<init>"; // #5
+    Utf8 "()V"; // #6
+    class #8; // #7
+    Utf8 "AbstractValueClass2"; // #8
+    Utf8 "Code"; // #9
+    Utf8 "LineNumberTable"; // #10
+    Utf8 "SourceFile"; // #11
+    Utf8 "AbstractValueClass2.java"; // #12
+  } // Constant Pool
+
+  0x0401; // access
+  #7;// this_cpx
+  #2;// super_cpx
+
+  [] { // Interfaces
+  } // Interfaces
+
+  [] { // Fields
+  } // Fields
+
+  [] { // Methods
+    {  // method
+      0x0001; // access
+      #5; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+        Attr(#9) { // Code
+          1; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x2AB70001B1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#10) { // LineNumberTable
+              [] { // line_number_table
+                0  1;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+  } // Methods
+
+  [] { // Attributes
+    Attr(#11) { // SourceFile
+      #12;
+    } // end SourceFile
+  } // Attributes
+} // end class AbstractValueClass2
+
+// Abstract identity class from older class file without ACC_IDENTITY, extending an abstract (with identity) class
+class AbstractIdentityClass2 {
+  0xCAFEBABE;
+  0; // minor version
+  71; // version
+  [] { // Constant Pool
+    ; // first element is empty
+    Method #2 #3; // #1
+    class #4; // #2
+    NameAndType #5 #6; // #3
+    Utf8 "AbstractClass"; // #4
+    Utf8 "<init>"; // #5
+    Utf8 "()V"; // #6
+    class #8; // #7
+    Utf8 "AbstractIdentityClass2"; // #8
+    Utf8 "Code"; // #9
+    Utf8 "LineNumberTable"; // #10
+    Utf8 "SourceFile"; // #11
+    Utf8 "AbstractIdentityClass2.java"; // #12
+  } // Constant Pool
+
+  0x0401; // access
+  #7;// this_cpx
+  #2;// super_cpx
+
+  [] { // Interfaces
+  } // Interfaces
+
+  [] { // Fields
+  } // Fields
+
+  [] { // Methods
+    {  // method
+      0x0001; // access
+      #5; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+        Attr(#9) { // Code
+          1; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x2AB70001B1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#10) { // LineNumberTable
+              [] { // line_number_table
+                0  1;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+  } // Methods
+
+  [] { // Attributes
+    Attr(#11) { // SourceFile
+      #12;
+    } // end SourceFile
+  } // Attributes
+} // end class AbstractValueClass2
+
+// Abstract value class extending a final value class
+class AbstractValueClass3 {
+  0xCAFEBABE;
+  65535; // minor version
+  71; // version
+  [] { // Constant Pool
+    ; // first element is empty
+    Method #2 #3; // #1
+    class #4; // #2
+    NameAndType #5 #6; // #3
+    Utf8 "FinalValue"; // #4
+    Utf8 "<init>"; // #5
+    Utf8 "()V"; // #6
+    class #8; // #7
+    Utf8 "AbstractValueClass3"; // #8
+    Utf8 "Code"; // #9
+    Utf8 "LineNumberTable"; // #10
+    Utf8 "SourceFile"; // #11
+    Utf8 "AbstractValueClass3.java"; // #12
+  } // Constant Pool
+
+  0x0401; // access
+  #7;// this_cpx
+  #2;// super_cpx
+
+  [] { // Interfaces
+  } // Interfaces
+
+  [] { // Fields
+  } // Fields
+
+  [] { // Methods
+    {  // method
+      0x0001; // access
+      #5; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+        Attr(#9) { // Code
+          1; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x2AB70001B1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#10) { // LineNumberTable
+              [] { // line_number_table
+                0  1;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+  } // Methods
+
+  [] { // Attributes
+    Attr(#11) { // SourceFile
+      #12;
+    } // end SourceFile
+  } // Attributes
+} // end class AbstractValueClass3
+
+// A concrete class without ACC_IDENTITY but with an older class file version, declaring a field without ACC_STATIC nor ACC_STRICT
+//
+class NotStaticNotStrictInOldClass {
+  0xCAFEBABE;
+  0; // minor version
+  71; // version
+  [] { // Constant Pool
+    ; // first element is empty
+    Field #2 #3; // #1
+    class #4; // #2
+    NameAndType #5 #6; // #3
+    Utf8 "NotStaticNotStrictInOldClass"; // #4
+    Utf8 "i"; // #5
+    Utf8 "I"; // #6
+    Method #8 #9; // #7
+    class #10; // #8
+    NameAndType #11 #12; // #9
+    Utf8 "java/lang/Object"; // #10
+    Utf8 "<init>"; // #11
+    Utf8 "()V"; // #12
+    Field #2 #14; // #13
+    NameAndType #15 #6; // #14
+    Utf8 "si"; // #15
+    Utf8 "ConstantValue"; // #16
+    int 0x00000000; // #17
+    Utf8 "Code"; // #18
+    Utf8 "LineNumberTable"; // #19
+    Utf8 "<clinit>"; // #20
+    Utf8 "SourceFile"; // #21
+    Utf8 "NotStaticNotStrictInOldClass.java"; // #22
+  } // Constant Pool
+
+  0x0011; // access
+  #2;// this_cpx
+  #8;// super_cpx
+
+  [] { // Interfaces
+  } // Interfaces
+
+  [] { // Fields
+    {  // field
+      0x0008; // access
+      #15; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+      } // Attributes
+    }
+    ;
+    {  // field
+      0x0010; // access
+      #5; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+        Attr(#16) { // ConstantValue
+          #17;
+        } // end ConstantValue
+      } // Attributes
+    }
+  } // Fields
+
+  [] { // Methods
+    {  // method
+      0x0001; // access
+      #11; // name_index
+      #12; // descriptor_index
+      [] { // Attributes
+        Attr(#18) { // Code
+          2; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x2A03B500012AB700;
+            0x07B1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#19) { // LineNumberTable
+              [] { // line_number_table
+                0  3;
+                5  1;
+                9  3;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+    ;
+    {  // method
+      0x0008; // access
+      #20; // name_index
+      #12; // descriptor_index
+      [] { // Attributes
+        Attr(#18) { // Code
+          1; // max_stack
+          0; // max_locals
+          Bytes[]{
+            0x03B3000DB1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#19) { // LineNumberTable
+              [] { // line_number_table
+                0  2;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+  } // Methods
+
+  [] { // Attributes
+    Attr(#21) { // SourceFile
+      #22;
+    } // end SourceFile
+  } // Attributes
+} // end class NotStaticNotStrictInOldClass
+
+// Valid concrete value class with a synchronized static method
+class StaticSynchMethod {
+  0xCAFEBABE;
+  65535; // minor version
+  71; // version
+  [] { // Constant Pool
+    ; // first element is empty
+    Method #2 #3; // #1
+    class #4; // #2
+    NameAndType #5 #6; // #3
+    Utf8 "java/lang/Object"; // #4
+    Utf8 "<init>"; // #5
+    Utf8 "()V"; // #6
+    class #8; // #7
+    Utf8 "StaticSynchMethod"; // #8
+    Utf8 "Code"; // #9
+    Utf8 "LineNumberTable"; // #10
+    Utf8 "m"; // #11
+    Utf8 "()I"; // #12
+    Utf8 "SourceFile"; // #13
+    Utf8 "StaticSynchMethod.java"; // #14
+  } // Constant Pool
+
+  0x0011; // access
+  #7;// this_cpx
+  #2;// super_cpx
+
+  [] { // Interfaces
+  } // Interfaces
+
+  [] { // Fields
+  } // Fields
+
+  [] { // Methods
+    {  // method
+      0x0001; // access
+      #5; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+        Attr(#9) { // Code
+          1; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x2AB70001B1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#10) { // LineNumberTable
+              [] { // line_number_table
+                0  1;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+    ;
+    {  // method
+      0x0029; // access
+      #11; // name_index
+      #12; // descriptor_index
+      [] { // Attributes
+        Attr(#9) { // Code
+          1; // max_stack
+          0; // max_locals
+          Bytes[]{
+            0x102AAC;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#10) { // LineNumberTable
+              [] { // line_number_table
+                0  2;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+  } // Methods
+
+  [] { // Attributes
+    Attr(#13) { // SourceFile
+      #14;
+    } // end SourceFile
+  } // Attributes
+} // end class StaticSynchMethod
+
+// Invalid concrete value class with synchronized non-static method
+class SynchMethod {
+  0xCAFEBABE;
+  65535; // minor version
+  71; // version
+  [] { // Constant Pool
+    ; // first element is empty
+    Method #2 #3; // #1
+    class #4; // #2
+    NameAndType #5 #6; // #3
+    Utf8 "java/lang/Object"; // #4
+    Utf8 "<init>"; // #5
+    Utf8 "()V"; // #6
+    class #8; // #7
+    Utf8 "SynchMethod"; // #8
+    Utf8 "Code"; // #9
+    Utf8 "LineNumberTable"; // #10
+    Utf8 "m"; // #11
+    Utf8 "()I"; // #12
+    Utf8 "SourceFile"; // #13
+    Utf8 "SynchMethod.java"; // #14
+  } // Constant Pool
+
+  0x0011; // access
+  #7;// this_cpx
+  #2;// super_cpx
+
+  [] { // Interfaces
+  } // Interfaces
+
+  [] { // Fields
+  } // Fields
+
+  [] { // Methods
+    {  // method
+      0x0001; // access
+      #5; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+        Attr(#9) { // Code
+          1; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x2AB70001B1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#10) { // LineNumberTable
+              [] { // line_number_table
+                0  1;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+    ;
+    {  // method
+      0x0021; // access               // Modified to make it synchronized
+      #11; // name_index
+      #12; // descriptor_index
+      [] { // Attributes
+        Attr(#9) { // Code
+          1; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x102AAC;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#10) { // LineNumberTable
+              [] { // line_number_table
+                0  2;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+  } // Methods
+
+  [] { // Attributes
+    Attr(#13) { // SourceFile
+      #14;
+    } // end SourceFile
+  } // Attributes
+} // end class SynchMethod
+
+// Valid abstract value class with synchronized static method
+class StaticSynchMethodInAbstractValue {
+  0xCAFEBABE;
+  65535; // minor version
+  71; // version
+  [] { // Constant Pool
+    ; // first element is empty
+    Method #2 #3; // #1
+    class #4; // #2
+    NameAndType #5 #6; // #3
+    Utf8 "java/lang/Object"; // #4
+    Utf8 "<init>"; // #5
+    Utf8 "()V"; // #6
+    class #8; // #7
+    Utf8 "StaticSynchMethodInAbstractValue"; // #8
+    Utf8 "Code"; // #9
+    Utf8 "LineNumberTable"; // #10
+    Utf8 "m"; // #11
+    Utf8 "()I"; // #12
+    Utf8 "SourceFile"; // #13
+    Utf8 "StaticSynchMethodInAbstractValue.java"; // #14
+  } // Constant Pool
+
+  0x0401; // access
+  #7;// this_cpx
+  #2;// super_cpx
+
+  [] { // Interfaces
+  } // Interfaces
+
+  [] { // Fields
+  } // Fields
+
+  [] { // Methods
+    {  // method
+      0x0001; // access
+      #5; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+        Attr(#9) { // Code
+          1; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x2AB70001B1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#10) { // LineNumberTable
+              [] { // line_number_table
+                0  1;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+    ;
+    {  // method
+      0x0029; // access
+      #11; // name_index
+      #12; // descriptor_index
+      [] { // Attributes
+        Attr(#9) { // Code
+          1; // max_stack
+          0; // max_locals
+          Bytes[]{
+            0x102AAC;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#10) { // LineNumberTable
+              [] { // line_number_table
+                0  2;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+  } // Methods
+
+  [] { // Attributes
+    Attr(#13) { // SourceFile
+      #14;
+    } // end SourceFile
+  } // Attributes
+} // end class StaticSynchMethodInAbstractValue
+
+// Invalid abstract value class with a synchronized non-static method
+class SynchMethodInAbstractValue {
+  0xCAFEBABE;
+  65535; // minor version
+  71; // version
+  [] { // Constant Pool
+    ; // first element is empty
+    Method #2 #3; // #1
+    class #4; // #2
+    NameAndType #5 #6; // #3
+    Utf8 "java/lang/Object"; // #4
+    Utf8 "<init>"; // #5
+    Utf8 "()V"; // #6
+    class #8; // #7
+    Utf8 "SynchMethodInAbstractValue"; // #8
+    Utf8 "Code"; // #9
+    Utf8 "LineNumberTable"; // #10
+    Utf8 "m"; // #11
+    Utf8 "()I"; // #12
+    Utf8 "SourceFile"; // #13
+    Utf8 "SynchMethodInAbstractValue.java"; // #14
+  } // Constant Pool
+
+  0x0401; // access
+  #7;// this_cpx
+  #2;// super_cpx
+
+  [] { // Interfaces
+  } // Interfaces
+
+  [] { // Fields
+  } // Fields
+
+  [] { // Methods
+    {  // method
+      0x0001; // access
+      #5; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+        Attr(#9) { // Code
+          1; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x2AB70001B1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#10) { // LineNumberTable
+              [] { // line_number_table
+                0  1;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+    ;
+    {  // method
+      0x0021; // access                // modified to make it synchronized
+      #11; // name_index
+      #12; // descriptor_index
+      [] { // Attributes
+        Attr(#9) { // Code
+          1; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x102AAC;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#10) { // LineNumberTable
+              [] { // line_number_table
+                0  2;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+  } // Methods
+
+  [] { // Attributes
+    Attr(#13) { // SourceFile
+      #14;
+    } // end SourceFile
+  } // Attributes
+} // end class SynchMethodInAbstractValue
+
+// Class to test invalid entries in LoadableDescriptors Attributes
+// Class generated from this source:
+// public class PrimitiveInLoadableDescriptors {
+// int i;
+// void foo(Integer i) { }
+// }
+
+class PrimitiveInLoadableDescriptors {
+  0xCAFEBABE;
+  65535; // minor version
+  71; // version
+  [] { // Constant Pool
+    ; // first element is empty
+    Method #2 #3; // #1
+    class #4; // #2
+    NameAndType #5 #6; // #3
+    Utf8 "java/lang/Object"; // #4
+    Utf8 "<init>"; // #5
+    Utf8 "()V"; // #6
+    class #8; // #7
+    Utf8 "PrimitiveInLoadableDescriptors"; // #8
+    Utf8 "i"; // #9
+    Utf8 "I"; // #10
+    Utf8 "Code"; // #11
+    Utf8 "LineNumberTable"; // #12
+    Utf8 "foo"; // #13
+    Utf8 "(Ljava/lang/Integer;)V"; // #14
+    Utf8 "SourceFile"; // #15
+    Utf8 "PrimitiveInLoadableDescriptors.java"; // #16
+    Utf8 "LoadableDescriptors"; // #17
+    Utf8 "I"; // #18                            // Modified from "Ljava/lang/Integer;" to "I"
+  } // Constant Pool
+
+  0x0021; // access
+  #7;// this_cpx
+  #2;// super_cpx
+
+  [] { // Interfaces
+  } // Interfaces
+
+  [] { // Fields
+    {  // field
+      0x0000; // access
+      #9; // name_index
+      #10; // descriptor_index
+      [] { // Attributes
+      } // Attributes
+    }
+  } // Fields
+
+  [] { // Methods
+    {  // method
+      0x0001; // access
+      #5; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+        Attr(#11) { // Code
+          1; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x2AB70001B1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#12) { // LineNumberTable
+              [] { // line_number_table
+                0  1;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+    ;
+    {  // method
+      0x0000; // access
+      #13; // name_index
+      #14; // descriptor_index
+      [] { // Attributes
+        Attr(#11) { // Code
+          0; // max_stack
+          2; // max_locals
+          Bytes[]{
+            0xB1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#12) { // LineNumberTable
+              [] { // line_number_table
+                0  3;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+  } // Methods
+
+  [] { // Attributes
+    Attr(#15) { // SourceFile
+      #16;
+    } // end SourceFile
+    ;
+    Attr(#17) { // LoadableDescriptors
+      0x00010012;
+    } // end LoadableDescriptors
+  } // Attributes
+} // end class PrimitiveInLoadableDescriptors

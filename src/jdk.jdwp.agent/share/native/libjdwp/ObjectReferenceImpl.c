@@ -357,6 +357,63 @@ referringObjects(PacketInputStream *in, PacketOutputStream *out)
     return JNI_TRUE;
 }
 
+static jboolean
+isSameObjectImpl(PacketInputStream *in, PacketOutputStream *out)
+{
+    jlong id1;
+    jlong id2;
+    jobject ref1;
+    jobject ref2;
+    JNIEnv *env;
+
+    env = getEnv();
+    id1 = inStream_readObjectID(in);
+    id2 = inStream_readObjectID(in);
+    if (inStream_error(in)) {
+        return JNI_TRUE;
+    }
+
+    if (id1 == NULL_OBJECT_ID || id2 == NULL_OBJECT_ID) {
+        outStream_setError(out, JDWP_ERROR(INVALID_OBJECT));
+        return JNI_TRUE;
+    }
+
+    ref1 = commonRef_idToRef(env, id1);
+    ref2 = commonRef_idToRef(env, id2);
+    (void)outStream_writeBoolean(out, isSameObject(env, ref1, ref2));
+
+    commonRef_idToRef_delete(env, ref1);
+    commonRef_idToRef_delete(env, ref2);
+
+    return JNI_TRUE;
+}
+
+static jboolean
+objectHashCodeImpl(PacketInputStream *in, PacketOutputStream *out)
+{
+    jlong id;
+    jobject ref;
+    JNIEnv *env;
+
+    env = getEnv();
+    id = inStream_readObjectID(in);
+    if (inStream_error(in)) {
+        return JNI_TRUE;
+    }
+
+    if (id == NULL_OBJECT_ID) {
+        outStream_setError(out, JDWP_ERROR(INVALID_OBJECT));
+        return JNI_TRUE;
+    }
+
+    ref = commonRef_idToRef(env, id);
+    (void)outStream_writeInt(out, objectHashCode(ref));
+
+    commonRef_idToRef_delete(env, ref);
+
+    return JNI_TRUE;
+}
+
 Command ObjectReference_Commands[] = {
     {referenceType, "ReferenceType"},
     {getValues, "GetValues"},
@@ -367,7 +424,9 @@ Command ObjectReference_Commands[] = {
     {disableCollection, "DisableCollection"},
     {enableCollection, "EnableCollection"},
     {isCollected, "IsCollected"},
-    {referringObjects, "ReferringObjects"}
+    {referringObjects, "ReferringObjects"},
+    {isSameObjectImpl, "IsSameObject"},
+    {objectHashCodeImpl, "ObjectHashCode"}
 };
 
 DEBUG_DISPATCH_DEFINE_CMDSET(ObjectReference)

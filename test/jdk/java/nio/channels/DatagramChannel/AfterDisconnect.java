@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
  * @bug 8231880 8231258
  * @library /test/lib
  * @summary Test DatagramChannel bound to specific address/ephemeral port after disconnect
- * @run junit/othervm AfterDisconnect
- * @run junit/othervm -Djava.net.preferIPv4Stack=true AfterDisconnect
- * @run junit/othervm -Djava.net.preferIPv6Addresses=true AfterDisconnect
+ * @run testng/othervm AfterDisconnect
+ * @run testng/othervm -Djava.net.preferIPv4Stack=true AfterDisconnect
+ * @run testng/othervm -Djava.net.preferIPv6Addresses=true AfterDisconnect
  */
 
 import java.io.IOException;
@@ -49,17 +49,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Predicate;
 
+import org.testng.annotations.Test;
+import static org.testng.Assert.*;
+
 import jdk.test.lib.net.IPSupport;
-
-import org.junit.jupiter.api.Test;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.*;
 
 public class AfterDisconnect {
 
     interface RetryableTest<T extends Exception> {
-        void runTest() throws T;
+        public void runTest() throws T;
     }
 
     // retry the given lambda (RetryableTest) if an exception
@@ -83,7 +81,7 @@ public class AfterDisconnect {
      * When calling {@link DatagramChannel#disconnect()} a {@link BindException}
      * may occur. In which case we want to retry the test.
      */
-    static class BindExceptionOnDisconnect extends BindException {
+    class BindExceptionOnDisconnect extends BindException {
         BindExceptionOnDisconnect(BindException x) {
             super(x.getMessage());
             initCause(x);
@@ -151,8 +149,8 @@ public class AfterDisconnect {
 
             dc.connect(remote);
             assertTrue(dc.isConnected());
-            assertEquals(local, dc.getLocalAddress());
-            assertEquals(remote, dc.getRemoteAddress());
+            assertEquals(dc.getLocalAddress(), local);
+            assertEquals(dc.getRemoteAddress(), remote);
 
             try {
                 dc.disconnect();
@@ -160,8 +158,8 @@ public class AfterDisconnect {
                 throw new BindExceptionOnDisconnect(x);
             }
             assertFalse(dc.isConnected());
-            assertEquals(local, dc.getLocalAddress());
-            assertNull(dc.getRemoteAddress());
+            assertEquals(dc.getLocalAddress(), local);
+            assertTrue(dc.getRemoteAddress() == null);
         }
     }
 
@@ -194,7 +192,7 @@ public class AfterDisconnect {
     /**
      * Returns a map of the given channel's socket options and values.
      */
-    private Map<SocketOption<?>, Object> options(DatagramChannel dc) {
+    private Map<SocketOption<?>, Object> options(DatagramChannel dc) throws IOException {
         Map<SocketOption<?>, Object> map = new HashMap<>();
         for (SocketOption<?> option : dc.supportedOptions()) {
             try {
@@ -231,15 +229,15 @@ public class AfterDisconnect {
             // check blocking mode with non-blocking receive
             ByteBuffer bb = ByteBuffer.allocate(100);
             SocketAddress sender = dc.receive(bb);
-            assertNull(sender);
+            assertTrue(sender == null);
 
             // send datagram and ensure that channel is selected
-            dc.send(ByteBuffer.wrap("Hello".getBytes(UTF_8)), dc.getLocalAddress());
+            dc.send(ByteBuffer.wrap("Hello".getBytes("UTF-8")), dc.getLocalAddress());
             assertFalse(key.isReadable());
             while (sel.select() == 0);
             assertTrue(key.isReadable());
             sender = dc.receive(bb);
-            assertEquals(dc.getLocalAddress(), sender);
+            assertEquals(sender, dc.getLocalAddress());
 
             // cancel key, flush from Selector, and restore blocking mode
             key.cancel();
@@ -275,10 +273,10 @@ public class AfterDisconnect {
             assertTrue(key.isValid());
 
             // send datagram to multicast group, should be received
-            dc.send(ByteBuffer.wrap("Hello".getBytes(UTF_8)), dc.getLocalAddress());
+            dc.send(ByteBuffer.wrap("Hello".getBytes("UTF-8")), dc.getLocalAddress());
             ByteBuffer bb = ByteBuffer.allocate(100);
             SocketAddress sender = dc.receive(bb);
-            assertEquals(dc.getLocalAddress(), sender);
+            assertEquals(sender, dc.getLocalAddress());
 
             // drop membership
             key.drop();

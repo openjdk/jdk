@@ -135,13 +135,21 @@
   do_blob(fast_new_instance_init_check)                                \
   do_blob(new_type_array)                                              \
   do_blob(new_object_array)                                            \
+  do_blob(new_null_free_array)                                         \
   do_blob(new_multi_array)                                             \
+  do_blob(load_flat_array)                                             \
+  do_blob(store_flat_array)                                            \
+  do_blob(substitutability_check)                                      \
+  do_blob(buffer_inline_args)                                          \
+  do_blob(buffer_inline_args_no_receiver)                              \
   do_blob(handle_exception_nofpu)         /* optimized version that does not preserve fpu registers */ \
   do_blob(handle_exception)                                            \
   do_blob(handle_exception_from_callee)                                \
   do_blob(throw_array_store_exception)                                 \
   do_blob(throw_class_cast_exception)                                  \
   do_blob(throw_incompatible_class_change_error)                       \
+  do_blob(throw_illegal_monitor_state_exception)                       \
+  do_blob(throw_identity_exception)                                    \
   do_blob(slow_subtype_check)                                          \
   do_blob(is_instance_of)                                              \
   do_blob(monitorenter)                                                \
@@ -229,6 +237,8 @@
   do_stub(rethrow, 2, true, true)                                      \
   do_stub(slow_arraycopy, 0, false, false)                             \
   do_stub(register_finalizer, 0, false, false)                         \
+  do_stub(load_unknown_inline, 0, true, false)                         \
+  do_stub(store_unknown_inline, 0, true, false)                        \
   do_stub(vthread_end_first_transition, 0, false, false)               \
   do_stub(vthread_start_final_transition, 0, false, false)             \
   do_stub(vthread_start_transition, 0, false, false)                   \
@@ -667,6 +677,16 @@
   do_entry(initial, dcbrt, dcbrt, dcbrt)                                \
   do_stub(initial, fmod)                                                \
   do_entry(initial, fmod, fmod, fmod)                                   \
+  /* following generic entries should really be x86_32 only */          \
+  do_stub(initial, dlibm_sin_cos_huge)                                  \
+  do_entry(initial, dlibm_sin_cos_huge, dlibm_sin_cos_huge,             \
+           dlibm_sin_cos_huge)                                          \
+  do_stub(initial, dlibm_reduce_pi04l)                                  \
+  do_entry(initial, dlibm_reduce_pi04l, dlibm_reduce_pi04l,             \
+           dlibm_reduce_pi04l)                                          \
+  do_stub(initial, dlibm_tan_cot_huge)                                  \
+  do_entry(initial, dlibm_tan_cot_huge, dlibm_tan_cot_huge,             \
+           dlibm_tan_cot_huge)                                          \
   /* merge in stubs and entries declared in arch header */              \
   STUBGEN_INITIAL_BLOBS_ARCH_DO(do_stub, do_arch_blob,                  \
                                 do_arch_entry, do_arch_entry_init)      \

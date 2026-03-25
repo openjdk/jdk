@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 #include "c1/c1_InstructionPrinter.hpp"
 #include "c1/c1_IR.hpp"
 #include "c1/c1_ValueStack.hpp"
+#include "ci/ciFlatArrayKlass.hpp"
+#include "ci/ciInlineKlass.hpp"
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciTypeArrayKlass.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -105,13 +107,75 @@ void Instruction::state_values_do(ValueVisitor* f) {
 }
 
 ciType* Instruction::exact_type() const {
-  ciType* t =  declared_type();
+  ciType* t = declared_type();
   if (t != nullptr && t->is_klass()) {
     return t->as_klass()->exact_klass();
   }
   return nullptr;
 }
 
+ciKlass* Instruction::as_loaded_klass_or_null() const {
+  ciType* type = declared_type();
+  if (type != nullptr && type->is_klass()) {
+    ciKlass* klass = type->as_klass();
+    if (klass->is_loaded()) {
+      return klass;
+    }
+  }
+  return nullptr;
+}
+
+bool Instruction::is_loaded_flat_array() const {
+  if (UseArrayFlattening) {
+    ciType* type = declared_type();
+    return type != nullptr && type->is_flat_array_klass();
+  }
+  return false;
+}
+
+bool Instruction::maybe_flat_array() {
+  if (UseArrayFlattening) {
+    ciType* type = declared_type();
+    if (type != nullptr) {
+      if (type->is_ref_array_klass()) {
+        return false;
+      } else if (type->is_flat_array_klass()) {
+        return true;
+      } else if (type->is_obj_array_klass()) {
+        // This is the unrefined array type
+        ciKlass* element_klass = type->as_obj_array_klass()->element_klass();
+        if (element_klass->can_be_inline_klass() && (!element_klass->is_inlinetype() || element_klass->as_inline_klass()->maybe_flat_in_array())) {
+          return true;
+        }
+      } else if (type->is_klass() && type->as_klass()->is_java_lang_Object()) {
+        // This can happen as a parameter to System.arraycopy()
+        return true;
+      }
+    } else {
+      // Type info gets lost during Phi merging (Phi, IfOp, etc), but we might be storing into a
+      // flat array, so we should do a runtime check.
+      return true;
+    }
+  }
+  return false;
+}
+
+bool Instruction::maybe_null_free_array() {
+  ciType* type = declared_type();
+  if (type != nullptr) {
+    if (type->is_obj_array_klass()) {
+      // Due to array covariance, the runtime type might be a null-free array.
+      if (type->as_obj_array_klass()->can_be_inline_array_klass()) {
+        return true;
+      }
+    }
+  } else {
+    // Type info gets lost during Phi merging (Phi, IfOp, etc), but we might be storing into a
+    // null-free array, so we should do a runtime check.
+    return true;
+  }
+  return false;
+}
 
 #ifndef PRODUCT
 void Instruction::check_state(ValueStack* state) {
@@ -172,7 +236,7 @@ ciType* Constant::exact_type() const {
 
 ciType* LoadIndexed::exact_type() const {
   ciType* array_type = array()->exact_type();
-  if (array_type != nullptr) {
+  if (delayed() == nullptr && array_type != nullptr) {
     assert(array_type->is_array_klass(), "what else?");
     ciArrayKlass* ak = (ciArrayKlass*)array_type;
 
@@ -186,8 +250,10 @@ ciType* LoadIndexed::exact_type() const {
   return Instruction::exact_type();
 }
 
-
 ciType* LoadIndexed::declared_type() const {
+  if (delayed() != nullptr) {
+    return delayed()->field()->type();
+  }
   ciType* array_type = array()->declared_type();
   if (array_type == nullptr || !array_type->is_loaded()) {
     return nullptr;
@@ -197,6 +263,20 @@ ciType* LoadIndexed::declared_type() const {
   return ak->element_type();
 }
 
+bool StoreIndexed::is_exact_flat_array_store() const {
+  if (array()->is_loaded_flat_array() && value()->as_Constant() == nullptr && value()->declared_type() != nullptr) {
+    ciKlass* element_klass = array()->declared_type()->as_flat_array_klass()->element_klass();
+    ciKlass* actual_klass = value()->declared_type()->as_klass();
+
+    // The following check can fail with inlining:
+    //     void test45_inline(Object[] oa, Object o, int index) { oa[index] = o; }
+    //     void test45(MyValue1[] va, int index, MyValue2 v) { test45_inline(va, v, index); }
+    if (element_klass == actual_klass) {
+      return true;
+    }
+  }
+  return false;
+}
 
 ciType* LoadField::declared_type() const {
   return field()->type();
@@ -208,7 +288,11 @@ ciType* NewTypeArray::exact_type() const {
 }
 
 ciType* NewObjectArray::exact_type() const {
-  return ciObjArrayKlass::make(klass());
+  return ciArrayKlass::make(klass());
+}
+
+ciType* NewMultiArray::exact_type() const {
+  return _klass;
 }
 
 ciType* NewArray::declared_type() const {
@@ -318,16 +402,43 @@ void BlockBegin::state_values_do(ValueVisitor* f) {
 }
 
 
+StoreField::StoreField(Value obj, int offset, ciField* field, Value value, bool is_static,
+                       ValueStack* state_before, bool needs_patching)
+  : AccessField(obj, offset, field, is_static, state_before, needs_patching)
+  , _value(value)
+  , _enclosing_field(nullptr)
+{
+#ifdef ASSERT
+  AssertValues assert_value;
+  values_do(&assert_value);
+#endif
+  pin();
+}
+
+StoreIndexed::StoreIndexed(Value array, Value index, Value length, BasicType elt_type, Value value,
+                           ValueStack* state_before, bool check_boolean, bool mismatched)
+  : AccessIndexed(array, index, length, elt_type, state_before, mismatched)
+  , _value(value), _check_boolean(check_boolean)
+{
+#ifdef ASSERT
+  AssertValues assert_value;
+  values_do(&assert_value);
+#endif
+  pin();
+}
+
+
 // Implementation of Invoke
 
 
-Invoke::Invoke(Bytecodes::Code code, ValueType* result_type, Value recv, Values* args,
+Invoke::Invoke(Bytecodes::Code code, ciType* return_type, Value recv, Values* args,
                ciMethod* target, ValueStack* state_before)
-  : StateSplit(result_type, state_before)
+  : StateSplit(as_ValueType(return_type), state_before)
   , _code(code)
   , _recv(recv)
   , _args(args)
   , _target(target)
+  , _return_type(return_type)
 {
   set_flag(TargetIsLoadedFlag,   target->is_loaded());
   set_flag(TargetIsFinalFlag,    target_is_loaded() && target->is_final_method());
@@ -344,7 +455,8 @@ Invoke::Invoke(Bytecodes::Code code, ValueType* result_type, Value recv, Values*
     _signature->append(as_BasicType(receiver()->type()));
   }
   for (int i = 0; i < number_of_arguments(); i++) {
-    ValueType* t = argument_at(i)->type();
+    Value v = argument_at(i);
+    ValueType* t = v->type();
     BasicType bt = as_BasicType(t);
     _signature->append(bt);
   }
@@ -358,10 +470,8 @@ void Invoke::state_values_do(ValueVisitor* f) {
 }
 
 ciType* Invoke::declared_type() const {
-  ciSignature* declared_signature = state()->scope()->method()->get_declared_signature_at_bci(state()->bci());
-  ciType *t = declared_signature->return_type();
-  assert(t->basic_type() != T_VOID, "need return value of void method?");
-  return t;
+  assert(_return_type->basic_type() != T_VOID, "need return value of void method?");
+  return _return_type;
 }
 
 // Implementation of Constant
@@ -989,3 +1099,4 @@ void RangeCheckPredicate::check_state() {
 void ProfileInvoke::state_values_do(ValueVisitor* f) {
   if (state() != nullptr) state()->values_do(f);
 }
+

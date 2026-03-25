@@ -1,0 +1,637 @@
+/*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+ // This file contains multiple illegal inline type classes that should cause
+// ClassFormatError exceptions when attempted to be loaded.
+//
+// Many of these test were originally generated from this Java file and then
+// field modifiers are changed to cause a ClassFormatError exceptions.
+//
+// public value class Value {
+//    static int si = 0;
+//    int i = 0;
+//}
+
+
+// A field has both ACC_FINAL and ACC_VOLATILE set
+//
+class FinalAndVolatile {
+  0xCAFEBABE;
+  65535; // minor version
+  71; // version
+  [] { // Constant Pool
+    ; // first element is empty
+    Field #2 #3; // #1
+    class #4; // #2
+    NameAndType #5 #6; // #3
+    Utf8 "FinalAndVolatile"; // #4
+    Utf8 "i"; // #5
+    Utf8 "I"; // #6
+    Method #8 #9; // #7
+    class #10; // #8
+    NameAndType #11 #12; // #9
+    Utf8 "java/lang/Object"; // #10
+    Utf8 "<init>"; // #11
+    Utf8 "()V"; // #12
+    Field #2 #14; // #13
+    NameAndType #15 #6; // #14
+    Utf8 "si"; // #15
+    Utf8 "ConstantValue"; // #16
+    int 0x00000000; // #17
+    Utf8 "Code"; // #18
+    Utf8 "LineNumberTable"; // #19
+    Utf8 "<clinit>"; // #20
+    Utf8 "SourceFile"; // #21
+    Utf8 "FinalAndVolatile.java"; // #22
+  } // Constant Pool
+
+  0x0011; // access
+  #2;// this_cpx
+  #8;// super_cpx
+
+  [] { // Interfaces
+  } // Interfaces
+
+  [] { // Fields
+    {  // field
+      0x0008; // access
+      #15; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+      } // Attributes
+    }
+    ;
+    {  // field
+      0x0850; // access
+      #5; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+        Attr(#16) { // ConstantValue
+          #17;
+        } // end ConstantValue
+      } // Attributes
+    }
+  } // Fields
+
+  [] { // Methods
+    {  // method
+      0x0001; // access
+      #11; // name_index
+      #12; // descriptor_index
+      [] { // Attributes
+        Attr(#18) { // Code
+          2; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x2A03B500012AB700;
+            0x07B1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#19) { // LineNumberTable
+              [] { // line_number_table
+                0  3;
+                5  1;
+                9  3;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+    ;
+    {  // method
+      0x0008; // access
+      #20; // name_index
+      #12; // descriptor_index
+      [] { // Attributes
+        Attr(#18) { // Code
+          1; // max_stack
+          0; // max_locals
+          Bytes[]{
+            0x03B3000DB1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#19) { // LineNumberTable
+              [] { // line_number_table
+                0  2;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+  } // Methods
+
+  [] { // Attributes
+    Attr(#21) { // SourceFile
+      #22;
+    } // end SourceFile
+  } // Attributes
+} // end class FinalAndVolatile
+
+
+// A field has both ACC_STRICT and ACC_STATIC set
+//
+class StrictAndStatic {
+  0xCAFEBABE;
+  65535; // minor version
+  71; // version
+  [] { // Constant Pool
+    ; // first element is empty
+    Field #2 #3; // #1
+    class #4; // #2
+    NameAndType #5 #6; // #3
+    Utf8 "StrictAndStatic"; // #4
+    Utf8 "i"; // #5
+    Utf8 "I"; // #6
+    Method #8 #9; // #7
+    class #10; // #8
+    NameAndType #11 #12; // #9
+    Utf8 "java/lang/Object"; // #10
+    Utf8 "<init>"; // #11
+    Utf8 "()V"; // #12
+    Field #2 #14; // #13
+    NameAndType #15 #6; // #14
+    Utf8 "si"; // #15
+    Utf8 "ConstantValue"; // #16
+    int 0x00000000; // #17
+    Utf8 "Code"; // #18
+    Utf8 "LineNumberTable"; // #19
+    Utf8 "<clinit>"; // #20
+    Utf8 "SourceFile"; // #21
+    Utf8 "StrictAndStatic.java"; // #22
+  } // Constant Pool
+
+  0x0011; // access
+  #2;// this_cpx
+  #8;// super_cpx
+
+  [] { // Interfaces
+  } // Interfaces
+
+  [] { // Fields
+    {  // field
+      0x0808; // access
+      #15; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+      } // Attributes
+    }
+    ;
+    {  // field
+      0x0810; // access
+      #5; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+        Attr(#16) { // ConstantValue
+          #17;
+        } // end ConstantValue
+      } // Attributes
+    }
+  } // Fields
+
+  [] { // Methods
+    {  // method
+      0x0001; // access
+      #11; // name_index
+      #12; // descriptor_index
+      [] { // Attributes
+        Attr(#18) { // Code
+          2; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x2A03B500012AB700;
+            0x07B1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#19) { // LineNumberTable
+              [] { // line_number_table
+                0  3;
+                5  1;
+                9  3;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+    ;
+    {  // method
+      0x0008; // access
+      #20; // name_index
+      #12; // descriptor_index
+      [] { // Attributes
+        Attr(#18) { // Code
+          1; // max_stack
+          0; // max_locals
+          Bytes[]{
+            0x03B3000DB1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#19) { // LineNumberTable
+              [] { // line_number_table
+                0  2;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+  } // Methods
+
+  [] { // Attributes
+    Attr(#21) { // SourceFile
+      #22;
+    } // end SourceFile
+  } // Attributes
+} // end class StrictAndStatic
+
+
+// A field has ACC_STRICT set without ACC_FINAL being set
+//
+class StrictNotFinal {
+  0xCAFEBABE;
+  65535; // minor version
+  71; // version
+  [] { // Constant Pool
+    ; // first element is empty
+    Field #2 #3; // #1
+    class #4; // #2
+    NameAndType #5 #6; // #3
+    Utf8 "StrictNotFinal"; // #4
+    Utf8 "i"; // #5
+    Utf8 "I"; // #6
+    Method #8 #9; // #7
+    class #10; // #8
+    NameAndType #11 #12; // #9
+    Utf8 "java/lang/Object"; // #10
+    Utf8 "<init>"; // #11
+    Utf8 "()V"; // #12
+    Field #2 #14; // #13
+    NameAndType #15 #6; // #14
+    Utf8 "si"; // #15
+    Utf8 "ConstantValue"; // #16
+    int 0x00000000; // #17
+    Utf8 "Code"; // #18
+    Utf8 "LineNumberTable"; // #19
+    Utf8 "<clinit>"; // #20
+    Utf8 "SourceFile"; // #21
+    Utf8 "StrictNotFinal.java"; // #22
+  } // Constant Pool
+
+  0x0011; // access
+  #2;// this_cpx
+  #8;// super_cpx
+
+  [] { // Interfaces
+  } // Interfaces
+
+  [] { // Fields
+    {  // field
+      0x0008; // access
+      #15; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+      } // Attributes
+    }
+    ;
+    {  // field
+      0x0800; // access
+      #5; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+        Attr(#16) { // ConstantValue
+          #17;
+        } // end ConstantValue
+      } // Attributes
+    }
+  } // Fields
+
+  [] { // Methods
+    {  // method
+      0x0001; // access
+      #11; // name_index
+      #12; // descriptor_index
+      [] { // Attributes
+        Attr(#18) { // Code
+          2; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x2A03B500012AB700;
+            0x07B1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#19) { // LineNumberTable
+              [] { // line_number_table
+                0  3;
+                5  1;
+                9  3;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+    ;
+    {  // method
+      0x0008; // access
+      #20; // name_index
+      #12; // descriptor_index
+      [] { // Attributes
+        Attr(#18) { // Code
+          1; // max_stack
+          0; // max_locals
+          Bytes[]{
+            0x03B3000DB1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#19) { // LineNumberTable
+              [] { // line_number_table
+                0  2;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+  } // Methods
+
+  [] { // Attributes
+    Attr(#21) { // SourceFile
+      #22;
+    } // end SourceFile
+  } // Attributes
+} // end class StrictNotFinal
+
+// A concrete value class declaring a field without ACC_STATIC nor ACC_STRICT
+//
+class NotStaticNotStrict {
+  0xCAFEBABE;
+  65535; // minor version
+  71; // version
+  [] { // Constant Pool
+    ; // first element is empty
+    Field #2 #3; // #1
+    class #4; // #2
+    NameAndType #5 #6; // #3
+    Utf8 "NotStaticNotStrict"; // #4
+    Utf8 "i"; // #5
+    Utf8 "I"; // #6
+    Method #8 #9; // #7
+    class #10; // #8
+    NameAndType #11 #12; // #9
+    Utf8 "java/lang/Object"; // #10
+    Utf8 "<init>"; // #11
+    Utf8 "()V"; // #12
+    Field #2 #14; // #13
+    NameAndType #15 #6; // #14
+    Utf8 "si"; // #15
+    Utf8 "ConstantValue"; // #16
+    int 0x00000000; // #17
+    Utf8 "Code"; // #18
+    Utf8 "LineNumberTable"; // #19
+    Utf8 "<clinit>"; // #20
+    Utf8 "SourceFile"; // #21
+    Utf8 "NotStaticNotStrict.java"; // #22
+  } // Constant Pool
+
+  0x0011; // access
+  #2;// this_cpx
+  #8;// super_cpx
+
+  [] { // Interfaces
+  } // Interfaces
+
+  [] { // Fields
+    {  // field
+      0x0008; // access
+      #15; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+      } // Attributes
+    }
+    ;
+    {  // field
+      0x0010; // access
+      #5; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+        Attr(#16) { // ConstantValue
+          #17;
+        } // end ConstantValue
+      } // Attributes
+    }
+  } // Fields
+
+  [] { // Methods
+    {  // method
+      0x0001; // access
+      #11; // name_index
+      #12; // descriptor_index
+      [] { // Attributes
+        Attr(#18) { // Code
+          2; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x2A03B500012AB700;
+            0x07B1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#19) { // LineNumberTable
+              [] { // line_number_table
+                0  3;
+                5  1;
+                9  3;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+    ;
+    {  // method
+      0x0008; // access
+      #20; // name_index
+      #12; // descriptor_index
+      [] { // Attributes
+        Attr(#18) { // Code
+          1; // max_stack
+          0; // max_locals
+          Bytes[]{
+            0x03B3000DB1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#19) { // LineNumberTable
+              [] { // line_number_table
+                0  2;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+  } // Methods
+
+  [] { // Attributes
+    Attr(#21) { // SourceFile
+      #22;
+    } // end SourceFile
+  } // Attributes
+} // end class NotStaticNotStrict
+
+// An abstract value class declaring a field without ACC_STATIC nor ACC_STRICT
+//
+class NotStaticNotStrictInAbstract {
+  0xCAFEBABE;
+  65535; // minor version
+  71; // version
+  [] { // Constant Pool
+    ; // first element is empty
+    Field #2 #3; // #1
+    class #4; // #2
+    NameAndType #5 #6; // #3
+    Utf8 "NotStaticNotStrictInAbstract"; // #4
+    Utf8 "i"; // #5
+    Utf8 "I"; // #6
+    Method #8 #9; // #7
+    class #10; // #8
+    NameAndType #11 #12; // #9
+    Utf8 "java/lang/Object"; // #10
+    Utf8 "<init>"; // #11
+    Utf8 "()V"; // #12
+    Field #2 #14; // #13
+    NameAndType #15 #6; // #14
+    Utf8 "si"; // #15
+    Utf8 "ConstantValue"; // #16
+    int 0x00000000; // #17
+    Utf8 "Code"; // #18
+    Utf8 "LineNumberTable"; // #19
+    Utf8 "<clinit>"; // #20
+    Utf8 "SourceFile"; // #21
+    Utf8 "NotStaticNotStrictInAbstract.java"; // #22
+  } // Constant Pool
+
+  0x0401; // access
+  #2;// this_cpx
+  #8;// super_cpx
+
+  [] { // Interfaces
+  } // Interfaces
+
+  [] { // Fields
+    {  // field
+      0x0008; // access
+      #15; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+      } // Attributes
+    }
+    ;
+    {  // field
+      0x0010; // access
+      #5; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+        Attr(#16) { // ConstantValue
+          #17;
+        } // end ConstantValue
+      } // Attributes
+    }
+  } // Fields
+
+  [] { // Methods
+    {  // method
+      0x0001; // access
+      #11; // name_index
+      #12; // descriptor_index
+      [] { // Attributes
+        Attr(#18) { // Code
+          2; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x2A03B500012AB700;
+            0x07B1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#19) { // LineNumberTable
+              [] { // line_number_table
+                0  3;
+                5  1;
+                9  3;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+    ;
+    {  // method
+      0x0008; // access
+      #20; // name_index
+      #12; // descriptor_index
+      [] { // Attributes
+        Attr(#18) { // Code
+          1; // max_stack
+          0; // max_locals
+          Bytes[]{
+            0x03B3000DB1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#19) { // LineNumberTable
+              [] { // line_number_table
+                0  2;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+  } // Methods
+
+  [] { // Attributes
+    Attr(#21) { // SourceFile
+      #22;
+    } // end SourceFile
+  } // Attributes
+} // end class NotStaticNotStrictInAbstract

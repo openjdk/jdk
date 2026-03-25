@@ -25,7 +25,7 @@
  * @test
  * @modules java.base/jdk.internal.module
  * @library /test/lib
- * @build ModuleFinderTest jdk.test.lib.util.ModuleInfoWriter
+ * @build ModuleFinderTest
  * @run testng ModuleFinderTest
  * @summary Basic tests for java.lang.module.ModuleFinder
  */
@@ -826,4 +826,3 @@ public class ModuleFinderTest {
     }
 
 }
-

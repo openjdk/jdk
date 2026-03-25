@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,35 @@
  */
 
 /*
- * @test
+ * @test id=NoPreview
  * @bug 4975569 6622215 8034861
  * @summary javap doesn't print new flag bits
  * @modules jdk.jdeps/com.sun.tools.javap
+ * @modules java.base/jdk.internal.misc
+ * @comment Ensure that that this test is skipped if the test is run on a preview enabled
+            VM as the compiled test class has not been forced into preview mode.
+            Valhalla affects the outcome.
+ * @requires !java.enablePreview
+ * @run main T4975569
+ */
+
+/*
+ * @test id=Preview
+ * @bug 4975569 6622215 8034861
+ * @summary javap doesn't print new flag bits - Preview
+ * @modules jdk.jdeps/com.sun.tools.javap
+ * @modules java.base/jdk.internal.misc
+ * @enablePreview
+ * @compile -XDforcePreview T4975569.java
+ * @run main T4975569
  */
 
 import java.io.*;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import jdk.internal.misc.PreviewFeatures;
 
 public class T4975569 {
     private static final String NEW_LINE = System.getProperty("line.separator");
@@ -41,9 +60,16 @@ public class T4975569 {
         new T4975569().run();
     }
 
+    T4975569() {
+        System.currentTimeMillis();
+        super(); // Trigger forced preview
+    }
+
     void run() {
         verify(Anno.class.getName(), "flags: \\(0x2600\\) ACC_INTERFACE, ACC_ABSTRACT, ACC_ANNOTATION");
-        verify(E.class.getName(),    "flags: \\(0x4030\\) ACC_FINAL, ACC_SUPER, ACC_ENUM");
+        verify(E.class.getName(), PreviewFeatures.isEnabled()
+                ? "flags: \\(0x4030\\) ACC_FINAL, ACC_IDENTITY, ACC_ENUM"
+                : "flags: \\(0x4030\\) ACC_FINAL, ACC_SUPER, ACC_ENUM");
         verify(S.class.getName(),    "flags: \\(0x1040\\) ACC_BRIDGE, ACC_SYNTHETIC",
                                      "InnerClasses:\n  static [# =\\w]+; +// ");
         verify(V.class.getName(),    "void m\\(java.lang.String...\\)",

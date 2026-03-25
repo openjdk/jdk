@@ -91,6 +91,31 @@ class SerializeClosure;
   template(java_lang_Long_LongCache,                  "java/lang/Long$LongCache")                 \
   template(java_lang_Void,                            "java/lang/Void")                           \
                                                                                                   \
+  /* Valhalla migrated classes. */                                                                \
+  template(java_lang_Number,                          "java/lang/Number")                         \
+  template(java_lang_Record,                          "java/lang/Record")                         \
+  template(java_util_Optional,                        "java/util/Optional")                       \
+  template(java_util_OptionalInt,                     "java/util/OptionalInt")                    \
+  template(java_util_OptionalLong,                    "java/util/OptionalLong")                   \
+  template(java_util_OptionalDouble,                  "java/util/OptionalDouble")                 \
+  template(java_time_LocalDate,                       "java/time/LocalDate")                      \
+  template(java_time_LocalDateTime,                   "java/time/LocalDateTime")                  \
+  template(java_time_LocalTime,                       "java/time/LocalTime")                      \
+  template(java_time_Duration,                        "java/time/Duration")                       \
+  template(java_time_Instant,                         "java/time/Instant")                        \
+  template(java_time_MonthDay,                        "java/time/MonthDay")                       \
+  template(java_time_ZonedDateTime,                   "java/time/ZonedDateTime")                  \
+  template(java_time_OffsetDateTime,                  "java/time/OffsetDateTime")                 \
+  template(java_time_OffsetTime,                      "java/time/OffsetTime")                     \
+  template(java_time_YearMonth,                       "java/time/YearMonth")                      \
+  template(java_time_Year,                            "java/time/Year")                           \
+  template(java_time_Period,                          "java/time/Period")                         \
+  template(java_time_chrono_ChronoLocalDateImpl,      "java/time/chrono/ChronoLocalDateImpl")     \
+  template(java_time_chrono_MinguoDate,               "java/time/chrono/MinguoDate")              \
+  template(java_time_chrono_HijrahDate,               "java/time/chrono/HijrahDate")              \
+  template(java_time_chrono_JapaneseDate,             "java/time/chrono/JapaneseDate")            \
+  template(java_time_chrono_ThaiBuddhistDate,         "java/time/chrono/ThaiBuddhistDate")        \
+                                                                                                  \
   template(jdk_internal_vm_vector_VectorSupport,      "jdk/internal/vm/vector/VectorSupport")     \
   template(jdk_internal_vm_vector_Float16Math,        "jdk/internal/vm/vector/Float16Math")       \
   template(jdk_internal_vm_vector_VectorPayload,      "jdk/internal/vm/vector/VectorSupport$VectorPayload") \
@@ -138,7 +163,6 @@ class SerializeClosure;
   template(java_lang_AssertionStatusDirectives,       "java/lang/AssertionStatusDirectives")      \
   template(jdk_internal_vm_PostVMInitHook,            "jdk/internal/vm/PostVMInitHook")           \
   template(java_util_Iterator,                        "java/util/Iterator")                       \
-  template(java_lang_Record,                          "java/lang/Record")                         \
   template(sun_instrument_InstrumentationImpl,        "sun/instrument/InstrumentationImpl")       \
   template(sun_invoke_util_ValueConversions,          "sun/invoke/util/ValueConversions")         \
                                                                                                   \
@@ -168,6 +192,7 @@ class SerializeClosure;
   template(tag_inner_classes,                         "InnerClasses")                             \
   template(tag_nest_members,                          "NestMembers")                              \
   template(tag_nest_host,                             "NestHost")                                 \
+  template(tag_loadable_descriptors,                  "LoadableDescriptors")                      \
   template(tag_constant_value,                        "ConstantValue")                            \
   template(tag_code,                                  "Code")                                     \
   template(tag_exceptions,                            "Exceptions")                               \
@@ -204,6 +229,7 @@ class SerializeClosure;
   template(java_lang_IllegalCallerException,          "java/lang/IllegalCallerException")         \
   template(java_lang_IllegalStateException,           "java/lang/IllegalStateException")          \
   template(java_lang_IllegalMonitorStateException,    "java/lang/IllegalMonitorStateException")   \
+  template(java_lang_IdentityException,               "java/lang/IdentityException")              \
   template(java_lang_IllegalThreadStateException,     "java/lang/IllegalThreadStateException")    \
   template(java_lang_IndexOutOfBoundsException,       "java/lang/IndexOutOfBoundsException")      \
   template(java_lang_InstantiationException,          "java/lang/InstantiationException")         \
@@ -248,6 +274,8 @@ class SerializeClosure;
   template(java_util_concurrent_locks_AbstractOwnableSynchronizer,           "java/util/concurrent/locks/AbstractOwnableSynchronizer") \
   template(jdk_internal_vm_annotation_Contended_signature,                   "Ljdk/internal/vm/annotation/Contended;")    \
   template(jdk_internal_vm_annotation_ReservedStackAccess_signature,         "Ljdk/internal/vm/annotation/ReservedStackAccess;") \
+  template(jdk_internal_vm_annotation_LooselyConsistentValue_signature,      "Ljdk/internal/vm/annotation/LooselyConsistentValue;") \
+  template(jdk_internal_vm_annotation_NullRestricted_signature,              "Ljdk/internal/vm/annotation/NullRestricted;") \
   template(jdk_internal_ValueBased_signature,                                "Ljdk/internal/ValueBased;") \
                                                                                                   \
   /* class symbols needed by intrinsics */                                                        \
@@ -277,7 +305,6 @@ class SerializeClosure;
   template(returnType_name,                           "returnType")                               \
   template(signature_name,                            "signature")                                \
   template(slot_name,                                 "slot")                                     \
-  template(trusted_final_name,                        "trustedFinal")                             \
   template(blackhole_name,                            "<blackhole>")  /*fake name*/               \
                                                                                                   \
   /* Support for annotations (JDK 1.5 and above) */                                               \
@@ -500,6 +527,9 @@ class SerializeClosure;
   template(module_entry_name,                         "module_entry")                             \
   template(resolved_references_name,                  "<resolved_references>")                    \
   template(init_lock_name,                            "<init_lock>")                              \
+  template(null_reset_value_name,                     ".null_reset")                              \
+  template(acmp_maps_name,                            ".acmp_maps")                               \
+  template(empty_marker_name,                         ".empty")                                   \
   template(address_size_name,                         "ADDRESS_SIZE0")                            \
   template(page_size_name,                            "PAGE_SIZE")                                \
   template(big_endian_name,                           "BIG_ENDIAN")                               \
@@ -576,6 +606,7 @@ class SerializeClosure;
   template(class_int_signature,                       "(Ljava/lang/Class;)I")                     \
   template(class_long_signature,                      "(Ljava/lang/Class;)J")                     \
   template(class_boolean_signature,                   "(Ljava/lang/Class;)Z")                     \
+  template(class_class_signature,                     "(Ljava/lang/Class;)Ljava/lang/Class;")     \
   template(throwable_throwable_signature,             "(Ljava/lang/Throwable;)Ljava/lang/Throwable;")             \
   template(thread_void_signature,                     "(Ljava/lang/Thread;)V")                                    \
   template(runnable_void_signature,                   "(Ljava/lang/Runnable;)V")                                   \
@@ -585,6 +616,7 @@ class SerializeClosure;
   template(string_class_signature,                    "(Ljava/lang/String;)Ljava/lang/Class;")                    \
   template(string_boolean_class_signature,            "(Ljava/lang/String;Z)Ljava/lang/Class;")                   \
   template(object_object_object_signature,            "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;") \
+  template(object_object_boolean_signature,           "(Ljava/lang/Object;Ljava/lang/Object;)Z")                  \
   template(string_string_signature,                   "(Ljava/lang/String;)Ljava/lang/String;")                   \
   template(classloader_class_string_string_long_signature,         "(Ljava/lang/ClassLoader;Ljava/lang/Class;Ljava/lang/String;Ljava/lang/String;)J")             \
   template(byte_array_void_signature,                 "([B)V")                                                    \
@@ -712,6 +744,8 @@ class SerializeClosure;
   template(classRedefinedCount_name,                   "classRedefinedCount")                                     \
   template(classLoader_name,                           "classLoader")                                             \
   template(componentType_name,                         "componentType")                                           \
+  template(primaryType_name,                           "primaryType")                                             \
+  template(secondaryType_name,                         "secondaryType")                                           \
                                                                                                                   \
   /* forEachRemaining support */                                                                                  \
   template(java_util_stream_StreamsRangeIntSpliterator,          "java/util/stream/Streams$RangeIntSpliterator")  \
@@ -740,6 +774,11 @@ class SerializeClosure;
   template(runtimeSetup,                                    "runtimeSetup")                                       \
   template(toFileURL_name,                                  "toFileURL")                                          \
   template(toFileURL_signature,                             "(Ljava/lang/String;)Ljava/net/URL;")                 \
+                                                                                                                  \
+  template(java_lang_runtime_ValueObjectMethods,            "java/lang/runtime/ValueObjectMethods")               \
+  template(isSubstitutable_name,                            "isSubstitutable")                                    \
+  template(valueObjectHashCode_name,                        "valueObjectHashCode")                                \
+  template(jdk_internal_value_ValueClass,                   "jdk/internal/value/ValueClass")                      \
                                                                                                                   \
   /* jcmd Thread.dump_to_file */                                                                                  \
   template(jdk_internal_vm_ThreadDumper,           "jdk/internal/vm/ThreadDumper")                                \
@@ -822,6 +861,10 @@ class vmSymbols: AllStatic {
 
   // Field signatures indexed by BasicType.
   static Symbol* _type_signatures[T_VOID+1];
+  static void initialize_migrated_class_names();
+
+  static const int _migrated_class_names_length = 31;
+  static Symbol* _migrated_class_names[_migrated_class_names_length];
 
  public:
   // Initialization
@@ -857,6 +900,13 @@ class vmSymbols: AllStatic {
   // No need for this in the product:
   static const char* name_for(vmSymbolID sid);
 #endif //PRODUCT
+
+  template<typename Function>
+  static void migrated_class_names_do(Function f) {
+     for (int i = 0; i < _migrated_class_names_length; i++) {
+       f(_migrated_class_names[i]);
+     }
+  }
 };
 
 #endif // SHARE_CLASSFILE_VMSYMBOLS_HPP

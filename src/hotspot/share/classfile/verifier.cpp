@@ -43,12 +43,13 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/constantPool.inline.hpp"
+#include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/fieldDescriptor.hpp"
+#include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -66,6 +67,7 @@
 #define NOFAILOVER_MAJOR_VERSION                       51
 #define NONZERO_PADDING_BYTES_IN_SWITCH_MAJOR_VERSION  51
 #define STATIC_METHOD_IN_INTERFACE_MAJOR_VERSION       52
+#define INLINE_TYPE_MAJOR_VERSION                       56
 #define MAX_ARRAY_DIMENSIONS 255
 
 // Access to external entry for VerifyClassForMajorVersion - old byte code verifier
@@ -476,11 +478,17 @@ void ErrorContext::reason_details(outputStream* ss) const {
     case BAD_LOCAL_INDEX:
       ss->print("Local index %d is invalid", _type.index());
       break;
+    case BAD_STRICT_FIELDS:
+      ss->print("Invalid use of strict instance fields");
+      break;
     case LOCALS_SIZE_MISMATCH:
       ss->print("Current frame's local size doesn't match stackmap.");
       break;
     case STACK_SIZE_MISMATCH:
       ss->print("Current frame's stack size doesn't match stackmap.");
+      break;
+    case STRICT_FIELDS_MISMATCH:
+      ss->print("Current frame's strict instance fields not compatible with stackmap.");
       break;
     case STACK_OVERFLOW:
       ss->print("Exceeded max stack size.");
@@ -493,6 +501,13 @@ void ErrorContext::reason_details(outputStream* ss) const {
       break;
     case BAD_STACKMAP:
       ss->print("Invalid stackmap specification.");
+      break;
+    case WRONG_INLINE_TYPE:
+      ss->print("Type ");
+      _type.details(ss);
+      ss->print(" and type ");
+      _expected.details(ss);
+      ss->print(" must be identical inline types.");
       break;
     case UNKNOWN:
     default:
@@ -616,6 +631,11 @@ TypeOrigin ClassVerifier::ref_ctx(const char* sig) {
   return TypeOrigin::implicit(vt);
 }
 
+static bool supports_strict_fields(InstanceKlass* klass) {
+  int ver = klass->major_version();
+  return ver > Verifier::VALUE_TYPES_MAJOR_VERSION ||
+         (ver == Verifier::VALUE_TYPES_MAJOR_VERSION && klass->minor_version() == Verifier::JAVA_PREVIEW_MINOR_VERSION);
+}
 
 void ClassVerifier::verify_class(TRAPS) {
   log_info(verification)("Verifying class %s with new format", _klass->external_name());
@@ -708,8 +728,23 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
   assert(SignatureVerifier::is_valid_method_signature(m->signature()),
          "Invalid method signature");
 
+  // Collect the initial strict instance fields
+  StackMapFrame::AssertUnsetFieldTable* strict_fields = new StackMapFrame::AssertUnsetFieldTable();
+  if (m->is_object_constructor()) {
+    for (AllFieldStream fs(m->method_holder()); !fs.done(); fs.next()) {
+      if (fs.access_flags().is_strict() && !fs.access_flags().is_static()) {
+        NameAndSig new_field(fs.name(), fs.signature());
+        if (IgnoreAssertUnsetFields) {
+          strict_fields->put(new_field, true);
+        } else {
+          strict_fields->put(new_field, false);
+        }
+      }
+    }
+  }
+
   // Initial stack map frame: offset is 0, stack is initially empty.
-  StackMapFrame current_frame(max_locals, max_stack, this);
+  StackMapFrame current_frame(max_locals, max_stack, strict_fields, this);
   // Set initial locals
   VerificationType return_type = current_frame.set_locals_from_arg( m, current_type());
 
@@ -736,7 +771,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
 
   Array<u1>* stackmap_data = m->stackmap_data();
   StackMapStream stream(stackmap_data);
-  StackMapReader reader(this, &stream, code_data, code_length, &current_frame, max_locals, max_stack, THREAD);
+  StackMapReader reader(this, &stream, code_data, code_length, &current_frame, max_locals, max_stack, strict_fields, THREAD);
   StackMapTable stackmap_table(&reader, CHECK_VERIFY(this));
 
   LogTarget(Debug, verification) lt;
@@ -1672,7 +1707,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
           }
           // Make sure "this" has been initialized if current method is an
           // <init>.
-          if (_method->name() == vmSymbols::object_initializer_name() &&
+          if (_method->is_object_constructor() &&
               current_frame.flag_this_uninit()) {
             verify_error(ErrorContext::bad_code(bci),
                          "Constructor must call super() or this() "
@@ -1695,15 +1730,11 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
         case Bytecodes::_invokevirtual :
         case Bytecodes::_invokespecial :
         case Bytecodes::_invokestatic :
-          verify_invoke_instructions(
-            &bcs, code_length, &current_frame, (bci >= ex_min && bci < ex_max),
-            &this_uninit, return_type, cp, &stackmap_table, CHECK_VERIFY(this));
-          no_control_flow = false; break;
         case Bytecodes::_invokeinterface :
         case Bytecodes::_invokedynamic :
           verify_invoke_instructions(
             &bcs, code_length, &current_frame, (bci >= ex_min && bci < ex_max),
-            &this_uninit, return_type, cp, &stackmap_table, CHECK_VERIFY(this));
+            &this_uninit, cp, &stackmap_table, CHECK_VERIFY(this));
           no_control_flow = false; break;
         case Bytecodes::_new :
         {
@@ -1761,10 +1792,11 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
           no_control_flow = false; break;
         }
         case Bytecodes::_monitorenter :
-        case Bytecodes::_monitorexit :
-          current_frame.pop_stack(
+        case Bytecodes::_monitorexit : {
+          VerificationType ref = current_frame.pop_stack(
             VerificationType::reference_check(), CHECK_VERIFY(this));
           no_control_flow = false; break;
+        }
         case Bytecodes::_multianewarray :
         {
           u2 index = bcs.get_index_u2();
@@ -2142,7 +2174,7 @@ void ClassVerifier::verify_ldc(
   if (opcode == Bytecodes::_ldc || opcode == Bytecodes::_ldc_w) {
     if (!tag.is_unresolved_klass()) {
       types = (1 << JVM_CONSTANT_Integer) | (1 << JVM_CONSTANT_Float)
-            | (1 << JVM_CONSTANT_String)  | (1 << JVM_CONSTANT_Class)
+            | (1 << JVM_CONSTANT_String) | (1 << JVM_CONSTANT_Class)
             | (1 << JVM_CONSTANT_MethodHandle) | (1 << JVM_CONSTANT_MethodType)
             | (1 << JVM_CONSTANT_Dynamic);
       // Note:  The class file parser already verified the legality of
@@ -2317,13 +2349,14 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
   VerificationType ref_class_type = cp_ref_index_to_type(
     index, cp, CHECK_VERIFY(this));
   if (!ref_class_type.is_object() &&
-    (!allow_arrays || !ref_class_type.is_array())) {
+      (!allow_arrays || !ref_class_type.is_array())) {
     verify_error(ErrorContext::bad_type(bcs->bci(),
         TypeOrigin::cp(index, ref_class_type)),
         "Expecting reference to class in class %s at constant pool index %d",
         _klass->external_name(), index);
     return;
   }
+
   VerificationType target_class_type = ref_class_type;
 
   assert(sizeof(VerificationType) == sizeof(uintptr_t),
@@ -2365,13 +2398,32 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
       }
       stack_object_type = current_frame->pop_stack(CHECK_VERIFY(this));
 
-      // The JVMS 2nd edition allows field initialization before the superclass
+      // Field initialization is allowed before the superclass
       // initializer, if the field is defined within the current class.
       fieldDescriptor fd;
-      if (stack_object_type == VerificationType::uninitialized_this_type() &&
-          target_class_type.equals(current_type()) &&
-          _klass->find_local_field(field_name, field_sig, &fd)) {
-        stack_object_type = current_type();
+      bool is_local_field = _klass->find_local_field(field_name, field_sig, &fd) &&
+                            target_class_type.equals(current_type());
+      if (stack_object_type == VerificationType::uninitialized_this_type()) {
+        if (is_local_field) {
+          // Set the type to the current type so the is_assignable check passes.
+          stack_object_type = current_type();
+
+          if (fd.access_flags().is_strict()) {
+            if (!current_frame->satisfy_unset_field(fd.name(), fd.signature())) {
+              log_info(verification)("Attempting to initialize field not found in initial strict instance fields: %s%s",
+                                     fd.name()->as_C_string(), fd.signature()->as_C_string());
+              verify_error(ErrorContext::bad_strict_fields(bci, current_frame),
+                           "Initializing unknown strict field: %s:%s", fd.name()->as_C_string(), fd.signature()->as_C_string());
+            }
+          }
+        }
+      } else if (supports_strict_fields(_klass)) {
+        // `strict` fields are not writable, but only local fields produce verification errors
+        if (is_local_field && fd.access_flags().is_strict() && fd.access_flags().is_final()) {
+          verify_error(ErrorContext::bad_code(bci),
+                       "Illegal use of putfield on a strict field");
+          return;
+        }
       }
       is_assignable = target_class_type.is_assignable_from(
         stack_object_type, this, false, CHECK_VERIFY(this));
@@ -2450,6 +2502,13 @@ void ClassVerifier::verify_invoke_init(
           TypeOrigin::implicit(current_type())),
           "Bad <init> method call");
       return;
+    } else if (ref_class_type.name() == superk->name()) {
+      // Strict final fields must be satisfied by this point
+      if (!current_frame->verify_unset_fields_satisfied()) {
+        log_info(verification)("Strict instance fields not initialized");
+        StackMapFrame::print_strict_fields(current_frame->assert_unset_fields());
+        current_frame->unsatisfied_strict_fields_error(current_class(), bci);
+      }
     }
 
     // If this invokespecial call is done from inside of a TRY block then make
@@ -2554,7 +2613,7 @@ bool ClassVerifier::is_same_or_direct_interface(
 
 void ClassVerifier::verify_invoke_instructions(
     RawBytecodeStream* bcs, u4 code_length, StackMapFrame* current_frame,
-    bool in_try_block, bool *this_uninit, VerificationType return_type,
+    bool in_try_block, bool *this_uninit,
     const constantPoolHandle& cp, StackMapTable* stackmap_table, TRAPS) {
   // Make sure the constant pool item is the right type
   u2 index = bcs->get_index_u2();
@@ -2586,7 +2645,7 @@ void ClassVerifier::verify_invoke_instructions(
   assert(SignatureVerifier::is_valid_method_signature(method_sig),
          "Invalid method signature");
 
-  // Get referenced class type
+  // Get referenced class
   VerificationType ref_class_type;
   if (opcode == Bytecodes::_invokedynamic) {
     if (_klass->major_version() < Verifier::INVOKEDYNAMIC_MAJOR_VERSION) {
@@ -2652,9 +2711,10 @@ void ClassVerifier::verify_invoke_instructions(
   }
 
   if (method_name->char_at(0) == JVM_SIGNATURE_SPECIAL) {
-    // Make sure <init> can only be invoked by invokespecial
+    // Make sure:
+    //   <init> can only be invoked by invokespecial.
     if (opcode != Bytecodes::_invokespecial ||
-        method_name != vmSymbols::object_initializer_name()) {
+          method_name != vmSymbols::object_initializer_name()) {
       verify_error(ErrorContext::bad_code(bci),
           "Illegal call to internal method");
       return;
@@ -2664,7 +2724,7 @@ void ClassVerifier::verify_invoke_instructions(
   // or any superclass (including Object).
   else if (opcode == Bytecodes::_invokespecial
            && !is_same_or_direct_interface(current_class(), current_type(), ref_class_type)
-           && !ref_class_type.equals(VerificationType::reference_type(current_class()->super()->name()))) {
+           && !ref_class_type.equals(VerificationType::reference_type(current_class()->super()->name()))) { // super() can never be an inline_type.
 
     // We know it is not current class, direct superinterface or immediate superclass. That means it
     // could be:
@@ -2764,9 +2824,7 @@ void ClassVerifier::verify_invoke_instructions(
   int sig_verif_types_len = sig_verif_types->length();
   if (sig_verif_types_len > nargs) {  // There's a return type
     if (method_name == vmSymbols::object_initializer_name()) {
-      // <init> method must have a void return type
-      /* Unreachable?  Class file parser verifies that methods with '<' have
-       * void return */
+      // an <init> method must have a void return type
       verify_error(ErrorContext::bad_code(bci),
           "Return type must be void in <init> method");
       return;

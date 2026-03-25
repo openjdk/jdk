@@ -35,6 +35,7 @@
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/inlineKlass.hpp"
 #include "oops/markWord.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/methodData.hpp"
@@ -59,6 +60,9 @@
 #include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/formatBuffer.hpp"
+#ifdef COMPILER1
+#include "c1/c1_Runtime1.hpp"
+#endif
 
 RegisterMap::RegisterMap(JavaThread *thread, UpdateMap update_map, ProcessFrames process_frames, WalkContinuation walk_cont) {
   _thread         = thread;
@@ -361,6 +365,25 @@ void frame::deoptimize(JavaThread* thread) {
 
   // Save the original pc before we patch in the new one
   nm->set_original_pc(this, pc());
+
+#ifdef COMPILER1
+  if (nm->is_compiled_by_c1() && nm->method()->has_scalarized_args() &&
+      pc() < nm->verified_inline_entry_point()) {
+    // The VEP and VIEP(RO) of C1-compiled methods call into the runtime to buffer scalarized value
+    // type args. We can't deoptimize at that point because the buffers have not yet been initialized.
+    // Also, if the method is synchronized, we first need to acquire the lock.
+    // Don't patch the return pc to delay deoptimization until we enter the method body (the check
+    // added in LIRGenerator::do_Base will detect the pending deoptimization by checking the original_pc).
+#if defined ASSERT && !defined AARCH64   // Stub call site does not look like NativeCall on AArch64
+    NativeCall* call = nativeCall_before(this->pc());
+    address dest = call->destination();
+    assert(dest == Runtime1::entry_for(StubId::c1_buffer_inline_args_no_receiver_id) ||
+           dest == Runtime1::entry_for(StubId::c1_buffer_inline_args_id), "unexpected safepoint in entry point");
+#endif
+    return;
+  }
+#endif
+
   patch_pc(thread, deopt);
   assert(is_deoptimized_frame(), "must be");
 
@@ -771,7 +794,9 @@ class InterpreterFrameClosure : public OffsetClosure {
     if (offset < _max_locals) {
       addr = (oop*) _fr->interpreter_frame_local_at(offset);
       assert((intptr_t*)addr >= _fr->sp(), "must be inside the frame");
-      _f->do_oop(addr);
+      if (_f != nullptr) {
+        _f->do_oop(addr);
+      }
     } else {
       addr = (oop*) _fr->interpreter_frame_expression_stack_at((offset - _max_locals));
       // In case of exceptions, the expression stack is invalid and the esp will be reset to express
@@ -783,7 +808,9 @@ class InterpreterFrameClosure : public OffsetClosure {
         in_stack = (intptr_t*)addr >= _fr->interpreter_frame_tos_address();
       }
       if (in_stack) {
-        _f->do_oop(addr);
+        if (_f != nullptr) {
+          _f->do_oop(addr);
+        }
       }
     }
   }
@@ -1012,6 +1039,7 @@ class CompiledArgumentOopFinder: public SignatureIterator {
   virtual void handle_oop_offset() {
     // Extract low order register number from register array.
     // In LP64-land, the high-order bits are valid but unhelpful.
+    assert(_offset < _arg_size, "out of bounds");
     VMReg reg = _regs[_offset].first();
     oop *loc = _fr.oopmapreg_to_oop_location(reg, _reg_map);
   #ifdef ASSERT
@@ -1038,11 +1066,7 @@ class CompiledArgumentOopFinder: public SignatureIterator {
     _has_appendix = has_appendix;
     _fr        = fr;
     _reg_map   = (RegisterMap*)reg_map;
-    _arg_size  = ArgumentSizeComputer(signature).size() + (has_receiver ? 1 : 0) + (has_appendix ? 1 : 0);
-
-    int arg_size;
-    _regs = SharedRuntime::find_callee_arguments(signature, has_receiver, has_appendix, &arg_size);
-    assert(arg_size == _arg_size, "wrong arg size");
+    _regs = SharedRuntime::find_callee_arguments(signature, has_receiver, has_appendix, &_arg_size);
   }
 
   void oops_do() {
@@ -1422,8 +1446,8 @@ void frame::describe(FrameValues& values, int frame_no, const RegisterMap* reg_m
     // For now just label the frame
     nmethod* nm = cb()->as_nmethod();
     values.describe(-1, info_address,
-                    FormatBuffer<1024>("#%d nmethod " INTPTR_FORMAT " for method J %s%s", frame_no,
-                                       p2i(nm),
+                    FormatBuffer<1024>("#%d nmethod (%s %d) " INTPTR_FORMAT " for method J %s%s", frame_no,
+                                       nm->is_compiled_by_c1() ? "c1" : "c2", nm->frame_size(), p2i(nm),
                                        nm->method()->name_and_sig_as_C_string(),
                                        (_deopt_state == is_deoptimized) ?
                                        " (deoptimized)" :
@@ -1433,36 +1457,18 @@ void frame::describe(FrameValues& values, int frame_no, const RegisterMap* reg_m
     { // mark arguments (see nmethod::print_nmethod_labels)
       Method* m = nm->method();
 
-      int stack_slot_offset = nm->frame_size() * wordSize; // offset, in bytes, to caller sp
-      int sizeargs = m->size_of_parameters();
+      CompiledEntrySignature ces(m);
+      ces.compute_calling_conventions(false);
+      const GrowableArray<SigEntry>* sig_cc = nm->is_compiled_by_c2() ? ces.sig_cc() : ces.sig();
+      const VMRegPair* regs = nm->is_compiled_by_c2() ? ces.regs_cc() : ces.regs();
 
-      BasicType* sig_bt = NEW_RESOURCE_ARRAY(BasicType, sizeargs);
-      VMRegPair* regs   = NEW_RESOURCE_ARRAY(VMRegPair, sizeargs);
-      {
-        int sig_index = 0;
-        if (!m->is_static()) {
-          sig_bt[sig_index++] = T_OBJECT; // 'this'
-        }
-        for (SignatureStream ss(m->signature()); !ss.at_return_type(); ss.next()) {
-          BasicType t = ss.type();
-          assert(type2size[t] == 1 || type2size[t] == 2, "size is 1 or 2");
-          sig_bt[sig_index++] = t;
-          if (type2size[t] == 2) {
-            sig_bt[sig_index++] = T_VOID;
-          }
-        }
-        assert(sig_index == sizeargs, "");
-      }
-      int stack_arg_slots = SharedRuntime::java_calling_convention(sig_bt, regs, sizeargs);
-      assert(stack_arg_slots ==  nm->as_nmethod()->num_stack_arg_slots(false /* rounded */) || nm->is_osr_method(), "");
+      int stack_slot_offset = nm->frame_size() * wordSize; // offset, in bytes, to caller sp
       int out_preserve = SharedRuntime::out_preserve_stack_slots();
       int sig_index = 0;
       int arg_index = (m->is_static() ? 0 : -1);
-      for (SignatureStream ss(m->signature()); !ss.at_return_type(); ) {
+      for (ExtendedSignature sig = ExtendedSignature(sig_cc, SigEntryFilter()); !sig.at_end(); ++sig) {
         bool at_this = (arg_index == -1);
-        bool at_old_sp = false;
-        BasicType t = (at_this ? T_OBJECT : ss.type());
-        assert(t == sig_bt[sig_index], "sigs in sync");
+        BasicType t = (*sig)._bt;
         VMReg fst = regs[sig_index].first();
         if (fst->is_stack()) {
           assert(((int)fst->reg2stack()) >= 0, "reg2stack: %d", fst->reg2stack());
@@ -1476,9 +1482,6 @@ void frame::describe(FrameValues& values, int frame_no, const RegisterMap* reg_m
         }
         sig_index += type2size[t];
         arg_index += 1;
-        if (!at_this) {
-          ss.next();
-        }
       }
     }
 

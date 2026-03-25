@@ -31,6 +31,7 @@
 #include "utilities/macros.hpp"
 
 class Compilation;
+class CompiledEntrySignature;
 class ScopeValue;
 
 class LIR_Assembler: public CompilationResourceObj {
@@ -47,6 +48,7 @@ class LIR_Assembler: public CompilationResourceObj {
   int                _immediate_oops_patched;
 
   Label              _unwind_handler_entry;
+  Label              _verified_inline_entry;
 
 #ifdef ASSERT
   BlockList          _branch_target_blocks;
@@ -91,6 +93,10 @@ class LIR_Assembler: public CompilationResourceObj {
 
   void emit_stubs(CodeStubList* stub_list);
 
+  bool needs_stack_repair() const {
+    return compilation()->needs_stack_repair();
+  }
+
  public:
   // addresses
   Address as_Address(LIR_Address* addr);
@@ -98,7 +104,7 @@ class LIR_Assembler: public CompilationResourceObj {
   Address as_Address_hi(LIR_Address* addr);
 
   // debug information
-  void add_call_info(int pc_offset, CodeEmitInfo* cinfo);
+  void add_call_info(int pc_offset, CodeEmitInfo* cinfo, bool maybe_return_as_fields = false);
   void add_debug_info_for_branch(CodeEmitInfo* info);
   void add_debug_info_for_div0(int pc_offset, CodeEmitInfo* cinfo);
   void add_debug_info_for_div0_here(CodeEmitInfo* info);
@@ -195,6 +201,9 @@ class LIR_Assembler: public CompilationResourceObj {
   void emit_alloc_obj(LIR_OpAllocObj* op);
   void emit_alloc_array(LIR_OpAllocArray* op);
   void emit_opTypeCheck(LIR_OpTypeCheck* op);
+  void emit_opFlattenedArrayCheck(LIR_OpFlattenedArrayCheck* op);
+  void emit_opNullFreeArrayCheck(LIR_OpNullFreeArrayCheck* op);
+  void emit_opSubstitutabilityCheck(LIR_OpSubstitutabilityCheck* op);
   void emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, Label* failure, Label* obj_is_null);
   void emit_compare_and_swap(LIR_OpCompareAndSwap* op);
   void emit_lock(LIR_OpLock* op);
@@ -203,6 +212,10 @@ class LIR_Assembler: public CompilationResourceObj {
   void emit_rtcall(LIR_OpRTCall* op);
   void emit_profile_call(LIR_OpProfileCall* op);
   void emit_profile_type(LIR_OpProfileType* op);
+  void emit_profile_inline_type(LIR_OpProfileInlineType* op);
+  void emit_std_entries();
+  void emit_std_entry(CodeOffsets::Entries entry, const CompiledEntrySignature* ces);
+  void add_scalarized_entry_info(int call_offset);
 
   void arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr dest, CodeEmitInfo* info);
   void arithmetic_idiv(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr temp, LIR_Opr result, CodeEmitInfo* info);
@@ -223,6 +236,7 @@ class LIR_Assembler: public CompilationResourceObj {
   void call(        LIR_OpJavaCall* op, relocInfo::relocType rtype);
   void ic_call(     LIR_OpJavaCall* op);
   void vtable_call( LIR_OpJavaCall* op);
+  int  store_inline_type_fields_to_buf(ciInlineKlass* vk);
 
   void osr_entry();
 
@@ -249,6 +263,7 @@ class LIR_Assembler: public CompilationResourceObj {
   void membar_storeload();
   void on_spin_wait();
   void get_thread(LIR_Opr result);
+  void check_orig_pc();
 
   void verify_oop_map(CodeEmitInfo* info);
 

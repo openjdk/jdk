@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,24 +24,22 @@
 /*
  * @test
  * @bug 8205612
- * @run junit CallWithInterruptSet
+ * @run testng CallWithInterruptSet
  * @summary Test invoking Files methods with the interrupted status set
  */
 
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.testng.annotations.Test;
+import static org.testng.Assert.*;
 
 public class CallWithInterruptSet {
 
@@ -51,7 +49,7 @@ public class CallWithInterruptSet {
         Thread.currentThread().interrupt();
         try {
             byte[] bytes = Files.readAllBytes(file);
-            assertEquals(100, bytes.length);
+            assertTrue(bytes.length == 100);
         } finally {
             assertTrue(Thread.interrupted());  // clear interrupt
         }
@@ -78,7 +76,7 @@ public class CallWithInterruptSet {
         } finally {
             assertTrue(Thread.interrupted());  // clear interrupt
         }
-        assertEquals(10, Files.size(file));
+        assertTrue(Files.size(file) == 10);
     }
 
     @Test
@@ -88,7 +86,7 @@ public class CallWithInterruptSet {
         Thread.currentThread().interrupt();
         try {
             String msg = Files.readString(file);
-            assertEquals("hello", msg);
+            assertEquals(msg, "hello");
         } finally {
             assertTrue(Thread.interrupted());  // clear interrupt
         }
@@ -104,7 +102,7 @@ public class CallWithInterruptSet {
             assertTrue(Thread.interrupted());  // clear interrupt
         }
         String msg = Files.readString(file);
-        assertEquals("hello", msg);
+        assertEquals(msg, "hello");
     }
 
     @Test
@@ -114,7 +112,7 @@ public class CallWithInterruptSet {
         Thread.currentThread().interrupt();
         try (BufferedReader reader = Files.newBufferedReader(file)) {
             String msg = reader.readLine();
-            assertEquals("hello", msg);
+            assertEquals(msg, "hello");
         } finally {
             assertTrue(Thread.interrupted());  // clear interrupt
         }
@@ -130,7 +128,7 @@ public class CallWithInterruptSet {
             assertTrue(Thread.interrupted());  // clear interrupt
         }
         String msg = Files.readString(file);
-        assertEquals("hello", msg);
+        assertEquals(msg, "hello");
     }
 
     private Path mkfile() throws IOException {

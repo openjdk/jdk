@@ -1,0 +1,744 @@
+/*
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+// Generated from the following class files with PointN.x renamed and RectangleP.p1 made private
+// java org.openjdk.asmtools.Main jdec NamedRectangleN.class NamedRectangleP.class PointN.class RectangleN.class RectangleP.class
+
+/*
+package compiler.valhalla.inlinetypes;
+
+import jdk.internal.vm.annotation.LooselyConsistentValue;
+import jdk.internal.vm.annotation.NullRestricted;
+
+@LooselyConsistentValue
+value class PointN {
+    int x; // Removed
+    int y;
+
+    PointN(int i, int j) {
+        x = i;
+        y = j;
+    }
+}
+
+@LooselyConsistentValue
+value class RectangleN {
+    @NullRestricted
+    PointN p1 = new PointN(4, 7);
+}
+
+class NamedRectangleN {
+    @NullRestricted
+    RectangleN rect = new RectangleN();
+    String name = "";
+
+    static int getP1X(NamedRectangleN nr) {
+        return nr.rect.p1.x;
+    }
+}
+
+@LooselyConsistentValue
+value class RectangleP {
+    @NullRestricted
+    PointN p1 = new PointN(4, 7); // Made private
+}
+
+class NamedRectangleP {
+    @NullRestricted
+    RectangleP rect = new RectangleP();
+    String name = "";
+
+    static int getP1Y(NamedRectangleP nr) {
+        return nr.rect.p1.y;
+    }
+}
+
+*/
+
+class compiler/valhalla/inlinetypes/NamedRectangleN {
+  0xCAFEBABE;
+  65535; // minor version
+  71; // version
+  [] { // Constant Pool
+    ; // first element is empty
+    class #2; // #1
+    Utf8 "compiler/valhalla/inlinetypes/RectangleN"; // #2
+    Method #1 #4; // #3
+    NameAndType #5 #6; // #4
+    Utf8 "<init>"; // #5
+    Utf8 "()V"; // #6
+    Field #8 #9; // #7
+    class #10; // #8
+    NameAndType #11 #12; // #9
+    Utf8 "compiler/valhalla/inlinetypes/NamedRectangleN"; // #10
+    Utf8 "rect"; // #11
+    Utf8 "Lcompiler/valhalla/inlinetypes/RectangleN;"; // #12
+    String #14; // #13
+    Utf8 ""; // #14
+    Field #8 #16; // #15
+    NameAndType #17 #18; // #16
+    Utf8 "name"; // #17
+    Utf8 "Ljava/lang/String;"; // #18
+    Method #20 #4; // #19
+    class #21; // #20
+    Utf8 "java/lang/Object"; // #21
+    Field #1 #23; // #22
+    NameAndType #24 #25; // #23
+    Utf8 "p1"; // #24
+    Utf8 "Lcompiler/valhalla/inlinetypes/PointN;"; // #25
+    Field #27 #28; // #26
+    class #29; // #27
+    NameAndType #30 #31; // #28
+    Utf8 "compiler/valhalla/inlinetypes/PointN"; // #29
+    Utf8 "x"; // #30
+    Utf8 "I"; // #31
+    Utf8 "RuntimeVisibleAnnotations"; // #32
+    Utf8 "Ljdk/internal/vm/annotation/NullRestricted;"; // #33
+    Utf8 "RuntimeInvisibleAnnotations"; // #34
+    Utf8 "Ljdk/internal/vm/annotation/Strict;"; // #35
+    Utf8 "Code"; // #36
+    Utf8 "LineNumberTable"; // #37
+    Utf8 "getP1X"; // #38
+    Utf8 "(Lcompiler/valhalla/inlinetypes/NamedRectangleN;)I"; // #39
+    Utf8 "SourceFile"; // #40
+    Utf8 "PointN.java"; // #41
+    Utf8 "LoadableDescriptors"; // #42
+  } // Constant Pool
+
+  0x0020; // access
+  #8;// this_cpx
+  #20;// super_cpx
+
+  [] { // Interfaces
+  } // Interfaces
+
+  [] { // Fields
+    {  // field
+      0x0800; // access
+      #11; // name_index
+      #12; // descriptor_index
+      [] { // Attributes
+        Attr(#32) { // RuntimeVisibleAnnotations
+          [] { // annotations
+            {  //  annotation
+              #33;
+              [] { // element_value_pairs
+              }  //  element_value_pairs
+            }  //  annotation
+          }
+        } // end RuntimeVisibleAnnotations
+        ;
+        Attr(#34) { // RuntimeInvisibleAnnotations
+          [] { // annotations
+            {  //  annotation
+              #35;
+              [] { // element_value_pairs
+              }  //  element_value_pairs
+            }  //  annotation
+          }
+        } // end RuntimeInvisibleAnnotations
+      } // Attributes
+    }
+    ;
+    {  // field
+      0x0000; // access
+      #17; // name_index
+      #18; // descriptor_index
+      [] { // Attributes
+      } // Attributes
+    }
+  } // Fields
+
+  [] { // Methods
+    {  // method
+      0x0000; // access
+      #5; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+        Attr(#36) { // Code
+          3; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x2ABB000159B70003;
+            0xB500072A120DB500;
+            0x0F2AB70013B1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#37) { // LineNumberTable
+              [] { // line_number_table
+                0  26;
+                11  29;
+                17  25;
+                21  29;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+    ;
+    {  // method
+      0x0008; // access
+      #38; // name_index
+      #39; // descriptor_index
+      [] { // Attributes
+        Attr(#36) { // Code
+          1; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x2AB40007B40016B4;
+            0x001AAC;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#37) { // LineNumberTable
+              [] { // line_number_table
+                0  32;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+  } // Methods
+
+  [] { // Attributes
+    Attr(#40) { // SourceFile
+      #41;
+    } // end SourceFile
+    ;
+    Attr(#42) { // LoadableDescriptors
+      0x0001000C;
+    } // end LoadableDescriptors
+  } // Attributes
+} // end class compiler/valhalla/inlinetypes/NamedRectangleN
+
+class compiler/valhalla/inlinetypes/NamedRectangleP {
+  0xCAFEBABE;
+  65535; // minor version
+  71; // version
+  [] { // Constant Pool
+    ; // first element is empty
+    class #2; // #1
+    Utf8 "compiler/valhalla/inlinetypes/RectangleP"; // #2
+    Method #1 #4; // #3
+    NameAndType #5 #6; // #4
+    Utf8 "<init>"; // #5
+    Utf8 "()V"; // #6
+    Field #8 #9; // #7
+    class #10; // #8
+    NameAndType #11 #12; // #9
+    Utf8 "compiler/valhalla/inlinetypes/NamedRectangleP"; // #10
+    Utf8 "rect"; // #11
+    Utf8 "Lcompiler/valhalla/inlinetypes/RectangleP;"; // #12
+    String #14; // #13
+    Utf8 ""; // #14
+    Field #8 #16; // #15
+    NameAndType #17 #18; // #16
+    Utf8 "name"; // #17
+    Utf8 "Ljava/lang/String;"; // #18
+    Method #20 #4; // #19
+    class #21; // #20
+    Utf8 "java/lang/Object"; // #21
+    Field #1 #23; // #22
+    NameAndType #24 #25; // #23
+    Utf8 "p1"; // #24
+    Utf8 "Lcompiler/valhalla/inlinetypes/PointN;"; // #25
+    Field #27 #28; // #26
+    class #29; // #27
+    NameAndType #30 #31; // #28
+    Utf8 "compiler/valhalla/inlinetypes/PointN"; // #29
+    Utf8 "y"; // #30
+    Utf8 "I"; // #31
+    Utf8 "RuntimeVisibleAnnotations"; // #32
+    Utf8 "Ljdk/internal/vm/annotation/NullRestricted;"; // #33
+    Utf8 "RuntimeInvisibleAnnotations"; // #34
+    Utf8 "Ljdk/internal/vm/annotation/Strict;"; // #35
+    Utf8 "Code"; // #36
+    Utf8 "LineNumberTable"; // #37
+    Utf8 "getP1Y"; // #38
+    Utf8 "(Lcompiler/valhalla/inlinetypes/NamedRectangleP;)I"; // #39
+    Utf8 "SourceFile"; // #40
+    Utf8 "PointN.java"; // #41
+    Utf8 "LoadableDescriptors"; // #42
+  } // Constant Pool
+
+  0x0020; // access
+  #8;// this_cpx
+  #20;// super_cpx
+
+  [] { // Interfaces
+  } // Interfaces
+
+  [] { // Fields
+    {  // field
+      0x0800; // access
+      #11; // name_index
+      #12; // descriptor_index
+      [] { // Attributes
+        Attr(#32) { // RuntimeVisibleAnnotations
+          [] { // annotations
+            {  //  annotation
+              #33;
+              [] { // element_value_pairs
+              }  //  element_value_pairs
+            }  //  annotation
+          }
+        } // end RuntimeVisibleAnnotations
+        ;
+        Attr(#34) { // RuntimeInvisibleAnnotations
+          [] { // annotations
+            {  //  annotation
+              #35;
+              [] { // element_value_pairs
+              }  //  element_value_pairs
+            }  //  annotation
+          }
+        } // end RuntimeInvisibleAnnotations
+      } // Attributes
+    }
+    ;
+    {  // field
+      0x0000; // access
+      #17; // name_index
+      #18; // descriptor_index
+      [] { // Attributes
+      } // Attributes
+    }
+  } // Fields
+
+  [] { // Methods
+    {  // method
+      0x0000; // access
+      #5; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+        Attr(#36) { // Code
+          3; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x2ABB000159B70003;
+            0xB500072A120DB500;
+            0x0F2AB70013B1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#37) { // LineNumberTable
+              [] { // line_number_table
+                0  44;
+                11  47;
+                17  43;
+                21  47;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+    ;
+    {  // method
+      0x0008; // access
+      #38; // name_index
+      #39; // descriptor_index
+      [] { // Attributes
+        Attr(#36) { // Code
+          1; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x2AB40007B40016B4;
+            0x001AAC;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#37) { // LineNumberTable
+              [] { // line_number_table
+                0  50;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+  } // Methods
+
+  [] { // Attributes
+    Attr(#40) { // SourceFile
+      #41;
+    } // end SourceFile
+    ;
+    Attr(#42) { // LoadableDescriptors
+      0x0001000C;
+    } // end LoadableDescriptors
+  } // Attributes
+} // end class compiler/valhalla/inlinetypes/NamedRectangleP
+
+class compiler/valhalla/inlinetypes/PointN {
+  0xCAFEBABE;
+  65535; // minor version
+  71; // version
+  [] { // Constant Pool
+    ; // first element is empty
+    Field #2 #3; // #1
+    class #4; // #2
+    NameAndType #5 #6; // #3
+    Utf8 "compiler/valhalla/inlinetypes/PointN"; // #4
+    Utf8 "x0"; // #5
+    Utf8 "I"; // #6
+    Field #2 #8; // #7
+    NameAndType #9 #6; // #8
+    Utf8 "y"; // #9
+    Method #11 #12; // #10
+    class #13; // #11
+    NameAndType #14 #15; // #12
+    Utf8 "java/lang/Object"; // #13
+    Utf8 "<init>"; // #14
+    Utf8 "()V"; // #15
+    Utf8 "(II)V"; // #16
+    Utf8 "Code"; // #17
+    Utf8 "LineNumberTable"; // #18
+    Utf8 "SourceFile"; // #19
+    Utf8 "PointN.java"; // #20
+    Utf8 "RuntimeVisibleAnnotations"; // #21
+    Utf8 "Ljdk/internal/vm/annotation/LooselyConsistentValue;"; // #22
+  } // Constant Pool
+
+  0x0010; // access
+  #2;// this_cpx
+  #11;// super_cpx
+
+  [] { // Interfaces
+  } // Interfaces
+
+  [] { // Fields
+    {  // field
+      0x0810; // access
+      #5; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+      } // Attributes
+    }
+    ;
+    {  // field
+      0x0810; // access
+      #9; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+      } // Attributes
+    }
+  } // Fields
+
+  [] { // Methods
+    {  // method
+      0x0000; // access
+      #14; // name_index
+      #16; // descriptor_index
+      [] { // Attributes
+        Attr(#17) { // Code
+          2; // max_stack
+          3; // max_locals
+          Bytes[]{
+            0x2A1BB500012A1CB5;
+            0x00072AB7000AB1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#18) { // LineNumberTable
+              [] { // line_number_table
+                0  13;
+                5  14;
+                10  12;
+                14  15;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+  } // Methods
+
+  [] { // Attributes
+    Attr(#19) { // SourceFile
+      #20;
+    } // end SourceFile
+    ;
+    Attr(#21) { // RuntimeVisibleAnnotations
+      [] { // annotations
+        {  //  annotation
+          #22;
+          [] { // element_value_pairs
+          }  //  element_value_pairs
+        }  //  annotation
+      }
+    } // end RuntimeVisibleAnnotations
+  } // Attributes
+} // end class compiler/valhalla/inlinetypes/PointN
+
+class compiler/valhalla/inlinetypes/RectangleN {
+  0xCAFEBABE;
+  65535; // minor version
+  71; // version
+  [] { // Constant Pool
+    ; // first element is empty
+    class #2; // #1
+    Utf8 "compiler/valhalla/inlinetypes/PointN"; // #2
+    Method #1 #4; // #3
+    NameAndType #5 #6; // #4
+    Utf8 "<init>"; // #5
+    Utf8 "(II)V"; // #6
+    Field #8 #9; // #7
+    class #10; // #8
+    NameAndType #11 #12; // #9
+    Utf8 "compiler/valhalla/inlinetypes/RectangleN"; // #10
+    Utf8 "p1"; // #11
+    Utf8 "Lcompiler/valhalla/inlinetypes/PointN;"; // #12
+    Method #14 #15; // #13
+    class #16; // #14
+    NameAndType #5 #17; // #15
+    Utf8 "java/lang/Object"; // #16
+    Utf8 "()V"; // #17
+    Utf8 "RuntimeVisibleAnnotations"; // #18
+    Utf8 "Ljdk/internal/vm/annotation/NullRestricted;"; // #19
+    Utf8 "RuntimeInvisibleAnnotations"; // #20
+    Utf8 "Ljdk/internal/vm/annotation/Strict;"; // #21
+    Utf8 "Code"; // #22
+    Utf8 "LineNumberTable"; // #23
+    Utf8 "SourceFile"; // #24
+    Utf8 "PointN.java"; // #25
+    Utf8 "Ljdk/internal/vm/annotation/LooselyConsistentValue;"; // #26
+    Utf8 "LoadableDescriptors"; // #27
+  } // Constant Pool
+
+  0x0010; // access
+  #8;// this_cpx
+  #14;// super_cpx
+
+  [] { // Interfaces
+  } // Interfaces
+
+  [] { // Fields
+    {  // field
+      0x0810; // access
+      #11; // name_index
+      #12; // descriptor_index
+      [] { // Attributes
+        Attr(#18) { // RuntimeVisibleAnnotations
+          [] { // annotations
+            {  //  annotation
+              #19;
+              [] { // element_value_pairs
+              }  //  element_value_pairs
+            }  //  annotation
+          }
+        } // end RuntimeVisibleAnnotations
+        ;
+        Attr(#20) { // RuntimeInvisibleAnnotations
+          [] { // annotations
+            {  //  annotation
+              #21;
+              [] { // element_value_pairs
+              }  //  element_value_pairs
+            }  //  annotation
+          }
+        } // end RuntimeInvisibleAnnotations
+      } // Attributes
+    }
+  } // Fields
+
+  [] { // Methods
+    {  // method
+      0x0000; // access
+      #5; // name_index
+      #17; // descriptor_index
+      [] { // Attributes
+        Attr(#22) { // Code
+          5; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x2ABB000159071007;
+            0xB70003B500072AB7;
+            0x000DB1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#23) { // LineNumberTable
+              [] { // line_number_table
+                0  20;
+                14  19;
+                18  20;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+  } // Methods
+
+  [] { // Attributes
+    Attr(#24) { // SourceFile
+      #25;
+    } // end SourceFile
+    ;
+    Attr(#18) { // RuntimeVisibleAnnotations
+      [] { // annotations
+        {  //  annotation
+          #26;
+          [] { // element_value_pairs
+          }  //  element_value_pairs
+        }  //  annotation
+      }
+    } // end RuntimeVisibleAnnotations
+    ;
+    Attr(#27) { // LoadableDescriptors
+      0x0001000C;
+    } // end LoadableDescriptors
+  } // Attributes
+} // end class compiler/valhalla/inlinetypes/RectangleN
+
+class compiler/valhalla/inlinetypes/RectangleP {
+  0xCAFEBABE;
+  65535; // minor version
+  71; // version
+  [] { // Constant Pool
+    ; // first element is empty
+    class #2; // #1
+    Utf8 "compiler/valhalla/inlinetypes/PointN"; // #2
+    Method #1 #4; // #3
+    NameAndType #5 #6; // #4
+    Utf8 "<init>"; // #5
+    Utf8 "(II)V"; // #6
+    Field #8 #9; // #7
+    class #10; // #8
+    NameAndType #11 #12; // #9
+    Utf8 "compiler/valhalla/inlinetypes/RectangleP"; // #10
+    Utf8 "p1"; // #11
+    Utf8 "Lcompiler/valhalla/inlinetypes/PointN;"; // #12
+    Method #14 #15; // #13
+    class #16; // #14
+    NameAndType #5 #17; // #15
+    Utf8 "java/lang/Object"; // #16
+    Utf8 "()V"; // #17
+    Utf8 "RuntimeVisibleAnnotations"; // #18
+    Utf8 "Ljdk/internal/vm/annotation/NullRestricted;"; // #19
+    Utf8 "RuntimeInvisibleAnnotations"; // #20
+    Utf8 "Ljdk/internal/vm/annotation/Strict;"; // #21
+    Utf8 "Code"; // #22
+    Utf8 "LineNumberTable"; // #23
+    Utf8 "SourceFile"; // #24
+    Utf8 "PointN.java"; // #25
+    Utf8 "Ljdk/internal/vm/annotation/LooselyConsistentValue;"; // #26
+    Utf8 "LoadableDescriptors"; // #27
+  } // Constant Pool
+
+  0x0010; // access
+  #8;// this_cpx
+  #14;// super_cpx
+
+  [] { // Interfaces
+  } // Interfaces
+
+  [] { // Fields
+    {  // field
+      0x0812; // access
+      #11; // name_index
+      #12; // descriptor_index
+      [] { // Attributes
+        Attr(#18) { // RuntimeVisibleAnnotations
+          [] { // annotations
+            {  //  annotation
+              #19;
+              [] { // element_value_pairs
+              }  //  element_value_pairs
+            }  //  annotation
+          }
+        } // end RuntimeVisibleAnnotations
+        ;
+        Attr(#20) { // RuntimeInvisibleAnnotations
+          [] { // annotations
+            {  //  annotation
+              #21;
+              [] { // element_value_pairs
+              }  //  element_value_pairs
+            }  //  annotation
+          }
+        } // end RuntimeInvisibleAnnotations
+      } // Attributes
+    }
+  } // Fields
+
+  [] { // Methods
+    {  // method
+      0x0000; // access
+      #5; // name_index
+      #17; // descriptor_index
+      [] { // Attributes
+        Attr(#22) { // Code
+          5; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x2ABB000159071007;
+            0xB70003B500072AB7;
+            0x000DB1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+            Attr(#23) { // LineNumberTable
+              [] { // line_number_table
+                0  38;
+                14  37;
+                18  38;
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+  } // Methods
+
+  [] { // Attributes
+    Attr(#24) { // SourceFile
+      #25;
+    } // end SourceFile
+    ;
+    Attr(#18) { // RuntimeVisibleAnnotations
+      [] { // annotations
+        {  //  annotation
+          #26;
+          [] { // element_value_pairs
+          }  //  element_value_pairs
+        }  //  annotation
+      }
+    } // end RuntimeVisibleAnnotations
+    ;
+    Attr(#27) { // LoadableDescriptors
+      0x0001000C;
+    } // end LoadableDescriptors
+  } // Attributes
+} // end class compiler/valhalla/inlinetypes/RectangleP

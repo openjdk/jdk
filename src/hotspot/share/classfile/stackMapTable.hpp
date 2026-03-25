@@ -128,6 +128,9 @@ class StackMapReader : StackObj {
   u2 _max_locals;
   u2 _max_stack;
 
+  // Contains assert_unset_fields generated from classfile
+  StackMapFrame::AssertUnsetFieldTable* _assert_unset_fields_buffer;
+
   // Check if reading first entry
   bool _first;
 
@@ -154,7 +157,8 @@ class StackMapReader : StackObj {
     SAME_LOCALS_1_STACK_ITEM_FRAME_START = 64,
     SAME_LOCALS_1_STACK_ITEM_FRAME_END = 127,
     RESERVED_START = 128,
-    RESERVED_END = 246,
+    RESERVED_END = 245,
+    EARLY_LARVAL = 246,
     SAME_LOCALS_1_STACK_ITEM_EXTENDED = 247,
     CHOP_FRAME_START = 248,
     CHOP_FRAME_END = 250,
@@ -169,7 +173,8 @@ class StackMapReader : StackObj {
   StackMapReader(ClassVerifier* v, StackMapStream* stream,
                  char* code_data, int32_t code_len,
                  StackMapFrame* init_frame,
-                 u2 max_locals, u2 max_stack, TRAPS);
+                 u2 max_locals, u2 max_stack,
+                 StackMapFrame::AssertUnsetFieldTable* initial_strict_fields, TRAPS);
 
   inline int32_t get_frame_count()   const { return _frame_count; }
   inline StackMapFrame* prev_frame() const { return _prev_frame; }

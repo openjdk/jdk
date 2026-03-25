@@ -416,6 +416,22 @@ const class TypePtr *MachNode::adr_type() const {
   }
   assert(tp->base() != Type::AnyPtr, "not a bare pointer");
 
+  if (tp->isa_aryptr()) {
+    // In the case of a flat inline type array, each field has its
+    // own slice so we need to extract the field being accessed from
+    // the address computation
+    if (offset == Type::OffsetBot) {
+      Node* base;
+      Node* index;
+      const MachOper* oper = memory_inputs(base, index);
+      if (oper != (MachOper*)-1) {
+        offset = oper->constant_disp();
+        return tp->is_aryptr()->add_field_offset_and_offset(offset)->add_offset(Type::OffsetBot);
+      }
+    }
+    return tp->is_aryptr()->add_field_offset_and_offset(offset);
+  }
+
   return tp->add_offset(offset);
 }
 
@@ -487,6 +503,11 @@ void MachNode::method_set( intptr_t addr ) {
 
 //------------------------------rematerialize----------------------------------
 bool MachNode::rematerialize() const {
+  // Never rematerialize CastI2N because it might "hide" narrow oops from a safepoint
+  if (ideal_Opcode() == Op_CastI2N) {
+    return false;
+  }
+
   // Temps are always rematerializable
   if (is_MachTemp()) return true;
 
@@ -719,8 +740,8 @@ const RegMask &MachSafePointNode::in_RegMask( uint idx ) const {
 
 bool MachCallNode::cmp( const Node &n ) const
 { return _tf == ((MachCallNode&)n)._tf; }
-const Type *MachCallNode::bottom_type() const { return tf()->range(); }
-const Type* MachCallNode::Value(PhaseGVN* phase) const { return tf()->range(); }
+const Type *MachCallNode::bottom_type() const { return tf()->range_cc(); }
+const Type* MachCallNode::Value(PhaseGVN* phase) const { return tf()->range_cc(); }
 
 #ifndef PRODUCT
 void MachCallNode::dump_spec(outputStream *st) const {
@@ -731,9 +752,8 @@ void MachCallNode::dump_spec(outputStream *st) const {
 }
 #endif
 
-#ifndef _LP64
 bool MachCallNode::return_value_is_used() const {
-  if (tf()->range()->cnt() == TypeFunc::Parms) {
+  if (tf()->range_sig()->cnt() == TypeFunc::Parms) {
     // void return
     return false;
   }
@@ -748,22 +768,30 @@ bool MachCallNode::return_value_is_used() const {
   }
   return false;
 }
-#endif
 
 // Similar to cousin class CallNode::returns_pointer
 // Because this is used in deoptimization, we want the type info, not the data
 // flow info; the interpreter will "use" things that are dead to the optimizer.
 bool MachCallNode::returns_pointer() const {
-  const TypeTuple *r = tf()->range();
+  const TypeTuple *r = tf()->range_sig();
   return (r->cnt() > TypeFunc::Parms &&
           r->field_at(TypeFunc::Parms)->isa_ptr());
+}
+
+bool MachCallNode::returns_scalarized() const {
+  return tf()->returns_inline_type_as_fields();
 }
 
 //------------------------------Registers--------------------------------------
 const RegMask &MachCallNode::in_RegMask(uint idx) const {
   // Values in the domain use the users calling convention, embodied in the
   // _in_rms array of RegMasks.
-  if (idx < tf()->domain()->cnt()) {
+  if (entry_point() == nullptr && idx == TypeFunc::Parms) {
+    // Null entry point is a special cast where the target of the call
+    // is in a register.
+    return MachNode::in_RegMask(idx);
+  }
+  if (idx < tf()->domain_sig()->cnt()) {
     return _in_rms[idx];
   }
   if (idx == mach_constant_base_node_input()) {
@@ -794,7 +822,7 @@ void MachCallJavaNode::dump_spec(outputStream *st) const {
 const RegMask &MachCallJavaNode::in_RegMask(uint idx) const {
   // Values in the domain use the users calling convention, embodied in the
   // _in_rms array of RegMasks.
-  if (idx < tf()->domain()->cnt()) {
+  if (idx < tf()->domain_cc()->cnt()) {
     return _in_rms[idx];
   }
   if (idx == mach_constant_base_node_input()) {

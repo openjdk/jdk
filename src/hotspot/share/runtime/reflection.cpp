@@ -36,6 +36,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/inlineKlass.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -51,6 +52,7 @@
 #include "runtime/signature.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "utilities/formatBuffer.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 static void trace_class_resolution(oop mirror) {
   if (mirror == nullptr || java_lang_Class::is_primitive(mirror)) {
@@ -228,7 +230,8 @@ BasicType Reflection::array_get(jvalue* value, arrayOop a, int index, TRAPS) {
     THROW_(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), T_ILLEGAL);
   }
   if (a->is_objArray()) {
-    value->l = cast_from_oop<jobject>(objArrayOop(a)->obj_at(index));
+    oop o = objArrayOop(a)->obj_at(index, CHECK_(T_ILLEGAL)); // reading from a flat array can throw an OOM
+    value->l = cast_from_oop<jobject>(o);
     return T_OBJECT;
   } else {
     assert(a->is_typeArray(), "just checking");
@@ -270,9 +273,14 @@ void Reflection::array_set(jvalue* value, arrayOop a, int index, BasicType value
   if (!a->is_within_bounds(index)) {
     THROW(vmSymbols::java_lang_ArrayIndexOutOfBoundsException());
   }
+
   if (value_type == T_OBJECT) {
     assert(a->is_objArray(), "just checking");
     oop obj = cast_to_oop(value->l);
+    if (a->is_null_free_array() && obj == nullptr) {
+      THROW_MSG(vmSymbols::java_lang_NullPointerException(), "null-restricted array");
+    }
+
     if (obj != nullptr) {
       Klass* element_klass = ObjArrayKlass::cast(a->klass())->element_klass();
       if (!obj->is_a(element_klass)) {
@@ -756,17 +764,13 @@ static objArrayHandle get_exception_types(const methodHandle& method, TRAPS) {
 static Handle new_type(Symbol* signature, Klass* k, TRAPS) {
   ResolvingSignatureStream ss(signature, k, false);
   oop nt = ss.as_java_mirror(SignatureStream::NCDFError, CHECK_NH);
-  if (log_is_enabled(Debug, class, resolve)) {
-    trace_class_resolution(nt);
-  }
   return Handle(THREAD, nt);
 }
 
 oop Reflection::new_method(const methodHandle& method, bool for_constant_pool_access, TRAPS) {
   // Allow jdk.internal.reflect.ConstantPool to refer to <clinit> methods as java.lang.reflect.Methods.
-  assert(!method()->is_object_initializer() &&
-         (for_constant_pool_access || !method()->is_static_initializer()),
-         "Should not be the initializer");
+  assert(!method()->name()->starts_with('<') || for_constant_pool_access,
+         "should call new_constructor instead");
   InstanceKlass* holder = method->method_holder();
   int slot = method->method_idnum();
 
@@ -814,7 +818,8 @@ oop Reflection::new_method(const methodHandle& method, bool for_constant_pool_ac
 
 
 oop Reflection::new_constructor(const methodHandle& method, TRAPS) {
-  assert(method()->is_object_initializer(), "Should be the initializer");
+  assert(method()->is_object_constructor(),
+         "should call new_method instead");
 
   InstanceKlass* holder = method->method_holder();
   int slot = method->method_idnum();
@@ -863,9 +868,16 @@ oop Reflection::new_field(fieldDescriptor* fd, TRAPS) {
   java_lang_reflect_Field::set_slot(rh(), fd->index());
   java_lang_reflect_Field::set_name(rh(), name());
   java_lang_reflect_Field::set_type(rh(), type());
+
+  int flags = 0;
   if (fd->is_trusted_final()) {
-    java_lang_reflect_Field::set_trusted_final(rh());
+    flags |= TRUSTED_FINAL;
   }
+  if (fd->is_null_free_inline_type()) {
+    flags |= NULL_RESTRICTED;
+  }
+  java_lang_reflect_Field::set_flags(rh(), flags);
+
   // Note the ACC_ANNOTATION bit, which is a per-class access flag, is never set here.
   java_lang_reflect_Field::set_modifiers(rh(), fd->access_flags().as_field_flags());
   java_lang_reflect_Field::set_override(rh(), false);
@@ -976,7 +988,8 @@ static oop invoke(InstanceKlass* klass,
     // target klass is receiver's klass
     target_klass = receiver->klass();
     // no need to resolve if method is private or <init>
-    if (reflected_method->is_private() || reflected_method->name() == vmSymbols::object_initializer_name()) {
+    if (reflected_method->is_private() ||
+        reflected_method->name() == vmSymbols::object_initializer_name()) {
       method = reflected_method;
     } else {
       // resolve based on the receiver
@@ -1056,8 +1069,8 @@ static oop invoke(InstanceKlass* klass,
   }
 
   for (int i = 0; i < args_len; i++) {
-    oop type_mirror = ptypes->obj_at(i);
-    oop arg = args->obj_at(i);
+    oop type_mirror = ptypes->obj_at(i, CHECK_NULL);
+    oop arg = args->obj_at(i, CHECK_NULL);
     if (java_lang_Class::is_primitive(type_mirror)) {
       jvalue value;
       BasicType ptype = basic_type_mirror_to_basic_type(type_mirror);
@@ -1158,7 +1171,6 @@ oop Reflection::invoke_constructor(oop constructor_mirror, objArrayHandle args, 
     THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "invoke");
   }
   methodHandle method(THREAD, m);
-  assert(method->name() == vmSymbols::object_initializer_name(), "invalid constructor");
 
   // Make sure klass gets initialize
   klass->initialize(CHECK_NULL);

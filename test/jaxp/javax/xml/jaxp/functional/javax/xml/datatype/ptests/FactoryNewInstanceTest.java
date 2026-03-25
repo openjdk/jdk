@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,27 +23,25 @@
 
 package javax.xml.datatype.ptests;
 
-import jaxp.library.JAXPDataProvider;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNotSame;
+import static org.testng.Assert.assertSame;
+import static org.testng.Assert.assertEquals;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.Duration;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import jaxp.library.JAXPDataProvider;
+
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
 /*
  * @test
  * @bug 8169778
  * @library /javax/xml/jaxp/libs
- * @build jaxp.library.JAXPDataProvider
- * @run junit/othervm javax.xml.datatype.ptests.FactoryNewInstanceTest
+ * @run testng/othervm javax.xml.datatype.ptests.FactoryNewInstanceTest
  * @summary Tests for DatatypeFactory.newInstance(factoryClassName , classLoader)
  */
 public class FactoryNewInstanceTest {
@@ -52,11 +50,9 @@ public class FactoryNewInstanceTest {
         "com.sun.org.apache.xerces.internal.jaxp.datatype.DatatypeFactoryImpl";
     private static final String DATATYPE_FACTORY_CLASSNAME = DEFAULT_IMPL_CLASS;
 
-    public static Object[][] getValidateParameters() {
-        return new Object[][] {
-                { DATATYPE_FACTORY_CLASSNAME, null },
-                { DATATYPE_FACTORY_CLASSNAME, FactoryNewInstanceTest.class.getClassLoader() },
-        };
+    @DataProvider(name = "parameters")
+    public Object[][] getValidateParameters() {
+        return new Object[][] { { DATATYPE_FACTORY_CLASSNAME, null }, { DATATYPE_FACTORY_CLASSNAME, this.getClass().getClassLoader() } };
     }
 
     /**
@@ -70,8 +66,8 @@ public class FactoryNewInstanceTest {
         DatatypeFactory dtf2 = DatatypeFactory.newInstance();
         assertNotSame(dtf1, dtf2, "same instance returned:");
         assertSame(dtf1.getClass(), dtf2.getClass(),
-                "unexpected class mismatch for newDefaultInstance():");
-        assertEquals(DEFAULT_IMPL_CLASS, dtf1.getClass().getName());
+                  "unexpected class mismatch for newDefaultInstance():");
+        assertEquals(dtf1.getClass().getName(), DEFAULT_IMPL_CLASS);
     }
 
     /*
@@ -80,8 +76,7 @@ public class FactoryNewInstanceTest {
      * implementation of javax.xml.datatype.DatatypeFactory , should return
      * newInstance of DatatypeFactory
      */
-    @ParameterizedTest
-    @MethodSource("getValidateParameters")
+    @Test(dataProvider = "parameters")
     public void testNewInstance(String factoryClassName, ClassLoader classLoader) throws DatatypeConfigurationException {
         DatatypeFactory dtf = DatatypeFactory.newInstance(DATATYPE_FACTORY_CLASSNAME, null);
         Duration duration = dtf.newDuration(true, 1, 1, 1, 1, 1, 1);
@@ -94,11 +89,9 @@ public class FactoryNewInstanceTest {
      * java.lang.ClassLoader classLoader) factoryClassName is null , should
      * throw DatatypeConfigurationException
      */
-    @ParameterizedTest
-    @MethodSource("jaxp.library.JAXPDataProvider#newInstanceNeg")
+    @Test(expectedExceptions = DatatypeConfigurationException.class, dataProvider = "new-instance-neg", dataProviderClass = JAXPDataProvider.class)
     public void testNewInstanceNeg(String factoryClassName, ClassLoader classLoader) throws DatatypeConfigurationException {
-        assertThrows(
-                DatatypeConfigurationException.class,
-                () -> DatatypeFactory.newInstance(factoryClassName, classLoader));
+        DatatypeFactory.newInstance(factoryClassName, classLoader);
     }
+
 }

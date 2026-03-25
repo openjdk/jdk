@@ -39,6 +39,9 @@ import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.Label;
 import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+
+import jdk.internal.misc.PreviewFeatures;
+
 import jdk.jfr.AnnotationElement;
 import jdk.jfr.Event;
 import jdk.jfr.ValueDescriptor;
@@ -108,9 +111,10 @@ public final class EventClassBuilder {
         }));
     }
 
+    @SuppressWarnings("preview")
     private void buildClassInfo(ClassBuilder builder) {
         builder.withSuperclass(Bytecode.classDesc(Event.class));
-        builder.withFlags(AccessFlag.FINAL, AccessFlag.PUBLIC, AccessFlag.SUPER);
+        builder.withFlags(AccessFlag.FINAL, AccessFlag.PUBLIC, (PreviewFeatures.isEnabled() ? AccessFlag.IDENTITY : AccessFlag.SUPER));
         List<java.lang.classfile.Annotation> annotations = new ArrayList<>();
         for (jdk.jfr.AnnotationElement a : annotationElements) {
             List<java.lang.classfile.AnnotationElement> list = new ArrayList<>();

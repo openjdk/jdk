@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,16 @@
  */
 package org.xml.sax.ptests;
 
-import org.junit.jupiter.api.Test;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
+import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
+
+import java.io.FileInputStream;
+
+import javax.xml.parsers.SAXParserFactory;
+
+import org.testng.annotations.Test;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -32,15 +41,6 @@ import org.xml.sax.helpers.ParserAdapter;
 import org.xml.sax.helpers.XMLFilterImpl;
 import org.xml.sax.helpers.XMLReaderAdapter;
 
-import javax.xml.parsers.SAXParserFactory;
-import java.io.FileInputStream;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
-
 
 /**
  * Unit test cases for ParserAdapter API. By default the only features recognized
@@ -49,7 +49,7 @@ import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run junit/othervm org.xml.sax.ptests.ParserAdapterTest
+ * @run testng/othervm org.xml.sax.ptests.ParserAdapterTest
  */
 public class ParserAdapterTest {
     /**
@@ -177,9 +177,9 @@ public class ParserAdapterTest {
      *
      * @exception Exception If any errors occur.
      */
-    @Test
+    @Test(expectedExceptions = SAXNotRecognizedException.class)
     public void getFeature03() throws Exception {
-        assertThrows(SAXNotRecognizedException.class, () -> parserAdapter.getFeature("no-meaning-feature"));
+        parserAdapter.getFeature("no-meaning-feature");
     }
 
     /**
@@ -228,25 +228,31 @@ public class ParserAdapterTest {
 
     /**
      * NPE expected when parsing a null object by ParserAdapter.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test
+    @Test(expectedExceptions = NullPointerException.class)
     public void parse01() throws Exception {
-        assertThrows(NullPointerException.class, () -> parserAdapter.parse((InputSource) null));
+        parserAdapter.parse((InputSource)null);
     }
 
     /**
      * SAXException expected when parsing a wrong-formatter XML with ParserAdapter.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test
+    @Test(expectedExceptions = SAXException.class)
     public void parse02() throws Exception {
         try(FileInputStream fis = new FileInputStream(XML_DIR + "invalid.xml")) {
             InputSource is = new InputSource(fis);
-            assertThrows(SAXException.class, () -> parserAdapter.parse(is));
+            parserAdapter.parse(is);
         }
     }
 
     /**
      * Parse a well-formatter XML with ParserAdapter.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
     public void parse03() throws Exception {

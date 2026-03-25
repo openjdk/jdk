@@ -39,6 +39,7 @@ import java.security.PrivilegedAction;
 
 import jdk.internal.jimage.ImageReader;
 import jdk.internal.jimage.ImageReader.Node;
+import jdk.internal.jimage.PreviewMode;
 
 /**
  * @implNote This class needs to maintain JDK 8 source compatibility.
@@ -47,35 +48,49 @@ import jdk.internal.jimage.ImageReader.Node;
  * but also compiled and delivered as part of the jrtfs.jar to support access
  * to the jimage file provided by the shipped JDK by tools running on JDK 8.
  */
-@SuppressWarnings({ "removal", "suppression"} )
-abstract class SystemImage {
+@SuppressWarnings({"removal", "suppression"})
+public abstract class SystemImage implements AutoCloseable {
 
-    abstract Node findNode(String path) throws IOException;
-    abstract byte[] getResource(Node node) throws IOException;
-    abstract void close() throws IOException;
+    public abstract Node findNode(String path) throws IOException;
+    public abstract byte[] getResource(Node node) throws IOException;
+    public abstract void close() throws IOException;
 
-    static SystemImage open() throws IOException {
-        if (modulesImageExists) {
-            // open a .jimage and build directory structure
-            final ImageReader image = ImageReader.open(moduleImageFile);
-            return new SystemImage() {
-                @Override
-                Node findNode(String path) throws IOException {
-                    return image.findNode(path);
-                }
-                @Override
-                byte[] getResource(Node node) throws IOException {
-                    return image.getResource(node);
-                }
-                @Override
-                void close() throws IOException {
-                    image.close();
-                }
-            };
+    /**
+     * Opens the system image for the current runtime.
+     *
+     * @param mode determines whether preview mode should be enabled.
+     * @return a new system image based on either the jimage file or an "exploded"
+     *     modules directory, according to the build state.
+     */
+    public static SystemImage open(PreviewMode mode) throws IOException {
+        return modulesImageExists ? fromJimage(moduleImageFile, mode) : fromDirectory(explodedModulesDir, mode);
+    }
+
+    /** Internal factory method for testing only, use {@link SystemImage#open(PreviewMode)}. */
+    public static SystemImage fromJimage(Path path, PreviewMode mode) throws IOException {
+        final ImageReader image = ImageReader.open(path, mode);
+        return new SystemImage() {
+            @Override
+            public Node findNode(String path) throws IOException {
+                return image.findNode(path);
+            }
+            @Override
+            public byte[] getResource(Node node) throws IOException {
+                return image.getResource(node);
+            }
+            @Override
+            public void close() throws IOException {
+                image.close();
+            }
+        };
+    }
+
+    /** Internal factory method for testing only, use {@link SystemImage#open(PreviewMode)}. */
+    public static SystemImage fromDirectory(Path modulesDir, PreviewMode mode) throws IOException {
+        if (!Files.isDirectory(modulesDir)) {
+            throw new FileSystemNotFoundException(modulesDir.toString());
         }
-        if (Files.notExists(explodedModulesDir))
-            throw new FileSystemNotFoundException(explodedModulesDir.toString());
-        return new ExplodedImage(explodedModulesDir);
+        return new ExplodedImage(modulesDir, mode.isPreviewModeEnabled());
     }
 
     private static final String RUNTIME_HOME;

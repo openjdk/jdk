@@ -30,6 +30,7 @@
 #include "oops/access.hpp"
 #include "oops/accessBackend.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "utilities/exceptions.hpp"
 #include "utilities/fakeRttiSupport.hpp"
 #include "utilities/macros.hpp"
 
@@ -311,6 +312,14 @@ public:
     // Clone barrier support
     static void clone_in_heap(oop src, oop dst, size_t size) {
       Raw::clone(src, dst, size);
+    }
+
+    static void value_copy_in_heap(const ValuePayload& src, const ValuePayload& dst) {
+      Raw::value_copy(src, dst);
+    }
+
+    static void value_store_null_in_heap(const ValuePayload& dst) {
+      Raw::value_store_null(dst);
     }
   };
 };

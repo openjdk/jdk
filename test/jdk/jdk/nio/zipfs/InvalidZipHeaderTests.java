@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,10 @@
  * questions.
  */
 
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -32,17 +36,9 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.nio.file.Files.walk;
-
-import org.junit.jupiter.api.AfterAll;
-import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.BeforeAll;
-
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import static org.testng.Assert.*;
 
 /**
  * @test
@@ -50,7 +46,7 @@ import org.junit.jupiter.params.provider.MethodSource;
  * @summary Validate that you can iterate a ZIP file with invalid ZIP header entries
  * @modules jdk.zipfs
  * @compile InvalidZipHeaderTests.java
- * @run junit InvalidZipHeaderTests
+ * @run testng InvalidZipHeaderTests
  */
 public class InvalidZipHeaderTests {
 
@@ -61,16 +57,16 @@ public class InvalidZipHeaderTests {
     /**
      * Create the JAR files used by the tests
      */
-    @BeforeAll
-    public static void setUp() throws Exception {
+    @BeforeClass
+    public void setUp() throws Exception {
         createInvalidJarFile();
     }
 
     /**
      * Remove JAR files used by test as part of clean-up
      */
-    @AfterAll
-    public static void tearDown() throws Exception {
+    @AfterClass
+    public void tearDown() throws Exception {
         Files.deleteIfExists(Path.of(INVALID_JAR_FILE));
     }
 
@@ -79,17 +75,17 @@ public class InvalidZipHeaderTests {
      * Validate that you can walk a ZIP archive with header entries
      * such as "foo//"
      */
-    @ParameterizedTest
-    @MethodSource("Name")
+    @Test(dataProvider = "startPaths")
     public void walkInvalidHeaderTest(String startPath, List<String> expectedPaths)
             throws IOException {
         try (FileSystem zipfs =
                      FileSystems.newFileSystem(Path.of(INVALID_JAR_FILE))) {
             List<String> result = walk(zipfs.getPath(startPath))
                     .map(f -> f.toString()).collect(Collectors.toList());
-            assertEquals(result, expectedPaths, String.format("Error: Expected paths not found when walking"
-                            + "%s,  starting at %s%n", INVALID_JAR_FILE,
-                    startPath));
+            assertTrue(result.equals(expectedPaths),
+                    String.format("Error: Expected paths not found when walking"
+                                    + "%s,  starting at %s%n", INVALID_JAR_FILE,
+                            startPath));
         }
     }
 
@@ -98,16 +94,18 @@ public class InvalidZipHeaderTests {
      * Starting Path for walking the ZIP archive and the expected paths to be returned
      * when traversing the archive
      */
-    public static Stream<Arguments> Name() {
-        return Stream.of(
-                Arguments.of("luckydog", List.of("luckydog", "luckydog/outfile.txt")),
-                Arguments.of("/luckydog", List.of("/luckydog", "/luckydog/outfile.txt")),
-                Arguments.of("./luckydog", List.of("./luckydog", "./luckydog/outfile.txt")),
-                Arguments.of("", List.of( "", "luckydog", "luckydog/outfile.txt")),
-                Arguments.of("/", List.of("/", "/luckydog", "/luckydog/outfile.txt")),
-                Arguments.of(".", List.of(".", "./luckydog", "./luckydog/outfile.txt")),
-                Arguments.of("./", List.of(".", "./luckydog", "./luckydog/outfile.txt"))
-        );
+    @DataProvider(name = "startPaths")
+    public static Object[][] Name() {
+        return new Object[][]{
+
+                {"luckydog", List.of("luckydog", "luckydog/outfile.txt")},
+                {"/luckydog", List.of("/luckydog", "/luckydog/outfile.txt")},
+                {"./luckydog", List.of("./luckydog", "./luckydog/outfile.txt")},
+                {"", List.of( "", "luckydog", "luckydog/outfile.txt")},
+                {"/", List.of("/", "/luckydog", "/luckydog/outfile.txt")},
+                {".", List.of(".", "./luckydog", "./luckydog/outfile.txt")},
+                {"./", List.of(".", "./luckydog", "./luckydog/outfile.txt")}
+        };
     }
 
     /**

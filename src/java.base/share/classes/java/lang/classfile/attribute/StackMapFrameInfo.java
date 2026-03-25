@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,14 @@ import java.lang.classfile.Label;
 import java.lang.classfile.Opcode;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.instruction.BranchInstruction;
+import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.lang.constant.ClassDesc;
 import java.util.List;
 
 import jdk.internal.classfile.impl.StackMapDecoder;
 import jdk.internal.classfile.impl.StackMapGenerator;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a stack map frame in a {@link StackMapTableAttribute StackMapTable}
@@ -79,6 +81,15 @@ public sealed interface StackMapFrameInfo
     List<VerificationTypeInfo> stack();
 
     /**
+     * {@return the expanded unset fields}
+     *
+     * @jvms strict-fields-4.7.4 The {@code StackMapTable} Attribute
+     * @since Valhalla
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.STRICT_FIELDS, reflective = true)
+    List<NameAndTypeEntry> unsetFields();
+
+    /**
      * {@return a new stack map frame}
      *
      * @param target the location of the frame
@@ -90,7 +101,30 @@ public sealed interface StackMapFrameInfo
     public static StackMapFrameInfo of(Label target,
             List<VerificationTypeInfo> locals,
             List<VerificationTypeInfo> stack) {
-        return new StackMapDecoder.StackMapFrameImpl(255, target, locals, stack);
+
+        return of(target, locals, stack, List.of());
+    }
+
+    /**
+     * {@return a new stack map frame}
+     * @param target the location of the frame
+     * @param locals the complete list of frame locals
+     * @param stack the complete frame stack
+     * @param unsetFields the complete list of unset fields
+     * @throws IllegalArgumentException if the number of elements in {@code locals},
+     *         {@code stack}, or {@code unsetFields} exceeds the limit of
+     *         {@link java.lang.classfile##u2 u2}; or if unset fields has
+     *         elements, but no {@link SimpleVerificationTypeInfo#UNINITIALIZED_THIS
+     *         uninitializedThis} is present in {@code locals}
+     * @since Valhalla
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.STRICT_FIELDS, reflective = true)
+    public static StackMapFrameInfo of(Label target,
+                                       List<VerificationTypeInfo> locals,
+                                       List<VerificationTypeInfo> stack,
+                                       List<NameAndTypeEntry> unsetFields) {
+
+        return new StackMapDecoder.StackMapFrameImpl(255, target, locals, stack, unsetFields);
     }
 
     /**

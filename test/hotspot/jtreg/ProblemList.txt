@@ -78,11 +78,10 @@ compiler/floatingpoint/TestSubnormalDouble.java 8317810 generic-i586
 compiler/codecache/CodeCacheFullCountTest.java 8332954 generic-all
 
 compiler/interpreter/Test6833129.java 8335266 generic-i586
-compiler/intrinsics/TestReturnOopSetForJFRWriteCheckpoint.java 8286300 linux-s390x
 
 compiler/c2/aarch64/TestStaticCallStub.java 8359963 linux-aarch64,macosx-aarch64
 
-compiler/unsafe/AlignmentGapAccess.java 8373487 generic-all
+compiler/longcountedloops/TestLoopNestTooManyTraps.java 8376591 generic-all
 
 #############################################################################
 
@@ -114,11 +113,11 @@ runtime/StackGuardPages/TestStackGuardPagesNative.java 8303612 linux-all
 runtime/ErrorHandling/MachCodeFramesInErrorFile.java 8313315 linux-ppc64le
 runtime/NMT/VirtualAllocCommitMerge.java 8309698 linux-s390x
 
-applications/ctw/modules/jdk_jfr.java 8286300 linux-s390x
 applications/jcstress/copy.java 8229852 linux-all
 
+containers/docker/TestJcmd.java 8278102 linux-all
 containers/docker/TestJFREvents.java 8327723 linux-x64
-containers/docker/TestJcmdWithSideCar.java 8341518 linux-all
+containers/docker/TestJcmdWithSideCar.java 8341518 linux-x64
 
 #############################################################################
 
@@ -197,3 +196,20 @@ vmTestbase/nsk/monitoring/ThreadMXBean/findMonitorDeadlockedThreads/find006/Test
 # in either implementation or test code.
 
 #############################################################################
+
+# Valhalla failures start here:
+compiler/codegen/TestRedundantLea.java#Spill              8361089 generic-all
+compiler/valhalla/inlinetypes/TestCallingConvention.java#id0 8367624 generic-all
+compiler/valhalla/inlinetypes/TestCallingConvention.java#id3 8367624 generic-all
+compiler/valhalla/inlinetypes/TestCallingConvention.java#id5 8367624 generic-all
+compiler/valhalla/inlinetypes/TestCallingConvention.java#id6 8367624 generic-all
+
+vmTestbase/nsk/jdb/exclude/exclude001/exclude001.java 8375062 windows-x64
+vmTestbase/nsk/jdi/Scenarios/invokeMethod/popframes001/TestDescription.java 8375076 windows-x64
+
+# The following test failures DID NOT reproduce during Tier[1-8] testing
+# done for 8377828. Further analysis is being done with 8376235:
+compiler/codegen/TestRedundantLea.java#RegexFind          8361089 generic-all
+
+# I'm disabling this entry to determine frequency of failure:
+# vmTestbase/nsk/jdi/BScenarios/multithrd/tc04x001/TestDescription.java 8375076 windows-x64

@@ -32,6 +32,7 @@
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "runtime/deoptimization.hpp"
+#include "runtime/sharedRuntime.hpp"
 
 class CompilationFailureInfo;
 class CompilationResourceObj;
@@ -94,6 +95,7 @@ class Compilation: public StackObj {
   CodeBuffer         _code;
   bool               _has_access_indexed;
   int                _interpreter_frame_size; // Stack space needed in case of a deoptimization
+  CompiledEntrySignature _compiled_entry_signature;
   int                _immediate_oops_patched;
 
   // compilation helpers
@@ -252,6 +254,10 @@ class Compilation: public StackObj {
     return env()->comp_level() == CompLevel_full_profile &&
       C1UpdateMethodData && MethodData::profile_return();
   }
+  bool profile_array_accesses() {
+    return env()->comp_level() == CompLevel_full_profile &&
+      C1UpdateMethodData;
+  }
 
   // will compilation make optimistic assumptions that might lead to
   // deoptimization and that the runtime will account for?
@@ -276,6 +282,13 @@ class Compilation: public StackObj {
 
   int interpreter_frame_size() const {
     return _interpreter_frame_size;
+  }
+
+  const CompiledEntrySignature* compiled_entry_signature() const {
+    return &_compiled_entry_signature;
+  }
+  bool needs_stack_repair() const {
+    return compiled_entry_signature()->c1_needs_stack_repair();
   }
 };
 

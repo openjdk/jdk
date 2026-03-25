@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,11 @@
 #define SHARE_UTILITIES_STRINGUTILS_HPP
 
 #include "memory/allStatic.hpp"
-#include "utilities/globalDefinitions.hpp"
+
+#ifdef _WINDOWS
+  // strtok_s is the Windows thread-safe equivalent of POSIX strtok_r
+# define strtok_r strtok_s
+#endif
 
 class StringUtils : AllStatic {
 public:
@@ -41,6 +45,10 @@ public:
 
   // Compute string similarity based on Dice's coefficient
   static double similarity(const char* str1, size_t len1, const char* str2, size_t len2);
+
+  // Match a wildcarded class list to a proposed class name (in internal form).
+  // Commas separate multiple possible matches; stars are shell-style wildcards.
+  static bool class_list_match(const char* class_list, const char* class_name);
 
   // Find needle in haystack, case insensitive.
   // Custom implementation of strcasestr, as it is not available on windows.

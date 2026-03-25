@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ include MakeFileStart.gmk
 
 include JavaCompilation.gmk
 include Modules.gmk
+
+include CopyFiles.gmk
 
 ################################################################################
 # If this is an imported module that has prebuilt classes, only compile
@@ -98,13 +100,15 @@ endif
 ################################################################################
 # Setup the main compilation
 
+COMPILATION_OUTPUTDIR := $(if $($(MODULE)_BIN), $($(MODULE)_BIN), $(JDK_OUTPUTDIR)/modules)
+
 $(eval $(call SetupJavaCompilation, $(MODULE), \
     SMALL_JAVA := false, \
     MODULE := $(MODULE), \
     SRC := $(wildcard $(MODULE_SRC_DIRS)), \
     INCLUDES := $(JDK_USER_DEFINED_FILTER), \
     FAIL_NO_SRC := $(FAIL_NO_SRC), \
-    BIN := $(if $($(MODULE)_BIN), $($(MODULE)_BIN), $(JDK_OUTPUTDIR)/modules), \
+    BIN := $(COMPILATION_OUTPUTDIR), \
     HEADERS := $(SUPPORT_OUTPUTDIR)/headers, \
     CREATE_API_DIGEST := true, \
     CLEAN := $(CLEAN), \
@@ -125,6 +129,67 @@ $(eval $(call SetupJavaCompilation, $(MODULE), \
 ))
 
 TARGETS += $($(MODULE))
+
+################################################################################
+# Setup compilation for preview classes in the module
+# TBD: When $(DOCLINT) was included there was an NPE in JavacTypes.getOverriddenMethods
+
+# Directory and file name suffix for jar file containing preview classes/resources.
+PREVIEW_CLASSES_LABEL := preview
+# Module relative path in which preview classes/resources are placed.
+PREVIEW_PATH := META-INF/preview
+
+ifneq ($(COMPILER), bootjdk)
+  MODULE_PREVIEW_SRC_DIRS := $(call FindModulePreviewSrcDirs, $(MODULE))
+  MODULE_PREVIEW_SOURCEPATH := $(call GetModulePreviewSrcPath)
+  ifneq ($(MODULE_PREVIEW_SRC_DIRS),)
+    # Temporarily compile preview classes into a separate directory, and then
+    # copy into the correct output path location.
+    # We cannot compile directly into the desired directory because it's the
+    # compiler which creates the original '<module>/<classpath>/...' hierarchy.
+    TEMP_OUTPUTDIR := $(SUPPORT_OUTPUTDIR)/$(PREVIEW_CLASSES_LABEL)
+
+    $(eval $(call SetupJavaCompilation, $(MODULE)-$(PREVIEW_CLASSES_LABEL), \
+        SMALL_JAVA := false, \
+        MODULE := $(MODULE), \
+        SRC := $(wildcard $(MODULE_PREVIEW_SRC_DIRS)), \
+        INCLUDES := $(JDK_USER_DEFINED_FILTER), \
+        FAIL_NO_SRC := $(FAIL_NO_SRC), \
+        BIN := $(TEMP_OUTPUTDIR)/, \
+        HEADERS := $(SUPPORT_OUTPUTDIR)/headers, \
+        DISABLED_WARNINGS := $(DISABLED_WARNINGS_java) preview, \
+        EXCLUDES := $(EXCLUDES), \
+        EXCLUDE_FILES := $(EXCLUDE_FILES) \
+        KEEP_ALL_TRANSLATIONS := $(KEEP_ALL_TRANSLATIONS), \
+        DEPENDS := $($(MODULE)), \
+        JAVAC_FLAGS := \
+            $(JAVAC_FLAGS) \
+            --module-source-path $(MODULE_PREVIEW_SOURCEPATH) \
+            --module-path $(JDK_OUTPUTDIR)/modules \
+            --system none \
+            --enable-preview -source $(JDK_SOURCE_TARGET_VERSION), \
+    ))
+
+    # Don't add '$($(MODULE)-$(PREVIEW_CLASSES_LABEL))' to TARGETS (it's transient).
+    # The 'preview' target below depends on it, and that's the non-transient
+    # result we care about.
+
+    # Copy compiled output from "$TEMP_OUTPUTDIR/$MODULE/<classpath>/..."
+    # to "$COMPILATION_OUTPUTDIR/$MODULE/$PREVIEW_PATH/<classpath>/...".
+    MOD_SRC := $(TEMP_OUTPUTDIR)/$(MODULE)
+    MOD_DST := $(COMPILATION_OUTPUTDIR)/$(MODULE)
+
+    # NOTE: We cannot use '$(CP) -R $(MOD_SRC)/*/ ...' to select sub-directories (it
+    # does not work on MacOS/BSD). Use 'filter-out' to explicitly exclude marker files.
+    $(MOD_DST)/_the.$(MODULE).preview: $($(MODULE)-$(PREVIEW_CLASSES_LABEL))
+		$(RM) -r $(@D)/$(PREVIEW_PATH)
+		$(MKDIR) -p $(@D)/$(PREVIEW_PATH)
+		$(CP) -R $(filter-out $(MOD_SRC)/_%, $(wildcard $(MOD_SRC)/*)) $(@D)/$(PREVIEW_PATH)
+		$(TOUCH) $@
+
+    TARGETS += $(MOD_DST)/_the.$(MODULE).preview
+  endif
+endif
 
 # Declare dependencies between java compilations of different modules.
 # Since the other modules are declared in different invocations of this file,

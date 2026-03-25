@@ -83,7 +83,7 @@ typedef struct {
   jint name_offset;       // offset of the data item name
   jint vector_length;     // length of the vector. If 0, then scalar
   jbyte data_type;        // type of the data item -
-                          // 'B','Z','J','I','S','C','D','F','V','L','['
+                          // 'B','Z','J','I','S','C','D','F','V','L','Q','['
   jbyte flags;            // flags indicating misc attributes
   jbyte data_units;       // unit of measure for the data type
   jbyte data_variability; // variability classification of data type

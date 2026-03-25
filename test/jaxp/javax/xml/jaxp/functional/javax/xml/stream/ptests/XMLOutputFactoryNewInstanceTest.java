@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,25 +23,26 @@
 
 package javax.xml.stream.ptests;
 
-import jaxp.library.JAXPDataProvider;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import static jaxp.library.JAXPTestUtilities.setSystemProperty;
+import static jaxp.library.JAXPTestUtilities.clearSystemProperty;
+
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNotSame;
+import static org.testng.Assert.assertSame;
+import static org.testng.Assert.assertEquals;
 
 import javax.xml.stream.XMLOutputFactory;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import jaxp.library.JAXPDataProvider;
+
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
 /*
  * @test
  * @bug 8169778
  * @library /javax/xml/jaxp/libs
- * @build jaxp.library.JAXPDataProvider
- * @run junit/othervm javax.xml.stream.ptests.XMLOutputFactoryNewInstanceTest
+ * @run testng/othervm javax.xml.stream.ptests.XMLOutputFactoryNewInstanceTest
  * @summary Tests for XMLOutputFactory.newFactory(factoryId , classLoader)
  */
 public class XMLOutputFactoryNewInstanceTest {
@@ -51,25 +52,26 @@ public class XMLOutputFactoryNewInstanceTest {
     private static final String XMLOUTPUT_FACTORY_CLASSNAME = DEFAULT_IMPL_CLASS;
     private static final String XMLOUTPUT_FACTORY_ID = "javax.xml.stream.XMLOutputFactory";
 
-    public static Object[][] getValidateParameters() {
+    @DataProvider(name = "parameters")
+    public Object[][] getValidateParameters() {
         return new Object[][] {
-                { XMLOUTPUT_FACTORY_ID, null },
-                { XMLOUTPUT_FACTORY_ID, XMLOutputFactoryNewInstanceTest.class.getClassLoader() },
-        };
+            { XMLOUTPUT_FACTORY_ID, null },
+            { XMLOUTPUT_FACTORY_ID, this.getClass().getClassLoader() } };
     }
 
     /**
      * Test if newDefaultFactory() method returns an instance
      * of the expected factory.
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void testDefaultInstance() {
+    public void testDefaultInstance() throws Exception {
         XMLOutputFactory of1 = XMLOutputFactory.newDefaultFactory();
         XMLOutputFactory of2 = XMLOutputFactory.newFactory();
         assertNotSame(of1, of2, "same instance returned:");
         assertSame(of1.getClass(), of2.getClass(),
-                "unexpected class mismatch for newDefaultFactory():");
-        assertEquals(DEFAULT_IMPL_CLASS, of1.getClass().getName());
+                  "unexpected class mismatch for newDefaultFactory():");
+        assertEquals(of1.getClass().getName(), DEFAULT_IMPL_CLASS);
     }
 
     /*
@@ -78,15 +80,14 @@ public class XMLOutputFactoryNewInstanceTest {
      * implementation of javax.xml.stream.XMLOutputFactory , should return
      * newInstance of XMLOutputFactory
      */
-    @ParameterizedTest
-    @MethodSource("getValidateParameters")
+    @Test(dataProvider = "parameters")
     public void testNewFactory(String factoryId, ClassLoader classLoader) {
-        System.setProperty(XMLOUTPUT_FACTORY_ID, XMLOUTPUT_FACTORY_CLASSNAME);
+        setSystemProperty(XMLOUTPUT_FACTORY_ID, XMLOUTPUT_FACTORY_CLASSNAME);
         try {
             XMLOutputFactory xif = XMLOutputFactory.newFactory(factoryId, classLoader);
             assertNotNull(xif);
         } finally {
-            System.clearProperty(XMLOUTPUT_FACTORY_ID);
+            clearSystemProperty(XMLOUTPUT_FACTORY_ID);
         }
     }
 
@@ -95,10 +96,9 @@ public class XMLOutputFactoryNewInstanceTest {
      * java.lang.ClassLoader classLoader) factoryClassName is null , should
      * throw NullPointerException
      */
-    @ParameterizedTest
-    @MethodSource("jaxp.library.JAXPDataProvider#newInstanceNeg")
+    @Test(expectedExceptions = NullPointerException.class, dataProvider = "new-instance-neg", dataProviderClass = JAXPDataProvider.class)
     public void testNewFactoryNeg(String factoryId, ClassLoader classLoader) {
-        assertThrows(NullPointerException.class, () -> XMLOutputFactory.newFactory(factoryId, classLoader));
+        XMLOutputFactory.newFactory(factoryId, classLoader);
     }
 
 }

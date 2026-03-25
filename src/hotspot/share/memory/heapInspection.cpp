@@ -33,8 +33,12 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "nmt/memTracker.hpp"
+#include "oops/fieldInfo.hpp"
+#include "oops/fieldStreams.inline.hpp"
+#include "oops/inlineKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomicAccess.hpp"
+#include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -508,6 +512,129 @@ class HistoClosure : public KlassInfoClosure {
     _cih->add(cie);
   }
 };
+
+class FindClassByNameClosure : public KlassInfoClosure {
+ private:
+  GrowableArray<Klass*>* _klasses;
+  Symbol* _classname;
+ public:
+  FindClassByNameClosure(GrowableArray<Klass*>* klasses, Symbol* classname) :
+    _klasses(klasses), _classname(classname) { }
+
+  void do_cinfo(KlassInfoEntry* cie) {
+    if (cie->klass()->name() == _classname) {
+      _klasses->append(cie->klass());
+    }
+  }
+};
+
+class FieldDesc {
+private:
+  Symbol* _name;
+  Symbol* _signature;
+  int _offset;
+  int _index;
+  InstanceKlass* _holder;
+  AccessFlags _access_flags;
+  FieldInfo::FieldFlags _field_flags;
+ public:
+  FieldDesc() : _name(nullptr), _signature(nullptr), _offset(-1), _index(-1), _holder(nullptr),
+                _access_flags(AccessFlags()), _field_flags(FieldInfo::FieldFlags((u4)0)) { }
+
+  FieldDesc(fieldDescriptor& fd) : _name(fd.name()), _signature(fd.signature()), _offset(fd.offset()),
+                                   _index(fd.index()), _holder(fd.field_holder()),
+                                   _access_flags(fd.access_flags()), _field_flags(fd.field_flags()) { }
+
+  const Symbol* name() { return _name;}
+  const Symbol* signature() { return _signature; }
+  int offset() const { return _offset; }
+  int index() const { return _index; }
+  const InstanceKlass* holder() { return _holder; }
+  const AccessFlags& access_flags() { return _access_flags; }
+  bool is_null_free_inline_type() const { return _field_flags.is_null_free_inline_type(); }
+};
+
+static int compare_offset(FieldDesc* f1, FieldDesc* f2) {
+   return f1->offset() > f2->offset() ? 1 : -1;
+}
+
+static void print_field(outputStream* st, int level, int offset, FieldDesc& fd, bool is_inline_type, bool is_flat ) {
+  const char* flat_field_msg = "";
+  if (is_flat) {
+    flat_field_msg = is_flat ? "flat" : "not flat";
+  }
+  st->print_cr("  @ %d %*s \"%s\" %s %s %s",
+      offset, level * 3, "",
+      fd.name()->as_C_string(),
+      fd.signature()->as_C_string(),
+      is_inline_type ? " // inline type " : "",
+      flat_field_msg);
+}
+
+static void print_flat_field(outputStream* st, int level, int offset, InstanceKlass* klass) {
+  assert(klass->is_inline_klass(), "Only inline types can be flat");
+  InlineKlass* vklass = InlineKlass::cast(klass);
+  GrowableArray<FieldDesc>* fields = new (mtServiceability) GrowableArray<FieldDesc>(100, mtServiceability);
+  for (AllFieldStream fd(klass); !fd.done(); fd.next()) {
+    if (!fd.access_flags().is_static()) {
+      fields->append(FieldDesc(fd.field_descriptor()));
+    }
+  }
+  fields->sort(compare_offset);
+  for(int i = 0; i < fields->length(); i++) {
+    FieldDesc fd = fields->at(i);
+    int offset2 = offset + fd.offset() - vklass->payload_offset();
+    print_field(st, level, offset2, fd,
+        fd.is_null_free_inline_type(), fd.holder()->field_is_flat(fd.index()));
+    if (fd.holder()->field_is_flat(fd.index())) {
+      print_flat_field(st, level + 1, offset2 ,
+          InstanceKlass::cast(fd.holder()->get_inline_type_field_klass(fd.index())));
+    }
+  }
+}
+
+void PrintClassLayout::print_class_layout(outputStream* st, char* class_name) {
+  KlassInfoTable cit(true);
+  if (cit.allocation_failed()) {
+    st->print_cr("ERROR: Ran out of C-heap; hierarchy not generated");
+    return;
+  }
+
+  Thread* THREAD = Thread::current();
+
+  Symbol* classname = SymbolTable::probe(class_name, (int)strlen(class_name));
+
+  GrowableArray<Klass*>* klasses = new (mtServiceability) GrowableArray<Klass*>(100, mtServiceability);
+
+  FindClassByNameClosure fbnc(klasses, classname);
+  cit.iterate(&fbnc);
+
+  for(int i = 0; i < klasses->length(); i++) {
+    Klass* klass = klasses->at(i);
+    if (!klass->is_instance_klass()) continue;  // Skip
+    InstanceKlass* ik = InstanceKlass::cast(klass);
+    int tab = 1;
+    st->print_cr("Class %s [@%s]:", klass->name()->as_C_string(),
+        klass->class_loader_data()->loader_name());
+    ResourceMark rm;
+    GrowableArray<FieldDesc>* fields = new (mtServiceability) GrowableArray<FieldDesc>(100, mtServiceability);
+    for (AllFieldStream fd(ik); !fd.done(); fd.next()) {
+      if (!fd.access_flags().is_static()) {
+        fields->append(FieldDesc(fd.field_descriptor()));
+      }
+    }
+    fields->sort(compare_offset);
+    for(int i = 0; i < fields->length(); i++) {
+      FieldDesc fd = fields->at(i);
+      print_field(st, 0, fd.offset(), fd, fd.is_null_free_inline_type(), fd.holder()->field_is_flat(fd.index()));
+      if (fd.holder()->field_is_flat(fd.index())) {
+        print_flat_field(st, 1, fd.offset(),
+            InstanceKlass::cast(fd.holder()->get_inline_type_field_klass(fd.index())));
+      }
+    }
+  }
+  st->cr();
+}
 
 class RecordInstanceClosure : public ObjectClosure {
  private:

@@ -175,7 +175,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // Generate a subtype check: branch to ok_is_subtype if sub_klass is
   // a subtype of super_klass.
-  void gen_subtype_check( Register sub_klass, Label &ok_is_subtype );
+  void gen_subtype_check(Register sub_klass, Label &ok_is_subtype, bool profile = true);
 
   // Dispatching
   void dispatch_prolog(TosState state, int step = 0);
@@ -215,6 +215,20 @@ class InterpreterMacroAssembler: public MacroAssembler {
                          bool notify_jvmdi = true);
   void get_method_counters(Register method, Register mcs, Label& skip);
 
+  // Kills t1 and t2, preserves klass, return allocation in new_obj
+  void allocate_instance(Register klass, Register new_obj,
+                         Register t1, Register t2,
+                         bool clear_fields, Label& alloc_failed);
+
+  // Allocate instance in "obj" and read in the content of the inline field
+  // NOTES:
+  //   - input holder object via "obj", which must be rax,
+  //     will return new instance via the same reg
+  void read_flat_field(Register entry, Register obj);
+  void write_flat_field(Register entry,
+                        Register tmp1, Register tmp2,
+                        Register obj, Register off, Register value);
+
   // Object locking
   void lock_object  (Register lock_reg);
   void unlock_object(Register lock_reg);
@@ -240,7 +254,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void update_mdp_for_ret(Register return_bci);
 
   void profile_taken_branch(Register mdp);
-  void profile_not_taken_branch(Register mdp);
+  void profile_not_taken_branch(Register mdp, bool acmp = false);
   void profile_call(Register mdp);
   void profile_final_call(Register mdp);
   void profile_virtual_call(Register receiver, Register mdp,
@@ -252,6 +266,11 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void profile_switch_default(Register mdp);
   void profile_switch_case(Register index_in_scratch, Register mdp,
                            Register scratch2);
+  template <class ArrayData> void profile_array_type(Register mdp, Register array, Register tmp);
+
+  void profile_multiple_element_types(Register mdp, Register element, Register tmp, const Register tmp2);
+  void profile_element_type(Register mdp, Register element, Register tmp);
+  void profile_acmp(Register mdp, Register left, Register right, Register tmp);
 
   // Debugging
   // only if +VerifyOops && state == atos

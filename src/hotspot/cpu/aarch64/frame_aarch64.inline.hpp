@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,6 +32,9 @@
 #include "interpreter/interpreter.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "pauth_aarch64.hpp"
+#ifdef COMPILER1
+#include "c1/c1_Runtime1.hpp"
+#endif
 
 // Inline functions for AArch64 frames:
 
@@ -245,8 +248,8 @@ inline bool frame::equal(frame other) const {
 
 // Return unique id for this frame. The id must have a value where we can distinguish
 // identity and younger/older relationship. null represents an invalid (incomparable)
-// frame. Should not be called for heap frames.
-inline intptr_t* frame::id(void) const { return real_fp(); }
+// frame.
+inline intptr_t* frame::id(void) const { return unextended_sp(); }
 
 // Return true if the frame is older (less recent activation) than the frame represented by id
 inline bool frame::is_older(intptr_t* id) const   { assert(this->id() != nullptr && id != nullptr, "null frame id");
@@ -412,9 +415,6 @@ inline frame frame::sender(RegisterMap* map) const {
     StackWatermarkSet::on_iteration(map->thread(), result);
   }
 
-  // Calling frame::id() is currently not supported for heap frames.
-  assert(result._on_heap || this->_on_heap || result.is_older(this->id()), "Must be");
-
   return result;
 }
 
@@ -444,28 +444,32 @@ inline frame frame::sender_raw(RegisterMap* map) const {
 }
 
 inline frame frame::sender_for_compiled_frame(RegisterMap* map) const {
-  // we cannot rely upon the last fp having been saved to the thread
-  // in C2 code but it will have been pushed onto the stack. so we
-  // have to find it relative to the unextended sp
-
-  assert(_cb->frame_size() > 0, "must have non-zero frame size");
-  intptr_t* l_sender_sp = (!PreserveFramePointer || _sp_is_trusted) ? unextended_sp() + _cb->frame_size()
-                                                                    : sender_sp();
-  assert(!_sp_is_trusted || l_sender_sp == real_fp(), "");
+  CompiledFramePointers cfp = compiled_frame_details();
 
   // The return_address is always the word on the stack.
   // For ROP protection, C1/C2 will have signed the sender_pc,
   // but there is no requirement to authenticate it here.
-  address sender_pc = pauth_strip_verifiable((address) *(l_sender_sp - 1));
-
-  intptr_t** saved_fp_addr = (intptr_t**) (l_sender_sp - frame::sender_sp_offset);
+  address sender_pc = pauth_strip_verifiable(*cfp.sender_pc_addr);
 
   if (map->update_map()) {
     // Tell GC to use argument oopmaps for some runtime stubs that need it.
     // For C1, the runtime stub might not have oop maps, so set this flag
     // outside of update_register_map.
-    if (!_cb->is_nmethod()) { // compiled frames do not use callee-saved registers
-      map->set_include_argument_oops(_cb->caller_must_gc_arguments(map->thread()));
+    bool c1_buffering = false;
+#ifdef COMPILER1
+    nmethod* nm = _cb->as_nmethod_or_null();
+    if (nm != nullptr && nm->is_compiled_by_c1() && nm->method()->has_scalarized_args() &&
+        pc() < nm->verified_inline_entry_point()) {
+      // TODO 8284443 Can't we do that by not passing 'dont_gc_arguments' in case 'StubId::c1_buffer_inline_args_id' in 'Runtime1::generate_code_for'?
+      // The VEP and VIEP(RO) of C1-compiled methods call buffer_inline_args_xxx
+      // before doing any argument shuffling, so we need to scan the oops
+      // as the caller passes them.
+      c1_buffering = true;
+    }
+#endif
+    if (!_cb->is_nmethod() || c1_buffering) { // compiled frames do not use callee-saved registers
+      bool caller_args = _cb->caller_must_gc_arguments(map->thread()) || c1_buffering;
+      map->set_include_argument_oops(caller_args);
       if (oop_map() != nullptr) {
         _oop_map->update_register_map(this, map);
       }
@@ -478,19 +482,19 @@ inline frame frame::sender_for_compiled_frame(RegisterMap* map) const {
     // Since the prolog does the save and restore of FP there is no oopmap
     // for it so we must fill in its location as if there was an oopmap entry
     // since if our caller was compiled code there could be live jvm state in it.
-    update_map_with_saved_link(map, saved_fp_addr);
+    update_map_with_saved_link(map, cfp.saved_fp_addr);
   }
 
   if (Continuation::is_return_barrier_entry(sender_pc)) {
     if (map->walk_cont()) { // about to walk into an h-stack
       return Continuation::top_frame(*this, map);
     } else {
-      return Continuation::continuation_bottom_sender(map->thread(), *this, l_sender_sp);
+      return Continuation::continuation_bottom_sender(map->thread(), *this, cfp.sender_sp);
     }
   }
 
-  intptr_t* unextended_sp = l_sender_sp;
-  return frame(l_sender_sp, unextended_sp, *saved_fp_addr, sender_pc);
+  intptr_t* unextended_sp = cfp.sender_sp;
+  return frame(cfp.sender_sp, unextended_sp, *cfp.saved_fp_addr, sender_pc);
 }
 
 template <typename RegisterMapT>

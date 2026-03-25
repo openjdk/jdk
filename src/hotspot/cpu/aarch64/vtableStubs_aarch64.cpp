@@ -47,10 +47,10 @@
 extern "C" void bad_compiled_vtable_index(JavaThread* thread, oop receiver, int index);
 #endif
 
-VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
+VtableStub* VtableStubs::create_vtable_stub(int vtable_index, bool caller_is_c1) {
   // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
   const int stub_code_length = code_size_limit(true);
-  VtableStub* s = new(stub_code_length) VtableStub(true, vtable_index);
+  VtableStub* s = new(stub_code_length) VtableStub(true, vtable_index, caller_is_c1);
   // Can be null if there is no free space in the code cache.
   if (s == nullptr) {
     return nullptr;
@@ -62,6 +62,8 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   address   start_pc;
   int       slop_bytes = 0;
   int       slop_delta = 0;
+
+  ByteSize  entry_offset = caller_is_c1 ? Method::from_compiled_inline_offset() :  Method::from_compiled_inline_ro_offset();
 
   ResourceMark    rm;
   CodeBuffer      cb(s->entry_point(), stub_code_length);
@@ -116,7 +118,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   if (DebugVtables) {
     Label L;
     __ cbz(rmethod, L);
-    __ ldr(rscratch1, Address(rmethod, Method::from_compiled_offset()));
+    __ ldr(rscratch1, Address(rmethod, entry_offset));
     __ cbnz(rscratch1, L);
     __ stop("Vtable entry is null");
     __ bind(L);
@@ -127,7 +129,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   // rmethod: Method*
   // r2: receiver
   address ame_addr = __ pc();
-  __ ldr(rscratch1, Address(rmethod, Method::from_compiled_offset()));
+  __ ldr(rscratch1, Address(rmethod, entry_offset));
   __ br(rscratch1);
 
   masm->flush();
@@ -137,10 +139,10 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 }
 
 
-VtableStub* VtableStubs::create_itable_stub(int itable_index) {
+VtableStub* VtableStubs::create_itable_stub(int itable_index, bool caller_is_c1) {
   // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
   const int stub_code_length = code_size_limit(false);
-  VtableStub* s = new(stub_code_length) VtableStub(false, itable_index);
+  VtableStub* s = new(stub_code_length) VtableStub(false, itable_index, caller_is_c1);
   // Can be null if there is no free space in the code cache.
   if (s == nullptr) {
     return nullptr;
@@ -152,6 +154,8 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   address   start_pc;
   int       slop_bytes = 0;
   int       slop_delta = 0;
+
+  ByteSize  entry_offset = caller_is_c1 ? Method::from_compiled_inline_offset() :  Method::from_compiled_inline_ro_offset();
 
   ResourceMark    rm;
   CodeBuffer      cb(s->entry_point(), stub_code_length);
@@ -207,7 +211,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   if (DebugVtables) {
     Label L2;
     __ cbz(rmethod, L2);
-    __ ldr(rscratch1, Address(rmethod, Method::from_compiled_offset()));
+    __ ldr(rscratch1, Address(rmethod, entry_offset));
     __ cbnz(rscratch1, L2);
     __ stop("compiler entrypoint is null");
     __ bind(L2);
@@ -217,7 +221,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // rmethod: Method*
   // j_rarg0: receiver
   address ame_addr = __ pc();
-  __ ldr(rscratch1, Address(rmethod, Method::from_compiled_offset()));
+  __ ldr(rscratch1, Address(rmethod, entry_offset));
   __ br(rscratch1);
 
   __ bind(L_no_such_interface);

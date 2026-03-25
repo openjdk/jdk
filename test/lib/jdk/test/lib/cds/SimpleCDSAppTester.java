@@ -61,6 +61,7 @@ public class SimpleCDSAppTester {
     private Tester tester;
 
     private SimpleCDSAppTester(String name) {
+        super();
         this.name = name;
         this.tester = new Tester(name);
     }

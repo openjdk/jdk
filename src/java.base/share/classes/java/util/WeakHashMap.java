@@ -122,6 +122,22 @@ import java.util.function.Consumer;
  * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
+ * @apiNote
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          Objects that are {@linkplain Class#isValue() value objects} do not have identity
+ *          and can not be used as keys in a {@code WeakHashMap}. {@linkplain java.lang.ref.Reference References}
+ *          such as {@linkplain WeakReference WeakReference} used by {@code WeakhashMap}
+ *          to hold the key cannot refer to a value object.
+ *          Methods such as {@linkplain #get get} or {@linkplain #containsKey containsKey}
+ *          will always return {@code null} or {@code false} respectively.
+ *          The methods such as {@linkplain #put put}, {@linkplain #putAll putAll},
+ *          {@linkplain #compute(Object, BiFunction) compute}, and
+ *          {@linkplain #computeIfAbsent(Object, Function) computeIfAbsent} or any method putting
+ *          a value object, as a key, throw {@link IdentityException}.
+ *      </div>
+ * </div>
+ *
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
  *
@@ -288,6 +304,8 @@ public class WeakHashMap<@jdk.internal.RequiresIdentity K,V>
     /**
      * Checks for equality of non-null reference x and possibly-null y.  By
      * default uses Object.equals.
+     * The key may be a value object, but it will never be equal to the referent
+     * so does not need a separate Objects.hasIdentity check.
      */
     private boolean matchesKey(Entry<K,V> e, Object key) {
         // check if the given entry refers to the given key without
@@ -456,9 +474,11 @@ public class WeakHashMap<@jdk.internal.RequiresIdentity K,V>
      *         {@code null} if there was no mapping for {@code key}.
      *         (A {@code null} return can also indicate that the map
      *         previously associated {@code null} with {@code key}.)
+     * @throws IdentityException if {@code key} is a value object
      */
     public V put(@jdk.internal.RequiresIdentity K key, V value) {
         Object k = maskNull(key);
+        Objects.requireIdentity(k);
         int h = hash(k);
         Entry<K,V>[] tab = getTable();
         int i = indexFor(h, tab.length);
@@ -546,8 +566,13 @@ public class WeakHashMap<@jdk.internal.RequiresIdentity K,V>
      * These mappings will replace any mappings that this map had for any
      * of the keys currently in the specified map.
      *
+     * @apiNote If the specified map contains keys that are {@linkplain Objects#isValueObject value objects}
+     * an {@linkplain IdentityException} is thrown when the first value object key is encountered.
+     * Zero or more mappings may have already been copied to this map.
+     *
      * @param m mappings to be stored in this map.
      * @throws  NullPointerException if the specified map is null.
+     * @throws  IdentityException if any of the {@code keys} is a value object
      */
     public void putAll(Map<? extends K, ? extends V> m) {
         int numKeysToBeAdded = m.size();

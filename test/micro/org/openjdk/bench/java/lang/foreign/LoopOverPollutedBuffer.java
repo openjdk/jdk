@@ -58,6 +58,7 @@ public class LoopOverPollutedBuffer {
 
     ByteBuffer dbb = ByteBuffer.allocateDirect(ALLOC_SIZE).order(ByteOrder.nativeOrder());
     byte[] arr = new byte[ALLOC_SIZE];
+    @SuppressWarnings("initialization")
     ByteBuffer hbb = ByteBuffer.wrap(arr).order(ByteOrder.nativeOrder());
     FloatBuffer hfb = hbb.asFloatBuffer();
 

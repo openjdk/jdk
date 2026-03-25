@@ -1,0 +1,5 @@
+DualNonDuplicateErrors.java:18:13: compiler.err.cant.ref.before.ctor.called: this
+DualNonDuplicateErrors.java:18:9: compiler.err.cant.ref.before.ctor.called: foo(DualNonDuplicateErrors)
+- compiler.note.preview.filename: DualNonDuplicateErrors.java, DEFAULT
+- compiler.note.preview.recompile
+2 errors

@@ -36,6 +36,7 @@ import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -314,50 +315,50 @@ final class WinMsiPackager implements Consumer<PackagingPipeline.Builder> {
         wixPipeline.buildMsi(msiOut.toAbsolutePath());
     }
 
-    private WixVariables createWixVars() throws IOException {
-        var wixVars = new WixVariables();
+    private Map<String, String> createWixVars() throws IOException {
+        Map<String, String> data = new HashMap<>();
 
-        wixVars.put("JpProductCode", pkg.productCode().toString());
-        wixVars.put("JpProductUpgradeCode", pkg.upgradeCode().toString());
+        data.put("JpProductCode", pkg.productCode().toString());
+        data.put("JpProductUpgradeCode", pkg.upgradeCode().toString());
 
         Log.verbose(I18N.format("message.product-code", pkg.productCode()));
         Log.verbose(I18N.format("message.upgrade-code", pkg.upgradeCode()));
 
-        wixVars.define("JpAllowUpgrades");
+        data.put("JpAllowUpgrades", "yes");
         if (!pkg.isRuntimeInstaller()) {
-            wixVars.define("JpAllowDowngrades");
+            data.put("JpAllowDowngrades", "yes");
         }
 
-        wixVars.put("JpAppName", pkg.packageName());
-        wixVars.put("JpAppDescription", pkg.description());
-        wixVars.put("JpAppVendor", pkg.app().vendor());
-        wixVars.put("JpAppVersion", pkg.version());
+        data.put("JpAppName", pkg.packageName());
+        data.put("JpAppDescription", pkg.description());
+        data.put("JpAppVendor", pkg.app().vendor());
+        data.put("JpAppVersion", pkg.version());
         if (Files.exists(installerIcon)) {
-            wixVars.put("JpIcon", installerIcon.toString());
+            data.put("JpIcon", installerIcon.toString());
         }
 
         pkg.helpURL().ifPresent(value -> {
-            wixVars.put("JpHelpURL", value);
+            data.put("JpHelpURL", value);
         });
 
         pkg.updateURL().ifPresent(value -> {
-            wixVars.put("JpUpdateURL", value);
+            data.put("JpUpdateURL", value);
         });
 
         pkg.aboutURL().ifPresent(value -> {
-            wixVars.put("JpAboutURL", value);
+            data.put("JpAboutURL", value);
         });
 
-        wixVars.put("JpAppSizeKb", Long.toString(AppImageLayout.toPathGroup(
+        data.put("JpAppSizeKb", Long.toString(AppImageLayout.toPathGroup(
                 env.appImageLayout()).sizeInBytes() >> 10));
 
-        wixVars.put("JpConfigDir", env.configDir().toAbsolutePath().toString());
+        data.put("JpConfigDir", env.configDir().toAbsolutePath().toString());
 
         if (pkg.isSystemWideInstall()) {
-            wixVars.define("JpIsSystemWide");
+            data.put("JpIsSystemWide", "yes");
         }
 
-        return wixVars;
+        return data;
     }
 
     private static List<Path> getWxlFilesFromDir(Path dir) {

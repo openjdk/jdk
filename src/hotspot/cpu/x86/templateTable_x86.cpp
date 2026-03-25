@@ -36,11 +36,13 @@
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/inlineKlass.hpp"
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "oops/resolvedMethodEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -167,6 +169,7 @@ void TemplateTable::patch_bytecode(Bytecodes::Code bc, Register bc_reg,
   Label L_patch_done;
 
   switch (bc) {
+  case Bytecodes::_fast_vputfield:
   case Bytecodes::_fast_aputfield:
   case Bytecodes::_fast_bputfield:
   case Bytecodes::_fast_zputfield:
@@ -775,15 +778,34 @@ void TemplateTable::daload() {
 
 void TemplateTable::aaload() {
   transition(itos, atos);
-  // rax: index
-  // rdx: array
-  index_check(rdx, rax); // kills rbx
-  do_oop_load(_masm,
-              Address(rdx, rax,
-                      UseCompressedOops ? Address::times_4 : Address::times_ptr,
-                      arrayOopDesc::base_offset_in_bytes(T_OBJECT)),
-              rax,
-              IS_ARRAY);
+  Register array = rdx;
+  Register index = rax;
+
+  index_check(array, index); // kills rbx
+  __ profile_array_type<ArrayLoadData>(rbx, array, rcx);
+  if (UseArrayFlattening) {
+    Label is_flat_array, done;
+    __ test_flat_array_oop(array, rbx, is_flat_array);
+    do_oop_load(_masm,
+                Address(array, index,
+                        UseCompressedOops ? Address::times_4 : Address::times_ptr,
+                        arrayOopDesc::base_offset_in_bytes(T_OBJECT)),
+                rax,
+                IS_ARRAY);
+    __ jmp(done);
+    __ bind(is_flat_array);
+    __ movptr(rcx, array);
+    call_VM(rax, CAST_FROM_FN_PTR(address, InterpreterRuntime::flat_array_load), rcx, index);
+    __ bind(done);
+  } else {
+    do_oop_load(_masm,
+                Address(array, index,
+                        UseCompressedOops ? Address::times_4 : Address::times_ptr,
+                        arrayOopDesc::base_offset_in_bytes(T_OBJECT)),
+                rax,
+                IS_ARRAY);
+  }
+  __ profile_element_type(rbx, rax, rcx);
 }
 
 void TemplateTable::baload() {
@@ -1057,7 +1079,7 @@ void TemplateTable::dastore() {
 }
 
 void TemplateTable::aastore() {
-  Label is_null, ok_is_subtype, done;
+  Label is_null, is_flat_array, ok_is_subtype, done;
   transition(vtos, vtos);
   // stack: ..., array, index, value
   __ movptr(rax, at_tos());    // value
@@ -1069,19 +1091,30 @@ void TemplateTable::aastore() {
                           arrayOopDesc::base_offset_in_bytes(T_OBJECT));
 
   index_check_without_pop(rdx, rcx);     // kills rbx
+
+  __ profile_array_type<ArrayStoreData>(rdi, rdx, rbx);
+  __ profile_multiple_element_types(rdi, rax, rbx, rcx);
+
   __ testptr(rax, rax);
   __ jcc(Assembler::zero, is_null);
 
+  // Move array class to rdi
+  __ load_klass(rdi, rdx, rscratch1);
+  if (UseArrayFlattening) {
+    __ movl(rbx, Address(rdi, Klass::layout_helper_offset()));
+    __ test_flat_array_layout(rbx, is_flat_array);
+  }
+
   // Move subklass into rbx
   __ load_klass(rbx, rax, rscratch1);
-  // Move superklass into rax
-  __ load_klass(rax, rdx, rscratch1);
-  __ movptr(rax, Address(rax,
+  // Move array element superklass into rax
+  __ movptr(rax, Address(rdi,
                          ObjArrayKlass::element_klass_offset()));
 
   // Generate subtype check.  Blows rcx, rdi
   // Superklass in rax.  Subklass in rbx.
-  __ gen_subtype_check(rbx, ok_is_subtype);
+  // is "rbx <: rax" ? (value subclass <: array element superclass)
+  __ gen_subtype_check(rbx, ok_is_subtype, false);
 
   // Come here on failure
   // object is at TOS
@@ -1099,11 +1132,39 @@ void TemplateTable::aastore() {
 
   // Have a null in rax, rdx=array, ecx=index.  Store null at ary[idx]
   __ bind(is_null);
-  __ profile_null_seen(rbx);
+  if (Arguments::is_valhalla_enabled()) {
+    Label write_null_to_null_free_array, store_null;
 
+      // Move array class to rdi
+    __ load_klass(rdi, rdx, rscratch1);
+    if (UseArrayFlattening) {
+      __ movl(rbx, Address(rdi, Klass::layout_helper_offset()));
+      __ test_flat_array_layout(rbx, is_flat_array);
+    }
+
+    // No way to store null in null-free array
+    __ test_null_free_array_oop(rdx, rbx, write_null_to_null_free_array);
+    __ jmp(store_null);
+
+    __ bind(write_null_to_null_free_array);
+    __ jump(RuntimeAddress(Interpreter::_throw_NullPointerException_entry));
+
+    __ bind(store_null);
+  }
   // Store a null
   do_oop_store(_masm, element_address, noreg, IS_ARRAY);
+  __ jmp(done);
 
+  if (UseArrayFlattening) {
+    Label is_type_ok;
+    __ bind(is_flat_array); // Store non-null value to flat
+
+    __ movptr(rax, at_tos());
+    __ movl(rcx, at_tos_p1()); // index
+    __ movptr(rdx, at_tos_p2()); // array
+
+    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::flat_array_store), rax, rdx, rcx);
+  }
   // Pop stack arguments
   __ bind(done);
   __ addptr(rsp, 3 * Interpreter::stackElementSize);
@@ -1891,13 +1952,59 @@ void TemplateTable::if_nullcmp(Condition cc) {
 void TemplateTable::if_acmp(Condition cc) {
   transition(atos, vtos);
   // assume branch is more often taken than not (loops use backward branches)
-  Label not_taken;
+  Label taken, not_taken;
   __ pop_ptr(rdx);
+
+  __ profile_acmp(rbx, rdx, rax, rcx);
+
+  const int is_inline_type_mask = markWord::inline_type_pattern;
+  if (Arguments::is_valhalla_enabled()) {
+    __ cmpoop(rdx, rax);
+    __ jcc(Assembler::equal, (cc == equal) ? taken : not_taken);
+
+    // might be substitutable, test if either rax or rdx is null
+    __ testptr(rax, rax);
+    __ jcc(Assembler::zero, (cc == equal) ? not_taken : taken);
+    __ testptr(rdx, rdx);
+    __ jcc(Assembler::zero, (cc == equal) ? not_taken : taken);
+
+    // and both are values ?
+    __ movptr(rbx, Address(rdx, oopDesc::mark_offset_in_bytes()));
+    __ andptr(rbx, Address(rax, oopDesc::mark_offset_in_bytes()));
+    __ andptr(rbx, is_inline_type_mask);
+    __ cmpptr(rbx, is_inline_type_mask);
+    __ jcc(Assembler::notEqual, (cc == equal) ? not_taken : taken);
+
+    // same value klass ?
+    __ load_metadata(rbx, rdx);
+    __ load_metadata(rcx, rax);
+    __ cmpptr(rbx, rcx);
+    __ jcc(Assembler::notEqual, (cc == equal) ? not_taken : taken);
+
+    // Know both are the same type, let's test for substitutability...
+    if (cc == equal) {
+      invoke_is_substitutable(rax, rdx, taken, not_taken);
+    } else {
+      invoke_is_substitutable(rax, rdx, not_taken, taken);
+    }
+    __ stop("Not reachable");
+  }
+
   __ cmpoop(rdx, rax);
   __ jcc(j_not(cc), not_taken);
+  __ bind(taken);
   branch(false, false);
   __ bind(not_taken);
-  __ profile_not_taken_branch(rax);
+  __ profile_not_taken_branch(rax, true);
+}
+
+void TemplateTable::invoke_is_substitutable(Register aobj, Register bobj,
+                                            Label& is_subst, Label& not_subst) {
+  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::is_substitutable), aobj, bobj);
+  // Restored...rax answer, jmp to outcome...
+  __ testl(rax, rax);
+  __ jcc(Assembler::zero, not_subst);
+  __ jmp(is_subst);
 }
 
 void TemplateTable::ret() {
@@ -2151,7 +2258,8 @@ void TemplateTable::_return(TosState state) {
   if (state == itos) {
     __ narrow(rax);
   }
-  __ remove_activation(state, rbcp);
+
+  __ remove_activation(state, rbcp, true, true, true);
 
   __ jmp(rbcp);
 }
@@ -2524,19 +2632,17 @@ void TemplateTable::pop_and_check_object(Register r) {
 void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteControl rc) {
   transition(vtos, vtos);
 
-  const Register obj   = c_rarg3;
+  const Register obj   = r9;
   const Register cache = rcx;
   const Register index = rdx;
   const Register off   = rbx;
   const Register tos_state   = rax;
   const Register flags = rdx;
-  const Register bc    = c_rarg3; // uses same reg as obj, so don't mix them
+  const Register bc    = c_rarg3;
 
   resolve_cache_and_index_for_field(byte_no, cache, index);
   jvmti_post_field_access(cache, index, is_static, false);
   load_resolved_field_entry(obj, cache, tos_state, off, flags, is_static);
-
-  if (!is_static) pop_and_check_object(obj);
 
   const Address field(obj, off, Address::times_1, 0*wordSize);
 
@@ -2548,6 +2654,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ jcc(Assembler::notZero, notByte);
 
   // btos
+  if (!is_static) pop_and_check_object(obj);
   __ access_load_at(T_BYTE, IN_HEAP, rax, field, noreg);
   __ push(btos);
   // Rewrite bytecode to be faster
@@ -2561,6 +2668,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ jcc(Assembler::notEqual, notBool);
 
   // ztos (same code as btos)
+  if (!is_static) pop_and_check_object(obj);
   __ access_load_at(T_BOOLEAN, IN_HEAP, rax, field, noreg);
   __ push(ztos);
   // Rewrite bytecode to be faster
@@ -2574,14 +2682,46 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ cmpl(tos_state, atos);
   __ jcc(Assembler::notEqual, notObj);
   // atos
-  do_oop_load(_masm, field, rax);
-  __ push(atos);
-  if (!is_static && rc == may_rewrite) {
-    patch_bytecode(Bytecodes::_fast_agetfield, bc, rbx);
+  if (!Arguments::is_valhalla_enabled()) {
+    if (!is_static) pop_and_check_object(obj);
+    do_oop_load(_masm, field, rax);
+    __ push(atos);
+    if (!is_static && rc == may_rewrite) {
+      patch_bytecode(Bytecodes::_fast_agetfield, bc, rbx);
+    }
+    __ jmp(Done);
+  } else {
+    if (is_static) {
+      __ load_heap_oop(rax, field);
+      __ push(atos);
+      __ jmp(Done);
+    } else {
+      Label is_flat;
+      __ test_field_is_flat(flags, rscratch1, is_flat);
+      pop_and_check_object(obj);
+      __ load_heap_oop(rax, field);
+      __ push(atos);
+      if (rc == may_rewrite) {
+        patch_bytecode(Bytecodes::_fast_agetfield, bc, rbx);
+      }
+      __ jmp(Done);
+      __ bind(is_flat);
+      // field is flat (null-free or nullable with a null-marker)
+      pop_and_check_object(rax);
+      __ read_flat_field(rcx, rax);
+      __ verify_oop(rax);
+      __ push(atos);
+      if (rc == may_rewrite) {
+        patch_bytecode(Bytecodes::_fast_vgetfield, bc, rbx);
+      }
+      __ jmp(Done);
+    }
   }
-  __ jmp(Done);
 
   __ bind(notObj);
+
+  if (!is_static) pop_and_check_object(obj);
+
   __ cmpl(tos_state, itos);
   __ jcc(Assembler::notEqual, notInt);
   // itos
@@ -2681,7 +2821,6 @@ void TemplateTable::getstatic(int byte_no) {
   getfield_or_static(byte_no, true);
 }
 
-
 // The registers cache and index expected to be set before call.
 // The function may destroy various registers, just not the cache and index registers.
 void TemplateTable::jvmti_post_field_mod(Register cache, Register index, bool is_static) {
@@ -2743,7 +2882,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   const Register index = rdx;
   const Register tos_state   = rdx;
   const Register off   = rbx;
-  const Register flags = rax;
+  const Register flags = r9;
 
   resolve_cache_and_index_for_field(byte_no, cache, index);
   jvmti_post_field_mod(cache, index, is_static);
@@ -2756,23 +2895,24 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   Label notVolatile, Done;
 
   // Check for volatile store
-  __ andl(flags, (1 << ResolvedFieldEntry::is_volatile_shift));
-  __ testl(flags, flags);
+  __ movl(rscratch1, flags);
+  __ andl(rscratch1, (1 << ResolvedFieldEntry::is_volatile_shift));
+  __ testl(rscratch1, rscratch1);
   __ jcc(Assembler::zero, notVolatile);
 
-  putfield_or_static_helper(byte_no, is_static, rc, obj, off, tos_state);
+  putfield_or_static_helper(byte_no, is_static, rc, obj, off, tos_state, flags);
   volatile_barrier(Assembler::Membar_mask_bits(Assembler::StoreLoad |
                                                Assembler::StoreStore));
   __ jmp(Done);
   __ bind(notVolatile);
 
-  putfield_or_static_helper(byte_no, is_static, rc, obj, off, tos_state);
+  putfield_or_static_helper(byte_no, is_static, rc, obj, off, tos_state, flags);
 
   __ bind(Done);
 }
 
 void TemplateTable::putfield_or_static_helper(int byte_no, bool is_static, RewriteControl rc,
-                                              Register obj, Register off, Register tos_state) {
+                                              Register obj, Register off, Register tos_state, Register flags) {
 
   // field addresses
   const Address field(obj, off, Address::times_1, 0*wordSize);
@@ -2819,14 +2959,51 @@ void TemplateTable::putfield_or_static_helper(int byte_no, bool is_static, Rewri
 
   // atos
   {
-    __ pop(atos);
-    if (!is_static) pop_and_check_object(obj);
-    // Store into the field
-    do_oop_store(_masm, field, rax);
-    if (!is_static && rc == may_rewrite) {
-      patch_bytecode(Bytecodes::_fast_aputfield, bc, rbx, true, byte_no);
+    if (!Arguments::is_valhalla_enabled()) {
+      __ pop(atos);
+      if (!is_static) pop_and_check_object(obj);
+      // Store into the field
+      do_oop_store(_masm, field, rax);
+      if (!is_static && rc == may_rewrite) {
+        patch_bytecode(Bytecodes::_fast_aputfield, bc, rbx, true, byte_no);
+      }
+      __ jmp(Done);
+    } else {
+      __ pop(atos);
+      if (is_static) {
+        Label is_nullable;
+        __ test_field_is_not_null_free_inline_type(flags, rscratch1, is_nullable);
+        __ null_check(rax);  // FIXME JDK-8341120
+        __ bind(is_nullable);
+        do_oop_store(_masm, field, rax);
+        __ jmp(Done);
+      } else {
+        Label is_flat, null_free_reference, rewrite_inline;
+        __ test_field_is_flat(flags, rscratch1, is_flat);
+        __ test_field_is_null_free_inline_type(flags, rscratch1, null_free_reference);
+        pop_and_check_object(obj);
+        // Store into the field
+        do_oop_store(_masm, field, rax);
+        if (rc == may_rewrite) {
+          patch_bytecode(Bytecodes::_fast_aputfield, bc, rbx, true, byte_no);
+        }
+        __ jmp(Done);
+        __ bind(null_free_reference);
+        __ null_check(rax);  // FIXME JDK-8341120
+        pop_and_check_object(obj);
+        // Store into the field
+        do_oop_store(_masm, field, rax);
+        __ jmp(rewrite_inline);
+        __ bind(is_flat);
+        pop_and_check_object(rscratch2);
+        __ write_flat_field(rcx, r8, rscratch1, rscratch2, rbx, rax);
+        __ bind(rewrite_inline);
+        if (rc == may_rewrite) {
+          patch_bytecode(Bytecodes::_fast_vputfield, bc, rbx, true, byte_no);
+        }
+        __ jmp(Done);
+      }
     }
-    __ jmp(Done);
   }
 
   __ bind(notObj);
@@ -2963,6 +3140,7 @@ void TemplateTable::jvmti_post_fast_field_mod() {
     // to do it for every data type, we use the saved values as the
     // jvalue object.
     switch (bytecode()) {          // load values into the jvalue object
+    case Bytecodes::_fast_vputfield: // fall through
     case Bytecodes::_fast_aputfield: __ push_ptr(rax); break;
     case Bytecodes::_fast_bputfield: // fall through
     case Bytecodes::_fast_zputfield: // fall through
@@ -2986,6 +3164,7 @@ void TemplateTable::jvmti_post_fast_field_mod() {
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_field_modification), rbx, c_rarg2, c_rarg3);
 
     switch (bytecode()) {             // restore tos values
+    case Bytecodes::_fast_vputfield: // fall through
     case Bytecodes::_fast_aputfield: __ pop_ptr(rax); break;
     case Bytecodes::_fast_bputfield: // fall through
     case Bytecodes::_fast_zputfield: // fall through
@@ -3004,18 +3183,15 @@ void TemplateTable::jvmti_post_fast_field_mod() {
 void TemplateTable::fast_storefield(TosState state) {
   transition(state, vtos);
 
-  Register cache = rcx;
-
   Label notVolatile, Done;
 
   jvmti_post_fast_field_mod();
 
   __ push(rax);
   __ load_field_entry(rcx, rax);
-  load_resolved_field_entry(noreg, cache, rax, rbx, rdx);
-  // RBX: field offset, RAX: TOS, RDX: flags
-  __ andl(rdx, (1 << ResolvedFieldEntry::is_volatile_shift));
+  load_resolved_field_entry(noreg, rcx, rax, rbx, rdx);
   __ pop(rax);
+  // RBX: field offset, RCX: RAX: TOS, RDX: flags
 
   // Get object from stack
   pop_and_check_object(rcx);
@@ -3024,26 +3200,47 @@ void TemplateTable::fast_storefield(TosState state) {
   const Address field(rcx, rbx, Address::times_1);
 
   // Check for volatile store
-  __ testl(rdx, rdx);
+  __ movl(rscratch2, rdx);  // saving flags for is_flat test
+  __ andl(rscratch2, (1 << ResolvedFieldEntry::is_volatile_shift));
+  __ testl(rscratch2, rscratch2);
   __ jcc(Assembler::zero, notVolatile);
 
-  fast_storefield_helper(field, rax);
+  fast_storefield_helper(field, rax, rdx);
   volatile_barrier(Assembler::Membar_mask_bits(Assembler::StoreLoad |
                                                Assembler::StoreStore));
   __ jmp(Done);
   __ bind(notVolatile);
 
-  fast_storefield_helper(field, rax);
+  fast_storefield_helper(field, rax, rdx);
 
   __ bind(Done);
 }
 
-void TemplateTable::fast_storefield_helper(Address field, Register rax) {
+void TemplateTable::fast_storefield_helper(Address field, Register rax, Register flags) {
+
+  // DANGER: 'field' argument depends on rcx and rbx
 
   // access field
   switch (bytecode()) {
+  case Bytecodes::_fast_vputfield:
+    {
+      // Field is either flat (nullable or not) or non-flat and null-free
+      Label is_flat, done;
+      __ test_field_is_flat(flags, rscratch1, is_flat);
+      __ null_check(rax);  // FIXME JDK-8341120
+      do_oop_store(_masm, field, rax);
+      __ jmp(done);
+      __ bind(is_flat);
+      __ load_field_entry(r8, r9);
+      __ movptr(rscratch2, rcx);  // re-shuffle registers because of VM call calling convention
+      __ write_flat_field(r8, rscratch1, r9, rscratch2, rbx, rax);
+      __ bind(done);
+    }
+    break;
   case Bytecodes::_fast_aputfield:
-    do_oop_store(_masm, field, rax);
+    {
+      do_oop_store(_masm, field, rax);
+    }
     break;
   case Bytecodes::_fast_lputfield:
     __ access_store_at(T_LONG, IN_HEAP, field, noreg /* ltos */, noreg, noreg, noreg);
@@ -3099,15 +3296,19 @@ void TemplateTable::fast_accessfield(TosState state) {
 
   // access constant pool cache
   __ load_field_entry(rcx, rbx);
-  __ load_sized_value(rbx, Address(rcx, in_bytes(ResolvedFieldEntry::field_offset_offset())), sizeof(int), true /*is_signed*/);
+  __ load_sized_value(rdx, Address(rcx, in_bytes(ResolvedFieldEntry::field_offset_offset())), sizeof(int), true /*is_signed*/);
 
   // rax: object
   __ verify_oop(rax);
   __ null_check(rax);
-  Address field(rax, rbx, Address::times_1);
+  Address field(rax, rdx, Address::times_1);
 
   // access field
   switch (bytecode()) {
+  case Bytecodes::_fast_vgetfield:
+    __ read_flat_field(rcx, rax);
+    __ verify_oop(rax);
+    break;
   case Bytecodes::_fast_agetfield:
     do_oop_load(_masm, field, rax);
     __ verify_oop(rax);
@@ -3532,9 +3733,7 @@ void TemplateTable::_new() {
   transition(vtos, atos);
   __ get_unsigned_2_byte_index_at_bcp(rdx, 1);
   Label slow_case;
-  Label slow_case_no_pop;
   Label done;
-  Label initialize_header;
 
   __ get_cpool_and_tags(rcx, rax);
 
@@ -3543,105 +3742,21 @@ void TemplateTable::_new() {
   // how Constant Pool is updated (see ConstantPool::klass_at_put)
   const int tags_offset = Array<u1>::base_offset_in_bytes();
   __ cmpb(Address(rax, rdx, Address::times_1, tags_offset), JVM_CONSTANT_Class);
-  __ jcc(Assembler::notEqual, slow_case_no_pop);
+  __ jcc(Assembler::notEqual, slow_case);
 
   // get InstanceKlass
   __ load_resolved_klass_at_index(rcx, rcx, rdx);
-  __ push(rcx);  // save the contexts of klass for initializing the header
 
   // make sure klass is initialized
   // init_state needs acquire, but x86 is TSO, and so we are already good.
   assert(VM_Version::supports_fast_class_init_checks(), "must support fast class initialization checks");
   __ clinit_barrier(rcx, nullptr /*L_fast_path*/, &slow_case);
 
-  // get instance_size in InstanceKlass (scaled to a count of bytes)
-  __ movl(rdx, Address(rcx, Klass::layout_helper_offset()));
-  // test to see if it is malformed in some way
-  __ testl(rdx, Klass::_lh_instance_slow_path_bit);
-  __ jcc(Assembler::notZero, slow_case);
-
-  // Allocate the instance:
-  //  If TLAB is enabled:
-  //    Try to allocate in the TLAB.
-  //    If fails, go to the slow path.
-  //    Initialize the allocation.
-  //    Exit.
-  //
-  //  Go to slow path.
-
-  if (UseTLAB) {
-    __ tlab_allocate(rax, rdx, 0, rcx, rbx, slow_case);
-    if (ZeroTLAB) {
-      // the fields have been already cleared
-      __ jmp(initialize_header);
-    }
-
-    // The object is initialized before the header.  If the object size is
-    // zero, go directly to the header initialization.
-    if (UseCompactObjectHeaders) {
-      assert(is_aligned(oopDesc::base_offset_in_bytes(), BytesPerLong), "oop base offset must be 8-byte-aligned");
-      __ decrement(rdx, oopDesc::base_offset_in_bytes());
-    } else {
-      __ decrement(rdx, sizeof(oopDesc));
-    }
-    __ jcc(Assembler::zero, initialize_header);
-
-    // Initialize topmost object field, divide rdx by 8, check if odd and
-    // test if zero.
-    __ xorl(rcx, rcx);    // use zero reg to clear memory (shorter code)
-    __ shrl(rdx, LogBytesPerLong); // divide by 2*oopSize and set carry flag if odd
-
-    // rdx must have been multiple of 8
-#ifdef ASSERT
-    // make sure rdx was multiple of 8
-    Label L;
-    // Ignore partial flag stall after shrl() since it is debug VM
-    __ jcc(Assembler::carryClear, L);
-    __ stop("object size is not multiple of 2 - adjust this code");
-    __ bind(L);
-    // rdx must be > 0, no extra check needed here
-#endif
-
-    // initialize remaining object fields: rdx was a multiple of 8
-    { Label loop;
-    __ bind(loop);
-    int header_size_bytes = oopDesc::header_size() * HeapWordSize;
-    assert(is_aligned(header_size_bytes, BytesPerLong), "oop header size must be 8-byte-aligned");
-    __ movptr(Address(rax, rdx, Address::times_8, header_size_bytes - 1*oopSize), rcx);
-    __ decrement(rdx);
-    __ jcc(Assembler::notZero, loop);
-    }
-
-    // initialize object header only.
-    __ bind(initialize_header);
-    if (UseCompactObjectHeaders) {
-      __ pop(rcx);   // get saved klass back in the register.
-      __ movptr(rbx, Address(rcx, Klass::prototype_header_offset()));
-      __ movptr(Address(rax, oopDesc::mark_offset_in_bytes()), rbx);
-    } else {
-      __ movptr(Address(rax, oopDesc::mark_offset_in_bytes()),
-                (intptr_t)markWord::prototype().value()); // header
-      __ pop(rcx);   // get saved klass back in the register.
-      __ xorl(rsi, rsi); // use zero reg to clear memory (shorter code)
-      __ store_klass_gap(rax, rsi);  // zero klass gap for compressed oops
-      __ store_klass(rax, rcx, rscratch1);  // klass
-    }
-
-    if (DTraceAllocProbes) {
-      // Trigger dtrace event for fastpath
-      __ push(atos);
-      __ call_VM_leaf(
-           CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc)), rax);
-      __ pop(atos);
-    }
-
-    __ jmp(done);
-  }
+  __ allocate_instance(rcx, rax, rdx, rbx, true, slow_case);
+  __ jmp(done);
 
   // slow case
   __ bind(slow_case);
-  __ pop(rcx);   // restore stack pointer to what it was when we came in.
-  __ bind(slow_case_no_pop);
 
   __ get_constant_pool(c_rarg1);
   __ get_unsigned_2_byte_index_at_bcp(c_rarg2, 1);
@@ -3683,10 +3798,10 @@ void TemplateTable::checkcast() {
   __ get_cpool_and_tags(rcx, rdx); // rcx=cpool, rdx=tags array
   __ get_unsigned_2_byte_index_at_bcp(rbx, 1); // rbx=index
   // See if bytecode has already been quicked
-  __ cmpb(Address(rdx, rbx,
-                  Address::times_1,
-                  Array<u1>::base_offset_in_bytes()),
-          JVM_CONSTANT_Class);
+  __ movzbl(rdx, Address(rdx, rbx,
+      Address::times_1,
+      Array<u1>::base_offset_in_bytes()));
+  __ cmpl(rdx, JVM_CONSTANT_Class);
   __ jcc(Assembler::equal, quicked);
   __ push(atos); // save receiver for result, and for GC
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
@@ -3716,15 +3831,15 @@ void TemplateTable::checkcast() {
   // Come here on success
   __ bind(ok_is_subtype);
   __ mov(rax, rdx); // Restore object in rdx
+  __ jmp(done);
+
+  __ bind(is_null);
 
   // Collect counts on whether this check-cast sees nulls a lot or not.
   if (ProfileInterpreter) {
-    __ jmp(done);
-    __ bind(is_null);
     __ profile_null_seen(rcx);
-  } else {
-    __ bind(is_null);   // same as 'done'
   }
+
   __ bind(done);
 }
 
@@ -3738,10 +3853,10 @@ void TemplateTable::instanceof() {
   __ get_cpool_and_tags(rcx, rdx); // rcx=cpool, rdx=tags array
   __ get_unsigned_2_byte_index_at_bcp(rbx, 1); // rbx=index
   // See if bytecode has already been quicked
-  __ cmpb(Address(rdx, rbx,
-                  Address::times_1,
-                  Array<u1>::base_offset_in_bytes()),
-          JVM_CONSTANT_Class);
+  __ movzbl(rdx, Address(rdx, rbx,
+        Address::times_1,
+        Array<u1>::base_offset_in_bytes()));
+  __ cmpl(rdx, JVM_CONSTANT_Class);
   __ jcc(Assembler::equal, quicked);
 
   __ push(atos); // save receiver for result, and for GC
@@ -3784,7 +3899,6 @@ void TemplateTable::instanceof() {
   // rax = 0: obj == nullptr or  obj is not an instanceof the specified klass
   // rax = 1: obj != nullptr and obj is     an instanceof the specified klass
 }
-
 
 //----------------------------------------------------------------------------------------------------
 // Breakpoints
@@ -3844,6 +3958,10 @@ void TemplateTable::monitorenter() {
 
   // check for null object
   __ null_check(rax);
+
+  Label is_inline_type;
+  __ movptr(rbx, Address(rax, oopDesc::mark_offset_in_bytes()));
+  __ test_markword_is_inline_type(rbx, is_inline_type);
 
   const Address monitor_block_top(
         rbp, frame::interpreter_frame_monitor_block_top_offset * wordSize);
@@ -3937,6 +4055,11 @@ void TemplateTable::monitorenter() {
   // The bcp has already been incremented. Just need to dispatch to
   // next instruction.
   __ dispatch_next(vtos);
+
+  __ bind(is_inline_type);
+  __ call_VM(noreg, CAST_FROM_FN_PTR(address,
+                    InterpreterRuntime::throw_identity_exception), rax);
+  __ should_not_reach_here();
 }
 
 void TemplateTable::monitorexit() {
@@ -3944,6 +4067,17 @@ void TemplateTable::monitorexit() {
 
   // check for null object
   __ null_check(rax);
+
+  const int is_inline_type_mask = markWord::inline_type_pattern;
+  Label has_identity;
+  __ movptr(rbx, Address(rax, oopDesc::mark_offset_in_bytes()));
+  __ andptr(rbx, is_inline_type_mask);
+  __ cmpl(rbx, is_inline_type_mask);
+  __ jcc(Assembler::notEqual, has_identity);
+  __ call_VM(noreg, CAST_FROM_FN_PTR(address,
+                     InterpreterRuntime::throw_illegal_monitor_state_exception));
+  __ should_not_reach_here();
+  __ bind(has_identity);
 
   const Address monitor_block_top(
         rbp, frame::interpreter_frame_monitor_block_top_offset * wordSize);

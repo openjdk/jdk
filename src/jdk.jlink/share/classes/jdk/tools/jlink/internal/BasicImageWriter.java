@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,21 +36,17 @@ import jdk.internal.jimage.ImageStringsReader;
 public final class BasicImageWriter {
     public static final String MODULES_IMAGE_NAME = "modules";
 
-    private ByteOrder byteOrder;
-    private ImageStringsWriter strings;
+    private final ByteOrder byteOrder;
+    private final ImageStringsWriter strings;
     private int length;
     private int[] redirect;
     private ImageLocationWriter[] locations;
-    private List<ImageLocationWriter> input;
-    private ImageStream headerStream;
-    private ImageStream redirectStream;
-    private ImageStream locationOffsetStream;
-    private ImageStream locationStream;
-    private ImageStream allIndexStream;
-
-    public BasicImageWriter() {
-        this(ByteOrder.nativeOrder());
-    }
+    private final List<ImageLocationWriter> input;
+    private final ImageStream headerStream;
+    private final ImageStream redirectStream;
+    private final ImageStream locationOffsetStream;
+    private final ImageStream locationStream;
+    private final ImageStream allIndexStream;
 
     public BasicImageWriter(ByteOrder byteOrder) {
         this.byteOrder = Objects.requireNonNull(byteOrder);
@@ -75,21 +71,21 @@ public final class BasicImageWriter {
         return strings.get(offset);
     }
 
-    public void addLocation(String fullname, long contentOffset,
-            long compressedSize, long uncompressedSize) {
+    public void addLocation(
+            String fullname,
+            long contentOffset,
+            long compressedSize,
+            long uncompressedSize,
+            int previewFlags) {
         ImageLocationWriter location =
                 ImageLocationWriter.newLocation(fullname, strings,
-                        contentOffset, compressedSize, uncompressedSize);
+                        contentOffset, compressedSize, uncompressedSize, previewFlags);
         input.add(location);
         length++;
     }
 
     ImageLocationWriter[] getLocations() {
         return locations;
-    }
-
-    int getLocationsCount() {
-        return input.size();
     }
 
     private void generatePerfectHash() {
@@ -173,17 +169,5 @@ public final class BasicImageWriter {
         }
 
         return allIndexStream.toArray();
-    }
-
-    ImageLocationWriter find(String key) {
-        int index = redirect[ImageStringsReader.hashCode(key) % length];
-
-        if (index < 0) {
-            index = -index - 1;
-        } else {
-            index = ImageStringsReader.hashCode(key, index) % length;
-        }
-
-        return locations[index];
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,12 +46,22 @@ class ObjArrayKlass : public ArrayKlass {
   // must add this field to ObjArrayKlass::metaspace_pointers_do().
   Klass* _element_klass;            // The klass of the elements of this array type
   Klass* _bottom_klass;             // The one-dimensional type (InstanceKlass or TypeArrayKlass)
+  ObjArrayKlass* _next_refined_array_klass;
 
+  static ArrayDescription array_layout_selection(Klass* element, ArrayProperties properties);
+  ObjArrayKlass* allocate_klass_from_description(ArrayDescription ad, TRAPS);
+  ObjArrayKlass* klass_from_description(ArrayDescription adesc, TRAPS);
+
+  inline ObjArrayKlass* next_refined_array_klass_acquire() const;
+  inline void release_set_next_refined_klass(ObjArrayKlass* ak);
+
+ protected:
   // Constructor
-  ObjArrayKlass(int n, Klass* element_klass, Symbol* name);
-  static ObjArrayKlass* allocate_klass(ClassLoaderData* loader_data, int n, Klass* k, Symbol* name, TRAPS);
+  ObjArrayKlass(int n, Klass* element_klass, Symbol* name, KlassKind kind, ArrayProperties props);
+  static ObjArrayKlass* allocate_klass(ClassLoaderData* loader_data, int n, Klass* k, Symbol* name, ArrayProperties props, TRAPS);
 
-  objArrayOop allocate_instance(int length, TRAPS);
+  ObjArrayKlass* allocate_klass_with_properties(ArrayProperties props, TRAPS);
+  objArrayOop allocate_instance(int length, ArrayProperties props, TRAPS);
 
  protected:
   // Create array_name for element klass
@@ -61,15 +71,18 @@ class ObjArrayKlass : public ArrayKlass {
   // For dummy objects
   ObjArrayKlass() {}
 
-  // Instance variables
   Klass* element_klass() const      { return _element_klass; }
-  void set_element_klass(Klass* k)  { _element_klass = k; }
+
+  ObjArrayKlass* klass_with_properties(ArrayProperties props, TRAPS);
+
+  ObjArrayKlass* next_refined_array_klass() const   { return _next_refined_array_klass; }
+  bool find_refined_array_klass(ObjArrayKlass* k);
 
   // Compiler/Interpreter offset
-  static ByteSize element_klass_offset() { return byte_offset_of(ObjArrayKlass, _element_klass); }
+  static ByteSize element_klass_offset()            { return byte_offset_of(ObjArrayKlass, _element_klass); }
+  static ByteSize next_refined_array_klass_offset() { return byte_offset_of(ObjArrayKlass, _next_refined_array_klass); }
 
   Klass* bottom_klass() const       { return _bottom_klass; }
-  void set_bottom_klass(Klass* k)   { _bottom_klass = k; }
   Klass** bottom_klass_addr()       { return &_bottom_klass; }
 
   ModuleEntry* module() const override;
@@ -94,14 +107,14 @@ class ObjArrayKlass : public ArrayKlass {
   // Compute protection domain
   oop protection_domain() const override { return bottom_klass()->protection_domain(); }
 
-  virtual void metaspace_pointers_do(MetaspaceClosure* iter) override;
+  void metaspace_pointers_do(MetaspaceClosure* iter) override;
 
- private:
-  // Either oop or narrowOop depending on UseCompressedOops.
-  // must be called from within ObjArrayKlass.cpp
-  void do_copy(arrayOop s, size_t src_offset,
-               arrayOop d, size_t dst_offset,
-               int length, TRAPS);
+#if INCLUDE_CDS
+  void remove_unshareable_info() override;
+  void remove_java_mirror() override;
+  void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS);
+#endif
+
  public:
   static ObjArrayKlass* cast(Klass* k) {
     return const_cast<ObjArrayKlass*>(cast(const_cast<const Klass*>(k)));

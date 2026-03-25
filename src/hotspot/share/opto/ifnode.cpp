@@ -1274,6 +1274,23 @@ bool IfNode::is_null_check(IfProjNode* proj, PhaseIterGVN* igvn) const {
   return false;
 }
 
+// Returns true if this IfNode belongs to a flat array check
+// and returns the corresponding array in the 'array' parameter.
+bool IfNode::is_flat_array_check(PhaseTransform* phase, Node** array) {
+  Node* bol = in(1);
+  if (!bol->is_Bool()) {
+    return false;
+  }
+  Node* cmp = bol->in(1);
+  if (cmp->isa_FlatArrayCheck()) {
+    if (array != nullptr) {
+      *array = cmp->in(FlatArrayCheckNode::ArrayOrKlass);
+    }
+    return true;
+  }
+  return false;
+}
+
 // Check that the If that is in between the 2 integer comparisons has
 // no side effect
 bool IfNode::is_side_effect_free_test(IfProjNode* proj, PhaseIterGVN* igvn) const {

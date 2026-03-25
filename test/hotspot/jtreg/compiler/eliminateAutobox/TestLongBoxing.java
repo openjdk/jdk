@@ -28,6 +28,8 @@
  *
  * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+EliminateAutoBox
  *                   compiler.eliminateAutobox.TestLongBoxing
+ * @run main/othervm --enable-preview -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+EliminateAutoBox
+ *                   compiler.eliminateAutobox.TestLongBoxing
  * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+EliminateAutoBox
  *                   -XX:CompileCommand=exclude,compiler.eliminateAutobox.TestLongBoxing::dummy
  *                   -XX:CompileCommand=exclude,compiler.eliminateAutobox.TestLongBoxing::foo

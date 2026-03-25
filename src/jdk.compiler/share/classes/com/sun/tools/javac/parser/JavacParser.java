@@ -37,9 +37,11 @@ import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
 import com.sun.source.tree.ModuleTree.ModuleKind;
 
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.FlagsEnum;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.file.PathFileObject;
 import com.sun.tools.javac.parser.Tokens.*;
+import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
@@ -52,6 +54,7 @@ import com.sun.tools.javac.util.JCDiagnostic.Error;
 import com.sun.tools.javac.util.JCDiagnostic.Fragment;
 import com.sun.tools.javac.util.List;
 
+import static com.sun.tools.javac.code.Flags.asFlagSet;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.*;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.ASSERT;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.CASE;
@@ -60,6 +63,7 @@ import static com.sun.tools.javac.parser.Tokens.TokenKind.EQ;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.GT;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.IMPORT;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.LT;
+import static com.sun.tools.javac.parser.Tokens.TokenKind.SYNCHRONIZED;
 import com.sun.tools.javac.parser.VirtualParser.VirtualScanner;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import static com.sun.tools.javac.resources.CompilerProperties.Fragments.ImplicitAndExplicitNotAllowed;
@@ -194,6 +198,8 @@ public class JavacParser implements Parser {
         this.allowYieldStatement = Feature.SWITCH_EXPRESSION.allowedInSource(source);
         this.allowRecords = Feature.RECORDS.allowedInSource(source);
         this.allowSealedTypes = Feature.SEALED_CLASSES.allowedInSource(source);
+        this.allowValueClasses = (!preview.isPreview(Feature.VALUE_CLASSES) || preview.isEnabled()) &&
+                Feature.VALUE_CLASSES.allowedInSource(source);
         updateUnexpectedTopLevelDefinitionStartError(false);
     }
 
@@ -217,6 +223,8 @@ public class JavacParser implements Parser {
         this.allowYieldStatement = Feature.SWITCH_EXPRESSION.allowedInSource(source);
         this.allowRecords = Feature.RECORDS.allowedInSource(source);
         this.allowSealedTypes = Feature.SEALED_CLASSES.allowedInSource(source);
+        this.allowValueClasses = (!preview.isPreview(Feature.VALUE_CLASSES) || preview.isEnabled()) &&
+                Feature.VALUE_CLASSES.allowedInSource(source);
         updateUnexpectedTopLevelDefinitionStartError(false);
     }
 
@@ -248,6 +256,10 @@ public class JavacParser implements Parser {
     /** Switch: are records allowed in this source level?
      */
     boolean allowRecords;
+
+    /** Switch: are value classes allowed in this source level?
+     */
+    boolean allowValueClasses;
 
     /** Switch: are sealed types allowed in this source level?
      */
@@ -1662,8 +1674,8 @@ public class JavacParser implements Parser {
                         }
                         break loop;
                     case LT:
-                        if (!isMode(TYPE) && isUnboundMemberRef()) {
-                            //this is an unbound method reference whose qualifier
+                        if (!isMode(TYPE) && isParameterizedTypePrefix()) {
+                            //this is either an unbound method reference whose qualifier
                             //is a generic type i.e. A<S>::m
                             int pos1 = token.pos;
                             accept(LT);
@@ -1908,7 +1920,7 @@ public class JavacParser implements Parser {
      * matching '&gt;' and see if the subsequent terminal is either '.' or '::'.
      */
     @SuppressWarnings("fallthrough")
-    boolean isUnboundMemberRef() {
+    boolean isParameterizedTypePrefix() {
         int pos = 0, depth = 0;
         outer: for (Token t = S.token(pos) ; ; t = S.token(++pos)) {
             switch (t.kind) {
@@ -3003,6 +3015,11 @@ public class JavacParser implements Parser {
                 }
             }
         }
+        if ((isValueModifier()) && allowValueClasses) {
+            checkSourceLevel(Feature.VALUE_CLASSES);
+            dc = token.docComment();
+            return List.of(classOrRecordOrInterfaceOrEnumDeclaration(modifiersOpt(), dc));
+        }
         dc = token.docComment();
         if (isRecordStart() && allowRecords) {
             return List.of(recordDeclaration(F.at(pos).Modifiers(0), dc));
@@ -3608,6 +3625,11 @@ public class JavacParser implements Parser {
                     flag = Flags.SEALED;
                     break;
                 }
+                if (isValueModifier()) {
+                    checkSourceLevel(Feature.VALUE_CLASSES);
+                    flag = Flags.VALUE_CLASS;
+                    break;
+                }
                 break loop;
             }
             default: break loop;
@@ -3873,6 +3895,13 @@ public class JavacParser implements Parser {
                 return Source.JDK14;
             } else if (shouldWarn) {
                 log.warning(pos, Warnings.RestrictedTypeNotAllowedPreview(name, Source.JDK14));
+            }
+        }
+        if (name == names.value) {
+            if (allowValueClasses) {
+                return Source.JDK23;
+            } else if (shouldWarn) {
+                log.warning(pos, Warnings.RestrictedTypeNotAllowedPreview(name, Source.JDK23));
             }
         }
         if (name == names.sealed) {
@@ -4995,6 +5024,32 @@ public class JavacParser implements Parser {
         return false;
     }
 
+    protected boolean isValueModifier() {
+        if (token.kind == IDENTIFIER && token.name() == names.value) {
+            boolean isValueModifier = false;
+            Token next = S.token(1);
+            switch (next.kind) {
+                case PRIVATE: case PROTECTED: case PUBLIC: case STATIC: case TRANSIENT:
+                case FINAL: case ABSTRACT: case NATIVE: case VOLATILE: case SYNCHRONIZED:
+                case STRICTFP: case MONKEYS_AT: case DEFAULT: case BYTE: case SHORT:
+                case CHAR: case INT: case LONG: case FLOAT: case DOUBLE: case BOOLEAN: case VOID:
+                case CLASS: case INTERFACE: case ENUM:
+                    isValueModifier = true;
+                    break;
+                case IDENTIFIER: // value record R || value value || new value Comparable() {} ??
+                    if (next.name() == names.record || next.name() == names.value
+                            || (mode & EXPR) != 0)
+                        isValueModifier = true;
+                    break;
+            }
+            if (isValueModifier) {
+                checkSourceLevel(Feature.VALUE_CLASSES);
+                return true;
+            }
+        }
+        return false;
+    }
+
     protected boolean isSealedClassStart(boolean local) {
         if (token.name() == names.sealed) {
             Token next = S.token(1);
@@ -5022,7 +5077,9 @@ public class JavacParser implements Parser {
                     yield afterNext.kind != INTERFACE || currentIsNonSealed;
                 }
                 case PUBLIC, PROTECTED, PRIVATE, ABSTRACT, STATIC, FINAL, STRICTFP, CLASS, INTERFACE, ENUM -> true;
-                case IDENTIFIER -> isNonSealedIdentifier(next, currentIsNonSealed ? 3 : 1) || next.name() == names.sealed;
+                case IDENTIFIER -> isNonSealedIdentifier(next, currentIsNonSealed ? 3 : 1) ||
+                        next.name() == names.sealed ||
+                        allowValueClasses && next.name() == names.value;
                 default -> false;
             };
     }

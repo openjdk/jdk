@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package java.lang;
 
 import jdk.internal.misc.CDS;
+import jdk.internal.misc.PreviewFeatures;
+import jdk.internal.value.DeserializeConstructor;
 import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
@@ -50,14 +52,23 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * with a {@code byte}.
  *
  * <p>This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; programmers should treat instances that are
- * {@linkplain #equals(Object) equal} as interchangeable and should not
- * use instances for synchronization, or unpredictable behavior may
- * occur. For example, in a future release, synchronization may fail.
+ * class; programmers should treat instances that are {@linkplain #equals(Object) equal}
+ * as interchangeable and should not use instances for synchronization, mutexes, or
+ * with {@linkplain java.lang.ref.Reference object references}.
+ *
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          When preview features are enabled, {@code Byte} is a {@linkplain Class#isValue value class}.
+ *          Use of value class instances for synchronization, mutexes, or with
+ *          {@linkplain java.lang.ref.Reference object references} result in
+ *          {@link IdentityException}.
+ *      </div>
+ * </div>
  *
  * @see     java.lang.Number
  * @since   1.1
  */
+@jdk.internal.MigratedValueClass
 @jdk.internal.ValueBased
 public final class Byte extends Number implements Comparable<Byte>, Constable {
 
@@ -132,20 +143,36 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
     /**
      * Returns a {@code Byte} instance representing the specified
      * {@code byte} value.
-     * If a new {@code Byte} instance is not required, this method
-     * should generally be used in preference to the constructor
-     * {@link #Byte(byte)}, as this method is likely to yield
-     * significantly better space and time performance since
-     * all byte values are cached.
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          <p>
+     *              - When preview features are NOT enabled, {@code Byte} is an identity class.
+     *              If a new {@code Byte} instance is not required, this method
+     *              should generally be used in preference to the constructor
+     *              {@link #Byte(byte)}, as this method is likely to yield
+     *              significantly better space and time performance since
+     *              all byte values are cached.
+     *          </p>
+     *          <p>
+     *              - When preview features are enabled, {@code Byte} is a {@linkplain Class#isValue value class}.
+     *              The {@code valueOf} behavior is the same as invoking the constructor,
+     *              whether cached or not.
+     *          </p>
+     *      </div>
+     * </div>
      *
      * @param  b a byte value.
      * @return a {@code Byte} instance representing {@code b}.
      * @since  1.5
      */
     @IntrinsicCandidate
+    @DeserializeConstructor
     public static Byte valueOf(byte b) {
-        final int offset = 128;
-        return ByteCache.cache[(int)b + offset];
+        if (!PreviewFeatures.isEnabled()) {
+            final int offset = 128;
+            return ByteCache.cache[(int) b + offset];
+        }
+        return new Byte(b);
     }
 
     /**

@@ -33,6 +33,7 @@ public class BBPoint {
 
     private final ByteBuffer buff;
 
+    @SuppressWarnings("initialization")
     public BBPoint(int x, int y) {
         this.buff = ByteBuffer.allocateDirect(4 * 2).order(ByteOrder.nativeOrder());
         setX(x);

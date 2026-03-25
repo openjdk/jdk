@@ -29,9 +29,11 @@
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_ValueStack.hpp"
+#include "ci/ciInlineKlass.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/oopMap.hpp"
 #include "runtime/os.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "runtime/vm_version.hpp"
 
 void LIR_Assembler::patching_epilog(PatchingStub* patch, LIR_PatchCode patch_code, Register obj, CodeEmitInfo* info) {
@@ -117,6 +119,7 @@ LIR_Assembler::~LIR_Assembler() {
   // The unwind handler label may be unnbound if this destructor is invoked because of a bail-out.
   // Reset it here to avoid an assertion.
   _unwind_handler_entry.reset();
+  _verified_inline_entry.reset();
 }
 
 
@@ -327,7 +330,6 @@ void LIR_Assembler::check_no_unbound_labels() {
 
 //----------------------------------debug info--------------------------------
 
-
 void LIR_Assembler::add_debug_info_for_branch(CodeEmitInfo* info) {
   int pc_offset = code_offset();
   flush_debug_info(pc_offset);
@@ -337,10 +339,9 @@ void LIR_Assembler::add_debug_info_for_branch(CodeEmitInfo* info) {
   }
 }
 
-
-void LIR_Assembler::add_call_info(int pc_offset, CodeEmitInfo* cinfo) {
+void LIR_Assembler::add_call_info(int pc_offset, CodeEmitInfo* cinfo, bool maybe_return_as_fields) {
   flush_debug_info(pc_offset);
-  cinfo->record_debug_info(compilation()->debug_info_recorder(), pc_offset);
+  cinfo->record_debug_info(compilation()->debug_info_recorder(), pc_offset, maybe_return_as_fields);
   if (cinfo->exception_handlers() != nullptr) {
     compilation()->add_exception_handlers_for_pco(pc_offset, cinfo->exception_handlers());
   }
@@ -478,6 +479,12 @@ void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
     fatal("unexpected op code: %s", op->name());
     break;
   }
+
+  ciInlineKlass* vk = nullptr;
+  if (op->maybe_return_as_fields(&vk)) {
+    int offset = store_inline_type_fields_to_buf(vk);
+    add_call_info(offset, op->info(), true);
+  }
 }
 
 
@@ -567,6 +574,141 @@ void LIR_Assembler::emit_op1(LIR_Op1* op) {
   }
 }
 
+void LIR_Assembler::add_scalarized_entry_info(int pc_offset) {
+  flush_debug_info(pc_offset);
+  DebugInformationRecorder* debug_info = compilation()->debug_info_recorder();
+  // The VEP and VIEP(RO) of a C1-compiled method call buffer_inline_args_xxx()
+  // before doing any argument shuffling. This call may cause GC. When GC happens,
+  // all the parameters are still as passed by the caller, so we just use
+  // map->set_include_argument_oops() inside frame::sender_for_compiled_frame(RegisterMap* map).
+  // There's no need to build a GC map here.
+  OopMap* oop_map = new OopMap(0, 0);
+  debug_info->add_safepoint(pc_offset, oop_map);
+  DebugToken* locvals = debug_info->create_scope_values(nullptr); // FIXME is this needed (for Java debugging to work properly??)
+  DebugToken* expvals = debug_info->create_scope_values(nullptr); // FIXME is this needed (for Java debugging to work properly??)
+  DebugToken* monvals = debug_info->create_monitor_values(nullptr); // FIXME: need testing with synchronized method
+  bool reexecute = false;
+  bool return_oop = false; // This flag will be ignored since it used only for C2 with escape analysis.
+  bool rethrow_exception = false;
+  bool is_method_handle_invoke = false;
+  debug_info->describe_scope(pc_offset, methodHandle(), method(), 0, reexecute, rethrow_exception, is_method_handle_invoke, return_oop, false, locvals, expvals, monvals);
+  debug_info->end_safepoint(pc_offset);
+}
+
+// The entries points of C1-compiled methods can have the following types:
+// (1) Methods with no inline type args
+// (2) Methods with inline type receiver but no inline type args
+//     VIEP_RO is the same as VIEP
+// (3) Methods with non-inline type receiver and some inline type args
+//     VIEP_RO is the same as VEP
+// (4) Methods with inline type receiver and other inline type args
+//     Separate VEP, VIEP and VIEP_RO
+//
+// (1)               (2)                 (3)                    (4)
+// UEP/UIEP:         VEP:                UEP:                   UEP:
+//   check_icache      pack receiver       check_icache           check_icache
+// VEP/VIEP/VIEP_RO    jump to VIEP      VEP/VIEP_RO:           VIEP_RO:
+//   body            UEP/UIEP:             pack inline args       pack inline args (except receiver)
+//                     check_icache        jump to VIEP           jump to VIEP
+//                   VIEP/VIEP_RO        UIEP:                  VEP:
+//                     body                check_icache           pack all inline args
+//                                       VIEP:                    jump to VIEP
+//                                         body                 UIEP:
+//                                                                check_icache
+//                                                              VIEP:
+//                                                                body
+void LIR_Assembler::emit_std_entries() {
+  offsets()->set_value(CodeOffsets::OSR_Entry, _masm->offset());
+
+  _masm->align(CodeEntryAlignment);
+  const CompiledEntrySignature* ces = compilation()->compiled_entry_signature();
+  if (ces->has_scalarized_args()) {
+    assert(InlineTypePassFieldsAsArgs && method()->get_Method()->has_scalarized_args(), "must be");
+    CodeOffsets::Entries ro_entry_type = ces->c1_inline_ro_entry_type();
+
+    // UEP: check icache and fall-through
+    if (ro_entry_type != CodeOffsets::Verified_Inline_Entry) {
+      offsets()->set_value(CodeOffsets::Entry, _masm->offset());
+      if (needs_icache(method())) {
+        check_icache();
+      }
+    }
+
+    // VIEP_RO: pack all value parameters, except the receiver
+    if (ro_entry_type == CodeOffsets::Verified_Inline_Entry_RO) {
+      emit_std_entry(CodeOffsets::Verified_Inline_Entry_RO, ces);
+    }
+
+    // VEP: pack all value parameters
+    _masm->align(CodeEntryAlignment);
+    emit_std_entry(CodeOffsets::Verified_Entry, ces);
+
+    // UIEP: check icache and fall-through
+    _masm->align(CodeEntryAlignment);
+    offsets()->set_value(CodeOffsets::Inline_Entry, _masm->offset());
+    if (ro_entry_type == CodeOffsets::Verified_Inline_Entry) {
+      // Special case if we have VIEP == VIEP(RO):
+      // this means UIEP (called by C1) == UEP (called by C2).
+      offsets()->set_value(CodeOffsets::Entry, _masm->offset());
+    }
+    if (needs_icache(method())) {
+      check_icache();
+    }
+
+    // VIEP: all value parameters are passed as refs - no packing.
+    emit_std_entry(CodeOffsets::Verified_Inline_Entry, nullptr);
+
+    if (ro_entry_type != CodeOffsets::Verified_Inline_Entry_RO) {
+      // The VIEP(RO) is the same as VEP or VIEP
+      assert(ro_entry_type == CodeOffsets::Verified_Entry ||
+             ro_entry_type == CodeOffsets::Verified_Inline_Entry, "must be");
+      offsets()->set_value(CodeOffsets::Verified_Inline_Entry_RO,
+                           offsets()->value(ro_entry_type));
+    }
+  } else {
+    // All 3 entries are the same (no inline type packing)
+    offsets()->set_value(CodeOffsets::Entry, _masm->offset());
+    offsets()->set_value(CodeOffsets::Inline_Entry, _masm->offset());
+    if (needs_icache(method())) {
+      check_icache();
+    }
+    emit_std_entry(CodeOffsets::Verified_Inline_Entry, nullptr);
+    offsets()->set_value(CodeOffsets::Verified_Entry, offsets()->value(CodeOffsets::Verified_Inline_Entry));
+    offsets()->set_value(CodeOffsets::Verified_Inline_Entry_RO, offsets()->value(CodeOffsets::Verified_Inline_Entry));
+  }
+}
+
+void LIR_Assembler::emit_std_entry(CodeOffsets::Entries entry, const CompiledEntrySignature* ces) {
+  offsets()->set_value(entry, _masm->offset());
+  _masm->verified_entry(compilation()->directive()->BreakAtExecuteOption);
+  switch (entry) {
+  case CodeOffsets::Verified_Entry: {
+    if (needs_clinit_barrier_on_entry(method())) {
+      clinit_barrier(method());
+    }
+    int rt_call_offset = _masm->verified_entry(ces, initial_frame_size_in_bytes(), bang_size_in_bytes(), in_bytes(frame_map()->sp_offset_for_orig_pc()), _verified_inline_entry);
+    add_scalarized_entry_info(rt_call_offset);
+    break;
+  }
+  case CodeOffsets::Verified_Inline_Entry_RO: {
+    assert(!needs_clinit_barrier_on_entry(method()), "can't be static");
+    int rt_call_offset = _masm->verified_inline_ro_entry(ces, initial_frame_size_in_bytes(), bang_size_in_bytes(), in_bytes(frame_map()->sp_offset_for_orig_pc()), _verified_inline_entry);
+    add_scalarized_entry_info(rt_call_offset);
+    break;
+  }
+  case CodeOffsets::Verified_Inline_Entry: {
+    if (needs_clinit_barrier_on_entry(method())) {
+      clinit_barrier(method());
+    }
+    build_frame();
+    offsets()->set_value(CodeOffsets::Frame_Complete, _masm->offset());
+    break;
+  }
+  default:
+    ShouldNotReachHere();
+    break;
+  }
+}
 
 void LIR_Assembler::emit_op0(LIR_Op0* op) {
   switch (op->code()) {
@@ -579,23 +721,9 @@ void LIR_Assembler::emit_op0(LIR_Op0* op) {
       Unimplemented();
       break;
 
-    case lir_std_entry: {
-      // init offsets
-      offsets()->set_value(CodeOffsets::OSR_Entry, _masm->offset());
-      if (needs_icache(compilation()->method())) {
-        int offset = check_icache();
-        offsets()->set_value(CodeOffsets::Entry, offset);
-      }
-      _masm->align(CodeEntryAlignment);
-      offsets()->set_value(CodeOffsets::Verified_Entry, _masm->offset());
-      _masm->verified_entry(compilation()->directive()->BreakAtExecuteOption);
-      if (needs_clinit_barrier_on_entry(compilation()->method())) {
-        clinit_barrier(compilation()->method());
-      }
-      build_frame();
-      offsets()->set_value(CodeOffsets::Frame_Complete, _masm->offset());
+    case lir_std_entry:
+      emit_std_entries();
       break;
-    }
 
     case lir_osr_entry:
       offsets()->set_value(CodeOffsets::OSR_Entry, _masm->offset());
@@ -640,6 +768,10 @@ void LIR_Assembler::emit_op0(LIR_Op0* op) {
 
     case lir_on_spin_wait:
       on_spin_wait();
+      break;
+
+    case lir_check_orig_pc:
+      check_orig_pc();
       break;
 
     default:
@@ -727,7 +859,8 @@ void LIR_Assembler::emit_op4(LIR_Op4* op) {
 }
 
 void LIR_Assembler::build_frame() {
-  _masm->build_frame(initial_frame_size_in_bytes(), bang_size_in_bytes());
+  _masm->build_frame(initial_frame_size_in_bytes(), bang_size_in_bytes(), in_bytes(frame_map()->sp_offset_for_orig_pc()),
+                     needs_stack_repair(), method()->has_scalarized_args(), &_verified_inline_entry);
 }
 
 

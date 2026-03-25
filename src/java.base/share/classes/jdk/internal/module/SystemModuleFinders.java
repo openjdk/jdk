@@ -54,9 +54,10 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import jdk.internal.jimage.ImageReader;
-import jdk.internal.jimage.ImageReaderFactory;
+import jdk.internal.jimage.SystemImageReader;
 import jdk.internal.access.JavaNetUriAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.module.ModuleHashes.HashSupplier;
 
@@ -204,7 +205,7 @@ public final class SystemModuleFinders {
         Path dir = Path.of(home, "modules");
         if (!Files.isDirectory(dir))
             throw new InternalError("Unable to detect the run-time image");
-        return ModulePath.of(ModuleBootstrap.patcher(), dir);
+        return ModulePath.of(ModuleBootstrap.patcher(), PreviewFeatures.isEnabled(), dir);
     }
 
     /**
@@ -392,7 +393,7 @@ public final class SystemModuleFinders {
      * Holder class for the ImageReader.
      */
     private static class SystemImage {
-        static final ImageReader READER = ImageReaderFactory.getImageReader();
+        static final ImageReader READER = SystemImageReader.get();
         static ImageReader reader() {
             return READER;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,21 @@
  */
 package org.w3c.dom.ptests;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import static org.testng.Assert.assertEquals;
+import static org.w3c.dom.ptests.DOMTestUtil.createNewDocument;
+
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentType;
 
-import javax.xml.parsers.ParserConfigurationException;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.w3c.dom.ptests.DOMTestUtil.createNewDocument;
-
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run junit/othervm org.w3c.dom.ptests.DomImplementationTest
+ * @run testng/othervm org.w3c.dom.ptests.DomImplementationTest
  * @summary Test DomImplementation API
  */
 public class DomImplementationTest {
@@ -51,8 +50,8 @@ public class DomImplementationTest {
         final String name = "document:localName";
         DOMImplementation domImpl = getDOMImplementation();
         Document document = domImpl.createDocument(nsURI, name, null);
-        assertEquals(nsURI, document.getDocumentElement().getNamespaceURI());
-        assertEquals(name, document.getDocumentElement().getNodeName());
+        assertEquals(document.getDocumentElement().getNamespaceURI(), nsURI);
+        assertEquals(document.getDocumentElement().getNodeName(), name);
     }
 
     /*
@@ -86,7 +85,8 @@ public class DomImplementationTest {
         verifyDocumentType(document.getDoctype(), name, publicId, systemId);
     }
 
-    public static Object[][] getFeatureSupportedList() throws ParserConfigurationException {
+    @DataProvider(name = "feature-supported")
+    public Object[][] getFeatureSupportedList() throws ParserConfigurationException {
         DOMImplementation impl = getDOMImplementation();
         return new Object[][] {
                 { impl, "XML", "2.0", true },
@@ -109,21 +109,20 @@ public class DomImplementationTest {
     /*
      * Verify DOMImplementation for feature supporting.
      */
-    @ParameterizedTest
-    @MethodSource("getFeatureSupportedList")
+    @Test(dataProvider = "feature-supported")
     public void testHasFeature(DOMImplementation impl, String feature, String version, boolean isSupported) {
-        assertEquals(isSupported, impl.hasFeature(feature, version));
+        assertEquals(impl.hasFeature(feature,version), isSupported);
     }
 
 
-    private static DOMImplementation getDOMImplementation() throws ParserConfigurationException {
+    private DOMImplementation getDOMImplementation() throws ParserConfigurationException {
         return createNewDocument().getImplementation();
     }
 
 
-    private static void verifyDocumentType(DocumentType documentType, String name, String publicId, String systemId) {
-        assertEquals(publicId, documentType.getPublicId());
-        assertEquals(systemId, documentType.getSystemId());
-        assertEquals(name, documentType.getName());
+    private void verifyDocumentType(DocumentType documentType, String name, String publicId, String systemId) {
+        assertEquals(documentType.getPublicId(), publicId);
+        assertEquals(documentType.getSystemId(), systemId);
+        assertEquals(documentType.getName(), name);
     }
 }

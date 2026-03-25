@@ -173,6 +173,10 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_object() {
   }
 }
 
+void InterpreterRuntime::SignatureHandlerGenerator::pass_valuetype() {
+   pass_object();
+}
+
 void InterpreterRuntime::SignatureHandlerGenerator::generate(uint64_t fingerprint) {
   // generate code to handle arguments
   iterate(fingerprint);
@@ -255,6 +259,11 @@ class SlowSignatureHandler
     if (pass_gpr(value) < 0) {
       pass_stack<>(value);
     }
+  }
+
+  virtual void pass_valuetype() {
+    // values are handled with oops, like objects
+    pass_object();
   }
 
   virtual void pass_long() {

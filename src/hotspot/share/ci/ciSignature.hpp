@@ -27,6 +27,7 @@
 
 #include "ci/ciClassList.hpp"
 #include "ci/ciSymbol.hpp"
+#include "ci/ciType.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
@@ -56,7 +57,7 @@ public:
   ciKlass*  accessing_klass() const              { return _accessing_klass; }
 
   ciType*   return_type() const                  { return _return_type; }
-  ciType*   type_at(int index) const             { return _types.at(index); }
+  ciType*   type_at(int index) const             { return _types.at(index)->unwrap(); }
 
   int       size() const                         { return _size; }
   int       count() const                        { return _types.length(); }

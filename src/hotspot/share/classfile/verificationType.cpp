@@ -66,6 +66,13 @@ bool VerificationType::resolve_and_check_assignability(InstanceKlass* current_kl
     }
   }
 
+  // Need to do this check when called from CDS.
+  // if (this_class->access_flags().is_primitive_class()) {
+  //   Klass* from_class = SystemDictionary::resolve_or_fail(
+  //     from_name, Handle(THREAD, klass->class_loader()),
+  //     Handle(THREAD, klass->protection_domain()), true, CHECK_false);
+  //   return from_class == this_class;
+  // }
   bool is_intf = target_klass->is_interface();
   if (target_is_interface != nullptr) {
     *target_is_interface = is_intf;
@@ -75,7 +82,7 @@ bool VerificationType::resolve_and_check_assignability(InstanceKlass* current_kl
       from_name != vmSymbols::java_lang_Object())) {
     // If we are not trying to access a protected field or method in
     // java.lang.Object then, for arrays, we only allow assignability
-    // to interfaces java.lang.Cloneable and java.io.Serializable.
+    // to interfaces java.lang.Cloneable and java.io.Serializable
     // Otherwise, we treat interfaces as java.lang.Object.
     return !from_is_array ||
       target_klass == vmClasses::Cloneable_klass() ||
@@ -134,6 +141,7 @@ bool VerificationType::is_reference_assignable_from(
   } else if (is_array() && from.is_array()) {
     VerificationType comp_this = get_component(context);
     VerificationType comp_from = from.get_component(context);
+
     if (!comp_this.is_bogus() && !comp_from.is_bogus()) {
       return comp_this.is_component_assignable_from(comp_from, context,
                                                     from_field_is_protected, THREAD);

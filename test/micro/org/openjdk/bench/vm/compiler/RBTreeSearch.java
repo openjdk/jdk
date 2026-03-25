@@ -388,6 +388,7 @@ public class RBTreeSearch {
                 next = firstEntry;
             }
 
+            @SuppressWarnings("initialization")
             KeyIteratorImpl(final int k) {
                 if ((next = locateKey(k)) != null) {
                     if (next.key <= k) {

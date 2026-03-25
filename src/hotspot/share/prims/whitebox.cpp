@@ -52,6 +52,7 @@
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
+#include "memory/iterator.inline.hpp"
 #include "memory/memoryReserver.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspace/testHelpers.hpp"
@@ -60,8 +61,10 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "nmt/mallocSiteTable.hpp"
+#include "oops/access.hpp"
 #include "oops/array.hpp"
 #include "oops/compressedOops.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
@@ -87,6 +90,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/keepStackGCProcessed.hpp"
 #include "runtime/lockStack.hpp"
 #include "runtime/os.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
@@ -578,7 +582,7 @@ WB_END
 WB_ENTRY(jboolean, WB_G1InConcurrentMark(JNIEnv* env, jobject o))
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    return g1h->collector_state()->is_in_concurrent_cycle();
+    return g1h->concurrent_mark()->in_progress();
   }
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1InConcurrentMark: G1 GC is not enabled");
 WB_END
@@ -2015,6 +2019,109 @@ WB_ENTRY(jobjectArray, WB_GetResolvedReferences(JNIEnv* env, jobject wb, jclass 
   return (jobjectArray)JNIHandles::make_local(THREAD, resolved_refs);
 WB_END
 
+WB_ENTRY(jobjectArray, WB_getObjectsViaKlassOopMaps(JNIEnv* env, jobject wb, jobject thing))
+  oop aoop = JNIHandles::resolve(thing);
+  if (!aoop->is_instance()) {
+    return nullptr;
+  }
+  instanceHandle ih(THREAD, (instanceOop) aoop);
+  InstanceKlass* klass = InstanceKlass::cast(ih->klass());
+  if (klass->nonstatic_oop_map_count() == 0) {
+    return nullptr;
+  }
+  const OopMapBlock* map = klass->start_of_nonstatic_oop_maps();
+  const OopMapBlock* const end = map + klass->nonstatic_oop_map_count();
+  int oop_count = 0;
+  while (map < end) {
+    oop_count += map->count();
+    map++;
+  }
+
+  refArrayHandle result_array =
+      oopFactory::new_refArray_handle(vmClasses::Object_klass(), oop_count, CHECK_NULL);
+  map = klass->start_of_nonstatic_oop_maps();
+  int index = 0;
+  while (map < end) {
+    int offset = map->offset();
+    for (unsigned int j = 0; j < map->count(); j++) {
+      result_array->obj_at_put(index++, ih->obj_field(offset));
+      offset += heapOopSize;
+    }
+    map++;
+  }
+  return (jobjectArray)JNIHandles::make_local(THREAD, result_array());
+WB_END
+
+// Collect Object oops but not value objects...loaded from heap
+class CollectObjectOops : public BasicOopIterateClosure {
+  public:
+  GrowableArray<Handle>* _array;
+
+  CollectObjectOops() {
+      _array = new GrowableArray<Handle>(128);
+  }
+
+  void add_oop(oop o) {
+    Handle oh = Handle(Thread::current(), o);
+    if (oh != nullptr && oh->is_inline_type()) {
+      oh->oop_iterate(this);
+    } else {
+      _array->append(oh);
+    }
+  }
+
+  template <class T> inline void add_oop(T* p) { add_oop(HeapAccess<>::oop_load(p)); }
+  void do_oop(oop* o) { add_oop(o); }
+  void do_oop(narrowOop* v) { add_oop(v); }
+
+  jobjectArray create_jni_result(JNIEnv* env, TRAPS) {
+    refArrayHandle result_array =
+        oopFactory::new_refArray_handle(vmClasses::Object_klass(), _array->length(), CHECK_NULL);
+    for (int i = 0 ; i < _array->length(); i++) {
+      result_array->obj_at_put(i, _array->at(i)());
+    }
+    return (jobjectArray)JNIHandles::make_local(THREAD, result_array());
+  }
+};
+
+// Collect Object oops but not value objects...loaded from frames
+class CollectFrameObjectOops : public BasicOopIterateClosure {
+ public:
+  CollectObjectOops _collect;
+
+  template <class T> inline void add_oop(T* p) { _collect.add_oop(RawAccess<>::oop_load(p)); }
+  void do_oop(oop* o) { add_oop(o); }
+  void do_oop(narrowOop* v) { add_oop(v); }
+
+  jobjectArray create_jni_result(JNIEnv* env, TRAPS) {
+    return _collect.create_jni_result(env, THREAD);
+  }
+};
+
+// Collect Object oops for the given oop, iterate through value objects
+WB_ENTRY(jobjectArray, WB_getObjectsViaOopIterator(JNIEnv* env, jobject wb, jobject thing))
+  ResourceMark rm(thread);
+  Handle objh(thread, JNIHandles::resolve(thing));
+  CollectObjectOops collectOops;
+  objh->oop_iterate(&collectOops);
+  return collectOops.create_jni_result(env, THREAD);
+WB_END
+
+// Collect Object oops for the given frame deep, iterate through value objects
+WB_ENTRY(jobjectArray, WB_getObjectsViaFrameOopIterator(JNIEnv* env, jobject wb, jint depth))
+  KeepStackGCProcessedMark ksgcpm(THREAD);
+  ResourceMark rm(THREAD);
+  CollectFrameObjectOops collectOops;
+  StackFrameStream sfs(thread, true /* update */, true /* process_frames */);
+  while (depth > 0) { // Skip the native WB API frame
+    sfs.next();
+    frame* f = sfs.current();
+    f->oops_do(&collectOops, nullptr, sfs.register_map());
+    depth--;
+  }
+  return collectOops.create_jni_result(env, THREAD);
+WB_END
+
 WB_ENTRY(jint, WB_getFieldEntriesLength(JNIEnv* env, jobject wb, jclass klass))
   InstanceKlass* ik = java_lang_Class::as_InstanceKlass(JNIHandles::resolve(klass));
   ConstantPool* cp = ik->constants();
@@ -3015,6 +3122,12 @@ static JNINativeMethod methods[] = {
   {CC"forceClassLoaderStatsSafepoint", CC"()V",       (void*)&WB_ForceClassLoaderStatsSafepoint },
   {CC"getConstantPool0",   CC"(Ljava/lang/Class;)J",  (void*)&WB_GetConstantPool    },
   {CC"getResolvedReferences0", CC"(Ljava/lang/Class;)[Ljava/lang/Object;", (void*)&WB_GetResolvedReferences},
+  {CC"getObjectsViaKlassOopMaps0",
+      CC"(Ljava/lang/Object;)[Ljava/lang/Object;",    (void*)&WB_getObjectsViaKlassOopMaps},
+  {CC"getObjectsViaOopIterator0",
+          CC"(Ljava/lang/Object;)[Ljava/lang/Object;",(void*)&WB_getObjectsViaOopIterator},
+  {CC"getObjectsViaFrameOopIterator",
+      CC"(I)[Ljava/lang/Object;",                     (void*)&WB_getObjectsViaFrameOopIterator},
   {CC"getFieldEntriesLength0", CC"(Ljava/lang/Class;)I",  (void*)&WB_getFieldEntriesLength},
   {CC"getFieldCPIndex0",    CC"(Ljava/lang/Class;I)I", (void*)&WB_getFieldCPIndex},
   {CC"getMethodEntriesLength0", CC"(Ljava/lang/Class;)I",  (void*)&WB_getMethodEntriesLength},

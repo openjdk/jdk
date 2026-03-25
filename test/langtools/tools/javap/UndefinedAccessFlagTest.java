@@ -92,7 +92,7 @@ public class UndefinedAccessFlagTest {
                     });
                 case InnerClassesAttribute attr when location == TestLocation.INNER_CLASS -> cb
                     .with(InnerClassesAttribute.of(attr.classes().stream()
-                        .map(ic -> InnerClassInfo.of(ic.innerClass(), ic.outerClass(), ic.innerName(), ic.flagsMask() | ACC_SUPER))
+                        .map(ic -> InnerClassInfo.of(ic.innerClass(), ic.outerClass(), ic.innerName(), ic.flagsMask() | 0x0050))
                         .toList()));
                 default -> cb.with(ce);
             }

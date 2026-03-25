@@ -62,6 +62,7 @@ static_assert(!std::is_polymorphic<AdapterBlob>::value,        "no virtual metho
 static_assert(!std::is_polymorphic<VtableBlob>::value,         "no virtual methods are allowed in code blobs");
 static_assert(!std::is_polymorphic<MethodHandlesAdapterBlob>::value, "no virtual methods are allowed in code blobs");
 static_assert(!std::is_polymorphic<RuntimeStub>::value,        "no virtual methods are allowed in code blobs");
+static_assert(!std::is_polymorphic<BufferedInlineTypeBlob>::value,   "no virtual methods are allowed in code blobs");
 static_assert(!std::is_polymorphic<DeoptimizationBlob>::value, "no virtual methods are allowed in code blobs");
 static_assert(!std::is_polymorphic<SafepointBlob>::value,      "no virtual methods are allowed in code blobs");
 static_assert(!std::is_polymorphic<UpcallStub>::value,         "no virtual methods are allowed in code blobs");
@@ -90,6 +91,7 @@ const CodeBlob::Vptr* CodeBlob::vptr(CodeBlobKind kind) {
       &AdapterBlob::_vpntr,
       &VtableBlob::_vpntr,
       &MethodHandlesAdapterBlob::_vpntr,
+      &BufferedInlineTypeBlob::_vpntr,
       &RuntimeStub::_vpntr,
       &DeoptimizationBlob::_vpntr,
       &SafepointBlob::_vpntr,
@@ -331,13 +333,7 @@ RuntimeBlob::RuntimeBlob(
   : CodeBlob(name, kind, cb, size, header_size, frame_complete, frame_size, oop_maps, caller_must_gc_arguments,
              align_up(cb->total_relocation_size(), oopSize))
 {
-  if (code_size() == 0) {
-    // Nothing to copy
-    return;
-  }
-
   cb->copy_code_and_locs_to(this);
-  ICache::invalidate_range(code_begin(), code_size());
 }
 
 void RuntimeBlob::free(RuntimeBlob* blob) {
@@ -432,7 +428,7 @@ BufferBlob* BufferBlob::create(const char* name, CodeBuffer* cb) {
   assert(name != nullptr, "must provide a name");
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) BufferBlob(name, CodeBlobKind::Buffer, cb, size);
+    blob = new (size) BufferBlob(name, CodeBlobKind::Buffer, cb, size, sizeof(BufferBlob));
   }
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();
@@ -448,14 +444,18 @@ void BufferBlob::free(BufferBlob *blob) {
   RuntimeBlob::free(blob);
 }
 
+BufferBlob::BufferBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size, uint16_t header_size, int frame_complete, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments)
+  : RuntimeBlob(name, kind, cb, size, header_size, frame_complete, frame_size, oop_maps, caller_must_gc_arguments)
+{}
+
 
 //----------------------------------------------------------------------------------------------------
 // Implementation of AdapterBlob
 
-AdapterBlob::AdapterBlob(int size, CodeBuffer* cb, int entry_offset[AdapterBlob::ENTRY_COUNT]) :
-  BufferBlob("I2C/C2I adapters", CodeBlobKind::Adapter, cb, size, sizeof(AdapterBlob)) {
-  assert(entry_offset[I2C] == 0, "sanity check");
+AdapterBlob::AdapterBlob(int size, CodeBuffer* cb, int entry_offset[AdapterBlob::ENTRY_COUNT], int frame_complete, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments) :
+  BufferBlob("I2C/C2I adapters", CodeBlobKind::Adapter, cb, size, sizeof(AdapterBlob), frame_complete, frame_size, oop_maps, caller_must_gc_arguments) {
 #ifdef ASSERT
+  assert(entry_offset[I2C] == 0, "sanity check");
   for (int i = 1; i < AdapterBlob::ENTRY_COUNT; i++) {
     // The entry is within the adapter blob or unset.
     int offset = entry_offset[i];
@@ -465,12 +465,15 @@ AdapterBlob::AdapterBlob(int size, CodeBuffer* cb, int entry_offset[AdapterBlob:
   }
 #endif // ASSERT
   _c2i_offset = entry_offset[C2I];
+  _c2i_inline_offset = entry_offset[C2I_Inline];
+  _c2i_inline_ro_offset = entry_offset[C2I_Inline_RO];
   _c2i_unverified_offset = entry_offset[C2I_Unverified];
+  _c2i_unverified_inline_offset = entry_offset[C2I_Unverified_Inline];
   _c2i_no_clinit_check_offset = entry_offset[C2I_No_Clinit_Check];
   CodeCache::commit(this);
 }
 
-AdapterBlob* AdapterBlob::create(CodeBuffer* cb, int entry_offset[AdapterBlob::ENTRY_COUNT]) {
+AdapterBlob* AdapterBlob::create(CodeBuffer* cb, int entry_offset[AdapterBlob::ENTRY_COUNT], int frame_complete, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments) {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
 
   CodeCache::gc_on_allocation();
@@ -479,7 +482,7 @@ AdapterBlob* AdapterBlob::create(CodeBuffer* cb, int entry_offset[AdapterBlob::E
   unsigned int size = CodeBlob::allocation_size(cb, sizeof(AdapterBlob));
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) AdapterBlob(size, cb, entry_offset);
+    blob = new (size) AdapterBlob(size, cb, entry_offset, frame_complete, frame_size, oop_maps, caller_must_gc_arguments);
   }
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();
@@ -555,6 +558,31 @@ MethodHandlesAdapterBlob* MethodHandlesAdapterBlob::create(int buffer_size) {
     if (blob == nullptr) {
       vm_exit_out_of_memory(size, OOM_MALLOC_ERROR, "CodeCache: no room for method handle adapter blob");
     }
+  }
+  // Track memory usage statistic after releasing CodeCache_lock
+  MemoryService::track_code_cache_memory_usage();
+
+  return blob;
+}
+
+//----------------------------------------------------------------------------------------------------
+// Implementation of BufferedInlineTypeBlob
+BufferedInlineTypeBlob::BufferedInlineTypeBlob(int size, CodeBuffer* cb, int pack_fields_off, int pack_fields_jobject_off, int unpack_fields_off) :
+  BufferBlob("buffered inline type", CodeBlobKind::BufferedInlineType, cb, size, sizeof(BufferedInlineTypeBlob)),
+  _pack_fields_off(pack_fields_off),
+  _pack_fields_jobject_off(pack_fields_jobject_off),
+  _unpack_fields_off(unpack_fields_off) {
+  CodeCache::commit(this);
+}
+
+BufferedInlineTypeBlob* BufferedInlineTypeBlob::create(CodeBuffer* cb, int pack_fields_off, int pack_fields_jobject_off, int unpack_fields_off) {
+  ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
+
+  BufferedInlineTypeBlob* blob = nullptr;
+  unsigned int size = CodeBlob::allocation_size(cb, sizeof(BufferedInlineTypeBlob));
+  {
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    blob = new (size) BufferedInlineTypeBlob(size, cb, pack_fields_off, pack_fields_jobject_off, unpack_fields_off);
   }
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();

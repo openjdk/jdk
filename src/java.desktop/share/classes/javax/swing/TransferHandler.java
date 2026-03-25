@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import javax.swing.text.JTextComponent;
 
 import sun.reflect.misc.MethodUtil;
 import sun.swing.SwingUtilities2;
+import sun.awt.AppContext;
 import sun.swing.*;
 import sun.awt.SunToolkit;
 
@@ -1095,12 +1096,15 @@ public class TransferHandler implements Serializable {
 
     private String propertyName;
     private static SwingDragGestureRecognizer recognizer = null;
-    private static DropHandler handler;
 
     private static DropTargetListener getDropTargetListener() {
         synchronized(DropHandler.class) {
+            DropHandler handler =
+                (DropHandler)AppContext.getAppContext().get(DropHandler.class);
+
             if (handler == null) {
                 handler = new DropHandler();
+                AppContext.getAppContext().put(DropHandler.class, handler);
             }
 
             return handler;
@@ -1721,22 +1725,29 @@ public class TransferHandler implements Serializable {
             }
         }
 
-        private static Clipboard clipboard;
         /**
          * Returns the clipboard to use for cut/copy/paste.
          */
         private Clipboard getClipboard(JComponent c) {
-            if (!GraphicsEnvironment.isHeadless()) {
+            if (SwingUtilities2.canAccessSystemClipboard()) {
                 return c.getToolkit().getSystemClipboard();
             }
-            // Likely it is impossible to be here in headless.
-            synchronized (TransferHandler.class) {
-               if (clipboard == null) {
-                   clipboard = new Clipboard("Headless clipboard");
-               }
-               return clipboard;
+            Clipboard clipboard = (Clipboard)sun.awt.AppContext.getAppContext().
+                get(SandboxClipboardKey);
+            if (clipboard == null) {
+                clipboard = new Clipboard("Sandboxed Component Clipboard");
+                sun.awt.AppContext.getAppContext().put(SandboxClipboardKey,
+                                                       clipboard);
             }
+            return clipboard;
         }
+
+        /**
+         * Key used in app context to lookup Clipboard to use if access to
+         * System clipboard is denied.
+         */
+        private static Object SandboxClipboardKey = new Object();
+
     }
 
 }

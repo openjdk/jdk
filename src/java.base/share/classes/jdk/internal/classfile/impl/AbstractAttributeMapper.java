@@ -311,6 +311,24 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
     }
 
+    public static final class LoadableDescriptorsMapper extends AbstractAttributeMapper<LoadableDescriptorsAttribute> {
+        public static final LoadableDescriptorsMapper INSTANCE = new LoadableDescriptorsMapper();
+
+        private LoadableDescriptorsMapper() {
+            super(NAME_LOADABLE_DESCRIPTORS, AttributeStability.CP_REFS);
+        }
+
+        @Override
+        public LoadableDescriptorsAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundLoadableDescriptorsAttribute(cf, this, p);
+        }
+
+        @Override
+        protected void writeBody(BufWriter buf, LoadableDescriptorsAttribute attr) {
+            Util.writeListIndices(buf, attr.loadableDescriptors());
+        }
+    }
+
     public static final class LocalVariableTableMapper extends AbstractAttributeMapper<LocalVariableTableAttribute> {
         public static final LocalVariableTableMapper INSTANCE = new LocalVariableTableMapper();
 

@@ -27,8 +27,11 @@ package jdk.jpackage.internal;
 import static jdk.jpackage.internal.FromOptions.buildApplicationBuilder;
 import static jdk.jpackage.internal.FromOptions.createPackageBuilder;
 import static jdk.jpackage.internal.MacPackagingPipeline.APPLICATION_LAYOUT;
+import static jdk.jpackage.internal.MacRuntimeValidator.validateRuntimeHasJliLib;
+import static jdk.jpackage.internal.MacRuntimeValidator.validateRuntimeHasNoBinDir;
 import static jdk.jpackage.internal.OptionUtils.isBundlingOperation;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_MAC_PKG;
+import static jdk.jpackage.internal.cli.StandardBundlingOperation.SIGN_MAC_APP_IMAGE;
 import static jdk.jpackage.internal.cli.StandardOption.APPCLASS;
 import static jdk.jpackage.internal.cli.StandardOption.ICON;
 import static jdk.jpackage.internal.cli.StandardOption.MAC_APP_CATEGORY;
@@ -62,7 +65,6 @@ import jdk.jpackage.internal.cli.OptionValue;
 import jdk.jpackage.internal.cli.Options;
 import jdk.jpackage.internal.cli.StandardFaOption;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
-import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.model.ExternalApplication;
 import jdk.jpackage.internal.model.FileAssociation;
 import jdk.jpackage.internal.model.Launcher;
@@ -201,14 +203,12 @@ final class MacFromOptions {
         final var predefinedRuntimeLayout = PREDEFINED_RUNTIME_IMAGE.findIn(options)
                 .map(MacPackage::guessRuntimeLayout);
 
-        predefinedRuntimeLayout.ifPresent(MacRuntimeValidator::validateRuntimeHasJliLib);
-
-        if (MAC_APP_STORE.containsIn(options)) {
-            PREDEFINED_APP_IMAGE.findIn(options)
-                    .map(APPLICATION_LAYOUT::resolveAt)
-                    .ifPresent(MacRuntimeValidator::validateRuntimeHasNoBinDir);
-            predefinedRuntimeLayout.ifPresent(MacRuntimeValidator::validateRuntimeHasNoBinDir);
-        }
+        predefinedRuntimeLayout.ifPresent(layout -> {
+            validateRuntimeHasJliLib(layout);
+            if (MAC_APP_STORE.containsIn(options)) {
+                validateRuntimeHasNoBinDir(layout);
+            }
+        });
 
         final var launcherFromOptions = new LauncherFromOptions().faMapper(MacFromOptions::createMacFa);
 
@@ -234,7 +234,7 @@ final class MacFromOptions {
             superAppBuilder.launchers(new ApplicationLaunchers(MacLauncher.create(mainLauncher), launchers.additionalLaunchers()));
         }
 
-        superAppBuilder.derivedVersionNormalizer(MacFromOptions::normalizeVersion);
+        final var app = superAppBuilder.create();
 
         return superAppBuilder;
     }
@@ -269,13 +269,11 @@ final class MacFromOptions {
         final boolean sign = MAC_SIGN.getFrom(options);
         final boolean appStore;
 
-        if (MAC_APP_STORE.containsIn(options)) {
-            appStore = MAC_APP_STORE.getFrom(options);
-        } else if (PREDEFINED_APP_IMAGE.containsIn(options)) {
+        if (PREDEFINED_APP_IMAGE.containsIn(options)) {
             final var appImageFileOptions = appBuilder.externalApplication().orElseThrow().extra();
             appStore = MAC_APP_STORE.getFrom(appImageFileOptions);
         } else {
-            appStore = false;
+            appStore = MAC_APP_STORE.getFrom(options);
         }
 
         appBuilder.appStore(appStore);
@@ -390,12 +388,5 @@ final class MacFromOptions {
 
     private static boolean hasPkgInstallerSignIdentity(Options options) {
         return options.contains(MAC_SIGNING_KEY_NAME) || options.contains(MAC_INSTALLER_SIGN_IDENTITY);
-    }
-
-    private static String normalizeVersion(String version) {
-        // macOS requires 1, 2 or 3 components version string.
-        // When reading from release file it can be 1 or 3 or maybe more.
-        // We will always normalize to 3 components if needed.
-        return DottedVersion.lazy(version).trim(3).toComponentsString();
     }
 }

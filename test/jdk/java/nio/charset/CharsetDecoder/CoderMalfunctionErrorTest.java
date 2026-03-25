@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,30 +23,26 @@
 
 /* @test
  * @bug 8253832
+ * @run testng CoderMalfunctionErrorTest
  * @summary Check CoderMalfunctionError is thrown for any RuntimeException
  *      on CharsetDecoder.decodeLoop() invocation.
- * @run junit CoderMalfunctionErrorTest
  */
 
+import org.testng.annotations.Test;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.*;
 
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
+@Test
 public class CoderMalfunctionErrorTest {
-
-    @Test
+    @Test (expectedExceptions = CoderMalfunctionError.class)
     public void testDecodeLoop() {
-        assertThrows(CoderMalfunctionError.class,
-                () -> new CharsetDecoder(StandardCharsets.US_ASCII, 1, 1) {
+        new CharsetDecoder(StandardCharsets.US_ASCII, 1, 1) {
             @Override
             protected CoderResult decodeLoop(ByteBuffer byteBuffer, CharBuffer charBuffer) {
                 throw new RuntimeException("This exception should be wrapped in CoderMalfunctionError");
             }
-        }.decode(null, null, true));
+        }.decode(null, null, true);
     }
 }

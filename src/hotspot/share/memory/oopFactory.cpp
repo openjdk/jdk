@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,17 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/arrayKlass.hpp"
+#include "oops/flatArrayKlass.hpp"
+#include "oops/flatArrayOop.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/objArrayKlass.hpp"
-#include "oops/objArrayOop.hpp"
+#include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "oops/refArrayKlass.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -72,7 +78,7 @@ typeArrayOop oopFactory::new_longArray(int length, TRAPS) {
 }
 
 // create java.lang.Object[]
-objArrayOop oopFactory::new_objectArray(int length, TRAPS)  {
+refArrayOop oopFactory::new_objectArray(int length, TRAPS)  {
   return Universe::objectArrayKlass()->allocate_instance(length, THREAD);
 }
 
@@ -104,12 +110,44 @@ typeArrayOop oopFactory::new_typeArray_nozero(BasicType type, int length, TRAPS)
   return klass->allocate_common(length, false, THREAD);
 }
 
-objArrayOop oopFactory::new_objArray(Klass* klass, int length, TRAPS) {
+objArrayOop oopFactory::new_objArray(Klass* klass, int length, ArrayProperties properties, TRAPS) {
+  assert(!klass->is_array_klass() || properties == ArrayProperties::Default(), "properties only apply to single dimension arrays");
   ArrayKlass* ak = klass->array_klass(CHECK_NULL);
-  return ObjArrayKlass::cast(ak)->allocate_instance(length, THREAD);
+  return ObjArrayKlass::cast(ak)->allocate_instance(length, properties, THREAD);
 }
 
-objArrayHandle oopFactory::new_objArray_handle(Klass* klass, int length, TRAPS) {
-  objArrayOop obj = new_objArray(klass, length, CHECK_(objArrayHandle()));
-  return objArrayHandle(THREAD, obj);
+objArrayOop oopFactory::new_objArray(Klass* klass, int length, TRAPS) {
+  return  new_objArray(klass, length, ArrayProperties::Default(), THREAD);
+}
+
+refArrayOop oopFactory::new_refArray(Klass* klass, int length, ArrayProperties properties, TRAPS) {
+  ArrayKlass* ak = klass->array_klass(CHECK_NULL);
+  ArrayDescription ad(Klass::RefArrayKlassKind, properties, LayoutKind::REFERENCE);
+  ObjArrayKlass* oak = ObjArrayKlass::cast(ak)->klass_from_description(ad, CHECK_NULL);
+  // Cast below must pass because the array description required a RefArrayKlass
+  RefArrayKlass* rak = RefArrayKlass::cast(oak);
+  return rak->allocate_instance(length, CHECK_NULL);
+}
+
+refArrayOop oopFactory::new_refArray(Klass* klass, int length, TRAPS) {
+  return new_refArray(klass, length, ArrayProperties::Default(), THREAD);
+}
+
+flatArrayOop oopFactory::new_flatArray(FlatArrayKlass* klass, int length, TRAPS) {
+  return klass->allocate_instance(length, THREAD);
+}
+
+flatArrayOop oopFactory::new_flatArray(Klass* k, int length, ArrayProperties props, LayoutKind lk, TRAPS) {
+  InlineKlass* klass = InlineKlass::cast(k);
+
+  ArrayKlass* ak = klass->array_klass(CHECK_NULL);
+  ObjArrayKlass* oak = ObjArrayKlass::cast(ak)->klass_with_properties(props, CHECK_NULL);
+
+  FlatArrayKlass* fak = FlatArrayKlass::cast(oak);
+  return fak->allocate_instance(length, CHECK_NULL);
+}
+
+refArrayHandle oopFactory::new_refArray_handle(Klass* klass, int length, TRAPS) {
+  refArrayOop obj = new_refArray(klass, length, CHECK_(refArrayHandle()));
+  return refArrayHandle(THREAD, obj);
 }

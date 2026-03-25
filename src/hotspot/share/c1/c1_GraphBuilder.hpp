@@ -35,6 +35,24 @@
 
 class MemoryBuffer;
 
+class DelayedFieldAccess : public CompilationResourceObj {
+private:
+  Value            _obj;
+  ciInstanceKlass* _holder;
+  int              _offset;
+  ValueStack*      _state_before;
+
+public:
+  DelayedFieldAccess(Value obj, ciInstanceKlass* holder, int offset, ValueStack* state_before)
+  : _obj(obj), _holder(holder) , _offset(offset), _state_before(state_before) { }
+
+  Value obj() const { return _obj; }
+  ciInstanceKlass* holder() const { return _holder; }
+  int offset() const { return _offset; }
+  void inc_offset(int offset) { _offset += offset; }
+  ValueStack* state_before() const { return _state_before; }
+};
+
 class GraphBuilder {
   friend class JfrResolution;
  private:
@@ -192,6 +210,10 @@ class GraphBuilder {
   Instruction*      _last;                       // the last instruction added
   bool              _skip_block;                 // skip processing of the rest of this block
 
+  // support for optimization of accesses to flat fields and flat arrays
+  DelayedFieldAccess* _pending_field_access;
+  DelayedLoadIndexed* _pending_load_indexed;
+
   // accessors
   ScopeData*        scope_data() const           { return _scope_data; }
   Compilation*      compilation() const          { return _compilation; }
@@ -209,6 +231,12 @@ class GraphBuilder {
   Bytecodes::Code   code() const                 { return stream()->cur_bc(); }
   int               bci() const                  { return stream()->cur_bci(); }
   int               next_bci() const             { return stream()->next_bci(); }
+  bool              has_pending_field_access()   { return _pending_field_access != nullptr; }
+  DelayedFieldAccess* pending_field_access()     { return _pending_field_access; }
+  void              set_pending_field_access(DelayedFieldAccess* delayed) { _pending_field_access = delayed; }
+  bool              has_pending_load_indexed()   { return _pending_load_indexed != nullptr; }
+  DelayedLoadIndexed* pending_load_indexed()     { return _pending_load_indexed; }
+  void              set_pending_load_indexed(DelayedLoadIndexed* delayed) { _pending_load_indexed = delayed; }
 
   // unified bailout support
   void bailout(const char* msg) const            { compilation()->bailout(msg); }
@@ -266,6 +294,9 @@ class GraphBuilder {
   void monitorexit(Value x, int bci);
   void new_multi_array(int dimensions);
   void throw_op(int bci);
+
+  // inline types
+  void copy_inline_content(ciInlineKlass* vk, Value src, int src_off, Value dest, int dest_off, ValueStack* state_before, ciField* encloding_field = nullptr);
 
   // stack/code manipulation helpers
   Instruction* append_with_bci(Instruction* instr, int bci);
@@ -395,6 +426,7 @@ class GraphBuilder {
   bool profile_parameters()    { return _compilation->profile_parameters();    }
   bool profile_arguments()     { return _compilation->profile_arguments();     }
   bool profile_return()        { return _compilation->profile_return();        }
+  bool profile_array_accesses(){ return _compilation->profile_array_accesses();}
 
   Values* args_list_for_profiling(ciMethod* target, int& start, bool may_have_receiver);
   Values* collect_args_for_profiling(Values* args, ciMethod* target, bool may_have_receiver);

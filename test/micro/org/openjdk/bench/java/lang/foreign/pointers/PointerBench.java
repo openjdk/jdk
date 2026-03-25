@@ -52,8 +52,11 @@ public class PointerBench {
 
     final Arena arena = Arena.ofConfined();
     static final int ELEM_SIZE = 1_000_000;
+    @SuppressWarnings("initialization")
     Pointer<Integer> intPointer = Pointer.allocate(NativeType.C_INT, ELEM_SIZE, arena);
+    @SuppressWarnings("initialization")
     Pointer<Pointer<Integer>> intPointerPointer = Pointer.allocate(NativeType.C_INT_PTR, ELEM_SIZE, arena);
+    @SuppressWarnings("initialization")
     Pointer<Point> pointPointer = Pointer.allocate(Point.TYPE, ELEM_SIZE, arena);
     MemorySegment intSegment = intPointer.segment();
     MemorySegment intPointerSegment = intPointerPointer.segment();

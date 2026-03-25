@@ -43,7 +43,7 @@ public class Test8329757 {
 
     void q() {
         int e;
-        synchronized (new Double(1.1f)) {
+        synchronized (new Object()) {
         int[] f = new int[a];
         synchronized (Test8329757.class) {
             for (int d = 4; d < 127; d++) {

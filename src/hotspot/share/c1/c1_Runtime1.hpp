@@ -56,8 +56,14 @@ public:
   static uint _arraycopy_checkcast_attempt_cnt;
   static uint _new_type_array_slowcase_cnt;
   static uint _new_object_array_slowcase_cnt;
+  static uint _new_null_free_array_slowcase_cnt;
   static uint _new_instance_slowcase_cnt;
   static uint _new_multi_array_slowcase_cnt;
+  static uint _load_flat_array_slowcase_cnt;
+  static uint _store_flat_array_slowcase_cnt;
+  static uint _substitutability_check_slowcase_cnt;
+  static uint _buffer_inline_args_slowcase_cnt;
+  static uint _buffer_inline_args_no_receiver_slowcase_cnt;
   static uint _monitorenter_slowcase_cnt;
   static uint _monitorexit_slowcase_cnt;
   static uint _patch_code_slowcase_cnt;
@@ -67,11 +73,14 @@ public:
   static uint _throw_null_pointer_exception_count;
   static uint _throw_class_cast_exception_count;
   static uint _throw_incompatible_class_change_error_count;
+  static uint _throw_illegal_monitor_state_exception_count;
+  static uint _throw_identity_exception_count;
   static uint _throw_count;
 #endif
 
  private:
   static CodeBlob* _blobs[(int)StubInfo::C1_STUB_COUNT];
+  static void buffer_inline_args_impl(JavaThread* current, Method* m, bool allocate_receiver);
 
   // stub generation
  public:
@@ -89,9 +98,16 @@ public:
 
   // runtime entry points
   static void new_instance    (JavaThread* current, Klass* klass);
+  static void new_instance_no_inline(JavaThread* current, Klass* klass);
   static void new_type_array  (JavaThread* current, Klass* klass, jint length);
   static void new_object_array(JavaThread* current, Klass* klass, jint length);
+  static void new_null_free_array(JavaThread* current, Klass* klass, jint length);
   static void new_multi_array (JavaThread* current, Klass* klass, int rank, jint* dims);
+  static void load_flat_array(JavaThread* current, flatArrayOopDesc* array, int index);
+  static void store_flat_array(JavaThread* current, arrayOopDesc* array, int index, oopDesc* value);
+  static int  substitutability_check(JavaThread* current, oopDesc* left, oopDesc* right);
+  static void buffer_inline_args(JavaThread* current, Method* method);
+  static void buffer_inline_args_no_receiver(JavaThread* current, Method* method);
 
   static address counter_overflow(JavaThread* current, int bci, Method* method);
 
@@ -105,6 +121,8 @@ public:
   static void throw_null_pointer_exception(JavaThread* current);
   static void throw_class_cast_exception(JavaThread* current, oopDesc* object);
   static void throw_incompatible_class_change_error(JavaThread* current);
+  static void throw_illegal_monitor_state_exception(JavaThread* current);
+  static void throw_identity_exception(JavaThread* current, oopDesc* object);
   static void throw_array_store_exception(JavaThread* current, oopDesc* object);
 
   static void monitorenter(JavaThread* current, oopDesc* obj, BasicObjectLock* lock);

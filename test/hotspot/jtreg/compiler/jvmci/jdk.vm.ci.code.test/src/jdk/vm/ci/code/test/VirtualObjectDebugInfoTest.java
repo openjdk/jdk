@@ -71,6 +71,36 @@ public class VirtualObjectDebugInfoTest extends DebugInfoTest {
         }
 
         @Override
+        public String toString() {
+            var builder = new StringBuilder()
+                    .append("{l: ")
+                    .append(longField)
+                    .append("; ")
+                    .append("i: ")
+                    .append(intField)
+                    .append("; ")
+                    .append("f: ")
+                    .append(floatField)
+                    .append("; ")
+                    .append("a[")
+                    .append(arrayField.length)
+                    .append("]: ");
+            for (int i = 0; i < arrayField.length; ++i) {
+                if (i != 0) {
+                    builder.append("; ");
+                }
+                builder.append("[").append(i).append("]=");
+                if (arrayField[i] == this) {
+                    builder.append("this");
+                } else {
+                    builder.append(arrayField[i]);
+                }
+            }
+            builder.append("}");
+            return builder.toString();
+        }
+
+        @Override
         public boolean equals(Object o) {
             if (!(o instanceof TestClass)) {
                 return false;

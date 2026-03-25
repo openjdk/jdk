@@ -41,11 +41,13 @@ class MethodLiveness;
 class Arena;
 class BCEscapeAnalyzer;
 class InlineTree;
+class SigEntry;
 class xmlStream;
 
 // Whether profiling found an oop to be always, never or sometimes
 // null
 enum ProfilePtrKind {
+  ProfileUnknownNull,
   ProfileAlwaysNull,
   ProfileNeverNull,
   ProfileMaybeNull
@@ -198,7 +200,7 @@ class ciMethod : public ciMetadata {
   bool force_inline()           const { return get_Method()->force_inline();           }
   bool dont_inline()            const { return get_Method()->dont_inline();            }
   bool intrinsic_candidate()    const { return get_Method()->intrinsic_candidate();    }
-  bool is_static_initializer()  const { return get_Method()->is_static_initializer();  }
+  bool is_class_initializer()   const { return get_Method()->is_class_initializer();   }
   bool changes_current_thread() const { return get_Method()->changes_current_thread(); }
   bool deprecated()             const { return is_loaded() && get_Method()->deprecated(); }
 
@@ -269,7 +271,10 @@ class ciMethod : public ciMetadata {
   bool          argument_profiled_type(int bci, int i, ciKlass*& type, ProfilePtrKind& ptr_kind);
   bool          parameter_profiled_type(int i, ciKlass*& type, ProfilePtrKind& ptr_kind);
   bool          return_profiled_type(int bci, ciKlass*& type, ProfilePtrKind& ptr_kind);
-
+  bool          array_access_profiled_type(int bci, ciKlass*& array_type, ciKlass*& element_type, ProfilePtrKind& element_ptr, bool &flat_array, bool &null_free);
+  bool          acmp_profiled_type(int bci, ciKlass*& left_type, ciKlass*& right_type,
+                                   ProfilePtrKind& left_ptr, ProfilePtrKind& right_ptr,
+                                   bool &left_inline_type, bool &right_inline_type);
   ciField*      get_field_at_bci( int bci, bool &will_link);
   ciMethod*     get_method_at_bci(int bci, bool &will_link, ciSignature* *declared_signature);
   ciMethod*     get_method_at_bci(int bci) {
@@ -341,6 +346,7 @@ class ciMethod : public ciMetadata {
   bool is_native      () const                   { return flags().is_native(); }
   bool is_interface   () const                   { return flags().is_interface(); }
   bool is_abstract    () const                   { return flags().is_abstract(); }
+  bool has_vararg     () const                   { return flags().has_vararg(); }
 
   // Other flags
   bool is_final_method() const                   { return is_final() || holder()->is_final(); }
@@ -357,8 +363,8 @@ class ciMethod : public ciMetadata {
   bool has_reserved_stack_access() const         { return _has_reserved_stack_access; }
   bool is_boxing_method() const;
   bool is_unboxing_method() const;
+  bool is_object_constructor() const;
   bool is_vector_method() const;
-  bool is_object_initializer() const;
   bool is_scoped() const;
   bool is_old() const;
 
@@ -383,6 +389,17 @@ class ciMethod : public ciMetadata {
   void print_short_name(outputStream* st = tty);
 
   static bool is_consistent_info(ciMethod* declared_method, ciMethod* resolved_method);
+
+  // Support for the inline type calling convention
+  bool is_scalarized_arg(int idx) const;
+  bool has_scalarized_args() const;
+  const GrowableArray<SigEntry>* get_sig_cc() const;
+  bool mismatch() const;
+
+  // Generally, a method cannot return a larval object or receive a larval argument. There are some
+  // exceptions.
+  bool receiver_maybe_larval() const;
+  bool return_value_is_larval() const;
 };
 
 #endif // SHARE_CI_CIMETHOD_HPP

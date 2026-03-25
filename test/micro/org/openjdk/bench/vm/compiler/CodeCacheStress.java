@@ -321,6 +321,7 @@ public class CodeCacheStress {
         }
     }
 
+    @SuppressWarnings("initialization")
     CodeCacheStress.BenchLoader loader1 = new CodeCacheStress.BenchLoader();
 
     @Setup(Level.Trial)

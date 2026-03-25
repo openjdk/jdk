@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import java.net.http.HttpRequest.BodyPublisher;
-import java.nio.ByteBuffer;
-import java.util.List;
+import java.net.http.HttpRequest;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import static java.net.http.HttpRequest.BodyPublishers.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -40,18 +37,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @test
  * @bug 8364733
  * @summary Verify all specified `HttpRequest.BodyPublishers::fromPublisher` behavior
- * @build ByteBufferUtils
- *        RecordingSubscriber
- *        ReplayTestSupport
- * @run junit ${test.main.class}
+ * @build RecordingSubscriber
+ * @run junit FromPublisherTest
  */
 
-class FromPublisherTest extends ReplayTestSupport {
+class FromPublisherTest {
 
     @Test
     void testNullPublisher() {
-        assertThrows(NullPointerException.class, () -> fromPublisher(null));
-        assertThrows(NullPointerException.class, () -> fromPublisher(null, 1));
+        assertThrows(NullPointerException.class, () -> HttpRequest.BodyPublishers.fromPublisher(null));
+        assertThrows(NullPointerException.class, () -> HttpRequest.BodyPublishers.fromPublisher(null, 1));
     }
 
     @ParameterizedTest
@@ -59,7 +54,7 @@ class FromPublisherTest extends ReplayTestSupport {
     void testInvalidContentLength(long contentLength) {
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> fromPublisher(null, contentLength));
+                () -> HttpRequest.BodyPublishers.fromPublisher(null, contentLength));
         String exceptionMessage = exception.getMessage();
         assertTrue(
                 exceptionMessage.contains("non-positive contentLength"),
@@ -69,26 +64,29 @@ class FromPublisherTest extends ReplayTestSupport {
     @ParameterizedTest
     @ValueSource(longs = {1, 2, 3, 4})
     void testValidContentLength(long contentLength) {
-        BodyPublisher publisher = fromPublisher(noBody(), contentLength);
+        HttpRequest.BodyPublisher publisher =
+                HttpRequest.BodyPublishers.fromPublisher(HttpRequest.BodyPublishers.noBody(), contentLength);
         assertEquals(contentLength, publisher.contentLength());
     }
 
     @Test
     void testNoContentLength() {
-        BodyPublisher publisher = fromPublisher(noBody());
+        HttpRequest.BodyPublisher publisher =
+                HttpRequest.BodyPublishers.fromPublisher(HttpRequest.BodyPublishers.noBody());
         assertEquals(-1, publisher.contentLength());
     }
 
     @Test
     void testNullSubscriber() {
-        BodyPublisher publisher = fromPublisher(noBody());
+        HttpRequest.BodyPublisher publisher =
+                HttpRequest.BodyPublishers.fromPublisher(HttpRequest.BodyPublishers.noBody());
         assertThrows(NullPointerException.class, () -> publisher.subscribe(null));
     }
 
     @Test
     void testDelegation() throws InterruptedException {
         BlockingQueue<Object> publisherInvocations = new LinkedBlockingQueue<>();
-        BodyPublisher publisher = fromPublisher(subscriber -> {
+        HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.fromPublisher(subscriber -> {
             publisherInvocations.add("subscribe");
             publisherInvocations.add(subscriber);
         });
@@ -97,15 +95,6 @@ class FromPublisherTest extends ReplayTestSupport {
         assertEquals("subscribe", publisherInvocations.take());
         assertEquals(subscriber, publisherInvocations.take());
         assertTrue(subscriber.invocations.isEmpty());
-    }
-
-    @Override
-    Iterable<ReplayTarget> createReplayTargets() {
-        byte[] content = ByteBufferUtils.byteArrayOfLength(10);
-        ByteBuffer expectedBuffer = ByteBuffer.wrap(content);
-        BodyPublisher delegatePublisher = ofByteArray(content);
-        BodyPublisher publisher = fromPublisher(delegatePublisher, delegatePublisher.contentLength());
-        return List.of(new ReplayTarget(expectedBuffer, publisher));
     }
 
 }

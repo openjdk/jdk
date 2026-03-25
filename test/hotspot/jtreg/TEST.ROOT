@@ -58,6 +58,7 @@ requires.extraPropDefns.vmOpts = \
     --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
 requires.properties= \
     sun.arch.data.model \
+    java.enablePreview \
     vm.simpleArch \
     vm.bits \
     vm.flightRecorder \
@@ -69,6 +70,7 @@ requires.properties= \
     vm.gc.Z \
     vm.jvmci \
     vm.jvmci.enabled \
+    vm.emulatedClient \
     vm.cpu.features \
     vm.pageSize \
     vm.debug \

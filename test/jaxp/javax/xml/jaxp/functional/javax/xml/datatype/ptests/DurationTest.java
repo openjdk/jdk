@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,50 +23,52 @@
 
 package javax.xml.datatype.ptests;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
-
-import javax.xml.datatype.DatatypeConfigurationException;
-import javax.xml.datatype.DatatypeConstants;
-import javax.xml.datatype.DatatypeFactory;
-import javax.xml.datatype.Duration;
-import javax.xml.namespace.QName;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.Calendar;
-import java.util.function.Function;
-
 import static javax.xml.datatype.DatatypeConstants.DAYS;
 import static javax.xml.datatype.DatatypeConstants.HOURS;
 import static javax.xml.datatype.DatatypeConstants.MINUTES;
 import static javax.xml.datatype.DatatypeConstants.MONTHS;
 import static javax.xml.datatype.DatatypeConstants.SECONDS;
 import static javax.xml.datatype.DatatypeConstants.YEARS;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.Calendar;
+import java.util.function.Function;
+
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeConstants;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.Duration;
+import javax.xml.namespace.QName;
+
+import org.testng.Assert;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run junit/othervm javax.xml.datatype.ptests.DurationTest
+ * @run testng/othervm javax.xml.datatype.ptests.DurationTest
  * @summary Class containing the test cases for Duration.
  */
 public class DurationTest {
 
-    private static DatatypeFactory datatypeFactory = null;
+    private DatatypeFactory datatypeFactory;
 
-    @BeforeAll
-    public static void setup() throws DatatypeConfigurationException {
+    /*
+     * Setup.
+     */
+    @BeforeClass
+    public void setup() throws DatatypeConfigurationException {
         datatypeFactory = DatatypeFactory.newInstance();
     }
 
-    public static Object[][] getLegalNumberDuration() {
+    @DataProvider(name = "legal-number-duration")
+    public Object[][] getLegalNumberDuration() {
         return new Object[][] {
                 // is positive, year, month, day, hour, minute, second
                 { true, 1, 1, 1, 1, 1, 1 },
@@ -80,13 +82,13 @@ public class DurationTest {
      * Test for constructor Duration(boolean isPositive,int years,int months,
      * int days,int hours,int minutes,int seconds).
      */
-    @ParameterizedTest
-    @MethodSource("getLegalNumberDuration")
+    @Test(dataProvider = "legal-number-duration")
     public void checkNumberDurationPos(boolean isPositive, int years, int months, int days, int hours, int minutes, int seconds) {
         datatypeFactory.newDuration(isPositive, years, months, days, hours, minutes, seconds);
     }
 
-    public static Object[][] getIllegalNumberDuration() {
+    @DataProvider(name = "illegal-number-duration")
+    public Object[][] getIllegalNumberDuration() {
         return new Object[][] {
                 // is positive, year, month, day, hour, minute, second
                 { true, 1, 1, -1, 1, 1, 1 },
@@ -101,15 +103,13 @@ public class DurationTest {
      * int days,int hours,int minutes,int seconds), if any of the fields is
      * negative should throw IllegalArgumentException.
      */
-    @ParameterizedTest
-    @MethodSource("getIllegalNumberDuration")
+    @Test(expectedExceptions = IllegalArgumentException.class, dataProvider = "illegal-number-duration")
     public void checkDurationNumberNeg(boolean isPositive, int years, int months, int days, int hours, int minutes, int seconds) {
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> datatypeFactory.newDuration(isPositive, years, months, days, hours, minutes, seconds));
+        datatypeFactory.newDuration(isPositive, years, months, days, hours, minutes, seconds);
     }
 
-    public static Object[][] getLegalBigIntegerDuration() {
+    @DataProvider(name = "legal-bigint-duration")
+    public Object[][] getLegalBigIntegerDuration() {
         return new Object[][] {
                 // is positive, year, month, day, hour, minute, second
                 { true, zero, zero, zero, zero, zero, new BigDecimal(zero) },
@@ -125,14 +125,14 @@ public class DurationTest {
      * years,BigInteger months, BigInteger days,BigInteger hours,BigInteger
      * minutes,BigDecimal seconds).
      */
-    @ParameterizedTest
-    @MethodSource("getLegalBigIntegerDuration")
+    @Test(dataProvider = "legal-bigint-duration")
     public void checkBigIntegerDurationPos(boolean isPositive, BigInteger years, BigInteger months, BigInteger days, BigInteger hours, BigInteger minutes,
             BigDecimal seconds) {
         datatypeFactory.newDuration(isPositive, years, months, days, hours, minutes, seconds);
     }
 
-    public static Object[][] getIllegalBigIntegerDuration() {
+    @DataProvider(name = "illegal-bigint-duration")
+    public Object[][] getIllegalBigIntegerDuration() {
         return new Object[][] {
                 // is positive, year, month, day, hour, minute, second
                 { true, null, null, null, null, null, null },
@@ -146,66 +146,79 @@ public class DurationTest {
      * minutes,BigDecimal seconds), if all the fields are null should throw
      * IllegalArgumentException.
      */
-    @ParameterizedTest
-    @MethodSource("getIllegalBigIntegerDuration")
-    public void checkBigIntegerDurationNeg(
-            boolean isPositive, BigInteger years, BigInteger months, BigInteger days, BigInteger hours, BigInteger minutes, BigDecimal seconds) {
-        assertThrows(IllegalArgumentException.class, () -> datatypeFactory.newDuration(isPositive, years, months, days, hours, minutes, seconds));
+    @Test(expectedExceptions = IllegalArgumentException.class, dataProvider = "illegal-bigint-duration")
+    public void checkBigIntegerDurationNeg(boolean isPositive, BigInteger years, BigInteger months, BigInteger days, BigInteger hours, BigInteger minutes,
+            BigDecimal seconds) {
+        datatypeFactory.newDuration(isPositive, years, months, days, hours, minutes, seconds);
+    }
+
+    @DataProvider(name = "legal-millisec-duration")
+    public Object[][] getLegalMilliSecondDuration() {
+        return new Object[][] { { 1000000 }, { 0 }, { Long.MAX_VALUE }, { Long.MIN_VALUE }
+
+        };
     }
 
     /*
      * Test for constructor Duration(long durationInMilliSeconds)
      */
-    @ParameterizedTest
-    @ValueSource(longs={ 1000000, 0, Long.MAX_VALUE, Long.MIN_VALUE })
+    @Test(dataProvider = "legal-millisec-duration")
     public void checkMilliSecondDuration(long millisec) {
         datatypeFactory.newDuration(millisec);
+    }
+
+    @DataProvider(name = "legal-lexical-duration")
+    public Object[][] getLegalLexicalDuration() {
+        return new Object[][] { { "P1Y1M1DT1H1M1S" }, { "-P1Y1M1DT1H1M1S" } };
     }
 
     /*
      * Test for constructor Duration(java.lang.String lexicalRepresentation)
      */
-    @ParameterizedTest
-    @ValueSource(strings={ "P1Y1M1DT1H1M1S", "-P1Y1M1DT1H1M1S" })
+    @Test(dataProvider = "legal-lexical-duration")
     public void checkLexicalDurationPos(String lexRepresentation) {
         datatypeFactory.newDuration(lexRepresentation);
     }
 
-    /*
-     * Test for constructor Duration(java.lang.String lexicalRepresentation),
-     * null should throw NullPointerException
-     */
-    @Test
-    public void checkLexicalDurationNull() {
-        assertThrows(NullPointerException.class, () -> datatypeFactory.newDuration(null));
+    @DataProvider(name = "illegal-lexical-duration")
+    public Object[][] getIllegalLexicalDuration() {
+        return new Object[][] {
+                { null },
+                { "P1Y1M1DT1H1M1S " },
+                { " P1Y1M1DT1H1M1S" },
+                { "X1Y1M1DT1H1M1S" },
+                { "" },
+                { "P1Y2MT" } // The designator 'T' shall be absent if all of the time items are absent in "PnYnMnDTnHnMnS"
+        };
     }
 
     /*
      * Test for constructor Duration(java.lang.String lexicalRepresentation),
-     * invalid lex should throw IllegalArgumentException
+     * null should throw NullPointerException, invalid lex should throw
+     * IllegalArgumentException
      */
-    @ParameterizedTest
-    @ValueSource(strings={ "P1Y1M1DT1H1M1S ", " P1Y1M1DT1H1M1S", "X1Y1M1DT1H1M1S", "", "P1Y2MT" })
+    @Test(expectedExceptions = { NullPointerException.class, IllegalArgumentException.class }, dataProvider = "illegal-lexical-duration")
     public void checkLexicalDurationNeg(String lexRepresentation) {
-        assertThrows(IllegalArgumentException.class, () -> datatypeFactory.newDuration(lexRepresentation));
+        datatypeFactory.newDuration(lexRepresentation);
     }
 
-    public static Object[][] getEqualDurations() {
+    @DataProvider(name = "equal-duration")
+    public Object[][] getEqualDurations() {
         return new Object[][] { { "P1Y1M1DT1H1M1S", "P1Y1M1DT1H1M1S" } };
     }
 
     /*
      * Test for compare() both durations valid and equal.
      */
-    @ParameterizedTest
-    @MethodSource("getEqualDurations")
+    @Test(dataProvider = "equal-duration")
     public void checkDurationEqual(String lexRepresentation1, String lexRepresentation2) {
         Duration duration1 = datatypeFactory.newDuration(lexRepresentation1);
         Duration duration2 = datatypeFactory.newDuration(lexRepresentation2);
-        assertEquals(duration1, duration2);
+        assertTrue(duration1.equals(duration2));
     }
 
-    public static Object[][] getGreaterDuration() {
+    @DataProvider(name = "greater-duration")
+    public Object[][] getGreaterDuration() {
         return new Object[][] {
                 { "P1Y1M1DT1H1M2S", "P1Y1M1DT1H1M1S" },
                 { "P1Y1M1DT1H1M1S", "-P1Y1M1DT1H1M2S" },
@@ -216,15 +229,15 @@ public class DurationTest {
     /*
      * Test for compare() both durations valid and lhs > rhs.
      */
-    @ParameterizedTest
-    @MethodSource("getGreaterDuration")
+    @Test(dataProvider = "greater-duration")
     public void checkDurationCompare(String lexRepresentation1, String lexRepresentation2) {
         Duration duration1 = datatypeFactory.newDuration(lexRepresentation1);
         Duration duration2 = datatypeFactory.newDuration(lexRepresentation2);
-        assertEquals(DatatypeConstants.GREATER, duration1.compare(duration2));
+        assertTrue(duration1.compare(duration2) == DatatypeConstants.GREATER);
     }
 
-    public static Object[][] getNotEqualDurations() {
+    @DataProvider(name = "not-equal-duration")
+    public Object[][] getNotEqualDurations() {
         return new Object[][] {
                 { "P1Y1M1DT1H1M1S", "-P1Y1M1DT1H1M1S" },
                 { "P2Y1M1DT1H1M1S", "P1Y1M1DT1H1M1S" } };
@@ -233,15 +246,15 @@ public class DurationTest {
     /*
      * Test for equals() both durations valid and lhs not equals rhs.
      */
-    @ParameterizedTest
-    @MethodSource("getNotEqualDurations")
+    @Test(dataProvider = "not-equal-duration")
     public void checkDurationNotEqual(String lexRepresentation1, String lexRepresentation2) {
         Duration duration1 = datatypeFactory.newDuration(lexRepresentation1);
         Duration duration2 = datatypeFactory.newDuration(lexRepresentation2);
-        assertNotEquals(duration1, duration2);
+        Assert.assertNotEquals(duration1, duration2);
     }
 
-    public static Object[][] getDurationAndSign() {
+    @DataProvider(name = "duration-sign")
+    public Object[][] getDurationAndSign() {
         return new Object[][] {
                 { "P0Y0M0DT0H0M0S", 0 },
                 { "P1Y0M0DT0H0M0S", 1 },
@@ -251,11 +264,10 @@ public class DurationTest {
     /*
      * Test for Duration.getSign().
      */
-    @ParameterizedTest
-    @MethodSource("getDurationAndSign")
-    public void checkDurationSign(String lexRepresentation, int expectedSign) {
+    @Test(dataProvider = "duration-sign")
+    public void checkDurationSign(String lexRepresentation, int sign) {
         Duration duration = datatypeFactory.newDuration(lexRepresentation);
-        assertEquals(expectedSign, duration.getSign());
+        assertEquals(duration.getSign(), sign);
     }
 
     /*
@@ -266,9 +278,10 @@ public class DurationTest {
         Duration durationPos = datatypeFactory.newDuration("P1Y0M0DT0H0M0S");
         Duration durationNeg = datatypeFactory.newDuration("-P1Y0M0DT0H0M0S");
 
-        assertEquals(durationNeg, durationPos.negate());
-        assertEquals(durationPos, durationNeg.negate());
-        assertEquals(durationPos, durationPos.negate().negate());
+        assertEquals(durationPos.negate(), durationNeg);
+        assertEquals(durationNeg.negate(), durationPos);
+        assertEquals(durationPos.negate().negate(), durationPos);
+
     }
 
     /*
@@ -329,22 +342,24 @@ public class DurationTest {
     /*
      * Test Duration.isSet(Field) throws NPE if the field parameter is null.
      */
+    @Test(expectedExceptions = NullPointerException.class)
     public void checkDurationIsSetNeg() {
         Duration duration = datatypeFactory.newDuration(true, 0, 0, 0, 0, 0, 0);
-        assertThrows(NullPointerException.class, () -> duration.isSet(null));
+        duration.isSet(null);
     }
 
     /*
      * Test for -getField(DatatypeConstants.Field) DatatypeConstants.Field is
      * null - throws NPE.
      */
-    @Test
+    @Test(expectedExceptions = NullPointerException.class)
     public void checkDurationGetFieldNeg() {
-        Duration duration = datatypeFactory.newDuration("P1Y1M1DT1H1M1S");
-        assertThrows(NullPointerException.class, () -> duration.getField(null));
+        Duration duration67 = datatypeFactory.newDuration("P1Y1M1DT1H1M1S");
+        duration67.getField(null);
     }
 
-    public static Object[][] getDurationAndFields() {
+    @DataProvider(name = "duration-fields")
+    public Object[][] getDurationAndFields() {
         return new Object[][] {
                 { "P1Y1M1DT1H1M1S", one, one, one, one, one, new BigDecimal(one) },
                 { "PT1M", null, null, null, null, one, null },
@@ -354,21 +369,21 @@ public class DurationTest {
     /*
      * Test for Duration.getField(DatatypeConstants.Field).
      */
-    @ParameterizedTest
-    @MethodSource("getDurationAndFields")
+    @Test(dataProvider = "duration-fields")
     public void checkDurationGetField(String lexRepresentation, BigInteger years, BigInteger months, BigInteger days, BigInteger hours, BigInteger minutes,
             BigDecimal seconds) {
         Duration duration = datatypeFactory.newDuration(lexRepresentation);
 
-        assertEquals(years, duration.getField(YEARS));
-        assertEquals(months, duration.getField(MONTHS));
-        assertEquals(days, duration.getField(DAYS));
-        assertEquals(hours, duration.getField(HOURS));
-        assertEquals(minutes, duration.getField(MINUTES));
-        assertEquals(seconds, duration.getField(SECONDS));
+        assertEquals(duration.getField(YEARS), years);
+        assertEquals(duration.getField(MONTHS), months);
+        assertEquals(duration.getField(DAYS), days);
+        assertEquals(duration.getField(HOURS), hours);
+        assertEquals(duration.getField(MINUTES), minutes);
+        assertEquals(duration.getField(SECONDS), seconds);
     }
 
-    public static Object[][] getNumberAndString() {
+    @DataProvider(name = "number-string")
+    public Object[][] getNumberAndString() {
         return new Object[][] {
                 // is positive, year, month, day, hour, minute, second, lexical
                 { true, 1, 1, 1, 1, 1, 1, "P1Y1M1DT1H1M1S" },
@@ -381,22 +396,22 @@ public class DurationTest {
     /*
      * Test for - toString().
      */
-    @ParameterizedTest
-    @MethodSource("getNumberAndString")
+    @Test(dataProvider = "number-string")
     public void checkDurationToString(boolean isPositive, int years, int months, int days, int hours, int minutes, int seconds, String lexical) {
-        Duration duration = datatypeFactory.newDuration(isPositive, years, months, days, hours, minutes, seconds);
-        assertEquals(lexical, duration.toString());
+        Duration duration = datatypeFactory.newDuration(isPositive,  years,  months,  days,  hours,  minutes,  seconds);
+        assertEquals(duration.toString(), lexical);
 
-        assertEquals(duration, datatypeFactory.newDuration(duration.toString()));
+        assertEquals(datatypeFactory.newDuration(duration.toString()), duration);
     }
 
-    public static Object[][] getDurationAndField() {
-        Function<Duration, Integer> getyears = Duration::getYears;
-        Function<Duration, Integer> getmonths = Duration::getMonths;
-        Function<Duration, Integer> getdays = Duration::getDays;
-        Function<Duration, Integer> gethours = Duration::getHours;
-        Function<Duration, Integer> getminutes = Duration::getMinutes;
-        Function<Duration, Integer> getseconds = Duration::getSeconds;
+    @DataProvider(name = "duration-field")
+    public Object[][] getDurationAndField() {
+        Function<Duration, Integer> getyears = duration -> duration.getYears();
+        Function<Duration, Integer> getmonths = duration -> duration.getMonths();
+        Function<Duration, Integer> getdays = duration -> duration.getDays();
+        Function<Duration, Integer> gethours = duration -> duration.getHours();
+        Function<Duration, Integer> getminutes = duration -> duration.getMinutes();
+        Function<Duration, Integer> getseconds = duration -> duration.getSeconds();
         return new Object[][] {
                 { "P1Y1M1DT1H1M1S", getyears, 1 },
                 { "P1M1DT1H1M1S", getyears, 0 },
@@ -416,11 +431,10 @@ public class DurationTest {
     /*
      * Test for Duration.getYears(), getMonths(), etc.
      */
-    @ParameterizedTest
-    @MethodSource("getDurationAndField")
-    public void checkDurationGetOneField(String lexRepresentation, Function<Duration, Integer> getter, int expectedValue) {
+    @Test(dataProvider = "duration-field")
+    public void checkDurationGetOneField(String lexRepresentation, Function<Duration, Integer> getter, int value) {
         Duration duration = datatypeFactory.newDuration(lexRepresentation);
-        assertEquals(expectedValue, getter.apply(duration).intValue());
+        assertEquals(getter.apply(duration).intValue(), value);
     }
 
     /*
@@ -429,7 +443,7 @@ public class DurationTest {
     @Test
     public void checkDurationGetSecondsField() {
         Duration duration85 = datatypeFactory.newDuration("P1Y1M1DT1H1M100000000S");
-        assertEquals(100000000, (duration85.getField(SECONDS)).intValue());
+        assertEquals((duration85.getField(SECONDS)).intValue(), 100000000);
     }
 
     /*
@@ -438,9 +452,9 @@ public class DurationTest {
      */
     @Test
     public void checkDurationGetTimeInMillis() {
-        Duration duration = datatypeFactory.newDuration("PT1M1S");
-        Calendar calendar = Calendar.getInstance();
-        assertEquals(61000, duration.getTimeInMillis(calendar));
+        Duration duration86 = datatypeFactory.newDuration("PT1M1S");
+        Calendar calendar86 = Calendar.getInstance();
+        assertEquals(duration86.getTimeInMillis(calendar86), 61000);
     }
 
     /*
@@ -448,13 +462,15 @@ public class DurationTest {
      * between startInstant and startInstant plus this Duration throws NPE if
      * startInstant parameter is null.
      */
-    @Test
+    @Test(expectedExceptions = NullPointerException.class)
     public void checkDurationGetTimeInMillisNeg() {
-        Duration duration = datatypeFactory.newDuration("PT1M1S");
-        assertThrows(NullPointerException.class, () -> duration.getTimeInMillis((Calendar) null));
+        Duration duration87 = datatypeFactory.newDuration("PT1M1S");
+        Calendar calendar87 = null;
+        duration87.getTimeInMillis(calendar87);
     }
 
-    public static Object[][] getDurationsForHash() {
+    @DataProvider(name = "duration-for-hash")
+    public Object[][] getDurationsForHash() {
         return new Object[][] {
                 { "P1Y1M1DT1H1M1S", "P1Y1M1DT1H1M1S" },
                 { "P1D", "PT24H" },
@@ -467,17 +483,17 @@ public class DurationTest {
      * Test for Duration.hashcode(). hashcode() should return same value for
      * some equal durations.
      */
-    @ParameterizedTest
-    @MethodSource("getDurationsForHash")
+    @Test(dataProvider = "duration-for-hash")
     public void checkDurationHashCode(String lexRepresentation1, String lexRepresentation2) {
         Duration duration1 = datatypeFactory.newDuration(lexRepresentation1);
         Duration duration2 = datatypeFactory.newDuration(lexRepresentation2);
         int hash1 = duration1.hashCode();
         int hash2 = duration2.hashCode();
-        assertEquals(hash1, hash2, " generated hash1 : " + hash1 + " generated hash2 : " + hash2);
+        assertTrue(hash1 == hash2, " generated hash1 : " + hash1 + " generated hash2 : " + hash2);
     }
 
-    public static Object[][] getDurationsForAdd() {
+    @DataProvider(name = "duration-for-add")
+    public Object[][] getDurationsForAdd() {
         return new Object[][] {
                 // initVal, addVal, resultVal
                 { "P1Y1M1DT1H1M1S", "P1Y1M1DT1H1M1S", "P2Y2M2DT2H2M2S" },
@@ -488,8 +504,7 @@ public class DurationTest {
     /*
      * Test for add(Duration rhs).
      */
-    @ParameterizedTest
-    @MethodSource("getDurationsForAdd")
+    @Test(dataProvider = "duration-for-add")
     public void checkDurationAdd(String initVal, String addVal, String result) {
         Duration durationInit = datatypeFactory.newDuration(initVal);
         Duration durationAdd = datatypeFactory.newDuration(addVal);
@@ -498,32 +513,25 @@ public class DurationTest {
         assertEquals(durationInit.add(durationAdd), durationResult);
     }
 
-    public static Object[][] getDurationsForAddNeg() {
+    @DataProvider(name = "duration-for-addneg")
+    public Object[][] getDurationsForAddNeg() {
         return new Object[][] {
                 // initVal, addVal
+                { "P1Y1M1DT1H1M1S", null },
                 { "P1Y", "-P1D" },
                 { "-P1Y", "P1D" }, };
     }
 
     /*
-     * Test for add(Duration rhs).
-     * "1 year" + "-1 day" or "-1 year" + "1 day" should throw IllegalStateException
+     * Test for add(Duration rhs) 'rhs' is null , should throw NPE. "1 year" +
+     * "-1 day" or "-1 year" + "1 day" should throw IllegalStateException
      */
-    @ParameterizedTest
-    @MethodSource("getDurationsForAddNeg")
+    @Test(expectedExceptions = { NullPointerException.class, IllegalStateException.class }, dataProvider = "duration-for-addneg")
     public void checkDurationAddNeg(String initVal, String addVal) {
         Duration durationInit = datatypeFactory.newDuration(initVal);
         Duration durationAdd = addVal == null ? null : datatypeFactory.newDuration(addVal);
-        assertThrows(IllegalStateException.class, () -> durationInit.add(durationAdd));
-    }
 
-    /*
-     * Test for add(Duration rhs) 'rhs' is null , should throw NPE.
-     */
-    @Test
-    public void checkDurationAddNull() {
-        Duration durationInit = datatypeFactory.newDuration("P1Y1M1DT1H1M1S");
-        assertThrows(NullPointerException.class, () -> durationInit.add(null));
+        durationInit.add(durationAdd);
     }
 
     /*
@@ -532,14 +540,15 @@ public class DurationTest {
      * Bug # 4972785 UnsupportedOperationException is expected
      *
      */
-    @Test
+    @Test(expectedExceptions = UnsupportedOperationException.class)
     public void checkDurationCompareLarge() {
         String duration1Lex = "P100000000000000000000D";
         String duration2Lex = "PT2400000000000000000000H";
 
         Duration duration1 = datatypeFactory.newDuration(duration1Lex);
         Duration duration2 = datatypeFactory.newDuration(duration2Lex);
-        assertThrows(UnsupportedOperationException.class, () -> duration1.compare(duration2));
+        duration1.compare(duration2);
+
     }
 
     /*
@@ -553,24 +562,25 @@ public class DurationTest {
         // DURATION
         Duration duration = datatypeFactory.newDuration("P1Y1M1DT1H1M1S");
         QName duration_xmlSchemaType = duration.getXMLSchemaType();
-        assertEquals(DatatypeConstants.DURATION, duration_xmlSchemaType, "Expected DatatypeConstants.DURATION, returned " + duration_xmlSchemaType.toString());
+        assertEquals(duration_xmlSchemaType, DatatypeConstants.DURATION, "Expected DatatypeConstants.DURATION, returned " + duration_xmlSchemaType.toString());
 
         // DURATION_DAYTIME
         Duration duration_dayTime = datatypeFactory.newDuration("P1DT1H1M1S");
         QName duration_dayTime_xmlSchemaType = duration_dayTime.getXMLSchemaType();
-        assertEquals(DatatypeConstants.DURATION_DAYTIME, duration_dayTime_xmlSchemaType, "Expected DatatypeConstants.DURATION_DAYTIME, returned "
+        assertEquals(duration_dayTime_xmlSchemaType, DatatypeConstants.DURATION_DAYTIME, "Expected DatatypeConstants.DURATION_DAYTIME, returned "
                 + duration_dayTime_xmlSchemaType.toString());
 
         // DURATION_YEARMONTH
         Duration duration_yearMonth = datatypeFactory.newDuration("P1Y1M");
         QName duration_yearMonth_xmlSchemaType = duration_yearMonth.getXMLSchemaType();
-        assertEquals(DatatypeConstants.DURATION_YEARMONTH, duration_yearMonth_xmlSchemaType, "Expected DatatypeConstants.DURATION_YEARMONTH, returned "
+        assertEquals(duration_yearMonth_xmlSchemaType, DatatypeConstants.DURATION_YEARMONTH, "Expected DatatypeConstants.DURATION_YEARMONTH, returned "
                 + duration_yearMonth_xmlSchemaType.toString());
 
     }
 
 
-    private final static int undef = DatatypeConstants.FIELD_UNDEFINED;
-    private final static BigInteger zero = BigInteger.ZERO;
-    private final static BigInteger one = BigInteger.ONE;
+    private final int undef = DatatypeConstants.FIELD_UNDEFINED;
+    private final BigInteger zero = BigInteger.ZERO;
+    private final BigInteger one = BigInteger.ONE;
+
 }

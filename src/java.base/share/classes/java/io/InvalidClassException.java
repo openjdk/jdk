@@ -37,6 +37,9 @@ package java.io;
  *      an enum type
  * <LI> Other conditions given in the <cite>Java Object Serialization
  *      Specification</cite>
+ * <LI> A {@linkplain Class#isValue()} value class implements {@linkplain Serializable}
+ *      but does not delegate to a serialization proxy using {@code writeReplace()}.
+ * <LI> A {@linkplain Class#isValue()} value class implements {@linkplain Externalizable}.
  * </UL>
  *
  * @since   1.1

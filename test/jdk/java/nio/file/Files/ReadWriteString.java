@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,21 +27,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.MalformedInputException;
 import java.nio.charset.UnmappableCharacterException;
-import java.nio.file.Files;
-import java.nio.file.OpenOption;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Random;
-import java.util.concurrent.Callable;
-import java.util.stream.Stream;
-
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -51,31 +36,36 @@ import static java.nio.charset.StandardCharsets.UTF_16LE;
 import static java.nio.charset.StandardCharsets.UTF_32;
 import static java.nio.charset.StandardCharsets.UTF_32BE;
 import static java.nio.charset.StandardCharsets.UTF_32LE;
-
+import java.nio.file.Files;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import static java.nio.file.StandardOpenOption.APPEND;
 import static java.nio.file.StandardOpenOption.CREATE;
-
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import java.util.Arrays;
+import java.util.Random;
+import java.util.concurrent.Callable;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
 /* @test
  * @bug 8201276 8205058 8209576 8287541 8288589 8325590
  * @build ReadWriteString PassThroughFileSystem
- * @run junit ReadWriteString
+ * @run testng ReadWriteString
  * @summary Unit test for methods for Files readString and write methods.
  * @key randomness
  * @modules jdk.charsets
  */
+@Test(groups = "readwrite")
 public class ReadWriteString {
 
     // data for text files
-    final static String TEXT_UNICODE = "\u201CHello\u201D";
-    final static String TEXT_ASCII = "ABCDEFGHIJKLMNOPQRSTUVWXYZ\n abcdefghijklmnopqrstuvwxyz\n 1234567890\n";
+    final String TEXT_UNICODE = "\u201CHello\u201D";
+    final String TEXT_ASCII = "ABCDEFGHIJKLMNOPQRSTUVWXYZ\n abcdefghijklmnopqrstuvwxyz\n 1234567890\n";
     final static String TEXT_PERSON_CART_WHEELING = "\ud83e\udd38";
     private static final String JA_STRING = "\u65e5\u672c\u8a9e\u6587\u5b57\u5217";
     private static final Charset WINDOWS_1252 = Charset.forName("windows-1252");
@@ -95,85 +85,96 @@ public class ReadWriteString {
             return baos.toByteArray();
         } catch (IOException ex) {
             // in case it happens, fail the test
-            fail(ex);
-            return null; // appease the compiler
+            throw new RuntimeException(ex);
         }
     }
 
     // file used by testReadWrite, testReadString and testWriteString
-    private static Path[] testFiles = new Path[3];
+    private Path[] testFiles = new Path[3];
 
     /*
-     * MethodSource for malformed write test. Provides the following fields:
+     * DataProvider for malformed write test. Provides the following fields:
      * file path, malformed input string, charset
      */
-    public static Stream<Arguments> getMalformedWrite() throws IOException {
+    @DataProvider(name = "malformedWrite")
+    public Object[][] getMalformedWrite() throws IOException {
         Path path = Files.createFile(Path.of("malformedWrite"));
-        return Stream.of
-            (Arguments.of(path, "\ud800", null),  //the default Charset is UTF_8
-             Arguments.of(path, "\u00A0\u00A1", US_ASCII),
-             Arguments.of(path, "\ud800", UTF_8),
-             Arguments.of(path, JA_STRING, ISO_8859_1),
-             Arguments.of(path, "\u041e", WINDOWS_1252), // cyrillic capital letter O
-             Arguments.of(path, "\u091c", WINDOWS_31J)); // devanagari letter ja
+        return new Object[][]{
+            {path, "\ud800", null},  //the default Charset is UTF_8
+            {path, "\u00A0\u00A1", US_ASCII},
+            {path, "\ud800", UTF_8},
+            {path, JA_STRING, ISO_8859_1},
+            {path, "\u041e", WINDOWS_1252}, // cyrillic capital letter O
+            {path, "\u091c", WINDOWS_31J}, // devanagari letter ja
+        };
     }
 
     /*
-     * MethodSource for illegal input test
+     * DataProvider for illegal input test
      * Writes the data in ISO8859 and reads with UTF_8, expects MalformedInputException
      */
-    public static Stream<Arguments> getIllegalInput() throws IOException {
+    @DataProvider(name = "illegalInput")
+    public Object[][] getIllegalInput() throws IOException {
         Path path = Files.createFile(Path.of("illegalInput"));
-        return Stream.of(Arguments.of(path, data, ISO_8859_1, null),
-                         Arguments.of(path, data, ISO_8859_1, UTF_8));
+        return new Object[][]{
+            {path, data, ISO_8859_1, null},
+            {path, data, ISO_8859_1, UTF_8}
+        };
     }
 
     /*
-     * MethodSource for illegal input bytes test
+     * DataProvider for illegal input bytes test
      */
-    public static Stream<Arguments> getIllegalInputBytes() throws IOException {
-        return Stream.of
-            (Arguments.of(new byte[] {(byte)0x00, (byte)0x20, (byte)0x00}, UTF_16, MalformedInputException.class),
-             Arguments.of(new byte[] {-50}, UTF_16, MalformedInputException.class),
-             Arguments.of(new byte[] {(byte)0x81}, WINDOWS_1252, UnmappableCharacterException.class), // unused in Cp1252
-             Arguments.of(new byte[] {(byte)0x81, (byte)0xff}, WINDOWS_31J, UnmappableCharacterException.class)); // invalid trailing byte
+    @DataProvider(name = "illegalInputBytes")
+    public Object[][] getIllegalInputBytes() throws IOException {
+        return new Object[][]{
+            {new byte[] {(byte)0x00, (byte)0x20, (byte)0x00}, UTF_16, MalformedInputException.class},
+            {new byte[] {-50}, UTF_16, MalformedInputException.class},
+            {new byte[] {(byte)0x81}, WINDOWS_1252, UnmappableCharacterException.class}, // unused in Cp1252
+            {new byte[] {(byte)0x81, (byte)0xff}, WINDOWS_31J, UnmappableCharacterException.class}, // invalid trailing byte
+        };
     }
 
     /*
-     * MethodSource for writeString test
+     * DataProvider for writeString test
      * Writes the data using both the existing and new method and compares the results.
      */
-    public static Stream<Arguments> getWriteString() {
-        return Stream.of
-            (Arguments.of(testFiles[1], testFiles[2], TEXT_ASCII, US_ASCII, null),
-             Arguments.of(testFiles[1], testFiles[2], TEXT_ASCII, US_ASCII, US_ASCII),
-             Arguments.of(testFiles[1], testFiles[2], TEXT_UNICODE, UTF_8, null),
-             Arguments.of(testFiles[1], testFiles[2], TEXT_UNICODE, UTF_8, UTF_8));
+    @DataProvider(name = "testWriteString")
+    public Object[][] getWriteString() {
+
+        return new Object[][]{
+            {testFiles[1], testFiles[2], TEXT_ASCII, US_ASCII, null},
+            {testFiles[1], testFiles[2], TEXT_ASCII, US_ASCII, US_ASCII},
+            {testFiles[1], testFiles[2], TEXT_UNICODE, UTF_8, null},
+            {testFiles[1], testFiles[2], TEXT_UNICODE, UTF_8, UTF_8}
+        };
     }
 
     /*
-     * MethodSource for readString test
+     * DataProvider for readString test
      * Reads the file using both the existing and new method and compares the results.
      */
-    public static Stream<Arguments> getReadString() {
-        return Stream.of
-            (Arguments.of(testFiles[1], TEXT_ASCII, US_ASCII, US_ASCII),
-             Arguments.of(testFiles[1], TEXT_ASCII, US_ASCII, UTF_8),
-             Arguments.of(testFiles[1], TEXT_UNICODE, UTF_8, null),
-             Arguments.of(testFiles[1], TEXT_UNICODE, UTF_8, UTF_8),
-             Arguments.of(testFiles[1], TEXT_ASCII, US_ASCII, ISO_8859_1),
-             Arguments.of(testFiles[1], TEXT_PERSON_CART_WHEELING, UTF_16, UTF_16),
-             Arguments.of(testFiles[1], TEXT_PERSON_CART_WHEELING, UTF_16BE, UTF_16BE),
-             Arguments.of(testFiles[1], TEXT_PERSON_CART_WHEELING, UTF_16LE, UTF_16LE),
-             Arguments.of(testFiles[1], TEXT_PERSON_CART_WHEELING, UTF_32, UTF_32),
-             Arguments.of(testFiles[1], TEXT_PERSON_CART_WHEELING, UTF_32BE, UTF_32BE),
-             Arguments.of(testFiles[1], TEXT_PERSON_CART_WHEELING, UTF_32LE, UTF_32LE),
-             Arguments.of(testFiles[1], TEXT_PERSON_CART_WHEELING, WINDOWS_1252, WINDOWS_1252),
-             Arguments.of(testFiles[1], TEXT_PERSON_CART_WHEELING, WINDOWS_31J, WINDOWS_31J));
+    @DataProvider(name = "testReadString")
+    public Object[][] getReadString() {
+        return new Object[][]{
+            {testFiles[1], TEXT_ASCII, US_ASCII, US_ASCII},
+            {testFiles[1], TEXT_ASCII, US_ASCII, UTF_8},
+            {testFiles[1], TEXT_UNICODE, UTF_8, null},
+            {testFiles[1], TEXT_UNICODE, UTF_8, UTF_8},
+            {testFiles[1], TEXT_ASCII, US_ASCII, ISO_8859_1},
+            {testFiles[1], TEXT_PERSON_CART_WHEELING, UTF_16, UTF_16},
+            {testFiles[1], TEXT_PERSON_CART_WHEELING, UTF_16BE, UTF_16BE},
+            {testFiles[1], TEXT_PERSON_CART_WHEELING, UTF_16LE, UTF_16LE},
+            {testFiles[1], TEXT_PERSON_CART_WHEELING, UTF_32, UTF_32},
+            {testFiles[1], TEXT_PERSON_CART_WHEELING, UTF_32BE, UTF_32BE},
+            {testFiles[1], TEXT_PERSON_CART_WHEELING, UTF_32LE, UTF_32LE},
+            {testFiles[1], TEXT_PERSON_CART_WHEELING, WINDOWS_1252, WINDOWS_1252},
+            {testFiles[1], TEXT_PERSON_CART_WHEELING, WINDOWS_31J, WINDOWS_31J}
+        };
     }
 
-    @BeforeAll
-    static void setup() throws IOException {
+    @BeforeClass
+    void setup() throws IOException {
         testFiles[0] = Files.createFile(Path.of("readWriteString"));
         testFiles[1] = Files.createFile(Path.of("writeString_file1"));
         testFiles[2] = Files.createFile(Path.of("writeString_file2"));
@@ -224,8 +225,7 @@ public class ReadWriteString {
      * This method compares the results written by the existing write method and
      * the writeString method added since 11.
      */
-    @ParameterizedTest
-    @MethodSource("getWriteString")
+    @Test(dataProvider = "testWriteString")
     public void testWriteString(Path path, Path path2, String text, Charset cs, Charset cs2) throws IOException {
         Files.write(path, text.getBytes(cs));
 
@@ -237,15 +237,14 @@ public class ReadWriteString {
         }
         byte[] bytes = Files.readAllBytes(path);
         byte[] bytes2 = Files.readAllBytes(path2);
-        assertArrayEquals(bytes2, bytes, "The bytes should be the same");
+        assertTrue((Arrays.compare(bytes, bytes2) == 0), "The bytes should be the same");
     }
 
     /**
      * Verifies that the readString method added since 11 behaves the same as
      * constructing a string from the existing readAllBytes method.
      */
-    @ParameterizedTest
-    @MethodSource("getReadString")
+    @Test(dataProvider = "testReadString")
     public void testReadString(Path path, String text, Charset cs, Charset cs2) throws IOException {
         Files.write(path, text.getBytes(cs));
         String str = new String(Files.readAllBytes(path), cs);
@@ -253,7 +252,7 @@ public class ReadWriteString {
         // readString @since 11
         String str2 = (cs2 == null) ? Files.readString(path) :
                                       Files.readString(path, cs2);
-        assertEquals(str, str2, "The strings should be the same");
+        assertTrue((str.equals(str2)), "The strings should be the same");
     }
 
     /**
@@ -265,17 +264,13 @@ public class ReadWriteString {
      * @param cs the Charset
      * @throws IOException if the input is malformed
      */
-    @ParameterizedTest
-    @MethodSource("getMalformedWrite")
+    @Test(dataProvider = "malformedWrite", expectedExceptions = UnmappableCharacterException.class)
     public void testMalformedWrite(Path path, String s, Charset cs) throws IOException {
-        assertThrows(UnmappableCharacterException.class,
-                     () -> {
-                         if (cs == null) {
-                             Files.writeString(path, s);
-                         } else {
-                             Files.writeString(path, s, cs);
-                         }
-                     });
+        if (cs == null) {
+            Files.writeString(path, s);
+        } else {
+            Files.writeString(path, s, cs);
+        }
     }
 
     /**
@@ -288,19 +283,15 @@ public class ReadWriteString {
      * @param csRead the Charset to use for reading the file
      * @throws IOException when the Charset used for reading the file is incorrect
      */
-    @ParameterizedTest
-    @MethodSource("getIllegalInput")
+    @Test(dataProvider = "illegalInput", expectedExceptions = MalformedInputException.class)
     public void testMalformedRead(Path path, byte[] data, Charset csWrite, Charset csRead) throws IOException {
         String temp = new String(data, csWrite);
         Files.writeString(path, temp, csWrite);
-        assertThrows(MalformedInputException.class,
-                     () -> {
-                         if (csRead == null) {
-                             Files.readString(path);
-                         } else {
-                             Files.readString(path, csRead);
-                         }
-                     });
+        if (csRead == null) {
+            Files.readString(path);
+        } else {
+            Files.readString(path, csRead);
+        }
     }
 
     /**
@@ -312,19 +303,20 @@ public class ReadWriteString {
      * @param expected exception class
      * @throws IOException when the Charset used for reading the file is incorrect
      */
-    @ParameterizedTest
-    @MethodSource("getIllegalInputBytes")
+    @Test(dataProvider = "illegalInputBytes")
     public void testMalformedReadBytes(byte[] data, Charset csRead, Class<CharacterCodingException> expected)
             throws IOException {
         Path path = Path.of("illegalInputBytes");
         Files.write(path, data);
         try {
             Files.readString(path, csRead);
-        } catch (MalformedInputException e) {
-            assertInstanceOf(MalformedInputException.class, e);
-        } catch (UnmappableCharacterException e) {
-            assertInstanceOf(UnmappableCharacterException.class, e);
+        } catch (MalformedInputException | UnmappableCharacterException e) {
+            if (expected.isInstance(e)) {
+                // success
+                return;
+            }
         }
+        throw new RuntimeException("An instance of " + expected + " should be thrown");
     }
 
     // Verify File.readString with UTF16 to confirm proper string length and contents.
@@ -334,16 +326,22 @@ public class ReadWriteString {
         String original = "🤸";    // "\ud83e\udd38";
         Files.writeString(testFiles[0], original, UTF_16);
         String actual = Files.readString(testFiles[0], UTF_16);
-        if (!original.equals(actual)) {
+        if (!actual.equals(original)) {
             System.out.printf("expected (%s), was (%s)\n", original, actual);
             System.out.printf("expected UTF_16 bytes: %s\n", Arrays.toString(original.getBytes(UTF_16)));
             System.out.printf("actual UTF_16 bytes: %s\n", Arrays.toString(actual.getBytes(UTF_16)));
         }
-        assertEquals(original, actual, "Round trip string mismatch with multi-byte encoding");
+        assertEquals(actual, original, "Round trip string mismatch with multi-byte encoding");
     }
 
     private void checkNullPointerException(Callable<?> c) {
-        assertThrows(NullPointerException.class, () -> c.call());
+        try {
+            c.call();
+            fail("NullPointerException expected");
+        } catch (NullPointerException ignore) {
+        } catch (Exception e) {
+            fail(e + " not expected");
+        }
     }
 
     private void testReadWrite(int size, Charset cs, boolean append) throws IOException {
@@ -357,14 +355,14 @@ public class ReadWriteString {
         }
 
         //System.out.println(result.toUri().toASCIIString());
-        assertSame(result, testFiles[0]);
+        assertTrue(result == testFiles[0]);
         if (append) {
             if (cs == null) {
                 Files.writeString(testFiles[0], str, APPEND);
             } else {
                 Files.writeString(testFiles[0], str, cs, APPEND);
             }
-            assertEquals(size * 2, Files.size(testFiles[0]));
+            assertTrue(Files.size(testFiles[0]) == size * 2);
         }
 
 
@@ -381,7 +379,7 @@ public class ReadWriteString {
             read = Files.readString(result, cs);
         }
 
-        assertEquals(expected, read, "String read not the same as written");
+        assertTrue(read.equals(expected), "String read not the same as written");
     }
 
     static final char[] CHARS = "abcdefghijklmnopqrstuvwxyz \r\n".toCharArray();

@@ -187,7 +187,7 @@ class CondyNestedResolution {
     class #72; // #84     at 0x04C5
   } // Constant Pool
 
-  0x0000; // access [ ]
+  0x0020; // access [ ]
   #84;// this_cpx
   #51;// super_cpx
 

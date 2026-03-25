@@ -35,10 +35,10 @@ class CgroupUtil: AllStatic {
     static bool processor_count(CgroupCpuController* cpu, int upper_bound, double& value);
     // Given a memory controller, adjust its path to a point in the hierarchy
     // that represents the closest memory limit.
-    static void adjust_controller(CgroupMemoryController* m, physical_memory_size_type upper_bound);
+    static void adjust_controller(CgroupMemoryController* m);
     // Given a cpu controller, adjust its path to a point in the hierarchy
     // that represents the closest cpu limit.
-    static void adjust_controller(CgroupCpuController* c, int upper_bound);
+    static void adjust_controller(CgroupCpuController* c);
   private:
     static physical_memory_size_type get_updated_mem_limit(CgroupMemoryController* m,
                                                            physical_memory_size_type lowest,

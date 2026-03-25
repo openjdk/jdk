@@ -1711,7 +1711,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
 // Generic interpreted method entry to (asm) interpreter.
 //
-address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
+address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized, bool object_init) {
   bool inc_counter = UseCompiler || CountCompiledCalls;
   address entry = __ pc();
   // Generate the code to allocate the interpreter stack frame.
@@ -1805,6 +1805,13 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   // --------------------------------------------------------------------------
   // JVMTI support
   __ notify_method_entry();
+
+  // --------------------------------------------------------------------------
+  // Issue a StoreStore barrier on entry to Object_init if the
+  // class has strict field fields.  Be lazy, always do it.
+  if (object_init) {
+    __ membar(Assembler::StoreStore);
+  }
 
   // --------------------------------------------------------------------------
   // Start executing instructions.

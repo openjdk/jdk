@@ -125,15 +125,19 @@ public class Function0 {
     }
 
     public final FunctionI mref_I2I  = Function0::fooStaticI;
+    @SuppressWarnings("initialization")
     public final FunctionI mref_I2I_bound = this::fooInstanceI;
 
     public final FunctionL mref_I2L  = Function0::fooStaticI;
+    @SuppressWarnings("initialization")
     public final FunctionL mref_I2L_bound = this::fooInstanceI;
 
     public final FunctionI mref_L2I  = Function0::fooStaticL;
+    @SuppressWarnings("initialization")
     public final FunctionI mref_L2I_bound = this::fooInstanceL;
 
     public final FunctionL mref_L2L  = Function0::fooStaticL;
+    @SuppressWarnings("initialization")
     public final FunctionL mref_L2L_bound = this::fooInstanceL;
 
     // mref naming

@@ -38,8 +38,10 @@ public class StringEquals {
 
     public String test = new String("0123456789");
     public String test2 = new String("tgntogjnrognagronagroangroarngorngaorng");
+    @SuppressWarnings("initialization")
     public String test3 = new String(test); // equal to test, but not same
     public String test4 = new String("0123\u01FF");
+    @SuppressWarnings("initialization")
     public String test5 = new String(test4); // equal to test4, but not same
     public String test6 = new String("0123456780");
     public String test7 = new String("0123\u01FE");

@@ -31,11 +31,21 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.access.JavaLangRefAccess;
 import jdk.internal.access.SharedSecrets;
 
+import java.util.Objects;
+
 /**
  * Abstract base class for reference objects.  This class defines the
  * operations common to all reference objects.  Because reference objects are
  * implemented in close cooperation with the garbage collector, this class may
  * not be subclassed directly.
+ *
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          The referent must have {@linkplain Objects#hasIdentity(Object) object identity}.
+ *          When preview features are enabled, attempts to create a reference
+ *          to a {@linkplain Class#isValue value object} result in an {@link IdentityException}.
+ *      </div>
+ * </div>
  * @param <T> the type of the referent
  *
  * @author   Mark Reinhold
@@ -529,6 +539,9 @@ public abstract sealed class Reference<@jdk.internal.RequiresIdentity T>
     }
 
     Reference(T referent, ReferenceQueue<? super T> queue) {
+        if (referent != null) {
+            Objects.requireIdentity(referent);
+        }
         this.referent = referent;
         this.queue = (queue == null) ? ReferenceQueue.NULL_QUEUE : queue;
     }

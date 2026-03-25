@@ -1,0 +1,76 @@
+#
+# Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################################
+# Generate the value class replacements for selected java.base source files
+
+java.base-VALUE_CLASS-REPLACEMENTS := \
+    java/lang/Byte.java \
+    java/lang/Short.java \
+    java/lang/Integer.java \
+    java/lang/Long.java \
+    java/lang/Float.java \
+    java/lang/Double.java \
+    java/lang/Boolean.java \
+    java/lang/Character.java \
+    java/lang/Number.java \
+    java/lang/Record.java \
+    java/util/Optional.java \
+    java/util/OptionalInt.java \
+    java/util/OptionalLong.java \
+    java/util/OptionalDouble.java \
+    java/time/LocalDate.java \
+    java/time/LocalDateTime.java \
+    java/time/LocalTime.java \
+    java/time/Duration.java \
+    java/time/Instant.java \
+    java/time/MonthDay.java \
+    java/time/ZonedDateTime.java \
+    java/time/OffsetDateTime.java \
+    java/time/OffsetTime.java \
+    java/time/YearMonth.java \
+    java/time/Year.java \
+    java/time/Period.java \
+    java/time/chrono/ChronoLocalDateImpl.java \
+    java/time/chrono/MinguoDate.java \
+    java/time/chrono/HijrahDate.java \
+    java/time/chrono/JapaneseDate.java \
+    java/time/chrono/ThaiBuddhistDate.java \
+    #
+
+java.base-VALUE-CLASS-FILES := \
+    $(foreach f, $(java.base-VALUE_CLASS-REPLACEMENTS), $(addprefix $(TOPDIR)/src/java.base/share/classes/, $(f)))
+
+$(eval $(call SetupTextFileProcessing, JAVA_BASE_VALUECLASS_REPLACEMENTS, \
+    SOURCE_FILES := $(java.base-VALUE-CLASS-FILES), \
+    SOURCE_BASE_DIR := $(TOPDIR)/src/java.base/share/classes, \
+    OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/gensrc-valueclasses/java.base/, \
+    REPLACEMENTS := \
+        public final class => public final value class ; \
+        public abstract class => public abstract value class ; \
+        abstract class ChronoLocalDateImpl => abstract value class ChronoLocalDateImpl, \
+))
+
+TARGETS += $(JAVA_BASE_VALUECLASS_REPLACEMENTS)

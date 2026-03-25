@@ -366,8 +366,8 @@ provider hotspot_jni {
   probe IsInstanceOf__return(uintptr_t);
   probe IsSameObject__entry(void*, void*, void*);
   probe IsSameObject__return(uintptr_t);
-  probe IsVirtualThread__entry(void*, void*);
-  probe IsVirtualThread__return(uintptr_t);
+  probe IsValueObject__entry(void*, void*);
+  probe IsValueObject__return(uintptr_t);
   probe MonitorEnter__entry(void*, void*);
   probe MonitorEnter__return(uint32_t);
   probe MonitorExit__entry(void*, void*);

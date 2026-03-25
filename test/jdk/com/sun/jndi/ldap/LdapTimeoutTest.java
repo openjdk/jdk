@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,14 @@
  * @test
  * @library /test/lib
  *          lib/
- * @run junit/othervm LdapTimeoutTest
+ * @run testng/othervm LdapTimeoutTest
  * @bug 7094377 8000487 6176036 7056489 8151678
  * @summary Timeout tests for ldap
  */
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
+import org.testng.Assert;
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Test;
 
 import javax.naming.Context;
 import javax.naming.NamingException;
@@ -63,6 +60,8 @@ import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static jdk.test.lib.Utils.adjustTimeout;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.expectThrows;
 
 public class LdapTimeoutTest {
 
@@ -91,7 +90,7 @@ public class LdapTimeoutTest {
         assert (2 * CONNECT_MILLIS + READ_MILLIS + TOLERANCE < INFINITY_MILLIS);
     }
 
-    @BeforeEach
+    @BeforeTest
     public void beforeTest() {
         startAuxiliaryDiagnosticOutput();
     }
@@ -99,6 +98,11 @@ public class LdapTimeoutTest {
     /*
      * These are timeout tests and they are run in parallel to reduce the total
      * amount of run time.
+     *
+     * Currently it doesn't seem possible to instruct JTREG to run TestNG test
+     * methods in parallel. That said, this JTREG test is still
+     * a "TestNG-flavored" test for the sake of having org.testng.Assert
+     * capability.
      */
     @Test
     public void test() throws Exception {
@@ -186,11 +190,11 @@ public class LdapTimeoutTest {
             env.put(Context.PROVIDER_URL, urlTo(server));
             server.start();
             server.starting().join();
-            Executable completion =
+            Assert.ThrowingRunnable completion =
                     () -> assertCompletion(CONNECT_MILLIS,
                                            2 * CONNECT_MILLIS + TOLERANCE,
                                            () -> new InitialDirContext(env));
-            NamingException e = assertThrows(NamingException.class, completion);
+            NamingException e = expectThrows(NamingException.class, completion);
             String msg = e.getMessage();
             assertTrue(msg != null && msg.contains("timeout")
                                && msg.contains(String.valueOf(CONNECT_MILLIS)),
@@ -210,11 +214,11 @@ public class LdapTimeoutTest {
             InitialDirContext ctx = new InitialDirContext(env);
             SearchControls scl = new SearchControls();
             scl.setSearchScope(SearchControls.SUBTREE_SCOPE);
-            Executable completion =
+            Assert.ThrowingRunnable completion =
                     () -> assertCompletion(READ_MILLIS,
                                            READ_MILLIS + TOLERANCE,
                                            () -> ctx.search("ou=People,o=JNDITutorial", "(objectClass=*)", scl));
-            NamingException e = assertThrows(NamingException.class, completion);
+            NamingException e = expectThrows(NamingException.class, completion);
             String msg = e.getMessage();
             assertTrue(msg != null && msg.contains("timeout")
                                && msg.contains(String.valueOf(READ_MILLIS)),
@@ -231,11 +235,11 @@ public class LdapTimeoutTest {
             env.put(Context.PROVIDER_URL, urlTo(server));
             server.start();
             server.starting().join();
-            Executable completion =
+            Assert.ThrowingRunnable completion =
                     () -> assertCompletion(CONNECT_MILLIS,
                                            2 * CONNECT_MILLIS + TOLERANCE,
                                            () -> new InitialDirContext(env));
-            NamingException e = assertThrows(NamingException.class, completion);
+            NamingException e = expectThrows(NamingException.class, completion);
             String msg = e.getMessage();
             assertTrue(msg != null && msg.contains("timeout")
                                && msg.contains(String.valueOf(CONNECT_MILLIS)),
@@ -257,11 +261,11 @@ public class LdapTimeoutTest {
             env.put(Context.PROVIDER_URL, urlTo(server));
             server.start();
             server.starting().join();
-            Executable completion =
+            Assert.ThrowingRunnable completion =
                     () -> assertCompletion(CONNECT_MILLIS,
                                            2 * CONNECT_MILLIS + TOLERANCE,
                                            () -> new InitialDirContext(env));
-            NamingException e = assertThrows(NamingException.class, completion);
+            NamingException e = expectThrows(NamingException.class, completion);
             String msg = e.getMessage();
             assertTrue(msg != null && msg.contains("timeout")
                                && msg.contains(String.valueOf(CONNECT_MILLIS)),

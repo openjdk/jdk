@@ -174,7 +174,7 @@ public class TrySetAccessibleTest {
         // non-public constructor
         Constructor<?> ctor
             = Class.class.getDeclaredConstructor(ClassLoader.class, Class.class, char.class,
-                                                 ProtectionDomain.class, boolean.class, char.class);
+                                                 ProtectionDomain.class, boolean.class, boolean.class, char.class);
         AccessibleObject[] ctors = { ctor };
 
         assertFalse(ctor.trySetAccessible());

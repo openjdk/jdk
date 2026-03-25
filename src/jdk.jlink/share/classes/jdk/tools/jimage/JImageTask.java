@@ -298,7 +298,7 @@ class JImageTask {
                                         parent.getAbsolutePath());
         }
 
-        if (!ImageResourcesTree.isTreeInfoResource(name)) {
+        if (location.getType() == ImageLocation.LocationType.RESOURCE) {
             Files.write(resource.toPath(), bytes);
         }
     }
@@ -415,21 +415,18 @@ class JImageTask {
                             continue;
                         }
 
-                        if (!ImageResourcesTree.isTreeInfoResource(name)) {
+                        ImageLocation location = reader.findLocation(name);
+                        if (location.getType() == ImageLocation.LocationType.RESOURCE) {
                             if (moduleAction != null) {
-                                int offset = name.indexOf('/', 1);
-
-                                String newModule = offset != -1 ?
-                                        name.substring(1, offset) :
-                                        "<unknown>";
-
+                                String newModule = location.getModule();
+                                if (newModule.isEmpty()) {
+                                    newModule = "<unknown>";
+                                }
                                 if (!oldModule.equals(newModule)) {
                                     moduleAction.apply(reader, oldModule, newModule);
                                     oldModule = newModule;
                                 }
                             }
-
-                            ImageLocation location = reader.findLocation(name);
                             resourceAction.apply(reader, name, location);
                         }
                     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,9 @@
 //
 // args[0]: the expected maximum value expected to be archived
 //
+
+import jdk.internal.misc.PreviewFeatures;
+
 public class CheckIntegerCacheApp {
     public static void main(String[] args) throws Exception {
         if (args.length != 1) {
@@ -76,9 +79,17 @@ public class CheckIntegerCacheApp {
                     "FAILED. Value expected to be retrieved from cache: " + high);
         }
 
-        if (Integer.valueOf(high + 1) == Integer.valueOf(high + 1)) {
-            throw new RuntimeException(
-                    "FAILED. Value not expected to be retrieved from cache: " + high);
+        // In preview mode the Integer is a value class and the Integer cache is disabled
+        if (!PreviewFeatures.isEnabled()) {
+            if (Integer.valueOf(high + 1) == Integer.valueOf(high + 1)) {
+                throw new RuntimeException(
+                        "FAILED. Value not expected to be retrieved from cache: " + high);
+            }
+        } else {
+            if (Integer.valueOf(high + 1) != Integer.valueOf(high + 1)) {
+                throw new RuntimeException(
+                        "FAILED. Values must be equal in preview mode: " + high);
+            }
         }
     }
 }

@@ -442,8 +442,8 @@ class Parse : public GraphKit {
   SafePointNode* create_entry_map();
 
   // OSR helpers
-  Node *fetch_interpreter_state(int index, BasicType bt, Node* local_addrs);
-  Node* check_interpreter_type(Node* l, const Type* type, SafePointNode* &bad_type_exit);
+  Node* fetch_interpreter_state(int index, const Type* type, Node* local_addrs);
+  Node* check_interpreter_type(Node* l, const Type* type, const TypeKlassPtr* klass_type, SafePointNode* &bad_type_exit, bool is_larval);
   void  load_interpreter_state(Node* osr_buf);
 
   // Functions for managing basic blocks:
@@ -479,8 +479,8 @@ class Parse : public GraphKit {
   // Helper: Merge the current mapping into the given basic block
   void merge_common(Block* target, int pnum);
   // Helper functions for merging individual cells.
-  PhiNode *ensure_phi(       int idx, bool nocreate = false);
-  PhiNode *ensure_memory_phi(int idx, bool nocreate = false);
+  Node*    ensure_phi(       int idx, bool nocreate = false);
+  PhiNode* ensure_memory_phi(int idx, bool nocreate = false);
   // Helper to merge the current memory state into the given basic block
   void merge_memory_edges(MergeMemNode* n, int pnum, bool nophi);
 
@@ -488,13 +488,23 @@ class Parse : public GraphKit {
   void do_one_bytecode();
 
   // helper function to generate array store check
-  void array_store_check();
+  Node* array_store_check(Node*& adr, const Type*& elemtype);
   // Helper function to generate array load
   void array_load(BasicType etype);
+  Node* load_from_unknown_flat_array(Node* array, Node* array_index, const TypeOopPtr* element_ptr);
   // Helper function to generate array store
   void array_store(BasicType etype);
+  void store_to_unknown_flat_array(Node* array, Node* idx, Node* non_null_stored_value);
   // Helper function to compute array addressing
   Node* array_addressing(BasicType type, int vals, const Type*& elemtype);
+  bool needs_range_check(const TypeInt* size_type, const Node* index) const;
+  Node* create_speculative_inline_type_array_checks(Node* array, const TypeAryPtr* array_type, const Type*& element_type);
+  Node* cast_to_speculative_array_type(Node* array, const TypeAryPtr*& array_type, const Type*& element_type);
+  Node* cast_to_profiled_array_type(Node* const array);
+  Node* speculate_non_null_free_array(Node* array, const TypeAryPtr*& array_type);
+  Node* speculate_non_flat_array(Node* array, const TypeAryPtr* array_type);
+  void create_range_check(Node* idx, Node* ary, const TypeInt* sizetype);
+  Node* record_profile_for_speculation_at_array_load(Node* ld);
 
   void clinit_deopt();
 
@@ -540,13 +550,15 @@ class Parse : public GraphKit {
   void do_field_access(bool is_get, bool is_field);
 
   // common code for actually performing the load or store
-  void do_get_xxx(Node* obj, ciField* field, bool is_field);
+  void do_get_xxx(Node* obj, ciField* field);
   void do_put_xxx(Node* obj, ciField* field, bool is_field);
+
+  ciType* improve_abstract_inline_type_klass(ciType* field_klass);
 
   // implementation of object creation bytecodes
   void do_new();
   void do_newarray(BasicType elemtype);
-  void do_anewarray();
+  void do_newarray();
   void do_multianewarray();
   Node* expand_multianewarray(ciArrayKlass* array_klass, Node* *lengths, int ndimensions, int nargs);
 
@@ -560,9 +572,14 @@ class Parse : public GraphKit {
   bool    path_is_suitable_for_uncommon_trap(float prob) const;
 
   void    do_ifnull(BoolTest::mask btest, Node* c);
-  void    do_if(BoolTest::mask btest, Node* c);
+  void    do_if(BoolTest::mask btest, Node* c, bool can_trap = true, bool new_path = false, Node** ctrl_taken = nullptr, Node** stress_count_mem = nullptr);
+  void    do_acmp(BoolTest::mask btest, Node* left, Node* right);
+  void    acmp_always_null_input(Node* input, const TypeOopPtr* tinput, BoolTest::mask btest, Node* eq_region);
+  void    acmp_type_check_or_trap(Node** non_null_input, ciKlass* input_type, Deoptimization::DeoptReason);
+  void    acmp_type_check(Node* input, const TypeOopPtr* tinput, ProfilePtrKind input_ptr, ciKlass* input_type, BoolTest::mask btest, Node* eq_region);
+  Node*   acmp_null_check(Node* input, const TypeOopPtr* tinput, ProfilePtrKind input_ptr, Node*& null_ctl);
   int     repush_if_args();
-  void    adjust_map_after_if(BoolTest::mask btest, Node* c, float prob, Block* path);
+  void    adjust_map_after_if(BoolTest::mask btest, Node* c, float prob, Block* path, bool can_trap = true);
   void    sharpen_type_after_if(BoolTest::mask btest,
                                 Node* con, const Type* tcon,
                                 Node* val, const Type* tval);

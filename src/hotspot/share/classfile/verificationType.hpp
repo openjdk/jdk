@@ -68,12 +68,12 @@ class VerificationType {
 
     // Enum for the _data field
     enum : uint {
-      // Bottom two bits determine if the type is a reference, primitive,
-      // uninitialized or a query-type.
-      TypeMask           = 0x00000003,
+      // Bottom three bits determine if the type is a reference, inline type,
+      // primitive, uninitialized or a query-type.
+      TypeMask           = 0x00000007,
 
       // Topmost types encoding
-      Reference          = 0x0,        // _sym contains the name
+      Reference          = 0x0,        // _sym contains the name of an object
       Primitive          = 0x1,        // see below for primitive list
       Uninitialized      = 0x2,        // 0x00ffff00 contains bci
       TypeQuery          = 0x3,        // Meta-types used for category testing
@@ -114,7 +114,7 @@ class VerificationType {
       ReferenceQuery     = (ReferenceFlag     << 1 * BitsPerByte) | TypeQuery,
       Category1Query     = (Category1Flag     << 1 * BitsPerByte) | TypeQuery,
       Category2Query     = (Category2Flag     << 1 * BitsPerByte) | TypeQuery,
-      Category2_2ndQuery = (Category2_2ndFlag << 1 * BitsPerByte) | TypeQuery
+      Category2_2ndQuery = (Category2_2ndFlag << 1 * BitsPerByte) | TypeQuery,
     };
 
   VerificationType(uintptr_t raw_data) {
@@ -156,7 +156,7 @@ class VerificationType {
 
   // For reference types, store the actual Symbol
   static VerificationType reference_type(Symbol* sh) {
-      assert(((uintptr_t)sh & 0x3) == 0, "Symbols must be aligned");
+      assert(((uintptr_t)sh & TypeMask) == 0, "Symbols must be aligned");
       // If the above assert fails in the future because oop* isn't aligned,
       // then this type encoding system will have to change to have a tag value
       // to discriminate between oops and primitives.
@@ -185,8 +185,8 @@ class VerificationType {
   bool is_reference() const { return ((_u._data & TypeMask) == Reference); }
   bool is_category1() const {
     // This should return true for all one-word types, which are category1
-    // primitives, and references (including uninitialized refs).  Though
-    // the 'query' types should technically return 'false' here, if we
+    // primitives, references (including uninitialized refs) and inline types.
+    // Though the 'query' types should technically return 'false' here, if we
     // allow this to return true, we can perform the test using only
     // 2 operations rather than 8 (3 masks, 3 compares and 2 logical 'ands').
     // Since no one should call this on a query type anyway, this is ok.
@@ -220,6 +220,8 @@ class VerificationType {
   bool is_array_array() const { return is_x_array(JVM_SIGNATURE_ARRAY); }
   bool is_reference_array() const
     { return is_object_array() || is_array_array(); }
+  bool is_nonscalar_array() const
+    { return is_object_array() || is_array_array(); }
   bool is_object() const
     { return (is_reference() && !is_null() && name()->utf8_length() >= 1 &&
               name()->char_at(0) != JVM_SIGNATURE_ARRAY); }
@@ -242,14 +244,15 @@ class VerificationType {
   }
 
   Symbol* name() const {
-    assert(is_reference() && !is_null(), "Must be a non-null reference");
+    assert(!is_null() && is_reference(), "Must be a non-null reference");
     return _u._sym;
   }
 
   bool equals(const VerificationType& t) const {
     return (_u._data == t._u._data ||
-      (is_reference() && t.is_reference() && !is_null() && !t.is_null() &&
-       name() == t.name()));
+            (((is_reference() && t.is_reference())) &&
+             !is_null() && !t.is_null() && name() == t.name()));
+
   }
 
   bool operator ==(const VerificationType& t) const {

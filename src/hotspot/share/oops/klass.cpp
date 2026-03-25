@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -270,20 +270,6 @@ Method* Klass::uncached_lookup_method(const Symbol* name, const Symbol* signatur
   return nullptr;
 }
 
-static markWord make_prototype(const Klass* kls) {
-  markWord prototype = markWord::prototype();
-#ifdef _LP64
-  if (UseCompactObjectHeaders) {
-    // With compact object headers, the narrow Klass ID is part of the mark word.
-    // We therefore seed the mark word with the narrow Klass ID.
-    precond(CompressedKlassPointers::is_encodable(kls));
-    const narrowKlass nk = CompressedKlassPointers::encode(const_cast<Klass*>(kls));
-    prototype = prototype.set_narrow_klass(nk);
-  }
-#endif
-  return prototype;
-}
-
 void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw() {
   return Metaspace::allocate(loader_data, word_size, MetaspaceObj::ClassType, THREAD);
 }
@@ -296,9 +282,9 @@ Klass::Klass() : _kind(UnknownKlassKind) {
 // which zeros out memory - calloc equivalent.
 // The constructor is also used from CppVtableCloner,
 // which doesn't zero out the memory before calling the constructor.
-Klass::Klass(KlassKind kind) : _kind(kind),
-                               _prototype_header(make_prototype(this)),
+Klass::Klass(KlassKind kind, markWord prototype_header) : _kind(kind),
                                _shared_class_path_index(-1) {
+  set_prototype_header(make_prototype_header(this, prototype_header));
   CDS_ONLY(_aot_class_flags = 0;)
   CDS_JAVA_HEAP_ONLY(_archived_mirror_index = -1;)
   _primary_supers[0] = this;
@@ -311,12 +297,12 @@ jint Klass::array_layout_helper(BasicType etype) {
   int  hsize = arrayOopDesc::base_offset_in_bytes(etype);
   int  esize = type2aelembytes(etype);
   bool isobj = (etype == T_OBJECT);
-  int  tag   =  isobj ? _lh_array_tag_obj_value : _lh_array_tag_type_value;
-  int lh = array_layout_helper(tag, hsize, etype, exact_log2(esize));
+  int  tag   =  isobj ? _lh_array_tag_ref_value : _lh_array_tag_type_value;
+  int lh = array_layout_helper(tag, false, hsize, etype, exact_log2(esize));
 
   assert(lh < (int)_lh_neutral_value, "must look like an array layout");
   assert(layout_helper_is_array(lh), "correct kind");
-  assert(layout_helper_is_objArray(lh) == isobj, "correct kind");
+  assert(layout_helper_is_refArray(lh) == isobj, "correct kind");
   assert(layout_helper_is_typeArray(lh) == !isobj, "correct kind");
   assert(layout_helper_header_size(lh) == hsize, "correct decode");
   assert(layout_helper_element_type(lh) == etype, "correct decode");
@@ -606,7 +592,6 @@ GrowableArray<Klass*>* Klass::compute_secondary_supers(int num_extra_slots,
   set_secondary_supers(Universe::the_empty_klass_array(), Universe::the_empty_klass_bitmap());
   return nullptr;
 }
-
 
 // subklass links.  Used by the compiler (and vtable initialization)
 // May be cleaned concurrently, so must use the Compile_lock.
@@ -1029,10 +1014,8 @@ void Klass::oop_print_on(oop obj, outputStream* st) {
      // print header
      obj->mark().print_on(st);
      st->cr();
-     if (UseCompactObjectHeaders) {
-       st->print(BULLET"prototype_header: " INTPTR_FORMAT, _prototype_header.value());
-       st->cr();
-     }
+     st->print(BULLET"prototype_header: " INTPTR_FORMAT, _prototype_header.value());
+     st->cr();
   }
 
   // print class
@@ -1089,6 +1072,40 @@ void Klass::oop_verify_on(oop obj, outputStream* st) {
   guarantee(oopDesc::is_oop(obj),  "should be oop");
   guarantee(obj->klass()->is_klass(), "klass field is not a klass");
 }
+
+#ifdef ASSERT
+void Klass::validate_array_description(const ArrayDescription& ad) {
+  if (is_identity_class() || is_array_klass() || is_interface() ||
+      (is_instance_klass() && InstanceKlass::cast(this)->access_flags().is_abstract())) {
+    assert(ad._layout_kind == LayoutKind::REFERENCE, "Cannot support flattening");
+    assert(ad._kind == KlassKind::RefArrayKlassKind, "Must be a reference array");
+  } else {
+    assert(is_inline_klass(), "Must be");
+    InlineKlass* ik = InlineKlass::cast(this);
+    switch(ad._layout_kind) {
+      case LayoutKind::BUFFERED:
+        fatal("Invalid layout for an array");
+        break;
+      case LayoutKind::NULL_FREE_ATOMIC_FLAT:
+        assert(ik->has_null_free_atomic_layout(), "Sanity check");
+        break;
+      case LayoutKind::NULL_FREE_NON_ATOMIC_FLAT:
+        assert(ik->has_null_free_non_atomic_layout(), "Sanity check");
+        break;
+      case LayoutKind::NULLABLE_ATOMIC_FLAT:
+        assert(ik->has_nullable_atomic_layout(), "Sanity check");
+        break;
+      case LayoutKind::NULLABLE_NON_ATOMIC_FLAT:
+        assert(ik->has_nullable_non_atomic_layout(), "Sanity check)");
+        break;
+      case LayoutKind::REFERENCE:
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+  }
+}
+#endif // ASSERT
 
 // Note: this function is called with an address that may or may not be a Klass.
 // The point is not to assert it is but to check if it could be.

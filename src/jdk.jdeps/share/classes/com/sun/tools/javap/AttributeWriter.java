@@ -32,6 +32,7 @@ import java.lang.classfile.Signature;
 import java.lang.classfile.TypeAnnotation;
 import java.lang.classfile.attribute.*;
 import java.lang.classfile.constantpool.ModuleEntry;
+import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.lang.classfile.constantpool.PoolEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.reflect.AccessFlag;
@@ -66,6 +67,7 @@ public class AttributeWriter extends BasicWriter {
     protected AttributeWriter(Context context) {
         super(context);
         context.put(AttributeWriter.class, this);
+        classWriter = ClassWriter.instance(context);
         annotationWriter = AnnotationWriter.instance(context);
         codeWriter = CodeWriter.instance(context);
         constantWriter = ConstantWriter.instance(context);
@@ -218,7 +220,8 @@ public class AttributeWriter extends BasicWriter {
                             indent(+1);
                             first = false;
                         }
-                        for (var flag : maskToAccessFlagsReportUnknown(access_flags, AccessFlag.Location.INNER_CLASS, cffv)) {
+                        var flagSet = maskToAccessFlagsReportUnknown(access_flags, AccessFlag.Location.INNER_CLASS, cffv);
+                        for (var flag : flagSet) {
                             if (flag.sourceModifier() && (flag != AccessFlag.ABSTRACT
                                     || !info.has(AccessFlag.INTERFACE))) {
                                 print(Modifier.toString(flag.mask()) + " ");
@@ -243,6 +246,12 @@ public class AttributeWriter extends BasicWriter {
                             constantWriter.write(info.outerClass().get().index());
                         }
                         println();
+                        if (options.verbose) {
+                            indent(1);
+                            classWriter.writeList(String.format("flags: (0x%04x) ", access_flags),
+                                    flagSet, "\n");
+                            indent(-1);
+                        }
                     }
                 }
                 if (!first)
@@ -534,6 +543,14 @@ public class AttributeWriter extends BasicWriter {
                 }
                 indent(-1);
             }
+            case LoadableDescriptorsAttribute attr -> {
+                println("LoadableDescriptors:");
+                indent(+1);
+                for (var sc : attr.loadableDescriptors()) {
+                    println(constantWriter.stringValue(sc));
+                }
+                indent(-1);
+            }
             case SignatureAttribute attr -> {
                 print("Signature: #" + attr.signature().index());
                 tab();
@@ -569,8 +586,27 @@ public class AttributeWriter extends BasicWriter {
                     } else {
                         int offsetDelta = lr.labelToBci(frame.target()) - lastOffset - 1;
                         switch (frameType) {
+                            case 246 -> {
+                                printHeader(frameType, "/* early_larval */");
+                                indent(+1);
+                                println("number of unset_fields = " + frame.unsetFields().size());
+                                    indent(+1);
+                                    for (NameAndTypeEntry field : frame.unsetFields()) {
+                                        print("unset_field = #");
+                                        constantWriter.write(field.index());
+                                        println();
+                                    }
+                                    // temporary: print the nested contents of early larval
+                                    indent(+1);
+                                    println("offset_delta = " + offsetDelta);
+                                    printMap("locals", frame.locals(), lr);
+                                    printMap("stack", frame.stack(), lr);
+                                    indent(-1);
+                                    indent(-1);
+                                indent(-1);
+                            }
                             case 247 -> {
-                                printHeader(frameType, "/* same_locals_1_stack_item_frame_extended */");
+                                printHeader(frameType, "/* same_locals_1_stack_item_entry_extended */");
                                 indent(+1);
                                 println("offset_delta = " + offsetDelta);
                                 printMap("stack", frame.stack(), lr);
@@ -583,7 +619,7 @@ public class AttributeWriter extends BasicWriter {
                                 indent(-1);
                             }
                             case 251 -> {
-                                printHeader(frameType, "/* same_frame_extended */");
+                                printHeader(frameType, "/* same_entry_extended */");
                                 indent(+1);
                                 println("offset_delta = " + offsetDelta);
                                 indent(-1);
@@ -598,7 +634,7 @@ public class AttributeWriter extends BasicWriter {
                                 indent(-1);
                             }
                             case 255 -> {
-                                printHeader(frameType, "/* full_frame */");
+                                printHeader(frameType, "/* full_entry */");
                                 indent(+1);
                                 println("offset_delta = " + offsetDelta);
                                 printMap("locals", frame.locals(), lr);
@@ -752,6 +788,7 @@ public class AttributeWriter extends BasicWriter {
         return sb.toString();
     }
 
+    private final ClassWriter classWriter;
     private final AnnotationWriter annotationWriter;
     private final CodeWriter codeWriter;
     private final ConstantWriter constantWriter;

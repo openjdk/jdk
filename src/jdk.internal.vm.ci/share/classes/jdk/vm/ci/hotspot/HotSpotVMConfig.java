@@ -97,7 +97,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int instanceKlassConstantsOffset = getFieldOffset("InstanceKlass::_constants", Integer.class, "ConstantPool*");
     final int instanceKlassFieldInfoStreamOffset = getFieldOffset("InstanceKlass::_fieldinfo_stream", Integer.class, "Array<u1>*");
     final int instanceKlassAnnotationsOffset = getFieldOffset("InstanceKlass::_annotations", Integer.class, "Annotations*");
-    final int instanceKlassMiscFlagsOffset = getFieldOffset("InstanceKlass::_misc_flags._flags", Integer.class, "u2");
+    final int instanceKlassMiscFlagsOffset = getFieldOffset("InstanceKlass::_misc_flags._flags", Integer.class, "u4");
     final int klassMiscFlagsOffset = getFieldOffset("Klass::_misc_flags._flags", Integer.class, "u1");
     final int klassVtableStartOffset = getFieldValue("CompilerToVM::Data::Klass_vtable_start_offset", Integer.class, "int");
     final int klassVtableLengthOffset = getFieldValue("CompilerToVM::Data::Klass_vtable_length_offset", Integer.class, "int");
@@ -304,6 +304,9 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int dataLayoutVirtualCallTypeDataTag = getConstant("DataLayout::virtual_call_type_data_tag", Integer.class);
     final int dataLayoutParametersTypeDataTag = getConstant("DataLayout::parameters_type_data_tag", Integer.class);
     final int dataLayoutSpeculativeTrapDataTag = getConstant("DataLayout::speculative_trap_data_tag", Integer.class);
+    final int dataLayoutArrayLoadDataTag = getConstant("DataLayout::array_load_data_tag", Integer.class);
+    final int dataLayoutArrayStoreDataTag = getConstant("DataLayout::array_store_data_tag", Integer.class);
+    final int dataLayoutACmpDataTag = getConstant("DataLayout::acmp_data_tag", Integer.class);
 
     final int bciProfileWidth = getFlag("BciProfileWidth", Integer.class);
     final int typeProfileWidth = getFlag("TypeProfileWidth", Integer.class);

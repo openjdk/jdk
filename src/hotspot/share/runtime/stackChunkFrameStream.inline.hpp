@@ -61,8 +61,9 @@ StackChunkFrameStream<frame_kind>::StackChunkFrameStream(stackChunkOop chunk) DE
   if (frame_kind == ChunkFrames::Mixed) {
     _unextended_sp = (!is_done() && is_interpreted()) ? unextended_sp_for_interpreter_frame() : _sp;
     assert(_unextended_sp >= _sp - frame::metadata_words, "");
+  } else {
+    _unextended_sp = _sp;
   }
-  DEBUG_ONLY(else _unextended_sp = nullptr;)
 
   if (is_stub()) {
     get_oopmap(pc(), 0);
@@ -86,8 +87,9 @@ StackChunkFrameStream<frame_kind>::StackChunkFrameStream(stackChunkOop chunk, co
   if (frame_kind == ChunkFrames::Mixed) {
     _unextended_sp = f.unextended_sp();
     assert(_unextended_sp >= _sp - frame::metadata_words, "");
+  } else {
+    _unextended_sp = _sp;
   }
-  DEBUG_ONLY(else _unextended_sp = nullptr;)
   assert(_sp >= chunk->start_address(), "");
   assert(_sp <= chunk->end_address() + frame::metadata_words, "");
 
@@ -224,12 +226,22 @@ inline void StackChunkFrameStream<frame_kind>::next(RegisterMapT* map, bool stop
       _sp = _unextended_sp + cb()->frame_size();
       if (_sp >= _end - frame::metadata_words) {
         _sp = _end;
+#ifndef ZERO
+      } else if (cb()->is_nmethod() && cb()->as_nmethod()->needs_stack_repair()) {
+        _sp = frame::repair_sender_sp(cb()->as_nmethod(), _unextended_sp, (intptr_t**)(_sp - frame::sender_sp_offset));
+#endif
       }
       _unextended_sp = is_interpreted() ? unextended_sp_for_interpreter_frame() : _sp;
     }
     assert(_unextended_sp >= _sp - frame::metadata_words, "");
   } else {
-    _sp += cb()->frame_size();
+    _sp = _unextended_sp + cb()->frame_size();
+#ifndef ZERO
+    if (cb()->is_nmethod() && cb()->as_nmethod()->needs_stack_repair()) {
+      _sp = frame::repair_sender_sp(cb()->as_nmethod(), _unextended_sp, (intptr_t**)(_sp - frame::sender_sp_offset));
+    }
+#endif
+    _unextended_sp = _sp;
   }
   assert(!is_interpreted() || _unextended_sp == unextended_sp_for_interpreter_frame(), "");
 

@@ -41,6 +41,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -153,7 +154,13 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
         if (m->code_size() == 1) {
           // We need to execute the special return bytecode to check for
           // finalizer registration so create a normal frame.
+          // No need to use the method kind with a memory barrier on entry
+          // because the method is empty and already has a memory barrier on return
           return zerolocals;
+        } else if (Arguments::is_valhalla_enabled()) {
+          // For non-empty Object constructors, we need a memory barrier
+          // when entering the method to ensure correctness of strict fields
+          return object_init;
         }
         break;
       default: break;
@@ -303,6 +310,7 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case getter                 : tty->print("getter"                 ); break;
     case setter                 : tty->print("setter"                 ); break;
     case abstract               : tty->print("abstract"               ); break;
+    case object_init            : tty->print("object_init"            ); break;
     case java_lang_math_sin     : tty->print("java_lang_math_sin"     ); break;
     case java_lang_math_cos     : tty->print("java_lang_math_cos"     ); break;
     case java_lang_math_tan     : tty->print("java_lang_math_tan"     ); break;

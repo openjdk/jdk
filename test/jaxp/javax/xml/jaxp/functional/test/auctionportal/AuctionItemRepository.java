@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,31 +22,14 @@
  */
 package test.auctionportal;
 
-import org.junit.jupiter.api.Test;
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Paths;
+import static jaxp.library.JAXPTestUtilities.setSystemProperty;
 
 import static javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING;
 import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
+import static jaxp.library.JAXPTestUtilities.compareDocumentWithGold;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 import static test.auctionportal.HiBidConstants.GOLDEN_DIR;
 import static test.auctionportal.HiBidConstants.JAXP_SCHEMA_LANGUAGE;
 import static test.auctionportal.HiBidConstants.JAXP_SCHEMA_SOURCE;
@@ -54,13 +37,30 @@ import static test.auctionportal.HiBidConstants.SP_ENTITY_EXPANSION_LIMIT;
 import static test.auctionportal.HiBidConstants.SP_MAX_OCCUR_LIMIT;
 import static test.auctionportal.HiBidConstants.XML_DIR;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.testng.annotations.Test;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXParseException;
+
 /**
  * This is a test class for the Auction portal HiBid.com.
  */
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run junit/othervm test.auctionportal.AuctionItemRepository
+ * @run testng/othervm test.auctionportal.AuctionItemRepository
  */
 public class AuctionItemRepository {
     /**
@@ -79,6 +79,7 @@ public class AuctionItemRepository {
      * not. Previous system property was changed to jdk.xml.entityExpansionLimit
      * see http://docs.oracle.com/javase/tutorial/jaxp/limits/limits.html.
      *
+     * @throws Exception If any errors occur.
      */
     @Test
     public void testEntityExpansionSAXPos() throws Exception {
@@ -87,7 +88,7 @@ public class AuctionItemRepository {
         // implementation limits.
         factory.setFeature(FEATURE_SECURE_PROCESSING, true);
         // Set entityExpansionLimit as 2 should expect fatalError
-        System.setProperty(SP_ENTITY_EXPANSION_LIMIT, String.valueOf(128000));
+        setSystemProperty(SP_ENTITY_EXPANSION_LIMIT, String.valueOf(128000));
         SAXParser parser = factory.newSAXParser();
 
         MyErrorHandler fatalHandler = new MyErrorHandler();
@@ -100,25 +101,27 @@ public class AuctionItemRepository {
      * not. Previous system property was changed to jdk.xml.entityExpansionLimit
      * see http://docs.oracle.com/javase/tutorial/jaxp/limits/limits.html.
      *
+     * @throws Exception If any errors occur.
      */
-    @Test
+    @Test(expectedExceptions = SAXParseException.class)
     public void testEntityExpansionSAXNeg() throws Exception {
         SAXParserFactory factory = SAXParserFactory.newInstance();
         // Secure processing will limit XML processing to conform to
         // implementation limits.
         factory.setFeature(FEATURE_SECURE_PROCESSING, true);
         // Set entityExpansionLimit as 2 should expect SAXParseException.
-        System.setProperty(SP_ENTITY_EXPANSION_LIMIT, String.valueOf(2));
+        setSystemProperty(SP_ENTITY_EXPANSION_LIMIT, String.valueOf(2));
 
         SAXParser parser = factory.newSAXParser();
         MyErrorHandler fatalHandler = new MyErrorHandler();
-        assertThrows(SAXParseException.class, () -> parser.parse(new File(ENTITY_XML), fatalHandler));
+        parser.parse(new File(ENTITY_XML), fatalHandler);
     }
 
     /**
      * Testing set MaxOccursLimit to 10000 in the secure processing enabled for
      * SAXParserFactory.
      *
+     * @throws Exception If any errors occur.
      */
     @Test
     public void testMaxOccurLimitPos() throws Exception {
@@ -127,7 +130,7 @@ public class AuctionItemRepository {
         SAXParserFactory factory = SAXParserFactory.newInstance();
         factory.setValidating(true);
         factory.setFeature(FEATURE_SECURE_PROCESSING, true);
-        System.setProperty(SP_MAX_OCCUR_LIMIT, String.valueOf(10000));
+        setSystemProperty(SP_MAX_OCCUR_LIMIT, String.valueOf(10000));
         SAXParser parser = factory.newSAXParser();
         parser.setProperty(JAXP_SCHEMA_LANGUAGE, W3C_XML_SCHEMA_NS_URI);
         parser.setProperty(JAXP_SCHEMA_SOURCE, new File(schema_file));
@@ -142,12 +145,13 @@ public class AuctionItemRepository {
      * Use a DocumentBuilder to create a DOM object and see if Secure Processing
      * feature affects the entity expansion.
      *
+     * @throws Exception If any errors occur.
      */
     @Test
     public void testEntityExpansionDOMPos() throws Exception  {
         DocumentBuilderFactory dfactory = DocumentBuilderFactory.newInstance();
         dfactory.setFeature(FEATURE_SECURE_PROCESSING, true);
-        System.setProperty(SP_ENTITY_EXPANSION_LIMIT, String.valueOf(10000));
+        setSystemProperty(SP_ENTITY_EXPANSION_LIMIT, String.valueOf(10000));
         DocumentBuilder dBuilder = dfactory.newDocumentBuilder();
         MyErrorHandler eh = new MyErrorHandler();
         dBuilder.setErrorHandler(eh);
@@ -160,25 +164,27 @@ public class AuctionItemRepository {
      * Processing feature and entityExpansionLimit value affects output.
      * Negative test that when entityExpansionLimit is too small.
      *
+     * @throws Exception If any errors occur.
      */
-    @Test
+    @Test(expectedExceptions = SAXParseException.class)
     public void testEntityExpansionDOMNeg() throws Exception {
         DocumentBuilderFactory dfactory = DocumentBuilderFactory.newInstance();
         dfactory.setFeature(FEATURE_SECURE_PROCESSING, true);
-        System.setProperty(SP_ENTITY_EXPANSION_LIMIT, String.valueOf(2));
+        setSystemProperty(SP_ENTITY_EXPANSION_LIMIT, String.valueOf(2));
         DocumentBuilder dBuilder = dfactory.newDocumentBuilder();
         MyErrorHandler eh = new MyErrorHandler();
         dBuilder.setErrorHandler(eh);
-        assertThrows(SAXParseException.class, () -> dBuilder.parse(ENTITY_XML));
+        dBuilder.parse(ENTITY_XML);
     }
 
     /**
      * Test xi:include with a SAXParserFactory.
      *
+     * @throws Exception If any errors occur.
      */
-    @Test
+    @Test(groups = {"readWriteLocalFiles"})
     public void testXIncludeSAXPos() throws Exception {
-        String resultFile = "doc_xinclude.out";
+        String resultFile = USER_DIR + "doc_xinclude.out";
         String goldFile = GOLDEN_DIR + "doc_xincludeGold.xml";
         String xmlFile = XML_DIR + "doc_xinclude.xml";
 
@@ -197,10 +203,11 @@ public class AuctionItemRepository {
      * Test the simple case of including a document using xi:include using a
      * DocumentBuilder.
      *
+     * @throws Exception If any errors occur.
      */
-    @Test
+    @Test(groups = {"readWriteLocalFiles"})
     public void testXIncludeDOMPos() throws Exception {
-        String resultFile = "doc_xincludeDOM.out";
+        String resultFile = USER_DIR + "doc_xincludeDOM.out";
         String goldFile = GOLDEN_DIR + "doc_xincludeGold.xml";
         String xmlFile = XML_DIR + "doc_xinclude.xml";
         try (FileOutputStream fos = new FileOutputStream(resultFile)) {
@@ -219,10 +226,11 @@ public class AuctionItemRepository {
      * Test the simple case of including a document using xi:include within a
      * xi:fallback using a DocumentBuilder.
      *
+     * @throws Exception If any errors occur.
      */
-    @Test
+    @Test(groups = {"readWriteLocalFiles"})
     public void testXIncludeFallbackDOMPos() throws Exception {
-        String resultFile = "doc_fallbackDOM.out";
+        String resultFile = USER_DIR + "doc_fallbackDOM.out";
         String goldFile = GOLDEN_DIR + "doc_fallbackGold.xml";
         String xmlFile = XML_DIR + "doc_fallback.xml";
         try (FileOutputStream fos = new FileOutputStream(resultFile)) {
@@ -242,10 +250,11 @@ public class AuctionItemRepository {
      * Test for xi:fallback where the fall back text is parsed as text. This
      * test uses a nested xi:include for the fallback test.
      *
+     * @throws Exception If any errors occur.
      */
-    @Test
+    @Test(groups = {"readWriteLocalFiles"})
     public void testXIncludeFallbackTextPos() throws Exception {
-        String resultFile = "doc_fallback_text.out";
+        String resultFile = USER_DIR + "doc_fallback_text.out";
         String goldFile = GOLDEN_DIR + "doc_fallback_textGold.xml";
         String xmlFile = XML_DIR + "doc_fallback_text.xml";
         try (FileOutputStream fos = new FileOutputStream(resultFile)) {
@@ -264,10 +273,11 @@ public class AuctionItemRepository {
     /**
      * Test the XPointer element() framework with XInclude.
      *
+     * @throws Exception If any errors occur.
      */
-    @Test
+    @Test(groups = {"readWriteLocalFiles"})
     public void testXpointerElementPos() throws Exception {
-        String resultFile = "doc_xpointer_element.out";
+        String resultFile = USER_DIR + "doc_xpointer_element.out";
         String goldFile = GOLDEN_DIR + "doc_xpointerGold.xml";
         String xmlFile = XML_DIR + "doc_xpointer_element.xml";
         try (FileOutputStream fos = new FileOutputStream(resultFile)) {
@@ -287,10 +297,11 @@ public class AuctionItemRepository {
     /**
      * Test the XPointer framework with a SAX object.
      *
+     * @throws Exception If any errors occur.
      */
-    @Test
+    @Test(groups = {"readWriteLocalFiles"})
     public void testXPointerPos() throws Exception {
-        String resultFile = "doc_xpointer.out";
+        String resultFile = USER_DIR + "doc_xpointer.out";
         String goldFile = GOLDEN_DIR + "doc_xpointerGold.xml";
         String xmlFile = XML_DIR + "doc_xpointer.xml";
 
@@ -309,10 +320,11 @@ public class AuctionItemRepository {
      * Test if xi:include may reference the doc containing the include if the
      * parse type is text.
      *
+     * @throws Exception If any errors occur.
      */
-    @Test
+    @Test(groups = {"readWriteLocalFiles"})
     public void testXIncludeLoopPos() throws Exception {
-        String resultFile = "doc_xinc_loops.out";
+        String resultFile = USER_DIR + "doc_xinc_loops.out";
         String goldFile = GOLDEN_DIR + "doc_xinc_loopGold.xml";
         String xmlFile = XML_DIR + "doc_xinc_loops.xml";
 
@@ -335,10 +347,11 @@ public class AuctionItemRepository {
      * Test if two non nested xi:include elements can include the same document
      * with an xi:include statement.
      *
+     * @throws Exception If any errors occur.
      */
-    @Test
+    @Test(groups = {"readWriteLocalFiles"})
     public void testXIncludeNestedPos() throws Exception {
-        String resultFile = "schedule.out";
+        String resultFile = USER_DIR + "schedule.out";
         String goldFile = GOLDEN_DIR + "scheduleGold.xml";
         String xmlFile = XML_DIR + "schedule.xml";
 
@@ -353,21 +366,5 @@ public class AuctionItemRepository {
                     .transform(new DOMSource(doc), new StreamResult(fos));
         }
         assertTrue(compareDocumentWithGold(goldFile, resultFile));
-    }
-
-    public static boolean compareDocumentWithGold(String goldfile, String resultFile)
-            throws ParserConfigurationException, SAXException, IOException {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(true);
-        factory.setCoalescing(true);
-        factory.setIgnoringElementContentWhitespace(true);
-        factory.setIgnoringComments(true);
-        DocumentBuilder db = factory.newDocumentBuilder();
-
-        Document goldD = db.parse(Paths.get(goldfile).toFile());
-        goldD.normalizeDocument();
-        Document resultD = db.parse(Paths.get(resultFile).toFile());
-        resultD.normalizeDocument();
-        return goldD.isEqualNode(resultD);
     }
 }

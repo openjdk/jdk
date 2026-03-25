@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,9 @@
  *
  */
 
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -33,28 +36,24 @@ import java.util.Collections;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 /**
  * @test
  * @bug 8190753 8011146
  * @summary Verify that using zip filesystem for opening an outputstream for a zip entry whose
  * compressed size is large, doesn't run into "Negative initial size" exception
- * @run junit/manual/othervm LargeCompressedEntrySizeTest
+ * @run testng/manual/othervm LargeCompressedEntrySizeTest
  */
 public class LargeCompressedEntrySizeTest {
 
     private static final String LARGE_FILE_NAME = "LargeZipEntry.txt";
     private static final String ZIP_FILE_NAME = "8190753-test-compressed-size.zip";
 
-    @BeforeEach
+    @BeforeMethod
     public void setUp() throws IOException {
         deleteFiles();
     }
 
-    @AfterEach
+    @AfterMethod
     public void tearDown() throws IOException {
         deleteFiles();
     }

@@ -852,11 +852,17 @@ public class ToolBox {
         private final Map<Location, Map<String, Content>> files;
 
         /**
+         * Whether the delegate is owned by this instance and should be closed when
+         * this instance is closed.
+         */
+        private final boolean shouldClose;
+
+        /**
          * Constructs a memory file manager which stores output files in memory,
          * and delegates to a default file manager for input files.
          */
         public MemoryFileManager() {
-            this(ToolProvider.getSystemJavaCompiler().getStandardFileManager(null, null, null));
+            this(ToolProvider.getSystemJavaCompiler().getStandardFileManager(null, null, null), true);
         }
 
         /**
@@ -864,10 +870,20 @@ public class ToolBox {
          * and delegates to a specified file manager for input files.
          *
          * @param fileManager the file manager to be used for input files
+         * @param shouldClose whether the delegate file manager should be closed
+         *     when this instance is closed
          */
-        public MemoryFileManager(JavaFileManager fileManager) {
+        public MemoryFileManager(JavaFileManager fileManager, boolean shouldClose) {
             super(fileManager);
-            files = new HashMap<>();
+            this.files = new HashMap<>();
+            this.shouldClose = shouldClose;
+        }
+
+        @Override
+        public void close() throws IOException {
+            if (shouldClose) {
+                super.close();
+            }
         }
 
         @Override

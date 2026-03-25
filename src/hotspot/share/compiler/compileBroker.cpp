@@ -1286,7 +1286,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
         // Don't allow blocking compiles if inside a class initializer or while performing class loading
         vframeStream vfst(JavaThread::cast(thread));
         for (; !vfst.at_end(); vfst.next()) {
-          if (vfst.method()->is_static_initializer() ||
+        if (vfst.method()->is_class_initializer() ||
               (vfst.method()->method_holder()->is_subclass_of(vmClasses::ClassLoader_klass()) &&
                   vfst.method()->name() == vmSymbols::loadClass_name())) {
             blocking = false;

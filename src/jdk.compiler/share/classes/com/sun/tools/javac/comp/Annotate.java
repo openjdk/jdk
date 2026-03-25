@@ -97,6 +97,7 @@ public class Annotate {
     private final Symtab syms;
     private final TypeEnvs typeEnvs;
     private final Types types;
+    private final Preview preview;
 
     private final Attribute theUnfinishedDefaultValue;
     private final String sourceName;
@@ -116,6 +117,7 @@ public class Annotate {
         syms = Symtab.instance(context);
         typeEnvs = TypeEnvs.instance(context);
         types = Types.instance(context);
+        preview = Preview.instance(context);
 
         theUnfinishedDefaultValue =  new Attribute.Error(syms.errType);
 
@@ -373,6 +375,12 @@ public class Annotate {
                     && toAnnotate.kind == TYP
                     && types.isSameType(c.type, syms.valueBasedType)) {
                 toAnnotate.flags_field |= Flags.VALUE_BASED;
+            }
+
+            if (!c.type.isErroneous()
+                    && toAnnotate.kind == TYP
+                    && types.isSameType(c.type, syms.migratedValueClassType)) {
+                toAnnotate.flags_field |= Flags.MIGRATED_VALUE_CLASS;
             }
 
             if (!c.type.isErroneous()
@@ -861,6 +869,7 @@ public class Annotate {
                 if (!chk.validateAnnotationDeferErrors(annoTree))
                     log.error(annoTree.pos(), Errors.DuplicateAnnotationInvalidRepeated(origAnnoType));
 
+                c = attributeAnnotation(annoTree, targetContainerType, ctx.env);
                 c.setSynthesized(true);
 
                 @SuppressWarnings("unchecked")

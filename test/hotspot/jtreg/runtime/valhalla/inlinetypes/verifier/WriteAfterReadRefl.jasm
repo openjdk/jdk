@@ -1,0 +1,83 @@
+/*
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/*
+class WriteAfterReadRefl {
+        @Strict static final String F1__STRICT;
+        @Strict static final int    F2__STRICT;
+        static {
+            // Bytecode write
+            F1__STRICT = "foo";
+            F2__STRICT = 42;
+
+
+            // Reflective read
+            Field FIELD_F2 = findField(WriteAfterReadRefl.class, "F2__STRICT");
+            int x = (int) getstaticReflective(FIELD_F2);
+
+            // Bytecode write after read (FAIL)
+            F2__STRICT = 43;
+        }
+    }
+*/
+
+super class WriteAfterReadRefl version 71:65535
+{
+  strict static final  Field F1__STRICT:"Ljava/lang/String;";
+  strict static final Field F2__STRICT:I;
+
+  Method       "<init>":"(LStrictStaticFieldsTest;)V"
+    stack 2  locals 2
+     0:  #{ #0 final mandated }
+  {
+         aload_1;
+         dup;
+         invokestatic      Method java/util/Objects.requireNonNull:"(Ljava/lang/Object;)Ljava/lang/Object;";
+         pop;
+         pop;
+         aload_0;
+         invokespecial     Method java/lang/Object."<init>":"()V";
+         return;
+  }
+
+  static Method "<clinit>":"()V"
+    stack 2  locals 2
+  {
+         ldc               String "foo";
+         putstatic         Field F1__STRICT:"Ljava/lang/String;";
+         bipush            42;
+         putstatic         Field F2__STRICT:"I";
+         ldc               class WriteAfterReadRefl;
+         ldc               String "F2__STRICT";
+         invokestatic      Method StrictStaticFieldsTest.findField:"(Ljava/lang/Class;Ljava/lang/String;)Ljava/lang/reflect/Field;";
+         astore_0;
+         aload_0;
+         invokestatic      Method StrictStaticFieldsTest.getstaticReflective:"(Ljava/lang/reflect/Field;)Ljava/lang/Object;";
+         checkcast         class java/lang/Integer;
+         invokevirtual     Method java/lang/Integer.intValue:"()I";
+         istore_1;
+         bipush            43;
+         putstatic         Field F2__STRICT:"I";
+         return;
+  }
+} // end Class WriteAfterReadRefl

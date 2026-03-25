@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,20 @@
  */
 package org.xml.sax.ptests;
 
-import org.junit.jupiter.api.Test;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
+import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
+
+import java.io.FileInputStream;
+
+import javax.xml.parsers.SAXParserFactory;
+
+import org.testng.annotations.Test;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLFilterImpl;
-
-import javax.xml.parsers.SAXParserFactory;
-import java.io.FileInputStream;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
 
 /**
  * Unit test for XMLFilter.
@@ -43,7 +43,7 @@ import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run junit/othervm org.xml.sax.ptests.XMLFilterTest
+ * @run testng/othervm org.xml.sax.ptests.XMLFilterTest
  */
 public class XMLFilterTest {
     /**
@@ -132,6 +132,8 @@ public class XMLFilterTest {
 
     /**
      * By default true is expected get namespaces feature.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
     public void getFeature01() throws Exception {
@@ -146,6 +148,8 @@ public class XMLFilterTest {
 
     /**
      * By default false is expected get namespaces-prefix feature.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
     public void getFeature02() throws Exception {
@@ -159,15 +163,19 @@ public class XMLFilterTest {
     /**
      * SAXNotRecognizedException is expected when get a feature by an invalid
      * feature name.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test
+    @Test(expectedExceptions = SAXNotRecognizedException.class)
     public void getFeature03() throws Exception {
-        assertThrows(SAXNotRecognizedException.class, () -> new XMLFilterImpl().getFeature("no-meaning-feature"));
+        new XMLFilterImpl().getFeature("no-meaning-feature");
     }
 
     /**
      * Set namespaces feature to a value to XMLFilter. it's expected same when
      * obtain it again.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
     public void setFeature01() throws Exception {
@@ -185,6 +193,8 @@ public class XMLFilterTest {
     /**
      * Set namespaces-prefix feature to a value to XMLFilter. it's expected same
      * when obtain it again.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
     public void setFeature02() throws Exception {
@@ -201,31 +211,35 @@ public class XMLFilterTest {
 
     /**
      * NullPointerException is expected when parse a null InputSource.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test
+    @Test(expectedExceptions = NullPointerException.class)
     public void parse01() throws Exception {
-        assertThrows(NullPointerException.class, () -> new XMLFilterImpl().parse((InputSource) null));
+        new XMLFilterImpl().parse((InputSource)null);
     }
 
     /**
      * SAXException is expected when parsing a invalid formatted XML file.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test
+    @Test(expectedExceptions = NullPointerException.class)
     public void parse02() throws Exception {
-        try (FileInputStream fis = new FileInputStream(XML_DIR + "invalid.xml")) {
-            InputSource input = new InputSource(fis);
-            assertThrows(NullPointerException.class, () -> new XMLFilterImpl().parse(input));
+        try(FileInputStream fis = new FileInputStream(XML_DIR + "invalid.xml")) {
+            new XMLFilterImpl().parse(new InputSource(fis));
         }
     }
 
     /**
      * No exception when parse a normal XML file.
+     *
+     * @throws Exception If any errors occur.
      */
-    @Test
+    @Test(expectedExceptions = NullPointerException.class)
     public void parse03() throws Exception {
-        try (FileInputStream fis = new FileInputStream(XML_DIR + "correct2.xml")) {
-            InputSource input = new InputSource(fis);
-            assertThrows(NullPointerException.class, () -> new XMLFilterImpl().parse(input));
+        try(FileInputStream fis = new FileInputStream(XML_DIR + "correct2.xml")) {
+            new XMLFilterImpl().parse(new InputSource(fis));
         }
     }
 }

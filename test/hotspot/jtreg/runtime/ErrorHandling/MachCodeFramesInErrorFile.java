@@ -166,7 +166,7 @@ public class MachCodeFramesInErrorFile {
             return;
         }
 
-        Matcher matcher = Pattern.compile("\\[MachCode\\]\\s*\\[Verified Entry Point\\]\\s*  # \\{method\\} \\{[^}]*\\} '([^']+)' '([^']+)' in '([^']+)'", Pattern.DOTALL).matcher(hsErr);
+        Matcher matcher = Pattern.compile("\\[MachCode\\]\\s[^{]+\\{method\\} \\{[^}]*\\} '([^']+)' '([^']+)' in '([^']+)'", Pattern.DOTALL).matcher(hsErr);
         List<String> machCodeHeaders = matcher.results().map(mr -> String.format("'%s' '%s' in '%s'", mr.group(1), mr.group(2), mr.group(3))).collect(Collectors.toList());
         int minExpectedMachCodeSections = Math.max(1, compiledJavaFrames);
         if ((hsErr.contains("stop reattempt (retry printing native stack (no source info))") || hsErr.contains("reason: Step time limit reached"))) {

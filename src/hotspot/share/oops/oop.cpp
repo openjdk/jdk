@@ -142,12 +142,15 @@ void VerifyOopClosure::do_oop(oop* p)       { VerifyOopClosure::do_oop_work(p); 
 void VerifyOopClosure::do_oop(narrowOop* p) { VerifyOopClosure::do_oop_work(p); }
 
 // type test operations that doesn't require inclusion of oop.inline.hpp.
-bool oopDesc::is_instance_noinline()    const { return is_instance();    }
-bool oopDesc::is_instanceRef_noinline() const { return is_instanceRef(); }
-bool oopDesc::is_stackChunk_noinline()  const { return is_stackChunk();  }
-bool oopDesc::is_array_noinline()       const { return is_array();       }
-bool oopDesc::is_objArray_noinline()    const { return is_objArray();    }
-bool oopDesc::is_typeArray_noinline()   const { return is_typeArray();   }
+bool oopDesc::is_instance_noinline()        const { return is_instance();         }
+bool oopDesc::is_instanceRef_noinline()     const { return is_instanceRef();      }
+bool oopDesc::is_stackChunk_noinline()      const { return is_stackChunk();       }
+bool oopDesc::is_array_noinline()           const { return is_array();            }
+bool oopDesc::is_objArray_noinline()        const { return is_objArray();         }
+bool oopDesc::is_refArray_noinline()        const { return is_refArray();         }
+bool oopDesc::is_typeArray_noinline()       const { return is_typeArray();        }
+bool oopDesc::is_flatArray_noinline()       const { return is_flatArray();        }
+bool oopDesc::is_null_free_array_noinline() const { return is_null_free_array();  }
 
 #if INCLUDE_CDS_JAVA_HEAP
 void oopDesc::set_narrow_klass(narrowKlass nk) {

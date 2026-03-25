@@ -26,7 +26,6 @@ import static java.util.stream.Collectors.toMap;
 import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
-import static jdk.jpackage.test.JPackageCommand.DEFAULT_VERSION;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -66,7 +65,7 @@ public record AppImageFile(String mainLauncherName, Optional<String> mainLaunche
     }
 
     public AppImageFile(String mainLauncherName, Optional<String> mainLauncherClassName) {
-        this(mainLauncherName, mainLauncherClassName, DEFAULT_VERSION, false, Map.of(mainLauncherName, Map.of()));
+        this(mainLauncherName, mainLauncherClassName, "1.0", false, Map.of(mainLauncherName, Map.of()));
     }
 
     public AppImageFile(String mainLauncherName, String mainLauncherClassName) {

@@ -61,7 +61,9 @@ void G1FullGCMarker::process_partial_array(PartialArrayState* state, bool stolen
 }
 
 void G1FullGCMarker::start_partial_array_processing(objArrayOop obj) {
+  precond(obj->is_array_with_oops());
   mark_closure()->do_klass(obj->klass());
+
   // Don't push empty arrays to avoid unnecessary work.
   size_t array_length = obj->length();
   if (array_length > 0) {

@@ -430,3 +430,20 @@ frame::frame(void* sp, void* fp, void* pc) {
 }
 
 #endif
+
+intptr_t* frame::repair_sender_sp(intptr_t* sender_sp, intptr_t** saved_fp_addr) const {
+  // Only called for nmethods, which Zero does not have.
+  ShouldNotReachHere();
+  return nullptr;
+}
+
+intptr_t* frame::repair_sender_sp(nmethod* nm, intptr_t* sp, intptr_t** saved_fp_addr) {
+  // Only called for nmethods, which Zero does not have.
+  ShouldNotReachHere();
+  return nullptr;
+}
+
+bool frame::was_augmented_on_entry(int& real_size) const {
+  ShouldNotReachHere();
+  return false;
+}

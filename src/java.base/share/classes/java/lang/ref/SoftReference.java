@@ -26,10 +26,20 @@
 package java.lang.ref;
 
 
+import java.util.Objects;
+
 /**
  * Soft reference objects, which are cleared at the discretion of the garbage
  * collector in response to memory demand.  Soft references are most often used
  * to implement memory-sensitive caches.
+ *
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          The referent must have {@linkplain Objects#hasIdentity(Object) object identity}.
+ *          When preview features are enabled, attempts to create a reference
+ *          to a {@linkplain Class#isValue value object} result in an {@link IdentityException}.
+ *      </div>
+ * </div>
  *
  * <p> Suppose that the garbage collector determines at a certain point in time
  * that an object is <a href="package-summary.html#reachability">softly
@@ -81,6 +91,8 @@ public non-sealed class SoftReference<@jdk.internal.RequiresIdentity T> extends 
      * reference is not registered with any queue.
      *
      * @param referent object the new soft reference will refer to
+     * @throws IdentityException if the referent is not an
+     *         {@link java.util.Objects#hasIdentity(Object) identity object}
      */
     public SoftReference(@jdk.internal.RequiresIdentity T referent) {
         super(referent);
@@ -94,7 +106,8 @@ public non-sealed class SoftReference<@jdk.internal.RequiresIdentity T> extends 
      * @param referent object the new soft reference will refer to
      * @param q the queue with which the reference is to be registered,
      *          or {@code null} if registration is not required
-     *
+     * @throws IdentityException if the referent is not an
+     *         {@link java.util.Objects#hasIdentity(Object) identity object}
      */
     public SoftReference(@jdk.internal.RequiresIdentity T referent, ReferenceQueue<? super T> q) {
         super(referent, q);

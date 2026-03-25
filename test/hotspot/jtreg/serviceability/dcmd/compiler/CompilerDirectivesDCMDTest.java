@@ -49,7 +49,7 @@ public class CompilerDirectivesDCMDTest {
 
     public void run(CommandExecutor executor) {
 
-        if (Platform.isServer()) {
+        if (Platform.isServer() && !Platform.isEmulatedClient()) {
             filename = System.getProperty("test.src", ".") + File.separator + "control2.txt";
         } else {
             filename = System.getProperty("test.src", ".") + File.separator + "control1.txt";

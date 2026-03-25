@@ -1536,6 +1536,12 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 #endif
   }
 
+  // Issue a StoreStore barrier on entry to Object_init if the
+  // class has strict field fields.  Be lazy, always do it.
+  if (object_init) {
+    __ membar(MacroAssembler::StoreStore);
+  }
+
   // start execution
   __ verify_frame_setup();
 

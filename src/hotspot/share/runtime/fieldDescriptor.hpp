@@ -56,6 +56,7 @@ class fieldDescriptor {
   AccessFlags access_flags()      const    { return _fieldinfo.access_flags(); }
   FieldInfo::FieldFlags field_flags() const { return _fieldinfo.field_flags(); }
   FieldStatus field_status()      const    { return field_holder()->fields_status()->at(_fieldinfo.index()); }
+  LayoutKind layout_kind()        const    { return _fieldinfo.layout_kind(); }
   oop loader()                    const;
   // Offset (in bytes) of field from start of instanceOop / Klass*
   inline int offset()             const;
@@ -74,6 +75,9 @@ class fieldDescriptor {
   jdouble double_initial_value()  const;
   oop string_initial_value(TRAPS) const;
 
+  // Unset strict static
+  inline bool is_strict_static_unset()   const;
+
   // Field signature type
   inline BasicType field_type() const;
 
@@ -87,6 +91,10 @@ class fieldDescriptor {
   bool is_injected()              const    { return field_flags().is_injected(); }
   bool is_volatile()              const    { return access_flags().is_volatile(); }
   bool is_transient()             const    { return access_flags().is_transient(); }
+  bool is_strict()                const    { return access_flags().is_strict(); }
+  inline bool is_flat()           const;
+  inline bool is_null_free_inline_type() const;
+  inline bool has_null_marker()   const;
 
   bool is_synthetic()             const    { return access_flags().is_synthetic(); }
 
@@ -109,8 +117,8 @@ class fieldDescriptor {
 
   // Print
   void print() const;
-  void print_on(outputStream* st) const;
-  void print_on_for(outputStream* st, oop obj);
+  void print_on(outputStream* st, int base_offset = 0) const;
+  void print_on_for(outputStream* st, oop obj, int indent = 0, int base_offset = 0);
 };
 
 #endif // SHARE_RUNTIME_FIELDDESCRIPTOR_HPP

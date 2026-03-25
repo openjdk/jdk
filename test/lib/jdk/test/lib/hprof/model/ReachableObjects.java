@@ -41,6 +41,7 @@ import jdk.test.lib.hprof.util.Comparer;
  */
 
 public class ReachableObjects {
+    @SuppressWarnings("initialization")
     public ReachableObjects(JavaHeapObject root,
                             final ReachableExcludes excludes) {
         this.root = root;

@@ -24,6 +24,9 @@
  * @test
  * @bug 8334037
  * @summary Test for compiler crash when local class created in early lambda
+ * @run main LambdaLocalEarlyCrash
+ * @build InitializationWarningTester
+ * @run main InitializationWarningTester LambdaLocalEarlyCrash
  */
 
 public class LambdaLocalEarlyCrash {

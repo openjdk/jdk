@@ -554,6 +554,9 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
         set_global_escape(state.apop());
         state.spop();
         ArgumentMap arr = state.apop();
+        // If the array is a flat array, a larger part of it is modified than
+        // the size of a reference. However, if OFFSET_ANY is given as
+        // parameter to set_modified(), size is not taken into account.
         set_modified(arr, OFFSET_ANY, type2size[T_OBJECT]*HeapWordSize);
         break;
       }

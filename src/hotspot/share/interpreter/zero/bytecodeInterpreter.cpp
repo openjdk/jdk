@@ -343,11 +343,12 @@ JRT_END
  * On some architectures/platforms it should be possible to do this implicitly
  */
 #undef CHECK_NULL
-#define CHECK_NULL(obj_)                                                                         \
-        if ((obj_) == nullptr) {                                                                    \
-          VM_JAVA_ERROR(vmSymbols::java_lang_NullPointerException(), nullptr);                      \
-        }                                                                                        \
+#define CHECK_NULL_MSG(obj_, msg)                                              \
+        if ((obj_) == nullptr) {                                               \
+          VM_JAVA_ERROR(vmSymbols::java_lang_NullPointerException(), (msg));   \
+        }                                                                      \
         VERIFY_OOP(obj_)
+#define CHECK_NULL(obj_) CHECK_NULL_MSG(obj_, nullptr)
 
 #define VMdoubleConstZero() 0.0
 #define VMdoubleConstOne() 1.0
@@ -581,18 +582,17 @@ void BytecodeInterpreter::run(interpreterState istate) {
 /* 0xC0 */ &&opc_checkcast,     &&opc_instanceof,       &&opc_monitorenter,   &&opc_monitorexit,
 /* 0xC4 */ &&opc_wide,          &&opc_multianewarray,   &&opc_ifnull,         &&opc_ifnonnull,
 /* 0xC8 */ &&opc_goto_w,        &&opc_jsr_w,            &&opc_breakpoint,     &&opc_fast_agetfield,
-/* 0xCC */ &&opc_fast_bgetfield,&&opc_fast_cgetfield,   &&opc_fast_dgetfield, &&opc_fast_fgetfield,
+/* 0xCC */ &&opc_default,       &&opc_fast_bgetfield,   &&opc_fast_cgetfield, &&opc_fast_dgetfield,
 
-/* 0xD0 */ &&opc_fast_igetfield,&&opc_fast_lgetfield,   &&opc_fast_sgetfield, &&opc_fast_aputfield,
-/* 0xD4 */ &&opc_fast_bputfield,&&opc_fast_zputfield,   &&opc_fast_cputfield, &&opc_fast_dputfield,
-/* 0xD8 */ &&opc_fast_fputfield,&&opc_fast_iputfield,   &&opc_fast_lputfield, &&opc_fast_sputfield,
-/* 0xDC */ &&opc_fast_aload_0,  &&opc_fast_iaccess_0,   &&opc_fast_aaccess_0, &&opc_fast_faccess_0,
+/* 0xD0 */ &&opc_fast_fgetfield, &&opc_fast_igetfield,  &&opc_fast_lgetfield, &&opc_fast_sgetfield,
+/* 0xD4 */ &&opc_fast_aputfield, &&opc_default,         &&opc_fast_bputfield, &&opc_fast_zputfield,
+/* 0xD8 */ &&opc_fast_cputfield, &&opc_fast_dputfield,  &&opc_fast_fputfield, &&opc_fast_iputfield,
+/* 0xDC */ &&opc_fast_lputfield, &&opc_fast_sputfield,  &&opc_fast_aload_0,   &&opc_fast_iaccess_0,
 
-/* 0xE0 */ &&opc_fast_iload,    &&opc_fast_iload2,      &&opc_fast_icaload,   &&opc_fast_invokevfinal,
-/* 0xE4 */ &&opc_default,       &&opc_default,          &&opc_fast_aldc,      &&opc_fast_aldc_w,
-/* 0xE8 */ &&opc_return_register_finalizer,
-                                &&opc_invokehandle,     &&opc_nofast_getfield,&&opc_nofast_putfield,
-/* 0xEC */ &&opc_nofast_aload_0,&&opc_nofast_iload,     &&opc_default,        &&opc_default,
+/* 0xE0 */ &&opc_fast_aaccess_0,  &&opc_fast_faccess_0,    &&opc_fast_iload,                &&opc_fast_iload2,
+/* 0xE4 */ &&opc_fast_icaload,    &&opc_fast_invokevfinal, &&opc_default,                   &&opc_default,
+/* 0xE8 */ &&opc_fast_aldc,       &&opc_fast_aldc_w,       &&opc_return_register_finalizer, &&opc_invokehandle,
+/* 0xEC */ &&opc_nofast_getfield, &&opc_nofast_putfield,   &&opc_nofast_aload_0,            &&opc_nofast_iload,
 
 /* 0xF0 */ &&opc_default,       &&opc_default,          &&opc_default,        &&opc_default,
 /* 0xF4 */ &&opc_default,       &&opc_default,          &&opc_default,        &&opc_default,
@@ -1502,7 +1502,13 @@ run:
           ARRAY_LOADTO32(T_FLOAT, jfloat, "%f",   STACK_FLOAT, 0);
       CASE(_aaload): {
           ARRAY_INTRO(-2);
-          SET_STACK_OBJECT(((objArrayOop) arrObj)->obj_at(index), -2);
+          if (((objArrayOop) arrObj)->is_flatArray()) {
+            CALL_VM(InterpreterRuntime::flat_array_load(THREAD, (objArrayOop) arrObj, index), handle_exception);
+            SET_STACK_OBJECT(THREAD->vm_result_oop(), -2);
+            THREAD->set_vm_result_oop(nullptr);
+          } else {
+            SET_STACK_OBJECT(((refArrayOop) arrObj)->obj_at(index), -2);
+          }
           UPDATE_PC_AND_TOS_AND_CONTINUE(1, -1);
       }
       CASE(_baload):
@@ -1566,6 +1572,8 @@ run:
             if (rhsKlass != elemKlass && !rhsKlass->is_subtype_of(elemKlass)) { // ebx->is...
               VM_JAVA_ERROR(vmSymbols::java_lang_ArrayStoreException(), "");
             }
+          } else if (arrObj->is_null_free_array()) {
+            VM_JAVA_ERROR(vmSymbols::java_lang_NullPointerException(), "Cannot store null in a null-restricted array");
           }
           ((objArrayOop) arrObj)->obj_at_put(index, rhsObject);
           UPDATE_PC_AND_TOS_AND_CONTINUE(1, -3);
@@ -1730,6 +1738,7 @@ run:
                 MORE_STACK(1);
                 break;
               case atos: {
+                assert(!entry->is_flat(), "Flat volatile field not supported");
                 oop val = obj->obj_field_acquire(field_offset);
                 VERIFY_OOP(val);
                 SET_STACK_OBJECT(val, -1);
@@ -1765,7 +1774,14 @@ run:
                 MORE_STACK(1);
                 break;
               case atos: {
-                oop val = obj->obj_field(field_offset);
+                oop val;
+                if (entry->is_flat()) {
+                  CALL_VM(InterpreterRuntime::read_flat_field(THREAD, obj, entry), handle_exception);
+                  val = THREAD->vm_result_oop();
+                  THREAD->set_vm_result_oop(nullptr);
+                } else {
+                  val = obj->obj_field(field_offset);
+                }
                 VERIFY_OOP(val);
                 SET_STACK_OBJECT(val, -1);
                 break;
@@ -1858,6 +1874,7 @@ run:
                 obj->release_double_field_put(field_offset, STACK_DOUBLE(-1));
                 break;
               case atos: {
+                assert(!entry->is_flat(), "Flat volatile field not supported");
                 oop val = STACK_OBJECT(-1);
                 VERIFY_OOP(val);
                 obj->release_obj_field_put(field_offset, val);
@@ -1896,7 +1913,11 @@ run:
               case atos: {
                 oop val = STACK_OBJECT(-1);
                 VERIFY_OOP(val);
-                obj->obj_field_put(field_offset, val);
+                if (entry->is_flat()) {
+                  CALL_VM(InterpreterRuntime::write_flat_field(THREAD, obj, val, entry), handle_exception);
+                } else {
+                  obj->obj_field_put(field_offset, val);
+                }
                 break;
               }
               default:
@@ -2529,8 +2550,17 @@ run:
 
         MAYBE_POST_FIELD_ACCESS(obj);
 
-        VERIFY_OOP(obj->obj_field(field_offset));
-        SET_STACK_OBJECT(obj->obj_field(field_offset), -1);
+        oop val;
+        if (entry->is_flat()) {
+          CALL_VM(InterpreterRuntime::read_flat_field(THREAD, obj, entry), handle_exception);
+          val = THREAD->vm_result_oop();
+          THREAD->set_vm_result_oop(nullptr);
+        } else {
+          val = obj->obj_field(field_offset);
+        }
+
+        VERIFY_OOP(val);
+        SET_STACK_OBJECT(val, -1);
         UPDATE_PC_AND_CONTINUE(3);
       }
 
@@ -2644,7 +2674,17 @@ run:
         MAYBE_POST_FIELD_MODIFICATION(obj);
 
         int field_offset = entry->field_offset();
-        obj->obj_field_put(field_offset, STACK_OBJECT(-1));
+        oop val = STACK_OBJECT(-1);
+
+        if (entry->is_null_free_inline_type()) {
+          CHECK_NULL_MSG(val, "Value is null");
+        }
+
+        if (entry->is_flat()) {
+          CALL_VM(InterpreterRuntime::write_flat_field(THREAD, obj, val, entry), handle_exception);
+        } else {
+          obj->obj_field_put(field_offset, val);
+        }
 
         UPDATE_PC_AND_TOS_AND_CONTINUE(3, -2);
       }
@@ -2787,8 +2827,17 @@ run:
 
         MAYBE_POST_FIELD_ACCESS(obj);
 
-        VERIFY_OOP(obj->obj_field(field_offset));
-        SET_STACK_OBJECT(obj->obj_field(field_offset), 0);
+        oop val;
+        if (entry->is_flat()) {
+          CALL_VM(InterpreterRuntime::read_flat_field(THREAD, obj, entry), handle_exception);
+          val = THREAD->vm_result_oop();
+          THREAD->set_vm_result_oop(nullptr);
+        } else {
+          val = obj->obj_field(field_offset);
+        }
+
+        VERIFY_OOP(val);
+        SET_STACK_OBJECT(val, 0);
         UPDATE_PC_AND_TOS_AND_CONTINUE(4, 1);
       }
 

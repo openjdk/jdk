@@ -54,6 +54,8 @@ public class ObjectStreamField
     private final Field field;
     /** offset of field value in enclosing field group */
     private int offset;
+    /** index of the field in the class, retain the declaration order of serializable fields */
+    private final int argIndex;
 
     /**
      * Create a Serializable field with the specified type.  This field should
@@ -84,6 +86,11 @@ public class ObjectStreamField
      * @since   1.4
      */
     public ObjectStreamField(String name, Class<?> type, boolean unshared) {
+        this(name, type, unshared, -1);
+    }
+
+    /* package-private */
+    ObjectStreamField(String name, Class<?> type, boolean unshared, int argIndex) {
         if (name == null) {
             throw new NullPointerException();
         }
@@ -92,13 +99,14 @@ public class ObjectStreamField
         this.unshared = unshared;
         this.field = null;
         this.signature = null;
+        this.argIndex = argIndex;
     }
 
     /**
      * Creates an ObjectStreamField representing a field with the given name,
      * signature and unshared setting.
      */
-    ObjectStreamField(String name, String signature, boolean unshared) {
+    ObjectStreamField(String name, String signature, boolean unshared, int argIndex) {
         if (name == null) {
             throw new NullPointerException();
         }
@@ -106,6 +114,7 @@ public class ObjectStreamField
         this.signature = signature.intern();
         this.unshared = unshared;
         this.field = null;
+        this.argIndex = argIndex;
 
         type = switch (signature.charAt(0)) {
             case 'Z'      -> Boolean.TYPE;
@@ -129,13 +138,14 @@ public class ObjectStreamField
      * ObjectStreamField (if non-primitive) will return Object.class (as
      * opposed to a more specific reference type).
      */
-    ObjectStreamField(Field field, boolean unshared, boolean showType) {
+    ObjectStreamField(Field field, boolean unshared, boolean showType, int argIndex) {
         this.field = field;
         this.unshared = unshared;
         name = field.getName();
         Class<?> ftype = field.getType();
         type = (showType || ftype.isPrimitive()) ? ftype : Object.class;
         signature = ftype.descriptorString().intern();
+        this.argIndex = argIndex;
     }
 
     /**
@@ -214,6 +224,13 @@ public class ObjectStreamField
     // REMIND: deprecate?
     protected void setOffset(int offset) {
         this.offset = offset;
+    }
+
+    /**
+     * {@return Index of the field in the sequence of Serializable fields}
+     */
+    int getArgIndex() {
+        return argIndex;
     }
 
     /**

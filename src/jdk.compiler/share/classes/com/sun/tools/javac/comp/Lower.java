@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,6 +106,7 @@ public class Lower extends TreeTranslator {
     private final boolean nullCheckOuterThis;
     private final boolean useMatchException;
     private final HashMap<TypePairs, String> typePairToName;
+    private final boolean allowValueClasses;
     private int variableIndex = 0;
 
     @SuppressWarnings("this-escape")
@@ -141,6 +142,8 @@ public class Lower extends TreeTranslator {
         useMatchException = Feature.PATTERN_SWITCH.allowedInSource(source) &&
                             (preview.isEnabled() || !preview.isPreview(Feature.PATTERN_SWITCH));
         typePairToName = TypePairs.initialize(syms);
+        this.allowValueClasses = (!preview.isPreview(Feature.VALUE_CLASSES) || preview.isEnabled()) &&
+                Feature.VALUE_CLASSES.allowedInSource(source);
     }
 
     /** The currently enclosing class.
@@ -192,6 +195,10 @@ public class Lower extends TreeTranslator {
     /** The currently enclosing outermost member definition.
      */
     JCTree outermostMemberDef;
+
+    /** A hash table mapping local classes to a set of outer this fields
+     */
+    public Map<ClassSymbol, Set<JCExpression>> initializerOuterThis = new WeakHashMap<>();
 
     /** A navigator class for assembling a mapping from local class symbols
      *  to class definition trees.
@@ -771,7 +778,8 @@ public class Lower extends TreeTranslator {
             if (isTranslatedClassAvailable(c))
                 continue;
             // Create class definition tree.
-            JCClassDecl cdec = makeEmptyClass(STATIC | SYNTHETIC,
+            // IDENTITY_TYPE will be interpreted as ACC_SUPER for older class files so we are fine
+            JCClassDecl cdec = makeEmptyClass(STATIC | SYNTHETIC | IDENTITY_TYPE,
                     c.outermostClass(), c.flatname, false);
             swapAccessConstructorTag(c, cdec.sym);
             translated.append(cdec);
@@ -1243,7 +1251,8 @@ public class Lower extends TreeTranslator {
                                             i);
             ClassSymbol ctag = chk.getCompiled(topModle, flatname);
             if (ctag == null)
-                ctag = makeEmptyClass(STATIC | SYNTHETIC, topClass).sym;
+                // IDENTITY_TYPE will be interpreted as ACC_SUPER for older class files so we are fine
+                ctag = makeEmptyClass(STATIC | SYNTHETIC | IDENTITY_TYPE, topClass).sym;
             else if (!ctag.isAnonymous())
                 continue;
             // keep a record of all tags, to verify that all are generated as required
@@ -1399,9 +1408,10 @@ public class Lower extends TreeTranslator {
     }
 
     /** Proxy definitions for all free variables in given list, in reverse order.
-     *  @param pos        The source code position of the definition.
-     *  @param freevars   The free variables.
-     *  @param owner      The class in which the definitions go.
+     *  @param pos               The source code position of the definition.
+     *  @param freevars          The free variables.
+     *  @param owner             The class in which the definitions go.
+     *  @param additionalFlags   Any additional flags
      */
     List<JCVariableDecl> freevarDefs(int pos, List<VarSymbol> freevars, Symbol owner) {
         return freevarDefs(pos, freevars, owner, LOCAL_CAPTURE_FIELD);
@@ -1492,7 +1502,7 @@ public class Lower extends TreeTranslator {
      *  @param owner      The class in which the definition goes.
      */
     JCVariableDecl outerThisDef(int pos, ClassSymbol owner) {
-        VarSymbol outerThis = makeOuterThisVarSymbol(owner, FINAL | SYNTHETIC);
+        VarSymbol outerThis = makeOuterThisVarSymbol(owner, FINAL | SYNTHETIC | (allowValueClasses && owner.isValueClass() ? STRICT : 0));
         return makeOuterThisVarDecl(pos, outerThis);
     }
 
@@ -1832,7 +1842,8 @@ public class Lower extends TreeTranslator {
             if (sym.kind == TYP &&
                 sym.name == names.empty &&
                 (sym.flags() & INTERFACE) == 0) return (ClassSymbol) sym;
-        return makeEmptyClass(STATIC | SYNTHETIC, clazz).sym;
+        // IDENTITY_TYPE will be interpreted as ACC_SUPER for older class files so we are fine
+        return makeEmptyClass(STATIC | SYNTHETIC | IDENTITY_TYPE, clazz).sym;
     }
 
     /** Create an attributed tree of the form left.name(). */
@@ -1884,7 +1895,8 @@ public class Lower extends TreeTranslator {
     private ClassSymbol assertionsDisabledClass() {
         if (assertionsDisabledClassCache != null) return assertionsDisabledClassCache;
 
-        assertionsDisabledClassCache = makeEmptyClass(STATIC | SYNTHETIC, outermostClassDef.sym).sym;
+        // IDENTITY_TYPE will be interpreted as ACC_SUPER for older class files so we are fine
+        assertionsDisabledClassCache = makeEmptyClass(STATIC | SYNTHETIC | IDENTITY_TYPE, outermostClassDef.sym).sym;
 
         return assertionsDisabledClassCache;
     }
@@ -2172,7 +2184,7 @@ public class Lower extends TreeTranslator {
 
         // If this is a local class, define proxies for all its free variables.
         List<JCVariableDecl> fvdefs = freevarDefs(
-            tree.pos, freevars(currentClass), currentClass);
+            tree.pos, freevars(currentClass), currentClass, allowValueClasses && currentClass.isValueClass() ? STRICT : LOCAL_CAPTURE_FIELD);
 
         // Recursively translate superclass, interfaces.
         tree.extending = translate(tree.extending);
@@ -2753,17 +2765,23 @@ public class Lower extends TreeTranslator {
                 if (sym.kind == Kinds.Kind.VAR && ((sym.flags() & RECORD) != 0))
                     fields.append((VarSymbol) sym);
             }
+            ListBuffer<JCStatement> initializers = new ListBuffer<>();
             for (VarSymbol field: fields) {
                 if ((field.flags_field & Flags.UNINITIALIZED_FIELD) != 0) {
                     VarSymbol param = tree.params.stream().filter(p -> p.name == field.name).findFirst().get().sym;
                     make.at(tree.pos);
-                    tree.body.stats = tree.body.stats.append(
-                            make.Exec(
-                                    make.Assign(
-                                            make.Select(make.This(field.owner.erasure(types)), field),
-                                            make.Ident(param)).setType(field.erasure(types))));
-                    // we don't need the flag at the field anymore
+                    initializers.add(make.Exec(
+                            make.Assign(
+                                    make.Select(make.This(field.owner.erasure(types)), field),
+                                    make.Ident(param)).setType(field.erasure(types))));
                     field.flags_field &= ~Flags.UNINITIALIZED_FIELD;
+                }
+            }
+            if (initializers.nonEmpty()) {
+                if (allowValueClasses && (tree.sym.owner.isValueClass() || ((ClassSymbol)tree.sym.owner).isRecord())) {
+                    TreeInfo.mapSuperCalls(tree.body, supercall -> make.Block(0, initializers.toList().append(supercall)));
+                } else {
+                    tree.body.stats = tree.body.stats.appendList(initializers);
                 }
             }
         }
@@ -2989,6 +3007,17 @@ public class Lower extends TreeTranslator {
             } else {
                 // nested class
                 thisArg = makeOwnerThis(tree.pos(), c, false);
+                if (currentMethodSym != null &&
+                        ((currentMethodSym.flags_field & (STATIC | BLOCK)) == BLOCK) &&
+                        currentMethodSym.owner.isValueClass()) {
+                    // instance initializer in a value class
+                    Set<JCExpression> outerThisSet = initializerOuterThis.get(currentClass);
+                    if (outerThisSet == null) {
+                        outerThisSet = new HashSet<>();
+                    }
+                    outerThisSet.add(thisArg);
+                    initializerOuterThis.put(currentClass, outerThisSet);
+                }
             }
             tree.args = tree.args.prepend(thisArg);
         }

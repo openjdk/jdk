@@ -58,9 +58,17 @@ class InterpreterRuntime: AllStatic {
   // Allocation
   static void    _new          (JavaThread* current, ConstantPool* pool, int index);
   static void    newarray      (JavaThread* current, BasicType type, jint size);
-  static void    anewarray     (JavaThread* current, ConstantPool* pool, int index, jint size);
+  static void    anewarray     (JavaThread* threcurrentad, ConstantPool* pool, int index, jint size);
   static void    multianewarray(JavaThread* current, jint* first_size_address);
   static void    register_finalizer(JavaThread* current, oopDesc* obj);
+  static void    write_heap_copy (JavaThread* current, oopDesc* value, int offset, oopDesc* rcv);
+  static void    read_flat_field(JavaThread* current, oopDesc* object, ResolvedFieldEntry* entry);
+  static void    write_flat_field(JavaThread* current, oopDesc* object, oopDesc* value, ResolvedFieldEntry* entry);
+
+  static void flat_array_load(JavaThread* current, arrayOopDesc* array, int index);
+  static void flat_array_store(JavaThread* current, oopDesc* val, arrayOopDesc* array, int index);
+
+  static jboolean is_substitutable(JavaThread* current, oopDesc* aobj, oopDesc* bobj);
 
   // Quicken instance-of and check-cast bytecodes
   static void    quicken_io_cc(JavaThread* current);
@@ -72,6 +80,7 @@ class InterpreterRuntime: AllStatic {
                                                   Klass* recvKlass,
                                                   Method* missingMethod);
 
+  static void    throw_InstantiationError(JavaThread* current);
   static void    throw_IncompatibleClassChangeError(JavaThread* current);
   static void    throw_IncompatibleClassChangeErrorVerbose(JavaThread* current,
                                                            Klass* resc,
@@ -121,6 +130,7 @@ private:
 
   static void    throw_illegal_monitor_state_exception(JavaThread* current);
   static void    new_illegal_monitor_state_exception(JavaThread* current);
+  static void    throw_identity_exception(JavaThread* current, oopDesc* obj);
 
   // Breakpoints
   static void _breakpoint(JavaThread* current, Method* method, address bcp);

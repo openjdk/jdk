@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,13 +70,17 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import jdk.internal.constant.ConstantUtils;
+import jdk.internal.javac.PreviewFeature;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.BuiltinClassLoader;
+import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.module.Resources;
+import jdk.internal.reflect.AccessFlagSet;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.CallerSensitiveAdapter;
 import jdk.internal.reflect.ConstantPool;
+import jdk.internal.reflect.PreviewAccessFlags;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.reflect.ReflectionFactory;
 import jdk.internal.util.ModifiedUtf;
@@ -245,7 +249,7 @@ public final class Class<T> implements java.io.Serializable,
      * This constructor is not used and prevents the default constructor being
      * generated.
      */
-    private Class(ClassLoader loader, Class<?> arrayComponentType, char mods, ProtectionDomain pd, boolean isPrim, char flags) {
+    private Class(ClassLoader loader, Class<?> arrayComponentType, char mods, ProtectionDomain pd, boolean isPrim, boolean isIdentity, char flags) {
         // Initialize final field for classLoader.  The initialization value of non-null
         // prevents future JIT optimizations from assuming this final field is null.
         // The following assignments are done directly by the VM without calling this constructor.
@@ -254,6 +258,7 @@ public final class Class<T> implements java.io.Serializable,
         modifiers = mods;
         protectionDomain = pd;
         primitive = isPrim;
+        identity = isIdentity;
         classFileAccessFlags = flags;
     }
 
@@ -325,6 +330,8 @@ public final class Class<T> implements java.io.Serializable,
             } else {
                 // Class modifiers are a superset of interface modifiers
                 int modifiers = getModifiers() & Modifier.classModifiers();
+                // Modifier.toString() below mis-interprets SYNCHRONIZED, STRICT, and VOLATILE bits
+                modifiers &= ~(Modifier.SYNCHRONIZED | Modifier.STRICT | Modifier.VOLATILE);
                 if (modifiers != 0) {
                     sb.append(Modifier.toString(modifiers));
                     sb.append(' ');
@@ -343,10 +350,15 @@ public final class Class<T> implements java.io.Serializable,
                 } else {
                     if (isEnum())
                         sb.append("enum");
-                    else if (isRecord())
-                        sb.append("record");
-                    else
-                        sb.append("class");
+                    else {
+                        if (isValue()) {
+                            sb.append("value ");
+                        }
+                        if (isRecord())
+                            sb.append("record");
+                        else
+                            sb.append("class");
+                    }
                 }
                 sb.append(' ');
                 sb.append(getName());
@@ -613,6 +625,54 @@ public final class Class<T> implements java.io.Serializable,
         } else {
             return BootLoader.loadClass(module, name);
         }
+    }
+
+    /**
+     * {@return {@code true} if this {@code Class} object represents an identity class,
+     * otherwise {@code false}}
+     *
+     * <ul>
+     *      <li>
+     *          If this {@code Class} object represents an array type this method returns {@code true}.
+     *      <li>
+     *          If this {@code Class} object represents an interface, a primitive type,
+     *          or {@code void} this method returns {@code false}.
+     *      <li>
+     *          For all other {@code Class} objects, this method returns {@code true} if either
+     *          preview features are disabled or {@linkplain AccessFlag#IDENTITY IDENTITY} is
+     *          present in the {@linkplain #accessFlags() class access flags}.
+     * </ul>
+     * @see AccessFlag#IDENTITY
+     * @since Valhalla
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.VALUE_OBJECTS, reflective=true)
+    public boolean isIdentity() {
+        return identity;
+    }
+
+    /**
+     * {@return {@code true} if this {@code Class} object represents a value class,
+     * otherwise {@code false}}
+     * <ul>
+     *      <li>
+     *          If this {@code Class} object represents an array type this method returns {@code false}.
+     *      <li>
+     *          If this {@code Class} object represents an interface, a primitive type,
+     *          or {@code void} this method returns {@code true} only if preview features are enabled.
+     *      <li>
+     *          For all other {@code Class} objects, this method returns {@code true} only if
+     *          preview features are enabled and {@linkplain AccessFlag#IDENTITY IDENTITY} is not
+     *          present in the {@linkplain #accessFlags() class access flags}.
+     * </ul>
+     * @see AccessFlag#IDENTITY
+     * @since Valhalla
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.VALUE_OBJECTS, reflective=true)
+    public boolean isValue() {
+        if (!PreviewFeatures.isEnabled()) {
+            return false;
+        }
+        return !isIdentity();
     }
 
     /**
@@ -1018,7 +1078,8 @@ public final class Class<T> implements java.io.Serializable,
     private transient Object[] signers; // Read by VM, mutable
     private final transient char modifiers;  // Set by the VM
     private final transient char classFileAccessFlags;  // Set by the VM
-    private final transient boolean primitive;  // Set by the VM if the Class is a primitive type.
+    private final transient boolean primitive;  // Set by the VM if the Class is a primitive type
+    private final transient boolean identity;   // Set by the VM if the Class is an identity class
 
     // package-private
     Object getClassData() {
@@ -1338,6 +1399,8 @@ public final class Class<T> implements java.io.Serializable,
      *      {@code true}
      * <li> its interface modifier is always {@code false}, even when
      *      the component type is an interface
+     * <li> when preview features are enabled, its {@linkplain
+     *      AccessFlag#IDENTITY identity} modifier is always true
      * </ul>
      * If this {@code Class} object represents a primitive type or
      * void, its {@code public}, {@code abstract}, and {@code final}
@@ -1365,6 +1428,7 @@ public final class Class<T> implements java.io.Serializable,
     /**
      * {@return an unmodifiable set of the {@linkplain AccessFlag access
      * flags} for this class, possibly empty}
+     * The {@code AccessFlags} may depend on the class file format version of the class.
      *
      * <p> If the underlying class is an array class:
      * <ul>
@@ -1373,6 +1437,8 @@ public final class Class<T> implements java.io.Serializable,
      * <li> its {@code ABSTRACT} and {@code FINAL} flags are present
      * <li> its {@code INTERFACE} flag is absent, even when the
      *      component type is an interface
+     * <li> when preview features are enabled, its {@code IDENTITY} flag
+    *       is present
      * </ul>
      * If this {@code Class} object represents a primitive type or
      * void, the flags are {@code PUBLIC}, {@code ABSTRACT}, and
@@ -1386,17 +1452,20 @@ public final class Class<T> implements java.io.Serializable,
      * @since 20
      */
     public Set<AccessFlag> accessFlags() {
-        // Location.CLASS allows SUPER and AccessFlag.MODULE which
-        // INNER_CLASS forbids. INNER_CLASS allows PRIVATE, PROTECTED,
-        // and STATIC, which are not allowed on Location.CLASS.
-        // Use getClassFileAccessFlags to expose SUPER status.
-        // Arrays need to use PRIVATE/PROTECTED from its component modifiers.
-        var location = (isMemberClass() || isLocalClass() ||
-                        isAnonymousClass() || isArray()) ?
-            AccessFlag.Location.INNER_CLASS :
-            AccessFlag.Location.CLASS;
-        return getReflectionFactory().parseAccessFlags((location == AccessFlag.Location.CLASS) ?
-                        getClassFileAccessFlags() : getModifiers(), location, this);
+        if (!PreviewFeatures.isEnabled()) {
+            // INNER_CLASS_FLAGS exclusively defines PRIVATE, PROTECTED, and STATIC.
+            // CLASS_FLAGS exclusively defines SUPER and MODULE.
+            // Nested classes and interfaces need to report PRIVATE/PROTECTED/STATIC.
+            // Arrays need to report PRIVATE/PROTECTED.
+            // Top-level classes need to report SUPER, using getClassFileAccessFlags.
+            // Module descriptors do not have Class objects so nothing reports MODULE.
+            return (isArray() || getEnclosingClass() != null)
+                    ? AccessFlagSet.ofValidated(AccessFlagSet.INNER_CLASS_FLAGS, getModifiers())
+                    : AccessFlagSet.ofValidated(AccessFlagSet.CLASS_FLAGS, getClassFileAccessFlags());
+        }
+        // CLASS_FLAGS exclusively defines MODULE, but module descriptors are
+        // never represented with Class objects, so INNER_CLASS_FLAGS works
+        return AccessFlagSet.ofValidated(PreviewAccessFlags.INNER_CLASS_PREVIEW_FLAGS, getModifiers());
     }
 
     /**

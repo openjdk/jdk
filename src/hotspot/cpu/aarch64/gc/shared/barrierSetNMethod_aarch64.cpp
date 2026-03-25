@@ -68,6 +68,7 @@ class NativeNMethodBarrier {
   int*     _guard_addr;
   nmethod* _nm;
 
+public:
   address instruction_address() const { return _instruction_address; }
 
   int *guard_addr() {
@@ -79,10 +80,10 @@ class NativeNMethodBarrier {
     return (-entry_barrier_offset(nm)) - 4;
   }
 
-public:
-  NativeNMethodBarrier(nmethod* nm): _nm(nm) {
+  NativeNMethodBarrier(nmethod* nm, address alt_entry_instruction_address = nullptr): _nm(nm) {
 #if INCLUDE_JVMCI
     if (nm->is_compiled_by_jvmci()) {
+      assert(alt_entry_instruction_address == nullptr, "invariant");
       address pc = nm->code_begin() + nm->jvmci_nmethod_data()->nmethod_entry_patch_offset();
       RelocIterator iter(nm, pc, pc + 4);
       guarantee(iter.next(), "missing relocs");
@@ -93,7 +94,8 @@ public:
     } else
 #endif
       {
-        _instruction_address = nm->code_begin() + nm->frame_complete_offset() + entry_barrier_offset(nm);
+        _instruction_address = (alt_entry_instruction_address != nullptr) ? alt_entry_instruction_address :
+          nm->code_begin() + nm->frame_complete_offset() + entry_barrier_offset(nm);
         if (nm->is_compiled_by_c2()) {
           // With c2 compiled code, the guard is out-of-line in a stub
           // We find it using the RelocIterator.
@@ -193,6 +195,31 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
   new_frame->pc = SharedRuntime::get_handle_wrong_method_stub();
 }
 
+static void set_value(nmethod* nm, jint val, int bit_mask) {
+  NativeNMethodBarrier cmp1 = NativeNMethodBarrier(nm);
+  cmp1.set_value(val, bit_mask);
+
+  if (!nm->is_osr_method() && nm->method()->has_scalarized_args()) {
+    // nmethods with scalarized arguments have multiple entry points that each have an own nmethod entry barrier
+    assert(nm->verified_entry_point() != nm->verified_inline_entry_point(), "scalarized entry point not found");
+    address method_body = nm->is_compiled_by_c1() ? nm->verified_inline_entry_point() : nm->verified_entry_point();
+    address entry_point2 = nm->is_compiled_by_c1() ? nm->verified_entry_point() : nm->verified_inline_entry_point();
+
+    int barrier_offset = cmp1.instruction_address() - method_body;
+    NativeNMethodBarrier cmp2 = NativeNMethodBarrier(nm, entry_point2 + barrier_offset);
+    assert(cmp1.instruction_address() != cmp2.instruction_address(), "sanity");
+    DEBUG_ONLY(cmp2.verify());
+    cmp2.set_value(val, bit_mask);
+
+    if (method_body != nm->verified_inline_ro_entry_point() && entry_point2 != nm->verified_inline_ro_entry_point()) {
+      NativeNMethodBarrier cmp3 = NativeNMethodBarrier(nm, nm->verified_inline_ro_entry_point() + barrier_offset);
+      assert(cmp1.instruction_address() != cmp3.instruction_address() && cmp2.instruction_address() != cmp3.instruction_address(), "sanity");
+      DEBUG_ONLY(cmp3.verify());
+      cmp3.set_value(val, bit_mask);
+    }
+  }
+}
+
 void BarrierSetNMethod::set_guard_value(nmethod* nm, int value, int bit_mask) {
   if (!supports_entry_barrier(nm)) {
     return;
@@ -213,8 +240,7 @@ void BarrierSetNMethod::set_guard_value(nmethod* nm, int value, int bit_mask) {
   // stub.
   MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current()));
 
-  NativeNMethodBarrier barrier(nm);
-  barrier.set_value(value, bit_mask);
+  set_value(nm, value, bit_mask);
 }
 
 int BarrierSetNMethod::guard_value(nmethod* nm) {

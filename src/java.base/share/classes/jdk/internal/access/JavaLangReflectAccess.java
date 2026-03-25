@@ -64,6 +64,9 @@ public interface JavaLangReflectAccess {
     /** Tests if this is a trusted final field */
     public boolean isTrustedFinalField(Field f);
 
+    /** Tests if this is a null-restricted field */
+    public boolean isNullRestrictedField(Field f);
+
     /** Returns a new instance created by the given constructor with access check */
     public <T> T newInstance(Constructor<T> ctor, Object[] args, Class<?> caller)
         throws IllegalAccessException, InstantiationException, InvocationTargetException;

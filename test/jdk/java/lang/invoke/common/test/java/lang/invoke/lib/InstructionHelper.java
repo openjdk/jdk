@@ -25,15 +25,16 @@ package test.java.lang.invoke.lib;
 
 import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.TypeKind;
 
 import java.lang.constant.*;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import static java.lang.invoke.MethodType.fromMethodDescriptorString;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 public class InstructionHelper {
 
@@ -135,4 +136,27 @@ public class InstructionHelper {
         String classDescStr = sb.insert(sb.length() - 1, suffix).toString();
         return ClassDesc.ofDescriptor(classDescStr);
     }
+
+
+    public static MethodHandle buildMethodHandle(MethodHandles.Lookup l, String methodName, MethodType methodType, Consumer<? super CodeBuilder> builder) {
+        ClassDesc genClassDesc = classDesc(l.lookupClass(), "$Code_" + COUNT.getAndIncrement());
+        return buildMethodHandle(l, genClassDesc, methodName, methodType, builder);
+    }
+
+    public static MethodHandle buildMethodHandle(MethodHandles.Lookup l, ClassDesc classDesc, String methodName, MethodType methodType, Consumer<? super CodeBuilder> builder) {
+        try {
+            byte[] bytes = ClassFile.of().build(classDesc, classBuilder -> {
+                classBuilder.withMethod(methodName,
+                                        MethodTypeDesc.ofDescriptor(methodType.toMethodDescriptorString()),
+                                        ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC,
+                                        methodBuilder -> methodBuilder.withCode(builder));
+            });
+            Class<?> clazz = l.defineClass(bytes);
+            return l.findStatic(clazz, methodName, methodType);
+        } catch (Throwable t) {
+            t.printStackTrace();
+            throw new RuntimeException("Failed to buildMethodHandle: " + methodName + " type " + methodType);
+        }
+    }
+
 }

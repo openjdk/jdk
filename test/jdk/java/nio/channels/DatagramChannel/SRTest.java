@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,13 @@
 
 /* @test
  * @summary Test DatagramChannel's send and receive methods
- * @run junit/othervm SRTest
+ * @run testng/othervm/timeout=20 SRTest
  */
 
-import java.io.IOException;
-import java.io.PrintStream;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.SocketException;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.channels.DatagramChannel;
+import java.io.*;
+import java.net.*;
+import java.nio.*;
+import java.nio.channels.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
@@ -43,24 +37,22 @@ import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.*;
 
 public class SRTest {
 
-    static ExecutorService executorService;
+    ExecutorService executorService;
     static PrintStream log = System.err;
 
     static final String DATA_STRING = "hello";
 
-    @BeforeAll
-    public static void beforeClass() {
+    @BeforeClass
+    public void beforeClass() {
         executorService = Executors.newCachedThreadPool();
     }
 
-    @AfterAll
-    public static void afterClass() {
+    @AfterClass
+    public void afterClass() {
         executorService.shutdown();
     }
 

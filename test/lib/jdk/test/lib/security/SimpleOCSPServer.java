@@ -1009,6 +1009,7 @@ public class SimpleOCSPServer {
          * @throws CertificateException if certificates are found in the
          * OCSP request and they do not parse correctly.
          */
+        @SuppressWarnings("initialization")
         private LocalOcspRequest(byte[] requestBytes) throws IOException,
                 CertificateException {
             Objects.requireNonNull(requestBytes, "Received null input");
@@ -1203,6 +1204,7 @@ public class SimpleOCSPServer {
          * Inner class designed to handle the decoding/representation of
          * single requests within a {@code LocalOcspRequest} object.
          */
+        @SuppressWarnings("initialization")
         public class LocalSingleRequest {
             private final CertId cid;
             private Map<String, Extension> extensions = Collections.emptyMap();
@@ -1334,6 +1336,7 @@ public class SimpleOCSPServer {
          * @throws GeneralSecurityException if errors occur while obtaining
          * the signature object or any algorithm identifier parameters.
          */
+        @SuppressWarnings("initialization")
         public LocalOcspResponse(OCSPResponse.ResponseStatus respStat,
                 Map<CertId, CertStatusInfo> itemMap,
                 Map<String, Extension> reqExtensions)

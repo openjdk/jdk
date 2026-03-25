@@ -22,13 +22,13 @@
  */
 package test.astro;
 
+import static jaxp.library.JAXPTestUtilities.filenameToURL;
 import static test.astro.AstroConstants.DECXSL;
 import static test.astro.AstroConstants.RAURIXSL;
 import static test.astro.AstroConstants.STYPEXSL;
 import static test.astro.AstroConstants.TOPTEMPLINCXSL;
 
 import java.io.IOException;
-import java.nio.file.Path;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
@@ -94,8 +94,7 @@ public class TemplatesFilterFactoryImpl extends AbstractFilterFactory {
         // create the stylesheet input source
         InputSource xslSrc = new InputSource(xslFileName);
 
-        String xslUri = Path.of(xslFileName).toUri().toASCIIString();
-        xslSrc.setSystemId(xslUri);
+        xslSrc.setSystemId(filenameToURL(xslFileName));
         // hook up the templates handler as the xsl content handler
         xmlreader.setContentHandler(templatesHandler);
         // call parse on the xsl input source
@@ -114,8 +113,7 @@ public class TemplatesFilterFactoryImpl extends AbstractFilterFactory {
         public Source resolve(String href, String base) throws TransformerException {
             if ("http://astro.com/stylesheets/topleveltemplate".equals(href)) {
                 StreamSource ss = new StreamSource(TOPTEMPLINCXSL);
-                String xslUri = Path.of(TOPTEMPLINCXSL).toUri().toASCIIString();
-                ss.setSystemId(xslUri);
+                ss.setSystemId(filenameToURL(TOPTEMPLINCXSL));
                 return ss;
             } else {
                 return null;

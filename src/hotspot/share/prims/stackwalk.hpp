@@ -63,17 +63,17 @@ public:
 
   virtual const RegisterMap* reg_map()=0;
 
-  virtual void    fill_frame(int index, objArrayHandle  frames_array,
+  virtual void    fill_frame(int index, refArrayHandle frames_array,
                              const methodHandle& method, TRAPS)=0;
 
   oop continuation() { return _continuation(); }
   void set_continuation(Handle cont);
 
-  void setup_magic_on_entry(objArrayHandle frames_array);
-  bool check_magic(objArrayHandle frames_array);
-  bool cleanup_magic_on_exit(objArrayHandle frames_array);
+  void setup_magic_on_entry(refArrayHandle frames_array);
+  bool check_magic(refArrayHandle frames_array);
+  bool cleanup_magic_on_exit(refArrayHandle frames_array);
 
-  bool is_valid_in(Thread* thread, objArrayHandle frames_array) {
+  bool is_valid_in(Thread* thread, refArrayHandle frames_array) {
     return (_thread == thread && check_magic(frames_array));
   }
 
@@ -81,7 +81,7 @@ public:
     return (jlong) this;
   }
 
-  static BaseFrameStream* from_current(JavaThread* thread, jlong magic, objArrayHandle frames_array);
+  static BaseFrameStream* from_current(JavaThread* thread, jlong magic, refArrayHandle frames_array);
 };
 
 class JavaFrameStream : public BaseFrameStream {
@@ -101,7 +101,7 @@ public:
   int bci()        override { return _vfst.bci(); }
   oop cont()       override { return _vfst.continuation(); }
 
-  void fill_frame(int index, objArrayHandle  frames_array,
+  void fill_frame(int index, refArrayHandle frames_array,
                   const methodHandle& method, TRAPS) override;
 };
 
@@ -136,7 +136,7 @@ public:
   int bci()        override { return _jvf->bci(); }
   oop cont()       override { return continuation() != nullptr ? continuation(): ContinuationEntry::cont_oop_or_null(_cont_entry, _map->thread()); }
 
-  void fill_frame(int index, objArrayHandle  frames_array,
+  void fill_frame(int index, refArrayHandle  frames_array,
                   const methodHandle& method, TRAPS) override;
 };
 
@@ -144,7 +144,7 @@ class StackWalk : public AllStatic {
 private:
   static int fill_in_frames(jint mode, BaseFrameStream& stream,
                             int buffer_size, int start_index,
-                            objArrayHandle frames_array,
+                            refArrayHandle frames_array,
                             int& end_index, TRAPS);
 
   static inline bool skip_hidden_frames(jint mode) {
@@ -160,18 +160,18 @@ public:
   }
 
   static oop walk(Handle stackStream, jint mode, int skip_frames, Handle cont_scope, Handle cont,
-                  int buffer_size, int start_index, objArrayHandle frames_array,
+                  int buffer_size, int start_index, refArrayHandle frames_array,
                   TRAPS);
 
   static oop fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
                              jint mode, int skip_frames, int buffer_size,
-                             int start_index, objArrayHandle frames_array, TRAPS);
+                             int start_index, refArrayHandle frames_array, TRAPS);
 
   static jint fetchNextBatch(Handle stackStream, jint mode, jlong magic,
                              int last_batch_count, int buffer_size, int start_index,
-                             objArrayHandle frames_array, TRAPS);
+                             refArrayHandle frames_array, TRAPS);
 
-  static void setContinuation(Handle stackStream, jlong magic, objArrayHandle frames_array,
+  static void setContinuation(Handle stackStream, jlong magic, refArrayHandle frames_array,
                               Handle cont, TRAPS);
 };
 #endif // SHARE_PRIMS_STACKWALK_HPP

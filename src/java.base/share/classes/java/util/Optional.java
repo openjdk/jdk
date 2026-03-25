@@ -46,10 +46,18 @@ import java.util.stream.Stream;
  * action if a value is present).
  *
  * <p>This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; programmers should treat instances that are
- * {@linkplain #equals(Object) equal} as interchangeable and should not
- * use instances for synchronization, or unpredictable behavior may
- * occur. For example, in a future release, synchronization may fail.
+ * class; programmers should treat instances that are {@linkplain #equals(Object) equal}
+ * as interchangeable and should not use instances for synchronization, mutexes, or
+ * with {@linkplain java.lang.ref.Reference object references}.
+ *
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          When preview features are enabled, {@code Optional} is a {@linkplain Class#isValue value class}.
+ *          Use of value class instances for synchronization, mutexes, or with
+ *          {@linkplain java.lang.ref.Reference object references} result in
+ *          {@link IdentityException}.
+ *      </div>
+ * </div>
  *
  * @apiNote
  * {@code Optional} is primarily intended for use as a method return type where
@@ -61,6 +69,7 @@ import java.util.stream.Stream;
  * @param <T> the type of value
  * @since 1.8
  */
+@jdk.internal.MigratedValueClass
 @jdk.internal.ValueBased
 @TrustFinalFields
 public final class Optional<T> {

@@ -51,6 +51,7 @@ class MachPrologNode;
 class MachReturnNode;
 class MachSafePointNode;
 class MachSpillCopyNode;
+class MachVEPNode;
 class Matcher;
 class PhaseRegAlloc;
 class RegMask;
@@ -510,13 +511,42 @@ public:
   virtual uint size_of() const { return sizeof(MachConstantNode); }
 };
 
+//------------------------------MachVEPNode-----------------------------------
+// Machine Inline Type Entry Point Node
+class MachVEPNode : public MachIdealNode {
+public:
+  Label* _verified_entry;
+
+  MachVEPNode(Label* verified_entry, bool verified, bool receiver_only) :
+    _verified_entry(verified_entry),
+    _verified(verified),
+    _receiver_only(receiver_only) {
+    init_class_id(Class_MachVEP);
+  }
+  virtual bool cmp(const Node &n) const {
+    return (_verified_entry == ((MachVEPNode&)n)._verified_entry) &&
+           (_verified == ((MachVEPNode&)n)._verified) &&
+           (_receiver_only == ((MachVEPNode&)n)._receiver_only) &&
+           MachIdealNode::cmp(n);
+  }
+  virtual uint size_of() const { return sizeof(*this); }
+  virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc* ra_) const;
+
+#ifndef PRODUCT
+  virtual const char* Name() const { return "InlineType Entry-Point"; }
+  virtual void format(PhaseRegAlloc*, outputStream* st) const;
+#endif
+private:
+  bool   _verified;
+  bool   _receiver_only;
+};
+
 //------------------------------MachUEPNode-----------------------------------
 // Machine Unvalidated Entry Point Node
 class MachUEPNode : public MachIdealNode {
 public:
   MachUEPNode( ) {}
   virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const;
-  virtual uint size(PhaseRegAlloc *ra_) const;
 
 #ifndef PRODUCT
   virtual const char *Name() const { return "Unvalidated-Entry-Point"; }
@@ -528,9 +558,16 @@ public:
 // Machine function Prolog Node
 class MachPrologNode : public MachIdealNode {
 public:
-  MachPrologNode( ) {}
+  Label* _verified_entry;
+
+  MachPrologNode(Label* verified_entry) : _verified_entry(verified_entry) {
+    init_class_id(Class_MachProlog);
+  }
+  virtual bool cmp(const Node &n) const {
+    return (_verified_entry == ((MachPrologNode&)n)._verified_entry) && MachIdealNode::cmp(n);
+  }
+  virtual uint size_of() const { return sizeof(*this); }
   virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const;
-  virtual uint size(PhaseRegAlloc *ra_) const;
   virtual int reloc() const;
 
 #ifndef PRODUCT
@@ -547,7 +584,6 @@ private:
 public:
   MachEpilogNode(bool do_poll = false) : _do_polling(do_poll) {}
   virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const;
-  virtual uint size(PhaseRegAlloc *ra_) const;
   virtual int reloc() const;
   virtual const Pipeline *pipeline() const;
   virtual uint size_of() const { return sizeof(MachEpilogNode); }
@@ -939,10 +975,11 @@ public:
   virtual const RegMask &in_RegMask(uint) const;
   virtual int ret_addr_offset() { return 0; }
 
-  NOT_LP64(bool return_value_is_used() const;)
+  bool return_value_is_used() const;
 
   // Similar to cousin class CallNode::returns_pointer
   bool returns_pointer() const;
+  bool returns_scalarized() const;
 
   bool guaranteed_safepoint() const { return _guaranteed_safepoint; }
 

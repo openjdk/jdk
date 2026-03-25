@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2011, 2024, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -45,10 +45,7 @@ class ExplicitHugePageSupport {
 
   // All supported hugepage sizes (sizes for which entries exist
   // in /sys/kernel/mm/hugepages/hugepage-xxx)
-  os::PageSizes _os_supported;
-
-  // Above pages filtered for where the contents of file nr_hugepages was larger than zero
-  os::PageSizes _pre_allocated;
+  os::PageSizes _pagesizes;
 
   // Contains the default hugepage. The "default hugepage size" is the one that
   // - is marked in /proc/meminfo as "Hugepagesize"
@@ -63,8 +60,7 @@ public:
 
   void scan_os();
 
-  os::PageSizes os_supported() const;
-  os::PageSizes pre_allocated() const;
+  os::PageSizes pagesizes() const;
   size_t default_hugepage_size() const;
   void print_on(outputStream* os);
 

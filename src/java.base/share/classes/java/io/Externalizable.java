@@ -51,9 +51,15 @@ import java.io.ObjectInput;
  * constructor, then the readExternal method called.  Serializable
  * objects are restored by reading them from an ObjectInputStream.<br>
  *
- * An Externalizable instance can designate a substitution object via
+ * An Externalizable object can designate a substitution object via
  * the writeReplace and readResolve methods documented in the Serializable
- * interface.<br>
+ * interface. To control the serialized form of Records and Externalizable value classes
+ * the record or class uses {@link Serializable} {@code writeReplace}
+ * to delegate to another serializable or externalizable class and that delegate
+ * uses {@code readResolve} to supply the replacement on deserialization.
+ * Value classes implementing {@link Externalizable}
+ * and not using {@code writeReplace} are not supported.
+ * <br>
  *
  * @see java.io.ObjectOutputStream
  * @see java.io.ObjectInputStream

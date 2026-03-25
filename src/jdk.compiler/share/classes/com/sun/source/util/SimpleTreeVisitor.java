@@ -236,9 +236,7 @@ public class SimpleTreeVisitor <R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc}
-     *
-     * @implSpec This implementation calls {@code defaultAction}.
+     * {@inheritDoc} This implementation calls {@code defaultAction}.
      *
      * @param node {@inheritDoc}
      * @param p {@inheritDoc}

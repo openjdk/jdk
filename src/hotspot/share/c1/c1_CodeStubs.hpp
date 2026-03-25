@@ -228,6 +228,83 @@ class ImplicitNullCheckStub: public CodeStub {
 };
 
 
+class LoadFlattenedArrayStub: public CodeStub {
+ private:
+  LIR_Opr          _array;
+  LIR_Opr          _index;
+  LIR_Opr          _result;
+  LIR_Opr          _scratch_reg;
+  CodeEmitInfo*    _info;
+
+ public:
+  LoadFlattenedArrayStub(LIR_Opr array, LIR_Opr index, LIR_Opr result, CodeEmitInfo* info);
+  virtual void emit_code(LIR_Assembler* e);
+  virtual CodeEmitInfo* info() const             { return _info; }
+  virtual void visit(LIR_OpVisitState* visitor) {
+    visitor->do_slow_case(_info);
+    visitor->do_input(_array);
+    visitor->do_input(_index);
+    visitor->do_output(_result);
+    if (_scratch_reg != LIR_OprFact::illegalOpr) {
+      visitor->do_temp(_scratch_reg);
+    }
+  }
+
+#ifndef PRODUCT
+  virtual void print_name(outputStream* out) const { out->print("LoadFlattenedArrayStub"); }
+#endif // PRODUCT
+};
+
+
+class StoreFlattenedArrayStub: public CodeStub {
+ private:
+  LIR_Opr          _array;
+  LIR_Opr          _index;
+  LIR_Opr          _value;
+  LIR_Opr          _scratch_reg;
+  CodeEmitInfo*    _info;
+
+ public:
+  StoreFlattenedArrayStub(LIR_Opr array, LIR_Opr index, LIR_Opr value, CodeEmitInfo* info);
+  virtual void emit_code(LIR_Assembler* e);
+  virtual CodeEmitInfo* info() const             { return _info; }
+  virtual void visit(LIR_OpVisitState* visitor) {
+    visitor->do_slow_case(_info);
+    visitor->do_input(_array);
+    visitor->do_input(_index);
+    visitor->do_input(_value);
+    if (_scratch_reg != LIR_OprFact::illegalOpr) {
+      visitor->do_temp(_scratch_reg);
+    }
+  }
+#ifndef PRODUCT
+  virtual void print_name(outputStream* out) const { out->print("StoreFlattenedArrayStub"); }
+#endif // PRODUCT
+};
+
+class SubstitutabilityCheckStub: public CodeStub {
+ private:
+  LIR_Opr          _left;
+  LIR_Opr          _right;
+  LIR_Opr          _scratch_reg;
+  CodeEmitInfo*    _info;
+ public:
+  SubstitutabilityCheckStub(LIR_Opr left, LIR_Opr right, CodeEmitInfo* info);
+  virtual void emit_code(LIR_Assembler* e);
+  virtual CodeEmitInfo* info() const             { return _info; }
+  virtual void visit(LIR_OpVisitState* visitor) {
+    visitor->do_slow_case(_info);
+    visitor->do_input(_left);
+    visitor->do_input(_right);
+    if (_scratch_reg != LIR_OprFact::illegalOpr) {
+      visitor->do_temp(_scratch_reg);
+    }
+  }
+#ifndef PRODUCT
+  virtual void print_name(outputStream* out) const { out->print("SubstitutabilityCheckStub"); }
+#endif // PRODUCT
+};
+
 class NewInstanceStub: public CodeStub {
  private:
   ciInstanceKlass* _klass;
@@ -280,9 +357,9 @@ class NewObjectArrayStub: public CodeStub {
   LIR_Opr        _length;
   LIR_Opr        _result;
   CodeEmitInfo*  _info;
-
+  bool           _is_null_free;
  public:
-  NewObjectArrayStub(LIR_Opr klass_reg, LIR_Opr length, LIR_Opr result, CodeEmitInfo* info);
+  NewObjectArrayStub(LIR_Opr klass_reg, LIR_Opr length, LIR_Opr result, CodeEmitInfo* info, bool is_null_free);
   virtual void emit_code(LIR_Assembler* e);
   virtual CodeEmitInfo* info() const             { return _info; }
   virtual void visit(LIR_OpVisitState* visitor) {
@@ -317,11 +394,19 @@ class MonitorAccessStub: public CodeStub {
 class MonitorEnterStub: public MonitorAccessStub {
  private:
   CodeEmitInfo* _info;
+  CodeStub* _throw_ie_stub;
+  LIR_Opr _scratch_reg;
 
  public:
-  MonitorEnterStub(LIR_Opr obj_reg, LIR_Opr lock_reg, CodeEmitInfo* info)
+  MonitorEnterStub(LIR_Opr obj_reg, LIR_Opr lock_reg, CodeEmitInfo* info,
+                   CodeStub* throw_ie_stub = nullptr, LIR_Opr scratch_reg = LIR_OprFact::illegalOpr)
     : MonitorAccessStub(obj_reg, lock_reg) {
     _info = new CodeEmitInfo(info);
+    _scratch_reg = scratch_reg;
+    _throw_ie_stub = throw_ie_stub;
+    if (_throw_ie_stub != nullptr) {
+      assert(_scratch_reg != LIR_OprFact::illegalOpr, "must be");
+    }
     FrameMap* f = Compilation::current()->frame_map();
     f->update_reserved_argument_area_size(2 * BytesPerWord);
   }
@@ -331,6 +416,9 @@ class MonitorEnterStub: public MonitorAccessStub {
   virtual void visit(LIR_OpVisitState* visitor) {
     visitor->do_input(_obj_reg);
     visitor->do_input(_lock_reg);
+    if (_scratch_reg != LIR_OprFact::illegalOpr) {
+      visitor->do_temp(_scratch_reg);
+    }
     visitor->do_slow_case(_info);
   }
 #ifndef PRODUCT

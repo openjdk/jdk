@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,8 @@ protected:
 
   void print_impl(outputStream* st);
 
-  ciConstant field_value_impl(BasicType field_btype, int offset);
+  ciConstant field_value_impl(ciField* field);
+  ciConstant sub_field_value(ciField* field);
 
 public:
   // If this object is a java mirror, return the corresponding type.

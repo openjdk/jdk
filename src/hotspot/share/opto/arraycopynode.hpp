@@ -100,27 +100,29 @@ private:
 
   intptr_t get_length_if_constant(PhaseGVN *phase) const;
   int get_count(PhaseGVN *phase) const;
-  static const TypePtr* get_address_type(PhaseGVN* phase, const TypePtr* atp, Node* n);
+  static const TypeAryPtr* get_address_type(PhaseGVN* phase, const TypePtr* atp, Node* n);
 
   Node* try_clone_instance(PhaseGVN *phase, bool can_reshape, int count);
   bool prepare_array_copy(PhaseGVN *phase, bool can_reshape,
                           Node*& adr_src, Node*& base_src, Node*& adr_dest, Node*& base_dest,
                           BasicType& copy_type, const Type*& value_type, bool& disjoint_bases);
-  void array_copy_test_overlap(PhaseGVN *phase, bool can_reshape,
+  void array_copy_test_overlap(GraphKit& kit,
                                bool disjoint_bases, int count,
-                               Node*& forward_ctl, Node*& backward_ctl);
-  Node* array_copy_forward(PhaseGVN *phase, bool can_reshape, Node*& ctl,
-                           Node* mem,
-                           const TypePtr* atp_src, const TypePtr* atp_dest,
+                               Node*& backward_ctl);
+  void array_copy_forward(GraphKit& kit, bool can_reshape,
+                          const TypeAryPtr* atp_src, const TypeAryPtr* atp_dest,
+                          Node* adr_src, Node* base_src, Node* adr_dest, Node* base_dest,
+                          BasicType copy_type, const Type* value_type, int count);
+  void array_copy_backward(GraphKit& kit, bool can_reshape,
+                           const TypeAryPtr* atp_src, const TypeAryPtr* atp_dest,
                            Node* adr_src, Node* base_src, Node* adr_dest, Node* base_dest,
                            BasicType copy_type, const Type* value_type, int count);
-  Node* array_copy_backward(PhaseGVN *phase, bool can_reshape, Node*& ctl,
-                            Node* mem,
-                            const TypePtr* atp_src, const TypePtr* atp_dest,
-                            Node* adr_src, Node* base_src, Node* adr_dest, Node* base_dest,
-                            BasicType copy_type, const Type* value_type, int count);
   bool finish_transform(PhaseGVN *phase, bool can_reshape,
                         Node* ctl, Node *mem);
+  void copy(GraphKit& kit, const TypeAryPtr* atp_src, const TypeAryPtr* atp_dest, int i,
+            Node* base_src, Node* base_dest, Node* adr_src, Node* adr_dest,
+            BasicType copy_type, const Type* value_type);
+
   static bool may_modify_helper(const TypeOopPtr* t_oop, Node* n, PhaseValues* phase, ArrayCopyNode*& ac);
 public:
   static Node* load(BarrierSetC2* bs, PhaseGVN *phase, Node*& ctl, MergeMemNode* mem, Node* addr, const TypePtr* adr_type, const Type *type, BasicType bt);

@@ -48,6 +48,7 @@ public class SystemdRunOptions {
      *
      * @return Default docker run options
      */
+    @SuppressWarnings("initialization")
     public SystemdRunOptions(String classToRun, String... javaOpts) {
         this.classToRun = classToRun;
         Collections.addAll(this.javaOpts, javaOpts);

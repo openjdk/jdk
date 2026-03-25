@@ -28,6 +28,7 @@
  * @requires vm.jvmti &
  *           vm.gc != "Epsilon" &
  *           vm.flavor == "server" &
+ *           !vm.emulatedClient &
  *           (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4) &
  *           vm.compMode == "Xmixed"
  * @library /test/lib /test/hotspot/jtreg

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6529795
+ * @bug 6529795 8336669
  * @summary next() does not change iterator state if throws NoSuchElementException
  * @author Martin Buchholz
  */
@@ -99,7 +99,7 @@ public class IteratorAtEnd {
     static void testMap(Map m) {
         try {
             for (int i = 0; i < 3*SIZE; i++)
-                m.put(i, i);
+                m.put("BASE-" + i, i);
             test(m.values());
             test(m.keySet());
             test(m.entrySet());

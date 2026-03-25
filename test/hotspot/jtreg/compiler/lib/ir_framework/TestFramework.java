@@ -655,6 +655,18 @@ public class TestFramework {
     }
 
     /**
+     * Checks if deopt of {@code m} is stable at the specified {@code compLevel}.
+     *
+     * @param m the method to be checked.
+     * @param compLevel the compilation level.
+     * @return {@code true} if deopt of {@code m} is stable at {@code compLevel};
+     *         {@code false} otherwise.
+     */
+    public static boolean isStableDeopt(Method m, CompLevel compLevel) {
+        return TestVM.isStableDeopt(m, compLevel);
+    }
+
+    /**
      * Returns a different boolean each time this method is invoked (switching between {@code false} and {@code true}).
      * The very first invocation returns {@code false}. Note that this method could be used by different tests and
      * thus the first invocation for a test could be {@code true} or {@code false} depending on how many times

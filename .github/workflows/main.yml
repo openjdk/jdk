@@ -169,6 +169,12 @@ jobs:
                 echo 'true'
                 return
               fi
+
+              # ...same for project branch
+              if [[ $BRANCH == "lworld" ]]; then
+                echo 'true'
+                return
+              fi
             fi
 
             echo 'false'

@@ -351,7 +351,6 @@ writeFieldValue(JNIEnv *env, PacketOutputStream *out, jobject object,
     /*
      * For primitive types, the type key is bounced back as is.
      */
-
     (void)outStream_writeByte(out, typeKey);
 
     switch (typeKey) {

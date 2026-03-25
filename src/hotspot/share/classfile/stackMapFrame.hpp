@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,21 @@ enum {
 };
 
 class StackMapFrame : public ResourceObj {
+ public:
+  static unsigned int nameandsig_hash(NameAndSig const& field) {
+    Symbol* name = field._name;
+    return (unsigned int) name->identity_hash();
+  }
+
+  static inline bool nameandsig_equals(NameAndSig const& f1, NameAndSig const& f2) {
+    return f1._name == f2._name &&
+           f1._signature == f2._signature;
+  }
+
+  // Maps a strict field's name and signature to whether or not it was initialized
+  typedef HashTable<NameAndSig, bool, 17,
+                    AnyObj::RESOURCE_AREA, mtInternal,
+                    nameandsig_hash, nameandsig_equals> AssertUnsetFieldTable;
  private:
   int32_t _offset;
 
@@ -59,6 +74,8 @@ class StackMapFrame : public ResourceObj {
   u1 _flags;
   VerificationType* _locals; // local variable type array
   VerificationType* _stack;  // operand stack type array
+
+  AssertUnsetFieldTable* _assert_unset_fields; // List of unsatisfied strict fields in the basic block
 
   ClassVerifier* _verifier;  // the verifier verifying this method
 
@@ -85,6 +102,7 @@ class StackMapFrame : public ResourceObj {
         _stack[i] = VerificationType::bogus_type();
       }
     }
+    _assert_unset_fields = cp._assert_unset_fields;
     _verifier = nullptr;
   }
 
@@ -94,7 +112,7 @@ class StackMapFrame : public ResourceObj {
   // This constructor is used by the type checker to allocate frames
   // in type state, which have _max_locals and _max_stack array elements
   // in _locals and _stack.
-  StackMapFrame(u2 max_locals, u2 max_stack, ClassVerifier* verifier);
+  StackMapFrame(u2 max_locals, u2 max_stack, AssertUnsetFieldTable* initial_strict_fields, ClassVerifier* verifier);
 
   // This constructor is used to initialize stackmap frames in stackmap table,
   // which have _locals_size and _stack_size array elements in _locals and _stack.
@@ -106,6 +124,7 @@ class StackMapFrame : public ResourceObj {
                 u2 max_stack,
                 VerificationType* locals,
                 VerificationType* stack,
+                AssertUnsetFieldTable* assert_unset_fields,
                 ClassVerifier* v) : _offset(offset),
                                     _locals_size(locals_size),
                                     _stack_size(stack_size),
@@ -113,6 +132,7 @@ class StackMapFrame : public ResourceObj {
                                     _max_locals(max_locals),
                                     _max_stack(max_stack),  _flags(flags),
                                     _locals(locals), _stack(stack),
+                                    _assert_unset_fields(assert_unset_fields),
                                     _verifier(v) { }
 
   static StackMapFrame* copy(StackMapFrame* smf) {
@@ -135,6 +155,69 @@ class StackMapFrame : public ResourceObj {
   inline u2 max_locals() const                { return _max_locals; }
   inline u2 max_stack() const                 { return _max_stack; }
   inline bool flag_this_uninit() const        { return _flags & FLAG_THIS_UNINIT; }
+
+  AssertUnsetFieldTable* assert_unset_fields() const {
+    return _assert_unset_fields;
+  }
+
+  void set_assert_unset_fields(AssertUnsetFieldTable* table) {
+    _assert_unset_fields = table;
+  }
+
+  // Called when verifying putfields to mark strict instance fields as satisfied
+  bool satisfy_unset_field(Symbol* name, Symbol* signature) {
+    NameAndSig dummy_field(name, signature);
+
+    if (_assert_unset_fields->contains(dummy_field)) {
+      _assert_unset_fields->put(dummy_field, true);
+      return true;
+    }
+    return false;
+  }
+
+  // Verify that all strict fields have been initialized
+  // Strict fields must be initialized before the super constructor is called
+  bool verify_unset_fields_satisfied() {
+    bool all_satisfied = true;
+    auto check_satisfied = [&] (const NameAndSig& key, const bool& value) {
+      all_satisfied &= value;
+    };
+    _assert_unset_fields->iterate_all(check_satisfied);
+    return all_satisfied;
+  }
+
+  // Merge incoming unset strict fields from StackMapTable with
+  // initial strict instance fields
+  AssertUnsetFieldTable* merge_unset_fields(AssertUnsetFieldTable* new_fields) {
+    auto merge_satisfied = [&] (const NameAndSig& key, const bool& value) {
+      if (!new_fields->contains(key)) {
+        new_fields->put(key, true);
+      }
+    };
+    _assert_unset_fields->iterate_all(merge_satisfied);
+    return new_fields;
+  }
+
+  // Verify that strict fields are compatible between the current frame and the successor
+  // Called during merging of frames
+  bool verify_unset_fields_compatibility(AssertUnsetFieldTable* target_table) const {
+    bool compatible = true;
+    auto is_unset = [&] (const NameAndSig& key, const bool& satisfied) {
+      // Successor must have same (or more) unsatisfied debts as current frame.
+      if (!satisfied) {
+        bool* target_satisfied = target_table->get(key);
+        guarantee(target_satisfied != nullptr, "Must be present");
+        if (*target_satisfied == true) {
+          compatible = false;
+        }
+      }
+    };
+    _assert_unset_fields->iterate_all(is_unset);
+    return compatible;
+  }
+
+  void unsatisfied_strict_fields_error(InstanceKlass* ik, int bci);
+  static void print_strict_fields(AssertUnsetFieldTable* table);
 
   // Set locals and stack types to bogus
   inline void reset() {

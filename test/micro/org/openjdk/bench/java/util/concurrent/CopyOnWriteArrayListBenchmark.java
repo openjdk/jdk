@@ -67,11 +67,13 @@ public class CopyOnWriteArrayListBenchmark {
     private Object[] oneItemArray = new Object[] { "" };
 
     private CopyOnWriteArrayList<?> emptyInstance = new CopyOnWriteArrayList<>();
+    @SuppressWarnings("initialization")
     private CopyOnWriteArrayList<?> oneItemInstance = new CopyOnWriteArrayList<>(oneItemArray);
 
     private byte[] emptyInstanceBytes;
     private byte[] oneInstanceBytes;
 
+    @SuppressWarnings("initialization")
     public CopyOnWriteArrayListBenchmark() {
         try {
             emptyInstanceBytes = getSerializedBytes(emptyInstance);

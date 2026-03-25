@@ -1,0 +1,80 @@
+/*
+ * Copyright (c) 2025, and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+#ifndef SHARE_OOPS_REFARRAYOOP_INLINE_HPP
+#define SHARE_OOPS_REFARRAYOOP_INLINE_HPP
+
+#include "oops/refArrayOop.hpp"
+
+#include "oops/access.hpp"
+#include "oops/arrayOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/globals.hpp"
+
+inline RefArrayKlass* refArrayOopDesc::klass() const {
+  Klass* k = oopDesc::klass();
+  return RefArrayKlass::cast(k);
+}
+
+inline HeapWord *refArrayOopDesc::base() const {
+  return (HeapWord *)arrayOopDesc::base(T_OBJECT);
+}
+
+template <class T> T *refArrayOopDesc::obj_at_addr(int index) const {
+  assert(is_within_bounds(index), "index %d out of bounds %d", index, length());
+  return &((T *)base())[index];
+}
+
+inline oop refArrayOopDesc::obj_at(int index) const {
+  assert(is_within_bounds(index), "index %d out of bounds %d", index, length());
+  ptrdiff_t offset = UseCompressedOops ? obj_at_offset<narrowOop>(index)
+                                       : obj_at_offset<oop>(index);
+  return HeapAccess<IS_ARRAY>::oop_load_at(as_oop(), offset);
+}
+
+inline void refArrayOopDesc::obj_at_put(int index, oop value) {
+  assert(is_within_bounds(index), "index %d out of bounds %d", index, length());
+  assert(!is_null_free_array() || value != nullptr, "Trying to write null to a null free array");
+  ptrdiff_t offset = UseCompressedOops ? obj_at_offset<narrowOop>(index)
+                                       : obj_at_offset<oop>(index);
+  HeapAccess<IS_ARRAY>::oop_store_at(as_oop(), offset, value);
+}
+
+inline void refArrayOopDesc::obj_at_put(int index, oop value, TRAPS) {
+  if (is_null_free_array() && value == nullptr) {
+    THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Cannot store null in a null-restricted array");
+  }
+  obj_at_put(index, value);
+}
+
+template <typename OopClosureType>
+void refArrayOopDesc::oop_iterate_elements_range(OopClosureType* blk, int start, int end) {
+  if (UseCompressedOops) {
+    klass()->oop_oop_iterate_elements_range<narrowOop>(this, blk, start, end);
+  } else {
+    klass()->oop_oop_iterate_elements_range<oop>(this, blk, start, end);
+  }
+}
+
+#endif // SHARE_OOPS_REFARRAYOOP_INLINE_HPP

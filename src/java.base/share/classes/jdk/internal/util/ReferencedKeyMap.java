@@ -49,6 +49,7 @@ import jdk.internal.misc.CDS;
  * remove entries automatically when the key is garbage collected. This is
  * accomplished by using a backing map where the keys are either a
  * {@link WeakReference} or a {@link SoftReference}.
+ * Keys must be {@linkplain Class#isIdentity() identity objects.}
  * <p>
  * To create a {@link ReferencedKeyMap} the user must provide a {@link Supplier}
  * of the backing map and whether {@link WeakReference} or

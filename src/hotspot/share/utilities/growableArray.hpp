@@ -27,6 +27,8 @@
 
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
+#include "oops/array.hpp"
+#include "oops/oop.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
@@ -96,6 +98,7 @@ public:
 };
 
 template <typename E> class GrowableArrayIterator;
+template <typename E, typename UnaryPredicate> class GrowableArrayFilterIterator;
 
 // Extends GrowableArrayBase with a typed data array.
 //
@@ -423,6 +426,12 @@ public:
   }
 
   void appendAll(const GrowableArrayView<E>* l) {
+    for (int i = 0; i < l->length(); i++) {
+      this->at_put_grow(this->_len, l->at(i), E());
+    }
+  }
+
+  void appendAll(const Array<E>* l) {
     for (int i = 0; i < l->length(); i++) {
       this->at_put_grow(this->_len, l->at(i), E());
     }
@@ -876,6 +885,7 @@ public:
 template <typename E>
 class GrowableArrayIterator : public StackObj {
   friend class GrowableArrayView<E>;
+  template <typename F, typename UnaryPredicate> friend class GrowableArrayFilterIterator;
 
  private:
   const GrowableArrayView<E>* _array; // GrowableArray we iterate over
@@ -899,6 +909,60 @@ class GrowableArrayIterator : public StackObj {
   bool operator!=(const GrowableArrayIterator& rhs)  {
     assert(_array == rhs._array, "iterator belongs to different array");
     return _position != rhs._position;
+  }
+};
+
+// Custom STL-style iterator to iterate over elements of a GrowableArray that satisfy a given predicate
+template <typename E, class UnaryPredicate>
+class GrowableArrayFilterIterator : public StackObj {
+  friend class GrowableArrayView<E>;
+
+ private:
+  const GrowableArrayView<E>* _array; // GrowableArray we iterate over
+  int _position;                      // Current position in the GrowableArray
+  UnaryPredicate _predicate;          // Unary predicate the elements of the GrowableArray should satisfy
+
+ public:
+  GrowableArrayFilterIterator(const GrowableArray<E>* array, UnaryPredicate filter_predicate) :
+      _array(array), _position(0), _predicate(filter_predicate) {
+    // Advance to first element satisfying the predicate
+    while(!at_end() && !_predicate(_array->at(_position))) {
+      ++_position;
+    }
+  }
+
+  GrowableArrayFilterIterator<E, UnaryPredicate>& operator++() {
+    do {
+      // Advance to next element satisfying the predicate
+      ++_position;
+    } while(!at_end() && !_predicate(_array->at(_position)));
+    return *this;
+  }
+
+  E operator*() { return _array->at(_position); }
+
+  bool operator==(const GrowableArrayIterator<E>& rhs)  {
+    assert(_array == rhs._array, "iterator belongs to different array");
+    return _position == rhs._position;
+  }
+
+  bool operator!=(const GrowableArrayIterator<E>& rhs)  {
+    assert(_array == rhs._array, "iterator belongs to different array");
+    return _position != rhs._position;
+  }
+
+  bool operator==(const GrowableArrayFilterIterator<E, UnaryPredicate>& rhs)  {
+    assert(_array == rhs._array, "iterator belongs to different array");
+    return _position == rhs._position;
+  }
+
+  bool operator!=(const GrowableArrayFilterIterator<E, UnaryPredicate>& rhs)  {
+    assert(_array == rhs._array, "iterator belongs to different array");
+    return _position != rhs._position;
+  }
+
+  bool at_end() const {
+    return _array == nullptr || _position == _array->end()._position;
   }
 };
 

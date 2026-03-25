@@ -1,0 +1,38 @@
+SuperInitFails.java:106:14: compiler.err.cant.ref.before.ctor.called: this
+SuperInitFails.java:110:20: compiler.err.not.encl.class: java.lang.Object
+SuperInitFails.java:121:22: compiler.err.call.must.only.appear.in.ctor
+SuperInitFails.java:135:9: compiler.err.non.canonical.constructor.invoke.another.constructor: SuperInitFails.Record1
+SuperInitFails.java:140:9: compiler.err.non.canonical.constructor.invoke.another.constructor: SuperInitFails.Record2
+SuperInitFails.java:157:50: compiler.err.cant.ref.before.ctor.called: x
+SuperInitFails.java:161:15: compiler.err.cant.ref.before.ctor.called: SuperInitFails
+SuperInitFails.java:213:33: compiler.err.ctor.calls.not.allowed.here
+SuperInitFails.java:253:13: compiler.err.cant.ref.before.ctor.called: x
+SuperInitFails.java:266:18: compiler.err.cant.ref.before.ctor.called: x
+SuperInitFails.java:305:26: compiler.err.not.encl.class: SuperInitFails.Inner11.Inner11_1
+SuperInitFails.java:35:13: compiler.err.call.must.only.appear.in.ctor
+SuperInitFails.java:39:14: compiler.err.call.must.only.appear.in.ctor
+SuperInitFails.java:43:14: compiler.err.call.must.only.appear.in.ctor
+SuperInitFails.java:47:13: compiler.err.call.must.only.appear.in.ctor
+SuperInitFails.java:51:33: compiler.err.call.must.only.appear.in.ctor
+SuperInitFails.java:55:32: compiler.err.call.must.only.appear.in.ctor
+SuperInitFails.java:85:18: compiler.err.ctor.calls.not.allowed.here
+SuperInitFails.java:152:18: compiler.err.call.must.only.appear.in.ctor
+SuperInitFails.java:59:9: compiler.warn.would.not.be.allowed.in.prologue: hashCode()
+SuperInitFails.java:64:13: compiler.warn.would.not.be.allowed.in.prologue: hashCode()
+SuperInitFails.java:69:14: compiler.warn.would.not.be.allowed.in.prologue: hashCode()
+SuperInitFails.java:74:28: compiler.warn.would.not.be.allowed.in.prologue: hashCode()
+SuperInitFails.java:79:29: compiler.warn.would.not.be.allowed.in.prologue: hashCode()
+SuperInitFails.java:101:33: compiler.warn.would.not.be.allowed.in.prologue: this
+SuperInitFails.java:114:23: compiler.warn.would.not.be.allowed.in.prologue: spliterator()
+SuperInitFails.java:127:9: compiler.warn.would.not.be.allowed.in.prologue: SuperInitFails
+SuperInitFails.java:170:13: compiler.warn.would.not.be.allowed.in.prologue: x
+SuperInitFails.java:174:17: compiler.warn.would.not.be.allowed.in.prologue: x
+SuperInitFails.java:178:24: compiler.warn.would.not.be.allowed.in.prologue: x
+SuperInitFails.java:182:18: compiler.warn.would.not.be.allowed.in.prologue: x
+SuperInitFails.java:188:32: compiler.warn.would.not.be.allowed.in.prologue: x
+SuperInitFails.java:231:41: compiler.warn.would.not.be.allowed.in.prologue: x
+SuperInitFails.java:232:16: compiler.warn.would.not.be.allowed.in.prologue: x
+SuperInitFails.java:241:35: compiler.warn.would.not.be.allowed.in.prologue: this
+SuperInitFails.java:282:50: compiler.warn.would.not.be.allowed.in.prologue: check
+SuperInitFails.java:283:39: compiler.warn.would.not.be.allowed.in.prologue: check
+SuperInitFails.java:293:25: compiler.warn.would.not.be.allowed.in.prologue: testMethod()

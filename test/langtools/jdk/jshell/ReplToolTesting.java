@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -914,7 +914,7 @@ public class ReplToolTesting {
         }
     }
 
-    public static class MemoryPreferences extends AbstractPreferences {
+    public static final class MemoryPreferences extends AbstractPreferences {
 
         private final Map<String, String> values = new HashMap<>();
         private final Map<String, MemoryPreferences> nodes = new HashMap<>();
@@ -943,17 +943,17 @@ public class ReplToolTesting {
         }
 
         @Override
-        protected void removeNodeSpi() {
+        protected void removeNodeSpi() throws BackingStoreException {
             ((MemoryPreferences) parent()).nodes.remove(name());
         }
 
         @Override
-        protected String[] keysSpi() {
+        protected String[] keysSpi() throws BackingStoreException {
             return values.keySet().toArray(new String[0]);
         }
 
         @Override
-        protected String[] childrenNamesSpi() {
+        protected String[] childrenNamesSpi() throws BackingStoreException {
             return nodes.keySet().toArray(new String[0]);
         }
 
@@ -963,11 +963,11 @@ public class ReplToolTesting {
         }
 
         @Override
-        protected void syncSpi() {
+        protected void syncSpi() throws BackingStoreException {
         }
 
         @Override
-        protected void flushSpi() {
+        protected void flushSpi() throws BackingStoreException {
         }
 
     }

@@ -32,7 +32,7 @@
 ShenandoahUncommitThread::ShenandoahUncommitThread(ShenandoahHeap* heap)
   : _heap(heap),
     _uncommit_lock(Mutex::safepoint - 2, "ShenandoahUncommit_lock", true) {
-  set_name("ShenUncommit");
+  set_name("Shenandoah Uncommit Thread");
   create_and_start();
 
   // Allow uncommits. This is managed by the control thread during a GC.

@@ -22,6 +22,7 @@
  *
  */
 
+#include "asm/assembler.hpp"
 #include "asm/macroAssembler.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmIntrinsics.hpp"
@@ -38,6 +39,8 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/macros.hpp"
+#include "vmreg_x86.inline.hpp"
 #include "stubGenerator_x86_64.hpp"
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
@@ -301,22 +304,22 @@ address StubGenerator::generate_call_stub(address& return_address) {
 
   // store result depending on type (everything that is not
   // T_OBJECT, T_LONG, T_FLOAT or T_DOUBLE is treated as T_INT)
-  __ movptr(c_rarg0, result);
-  Label is_long, is_float, is_double, exit;
-  __ movl(c_rarg1, result_type);
-  __ cmpl(c_rarg1, T_OBJECT);
+  __ movptr(r13, result);
+  Label is_long, is_float, is_double, check_prim, exit;
+  __ movl(rbx, result_type);
+  __ cmpl(rbx, T_OBJECT);
+  __ jcc(Assembler::equal, check_prim);
+  __ cmpl(rbx, T_LONG);
   __ jcc(Assembler::equal, is_long);
-  __ cmpl(c_rarg1, T_LONG);
-  __ jcc(Assembler::equal, is_long);
-  __ cmpl(c_rarg1, T_FLOAT);
+  __ cmpl(rbx, T_FLOAT);
   __ jcc(Assembler::equal, is_float);
-  __ cmpl(c_rarg1, T_DOUBLE);
+  __ cmpl(rbx, T_DOUBLE);
   __ jcc(Assembler::equal, is_double);
 #ifdef ASSERT
   // make sure the type is INT
   {
     Label L;
-    __ cmpl(c_rarg1, T_INT);
+    __ cmpl(rbx, T_INT);
     __ jcc(Assembler::equal, L);
     __ stop("StubRoutines::call_stub: unexpected result type");
     __ bind(L);
@@ -324,7 +327,7 @@ address StubGenerator::generate_call_stub(address& return_address) {
 #endif
 
   // handle T_INT case
-  __ movl(Address(c_rarg0, 0), rax);
+  __ movl(Address(r13, 0), rax);
 
   __ BIND(exit);
 
@@ -382,16 +385,29 @@ address StubGenerator::generate_call_stub(address& return_address) {
   __ ret(0);
 
   // handle return types different from T_INT
+  __ BIND(check_prim);
+  if (InlineTypeReturnedAsFields) {
+    // Check for scalarized return value
+    __ testptr(rax, 1);
+    __ jcc(Assembler::zero, is_long);
+    // Load pack handler address
+    __ andptr(rax, -2);
+    __ movptr(rax, Address(rax, InlineKlass::adr_members_offset()));
+    __ movptr(rbx, Address(rax, InlineKlass::pack_handler_jobject_offset()));
+    // Call pack handler to initialize the buffer
+    __ call(rbx);
+    __ jmp(exit);
+  }
   __ BIND(is_long);
-  __ movq(Address(c_rarg0, 0), rax);
+  __ movq(Address(r13, 0), rax);
   __ jmp(exit);
 
   __ BIND(is_float);
-  __ movflt(Address(c_rarg0, 0), xmm0);
+  __ movflt(Address(r13, 0), xmm0);
   __ jmp(exit);
 
   __ BIND(is_double);
-  __ movdbl(Address(c_rarg0, 0), xmm0);
+  __ movdbl(Address(r13, 0), xmm0);
   __ jmp(exit);
 
   return start;
@@ -3749,6 +3765,67 @@ address StubGenerator::generate_floatToFloat16() {
   return start;
 }
 
+static void save_return_registers(MacroAssembler* masm) {
+  masm->push_ppx(rax);
+  if (InlineTypeReturnedAsFields) {
+    masm->push(rdi);
+    masm->push(rsi);
+    masm->push(rdx);
+    masm->push(rcx);
+    masm->push(r8);
+    masm->push(r9);
+  }
+  masm->push_d(xmm0);
+  if (InlineTypeReturnedAsFields) {
+    masm->push_d(xmm1);
+    masm->push_d(xmm2);
+    masm->push_d(xmm3);
+    masm->push_d(xmm4);
+    masm->push_d(xmm5);
+    masm->push_d(xmm6);
+    masm->push_d(xmm7);
+  }
+#ifdef ASSERT
+  masm->movq(rax, 0xBADC0FFE);
+  masm->movq(rdi, rax);
+  masm->movq(rsi, rax);
+  masm->movq(rdx, rax);
+  masm->movq(rcx, rax);
+  masm->movq(r8, rax);
+  masm->movq(r9, rax);
+  masm->movq(xmm0, rax);
+  masm->movq(xmm1, rax);
+  masm->movq(xmm2, rax);
+  masm->movq(xmm3, rax);
+  masm->movq(xmm4, rax);
+  masm->movq(xmm5, rax);
+  masm->movq(xmm6, rax);
+  masm->movq(xmm7, rax);
+#endif
+}
+
+static void restore_return_registers(MacroAssembler* masm) {
+  if (InlineTypeReturnedAsFields) {
+    masm->pop_d(xmm7);
+    masm->pop_d(xmm6);
+    masm->pop_d(xmm5);
+    masm->pop_d(xmm4);
+    masm->pop_d(xmm3);
+    masm->pop_d(xmm2);
+    masm->pop_d(xmm1);
+  }
+  masm->pop_d(xmm0);
+  if (InlineTypeReturnedAsFields) {
+    masm->pop(r9);
+    masm->pop(r8);
+    masm->pop(rcx);
+    masm->pop(rdx);
+    masm->pop(rsi);
+    masm->pop(rdi);
+  }
+  masm->pop_ppx(rax);
+}
+
 address StubGenerator::generate_cont_thaw(StubId stub_id) {
   if (!Continuations::enabled()) return nullptr;
 
@@ -3800,8 +3877,7 @@ address StubGenerator::generate_cont_thaw(StubId stub_id) {
 
   if (return_barrier) {
     // Preserve possible return value from a method returning to the return barrier.
-    __ push_ppx(rax);
-    __ push_d(xmm0);
+    save_return_registers(_masm);
   }
 
   __ movptr(c_rarg0, r15_thread);
@@ -3812,8 +3888,7 @@ address StubGenerator::generate_cont_thaw(StubId stub_id) {
   if (return_barrier) {
     // Restore return value from a method returning to the return barrier.
     // No safepoint in the call to thaw, so even an oop return value should be OK.
-    __ pop_d(xmm0);
-    __ pop_ppx(rax);
+    restore_return_registers(_masm);
   }
 
 #ifdef ASSERT
@@ -3839,8 +3914,7 @@ address StubGenerator::generate_cont_thaw(StubId stub_id) {
 
   if (return_barrier) {
     // Preserve possible return value from a method returning to the return barrier. (Again.)
-    __ push_ppx(rax);
-    __ push_d(xmm0);
+    save_return_registers(_masm);
   }
 
   // If we want, we can templatize thaw by kind, and have three different entries.
@@ -3852,8 +3926,7 @@ address StubGenerator::generate_cont_thaw(StubId stub_id) {
   if (return_barrier) {
     // Restore return value from a method returning to the return barrier. (Again.)
     // No safepoint in the call to thaw, so even an oop return value should be OK.
-    __ pop_d(xmm0);
-    __ pop_ppx(rax);
+    restore_return_registers(_masm);
   } else {
     // Return 0 (success) from doYield.
     __ xorptr(rax, rax);
@@ -4060,6 +4133,16 @@ void StubGenerator::generate_initial_stubs() {
 
   StubRoutines::_forward_exception_entry = generate_forward_exception();
 
+  // Generate these first because they are called from other stubs
+  if (InlineTypeReturnedAsFields) {
+    StubRoutines::_load_inline_type_fields_in_regs =
+      generate_return_value_stub(CAST_FROM_FN_PTR(address, SharedRuntime::load_inline_type_fields_in_regs),
+                                 "load_inline_type_fields_in_regs", false);
+    StubRoutines::_store_inline_type_fields_to_buf =
+      generate_return_value_stub(CAST_FROM_FN_PTR(address, SharedRuntime::store_inline_type_fields_to_buf),
+                                 "store_inline_type_fields_to_buf", true);
+  }
+
   StubRoutines::_call_stub_entry =
     generate_call_stub(StubRoutines::_call_stub_return_address);
 
@@ -4101,6 +4184,150 @@ void StubGenerator::generate_initial_stubs() {
   generate_libm_stubs();
 
   StubRoutines::_fmod = generate_libmFmod(); // from stubGenerator_x86_64_fmod.cpp
+}
+
+// Call here from the interpreter or compiled code to either load
+// multiple returned values from the inline type instance being
+// returned to registers or to store returned values to a newly
+// allocated inline type instance.
+// Register is a class, but it would be assigned numerical value.
+// "0" is assigned for xmm0. Thus we need to ignore -Wnonnull.
+PRAGMA_DIAG_PUSH
+PRAGMA_NONNULL_IGNORED
+address StubGenerator::generate_return_value_stub(address destination, const char* name, bool has_res) {
+  // We need to save all registers the calling convention may use so
+  // the runtime calls read or update those registers. This needs to
+  // be in sync with SharedRuntime::java_return_convention().
+  enum layout {
+    pad_off = frame::arg_reg_save_area_bytes/BytesPerInt, pad_off_2,
+    rax_off, rax_off_2,
+    j_rarg5_off, j_rarg5_2,
+    j_rarg4_off, j_rarg4_2,
+    j_rarg3_off, j_rarg3_2,
+    j_rarg2_off, j_rarg2_2,
+    j_rarg1_off, j_rarg1_2,
+    j_rarg0_off, j_rarg0_2,
+    j_farg0_off, j_farg0_2,
+    j_farg1_off, j_farg1_2,
+    j_farg2_off, j_farg2_2,
+    j_farg3_off, j_farg3_2,
+    j_farg4_off, j_farg4_2,
+    j_farg5_off, j_farg5_2,
+    j_farg6_off, j_farg6_2,
+    j_farg7_off, j_farg7_2,
+    rbp_off, rbp_off_2,
+    return_off, return_off_2,
+
+    framesize
+  };
+
+  CodeBuffer buffer(name, 1000, 512);
+  MacroAssembler* _masm = new MacroAssembler(&buffer);
+
+  int frame_size_in_bytes = align_up(framesize*BytesPerInt, 16);
+  assert(frame_size_in_bytes == framesize*BytesPerInt, "misaligned");
+  int frame_size_in_slots = frame_size_in_bytes / BytesPerInt;
+  int frame_size_in_words = frame_size_in_bytes / wordSize;
+
+  OopMapSet *oop_maps = new OopMapSet();
+  OopMap* map = new OopMap(frame_size_in_slots, 0);
+
+  map->set_callee_saved(VMRegImpl::stack2reg(rax_off), rax->as_VMReg());
+  map->set_callee_saved(VMRegImpl::stack2reg(j_rarg5_off), j_rarg5->as_VMReg());
+  map->set_callee_saved(VMRegImpl::stack2reg(j_rarg4_off), j_rarg4->as_VMReg());
+  map->set_callee_saved(VMRegImpl::stack2reg(j_rarg3_off), j_rarg3->as_VMReg());
+  map->set_callee_saved(VMRegImpl::stack2reg(j_rarg2_off), j_rarg2->as_VMReg());
+  map->set_callee_saved(VMRegImpl::stack2reg(j_rarg1_off), j_rarg1->as_VMReg());
+  map->set_callee_saved(VMRegImpl::stack2reg(j_rarg0_off), j_rarg0->as_VMReg());
+  map->set_callee_saved(VMRegImpl::stack2reg(j_farg0_off), j_farg0->as_VMReg());
+  map->set_callee_saved(VMRegImpl::stack2reg(j_farg1_off), j_farg1->as_VMReg());
+  map->set_callee_saved(VMRegImpl::stack2reg(j_farg2_off), j_farg2->as_VMReg());
+  map->set_callee_saved(VMRegImpl::stack2reg(j_farg3_off), j_farg3->as_VMReg());
+  map->set_callee_saved(VMRegImpl::stack2reg(j_farg4_off), j_farg4->as_VMReg());
+  map->set_callee_saved(VMRegImpl::stack2reg(j_farg5_off), j_farg5->as_VMReg());
+  map->set_callee_saved(VMRegImpl::stack2reg(j_farg6_off), j_farg6->as_VMReg());
+  map->set_callee_saved(VMRegImpl::stack2reg(j_farg7_off), j_farg7->as_VMReg());
+
+  int start = __ offset();
+
+  __ subptr(rsp, frame_size_in_bytes - 8 /* return address*/);
+
+  __ movptr(Address(rsp, rbp_off * BytesPerInt), rbp);
+  __ movdbl(Address(rsp, j_farg7_off * BytesPerInt), j_farg7);
+  __ movdbl(Address(rsp, j_farg6_off * BytesPerInt), j_farg6);
+  __ movdbl(Address(rsp, j_farg5_off * BytesPerInt), j_farg5);
+  __ movdbl(Address(rsp, j_farg4_off * BytesPerInt), j_farg4);
+  __ movdbl(Address(rsp, j_farg3_off * BytesPerInt), j_farg3);
+  __ movdbl(Address(rsp, j_farg2_off * BytesPerInt), j_farg2);
+  __ movdbl(Address(rsp, j_farg1_off * BytesPerInt), j_farg1);
+  __ movdbl(Address(rsp, j_farg0_off * BytesPerInt), j_farg0);
+
+  __ movptr(Address(rsp, j_rarg0_off * BytesPerInt), j_rarg0);
+  __ movptr(Address(rsp, j_rarg1_off * BytesPerInt), j_rarg1);
+  __ movptr(Address(rsp, j_rarg2_off * BytesPerInt), j_rarg2);
+  __ movptr(Address(rsp, j_rarg3_off * BytesPerInt), j_rarg3);
+  __ movptr(Address(rsp, j_rarg4_off * BytesPerInt), j_rarg4);
+  __ movptr(Address(rsp, j_rarg5_off * BytesPerInt), j_rarg5);
+  __ movptr(Address(rsp, rax_off * BytesPerInt), rax);
+
+  int frame_complete = __ offset();
+
+  __ set_last_Java_frame(noreg, noreg, nullptr, rscratch1);
+
+  __ mov(c_rarg0, r15_thread);
+  __ mov(c_rarg1, rax);
+
+  __ call(RuntimeAddress(destination));
+
+  // Set an oopmap for the call site.
+
+  oop_maps->add_gc_map( __ offset() - start, map);
+
+  // clear last_Java_sp
+  __ reset_last_Java_frame(false);
+
+  __ movptr(rbp, Address(rsp, rbp_off * BytesPerInt));
+  __ movdbl(j_farg7, Address(rsp, j_farg7_off * BytesPerInt));
+  __ movdbl(j_farg6, Address(rsp, j_farg6_off * BytesPerInt));
+  __ movdbl(j_farg5, Address(rsp, j_farg5_off * BytesPerInt));
+  __ movdbl(j_farg4, Address(rsp, j_farg4_off * BytesPerInt));
+  __ movdbl(j_farg3, Address(rsp, j_farg3_off * BytesPerInt));
+  __ movdbl(j_farg2, Address(rsp, j_farg2_off * BytesPerInt));
+  __ movdbl(j_farg1, Address(rsp, j_farg1_off * BytesPerInt));
+  __ movdbl(j_farg0, Address(rsp, j_farg0_off * BytesPerInt));
+
+  __ movptr(j_rarg0, Address(rsp, j_rarg0_off * BytesPerInt));
+  __ movptr(j_rarg1, Address(rsp, j_rarg1_off * BytesPerInt));
+  __ movptr(j_rarg2, Address(rsp, j_rarg2_off * BytesPerInt));
+  __ movptr(j_rarg3, Address(rsp, j_rarg3_off * BytesPerInt));
+  __ movptr(j_rarg4, Address(rsp, j_rarg4_off * BytesPerInt));
+  __ movptr(j_rarg5, Address(rsp, j_rarg5_off * BytesPerInt));
+  __ movptr(rax, Address(rsp, rax_off * BytesPerInt));
+
+  __ addptr(rsp, frame_size_in_bytes-8);
+
+  // check for pending exceptions
+  Label pending;
+  __ cmpptr(Address(r15_thread, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
+  __ jcc(Assembler::notEqual, pending);
+
+  if (has_res) {
+    __ get_vm_result_oop(rax);
+  }
+
+  __ ret(0);
+
+  __ bind(pending);
+
+  __ movptr(rax, Address(r15_thread, Thread::pending_exception_offset()));
+  __ jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
+
+  // -------------
+  // make sure all code is generated
+  _masm->flush();
+
+  RuntimeStub* stub = RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, frame_size_in_words, oop_maps, false);
+  return stub->entry_point();
 }
 
 void StubGenerator::generate_continuation_stubs() {

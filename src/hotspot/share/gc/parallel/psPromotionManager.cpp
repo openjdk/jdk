@@ -45,6 +45,7 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/debug.hpp"
 
 PaddedEnd<PSPromotionManager>* PSPromotionManager::_manager_array = nullptr;
 PSPromotionManager::PSScannerTasksQueueSet* PSPromotionManager::_stack_array_depth = nullptr;
@@ -138,13 +139,13 @@ bool PSPromotionManager::post_scavenge(YoungGCTracer& gc_tracer) {
 #if TASKQUEUE_STATS
 
 void PSPromotionManager::print_and_reset_taskqueue_stats() {
-  stack_array_depth()->print_and_reset_taskqueue_stats("Young GC");
+  stack_array_depth()->print_and_reset_taskqueue_stats("Oop Queue");
 
   auto get_pa_stats = [&](uint i) {
     return manager_array(i)->partial_array_task_stats();
   };
   PartialArrayTaskStats::log_set(ParallelGCThreads, get_pa_stats,
-                                 "Young GC Partial Array");
+                                 "Partial Array Task Stats");
   for (uint i = 0; i < ParallelGCThreads; ++i) {
     get_pa_stats(i)->reset();
   }
@@ -259,15 +260,18 @@ void PSPromotionManager::process_array_chunk(objArrayOop obj, size_t start, size
 void PSPromotionManager::process_array_chunk(PartialArrayState* state, bool stolen) {
   // Access before release by claim().
   objArrayOop to_array = objArrayOop(state->destination());
+  precond(to_array->is_array_with_oops());
+
   PartialArraySplitter::Claim claim =
     _partial_array_splitter.claim(state, &_claimed_stack_depth, stolen);
+
   process_array_chunk(to_array, claim._start, claim._end);
 }
 
 void PSPromotionManager::push_objArray(oop old_obj, oop new_obj) {
   assert(old_obj->is_forwarded(), "precondition");
   assert(old_obj->forwardee() == new_obj, "precondition");
-  assert(new_obj->is_objArray(), "precondition");
+  precond(new_obj->is_array_with_oops());
 
   objArrayOop to_array = objArrayOop(new_obj);
   size_t array_length = to_array->length();

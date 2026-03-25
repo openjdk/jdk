@@ -27,6 +27,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "jvmci/jvmciExceptions.hpp"
 #include "jvmci/jvmciObject.hpp"
+#include "oops/refArrayOop.hpp"
 
 /*
  * This macro defines the structure of the JVMCI classes accessed from VM code.  It is used to
@@ -295,13 +296,13 @@ class JVMCIEnv;
 #define FLOAT_FIELD(simpleClassName,  name) FIELD(simpleClassName, name, jfloat)
 
 #define OBJECT_FIELD(simpleClassName,  name, signature) OOPISH_FIELD(simpleClassName, name, JVMCIObject, oop)
-#define OBJECTARRAY_FIELD(simpleClassName,  name, signature) OOPISH_FIELD(simpleClassName, name, JVMCIObjectArray, objArrayOop)
+#define OBJECTARRAY_FIELD(simpleClassName,  name, signature) OOPISH_FIELD(simpleClassName, name, JVMCIObjectArray, refArrayOop)
 #define PRIMARRAY_FIELD(simpleClassName,  name, signature) OOPISH_FIELD(simpleClassName, name, JVMCIPrimitiveArray, typeArrayOop)
 
 #define STATIC_INT_FIELD(simpleClassName, name) STATIC_FIELD(simpleClassName, name, jint)
 #define STATIC_BOOLEAN_FIELD(simpleClassName, name) STATIC_FIELD(simpleClassName, name, jboolean)
 #define STATIC_OBJECT_FIELD(simpleClassName, name, signature) STATIC_OOPISH_FIELD(simpleClassName, name, JVMCIObject, oop)
-#define STATIC_OBJECTARRAY_FIELD(simpleClassName, name, signature) STATIC_OOPISH_FIELD(simpleClassName, name, JVMCIObjectArray, objArrayOop)
+#define STATIC_OBJECTARRAY_FIELD(simpleClassName, name, signature) STATIC_OOPISH_FIELD(simpleClassName, name, JVMCIObjectArray, refArrayOop)
 
 #define HS_START_CLASS(simpleClassName, fullClassName)                                  \
   START_CLASS(simpleClassName, fullClassName)                                           \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package catalog;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -30,7 +31,6 @@ import javax.xml.catalog.CatalogException;
 import javax.xml.catalog.CatalogResolver;
 
 import static catalog.CatalogTestUtils.catalogResolver;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
@@ -55,7 +55,7 @@ public class CatalogReferCircularityTest {
             "catalogReferCircle-left.xml" })
     public void testReferCircularity(String catalogFile) {
         CatalogResolver resolver = catalogResolver(catalogFile);
-        assertThrows(
+        Assertions.assertThrows(
                 CatalogException.class,
                 () -> resolver.resolveEntity(null, "http://remote/dtd/ghost/docGhost.dtd"));
     }

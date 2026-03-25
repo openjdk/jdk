@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,23 @@
 
 package javax.xml.parsers.ptests;
 
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.xml.sax.EntityResolver;
-import org.xml.sax.InputSource;
+import static javax.xml.parsers.ptests.ParserTestConst.XML_DIR;
+import static jaxp.library.JAXPTestUtilities.FILE_SEP;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FilePermission;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.File;
-import java.io.FileInputStream;
 
-import static javax.xml.parsers.ptests.ParserTestConst.XML_DIR;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.InputSource;
 
 /**
  * This checks for the methods of DocumentBuilder
@@ -44,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run junit/othervm javax.xml.parsers.ptests.DocumentBuilderImpl01
+ * @run testng/othervm javax.xml.parsers.ptests.DocumentBuilderImpl01
  */
 public class DocumentBuilderImpl01 implements EntityResolver {
     /**
@@ -54,7 +57,8 @@ public class DocumentBuilderImpl01 implements EntityResolver {
      * @throws ParserConfigurationException if a DocumentBuilder cannot be
      *         created which satisfies the configuration requested.
      */
-    public static Object[][] getBuilder() throws ParserConfigurationException {
+    @DataProvider(name = "builder-provider")
+    public Object[][] getBuilder() throws ParserConfigurationException {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = dbf.newDocumentBuilder();
         return new Object[][] { { docBuilder } };
@@ -65,8 +69,7 @@ public class DocumentBuilderImpl01 implements EntityResolver {
      * to return false because not setting the validation.
      * @param docBuilder document builder instance.
      */
-    @ParameterizedTest
-    @MethodSource("getBuilder")
+    @Test(dataProvider = "builder-provider")
     public void testCheckDocumentBuilderImpl01(DocumentBuilder docBuilder) {
         assertFalse(docBuilder.isValidating());
     }
@@ -75,8 +78,7 @@ public class DocumentBuilderImpl01 implements EntityResolver {
      * Test the default functionality of isNamespaceAware method.
      * @param docBuilder document builder instance.
      */
-    @ParameterizedTest
-    @MethodSource("getBuilder")
+    @Test(dataProvider = "builder-provider")
     public void testCheckDocumentBuilderImpl02(DocumentBuilder docBuilder) {
         assertFalse(docBuilder.isNamespaceAware());
     }
@@ -86,8 +88,7 @@ public class DocumentBuilderImpl01 implements EntityResolver {
      * @param docBuilder document builder instance.
      * @throws Exception If any errors occur.
      */
-    @ParameterizedTest
-    @MethodSource("getBuilder")
+    @Test(dataProvider = "builder-provider")
     public void testCheckDocumentBuilderImpl04(DocumentBuilder docBuilder)
             throws Exception {
         try (FileInputStream fis = new FileInputStream(new File(XML_DIR,
@@ -102,8 +103,7 @@ public class DocumentBuilderImpl01 implements EntityResolver {
      * @param docBuilder document builder instance.
      * @throws Exception If any errors occur.
      */
-    @ParameterizedTest
-    @MethodSource("getBuilder")
+    @Test(dataProvider = "builder-provider")
     public void testCheckDocumentBuilderImpl05(DocumentBuilder docBuilder)
             throws Exception {
         assertNotNull(docBuilder.parse(new File(XML_DIR,
@@ -115,14 +115,13 @@ public class DocumentBuilderImpl01 implements EntityResolver {
      * @param docBuilder document builder instance.
      * @throws Exception If any errors occur.
      */
-    @ParameterizedTest
-    @MethodSource("getBuilder")
+    @Test(dataProvider = "builder-provider")
     public void testCheckDocumentBuilderImpl06(DocumentBuilder docBuilder)
             throws Exception {
         try (FileInputStream fis = new FileInputStream(new File(XML_DIR,
                 "DocumentBuilderImpl02.xml"))) {
             assertNotNull(docBuilder.parse(fis, new File(XML_DIR).toURI()
-                    .toASCIIString() + '/'));
+                    .toASCIIString() + FILE_SEP));
         }
     }
 
@@ -130,8 +129,7 @@ public class DocumentBuilderImpl01 implements EntityResolver {
      * Test the setEntityResolver.
      * @param docBuilder document builder instance.
      */
-    @ParameterizedTest
-    @MethodSource("getBuilder")
+    @Test(dataProvider = "builder-provider")
     public void testCheckDocumentBuilderImpl07(DocumentBuilder docBuilder) {
         docBuilder.setEntityResolver(this);
         assertNotNull(resolveEntity("publicId", "http://www.myhost.com/today"));

@@ -23,6 +23,8 @@
  */
 
 #include "ci/bcEscapeAnalyzer.hpp"
+#include "ci/ciFlatArrayKlass.hpp"
+#include "ci/ciSymbols.hpp"
 #include "code/vmreg.hpp"
 #include "compiler/compileLog.hpp"
 #include "compiler/oopMap.hpp"
@@ -34,14 +36,17 @@
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/escape.hpp"
+#include "opto/inlinetypenode.hpp"
 #include "opto/locknode.hpp"
 #include "opto/machnode.hpp"
 #include "opto/matcher.hpp"
+#include "opto/movenode.hpp"
 #include "opto/parse.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/regmask.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -78,7 +83,7 @@ const RegMask &StartNode::in_RegMask(uint) const {
 
 //------------------------------match------------------------------------------
 // Construct projections for incoming parameters, and their RegMask info
-Node *StartNode::match( const ProjNode *proj, const Matcher *match ) {
+Node *StartNode::match(const ProjNode *proj, const Matcher *match, const RegMask* mask) {
   switch (proj->_con) {
   case TypeFunc::Control:
   case TypeFunc::I_O:
@@ -100,17 +105,6 @@ Node *StartNode::match( const ProjNode *proj, const Matcher *match ) {
     }
   }
   return nullptr;
-}
-
-//------------------------------StartOSRNode----------------------------------
-// The method start node for an on stack replacement adapter
-
-//------------------------------osr_domain-----------------------------
-const TypeTuple *StartOSRNode::osr_domain() {
-  const Type **fields = TypeTuple::fields(2);
-  fields[TypeFunc::Parms+0] = TypeRawPtr::BOTTOM;  // address of osr buffer
-
-  return TypeTuple::make(TypeFunc::Parms+1, fields);
 }
 
 //=============================================================================
@@ -500,17 +494,24 @@ void JVMState::format(PhaseRegAlloc *regalloc, const Node *n, outputStream* st) 
         while (ndim-- > 0) {
           st->print("[]");
         }
+      } else {
+        assert(false, "unexpected type %s", cik->name()->as_utf8());
       }
       st->print("={");
       uint nf = spobj->n_fields();
       if (nf > 0) {
         uint first_ind = spobj->first_index(mcall->jvms());
+        if (iklass != nullptr && iklass->is_inlinetype()) {
+          Node* null_marker = mcall->in(first_ind++);
+          if (!null_marker->is_top()) {
+            st->print(" [null marker");
+            format_helper(regalloc, st, null_marker, ":", -1, nullptr);
+          }
+        }
         Node* fld_node = mcall->in(first_ind);
-        ciField* cifield;
         if (iklass != nullptr) {
           st->print(" [");
-          cifield = iklass->nonstatic_field_at(0);
-          cifield->print_name_on(st);
+          iklass->nonstatic_field_at(0)->print_name_on(st);
           format_helper(regalloc, st, fld_node, ":", 0, &scobjs);
         } else {
           format_helper(regalloc, st, fld_node, "[", 0, &scobjs);
@@ -519,8 +520,7 @@ void JVMState::format(PhaseRegAlloc *regalloc, const Node *n, outputStream* st) 
           fld_node = mcall->in(first_ind+j);
           if (iklass != nullptr) {
             st->print(", [");
-            cifield = iklass->nonstatic_field_at(j);
-            cifield->print_name_on(st);
+            iklass->nonstatic_field_at(j)->print_name_on(st);
             format_helper(regalloc, st, fld_node, ":", j, &scobjs);
           } else {
             format_helper(regalloc, st, fld_node, ", [", j, &scobjs);
@@ -755,16 +755,23 @@ void AllocateNode::dump_spec(outputStream* st) const {
 }
 #endif
 
-const Type *CallNode::bottom_type() const { return tf()->range(); }
+const Type *CallNode::bottom_type() const { return tf()->range_cc(); }
 const Type* CallNode::Value(PhaseGVN* phase) const {
   if (in(0) == nullptr || phase->type(in(0)) == Type::TOP) {
     return Type::TOP;
   }
-  return tf()->range();
+  return tf()->range_cc();
 }
 
 //------------------------------calling_convention-----------------------------
 void CallNode::calling_convention(BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt) const {
+  if (_entry_point == StubRoutines::store_inline_type_fields_to_buf()) {
+    // The call to that stub is a special case: its inputs are
+    // multiple values returned from a call and so it should follow
+    // the return convention.
+    SharedRuntime::java_return_convention(sig_bt, parm_regs, argcnt);
+    return;
+  }
   // Use the standard compiler calling convention
   SharedRuntime::java_calling_convention(sig_bt, parm_regs, argcnt);
 }
@@ -773,42 +780,52 @@ void CallNode::calling_convention(BasicType* sig_bt, VMRegPair *parm_regs, uint 
 //------------------------------match------------------------------------------
 // Construct projections for control, I/O, memory-fields, ..., and
 // return result(s) along with their RegMask info
-Node *CallNode::match( const ProjNode *proj, const Matcher *match ) {
-  switch (proj->_con) {
+Node *CallNode::match(const ProjNode *proj, const Matcher *match, const RegMask* mask) {
+  uint con = proj->_con;
+  const TypeTuple* range_cc = tf()->range_cc();
+  if (con >= TypeFunc::Parms) {
+    if (tf()->returns_inline_type_as_fields()) {
+      // The call returns multiple values (inline type fields): we
+      // create one projection per returned value.
+      assert(con <= TypeFunc::Parms+1 || InlineTypeReturnedAsFields, "only for multi value return");
+      uint ideal_reg = range_cc->field_at(con)->ideal_reg();
+      return new MachProjNode(this, con, mask[con-TypeFunc::Parms], ideal_reg);
+    } else {
+      if (con == TypeFunc::Parms) {
+        uint ideal_reg = range_cc->field_at(TypeFunc::Parms)->ideal_reg();
+        OptoRegPair regs = Opcode() == Op_CallLeafVector
+          ? match->vector_return_value(ideal_reg)      // Calls into assembly vector routine
+          : match->c_return_value(ideal_reg);
+        RegMask rm = RegMask(regs.first());
+
+        if (Opcode() == Op_CallLeafVector) {
+          // If the return is in vector, compute appropriate regmask taking into account the whole range
+          if(ideal_reg >= Op_VecA && ideal_reg <= Op_VecZ) {
+            if(OptoReg::is_valid(regs.second())) {
+              for (OptoReg::Name r = regs.first(); r <= regs.second(); r = OptoReg::add(r, 1)) {
+                rm.insert(r);
+              }
+            }
+          }
+        }
+
+        if (OptoReg::is_valid(regs.second())) {
+          rm.insert(regs.second());
+        }
+        return new MachProjNode(this,con,rm,ideal_reg);
+      } else {
+        assert(con == TypeFunc::Parms+1, "only one return value");
+        assert(range_cc->field_at(TypeFunc::Parms+1) == Type::HALF, "");
+        return new MachProjNode(this,con, RegMask::EMPTY, (uint)OptoReg::Bad);
+      }
+    }
+  }
+
+  switch (con) {
   case TypeFunc::Control:
   case TypeFunc::I_O:
   case TypeFunc::Memory:
     return new MachProjNode(this,proj->_con,RegMask::EMPTY,MachProjNode::unmatched_proj);
-
-  case TypeFunc::Parms+1:       // For LONG & DOUBLE returns
-    assert(tf()->range()->field_at(TypeFunc::Parms+1) == Type::HALF, "");
-    // 2nd half of doubles and longs
-    return new MachProjNode(this,proj->_con, RegMask::EMPTY, (uint)OptoReg::Bad);
-
-  case TypeFunc::Parms: {       // Normal returns
-    uint ideal_reg = tf()->range()->field_at(TypeFunc::Parms)->ideal_reg();
-    OptoRegPair regs = Opcode() == Op_CallLeafVector
-      ? match->vector_return_value(ideal_reg)      // Calls into assembly vector routine
-      : is_CallRuntime()
-        ? match->c_return_value(ideal_reg)  // Calls into C runtime
-        : match->  return_value(ideal_reg); // Calls into compiled Java code
-    RegMask rm = RegMask(regs.first());
-
-    if (Opcode() == Op_CallLeafVector) {
-      // If the return is in vector, compute appropriate regmask taking into account the whole range
-      if(ideal_reg >= Op_VecA && ideal_reg <= Op_VecZ) {
-        if(OptoReg::is_valid(regs.second())) {
-          for (OptoReg::Name r = regs.first(); r <= regs.second(); r = OptoReg::add(r, 1)) {
-            rm.insert(r);
-          }
-        }
-      }
-    }
-
-    if( OptoReg::is_valid(regs.second()) )
-      rm.insert(regs.second());
-    return new MachProjNode(this,proj->_con,rm,ideal_reg);
-  }
 
   case TypeFunc::ReturnAdr:
   case TypeFunc::FramePtr:
@@ -830,7 +847,7 @@ uint CallNode::match_edge(uint idx) const {
 bool CallNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) {
   assert((t_oop != nullptr), "sanity");
   if (is_call_to_arraycopystub() && strcmp(_name, "unsafe_arraycopy") != 0) {
-    const TypeTuple* args = _tf->domain();
+    const TypeTuple* args = _tf->domain_sig();
     Node* dest = nullptr;
     // Stubs that can be called once an ArrayCopyNode is expanded have
     // different signatures. Look for the second pointer argument,
@@ -845,10 +862,6 @@ bool CallNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) {
       }
     }
     guarantee(dest != nullptr, "Call had only one ptr in, broken IR!");
-    if (phase->type(dest)->isa_rawptr()) {
-      // may happen for an arraycopy that initializes a newly allocated object. Conservatively return true;
-      return true;
-    }
     if (!dest->is_top() && may_modify_arraycopy_helper(phase->type(dest)->is_oopptr(), t_oop, phase)) {
       return true;
     }
@@ -883,7 +896,7 @@ bool CallNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) {
           return true;
         }
       }
-      const TypeTuple* d = tf()->domain();
+      const TypeTuple* d = tf()->domain_cc();
       for (uint i = TypeFunc::Parms; i < d->cnt(); i++) {
         const TypeInstPtr* inst_t = d->field_at(i)->isa_instptr();
         if ((inst_t != nullptr) && (!inst_t->klass_is_exact() ||
@@ -898,12 +911,22 @@ bool CallNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) {
 }
 
 // Does this call have a direct reference to n other than debug information?
-bool CallNode::has_non_debug_use(Node *n) {
-  const TypeTuple * d = tf()->domain();
+bool CallNode::has_non_debug_use(Node* n) {
+  const TypeTuple* d = tf()->domain_cc();
   for (uint i = TypeFunc::Parms; i < d->cnt(); i++) {
-    Node *arg = in(i);
-    if (arg == n) {
+    if (in(i) == n) {
       return true;
+    }
+  }
+  return false;
+}
+
+bool CallNode::has_debug_use(Node* n) {
+  if (jvms() != nullptr) {
+    for (uint i = jvms()->debug_start(); i < jvms()->debug_end(); i++) {
+      if (in(i) == n) {
+        return true;
+      }
     }
   }
   return false;
@@ -940,16 +963,21 @@ Node *CallNode::result_cast() {
 }
 
 
-void CallNode::extract_projections(CallProjections* projs, bool separate_io_proj, bool do_asserts) const {
-  projs->fallthrough_proj      = nullptr;
-  projs->fallthrough_catchproj = nullptr;
-  projs->fallthrough_ioproj    = nullptr;
-  projs->catchall_ioproj       = nullptr;
-  projs->catchall_catchproj    = nullptr;
-  projs->fallthrough_memproj   = nullptr;
-  projs->catchall_memproj      = nullptr;
-  projs->resproj               = nullptr;
-  projs->exobj                 = nullptr;
+CallProjections* CallNode::extract_projections(bool separate_io_proj, bool do_asserts) const {
+  uint max_res = TypeFunc::Parms-1;
+  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
+    ProjNode *pn = fast_out(i)->as_Proj();
+    max_res = MAX2(max_res, pn->_con);
+  }
+
+  assert(max_res < _tf->range_cc()->cnt(), "result out of bounds");
+
+  uint projs_size = sizeof(CallProjections);
+  if (max_res > TypeFunc::Parms) {
+    projs_size += (max_res-TypeFunc::Parms)*sizeof(Node*);
+  }
+  char* projs_storage = resource_allocate_bytes(projs_size);
+  CallProjections* projs = new(projs_storage)CallProjections(max_res - TypeFunc::Parms + 1);
 
   for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
     ProjNode *pn = fast_out(i)->as_Proj();
@@ -995,18 +1023,20 @@ void CallNode::extract_projections(CallProjections* projs, bool separate_io_proj
         projs->fallthrough_memproj = pn;
       break;
     case TypeFunc::Parms:
-      projs->resproj = pn;
+      projs->resproj[0] = pn;
       break;
     default:
-      assert(false, "unexpected projection from allocation node.");
+      assert(pn->_con <= max_res, "unexpected projection from allocation node.");
+      projs->resproj[pn->_con-TypeFunc::Parms] = pn;
+      break;
     }
   }
 
   // The resproj may not exist because the result could be ignored
   // and the exception object may not exist if an exception handler
   // swallows the exception but all the other must exist and be found.
-  assert(projs->fallthrough_proj      != nullptr, "must be found");
   do_asserts = do_asserts && !Compile::current()->inlining_incrementally();
+  assert(!do_asserts || projs->fallthrough_proj      != nullptr, "must be found");
   assert(!do_asserts || projs->fallthrough_catchproj != nullptr, "must be found");
   assert(!do_asserts || projs->fallthrough_memproj   != nullptr, "must be found");
   assert(!do_asserts || projs->fallthrough_ioproj    != nullptr, "must be found");
@@ -1015,6 +1045,7 @@ void CallNode::extract_projections(CallProjections* projs, bool separate_io_proj
     assert(!do_asserts || projs->catchall_memproj    != nullptr, "must be found");
     assert(!do_asserts || projs->catchall_ioproj     != nullptr, "must be found");
   }
+  return projs;
 }
 
 Node* CallNode::Ideal(PhaseGVN* phase, bool can_reshape) {
@@ -1055,8 +1086,8 @@ bool CallJavaNode::cmp( const Node &n ) const {
 
 void CallJavaNode::copy_call_debug_info(PhaseIterGVN* phase, SafePointNode* sfpt) {
   // Copy debug information and adjust JVMState information
-  uint old_dbg_start = sfpt->is_Call() ? sfpt->as_Call()->tf()->domain()->cnt() : (uint)TypeFunc::Parms+1;
-  uint new_dbg_start = tf()->domain()->cnt();
+  uint old_dbg_start = sfpt->is_Call() ? sfpt->as_Call()->tf()->domain_sig()->cnt() : (uint)TypeFunc::Parms+1;
+  uint new_dbg_start = tf()->domain_sig()->cnt();
   int jvms_adj  = new_dbg_start - old_dbg_start;
   assert (new_dbg_start == req(), "argument count mismatch");
   Compile* C = phase->C;
@@ -1096,6 +1127,10 @@ void CallJavaNode::copy_call_debug_info(PhaseIterGVN* phase, SafePointNode* sfpt
 bool CallJavaNode::validate_symbolic_info() const {
   if (method() == nullptr) {
     return true; // call into runtime or uncommon trap
+  }
+  Bytecodes::Code bc = jvms()->method()->java_code_at_bci(jvms()->bci());
+  if (Arguments::is_valhalla_enabled() && (bc == Bytecodes::_if_acmpeq || bc == Bytecodes::_if_acmpne)) {
+    return true;
   }
   ciMethod* symbolic_info = jvms()->method()->get_method_at_bci(jvms()->bci());
   ciMethod* callee = method();
@@ -1139,6 +1174,71 @@ bool CallStaticJavaNode::cmp( const Node &n ) const {
 }
 
 Node* CallStaticJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (can_reshape && uncommon_trap_request() != 0) {
+    PhaseIterGVN* igvn = phase->is_IterGVN();
+    if (remove_unknown_flat_array_load(igvn, control(), memory(), in(TypeFunc::Parms))) {
+      if (!control()->is_Region()) {
+        igvn->replace_input_of(this, 0, phase->C->top());
+      }
+      return this;
+    }
+  }
+
+  // Try to replace the runtime call to the substitutability test emitted by acmp if (at least) one operand is a known type
+  if (can_reshape && !control()->is_top() && method() != nullptr && method()->holder() == phase->C->env()->ValueObjectMethods_klass() &&
+      (method()->name() == ciSymbols::isSubstitutable_name())) {
+    Node* left = in(TypeFunc::Parms);
+    Node* right = in(TypeFunc::Parms + 1);
+    if (!left->is_top() && !right->is_top() && (left->is_InlineType() || right->is_InlineType())) {
+      if (!left->is_InlineType()) {
+        swap(left, right);
+      }
+      InlineTypeNode* vt = left->as_InlineType();
+
+      // Check if the field layout can be optimized
+      if (vt->can_emit_substitutability_check(right)) {
+        PhaseIterGVN* igvn = phase->is_IterGVN();
+
+        Node* ctrl = control();
+        RegionNode* region = new RegionNode(1);
+        Node* phi = new PhiNode(region, TypeInt::POS);
+
+        Node* base = right;
+        Node* ptr = right;
+        if (!base->is_InlineType()) {
+          // Parse time checks guarantee that both operands are non-null and have the same type
+          base = igvn->register_new_node_with_optimizer(new CheckCastPPNode(ctrl, base, vt->bottom_type()));
+          ptr = base;
+        }
+        // Emit IR for field-wise comparison
+        vt->check_substitutability(igvn, region, phi, &ctrl, in(TypeFunc::Memory), base, ptr);
+
+        // Equals
+        region->add_req(ctrl);
+        phi->add_req(igvn->intcon(1));
+
+        ctrl = igvn->register_new_node_with_optimizer(region);
+        Node* res = igvn->register_new_node_with_optimizer(phi);
+
+        // Kill exception projections and return a tuple that will replace the call
+        CallProjections* projs = extract_projections(false /*separate_io_proj*/);
+        if (projs->fallthrough_catchproj != nullptr) {
+          igvn->replace_node(projs->fallthrough_catchproj, ctrl);
+        }
+        if (projs->catchall_memproj != nullptr) {
+          igvn->replace_node(projs->catchall_memproj, igvn->C->top());
+        }
+        if (projs->catchall_ioproj != nullptr) {
+          igvn->replace_node(projs->catchall_ioproj, igvn->C->top());
+        }
+        if (projs->catchall_catchproj != nullptr) {
+          igvn->replace_node(projs->catchall_catchproj, igvn->C->top());
+        }
+        return TupleNode::make(tf()->range_cc(), ctrl, i_o(), memory(), frameptr(), returnadr(), res);
+      }
+    }
+  }
+
   CallGenerator* cg = generator();
   if (can_reshape && cg != nullptr) {
     if (cg->is_mh_late_inline()) {
@@ -1198,6 +1298,133 @@ int CallStaticJavaNode::extract_uncommon_trap_request(const Node* call) {
 #endif
   return call->in(TypeFunc::Parms)->bottom_type()->is_int()->get_con();
 }
+
+// Split if can cause the flat array branch of an array load with unknown type (see
+// Parse::array_load) to end in an uncommon trap. In that case, the call to
+// 'load_unknown_inline' is useless. Replace it with an uncommon trap with the same JVMState.
+bool CallStaticJavaNode::remove_unknown_flat_array_load(PhaseIterGVN* igvn, Node* ctl, Node* mem, Node* unc_arg) {
+  if (ctl == nullptr || ctl->is_top() || mem == nullptr || mem->is_top() || !mem->is_MergeMem()) {
+    return false;
+  }
+  if (ctl->is_Region()) {
+    bool res = false;
+    for (uint i = 1; i < ctl->req(); i++) {
+      MergeMemNode* mm = mem->clone()->as_MergeMem();
+      for (MergeMemStream mms(mm); mms.next_non_empty(); ) {
+        Node* m = mms.memory();
+        if (m->is_Phi() && m->in(0) == ctl) {
+          mms.set_memory(m->in(i));
+        }
+      }
+      if (remove_unknown_flat_array_load(igvn, ctl->in(i), mm, unc_arg)) {
+        res = true;
+        if (!ctl->in(i)->is_Region()) {
+          igvn->replace_input_of(ctl, i, igvn->C->top());
+        }
+      }
+      igvn->remove_dead_node(mm);
+    }
+    return res;
+  }
+  // Verify the control flow is ok
+  Node* call = ctl;
+  MemBarNode* membar = nullptr;
+  for (;;) {
+    if (call == nullptr || call->is_top()) {
+      return false;
+    }
+    if (call->is_Proj() || call->is_Catch() || call->is_MemBar()) {
+      call = call->in(0);
+    } else if (call->Opcode() == Op_CallStaticJava && !call->in(0)->is_top() &&
+               call->as_Call()->entry_point() == OptoRuntime::load_unknown_inline_Java()) {
+      // If there is no explicit flat array accesses in the compilation unit, there would be no
+      // membar here
+      if (call->in(0)->is_Proj() && call->in(0)->in(0)->is_MemBar()) {
+        membar = call->in(0)->in(0)->as_MemBar();
+      }
+      break;
+    } else {
+      return false;
+    }
+  }
+
+  JVMState* jvms = call->jvms();
+  if (igvn->C->too_many_traps(jvms->method(), jvms->bci(), Deoptimization::trap_request_reason(uncommon_trap_request()))) {
+    return false;
+  }
+
+  Node* call_mem = call->in(TypeFunc::Memory);
+  if (call_mem == nullptr || call_mem->is_top()) {
+    return false;
+  }
+  if (!call_mem->is_MergeMem()) {
+    call_mem = MergeMemNode::make(call_mem);
+    igvn->register_new_node_with_optimizer(call_mem);
+  }
+
+  // Verify that there's no unexpected side effect
+  for (MergeMemStream mms2(mem->as_MergeMem(), call_mem->as_MergeMem()); mms2.next_non_empty2(); ) {
+    Node* m1 = mms2.is_empty() ? mms2.base_memory() : mms2.memory();
+    Node* m2 = mms2.memory2();
+
+    for (uint i = 0; i < 100; i++) {
+      if (m1 == m2) {
+        break;
+      } else if (m1->is_Proj()) {
+        m1 = m1->in(0);
+      } else if (m1->is_MemBar()) {
+        m1 = m1->in(TypeFunc::Memory);
+      } else if (m1->Opcode() == Op_CallStaticJava &&
+                 m1->as_Call()->entry_point() == OptoRuntime::load_unknown_inline_Java()) {
+        if (m1 != call) {
+          return false;
+        }
+        break;
+      } else if (m1->is_MergeMem()) {
+        MergeMemNode* mm = m1->as_MergeMem();
+        int idx = mms2.alias_idx();
+        if (idx == Compile::AliasIdxBot) {
+          m1 = mm->base_memory();
+        } else {
+          m1 = mm->memory_at(idx);
+        }
+      } else {
+        return false;
+      }
+    }
+  }
+  if (call_mem->outcnt() == 0) {
+    igvn->remove_dead_node(call_mem);
+  }
+
+  // Remove membar preceding the call
+  if (membar != nullptr) {
+    membar->remove(igvn);
+  }
+
+  address call_addr = OptoRuntime::uncommon_trap_blob()->entry_point();
+  CallNode* unc = new CallStaticJavaNode(OptoRuntime::uncommon_trap_Type(), call_addr, "uncommon_trap", nullptr);
+  unc->init_req(TypeFunc::Control, call->in(0));
+  unc->init_req(TypeFunc::I_O, call->in(TypeFunc::I_O));
+  unc->init_req(TypeFunc::Memory, call->in(TypeFunc::Memory));
+  unc->init_req(TypeFunc::FramePtr,  call->in(TypeFunc::FramePtr));
+  unc->init_req(TypeFunc::ReturnAdr, call->in(TypeFunc::ReturnAdr));
+  unc->init_req(TypeFunc::Parms+0, unc_arg);
+  unc->set_cnt(PROB_UNLIKELY_MAG(4));
+  unc->copy_call_debug_info(igvn, call->as_CallStaticJava());
+
+  // Replace the call with an uncommon trap
+  igvn->replace_input_of(call, 0, igvn->C->top());
+
+  igvn->register_new_node_with_optimizer(unc);
+
+  Node* ctrl = igvn->transform(new ProjNode(unc, TypeFunc::Control));
+  Node* halt = igvn->transform(new HaltNode(ctrl, call->in(TypeFunc::FramePtr), "uncommon trap returned which should never happen"));
+  igvn->add_input_to(igvn->C->root(), halt);
+
+  return true;
+}
+
 
 #ifndef PRODUCT
 void CallStaticJavaNode::dump_spec(outputStream *st) const {
@@ -1314,14 +1541,21 @@ bool CallLeafVectorNode::cmp( const Node &n ) const {
 
 //------------------------------calling_convention-----------------------------
 void CallRuntimeNode::calling_convention(BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt) const {
+  if (_entry_point == nullptr) {
+    // The call to that stub is a special case: its inputs are
+    // multiple values returned from a call and so it should follow
+    // the return convention.
+    SharedRuntime::java_return_convention(sig_bt, parm_regs, argcnt);
+    return;
+  }
   SharedRuntime::c_calling_convention(sig_bt, parm_regs, argcnt);
 }
 
 void CallLeafVectorNode::calling_convention( BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt ) const {
 #ifdef ASSERT
-  assert(tf()->range()->field_at(TypeFunc::Parms)->is_vect()->length_in_bytes() * BitsPerByte == _num_bits,
+  assert(tf()->range_sig()->field_at(TypeFunc::Parms)->is_vect()->length_in_bytes() * BitsPerByte == _num_bits,
          "return vector size must match");
-  const TypeTuple* d = tf()->domain();
+  const TypeTuple* d = tf()->domain_sig();
   for (uint i = TypeFunc::Parms; i < d->cnt(); i++) {
     Node* arg = in(i);
     assert(arg->bottom_type()->is_vect()->length_in_bytes() * BitsPerByte == _num_bits,
@@ -1357,7 +1591,7 @@ bool CallLeafPureNode::is_dead() const {
 TupleNode* CallLeafPureNode::make_tuple_of_input_state_and_top_return_values(const Compile* C) const {
   // Transparently propagate input state but parameters
   TupleNode* tuple = TupleNode::make(
-      tf()->range(),
+      tf()->range_cc(),
       in(TypeFunc::Control),
       in(TypeFunc::I_O),
       in(TypeFunc::Memory),
@@ -1365,30 +1599,11 @@ TupleNode* CallLeafPureNode::make_tuple_of_input_state_and_top_return_values(con
       in(TypeFunc::ReturnAdr));
 
   // And add TOPs for the return values
-  for (uint i = TypeFunc::Parms; i < tf()->range()->cnt(); i++) {
+  for (uint i = TypeFunc::Parms; i < tf()->range_cc()->cnt(); i++) {
     tuple->set_req(i, C->top());
   }
 
   return tuple;
-}
-
-CallLeafPureNode* CallLeafPureNode::inline_call_leaf_pure_node(Node* control) const {
-  Node* top = Compile::current()->top();
-  if (control == nullptr) {
-    control = in(TypeFunc::Control);
-  }
-
-  CallLeafPureNode* call = new CallLeafPureNode(tf(), entry_point(), _name);
-  call->init_req(TypeFunc::Control, control);
-  call->init_req(TypeFunc::I_O, top);
-  call->init_req(TypeFunc::Memory, top);
-  call->init_req(TypeFunc::ReturnAdr, top);
-  call->init_req(TypeFunc::FramePtr, top);
-  for (unsigned int i = 0; i < tf()->domain()->cnt() - TypeFunc::Parms; i++) {
-    call->init_req(TypeFunc::Parms + i, in(TypeFunc::Parms + i));
-  }
-
-  return call;
 }
 
 Node* CallLeafPureNode::Ideal(PhaseGVN* phase, bool can_reshape) {
@@ -1414,6 +1629,12 @@ void CallLeafNode::dump_spec(outputStream *st) const {
   CallNode::dump_spec(st);
 }
 #endif
+
+uint CallLeafNoFPNode::match_edge(uint idx) const {
+  // Null entry point is a special case for which the target is in a
+  // register. Need to match that edge.
+  return entry_point() == nullptr && idx == TypeFunc::Parms;
+}
 
 //=============================================================================
 
@@ -1465,7 +1686,20 @@ SafePointNode* SafePointNode::next_exception() const {
 // Skip over any collapsed Regions
 Node *SafePointNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   assert(_jvms == nullptr || ((uintptr_t)_jvms->map() & 1) || _jvms->map() == this, "inconsistent JVMState");
-  return remove_dead_region(phase, can_reshape) ? this : nullptr;
+  if (remove_dead_region(phase, can_reshape)) {
+    return this;
+  }
+  // Scalarize inline types in safepoint debug info.
+  // Delay this until all inlining is over to avoid getting inconsistent debug info.
+  if (phase->C->scalarize_in_safepoints() && can_reshape && jvms() != nullptr) {
+    for (uint i = jvms()->debug_start(); i < jvms()->debug_end(); i++) {
+      Node* n = in(i)->uncast();
+      if (n->is_InlineType()) {
+        n->as_InlineType()->make_scalar_in_safepoints(phase->is_IterGVN());
+      }
+    }
+  }
+  return nullptr;
 }
 
 //------------------------------Identity---------------------------------------
@@ -1619,7 +1853,7 @@ SafePointScalarObjectNode::SafePointScalarObjectNode(const TypeOopPtr* tp, Node*
   _alloc(alloc)
 {
 #ifdef ASSERT
-  if (!alloc->is_Allocate() && !(alloc->Opcode() == Op_VectorBox)) {
+  if (alloc != nullptr && !alloc->is_Allocate() && !(alloc->Opcode() == Op_VectorBox)) {
     alloc->dump();
     assert(false, "unexpected call node");
   }
@@ -1724,7 +1958,9 @@ uint AllocateNode::size_of() const { return sizeof(*this); }
 
 AllocateNode::AllocateNode(Compile* C, const TypeFunc *atype,
                            Node *ctrl, Node *mem, Node *abio,
-                           Node *size, Node *klass_node, Node *initial_test)
+                           Node *size, Node *klass_node,
+                           Node* initial_test,
+                           InlineTypeNode* inline_type_node)
   : CallNode(atype, nullptr, TypeRawPtr::BOTTOM)
 {
   init_class_id(Class_Allocate);
@@ -1732,6 +1968,7 @@ AllocateNode::AllocateNode(Compile* C, const TypeFunc *atype,
   _is_scalar_replaceable = false;
   _is_non_escaping = false;
   _is_allocation_MemBar_redundant = false;
+  _larval = false;
   Node *topnode = C->top();
 
   init_req( TypeFunc::Control  , ctrl );
@@ -1744,12 +1981,16 @@ AllocateNode::AllocateNode(Compile* C, const TypeFunc *atype,
   init_req( InitialTest        , initial_test);
   init_req( ALength            , topnode);
   init_req( ValidLengthTest    , topnode);
+  init_req( InlineType     , inline_type_node);
+  // DefaultValue defaults to nullptr
+  // RawDefaultValue defaults to nullptr
   C->add_macro_node(this);
 }
 
 void AllocateNode::compute_MemBar_redundancy(ciMethod* initializer)
 {
-  assert(initializer != nullptr && initializer->is_object_initializer(),
+  assert(initializer != nullptr &&
+         (initializer->is_object_constructor() || initializer->is_class_initializer()),
          "unexpected initializer method");
   BCEscapeAnalyzer* analyzer = initializer->get_bcea();
   if (analyzer == nullptr) {
@@ -1761,17 +2002,22 @@ void AllocateNode::compute_MemBar_redundancy(ciMethod* initializer)
     _is_allocation_MemBar_redundant = true;
   }
 }
-Node *AllocateNode::make_ideal_mark(PhaseGVN* phase, Node* control, Node* mem) {
+
+Node* AllocateNode::make_ideal_mark(PhaseGVN* phase, Node* control, Node* mem) {
   Node* mark_node = nullptr;
-  if (UseCompactObjectHeaders) {
+  if (UseCompactObjectHeaders || Arguments::is_valhalla_enabled()) {
     Node* klass_node = in(AllocateNode::KlassNode);
-    Node* proto_adr = phase->transform(AddPNode::make_off_heap(klass_node, phase->MakeConX(in_bytes(Klass::prototype_header_offset()))));
-    mark_node = LoadNode::make(*phase, control, mem, proto_adr, phase->type(proto_adr)->is_ptr(), TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
+    Node* proto_adr = phase->transform(new AddPNode(phase->C->top(), klass_node, phase->MakeConX(in_bytes(Klass::prototype_header_offset()))));
+    mark_node = LoadNode::make(*phase, control, mem, proto_adr, TypeRawPtr::BOTTOM, TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
+    if (Arguments::is_valhalla_enabled()) {
+      mark_node = phase->transform(mark_node);
+      // Avoid returning a constant (old node) here because this method is used by LoadNode::Ideal
+      mark_node = new OrXNode(mark_node, phase->MakeConX(_larval ? markWord::larval_bit_in_place : 0));
+    }
+    return mark_node;
   } else {
-    // For now only enable fast locking for non-array types
-    mark_node = phase->MakeConX(markWord::prototype().value());
+    return phase->MakeConX(markWord::prototype().value());
   }
-  return mark_node;
 }
 
 // Retrieve the length from the AllocateArrayNode. Narrow the type with a
@@ -2167,7 +2413,8 @@ Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // prevents macro expansion from expanding the lock.  Since we don't
   // modify the graph, the value returned from this function is the
   // one computed above.
-  if (can_reshape && EliminateLocks && !is_non_esc_obj()) {
+  const Type* obj_type = phase->type(obj_node());
+  if (can_reshape && EliminateLocks && !is_non_esc_obj() && !obj_type->is_inlinetypeptr()) {
     //
     // If we are locking an non-escaped object, the lock/unlock is unnecessary
     //
@@ -2368,7 +2615,8 @@ Node *UnlockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // modify the graph, the value returned from this function is the
   // one computed above.
   // Escape state is defined after Parse phase.
-  if (can_reshape && EliminateLocks && !is_non_esc_obj()) {
+  const Type* obj_type = phase->type(obj_node());
+  if (can_reshape && EliminateLocks && !is_non_esc_obj() && !obj_type->is_inlinetypeptr()) {
     //
     // If we are unlocking an non-escaped object, the lock/unlock is unnecessary.
     //
@@ -2448,7 +2696,8 @@ bool CallNode::may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeO
       return true;
     }
 
-    dest_t = dest_t->add_offset(Type::OffsetBot)->is_oopptr();
+    dest_t = dest_t->is_aryptr()->with_field_offset(Type::OffsetBot)->add_offset(Type::OffsetBot)->is_oopptr();
+    t_oop = t_oop->is_aryptr()->with_field_offset(Type::OffsetBot);
     uint dest_alias = phase->C->get_alias_index(dest_t);
     uint t_oop_alias = phase->C->get_alias_index(t_oop);
 
@@ -2456,158 +2705,4 @@ bool CallNode::may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeO
   }
 
   return true;
-}
-
-PowDNode::PowDNode(Compile* C, Node* base, Node* exp)
-    : CallLeafPureNode(
-        OptoRuntime::Math_DD_D_Type(),
-        StubRoutines::dpow() != nullptr ? StubRoutines::dpow() : CAST_FROM_FN_PTR(address, SharedRuntime::dpow),
-        "pow") {
-  add_flag(Flag_is_macro);
-  C->add_macro_node(this);
-
-  init_req(TypeFunc::Parms + 0, base);
-  init_req(TypeFunc::Parms + 1, C->top());  // double slot padding
-  init_req(TypeFunc::Parms + 2, exp);
-  init_req(TypeFunc::Parms + 3, C->top());  // double slot padding
-}
-
-const Type* PowDNode::Value(PhaseGVN* phase) const {
-  const Type* t_base = phase->type(base());
-  const Type* t_exp  = phase->type(exp());
-
-  if (t_base == Type::TOP || t_exp == Type::TOP) {
-    return Type::TOP;
-  }
-
-  const TypeD* base_con = t_base->isa_double_constant();
-  const TypeD* exp_con  = t_exp->isa_double_constant();
-  const TypeD* result_t = nullptr;
-
-  // constant folding: both inputs are constants
-  if (base_con != nullptr && exp_con != nullptr) {
-    result_t = TypeD::make(SharedRuntime::dpow(base_con->getd(), exp_con->getd()));
-  }
-
-  // Special cases when only the exponent is known:
-  if (exp_con != nullptr) {
-    double e = exp_con->getd();
-
-    // If the second argument is positive or negative zero, then the result is 1.0.
-    // i.e., pow(x, +/-0.0D) => 1.0
-    if (e == 0.0) { // true for both -0.0 and +0.0
-      result_t = TypeD::ONE;
-    }
-
-    // If the second argument is NaN, then the result is NaN.
-    // i.e., pow(x, NaN) => NaN
-    if (g_isnan(e)) {
-      result_t = TypeD::make(NAN);
-    }
-  }
-
-  if (result_t != nullptr) {
-    // We can't simply return a TypeD here, it must be a tuple type to be compatible with call nodes.
-    const Type** fields = TypeTuple::fields(2);
-    fields[TypeFunc::Parms + 0] = result_t;
-    fields[TypeFunc::Parms + 1] = Type::HALF;
-    return TypeTuple::make(TypeFunc::Parms + 2, fields);
-  }
-
-  return tf()->range();
-}
-
-Node* PowDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  if (!can_reshape) {
-    return nullptr;  // wait for igvn
-  }
-
-  PhaseIterGVN* igvn = phase->is_IterGVN();
-  Node* base = this->base();
-  Node* exp  = this->exp();
-
-  const Type* t_exp  = phase->type(exp);
-  const TypeD* exp_con  = t_exp->isa_double_constant();
-
-  // Special cases when only the exponent is known:
-  if (exp_con != nullptr) {
-    double e = exp_con->getd();
-
-    // If the second argument is 1.0, then the result is the same as the first argument.
-    // i.e., pow(x, 1.0) => x
-    if (e == 1.0) {
-      return make_tuple_of_input_state_and_result(igvn, base);
-    }
-
-    // If the second argument is 2.0, then strength reduce to multiplications.
-    // i.e., pow(x, 2.0) => x * x
-    if (e == 2.0) {
-      Node* mul = igvn->transform(new MulDNode(base, base));
-      return make_tuple_of_input_state_and_result(igvn, mul);
-    }
-
-    // If the second argument is 0.5, the strength reduce to square roots.
-    // i.e., pow(x, 0.5) => sqrt(x) iff x > 0
-    if (e == 0.5 && Matcher::match_rule_supported(Op_SqrtD)) {
-      Node* ctrl = in(TypeFunc::Control);
-      Node* zero = igvn->zerocon(T_DOUBLE);
-
-      // According to the API specs, pow(-0.0, 0.5) = 0.0 and sqrt(-0.0) = -0.0.
-      // So pow(-0.0, 0.5) shouldn't be replaced with sqrt(-0.0).
-      // -0.0/+0.0 are both excluded since floating-point comparison doesn't distinguish -0.0 from +0.0.
-      Node* cmp = igvn->register_new_node_with_optimizer(new CmpDNode(base, zero));
-      Node* test = igvn->register_new_node_with_optimizer(new BoolNode(cmp, BoolTest::le));
-
-      IfNode* iff = new IfNode(ctrl, test, PROB_UNLIKELY_MAG(3), COUNT_UNKNOWN);
-      igvn->register_new_node_with_optimizer(iff);
-      Node* if_slow = igvn->register_new_node_with_optimizer(new IfTrueNode(iff));  // x <= 0
-      Node* if_fast = igvn->register_new_node_with_optimizer(new IfFalseNode(iff)); // x > 0
-
-      // slow path: call pow(x, 0.5)
-      Node* call = igvn->register_new_node_with_optimizer(inline_call_leaf_pure_node(if_slow));
-      Node* call_ctrl = igvn->register_new_node_with_optimizer(new ProjNode(call, TypeFunc::Control));
-      Node* call_result = igvn->register_new_node_with_optimizer(new ProjNode(call, TypeFunc::Parms + 0));
-
-      // fast path: sqrt(x)
-      Node* sqrt = igvn->register_new_node_with_optimizer(new SqrtDNode(igvn->C, if_fast, base));
-
-      // merge paths
-      RegionNode* region = new RegionNode(3);
-      igvn->register_new_node_with_optimizer(region);
-      region->init_req(1, call_ctrl); // slow path
-      region->init_req(2, if_fast);   // fast path
-
-      PhiNode* phi = new PhiNode(region, Type::DOUBLE);
-      igvn->register_new_node_with_optimizer(phi);
-      phi->init_req(1, call_result); // slow: pow() result
-      phi->init_req(2, sqrt);        // fast: sqrt() result
-
-      igvn->C->set_has_split_ifs(true); // Has chance for split-if optimization
-
-      return make_tuple_of_input_state_and_result(igvn, phi, region);
-    }
-  }
-
-  return CallLeafPureNode::Ideal(phase, can_reshape);
-}
-
-// We can't simply have Ideal() returning a Con or MulNode since the users are still expecting a Call node, but we could
-// produce a tuple that follows the same pattern so users can still get control, io, memory, etc..
-TupleNode* PowDNode::make_tuple_of_input_state_and_result(PhaseIterGVN* phase, Node* result, Node* control) {
-  if (control == nullptr) {
-    control = in(TypeFunc::Control);
-  }
-
-  Compile* C = phase->C;
-  C->remove_macro_node(this);
-  TupleNode* tuple = TupleNode::make(
-      tf()->range(),
-      control,
-      in(TypeFunc::I_O),
-      in(TypeFunc::Memory),
-      in(TypeFunc::FramePtr),
-      in(TypeFunc::ReturnAdr),
-      result,
-      C->top());
-  return tuple;
 }

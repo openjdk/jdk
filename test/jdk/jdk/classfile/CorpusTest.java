@@ -25,6 +25,7 @@
  * @test
  * @bug 8325485
  * @summary Testing ClassFile on small Corpus.
+ * @enablePreview
  * @build helpers.* testdata.*
  * @run junit/othervm/timeout=480 -Djunit.jupiter.execution.parallel.enabled=true CorpusTest
  */

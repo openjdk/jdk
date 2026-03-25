@@ -30,8 +30,11 @@
 #include "code/vmreg.inline.hpp"
 #include "compiler/oopMap.hpp"
 #include "utilities/macros.hpp"
+#include "runtime/signature.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/checkedCast.hpp"
+
+class ciInlineKlass;
 
 // MacroAssembler extends Assembler by frequently used macros.
 //
@@ -93,6 +96,28 @@ class MacroAssembler: public Assembler {
   void null_check(Register reg, int offset = -1);
   static bool needs_explicit_null_check(intptr_t offset);
   static bool uses_implicit_null_check(void* address);
+
+  // markWord tests, kills markWord reg
+  void test_markword_is_inline_type(Register markword, Label& is_inline_type);
+
+  // inlineKlass queries, kills temp_reg
+  void test_oop_is_not_inline_type(Register object, Register tmp, Label& not_inline_type, bool can_be_null = true);
+
+  void test_field_is_null_free_inline_type(Register flags, Register temp_reg, Label& is_null_free);
+  void test_field_is_not_null_free_inline_type(Register flags, Register temp_reg, Label& not_null_free);
+  void test_field_is_flat(Register flags, Register temp_reg, Label& is_flat);
+  void test_field_has_null_marker(Register flags, Register temp_reg, Label& has_null_marker);
+
+  // Check oops for special arrays, i.e. flat arrays and/or null-free arrays
+  void test_oop_prototype_bit(Register oop, Register temp_reg, int32_t test_bit, bool jmp_set, Label& jmp_label);
+  void test_flat_array_oop(Register oop, Register temp_reg, Label& is_flat_array);
+  void test_non_flat_array_oop(Register oop, Register temp_reg, Label& is_non_flat_array);
+  void test_null_free_array_oop(Register oop, Register temp_reg, Label& is_null_free_array);
+  void test_non_null_free_array_oop(Register oop, Register temp_reg, Label& is_non_null_free_array);
+
+  // Check array klass layout helper for flat or null-free arrays...
+  void test_flat_array_layout(Register lh, Label& is_flat_array);
+  void test_non_flat_array_layout(Register lh, Label& is_non_flat_array);
 
   // Required platform-specific helpers for Label::patch_instructions.
   // They _shadow_ the declarations in AbstractAssembler, which are undefined.
@@ -347,6 +372,9 @@ class MacroAssembler: public Assembler {
   void load_method_holder(Register holder, Register method);
 
   // oop manipulations
+
+  // Load oopDesc._metadata without decode (useful for direct Klass* compare from oops)
+  void load_metadata(Register dst, Register src);
   void load_narrow_klass_compact(Register dst, Register src);
   void load_klass(Register dst, Register src, Register tmp);
   void store_klass(Register dst, Register src, Register tmp);
@@ -364,6 +392,15 @@ class MacroAssembler: public Assembler {
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register val,
                        Register tmp1, Register tmp2, Register tmp3);
 
+  void flat_field_copy(DecoratorSet decorators, Register src, Register dst, Register inline_layout_info);
+
+  // inline type data payload offsets...
+  void payload_offset(Register inline_klass, Register offset);
+  void payload_addr(Register oop, Register data, Register inline_klass);
+  // get data payload ptr a flat value array at index, kills rcx and index
+  void data_for_value_array_index(Register array, Register array_klass,
+                                  Register index, Register data);
+
   void load_heap_oop(Register dst, Address src, Register tmp1 = noreg, DecoratorSet decorators = 0);
   void load_heap_oop_not_null(Register dst, Address src, Register tmp1 = noreg, DecoratorSet decorators = 0);
   void store_heap_oop(Address dst, Register val, Register tmp1 = noreg,
@@ -372,6 +409,8 @@ class MacroAssembler: public Assembler {
   // Used for storing null. All other oop constants should be
   // stored using routines that take a jobject.
   void store_heap_oop_null(Address dst);
+
+  void load_prototype_header(Register dst, Register src, Register tmp);
 
   void store_klass_gap(Register dst, Register src);
 
@@ -507,6 +546,15 @@ public:
   }
 
   // allocation
+
+  // Object / value buffer allocation...
+  // Allocate instance of klass, assumes klass initialized by caller
+  // new_obj prefers to be rax
+  // Kills t1 and t2, perserves klass, return allocation in new_obj (rsi on LP64)
+  void allocate_instance(Register klass, Register new_obj,
+                         Register t1, Register t2,
+                         bool clear_fields, Label& alloc_failed);
+
   void tlab_allocate(
     Register obj,                      // result: pointer to object after successful allocation
     Register var_size_in_bytes,        // object size in bytes if unknown at compile time; invalid otherwise
@@ -516,6 +564,8 @@ public:
     Label&   slow_case                 // continuation point if fast allocation fails
   );
   void zero_memory(Register address, Register length_in_bytes, int offset_in_bytes, Register temp);
+
+  void inline_layout_info(Register klass, Register index, Register layout_info);
 
   void population_count(Register dst, Register src, Register scratch1, Register scratch2);
 
@@ -765,6 +815,7 @@ public:
 
   void andptr(Register dst, int32_t src);
   void andptr(Register src1, Register src2) { andq(src1, src2); }
+  void andptr(Register dst, Address src) { andq(dst, src); }
 
   using Assembler::andq;
   void andq(Register dst, AddressLiteral src, Register rscratch = noreg);
@@ -1915,9 +1966,24 @@ public:
 
 
  public:
+  // Inline type specific methods
+  #include "asm/macroAssembler_common.hpp"
+
+  int store_inline_type_fields_to_buf(ciInlineKlass* vk, bool from_interpreter = true);
+  bool move_helper(VMReg from, VMReg to, BasicType bt, RegState reg_state[]);
+  bool unpack_inline_helper(const GrowableArray<SigEntry>* sig, int& sig_index,
+                            VMReg from, int& from_index, VMRegPair* to, int to_count, int& to_index,
+                            RegState reg_state[]);
+  bool pack_inline_helper(const GrowableArray<SigEntry>* sig, int& sig_index, int vtarg_index,
+                          VMRegPair* from, int from_count, int& from_index, VMReg to,
+                          RegState reg_state[], Register val_array);
+  int extend_stack_for_inline_args(int args_on_stack);
+  void remove_frame(int initial_framesize, bool needs_stack_repair);
+  VMReg spill_reg_for(VMReg reg);
+
   // clear memory of size 'cnt' qwords, starting at 'base';
   // if 'is_large' is set, do not try to produce short loop
-  void clear_mem(Register base, Register cnt, Register rtmp, XMMRegister xtmp, bool is_large, KRegister mask=knoreg);
+  void clear_mem(Register base, Register cnt, Register val, XMMRegister xtmp, bool is_large, bool word_copy_only, KRegister mask=knoreg);
 
   // clear memory initialization sequence for constant size;
   void clear_mem(Register base, int cnt, Register rtmp, XMMRegister xtmp, KRegister mask=knoreg);

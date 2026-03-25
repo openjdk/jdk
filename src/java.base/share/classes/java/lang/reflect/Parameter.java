@@ -29,6 +29,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.Objects;
+
+import jdk.internal.reflect.AccessFlagSet;
 import sun.reflect.annotation.AnnotationSupport;
 
 /**
@@ -172,8 +174,7 @@ public final class Parameter implements AnnotatedElement {
      * @since 20
      */
     public Set<AccessFlag> accessFlags() {
-        return AccessibleObject.reflectionFactory.parseAccessFlags(getModifiers(),
-                AccessFlag.Location.METHOD_PARAMETER, getDeclaringExecutable().getDeclaringClass());
+        return AccessFlagSet.ofValidated(AccessFlagSet.METHOD_PARAMETER_FLAGS, modifiers);
     }
 
     /**

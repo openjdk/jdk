@@ -125,6 +125,7 @@ class OptoRuntime : public AllStatic {
   // static TypeFunc* data members
   static const TypeFunc* _new_instance_Type;
   static const TypeFunc* _new_array_Type;
+  static const TypeFunc* _new_array_nozero_Type;
   static const TypeFunc* _multianewarray2_Type;
   static const TypeFunc* _multianewarray3_Type;
   static const TypeFunc* _multianewarray4_Type;
@@ -209,10 +210,10 @@ class OptoRuntime : public AllStatic {
   // =================================
 
   // Allocate storage for a Java instance.
-  static void new_instance_C(Klass* instance_klass, JavaThread* current);
+  static void new_instance_C(Klass* instance_klass, bool is_larval, JavaThread* current);
 
   // Allocate storage for a objArray or typeArray
-  static void new_array_C(Klass* array_klass, int len, JavaThread* current);
+  static void new_array_C(Klass* array_klass, int len, oopDesc* init_val, JavaThread* current);
   static void new_array_nozero_C(Klass* array_klass, int len, JavaThread* current);
 
   // Allocate storage for a multi-dimensional arrays
@@ -261,6 +262,8 @@ private:
   static void register_finalizer_C(oopDesc* obj, JavaThread* current);
 
  public:
+  static void load_unknown_inline_C(flatArrayOopDesc* array, int index, JavaThread* current);
+  static void store_unknown_inline_C(instanceOopDesc* buffer, flatArrayOopDesc* array, int index, JavaThread* current);
 
   static bool is_callee_saved_register(MachRegisterNumbers reg);
 
@@ -293,6 +296,8 @@ private:
 
   static address slow_arraycopy_Java()                   { return _slow_arraycopy_Java; }
   static address register_finalizer_Java()               { return _register_finalizer_Java; }
+  static address load_unknown_inline_Java()              { return _load_unknown_inline_Java; }
+  static address store_unknown_inline_Java()             { return _store_unknown_inline_Java; }
 
   static address vthread_end_first_transition_Java()     { return _vthread_end_first_transition_Java; }
   static address vthread_start_final_transition_Java()   { return _vthread_start_final_transition_Java; }
@@ -324,7 +329,8 @@ private:
   }
 
   static inline const TypeFunc* new_array_nozero_Type() {
-    return new_array_Type();
+    assert(_new_array_nozero_Type != nullptr, "should be initialized");
+    return _new_array_nozero_Type;
   }
 
   static const TypeFunc* multianewarray_Type(int ndim); // multianewarray
@@ -744,6 +750,12 @@ private:
     return _class_id_load_barrier_Type;
   }
 #endif // INCLUDE_JFR
+
+  static const TypeFunc* load_unknown_inline_Type();
+  static const TypeFunc* store_unknown_inline_Type();
+
+  static const TypeFunc* store_inline_type_fields_Type();
+  static const TypeFunc* pack_inline_type_Type();
 
   // Dtrace support. entry and exit probes have the same signature
   static inline const TypeFunc* dtrace_method_entry_exit_Type() {

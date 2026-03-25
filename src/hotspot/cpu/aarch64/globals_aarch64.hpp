@@ -67,6 +67,9 @@ define_pd_global(bool, RewriteFrequentPairs, true);
 
 define_pd_global(bool, PreserveFramePointer, false);
 
+define_pd_global(bool, InlineTypePassFieldsAsArgs, true);
+define_pd_global(bool, InlineTypeReturnedAsFields, true);
+
 define_pd_global(uintx, TypeProfileLevel, 111);
 
 define_pd_global(bool, CompactStrings, true);
@@ -127,8 +130,6 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Branch Protection to use: none, standard, pac-ret")          \
   product(bool, AlwaysMergeDMB, true, DIAGNOSTIC,                       \
           "Always merge DMB instructions in code emission")             \
-  product(bool, NeoverseN1ICacheErratumMitigation, false, DIAGNOSTIC,   \
-          "Enable workaround for Neoverse N1 erratum 1542419")          \
 
 // end of ARCH_FLAGS
 

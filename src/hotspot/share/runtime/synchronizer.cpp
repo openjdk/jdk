@@ -315,6 +315,22 @@ jlong ObjectSynchronizer::_last_async_deflation_time_ns = 0;
 static uintx _no_progress_cnt = 0;
 static bool _no_progress_skip_increment = false;
 
+// These checks are required for wait, notify and exit to avoid inflating the monitor to
+// find out this inline type object cannot be locked.
+#define CHECK_THROW_NOSYNC_IMSE(obj)  \
+  if ((obj)->mark().is_inline_type()) {  \
+    JavaThread* THREAD = current;           \
+    ResourceMark rm(THREAD);                \
+    THROW_MSG(vmSymbols::java_lang_IllegalMonitorStateException(), obj->klass()->external_name()); \
+  }
+
+#define CHECK_THROW_NOSYNC_IMSE_0(obj)  \
+  if ((obj)->mark().is_inline_type()) {  \
+    JavaThread* THREAD = current;             \
+    ResourceMark rm(THREAD);                  \
+    THROW_MSG_0(vmSymbols::java_lang_IllegalMonitorStateException(), obj->klass()->external_name()); \
+  }
+
 // =====================> Quick functions
 
 // The quick_* forms are special fast-path variants used to improve
@@ -341,6 +357,7 @@ bool ObjectSynchronizer::quick_notify(oopDesc* obj, JavaThread* current, bool al
   assert(current->thread_state() == _thread_in_Java, "invariant");
   NoSafepointVerifier nsv;
   if (obj == nullptr) return false;  // slow-path for invalid obj
+  assert(!obj->klass()->is_inline_klass(), "monitor op on inline type");
   const markWord mark = obj->mark();
 
   if (mark.is_fast_locked() && current->lock_stack().contains(cast_to_oop(obj))) {
@@ -428,12 +445,21 @@ void ObjectSynchronizer::handle_sync_on_value_based_class(Handle obj, JavaThread
 // JNI locks on java objects
 // NOTE: must use heavy weight monitor to handle jni monitor enter
 void ObjectSynchronizer::jni_enter(Handle obj, JavaThread* current) {
+  JavaThread* THREAD = current;
   // Top native frames in the stack will not be seen if we attempt
   // preemption, since we start walking from the last Java anchor.
   NoPreemptMark npm(current);
 
   if (obj->klass()->is_value_based()) {
     handle_sync_on_value_based_class(obj, current);
+  }
+
+  if (obj->klass()->is_inline_klass()) {
+    ResourceMark rm(THREAD);
+    stringStream ss;
+    ss.print("Cannot synchronize on an instance of value class %s",
+             obj->klass()->external_name());
+    THROW_MSG(vmSymbols::java_lang_IdentityException(), ss.as_string());
   }
 
   // the current locking is from JNI instead of Java code
@@ -453,6 +479,7 @@ void ObjectSynchronizer::jni_enter(Handle obj, JavaThread* current) {
 // NOTE: must use heavy weight monitor to handle jni monitor exit
 void ObjectSynchronizer::jni_exit(oop obj, TRAPS) {
   JavaThread* current = THREAD;
+  CHECK_THROW_NOSYNC_IMSE(obj);
 
   ObjectMonitor* monitor;
   monitor = ObjectSynchronizer::inflate_locked_or_imse(obj, inflate_cause_jni_exit, CHECK);
@@ -513,6 +540,7 @@ void ObjectLocker::wait_uninterruptibly(TRAPS) {
 
 int ObjectSynchronizer::wait(Handle obj, jlong millis, TRAPS) {
   JavaThread* current = THREAD;
+  CHECK_THROW_NOSYNC_IMSE_0(obj);
   if (millis < 0) {
     THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "timeout value is negative");
   }
@@ -542,6 +570,7 @@ void ObjectSynchronizer::waitUninterruptibly(Handle obj, jlong millis, TRAPS) {
 
 void ObjectSynchronizer::notify(Handle obj, TRAPS) {
   JavaThread* current = THREAD;
+  CHECK_THROW_NOSYNC_IMSE(obj);
 
   markWord mark = obj->mark();
   if ((mark.is_fast_locked() && current->lock_stack().contains(obj()))) {
@@ -555,6 +584,7 @@ void ObjectSynchronizer::notify(Handle obj, TRAPS) {
 // NOTE: see comment of notify()
 void ObjectSynchronizer::notifyall(Handle obj, TRAPS) {
   JavaThread* current = THREAD;
+  CHECK_THROW_NOSYNC_IMSE(obj);
 
   markWord mark = obj->mark();
   if ((mark.is_fast_locked() && current->lock_stack().contains(obj()))) {
@@ -640,6 +670,9 @@ static intptr_t get_next_hash(Thread* current, oop obj) {
 }
 
 intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
+  // VM should be calling bootstrap method.
+  assert(!obj->klass()->is_inline_klass(), "FastHashCode should not be called for inline classes");
+
   while (true) {
     ObjectMonitor* monitor = nullptr;
     markWord temp, test;
@@ -738,6 +771,9 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
 
 bool ObjectSynchronizer::current_thread_holds_lock(JavaThread* current,
                                                    Handle h_obj) {
+  if (h_obj->mark().is_inline_type()) {
+    return false;
+  }
   assert(current == JavaThread::current(), "Can only be called on current thread");
   oop obj = h_obj();
 
@@ -1416,11 +1452,7 @@ void ObjectSynchronizer::chk_in_use_entry(ObjectMonitor* n, outputStream* out,
   }
 
   const markWord mark = obj->mark();
-  // Note: When using ObjectMonitorTable we may observe an intermediate state,
-  // where the monitor is globally visible, but no thread has yet transitioned
-  // the markWord. To avoid reporting a false positive during this transition, we
-  // skip the `!mark.has_monitor()` test if we are using the ObjectMonitorTable.
-  if (!UseObjectMonitorTable && !mark.has_monitor()) {
+  if (!mark.has_monitor()) {
     out->print_cr("ERROR: monitor=" INTPTR_FORMAT ": in-use monitor's "
                   "object does not think it has a monitor: obj="
                   INTPTR_FORMAT ", mark=" INTPTR_FORMAT, p2i(n),

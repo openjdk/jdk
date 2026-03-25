@@ -222,7 +222,7 @@
   nonstatic_field(InstanceKlass,               _constants,                                    ConstantPool*)                         \
   volatile_nonstatic_field(InstanceKlass,      _init_state,                                   InstanceKlass::ClassState)             \
   volatile_nonstatic_field(InstanceKlass,      _init_thread,                                  JavaThread*)                           \
-  nonstatic_field(InstanceKlass,               _misc_flags._flags,                            u2)                                    \
+  nonstatic_field(InstanceKlass,               _misc_flags._flags,                            u4)                                    \
   nonstatic_field(InstanceKlass,               _access_flags,                                 AccessFlags)                           \
   nonstatic_field(InstanceKlass,               _annotations,                                  Annotations*)                          \
                                                                                                                                      \
@@ -735,6 +735,9 @@
   declare_constant(DataLayout::virtual_call_type_data_tag)                \
   declare_constant(DataLayout::parameters_type_data_tag)                  \
   declare_constant(DataLayout::speculative_trap_data_tag)                 \
+  declare_constant(DataLayout::array_store_data_tag)                      \
+  declare_constant(DataLayout::array_load_data_tag)                       \
+  declare_constant(DataLayout::acmp_data_tag)                             \
                                                                           \
   declare_constant(Deoptimization::Unpack_deopt)                          \
   declare_constant(Deoptimization::Unpack_exception)                      \
@@ -815,7 +818,7 @@
   declare_constant(Klass::_lh_header_size_mask)                           \
   declare_constant(Klass::_lh_array_tag_shift)                            \
   declare_constant(Klass::_lh_array_tag_type_value)                       \
-  declare_constant(Klass::_lh_array_tag_obj_value)                        \
+  declare_constant(Klass::_lh_array_tag_ref_value)                        \
                                                                           \
   declare_constant(markWord::no_hash)                                     \
                                                                           \

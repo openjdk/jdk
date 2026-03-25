@@ -31,6 +31,8 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.hpp"
+#include "runtime/javaThread.hpp"
+#include "runtime/thread.hpp"
 
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
@@ -40,9 +42,11 @@ inline OopCopyResult BarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_arr
   T* src = arrayOopDesc::obj_offset_to_raw(src_obj, src_offset_in_bytes, src_raw);
   T* dst = arrayOopDesc::obj_offset_to_raw(dst_obj, dst_offset_in_bytes, dst_raw);
 
-  if (!HasDecorator<decorators, ARRAYCOPY_CHECKCAST>::value) {
+  if ((!HasDecorator<decorators, ARRAYCOPY_CHECKCAST>::value) &&
+      (!HasDecorator<decorators, ARRAYCOPY_NOTNULL>::value)) {
     // Covariant, copy without checks
     Raw::oop_arraycopy(nullptr, 0, src, nullptr, 0, dst, length);
+
     return OopCopyResult::ok;
   }
 
@@ -50,7 +54,11 @@ inline OopCopyResult BarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_arr
   Klass* const dst_klass = objArrayOop(dst_obj)->element_klass();
   for (const T* const end = src + length; src < end; src++, dst++) {
     const T elem = *src;
-    if (!oopDesc::is_instanceof_or_null(CompressedOops::decode(elem), dst_klass)) {
+    if (HasDecorator<decorators, ARRAYCOPY_NOTNULL>::value && CompressedOops::is_null(elem)) {
+      return OopCopyResult::failed_check_null;
+    }
+    if (HasDecorator<decorators, ARRAYCOPY_CHECKCAST>::value &&
+        !oopDesc::is_instanceof_or_null(CompressedOops::decode(elem), dst_klass)) {
       return OopCopyResult::failed_check_class_cast;
     }
     *dst = elem;

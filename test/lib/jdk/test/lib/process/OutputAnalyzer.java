@@ -56,23 +56,8 @@ public final class OutputAnalyzer {
      * @throws IOException If an I/O error occurs.
      */
     public OutputAnalyzer(Process process, Charset cs) throws IOException {
-        this(process, cs, true);
+        buffer = OutputBuffer.of(process, cs);
     }
-
-    /**
-     * Create an OutputAnalyzer, a utility class for verifying output and exit
-     * value from a Process, with a configurable verbosity level.
-     *
-     * @param process Process to analyze
-     * @param cs The charset used to convert stdout/stderr from bytes to chars
-     *           or null for the default charset.
-     * @param verbose Set to false to limit logging to stdout.
-     * @throws IOException If an I/O error occurs.
-     */
-    public OutputAnalyzer(Process process, Charset cs, boolean verbose) throws IOException {
-        buffer = OutputBuffer.of(process, cs, verbose);
-    }
-
     /**
      * Create an OutputAnalyzer, a utility class for verifying output and exit
      * value from a Process
@@ -81,19 +66,7 @@ public final class OutputAnalyzer {
      * @throws IOException If an I/O error occurs.
      */
     public OutputAnalyzer(Process process) throws IOException {
-        this(process, true);
-    }
-
-    /**
-     * Create an OutputAnalyzer, a utility class for verifying output and exit
-     * value from a Process, with a configurable verbosity level.
-     *
-     * @param process Process to analyze
-     * @param verbose Set to false to limit logging to stdout.
-     * @throws IOException If an I/O error occurs.
-     */
-    public OutputAnalyzer(Process process, boolean verbose) throws IOException {
-        buffer = OutputBuffer.of(process, verbose);
+        buffer = OutputBuffer.of(process);
     }
 
     /**

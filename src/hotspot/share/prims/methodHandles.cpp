@@ -129,19 +129,22 @@ void MethodHandles::set_enabled(bool z) {
 
 // import java_lang_invoke_MemberName.*
 enum {
-  IS_METHOD            = java_lang_invoke_MemberName::MN_IS_METHOD,
-  IS_CONSTRUCTOR       = java_lang_invoke_MemberName::MN_IS_CONSTRUCTOR,
-  IS_FIELD             = java_lang_invoke_MemberName::MN_IS_FIELD,
-  IS_TYPE              = java_lang_invoke_MemberName::MN_IS_TYPE,
-  CALLER_SENSITIVE     = java_lang_invoke_MemberName::MN_CALLER_SENSITIVE,
-  TRUSTED_FINAL        = java_lang_invoke_MemberName::MN_TRUSTED_FINAL,
-  HIDDEN_MEMBER        = java_lang_invoke_MemberName::MN_HIDDEN_MEMBER,
-  REFERENCE_KIND_SHIFT = java_lang_invoke_MemberName::MN_REFERENCE_KIND_SHIFT,
-  REFERENCE_KIND_MASK  = java_lang_invoke_MemberName::MN_REFERENCE_KIND_MASK,
-  LM_UNCONDITIONAL     = java_lang_invoke_MemberName::MN_UNCONDITIONAL_MODE,
-  LM_MODULE            = java_lang_invoke_MemberName::MN_MODULE_MODE,
-  LM_TRUSTED           = java_lang_invoke_MemberName::MN_TRUSTED_MODE,
-  ALL_KINDS      = IS_METHOD | IS_CONSTRUCTOR | IS_FIELD | IS_TYPE
+  IS_METHOD             = java_lang_invoke_MemberName::MN_IS_METHOD,
+  IS_OBJECT_CONSTRUCTOR = java_lang_invoke_MemberName::MN_IS_OBJECT_CONSTRUCTOR,
+  IS_FIELD              = java_lang_invoke_MemberName::MN_IS_FIELD,
+  IS_TYPE               = java_lang_invoke_MemberName::MN_IS_TYPE,
+  CALLER_SENSITIVE      = java_lang_invoke_MemberName::MN_CALLER_SENSITIVE,
+  TRUSTED_FINAL         = java_lang_invoke_MemberName::MN_TRUSTED_FINAL,
+  HIDDEN_MEMBER         = java_lang_invoke_MemberName::MN_HIDDEN_MEMBER,
+  NULL_RESTRICTED       = java_lang_invoke_MemberName::MN_NULL_RESTRICTED_FIELD,
+  REFERENCE_KIND_SHIFT  = java_lang_invoke_MemberName::MN_REFERENCE_KIND_SHIFT,
+  REFERENCE_KIND_MASK   = java_lang_invoke_MemberName::MN_REFERENCE_KIND_MASK,
+  LAYOUT_SHIFT          = java_lang_invoke_MemberName::MN_LAYOUT_SHIFT,
+  LAYOUT_MASK           = java_lang_invoke_MemberName::MN_LAYOUT_MASK,
+  LM_UNCONDITIONAL      = java_lang_invoke_MemberName::MN_UNCONDITIONAL_MODE,
+  LM_MODULE             = java_lang_invoke_MemberName::MN_MODULE_MODE,
+  LM_TRUSTED            = java_lang_invoke_MemberName::MN_TRUSTED_MODE,
+  ALL_KINDS      = IS_METHOD | IS_OBJECT_CONSTRUCTOR | IS_FIELD | IS_TYPE
 };
 
 int MethodHandles::ref_kind_to_flags(int ref_kind) {
@@ -152,7 +155,7 @@ int MethodHandles::ref_kind_to_flags(int ref_kind) {
   } else if (ref_kind_is_method(ref_kind)) {
     flags |= IS_METHOD;
   } else if (ref_kind == JVM_REF_newInvokeSpecial) {
-    flags |= IS_CONSTRUCTOR;
+    flags |= IS_OBJECT_CONSTRUCTOR;
   }
   return flags;
 }
@@ -171,7 +174,7 @@ Handle MethodHandles::resolve_MemberName_type(Handle mname, Klass* caller, TRAPS
   int flags = java_lang_invoke_MemberName::flags(mname());
   switch (flags & ALL_KINDS) {
     case IS_METHOD:
-    case IS_CONSTRUCTOR:
+    case IS_OBJECT_CONSTRUCTOR:
       resolved = SystemDictionary::find_method_handle_type(signature, caller, CHECK_(empty));
       break;
     case IS_FIELD:
@@ -312,10 +315,10 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
   case CallInfo::direct_call:
     vmindex = Method::nonvirtual_vtable_index;
     if (m->is_static()) {
-      assert(!m->is_static_initializer(), "Cannot be static initializer");
+      assert(!m->is_class_initializer(), "Cannot be static initializer");
       flags |= IS_METHOD      | (JVM_REF_invokeStatic  << REFERENCE_KIND_SHIFT);
-    } else if (m->is_object_initializer()) {
-      flags |= IS_CONSTRUCTOR | (JVM_REF_invokeSpecial << REFERENCE_KIND_SHIFT);
+    } else if (m->is_object_constructor()) {
+      flags |= IS_OBJECT_CONSTRUCTOR | (JVM_REF_invokeSpecial << REFERENCE_KIND_SHIFT);
     } else {
       // "special" reflects that this is a direct call, not that it
       // necessarily originates from an invokespecial. We can also do
@@ -354,6 +357,12 @@ oop MethodHandles::init_field_MemberName(Handle mname, fieldDescriptor& fd, bool
   int flags = fd.access_flags().as_field_flags();
   flags |= IS_FIELD | ((fd.is_static() ? JVM_REF_getStatic : JVM_REF_getField) << REFERENCE_KIND_SHIFT);
   if (fd.is_trusted_final()) flags |= TRUSTED_FINAL;
+  if (fd.is_flat()) {
+    int layout_kind = (int)fd.layout_kind();
+    assert((layout_kind & LAYOUT_MASK) == layout_kind, "Layout information loss");
+    flags |= layout_kind << LAYOUT_SHIFT;
+  }
+  if (fd.is_null_free_inline_type()) flags |= NULL_RESTRICTED;
   if (is_setter)  flags += ((JVM_REF_putField - JVM_REF_getField) << REFERENCE_KIND_SHIFT);
   int vmindex        = fd.offset();  // determines the field uniquely when combined with static bit
 
@@ -804,13 +813,13 @@ Handle MethodHandles::resolve_MemberName(Handle mname, Klass* caller, int lookup
       oop mname2 = init_method_MemberName(mname, result);
       return Handle(THREAD, mname2);
     }
-  case IS_CONSTRUCTOR:
+  case IS_OBJECT_CONSTRUCTOR:
     {
       CallInfo result;
       LinkInfo link_info(defc, name, type, caller, access_check, loader_constraint_check);
       {
         assert(!HAS_PENDING_EXCEPTION, "");
-        if (name == vmSymbols::object_initializer_name()) {
+        if (name == vmSymbols::object_initializer_name() && type->is_void_method_signature()) {
           LinkResolver::resolve_special_call(result, Handle(), link_info, THREAD);
         } else {
           break;                // will throw after end of switch
@@ -873,7 +882,7 @@ void MethodHandles::expand_MemberName(Handle mname, int suppress, TRAPS) {
 
   switch (flags & ALL_KINDS) {
   case IS_METHOD:
-  case IS_CONSTRUCTOR:
+  case IS_OBJECT_CONSTRUCTOR:
     {
       Method* vmtarget = java_lang_invoke_MemberName::vmtarget(mname());
       if (vmtarget == nullptr) {
@@ -986,7 +995,7 @@ void MethodHandles::trace_method_handle_interpreter_entry(MacroAssembler* _masm,
 #ifndef PRODUCT
 #define EACH_NAMED_CON(template, requirement) \
     template(java_lang_invoke_MemberName,MN_IS_METHOD) \
-    template(java_lang_invoke_MemberName,MN_IS_CONSTRUCTOR) \
+    template(java_lang_invoke_MemberName,MN_IS_OBJECT_CONSTRUCTOR) \
     template(java_lang_invoke_MemberName,MN_IS_FIELD) \
     template(java_lang_invoke_MemberName,MN_IS_TYPE) \
     template(java_lang_invoke_MemberName,MN_CALLER_SENSITIVE) \
@@ -994,6 +1003,8 @@ void MethodHandles::trace_method_handle_interpreter_entry(MacroAssembler* _masm,
     template(java_lang_invoke_MemberName,MN_HIDDEN_MEMBER) \
     template(java_lang_invoke_MemberName,MN_REFERENCE_KIND_SHIFT) \
     template(java_lang_invoke_MemberName,MN_REFERENCE_KIND_MASK) \
+    template(java_lang_invoke_MemberName,MN_LAYOUT_SHIFT) \
+    template(java_lang_invoke_MemberName,MN_LAYOUT_MASK) \
     template(java_lang_invoke_MemberName,MN_NESTMATE_CLASS) \
     template(java_lang_invoke_MemberName,MN_HIDDEN_CLASS) \
     template(java_lang_invoke_MemberName,MN_STRONG_LOADER_LINK) \
@@ -1129,7 +1140,7 @@ JVM_ENTRY(jobject, MHN_resolve_Mem(JNIEnv *env, jobject igcls, jobject mname_jh,
     if ((flags & ALL_KINDS) == IS_FIELD) {
       THROW_MSG_NULL(vmSymbols::java_lang_NoSuchFieldError(), "field resolution failed");
     } else if ((flags & ALL_KINDS) == IS_METHOD ||
-               (flags & ALL_KINDS) == IS_CONSTRUCTOR) {
+               (flags & ALL_KINDS) == IS_OBJECT_CONSTRUCTOR) {
       THROW_MSG_NULL(vmSymbols::java_lang_NoSuchMethodError(), "method resolution failed");
     } else {
       THROW_MSG_NULL(vmSymbols::java_lang_LinkageError(), "resolution failed");
@@ -1181,7 +1192,7 @@ JVM_ENTRY(jobject, MHN_getMemberVMInfo(JNIEnv *env, jobject igcls, jobject mname
   if (mname_jh == nullptr)  return nullptr;
   Handle mname(THREAD, JNIHandles::resolve_non_null(mname_jh));
   intptr_t vmindex  = java_lang_invoke_MemberName::vmindex(mname());
-  objArrayHandle result = oopFactory::new_objArray_handle(vmClasses::Object_klass(), 2, CHECK_NULL);
+  refArrayHandle result = oopFactory::new_refArray_handle(vmClasses::Object_klass(), 2, CHECK_NULL);
   jvalue vmindex_value; vmindex_value.j = (long)vmindex;
   oop x = java_lang_boxing_object::create(T_LONG, &vmindex_value, CHECK_NULL);
   result->obj_at_put(0, x);
@@ -1260,7 +1271,7 @@ JVM_ENTRY(void, MHN_copyOutBootstrapArguments(JNIEnv* env, jobject igcls,
       THROW_MSG(vmSymbols::java_lang_InternalError(), "bad index info (1)");
   }
 
-  objArrayHandle buf(THREAD, (objArrayOop)JNIHandles::resolve(buf_jh));
+  refArrayHandle buf(THREAD, (refArrayOop)JNIHandles::resolve(buf_jh));
 
   Handle ifna(THREAD, JNIHandles::resolve(ifna_jh));
   caller->constants()->

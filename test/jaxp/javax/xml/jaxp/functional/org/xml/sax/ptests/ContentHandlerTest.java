@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,26 @@
  */
 package org.xml.sax.ptests;
 
-import org.junit.jupiter.api.Test;
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
+import static jaxp.library.JAXPTestUtilities.compareWithGold;
+import static org.testng.Assert.assertTrue;
+import static org.xml.sax.ptests.SAXTestConst.GOLDEN_DIR;
+import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
+
+import java.io.BufferedWriter;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+
+import javax.xml.parsers.SAXParserFactory;
+
+import org.testng.annotations.Test;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLFilterImpl;
-
-import javax.xml.parsers.SAXParserFactory;
-import java.io.BufferedWriter;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
-import static org.junit.jupiter.api.Assertions.assertLinesMatch;
-import static org.xml.sax.ptests.SAXTestConst.GOLDEN_DIR;
-import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
 
 /**
  * Class registers a content event handler to XMLReader. Content event handler
@@ -50,7 +51,7 @@ import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run junit/othervm org.xml.sax.ptests.ContentHandlerTest
+ * @run testng/othervm org.xml.sax.ptests.ContentHandlerTest
  */
 public class ContentHandlerTest {
     /**
@@ -60,7 +61,7 @@ public class ContentHandlerTest {
      */
     @Test
     public void testcase01() throws Exception {
-        String outputFile = "Content.out";
+        String outputFile = USER_DIR + "Content.out";
         String goldFile = GOLDEN_DIR + "ContentGF.out";
         String xmlFile = XML_DIR + "namespace1.xml";
 
@@ -72,9 +73,7 @@ public class ContentHandlerTest {
             xmlReader.setContentHandler(cHandler);
             xmlReader.parse(new InputSource(instream));
         }
-        assertLinesMatch(
-                Files.readAllLines(Path.of(goldFile)),
-                Files.readAllLines(Path.of(outputFile)));
+        assertTrue(compareWithGold(goldFile, outputFile));
     }
 }
 
@@ -113,6 +112,7 @@ class MyContentHandler extends XMLFilterImpl implements AutoCloseable {
     /**
      * Write characters tag along with content of characters when meet
      * characters event.
+     * @throws IOException error happen when writing file.
      */
     @Override
     public void characters(char[] ch, int start, int length) throws SAXException {
@@ -123,6 +123,7 @@ class MyContentHandler extends XMLFilterImpl implements AutoCloseable {
     /**
      * Write endDocument tag then flush the content and close the file when meet
      * endDocument event.
+     * @throws IOException error happen when writing file or closing file.
      */
     @Override
     public void endDocument() throws SAXException {
@@ -138,6 +139,7 @@ class MyContentHandler extends XMLFilterImpl implements AutoCloseable {
     /**
      * Write endElement tag with namespaceURI, localName, qName to the file when
      * meet endElement event.
+     * @throws IOException error happen when writing file.
      */
     @Override
     public void endElement(String namespaceURI,String localName,String qName) throws SAXException{
@@ -148,6 +150,7 @@ class MyContentHandler extends XMLFilterImpl implements AutoCloseable {
     /**
      * Write endPrefixMapping tag along with prefix to the file when meet
      * endPrefixMapping event.
+     * @throws IOException error happen when writing file.
      */
     @Override
     public void endPrefixMapping(String prefix) throws SAXException {
@@ -157,6 +160,7 @@ class MyContentHandler extends XMLFilterImpl implements AutoCloseable {
     /**
      * Write ignorableWhitespace tag along with white spaces when meet
      * ignorableWhitespace event.
+     * @throws IOException error happen when writing file.
      */
     @Override
     public void ignorableWhitespace(char[] ch, int start, int length) throws SAXException {
@@ -168,6 +172,7 @@ class MyContentHandler extends XMLFilterImpl implements AutoCloseable {
     /**
      * Write processingInstruction tag along with target name and target data
      * when meet processingInstruction event.
+     * @throws IOException error happen when writing file.
      */
     @Override
     public void processingInstruction(String target, String data) throws SAXException {
@@ -191,6 +196,7 @@ class MyContentHandler extends XMLFilterImpl implements AutoCloseable {
     /**
      * Write skippedEntity tag along with entity name when meet skippedEntity
      * event.
+     * @throws IOException error happen when writing file.
      */
     @Override
     public void skippedEntity(String name) throws SAXException {
@@ -199,6 +205,7 @@ class MyContentHandler extends XMLFilterImpl implements AutoCloseable {
 
     /**
      * Write startDocument tag when meet startDocument event.
+     * @throws IOException error happen when writing file.
      */
     @Override
     public void startDocument() throws SAXException {
@@ -208,6 +215,7 @@ class MyContentHandler extends XMLFilterImpl implements AutoCloseable {
     /**
      * Write startElement tag along with namespaceURI, localName, qName, number
      * of attributes and line number when meet startElement event.
+     * @throws IOException error happen when writing file.
      */
     @Override
     public void startElement(String namespaceURI, String localName,
@@ -221,6 +229,7 @@ class MyContentHandler extends XMLFilterImpl implements AutoCloseable {
     /**
      * Write startPrefixMapping tag along with prefix and uri when meet
      * startPrefixMapping event.
+     * @throws IOException error happen when writing file.
      */
     @Override
     public void startPrefixMapping(String prefix, String uri) throws SAXException {

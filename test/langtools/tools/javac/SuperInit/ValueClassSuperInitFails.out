@@ -1,0 +1,30 @@
+ValueClassSuperInitFails.java:67:9: compiler.err.cant.ref.before.ctor.called: hashCode()
+ValueClassSuperInitFails.java:72:13: compiler.err.cant.ref.before.ctor.called: hashCode()
+ValueClassSuperInitFails.java:77:14: compiler.err.cant.ref.before.ctor.called: hashCode()
+ValueClassSuperInitFails.java:82:38: compiler.err.cant.ref.before.ctor.called: hashCode()
+ValueClassSuperInitFails.java:87:39: compiler.err.cant.ref.before.ctor.called: hashCode()
+ValueClassSuperInitFails.java:109:33: compiler.err.cant.ref.before.ctor.called: this
+ValueClassSuperInitFails.java:114:14: compiler.err.cant.ref.before.ctor.called: this
+ValueClassSuperInitFails.java:118:20: compiler.err.not.encl.class: java.lang.Object
+ValueClassSuperInitFails.java:122:23: compiler.err.cant.ref.before.ctor.called: spliterator()
+ValueClassSuperInitFails.java:129:22: compiler.err.call.must.only.appear.in.ctor
+ValueClassSuperInitFails.java:135:9: compiler.err.cant.ref.before.ctor.called: ValueClassSuperInitFails
+ValueClassSuperInitFails.java:143:9: compiler.err.non.canonical.constructor.invoke.another.constructor: ValueClassSuperInitFails.Record1
+ValueClassSuperInitFails.java:148:9: compiler.err.non.canonical.constructor.invoke.another.constructor: ValueClassSuperInitFails.Record2
+ValueClassSuperInitFails.java:161:46: compiler.err.cant.ref.before.ctor.called: hashCode()
+ValueClassSuperInitFails.java:175:49: compiler.err.cant.ref.before.ctor.called: x
+ValueClassSuperInitFails.java:179:15: compiler.err.cant.ref.before.ctor.called: ValueClassSuperInitFails
+ValueClassSuperInitFails.java:183:13: compiler.err.cant.ref.before.ctor.called: b
+ValueClassSuperInitFails.java:184:19: compiler.err.cant.ref.before.ctor.called: b
+ValueClassSuperInitFails.java:43:13: compiler.err.call.must.only.appear.in.ctor
+ValueClassSuperInitFails.java:47:14: compiler.err.call.must.only.appear.in.ctor
+ValueClassSuperInitFails.java:51:14: compiler.err.call.must.only.appear.in.ctor
+ValueClassSuperInitFails.java:55:13: compiler.err.call.must.only.appear.in.ctor
+ValueClassSuperInitFails.java:59:33: compiler.err.call.must.only.appear.in.ctor
+ValueClassSuperInitFails.java:63:32: compiler.err.call.must.only.appear.in.ctor
+ValueClassSuperInitFails.java:93:18: compiler.err.ctor.calls.not.allowed.here
+ValueClassSuperInitFails.java:99:13: compiler.err.return.before.superclass.initialized
+ValueClassSuperInitFails.java:170:18: compiler.err.call.must.only.appear.in.ctor
+- compiler.note.preview.filename: ValueClassSuperInitFails.java, DEFAULT
+- compiler.note.preview.recompile
+27 errors

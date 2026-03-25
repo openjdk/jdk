@@ -115,6 +115,7 @@ public class Resolve {
     final EnumSet<VerboseResolutionMode> verboseResolutionMode;
     final boolean dumpMethodReferenceSearchResults;
     final boolean dumpStacktraceOnError;
+    private final LocalProxyVarsGen localProxyVarsGen;
 
     WriteableScope polymorphicSignatureScope;
 
@@ -154,6 +155,7 @@ public class Resolve {
         allowRecords = Feature.RECORDS.allowedInSource(source);
         dumpMethodReferenceSearchResults = options.isSet("debug.dumpMethodReferenceSearchResults");
         dumpStacktraceOnError = options.isSet("dev") || options.isSet(DOE);
+        localProxyVarsGen = LocalProxyVarsGen.instance(context);
     }
 
     /** error symbols, which are returned when resolution fails
@@ -421,45 +423,50 @@ public class Resolve {
             return true;
         }
 
-        switch ((short)(sym.flags() & AccessFlags)) {
-        case PRIVATE:
-            return
-                (env.enclClass.sym == sym.owner // fast special case
-                 ||
-                 env.enclClass.sym.outermostClass() ==
-                 sym.owner.outermostClass()
-                 ||
-                 privateMemberInPermitsClauseIfAllowed(env, sym))
-                &&
-                sym.isInheritedIn(site.tsym, types);
-        case 0:
-            return
-                (env.toplevel.packge == sym.owner.owner // fast special case
-                 ||
-                 env.toplevel.packge == sym.packge())
-                &&
-                isAccessible(env, site, checkInner)
-                &&
-                sym.isInheritedIn(site.tsym, types)
-                &&
-                notOverriddenIn(site, sym);
-        case PROTECTED:
-            return
-                (env.toplevel.packge == sym.owner.owner // fast special case
-                 ||
-                 env.toplevel.packge == sym.packge()
-                 ||
-                 isProtectedAccessible(sym, env.enclClass.sym, site)
-                 ||
-                 // OK to select instance method or field from 'super' or type name
-                 // (but type names should be disallowed elsewhere!)
-                 env.info.selectSuper && (sym.flags() & STATIC) == 0 && sym.kind != TYP)
-                &&
-                isAccessible(env, site, checkInner)
-                &&
-                notOverriddenIn(site, sym);
-        default: // this case includes erroneous combinations as well
-            return isAccessible(env, site, checkInner) && notOverriddenIn(site, sym);
+        ClassSymbol enclosingCsym = env.enclClass.sym;
+        try {
+            switch ((short)(sym.flags() & AccessFlags)) {
+                case PRIVATE:
+                    return
+                            (env.enclClass.sym == sym.owner // fast special case
+                                    ||
+                                    env.enclClass.sym.outermostClass() ==
+                                    sym.owner.outermostClass()
+                                    ||
+                                    privateMemberInPermitsClauseIfAllowed(env, sym))
+                                &&
+                                    sym.isInheritedIn(site.tsym, types);
+                case 0:
+                    return
+                            (env.toplevel.packge == sym.owner.owner // fast special case
+                                    ||
+                                    env.toplevel.packge == sym.packge())
+                                    &&
+                                    isAccessible(env, site, checkInner)
+                                    &&
+                                    sym.isInheritedIn(site.tsym, types)
+                                    &&
+                                    notOverriddenIn(site, sym);
+                case PROTECTED:
+                    return
+                            (env.toplevel.packge == sym.owner.owner // fast special case
+                                    ||
+                                    env.toplevel.packge == sym.packge()
+                                    ||
+                                    isProtectedAccessible(sym, env.enclClass.sym, site)
+                                    ||
+                                    // OK to select instance method or field from 'super' or type name
+                                    // (but type names should be disallowed elsewhere!)
+                                    env.info.selectSuper && (sym.flags() & STATIC) == 0 && sym.kind != TYP)
+                                    &&
+                                    isAccessible(env, site, checkInner)
+                                    &&
+                                    notOverriddenIn(site, sym);
+                default: // this case includes erroneous combinations as well
+                    return isAccessible(env, site, checkInner) && notOverriddenIn(site, sym);
+            }
+        } finally {
+            env.enclClass.sym = enclosingCsym;
         }
     }
 
@@ -1530,8 +1537,6 @@ public class Resolve {
                         (sym.flags() & STATIC) == 0) {
                     if (staticOnly)
                         return new StaticError(sym);
-                    if (env1.info.ctorPrologue && !isAllowedEarlyReference(pos, env1, (VarSymbol)sym))
-                        return new RefBeforeCtorCalledError(sym);
                 }
                 return sym;
             } else {
@@ -2039,8 +2044,6 @@ public class Resolve {
                             (sym.flags() & STATIC) == 0) {
                         if (staticOnly)
                             return new StaticError(sym);
-                        if (env1.info.ctorPrologue && env1 == env)
-                            return new RefBeforeCtorCalledError(sym);
                     }
                     return sym;
                 } else {
@@ -3816,9 +3819,6 @@ public class Resolve {
                     if (staticOnly) {
                         // current class is not an inner class, stop search
                         return new StaticError(sym);
-                    } else if (env1.info.ctorPrologue && !isAllowedEarlyReference(pos, env1, (VarSymbol)sym)) {
-                        // early construction context, stop search
-                        return new RefBeforeCtorCalledError(sym);
                     } else {
                         // found it
                         return sym;
@@ -3881,10 +3881,6 @@ public class Resolve {
                 if (sym != null) {
                     if (staticOnly)
                         sym = new StaticError(sym);
-                    else if (env1.info.ctorPrologue &&
-                            !isReceiverParameter(env, tree) &&
-                            !isAllowedEarlyReference(pos, env1, (VarSymbol)sym))
-                        sym = new RefBeforeCtorCalledError(sym);
                     return accessBase(sym, pos, env.enclClass.sym.type,
                             name, true);
                 }
@@ -3898,8 +3894,6 @@ public class Resolve {
             //this might be a default super call if one of the superinterfaces is 'c'
             for (Type t : pruneInterfaces(env.enclClass.type)) {
                 if (t.tsym == c) {
-                    if (env.info.ctorPrologue)
-                        log.error(pos, Errors.CantRefBeforeCtorCalled(name));
                     env.info.defaultSuperCallSite = t;
                     return new VarSymbol(0, names._super,
                             types.asSuper(env.enclClass.type, c), env.enclClass.sym);
@@ -3934,101 +3928,6 @@ public class Resolve {
             }
         }
         return result.toList();
-    }
-    private boolean isReceiverParameter(Env<AttrContext> env, JCFieldAccess tree) {
-        if (env.tree.getTag() != METHODDEF)
-            return false;
-        JCMethodDecl method = (JCMethodDecl)env.tree;
-        return method.recvparam != null && tree == method.recvparam.nameexpr;
-    }
-
-    /**
-     * Determine if an early instance field reference may appear in a constructor prologue.
-     *
-     * <p>
-     * This is only allowed when:
-     *  - The field is being assigned a value (i.e., written but not read)
-     *  - The field is not inherited from a superclass
-     *  - The assignment is not within a lambda, because that would require
-     *    capturing 'this' which is not allowed prior to super().
-     *
-     * <p>
-     * Note, this method doesn't catch all such scenarios, because this method
-     * is invoked for symbol "x" only for "x = 42" but not for "this.x = 42".
-     * We also don't verify that the field has no initializer, which is required.
-     * To catch those cases, we rely on similar logic in Attr.checkAssignable().
-     */
-    private boolean isAllowedEarlyReference(DiagnosticPosition pos, Env<AttrContext> env, VarSymbol v) {
-
-        // Check assumptions
-        Assert.check(env.info.ctorPrologue);
-        Assert.check((v.flags_field & STATIC) == 0);
-
-        // The symbol must appear in the LHS of an assignment statement
-        if (!(env.tree instanceof JCAssign assign))
-            return false;
-
-        // The assignment statement must not be within a lambda
-        if (env.info.isLambda)
-            return false;
-
-        // Get the symbol's qualifier, if any
-        JCExpression lhs = TreeInfo.skipParens(assign.lhs);
-        JCExpression base;
-        switch (lhs.getTag()) {
-        case IDENT:
-            base = null;
-            break;
-        case SELECT:
-            JCFieldAccess select = (JCFieldAccess)lhs;
-            base = select.selected;
-            if (!TreeInfo.isExplicitThisReference(types, (ClassType)env.enclClass.type, base))
-                return false;
-            break;
-        default:
-            return false;
-        }
-
-        // If an early reference, the field must not be declared in a superclass
-        if (isEarlyReference(env, base, v) && v.owner != env.enclClass.sym)
-            return false;
-
-        // The flexible constructors feature must be enabled
-        preview.checkSourceLevel(pos, Feature.FLEXIBLE_CONSTRUCTORS);
-
-        // OK
-        return true;
-    }
-
-    /**
-     * Determine if the variable appearance constitutes an early reference to the current class.
-     *
-     * <p>
-     * This means the variable is an instance field of the current class and it appears
-     * in an early initialization context of it (i.e., one of its constructor prologues).
-     *
-     * <p>
-     * Such a reference is only allowed for assignments to non-initialized fields that are
-     * not inherited from a superclass, though that is not enforced by this method.
-     *
-     * @param env    The current environment
-     * @param base   Variable qualifier, if any, otherwise null
-     * @param v      The variable
-     */
-    public boolean isEarlyReference(Env<AttrContext> env, JCTree base, VarSymbol v) {
-        if (env.info.ctorPrologue &&
-                (v.flags() & STATIC) == 0 &&
-                v.isMemberOf(env.enclClass.sym, types)) {
-
-            // Allow "Foo.this.x" when "Foo" is (also) an outer class, as this refers to the outer instance
-            if (base != null) {
-                return TreeInfo.isExplicitThisReference(types, (ClassType)env.enclClass.type, base);
-            }
-
-            // It's an early reference to an instance field member of the current instance
-            return true;
-        }
-        return false;
     }
 
 /* ***************************************************************************
@@ -4339,7 +4238,6 @@ public class Resolve {
                               rewriter,
                               kindName(ws),
                               ws.name == names.init ? ws.owner.name : ws.name,
-                              kindName(ws.owner),
                               ws.owner.type,
                               c.snd);
                 default:
@@ -5239,10 +5137,6 @@ public class Resolve {
 
         DeferredAttr.AttrMode attrMode() {
             return attrMode;
-        }
-
-        boolean internal() {
-            return internalResolution;
         }
     }
 

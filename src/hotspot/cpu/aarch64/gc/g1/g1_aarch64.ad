@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,121 @@ static void write_barrier_post(MacroAssembler* masm,
 }
 
 %}
+
+// TODO 8350865 (same applies to g1StoreLSpecialTwoOops)
+// - Do no set/overwrite barrier data here, also handle G1C2BarrierPostNotNull
+// - Move this into the .m4?
+instruct g1StoreLSpecialOneOopOff0(indirect mem, iRegLNoSp src, immI0 off, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, rFlagsReg cr)
+%{
+  predicate(UseG1GC);
+  match(Set mem (StoreLSpecial mem (Binary src off)));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
+  ins_cost(INSN_COST);
+  format %{ "str  $src, $mem\t# g1StoreLSpecialOneOopOff0" %}
+  ins_encode %{
+    ((MachNode*)this)->set_barrier_data(G1C2BarrierPre | G1C2BarrierPost);
+    write_barrier_pre(masm, this,
+                      $mem$$Register /* obj */,
+                      $tmp1$$Register /* pre_val */,
+                      $tmp2$$Register /* tmp1 */,
+                      $tmp3$$Register /* tmp2 */,
+                      RegSet::of($mem$$Register, $src$$Register) /* preserve */);
+
+    __ str($src$$Register, $mem$$Register);
+
+    // Extract the narrow oop field value
+    __ ubfm($tmp1$$Register, $src$$Register, 0, 31);
+    __ decode_heap_oop($tmp1$$Register, $tmp1$$Register);
+    write_barrier_post(masm, this,
+                       $mem$$Register /* store_addr */,
+                       $tmp1$$Register /* new_val */,
+                       $tmp2$$Register /* tmp1 */,
+                       $tmp3$$Register /* tmp2 */);
+  %}
+  ins_pipe(istore_reg_mem);
+%}
+
+instruct g1StoreLSpecialOneOopOff4(indirect mem, iRegLNoSp src, immI_4 off, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegPNoSp tmp4, rFlagsReg cr)
+%{
+  predicate(UseG1GC);
+  match(Set mem (StoreLSpecial mem (Binary src off)));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr);
+  ins_cost(INSN_COST);
+  format %{ "str  $src, $mem\t# g1StoreLSpecialOneOopOff4" %}
+  ins_encode %{
+    ((MachNode*)this)->set_barrier_data(G1C2BarrierPre | G1C2BarrierPost);
+
+    // Adjust address to point to narrow oop
+    __ add($tmp4$$Register, $mem$$Register, 4);
+    write_barrier_pre(masm, this,
+                      $tmp4$$Register /* obj */,
+                      $tmp1$$Register /* pre_val */,
+                      $tmp2$$Register /* tmp1 */,
+                      $tmp3$$Register /* tmp2 */,
+                      RegSet::of($mem$$Register, $src$$Register, $tmp4$$Register) /* preserve */);
+
+    __ str($src$$Register, $mem$$Register);
+
+    // Shift long value to extract the narrow oop field value
+    __ lsr($tmp1$$Register, $src$$Register, 32);
+    __ decode_heap_oop($tmp1$$Register, $tmp1$$Register);
+    write_barrier_post(masm, this,
+                       $tmp4$$Register /* store_addr */,
+                       $tmp1$$Register /* new_val */,
+                       $tmp2$$Register /* tmp1 */,
+                       $tmp3$$Register /* tmp2 */);
+  %}
+  ins_pipe(istore_reg_mem);
+%}
+
+instruct g1StoreLSpecialTwoOops(indirect mem, iRegLNoSp src, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegPNoSp tmp4, rFlagsReg cr)
+%{
+  predicate(UseG1GC);
+  match(Set mem (StoreLSpecial mem src));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr);
+  ins_cost(INSN_COST);
+  format %{ "str  $src, $mem\t# g1StoreLSpecialTwoOops" %}
+  ins_encode %{
+    ((MachNode*)this)->set_barrier_data(G1C2BarrierPre | G1C2BarrierPost);
+
+    write_barrier_pre(masm, this,
+                      $mem$$Register /* obj */,
+                      $tmp1$$Register /* pre_val */,
+                      $tmp2$$Register /* tmp1 */,
+                      $tmp3$$Register /* tmp2 */,
+                      RegSet::of($mem$$Register, $src$$Register) /* preserve */);
+    // Adjust address to point to the second narrow oop in the long value
+    __ add($tmp4$$Register, $mem$$Register, 4);
+    write_barrier_pre(masm, this,
+                      $tmp4$$Register /* obj */,
+                      $tmp1$$Register /* pre_val */,
+                      $tmp2$$Register /* tmp1 */,
+                      $tmp3$$Register /* tmp2 */,
+                      RegSet::of($mem$$Register, $src$$Register, $tmp4$$Register) /* preserve */);
+
+    __ str($src$$Register, $mem$$Register);
+
+    // Zero-extend first narrow oop to long
+    __ ubfm($tmp1$$Register, $src$$Register, 0, 31);
+    __ decode_heap_oop($tmp1$$Register, $tmp1$$Register);
+    write_barrier_post(masm, this,
+                       $mem$$Register /* store_addr */,
+                       $tmp1$$Register /* new_val */,
+                       $tmp2$$Register /* tmp1 */,
+                       $tmp3$$Register /* tmp2 */);
+
+    // Shift long value to extract the second narrow oop field value
+    __ lsr($tmp1$$Register, $src$$Register, 32);
+    __ decode_heap_oop($tmp1$$Register, $tmp1$$Register);
+    write_barrier_post(masm, this,
+                       $tmp4$$Register /* store_addr */,
+                       $tmp1$$Register /* new_val */,
+                       $tmp2$$Register /* tmp1 */,
+                       $tmp3$$Register /* tmp2 */);
+  %}
+  ins_pipe(istore_reg_mem);
+%}
+
 
 // BEGIN This section of the file is automatically generated. Do not edit --------------
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,11 @@
  *
  */
 
+import org.testng.Assert;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,16 +37,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.stream.Stream;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 /**
@@ -49,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @summary Verify that the outputstream created for zip file entries, through the ZipFileSystem
  * works fine for varying sizes of the zip file entries
  * @bug 8190753 8011146 8279536
- * @run junit/timeout=300 ZipFSOutputStreamTest
+ * @run testng/timeout=300 ZipFSOutputStreamTest
  */
 public class ZipFSOutputStreamTest {
     // List of files to be added to the ZIP file along with their sizes in bytes
@@ -61,12 +56,12 @@ public class ZipFSOutputStreamTest {
 
     private static final Path ZIP_FILE = Path.of("zipfs-outputstream-test.zip");
 
-    @BeforeEach
+    @BeforeMethod
     public void setUp() throws IOException {
         deleteFiles();
     }
 
-    @AfterEach
+    @AfterMethod
     public void tearDown() throws IOException {
         deleteFiles();
     }
@@ -75,12 +70,13 @@ public class ZipFSOutputStreamTest {
         Files.deleteIfExists(ZIP_FILE);
     }
 
-    private static Stream<Arguments> zipFSCreationEnv() {
-        return Stream.of(
-                Arguments.of(Map.of("create", "true", "noCompression", "true")), // STORED
-                Arguments.of(Map.of("create", "true", "noCompression", "false")) // DEFLATED
+    @DataProvider(name = "zipFSCreationEnv")
+    private Object[][] zipFSCreationEnv() {
+        return new Object[][]{
+                {Map.of("create", "true", "noCompression", "true")}, // STORED
+                {Map.of("create", "true", "noCompression", "false")} // DEFLATED
 
-        );
+        };
     }
 
     /**
@@ -88,8 +84,7 @@ public class ZipFSOutputStreamTest {
      * by the ZipFileSystem. Then verify that the generated zip file entries are as expected,
      * both in size and content
      */
-    @ParameterizedTest
-    @MethodSource("zipFSCreationEnv")
+    @Test(dataProvider = "zipFSCreationEnv")
     public void testOutputStream(final Map<String, ?> env) throws Exception {
         final byte[] chunk = new byte[1024];
         // fill it with some fixed content (the fixed content will later on help ease
@@ -122,12 +117,12 @@ public class ZipFSOutputStreamTest {
                     while ((numRead = is.read(buf)) != -1) {
                         totalRead += numRead;
                         // verify the content
-                        assertEquals(-1, Arrays.mismatch(buf, 0, numRead, chunk, 0, numRead),
+                        Assert.assertEquals(Arrays.mismatch(buf, 0, numRead, chunk, 0, numRead), -1,
                                 "Unexpected content in " + entryPath);
                     }
                     System.out.println("Read entry " + entryPath + " of bytes " + totalRead
                             + " in " + (System.currentTimeMillis() - start) + " milli seconds");
-                    assertEquals((long) entry.getValue(), totalRead,
+                    Assert.assertEquals(totalRead, (long) entry.getValue(),
                             "Unexpected number of bytes read from zip entry " + entryPath);
                 }
             }

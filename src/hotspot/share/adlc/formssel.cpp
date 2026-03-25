@@ -778,6 +778,7 @@ bool InstructForm::captures_bottom_type(FormDict &globals) const {
        !strcmp(_matrule->_rChild->_opType,"CastLL")       ||
        !strcmp(_matrule->_rChild->_opType,"CastVV")       ||
        !strcmp(_matrule->_rChild->_opType,"CastX2P")      ||  // new result type
+       !strcmp(_matrule->_rChild->_opType,"CastI2N")      ||
        !strcmp(_matrule->_rChild->_opType,"DecodeN")      ||
        !strcmp(_matrule->_rChild->_opType,"EncodeP")      ||
        !strcmp(_matrule->_rChild->_opType,"DecodeNKlass") ||
@@ -808,7 +809,7 @@ bool InstructForm::captures_bottom_type(FormDict &globals) const {
   if (is_vector()) return true;
   if (is_mach_constant()) return true;
 
-  return  false;
+  return false;
 }
 
 
@@ -899,7 +900,8 @@ uint InstructForm::oper_input_base(FormDict &globals) {
       strcmp(_matrule->_opType,"TailJump"  )==0 ||
       strcmp(_matrule->_opType,"ForwardException")==0 ||
       strcmp(_matrule->_opType,"SafePoint" )==0 ||
-      strcmp(_matrule->_opType,"Halt"      )==0 )
+      strcmp(_matrule->_opType,"Halt"      )==0 ||
+      strcmp(_matrule->_opType,"CallLeafNoFP")==0)
     return AdlcVMDeps::Parms;   // Skip the machine-state edges
 
   if( _matrule->_rChild &&
@@ -3643,7 +3645,7 @@ void MatchNode::forms_do(FormClosure *f) {
 
 int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
   static const char *needs_ideal_memory_list[] = {
-    "StoreI","StoreL","StoreP","StoreN","StoreNKlass","StoreD","StoreF" ,
+    "StoreI","StoreL","StoreLSpecial","StoreP","StoreN","StoreNKlass","StoreD","StoreF" ,
     "StoreB","StoreC","Store" ,"StoreFP",
     "LoadI", "LoadL", "LoadP" ,"LoadN", "LoadD" ,"LoadF"  ,
     "LoadB" , "LoadUB", "LoadUS" ,"LoadS" ,"Load" ,
@@ -4276,9 +4278,7 @@ bool MatchRule::is_ideal_membar() const {
     !strcmp(_opType,"LoadFence" ) ||
     !strcmp(_opType,"StoreFence") ||
     !strcmp(_opType,"StoreStoreFence") ||
-    !strcmp(_opType,"MemBarStoreLoad") ||
     !strcmp(_opType,"MemBarVolatile") ||
-    !strcmp(_opType,"MemBarFull") ||
     !strcmp(_opType,"MemBarCPUOrder") ||
     !strcmp(_opType,"MemBarStoreStore") ||
     !strcmp(_opType,"OnSpinWait");

@@ -26,17 +26,20 @@
 package jdk.internal.classfile.impl;
 
 import java.lang.classfile.BufWriter;
+import java.lang.classfile.ClassModel;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.PoolEntry;
 import java.lang.runtime.ExactConversionsSupport;
 import java.util.Arrays;
+import java.util.HashSet;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.vm.annotation.ForceInline;
 
+import static java.lang.classfile.ClassFile.*;
 import static java.lang.classfile.constantpool.PoolEntry.TAG_UTF8;
 import static jdk.internal.util.ModifiedUtf.putChar;
 import static jdk.internal.util.ModifiedUtf.utfLen;
@@ -47,6 +50,9 @@ public final class BufWriterImpl implements BufWriter {
     private final ConstantPoolBuilder constantPool;
     private final ClassFileImpl context;
     private LabelContext labelContext;
+    private WritableField.UnsetField[] strictInstanceFields; // do not modify array contents
+    private ClassModel lastStrictCheckClass; // buf writer has short life, so do not need weak here
+    private boolean lastStrictCheckResult;
     private boolean labelsMatch;
     private final ClassEntry thisClass;
     private final int majorVersion;
@@ -69,6 +75,33 @@ public final class BufWriterImpl implements BufWriter {
         this.majorVersion = majorVersion;
     }
 
+    public boolean strictFieldsMatch(ClassModel cm) {
+        // We have a cache because this check will be called multiple times
+        // if a MethodModel is sent wholesale
+        if (lastStrictCheckClass == cm) {
+            return lastStrictCheckResult;
+        }
+
+        var result = doStrictFieldsMatchCheck(cm);
+        lastStrictCheckClass = cm;
+        lastStrictCheckResult = result;
+        return result;
+    }
+
+    private boolean doStrictFieldsMatchCheck(ClassModel cm) {
+        // TODO only check for preview class files?
+        // UTF8 Entry can be used as equality objects
+        var checks = new HashSet<>(Arrays.asList(getStrictInstanceFields()));
+        for (var f : cm.fields()) {
+            if ((f.flags().flagsMask() & (ACC_STATIC | ACC_STRICT_INIT)) == ACC_STRICT_INIT) {
+                if (!checks.remove(new WritableField.UnsetField(f.fieldName(), f.fieldType()))) {
+                    return false; // Field mismatch!
+                }
+            }
+        }
+        return checks.isEmpty();
+    }
+
     @Override
     public ConstantPoolBuilder constantPool() {
         return constantPool;
@@ -82,6 +115,16 @@ public final class BufWriterImpl implements BufWriter {
         this.labelContext = labelContext;
         this.labelsMatch = labelsMatch;
     }
+
+    public WritableField.UnsetField[] getStrictInstanceFields() {
+        assert strictInstanceFields != null : "should access only after setter call in DirectClassBuilder";
+        return strictInstanceFields;
+    }
+
+    public void setStrictInstanceFields(WritableField.UnsetField[] strictInstanceFields) {
+        this.strictInstanceFields = strictInstanceFields;
+    }
+
 
     public boolean labelsMatch(LabelContext lc) {
         return labelsMatch

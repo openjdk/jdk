@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,125 +27,118 @@ import java.io.StringWriter;
 import java.nio.CharBuffer;
 import java.nio.ReadOnlyBufferException;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.testng.Assert.*;
 
 /*
  * @test
  * @bug 8196298 8204930
- * @run junit NullReader
+ * @run testng NullReader
  * @summary Check for expected behavior of Reader.nullReader().
  */
 public class NullReader {
     private static Reader openReader;
     private static Reader closedReader;
 
-    @BeforeAll
+    @BeforeClass
     public static void setup() throws IOException {
         openReader = Reader.nullReader();
         closedReader = Reader.nullReader();
         closedReader.close();
     }
 
-    @AfterAll
+    @AfterClass
     public static void closeStream() throws IOException {
         openReader.close();
     }
 
     @Test
-    public void testOpen() {
+    public static void testOpen() {
         assertNotNull(openReader, "Reader.nullReader() returned null");
     }
 
     @Test
-    public void testRead() throws IOException {
+    public static void testRead() throws IOException {
         assertEquals(-1, openReader.read(), "read() != -1");
     }
 
     @Test
-    public void testReadBII() throws IOException {
+    public static void testReadBII() throws IOException {
         assertEquals(-1, openReader.read(new char[1], 0, 1),
                 "read(char[],int,int) != -1");
     }
 
     @Test
-    public void testReadBIILenZero() throws IOException {
+    public static void testReadBIILenZero() throws IOException {
         assertEquals(0, openReader.read(new char[1], 0, 0),
                 "read(char[],int,int) != 0");
     }
 
     @Test
-    public void testReadCharBuffer() throws IOException {
+    public static void testReadCharBuffer() throws IOException {
         CharBuffer charBuffer = CharBuffer.allocate(1);
         assertEquals(-1, openReader.read(charBuffer),
                 "read(CharBuffer) != -1");
     }
 
     @Test
-    public void testReadCharBufferZeroRemaining() throws IOException {
+    public static void testReadCharBufferZeroRemaining() throws IOException {
         CharBuffer charBuffer = CharBuffer.allocate(0);
         assertEquals(0, openReader.read(charBuffer),
                 "read(CharBuffer) != 0");
     }
 
     @Test
-    public void testReady() throws IOException {
+    public static void testReady() throws IOException {
         assertFalse(openReader.ready());
     }
 
     @Test
-    public void testSkip() throws IOException {
+    public static void testSkip() throws IOException {
         assertEquals(0, openReader.skip(1), "skip() != 0");
     }
 
     @Test
-    public void testTransferTo() throws IOException {
+    public static void testTransferTo() throws IOException {
         assertEquals(0, openReader.transferTo(new StringWriter(7)),
                 "transferTo() != 0");
     }
 
-    @Test
-    public void testReadClosed() throws IOException {
-        assertThrows(IOException.class, () -> closedReader.read());
+    @Test(expectedExceptions = IOException.class)
+    public static void testReadClosed() throws IOException {
+        closedReader.read();
     }
 
-    @Test
-    public void testReadBIIClosed() throws IOException {
-        assertThrows(IOException.class,
-                     () -> closedReader.read(new char[1], 0, 1));
+    @Test(expectedExceptions = IOException.class)
+    public static void testReadBIIClosed() throws IOException {
+        closedReader.read(new char[1], 0, 1);
     }
 
-    @Test
-    public void testReadCharBufferClosed() throws IOException {
+    @Test(expectedExceptions = IOException.class)
+    public static void testReadCharBufferClosed() throws IOException {
         CharBuffer charBuffer = CharBuffer.allocate(0);
-        assertThrows(IOException.class, () -> closedReader.read(charBuffer));
+        closedReader.read(charBuffer);
     }
 
-    @Test
-    public void testReadCharBufferZeroRemainingClosed() throws IOException {
+    @Test(expectedExceptions = IOException.class)
+    public static void testReadCharBufferZeroRemainingClosed() throws IOException {
         CharBuffer charBuffer = CharBuffer.allocate(0);
-        assertThrows(IOException.class, () -> closedReader.read(charBuffer));
+        closedReader.read(charBuffer);
     }
 
-    @Test
-    public void testReadyClosed() throws IOException {
-        assertThrows(IOException.class, () -> closedReader.ready());
+    @Test(expectedExceptions = IOException.class)
+    public static void testReadyClosed() throws IOException {
+        closedReader.ready();
     }
 
-    @Test
-    public void testSkipClosed() throws IOException {
-        assertThrows(IOException.class, () -> closedReader.skip(1));
+    @Test(expectedExceptions = IOException.class)
+    public static void testSkipClosed() throws IOException {
+        closedReader.skip(1);
     }
 
-    @Test
-    public void testTransferToClosed() throws IOException {
-        assertThrows(IOException.class,
-                     () -> closedReader.transferTo(new StringWriter(7)));
+    @Test(expectedExceptions = IOException.class)
+    public static void testTransferToClosed() throws IOException {
+        closedReader.transferTo(new StringWriter(7));
     }
 }

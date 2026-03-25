@@ -213,6 +213,19 @@ public enum Source {
         return this.compareTo(MIN) >= 0;
     }
 
+    public static boolean isSupported(Feature feature, int majorVersion) {
+        Source source = null;
+        for (Target target : Target.values()) {
+            if (majorVersion == target.majorVersion) {
+                source = lookup(target.name);
+            }
+        }
+        if (source != null) {
+            return feature.allowedInSource(source);
+        }
+        return false;
+    }
+
     public Target requiredTarget() {
         return switch(this) {
         case JDK27  -> Target.JDK1_27;
@@ -279,6 +292,7 @@ public enum Source {
         WARN_ON_ILLEGAL_UTF8(MIN, JDK21),
         UNNAMED_VARIABLES(JDK22, Fragments.FeatureUnnamedVariables, DiagKind.PLURAL),
         PRIMITIVE_PATTERNS(JDK23, Fragments.FeaturePrimitivePatterns, DiagKind.PLURAL),
+        VALUE_CLASSES(JDK22, Fragments.FeatureValueClasses, DiagKind.PLURAL),
         FLEXIBLE_CONSTRUCTORS(JDK25, Fragments.FeatureFlexibleConstructors, DiagKind.NORMAL),
         MODULE_IMPORTS(JDK25, Fragments.FeatureModuleImports, DiagKind.PLURAL),
         JAVA_BASE_TRANSITIVE(JDK25, Fragments.FeatureJavaBaseTransitive, DiagKind.PLURAL),

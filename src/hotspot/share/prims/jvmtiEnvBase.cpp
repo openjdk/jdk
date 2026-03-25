@@ -555,7 +555,7 @@ JvmtiEnvBase::new_jthreadArray(int length, Handle *handles) {
 }
 
 jthreadGroup *
-JvmtiEnvBase::new_jthreadGroupArray(int length, objArrayHandle groups) {
+JvmtiEnvBase::new_jthreadGroupArray(int length, refArrayHandle groups) {
   if (length == 0) {
     return nullptr;
   }
@@ -860,7 +860,7 @@ JvmtiEnvBase::get_live_threads(JavaThread* current_thread, Handle group_hdl, jin
 }
 
 jvmtiError
-JvmtiEnvBase::get_subgroups(JavaThread* current_thread, Handle group_hdl, jint *count_ptr, objArrayHandle *group_objs_p) {
+JvmtiEnvBase::get_subgroups(JavaThread* current_thread, Handle group_hdl, jint *count_ptr, refArrayHandle *group_objs_p) {
 
   // This call collects the strong and weak groups
   JavaThread* THREAD = current_thread;
@@ -883,10 +883,10 @@ JvmtiEnvBase::get_subgroups(JavaThread* current_thread, Handle group_hdl, jint *
   }
 
   assert(result.get_type() == T_OBJECT, "just checking");
-  objArrayOop groups = (objArrayOop)result.get_oop();
+  refArrayOop groups = (refArrayOop)result.get_oop();
 
   *count_ptr = groups == nullptr ? 0 : groups->length();
-  *group_objs_p = objArrayHandle(current_thread, groups);
+  *group_objs_p = refArrayHandle(current_thread, groups);
 
   return JVMTI_ERROR_NONE;
 }

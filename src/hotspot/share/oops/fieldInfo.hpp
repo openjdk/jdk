@@ -26,6 +26,7 @@
 #define SHARE_OOPS_FIELDINFO_HPP
 
 #include "memory/allocation.hpp"
+#include "oops/layoutKind.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "utilities/accessFlags.hpp"
 #include "utilities/unsigned5.hpp"
@@ -34,7 +35,6 @@
 static constexpr u4 flag_mask(int pos) {
   return (u4)1 << pos;
 }
-
 
 // Helper class for access to the underlying Array<u1> used to
 // store the compressed stream of FieldInfo
@@ -67,16 +67,20 @@ class FieldInfo {
   class FieldFlags {
     friend class VMStructs;
     friend class JVMCIVMStructs;
+    friend class FieldDesc;
 
     // The ordering of this enum is totally internal.  More frequent
     // flags should come earlier than less frequent ones, because
     // earlier ones compress better.
     enum FieldFlagBitPosition {
+      _ff_null_free_inline_type,  // field's type is an inline type and the field is null free
+      _ff_flat,         // field is a flat field, optional section includes a layout kind
+      _ff_null_marker,  // field has a null marker, optional section includes the null marker offset
       _ff_initialized,  // has ConstantValue initializer attribute
       _ff_injected,     // internal field injected by the JVM
       _ff_generic,      // has a generic signature
       _ff_stable,       // trust as stable b/c declared as @Stable
-      _ff_contended,    // is contended, may have contention-group
+      _ff_contended    // is contended, may have contention-group
     };
 
     // Some but not all of the flag bits signal the presence of an
@@ -84,7 +88,9 @@ class FieldInfo {
     static const u4 _optional_item_bit_mask =
       flag_mask((int)_ff_initialized) |
       flag_mask((int)_ff_generic)     |
-      flag_mask((int)_ff_contended);
+      flag_mask((int)_ff_contended)   |
+      flag_mask((int)_ff_flat)        |
+      flag_mask((int)_ff_null_marker);
 
     // boilerplate:
     u4 _flags;
@@ -107,16 +113,22 @@ class FieldInfo {
     }
 
     bool is_initialized() const     { return test_flag(_ff_initialized); }
+    bool is_null_free_inline_type() const { return test_flag(_ff_null_free_inline_type); }
+    bool is_flat() const            { return test_flag(_ff_flat); }
     bool is_injected() const        { return test_flag(_ff_injected); }
     bool is_generic() const         { return test_flag(_ff_generic); }
     bool is_stable() const          { return test_flag(_ff_stable); }
     bool is_contended() const       { return test_flag(_ff_contended); }
+    bool has_null_marker() const    { return test_flag(_ff_null_marker); }
 
     void update_initialized(bool z) { update_flag(_ff_initialized, z); }
+    void update_null_free_inline_type(bool z) { update_flag(_ff_null_free_inline_type, z); }
+    void update_flat(bool z)        { update_flag(_ff_flat, z); }
     void update_injected(bool z)    { update_flag(_ff_injected, z); }
     void update_generic(bool z)     { update_flag(_ff_generic, z); }
     void update_stable(bool z)      { update_flag(_ff_stable, z); }
     void update_contended(bool z)   { update_flag(_ff_contended, z); }
+    void update_null_marker(bool z) { update_flag(_ff_null_marker, z); }
   };
 
  private:
@@ -132,6 +144,8 @@ class FieldInfo {
   u4 _offset;                   // offset in object layout
   AccessFlags _access_flags;    // access flags (JVM spec)
   FieldFlags _field_flags;      // VM defined flags (not JVM spec)
+  LayoutKind _layout_kind;      // LayoutKind if the field is flat
+  u4 _null_marker_offset;       // null marker offset for this field in the object layout
   u2 _initializer_index;        // index from ConstantValue attr (or 0)
   u2 _generic_signature_index;  // index from GenericSignature attr (or 0)
   u2 _contention_group;         // index from @Contended group item (or 0)
@@ -144,6 +158,8 @@ class FieldInfo {
                 _offset(0),
                 _access_flags(AccessFlags(0)),
                 _field_flags(FieldFlags(0)),
+                _layout_kind(LayoutKind::UNKNOWN),
+                _null_marker_offset(0),
                 _initializer_index(0),
                 _generic_signature_index(0),
                 _contention_group(0) { }
@@ -155,6 +171,8 @@ class FieldInfo {
             _offset(0),
             _access_flags(access_flags),
             _field_flags(fflags),
+            _layout_kind(LayoutKind::UNKNOWN),
+            _null_marker_offset(0),
             _initializer_index(initval_index),
             _generic_signature_index(0),
             _contention_group(0) {
@@ -174,6 +192,16 @@ class FieldInfo {
   AccessFlags access_flags() const           { return _access_flags; }
   FieldFlags field_flags() const             { return _field_flags; }
   FieldFlags* field_flags_addr()             { return &_field_flags; }
+  LayoutKind layout_kind() const             { return _layout_kind; }
+  void set_layout_kind(LayoutKind lk) {
+    assert(_field_flags.is_flat(), "Must be");
+    _layout_kind = lk;
+  }
+  u4 null_marker_offset() const              { return _null_marker_offset; }
+  void set_null_marker_offset(u4 offset) {
+    _field_flags.update_null_marker(true);
+    _null_marker_offset = offset;
+  }
   u2 initializer_index() const               { return _initializer_index; }
   void set_initializer_index(u2 index)       { _initializer_index = index; }
   u2 generic_signature_index() const         { return _generic_signature_index; }
@@ -297,12 +325,14 @@ class FieldStatus {
   enum FieldStatusBitPosition {
     _fs_access_watched,       // field access is watched by JVMTI
     _fs_modification_watched, // field modification is watched by JVMTI
+    _fs_strict_static_unset,  // JVM_ACC_STRICT_INIT static field has not yet been set
+    _fs_strict_static_unread, // SS field has not yet been read
     _initialized_final_update // (static) final field updated outside (class) initializer
   };
 
   // boilerplate:
   u1 _flags;
-  static constexpr u1 flag_mask(FieldStatusBitPosition pos) { return checked_cast<u1>(1 << pos); }
+  static constexpr u1 flag_mask(FieldStatusBitPosition pos) { return (u1)1 << (int)pos; }
   bool test_flag(FieldStatusBitPosition pos) { return (_flags & flag_mask(pos)) != 0; }
   // this performs an atomic update on a live status byte!
   void update_flag(FieldStatusBitPosition pos, bool z);
@@ -315,12 +345,16 @@ class FieldStatus {
   FieldStatus(u1 flags) { _flags = flags; }
   u1 as_uint() { return _flags; }
 
-  bool is_access_watched()        { return test_flag(_fs_access_watched); }
-  bool is_modification_watched()  { return test_flag(_fs_modification_watched); }
+  bool is_access_watched()           { return test_flag(_fs_access_watched); }
+  bool is_modification_watched()     { return test_flag(_fs_modification_watched); }
+  bool is_strict_static_unset()      { return test_flag(_fs_strict_static_unset); }
+  bool is_strict_static_unread()     { return test_flag(_fs_strict_static_unread); }
   bool is_initialized_final_update() { return test_flag(_initialized_final_update); }
 
   void update_access_watched(bool z);
   void update_modification_watched(bool z);
+  void update_strict_static_unset(bool z);
+  void update_strict_static_unread(bool z);
   void update_initialized_final_update(bool z);
 };
 

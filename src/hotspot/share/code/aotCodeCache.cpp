@@ -284,11 +284,11 @@ bool AOTCodeCache::open_cache(bool is_dumping, bool is_using) {
   return true;
 }
 
-void AOTCodeCache::dump() {
+void AOTCodeCache::close() {
   if (is_on()) {
-    assert(is_on_for_dump(), "should be called only when dumping AOT code");
-    MutexLocker ml(Compile_lock);
-    _cache->finish_write();
+    delete _cache; // Free memory
+    _cache = nullptr;
+    opened_cache = nullptr;
   }
 }
 
@@ -304,6 +304,7 @@ AOTCodeCache::AOTCodeCache(bool is_dumping, bool is_using) :
   _store_size(0),
   _for_use(is_using),
   _for_dump(is_dumping),
+  _closing(false),
   _failed(false),
   _lookup_failed(false),
   _table(nullptr),
@@ -377,6 +378,30 @@ void AOTCodeCache::init_early_c1_table() {
   AOTCodeAddressTable* table = addr_table();
   if (table != nullptr) {
     table->init_early_c1();
+  }
+}
+
+AOTCodeCache::~AOTCodeCache() {
+  if (_closing) {
+    return; // Already closed
+  }
+  // Stop any further access to cache.
+  _closing = true;
+
+  MutexLocker ml(Compile_lock);
+  if (for_dump()) { // Finalize cache
+    finish_write();
+  }
+  _load_buffer = nullptr;
+  if (_C_store_buffer != nullptr) {
+    FREE_C_HEAP_ARRAY(char, _C_store_buffer);
+    _C_store_buffer = nullptr;
+    _store_buffer = nullptr;
+  }
+  if (_table != nullptr) {
+    MutexLocker ml(AOTCodeCStrings_lock, Mutex::_no_safepoint_check_flag);
+    delete _table;
+    _table = nullptr;
   }
 }
 
@@ -483,21 +508,32 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
     return false;
   }
 
-  // The following checks do not affect AOT adapters caching
+  // The following checks do not affect AOT code, but can disable
+  // AOT stub/adapters caching if they are incompatible with runtime settings
+  // (adapters too as they access oops when buffering scalarized value objects).
 
   if (((_flags & compressedOops) != 0) != UseCompressedOops) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseCompressedOops = %s", UseCompressedOops ? "false" : "true");
+    log_debug(aot, codecache, init)("AOT Stub/Adapter Cache disabled: it was created with UseCompressedOops = %s", UseCompressedOops ? "false" : "true");
     AOTStubCaching = false;
+    if (InlineTypePassFieldsAsArgs) {
+      AOTAdapterCaching = false;
+    }
   }
   if (_compressedOopShift != (uint)CompressedOops::shift()) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with different CompressedOops::shift(): %d vs current %d", _compressedOopShift, CompressedOops::shift());
+    log_debug(aot, codecache, init)("AOT Stub/Adapter Cache disabled: it was created with different CompressedOops::shift(): %d vs current %d", _compressedOopShift, CompressedOops::shift());
     AOTStubCaching = false;
+    if (InlineTypePassFieldsAsArgs) {
+      AOTAdapterCaching = false;
+    }
   }
 
-  // This should be the last check as it only disables AOTStubCaching
+  // This should be the last check as it only disables AOTStub/AdapterCaching
   if ((_compressedOopBase == nullptr || CompressedOops::base() == nullptr) && (_compressedOopBase != CompressedOops::base())) {
-    log_debug(aot, codecache, init)("AOTStubCaching is disabled: incompatible CompressedOops::base(): %p vs current %p", _compressedOopBase, CompressedOops::base());
+    log_debug(aot, codecache, init)("AOT Stub/Adapter Cache disabled: incompatible CompressedOops::base(): %p vs current %p", _compressedOopBase, CompressedOops::base());
     AOTStubCaching = false;
+    if (InlineTypePassFieldsAsArgs) {
+      AOTAdapterCaching = false;
+    }
   }
 
   if (!verify_cpu_features(cache)) {
@@ -1321,6 +1357,7 @@ void AOTCodeAddressTable::init_extrs() {
   SET_ADDRESS(_extrs, SharedRuntime::handle_wrong_method);
   SET_ADDRESS(_extrs, SharedRuntime::handle_wrong_method_abstract);
   SET_ADDRESS(_extrs, SharedRuntime::handle_wrong_method_ic_miss);
+  SET_ADDRESS(_extrs, SharedRuntime::allocate_inline_types);
 #if defined(AARCH64) && !defined(ZERO)
   SET_ADDRESS(_extrs, JavaThread::aarch64_get_thread_helper);
 #endif
@@ -1370,6 +1407,14 @@ void AOTCodeAddressTable::init_extrs() {
     SET_ADDRESS(_extrs, Runtime1::move_appendix_patching);
     SET_ADDRESS(_extrs, Runtime1::predicate_failed_trap);
     SET_ADDRESS(_extrs, Runtime1::unimplemented_entry);
+    SET_ADDRESS(_extrs, Runtime1::new_null_free_array);
+    SET_ADDRESS(_extrs, Runtime1::load_flat_array);
+    SET_ADDRESS(_extrs, Runtime1::store_flat_array);
+    SET_ADDRESS(_extrs, Runtime1::substitutability_check);
+    SET_ADDRESS(_extrs, Runtime1::buffer_inline_args);
+    SET_ADDRESS(_extrs, Runtime1::buffer_inline_args_no_receiver);
+    SET_ADDRESS(_extrs, Runtime1::throw_identity_exception);
+    SET_ADDRESS(_extrs, Runtime1::throw_illegal_monitor_state_exception);
     SET_ADDRESS(_extrs, Thread::current);
     SET_ADDRESS(_extrs, CompressedKlassPointers::base_addr());
 #ifndef PRODUCT
@@ -1397,6 +1442,8 @@ void AOTCodeAddressTable::init_extrs() {
     SET_ADDRESS(_extrs, OptoRuntime::rethrow_C);
     SET_ADDRESS(_extrs, OptoRuntime::slow_arraycopy_C);
     SET_ADDRESS(_extrs, OptoRuntime::register_finalizer_C);
+    SET_ADDRESS(_extrs, OptoRuntime::load_unknown_inline_C);
+    SET_ADDRESS(_extrs, OptoRuntime::store_unknown_inline_C);
     SET_ADDRESS(_extrs, OptoRuntime::vthread_end_first_transition_C);
     SET_ADDRESS(_extrs, OptoRuntime::vthread_start_final_transition_C);
     SET_ADDRESS(_extrs, OptoRuntime::vthread_start_transition_C);
@@ -1427,6 +1474,10 @@ void AOTCodeAddressTable::init_extrs() {
   SET_ADDRESS(_extrs, MacroAssembler::debug64);
 #endif
 #endif // ZERO
+
+  if (UseCompressedOops) {
+    SET_ADDRESS(_extrs, CompressedOops::base_addr());
+  }
 
   // addresses of fields in AOT runtime constants area
   address* p = AOTRuntimeConstants::field_addresses_list();
@@ -1519,6 +1570,18 @@ void AOTCodeAddressTable::init_early_c1() {
 }
 
 #undef SET_ADDRESS
+
+AOTCodeAddressTable::~AOTCodeAddressTable() {
+  if (_extrs_addr != nullptr) {
+    FREE_C_HEAP_ARRAY(address, _extrs_addr);
+  }
+  if (_stubs_addr != nullptr) {
+    FREE_C_HEAP_ARRAY(address, _stubs_addr);
+  }
+  if (_shared_blobs_addr != nullptr) {
+    FREE_C_HEAP_ARRAY(address, _shared_blobs_addr);
+  }
+}
 
 #ifdef PRODUCT
 #define MAX_STR_COUNT 200

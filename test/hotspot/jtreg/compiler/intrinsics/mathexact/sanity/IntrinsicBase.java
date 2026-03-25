@@ -50,7 +50,7 @@ public abstract class IntrinsicBase extends CompilerWhiteBoxTest {
 
         int expectedIntrinsicCount = 0;
 
-        if (Platform.isServer()) {
+        if (Platform.isServer() && !Platform.isEmulatedClient()) {
             if (TIERED_COMPILATION) {
                 int max_level = TIERED_STOP_AT_LEVEL;
                 expectedIntrinsicCount = (max_level == COMP_LEVEL_MAX) ? 1 : 0;

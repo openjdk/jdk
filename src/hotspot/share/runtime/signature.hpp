@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,6 +26,7 @@
 #ifndef SHARE_RUNTIME_SIGNATURE_HPP
 #define SHARE_RUNTIME_SIGNATURE_HPP
 
+#include "classfile/symbolTable.hpp"
 #include "memory/allocation.hpp"
 #include "oops/method.hpp"
 
@@ -562,8 +563,44 @@ class SignatureStream : public StackObj {
 
   // free-standing lookups (bring your own CL/PD pair)
   enum FailureMode { ReturnNull, NCDFError, CachedOrNull };
+
   Klass* as_klass(Handle class_loader, FailureMode failure_mode, TRAPS);
+  InlineKlass* as_inline_klass(InstanceKlass* holder);
   oop as_java_mirror(Handle class_loader, FailureMode failure_mode, TRAPS);
+};
+
+class SigEntry;
+class SigEntryFilter;
+typedef GrowableArrayFilterIterator<SigEntry, SigEntryFilter> ExtendedSignature;
+
+// Used for adapter generation. One SigEntry is used per element of
+// the signature of the method. Inline type arguments are treated
+// specially. See comment for InlineKlass::collect_fields().
+class SigEntry {
+ public:
+  BasicType _bt;      // Basic type of the argument
+  int _offset;        // Offset of the field in its value class holder for scalarized arguments (-1 otherwise). Used for packing and unpacking.
+  Symbol* _name;      // Symbol for printing
+  bool _null_marker;  // Is it a null marker? For printing
+
+  SigEntry()
+    : _bt(T_ILLEGAL), _offset(-1), _name(nullptr) {}
+
+  SigEntry(BasicType bt, int offset, Symbol* name, bool null_marker)
+    : _bt(bt), _offset(offset), _name(name), _null_marker(null_marker) {}
+
+  static void add_entry(GrowableArray<SigEntry>* sig, BasicType bt, Symbol* name = nullptr, int offset = -1);
+  static void add_null_marker(GrowableArray<SigEntry>* sig, Symbol* name, int offset);
+  static bool skip_value_delimiters(const GrowableArray<SigEntry>* sig, int i);
+  static int fill_sig_bt(const GrowableArray<SigEntry>* sig, BasicType* sig_bt);
+  static TempNewSymbol create_symbol(const GrowableArray<SigEntry>* sig);
+
+  void print_on(outputStream* st) const;
+};
+
+class SigEntryFilter {
+public:
+  bool operator()(const SigEntry& entry) { return entry._bt != T_METADATA && entry._bt != T_VOID; }
 };
 
 // Specialized SignatureStream: used for invoking SystemDictionary to either find
@@ -628,11 +665,11 @@ void SignatureIterator::do_parameters_on(T* callback) {
   }
 }
 
- #ifdef ASSERT
+#ifdef ASSERT
  class SignatureVerifier : public StackObj {
   public:
-    static bool is_valid_method_signature(Symbol* sig);
-    static bool is_valid_type_signature(Symbol* sig);
+    static bool is_valid_method_signature(const Symbol* sig);
+    static bool is_valid_type_signature(const Symbol* sig);
   private:
     static ssize_t is_valid_type(const char*, ssize_t);
 };

@@ -42,9 +42,12 @@ typedef void* OopOrNarrowOopStar;
 
 typedef class oopDesc*                    oop;
 typedef class   instanceOopDesc*            instanceOop;
+typedef class     inlineOopDesc*              inlineOop;
 typedef class     stackChunkOopDesc*          stackChunkOop;
 typedef class   arrayOopDesc*               arrayOop;
 typedef class     objArrayOopDesc*            objArrayOop;
+typedef class       flatArrayOopDesc*           flatArrayOop;
+typedef class       refArrayOopDesc*            refArrayOop;
 typedef class     typeArrayOopDesc*           typeArrayOop;
 
 #else
@@ -150,10 +153,13 @@ struct PrimitiveConversions::Translate<oop> : public std::true_type {
    };
 
 DEF_OOP(instance);
+DEF_OOP(inline);
 DEF_OOP(stackChunk);
 DEF_OOP(array);
 DEF_OOP(objArray);
 DEF_OOP(typeArray);
+DEF_OOP(flatArray);
+DEF_OOP(refArray);
 
 #endif // CHECK_UNHANDLED_OOPS
 
@@ -183,12 +189,15 @@ class   ConstantPool;
 
 class Klass;
 class   InstanceKlass;
+class     InlineKlass;
 class     InstanceMirrorKlass;
 class     InstanceClassLoaderKlass;
 class     InstanceRefKlass;
 class     InstanceStackChunkKlass;
 class   ArrayKlass;
 class     ObjArrayKlass;
+class       FlatArrayKlass;
+class       RefArrayKlass;
 class     TypeArrayKlass;
 
 #endif // SHARE_OOPS_OOPSHIERARCHY_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,12 @@
  */
 package javax.xml.transform.ptests;
 
-import org.junit.jupiter.api.Test;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.xml.sax.InputSource;
+import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
+
+import java.io.File;
+import java.io.FileInputStream;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -35,12 +37,11 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamSource;
-import java.io.File;
-import java.io.FileInputStream;
 
-import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import org.testng.annotations.Test;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.xml.sax.InputSource;
 
 /**
  * Class containing the test cases for SAXParserFactory API
@@ -48,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run junit/othervm javax.xml.transform.ptests.TfClearParamTest
+ * @run testng/othervm javax.xml.transform.ptests.TfClearParamTest
  */
 public class TfClearParamTest {
     /**
@@ -81,7 +82,7 @@ public class TfClearParamTest {
     public void clear01() throws TransformerConfigurationException {
         Transformer transformer = TransformerFactory.newInstance().newTransformer();
         transformer.setParameter(LONG_PARAM_NAME, PARAM_VALUE);
-        assertEquals(PARAM_VALUE, transformer.getParameter(LONG_PARAM_NAME).toString());
+        assertEquals(transformer.getParameter(LONG_PARAM_NAME).toString(), PARAM_VALUE);
     }
 
     /**
@@ -123,9 +124,9 @@ public class TfClearParamTest {
     public void clear04() throws TransformerConfigurationException {
         Transformer transformer = TransformerFactory.newInstance().newTransformer();
 
-        int expectedIntValue = 5;
-        transformer.setParameter(SHORT_PARAM_NAME, expectedIntValue);
-        assertEquals(expectedIntValue, transformer.getParameter(SHORT_PARAM_NAME));
+        int intObject = 5;
+        transformer.setParameter(SHORT_PARAM_NAME, intObject);
+        assertEquals(transformer.getParameter(SHORT_PARAM_NAME), intObject);
     }
 
     /**
@@ -140,7 +141,7 @@ public class TfClearParamTest {
                 newTransformer(new StreamSource(new File(XSL_FILE)));
 
         transformer.setParameter(LONG_PARAM_NAME, PARAM_VALUE);
-        assertEquals(PARAM_VALUE, transformer.getParameter(LONG_PARAM_NAME));
+        assertEquals(transformer.getParameter(LONG_PARAM_NAME), PARAM_VALUE);
     }
 
     /**
@@ -171,7 +172,7 @@ public class TfClearParamTest {
 
             Transformer transformer = TransformerFactory.newInstance().newTransformer(saxSource);
             transformer.setParameter(LONG_PARAM_NAME, PARAM_VALUE);
-            assertEquals(PARAM_VALUE, transformer.getParameter(LONG_PARAM_NAME));
+            assertEquals(transformer.getParameter(LONG_PARAM_NAME), PARAM_VALUE);
         }
     }
 
@@ -211,7 +212,7 @@ public class TfClearParamTest {
         Transformer transformer = tfactory.newTransformer(domSource);
 
         transformer.setParameter(LONG_PARAM_NAME, PARAM_VALUE);
-        assertEquals(PARAM_VALUE, transformer.getParameter(LONG_PARAM_NAME));
+        assertEquals(transformer.getParameter(LONG_PARAM_NAME), PARAM_VALUE);
     }
 
     /**

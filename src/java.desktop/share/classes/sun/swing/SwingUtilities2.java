@@ -44,7 +44,6 @@ import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.Toolkit;
-import java.awt.event.FocusEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -796,7 +795,7 @@ public class SwingUtilities2 {
      */
     public static void adjustFocus(JComponent c) {
         if (!c.hasFocus() && c.isRequestFocusEnabled()) {
-            c.requestFocus(FocusEvent.Cause.MOUSE_EVENT);
+            c.requestFocus();
         }
     }
 
@@ -1435,6 +1434,15 @@ public class SwingUtilities2 {
         }
     }
 
+    /**
+    * checks if the system clipboard can be accessed.
+    * This is true in a headful environment, false in a headless one
+    *
+    */
+   public static boolean canAccessSystemClipboard() {
+       return !GraphicsEnvironment.isHeadless();
+   }
+
     public static String displayPropertiesToCSS(Font font, Color fg) {
         StringBuilder rule = new StringBuilder("body {");
         if (font != null) {
@@ -1637,24 +1645,24 @@ public class SwingUtilities2 {
             if (container.isFocusCycleRoot()) {
                 FocusTraversalPolicy policy = container.getFocusTraversalPolicy();
                 Component comp = policy.getDefaultComponent(container);
-                if (comp != null) {
-                    comp.requestFocus(FocusEvent.Cause.TRAVERSAL);
+                if (comp!=null) {
+                    comp.requestFocus();
                     return comp;
                 }
             }
             Container rootAncestor = container.getFocusCycleRootAncestor();
-            if (rootAncestor != null) {
+            if (rootAncestor!=null) {
                 FocusTraversalPolicy policy = rootAncestor.getFocusTraversalPolicy();
                 Component comp = policy.getComponentAfter(rootAncestor, container);
 
-                if (comp != null && SwingUtilities.isDescendingFrom(comp, container)) {
-                    comp.requestFocus(FocusEvent.Cause.TRAVERSAL);
+                if (comp!=null && SwingUtilities.isDescendingFrom(comp, container)) {
+                    comp.requestFocus();
                     return comp;
                 }
             }
         }
         if (component.isFocusable()) {
-            component.requestFocus(FocusEvent.Cause.TRAVERSAL);
+            component.requestFocus();
             return component;
         }
         return null;

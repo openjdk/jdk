@@ -373,14 +373,6 @@ SavedImage *GifMakeSavedImage(GifFileType *GifFile,
                          * aliasing problems.
                          */
 
-                        /* Null out aliased pointers before any allocations
-                         * so that FreeLastSavedImage won't free CopyFrom's
-                         * data if an allocation fails partway through. */
-                        sp->ImageDesc.ColorMap = NULL;
-                        sp->RasterBits = NULL;
-                        sp->ExtensionBlocks = NULL;
-                        sp->ExtensionBlockCount = 0;
-
                         /* first, the local color map */
                         if (CopyFrom->ImageDesc.ColorMap != NULL) {
                                 sp->ImageDesc.ColorMap = GifMakeMapObject(

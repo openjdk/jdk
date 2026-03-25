@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8345766 8378742
+ * @bug 8345766
  * @key randomness
  * @summary Test that Ideal transformations of ModDNode are being performed as expected.
  * @library /test/lib /
@@ -37,7 +37,6 @@ import compiler.lib.ir_framework.*;
  */
 public class ModDNodeTests {
     public static final double q = Utils.getRandomInstance().nextDouble() * 100.0d;
-    public static volatile int volatileField;
 
     public static void main(String[] args) {
         TestFramework.run();
@@ -49,7 +48,6 @@ public class ModDNodeTests {
             "unusedResultAfterLoopOpt1",
             "unusedResultAfterLoopOpt2",
             "unusedResultAfterLoopOpt3",
-            "constantFoldInCCP"
     })
     public void runMethod() {
         Asserts.assertEQ(constant(), q % 72.0d % 30.0d);
@@ -63,7 +61,6 @@ public class ModDNodeTests {
         Asserts.assertEQ(unusedResultAfterLoopOpt1(1.1d, 2.2d), 0.d);
         Asserts.assertEQ(unusedResultAfterLoopOpt2(1.1d, 2.2d), 0.d);
         Asserts.assertEQ(unusedResultAfterLoopOpt3(1.1d, 2.2d), 0.d);
-        Asserts.assertEQ(constantFoldInCCP(), 4.0d);
     }
 
     // Note: we used to check for ConD nodes in the IR. But that is a bit brittle:
@@ -75,7 +72,7 @@ public class ModDNodeTests {
     @Test
     @IR(counts = {IRNode.MOD_D, "2"},
         phase = CompilePhase.AFTER_PARSING)
-    @IR(failOn = {".*CallLeaf.*drem.*"},
+    @IR(counts = {".*CallLeaf.*drem.*", "0"},
         phase = CompilePhase.BEFORE_MATCHING)
     public double constant() {
         // All constants available during parsing
@@ -87,7 +84,7 @@ public class ModDNodeTests {
         phase = CompilePhase.AFTER_PARSING)
     @IR(counts = {IRNode.MOD_D, "1"},
         phase = CompilePhase.PHASEIDEALLOOP1) // Only constant fold after some loop opts
-    @IR(failOn = {".*CallLeaf.*drem.*"},
+    @IR(counts = {".*CallLeaf.*drem.*", "0"},
         phase = CompilePhase.BEFORE_MATCHING)
     public double alsoConstant() {
         // Make sure value is only available after second loop opts round
@@ -105,7 +102,7 @@ public class ModDNodeTests {
         phase = CompilePhase.AFTER_PARSING)
     @IR(counts = {IRNode.MOD_D, "2"},
         phase = CompilePhase.PHASEIDEALLOOP1) // Only constant fold after some loop opts
-    @IR(failOn = {".*CallLeaf.*drem.*"},
+    @IR(counts = {".*CallLeaf.*drem.*", "0"},
         phase = CompilePhase.BEFORE_MATCHING)
     public double nanLeftConstant() {
         // Make sure value is only available after second loop opts round
@@ -123,7 +120,7 @@ public class ModDNodeTests {
         phase = CompilePhase.AFTER_PARSING)
     @IR(counts = {IRNode.MOD_D, "2"},
         phase = CompilePhase.PHASEIDEALLOOP1) // Only constant fold after some loop opts
-    @IR(failOn = {".*CallLeaf.*drem.*"},
+    @IR(counts = {".*CallLeaf.*drem.*", "0"},
         phase = CompilePhase.BEFORE_MATCHING)
     public double nanRightConstant() {
         // Make sure value is only available after second loop opts round
@@ -159,7 +156,7 @@ public class ModDNodeTests {
         phase = CompilePhase.AFTER_PARSING)
     @IR(counts = {IRNode.MOD_D, "0"},
         phase = CompilePhase.ITER_GVN1) // IGVN removes unused nodes
-    @IR(failOn = {".*CallLeaf.*drem.*"},
+    @IR(counts = {".*CallLeaf.*drem.*", "0"},
         phase = CompilePhase.BEFORE_MATCHING)
     public void unusedResult(double x, double y) {
         double unused = x % y;
@@ -168,9 +165,9 @@ public class ModDNodeTests {
     @Test
     @IR(counts = {IRNode.MOD_D, "1"},
         phase = CompilePhase.AFTER_PARSING)
-    @IR(failOn = {IRNode.MOD_D},
+    @IR(counts = {IRNode.MOD_D, "0"},
         phase = CompilePhase.ITER_GVN1) // IGVN removes unused nodes
-    @IR(failOn = {".*CallLeaf.*drem.*"},
+    @IR(counts = {".*CallLeaf.*drem.*", "0"},
         phase = CompilePhase.BEFORE_MATCHING)
     public void repeatedlyUnused(double x, double y) {
         double unused = 1.d;
@@ -188,9 +185,9 @@ public class ModDNodeTests {
         phase = CompilePhase.AFTER_PARSING)
     @IR(counts = {IRNode.MOD_D, "1"},
         phase = CompilePhase.ITER_GVN2)
-    @IR(failOn = {IRNode.MOD_D},
+    @IR(counts = {IRNode.MOD_D, "0"},
         phase = CompilePhase.BEFORE_MACRO_EXPANSION)
-    @IR(failOn = {".*CallLeaf.*drem.*"},
+    @IR(counts = {".*CallLeaf.*drem.*", "0"},
         phase = CompilePhase.BEFORE_MATCHING)
     public double unusedResultAfterLoopOpt1(double x, double y) {
         double unused = x % y;
@@ -213,9 +210,9 @@ public class ModDNodeTests {
         phase = CompilePhase.AFTER_PARSING)
     @IR(counts = {IRNode.MOD_D, "1"},
         phase = CompilePhase.AFTER_CLOOPS)
-    @IR(failOn = {IRNode.MOD_D},
+    @IR(counts = {IRNode.MOD_D, "0"},
         phase = CompilePhase.PHASEIDEALLOOP1)
-    @IR(failOn = {".*CallLeaf.*drem.*"},
+    @IR(counts = {".*CallLeaf.*drem.*", "0"},
         phase = CompilePhase.BEFORE_MATCHING)
     public double unusedResultAfterLoopOpt2(double x, double y) {
         int a = 77;
@@ -238,9 +235,9 @@ public class ModDNodeTests {
         phase = CompilePhase.AFTER_PARSING)
     @IR(counts = {IRNode.MOD_D, "2"},
         phase = CompilePhase.AFTER_CLOOPS) // drop the useless one
-    @IR(failOn = {IRNode.MOD_D},
+    @IR(counts = {IRNode.MOD_D, "0"},
         phase = CompilePhase.PHASEIDEALLOOP1) // drop the rest
-    @IR(failOn = {".*CallLeaf.*drem.*"},
+    @IR(counts = {".*CallLeaf.*drem.*", "0"},
         phase = CompilePhase.BEFORE_MATCHING)
     public double unusedResultAfterLoopOpt3(double x, double y) {
         double unused = x % y;
@@ -254,26 +251,5 @@ public class ModDNodeTests {
 
         int other = (b - 77) * (int)(x % y % 1.d);
         return (double)other;
-    }
-
-    @Test
-    @IR(failOn = {IRNode.CMP_D},
-        phase = CompilePhase.CCP1)
-    @IR(failOn = {IRNode.MOD_D},
-        phase = CompilePhase.BEFORE_MACRO_EXPANSION)
-    public double constantFoldInCCP(){
-        int i;
-        for (i = 2; i < 4; i *= 2) {
-        }
-        int j;
-        for (j = 2; j < 4; j *= 2) {
-        }
-        volatileField = 42;
-        double v1 = (double) i / 2;
-        double v2 = j;
-        double v = v1 % v2;
-        for (; v < v2; v *= 2) {
-        }
-        return v;
     }
 }

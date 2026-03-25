@@ -44,12 +44,29 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
   return 0;
 }
 
+int SharedRuntime::java_return_convention(const BasicType *sig_bt,
+                                           VMRegPair *regs,
+                                           int total_args_passed) {
+  Unimplemented();
+  return 0;
+}
+
+BufferedInlineTypeBlob* SharedRuntime::generate_buffered_inline_type_adapter(const InlineKlass* vk) {
+  Unimplemented();
+  return nullptr;
+}
+
 void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
-                                            int total_args_passed,
                                             int comp_args_on_stack,
-                                            const BasicType *sig_bt,
-                                            const VMRegPair *regs,
-                                            address entry_address[AdapterBlob::ENTRY_COUNT]) {
+                                            const GrowableArray <SigEntry>* sig,
+                                            const VMRegPair* regs,
+                                            const GrowableArray <SigEntry>* sig_cc,
+                                            const VMRegPair* regs_cc,
+                                            const GrowableArray <SigEntry>* sig_cc_ro,
+                                            const VMRegPair* regs_cc_ro,
+                                            address entry_address[AdapterBlob::ENTRY_COUNT],
+                                            AdapterBlob*& new_adapter,
+                                            bool allocate_code_blob) {
   ShouldNotCallThis();
   return;
 }

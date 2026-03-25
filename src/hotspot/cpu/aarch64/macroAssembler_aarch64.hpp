@@ -33,7 +33,12 @@
 #include "oops/compressedOops.hpp"
 #include "oops/compressedKlass.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "runtime/signature.hpp"
+
+
+class ciInlineKlass;
 
 class OopMap;
 
@@ -184,7 +189,8 @@ class MacroAssembler: public Assembler {
   void strw(Register Rx, const Address &adr);
 
   // Frame creation and destruction shared between JITs.
-  void build_frame(int framesize);
+  DEBUG_ONLY(void build_frame(int framesize);)
+  void build_frame(int framesize DEBUG_ONLY(COMMA bool zap_rfp_lr_spills));
   void remove_frame(int framesize);
 
   virtual void _call_Unimplemented(address call_site) {
@@ -677,6 +683,28 @@ public:
   static bool needs_explicit_null_check(intptr_t offset);
   static bool uses_implicit_null_check(void* address);
 
+  // markWord tests, kills markWord reg
+  void test_markword_is_inline_type(Register markword, Label& is_inline_type);
+
+  // inlineKlass queries, kills temp_reg
+  void test_oop_is_not_inline_type(Register object, Register tmp, Label& not_inline_type, bool can_be_null = true);
+
+  void test_field_is_null_free_inline_type(Register flags, Register temp_reg, Label& is_null_free);
+  void test_field_is_not_null_free_inline_type(Register flags, Register temp_reg, Label& not_null_free);
+  void test_field_is_flat(Register flags, Register temp_reg, Label& is_flat);
+  void test_field_has_null_marker(Register flags, Register temp_reg, Label& has_null_marker);
+
+  // Check oops for special arrays, i.e. flat arrays and/or null-free arrays
+  void test_oop_prototype_bit(Register oop, Register temp_reg, int32_t test_bit, bool jmp_set, Label& jmp_label);
+  void test_flat_array_oop(Register klass, Register temp_reg, Label& is_flat_array);
+  void test_non_flat_array_oop(Register oop, Register temp_reg, Label&is_non_flat_array);
+  void test_null_free_array_oop(Register oop, Register temp_reg, Label& is_null_free_array);
+  void test_non_null_free_array_oop(Register oop, Register temp_reg, Label&is_non_null_free_array);
+
+  // Check array klass layout helper for flat or null-free arrays...
+  void test_flat_array_layout(Register lh, Label& is_flat_array);
+  void test_non_flat_array_layout(Register lh, Label& is_non_flat_array);
+
   static address target_addr_for_insn(address insn_addr);
 
   // Required platform-specific helpers for Label::patch_instructions.
@@ -905,6 +933,8 @@ public:
   void load_method_holder(Register holder, Register method);
 
   // oop manipulations
+  void load_metadata(Register dst, Register src);
+
   void load_narrow_klass_compact(Register dst, Register src);
   void load_klass(Register dst, Register src);
   void store_klass(Register dst, Register src);
@@ -921,6 +951,15 @@ public:
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register val,
                        Register tmp1, Register tmp2, Register tmp3);
 
+  void flat_field_copy(DecoratorSet decorators, Register src, Register dst, Register inline_layout_info);
+
+  // inline type data payload offsets...
+  void payload_offset(Register inline_klass, Register offset);
+  void payload_address(Register oop, Register data, Register inline_klass);
+  // get data payload ptr a flat value array at index, kills rcx and index
+  void data_for_value_array_index(Register array, Register array_klass,
+                                  Register index, Register data);
+
   void load_heap_oop(Register dst, Address src, Register tmp1,
                      Register tmp2, DecoratorSet decorators = 0);
 
@@ -933,6 +972,8 @@ public:
   // Used for storing null. All other oop constants should be
   // stored using routines that take a jobject.
   void store_heap_oop_null(Address dst);
+
+  void load_prototype_header(Register dst, Register src);
 
   void store_klass_gap(Register dst, Register src);
 
@@ -983,6 +1024,15 @@ public:
   void java_round_float(Register dst, FloatRegister src, FloatRegister ftmp);
 
   // allocation
+
+  // Object / value buffer allocation...
+  // Allocate instance of klass, assumes klass initialized by caller
+  // new_obj prefers to be rax
+  // Kills t1 and t2, perserves klass, return allocation in new_obj (rsi on LP64)
+  void allocate_instance(Register klass, Register new_obj,
+                         Register t1, Register t2,
+                         bool clear_fields, Label& alloc_failed);
+
   void tlab_allocate(
     Register obj,                      // result: pointer to object after successful allocation
     Register var_size_in_bytes,        // object size in bytes if unknown at compile time; invalid otherwise
@@ -992,6 +1042,8 @@ public:
     Label&   slow_case                 // continuation point if fast allocation fails
   );
   void verify_tlab();
+
+  void inline_layout_info(Register holder_klass, Register index, Register layout_info);
 
   // interface method calling
   void lookup_interface_method(Register recv_klass,
@@ -1450,6 +1502,24 @@ public:
 
   void adrp(Register reg1, const Address &dest, uint64_t &byte_offset);
 
+  void verified_entry(Compile* C, int sp_inc);
+
+  // Inline type specific methods
+  #include "asm/macroAssembler_common.hpp"
+
+  int store_inline_type_fields_to_buf(ciInlineKlass* vk, bool from_interpreter = true);
+  bool move_helper(VMReg from, VMReg to, BasicType bt, RegState reg_state[]);
+  bool unpack_inline_helper(const GrowableArray<SigEntry>* sig, int& sig_index,
+                            VMReg from, int& from_index, VMRegPair* to, int to_count, int& to_index,
+                            RegState reg_state[]);
+  bool pack_inline_helper(const GrowableArray<SigEntry>* sig, int& sig_index, int vtarg_index,
+                          VMRegPair* from, int from_count, int& from_index, VMReg to,
+                          RegState reg_state[], Register val_array);
+  int extend_stack_for_inline_args(int args_on_stack);
+  void remove_frame(int initial_framesize, bool needs_stack_repair);
+  VMReg spill_reg_for(VMReg reg);
+  void save_stack_increment(int sp_inc, int frame_size);
+
   void tableswitch(Register index, jint lowbound, jint highbound,
                    Label &jumptable, Label &jumptable_end, int stride = 1) {
     adr(rscratch1, jumptable);
@@ -1524,6 +1594,8 @@ public:
   void string_equals(Register a1, Register a2, Register result, Register cnt1);
 
   void fill_words(Register base, Register cnt, Register value);
+  void fill_words(Register base, uint64_t cnt, Register value);
+
   address zero_words(Register base, uint64_t cnt);
   address zero_words(Register ptr, Register cnt);
   void zero_dcache_blocks(Register base, Register cnt);

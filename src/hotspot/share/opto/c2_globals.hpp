@@ -249,9 +249,6 @@
   develop(bool, TraceLoopOpts, false,                                       \
           "Trace executed loop optimizations")                              \
                                                                             \
-  develop(bool, TraceSplitIf, false,                                        \
-          "Trace Split-If optimization")                                    \
-                                                                            \
   develop(bool, TraceLoopLimitCheck, false,                                 \
           "Trace generation of loop limits checks")                         \
                                                                             \
@@ -336,15 +333,6 @@
                                                                             \
   product(bool, PartialPeelLoop, true,                                      \
           "Partial peel (rotate) loops")                                    \
-                                                                            \
-  product(uint, LoopPeeling, 1, DIAGNOSTIC,                                 \
-          "Control loop peeling optimization: "                             \
-          "0 = always disable loop peeling, "                               \
-          "1 = enable loop peeling (default), "                             \
-          "2 = disable loop peeling as a standalone optimization but "      \
-          "allow it as a helper to other loop optimizations like removing " \
-          "empty loops")                                                    \
-          range(0, 2)                                                       \
                                                                             \
   product(intx, PartialPeelNewPhiDelta, 0,                                  \
           "Additional phis that can be created by partial peeling")         \
@@ -858,6 +846,12 @@
           "profiling data. "                                                \
           "Requires UseLoopPredicate to be turned on (default).")           \
                                                                             \
+  product(bool, UseArrayLoadStoreProfile, true,                             \
+          "Take advantage of profiling at array load/store")                \
+                                                                            \
+  product(bool, UseACmpProfile, true,                                       \
+          "Take advantage of profiling at acmp")                            \
+                                                                            \
   develop(uintx, StressLongCountedLoop, 0,                                  \
           "if > 0, convert int counted loops to long counted loops"         \
           "to stress handling of long counted loops: run inner loop"        \
@@ -907,9 +901,6 @@
                                                                             \
   develop(bool, StressLoopPeeling, false,                                   \
           "Randomize loop peeling decision")                                \
-                                                                            \
-  develop(bool, StressCountedLoop, false,                                   \
-          "Randomly delay conversion to counted loops")                     \
 
 // end of C2_FLAGS
 

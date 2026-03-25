@@ -147,18 +147,25 @@ public:
 class C2ParseAccess: public C2Access {
 protected:
   GraphKit*         _kit;
+  Node* _ctl;
+  const InlineTypeNode* _vt; // For flat, atomic accesses that might require GC barriers on oop fields
 
   void* barrier_set_state() const;
 
 public:
   C2ParseAccess(GraphKit* kit, DecoratorSet decorators,
-                BasicType type, Node* base, C2AccessValuePtr& addr) :
+                BasicType type, Node* base, C2AccessValuePtr& addr,
+                Node* ctl = nullptr, const InlineTypeNode* vt = nullptr) :
     C2Access(decorators, type, base, addr),
-    _kit(kit) {
+    _kit(kit),
+    _ctl(ctl),
+    _vt (vt) {
     fixup_decorators();
   }
 
   GraphKit* kit() const           { return _kit; }
+  Node* control() const;
+  const InlineTypeNode* vt() const { return _vt; }
 
   virtual PhaseGVN& gvn() const;
   virtual bool is_parse_access() const { return true; }
@@ -270,9 +277,6 @@ public:
 // various GC barrier sets inherit from the BarrierSetC2 class to sprinkle
 // barriers into the accesses.
 class BarrierSetC2: public CHeapObj<mtGC> {
-private:
-  static const TypeFunc* _clone_type_Type;
-
 protected:
   virtual void resolve_address(C2Access& access) const;
   virtual Node* store_at_resolved(C2Access& access, C2AccessValue& val) const;
@@ -300,7 +304,7 @@ public:
   virtual Node* atomic_xchg_at(C2AtomicParseAccess& access, Node* new_val, const Type* value_type) const;
   virtual Node* atomic_add_at(C2AtomicParseAccess& access, Node* new_val, const Type* value_type) const;
 
-  virtual void clone(GraphKit* kit, Node* src, Node* dst, Node* size, bool is_array) const;
+  virtual void clone(GraphKit* kit, Node* src_base, Node* dst_base, Node* size, bool is_array) const;
 
   virtual Node* obj_allocate(PhaseMacroExpand* macro, Node* mem, Node* toobig_false, Node* size_in_bytes,
                              Node*& i_o, Node*& needgc_ctrl,
@@ -328,7 +332,7 @@ public:
   // Support for macro expanded GC barriers
   virtual void register_potential_barrier_node(Node* node) const { }
   virtual void unregister_potential_barrier_node(Node* node) const { }
-  virtual void eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const { }
+  virtual void eliminate_gc_barrier(PhaseIterGVN* igvn, Node* node) const { }
   virtual void eliminate_gc_barrier_data(Node* node) const { }
   virtual void enqueue_useful_gc_barrier(PhaseIterGVN* igvn, Node* node) const {}
   virtual void eliminate_useless_gc_barriers(Unique_Node_List &useful, Compile* C) const {}
@@ -381,9 +385,6 @@ public:
   virtual void emit_stubs(CodeBuffer& cb) const { }
 
   static int arraycopy_payload_base_offset(bool is_array);
-
-  static void make_clone_type();
-  static const TypeFunc* clone_type();
 
 #ifndef PRODUCT
   virtual void dump_barrier_data(const MachNode* mach, outputStream* st) const {

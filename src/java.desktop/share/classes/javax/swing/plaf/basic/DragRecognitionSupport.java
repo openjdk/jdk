@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,14 @@ import java.awt.event.*;
 import java.awt.dnd.DragSource;
 import javax.swing.*;
 import sun.awt.dnd.SunDragSourceContextPeer;
+import sun.awt.AppContext;
 
 /**
  * Drag gesture recognition support for classes that have a
  * <code>TransferHandler</code>. The gesture for a drag in this class is a mouse
  * press followed by movement by <code>DragSource.getDragThreshold()</code>
- * pixels.
+ * pixels. An instance of this class is maintained per AppContext, and the
+ * public static methods call into the appropriate instance.
  *
  * @author Shannon Hickey
  */
@@ -51,14 +53,19 @@ class DragRecognitionSupport {
         public void dragStarting(MouseEvent me);
     }
 
-    private static DragRecognitionSupport support;
     /**
-     * Returns the DragRecognitionSupport instance.
+     * Returns the DragRecognitionSupport for the caller's AppContext.
      */
-    private static synchronized DragRecognitionSupport getDragRecognitionSupport() {
+    private static DragRecognitionSupport getDragRecognitionSupport() {
+        DragRecognitionSupport support =
+            (DragRecognitionSupport)AppContext.getAppContext().
+                get(DragRecognitionSupport.class);
+
         if (support == null) {
             support = new DragRecognitionSupport();
+            AppContext.getAppContext().put(DragRecognitionSupport.class, support);
         }
+
         return support;
     }
 

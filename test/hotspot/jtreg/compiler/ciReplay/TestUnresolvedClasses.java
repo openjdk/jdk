@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,18 +38,12 @@ package compiler.ciReplay;
 
 import jdk.test.lib.Asserts;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
 import java.util.List;
 
 public class TestUnresolvedClasses extends CiReplayBase {
     private static final String LOG_FILE = "hotspot.log";
-    private static final String[] COMMAND_LINE = new String[] {"-XX:LogFile='" + LOG_FILE + "'", "-XX:+LogCompilation", "-XX:+PrintIdeal",
-                                                               "-XX:CompileCommand=dontinline,compiler.ciReplay.Test::dontInline"};
+    private final PrintIdeal printIdeal = new PrintIdeal(LOG_FILE);
+
     public static void main(String[] args) {
         new TestUnresolvedClasses().runTest(false, TIERED_DISABLED_VM_OPTION);
     }
@@ -61,30 +55,20 @@ public class TestUnresolvedClasses extends CiReplayBase {
 
     @Override
     public void testAction() {
-        positiveTest(COMMAND_LINE);
+        List<String> vmFlags = printIdeal.vmFlags();
+        vmFlags.add("-XX:CompileCommand=dontinline,*Test::dontInline");
+        String[] commandLine = vmFlags.toArray(new String[0]);
+        positiveTest(commandLine);
+        printIdeal.parse();
         // Should find CallStaticJava node for dontInline() as f.bar() is resolved and parsing completes.
         checkLogFile(true);
 
+        ReplayFile replayFile = new ReplayFile(getReplayFileName());
         // Remove ciInstanceKlass entry for Foo in replay file.
-        try {
-            Path replayFilePath = Paths.get(REPLAY_FILE_NAME);
-            List<String> replayContent = Files.readAllLines(replayFilePath);
-            List<String> newReplayContent = new ArrayList<>();
-            boolean foundFoo = false;
-            for (String line : replayContent) {
-                if (!line.startsWith("ciInstanceKlass compiler/ciReplay/Foo")) {
-                    newReplayContent.add(line);
-                } else {
-                    foundFoo = true;
-                }
-            }
-            Asserts.assertTrue(foundFoo, "Did not find ciInstanceKlass compiler/ciReplay/Foo entry");
-            Files.write(replayFilePath, newReplayContent, StandardOpenOption.TRUNCATE_EXISTING);
-        } catch (IOException ioe) {
-            throw new Error("Failed to read/write replay data: " + ioe, ioe);
-        }
+        replayFile.removeLineStartingWith("ciInstanceKlass compiler/ciReplay/TestUnresolvedClasses$Foo");
 
-        positiveTest(COMMAND_LINE);
+        positiveTest(commandLine);
+        printIdeal.parse();
         // No ciInstanceKlass entry for Foo is found in the replay. Replay compilation simulates that Foo is unresolved.
         // Therefore, C2 cannot resolve f.bar() at parsing time. It emits an UCT to resolve Foo and stops parsing.
         // The call to dontInline() will not be parsed and thus we should not find a CallStaticJava node for it.
@@ -95,53 +79,38 @@ public class TestUnresolvedClasses extends CiReplayBase {
     // Parse <ideal> entry in hotspot.log file and try to find the call for dontInline().
     private void checkLogFile(boolean shouldMatch) {
         String toMatch = "Test::dontInline";
-        try (var br = Files.newBufferedReader(Paths.get(LOG_FILE))) {
-            String line;
-            boolean printIdealLine = false;
-            while ((line = br.readLine()) != null) {
-                if (printIdealLine) {
-                    if (line.startsWith("</ideal")) {
-                        break;
-                    }
-                    if (line.contains(toMatch)) {
-                        Asserts.assertTrue(line.contains("CallStaticJava"), "must be CallStaticJava node");
-                        Asserts.assertTrue(shouldMatch, "Should not have found " + toMatch);
-                        return;
-                    }
-                } else {
-                    printIdealLine = line.startsWith("<ideal");
-                }
+        String line = printIdeal.find(toMatch);
+        if (shouldMatch) {
+            Asserts.assertTrue(line.contains("CallStaticJava"), "must be CallStaticJava node");
+        } else {
+            Asserts.assertTrue(line.isEmpty(), "Should not have found " + toMatch);
+        }
+    }
+
+    private static class Test {
+        static Foo f = new Foo();
+
+        public static void main(String[] args) {
+            for (int i = 0; i < 10000; i++) {
+                test();
             }
-        } catch (IOException e) {
-            throw new Error("Failed to read " + LOG_FILE + " data: " + e, e);
         }
-        Asserts.assertFalse(shouldMatch, "Should have found " + toMatch);
-    }
-}
 
-class Test {
-    static Foo f = new Foo();
+        public static void test() {
+            f.bar();
+            // At replay compilation: Should emit UCT for f.bar() because class Foo is unloaded. Parsing stops here.
+            // dontInline() is not parsed anymore.
+            dontInline();
+        }
 
-    public static void main(String[] args) {
-        for (int i = 0; i < 10000; i++) {
-            test();
+        // Not inlined
+        public static void dontInline() {
         }
     }
 
-    public static void test() {
-        f.bar();
-        // At replay compilation: Should emit UCT for f.bar() because class Foo is unloaded. Parsing stops here.
-        // dontInline() is not parsed anymore.
-        dontInline();
-    }
-
-    // Not inlined
-    public static void dontInline() {
-    }
-}
-
-class Foo {
-    public int bar() {
-        return 3;
+    private static class Foo {
+        public int bar() {
+            return 3;
+        }
     }
 }

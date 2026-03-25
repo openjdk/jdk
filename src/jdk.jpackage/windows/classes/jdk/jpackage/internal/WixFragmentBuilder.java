@@ -32,6 +32,7 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.xml.stream.XMLStreamWriter;
@@ -64,14 +65,16 @@ abstract class WixFragmentBuilder {
     }
 
     void initFromParams(BuildEnv env, WinMsiPackage pkg) {
-        wixVariables = new WixVariables();
+        wixVariables = null;
         additionalResources = null;
         configRoot = env.configDir();
         fragmentResource = env.createResource(defaultResourceName).setPublicName(outputFileName);
     }
 
     void configureWixPipeline(WixPipeline.Builder wixPipeline) {
-        wixPipeline.addSource(configRoot.resolve(outputFileName), wixVariables);
+        wixPipeline.addSource(configRoot.resolve(outputFileName),
+                Optional.ofNullable(wixVariables).map(WixVariables::getValues).orElse(
+                        null));
     }
 
     void addFilesToConfigRoot() throws IOException {
@@ -144,11 +147,14 @@ abstract class WixFragmentBuilder {
     protected abstract Collection<XmlConsumer> getFragmentWriters();
 
     protected final void defineWixVariable(String variableName) {
-        wixVariables.define(variableName);
+        setWixVariable(variableName, "yes");
     }
 
     protected final void setWixVariable(String variableName, String variableValue) {
-        wixVariables.put(variableName, variableValue);
+        if (wixVariables == null) {
+            wixVariables = new WixVariables();
+        }
+        wixVariables.setWixVariable(variableName, variableValue);
     }
 
     protected final void addResource(OverridableResource resource, String saveAsName) {

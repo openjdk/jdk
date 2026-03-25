@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,12 @@
  */
 package javax.xml.transform.ptests;
 
-import org.junit.jupiter.api.Test;
-import org.w3c.dom.Document;
-import org.xml.sax.InputSource;
+import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+
+import java.io.File;
+import java.io.FileInputStream;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -36,12 +39,10 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
-import java.io.File;
-import java.io.FileInputStream;
 
-import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import org.testng.annotations.Test;
+import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
 
 /**
  * URIResolver should be invoked when transform happens.
@@ -49,9 +50,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run junit/othervm javax.xml.transform.ptests.URIResolverTest
+ * @run testng/othervm javax.xml.transform.ptests.URIResolverTest
  */
-public class URIResolverTest {
+public class URIResolverTest implements URIResolver {
     /**
      * System ID constant.
      */
@@ -72,29 +73,60 @@ public class URIResolverTest {
      */
     private final static String XSL_TEMP_FILE = "temp/cities.xsl";
 
-    record TestResolver(String expectedHref, String expectedBase) implements URIResolver {
-        /**
-         * Called by the processor when it encounters an xsl:include, xsl:import,
-         * or document() function.
-         */
-        @Override
-        public Source resolve(String href, String base) {
-            assertEquals(expectedHref, href);
-            assertEquals(expectedBase, base);
-            // Return null if the href cannot be resolved.
-            return null;
-        }
+    /**
+     * expected HREF.
+     */
+    private final String validateHref;
+
+    /**
+     * expected Base URI.
+     */
+    private final String validateBase;
+
+    /**
+     * Default constructor for testng invocation.
+     */
+    public URIResolverTest(){
+        validateHref = null;
+        validateBase = null;
+    }
+
+    /**
+     * Constructor for setting expected Href and expected Base URI.
+     * @param validateHref expected Href
+     * @param validateBase expected Base URI
+     */
+    public URIResolverTest(String validateHref, String validateBase){
+        this.validateHref = validateHref;
+        this.validateBase = validateBase;
+    }
+
+    /**
+     * Called by the processor when it encounters an xsl:include, xsl:import,
+     * or document() function.
+     * @param href An href attribute, which may be relative or absolute.
+     * @param base The base URI against which the first argument will be made
+     * absolute if the absolute URI is required.
+     * @return null always.
+     */
+    @Override
+    public Source resolve(String href, String base) {
+        assertEquals(href, validateHref);
+        assertEquals(base, validateBase);
+        return null;
     }
 
     /**
      * This is to test the URIResolver.resolve() method when a transformer is
      * created using StreamSource. style-sheet file has xsl:include in it.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void resolver01() throws Exception {
+    public static void resolver01() throws Exception {
         try (FileInputStream fis = new FileInputStream(XSL_INCLUDE_FILE)) {
             TransformerFactory tfactory = TransformerFactory.newInstance();
-            TestResolver resolver = new TestResolver(XSL_TEMP_FILE, SYSTEM_ID);
+            URIResolverTest resolver = new URIResolverTest(XSL_TEMP_FILE, SYSTEM_ID);
             tfactory.setURIResolver(resolver);
 
             StreamSource streamSource = new StreamSource(fis);
@@ -106,11 +138,13 @@ public class URIResolverTest {
     /**
      * This is to test the URIResolver.resolve() method when a transformer is
      * created using DOMSource. style-sheet file has xsl:include in it.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void resolver02() throws Exception {
+    public static void resolver02() throws Exception {
         TransformerFactory tfactory = TransformerFactory.newInstance();
-        TestResolver resolver = new TestResolver(XSL_TEMP_FILE, SYSTEM_ID);
+        URIResolverTest resolver = new URIResolverTest(XSL_TEMP_FILE, SYSTEM_ID);
         tfactory.setURIResolver(resolver);
 
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -125,11 +159,13 @@ public class URIResolverTest {
     /**
      * This is to test the URIResolver.resolve() method when a transformer is
      * created using SAXSource. style-sheet file has xsl:include in it.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void resolver03() throws Exception {
-        try (FileInputStream fis = new FileInputStream(XSL_INCLUDE_FILE)) {
-            TestResolver resolver = new TestResolver(XSL_TEMP_FILE, SYSTEM_ID);
+    public static void resolver03() throws Exception {
+        try (FileInputStream fis = new FileInputStream(XSL_INCLUDE_FILE)){
+            URIResolverTest resolver = new URIResolverTest(XSL_TEMP_FILE, SYSTEM_ID);
             TransformerFactory tfactory = TransformerFactory.newInstance();
             tfactory.setURIResolver(resolver);
             InputSource is = new InputSource(fis);
@@ -142,11 +178,13 @@ public class URIResolverTest {
     /**
      * This is to test the URIResolver.resolve() method when a transformer is
      * created using StreamSource. style-sheet file has xsl:import in it.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void resolver04() throws Exception {
+    public static void resolver04() throws Exception {
         try (FileInputStream fis = new FileInputStream(XSL_IMPORT_FILE)) {
-            TestResolver resolver = new TestResolver(XSL_TEMP_FILE, SYSTEM_ID);
+            URIResolverTest resolver = new URIResolverTest(XSL_TEMP_FILE, SYSTEM_ID);
             TransformerFactory tfactory = TransformerFactory.newInstance();
             tfactory.setURIResolver(resolver);
             StreamSource streamSource = new StreamSource(fis);
@@ -158,10 +196,12 @@ public class URIResolverTest {
     /**
      * This is to test the URIResolver.resolve() method when a transformer is
      * created using DOMSource. style-sheet file has xsl:import in it.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void resolver05() throws Exception {
-        TestResolver resolver = new TestResolver(XSL_TEMP_FILE, SYSTEM_ID);
+    public static void resolver05() throws Exception {
+        URIResolverTest resolver = new URIResolverTest(XSL_TEMP_FILE, SYSTEM_ID);
         TransformerFactory tfactory = TransformerFactory.newInstance();
         tfactory.setURIResolver(resolver);
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -175,11 +215,13 @@ public class URIResolverTest {
     /**
      * This is to test the URIResolver.resolve() method when a transformer is
      * created using SAXSource. style-sheet file has xsl:import in it.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void resolver06() throws Exception {
-        try (FileInputStream fis = new FileInputStream(XSL_IMPORT_FILE)) {
-            TestResolver resolver = new TestResolver(XSL_TEMP_FILE, SYSTEM_ID);
+    public static void resolver06() throws Exception {
+        try (FileInputStream fis = new FileInputStream(XSL_IMPORT_FILE)){
+            URIResolverTest resolver = new URIResolverTest(XSL_TEMP_FILE, SYSTEM_ID);
             TransformerFactory tfactory = TransformerFactory.newInstance();
             tfactory.setURIResolver(resolver);
             InputSource is = new InputSource(fis);
@@ -192,11 +234,13 @@ public class URIResolverTest {
     /**
      * This is to test the URIResolver.resolve() method when there is an error
      * in the file.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void docResolver01() throws Exception {
+    public static void docResolver01() throws Exception {
         try (FileInputStream fis = new FileInputStream(XML_DIR + "doctest.xsl")) {
-            TestResolver resolver = new TestResolver("temp/colors.xml", SYSTEM_ID);
+            URIResolverTest resolver = new URIResolverTest("temp/colors.xml", SYSTEM_ID);
             StreamSource streamSource = new StreamSource(fis);
             streamSource.setSystemId(SYSTEM_ID);
 

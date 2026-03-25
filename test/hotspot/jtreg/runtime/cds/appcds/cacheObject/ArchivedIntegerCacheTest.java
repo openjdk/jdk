@@ -25,6 +25,7 @@
 /*
  * @test
  * @summary Test primitive box caches integrity in various scenarios (IntegerCache etc)
+ * @requires !java.enablePreview
  * @requires vm.cds.write.archived.java.heap
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @compile --add-exports java.base/jdk.internal.misc=ALL-UNNAMED CheckIntegerCacheApp.java ArchivedIntegerHolder.java

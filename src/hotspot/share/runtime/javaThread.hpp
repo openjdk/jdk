@@ -149,6 +149,7 @@ class JavaThread: public Thread {
   // Used to pass back results to the interpreter or generated code running Java code.
   oop           _vm_result_oop;       // oop result is GC-preserved
   Metadata*     _vm_result_metadata;  // non-oop result
+  oop           _return_buffered_value; // buffered value being returned
 
   ObjectMonitor* volatile _current_pending_monitor;     // ObjectMonitor this thread is waiting to lock
   bool           _current_pending_monitor_is_from_java; // locking is from Java code
@@ -819,6 +820,9 @@ public:
 
   void set_vm_result_metadata(Metadata* x)       { _vm_result_metadata = x; }
 
+  oop return_buffered_value() const              { return _return_buffered_value; }
+  void set_return_buffered_value(oop val)        { _return_buffered_value = val; }
+
   // Is thread in scope of an InternalOOMEMark?
   bool is_in_internal_oome_mark() const          { return _is_in_internal_oome_mark; }
   void set_is_in_internal_oome_mark(bool b)      { _is_in_internal_oome_mark = b;    }
@@ -881,6 +885,7 @@ public:
   static ByteSize callee_target_offset()         { return byte_offset_of(JavaThread, _callee_target); }
   static ByteSize vm_result_oop_offset()         { return byte_offset_of(JavaThread, _vm_result_oop); }
   static ByteSize vm_result_metadata_offset()    { return byte_offset_of(JavaThread, _vm_result_metadata); }
+  static ByteSize return_buffered_value_offset() { return byte_offset_of(JavaThread, _return_buffered_value); }
   static ByteSize thread_state_offset()          { return byte_offset_of(JavaThread, _thread_state); }
   static ByteSize saved_exception_pc_offset()    { return byte_offset_of(JavaThread, _saved_exception_pc); }
   static ByteSize osthread_offset()              { return byte_offset_of(JavaThread, _osthread); }

@@ -190,6 +190,11 @@ class KlassInfoHisto : public StackObj {
   void sort();
 };
 
+class PrintClassLayout : AllStatic {
+ public:
+  static void print_class_layout(outputStream* st, char* classname);
+};
+
 #endif // INCLUDE_SERVICES
 
 // These declarations are needed since the declaration of KlassInfoTable and

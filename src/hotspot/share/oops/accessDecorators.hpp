@@ -191,17 +191,20 @@ const DecoratorSet IS_NOT_NULL           = UCONST64(1) << 22;
 //   are not guaranteed to be subclasses of the class of the destination array. This requires
 //   a check-cast barrier during the copying operation. If this is not set, it is assumed
 //   that the array is covariant: (the source array type is-a destination array type)
+// * ARRAYCOPY_NOTNULL: This property means that the source array may contain null elements
+//   but the destination does not allow null elements (i.e. throw NPE)
 // * ARRAYCOPY_DISJOINT: This property means that it is known that the two array ranges
 //   are disjoint.
 // * ARRAYCOPY_ARRAYOF: The copy is in the arrayof form.
 // * ARRAYCOPY_ATOMIC: The accesses have to be atomic over the size of its elements.
 // * ARRAYCOPY_ALIGNED: The accesses have to be aligned on a HeapWord.
 const DecoratorSet ARRAYCOPY_CHECKCAST            = UCONST64(1) << 23;
-const DecoratorSet ARRAYCOPY_DISJOINT             = UCONST64(1) << 24;
-const DecoratorSet ARRAYCOPY_ARRAYOF              = UCONST64(1) << 25;
-const DecoratorSet ARRAYCOPY_ATOMIC               = UCONST64(1) << 26;
-const DecoratorSet ARRAYCOPY_ALIGNED              = UCONST64(1) << 27;
-const DecoratorSet ARRAYCOPY_DECORATOR_MASK       = ARRAYCOPY_CHECKCAST | ARRAYCOPY_DISJOINT |
+const DecoratorSet ARRAYCOPY_NOTNULL              = UCONST64(1) << 24;
+const DecoratorSet ARRAYCOPY_DISJOINT             = UCONST64(1) << 25;
+const DecoratorSet ARRAYCOPY_ARRAYOF              = UCONST64(1) << 26;
+const DecoratorSet ARRAYCOPY_ATOMIC               = UCONST64(1) << 27;
+const DecoratorSet ARRAYCOPY_ALIGNED              = UCONST64(1) << 28;
+const DecoratorSet ARRAYCOPY_DECORATOR_MASK       = ARRAYCOPY_CHECKCAST | ARRAYCOPY_NOTNULL |
                                                     ARRAYCOPY_DISJOINT | ARRAYCOPY_ARRAYOF |
                                                     ARRAYCOPY_ATOMIC | ARRAYCOPY_ALIGNED;
 
@@ -209,11 +212,11 @@ const DecoratorSet ARRAYCOPY_DECORATOR_MASK       = ARRAYCOPY_CHECKCAST | ARRAYC
 // * ACCESS_READ: Indicate that the resolved object is accessed read-only. This allows the GC
 //   backend to use weaker and more efficient barriers.
 // * ACCESS_WRITE: Indicate that the resolved object is used for write access.
-const DecoratorSet ACCESS_READ                    = UCONST64(1) << 28;
-const DecoratorSet ACCESS_WRITE                   = UCONST64(1) << 29;
+const DecoratorSet ACCESS_READ                    = UCONST64(1) << 29;
+const DecoratorSet ACCESS_WRITE                   = UCONST64(1) << 30;
 
 // Keep track of the last decorator.
-const DecoratorSet DECORATOR_LAST = UCONST64(1) << 29;
+const DecoratorSet DECORATOR_LAST = UCONST64(1) << 30;
 
 namespace AccessInternal {
   // This class adds implied decorators that follow according to decorator rules.

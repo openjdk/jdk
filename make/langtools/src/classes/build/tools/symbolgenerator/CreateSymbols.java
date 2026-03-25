@@ -183,6 +183,18 @@ import static java.lang.classfile.ClassFile.ACC_PUBLIC;
  */
 public class CreateSymbols {
 
+    /**
+     * <p>Support for a "preview version" of classfiles when running with preview
+     * mode. This is modeled as a new version (@) and since preview mode is only
+     * supported for the current version, a single identifier token is sufficient.
+     *
+     * <p>For example, inside ct.sym, 27 will be modeled as 'R', and the preview
+     * for 27 will be '@'. Classfiles unchanged between 27 and 27-preview will
+     * not be duplicated (in the same way classfiles that are common between 26
+     * and 27 are shared).
+     */
+    private static final String PREVIEW_VERSION = "@";
+
     //<editor-fold defaultstate="collapsed" desc="ct.sym construction">
     /**Create sig files for ct.sym reading the classes description from the directory that contains
      * {@code ctDescriptionFile}, using the file as a recipe to create the sigfiles.
@@ -212,11 +224,16 @@ public class CreateSymbols {
         loadVersionClassesFromDirectory(data.classes, data.modules, moduleClassPath,
                                         includedModules, currentVersion, previousVersion);
 
+        loadVersionClassesFromDirectory(data.classes, data.modules, moduleClassPath,
+                includedModules, PREVIEW_VERSION, currentVersion);
+
         stripNonExistentAnnotations(data);
         splitHeaders(data.classes);
 
         Map<String, Map<Character, String>> package2Version2Module = new HashMap<>();
         Map<String, Set<FileData>> directory2FileData = new TreeMap<>();
+
+        String currentVersionFin = currentVersion;
 
         for (ModuleDescription md : data.modules.values()) {
             for (ModuleHeaderDescription mhd : md.header) {
@@ -226,6 +243,9 @@ public class CreateSymbols {
                                         mhd.versions,
                                         version -> {
                                             String versionString = Character.toString(version);
+                                            if (PREVIEW_VERSION.equals(versionString)) {
+                                                versionString = currentVersionFin;
+                                            }
                                             int versionNumber = Integer.parseInt(versionString, Character.MAX_RADIX);
                                             versionString = Integer.toString(versionNumber);
                                             if (versionNumber == currentVersionParsed && !preReleaseTag.isEmpty()) {
@@ -306,6 +326,10 @@ public class CreateSymbols {
             "Ljdk/internal/ValueBased;";
     private static final String VALUE_BASED_ANNOTATION_INTERNAL =
             "Ljdk/internal/ValueBased+Annotation;";
+    private static final String MIGRATED_VALUE_CLASS_ANNOTATION =
+            "Ljdk/internal/MigratedValueClass;";
+    private static final String MIGRATED_VALUE_CLASS_ANNOTATION_INTERNAL =
+            "Ljdk/internal/MigratedValueClass+Annotation;";
     private static final String REQUIRES_IDENTITY_ANNOTATION =
             "Ljdk/internal/RequiresIdentity;";
     private static final String REQUIRES_IDENTITY_ANNOTATION_INTERNAL =
@@ -316,6 +340,7 @@ public class CreateSymbols {
                     PREVIEW_FEATURE_ANNOTATION_OLD,
                     PREVIEW_FEATURE_ANNOTATION_NEW,
                     VALUE_BASED_ANNOTATION,
+                    MIGRATED_VALUE_CLASS_ANNOTATION,
                     RESTRICTED_ANNOTATION,
                     REQUIRES_IDENTITY_ANNOTATION));
 
@@ -809,6 +834,9 @@ public class CreateSymbols {
                     String module,
                     String version) throws IOException {
         var classFile = ClassFile.of().build(ClassDesc.ofInternalName(classDescription.name), clb -> {
+            if (header.preview) {
+                clb.withVersion(ClassFile.latestMajorVersion(), ClassFile.PREVIEW_MINOR_VERSION);
+            }
             if (header.extendsAttr != null)
                 clb.withSuperclass(ClassDesc.ofInternalName(header.extendsAttr));
             clb.withInterfaceSymbols(header.implementsAttr.stream().map(ClassDesc::ofInternalName).collect(Collectors.toList()))
@@ -1032,6 +1060,12 @@ public class CreateSymbols {
             //the non-public ValueBased annotation will not be available in ct.sym,
             //replace with purely synthetic javac-internal annotation:
             annotationType = VALUE_BASED_ANNOTATION_INTERNAL;
+        }
+
+        if (MIGRATED_VALUE_CLASS_ANNOTATION.equals(annotationType)) {
+            //the non-public MigratedValueClass annotation will not be available in ct.sym,
+            //replace with purely synthetic javac-internal annotation:
+            annotationType = MIGRATED_VALUE_CLASS_ANNOTATION_INTERNAL;
         }
 
         if (REQUIRES_IDENTITY_ANNOTATION.equals(annotationType)) {
@@ -1305,8 +1339,9 @@ public class CreateSymbols {
                 Collections.emptySet());
 
         try {
+            record ExportedDir(Path modulePath, Path exportedDir) {}
             Map<Path, ModuleHeaderDescription> modulePath2Header = new HashMap<>();
-            List<Path> pendingExportedDirectories = new ArrayList<>();
+            List<ExportedDir> pendingExportedDirectories = new ArrayList<>();
 
             try (DirectoryStream<Path> ds = Files.newDirectoryStream(modulesDirectory)) {
                 for (Path p : ds) {
@@ -1314,7 +1349,7 @@ public class CreateSymbols {
                         continue;
                     }
 
-                    Path moduleInfo = p.resolve("module-info.class");
+                    Path moduleInfo = resolvePossiblyPreviewClassFile(version, p, p.resolve("module-info.class"));
 
                     if (Files.isReadable(moduleInfo)) {
                         ModuleDescription md = inspectModuleInfoClassFile(Files.readAllBytes(moduleInfo),
@@ -1333,7 +1368,7 @@ public class CreateSymbols {
 
                         for (String dir : currentModuleExports) {
                             includes.add(dir);
-                            pendingExportedDirectories.add(p.resolve(dir));
+                            pendingExportedDirectories.add(new ExportedDir(p, p.resolve(dir)));
                         }
                     } else {
                         throw new IllegalArgumentException("Included module: " +
@@ -1345,12 +1380,14 @@ public class CreateSymbols {
 
             List<String> pendingExtraClasses = new ArrayList<>();
 
-            for (Path exported : pendingExportedDirectories) {
-                try (DirectoryStream<Path> ds = Files.newDirectoryStream(exported)) {
+            for (ExportedDir exported : pendingExportedDirectories) {
+                try (DirectoryStream<Path> ds = Files.newDirectoryStream(exported.exportedDir())) {
                     for (Path p2 : ds) {
                         if (!Files.isRegularFile(p2) || !p2.getFileName().toString().endsWith(".class")) {
                             continue;
                         }
+
+                        p2 = resolvePossiblyPreviewClassFile(version, exported.modulePath(), p2);
 
                         loadFromDirectoryHandleClassFile(p2, currentVersionClasses,
                                                          currentEIList, version,
@@ -1370,6 +1407,7 @@ public class CreateSymbols {
                     Path currentPath = e.getKey().resolve(current + ".class");
 
                     if (Files.isReadable(currentPath)) {
+                        currentPath = resolvePossiblyPreviewClassFile(version, e.getKey(), currentPath);
                         String pack = current.substring(0, current.lastIndexOf('/'));
 
                         e.getValue().extraModulePackages.add(pack);
@@ -1400,6 +1438,21 @@ public class CreateSymbols {
                                  todo.addAll(superTypes);
                              });
         }
+    }
+
+    private Path resolvePossiblyPreviewClassFile(String version, Path moduleClassDir, Path classfile) {
+        if (!PREVIEW_VERSION.equals(version)) {
+            return classfile;
+        }
+
+        Path relativePath = moduleClassDir.relativize(classfile);
+        Path previewCandidate = moduleClassDir.resolve("META-INF").resolve("preview").resolve(relativePath);
+
+        if (Files.exists(previewCandidate)) {
+            return previewCandidate;
+        }
+
+        return classfile;
     }
 
     private void finishClassLoading(ClassList classes, Map<String, ModuleDescription> modules, Map<String, ModuleDescription> currentVersionModules, ClassList currentVersionClasses, ExcludeIncludeList currentEIList, String version,
@@ -1930,6 +1983,7 @@ public class CreateSymbols {
         ClassHeaderDescription headerDesc = new ClassHeaderDescription();
 
         headerDesc.flags = cm.flags().flagsMask();
+        headerDesc.preview = cm.minorVersion() == ClassFile.PREVIEW_MINOR_VERSION;
 
         if (cm.superclass().isPresent()) {
             headerDesc.extendsAttr = cm.superclass().get().asInternalName();
@@ -1996,6 +2050,7 @@ public class CreateSymbols {
 
         headerDesc.versions = version;
         headerDesc.flags = cm.flags().flagsMask();
+        headerDesc.preview = cm.minorVersion() == ClassFile.PREVIEW_MINOR_VERSION;
 
         for (var attr : cm.attributes()) {
             if (!readAttribute(headerDesc, attr))
@@ -2263,7 +2318,13 @@ public class CreateSymbols {
                 feature.classTypeAnnotations = typeAnnotations2Descriptions(a.annotations());
             case RuntimeVisibleTypeAnnotationsAttribute a ->
                 feature.runtimeTypeAnnotations = typeAnnotations2Descriptions(a.annotations());
-            default -> throw new IllegalArgumentException("Unhandled attribute: " + attr.attributeName()); // Do nothing
+            default -> {
+                if (attr.attributeName().equalsString("LoadableDescriptors")) {
+                    //OK, do nothing
+                } else {
+                    throw new IllegalArgumentException("Unhandled attribute: " + attr.attributeName());
+                }
+            }
         }
 
         return true;
@@ -3308,11 +3369,13 @@ public class CreateSymbols {
 
     static abstract class HeaderDescription extends FeatureDescription {
         List<InnerClassInfo> innerClasses;
+        boolean preview;
 
         @Override
         public int hashCode() {
             int hash = super.hashCode();
             hash = 19 * hash + Objects.hashCode(this.innerClasses);
+            hash = 19 * hash + Objects.hashCode(this.preview);
             return hash;
         }
 
@@ -3326,6 +3389,9 @@ public class CreateSymbols {
             }
             final HeaderDescription other = (HeaderDescription) obj;
             if (!listEquals(this.innerClasses, other.innerClasses)) {
+                return false;
+            }
+            if (this.preview != other.preview) {
                 return false;
             }
             return true;
@@ -3366,6 +3432,22 @@ public class CreateSymbols {
             }
         }
 
+        @Override
+        protected void writeAttributes(Appendable output) throws IOException {
+            super.writeAttributes(output);
+            if (preview) {
+                output.append(" preview true");
+            }
+        }
+
+        @Override
+        protected void readAttributes(LineBasedReader reader) {
+            super.readAttributes(reader);
+            String inPreview = reader.attributes.get("preview");
+            if ("true".equals(inPreview)) {
+                preview = true;
+            }
+        }
     }
 
     static class MethodDescription extends FeatureDescription {

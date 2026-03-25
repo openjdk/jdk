@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -532,6 +532,11 @@ static void event_storage_add(EventStorage* storage,
   jvmtiFrameInfo frames[64];
   jint count;
   jvmtiError err;
+
+  if (jni->IsValueObject(object)) {
+    // weak references are prohibited for value objects, skip them
+    return;
+  }
 
   err = jvmti->GetStackTrace(thread, 0, 64, frames, &count);
   if (err == JVMTI_ERROR_NONE && count >= 1) {

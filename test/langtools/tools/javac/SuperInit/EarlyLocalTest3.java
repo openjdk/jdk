@@ -24,7 +24,11 @@
  * @test
  * @bug 8333313
  * @summary Verify references to local classes declared in early construction contexts
+ * @run main EarlyLocalTest3
+ * @build InitializationWarningTester
+ * @run main InitializationWarningTester EarlyLocalTest3
  */
+
 public class EarlyLocalTest3 {
 
     class Test {

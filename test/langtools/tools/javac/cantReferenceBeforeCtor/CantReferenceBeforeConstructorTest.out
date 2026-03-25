@@ -1,2 +1,2 @@
-CantReferenceBeforeConstructorTest.java:30:13: compiler.err.cant.ref.before.ctor.called: this
+CantReferenceBeforeConstructorTest.java:30:17: compiler.err.cant.ref.before.ctor.called: CantReferenceBeforeConstructorTest.BB.CC()
 1 error

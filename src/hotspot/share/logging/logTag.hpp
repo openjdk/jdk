@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,6 @@ class outputStream;
   LOG_TAG(freelist) \
   LOG_TAG(gc) \
   NOT_PRODUCT(LOG_TAG(generate)) \
-  LOG_TAG(generateoopmap) \
   LOG_TAG(handshake) \
   LOG_TAG(hashtables) \
   LOG_TAG(heap) \
@@ -163,6 +162,7 @@ class outputStream;
   LOG_TAG(plab) \
   LOG_TAG(placeholders) \
   LOG_TAG(preempt) \
+  LOG_TAG(preload)   /* Trace successfull class preloading */ \
   LOG_TAG(preorder)  /* Trace all classes loaded in order referenced (not loaded) */ \
   LOG_TAG(preview)   /* Trace loading of preview feature types */ \
   LOG_TAG(promotion) \
@@ -217,6 +217,7 @@ class outputStream;
   NOT_PRODUCT(LOG_TAG(upcall)) \
   LOG_TAG(update) \
   LOG_TAG(valuebasedclasses) \
+  LOG_TAG(valuetypes) \
   LOG_TAG(verification) \
   LOG_TAG(verify) \
   LOG_TAG(vmatree) \

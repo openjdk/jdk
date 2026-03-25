@@ -24,13 +24,17 @@
  */
 package jdk.jpackage.internal;
 
+import java.io.IOException;
+import java.io.Reader;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleReference;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import jdk.jpackage.internal.util.RuntimeReleaseFile;
+import java.util.Properties;
 
 record ModuleInfo(String name, Optional<String> version, Optional<String> mainClass, Optional<URI> location) {
 
@@ -52,16 +56,30 @@ record ModuleInfo(String name, Optional<String> version, Optional<String> mainCl
         // We can't extract info about version and main class of a module
         // linked in external runtime without running ModuleFinder in that
         // runtime. But this is too much work as the runtime might have been
-        // cooked without native launchers. So just make sure the module
-        // is linked in the runtime by simply analyzing the data
+        // coocked without native launchers. So just make sure the module
+        // is linked in the runtime by simply analysing the data
         // of `release` file.
 
-        try {
-            var cookedRuntimeModules = RuntimeReleaseFile.loadFromRuntime(cookedRuntime).getModules();
-            if (!cookedRuntimeModules.contains(moduleName)) {
+        final Path releaseFile = cookedRuntime.resolve("release");
+
+        try (Reader reader = Files.newBufferedReader(releaseFile)) {
+            Properties props = new Properties();
+            props.load(reader);
+            String moduleList = props.getProperty("MODULES");
+            if (moduleList == null) {
                 return Optional.empty();
             }
-        } catch (Exception ex) {
+
+            if ((moduleList.startsWith("\"") && moduleList.endsWith("\""))
+                    || (moduleList.startsWith("\'") && moduleList.endsWith(
+                    "\'"))) {
+                moduleList = moduleList.substring(1, moduleList.length() - 1);
+            }
+
+            if (!List.of(moduleList.split("\\s+")).contains(moduleName)) {
+                return Optional.empty();
+            }
+        } catch (IOException|IllegalArgumentException ex) {
             Log.verbose(ex);
             return Optional.empty();
         }

@@ -27,9 +27,12 @@
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/connode.hpp"
+#include "opto/graphKit.hpp"
+#include "opto/inlinetypenode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/phaseX.hpp"
+#include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
 #include "opto/type.hpp"
 #include "utilities/checkedCast.hpp"
@@ -107,13 +110,28 @@ const Type* ConstraintCastNode::Value(PhaseGVN* phase) const {
 //------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
-Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+Node *ConstraintCastNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (in(0) != nullptr && remove_dead_region(phase, can_reshape)) {
     return this;
   }
+
+  // Push cast through InlineTypeNode
+  InlineTypeNode* vt = in(1)->isa_InlineType();
+  if (vt != nullptr && phase->type(vt)->filter_speculative(_type) != Type::TOP) {
+    Node* cast = clone();
+    cast->set_req(1, vt->get_oop());
+    vt = vt->clone()->as_InlineType();
+    if (!_type->maybe_null()) {
+      vt->as_InlineType()->set_null_marker(*phase);
+    }
+    vt->set_oop(*phase, phase->transform(cast));
+    return vt;
+  }
+
   if (in(1) != nullptr && phase->type(in(1)) != Type::TOP) {
     return TypeNode::Ideal(phase, can_reshape);
   }
+
   return nullptr;
 }
 
@@ -413,6 +431,16 @@ Node* CastLLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return nullptr;
 }
 
+//=============================================================================
+//------------------------------Identity---------------------------------------
+// If input is already higher or equal to cast type, then this is an identity.
+Node* CheckCastPPNode::Identity(PhaseGVN* phase) {
+  if (in(1)->is_InlineType() && _type->isa_instptr() && phase->type(in(1))->inline_klass()->is_subtype_of(_type->is_instptr()->instance_klass())) {
+    return in(1);
+  }
+  return ConstraintCastNode::Identity(phase);
+}
+
 //------------------------------Value------------------------------------------
 // Take 'join' of input and cast-up type, unless working with an Interface
 const Type* CheckCastPPNode::Value(PhaseGVN* phase) const {
@@ -429,11 +457,21 @@ const Type* CheckCastPPNode::Value(PhaseGVN* phase) const {
   const TypePtr *my_type = _type->isa_ptr();
   const Type *result = _type;
   if (in_type != nullptr && my_type != nullptr) {
+    // TODO 8302672
+    if (!StressReflectiveCode && my_type->isa_aryptr() && in_type->isa_aryptr()) {
+      // Propagate array properties (not flat/null-free)
+      // Don't do this when StressReflectiveCode is enabled because it might lead to
+      // a dying data path while the corresponding flat/null-free check is not folded.
+      my_type = my_type->is_aryptr()->update_properties(in_type->is_aryptr());
+      if (my_type == nullptr) {
+        return Type::TOP; // Inconsistent properties
+      }
+    }
     TypePtr::PTR in_ptr = in_type->ptr();
     if (in_ptr == TypePtr::Null) {
       result = in_type;
     } else if (in_ptr != TypePtr::Constant) {
-      result =  my_type->cast_to_ptr_type(my_type->join_ptr(in_ptr));
+      result = my_type->cast_to_ptr_type(my_type->join_ptr(in_ptr));
     }
   }
 
@@ -470,7 +508,9 @@ static inline Node* addP_of_X2P(PhaseGVN *phase,
   if (negate) {
     dispX = phase->transform(new SubXNode(phase->MakeConX(0), dispX));
   }
-  return AddPNode::make_off_heap(phase->transform(new CastX2PNode(base)), dispX);
+  return new AddPNode(phase->C->top(),
+                      phase->transform(new CastX2PNode(base)),
+                      dispX);
 }
 
 Node *CastX2PNode::Ideal(PhaseGVN *phase, bool can_reshape) {

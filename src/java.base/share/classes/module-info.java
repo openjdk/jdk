@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,7 +153,8 @@ module java.base {
     // module declaration be annotated with jdk.internal.javac.ParticipatesInPreview.
     exports jdk.internal.javac to
         java.compiler,
-        jdk.compiler;
+        jdk.compiler,
+        jdk.jdeps; // Uses Valhalla reflective preview APIs
     exports jdk.internal.access to
         java.desktop,
         java.logging,
@@ -239,6 +240,7 @@ module java.base {
         java.sql.rowset,
         jdk.dynalink,
         jdk.internal.vm.ci,
+        jdk.jdeps,
         jdk.unsupported;
     exports jdk.internal.vm to
         java.management,
@@ -259,6 +261,8 @@ module java.base {
         jdk.jfr;
     exports jdk.internal.util.xml.impl to
         jdk.jfr;
+    exports jdk.internal.value to  // Needed by Unsafe
+        jdk.unsupported;
     exports jdk.internal.util to
         java.desktop,
         java.prefs,

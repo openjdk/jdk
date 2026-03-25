@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,12 +46,23 @@ package java.lang;
  * See the documentation of a given {@code Number} implementation for
  * conversion details.
  *
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          When preview features are enabled, {@code Number} is
+ *          an abstract {@linkplain Class#isValue value class}.
+ *          Subclasses of {@code Number} can be either an {@linkplain Class#isIdentity identity class}
+ *          or a {@linkplain Class#isValue value class}.
+ *          See The Java Language Specification {@jls value-objects-8.1.1.5 Value Classes}.
+ *      </div>
+ * </div>
+ *
  * @author      Lee Boynton
  * @author      Arthur van Hoff
  * @jls 5.1.2 Widening Primitive Conversion
  * @jls 5.1.3 Narrowing Primitive Conversion
  * @since   1.0
  */
+@jdk.internal.MigratedValueClass
 public abstract class Number implements java.io.Serializable {
     /**
      * Constructor for subclasses to call.

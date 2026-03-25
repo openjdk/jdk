@@ -22,26 +22,27 @@
  */
 package org.w3c.dom.ptests;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.fail;
+import static org.w3c.dom.DOMException.INDEX_SIZE_ERR;
+import static org.w3c.dom.ptests.DOMTestUtil.DOMEXCEPTION_EXPECTED;
+
+import java.io.IOException;
+
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 import org.w3c.dom.CharacterData;
 import org.w3c.dom.DOMException;
 import org.xml.sax.SAXException;
-
-import javax.xml.parsers.ParserConfigurationException;
-import java.io.IOException;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.w3c.dom.DOMException.INDEX_SIZE_ERR;
-import static org.w3c.dom.ptests.DOMTestUtil.DOMEXCEPTION_EXPECTED;
 
 /*
  * @summary common test for the CharacterData Interface
  */
 public abstract class AbstractCharacterDataTest {
-    public static Object[][] getDataForTestLength() {
+    @DataProvider(name = "data-for-length")
+    public Object[][] getDataForTestLength() {
         return new Object[][] {
                 { "", 0 },
                 { "test", 4 } };
@@ -51,11 +52,11 @@ public abstract class AbstractCharacterDataTest {
      * Verify getLength method works as the spec, for an empty string, should
      * return zero
      */
-    @ParameterizedTest
-    @MethodSource("getDataForTestLength")
+    @Test(dataProvider = "data-for-length")
     public void testGetLength(String text, int length) throws Exception {
         CharacterData cd = createCharacterData(text);
-        assertEquals(length, cd.getLength());
+        assertEquals(cd.getLength(), length);
+
     }
 
     /*
@@ -65,11 +66,12 @@ public abstract class AbstractCharacterDataTest {
     public void testAppendData() throws Exception {
         CharacterData cd = createCharacterData("DOM");
         cd.appendData("2");
-        assertEquals("DOM2", cd.getData());
+        assertEquals(cd.getData(), "DOM2");
 
     }
 
-    public static Object[][] getDataForTestDelete() {
+    @DataProvider(name = "data-for-delete")
+    public Object[][] getDataForTestDelete() {
         return new Object[][] {
                 { "DOM", 2, 1, "DO" },
                 { "DOM", 0, 2, "M" },
@@ -79,15 +81,15 @@ public abstract class AbstractCharacterDataTest {
     /*
      * Verify deleteData method works as the spec.
      */
-    @ParameterizedTest
-    @MethodSource("getDataForTestDelete")
+    @Test(dataProvider = "data-for-delete")
     public void testDeleteData(String text, int offset, int count, String result) throws Exception {
         CharacterData cd = createCharacterData(text);
         cd.deleteData(offset, count);
         assertEquals(cd.getData(), result);
     }
 
-    public static Object[][] getDataForTestReplace() {
+    @DataProvider(name = "data-for-replace")
+    public Object[][] getDataForTestReplace() {
         return new Object[][] {
                 { "DOM", 0, 3, "SAX", "SAX" },
                 { "DOM", 1, 1, "AA", "DAAM" },
@@ -98,15 +100,15 @@ public abstract class AbstractCharacterDataTest {
     /*
      * Verify replaceData method works as the spec.
      */
-    @ParameterizedTest
-    @MethodSource("getDataForTestReplace")
+    @Test(dataProvider = "data-for-replace")
     public void testReplaceData(String text, int offset, int count, String arg, String result) throws Exception {
         CharacterData cd = createCharacterData(text);
         cd.replaceData(offset, count, arg);
         assertEquals(cd.getData(), result);
     }
 
-    public static Object[][] getDataForTestReplaceNeg() {
+    @DataProvider(name = "data-for-replace-neg")
+    public Object[][] getDataForTestReplaceNeg() {
         return new Object[][] {
                 { "DOM", -1, 3, "SAX" }, //offset if neg
                 { "DOM", 0, -1, "SAX" }, //count is neg
@@ -117,19 +119,19 @@ public abstract class AbstractCharacterDataTest {
      * Test for replaceData method: verifies that DOMException with
      * INDEX_SIZE_ERR is thrown if offset or count is out of the bound.
      */
-    @ParameterizedTest
-    @MethodSource("getDataForTestReplaceNeg")
+    @Test(dataProvider = "data-for-replace-neg")
     public void testReplaceDataNeg(String text, int offset, int count, String arg) throws Exception {
         CharacterData cd = createCharacterData(text);
         try {
             cd.replaceData(offset, count, arg);
             fail(DOMEXCEPTION_EXPECTED);
         } catch (DOMException e) {
-            assertEquals(INDEX_SIZE_ERR, e.code);
+            assertEquals(e.code, INDEX_SIZE_ERR);
         }
     }
 
-    public static Object[][] getDataForTestInsert() {
+    @DataProvider(name = "data-for-insert")
+    public Object[][] getDataForTestInsert() {
         return new Object[][] {
                 { "DOM", 0, "SAX", "SAXDOM" },
                 { "DOM", 3, "SAX", "DOMSAX" } };
@@ -138,15 +140,15 @@ public abstract class AbstractCharacterDataTest {
     /*
      * Verify insertData method works as the spec.
      */
-    @ParameterizedTest
-    @MethodSource("getDataForTestInsert")
+    @Test(dataProvider = "data-for-insert")
     public void testInsertData(String text, int offset, String arg, String result) throws Exception {
         CharacterData cd = createCharacterData(text);
         cd.insertData(offset, arg);
         assertEquals(cd.getData(), result);
     }
 
-    public static Object[][] getDataForTestInsertNeg() {
+    @DataProvider(name = "data-for-insert-neg")
+    public Object[][] getDataForTestInsertNeg() {
         return new Object[][] {
                 { "DOM", -1 }, //offset is neg
                 { "DOM", 4 } };//offset is greater than length
@@ -156,15 +158,14 @@ public abstract class AbstractCharacterDataTest {
      * Test for insertData method: verifies that DOMException with
      * INDEX_SIZE_ERR is thrown if offset is out of the bound.
      */
-    @ParameterizedTest
-    @MethodSource("getDataForTestInsertNeg")
+    @Test(dataProvider = "data-for-insert-neg")
     public void testInsertDataNeg(String text, int offset) throws Exception {
         CharacterData cd = createCharacterData(text);
         try {
             cd.insertData(offset, "TEST");
             fail(DOMEXCEPTION_EXPECTED);
         } catch (DOMException e) {
-            assertEquals(INDEX_SIZE_ERR, e.code);
+            assertEquals(e.code, INDEX_SIZE_ERR);
         }
     }
 
@@ -175,10 +176,11 @@ public abstract class AbstractCharacterDataTest {
     public void testSetData() throws Exception {
         CharacterData cd = createCharacterData("DOM");
         cd.setData("SAX");
-        assertEquals("SAX", cd.getData());
+        assertEquals(cd.getData(), "SAX");
     }
 
-    public static Object[][] getDataForTestSubstring() {
+    @DataProvider(name = "data-for-substring")
+    public Object[][] getDataForTestSubstring() {
         return new Object[][] {
                 { "DOM Level 2", 0, 3, "DOM" },
                 { "DOM", 0, 3, "DOM" },
@@ -188,14 +190,15 @@ public abstract class AbstractCharacterDataTest {
     /*
      * Verify substringData method works as the spec.
      */
-    @ParameterizedTest
-    @MethodSource("getDataForTestSubstring")
+    @Test(dataProvider = "data-for-substring")
     public void testSubstringData(String text, int offset, int count, String result) throws Exception {
         CharacterData cd = createCharacterData(text);
-        assertEquals(result, cd.substringData(offset, count));
+        String retStr = cd.substringData(offset, count);
+        assertEquals(retStr, result);
     }
 
-    public static Object[][] getDataForTestSubstringNeg() {
+    @DataProvider(name = "data-for-substring-neg")
+    public Object[][] getDataForTestSubstringNeg() {
         return new Object[][] {
                 { "DOM Level 2", -1, 3 }, //offset is neg
                 { "DOM", 0, -1 }, //count is neg
@@ -206,15 +209,14 @@ public abstract class AbstractCharacterDataTest {
      * Test for substringData method: verifies that DOMException with
      * INDEX_SIZE_ERR is thrown if offset or count is out of the bound.
      */
-    @ParameterizedTest
-    @MethodSource("getDataForTestSubstringNeg")
+    @Test(dataProvider = "data-for-substring-neg")
     public void testSubstringDataNeg(String text, int offset, int count) throws Exception {
         CharacterData cd = createCharacterData(text);
         try {
             cd.substringData(offset, count);
             fail(DOMEXCEPTION_EXPECTED);
         } catch (DOMException e) {
-            assertEquals(INDEX_SIZE_ERR, e.code);
+            assertEquals(e.code, INDEX_SIZE_ERR);
         }
 
     }
@@ -223,4 +225,5 @@ public abstract class AbstractCharacterDataTest {
      * Return a concrete CharacterData instance.
      */
     abstract protected CharacterData createCharacterData(String text) throws IOException, SAXException, ParserConfigurationException;
+
 }

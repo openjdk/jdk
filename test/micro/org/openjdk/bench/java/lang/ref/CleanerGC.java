@@ -60,6 +60,7 @@ public class CleanerGC {
 
     static class Target {
         private static final Cleaner CLEANER = Cleaner.create();
+        @SuppressWarnings("initialization")
         public Target() {
             CLEANER.register(this, () -> {});
         }

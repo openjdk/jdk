@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,26 @@
  */
 package test.astro;
 
-import org.junit.jupiter.api.Test;
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
+import static jaxp.library.JAXPTestUtilities.filenameToURL;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
+import static org.w3c.dom.ls.DOMImplementationLS.MODE_SYNCHRONOUS;
+import static test.astro.AstroConstants.ASTROCAT;
+
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Writer;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.ls.DOMImplementationLS;
@@ -31,27 +50,10 @@ import org.w3c.dom.ls.LSOutput;
 import org.w3c.dom.ls.LSParser;
 import org.w3c.dom.ls.LSSerializer;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.Writer;
-import java.nio.file.Path;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.w3c.dom.ls.DOMImplementationLS.MODE_SYNCHRONOUS;
-import static test.astro.AstroConstants.ASTROCAT;
-
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run junit/othervm test.astro.DocumentLSTest
+ * @run testng/othervm test.astro.DocumentLSTest
  * @summary org.w3c.dom.ls tests
  */
 public class DocumentLSTest {
@@ -82,11 +84,11 @@ public class DocumentLSTest {
             assertTrue(src.getCertifiedText());
             src.setCertifiedText(origCertified); // set back to orig
 
-            src.setSystemId(Path.of(ASTROCAT).toUri().toASCIIString());
+            src.setSystemId(filenameToURL(ASTROCAT));
 
             Document doc = domParser.parse(src);
             Element result = doc.getDocumentElement();
-            assertEquals("stardb", result.getTagName());
+            assertEquals(result.getTagName(), "stardb");
         }
     }
 
@@ -104,12 +106,12 @@ public class DocumentLSTest {
         domSerializer.getDomConfig().setParameter("xml-declaration", Boolean.FALSE);
         LSInput src = impl.createLSInput();
         src.setStringData(xml);
-        assertEquals(xml, src.getStringData());
+        assertEquals(src.getStringData(), xml);
 
         Document doc = domParser.parse(src);
         String result = domSerializer.writeToString(doc);
 
-        assertEquals("<test>runDocumentLS_Q6</test>", result);
+        assertEquals(result, "<test>runDocumentLS_Q6</test>");
     }
 
     /*
@@ -126,7 +128,7 @@ public class DocumentLSTest {
         impl = (DOMImplementationLS) db.getDOMImplementation();
         LSSerializer domSerializer = impl.createLSSerializer();
         MyDOMOutput mydomoutput = new MyDOMOutput();
-        try (OutputStream os = new FileOutputStream("test.out")) {
+        try (OutputStream os = new FileOutputStream(USER_DIR + "test.out")) {
             mydomoutput.setByteStream(os);
             mydomoutput.setEncoding("UTF-8");
             assertTrue(domSerializer.write(doc, mydomoutput));

@@ -51,6 +51,8 @@
 #include "nmt/memTracker.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/arrayOop.hpp"
+#include "oops/flatArrayOop.inline.hpp"
+#include "oops/inlineKlass.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/klass.inline.hpp"
@@ -62,6 +64,7 @@
 #include "oops/symbol.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "oops/valuePayload.inline.hpp"
 #include "prims/jniCheck.hpp"
 #include "prims/jniExport.hpp"
 #include "prims/jniFastGetField.hpp"
@@ -418,8 +421,9 @@ JNI_ENTRY(jfieldID, jni_FromReflectedField(JNIEnv *env, jobject field))
   // The jfieldID is the offset of the field within the object
   // It may also have hash bits for k, if VerifyJNIFields is turned on.
   int offset = InstanceKlass::cast(k1)->field_offset( slot );
+  bool is_flat = InstanceKlass::cast(k1)->field_is_flat(slot);
   assert(InstanceKlass::cast(k1)->contains_field_offset(offset), "stay within object");
-  ret = jfieldIDWorkaround::to_instance_jfieldID(k1, offset);
+  ret = jfieldIDWorkaround::to_instance_jfieldID(k1, offset, is_flat);
   return ret;
 JNI_END
 
@@ -436,7 +440,7 @@ JNI_ENTRY(jobject, jni_ToReflectedMethod(JNIEnv *env, jclass cls, jmethodID meth
   methodHandle m (THREAD, Method::resolve_jmethod_id(method_id));
   assert(m->is_static() == (isStatic != 0), "jni_ToReflectedMethod access flags doesn't match");
   oop reflection_method;
-  if (m->is_object_initializer()) {
+  if (m->is_object_constructor()) {
     reflection_method = Reflection::new_constructor(m, CHECK_NULL);
   } else {
     // Note: Static initializers can theoretically be here, if JNI users manage
@@ -1770,7 +1774,7 @@ JNI_ENTRY(jfieldID, jni_GetFieldID(JNIEnv *env, jclass clazz,
 
   // A jfieldID for a non-static field is simply the offset of the field within the instanceOop
   // It may also have hash bits for k, if VerifyJNIFields is turned on.
-  ret = jfieldIDWorkaround::to_instance_jfieldID(k, fd.offset());
+  ret = jfieldIDWorkaround::to_instance_jfieldID(k, fd.offset(), fd.is_flat());
   return ret;
 JNI_END
 
@@ -1780,18 +1784,26 @@ JNI_ENTRY(jobject, jni_GetObjectField(JNIEnv *env, jobject obj, jfieldID fieldID
   oop o = JNIHandles::resolve_non_null(obj);
   Klass* k = o->klass();
   int offset = jfieldIDWorkaround::from_instance_jfieldID(k, fieldID);
+  oop res = nullptr;
   // Keep JVMTI addition small and only check enabled flag here.
   // jni_GetField_probe() assumes that is okay to create handles.
   if (JvmtiExport::should_post_field_access()) {
     o = JvmtiExport::jni_GetField_probe(thread, obj, o, k, fieldID, false);
   }
-  oop loaded_obj = HeapAccess<ON_UNKNOWN_OOP_REF>::oop_load_at(o, offset);
-  jobject ret = JNIHandles::make_local(THREAD, loaded_obj);
+  if (!jfieldIDWorkaround::is_flat_jfieldID(fieldID)) {
+    res = HeapAccess<ON_UNKNOWN_OOP_REF>::oop_load_at(o, offset);
+  } else {
+    InstanceKlass* ik = InstanceKlass::cast(k);
+    fieldDescriptor fd;
+    bool found = ik->find_field_from_offset(offset, false, &fd);  // performance bottleneck
+    assert(found, "Field not found");
+    FlatFieldPayload payload(instanceOop(o), &fd);
+    res = payload.read(CHECK_NULL);
+  }
+  jobject ret = JNIHandles::make_local(THREAD, res);
   HOTSPOT_JNI_GETOBJECTFIELD_RETURN(ret);
   return ret;
 JNI_END
-
-
 
 #define DEFINE_GETFIELD(Return,Fieldname,Result \
   , EntryProbe, ReturnProbe) \
@@ -1904,7 +1916,26 @@ JNI_ENTRY_NO_PRESERVE(void, jni_SetObjectField(JNIEnv *env, jobject obj, jfieldI
     field_value.l = value;
     o = JvmtiExport::jni_SetField_probe(thread, obj, o, k, fieldID, false, JVM_SIGNATURE_CLASS, (jvalue *)&field_value);
   }
-  HeapAccess<ON_UNKNOWN_OOP_REF>::oop_store_at(o, offset, JNIHandles::resolve(value));
+  if (!jfieldIDWorkaround::is_flat_jfieldID(fieldID)) {
+    oop v = JNIHandles::resolve(value);
+    if (v == nullptr) {
+      InstanceKlass *ik = InstanceKlass::cast(k);
+      fieldDescriptor fd;
+      ik->find_field_from_offset(offset, false, &fd);
+      if (fd.is_null_free_inline_type()) {
+        THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Cannot store null in a null-restricted field");
+      }
+    }
+    HeapAccess<ON_UNKNOWN_OOP_REF>::oop_store_at(o, offset, v);
+  } else {
+    assert(k->is_instance_klass(), "Only instances can have flat fields");
+    InstanceKlass* ik = InstanceKlass::cast(k);
+    fieldDescriptor fd;
+    bool found = ik->find_field_from_offset(offset, false, &fd);
+    assert(found, "Field not found");
+    FlatFieldPayload payload(instanceOop(o), &fd);
+    payload.write(inlineOop(JNIHandles::resolve(value)), CHECK);
+  }
   log_debug_if_final_instance_field(thread, "SetObjectField", InstanceKlass::cast(k), offset);
   HOTSPOT_JNI_SETOBJECTFIELD_RETURN();
 JNI_END
@@ -2337,7 +2368,9 @@ JNI_ENTRY(jobject, jni_GetObjectArrayElement(JNIEnv *env, jobjectArray array, js
   DT_RETURN_MARK(GetObjectArrayElement, jobject, (const jobject&)ret);
   objArrayOop a = objArrayOop(JNIHandles::resolve_non_null(array));
   if (a->is_within_bounds(index)) {
-    ret = JNIHandles::make_local(THREAD, a->obj_at(index));
+    oop res = a->obj_at(index, CHECK_NULL);
+    assert(res != nullptr || !a->is_null_free_array(), "Invalid value");
+    ret = JNIHandles::make_local(THREAD, res);
     return ret;
   } else {
     ResourceMark rm(THREAD);
@@ -2357,8 +2390,10 @@ JNI_ENTRY(void, jni_SetObjectArrayElement(JNIEnv *env, jobjectArray array, jsize
   objArrayOop a = objArrayOop(JNIHandles::resolve_non_null(array));
   oop v = JNIHandles::resolve(value);
   if (a->is_within_bounds(index)) {
+    assert(a->klass()->is_refined_objArray_klass(), "must be");
     if (v == nullptr || v->is_a(ObjArrayKlass::cast(a->klass())->element_klass())) {
-      a->obj_at_put(index, v);
+      a->obj_at_put(index, v, THREAD);
+      return;
     } else {
       ResourceMark rm(THREAD);
       stringStream ss;
@@ -2753,7 +2788,7 @@ JNI_ENTRY(jint, jni_MonitorEnter(JNIEnv *env, jobject jobj))
   }
 
   Handle obj(thread, JNIHandles::resolve_non_null(jobj));
-  ObjectSynchronizer::jni_enter(obj, thread);
+  ObjectSynchronizer::jni_enter(obj, CHECK_(JNI_ERR));
   return JNI_OK;
 JNI_END
 
@@ -2911,7 +2946,16 @@ JNI_END
 
 JNI_ENTRY(jweak, jni_NewWeakGlobalRef(JNIEnv *env, jobject ref))
   HOTSPOT_JNI_NEWWEAKGLOBALREF_ENTRY(env, ref);
+
   Handle ref_handle(thread, JNIHandles::resolve(ref));
+
+  if (!ref_handle.is_null() && ref_handle->klass()->is_inline_klass()) {
+    ResourceMark rm(THREAD);
+    stringStream ss;
+    ss.print("%s is not an identity class", ref_handle->klass()->external_name());
+    THROW_MSG_(vmSymbols::java_lang_IdentityException(), ss.as_string(), nullptr);
+  }
+
   jweak ret = JNIHandles::make_weak_global(ref_handle, AllocFailStrategy::RETURN_NULL);
   if (ret == nullptr && ref_handle.not_null()) {
     THROW_OOP_(Universe::out_of_memory_error_c_heap(), nullptr);
@@ -3129,21 +3173,28 @@ JNI_END
 
 
 JNI_ENTRY(jobject, jni_GetModule(JNIEnv* env, jclass clazz))
-  HOTSPOT_JNI_GETMODULE_ENTRY(env, clazz);
-  jobject ret = Modules::get_module(clazz, THREAD);
-  HOTSPOT_JNI_GETMODULE_RETURN(ret);
-  return ret;
+  return Modules::get_module(clazz, THREAD);
 JNI_END
 
 JNI_ENTRY(jboolean, jni_IsVirtualThread(JNIEnv* env, jobject obj))
-  HOTSPOT_JNI_ISVIRTUALTHREAD_ENTRY(env, obj);
-  jboolean ret = JNI_FALSE;
   oop thread_obj = JNIHandles::resolve_external_guard(obj);
   if (thread_obj != nullptr && thread_obj->is_a(vmClasses::BaseVirtualThread_klass())) {
-    ret = JNI_TRUE;
+    return JNI_TRUE;
+  } else {
+    return JNI_FALSE;
   }
-  HOTSPOT_JNI_ISVIRTUALTHREAD_RETURN(ret);
-  return ret;
+JNI_END
+
+JNI_ENTRY(jboolean, jni_IsValueObject(JNIEnv* env, jobject obj))
+  HOTSPOT_JNI_ISVALUEOBJECT_ENTRY(env, obj);
+  oop o = JNIHandles::resolve(obj);
+  if (o != nullptr && o->klass()->is_inline_klass()) {
+    HOTSPOT_JNI_ISVALUEOBJECT_RETURN(JNI_TRUE);
+    return JNI_TRUE;
+  } else {
+    HOTSPOT_JNI_ISVALUEOBJECT_RETURN(JNI_FALSE);
+    return JNI_FALSE;
+  }
 JNI_END
 
 
@@ -3438,7 +3489,11 @@ struct JNINativeInterface_ jni_NativeInterface = {
 
     // Large UTF8 support
 
-    jni_GetStringUTFLengthAsLong
+    jni_GetStringUTFLengthAsLong,
+
+    // Value classes
+
+    jni_IsValueObject
 };
 
 

@@ -1941,10 +1941,10 @@ Node* PhaseChaitin::find_base_for_derived(Node** derived_base_map, Node* derived
   // can't happen at run-time but the optimizer cannot deduce it so
   // we have to handle it gracefully.
   assert(!derived->bottom_type()->isa_narrowoop() ||
-          derived->bottom_type()->make_ptr()->is_ptr()->_offset == 0, "sanity");
+         derived->bottom_type()->make_ptr()->is_ptr()->offset() == 0, "sanity");
   const TypePtr *tj = derived->bottom_type()->isa_ptr();
   // If its an OOP with a non-zero offset, then it is derived.
-  if( tj == nullptr || tj->_offset == 0 ) {
+  if (tj == nullptr || tj->offset() == 0) {
     derived_base_map[derived->_idx] = derived;
     return derived;
   }
@@ -2110,9 +2110,9 @@ bool PhaseChaitin::stretch_base_pointer_live_ranges(ResourceArea *a) {
           Node *derived = lrgs(neighbor)._def;
           const TypePtr *tj = derived->bottom_type()->isa_ptr();
           assert(!derived->bottom_type()->isa_narrowoop() ||
-                  derived->bottom_type()->make_ptr()->is_ptr()->_offset == 0, "sanity");
+                 derived->bottom_type()->make_ptr()->is_ptr()->offset() == 0, "sanity");
           // If its an OOP with a non-zero offset, then it is derived.
-          if( tj && tj->_offset != 0 && tj->isa_oop_ptr() ) {
+          if (tj && tj->offset() != 0 && tj->isa_oop_ptr()) {
             Node *base = find_base_for_derived(derived_base_map, derived, maxlrg);
             assert(base->_idx < _lrg_map.size(), "");
             // Add reaching DEFs of derived pointer and base pointer as a
@@ -2402,7 +2402,7 @@ void PhaseChaitin::dump_for_spill_split_recycle() const {
 
 void PhaseChaitin::dump_frame() const {
   const char *fp = OptoReg::regname(OptoReg::c_frame_pointer);
-  const TypeTuple *domain = C->tf()->domain();
+  const TypeTuple *domain = C->tf()->domain_cc();
   const int        argcnt = domain->cnt() - TypeFunc::Parms;
 
   // Incoming arguments in registers dump
@@ -2611,11 +2611,11 @@ void PhaseChaitin::verify_base_ptrs(ResourceArea* a) const {
                     worklist.push(check->in(m));
                   }
                 } else if (check->is_Con()) {
-                  if (is_derived && check->bottom_type()->is_ptr()->_offset != 0) {
+                  if (is_derived && check->bottom_type()->is_ptr()->offset() != 0) {
                     // Derived is null+non-zero offset, base must be null.
                     assert(check->bottom_type()->is_ptr()->ptr() == TypePtr::Null, "Bad derived pointer");
                   } else {
-                    assert(check->bottom_type()->is_ptr()->_offset == 0, "Bad base pointer");
+                    assert(check->bottom_type()->is_ptr()->offset() == 0, "Bad base pointer");
                     // Base either ConP(nullptr) or loadConP
                     if (check->is_Mach()) {
                       assert(check->as_Mach()->ideal_Opcode() == Op_ConP, "Bad base pointer");
@@ -2624,7 +2624,7 @@ void PhaseChaitin::verify_base_ptrs(ResourceArea* a) const {
                              check->bottom_type()->is_ptr()->ptr() == TypePtr::Null, "Bad base pointer");
                     }
                   }
-                } else if (check->bottom_type()->is_ptr()->_offset == 0) {
+                } else if (check->bottom_type()->is_ptr()->offset() == 0) {
                   if (check->is_Proj() || (check->is_Mach() &&
                      (check->as_Mach()->ideal_Opcode() == Op_CreateEx ||
                       check->as_Mach()->ideal_Opcode() == Op_ThreadLocal ||

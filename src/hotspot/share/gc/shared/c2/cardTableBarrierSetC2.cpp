@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,12 @@ Node* CardTableBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& 
   bool use_precise = is_array || anonymous;
   bool tightly_coupled_alloc = (decorators & C2_TIGHTLY_COUPLED_ALLOC) != 0;
 
-  if (!access.is_oop() || tightly_coupled_alloc || (!in_heap && !anonymous)) {
+  const InlineTypeNode* vt = nullptr;
+  if (access.is_parse_access() && static_cast<C2ParseAccess&>(access).vt() != nullptr) {
+    vt = static_cast<C2ParseAccess&>(access).vt();
+  }
+
+  if (vt == nullptr && (!access.is_oop() || tightly_coupled_alloc || (!in_heap && !anonymous))) {
     return BarrierSetC2::store_at_resolved(access, val);
   }
 
@@ -55,7 +60,25 @@ Node* CardTableBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& 
   C2ParseAccess& parse_access = static_cast<C2ParseAccess&>(access);
 
   Node* store = BarrierSetC2::store_at_resolved(access, val);
-  post_barrier(parse_access.kit(), access.base(), adr, val.node(), use_precise);
+  // TODO 8350865
+  // - We actually only need the post barrier once for non-arrays (same for C1, right)?
+  // - Value is only needed to determine if we are storing null. Maybe we can go with a simple boolean?
+  GraphKit* kit = parse_access.kit();
+  if (vt != nullptr) {
+    for (uint i = 0; i < vt->field_count(); ++i) {
+      ciField* field = vt->field(i);
+      ciType* type = field->type();
+      if (!type->is_primitive_type()) {
+        ciInlineKlass* vk = vt->bottom_type()->inline_klass();
+        int field_offset = field->offset_in_bytes() - vk->payload_offset();
+        Node* value = vt->field_value(i);
+        Node* field_adr = kit->basic_plus_adr(access.base(), adr, field_offset);
+        post_barrier(kit, access.base(), field_adr, value, use_precise);
+      }
+    }
+  } else {
+    post_barrier(kit, access.base(), adr, val.node(), use_precise);
+  }
 
   return store;
 }
@@ -211,25 +234,29 @@ bool CardTableBarrierSetC2::use_ReduceInitialCardMarks() {
   return ReduceInitialCardMarks;
 }
 
-void CardTableBarrierSetC2::eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const {
+void CardTableBarrierSetC2::eliminate_gc_barrier(PhaseIterGVN* igvn, Node* node) const {
   assert(node->Opcode() == Op_CastP2X, "ConvP2XNode required");
-  Node *shift = node->unique_out();
-  Node *addp = shift->unique_out();
-  for (DUIterator_Last jmin, j = addp->last_outs(jmin); j >= jmin; --j) {
-    Node *mem = addp->last_out(j);
-    if (UseCondCardMark && mem->is_Load()) {
-      assert(mem->Opcode() == Op_LoadB, "unexpected code shape");
-      // The load is checking if the card has been written so
-      // replace it with zero to fold the test.
-      macro->replace_node(mem, macro->intcon(0));
-      continue;
+  for (DUIterator_Last imin, i = node->last_outs(imin); i >= imin; --i) {
+    Node* shift = node->last_out(i);
+    for (DUIterator_Last jmin, j = shift->last_outs(jmin); j >= jmin; --j) {
+      Node* addp = shift->last_out(j);
+      for (DUIterator_Last kmin, k = addp->last_outs(kmin); k >= kmin; --k) {
+        Node* mem = addp->last_out(k);
+        if (UseCondCardMark && mem->is_Load()) {
+          assert(mem->Opcode() == Op_LoadB, "unexpected code shape");
+          // The load is checking if the card has been written so
+          // replace it with zero to fold the test.
+          igvn->replace_node(mem, igvn->intcon(0));
+          continue;
+        }
+        assert(mem->is_Store(), "store required");
+        igvn->replace_node(mem, mem->in(MemNode::Memory));
+      }
     }
-    assert(mem->is_Store(), "store required");
-    macro->replace_node(mem, mem->in(MemNode::Memory));
   }
 }
 
 bool CardTableBarrierSetC2::array_copy_requires_gc_barriers(bool tightly_coupled_alloc, BasicType type, bool is_clone, bool is_clone_instance, ArrayCopyPhase phase) const {
-  bool is_oop = is_reference_type(type);
+  bool is_oop = type == T_OBJECT || type == T_ARRAY;
   return is_oop && (!tightly_coupled_alloc || !use_ReduceInitialCardMarks());
 }

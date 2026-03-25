@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,12 @@
  * @test
  * @bug 4926314 8287003
  * @summary Test for InputStreamReader#read(CharBuffer).
- * @run junit ReadCharBuffer
+ * @run testng ReadCharBuffer
  */
+
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -36,25 +40,22 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CodingErrorAction;
 import java.util.Arrays;
-import java.util.stream.Stream;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.testng.Assert.assertEquals;
 
 public class ReadCharBuffer {
 
     private static final int BUFFER_SIZE = 24;
 
-    public static Stream<CharBuffer> buffers() {
+    @DataProvider(name = "buffers")
+    public Object[][] createBuffers() {
         // test both on-heap and off-heap buffers as they make use different code paths
-        return Stream.of(CharBuffer.allocate(BUFFER_SIZE),
-                         ByteBuffer.allocateDirect(BUFFER_SIZE * 2).asCharBuffer());
+        return new Object[][]{
+                new Object[]{CharBuffer.allocate(BUFFER_SIZE)},
+                new Object[]{ByteBuffer.allocateDirect(BUFFER_SIZE * 2).asCharBuffer()}
+        };
     }
 
     private void fillBuffer(CharBuffer buffer) {
@@ -64,8 +65,7 @@ public class ReadCharBuffer {
         buffer.clear();
     }
 
-    @ParameterizedTest
-    @MethodSource("buffers")
+    @Test(dataProvider = "buffers")
     public void read(CharBuffer buffer) throws IOException {
         fillBuffer(buffer);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,14 @@
  */
 package javax.xml.transform.ptests;
 
-import org.junit.jupiter.api.Test;
-import org.w3c.dom.Document;
-import org.xml.sax.InputSource;
+import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.util.Properties;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -36,14 +41,10 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamSource;
-import java.io.File;
-import java.io.FileInputStream;
-import java.util.Properties;
 
-import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import org.testng.annotations.Test;
+import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
 
 /**
  * Basic test cases for Transformer API
@@ -51,7 +52,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run junit/othervm javax.xml.transform.ptests.TransformerTest
+ * @run testng/othervm javax.xml.transform.ptests.TransformerTest
  */
 public class TransformerTest {
     /**
@@ -89,6 +90,8 @@ public class TransformerTest {
 
     /**
      * This tests if newTransformer(DOMSource) method returns Transformer.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
     public void transformer03() throws Exception {
@@ -106,6 +109,8 @@ public class TransformerTest {
 
     /**
      * This tests set/get ErrorListener methods of Transformer.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
     public void transformer04() throws Exception {
@@ -119,11 +124,13 @@ public class TransformerTest {
                 .newTransformer(domSource);
         transformer.setErrorListener(new MyErrorListener());
         assertNotNull(transformer.getErrorListener());
-        assertInstanceOf(MyErrorListener.class, transformer.getErrorListener());
+        assertTrue(transformer.getErrorListener() instanceof MyErrorListener);
     }
 
     /**
      * This tests getOutputProperties() method of Transformer.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
     public void transformer05() throws Exception {
@@ -137,16 +144,18 @@ public class TransformerTest {
                 newTransformer(domSource);
         Properties prop = transformer.getOutputProperties();
 
-        assertEquals("yes", prop.getProperty("indent"));
-        assertEquals("xml", prop.getProperty("method"));
-        assertEquals("UTF-8", prop.getProperty("encoding"));
-        assertEquals("no", prop.getProperty("standalone"));
-        assertEquals("1.0", prop.getProperty("version"));
-        assertEquals("no", prop.getProperty("omit-xml-declaration"));
+        assertEquals(prop.getProperty("indent"), "yes");
+        assertEquals(prop.getProperty("method"), "xml");
+        assertEquals(prop.getProperty("encoding"), "UTF-8");
+        assertEquals(prop.getProperty("standalone"), "no");
+        assertEquals(prop.getProperty("version"), "1.0");
+        assertEquals(prop.getProperty("omit-xml-declaration"), "no");
     }
 
     /**
      * This tests getOutputProperty() method of Transformer.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
     public void transformer06() throws Exception {
@@ -159,7 +168,7 @@ public class TransformerTest {
         DOMSource domSource = new DOMSource(document);
 
         Transformer transformer = tfactory.newTransformer(domSource);
-        assertEquals("xml", transformer.getOutputProperty("method"));
+        assertEquals(transformer.getOutputProperty("method"), "xml");
     }
 }
 
@@ -190,7 +199,8 @@ class MyErrorListener implements ErrorListener {
      * @param e exception of a fatal error.
      */
     @Override
-    public void fatalError(TransformerException e) {
+    public void fatalError (TransformerException e) throws
+                TransformerException {
         System.out.println(" In fatal");
     }
 }

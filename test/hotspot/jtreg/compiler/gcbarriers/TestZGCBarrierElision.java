@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.lang.invoke.MethodHandles;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * @test
+ * @test id=Z
  * @summary Test that the ZGC barrier elision optimization does not elide
  *          necessary barriers. The tests use volatile memory accesses and
  *          blackholes to prevent C2 from simply optimizing them away.
@@ -39,7 +39,7 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 
 /**
- * @test
+ * @test id=ZGen
  * @summary Test that the ZGC barrier elision optimization elides unnecessary
  *          barriers following simple allocation and domination rules.
  * @library /test/lib /
@@ -187,7 +187,7 @@ class TestZGCCorrectBarrierElision {
     }
 
     @Test
-    @IR(counts = { IRNode.Z_GET_AND_SET_P_WITH_BARRIER_FLAG, Common.REMAINING, "1" }, phase = CompilePhase.FINAL_CODE)
+    @IR(counts = { IRNode.Z_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG, Common.REMAINING, "1" }, phase = CompilePhase.FINAL_CODE)
     static void testAllocateThenAtomic(Inner i) {
         Outer o = new Outer();
         Common.blackhole(o);
@@ -196,21 +196,21 @@ class TestZGCCorrectBarrierElision {
 
     @Test
     @IR(counts = { IRNode.Z_LOAD_P_WITH_BARRIER_FLAG, Common.REMAINING, "1" }, phase = CompilePhase.FINAL_CODE)
-    @IR(counts = { IRNode.Z_GET_AND_SET_P_WITH_BARRIER_FLAG, Common.REMAINING, "1" }, phase = CompilePhase.FINAL_CODE)
+    @IR(counts = { IRNode.Z_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG, Common.REMAINING, "1" }, phase = CompilePhase.FINAL_CODE)
     static void testLoadThenAtomic(Outer o, Inner i) {
         Common.blackhole(o.field1);
         Common.field1VarHandle.getAndSet(o, i);
     }
 
     @Test
-    @IR(counts = { IRNode.Z_GET_AND_SET_P_WITH_BARRIER_FLAG, Common.REMAINING, "2" }, phase = CompilePhase.FINAL_CODE)
+    @IR(counts = { IRNode.Z_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG, Common.REMAINING, "2" }, phase = CompilePhase.FINAL_CODE)
     static void testAtomicThenAtomicAnotherField(Outer o, Inner i) {
         Common.field1VarHandle.getAndSet(o, i);
         Common.field2VarHandle.getAndSet(o, i);
     }
 
     @Test
-    @IR(counts = { IRNode.Z_GET_AND_SET_P_WITH_BARRIER_FLAG, Common.REMAINING, "1" }, phase = CompilePhase.FINAL_CODE)
+    @IR(counts = { IRNode.Z_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG, Common.REMAINING, "1" }, phase = CompilePhase.FINAL_CODE)
     static void testAllocateArrayThenAtomicAtKnownIndex(Outer o) {
         Outer[] a = new Outer[42];
         Common.blackhole(a);
@@ -218,7 +218,7 @@ class TestZGCCorrectBarrierElision {
     }
 
     @Test
-    @IR(counts = { IRNode.Z_GET_AND_SET_P_WITH_BARRIER_FLAG, Common.REMAINING, "1" }, phase = CompilePhase.FINAL_CODE)
+    @IR(counts = { IRNode.Z_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG, Common.REMAINING, "1" }, phase = CompilePhase.FINAL_CODE)
     static void testAllocateArrayThenAtomicAtUnknownIndex(Outer o, int index) {
         Outer[] a = new Outer[42];
         Common.blackhole(a);
@@ -226,7 +226,7 @@ class TestZGCCorrectBarrierElision {
     }
 
     @Test
-    @IR(counts = { IRNode.Z_GET_AND_SET_P_WITH_BARRIER_FLAG, Common.REMAINING, "2" }, phase = CompilePhase.FINAL_CODE)
+    @IR(counts = { IRNode.Z_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG, Common.REMAINING, "2" }, phase = CompilePhase.FINAL_CODE)
     static void testArrayAtomicThenAtomicAtUnknownIndices(Outer[] a, Outer o, int index1, int index2) {
         Common.outerArrayVarHandle.getAndSet(a, index1, o);
         Common.outerArrayVarHandle.getAndSet(a, index2, o);
@@ -251,8 +251,7 @@ class TestZGCCorrectBarrierElision {
 class TestZGCEffectiveBarrierElision {
 
     @Test
-    // C2 does not emit a field load during parsing, so it also does not emit any barriers.
-    @IR(failOn = { IRNode.Z_LOAD_P_WITH_BARRIER_FLAG, Common.ELIDED }, phase = CompilePhase.FINAL_CODE)
+    @IR(counts = { IRNode.Z_LOAD_P_WITH_BARRIER_FLAG, Common.ELIDED, "1" }, phase = CompilePhase.FINAL_CODE)
     static void testAllocateThenLoad() {
         Outer o1 = new Outer();
         Common.blackhole(o1);
@@ -388,14 +387,14 @@ class TestZGCEffectiveBarrierElision {
 
     @Test
     @IR(counts = { IRNode.Z_STORE_P_WITH_BARRIER_FLAG, Common.REMAINING, "1" }, phase = CompilePhase.FINAL_CODE)
-    @IR(counts = { IRNode.Z_GET_AND_SET_P_WITH_BARRIER_FLAG, Common.ELIDED, "1" }, phase = CompilePhase.FINAL_CODE)
+    @IR(counts = { IRNode.Z_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG, Common.ELIDED, "1" }, phase = CompilePhase.FINAL_CODE)
     static void testStoreThenAtomic(Outer o, Inner i) {
         o.field1 = i;
         Common.field1VarHandle.getAndSet(o, i);
     }
 
     @Test
-    @IR(counts = { IRNode.Z_GET_AND_SET_P_WITH_BARRIER_FLAG, Common.REMAINING, "1" }, phase = CompilePhase.FINAL_CODE)
+    @IR(counts = { IRNode.Z_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG, Common.REMAINING, "1" }, phase = CompilePhase.FINAL_CODE)
     @IR(counts = { IRNode.Z_LOAD_P_WITH_BARRIER_FLAG, Common.ELIDED, "1" }, phase = CompilePhase.FINAL_CODE)
     static void testAtomicThenLoad(Outer o, Inner i) {
         Common.field1VarHandle.getAndSet(o, i);
@@ -403,7 +402,7 @@ class TestZGCEffectiveBarrierElision {
     }
 
     @Test
-    @IR(counts = { IRNode.Z_GET_AND_SET_P_WITH_BARRIER_FLAG, Common.REMAINING, "1" }, phase = CompilePhase.FINAL_CODE)
+    @IR(counts = { IRNode.Z_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG, Common.REMAINING, "1" }, phase = CompilePhase.FINAL_CODE)
     @IR(counts = { IRNode.Z_STORE_P_WITH_BARRIER_FLAG, Common.ELIDED, "1" }, phase = CompilePhase.FINAL_CODE)
     static void testAtomicThenStore(Outer o, Inner i) {
         Common.field1VarHandle.getAndSet(o, i);
@@ -411,16 +410,16 @@ class TestZGCEffectiveBarrierElision {
     }
 
     @Test
-    @IR(counts = { IRNode.Z_GET_AND_SET_P_WITH_BARRIER_FLAG, Common.REMAINING, "1" }, phase = CompilePhase.FINAL_CODE)
-    @IR(counts = { IRNode.Z_GET_AND_SET_P_WITH_BARRIER_FLAG, Common.ELIDED, "1" }, phase = CompilePhase.FINAL_CODE)
+    @IR(counts = { IRNode.Z_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG, Common.REMAINING, "1" }, phase = CompilePhase.FINAL_CODE)
+    //@IR(counts = { IRNode.Z_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG, Common.ELIDED, "1" }, phase = CompilePhase.FINAL_CODE)
     static void testAtomicThenAtomic(Outer o, Inner i) {
         Common.field1VarHandle.getAndSet(o, i);
         Common.field1VarHandle.getAndSet(o, i);
     }
 
     @Test
-    @IR(counts = { IRNode.Z_GET_AND_SET_P_WITH_BARRIER_FLAG, Common.REMAINING, "1" }, phase = CompilePhase.FINAL_CODE)
-    @IR(counts = { IRNode.Z_GET_AND_SET_P_WITH_BARRIER_FLAG, Common.ELIDED, "1" }, phase = CompilePhase.FINAL_CODE)
+    @IR(counts = { IRNode.Z_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG, Common.REMAINING, "1" }, phase = CompilePhase.FINAL_CODE)
+    @IR(counts = { IRNode.Z_COMPARE_AND_SWAP_P_WITH_BARRIER_FLAG, Common.ELIDED, "1" }, phase = CompilePhase.FINAL_CODE)
     static void testArrayAtomicThenAtomic(Outer[] a, Outer o) {
         Common.outerArrayVarHandle.getAndSet(a, 0, o);
         Common.outerArrayVarHandle.getAndSet(a, 0, o);

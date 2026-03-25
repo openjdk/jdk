@@ -148,7 +148,7 @@ void ProfileData::print_shared(outputStream* st, const char* name, const char* e
   }
   int flags = data()->flags();
   if (flags != 0) {
-    st->print("flags(%d) ", flags);
+    st->print("flags(%d) %p/%d", flags, data(), in_bytes(DataLayout::flags_offset()));
   }
 }
 
@@ -218,7 +218,7 @@ int TypeStackSlotEntries::compute_cell_count(Symbol* signature, bool include_rec
 
 int TypeEntriesAtCall::compute_cell_count(BytecodeStream* stream) {
   assert(Bytecodes::is_invoke(stream->code()), "should be invoke");
-  assert(TypeStackSlotEntries::per_arg_count() > ReturnTypeEntry::static_cell_count(), "code to test for arguments/results broken");
+  assert(TypeStackSlotEntries::per_arg_count() > SingleTypeEntry::static_cell_count(), "code to test for arguments/results broken");
   const methodHandle m = stream->method();
   int bci = stream->bci();
   Bytecode_invoke inv(m, bci);
@@ -228,7 +228,7 @@ int TypeEntriesAtCall::compute_cell_count(BytecodeStream* stream) {
   }
   int ret_cell = 0;
   if (MethodData::profile_return_for_invoke(m, bci) && is_reference_type(inv.result_type())) {
-    ret_cell = ReturnTypeEntry::static_cell_count();
+    ret_cell = SingleTypeEntry::static_cell_count();
   }
   int header_cell = 0;
   if (args_cell + ret_cell > 0) {
@@ -362,7 +362,7 @@ void TypeStackSlotEntries::metaspace_pointers_do(MetaspaceClosure* it) {
   }
 }
 
-void ReturnTypeEntry::clean_weak_klass_links(bool always_clean) {
+void SingleTypeEntry::clean_weak_klass_links(bool always_clean) {
   intptr_t p = type();
   Klass* k = (Klass*)klass_part(p);
   if (k != nullptr) {
@@ -375,7 +375,7 @@ void ReturnTypeEntry::clean_weak_klass_links(bool always_clean) {
   }
 }
 
-void ReturnTypeEntry::metaspace_pointers_do(MetaspaceClosure* it) {
+void SingleTypeEntry::metaspace_pointers_do(MetaspaceClosure* it) {
   Klass** k = (Klass**)type_adr(); // tagged
   it->push(k);
 }
@@ -410,7 +410,7 @@ void TypeStackSlotEntries::print_data_on(outputStream* st) const {
   }
 }
 
-void ReturnTypeEntry::print_data_on(outputStream* st) const {
+void SingleTypeEntry::print_data_on(outputStream* st) const {
   _pd->tab(st);
   print_klass(st, type());
   st->cr();
@@ -583,6 +583,10 @@ void BranchData::post_initialize(BytecodeStream* stream, MethodData* mdo) {
 
 void BranchData::print_data_on(outputStream* st, const char* extra) const {
   print_shared(st, "BranchData", extra);
+  if (data()->flags()) {
+    st->cr();
+    tab(st);
+  }
   st->print_cr("taken(%u) displacement(%d)",
                taken(), displacement());
   tab(st);
@@ -713,6 +717,42 @@ void SpeculativeTrapData::print_data_on(outputStream* st, const char* extra) con
   st->cr();
 }
 
+void ArrayStoreData::print_data_on(outputStream* st, const char* extra) const {
+  print_shared(st, "ArrayStore", extra);
+  st->cr();
+  tab(st, true);
+  st->print("array");
+  _array.print_data_on(st);
+  tab(st, true);
+  st->print("element");
+  if (null_seen()) {
+    st->print(" (null seen)");
+  }
+  tab(st);
+  print_receiver_data_on(st);
+}
+
+void ArrayLoadData::print_data_on(outputStream* st, const char* extra) const {
+  print_shared(st, "ArrayLoad", extra);
+  st->cr();
+  tab(st, true);
+  st->print("array");
+  _array.print_data_on(st);
+  tab(st, true);
+  st->print("element");
+  _element.print_data_on(st);
+}
+
+void ACmpData::print_data_on(outputStream* st, const char* extra) const {
+  BranchData::print_data_on(st, extra);
+  tab(st, true);
+  st->print("left");
+  _left.print_data_on(st);
+  tab(st, true);
+  st->print("right");
+  _right.print_data_on(st);
+}
+
 // ==================================================================
 // MethodData*
 //
@@ -731,12 +771,15 @@ int MethodData::bytecode_cell_count(Bytecodes::Code code) {
   switch (code) {
   case Bytecodes::_checkcast:
   case Bytecodes::_instanceof:
-  case Bytecodes::_aastore:
     if (TypeProfileCasts) {
       return ReceiverTypeData::static_cell_count();
     } else {
       return BitData::static_cell_count();
     }
+  case Bytecodes::_aaload:
+    return ArrayLoadData::static_cell_count();
+  case Bytecodes::_aastore:
+    return ArrayStoreData::static_cell_count();
   case Bytecodes::_invokespecial:
   case Bytecodes::_invokestatic:
     if (MethodData::profile_arguments() || MethodData::profile_return()) {
@@ -776,11 +819,12 @@ int MethodData::bytecode_cell_count(Bytecodes::Code code) {
   case Bytecodes::_if_icmpge:
   case Bytecodes::_if_icmpgt:
   case Bytecodes::_if_icmple:
-  case Bytecodes::_if_acmpeq:
-  case Bytecodes::_if_acmpne:
   case Bytecodes::_ifnull:
   case Bytecodes::_ifnonnull:
     return BranchData::static_cell_count();
+  case Bytecodes::_if_acmpne:
+  case Bytecodes::_if_acmpeq:
+    return ACmpData::static_cell_count();
   case Bytecodes::_lookupswitch:
   case Bytecodes::_tableswitch:
     return variable_cell_count;
@@ -839,6 +883,7 @@ bool MethodData::is_speculative_trap_bytecode(Bytecodes::Code code) {
   switch (code) {
   case Bytecodes::_checkcast:
   case Bytecodes::_instanceof:
+  case Bytecodes::_aaload:
   case Bytecodes::_aastore:
   case Bytecodes::_invokevirtual:
   case Bytecodes::_invokeinterface:
@@ -1055,7 +1100,6 @@ int MethodData::initialize_data(BytecodeStream* stream,
   switch (c) {
   case Bytecodes::_checkcast:
   case Bytecodes::_instanceof:
-  case Bytecodes::_aastore:
     if (TypeProfileCasts) {
       cell_count = ReceiverTypeData::static_cell_count();
       tag = DataLayout::receiver_type_data_tag;
@@ -1063,6 +1107,14 @@ int MethodData::initialize_data(BytecodeStream* stream,
       cell_count = BitData::static_cell_count();
       tag = DataLayout::bit_data_tag;
     }
+    break;
+  case Bytecodes::_aaload:
+    cell_count = ArrayLoadData::static_cell_count();
+    tag = DataLayout::array_load_data_tag;
+    break;
+  case Bytecodes::_aastore:
+    cell_count = ArrayStoreData::static_cell_count();
+    tag = DataLayout::array_store_data_tag;
     break;
   case Bytecodes::_invokespecial:
   case Bytecodes::_invokestatic: {
@@ -1135,12 +1187,15 @@ int MethodData::initialize_data(BytecodeStream* stream,
   case Bytecodes::_if_icmpge:
   case Bytecodes::_if_icmpgt:
   case Bytecodes::_if_icmple:
-  case Bytecodes::_if_acmpeq:
-  case Bytecodes::_if_acmpne:
   case Bytecodes::_ifnull:
   case Bytecodes::_ifnonnull:
     cell_count = BranchData::static_cell_count();
     tag = DataLayout::branch_data_tag;
+    break;
+  case Bytecodes::_if_acmpeq:
+  case Bytecodes::_if_acmpne:
+    cell_count = ACmpData::static_cell_count();
+    tag = DataLayout::acmp_data_tag;
     break;
   case Bytecodes::_lookupswitch:
   case Bytecodes::_tableswitch:
@@ -1209,6 +1264,12 @@ int DataLayout::cell_count() {
     return ((new ParametersTypeData(this))->cell_count());
   case DataLayout::speculative_trap_data_tag:
     return SpeculativeTrapData::static_cell_count();
+  case DataLayout::array_store_data_tag:
+    return ((new ArrayStoreData(this))->cell_count());
+  case DataLayout::array_load_data_tag:
+    return ((new ArrayLoadData(this))->cell_count());
+  case DataLayout::acmp_data_tag:
+    return ((new ACmpData(this))->cell_count());
   }
 }
 ProfileData* DataLayout::data_in() {
@@ -1243,6 +1304,12 @@ ProfileData* DataLayout::data_in() {
     return new ParametersTypeData(this);
   case DataLayout::speculative_trap_data_tag:
     return new SpeculativeTrapData(this);
+  case DataLayout::array_store_data_tag:
+    return new ArrayStoreData(this);
+  case DataLayout::array_load_data_tag:
+    return new ArrayLoadData(this);
+  case DataLayout::acmp_data_tag:
+    return new ACmpData(this);
   }
 }
 

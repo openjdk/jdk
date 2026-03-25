@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Testing ClassFile local variable table.
+ * @enablePreview
  * @compile -g testdata/Lvt.java
  * @run junit LvtTest
  */

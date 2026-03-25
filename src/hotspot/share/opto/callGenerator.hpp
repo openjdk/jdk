@@ -44,9 +44,8 @@ class CallGenerator : public ArenaObj {
 
   void do_late_inline_helper();
 
-  virtual bool           do_late_inline_check(Compile* C, JVMState* jvms) { ShouldNotReachHere(); return false;  }
-  virtual CallGenerator* inline_cg()    const                             { ShouldNotReachHere(); return nullptr;}
-  virtual bool           is_pure_call() const                             { ShouldNotReachHere(); return false;  }
+  virtual bool           do_late_inline_check(Compile* C, JVMState* jvms) { ShouldNotReachHere(); return false; }
+  virtual bool           is_pure_call() const                             { ShouldNotReachHere(); return false; }
 
  public:
   // Accessors
@@ -87,6 +86,8 @@ class CallGenerator : public ArenaObj {
 
   virtual void set_unique_id(jlong id)          { fatal("unique id only for late inlines"); };
   virtual jlong unique_id() const               { fatal("unique id only for late inlines"); return 0; };
+
+  virtual CallGenerator* inline_cg()    const                             { ShouldNotReachHere(); return nullptr;  }
 
   virtual ciMethod* callee_method() { ShouldNotReachHere(); }
   virtual void set_callee_method(ciMethod* callee) { ShouldNotReachHere(); }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,6 +174,7 @@ public:
 private:
   void do_partial_array(PartialArrayState* state, bool stolen);
   void start_partial_objarray(oop from, oop to);
+  void process_array_chunk(objArrayOop obj, size_t start, size_t end);
 
   HeapWord* allocate_copy_slow(G1HeapRegionAttr* dest_attr,
                                Klass* klass,

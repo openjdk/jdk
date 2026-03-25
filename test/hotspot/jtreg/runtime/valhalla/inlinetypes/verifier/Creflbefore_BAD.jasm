@@ -1,0 +1,98 @@
+/*
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/*
+class Creflbefore_BAD {
+    @Strict static String F1__STRICT;
+    @Strict static int    F2__STRICT;
+    static {
+        Field FIELD_F1 = findField(Creflbefore_BAD.class, "F1__STRICT");
+        Field FIELD_F2 = findField(Creflbefore_BAD.class, "F2__STRICT");
+
+        int x = (int) getstaticReflective(FIELD_F2);  // Read before write
+        System.out.println("Early read of F2=" + x);
+
+        putstaticReflective(FIELD_F1, "hello");
+        putstaticReflective(FIELD_F2, 42);
+    }
+}
+*/
+identity class Creflbefore_BAD version 71:65535
+{
+  strict static Field F1__STRICT:"Ljava/lang/String;";
+  strict static Field F2__STRICT:I;
+
+  Method       "<init>":"(LStrictStaticFieldsTest;)V"
+    stack 2  locals 2
+     0:  #{ #0 final mandated }
+  {
+         aload_1;
+         dup;
+         invokestatic      Method java/util/Objects.requireNonNull:"(Ljava/lang/Object;)Ljava/lang/Object;";
+         pop;
+         pop;
+         aload_0;
+         invokespecial     Method java/lang/Object."<init>":"()V";
+         return;
+  }
+
+  static Method "<clinit>":"()V"
+    stack 2  locals 3
+  {
+         ldc               class Creflbefore_BAD;
+         ldc               String "F1__STRICT";
+         invokestatic      Method StrictStaticFieldsTest.findField:"(Ljava/lang/Class;Ljava/lang/String;)Ljava/lang/reflect/Field;";
+         astore_0;
+         ldc               class Creflbefore_BAD;
+         ldc               String "F2__STRICT";
+         invokestatic      Method StrictStaticFieldsTest.findField:"(Ljava/lang/Class;Ljava/lang/String;)Ljava/lang/reflect/Field;";
+         astore_1;
+         aload_1;
+         invokestatic      Method StrictStaticFieldsTest.getstaticReflective:"(Ljava/lang/reflect/Field;)Ljava/lang/Object;";
+         checkcast         class java/lang/Integer;
+         invokevirtual     Method java/lang/Integer.intValue:"()I";
+         istore_2;
+         getstatic         Field java/lang/System.out:"Ljava/io/PrintStream;";
+         iload_2;
+         invokedynamic     InvokeDynamic REF_invokeStatic:Method java/lang/invoke/StringConcatFactory.makeConcatWithConstants:
+                           "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;":
+                           makeConcatWithConstants:"(I)Ljava/lang/String;" {
+                             String "Early read of F2=\u0001"
+                           };
+         invokevirtual     Method java/io/PrintStream.println:"(Ljava/lang/String;)V";
+         aload_0;
+         ldc               String "hello";
+         invokestatic      Method StrictStaticFieldsTest.putstaticReflective:"(Ljava/lang/reflect/Field;Ljava/lang/Object;)V";
+         aload_1;
+         bipush            42;
+         invokestatic      Method java/lang/Integer.valueOf:"(I)Ljava/lang/Integer;";
+         invokestatic      Method StrictStaticFieldsTest.putstaticReflective:"(Ljava/lang/reflect/Field;Ljava/lang/Object;)V";
+         return;
+  }
+
+  BootstrapMethod          REF_invokeStatic:java/lang/invoke/StringConcatFactory.makeConcatWithConstants:
+                           "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;";
+                           {
+                             String "(early read of F2=\u0001)"
+                           }
+} // end Class Creflbefore_BAD

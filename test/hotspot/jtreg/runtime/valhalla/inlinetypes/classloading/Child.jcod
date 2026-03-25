@@ -1,0 +1,51 @@
+class Child {
+  0xCAFEBABE;
+  65535; // minor version
+  71; // version
+  [] { // Constant Pool
+    ; // first element is empty
+    Utf8 "Child"; // #1
+    class #1; // #2
+    Utf8 "Parent"; // #3
+    class #3; // #4
+    Utf8 "<init>"; // #5
+    Utf8 "()V"; // #6
+    NameAndType #5 #6; // #7
+    Method #4 #7; // #8
+    Utf8 "Code"; // #9
+  } // Constant Pool
+
+  0x0011; // access NOTE: this is a value class, which cannot inherit from identity
+  #2;// this_cpx
+  #4;// super_cpx
+
+  [] { // Interfaces
+  } // Interfaces
+
+  [] { // Fields
+  } // Fields
+
+  [] { // Methods
+    {  // method
+      0x0001; // access
+      #5; // name_index
+      #6; // descriptor_index
+      [] { // Attributes
+        Attr(#9) { // Code
+          1; // max_stack
+          1; // max_locals
+          Bytes[]{
+            0x2AB70008B1;
+          }
+          [] { // Traps
+          } // end Traps
+          [] { // Attributes
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+  } // Methods
+
+  [] { // Attributes
+  } // Attributes
+} // end class Child

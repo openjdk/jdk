@@ -45,6 +45,7 @@ class ciSymbol : public ciBaseObject {
   friend class ciMethod;
   friend class ciField;
   friend class ciObjArrayKlass;
+  friend class ciFlatArrayKlass;
 
 private:
   const vmSymbolID _sid;
@@ -79,6 +80,11 @@ public:
 
   // Tests if the symbol starts with the given prefix.
   bool starts_with(const char* prefix, int len) const;
+  bool starts_with(char prefix_char) const;
+
+  // Tests if the symbol ends with the given suffix.
+  bool ends_with(const char* suffix, int len) const;
+  bool ends_with(char suffix_char) const;
 
   // Determines where the symbol contains the given substring.
   int index_of_at(int i, const char* str, int len) const;

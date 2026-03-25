@@ -152,12 +152,6 @@ freeze_result Continuation::try_preempt(JavaThread* current, oop continuation) {
   return res;
 }
 
-#ifndef PRODUCT
-static jlong java_tid(JavaThread* thread) {
-  return java_lang_Thread::thread_id(thread->threadObj());
-}
-#endif
-
 ContinuationEntry* Continuation::get_continuation_entry_for_continuation(JavaThread* thread, oop continuation) {
   if (thread == nullptr || continuation == nullptr) {
     return nullptr;
@@ -387,9 +381,8 @@ frame Continuation::continuation_bottom_sender(JavaThread* thread, const frame& 
   ContinuationEntry* ce = get_continuation_entry_for_sp(thread, callee.sp());
   assert(ce != nullptr, "callee.sp(): " INTPTR_FORMAT, p2i(callee.sp()));
 
-  log_develop_debug(continuations)("continuation_bottom_sender: [" JLONG_FORMAT "] [%d] callee: " INTPTR_FORMAT
-    " sender_sp: " INTPTR_FORMAT,
-    java_tid(thread), thread->osthread()->thread_id(), p2i(callee.sp()), p2i(sender_sp));
+  log_develop_debug(continuations)("continuation_bottom_sender: [%d] callee: " INTPTR_FORMAT " sender_sp: " INTPTR_FORMAT,
+      thread->osthread()->thread_id(), p2i(callee.sp()), p2i(sender_sp));
 
   frame entry = ce->to_frame();
   if (callee.is_interpreted_frame()) {

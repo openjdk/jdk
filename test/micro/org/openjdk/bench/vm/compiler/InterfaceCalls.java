@@ -188,8 +188,11 @@ public class InterfaceCalls {
     }
 
     final int asLength = 5;
+    @SuppressWarnings("initialization")
     public FirstInterface[] as = new FirstInterface[asLength];
+    @SuppressWarnings("initialization")
     public FirstInterface[] noninlined = new FirstInterface[asLength];
+    @SuppressWarnings("initialization")
     public FirstInterfaceExtExt[] noninlinedextext = new FirstInterfaceExtExt[asLength];
 
 

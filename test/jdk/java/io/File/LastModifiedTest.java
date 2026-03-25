@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,19 +21,20 @@
  * questions.
  */
 
+import org.testng.annotations.Test;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Instant;
 
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotEquals;
 
 /**
  * @test
  * @library ..
- * @run junit LastModifiedTest
+ * @run testng LastModifiedTest
  * @summary Test to validate that java.nio.Files returns the same value
  * as java.io.File
  */
@@ -51,7 +51,7 @@ public class LastModifiedTest {
             long ioTimestamp = tempFile.lastModified();
             long nioTimestamp = Files.getLastModifiedTime(tempFile.toPath()).toMillis();
 
-            assertEquals(nioTimestamp, ioTimestamp);
+            assertEquals(ioTimestamp, nioTimestamp);
         } finally {
             tempFile.delete();
         }

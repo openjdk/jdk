@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,23 @@
  */
 package javax.xml.validation.ptests;
 
-import jaxp.library.JAXPDataProvider;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestInstance.Lifecycle;
-import org.junit.jupiter.api.parallel.Execution;
-import org.junit.jupiter.api.parallel.ExecutionMode;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.w3c.dom.Document;
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXNotRecognizedException;
-import org.xml.sax.SAXNotSupportedException;
-import org.xml.sax.SAXParseException;
+import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
+import static javax.xml.validation.ptests.ValidationTestConst.XML_DIR;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertSame;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotSame;
+import static org.testng.Assert.assertEquals;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -51,38 +52,31 @@ import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
-import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
-import static javax.xml.validation.ptests.ValidationTestConst.XML_DIR;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import jaxp.library.JAXPDataProvider;
+
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+import org.w3c.dom.Document;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
+import org.xml.sax.SAXParseException;
 
 /*
  * @test
  * @bug 8080907 8169778
  * @library /javax/xml/jaxp/libs
- * @build jaxp.library.JAXPDataProvider
- * @run junit/othervm javax.xml.validation.ptests.SchemaFactoryTest
+ * @run testng/othervm javax.xml.validation.ptests.SchemaFactoryTest
  * @summary Class containing the test cases for SchemaFactory
  */
-@Execution(ExecutionMode.SAME_THREAD)
-@TestInstance(Lifecycle.PER_CLASS)
+@Test(singleThreaded = true)
 public class SchemaFactoryTest {
 
-    @BeforeAll
+    @BeforeClass
     public void setup() throws SAXException, IOException, ParserConfigurationException {
         sf = newSchemaFactory();
         assertNotNull(sf);
@@ -102,6 +96,7 @@ public class SchemaFactoryTest {
     }
 
 
+    @DataProvider(name = "parameters")
     public Object[][] getValidateParameters() {
         return new Object[][] { { W3C_XML_SCHEMA_NS_URI, SCHEMA_FACTORY_CLASSNAME, null },
                 { W3C_XML_SCHEMA_NS_URI, SCHEMA_FACTORY_CLASSNAME, this.getClass().getClassLoader() } };
@@ -110,15 +105,16 @@ public class SchemaFactoryTest {
     /**
      * Test if newDefaultInstance() method returns an instance
      * of the expected factory.
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void testDefaultInstance() {
+    public void testDefaultInstance() throws Exception {
         SchemaFactory sf1 = SchemaFactory.newDefaultInstance();
         SchemaFactory sf2 = SchemaFactory.newInstance(W3C_XML_SCHEMA_NS_URI);
         assertNotSame(sf1, sf2, "same instance returned:");
         assertSame(sf1.getClass(), sf2.getClass(),
-                "unexpected class mismatch for newDefaultInstance():");
-        assertEquals(DEFAULT_IMPL_CLASS, sf1.getClass().getName());
+                  "unexpected class mismatch for newDefaultInstance():");
+        assertEquals(sf1.getClass().getName(), DEFAULT_IMPL_CLASS);
         assertTrue(sf1.isSchemaLanguageSupported(W3C_XML_SCHEMA_NS_URI),
                    "isSchemaLanguageSupported(W3C_XML_SCHEMA_NS_URI):");
         assertFalse(sf1.isSchemaLanguageSupported(UNRECOGNIZED_NAME),
@@ -132,10 +128,9 @@ public class SchemaFactoryTest {
      * javax.xml.validation.SchemaFactory , should return newInstance of
      * SchemaFactory
      */
-    @ParameterizedTest
-    @MethodSource("getValidateParameters")
+    @Test(dataProvider = "parameters")
     public void testNewInstance(String schemaLanguage, String factoryClassName, ClassLoader classLoader) throws SAXException {
-        SchemaFactory sf = SchemaFactory.newInstance(schemaLanguage, factoryClassName, classLoader);
+        SchemaFactory sf = SchemaFactory.newInstance(W3C_XML_SCHEMA_NS_URI, SCHEMA_FACTORY_CLASSNAME, null);
         Schema schema = sf.newSchema();
         assertNotNull(schema);
     }
@@ -145,12 +140,10 @@ public class SchemaFactoryTest {
      * java.lang.String factoryClassName, java.lang.ClassLoader classLoader)
      * factoryClassName is null , should throw IllegalArgumentException
      */
-    @ParameterizedTest
-    @MethodSource("jaxp.library.JAXPDataProvider#newInstanceNeg")
+    @Test(expectedExceptions = IllegalArgumentException.class, dataProvider = "new-instance-neg", dataProviderClass = JAXPDataProvider.class)
     public void testNewInstanceWithNullFactoryClassName(String factoryClassName, ClassLoader classLoader) {
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> SchemaFactory.newInstance(W3C_XML_SCHEMA_NS_URI, factoryClassName, classLoader));
+
+        SchemaFactory.newInstance(W3C_XML_SCHEMA_NS_URI, factoryClassName, classLoader);
     }
 
     /*
@@ -158,11 +151,9 @@ public class SchemaFactoryTest {
      * java.lang.String factoryClassName, java.lang.ClassLoader classLoader)
      * schemaLanguage is null , should throw NPE
      */
-    @Test
+    @Test(expectedExceptions = NullPointerException.class)
     public void testNewInstanceWithNullSchemaLanguage() {
-        assertThrows(
-                NullPointerException.class,
-                () -> SchemaFactory.newInstance(null, SCHEMA_FACTORY_CLASSNAME, this.getClass().getClassLoader()));
+        SchemaFactory.newInstance(null, SCHEMA_FACTORY_CLASSNAME, this.getClass().getClassLoader());
     }
 
     /*
@@ -170,17 +161,15 @@ public class SchemaFactoryTest {
      * java.lang.String factoryClassName, java.lang.ClassLoader classLoader)
      * schemaLanguage is empty , should throw IllegalArgumentException
      */
-    @Test
+    @Test(expectedExceptions = IllegalArgumentException.class)
     public void testNewInstanceWithEmptySchemaLanguage() {
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> SchemaFactory.newInstance("", SCHEMA_FACTORY_CLASSNAME, this.getClass().getClassLoader()));
+        SchemaFactory.newInstance("", SCHEMA_FACTORY_CLASSNAME, this.getClass().getClassLoader());
     }
 
 
-    @Test
-    public void testNewSchemaDefault() {
-        assertThrows(SAXParseException.class, () -> validate(sf.newSchema()));
+    @Test(expectedExceptions = SAXParseException.class)
+    public void testNewSchemaDefault() throws SAXException, IOException {
+        validate(sf.newSchema());
     }
 
     @Test
@@ -188,11 +177,12 @@ public class SchemaFactoryTest {
         validate(sf.newSchema(new File(XML_DIR + "test.xsd")));
     }
 
-    @Test
-    public void testNewSchemaWithNullFile() {
-        assertThrows(NullPointerException.class, () -> sf.newSchema((File) null));
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testNewSchemaWithNullFile() throws SAXException {
+        sf.newSchema((File) null);
     }
 
+    @DataProvider(name = "valid-source")
     public Object[][] getValidSource() throws XMLStreamException {
         return new Object[][] {
                 { streamSource(xsd1) },
@@ -203,42 +193,43 @@ public class SchemaFactoryTest {
 
     }
 
-    @ParameterizedTest
-    @MethodSource("getValidSource")
+    @Test(dataProvider = "valid-source")
     public void testNewSchemaWithValidSource(Source schema) throws SAXException, IOException {
         validate(sf.newSchema(schema));
     }
 
-    public static Object[][] getInvalidSource() {
+    @DataProvider(name = "invalid-source")
+    public Object[][] getInvalidSource() {
         return new Object[][] {
                 { nullStreamSource() },
                 { nullSaxSource() } };
     }
 
-    @ParameterizedTest
-    @MethodSource("getInvalidSource")
-    public void testNewSchemaWithInvalidSource(Source schema) {
-        assertThrows(SAXParseException.class, () -> sf.newSchema(schema));
+    @Test(dataProvider = "invalid-source", expectedExceptions = SAXParseException.class)
+    public void testNewSchemaWithInvalidSource(Source schema) throws SAXException {
+        sf.newSchema(schema);
     }
 
-    @Test
-    public void testNewSchemaWithNullSource() {
-        assertThrows(NullPointerException.class, () -> sf.newSchema((Source) null));
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testNewSchemaWithNullSource() throws SAXException {
+        sf.newSchema((Source)null);
     }
 
+    @DataProvider(name = "valid-sources")
     public Object[][] getValidSources() {
         return new Object[][] {
                 { streamSource(xsd1), streamSource(xsd2) },
                 { saxSource(xsd1), saxSource(xsd2) },
                 { domSource(xsdDoc1), domSource(xsdDoc2) } };
+
     }
 
-    @ParameterizedTest
-    @MethodSource("getValidSources")
+    @Test(dataProvider = "valid-sources")
     public void testNewSchemaWithValidSourceArray(Source schema1, Source schema2) throws SAXException, IOException {
         validate(sf.newSchema(new Source[] { schema1, schema2 }));
     }
 
+    @DataProvider(name = "invalid-sources")
     public Object[][] getInvalidSources() {
         return new Object[][] {
                 { streamSource(xsd1), nullStreamSource() },
@@ -247,12 +238,12 @@ public class SchemaFactoryTest {
                 { nullSaxSource(), nullSaxSource() } };
     }
 
-    @ParameterizedTest
-    @MethodSource("getInvalidSources")
-    public void testNewSchemaWithInvalidSourceArray(Source schema1, Source schema2) {
-        assertThrows(SAXParseException.class, () -> sf.newSchema(new Source[] { schema1, schema2 }));
+    @Test(dataProvider = "invalid-sources", expectedExceptions = SAXParseException.class)
+    public void testNewSchemaWithInvalidSourceArray(Source schema1, Source schema2) throws SAXException {
+        sf.newSchema(new Source[] { schema1, schema2 });
     }
 
+    @DataProvider(name = "null-sources")
     public Object[][] getNullSources() {
         return new Object[][] {
                 { new Source[] { domSource(xsdDoc1), null } },
@@ -261,15 +252,14 @@ public class SchemaFactoryTest {
 
     }
 
-    @ParameterizedTest
-    @MethodSource("getNullSources")
-    public void testNewSchemaWithNullSourceArray(Source[] schemas) {
-        assertThrows(NullPointerException.class, () -> sf.newSchema(schemas));
+    @Test(dataProvider = "null-sources", expectedExceptions = NullPointerException.class)
+    public void testNewSchemaWithNullSourceArray(Source[] schemas) throws SAXException {
+        sf.newSchema(schemas);
     }
 
-    @Test
-    public void testNewSchemaWithNullUrl() {
-        assertThrows(NullPointerException.class, () -> sf.newSchema((URL) null));
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testNewSchemaWithNullUrl() throws SAXException {
+        sf.newSchema((URL) null);
     }
 
 
@@ -280,66 +270,70 @@ public class SchemaFactoryTest {
 
         ErrorHandler handler = new MyErrorHandler();
         sf.setErrorHandler(handler);
-        assertSame(handler, sf.getErrorHandler());
+        assertSame(sf.getErrorHandler(), handler);
 
         sf.setErrorHandler(null);
         assertNull(sf.getErrorHandler());
     }
 
-    @Test
-    public void testGetUnrecognizedProperty() {
+    @Test(expectedExceptions = SAXNotRecognizedException.class)
+    public void testGetUnrecognizedProperty() throws SAXNotRecognizedException, SAXNotSupportedException {
         SchemaFactory sf = newSchemaFactory();
-        assertThrows(SAXNotRecognizedException.class, () -> sf.getProperty(UNRECOGNIZED_NAME));
+        sf.getProperty(UNRECOGNIZED_NAME);
+
     }
 
-    @Test
-    public void testSetUnrecognizedProperty() {
+    @Test(expectedExceptions = SAXNotRecognizedException.class)
+    public void testSetUnrecognizedProperty() throws SAXNotRecognizedException, SAXNotSupportedException {
         SchemaFactory sf = newSchemaFactory();
-        assertThrows(SAXNotRecognizedException.class, () -> sf.setProperty(UNRECOGNIZED_NAME, "test"));
+        sf.setProperty(UNRECOGNIZED_NAME, "test");
     }
 
-    @Test
-    public void testGetNullProperty() {
-        SchemaFactory sf = newSchemaFactory();
-        assertNotNull(sf);
-        assertThrows(NullPointerException.class, () -> sf.getProperty(null));
-    }
-
-    @Test
-    public void testSetNullProperty() {
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testGetNullProperty() throws SAXNotRecognizedException, SAXNotSupportedException {
         SchemaFactory sf = newSchemaFactory();
         assertNotNull(sf);
-        assertThrows(NullPointerException.class, () -> sf.setProperty(null, "test"));
-    }
-
-    @Test
-    public void testGetUnrecognizedFeature() {
-        SchemaFactory sf = newSchemaFactory();
-        assertThrows(SAXNotRecognizedException.class, () -> sf.getFeature(UNRECOGNIZED_NAME));
+        sf.getProperty(null);
 
     }
 
-    @Test
-    public void testSetUnrecognizedFeature() {
-        SchemaFactory sf = newSchemaFactory();
-        assertThrows(SAXNotRecognizedException.class, () -> sf.setFeature(UNRECOGNIZED_NAME, true));
-    }
-
-    @Test
-    public void testGetNullFeature() {
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testSetNullProperty() throws SAXNotRecognizedException, SAXNotSupportedException {
         SchemaFactory sf = newSchemaFactory();
         assertNotNull(sf);
-        assertThrows(NullPointerException.class, () -> sf.getFeature(null));
+        sf.setProperty(null, "test");
     }
 
-    @Test
-    public void testSetNullFeature() {
+    @Test(expectedExceptions = SAXNotRecognizedException.class)
+    public void testGetUnrecognizedFeature() throws SAXNotRecognizedException, SAXNotSupportedException {
+        SchemaFactory sf = newSchemaFactory();
+        sf.getFeature(UNRECOGNIZED_NAME);
+
+    }
+
+    @Test(expectedExceptions = SAXNotRecognizedException.class)
+    public void testSetUnrecognizedFeature() throws SAXNotRecognizedException, SAXNotSupportedException {
+        SchemaFactory sf = newSchemaFactory();
+        sf.setFeature(UNRECOGNIZED_NAME, true);
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testGetNullFeature() throws SAXNotRecognizedException, SAXNotSupportedException {
         SchemaFactory sf = newSchemaFactory();
         assertNotNull(sf);
-        assertThrows(NullPointerException.class, () -> sf.setFeature(null, true));
+        sf.getFeature(null);
+
     }
 
-    public static Object[][] getSourceFeature() {
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testSetNullFeature() throws SAXNotRecognizedException, SAXNotSupportedException {
+        SchemaFactory sf = newSchemaFactory();
+        assertNotNull(sf);
+        sf.setFeature(null, true);
+    }
+
+    @DataProvider(name = "source-feature")
+    public Object[][] getSourceFeature() {
         return new Object[][] {
                 { StreamSource.FEATURE },
                 { SAXSource.FEATURE },
@@ -352,8 +346,7 @@ public class SchemaFactoryTest {
      * Return true for each of the JAXP Source features to indicate that this
      * SchemaFactory supports all of the built-in JAXP Source types.
      */
-    @ParameterizedTest
-    @MethodSource("getSourceFeature")
+    @Test(dataProvider = "source-feature")
     public void testSourceFeatureGet(String sourceFeature) throws Exception {
         assertTrue(newSchemaFactory().getFeature(sourceFeature));
     }
@@ -362,52 +355,46 @@ public class SchemaFactoryTest {
      * JAXP Source features are read-only because this SchemaFactory always
      * supports all JAXP Source types.
      */
-    @ParameterizedTest
-    @MethodSource("getSourceFeature")
-    public void testSourceFeatureSet(String sourceFeature) {
-        assertThrows(
-                SAXNotSupportedException.class,
-                () -> newSchemaFactory().setFeature(sourceFeature, false));
+    @Test(dataProvider = "source-feature", expectedExceptions = SAXNotSupportedException.class)
+    public void testSourceFeatureSet(String sourceFeature) throws Exception {
+        newSchemaFactory().setFeature(sourceFeature, false);
     }
 
-    @Test
+    @Test(expectedExceptions = IllegalArgumentException.class)
     public void testInvalidSchemaLanguage() {
         final String INVALID_SCHEMA_LANGUAGE = "http://relaxng.org/ns/structure/1.0";
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> SchemaFactory.newInstance(INVALID_SCHEMA_LANGUAGE));
+        SchemaFactory.newInstance(INVALID_SCHEMA_LANGUAGE);
     }
 
-    @Test
+    @Test(expectedExceptions = NullPointerException.class)
     public void testNullSchemaLanguage() {
-        assertThrows(NullPointerException.class, () -> SchemaFactory.newInstance(null));
+        SchemaFactory.newInstance(null);
     }
 
     private void validate(Schema schema) throws SAXException, IOException {
         schema.newValidator().validate(new StreamSource(new ByteArrayInputStream(xml)));
     }
-
-    private static InputStream newInputStream(byte[] xsd) {
+    private InputStream newInputStream(byte[] xsd) {
         return new ByteArrayInputStream(xsd);
     }
 
-    private static Source streamSource(byte[] xsd) {
+    private Source streamSource(byte[] xsd) {
         return new StreamSource(newInputStream(xsd));
     }
 
-    private static Source nullStreamSource() {
+    private Source nullStreamSource() {
         return new StreamSource((InputStream) null);
     }
 
-    private static Source saxSource(byte[] xsd) {
+    private Source saxSource(byte[] xsd) {
         return new SAXSource(new InputSource(newInputStream(xsd)));
     }
 
-    private static Source nullSaxSource() {
+    private Source nullSaxSource() {
         return new SAXSource(new InputSource((InputStream) null));
     }
 
-    private static Source domSource(Document xsdDoc) {
+    private Source domSource(Document xsdDoc) {
         return new DOMSource(xsdDoc);
     }
 

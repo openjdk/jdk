@@ -417,6 +417,7 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   initialize_class(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), CHECK);
   initialize_class(vmSymbols::java_lang_StackOverflowError(), CHECK);
   initialize_class(vmSymbols::java_lang_IllegalMonitorStateException(), CHECK);
+  initialize_class(vmSymbols::java_lang_IdentityException(), CHECK);
   initialize_class(vmSymbols::java_lang_IllegalArgumentException(), CHECK);
   initialize_class(vmSymbols::java_lang_InternalError(), CHECK);
 }
@@ -1127,7 +1128,7 @@ void Threads::remove(JavaThread* p, bool is_daemon) {
     ConditionalMutexLocker throttle_ml(ThreadsLockThrottle_lock, UseThreadsLockThrottleLock);
     MonitorLocker ml(Threads_lock);
 
-    if (ThreadIdTable::is_initialized_acquire()) {
+    if (ThreadIdTable::is_initialized()) {
       // This cleanup must be done before the current thread's GC barrier
       // is detached since we need to touch the threadObj oop.
       jlong tid = SharedRuntime::get_java_tid(p);

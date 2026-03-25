@@ -23,18 +23,22 @@
 
 package compiler.lib.ir_framework.driver.network.testvm.java;
 
+import compiler.lib.ir_framework.TestFramework;
+
 /**
  * Class to collect all Java messages sent from the Test VM to the Driver VM.
  */
 public class JavaMessages {
+    private static final boolean PRINT_APPLICABLE_IR_RULES = Boolean.parseBoolean(System.getProperty("PrintApplicableIRRules", "false"));
+
     private final StdoutMessages stdoutMessages;
     private final ExecutedTests executedTests;
     private final MethodTimes methodTimes;
-    private final ApplicableIRRules applicableIrRules;
-    private final VMInfo vmInfo;
+    private final String applicableIrRules;
+    private final String vmInfo;
 
     JavaMessages(StdoutMessages stdoutMessages, ExecutedTests executedTests, MethodTimes methodTimes,
-                 ApplicableIRRules applicableIrRules, VMInfo vmInfo) {
+                 String applicableIrRules, String vmInfo) {
         this.stdoutMessages = stdoutMessages;
         this.executedTests = executedTests;
         this.methodTimes = methodTimes;
@@ -42,19 +46,21 @@ public class JavaMessages {
         this.vmInfo = vmInfo;
     }
 
-    public VMInfo vmInfo() {
-        return vmInfo;
+    public String applicableIRRules() {
+        return applicableIrRules;
     }
 
-    public ApplicableIRRules applicableIRRules() {
-        return applicableIrRules;
+    public String vmInfo() {
+        return vmInfo;
     }
 
     public void print() {
         stdoutMessages.print();
         methodTimes.print();
         executedTests.print();
-        vmInfo.print();
-        applicableIrRules.print();
+        if (TestFramework.VERBOSE || PRINT_APPLICABLE_IR_RULES) {
+            System.out.println("Read Applicable IR Rules from Test VM:");
+            System.out.println(applicableIrRules);
+        }
     }
 }

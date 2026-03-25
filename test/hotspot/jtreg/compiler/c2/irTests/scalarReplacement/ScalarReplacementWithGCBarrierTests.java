@@ -99,12 +99,16 @@ public class ScalarReplacementWithGCBarrierTests {
     // the allocation of `Integer sum` can not be eliminated, so there should be
     // 1 allocation after allocations and locks elimination.
     //
+    // With Valhalla, when Integer is a value class, we have only one allocation
+    // at first (Iter), which goes away.
+    //
     // Before the patch of JDK-8333334, both allocations of `Iter` and `Integer`
     // could not be eliminated.
     @Test
-    @IR(phase = { CompilePhase.AFTER_PARSING }, counts = { IRNode.ALLOC, "1" })
-    @IR(phase = { CompilePhase.INCREMENTAL_BOXING_INLINE }, counts = { IRNode.ALLOC, "2" })
-    @IR(phase = { CompilePhase.ITER_GVN_AFTER_ELIMINATION }, counts = { IRNode.ALLOC, "1" })
+    @IR(applyIf = {"enable-valhalla", "false"}, phase = { CompilePhase.PHASEIDEAL_BEFORE_EA }, counts = { IRNode.ALLOC, "2" })
+    @IR(applyIf = {"enable-valhalla", "false"}, phase = { CompilePhase.ITER_GVN_AFTER_ELIMINATION }, counts = { IRNode.ALLOC, "1"})
+    @IR(applyIf = {"enable-valhalla", "true"}, phase = { CompilePhase.PHASEIDEAL_BEFORE_EA }, counts = { IRNode.ALLOC, "1" })
+    @IR(applyIf = {"enable-valhalla", "true"}, phase = { CompilePhase.ITER_GVN_AFTER_ELIMINATION }, failOn = { IRNode.ALLOC })
     private int testScalarReplacementWithGCBarrier(List list) {
         Iter iter = list.iter();
         while (true) {

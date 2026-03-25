@@ -34,7 +34,7 @@ void constantTag::print_on(outputStream* st) const {
 #endif // PRODUCT
 
 BasicType constantTag::basic_type() const {
-  switch (_tag) {
+  switch (value()) {
     case JVM_CONSTANT_Integer :
       return T_INT;
     case JVM_CONSTANT_Float :
@@ -68,7 +68,7 @@ BasicType constantTag::basic_type() const {
 
 
 jbyte constantTag::non_error_value() const {
-  switch (_tag) {
+  switch (value()) {
   case JVM_CONSTANT_UnresolvedClassInError:
     return JVM_CONSTANT_UnresolvedClass;
   case JVM_CONSTANT_MethodHandleInError:
@@ -78,13 +78,13 @@ jbyte constantTag::non_error_value() const {
   case JVM_CONSTANT_DynamicInError:
     return JVM_CONSTANT_Dynamic;
   default:
-    return _tag;
+    return value();
   }
 }
 
 
 jbyte constantTag::error_value() const {
-  switch (_tag) {
+  switch (value()) {
   case JVM_CONSTANT_UnresolvedClass:
     return JVM_CONSTANT_UnresolvedClassInError;
   case JVM_CONSTANT_MethodHandle:
@@ -100,7 +100,7 @@ jbyte constantTag::error_value() const {
 }
 
 const char* constantTag::internal_name() const {
-  switch (_tag) {
+  switch (value()) {
     case JVM_CONSTANT_Invalid :
       return "Invalid index";
     case JVM_CONSTANT_Class :

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2026, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2015, 2021, Red Hat, Inc. All rights reserved.
  * Copyright (C) 2022, Tencent. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -447,7 +447,7 @@ void ShenandoahBarrierC2Support::verify(RootNode* root) {
 
       if (call->is_call_to_arraycopystub()) {
         Node* dest = nullptr;
-        const TypeTuple* args = n->as_Call()->_tf->domain();
+        const TypeTuple* args = n->as_Call()->_tf->domain_sig();
         for (uint i = TypeFunc::Parms, j = 0; i < args->cnt(); i++) {
           if (args->field_at(i)->isa_ptr()) {
             j++;
@@ -568,7 +568,7 @@ void ShenandoahBarrierC2Support::verify(RootNode* root) {
           break;
         }
       }
-      uint stop = n->is_Call() ? n->as_Call()->tf()->domain()->cnt() : n->req();
+      uint stop = n->is_Call() ? n->as_Call()->tf()->domain_sig()->cnt() : n->req();
       if (i != others_len) {
         const uint inputs_len = sizeof(others[0].inputs) / sizeof(others[0].inputs[0]);
         for (uint j = 0; j < inputs_len; j++) {
@@ -803,18 +803,17 @@ Node* ShenandoahBarrierC2Support::find_bottom_mem(Node* ctrl, PhaseIdealLoop* ph
       }
     } else {
       if (c->is_Call() && c->as_Call()->adr_type() != nullptr) {
-        CallProjections projs;
-        c->as_Call()->extract_projections(&projs, true, false);
-        if (projs.fallthrough_memproj != nullptr) {
-          if (projs.fallthrough_memproj->adr_type() == TypePtr::BOTTOM) {
-            if (projs.catchall_memproj == nullptr) {
-              mem = projs.fallthrough_memproj;
+        CallProjections* projs = c->as_Call()->extract_projections(true, false);
+        if (projs->fallthrough_memproj != nullptr) {
+          if (projs->fallthrough_memproj->adr_type() == TypePtr::BOTTOM) {
+            if (projs->catchall_memproj == nullptr) {
+              mem = projs->fallthrough_memproj;
             } else {
-              if (phase->is_dominator(projs.fallthrough_catchproj, ctrl)) {
-                mem = projs.fallthrough_memproj;
+              if (phase->is_dominator(projs->fallthrough_catchproj, ctrl)) {
+                mem = projs->fallthrough_memproj;
               } else {
-                assert(phase->is_dominator(projs.catchall_catchproj, ctrl), "one proj must dominate barrier");
-                mem = projs.catchall_memproj;
+                assert(phase->is_dominator(projs->catchall_catchproj, ctrl), "one proj must dominate barrier");
+                mem = projs->catchall_memproj;
               }
             }
           }
@@ -871,7 +870,7 @@ void ShenandoahBarrierC2Support::test_gc_state(Node*& ctrl, Node* raw_mem, Node*
 
   Node* thread          = new ThreadLocalNode();
   Node* gc_state_offset = igvn.MakeConX(in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
-  Node* gc_state_addr   = AddPNode::make_off_heap(thread, gc_state_offset);
+  Node* gc_state_addr   = new AddPNode(phase->C->top(), thread, gc_state_offset);
   Node* gc_state        = new LoadBNode(old_ctrl, raw_mem, gc_state_addr,
                                         DEBUG_ONLY(phase->C->get_adr_type(Compile::AliasIdxRaw)) NOT_DEBUG(nullptr),
                                         TypeInt::BYTE, MemNode::unordered);
@@ -1075,7 +1074,7 @@ void ShenandoahBarrierC2Support::fix_ctrl(Node* barrier, Node* region, const Mem
   }
 }
 
-static Node* create_phis_on_call_return(Node* ctrl, Node* c, Node* n, Node* n_clone, const CallProjections& projs, PhaseIdealLoop* phase) {
+static Node* create_phis_on_call_return(Node* ctrl, Node* c, Node* n, Node* n_clone, const CallProjections* projs, PhaseIdealLoop* phase) {
   Node* region = nullptr;
   while (c != ctrl) {
     if (c->is_Region()) {
@@ -1087,9 +1086,9 @@ static Node* create_phis_on_call_return(Node* ctrl, Node* c, Node* n, Node* n_cl
   Node* phi = new PhiNode(region, n->bottom_type());
   for (uint j = 1; j < region->req(); j++) {
     Node* in = region->in(j);
-    if (phase->is_dominator(projs.fallthrough_catchproj, in)) {
+    if (phase->is_dominator(projs->fallthrough_catchproj, in)) {
       phi->init_req(j, n);
-    } else if (phase->is_dominator(projs.catchall_catchproj, in)) {
+    } else if (phase->is_dominator(projs->catchall_catchproj, in)) {
       phi->init_req(j, n_clone);
     } else {
       phi->init_req(j, create_phis_on_call_return(ctrl, in, n, n_clone, projs, phase));
@@ -1192,13 +1191,12 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
         } while(stack.size() > 0);
         continue;
       }
-      CallProjections projs;
-      call->extract_projections(&projs, false, false);
+      CallProjections* projs = call->extract_projections(false, false);
 
       // If this is a runtime call, it doesn't have an exception handling path
-      if (projs.fallthrough_catchproj == nullptr) {
+      if (projs->fallthrough_catchproj == nullptr) {
         assert(call->method() == nullptr, "should be runtime call");
-        assert(projs.catchall_catchproj == nullptr, "runtime call should not have catch all projection");
+        assert(projs->catchall_catchproj == nullptr, "runtime call should not have catch all projection");
         continue;
       }
 
@@ -1207,8 +1205,8 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
       VectorSet cloned;
 #endif
       Node* lrb_clone = lrb->clone();
-      phase->register_new_node(lrb_clone, projs.catchall_catchproj);
-      phase->set_ctrl(lrb, projs.fallthrough_catchproj);
+      phase->register_new_node(lrb_clone, projs->catchall_catchproj);
+      phase->set_ctrl(lrb, projs->fallthrough_catchproj);
 
       stack.push(lrb, 0);
       clones.push(lrb_clone);
@@ -1230,7 +1228,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
         if (idx < n->outcnt()) {
           Node* u = n->raw_out(idx);
           Node* c = phase->ctrl_or_self(u);
-          if (phase->is_dominator(call, c) && phase->is_dominator(c, projs.fallthrough_proj)) {
+          if (phase->is_dominator(call, c) && phase->is_dominator(c, projs->fallthrough_proj)) {
             stack.set_index(idx+1);
             assert(!u->is_CFG(), "");
             stack.push(u, 0);
@@ -1238,30 +1236,30 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
             Node* u_clone = u->clone();
             int nb = u_clone->replace_edge(n, n_clone, &phase->igvn());
             assert(nb > 0, "should have replaced some uses");
-            phase->register_new_node(u_clone, projs.catchall_catchproj);
+            phase->register_new_node(u_clone, projs->catchall_catchproj);
             clones.push(u_clone);
-            phase->set_ctrl(u, projs.fallthrough_catchproj);
+            phase->set_ctrl(u, projs->fallthrough_catchproj);
           } else {
             bool replaced = false;
             if (u->is_Phi()) {
               for (uint k = 1; k < u->req(); k++) {
                 if (u->in(k) == n) {
-                  if (phase->is_dominator(projs.catchall_catchproj, u->in(0)->in(k))) {
+                  if (phase->is_dominator(projs->catchall_catchproj, u->in(0)->in(k))) {
                     phase->igvn().replace_input_of(u, k, n_clone);
                     replaced = true;
-                  } else if (!phase->is_dominator(projs.fallthrough_catchproj, u->in(0)->in(k))) {
+                  } else if (!phase->is_dominator(projs->fallthrough_catchproj, u->in(0)->in(k))) {
                     phase->igvn().replace_input_of(u, k, create_phis_on_call_return(ctrl, u->in(0)->in(k), n, n_clone, projs, phase));
                     replaced = true;
                   }
                 }
               }
             } else {
-              if (phase->is_dominator(projs.catchall_catchproj, c)) {
+              if (phase->is_dominator(projs->catchall_catchproj, c)) {
                 phase->igvn().rehash_node_delayed(u);
                 int nb = u->replace_edge(n, n_clone, &phase->igvn());
                 assert(nb > 0, "should have replaced some uses");
                 replaced = true;
-              } else if (!phase->is_dominator(projs.fallthrough_catchproj, c)) {
+              } else if (!phase->is_dominator(projs->fallthrough_catchproj, c)) {
                 if (u->is_If()) {
                   // Can't break If/Bool/Cmp chain
                   assert(n->is_Bool(), "unexpected If shape");
@@ -1852,14 +1850,13 @@ Node* MemoryGraphFixer::get_ctrl(Node* n) const {
   if (n->is_Proj() && n->in(0) != nullptr && n->in(0)->is_Call()) {
     assert(c == n->in(0), "");
     CallNode* call = c->as_Call();
-    CallProjections projs;
-    call->extract_projections(&projs, true, false);
-    if (projs.catchall_memproj != nullptr) {
-      if (projs.fallthrough_memproj == n) {
-        c = projs.fallthrough_catchproj;
+    CallProjections* projs = call->extract_projections(true, false);
+    if (projs->catchall_memproj != nullptr) {
+      if (projs->fallthrough_memproj == n) {
+        c = projs->fallthrough_catchproj;
       } else {
-        assert(projs.catchall_memproj == n, "");
-        c = projs.catchall_catchproj;
+        assert(projs->catchall_memproj == n, "");
+        c = projs->catchall_catchproj;
       }
     }
   }

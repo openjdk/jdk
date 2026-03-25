@@ -45,7 +45,7 @@ import jdk.test.lib.util.ModuleInfoWriter;
  * @summary Test custom JAAS login module with all possible modular option.
  * @modules java.base/jdk.internal.module
  * @library /test/lib
- * @build jdk.test.lib.util.JarUtils jdk.test.lib.util.ModuleInfoWriter
+ * @build jdk.test.lib.util.JarUtils
  * @build TestLoginModule JaasClient
  * @run main JaasModularClientTest false
  * @run main JaasModularClientTest true

@@ -138,8 +138,9 @@ class ComputeCallStack : public SignatureIterator {
     _idx    = 0;
     _effect = effect;
 
-    if (!is_static)
+    if (!is_static) {
       effect[_idx++] = CellTypeState::ref;
+    }
 
     do_parameters_on(this);
 
@@ -400,7 +401,9 @@ void GenerateOopMap::bb_mark_fct(GenerateOopMap *c, int bci, int *data) {
   if (c->is_bb_header(bci))
      return;
 
-  log_debug(generateoopmap)( "Basicblock#%d begins at: %d", c->_bb_count, bci);
+  if (TraceNewOopMapGeneration) {
+     tty->print_cr("Basicblock#%d begins at: %d", c->_bb_count, bci);
+  }
   c->set_bbmark_bit(bci);
   c->_bb_count++;
 }
@@ -911,12 +914,13 @@ void GenerateOopMap::do_interpretation()
   // iterated more than once.
   int i = 0;
   do {
-    if (log_is_enabled(Trace, generateoopmap)) {
-      LogStream st(Log(generateoopmap)::trace());
-      st.print("Iteration #%d of do_interpretation loop, method:", i);
-      method()->print_name(&st);
-      st.print("\n\n");
+#ifndef PRODUCT
+    if (TraceNewOopMapGeneration) {
+      tty->print("\n\nIteration #%d of do_interpretation loop, method:\n", i);
+      method()->print_name(tty);
+      tty->print("\n\n");
     }
+#endif
     _conflict = false;
     _monitor_safe = true;
     // init_state is now called from init_basic_blocks.  The length of a
@@ -1081,7 +1085,8 @@ void GenerateOopMap::initialize_vars() {
 
 void GenerateOopMap::add_to_ref_init_set(int localNo) {
 
-  log_debug(generateoopmap)("Added init vars: %d", localNo);
+  if (TraceNewOopMapGeneration)
+    tty->print_cr("Added init vars: %d", localNo);
 
   // Is it already in the set?
   if (_init_vars->contains(localNo) )
@@ -1280,13 +1285,13 @@ void GenerateOopMap::report_monitor_mismatch(const char *msg) {
 void GenerateOopMap::print_states(outputStream *os,
                                   CellTypeState* vec, int num) {
   for (int i = 0; i < num; i++) {
-    vec[i].print(os);
+    vec[i].print(tty);
   }
 }
 
 // Print the state values at the current bytecode.
-void GenerateOopMap::print_current_state(outputStream*   os,
-                                         BytecodeStream* currentBC,
+void GenerateOopMap::print_current_state(outputStream   *os,
+                                         BytecodeStream *currentBC,
                                          bool            detailed) {
   if (detailed) {
     os->print("     %4d vars     = ", currentBC->bci());
@@ -1308,7 +1313,6 @@ void GenerateOopMap::print_current_state(outputStream*   os,
     case Bytecodes::_invokestatic:
     case Bytecodes::_invokedynamic:
     case Bytecodes::_invokeinterface: {
-      ResourceMark rm;
       int idx = currentBC->has_index_u4() ? currentBC->get_index_u4() : currentBC->get_index_u2();
       ConstantPool* cp      = method()->constants();
       int nameAndTypeIdx    = cp->name_and_type_ref_index_at(idx, currentBC->code());
@@ -1339,9 +1343,8 @@ void GenerateOopMap::print_current_state(outputStream*   os,
 // Sets the current state to be the state after executing the
 // current instruction, starting in the current state.
 void GenerateOopMap::interp1(BytecodeStream *itr) {
-  if (log_is_enabled(Trace, generateoopmap)) {
-    LogStream st(Log(generateoopmap)::trace());
-    print_current_state(&st, itr, Verbose);
+  if (TraceNewOopMapGeneration) {
+    print_current_state(tty, itr, TraceNewOopMapGenerationDetailed);
   }
 
   // Should we report the results? Result is reported *before* the instruction at the current bci is executed.
@@ -1594,11 +1597,11 @@ void GenerateOopMap::interp1(BytecodeStream *itr) {
     case Bytecodes::_getfield:          do_field(true,   false, itr->get_index_u2(), itr->bci(), itr->code()); break;
     case Bytecodes::_putfield:          do_field(false,  false, itr->get_index_u2(), itr->bci(), itr->code()); break;
 
+    case Bytecodes::_invokeinterface:
     case Bytecodes::_invokevirtual:
-    case Bytecodes::_invokespecial:     do_method(false, false, itr->get_index_u2(), itr->bci(), itr->code()); break;
-    case Bytecodes::_invokestatic:      do_method(true,  false, itr->get_index_u2(), itr->bci(), itr->code()); break;
-    case Bytecodes::_invokedynamic:     do_method(true,  false, itr->get_index_u4(), itr->bci(), itr->code()); break;
-    case Bytecodes::_invokeinterface:   do_method(false, true,  itr->get_index_u2(), itr->bci(), itr->code()); break;
+    case Bytecodes::_invokespecial:     do_method(false, itr->get_index_u2(), itr->bci(), itr->code()); break;
+    case Bytecodes::_invokestatic:      do_method(true , itr->get_index_u2(), itr->bci(), itr->code()); break;
+    case Bytecodes::_invokedynamic:     do_method(true , itr->get_index_u4(), itr->bci(), itr->code()); break;
     case Bytecodes::_newarray:
     case Bytecodes::_anewarray:         pp_new_ref(vCTS, itr->bci()); break;
     case Bytecodes::_checkcast:         do_checkcast(); break;
@@ -1618,6 +1621,7 @@ void GenerateOopMap::interp1(BytecodeStream *itr) {
     case Bytecodes::_areturn:           do_return_monitor_check();
                                         ppop1(refCTS);
                                         break;
+
     case Bytecodes::_ifnull:
     case Bytecodes::_ifnonnull:         ppop1(refCTS); break;
     case Bytecodes::_multianewarray:    do_multianewarray(*(itr->bcp()+3), itr->bci()); break;
@@ -1943,13 +1947,15 @@ void GenerateOopMap::do_field(int is_get, int is_static, int idx, int bci, Bytec
     out = epsilonCTS;
     i   = copy_cts(in, eff);
   }
-  if (!is_static) in[i++] = CellTypeState::ref;
+  if (!is_static) {
+    in[i++] = CellTypeState::ref;
+  }
   in[i] = CellTypeState::bottom;
   assert(i<=3, "sanity check");
   pp(in, out);
 }
 
-void GenerateOopMap::do_method(int is_static, int is_interface, int idx, int bci, Bytecodes::Code bc) {
+void GenerateOopMap::do_method(int is_static, int idx, int bci, Bytecodes::Code bc) {
  // Dig up signature for field in constant pool
   ConstantPool* cp  = _method->constants();
   Symbol* signature   = cp->signature_ref_at(idx, bc);
@@ -2024,7 +2030,9 @@ void GenerateOopMap::ret_jump_targets_do(BytecodeStream *bcs, jmpFct_t jmpFct, i
     DEBUG_ONLY(BasicBlock* target_bb = &jsr_bb[1];)
     assert(target_bb  == get_basic_block_at(target_bci), "wrong calc. of successor basicblock");
     bool alive = jsr_bb->is_alive();
-    log_debug(generateoopmap)("pc = %d, ret -> %d alive: %s", bci, target_bci, alive ? "true" : "false");
+    if (TraceNewOopMapGeneration) {
+      tty->print("pc = %d, ret -> %d alive: %s\n", bci, target_bci, alive ? "true" : "false");
+    }
     if (alive) jmpFct(this, target_bci, data);
   }
 }
@@ -2042,7 +2050,6 @@ char* GenerateOopMap::state_vec_to_string(CellTypeState* vec, int len) {
   return _state_vec_buf;
 }
 
-#ifndef PRODUCT
 void GenerateOopMap::print_time() {
   tty->print_cr ("Accumulated oopmap times:");
   tty->print_cr ("---------------------------");
@@ -2050,7 +2057,6 @@ void GenerateOopMap::print_time() {
   tty->print_cr ("  (%3.0f bytecodes per sec) ",
   (double)GenerateOopMap::_total_byte_count / GenerateOopMap::_total_oopmap_time.seconds());
 }
-#endif
 
 //
 //  ============ Main Entry Point ===========
@@ -2060,16 +2066,27 @@ GenerateOopMap::GenerateOopMap(const methodHandle& method) {
   _method = method;
   _max_locals=0;
   _init_vars = nullptr;
+
+#ifndef PRODUCT
+  // If we are doing a detailed trace, include the regular trace information.
+  if (TraceNewOopMapGenerationDetailed) {
+    TraceNewOopMapGeneration = true;
+  }
+#endif
 }
 
 bool GenerateOopMap::compute_map(Thread* current) {
 #ifndef PRODUCT
+  if (TimeOopMap2) {
+    method()->print_short_name(tty);
+    tty->print("  ");
+  }
   if (TimeOopMap) {
     _total_byte_count += method()->code_size();
-    TraceTime t_all(nullptr, &_total_oopmap_time, TimeOopMap);
   }
 #endif
-  TraceTime t_single("oopmap time", TRACETIME_LOG(Debug, generateoopmap));
+  TraceTime t_single("oopmap time", TimeOopMap2);
+  TraceTime t_all(nullptr, &_total_oopmap_time, TimeOopMap);
 
   // Initialize values
   _got_error      = false;
@@ -2086,16 +2103,16 @@ bool GenerateOopMap::compute_map(Thread* current) {
   _did_rewriting  = false;
   _did_relocation = false;
 
-  if (log_is_enabled(Debug, generateoopmap)) {
-    ResourceMark rm;
-    LogStream st(Log(generateoopmap)::debug());
-    st.print_cr("Method name: %s\n", method()->name()->as_C_string());
-    _method->print_codes_on(&st);
-    st.print_cr("Exception table:");
-    ExceptionTable excps(method());
-    for (int i = 0; i < excps.length(); i ++) {
-      st.print_cr("[%d - %d] -> %d",
-                  excps.start_pc(i), excps.end_pc(i), excps.handler_pc(i));
+  if (TraceNewOopMapGeneration) {
+    tty->print("Method name: %s\n", method()->name()->as_C_string());
+    if (Verbose) {
+      _method->print_codes();
+      tty->print_cr("Exception table:");
+      ExceptionTable excps(method());
+      for(int i = 0; i < excps.length(); i ++) {
+        tty->print_cr("[%d - %d] -> %d",
+                      excps.start_pc(i), excps.end_pc(i), excps.handler_pc(i));
+      }
     }
   }
 
@@ -2162,7 +2179,7 @@ void GenerateOopMap::verify_error(const char *format, ...) {
 //
 void GenerateOopMap::report_result() {
 
-  log_debug(generateoopmap)("Report result pass");
+  if (TraceNewOopMapGeneration) tty->print_cr("Report result pass");
 
   // We now want to report the result of the parse
   _report_result = true;
@@ -2179,7 +2196,7 @@ void GenerateOopMap::report_result() {
 }
 
 void GenerateOopMap::result_for_basicblock(int bci) {
- log_debug(generateoopmap)("Report result pass for basicblock");
+ if (TraceNewOopMapGeneration) tty->print_cr("Report result pass for basicblock");
 
   // We now want to report the result of the parse
   _report_result = true;
@@ -2187,7 +2204,7 @@ void GenerateOopMap::result_for_basicblock(int bci) {
   // Find basicblock and report results
   BasicBlock* bb = get_basic_block_containing(bci);
   guarantee(bb != nullptr, "no basic block for bci");
-  assert(bb->is_reachable(), "getting result from unreachable basicblock %d", bci);
+  assert(bb->is_reachable(), "getting result from unreachable basicblock");
   bb->set_changed(true);
   interp_bb(bb);
 }
@@ -2199,7 +2216,9 @@ void GenerateOopMap::result_for_basicblock(int bci) {
 void GenerateOopMap::record_refval_conflict(int varNo) {
   assert(varNo>=0 && varNo< _max_locals, "index out of range");
 
-  log_trace(generateoopmap)("### Conflict detected (local no: %d)", varNo);
+  if (TraceOopMapRewrites) {
+     tty->print("### Conflict detected (local no: %d)\n", varNo);
+  }
 
   if (!_new_var_map) {
     _new_var_map = NEW_RESOURCE_ARRAY(int, _max_locals);
@@ -2238,12 +2257,10 @@ void GenerateOopMap::rewrite_refval_conflicts()
   // Tracing flag
   _did_rewriting = true;
 
-  if (log_is_enabled(Trace, generateoopmap)) {
-    ResourceMark rm;
-    LogStream st(Log(generateoopmap)::trace());
-    st.print_cr("ref/value conflict for method %s - bytecodes are getting rewritten", method()->name()->as_C_string());
-    method()->print_on(&st);
-    method()->print_codes_on(&st);
+  if (TraceOopMapRewrites) {
+    tty->print_cr("ref/value conflict for method %s - bytecodes are getting rewritten", method()->name()->as_C_string());
+    method()->print();
+    method()->print_codes();
   }
 
   assert(_new_var_map!=nullptr, "nothing to rewrite");
@@ -2253,7 +2270,9 @@ void GenerateOopMap::rewrite_refval_conflicts()
   if (!_got_error) {
     for (int k = 0; k < _max_locals && !_got_error; k++) {
       if (_new_var_map[k] != k) {
-        log_trace(generateoopmap)("Rewriting: %d -> %d", k, _new_var_map[k]);
+        if (TraceOopMapRewrites) {
+          tty->print_cr("Rewriting: %d -> %d", k, _new_var_map[k]);
+        }
         rewrite_refval_conflict(k, _new_var_map[k]);
         if (_got_error) return;
         nof_conflicts++;
@@ -2304,16 +2323,22 @@ bool GenerateOopMap::rewrite_refval_conflict_inst(BytecodeStream *itr, int from,
   int bci = itr->bci();
 
   if (is_aload(itr, &index) && index == from) {
-    log_trace(generateoopmap)("Rewriting aload at bci: %d", bci);
+    if (TraceOopMapRewrites) {
+      tty->print_cr("Rewriting aload at bci: %d", bci);
+    }
     return rewrite_load_or_store(itr, Bytecodes::_aload, Bytecodes::_aload_0, to);
   }
 
   if (is_astore(itr, &index) && index == from) {
     if (!stack_top_holds_ret_addr(bci)) {
-      log_trace(generateoopmap)("Rewriting astore at bci: %d", bci);
+      if (TraceOopMapRewrites) {
+        tty->print_cr("Rewriting astore at bci: %d", bci);
+      }
       return rewrite_load_or_store(itr, Bytecodes::_astore, Bytecodes::_astore_0, to);
     } else {
-      log_trace(generateoopmap)("Suppress rewriting of astore at bci: %d", bci);
+      if (TraceOopMapRewrites) {
+        tty->print_cr("Suppress rewriting of astore at bci: %d", bci);
+      }
     }
   }
 
@@ -2481,7 +2506,9 @@ void GenerateOopMap::compute_ret_adr_at_TOS() {
         // TDT: should this be is_good_address() ?
         if (_stack_top > 0 && stack()[_stack_top-1].is_address()) {
           _ret_adr_tos->append(bcs.bci());
-          log_debug(generateoopmap)("Ret_adr TOS at bci: %d", bcs.bci());
+          if (TraceNewOopMapGeneration) {
+            tty->print_cr("Ret_adr TOS at bci: %d", bcs.bci());
+          }
         }
         interp1(&bcs);
       }

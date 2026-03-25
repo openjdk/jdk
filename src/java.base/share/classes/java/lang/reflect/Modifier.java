@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,9 @@ import java.util.StringJoiner;
 
 /**
  * The Modifier class provides {@code static} methods and
- * constants to decode class and member access modifiers.  The sets of
- * modifiers are represented as integers with distinct bit positions
+ * constants to decode class and member access modifiers.
+ * The {@link AccessFlag} class should be used instead of this class.
+ * The sets of modifiers are represented as integers with non-distinct bit positions
  * representing different modifiers.  The values for the constants
  * representing the modifiers are taken from the tables in sections
  * {@jvms 4.1}, {@jvms 4.4}, {@jvms 4.5}, and {@jvms 4.7} of
@@ -40,8 +41,8 @@ import java.util.StringJoiner;
  * Not all modifiers that are syntactic Java language modifiers are
  * represented in this class, only those modifiers that <em>also</em>
  * have a corresponding JVM {@linkplain AccessFlag access flag} are
- * included. In particular the {@code default} method modifier (JLS
- * {@jls 9.4.3}) and the {@code sealed} and {@code non-sealed} class
+ * included. In particular, the {@code default} method modifier (JLS
+ * {@jls 9.4.3}) and the {@code value}, {@code sealed} and {@code non-sealed} class
  * (JLS {@jls 8.1.1.2}) and interface (JLS {@jls 9.1.1.4}) modifiers
  * are <em>not</em> represented in this class.
  *
@@ -122,6 +123,9 @@ public final class Modifier {
     /**
      * Return {@code true} if the integer argument includes the
      * {@code synchronized} modifier, {@code false} otherwise.
+     *
+     * @apiNote {@code isSynchronized} should only be called with the modifiers
+     * of a {@linkplain Method#getModifiers() method}.
      *
      * @param   mod a set of modifiers
      * @return {@code true} if {@code mod} includes the
@@ -207,7 +211,7 @@ public final class Modifier {
      * Return a string describing the access modifier flags in
      * the specified modifier. For example:
      * <blockquote><pre>
-     *    public final synchronized strictfp
+     *    public final synchronized
      * </pre></blockquote>
      * The modifier names are returned in an order consistent with the
      * suggested modifier orderings given in sections 8.1.1, 8.3.1, 8.4.3, 8.8.3, and 9.1.1 of

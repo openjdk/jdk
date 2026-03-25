@@ -91,45 +91,106 @@ JIMAGE_Close(JImageFile* image) {
  * name, a version string and the name of a class/resource, return location
  * information describing the resource and its size. If no resource is found, the
  * function returns JIMAGE_NOT_FOUND and the value of size is undefined.
- * The version number should be "9.0" and is not used in locating the resource.
  * The resulting location does/should not have to be released.
  * All strings are utf-8, zero byte terminated.
  *
  *  Ex.
  *   jlong size;
  *   JImageLocationRef location = (*JImageFindResource)(image,
- *                                 "java.base", "9.0", "java/lang/String.class", &size);
+ *           "java.base", "java/lang/String.class", is_preview_mode, &size);
  */
 extern "C" JNIEXPORT JImageLocationRef
 JIMAGE_FindResource(JImageFile* image,
-        const char* module_name, const char* version, const char* name,
+        const char* module_name, const char* name, bool is_preview_mode,
         jlong* size) {
-    // Concatenate to get full path
-    char fullpath[IMAGE_MAX_PATH];
-    size_t moduleNameLen = strlen(module_name);
-    size_t nameLen = strlen(name);
-    size_t index;
+    static const char str_modules[] = "modules";
+    static const char str_packages[] = "packages";
+    static const char preview_infix[] = "/META-INF/preview";
 
-    assert(moduleNameLen > 0 && "module name must be non-empty");
-    assert(nameLen > 0 && "name must non-empty");
+    size_t module_name_len = strlen(module_name);
+    size_t name_len = strlen(name);
+    size_t preview_infix_len = strlen(preview_infix);
+    assert(module_name_len > 0 && "module name must be non-empty");
+    assert(name_len > 0 && "name must non-empty");
 
-    // If the concatenated string is too long for the buffer, return not found
-    if (1 + moduleNameLen + 1 + nameLen + 1 > IMAGE_MAX_PATH) {
+    // Do not attempt to lookup anything of the form /modules/... or /packages/...
+    if (strncmp(module_name, str_modules, sizeof(str_modules)) == 0
+            || strncmp(module_name, str_packages, sizeof(str_packages)) == 0) {
+        return 0L;
+    }
+    // If the preview mode version of the path string is too long for the buffer,
+    // return not found (even when not in preview mode).
+    if (1 + module_name_len + preview_infix_len + 1 + name_len + 1 > IMAGE_MAX_PATH) {
         return 0L;
     }
 
-    index = 0;
-    fullpath[index++] = '/';
-    memcpy(&fullpath[index], module_name, moduleNameLen);
-    index += moduleNameLen;
-    fullpath[index++] = '/';
-    memcpy(&fullpath[index], name, nameLen);
-    index += nameLen;
-    fullpath[index++] = '\0';
+    // Concatenate to get full path
+    char name_buffer[IMAGE_MAX_PATH];
+    char* path;
+    {   // Write the buffer with room to prepend the preview mode infix
+        // at the start (saves copying the trailing name part twice).
+        size_t index = preview_infix_len;
+        name_buffer[index++] = '/';
+        memcpy(&name_buffer[index], module_name, module_name_len);
+        index += module_name_len;
+        name_buffer[index++] = '/';
+        memcpy(&name_buffer[index], name, name_len);
+        index += name_len;
+        name_buffer[index++] = '\0';
+        // Path begins at the leading '/' (not the start of the buffer).
+        path = &name_buffer[preview_infix_len];
+    }
 
-    JImageLocationRef loc =
-            (JImageLocationRef) ((ImageFileReader*) image)->find_location_index(fullpath, (u8*) size);
-    return loc;
+    // find_location_index() returns the data "offset", not an index.
+    const ImageFileReader* image_file = (ImageFileReader*) image;
+    u4 locOffset = image_file->find_location_index(path, (u8*) size);
+    if (locOffset != 0) {
+        ImageLocation loc;
+        loc.set_data(image_file->get_location_offset_data(locOffset));
+
+        u4 flags = loc.get_preview_flags();
+        // No preview flags means "a normal resource, without a preview version".
+        // This is the overwhelmingly common case, with or without preview mode.
+        if (flags == 0) {
+            return locOffset;
+        }
+        // Regardless of preview mode, don't return resources requested directly
+        // via their preview path.
+        if ((flags & ImageLocation::FLAGS_IS_PREVIEW_VERSION) != 0) {
+            return 0L;
+        }
+        // Even if there is a preview version, we might not want to return it.
+        if (!is_preview_mode || (flags & ImageLocation::FLAGS_HAS_PREVIEW_VERSION) == 0) {
+            return locOffset;
+        }
+    } else if (!is_preview_mode) {
+        // No normal resource found, and not in preview mode.
+        return 0L;
+    }
+
+    // We are in preview mode, and the preview version of the resource is needed.
+    // This is either because:
+    // 1. The normal resource was flagged as having a preview version (rare)
+    // 2. This is a preview-only resource (there was no normal resource, very rare)
+    // 3. The requested resource doesn't exist (this should typically not happen)
+    //
+    // Since we only expect requests for resources which exist in jimage files, we
+    // expect this 2nd lookup to succeed (this is contrary to the expectations for
+    // the JRT file system, where non-existent resource lookups are common).
+
+    {   // Rewrite the front of the name buffer to make it a preview path.
+        size_t index = 0;
+        name_buffer[index++] = '/';
+        memcpy(&name_buffer[index], module_name, module_name_len);
+        index += module_name_len;
+        memcpy(&name_buffer[index], preview_infix, preview_infix_len);
+        index += preview_infix_len;
+        // Check we copied up to the expected '/' separator.
+        assert(name_buffer[index] == '/' && "bad string concatenation");
+        // The preview path now begins at the start of the buffer.
+        path = &name_buffer[0];
+    }
+    return image_file->find_location_index(path, (u8*) size);
 }
 
 /*

@@ -48,22 +48,16 @@ public enum PackageType {
     LINUX_RPM(".rpm", OperatingSystem.LINUX),
     MAC_DMG(".dmg", OperatingSystem.MACOS),
     MAC_PKG(".pkg", OperatingSystem.MACOS),
-    IMAGE(OperatingSystem.current()),
-    WIN_IMAGE(OperatingSystem.WINDOWS),
-    LINUX_IMAGE(OperatingSystem.LINUX),
-    MAC_IMAGE(OperatingSystem.MACOS),
-    ;
+    IMAGE;
 
-    PackageType(OperatingSystem os) {
-        this.os = Objects.requireNonNull(os);
+    PackageType() {
         type  = "app-image";
         suffix = null;
-        supported = (os == OperatingSystem.current());
-        enabled = supported;
+        supported = true;
+        enabled = true;
     }
 
     PackageType(String packageName, String bundleSuffix, OperatingSystem os) {
-        this.os = Objects.requireNonNull(os);
         type  = Objects.requireNonNull(packageName);
         suffix = Objects.requireNonNull(bundleSuffix);
         supported = isSupported(new BundlingOperationDescriptor(os, type));
@@ -94,27 +88,8 @@ public enum PackageType {
         return enabled;
     }
 
-    public boolean isAppImage() {
-        return type.equals(IMAGE.type);
-    }
-
-    public boolean isNative() {
-        return !isAppImage();
-    }
-
     public String getType() {
         return type;
-    }
-
-    public OperatingSystem os() {
-        return os;
-    }
-
-    public static PackageType appImageForOS(OperatingSystem os) {
-        Objects.requireNonNull(os);
-        return Stream.of(LINUX_IMAGE, MAC_IMAGE, WIN_IMAGE).filter(type -> {
-            return type.os() == os;
-        }).findFirst().orElseThrow();
     }
 
     public static RuntimeException throwSkippedExceptionIfNativePackagingUnavailable() {
@@ -140,7 +115,6 @@ public enum PackageType {
         return new LinkedHashSet<>(List.of(types));
     }
 
-    private final OperatingSystem os;
     private final String type;
     private final String suffix;
     private final boolean enabled;
@@ -151,10 +125,6 @@ public enum PackageType {
     public static final Set<PackageType> MAC = orderedSet(MAC_DMG, MAC_PKG);
     public static final Set<PackageType> NATIVE = Stream.of(LINUX, WINDOWS, MAC)
             .flatMap(Collection::stream).collect(Collectors.toUnmodifiableSet());
-
-    public static final Set<PackageType> ALL_LINUX = orderedSet(LINUX_IMAGE, LINUX_DEB, LINUX_RPM);
-    public static final Set<PackageType> ALL_WINDOWS = orderedSet(WIN_IMAGE, WIN_MSI, WIN_EXE);
-    public static final Set<PackageType> ALL_MAC = orderedSet(MAC_IMAGE, MAC_DMG, MAC_PKG);
 
     private static final class Inner {
         private static final Set<String> DISABLED_PACKAGERS = Optional.ofNullable(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,23 @@
  */
 package org.w3c.dom.ptests;
 
-import org.junit.jupiter.api.Test;
+import static org.testng.Assert.assertEquals;
+import static org.w3c.dom.ptests.DOMTestUtil.createDOM;
+
+import java.io.IOException;
+
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Notation;
 import org.xml.sax.SAXException;
 
-import javax.xml.parsers.ParserConfigurationException;
-import java.io.IOException;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.w3c.dom.ptests.DOMTestUtil.createDOM;
-
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run junit/othervm org.w3c.dom.ptests.NotationTest
+ * @run testng/othervm org.w3c.dom.ptests.NotationTest
  * @summary Test for Notation interface
  */
 public class NotationTest {
@@ -46,7 +47,7 @@ public class NotationTest {
      */
     @Test
     public void testGetSystemId() throws Exception {
-        assertEquals("http://who.knows.where/", findNotation("gs").getSystemId());
+        assertEquals(findNotation("gs").getSystemId(), "http://who.knows.where/");
     }
 
     /*
@@ -54,7 +55,7 @@ public class NotationTest {
      */
     @Test
     public void testGetPublicId() throws Exception {
-        assertEquals("pubId", findNotation("pubname").getPublicId());
+        assertEquals(findNotation("pubname").getPublicId(), "pubId");
     }
 
     //find notation in Notation01.xml

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,10 @@ public class Bits {
     private static final int wordshift = 5;
     private static final int wordmask = wordlen - 1;
 
-    public int[] bits = null;
+    /* every int in the bits array is used to represent 32 bits, so the bits array will have
+     * length == 1 until we need to represent the 33rd bit and so on.
+     */
+    private int[] bits = null;
     // This field will store last version of bits after every change.
     private static final int[] unassignedBits = new int[0];
 

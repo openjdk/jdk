@@ -34,6 +34,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 import jdk.internal.misc.CDS;
+import jdk.internal.misc.PreviewFeatures;
+import jdk.internal.value.DeserializeConstructor;
 import jdk.internal.util.DecimalDigits;
 import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.ForceInline;
@@ -55,10 +57,19 @@ import static java.lang.String.COMPACT_STRINGS;
  * with a {@code long}.
  *
  * <p>This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; programmers should treat instances that are
- * {@linkplain #equals(Object) equal} as interchangeable and should not
- * use instances for synchronization, or unpredictable behavior may
- * occur. For example, in a future release, synchronization may fail.
+ * class; programmers should treat instances that are {@linkplain #equals(Object) equal}
+ * as interchangeable and should not use instances for synchronization, mutexes, or
+ * with {@linkplain java.lang.ref.Reference object references}.
+ *
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          When preview features are enabled, {@code Long} is a {@linkplain Class#isValue value class}.
+ *          Use of value class instances for synchronization, mutexes, or with
+ *          {@linkplain java.lang.ref.Reference object references} result in
+ *          {@link IdentityException}.
+ *      </div>
+ * </div>
+ *
  *
  * <p>Implementation note: The implementations of the "bit twiddling"
  * methods (such as {@link #highestOneBit(long) highestOneBit} and
@@ -69,6 +80,7 @@ import static java.lang.String.COMPACT_STRINGS;
  *
  * @since   1.0
  */
+@jdk.internal.MigratedValueClass
 @jdk.internal.ValueBased
 public final class Long extends Number
         implements Comparable<Long>, Constable, ConstantDesc {
@@ -941,24 +953,38 @@ public final class Long extends Number
     /**
      * Returns a {@code Long} instance representing the specified
      * {@code long} value.
-     * If a new {@code Long} instance is not required, this method
-     * should generally be used in preference to the constructor
-     * {@link #Long(long)}, as this method is likely to yield
-     * significantly better space and time performance by caching
-     * frequently requested values.
-     *
-     * This method will always cache values in the range -128 to 127,
-     * inclusive, and may cache other values outside of this range.
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          <p>
+     *              - When preview features are NOT enabled, {@code Long} is an identity class.
+     *              If a new {@code Long} instance is not required, this method
+     *              should generally be used in preference to the constructor
+     *              {@link #Long(long)}, as this method is likely to yield
+     *              significantly better space and time performance by caching
+     *              frequently requested values.
+     *              This method will always cache values in the range -128 to 127,
+     *              inclusive, and may cache other values outside of this range.
+     *          </p>
+     *          <p>
+     *              - When preview features are enabled, {@code Long} is a {@linkplain Class#isValue value class}.
+     *              The {@code valueOf} behavior is the same as invoking the constructor,
+     *              whether cached or not.
+     *          </p>
+     *      </div>
+     * </div>
      *
      * @param  l a long value.
      * @return a {@code Long} instance representing {@code l}.
      * @since  1.5
      */
     @IntrinsicCandidate
+    @DeserializeConstructor
     public static Long valueOf(long l) {
-        final int offset = 128;
-        if (l >= -128 && l <= 127) { // will cache
-            return LongCache.cache[(int)l + offset];
+        if (!PreviewFeatures.isEnabled()) {
+            if (l >= -128 && l <= 127) { // will cache
+                final int offset = 128;
+                return LongCache.cache[(int) l + offset];
+            }
         }
         return new Long(l);
     }

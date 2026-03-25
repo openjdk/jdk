@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  */
 
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+import org.testng.SkipException;
 
 import java.io.IOException;
 import java.net.URI;
@@ -31,26 +36,14 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.stream.Stream;
-
 import jdk.test.lib.Platform;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-
-import org.junit.jupiter.api.AfterAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import org.junit.jupiter.api.Assumptions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.NullSource;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertThrows;
+import static org.testng.Assert.assertTrue;
 
 /**
  * @test
@@ -59,7 +52,7 @@ import org.junit.jupiter.params.provider.NullSource;
  * @modules jdk.zipfs
  * @library /test/lib
  * @compile NewFileSystemTests.java
- * @run junit NewFileSystemTests
+ * @run testng NewFileSystemTests
  */
 public class NewFileSystemTests {
 
@@ -75,8 +68,8 @@ public class NewFileSystemTests {
     /**
      * Create the JAR file used by the tests
      */
-    @BeforeAll
-    public static void setUp() throws Exception {
+    @BeforeClass
+    public void setUp() throws Exception {
         jarFile = Utils.createJarFile("basic.jar",
                 "README");
         jarURI = new URI(ZIPFS_SCHEME, jarFile.toUri().toString(), null);
@@ -86,8 +79,8 @@ public class NewFileSystemTests {
     /**
      * Remove JAR file used by test as part of clean-up
      */
-    @AfterAll
-    public static void tearDown() throws Exception {
+    @AfterClass
+    public void tearDown() throws Exception {
         Files.deleteIfExists(jarFile);
     }
 
@@ -124,9 +117,7 @@ public class NewFileSystemTests {
      *
      * @throws IOException
      */
-    @ParameterizedTest
-    @MethodSource("classLoaders")
-    @NullSource
+    @Test(dataProvider = "classLoaders")
     public void testNewFileSystemPathClassLoader(ClassLoader cl) throws Exception {
         try (FileSystem zipfs = FileSystems.newFileSystem(Path.of("basic.jar"),
                 cl)) {
@@ -140,9 +131,7 @@ public class NewFileSystemTests {
      *
      * @throws IOException
      */
-    @ParameterizedTest
-    @MethodSource("classLoaders")
-    @NullSource
+    @Test(dataProvider = "classLoaders")
     public void testNewFileSystemPathMapClassLoader(ClassLoader cl) throws Exception {
         try (FileSystem zipfs = FileSystems.newFileSystem(Path.of("basic.jar"),
                 ZIPFS_OPTIONS, cl)) {
@@ -169,9 +158,7 @@ public class NewFileSystemTests {
      *
      * @throws IOException
      */
-    @ParameterizedTest
-    @MethodSource("classLoaders")
-    @NullSource
+    @Test(dataProvider = "classLoaders")
     public void testNewFileSystemURIMapClassLoader(ClassLoader cl) throws Exception {
         try (FileSystem zipfs = FileSystems.newFileSystem(jarURI, ZIPFS_OPTIONS,
                 cl)) {
@@ -197,17 +184,17 @@ public class NewFileSystemTests {
      * opened if the underlying file is missing, but even with this set, a ZIP
      * file system cannot be opened for conflicting or invalid access modes.
      */
-    protected static Stream<Arguments> badEnvMap() {
-        return Stream.of(
-                Arguments.of(Map.of(), NoSuchFileException.class),
-                Arguments.of(Map.of("accessMode", "readOnly"), NoSuchFileException.class),
-                Arguments.of(Map.of("accessMode", "readWrite"), NoSuchFileException.class),
-                Arguments.of(Map.of("create", true, "accessMode", "readOnly"), IllegalArgumentException.class),
-                Arguments.of(Map.of("create", true, "accessMode", "badValue"), IllegalArgumentException.class)
-        );
+    @DataProvider(name = "badEnvMap")
+    protected Object[][] badEnvMap() {
+        return new Object[][]{
+                {Map.of(), NoSuchFileException.class},
+                {Map.of("accessMode", "readOnly"), NoSuchFileException.class},
+                {Map.of("accessMode", "readWrite"), NoSuchFileException.class},
+                {Map.of("create", true, "accessMode", "readOnly"), IllegalArgumentException.class},
+                {Map.of("create", true, "accessMode", "badValue"), IllegalArgumentException.class},
+        };
     }
-    @ParameterizedTest
-    @MethodSource("badEnvMap")
+    @Test(dataProvider = "badEnvMap")
     public void badArgumentsFailure(Map<String, String> env, Class<? extends Throwable> exception) throws IOException {
         assertThrows(exception, () -> FileSystems.newFileSystem(Path.of("no_such.zip"), env));
     }
@@ -222,7 +209,9 @@ public class NewFileSystemTests {
         Path multiReleaseJar = createMultiReleaseJar();
         try (FileSystem fs = FileSystems.newFileSystem(multiReleaseJar, Map.of("accessMode", "readWrite"))) {
             assertFalse(fs.isReadOnly());
-            assertEquals("Default version", Files.readString(fs.getPath("file.txt"), UTF_8),
+            assertEquals(
+                    Files.readString(fs.getPath("file.txt"), UTF_8),
+                    "Default version",
                     "unexpected file content");
         }
     }
@@ -233,7 +222,9 @@ public class NewFileSystemTests {
      */
     @Test
     public void readOnlyZipFileFailure() throws IOException {
-        Assumptions.assumeFalse(Platform.isRoot(), "Test skipped when executed by root user.");
+        if (Platform.isRoot()) {
+            throw new SkipException("Test skipped when executed by root user.");
+        }
         // Underlying file is read-only.
         Path readOnlyZip = Utils.createJarFile("read_only.zip", Map.of("file.txt", "Hello World"));
         // In theory this can fail, and we should avoid unwanted false-negatives.
@@ -252,7 +243,9 @@ public class NewFileSystemTests {
         Path multiReleaseJar = createMultiReleaseJar();
         try (FileSystem fs = FileSystems.newFileSystem(multiReleaseJar, Map.of("releaseVersion", "1"))) {
             assertTrue(fs.isReadOnly());
-            assertEquals("First version", Files.readString(fs.getPath("file.txt"), UTF_8),
+            assertEquals(
+                    Files.readString(fs.getPath("file.txt"), UTF_8),
+                    "First version",
                     "unexpected file content");
         }
     }
@@ -280,13 +273,15 @@ public class NewFileSystemTests {
     }
 
     /*
-     * MethodSource used to verify that a Zip file system may be returned
+     * DataProvider used to verify that a Zip file system may be returned
      * when specifying a class loader
      */
-    private static Stream<Arguments> classLoaders() {
-        return Stream.of(
-                Arguments.of(ClassLoader.getSystemClassLoader())
-        );
+    @DataProvider(name = "classLoaders")
+    private Object[][] classLoaders() {
+        return new Object[][]{
+                {null},
+                {ClassLoader.getSystemClassLoader()}
+        };
     }
 
     /**
@@ -299,11 +294,11 @@ public class NewFileSystemTests {
         assertNotNull(fs, "Error: FileSystem was not returned");
         assertTrue(fs.provider().getScheme().equalsIgnoreCase(ZIPFS_SCHEME));
         assertTrue(fs.isOpen());
-        assertEquals("/", fs.getSeparator());
+        assertEquals(fs.getSeparator(), "/");
 
         // one root
         Iterator<Path> roots = fs.getRootDirectories().iterator();
-        assertEquals("/", roots.next().toString());
+        assertTrue(roots.next().toString().equals("/"));
         assertFalse(roots.hasNext());
     }
 }

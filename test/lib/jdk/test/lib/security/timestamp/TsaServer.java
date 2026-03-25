@@ -50,6 +50,7 @@ public class TsaServer implements AutoCloseable {
      * @param handler a {@link TsaHandler} instance
      * @throws IOException the I/O exception
      */
+    @SuppressWarnings("initialization")
     public TsaServer(int port, TsaHandler handler) throws IOException {
         server = HttpServer.create(new InetSocketAddress(port), 0);
         if (handler != null) {

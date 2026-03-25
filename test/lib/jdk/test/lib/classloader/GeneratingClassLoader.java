@@ -66,6 +66,7 @@ public class GeneratingClassLoader extends ClassLoader {
      * Create generating class loader that will use class file for given class
      * from classpath as template.
      */
+    @SuppressWarnings("initialization")
     public GeneratingClassLoader(String templateClassName) {
         this.templateClassName = templateClassName;
         classPath = System.getProperty("java.class.path").split(File.pathSeparator);

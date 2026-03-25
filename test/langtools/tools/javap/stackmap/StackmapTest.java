@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,10 +66,10 @@ public class StackmapTest {
         "}\n";
 
     private static final String goldenOut =
-        "        frame_type = 255 /* full_frame */\n" +
-        "        frame_type = 255 /* full_frame */\n" +
+        "        frame_type = 255 /* full_entry */\n" +
+        "        frame_type = 255 /* full_entry */\n" +
         "        frame_type = 73 /* same_locals_1_stack_item */\n" +
-        "        frame_type = 255 /* full_frame */\n" +
+        "        frame_type = 255 /* full_entry */\n" +
         "          offset_delta = 19\n" +
         "          offset_delta = 0\n" +
         "          offset_delta = 2\n" +

@@ -1256,7 +1256,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                         Kinds.Kind symKind = cs.kind;
                         cs.reset();
                         if (symKind == ERR) {
-                            cs.type = new ClassType(cs.type.getEnclosingType(), null, cs);
+                            cs.type = new ClassType(cs.type.getEnclosingType(), null, cs, List.nil());
                         }
                         if (cs.isCompleted()) {
                             cs.completer = initialCompleter;

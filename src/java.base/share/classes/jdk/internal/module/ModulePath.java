@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,9 @@ public class ModulePath implements ModuleFinder {
 
     // true for the link phase (supports modules packaged in JMOD format)
     private final boolean isLinkPhase;
+    // true if the found modules should return preview versions of resources
+    // (this must only be set for system modules).
+    private final boolean previewMode;
 
     // for patching modules, can be null
     private final ModulePatcher patcher;
@@ -99,10 +102,12 @@ public class ModulePath implements ModuleFinder {
 
     private ModulePath(Runtime.Version version,
                        boolean isLinkPhase,
+                       boolean previewMode,
                        ModulePatcher patcher,
                        Path... entries) {
         this.releaseVersion = version;
         this.isLinkPhase = isLinkPhase;
+        this.previewMode = previewMode;
         this.patcher = patcher;
         this.entries = entries.clone();
         for (Path entry : this.entries) {
@@ -111,12 +116,24 @@ public class ModulePath implements ModuleFinder {
     }
 
     /**
+     * Returns a ModuleFinder for an exploded JDK build where {@code moduleDir}
+     * is the $JAVA_HOME/modules directory. The modules may be patched by the
+     * given ModulePatcher.
+     *
+     * <p>Preview mode is only permitted for system modules, and this method
+     * should only be called from {@link SystemModuleFinders#ofSystem()}.
+     */
+    public static ModuleFinder of(ModulePatcher patcher, boolean previewMode, Path moduleDir) {
+        return new ModulePath(JarFile.runtimeVersion(), false, previewMode, patcher, moduleDir);
+    }
+
+    /**
      * Returns a ModuleFinder that locates modules on the file system by
      * searching a sequence of directories and/or packaged modules. The modules
      * may be patched by the given ModulePatcher.
      */
     public static ModuleFinder of(ModulePatcher patcher, Path... entries) {
-        return new ModulePath(JarFile.runtimeVersion(), false, patcher, entries);
+        return new ModulePath(JarFile.runtimeVersion(), false, false, patcher, entries);
     }
 
     /**
@@ -137,7 +154,7 @@ public class ModulePath implements ModuleFinder {
     public static ModuleFinder of(Runtime.Version version,
                                   boolean isLinkPhase,
                                   Path... entries) {
-        return new ModulePath(version, isLinkPhase, null, entries);
+        return new ModulePath(version, isLinkPhase, false, null, entries);
     }
 
 
@@ -692,7 +709,7 @@ public class ModulePath implements ModuleFinder {
             // for now
             return null;
         }
-        return ModuleReferences.newExplodedModule(attrs, patcher, dir);
+        return ModuleReferences.newExplodedModule(attrs, patcher, previewMode, dir);
     }
 
     /**

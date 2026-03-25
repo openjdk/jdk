@@ -22,6 +22,7 @@
  */
 
 import jdk.internal.jimage.ImageReader;
+import jdk.internal.jimage.PreviewMode;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -54,7 +55,7 @@ public class ImageReaderDuplicateChildNodesTest {
         System.out.println("Running test against image " + imagePath);
         final String integersParentResource = "/modules/java.base/java/lang";
         final String integerResource = integersParentResource + "/Integer.class";
-        try (final ImageReader reader = ImageReader.open(imagePath)) {
+        try (final ImageReader reader = ImageReader.open(imagePath, PreviewMode.DISABLED)) {
             // find the child node/resource first
             final ImageReader.Node integerNode = reader.findNode(integerResource);
             if (integerNode == null) {

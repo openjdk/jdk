@@ -25,6 +25,7 @@
  * @test
  * @bug 8266925
  * @summary hidden class members can't be statically invocable
+ * @enablePreview
  * @modules java.base/jdk.internal.misc
  * @build java.base/*
  * @run junit StaticInvocableTest
@@ -116,7 +117,7 @@ public class StaticInvocableTest {
     public static byte[] dumpClass(String pkg) {
         return ClassFile.of().build(ClassDesc.of(pkg.replace('/', '.'), "MyClass"), clb -> {
             clb.withSuperclass(CD_Object);
-            clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
+            clb.withFlags(AccessFlag.PUBLIC, AccessFlag.IDENTITY);
             clb.withMethodBody(INIT_NAME, MTD_void, 0, cob -> {
                 cob.aload(0);
                 cob.invokespecial(CD_Object, INIT_NAME, MTD_void);

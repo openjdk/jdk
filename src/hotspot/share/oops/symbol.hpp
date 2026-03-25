@@ -240,6 +240,12 @@ class Symbol : public MetaspaceObj {
     return code_byte == char_at(position);
   }
 
+  // True if this is a descriptor for a method with void return.
+  // (Assumes it is a valid descriptor.)
+  bool is_void_method_signature() const {
+    return starts_with('(') && ends_with('V');
+  }
+
   // Test if the symbol has the give substring at or after the i-th char.
   int index_of_at(int i, const char* substr, int substr_len) const;
 

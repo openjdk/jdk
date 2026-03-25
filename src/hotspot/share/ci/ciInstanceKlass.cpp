@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,22 @@
  */
 
 #include "ci/ciField.hpp"
+#include "ci/ciInlineKlass.hpp"
 #include "ci/ciInstance.hpp"
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/fieldStreams.inline.hpp"
+#include "oops/inlineKlass.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -65,10 +69,11 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
   _has_nonstatic_concrete_methods = ik->has_nonstatic_concrete_methods();
   _is_hidden = ik->is_hidden();
   _is_record = ik->is_record();
+  _declared_nonstatic_fields = nullptr; // initialized lazily by compute_nonstatic_fields
+  _nonstatic_fields = nullptr;          // initialized lazily by compute_nonstatic_fields
   _trust_final_fields = ik->trust_final_fields();
-  _nonstatic_fields = nullptr; // initialized lazily by compute_nonstatic_fields:
   _has_injected_fields = -1;
-  _implementor = nullptr; // we will fill these lazily
+  _implementor = nullptr;               // we will fill these lazily
   _transitive_interfaces = nullptr;
 
   // Ensure that the metadata wrapped by the ciMetadata is kept alive by GC.
@@ -115,13 +120,15 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
 
 // Version for unloaded classes:
 ciInstanceKlass::ciInstanceKlass(ciSymbol* name,
-                                 jobject loader)
-  : ciKlass(name, T_OBJECT)
+                                 jobject loader,
+                                 BasicType bt)
+  : ciKlass(name, bt)
 {
   assert(name->char_at(0) != JVM_SIGNATURE_ARRAY, "not an instance klass");
   _init_state = (InstanceKlass::ClassState)0;
   _has_nonstatic_fields = false;
-  _nonstatic_fields = nullptr;
+  _declared_nonstatic_fields = nullptr; // initialized lazily by compute_nonstatic_fields
+  _nonstatic_fields = nullptr;          // initialized lazily by compute_nonstatic_fields
   _has_injected_fields = -1;
   _is_hidden = false;
   _is_record = false;
@@ -319,11 +326,11 @@ void ciInstanceKlass::print_impl(outputStream* st) {
               bool_to_str(has_subklass()),
               layout_helper());
 
-    _flags.print_klass_flags();
+    _flags.print_klass_flags(st);
 
     if (_super) {
       st->print(" super=");
-      _super->print_name();
+      _super->print_name_on(st);
     }
     if (_java_mirror) {
       st->print(" mirror=PRESENT");
@@ -394,10 +401,11 @@ bool ciInstanceKlass::contains_field_offset(int offset) {
 
 ciField* ciInstanceKlass::get_nonstatic_field_by_offset(const int field_offset) {
   for (int i = 0, len = nof_nonstatic_fields(); i < len; i++) {
-    ciField* field = _nonstatic_fields->at(i);
+    ciField* field = nonstatic_field_at(i);
     int field_off = field->offset_in_bytes();
-    if (field_off == field_offset)
+    if (field_off == field_offset) {
       return field;
+    }
   }
   return nullptr;
 }
@@ -408,6 +416,7 @@ ciField* ciInstanceKlass::get_field_by_offset(int field_offset, bool is_static) 
   if (!is_static) {
     return get_nonstatic_field_by_offset(field_offset);
   }
+
   VM_ENTRY_MARK;
   InstanceKlass* k = get_instanceKlass();
   fieldDescriptor fd;
@@ -416,6 +425,39 @@ ciField* ciInstanceKlass::get_field_by_offset(int field_offset, bool is_static) 
   }
   ciField* field = new (CURRENT_THREAD_ENV->arena()) ciField(&fd);
   return field;
+}
+
+ciField* ciInstanceKlass::get_non_flat_field_by_offset(int field_offset) {
+  for (int i = 0, len = nof_declared_nonstatic_fields(); i < len; i++) {
+    ciField* field = declared_nonstatic_field_at(i);
+    int field_off = field->offset_in_bytes();
+    if (field_off == field_offset) {
+      return field;
+    }
+  }
+  return nullptr;
+}
+
+int ciInstanceKlass::field_index_by_offset(int offset) {
+  int best_offset = 0;
+  int best_index = -1;
+  // Search the field with the given offset
+  for (int i = 0; i < nof_declared_nonstatic_fields(); ++i) {
+    int field_offset = declared_nonstatic_field_at(i)->offset_in_bytes();
+    if (field_offset == offset) {
+      // Exact match
+      return i;
+    } else if (field_offset < offset && field_offset > best_offset) {
+      // No exact match. Save the index of the field with the closest offset that
+      // is smaller than the given field offset. This index corresponds to the
+      // flat field that holds the field we are looking for.
+      best_offset = field_offset;
+      best_index = i;
+    }
+  }
+  assert(best_index >= 0, "field not found");
+  assert(best_offset == offset || declared_nonstatic_field_at(best_index)->type()->is_inlinetype(), "offset should match for non-inline types");
+  return best_index;
 }
 
 // ------------------------------------------------------------------
@@ -431,6 +473,8 @@ ciField* ciInstanceKlass::get_field_by_name(ciSymbol* name, ciSymbol* signature,
   ciField* field = new (CURRENT_THREAD_ENV->arena()) ciField(&fd);
   return field;
 }
+
+const GrowableArray<ciField*> empty_field_array(0, MemTag::mtCompiler);
 
 // This is essentially a shortcut for:
 //   get_field_by_offset(field_offset, is_static)->layout_type()
@@ -457,83 +501,120 @@ BasicType ciInstanceKlass::get_field_type_by_offset(const int field_offset, cons
   return type2field[make(field_type)->basic_type()];
 }
 
-// ------------------------------------------------------------------
-// ciInstanceKlass::compute_nonstatic_fields
-int ciInstanceKlass::compute_nonstatic_fields() {
+void ciInstanceKlass::compute_nonstatic_fields() {
   assert(is_loaded(), "must be loaded");
 
-  if (_nonstatic_fields != nullptr)
-    return _nonstatic_fields->length();
+  if (_nonstatic_fields != nullptr) {
+    assert(_declared_nonstatic_fields != nullptr, "must be initialized at the same time, class %s", name()->as_utf8());
+    return;
+  }
 
   if (!has_nonstatic_fields()) {
-    Arena* arena = CURRENT_ENV->arena();
-    _nonstatic_fields = new (arena) GrowableArray<ciField*>(arena, 0, 0, nullptr);
-    return 0;
+    _declared_nonstatic_fields = &empty_field_array;
+    _nonstatic_fields = &empty_field_array;
+    return;
   }
   assert(!is_java_lang_Object(), "bootstrap OK");
 
   ciInstanceKlass* super = this->super();
-  GrowableArray<ciField*>* super_fields = nullptr;
-  if (super != nullptr && super->has_nonstatic_fields()) {
-    int super_flen   = super->nof_nonstatic_fields();
-    super_fields = super->_nonstatic_fields;
-    assert(super_flen == 0 || super_fields != nullptr, "first get nof_fields");
-  }
+  assert(super != nullptr, "must have a super class, current class: %s", name()->as_utf8());
+  super->compute_nonstatic_fields();
+  const GrowableArray<ciField*>* super_declared_fields = super->_declared_nonstatic_fields;;
+  const GrowableArray<ciField*>* super_fields = super->_nonstatic_fields;
+  assert(super_declared_fields != nullptr && super_fields != nullptr, "must have been initialized, current class: %s, super class: %s", name()->as_utf8(), super->name()->as_utf8());
 
-  GrowableArray<ciField*>* fields = nullptr;
   GUARDED_VM_ENTRY({
-      fields = compute_nonstatic_fields_impl(super_fields);
-    });
+    compute_nonstatic_fields_impl(super_declared_fields, super_fields);
+  });
+}
 
-  if (fields == nullptr) {
-    // This can happen if this class (java.lang.Class) has invisible fields.
-    if (super_fields != nullptr) {
-      _nonstatic_fields = super_fields;
-      return super_fields->length();
+void ciInstanceKlass::compute_nonstatic_fields_impl(const GrowableArray<ciField*>* super_declared_fields, const GrowableArray<ciField*>* super_fields) {
+  assert(_declared_nonstatic_fields == nullptr && _nonstatic_fields == nullptr, "initialized already");
+  ASSERT_IN_VM;
+  Arena* arena = CURRENT_ENV->arena();
+
+  InstanceKlass* this_klass = get_instanceKlass();
+  int declared_field_num = 0;
+  int field_num = 0;
+  for (JavaFieldStream fs(this_klass); !fs.done(); fs.next()) {
+    if (fs.access_flags().is_static()) {
+      continue;
+    }
+
+    declared_field_num++;
+
+    fieldDescriptor& fd = fs.field_descriptor();
+    if (fd.is_flat()) {
+      InlineKlass* k = this_klass->get_inline_type_field_klass(fd.index());
+      ciInlineKlass* vk = CURRENT_ENV->get_klass(k)->as_inline_klass();
+      field_num += vk->nof_nonstatic_fields();
+      field_num += fd.has_null_marker() ? 1 : 0;
     } else {
-      return 0;
+      field_num++;
     }
   }
 
-  int flen = fields->length();
-
-  _nonstatic_fields = fields;
-  return flen;
-}
-
-GrowableArray<ciField*>*
-ciInstanceKlass::compute_nonstatic_fields_impl(GrowableArray<ciField*>*
-                                               super_fields) {
-  ASSERT_IN_VM;
-  Arena* arena = CURRENT_ENV->arena();
-  int flen = 0;
-  GrowableArray<ciField*>* fields = nullptr;
-  InstanceKlass* k = get_instanceKlass();
-  for (JavaFieldStream fs(k); !fs.done(); fs.next()) {
-    if (fs.access_flags().is_static())  continue;
-    flen += 1;
+  GrowableArray<ciField*>* tmp_declared_fields = nullptr;
+  if (declared_field_num != 0) {
+    tmp_declared_fields = new (arena) GrowableArray<ciField*>(arena, declared_field_num + super_declared_fields->length(), 0, nullptr);
+    tmp_declared_fields->appendAll(super_declared_fields);
   }
 
-  // allocate the array:
-  if (flen == 0) {
-    return nullptr;  // return nothing if none are locally declared
-  }
-  if (super_fields != nullptr) {
-    flen += super_fields->length();
-  }
-  fields = new (arena) GrowableArray<ciField*>(arena, flen, 0, nullptr);
-  if (super_fields != nullptr) {
-    fields->appendAll(super_fields);
+  GrowableArray<ciField*>* tmp_fields = nullptr;
+  if (field_num != 0) {
+    tmp_fields = new (arena) GrowableArray<ciField*>(arena, field_num + super_fields->length(), 0, nullptr);
+    tmp_fields->appendAll(super_fields);
   }
 
-  for (JavaFieldStream fs(k); !fs.done(); fs.next()) {
-    if (fs.access_flags().is_static())  continue;
+  // For later assertion
+  declared_field_num += super_declared_fields->length();
+  field_num += super_fields->length();
+
+  for (JavaFieldStream fs(this_klass); !fs.done(); fs.next()) {
+    if (fs.access_flags().is_static()) {
+      continue;
+    }
+
     fieldDescriptor& fd = fs.field_descriptor();
-    ciField* field = new (arena) ciField(&fd);
-    fields->append(field);
+    ciField* declared_field = new (arena) ciField(&fd);
+    assert(tmp_declared_fields != nullptr, "should be initialized");
+    tmp_declared_fields->append(declared_field);
+
+    if (fd.is_flat()) {
+      // Flat fields are embedded
+      Klass* k = get_instanceKlass()->get_inline_type_field_klass(fd.index());
+      ciInlineKlass* vk = CURRENT_ENV->get_klass(k)->as_inline_klass();
+      // Iterate over fields of the flat inline type and copy them to 'this'
+      for (int i = 0; i < vk->nof_nonstatic_fields(); ++i) {
+        assert(tmp_fields != nullptr, "should be initialized");
+        tmp_fields->append(new (arena) ciField(declared_field, vk->nonstatic_field_at(i)));
+      }
+      if (fd.has_null_marker()) {
+        assert(tmp_fields != nullptr, "should be initialized");
+        tmp_fields->append(new (arena) ciField(declared_field));
+      }
+    } else {
+      assert(tmp_fields != nullptr, "should be initialized");
+      tmp_fields->append(declared_field);
+    }
   }
-  assert(fields->length() == flen, "sanity");
-  return fields;
+
+  // Now sort them by offset, ascending. In principle, they could mix with superclass fields.
+  if (tmp_declared_fields != nullptr) {
+    assert(tmp_declared_fields->length() == declared_field_num, "sanity check failed for class: %s, number of declared fields: %d, expected: %d",
+           name()->as_utf8(), tmp_declared_fields->length(), declared_field_num);
+    _declared_nonstatic_fields = tmp_declared_fields;
+  } else {
+    _declared_nonstatic_fields = super_declared_fields;
+  }
+
+  if (tmp_fields != nullptr) {
+    assert(tmp_fields->length() == field_num, "sanity check failed for class: %s, number of fields: %d, expected: %d",
+           name()->as_utf8(), tmp_fields->length(), field_num);
+    _nonstatic_fields = tmp_fields;
+  } else {
+    _nonstatic_fields = super_fields;
+  }
 }
 
 bool ciInstanceKlass::compute_injected_fields_helper() {
@@ -645,6 +726,23 @@ ciInstanceKlass* ciInstanceKlass::implementor() {
   return impl;
 }
 
+bool ciInstanceKlass::can_be_inline_klass(bool is_exact) {
+  if (!Arguments::is_valhalla_enabled()) {
+    return false;
+  }
+  if (!is_loaded() || is_inlinetype()) {
+    // Not loaded or known to be an inline klass
+    return true;
+  }
+  if (!is_exact) {
+    // Not exact, check if this is a valid super for an inline klass
+    GUARDED_VM_ENTRY(
+      return !get_instanceKlass()->access_flags().is_identity_class() || is_java_lang_Object();
+    )
+  }
+  return false;
+}
+
 // Utility class for printing of the contents of the static fields for
 // use by compilation replay.  It only prints out the information that
 // could be consumed by the compiler, so for primitive types it prints
@@ -653,74 +751,127 @@ ciInstanceKlass* ciInstanceKlass::implementor() {
 // only value which statically unchangeable.  For all other reference
 // types it simply prints out the dynamic type.
 
-class StaticFinalFieldPrinter : public FieldClosure {
+class StaticFieldPrinter : public FieldClosure {
+protected:
   outputStream* _out;
+public:
+  StaticFieldPrinter(outputStream* out) :
+    _out(out) {
+  }
+  void do_field_helper(fieldDescriptor* fd, oop obj, bool is_flat);
+};
+
+class StaticFinalFieldPrinter : public StaticFieldPrinter {
   const char*   _holder;
  public:
   StaticFinalFieldPrinter(outputStream* out, const char* holder) :
-    _out(out),
-    _holder(holder) {
+    StaticFieldPrinter(out), _holder(holder) {
   }
   void do_field(fieldDescriptor* fd) {
     if (fd->is_final() && !fd->has_initial_value()) {
       ResourceMark rm;
-      oop mirror = fd->field_holder()->java_mirror();
-      _out->print("staticfield %s %s %s ", _holder, fd->name()->as_quoted_ascii(), fd->signature()->as_quoted_ascii());
-      BasicType field_type = fd->field_type();
-      switch (field_type) {
-        case T_BYTE:    _out->print_cr("%d", mirror->byte_field(fd->offset()));   break;
-        case T_BOOLEAN: _out->print_cr("%d", mirror->bool_field(fd->offset()));   break;
-        case T_SHORT:   _out->print_cr("%d", mirror->short_field(fd->offset()));  break;
-        case T_CHAR:    _out->print_cr("%d", mirror->char_field(fd->offset()));   break;
-        case T_INT:     _out->print_cr("%d", mirror->int_field(fd->offset()));    break;
-        case T_LONG:    _out->print_cr(INT64_FORMAT, (int64_t)(mirror->long_field(fd->offset())));   break;
-        case T_FLOAT: {
-          float f = mirror->float_field(fd->offset());
-          _out->print_cr("%d", *(int*)&f);
-          break;
-        }
-        case T_DOUBLE: {
-          double d = mirror->double_field(fd->offset());
-          _out->print_cr(INT64_FORMAT, *(int64_t*)&d);
-          break;
-        }
-        case T_ARRAY:  // fall-through
-        case T_OBJECT: {
-          oop value =  mirror->obj_field_acquire(fd->offset());
-          if (value == nullptr) {
-            if (field_type == T_ARRAY) {
-              _out->print("%d", -1);
-            }
-            _out->cr();
-          } else if (value->is_instance()) {
-            assert(field_type == T_OBJECT, "");
-            if (value->is_a(vmClasses::String_klass())) {
-              const char* ascii_value = java_lang_String::as_quoted_ascii(value);
-              _out->print_cr("\"%s\"", (ascii_value != nullptr) ? ascii_value : "");
-            } else {
-              const char* klass_name  = value->klass()->name()->as_quoted_ascii();
-              _out->print_cr("%s", klass_name);
-            }
-          } else if (value->is_array()) {
-            typeArrayOop ta = (typeArrayOop)value;
-            _out->print("%d", ta->length());
-            if (value->is_objArray()) {
-              objArrayOop oa = (objArrayOop)value;
-              const char* klass_name  = value->klass()->name()->as_quoted_ascii();
-              _out->print(" %s", klass_name);
-            }
-            _out->cr();
-          } else {
-            ShouldNotReachHere();
-          }
-          break;
-        }
-        default:
-          ShouldNotReachHere();
-        }
+      InstanceKlass* holder = fd->field_holder();
+      oop mirror = holder->java_mirror();
+      _out->print("staticfield %s %s ", _holder, fd->name()->as_quoted_ascii());
+      BasicType bt = fd->field_type();
+      if (bt != T_OBJECT && bt != T_ARRAY) {
+        _out->print("%s ", fd->signature()->as_quoted_ascii());
+      }
+      do_field_helper(fd, mirror, false);
+      _out->cr();
     }
   }
 };
+
+class InlineTypeFieldPrinter : public StaticFieldPrinter {
+  oop _obj;
+public:
+  InlineTypeFieldPrinter(outputStream* out, oop obj) :
+    StaticFieldPrinter(out), _obj(obj) {
+  }
+  void do_field(fieldDescriptor* fd) {
+    do_field_helper(fd, _obj, true);
+    _out->print(" ");
+  }
+};
+
+void StaticFieldPrinter::do_field_helper(fieldDescriptor* fd, oop mirror, bool is_flat) {
+  BasicType field_type = fd->field_type();
+  switch (field_type) {
+    case T_BYTE:    _out->print("%d", mirror->byte_field(fd->offset()));   break;
+    case T_BOOLEAN: _out->print("%d", mirror->bool_field(fd->offset()));   break;
+    case T_SHORT:   _out->print("%d", mirror->short_field(fd->offset()));  break;
+    case T_CHAR:    _out->print("%d", mirror->char_field(fd->offset()));   break;
+    case T_INT:     _out->print("%d", mirror->int_field(fd->offset()));    break;
+    case T_LONG:    _out->print(INT64_FORMAT, (int64_t)(mirror->long_field(fd->offset())));   break;
+    case T_FLOAT: {
+      float f = mirror->float_field(fd->offset());
+      _out->print("%d", *(int*)&f);
+      break;
+    }
+    case T_DOUBLE: {
+      double d = mirror->double_field(fd->offset());
+      _out->print(INT64_FORMAT, *(int64_t*)&d);
+      break;
+    }
+    case T_ARRAY:  // fall-through
+    case T_OBJECT:
+      if (!fd->is_null_free_inline_type()) {
+        _out->print("%s ", fd->signature()->as_quoted_ascii());
+        oop value =  mirror->obj_field_acquire(fd->offset());
+        if (value == nullptr) {
+          if (field_type == T_ARRAY) {
+            _out->print("%d", -1);
+          }
+          _out->cr();
+        } else if (value->is_instance()) {
+          assert(field_type == T_OBJECT, "");
+          if (value->is_a(vmClasses::String_klass())) {
+            const char* ascii_value = java_lang_String::as_quoted_ascii(value);
+            _out->print("\"%s\"", (ascii_value != nullptr) ? ascii_value : "");
+          } else {
+            const char* klass_name  = value->klass()->name()->as_quoted_ascii();
+            _out->print("%s", klass_name);
+          }
+        } else if (value->is_array()) {
+          typeArrayOop ta = (typeArrayOop)value;
+          _out->print("%d", ta->length());
+          if (value->is_objArray() || value->is_flatArray()) {
+            objArrayOop oa = (objArrayOop)value;
+            const char* klass_name  = value->klass()->name()->as_quoted_ascii();
+            _out->print(" %s", klass_name);
+          }
+        } else {
+          ShouldNotReachHere();
+        }
+        break;
+      } else {
+        // handling of null free inline type
+        ResetNoHandleMark rnhm;
+        Thread* THREAD = Thread::current();
+        SignatureStream ss(fd->signature(), false);
+        Symbol* name = ss.as_symbol();
+        assert(!HAS_PENDING_EXCEPTION, "can resolve klass?");
+        InstanceKlass* holder = fd->field_holder();
+        InstanceKlass* k = SystemDictionary::find_instance_klass(THREAD, name,
+                                                                 Handle(THREAD, holder->class_loader()));
+        guarantee(k != nullptr && !HAS_PENDING_EXCEPTION, "can resolve klass?");
+        InlineKlass* vk = InlineKlass::cast(k);
+        oop obj;
+        if (is_flat) {
+          int field_offset = fd->offset() - vk->payload_offset();
+          obj = cast_to_oop(cast_from_oop<address>(mirror) + field_offset);
+        } else {
+          obj = mirror->obj_field_acquire(fd->offset());
+        }
+        InlineTypeFieldPrinter print_field(_out, obj);
+        vk->do_nonstatic_fields(&print_field);
+        break;
+      }
+    default:
+      ShouldNotReachHere();
+  }
+}
 
 const char *ciInstanceKlass::replay_name() const {
   return CURRENT_ENV->replay_name(get_instanceKlass());

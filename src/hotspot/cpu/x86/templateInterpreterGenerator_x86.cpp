@@ -38,6 +38,7 @@
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/inlineKlass.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "oops/resolvedMethodEntry.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -63,7 +64,7 @@
 // if too small.
 // Run with +PrintInterpreter to get the VM to print out the size.
 // Max size with JVMTI
-int TemplateInterpreter::InterpreterCodeSize = JVMCI_ONLY(268) NOT_JVMCI(256) * 1024;
+int TemplateInterpreter::InterpreterCodeSize = JVMCI_ONLY(280) NOT_JVMCI(268) * 1024;
 
 // Global Register Names
 static const Register rbcp     = r13;
@@ -176,10 +177,14 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   address entry = __ pc();
 
   // Restore stack bottom in case i2c adjusted stack
-  __ movptr(rcx, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
-  __ lea(rsp, Address(rbp, rcx, Address::times_ptr));
+  __ movptr(rscratch1, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ lea(rsp, Address(rbp, rscratch1, Address::times_ptr));
   // and null it as marker that esp is now tos until next java call
   __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
+
+  if (state == atos && InlineTypeReturnedAsFields) {
+    __ store_inline_type_fields_to_buf(nullptr);
+  }
 
   __ restore_bcp();
   __ restore_locals();
@@ -1229,7 +1234,7 @@ address TemplateInterpreterGenerator::generate_abstract_entry(void) {
 //
 // Generic interpreted method entry to (asm) interpreter
 //
-address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
+address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized, bool object_init) {
   // determine code generation flags
   bool inc_counter  = UseCompiler || CountCompiledCalls;
 
@@ -1349,6 +1354,12 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
     }
 #endif
   }
+
+  // If object_init == true, we should insert a StoreStore barrier here to
+  // prevent strict fields initial default values from being observable.
+  // However, x86 is a TSO platform, so if `this` escapes, strict fields
+  // initialized values are guaranteed to be the ones observed, so the
+  // barrier can be elided.
 
   // start execution
 #ifdef ASSERT

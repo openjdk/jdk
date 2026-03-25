@@ -260,6 +260,12 @@ public class Lint {
         INCUBATING("incubating", false, true),
 
         /**
+         * Warn about code in identity classes that wouldn't be allowed in early
+         * construction due to a this dependency.
+         */
+        INITIALIZATION("initialization"),
+
+        /**
           * Warn about compiler possible lossy conversions.
           */
         LOSSY_CONVERSIONS("lossy-conversions"),
@@ -273,6 +279,11 @@ public class Lint {
          * Warn about module system related issues.
          */
         MODULE("module", true, true),
+
+        /**
+         * Warn about issues related to migration of JDK classes.
+         */
+        MIGRATION("migration"),
 
         /**
          * Warn about issues regarding module opens.

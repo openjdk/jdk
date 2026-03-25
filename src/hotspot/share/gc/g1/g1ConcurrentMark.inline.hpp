@@ -182,10 +182,11 @@ inline void G1CMTask::process_grey_task_entry(G1TaskQueueEntry task_entry, bool 
 }
 
 inline bool G1CMTask::should_be_sliced(oop obj) {
-  return obj->is_objArray() && ((objArrayOop)obj)->length() >= (int)ObjArrayMarkingStride;
+  return obj->is_array_with_oops() && ((objArrayOop)obj)->length() >= (int)ObjArrayMarkingStride;
 }
 
 inline void G1CMTask::process_array_chunk(objArrayOop obj, size_t start, size_t end) {
+  precond(obj->is_array_with_oops());
   obj->oop_iterate_elements_range(_cm_oop_closure,
                                   checked_cast<int>(start),
                                   checked_cast<int>(end));

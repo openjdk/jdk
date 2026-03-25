@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "code/codeBlob.hpp"
 #include "code/pcDesc.hpp"
+#include "compiler/compilerDefinitions.hpp"
 #include "oops/metadata.hpp"
 #include "oops/method.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -41,7 +42,6 @@ class Dependencies;
 class DirectiveSet;
 class DebugInformationRecorder;
 class ExceptionHandlerTable;
-class ICacheInvalidationContext;
 class ImplicitExceptionTable;
 class JvmtiThreadState;
 class MetadataClosure;
@@ -217,6 +217,9 @@ class nmethod : public CodeBlob {
   address  _osr_entry_point;       // entry point for on stack replacement
   uint16_t _entry_offset;          // entry point with class check
   uint16_t _verified_entry_offset; // entry point without class check
+  uint16_t _inline_entry_offset;             // inline type entry point (unpack all inline type args) with class check
+  uint16_t _verified_inline_entry_offset;    // inline type entry point (unpack all inline type args) without class check
+  uint16_t _verified_inline_ro_entry_offset; // inline type entry point (unpack receiver only) without class check
   int      _entry_bci;             // != InvocationEntryBci if this nmethod is an on-stack replacement method
   int      _immutable_data_size;
 
@@ -236,10 +239,11 @@ class nmethod : public CodeBlob {
   // Number of arguments passed on the stack
   uint16_t _num_stack_arg_slots;
 
+  uint16_t _oops_size;
 #if INCLUDE_JVMCI
   // _metadata_size is not specific to JVMCI. In the non-JVMCI case, it can be derived as:
   // _metadata_size = mutable_data_size - relocation_size
-  int _metadata_size;
+  uint16_t _metadata_size;
 #endif
 
   // Offset in immutable data section
@@ -697,6 +701,9 @@ public:
   // entry points
   address entry_point() const          { return code_begin() + _entry_offset;          } // normal entry point
   address verified_entry_point() const { return code_begin() + _verified_entry_offset; } // if klass is correct
+  address inline_entry_point() const              { return code_begin() + _inline_entry_offset; }             // inline type entry point (unpack all inline type args)
+  address verified_inline_entry_point() const     { return code_begin() + _verified_inline_entry_offset; }    // inline type entry point (unpack all inline type args) without class check
+  address verified_inline_ro_entry_point() const  { return code_begin() + _verified_inline_ro_entry_offset; } // inline type entry point (only unpack receiver) without class check
 
   enum : signed char { not_installed = -1, // in construction, only the owner doing the construction is
                                            // allowed to advance state
@@ -763,6 +770,16 @@ public:
   bool  has_wide_vectors() const                  { return _has_wide_vectors; }
   void  set_has_wide_vectors(bool z)              { _has_wide_vectors = z; }
 
+  bool  needs_stack_repair() const {
+    if (is_compiled_by_c1()) {
+      return method()->c1_needs_stack_repair();
+    } else if (is_compiled_by_c2()) {
+      return method()->c2_needs_stack_repair();
+    } else {
+      return false;
+    }
+  }
+
   bool  has_flushed_dependencies() const          { return _has_flushed_dependencies; }
   void  set_has_flushed_dependencies(bool z)      {
     assert(!has_flushed_dependencies(), "should only happen once");
@@ -802,15 +819,15 @@ public:
 
   // Relocation support
 private:
-  bool fix_oop_relocations(bool initialize_immediates);
+  void fix_oop_relocations(address begin, address end, bool initialize_immediates);
   inline void initialize_immediate_oop(oop* dest, jobject handle);
 
 protected:
   address oops_reloc_begin() const;
 
 public:
-  void fix_oop_relocations(ICacheInvalidationContext* icic);
-  void fix_oop_relocations();
+  void fix_oop_relocations(address begin, address end) { fix_oop_relocations(begin, end, false); }
+  void fix_oop_relocations()                           { fix_oop_relocations(nullptr, nullptr, false); }
 
   bool is_at_poll_return(address pc);
   bool is_at_poll_or_poll_return(address pc);
@@ -842,7 +859,7 @@ public:
   const char* state() const;
 
   bool inlinecache_check_contains(address addr) const {
-    return (addr >= code_begin() && addr < verified_entry_point());
+    return (addr >= code_begin() && (addr < verified_entry_point() || addr < verified_inline_entry_point()));
   }
 
   void preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f);
@@ -1075,9 +1092,10 @@ public:
   // and the changes have invalidated it
   bool check_dependency_on(DepChange& changes);
 
-  // Fast breakpoint support. Tells if this compiled method is
-  // dependent on the given method. Returns true if this nmethod
-  // corresponds to the given method as well.
+  // Tells if this compiled method is dependent on the given method.
+  // Returns true if this nmethod corresponds to the given method as well.
+  // It is used for fast breakpoint support and updating the calling convention
+  // in case of mismatch.
   bool is_dependent_on_method(Method* dependee);
 
   // JVMTI's GetLocalInstance() support

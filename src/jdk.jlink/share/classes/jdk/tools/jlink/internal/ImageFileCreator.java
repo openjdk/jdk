@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jdk.internal.jimage.ImageLocation;
 import jdk.tools.jlink.internal.Archive.Entry;
 import jdk.tools.jlink.internal.Archive.Entry.EntryType;
 import jdk.tools.jlink.internal.JRTArchive.ResourceFileEntry;
@@ -227,31 +228,8 @@ public final class ImageFileCreator {
             DataOutputStream out,
             boolean generateRuntimeImage
     ) throws IOException {
-        ResourcePool resultResources;
-        try {
-            resultResources = pluginSupport.visitResources(allContent);
-            if (generateRuntimeImage) {
-                // Keep track of non-modules resources for linking from a run-time image
-                resultResources = addNonClassResourcesTrackFiles(resultResources,
-                                                                 writer);
-                // Generate the diff between the input resources from packaged
-                // modules in 'allContent' to the plugin- or otherwise
-                // generated-content in 'resultResources'
-                resultResources = addResourceDiffFiles(allContent.resourcePool(),
-                                                       resultResources,
-                                                       writer);
-            }
-        } catch (PluginException pe) {
-            if (JlinkTask.DEBUG) {
-                pe.printStackTrace();
-            }
-            throw pe;
-        } catch (Exception ex) {
-            if (JlinkTask.DEBUG) {
-                ex.printStackTrace();
-            }
-            throw new IOException(ex);
-        }
+        ResourcePool resultResources =
+                getResourcePool(allContent, writer, pluginSupport, generateRuntimeImage);
         Set<String> duplicates = new HashSet<>();
         long[] offset = new long[1];
 
@@ -282,8 +260,10 @@ public final class ImageFileCreator {
                     offset[0] += onFileSize;
                     return;
                 }
+                int locFlags = ImageLocation.getFlags(
+                        res.path(), p -> resultResources.findEntry(p).isPresent());
                 duplicates.add(path);
-                writer.addLocation(path, offset[0], compressedSize, uncompressedSize);
+                writer.addLocation(path, offset[0], compressedSize, uncompressedSize, locFlags);
                 paths.add(path);
                 offset[0] += onFileSize;
             }
@@ -304,6 +284,40 @@ public final class ImageFileCreator {
 
         out.close();
 
+        return resultResources;
+    }
+
+    private static ResourcePool getResourcePool(
+            ResourcePoolManager allContent,
+            BasicImageWriter writer,
+            ImagePluginStack pluginSupport,
+            boolean generateRuntimeImage)
+            throws IOException {
+        ResourcePool resultResources;
+        try {
+            resultResources = pluginSupport.visitResources(allContent);
+            if (generateRuntimeImage) {
+                // Keep track of non-modules resources for linking from a run-time image
+                resultResources = addNonClassResourcesTrackFiles(resultResources,
+                        writer);
+                // Generate the diff between the input resources from packaged
+                // modules in 'allContent' to the plugin- or otherwise
+                // generated-content in 'resultResources'
+                resultResources = addResourceDiffFiles(allContent.resourcePool(),
+                        resultResources,
+                        writer);
+            }
+        } catch (PluginException pe) {
+            if (JlinkTask.DEBUG) {
+                pe.printStackTrace();
+            }
+            throw pe;
+        } catch (Exception ex) {
+            if (JlinkTask.DEBUG) {
+                ex.printStackTrace();
+            }
+            throw new IOException(ex);
+        }
         return resultResources;
     }
 
@@ -557,63 +571,5 @@ public final class ImageFileCreator {
         // adding resources here, preserving that same order is OK.
         resultResources.entries().forEach(resources::add);
         return resources;
-    }
-
-    /**
-     * Helper method that splits a Resource path onto 3 items: module, parent
-     * and resource name.
-     *
-     * @param path
-     * @return An array containing module, parent and name.
-     */
-    public static String[] splitPath(String path) {
-        Objects.requireNonNull(path);
-        String noRoot = path.substring(1);
-        int pkgStart = noRoot.indexOf("/");
-        String module = noRoot.substring(0, pkgStart);
-        List<String> result = new ArrayList<>();
-        result.add(module);
-        String pkg = noRoot.substring(pkgStart + 1);
-        String resName;
-        int pkgEnd = pkg.lastIndexOf("/");
-        if (pkgEnd == -1) { // No package.
-            resName = pkg;
-        } else {
-            resName = pkg.substring(pkgEnd + 1);
-        }
-
-        pkg = toPackage(pkg, false);
-        result.add(pkg);
-        result.add(resName);
-
-        String[] array = new String[result.size()];
-        return result.toArray(array);
-    }
-
-    /**
-     * Returns the path of the resource.
-     */
-    public static String resourceName(String path) {
-        Objects.requireNonNull(path);
-        String s = path.substring(1);
-        int index = s.indexOf("/");
-        return s.substring(index + 1);
-    }
-
-    public static String toPackage(String name) {
-        return toPackage(name, false);
-    }
-
-    private static String toPackage(String name, boolean log) {
-        int index = name.lastIndexOf('/');
-        if (index > 0) {
-            return name.substring(0, index).replace('/', '.');
-        } else {
-            // ## unnamed package
-            if (log) {
-                System.err.format("Warning: %s in unnamed package%n", name);
-            }
-            return "";
-        }
     }
 }
