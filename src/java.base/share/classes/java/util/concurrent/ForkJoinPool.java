@@ -1061,16 +1061,10 @@ public class ForkJoinPool extends AbstractExecutorService
     static final int DEFAULT_COMMON_MAX_SPARES = 256;
 
     /**
-     * Initial capacity of work-stealing queue array for workers.
+     * Initial capacity of work-stealing queue array
      * Must be a power of two, at least 2. See above.
      */
     static final int INITIAL_QUEUE_CAPACITY = 1 << 6;
-
-    /**
-     * Initial capacity of work-stealing queue array for external queues.
-     * Must be a power of two, at least 2. See above.
-     */
-    static final int INITIAL_EXTERNAL_QUEUE_CAPACITY = 1 << 9;
 
     // conversions among short, int, long
     static final int  SMASK           = 0xffff;      // (unsigned) short bits
@@ -1248,11 +1242,10 @@ public class ForkJoinPool extends AbstractExecutorService
          */
         WorkQueue(ForkJoinWorkerThread owner, int id, int cfg,
                   boolean clearThreadLocals) {
-            array = new ForkJoinTask<?>[owner == null ?
-                                        INITIAL_EXTERNAL_QUEUE_CAPACITY :
-                                        INITIAL_QUEUE_CAPACITY];
+            this.array = new ForkJoinTask<?>[INITIAL_QUEUE_CAPACITY];
             this.owner = owner;
             this.config = (clearThreadLocals) ? cfg | CLEAR_TLS : cfg;
+            this.phase = id;
         }
 
         /**
@@ -1295,7 +1288,7 @@ public class ForkJoinPool extends AbstractExecutorService
                     unlockPhase();
                 if (room < 0)
                     throw new RejectedExecutionException("Queue capacity exceeded");
-                if ((room == 0 || room == m ||
+                else if (((room & m) == 0 ||
                      U.getReferenceVolatile(a, slotOffset(m & (s - 1))) == null) &&
                     pool != null)
                     pool.signalWork();   // may have appeared empty
@@ -1309,7 +1302,7 @@ public class ForkJoinPool extends AbstractExecutorService
          * @param s current top
          */
         private void growArray(ForkJoinTask<?>[] a, int cap, int s) {
-            int newCap = cap << 1;
+            int newCap = (cap >= 1 << 16) ? cap << 1 : cap << 2;
             if (a != null && a.length == cap && cap > 0 && newCap > 0) {
                 ForkJoinTask<?>[] newArray = null;
                 try {
@@ -2621,7 +2614,6 @@ public class ForkJoinPool extends AbstractExecutorService
                 break;
             if ((q = qs[i = (id = r & EXTERNAL_ID_MASK) & (n - 1)]) == null) {
                 WorkQueue w = new WorkQueue(null, id, 0, false);
-                w.phase = id;
                 boolean reject = ((lockRunState() & SHUTDOWN) != 0 &&
                                   rejectOnShutdown);
                 if (!reject && queues == qs && qs[i] == null)
