@@ -26,14 +26,16 @@
 
 address RegisterMap::pd_location(VMReg base_reg, int slot_idx) const {
   if (base_reg->is_VectorRegister()) {
-    // Not all physical slots of a VectorRegister have corresponding
-    // VMRegs. However they are always saved to the stack in a
-    // contiguous region of memory so we can calculate the address of
-    // the upper slots by offsetting from the base address.
+    // Not all physical slots belonging to a VectorRegister have corresponding
+    // valid VMReg locations in the RegisterMap.
+    // (See RegisterSaver::push_frame_reg_args_and_save_live_registers.)
+    // However, the slots are always saved to the stack in a contiguous region
+    // of memory so we can calculate the address of the upper slots by
+    // offsetting from the base address.
     assert(base_reg->is_concrete(), "must pass base reg");
-    intptr_t offset_in_bytes = slot_idx * VMRegImpl::stack_slot_size;
     address base_location = location(base_reg, nullptr);
     if (base_location != nullptr) {
+      intptr_t offset_in_bytes = slot_idx * VMRegImpl::stack_slot_size;
       return base_location + offset_in_bytes;
     } else {
       return nullptr;
