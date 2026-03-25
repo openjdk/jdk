@@ -80,7 +80,6 @@ int* AOTStreamedHeapLoader::_root_highest_object_index_table;
 
 bool AOTStreamedHeapLoader::_waiting_for_iterator;
 bool AOTStreamedHeapLoader::_swapping_root_format;
-DEBUG_ONLY(volatile bool AOTStreamedHeapLoader::_gc_enabled = false;)
 
 static uint64_t _early_materialization_time_ns = 0;
 static uint64_t _late_materialization_time_ns = 0;
@@ -189,13 +188,6 @@ oop AOTStreamedHeapLoader::allocate_object(oopDesc* archive_object, markWord mar
   oop heap_object;
 
   Klass* klass = archive_object->klass();
-
-  DEBUG_ONLY({
-      if (AtomicAccess::load_acquire(&_gc_enabled)) {
-        assert(klass->class_loader_data() != nullptr, "must be loaded already");
-      }
-    });
-
   if (klass->is_mirror_instance_klass()) {
     heap_object = Universe::heap()->class_allocate(klass, size, CHECK_NULL);
   } else if (klass->is_instance_klass()) {
@@ -883,8 +875,6 @@ void AOTStreamedHeapLoader::switch_object_index_to_handle(int object_index) {
 }
 
 void AOTStreamedHeapLoader::enable_gc() {
-  DEBUG_ONLY(AtomicAccess::release_store(&_gc_enabled, true));
-
   if (AOTEagerlyLoadObjects && !IterativeObjectLoader::has_more()) {
     // Everything was loaded eagerly at early startup
     return;

@@ -112,6 +112,11 @@ static Klass* _test_class = nullptr;
 static const ArchivedKlassSubGraphInfoRecord* _test_class_record = nullptr;
 #endif
 
+#ifdef ASSERT
+// All classes that have at least one instance in the cached heap.
+static ArchivableKlassTable* _dumptime_classes_with_cached_oops = nullptr;
+static Array<Klass*>* _runtime_classes_with_cached_oops = nullptr;
+#endif
 
 //
 // If you add new entries to the following tables, you should know what you're doing!
@@ -391,9 +396,21 @@ void HeapShared::initialize_streaming() {
 }
 
 void HeapShared::enable_gc() {
-  if (AOTMappedHeapLoader::is_in_use()) {
-    AOTMappedHeapLoader::verify_roots_ready_for_gc();
-  }
+  DEBUG_ONLY({
+      // At this point, a GC may start and will be able to see some or all
+      // of the cached oops. The class of each oop seen by the GC must have
+      // already been loaded. One function with such a requirement is
+      // ClaimMetadataVisitingOopIterateClosure::do_klass().
+      if (is_archived_heap_in_use()) {
+        Array<Klass*>* klasses = _runtime_classes_with_cached_oops;
+
+        for (int i = 0; i < klasses->length(); i++) {
+          assert(klasses->at(i)->class_loader_data() != nullptr,
+                 "class of cached oop must have been loaded");
+        }
+      }
+    });
+
   if (AOTStreamedHeapLoader::is_in_use()) {
     AOTStreamedHeapLoader::enable_gc();
   }
@@ -569,6 +586,7 @@ bool HeapShared::archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgra
 
   AOTOopChecker::check(obj); // Make sure contents of this oop are safe.
   count_allocation(obj->size());
+  DEBUG_ONLY(_dumptime_classes_with_cached_oops->add(obj->klass()));
 
   if (HeapShared::is_writing_streaming_mode()) {
     AOTStreamedHeapWriter::add_source_obj(obj);
@@ -688,6 +706,7 @@ void HeapShared::init_dumping() {
   _scratch_objects_table = new (mtClass)MetaspaceObjToOopHandleTable();
   _pending_roots = new GrowableArrayCHeap<oop, mtClassShared>(500);
   _pending_roots->append(nullptr); // root index 0 represents a null oop
+  DEBUG_ONLY(_dumptime_classes_with_cached_oops = new (mtClassShared)ArchivableKlassTable());
 }
 
 void HeapShared::init_scratch_objects_for_basic_type_mirrors(TRAPS) {
@@ -968,6 +987,10 @@ void HeapShared::write_heap(AOTMappedHeapInfo* mapped_heap_info, AOTStreamedHeap
 
   ArchiveBuilder::OtherROAllocMark mark;
   write_subgraph_info_table();
+
+  DEBUG_ONLY({
+      _runtime_classes_with_cached_oops = _dumptime_classes_with_cached_oops->write_ordered_array();
+    });
 
   delete _pending_roots;
   _pending_roots = nullptr;
@@ -1280,6 +1303,7 @@ void HeapShared::serialize_tables(SerializeClosure* soc) {
 
   _run_time_subgraph_info_table.serialize_header(soc);
   soc->do_ptr(&_run_time_special_subgraph);
+  DEBUG_ONLY(soc->do_ptr(&_runtime_classes_with_cached_oops));
 }
 
 static void verify_the_heap(Klass* k, const char* which) {
