@@ -2591,7 +2591,6 @@ encode %{
 
   enc_class enc_load_long_constL(iRegLdst dst, immL src, iRegLdst toc) %{
     address const_toc_addr;
-
     if (ra_->C->output()->in_scratch_emit_size()) {
       __ addis($dst$$Register, R29_TOC, 0);
       __ ld($dst$$Register, 0, $dst$$Register);
@@ -2718,7 +2717,6 @@ encode %{
                                 ra_->get_reg_second(this), ra_->get_reg_first(this));
 
     // Push new nodes.
-
     if (loadConLNodes._last)     nodes->push(loadConLNodes._last);
 
     // some asserts
@@ -2770,7 +2768,6 @@ encode %{
     }
   %}
 
-
   // Postalloc expand emitter for loading a ptr constant from the method's TOC.
   // Enc_class needed as consttanttablebase is not supported by postalloc
   // expand.
@@ -2797,10 +2794,8 @@ encode %{
   // expand.
   enc_class postalloc_expand_load_float_constant(regF dst, immF src, iRegLdst toc) %{
 
-
     MachNode *m2;
     m2 = new loadConFNode();
-
     // inputs for new nodes
     m2->add_req(nullptr, n_toc);
 
@@ -3238,8 +3233,7 @@ encode %{
       // Build relocation at call site with ic position as data.
       assert( (_load_ic_node != nullptr),
              "must have one, but can't have both");
-      assert(
-             (_load_ic_node != nullptr    && _load_ic_node->_cbuf_insts_offset != -1),
+      assert((_load_ic_node != nullptr    && _load_ic_node->_cbuf_insts_offset != -1),
              "must contain instruction offset");
       const int virtual_call_oop_addr_offset = _load_ic_node->_cbuf_insts_offset;
       const address virtual_call_oop_addr = __ addr_at(virtual_call_oop_addr_offset);
@@ -6012,7 +6006,6 @@ instruct loadConF_Ex(regF dst, immF src) %{
 
 // Expand node for constant pool load: small offset.
 instruct loadConD(regD dst, immD src, iRegLdst toc) %{
-
   effect(DEF dst, USE src, USE toc);
   ins_cost(MEMORY_REF_COST);
 
@@ -6049,7 +6042,6 @@ instruct loadConD(regD dst, immD src, iRegLdst toc) %{
   %}
   ins_pipe(pipe_class_memory);
 %}
-
 
 // Adlc adds toc node MachConstantTableBase.
 instruct loadConD_Ex(regD dst, immD src) %{
