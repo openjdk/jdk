@@ -263,6 +263,7 @@ JVM_ENTRY(void, ScopedMemoryAccess_closeScope(JNIEnv *env, jobject receiver, job
   // Wait until any async exceptions are delivered before continuing,
   // because we will free the memory after this. This guarantees the target
   // thread does not continue to access the memory.
+  ThreadBlockInVM tbivm(thread);
   SpinYield spin_yield;
   while (async_exceptions.load_acquire() > 0) {
     spin_yield.wait();
