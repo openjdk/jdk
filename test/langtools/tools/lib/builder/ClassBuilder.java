@@ -156,7 +156,11 @@ public class ClassBuilder extends AbstractBuilder {
      * @return this builder.
      */
     public ClassBuilder setExtends(String name) {
-        extendsType = name;
+        if (modifiers.isInterface()) {
+            implementsTypes.add(name);
+        } else {
+            extendsType = name;
+        }
         return this;
     }
 
@@ -245,12 +249,11 @@ public class ClassBuilder extends AbstractBuilder {
             ow.print(typeParameter);
         }
         if (extendsType != null && !extendsType.isEmpty()) {
-            var last = modifiers.modifiers.getLast();
-            assert !last.equals("interface") && !last.equals("@interface");
+            assert !modifiers.isInterface();
             ow.print(" extends " + extendsType);
         }
         if (!implementsTypes.isEmpty()) {
-            ow.print(modifiers.modifiers.getLast().equals("interface") ? " extends " : " implements ");
+            ow.print(modifiers.isInterface() ? " extends " : " implements ");
             ow.print(String.join(", ", implementsTypes));
         }
         if (!permitsTypes.isEmpty()) {
