@@ -150,7 +150,7 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
     return _tenuring_threshold[prev];
   }
 
-  // Override the tenuring threshold for the current epoch. This is used to 
+  // Override the tenuring threshold for the current epoch. This is used to
   // cause everything to be promoted for a whitebox full gc request.
   void set_tenuring_threshold(uint threshold) { _tenuring_threshold[_epoch] = threshold; }
 
