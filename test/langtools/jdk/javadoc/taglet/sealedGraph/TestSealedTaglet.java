@@ -42,20 +42,21 @@ import toolbox.ToolBox;
 public class TestSealedTaglet extends JavadocTester {
 
     final ToolBox tb;
+    final Path tagletPath;
 
     public static void main(String... args) throws Exception {
         var tester = new TestSealedTaglet();
         tester.runTests();
     }
 
-    TestSealedTaglet() {
+    TestSealedTaglet() throws Exception {
         tb = new ToolBox();
+        tagletPath = JdkTaglets.build(tb, Path.of(""), "SealedGraph");
+        setAutomaticCheckLinks(false); // Don't fail for missing svg
     }
 
     @Test
     public void testInvisibleInMiddle(Path base) throws Exception {
-        var builtTaglet = JdkTaglets.build(tb, base, "SealedGraph");
-
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
 
@@ -79,8 +80,8 @@ public class TestSealedTaglet extends JavadocTester {
                 .write(srcDir);
 
         System.setProperty("sealedDotOutputDir", outDir.toString());
-        setAutomaticCheckLinks(false); // Don't check for missing svg
-        javadoc("-tagletpath", builtTaglet.toString(),
+
+        javadoc("-tagletpath", tagletPath.toString(),
                 "-taglet", "build.tools.taglet.SealedGraph",
                 "-d", outDir.toString(),
                 "-sourcepath", srcDir.toString(),
