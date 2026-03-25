@@ -69,7 +69,7 @@
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,1
  *                               compiler.compilercontrol.commands.CompileLevelWBTest
- *                               2 3>4 4
+ *                               2 3/4 4
  */
 
 /*
@@ -120,7 +120,7 @@
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,2
  *                               compiler.compilercontrol.commands.CompileLevelWBTest
- *                               1 3>4 4
+ *                               1 3/4 4
  */
 
 /*
@@ -171,7 +171,7 @@
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,3
  *                               compiler.compilercontrol.commands.CompileLevelWBTest
- *                               3>4 4
+ *                               3/4 4
  */
 
 /*
@@ -476,7 +476,7 @@
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod
  *                               compiler.compilercontrol.commands.CompileLevelWBTest
- *                               1 2 3>4 4
+ *                               1 2 3/4 4
  */
 
 /*
@@ -765,7 +765,7 @@
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,12
  *                               compiler.compilercontrol.commands.CompileLevelWBTest
- *                               3>4 4
+ *                               3/4 4
  */
 
 /*
@@ -816,7 +816,7 @@
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,13
  *                               compiler.compilercontrol.commands.CompileLevelWBTest
- *                               1 3>4 4
+ *                               1 3/4 4
  */
 
 /*
@@ -867,7 +867,7 @@
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,14
  *                               compiler.compilercontrol.commands.CompileLevelWBTest
- *                               2 3>4 4
+ *                               2 3/4 4
  */
 
 /*
@@ -918,7 +918,7 @@
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,15
  *                               compiler.compilercontrol.commands.CompileLevelWBTest
- *                               1 2 3>4 4
+ *                               1 2 3/4 4
  */
 
 /*
@@ -1054,7 +1054,7 @@ public class CompileLevelWBTest {
 
         for (String arg : args) {
             try {
-                String[] parts = arg.split(">");
+                String[] parts = arg.split("/");
                 int level = Integer.parseInt(parts[0]);
                 int goesToLevel = parts.length > 1 ? Integer.parseInt(parts[1]) : level;
                 verifyCompileLevel(level);

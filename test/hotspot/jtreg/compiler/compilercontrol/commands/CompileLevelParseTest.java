@@ -55,6 +55,7 @@ public class CompileLevelParseTest {
                         .shouldNotContain("CompileCommand: An error occurred during parsing")
                         .shouldContain("CompileCommand: " + cmd + " " + METHOD_EXP + " intx " + cmd + " = " + level); // should be registered
             }
+            // Note that values like "1suffix" are still accepted
             for (String incorrectLevel : List.of("c1", "true", "false")) {
                 ProcessTools.executeTestJava("-XX:CompileCommand=" + cmd + "," + METHOD_EXP + "," + incorrectLevel, "-version")
                         .shouldHaveExitValue(1)
