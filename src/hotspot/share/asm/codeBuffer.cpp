@@ -25,7 +25,6 @@
 #include "asm/codeBuffer.hpp"
 #include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
-#include "code/nmethod.hpp"
 #include "code/oopRecorder.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "logging/log.hpp"
@@ -33,7 +32,6 @@
 #include "oops/methodCounters.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/icache.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
@@ -740,19 +738,12 @@ void CodeBuffer::copy_code_to(CodeBlob* dest_blob) {
 
   relocate_code_to(&dest);
 
-  if (dest_blob->is_nmethod()) {
-    dest_blob->as_nmethod()->finalize_relocations();
-  }
-
   // Share assembly remarks and debug strings with the blob.
   NOT_PRODUCT(dest_blob->use_remarks(_asm_remarks));
   NOT_PRODUCT(dest_blob->use_strings(_dbg_strings));
 
   // Done moving code bytes; were they the right size?
   assert((int)align_up(dest.total_content_size(), oopSize) == dest_blob->content_size(), "sanity");
-
-  // Flush generated code
-  ICache::invalidate_range(dest_blob->code_begin(), dest_blob->code_size());
 }
 
 // Move all my code into another code buffer.  Consult applicable

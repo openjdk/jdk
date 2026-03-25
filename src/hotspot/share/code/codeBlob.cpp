@@ -39,6 +39,7 @@
 #include "prims/forte.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/icache.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaFrameAnchor.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -332,6 +333,9 @@ RuntimeBlob::RuntimeBlob(
              align_up(cb->total_relocation_size(), oopSize))
 {
   cb->copy_code_and_locs_to(this);
+  
+  // Flush generated code
+  ICache::invalidate_range(code_begin(), code_size());
 }
 
 void RuntimeBlob::free(RuntimeBlob* blob) {
