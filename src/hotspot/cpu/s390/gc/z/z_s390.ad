@@ -71,8 +71,8 @@ static void z_load_barrier(MacroAssembler* masm, const MachNode* node, Address r
     return;
   }
 
-  z_uncolor(masm, node, ref);
   if (node->barrier_data() == ZBarrierElided) {
+    z_uncolor(masm, node, ref);
     return;
   }
   ZLoadBarrierStubC2* const stub = ZLoadBarrierStubC2::create(node, ref_addr, ref);
@@ -201,7 +201,7 @@ instruct zCompareAndSwap(iRegI res, iRegP mem, iRegP newval, iRegP newval_temp, 
 %}
 
 // TODO: Double check this implementation currently this is copied form g1_s390.ad g1GetAndSetP
-instruct zSetAndGetP(iRegP mem, iRegP newval, iRegP temp, flagsReg cr) %{
+instruct zGetAndSetP(iRegP mem, iRegP newval, iRegP temp, flagsReg cr) %{
   match(Set newval (GetAndSetP mem newval));
   predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
   effect(TEMP temp, KILL cr);
