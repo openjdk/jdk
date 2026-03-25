@@ -152,7 +152,7 @@ inline Assembler::AvxVectorLen C2_MacroAssembler::vector_length_encoding(int vle
 
 // Because the transitions from emitted code to the runtime
 // monitorenter/exit helper stubs are so slow it's critical that
-// we inline both the stack-locking fast path and the inflated fast path.
+// we inline both the lock-stack fast path and the inflated fast path.
 //
 // See also: cmpFastLock and cmpFastUnlock.
 //
