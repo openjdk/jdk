@@ -1458,7 +1458,7 @@ static void split_regions_for_worker(size_t start, size_t end,
   size_t remainder = num_regions % num_workers;
   // The first few workers will get one extra.
   *worker_start = start + worker_id * num_regions_per_worker
-                  + MIN2(checked_cast<size_t>(worker_id), remainder);
+                  + MIN2<size_t>(worker_id, remainder);
   *worker_end = *worker_start + num_regions_per_worker
                 + (worker_id < remainder ? 1 : 0);
 }

@@ -1506,7 +1506,7 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
   Node* long_zero = longcon(0);
   Node* int_zero = intcon(0);
   Node* long_one = longcon(1);
-  Node* int_stride = intcon(checked_cast<int>(stride_con));
+  Node* int_stride = intcon(stride_con);
 
   for (uint i = 0; i < range_checks.size(); i++) {
     ProjNode* proj = range_checks.at(i)->as_Proj();
