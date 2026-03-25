@@ -22,6 +22,7 @@
  *
  */
 
+#include "code/aotCodeCache.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
 #include "code/relocInfo.hpp"
@@ -285,7 +286,8 @@ CodeBlob* CodeBlob::restore(address code_cache_buffer,
 CodeBlob* CodeBlob::create(CodeBlob* archived_blob,
                            const char* name,
                            address archived_reloc_data,
-                           ImmutableOopMapSet* archived_oop_maps
+                           ImmutableOopMapSet* archived_oop_maps,
+                           AOTCodeReader* reader
                           )
 {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
@@ -303,6 +305,7 @@ CodeBlob* CodeBlob::create(CodeBlob* archived_blob,
                                     archived_reloc_data,
                                     archived_oop_maps);
       assert(blob != nullptr, "sanity check");
+      reader->fix_relocations(blob);
 
       // Flush the code block
       ICache::invalidate_range(blob->code_begin(), blob->code_size());

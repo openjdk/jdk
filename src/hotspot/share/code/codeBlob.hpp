@@ -34,6 +34,7 @@
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
+class AOTCodeReader;
 class ImmutableOopMap;
 class ImmutableOopMapSet;
 class JNIHandleBlock;
@@ -318,7 +319,8 @@ public:
   static CodeBlob* create(CodeBlob* archived_blob,
                           const char* name,
                           address archived_reloc_data,
-                          ImmutableOopMapSet* archived_oop_maps);
+                          ImmutableOopMapSet* archived_oop_maps,
+                          AOTCodeReader* reader);
 };
 
 //----------------------------------------------------------------------------------------------------

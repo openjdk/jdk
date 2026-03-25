@@ -910,16 +910,6 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
     has_oop_maps = true;
   }
 
-#ifndef PRODUCT
-  // Write asm remarks
-  if (!cache->write_asm_remarks(blob)) {
-    return false;
-  }
-  if (!cache->write_dbg_strings(blob)) {
-    return false;
-  }
-#endif /* PRODUCT */
-
   if (!cache->write_relocations(blob)) {
     if (!cache->failed()) {
       // We may miss an address in AOT table - skip this code blob.
@@ -927,6 +917,16 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
     }
     return false;
   }
+
+#ifndef PRODUCT
+  // Write asm remarks after relocation info
+  if (!cache->write_asm_remarks(blob)) {
+    return false;
+  }
+  if (!cache->write_dbg_strings(blob)) {
+    return false;
+  }
+#endif /* PRODUCT */
 
   uint entry_size = cache->_write_position - entry_position;
   AOTCodeEntry* entry = new(cache) AOTCodeEntry(entry_kind, encode_id(entry_kind, id),
@@ -1007,7 +1007,8 @@ CodeBlob* AOTCodeReader::compile_code_blob(const char* name) {
   CodeBlob* code_blob = CodeBlob::create(archived_blob,
                                          stored_name,
                                          reloc_data,
-                                         oop_maps
+                                         oop_maps,
+                                         this
                                         );
   if (code_blob == nullptr) { // no space left in CodeCache
     return nullptr;
@@ -1019,8 +1020,6 @@ CodeBlob* AOTCodeReader::compile_code_blob(const char* name) {
   code_blob->dbg_strings().init();
   read_dbg_strings(code_blob->dbg_strings());
 #endif // PRODUCT
-
-  fix_relocations(code_blob);
 
 #ifdef ASSERT
   LogStreamHandle(Trace, aot, codecache, stubs) log;
