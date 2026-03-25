@@ -58,9 +58,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.cli.OptionValueExceptionFactory.StandardArgumentsMapper;
 import jdk.jpackage.internal.model.AppImageBundleType;
 import jdk.jpackage.internal.model.BundleType;
 import jdk.jpackage.internal.model.BundlingOperationDescriptor;
+import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.LauncherShortcut;
 import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
@@ -352,6 +354,11 @@ public final class StandardOption {
 
     public static final OptionValue<String> MAC_BUNDLE_IDENTIFIER = stringOption("mac-package-identifier")
             .valuePattern("package identifier")
+            .validator(StandardValidator.IS_VALID_MAC_BUNDLE_IDENTIFIER)
+            .validatorExceptionFactory(OptionValueExceptionFactory.build((message, cause) -> {
+                return new ConfigException(message, I18N.format("error.parameter-not-mac-bundle-identifier.advice"), cause);
+            }).formatArgumentsTransformer(StandardArgumentsMapper.VALUE_AND_NAME).create())
+            .validatorExceptionFormatString("error.parameter-not-mac-bundle-identifier")
             .create();
 
     public static final OptionValue<String> MAC_BUNDLE_SIGNING_PREFIX = stringOption("mac-package-signing-prefix").scope(MAC_SIGNING).create();
