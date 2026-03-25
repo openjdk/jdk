@@ -589,18 +589,21 @@ public class ZipFSTester {
     // test file stamp
     @Test
     void testTime() throws Exception {
-        var jar = Utils.createJarFile(System.currentTimeMillis() + ".jar");
+        var jar = Utils.createJarFile(System.currentTimeMillis() + ".jar",
+                "META-INF/MANIFEST.MF",
+                "dir1/foo",
+                "dir2/bar",
+                "dir1/dir3/fooo");
         BasicFileAttributes attrs = Files
                         .getFileAttributeView(jar, BasicFileAttributeView.class)
                         .readAttributes();
         // create a new filesystem, copy this file into it
-        Map<String, Object> env = new HashMap<String, Object>();
-        env.put("create", "true");
+        var env = Map.of("create", "true");
         Path fsPath = getTempPath();
-        try (FileSystem fs = newZipFileSystem(fsPath, env)) {
+        try (FileSystem fs = FileSystems.newFileSystem(fsPath, env)) {
             System.out.println("test copy with timestamps...");
             // copyin
-            Path dst = getPathWithParents(fs, "me");
+            Path dst = fs.getPath("me");
             Files.copy(jar, dst, COPY_ATTRIBUTES);
             checkEqual(jar, dst);
             System.out.println("mtime: " + attrs.lastModifiedTime());
