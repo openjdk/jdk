@@ -570,7 +570,7 @@ final class ShortVectorMax extends ShortVector {
     }
 
     // Mask
-
+    @ValueBased
     static final class ShortMaskMax extends AbstractMask<Short> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
@@ -803,7 +803,7 @@ final class ShortVectorMax extends ShortVector {
     }
 
     // Shuffle
-
+    @ValueBased
     static final class ShortShuffleMax extends AbstractShuffle<Short> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 

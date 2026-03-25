@@ -576,7 +576,7 @@ final class IntVector128 extends IntVector {
     }
 
     // Mask
-
+    @ValueBased
     static final class IntMask128 extends AbstractMask<Integer> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
@@ -809,7 +809,7 @@ final class IntVector128 extends IntVector {
     }
 
     // Shuffle
-
+    @ValueBased
     static final class IntShuffle128 extends AbstractShuffle<Integer> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 

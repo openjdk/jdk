@@ -857,7 +857,7 @@ final class $vectortype$ extends $abstractvectortype$ {
 #end[FP]
 
     // Mask
-
+    @ValueBased
     static final class $masktype$ extends AbstractMask<$Boxtype$> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
@@ -1105,7 +1105,7 @@ final class $vectortype$ extends $abstractvectortype$ {
     }
 
     // Shuffle
-
+    @ValueBased
     static final class $shuffletype$ extends AbstractShuffle<$Boxtype$> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 

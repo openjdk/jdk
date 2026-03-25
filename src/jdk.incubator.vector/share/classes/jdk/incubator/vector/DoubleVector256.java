@@ -565,7 +565,7 @@ final class DoubleVector256 extends DoubleVector {
     }
 
     // Mask
-
+    @ValueBased
     static final class DoubleMask256 extends AbstractMask<Double> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
@@ -798,7 +798,7 @@ final class DoubleVector256 extends DoubleVector {
     }
 
     // Shuffle
-
+    @ValueBased
     static final class DoubleShuffle256 extends AbstractShuffle<Double> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 

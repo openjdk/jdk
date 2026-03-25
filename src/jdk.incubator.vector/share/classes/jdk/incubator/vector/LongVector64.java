@@ -560,7 +560,7 @@ final class LongVector64 extends LongVector {
     }
 
     // Mask
-
+    @ValueBased
     static final class LongMask64 extends AbstractMask<Long> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
@@ -793,7 +793,7 @@ final class LongVector64 extends LongVector {
     }
 
     // Shuffle
-
+    @ValueBased
     static final class LongShuffle64 extends AbstractShuffle<Long> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 

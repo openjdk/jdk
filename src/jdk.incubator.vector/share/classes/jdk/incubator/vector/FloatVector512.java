@@ -589,7 +589,7 @@ final class FloatVector512 extends FloatVector {
     }
 
     // Mask
-
+    @ValueBased
     static final class FloatMask512 extends AbstractMask<Float> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
@@ -822,7 +822,7 @@ final class FloatVector512 extends FloatVector {
     }
 
     // Shuffle
-
+    @ValueBased
     static final class FloatShuffle512 extends AbstractShuffle<Float> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 

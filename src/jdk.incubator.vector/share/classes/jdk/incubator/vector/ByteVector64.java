@@ -584,7 +584,7 @@ final class ByteVector64 extends ByteVector {
     }
 
     // Mask
-
+    @ValueBased
     static final class ByteMask64 extends AbstractMask<Byte> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
@@ -817,7 +817,7 @@ final class ByteVector64 extends ByteVector {
     }
 
     // Shuffle
-
+    @ValueBased
     static final class ByteShuffle64 extends AbstractShuffle<Byte> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
