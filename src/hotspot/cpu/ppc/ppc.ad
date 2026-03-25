@@ -2596,7 +2596,6 @@ encode %{
       __ ld($dst$$Register, 0, $dst$$Register);
       return;
     }
-
     const_toc_addr = __ long_constant((jlong)$src$$constant);
     if (const_toc_addr == nullptr) {
       ciEnv::current()->record_out_of_memory_failure();
