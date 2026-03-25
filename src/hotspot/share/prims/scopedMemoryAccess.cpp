@@ -196,12 +196,15 @@ public:
       // An asynchronous handshake is sent to the target thread, telling it
       // to throw an exception, which will unwind the target thread out from
       // the scoped access.
+      //
+      // Since CloseScopedMemoryHandshakeClosure::do_thread may run concurrently
+      // with the target thread, because the target thread might be in native
+      // code, we may not install the async exception directly. Instead, we
+      // install another handshake that will deliver the exception the next
+      // time the target thread stops at a safepoint poll and is able to handle
+      // async exceptions.
       OopHandle session(Universe::vm_global(), JNIHandles::resolve(_session));
       OopHandle error(Universe::vm_global(), JNIHandles::resolve(_error));
-      // Since this handshake may run concurrently with the target thread,
-      // the target thread might be in native code, so we may not install the async exception
-      // directly. Instead, we install another handshake that will deliver the exception the next time
-      // the thread stops at a safepoint poll and is able to handle async exceptions.
       jt->install_async_exception(new ScopedAsyncExceptionHandshakeClosure(session, error, _async_exceptions));
     } else if (!in_scoped) {
       frame last_frame = get_last_frame(jt);
@@ -250,14 +253,18 @@ public:
 
 /*
  * This function performs a thread-local handshake against all threads running at the time
- * the given session (deopt) was closed. If the handshake for a given thread is processed while
- * one or more threads is found inside a scoped method (that is, a method inside the ScopedMemoryAccess
- * class annotated with the '@Scoped' annotation), and whose local variables mention the session being
- * closed (deopt), this method returns false, signalling that the session cannot be closed safely.
+ * the given session was closed. If a thread is found to be accessing the given session,
+ * it is made to throw the given exception (error).
  */
 JVM_ENTRY(void, ScopedMemoryAccess_closeScope(JNIEnv *env, jobject receiver, jobject session, jobject error))
   Atomic<int> async_exceptions;
   CloseScopedMemoryHandshakeClosure cl(session, error, &async_exceptions);
+  // We rely on the fact that enqueueing a handshake operation
+  // like this has release semantics, and processing a safepoint
+  // or transitioning back from native state has acquire semantics.
+  // This makes sure all target threads see updates to the session's
+  // liveness bit that we do before this point, and will see the
+  // session as closed after the handshake finishes.
   Handshake::execute(&cl);
 
   // Wait until any async exceptions are delivered before continuing,
