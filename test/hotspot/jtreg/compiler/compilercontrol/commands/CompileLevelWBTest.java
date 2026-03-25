@@ -42,7 +42,7 @@
  * @test id=exclude-mask-1-mixed
  * @bug 8313713
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
- * @requires vm.compMode == "Xmixed" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode == "Xmixed" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -59,7 +59,7 @@
  * @test id=exclude-mask-1-comp
  * @bug 8313713
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
- * @requires vm.compMode == "Xcomp" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode == "Xcomp" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -76,7 +76,7 @@
  * @test id=exclude-mask-1-no-tiered
  * @bug 8313713
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
- * @requires vm.compMode == "Xmixed" & vm.flavor == "server" & ! vm.opt.TieredCompilation
+ * @requires vm.compMode == "Xmixed" & vm.flavor == "server" & vm.opt.TieredCompilation == false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -93,7 +93,7 @@
  * @test id=exclude-mask-2-mixed
  * @bug 8313713
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
- * @requires vm.compMode == "Xmixed" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode == "Xmixed" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -110,7 +110,7 @@
  * @test id=exclude-mask-2-comp
  * @bug 8313713
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
- * @requires vm.compMode == "Xcomp" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode == "Xcomp" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -127,7 +127,7 @@
  * @test id=exclude-mask-2-no-tiered
  * @bug 8313713
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
- * @requires vm.compMode == "Xcomp" & vm.flavor == "server" & ! vm.opt.TieredCompilation
+ * @requires vm.compMode == "Xcomp" & vm.flavor == "server" & vm.opt.TieredCompilation == false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -144,7 +144,7 @@
  * @test id=exclude-mask-3-mixed
  * @bug 8313713
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
- * @requires vm.compMode == "Xmixed" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode == "Xmixed" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -161,7 +161,7 @@
  * @test id=exclude-mask-3-comp
  * @bug 8313713
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
- * @requires vm.compMode == "Xcomp" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode == "Xcomp" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -178,7 +178,7 @@
  * @test id=exclude-mask-3-no-tiered
  * @bug 8313713
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
- * @requires vm.compMode == "Xcomp" & vm.flavor == "server" & ! vm.opt.TieredCompilation
+ * @requires vm.compMode == "Xcomp" & vm.flavor == "server" & vm.opt.TieredCompilation == false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -195,7 +195,7 @@
  * @test id=exclude-mask-4-tiered
  * @bug 8313713
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
- * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -212,7 +212,7 @@
  * @test id=exclude-mask-4-no-tiered
  * @bug 8313713
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
- * @requires vm.compMode != "Xint" & vm.flavor == "server" & ! vm.opt.TieredCompilation
+ * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation == false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -229,7 +229,7 @@
  * @test id=exclude-mask-5-tiered
  * @bug 8313713
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
- * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -246,7 +246,7 @@
  * @test id=exclude-mask-5-no-tiered
  * @bug 8313713
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
- * @requires vm.compMode != "Xint" & vm.flavor == "server" & ! vm.opt.TieredCompilation
+ * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation == false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -263,7 +263,7 @@
  * @test id=exclude-mask-6-tiered
  * @bug 8313713
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
- * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -280,7 +280,7 @@
  * @test id=exclude-mask-6-no-tiered
  * @bug 8313713
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
- * @requires vm.compMode != "Xint" & vm.flavor == "server" & ! vm.opt.TieredCompilation
+ * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation == false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -314,7 +314,7 @@
  * @test id=exclude-mask-8
  * @bug 8313713
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
- * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -331,7 +331,7 @@
  * @test id=exclude-mask-9
  * @bug 8313713
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
- * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -348,7 +348,7 @@
  * @test id=exclude-mask-10
  * @bug 8313713
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
- * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -365,7 +365,7 @@
  * @test id=exclude-mask-11
  * @bug 8313713
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
- * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -382,7 +382,7 @@
  * @test id=exclude-mask-12
  * @bug 8313713
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
- * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -399,7 +399,7 @@
  * @test id=exclude-mask-13
  * @bug 8313713
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
- * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -416,7 +416,7 @@
  * @test id=exclude-mask-14
  * @bug 8313713
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
- * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -449,7 +449,7 @@
  * @test id=compileonly-all-levels-mixed
  * @bug 8313713
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
- * @requires vm.compMode == "Xmixed" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode == "Xmixed" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -466,7 +466,7 @@
  * @test id=compileonly-all-levels-comp
  * @bug 8313713
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
- * @requires vm.compMode == "Xcomp" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode == "Xcomp" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -483,7 +483,7 @@
  * @test id=compileonly-all-levels-no-tiered
  * @bug 8313713
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
- * @requires vm.compMode != "Xint" & vm.flavor == "server" & ! vm.opt.TieredCompilation
+ * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation == false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -500,7 +500,7 @@
  * @test id=compileonly-mask-1
  * @bug 8313713
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
- * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -517,7 +517,7 @@
  * @test id=compileonly-mask-2
  * @bug 8313713
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
- * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -534,7 +534,7 @@
  * @test id=compileonly-mask-3
  * @bug 8313713
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
- * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -551,7 +551,7 @@
  * @test id=compileonly-mask-4
  * @bug 8313713
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
- * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -568,7 +568,7 @@
  * @test id=compileonly-mask-5
  * @bug 8313713
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
- * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -585,7 +585,7 @@
  * @test id=compileonly-mask-6
  * @bug 8313713
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
- * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -602,7 +602,7 @@
  * @test id=compileonly-mask-7
  * @bug 8313713
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
- * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -636,7 +636,7 @@
  * @test id=compileonly-mask-9-tiered
  * @bug 8313713
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
- * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -653,7 +653,7 @@
  * @test id=compileonly-mask-9-no-tiered
  * @bug 8313713
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
- * @requires vm.compMode != "Xint" & vm.flavor == "server" & ! vm.opt.TieredCompilation
+ * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation == false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -670,7 +670,7 @@
  * @test id=compileonly-mask-10-tiered
  * @bug 8313713
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
- * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -687,7 +687,7 @@
  * @test id=compileonly-mask-10-no-tiered
  * @bug 8313713
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
- * @requires vm.compMode != "Xint" & vm.flavor == "server" & ! vm.opt.TieredCompilation
+ * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation == false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -704,7 +704,7 @@
  * @test id=compileonly-mask-11-tiered
  * @bug 8313713
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
- * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -721,7 +721,7 @@
  * @test id=compileonly-mask-11-no-tiered
  * @bug 8313713
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
- * @requires vm.compMode != "Xint" & vm.flavor == "server" & ! vm.opt.TieredCompilation
+ * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation == false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -738,7 +738,7 @@
  * @test id=compileonly-mask-12-mixed
  * @bug 8313713
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
- * @requires vm.compMode == "Xmixed" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode == "Xmixed" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -755,7 +755,7 @@
  * @test id=compileonly-mask-12-comp
  * @bug 8313713
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
- * @requires vm.compMode == "Xcomp" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode == "Xcomp" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -772,7 +772,7 @@
  * @test id=compileonly-mask-12-no-tiered
  * @bug 8313713
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
- * @requires vm.compMode != "Xint" & vm.flavor == "server" & ! vm.opt.TieredCompilation
+ * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation == false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -789,7 +789,7 @@
  * @test id=compileonly-mask-13-mixed
  * @bug 8313713
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
- * @requires vm.compMode == "Xmixed" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode == "Xmixed" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -806,7 +806,7 @@
  * @test id=compileonly-mask-13-comp
  * @bug 8313713
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
- * @requires vm.compMode == "Xcomp" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode == "Xcomp" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -823,7 +823,7 @@
  * @test id=compileonly-mask-13-no-tiered
  * @bug 8313713
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
- * @requires vm.compMode != "Xint" & vm.flavor == "server" & ! vm.opt.TieredCompilation
+ * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation == false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -840,7 +840,7 @@
  * @test id=compileonly-mask-14-mixed
  * @bug 8313713
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
- * @requires vm.compMode == "Xmixed" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode == "Xmixed" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -857,7 +857,7 @@
  * @test id=compileonly-mask-14-comp
  * @bug 8313713
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
- * @requires vm.compMode == "Xcomp" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode == "Xcomp" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -874,7 +874,7 @@
  * @test id=compileonly-mask-14-no-tiered
  * @bug 8313713
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
- * @requires vm.compMode != "Xint" & vm.flavor == "server" & ! vm.opt.TieredCompilation
+ * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation == false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -891,7 +891,7 @@
  * @test id=compileonly-mask-15-mixed
  * @bug 8313713
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
- * @requires vm.compMode == "Xmixed" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode == "Xmixed" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -908,7 +908,7 @@
  * @test id=compileonly-mask-15-comp
  * @bug 8313713
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
- * @requires vm.compMode == "Xcomp" & vm.flavor == "server" & vm.opt.TieredCompilation
+ * @requires vm.compMode == "Xcomp" & vm.flavor == "server" & vm.opt.TieredCompilation != false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
@@ -925,7 +925,7 @@
  * @test id=compileonly-mask-15-no-tiered
  * @bug 8313713
  * @summary Test -XX:CompileCommand=compileonly with different compilation levels
- * @requires vm.compMode != "Xint" & vm.flavor == "server" & ! vm.opt.TieredCompilation
+ * @requires vm.compMode != "Xint" & vm.flavor == "server" & vm.opt.TieredCompilation == false
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *         & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
