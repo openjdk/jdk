@@ -35,7 +35,6 @@ class OSInfo : AllStatic {
   static size_t    _vm_allocation_granularity;
 
 public:
-  static const size_t InvalidPageSize = 0;
   // Returns the byte size of a virtual memory page
   static size_t vm_page_size() { return _vm_page_size; }
 
@@ -43,7 +42,7 @@ public:
   static size_t vm_allocation_granularity() { return _vm_allocation_granularity; }
 
   static void set_vm_page_size(size_t n) {
-    assert(_vm_page_size == InvalidPageSize, "init only once");
+    assert(_vm_page_size == 0, "init only once");
     _vm_page_size = n;
   }
 

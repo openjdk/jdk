@@ -35,7 +35,7 @@
 #include <dirent.h>
 
 ExplicitHugePageSupport::ExplicitHugePageSupport() :
-  _initialized{false}, _os_supported{}, _pre_allocated{}, _default_hugepage_size{OSInfo::InvalidPageSize}, _inconsistent{false} {}
+  _initialized{false}, _os_supported{}, _pre_allocated{}, _default_hugepage_size{SIZE_MAX}, _inconsistent{false} {}
 
 os::PageSizes ExplicitHugePageSupport::os_supported() const {
   assert(_initialized, "Not initialized");
@@ -54,7 +54,7 @@ size_t ExplicitHugePageSupport::default_hugepage_size() const {
 
 // Scan /proc/meminfo and return value of Hugepagesize
 static size_t scan_default_hugepagesize() {
-  size_t pagesize = OSInfo::InvalidPageSize;
+  size_t pagesize = 0;
 
   // large_page_size on Linux is used to round up heap size. x86 uses either
   // 2M or 4M page, depending on whether PAE (Physical Address Extensions)
@@ -137,7 +137,7 @@ static os::PageSizes scan_hugepages() {
 static os::PageSizes filter_pre_allocated_hugepages(os::PageSizes pagesizes) {
   os::PageSizes pre_allocated{};
   char filename[PATH_MAX];
-  for (size_t ps = pagesizes.smallest(); ps != OSInfo::InvalidPageSize; ps = pagesizes.next_larger(ps)) {
+  for (size_t ps = pagesizes.smallest(); ps != 0; ps = pagesizes.next_larger(ps)) {
     os::snprintf_checked(filename, sizeof(filename), "%s/hugepages-%zukB/nr_hugepages", sys_hugepages, ps / K);
     size_t pages;
     bool read_success = read_number_file(filename, &pages);
@@ -151,7 +151,7 @@ static os::PageSizes filter_pre_allocated_hugepages(os::PageSizes pagesizes) {
 void ExplicitHugePageSupport::print_on(outputStream* os) {
   if (_initialized) {
     os->print_cr("Explicit hugepage support:");
-    for (size_t s = _os_supported.smallest(); s != OSInfo::InvalidPageSize; s = _os_supported.next_larger(s)) {
+    for (size_t s = _os_supported.smallest(); s != 0; s = _os_supported.next_larger(s)) {
       os->print_cr("  hugepage size: " EXACTFMT, EXACTFMTARGS(s));
     }
     os->print_cr("  default hugepage size: " EXACTFMT, EXACTFMTARGS(_default_hugepage_size));
@@ -165,7 +165,7 @@ void ExplicitHugePageSupport::print_on(outputStream* os) {
 
 void ExplicitHugePageSupport::scan_os() {
   _default_hugepage_size = scan_default_hugepagesize();
-  if (_default_hugepage_size != OSInfo::InvalidPageSize) {
+  if (_default_hugepage_size > 0) {
     _os_supported = scan_hugepages();
     _pre_allocated = filter_pre_allocated_hugepages(_os_supported);
     // See https://www.kernel.org/doc/Documentation/vm/hugetlbpage.txt: /proc/meminfo should match
@@ -187,7 +187,7 @@ void ExplicitHugePageSupport::scan_os() {
 }
 
 THPSupport::THPSupport() :
-  _initialized{false}, _mode{THPMode::never}, _pagesize{OSInfo::InvalidPageSize} {}
+    _initialized(false), _mode(THPMode::never), _pagesize(SIZE_MAX) {}
 
 
 THPMode THPSupport::mode() const {
@@ -221,8 +221,9 @@ void THPSupport::scan_os() {
   }
 
   // Scan large page size for THP from hpage_pmd_size
+  _pagesize = 0;
   if (read_number_file("/sys/kernel/mm/transparent_hugepage/hpage_pmd_size", &_pagesize)) {
-    assert(_pagesize != OSInfo::InvalidPageSize, "Expected");
+    assert(_pagesize > 0, "Expected");
   }
   _initialized = true;
 

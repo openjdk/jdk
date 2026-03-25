@@ -193,13 +193,13 @@ class os: AllStatic {
     PageSizes() : _v(0) {}
     void add(size_t pagesize);
     bool contains(size_t pagesize) const;
-    // Given a page size, return the next smaller page size in this set, or InvalidPageSize.
+    // Given a page size, return the next smaller page size in this set, or 0.
     size_t next_smaller(size_t pagesize) const;
-    // Given a page size, return the next larger page size in this set, or InvalidPageSize.
+    // Given a page size, return the next larger page size in this set, or 0.
     size_t next_larger(size_t pagesize) const;
-    // Returns the largest page size in this set, or InvalidPageSize if set is empty.
+    // Returns the largest page size in this set, or 0 if set is empty.
     size_t largest() const;
-    // Returns the smallest page size in this set, or InvalidPageSize if set is empty.
+    // Returns the smallest page size in this set, or 0 if set is empty.
     size_t smallest() const;
     // Prints one line of comma separated, human readable page sizes, "empty" if empty.
     void print_on(outputStream* st) const;
