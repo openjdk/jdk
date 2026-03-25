@@ -292,30 +292,14 @@ public final class SealedGraph implements Taglet {
         }
 
         private static List<TypeElement> permittedSubclasses(TypeElement node, Set<String> exports) {
-            List<TypeElement> dfsStack = new ArrayList<TypeElement>().reversed(); // Faster operations to head
-            List<TypeElement> result = new ArrayList<>();
-            // The starting node may be in the public API - still expand it
-            prependSubclasses(node, dfsStack);
-
-            while (!dfsStack.isEmpty()) {
-                TypeElement now = dfsStack.removeFirst();
-                if (isInPublicApi(now, exports)) {
-                    result.addLast(now);
-                } else {
-                    // Skip the non-exported classes in the hierarchy
-                    prependSubclasses(now, dfsStack);
-                }
-            }
-
-            return List.copyOf(result);
-        }
-
-        private static void prependSubclasses(TypeElement node, List<TypeElement> dfs) {
-            for (var e : node.getPermittedSubclasses().reversed()) {
-                if (e instanceof DeclaredType dt && dt.asElement() instanceof TypeElement te) {
-                    dfs.addFirst(te);
-                }
-            }
+            return node.getPermittedSubclasses().stream()
+                    .filter(DeclaredType.class::isInstance)
+                    .map(DeclaredType.class::cast)
+                    .map(DeclaredType::asElement)
+                    .filter(TypeElement.class::isInstance)
+                    .map(TypeElement.class::cast)
+                    .filter(te -> isInPublicApi(te, exports))
+                    .toList();
         }
 
         private static boolean isInPublicApi(TypeElement typeElement, Set<String> exports) {
