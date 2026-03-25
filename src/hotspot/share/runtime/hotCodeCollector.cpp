@@ -32,6 +32,7 @@
 #include "runtime/hotCodeCollector.hpp"
 #include "runtime/hotCodeSampler.hpp"
 #include "runtime/java.hpp"
+#include "runtime/javaThread.inline.hpp"
 
 // Initialize static variables
 bool      HotCodeCollector::_is_initialized = false;

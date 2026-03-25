@@ -27,6 +27,7 @@
 #include "code/codeCache.hpp"
 #include "logging/log.hpp"
 #include "runtime/hotCodeSampler.hpp"
+#include "runtime/javaThread.inline.hpp"
 
 void ThreadSampler::sample_all_java_threads() {
   uint64_t start_time = os::javaTimeMillis();
