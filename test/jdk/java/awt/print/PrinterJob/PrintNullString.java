@@ -37,7 +37,7 @@ import javax.print.attribute.standard.Destination;
 
 /*
  * @test
- * @bug 4223328 8377534
+ * @bug 4223328 4138921
  * @summary Printer graphics must throw expected exceptions
  * @key printer
  * @run main PrintNullString
