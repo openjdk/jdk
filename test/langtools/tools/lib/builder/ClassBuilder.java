@@ -30,6 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.regex.Matcher;
@@ -54,6 +55,7 @@ public class ClassBuilder extends AbstractBuilder {
 
     private String extendsType;
     private final List<String> implementsTypes;
+    private final List<String> permitsTypes;
     private final List<MemberBuilder> members;
     private final List<ClassBuilder> inners;
     private final List<ClassBuilder> nested;
@@ -86,6 +88,7 @@ public class ClassBuilder extends AbstractBuilder {
         }
         imports = new ArrayList<>();
         implementsTypes = new ArrayList<>();
+        permitsTypes = new ArrayList<>();
         members = new ArrayList<>();
         nested = new ArrayList<>();
         inners = new ArrayList<>();
@@ -163,7 +166,17 @@ public class ClassBuilder extends AbstractBuilder {
      * @return this builder.
      */
     public ClassBuilder addImplements(String... names) {
-        implementsTypes.addAll(List.of(names));
+        implementsTypes.addAll(Arrays.asList(names));
+        return this;
+    }
+
+    /**
+     * Adds a permits declaration(s).
+     * @param names the subtypes
+     * @return this builder
+     */
+    public ClassBuilder addPermits(String... names) {
+        permitsTypes.addAll(Arrays.asList(names));
         return this;
     }
 
@@ -237,14 +250,11 @@ public class ClassBuilder extends AbstractBuilder {
         }
         if (!implementsTypes.isEmpty()) {
             ow.print("implements ");
-
-            ListIterator<String> iter = implementsTypes.listIterator();
-            while (iter.hasNext()) {
-                String s = iter.next() ;
-                ow.print(s);
-                if (iter.hasNext())
-                    ow.print(", ");
-            }
+            ow.print(String.join(", ", implementsTypes));
+        }
+        if (!permitsTypes.isEmpty()) {
+            ow.print("permits ");
+            ow.print(String.join(", ", permitsTypes));
         }
         ow.print("{");
         if (!nested.isEmpty()) {

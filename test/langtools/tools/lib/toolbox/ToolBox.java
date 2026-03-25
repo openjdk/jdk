@@ -667,6 +667,27 @@ public class ToolBox {
     }
 
     /**
+     * Finds a file with a path relative to the langtools test root directory.
+     *
+     * @param path the desired path from test/langtools
+     * @return the file, if found
+     */
+    public Path findFromTestRoot(String path) {
+        Path testSrc = Path.of(System.getProperty("test.src", "."));
+
+        for (Path d = testSrc; d != null; d = d.getParent()) {
+            if (Files.exists(d.resolve("TEST.ROOT"))) {
+                Path file = d.resolve(path);
+                if (Files.exists(file)) {
+                    return file;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Returns a string representing the contents of an {@code Iterable} as a list.
      *
      * @param <T>   the type parameter of the {@code Iterable}
