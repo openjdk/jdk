@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,25 +138,20 @@ public final class SealedGraph implements Taglet {
 
         // Generates a graph in DOT format
         String graph(TypeElement rootClass, Set<String> exports) {
-            if (!isInPublicApi(rootClass, exports)) {
-                // Alternatively we can return "" for the graph since there is no single root to render
-                throw new IllegalArgumentException("Root not in public API: " + rootClass.getQualifiedName());
-            }
             final State state = new State(rootClass);
             traverse(state, rootClass, exports);
             return state.render();
         }
 
         static void traverse(State state, TypeElement node, Set<String> exports) {
-            if (!isInPublicApi(node, exports)) {
-                throw new IllegalArgumentException("Bad request, not in public API: " + node.getQualifiedName());
-            }
             state.addNode(node);
             if (!(node.getModifiers().contains(Modifier.SEALED) || node.getModifiers().contains(Modifier.FINAL))) {
                 state.addNonSealedEdge(node);
             } else {
                 for (TypeElement subNode : permittedSubclasses(node, exports)) {
-                    state.addEdge(node, subNode);
+                    if (isInPublicApi(node, exports) && isInPublicApi(subNode, exports)) {
+                        state.addEdge(node, subNode);
+                    }
                     traverse(state, subNode, exports);
                 }
             }
