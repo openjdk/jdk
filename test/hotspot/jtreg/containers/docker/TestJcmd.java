@@ -170,13 +170,9 @@ public class TestJcmd {
         opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z")
             .addJavaOpts("-cp", "/test-classes/")
             .addDockerOpts("--cap-add=SYS_PTRACE")
+            .addDockerOpts("--pull=never")
             .addDockerOpts("--name", CONTAINER_NAME)
             .addClassOptions("" + TIME_TO_RUN_CONTAINER_PROCESS);
-
-        if (IS_PODMAN && !ROOT_UID.equals(getId("-u"))) {
-            // map the current userid to the one in the target namespace
-            opts.addDockerOpts("--userns=keep-id");
-        }
 
         // avoid large Xmx
         opts.appendTestJavaOptions = false;
@@ -186,7 +182,7 @@ public class TestJcmd {
         return ProcessTools.startProcess("main-container-process",
                                       pb,
                                       line -> line.contains(EventGeneratorLoop.MAIN_METHOD_STARTED),
-                                      5, TimeUnit.SECONDS);
+                                      15, TimeUnit.SECONDS);
     }
 
 

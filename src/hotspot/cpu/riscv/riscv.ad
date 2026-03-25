@@ -2111,10 +2111,6 @@ uint Matcher::float_pressure_limit()
   return (FLOATPRESSURE == -1) ? _FLOAT_REG_mask.size() : FLOATPRESSURE;
 }
 
-bool Matcher::use_asm_for_ldiv_by_con(jlong divisor) {
-  return false;
-}
-
 const RegMask& Matcher::divI_proj_mask() {
   ShouldNotReachHere();
   return RegMask::EMPTY;
@@ -8156,6 +8152,22 @@ instruct unnecessary_membar_rvtso() %{
   ins_pipe(real_empty);
 %}
 
+instruct membar_storeload_rvtso() %{
+  predicate(UseZtso);
+  match(MemBarStoreLoad);
+  ins_cost(VOLATILE_REF_COST);
+
+  format %{ "#@membar_storeload_rvtso\n\t"
+            "fence w, r"%}
+
+  ins_encode %{
+    __ block_comment("membar_storeload_rvtso");
+    __ membar(MacroAssembler::StoreLoad);
+  %}
+
+  ins_pipe(pipe_slow);
+%}
+
 instruct membar_volatile_rvtso() %{
   predicate(UseZtso);
   match(MemBarVolatile);
@@ -8184,6 +8196,22 @@ instruct unnecessary_membar_volatile_rvtso() %{
     __ block_comment("unnecessary_membar_volatile_rvtso");
   %}
   ins_pipe(real_empty);
+%}
+
+instruct membar_full_rvtso() %{
+  predicate(UseZtso);
+  match(MemBarFull);
+  ins_cost(VOLATILE_REF_COST);
+
+  format %{ "#@membar_full_rvtso\n\t"
+            "fence rw, rw" %}
+
+  ins_encode %{
+    __ block_comment("membar_full_rvtso");
+    __ membar(MacroAssembler::AnyAny);
+  %}
+
+  ins_pipe(pipe_slow);
 %}
 
 // RVWMO
@@ -8235,6 +8263,22 @@ instruct membar_storestore_rvwmo() %{
   ins_pipe(pipe_serial);
 %}
 
+instruct membar_storeload_rvwmo() %{
+  predicate(!UseZtso);
+  match(MemBarStoreLoad);
+  ins_cost(VOLATILE_REF_COST);
+
+  format %{ "#@membar_storeload_rvwmo\n\t"
+            "fence w, r"%}
+
+  ins_encode %{
+    __ block_comment("membar_storeload_rvwmo");
+    __ membar(MacroAssembler::StoreLoad);
+  %}
+
+  ins_pipe(pipe_serial);
+%}
+
 instruct membar_volatile_rvwmo() %{
   predicate(!UseZtso);
   match(MemBarVolatile);
@@ -8277,6 +8321,22 @@ instruct unnecessary_membar_volatile_rvwmo() %{
     __ block_comment("unnecessary_membar_volatile_rvwmo");
   %}
   ins_pipe(real_empty);
+%}
+
+instruct membar_full_rvwmo() %{
+  predicate(!UseZtso);
+  match(MemBarFull);
+  ins_cost(VOLATILE_REF_COST);
+
+  format %{ "#@membar_full_rvwmo\n\t"
+            "fence rw, rw" %}
+
+  ins_encode %{
+    __ block_comment("membar_full_rvwmo");
+    __ membar(MacroAssembler::AnyAny);
+  %}
+
+  ins_pipe(pipe_serial);
 %}
 
 instruct spin_wait() %{

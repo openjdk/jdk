@@ -531,7 +531,7 @@ public class NimbusLookAndFeel extends SynthLookAndFeel {
         public Object createValue(UIDefaults table) {
             Object obj = null;
             // check specified state
-            if (state!=null){
+            if (state != null){
                 obj = uiDefaults.get(prefix+"["+state+"]."+suffix);
             }
             // check enabled state
