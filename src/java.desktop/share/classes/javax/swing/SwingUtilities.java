@@ -907,6 +907,7 @@ public class SwingUtilities implements SwingConstants
      * for shortcut keymask and/or accelerator keymask
      *
      * @return the system mnemonic key mask
+     * @since 27
      */
     public static int getSystemMnemonicKeyMask() {
         return SwingUtilities2.getSystemMnemonicKeyMask();
