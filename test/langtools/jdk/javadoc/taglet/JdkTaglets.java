@@ -35,9 +35,9 @@ public final class JdkTaglets {
 
     /// Build a taglet and return its path for `-tagletpath`.
     public static Path build(ToolBox tb, Path base, String... tagletFiles) throws IOException {
-        Path tagletOutDir = base.resolve("taglet");
-        Files.deleteIfExists(tagletOutDir);
+        Path tagletOutDir = base.resolve("tagletClasses");
         Files.createDirectories(tagletOutDir);
+        tb.cleanDirectory(tagletOutDir);
         Path tagletRoot = tb.findFromTestRoot("../../make/jdk/src/classes/build/tools/taglet");
 
         new JavacTask(tb)
