@@ -324,7 +324,7 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
   const TypePtr* adr_type = nullptr;
   if (ac->is_clonebasic()) {
     assert(ac->in(ArrayCopyNode::Src) != ac->in(ArrayCopyNode::Dest), "clone source equals destination");
-    adr = _igvn.transform(new AddPNode(base, base, _igvn.MakeConX(offset)));
+    adr = _igvn.transform(AddPNode::make_with_base(base, _igvn.MakeConX(offset)));
     adr_type = _igvn.type(base)->is_ptr()->add_offset(offset);
   } else {
     if (!ac->modifies(offset, offset, &_igvn, true)) {
@@ -339,7 +339,7 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
 
     if (src_pos_t->is_con() && dest_pos_t->is_con()) {
       intptr_t off = ((src_pos_t->get_con() - dest_pos_t->get_con()) << shift) + offset;
-      adr = _igvn.transform(new AddPNode(base, base, _igvn.MakeConX(off)));
+      adr = _igvn.transform(AddPNode::make_with_base(base, _igvn.MakeConX(off)));
       adr_type = _igvn.type(base)->is_ptr()->add_offset(off);
       if (ac->in(ArrayCopyNode::Src) == ac->in(ArrayCopyNode::Dest)) {
         // Don't emit a new load from src if src == dst but try to get the value from memory instead
@@ -353,7 +353,7 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
       diff = _igvn.transform(new LShiftXNode(diff, _igvn.intcon(shift)));
 
       Node* off = _igvn.transform(new AddXNode(_igvn.MakeConX(offset), diff));
-      adr = _igvn.transform(new AddPNode(base, base, off));
+      adr = _igvn.transform(AddPNode::make_with_base(base, off));
       adr_type = _igvn.type(base)->is_ptr()->add_offset(Type::OffsetBot);
       if (ac->in(ArrayCopyNode::Src) == ac->in(ArrayCopyNode::Dest)) {
         // Non constant offset in the array: we can't statically

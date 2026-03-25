@@ -363,6 +363,7 @@ public class TestArrayCopyEliminationUncRematerialization {
                              .toList()
                 ));
                 return scope(
+                    // Sometimes we get one more load depending on the position of the range checks of the different stores.
                     testCaseConstPlusOne.asToken("Const" + testName, 2 * config.copyLen - numStores, new TestTemplates(multiStoresConst, unstableTrap)),
                     testCaseIdx.asToken("Idx" + testName, new TestTemplates(multiStoresIdx, unstableTrap)),
                     testCaseClone.asToken("Clone" + testName, config.copyLen, new TestTemplates(multiStoresClone, unstableTrap))
