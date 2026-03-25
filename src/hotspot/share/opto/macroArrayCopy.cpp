@@ -1253,6 +1253,8 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
     // but does not set this flag.
     CallProjections callprojs;
     ac->extract_projections(&callprojs, false /*separate_io_proj*/, false /*do_asserts*/);
+    // The MemBar sits after the Catch chain if one exists, otherwise directly after the
+    // call projection. Either may be null if not yet wired or if the control output has no uses.
     Node* ctrl_out = callprojs.fallthrough_catchproj;
     if (ctrl_out == nullptr) ctrl_out = callprojs.fallthrough_proj;
     if (ctrl_out != nullptr) {
