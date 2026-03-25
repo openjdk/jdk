@@ -333,7 +333,7 @@ RuntimeBlob::RuntimeBlob(
              align_up(cb->total_relocation_size(), oopSize))
 {
   cb->copy_code_and_locs_to(this);
-  
+
   // Flush generated code
   ICache::invalidate_range(code_begin(), code_size());
 }
