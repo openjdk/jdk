@@ -58,7 +58,9 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   const G1OldGenAllocationTracker* _old_gen_alloc_tracker;
 
   const G1Predictions* _predictor;
-  TruncatedSeq _marking_times_s;
+  // Time intervals from marking start to the first mixed GC, including only mutator time;
+  // GC Pause times are excluded
+  TruncatedSeq _marking_start_to_mixed_times_s;
   TruncatedSeq _old_gen_alloc_rate_s;
 
   // The most recent unrestrained size of the young gen. This is used as an additional
@@ -74,10 +76,10 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   double predict(const TruncatedSeq* seq) const;
 
   bool have_enough_data_for_prediction() const;
-  double last_marking_length_s() const;
+  double last_marking_start_to_mixed_time_s() const;
 
-  // The "effective" target occupancy the algorithm wants to keep during and at the
-  // end of marking. This is typically lower than the target occupancy, as the
+  // The "effective" target occupancy the algorithm wants to keep until the start
+  // of Mixed GCs. This is typically lower than the target occupancy, as the
   // algorithm needs to consider restrictions by the environment.
   size_t effective_target_occupancy() const;
 
@@ -95,7 +97,8 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   // Adjust target occupancy.
   void update_target_occupancy(size_t new_target_occupancy);
 
-  size_t target_occupancy() const { return _target_occupancy; }
+  void update_target_after_marking_phase();
+
   // Update information about time during which allocations in the Java heap occurred,
   // how large these allocations were in bytes, and an additional buffer.
   // The allocations should contain any amount of space made unusable for further
@@ -108,7 +111,7 @@ class G1IHOPControl : public CHeapObj<mtGC> {
 
   // Update the time spent in the mutator beginning from the end of concurrent start to
   // the first mixed gc.
-  void update_marking_length(double marking_length_s);
+  void add_marking_length(double marking_length_s);
 
   // Get the current non-young occupancy at which concurrent marking should start.
   size_t old_gen_threshold_for_conc_mark_start();

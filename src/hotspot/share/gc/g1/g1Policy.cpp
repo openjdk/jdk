@@ -163,9 +163,9 @@ void G1Policy::record_new_heap_size(uint new_number_of_regions) {
 
   _young_gen_sizer.heap_size_changed(new_number_of_regions);
 
-  if (!is_init_completed() || !_g1h->collector_state()->is_in_marking()) {
-    // If Marking is already in progress, then we have no reason to update the
-    // thresholds.
+  if (!_concurrent_start_to_mixed.is_active()) {
+    // If in the time interval [Concurrent Start, First Mixed GC], then we have should not
+    // update the target.
     _ihop_control->update_target_occupancy(new_number_of_regions * G1HeapRegion::GrainBytes);
   }
 }
@@ -690,20 +690,6 @@ void G1Policy::record_young_collection_start() {
   _eden_surv_rate_group->stop_adding_regions();
   _survivors_age_table.clear();
 
-  if (collector_state()->is_in_young_gc_before_mixed()) {
-    // Check validity of our occupancy predictions
-    size_t current_used = _g1h->used();
-    size_t target_used_at_end_of_marking = _ihop_control->target_occupancy();
-    log_debug(gc, ihop) ("Basic IHOP Information (check prediction), current used: %zuB, target used %zuB, missed the target: %s",
-                         current_used,
-                         target_used_at_end_of_marking,
-                         BOOL_TO_STR(current_used > target_used_at_end_of_marking));
-    // Capacity may have changed during marking. Update the ihop target.
-    if (target_used_at_end_of_marking != _g1h->capacity()) {
-      _ihop_control->update_target_occupancy(_g1h->capacity());
-    }
-  }
-
   assert(_g1h->collection_set()->verify_young_ages(), "region age verification failed");
 }
 
@@ -1052,9 +1038,10 @@ bool G1Policy::update_ihop_prediction(double mutator_time_s,
            "Concurrent start to mixed time must be larger than zero but is %.3f",
            marking_to_mixed_time);
     if (marking_to_mixed_time > min_valid_time) {
-      _ihop_control->update_marking_length(marking_to_mixed_time);
+      _ihop_control->add_marking_length(marking_to_mixed_time);
       report = true;
     }
+    _ihop_control->update_target_after_marking_phase();
   }
 
   // As an approximation for the young gc promotion rates during marking we use

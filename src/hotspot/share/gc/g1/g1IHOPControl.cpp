@@ -38,12 +38,12 @@ double G1IHOPControl::predict(const TruncatedSeq* seq) const {
 bool G1IHOPControl::have_enough_data_for_prediction() const {
   assert(_is_adaptive, "precondition");
 
-  return ((size_t)_marking_times_s.num() >= G1AdaptiveIHOPNumInitialSamples) &&
+  return ((size_t)_marking_start_to_mixed_times_s.num() >= G1AdaptiveIHOPNumInitialSamples) &&
          ((size_t)_old_gen_alloc_rate_s.num() >= G1AdaptiveIHOPNumInitialSamples);
 }
 
-double G1IHOPControl::last_marking_length_s() const {
-  return _marking_times_s.last();
+double G1IHOPControl::last_marking_start_to_mixed_time_s() const {
+  return _marking_start_to_mixed_times_s.last();
 }
 
 size_t G1IHOPControl::effective_target_occupancy() const {
@@ -79,7 +79,7 @@ G1IHOPControl::G1IHOPControl(double ihop_percent,
     _last_allocation_time_s(0.0),
     _old_gen_alloc_tracker(old_gen_alloc_tracker),
     _predictor(predictor),
-    _marking_times_s(10, 0.05),
+    _marking_start_to_mixed_times_s(10, 0.05),
     _old_gen_alloc_rate_s(10, 0.05),
     _expected_young_gen_at_first_mixed_gc(0) {
   assert(_initial_ihop_percent >= 0.0 && _initial_ihop_percent <= 100.0,
@@ -91,6 +91,23 @@ void G1IHOPControl::update_target_occupancy(size_t new_target_occupancy) {
   log_debug(gc, ihop)("Target occupancy update: old: %zuB, new: %zuB",
                       _target_occupancy, new_target_occupancy);
   _target_occupancy = new_target_occupancy;
+}
+
+void G1IHOPControl::update_target_after_marking_phase() {
+  G1CollectedHeap *g1h = G1CollectedHeap::heap();
+  if (log_is_enabled(Debug, gc, ihop)) {
+    // Check validity of our occupancy predictions
+    size_t current_used = g1h->used();
+    size_t target_used = _target_occupancy;
+    log_debug(gc, ihop) ("Basic IHOP Information (check prediction), current used: %zuB, target used %zuB, missed the target: %s",
+                        current_used,
+                        target_used,
+                        BOOL_TO_STR(current_used > target_used));
+  }
+  // Capacity may have changed during the marking phase. Update the ihop target.
+  if (g1h->capacity() != _target_occupancy) {
+    update_target_occupancy(g1h->capacity());
+  }
 }
 
 void G1IHOPControl::report_statistics(G1NewTracer* new_tracer, size_t non_young_occupancy) {
@@ -106,9 +123,9 @@ void G1IHOPControl::update_allocation_info(double allocation_time_s, size_t desi
   _expected_young_gen_at_first_mixed_gc = desired_young_gen_size;
 }
 
-void G1IHOPControl::update_marking_length(double marking_length_s) {
+void G1IHOPControl::add_marking_length(double marking_length_s) {
   assert(marking_length_s >= 0.0, "Invalid marking length: %.3f", marking_length_s);
-  _marking_times_s.add(marking_length_s);
+  _marking_start_to_mixed_times_s.add(marking_length_s);
 }
 
 // Determine the old generation occupancy threshold at which to start
@@ -124,14 +141,14 @@ size_t G1IHOPControl::old_gen_threshold_for_conc_mark_start() {
   // During the time between marking start and the first Mixed GC,
   // additional memory will be consumed:
   //   - Old gen grows due to allocations:
-  //       old_gen_alloc_bytes = old_gen_alloc_rate * time_needed_for_marking
+  //       old_gen_alloc_bytes = old_gen_alloc_rate * marking_start_to_mixed_time
   //   - Young gen will occupy a certain size at the first Mixed GC:
   //       expected_young_gen_at_first_mixed_gc
-  double time_needed_for_marking = predict(&_marking_times_s);
+  double marking_start_to_mixed_time = predict(&_marking_start_to_mixed_times_s);
   double old_gen_alloc_rate = predict(&_old_gen_alloc_rate_s);
-  size_t old_gen_alloc_bytes = (size_t)(time_needed_for_marking * old_gen_alloc_rate);
+  size_t old_gen_alloc_bytes = (size_t)(marking_start_to_mixed_time * old_gen_alloc_rate);
 
-  // Therefore, the total heap occupancy at the time reclamation starts is:
+  // Therefore, the total heap occupancy at the first Mixed GC is:
   //   current_old_gen + old_gen_growth + expected_young_gen_at_first_mixed_gc
   //
   // To ensure this does not exceed the target_heap_occupancy, we work
@@ -160,24 +177,24 @@ void G1IHOPControl::print_log(size_t non_young_occupancy) {
                       _old_gen_alloc_tracker->last_period_old_gen_bytes(),
                       _last_allocation_time_s * 1000.0,
                       _last_allocation_time_s > 0.0 ? _old_gen_alloc_tracker->last_period_old_gen_bytes() / _last_allocation_time_s : 0.0,
-                      last_marking_length_s() * 1000.0);
+                      last_marking_start_to_mixed_time_s() * 1000.0);
 
   if (!_is_adaptive) {
     return;
   }
 
-  size_t effective_threshold = effective_target_occupancy();
+  size_t effective_target = effective_target_occupancy();
   log_debug(gc, ihop)("Adaptive IHOP information (value update), prediction active: %s, old-gen threshold: %zuB (%1.2f%%), internal target occupancy: %zuB, "
                       "old-gen occupancy: %zuB, additional buffer size: %zuB, predicted old-gen allocation rate: %1.2fB/s, "
                       "predicted marking phase length: %1.2fms",
                       BOOL_TO_STR(have_enough_data_for_prediction()),
                       old_gen_mark_start_threshold,
-                      percent_of(old_gen_mark_start_threshold, effective_threshold),
-                      effective_threshold,
+                      percent_of(old_gen_mark_start_threshold, effective_target),
+                      effective_target,
                       non_young_occupancy,
                       _expected_young_gen_at_first_mixed_gc,
                       predict(&_old_gen_alloc_rate_s),
-                      predict(&_marking_times_s) * 1000.0);
+                      predict(&_marking_start_to_mixed_times_s) * 1000.0);
 }
 
 void G1IHOPControl::send_trace_event(G1NewTracer* tracer, size_t non_young_occupancy) {
@@ -187,7 +204,7 @@ void G1IHOPControl::send_trace_event(G1NewTracer* tracer, size_t non_young_occup
                                        non_young_occupancy,
                                        _old_gen_alloc_tracker->last_period_old_gen_bytes(),
                                        _last_allocation_time_s,
-                                       last_marking_length_s());
+                                       last_marking_start_to_mixed_time_s());
 
   if (_is_adaptive) {
     tracer->report_adaptive_ihop_statistics(old_gen_threshold_for_conc_mark_start(),
@@ -195,7 +212,7 @@ void G1IHOPControl::send_trace_event(G1NewTracer* tracer, size_t non_young_occup
                                             non_young_occupancy,
                                             _expected_young_gen_at_first_mixed_gc,
                                             predict(&_old_gen_alloc_rate_s),
-                                            predict(&_marking_times_s),
+                                            predict(&_marking_start_to_mixed_times_s),
                                             have_enough_data_for_prediction());
   }
 }

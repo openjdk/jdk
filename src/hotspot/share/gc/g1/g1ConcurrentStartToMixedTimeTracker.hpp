@@ -80,6 +80,8 @@ public:
     }
   }
 
+  bool is_active() const { return _active; }
+
   // Returns whether we have a result that can be retrieved.
   bool has_result() const { return _mixed_start_time > 0.0 && _concurrent_start_end_time > 0.0; }
 };

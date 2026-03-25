@@ -43,8 +43,8 @@ public class IhopUtils {
     /**
      * Patterns are used for extracting occupancy and threshold from GC log.
      */
-    private final static Pattern OCCUPANCY = Pattern.compile("occupancy: (\\d+)MB");
-    private final static Pattern THRESHOLD = Pattern.compile("threshold: (\\d+)MB");
+    private final static Pattern OCCUPANCY = Pattern.compile("occupancy: (\\d+)B");
+    private final static Pattern THRESHOLD = Pattern.compile("threshold: (\\d+)B");
 
     /**
      * Messages related to concurrent cycle initiation.
