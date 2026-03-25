@@ -54,8 +54,8 @@ bool VectorSupport::is_vector_mask(Klass* klass) {
 BasicType VectorSupport::klass2bt(InstanceKlass* ik) {
   assert(ik->is_subclass_of(vmClasses::vector_VectorPayload_klass()), "%s not a VectorPayload", ik->name()->as_C_string());
   fieldDescriptor fd; // find_field initializes fd if found
-  // static final Class<?> ETYPE;
-  Klass* holder = ik->find_field(vmSymbols::ETYPE_name(), vmSymbols::class_signature(), &fd);
+  // static final Class<?> CTYPE;
+  Klass* holder = ik->find_field(vmSymbols::CTYPE_name(), vmSymbols::class_signature(), &fd);
 
   assert(holder != nullptr, "sanity");
   assert(fd.is_static(), "");
@@ -200,7 +200,6 @@ bool VectorSupport::is_unsigned_op(jint id) {
 }
 
 const char* VectorSupport::lanetype2name(LaneType lane_type) {
-  assert(lane_type >= LT_FLOAT && lane_type <= LT_LONG, "");
   const char* lanetype2name[] = {
     "float",
     "double",
@@ -209,7 +208,11 @@ const char* VectorSupport::lanetype2name(LaneType lane_type) {
     "int",
     "long"
   };
-  return lanetype2name[lane_type];
+  if (lane_type >= LT_FLOAT && lane_type <= LT_LONG) {
+    return lanetype2name[lane_type];
+  }
+  assert(false, "unknown lane type: %d", (int)lane_type);
+  return "illegal";
 }
 
 int VectorSupport::vop2ideal(jint id, LaneType lt) {

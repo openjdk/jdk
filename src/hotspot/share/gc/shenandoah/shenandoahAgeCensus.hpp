@@ -97,6 +97,8 @@ struct ShenandoahNoiseStats {
 // once the per-worker data is consolidated into the appropriate population vector
 // per minor collection. The _local_age_table is thus C x N, for N GC workers.
 class ShenandoahAgeCensus: public CHeapObj<mtGC> {
+  friend class ShenandoahTenuringOverride;
+
   AgeTable** _global_age_tables;      // Global age tables used for adapting tenuring threshold, one per snapshot
   AgeTable** _local_age_tables;       // Local scratch age tables to track object ages, one per worker
 
@@ -148,6 +150,10 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
     return _tenuring_threshold[prev];
   }
 
+  // Override the tenuring threshold for the current epoch. This is used to
+  // cause everything to be promoted for a whitebox full gc request.
+  void set_tenuring_threshold(uint threshold) { _tenuring_threshold[_epoch] = threshold; }
+
 #ifndef PRODUCT
   // Return the sum of size of objects of all ages recorded in the
   // census at snapshot indexed by snap.
@@ -173,7 +179,6 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
   ~ShenandoahAgeCensus();
 
   // Return the local age table (population vector) for worker_id.
-  // Only used in the case of ShenandoahGenerationalAdaptiveTenuring
   AgeTable* get_local_age_table(uint worker_id) const {
     return _local_age_tables[worker_id];
   }
@@ -231,6 +236,28 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
 
   // Print the age census information
   void print();
+};
+
+// RAII object that temporarily overrides the tenuring threshold for the
+// duration of a scope, restoring the original value on destruction.
+// Used to force promotion of all young objects during whitebox full GCs.
+class ShenandoahTenuringOverride : public StackObj {
+  ShenandoahAgeCensus* _census;
+  uint _saved_threshold;
+  bool _active;
+public:
+  ShenandoahTenuringOverride(bool active, ShenandoahAgeCensus* census) :
+    _census(census), _saved_threshold(0), _active(active) {
+    if (_active) {
+      _saved_threshold = _census->tenuring_threshold();
+      _census->set_tenuring_threshold(0);
+    }
+  }
+  ~ShenandoahTenuringOverride() {
+    if (_active) {
+      _census->set_tenuring_threshold(_saved_threshold);
+    }
+  }
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHAGECENSUS_HPP

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6687725
+ * @bug 6687725 8365883
  * @summary Test internal PKCS5Padding impl with various error conditions.
  * @author Valerie Peng
  * @library /test/lib ..
@@ -35,6 +35,7 @@ import java.security.AlgorithmParameters;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.Security;
+import java.util.Arrays;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -80,7 +81,7 @@ public class TestPKCS5PaddingError extends PKCS11Test {
 
     private void doTest(final Provider p) throws Exception {
         try {
-            byte[] plainText = new byte[200];
+            byte[] plainText = "testtexttesttext".getBytes(); // 16 bytes text
 
             for (CI currTest : TEST_LIST) {
                 System.out.println("===" + currTest.transformation + "===");
@@ -88,14 +89,16 @@ public class TestPKCS5PaddingError extends PKCS11Test {
                     KeyGenerator kg =
                             KeyGenerator.getInstance(currTest.keyAlgo, p);
                     SecretKey key = kg.generateKey();
-                    Cipher c1 = Cipher.getInstance(currTest.transformation,
+                    // Encrypting without padding to guarantee bad padding
+                    // exception when decrypting
+                    Cipher c1 = Cipher.getInstance(currTest.transformation
+                                    .replace("/PKCS5Padding", "/NoPadding"),
                             sunJCEProvider);
                     c1.init(Cipher.ENCRYPT_MODE, key);
                     byte[] cipherText = c1.doFinal(plainText);
                     AlgorithmParameters params = c1.getParameters();
                     Cipher c2 = Cipher.getInstance(currTest.transformation, p);
                     c2.init(Cipher.DECRYPT_MODE, key, params);
-                    c2.doFinal(cipherText);
 
                     // 1st test: wrong output length
                     // NOTE: Skip NSS since it reports CKR_DEVICE_ERROR when the
@@ -118,9 +121,17 @@ public class TestPKCS5PaddingError extends PKCS11Test {
                     // 2nd test: wrong padding value
                     try {
                         System.out.println("Testing with wrong padding bytes");
-                        cipherText[cipherText.length - 1]++;
-                        c2.doFinal(cipherText);
-                        System.out.println("WARNING: Expected BPE NOT thrown");
+                        byte[] result = c2.doFinal(cipherText);
+
+                        final String errorDescription =
+                                "Decrypted text " + Arrays.toString(result);
+                        if (Arrays.equals(result, plainText)) {
+                            System.out.println("WARNING: initial text and " +
+                                               "decoded text are the same");
+                        }
+                        System.out.println(errorDescription);
+                        throw new RuntimeException(
+                                "Expected BPE NOT thrown \n" + errorDescription);
                     } catch (BadPaddingException bpe) {
                         // expected
                     } catch (Exception ex) {

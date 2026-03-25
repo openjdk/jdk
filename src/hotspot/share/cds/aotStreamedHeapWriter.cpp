@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,7 +163,7 @@ void AOTStreamedHeapWriter::order_source_objs(GrowableArrayCHeap<oop, mtClassSha
 }
 
 void AOTStreamedHeapWriter::write(GrowableArrayCHeap<oop, mtClassShared>* roots,
-                                  ArchiveStreamedHeapInfo* heap_info) {
+                                  AOTStreamedHeapInfo* heap_info) {
   assert(CDSConfig::is_dumping_heap(), "sanity");
   allocate_buffer();
   order_source_objs(roots);
@@ -242,30 +242,12 @@ void AOTStreamedHeapWriter::copy_roots_max_dfs_to_buffer(int roots_length) {
   }
 }
 
-static bool is_interned_string(oop obj) {
-  if (!java_lang_String::is_instance(obj)) {
-    return false;
-  }
-
-  ResourceMark rm;
-  int len;
-  jchar* name = java_lang_String::as_unicode_string_or_null(obj, len);
-  if (name == nullptr) {
-    fatal("Insufficient memory for dumping");
-  }
-  return StringTable::lookup(name, len) == obj;
-}
-
 static BitMap::idx_t bit_idx_for_buffer_offset(size_t buffer_offset) {
   if (UseCompressedOops) {
     return BitMap::idx_t(buffer_offset / sizeof(narrowOop));
   } else {
     return BitMap::idx_t(buffer_offset / sizeof(HeapWord));
   }
-}
-
-bool AOTStreamedHeapWriter::is_dumped_interned_string(oop obj) {
-  return is_interned_string(obj) && HeapShared::get_cached_oop_info(obj) != nullptr;
 }
 
 void AOTStreamedHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtClassShared>* roots) {
@@ -325,7 +307,7 @@ size_t AOTStreamedHeapWriter::copy_one_source_obj_to_buffer(oop src_obj) {
 
   ensure_buffer_space(new_used);
 
-  if (is_interned_string(src_obj)) {
+  if (HeapShared::is_interned_string(src_obj)) {
     java_lang_String::hash_code(src_obj);                   // Sets the hash code field(s)
     java_lang_String::set_deduplication_forbidden(src_obj); // Allows faster interning at runtime
     assert(java_lang_String::hash_is_set(src_obj), "hash must be set");
@@ -402,7 +384,7 @@ void AOTStreamedHeapWriter::update_header_for_buffered_addr(address buffered_add
     mw = mw.copy_set_hash(src_hash);
   }
 
-  if (is_interned_string(src_obj)) {
+  if (HeapShared::is_interned_string(src_obj)) {
     // Mark the mark word of interned string so the loader knows to link these to
     // the string table at runtime.
     mw = mw.set_marked();
@@ -453,7 +435,7 @@ static void log_bitmap_usage(const char* which, BitMap* bitmap, size_t total_bit
 }
 
 // Update all oop fields embedded in the buffered objects
-void AOTStreamedHeapWriter::map_embedded_oops(ArchiveStreamedHeapInfo* heap_info) {
+void AOTStreamedHeapWriter::map_embedded_oops(AOTStreamedHeapInfo* heap_info) {
   size_t oopmap_unit = (UseCompressedOops ? sizeof(narrowOop) : sizeof(oop));
   size_t heap_region_byte_size = _buffer_used;
   heap_info->oopmap()->resize(heap_region_byte_size / oopmap_unit);
@@ -497,7 +479,7 @@ oop AOTStreamedHeapWriter::buffered_addr_to_source_obj(address buffered_addr) {
   return buffered_offset_to_source_obj(buffered_address_to_offset(buffered_addr));
 }
 
-void AOTStreamedHeapWriter::populate_archive_heap_info(ArchiveStreamedHeapInfo* info) {
+void AOTStreamedHeapWriter::populate_archive_heap_info(AOTStreamedHeapInfo* info) {
   assert(!info->is_used(), "only set once");
 
   size_t heap_region_byte_size = _buffer_used;
@@ -512,15 +494,9 @@ void AOTStreamedHeapWriter::populate_archive_heap_info(ArchiveStreamedHeapInfo* 
   info->set_num_archived_objects((size_t)_source_objs->length());
 }
 
-AOTMapLogger::OopDataIterator* AOTStreamedHeapWriter::oop_iterator(ArchiveStreamedHeapInfo* heap_info) {
-  class StreamedWriterOopIterator : public AOTMapLogger::OopDataIterator {
+AOTMapLogger::OopDataIterator* AOTStreamedHeapWriter::oop_iterator(AOTStreamedHeapInfo* heap_info) {
+  class StreamedWriterOopIterator : public AOTStreamedHeapOopIterator {
   private:
-    int _current;
-    int _next;
-
-    address _buffer_start;
-
-    int _num_archived_objects;
     int _num_archived_roots;
     int* _roots;
 
@@ -529,15 +505,11 @@ AOTMapLogger::OopDataIterator* AOTStreamedHeapWriter::oop_iterator(ArchiveStream
                               int num_archived_objects,
                               int num_archived_roots,
                               int* roots)
-      : _current(0),
-        _next(1),
-        _buffer_start(buffer_start),
-        _num_archived_objects(num_archived_objects),
+      : AOTStreamedHeapOopIterator(buffer_start, num_archived_objects),
         _num_archived_roots(num_archived_roots),
-        _roots(roots) {
-    }
+        _roots(roots) {}
 
-    AOTMapLogger::OopData capture(int dfs_index) {
+    AOTMapLogger::OopData capture(int dfs_index) override {
       size_t buffered_offset = _dfs_to_archive_object_table[dfs_index];
       address buffered_addr = _buffer_start + buffered_offset;
       oop src_obj = AOTStreamedHeapWriter::buffered_offset_to_source_obj(buffered_offset);
@@ -559,35 +531,6 @@ AOTMapLogger::OopDataIterator* AOTStreamedHeapWriter::oop_iterator(ArchiveStream
                klass,
                size,
                false };
-    }
-
-    bool has_next() override {
-      return _next <= _num_archived_objects;
-    }
-
-    AOTMapLogger::OopData next() override {
-      _current = _next;
-      AOTMapLogger::OopData result = capture(_current);
-      _next = _current + 1;
-      return result;
-    }
-
-    AOTMapLogger::OopData obj_at(narrowOop* addr) override {
-      int dfs_index = (int)(*addr);
-      if (dfs_index == 0) {
-        return null_data();
-      } else {
-        return capture(dfs_index);
-      }
-    }
-
-    AOTMapLogger::OopData obj_at(oop* addr) override {
-      int dfs_index = (int)cast_from_oop<uintptr_t>(*addr);
-      if (dfs_index == 0) {
-        return null_data();
-      } else {
-        return capture(dfs_index);
-      }
     }
 
     GrowableArrayCHeap<AOTMapLogger::OopData, mtClass>* roots() override {

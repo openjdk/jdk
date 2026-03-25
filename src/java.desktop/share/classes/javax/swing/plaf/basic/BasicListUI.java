@@ -876,7 +876,7 @@ public class BasicListUI extends ListUI
         }
 
         Long l = (Long)UIManager.get("List.timeFactor");
-        timeFactor = (l!=null) ? l.longValue() : 1000L;
+        timeFactor = (l != null) ? l.longValue() : 1000L;
 
         updateIsFileList();
     }
