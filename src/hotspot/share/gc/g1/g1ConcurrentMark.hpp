@@ -313,18 +313,21 @@ public:
 
   // Forces claim_next() to return null so that the iteration aborts early.
   void abort() { _should_abort.store_relaxed(true); }
-#ifdef ASSERT
   bool should_abort() const { return _should_abort.load_relaxed(); }
-#endif
 
   // Return true if the CM thread are actively scanning root regions,
   // false otherwise.
   bool scan_in_progress() { return _scan_in_progress.load_relaxed(); }
+  // Returns whether all root regions have already been processed. This is different
+  // to above because concurrent root scanning may be interrupted by a safepoint
+  // that completed the work while the concurrent root scanning has been suspended.
+  bool work_completed() { return num_remaining_root_regions() == 0; }
 
   // Claim the next root MemRegion to scan atomically, or return null if
   // all have been claimed.
   const MemRegion* claim_next();
 
+  uint num_remaining_root_regions() const;
   // The number of root regions to scan.
   uint num_root_regions() const;
 
