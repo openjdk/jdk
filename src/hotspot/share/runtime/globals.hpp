@@ -1978,8 +1978,6 @@ const int ObjectAlignmentInBytes = 8;
   develop(uint, BinarySearchThreshold, 16,                                  \
           "Minimal number of elements in a sorted collection to prefer"     \
           "binary search over simple linear search." )                      \
-  product(bool, UseSingleICacheInvalidation, false, DIAGNOSTIC,             \
-          "Defer multiple ICache invalidation to single invalidation")      \
                                                                             \
 
 // end of RUNTIME_FLAGS
