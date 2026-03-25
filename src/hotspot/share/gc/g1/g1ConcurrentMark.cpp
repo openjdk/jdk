@@ -1179,8 +1179,8 @@ bool G1ConcurrentMark::is_root_region(G1HeapRegion* r) {
   return root_regions()->contains(MemRegion(top_at_mark_start(r), r->top()));
 }
 
-void G1ConcurrentMark::abort_root_region_scan_and_wait() {
-  assert(!SafepointSynchronize::is_at_safepoint(), "should not abort in safepoint");
+void G1ConcurrentMark::root_region_scan_abort_and_wait() {
+  assert(!SafepointSynchronize::is_at_safepoint(), "should not abort in safepoint, would deadlock.");
   root_regions()->abort();
 
   // Wait until we get the notification.
@@ -2001,11 +2001,8 @@ bool G1ConcurrentMark::concurrent_cycle_abort() {
 }
 
 void G1ConcurrentMark::abort_marking_threads() {
-  // Root region scan may still be active:
-  // * during shutdown it has already been waited for and is not in progress.
-  //assert(!_g1h->is_shutting_down() || !_root_regions.scan_in_progress(), "still doing root region scan during shutdown");
-  //assert(_g1h->is_shutting_down() || _root_regions.should_abort(), "still not aborted during full gc");
-  // * during full gc root region scan may be in progress, just aborted.
+  assert(_root_regions.should_abort() || !_root_regions.scan_in_progress(),
+         "still doing root region scan while not aborted");
   _has_aborted.store_relaxed(true);
   _first_overflow_barrier_sync.abort();
   _second_overflow_barrier_sync.abort();

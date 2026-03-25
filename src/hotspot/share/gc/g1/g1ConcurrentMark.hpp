@@ -313,7 +313,9 @@ public:
 
   // Forces claim_next() to return null so that the iteration aborts early.
   void abort() { _should_abort.store_relaxed(true); }
+#ifdef ASSERT
   bool should_abort() const { return _should_abort.load_relaxed(); }
+#endif
 
   // Return true if the CM thread are actively scanning root regions,
   // false otherwise.
@@ -648,15 +650,16 @@ public:
   // Stop active components/the concurrent mark thread.
   void stop();
 
-  // Scan all the root regions and mark everything reachable from
-  // them.
   void add_root_region(G1HeapRegion* r);
   bool is_root_region(G1HeapRegion* r);
 
+  // Scan all the root regions concurrently and mark everything reachable from
+  // them.
   void scan_root_regions_concurrently();
   void complete_root_regions_scan_in_safepoint();
 
-  void abort_root_region_scan_and_wait();
+  // Abort an active concurrent root region scan and wait for it to return.
+  void root_region_scan_abort_and_wait();
 
 private:
   G1CMRootMemRegions* root_regions() { return &_root_regions; }
