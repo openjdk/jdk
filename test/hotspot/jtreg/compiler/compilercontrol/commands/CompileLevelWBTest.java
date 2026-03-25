@@ -35,7 +35,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  */
 
 /*
@@ -51,7 +51,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,1
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               2 3 4
  */
 
@@ -68,7 +68,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,1
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               2 3/4 4
  */
 
@@ -85,7 +85,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,1
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               4
  */
 
@@ -102,7 +102,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,2
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               1 3 4
  */
 
@@ -119,7 +119,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,2
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               1 3/4 4
  */
 
@@ -136,7 +136,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,2
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               4
  */
 
@@ -153,7 +153,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,3
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               3 4
  */
 
@@ -170,7 +170,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,3
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               3/4 4
  */
 
@@ -187,7 +187,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,3
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               4
  */
 
@@ -204,7 +204,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,4
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               1 2 4
  */
 
@@ -221,7 +221,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,4
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               4
  */
 
@@ -238,7 +238,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,5
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               2 4
  */
 
@@ -255,7 +255,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,5
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               4
  */
 
@@ -272,7 +272,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,6
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               1 4
  */
 
@@ -289,7 +289,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,6
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               4
  */
 
@@ -306,7 +306,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,7
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               4
  */
 
@@ -323,7 +323,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,8
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               1 2 3
  */
 
@@ -340,7 +340,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,9
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               2 3
  */
 
@@ -357,7 +357,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,10
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               1 3
  */
 
@@ -374,7 +374,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,11
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               3
  */
 
@@ -391,7 +391,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,12
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               1 2
  */
 
@@ -408,7 +408,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,13
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               2
  */
 
@@ -425,7 +425,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,14
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               1
  */
 
@@ -442,7 +442,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=exclude,*.CompileLevelWBTest::compiledMethod,15
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  */
 
 /*
@@ -458,7 +458,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               1 2 3 4
  */
 
@@ -475,7 +475,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               1 2 3/4 4
  */
 
@@ -492,7 +492,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               4
  */
 
@@ -509,7 +509,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,1
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               1
  */
 
@@ -526,7 +526,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,2
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               2
  */
 
@@ -543,7 +543,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,3
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               1 2
  */
 
@@ -560,7 +560,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,4
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               3
  */
 
@@ -577,7 +577,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,5
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               1 3
  */
 
@@ -594,7 +594,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,6
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               2 3
  */
 
@@ -611,7 +611,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,7
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               1 2 3
  */
 
@@ -628,7 +628,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,8
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               4
  */
 
@@ -645,7 +645,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,9
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               1 4
  */
 
@@ -662,7 +662,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,9
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               4
  */
 
@@ -679,7 +679,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,10
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               2 4
  */
 
@@ -696,7 +696,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,10
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               4
  */
 
@@ -713,7 +713,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,11
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               1 2 4
  */
 
@@ -730,7 +730,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,11
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               4
  */
 
@@ -747,7 +747,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,12
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               3 4
  */
 
@@ -764,7 +764,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,12
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               3/4 4
  */
 
@@ -781,7 +781,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,12
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               4
  */
 
@@ -798,7 +798,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,13
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               1 3 4
  */
 
@@ -815,7 +815,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,13
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               1 3/4 4
  */
 
@@ -832,7 +832,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,13
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               4
  */
 
@@ -849,7 +849,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,14
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               2 3 4
  */
 
@@ -866,7 +866,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,14
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               2 3/4 4
  */
 
@@ -883,7 +883,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,14
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               4
  */
 
@@ -900,7 +900,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,15
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               1 2 3 4
  */
 
@@ -917,7 +917,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,15
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               1 2 3/4 4
  */
 
@@ -934,7 +934,7 @@
  * @run main/othervm/timeout=30 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PrintCompilation
  *                               -XX:CompileCommand=BackgroundCompilation,*.CompileLevelWBTest::compiledMethod,false
  *                               -XX:CompileCommand=compileonly,*.CompileLevelWBTest::compiledMethod,15
- *                               compiler.compilercontrol.commands.CompileLevelWBTest
+ *                               ${test.main.class}
  *                               4
  */
 

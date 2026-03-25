@@ -31,8 +31,7 @@
  *          & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
  *          & (vm.opt.CompilationMode == "normal" | vm.opt.CompilationMode == null)
  * @library /test/lib
- * @build compiler.compilercontrol.commands.CompileLevelPrintTest
- * @run driver compiler.compilercontrol.commands.CompileLevelPrintTest runner
+ * @run main ${test.main.class} runner
  */
 
 package compiler.compilercontrol.commands;

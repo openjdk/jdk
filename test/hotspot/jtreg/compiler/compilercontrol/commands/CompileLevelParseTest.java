@@ -28,7 +28,7 @@
  * @summary Test if the following CompileCommand options support compilation
  *          level bitmask argument: break, compileonly, exclude, print
  * @library /test/lib
- * @run driver compiler.compilercontrol.commands.CompileLevelParseTest
+ * @run main ${test.main.class}
  */
 
 package compiler.compilercontrol.commands;
