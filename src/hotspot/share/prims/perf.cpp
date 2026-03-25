@@ -108,6 +108,11 @@ PERF_ENTRY(jobject, Perf_CreateLong(JNIEnv *env, jobject perf, jstring name,
 
   PerfWrapper("Perf_CreateLong");
 
+  // check for valid name
+  if (name == nullptr) {
+    THROW_NULL(vmSymbols::java_lang_NullPointerException());
+  }
+
   char* name_utf = nullptr;
 
   if (units <= 0 || units > PerfData::U_Last) {
