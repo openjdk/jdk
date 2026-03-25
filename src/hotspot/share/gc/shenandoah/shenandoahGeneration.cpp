@@ -423,12 +423,6 @@ size_t ShenandoahGeneration::available() const {
   return result;
 }
 
-// For ShenandoahYoungGeneration, Include the young available that may have been reserved for the Collector.
-size_t ShenandoahGeneration::available_with_reserve() const {
-  size_t result = available(max_capacity());
-  return result;
-}
-
 size_t ShenandoahGeneration::soft_mutator_available() const {
   size_t result = available(ShenandoahHeap::heap()->soft_max_capacity() * (100.0 - ShenandoahEvacReserve) / 100);
   return result;
