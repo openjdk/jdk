@@ -31,11 +31,13 @@
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/stackwalk.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vframe.inline.hpp"
+#include "utilities/spinYield.hpp"
 
 template<typename Func>
 static void for_scoped_methods(JavaThread* jt, bool agents_loaded, const Func& func) {
@@ -130,17 +132,20 @@ static frame get_last_frame(JavaThread* jt) {
 
 class ScopedAsyncExceptionHandshakeClosure : public AsyncExceptionHandshakeClosure {
   OopHandle _session;
+  Atomic<int>* _async_exceptions;
 
 public:
-  ScopedAsyncExceptionHandshakeClosure(OopHandle& session, OopHandle& error)
-    : AsyncExceptionHandshakeClosure(error),
-      _session(session) {}
+  ScopedAsyncExceptionHandshakeClosure(OopHandle& session, OopHandle& error, Atomic<int>* async_exceptions)
+    : AsyncExceptionHandshakeClosure(error, "ScopedAsyncExceptionHandshakeClosure"),
+      _session(session), _async_exceptions(async_exceptions) {}
 
   ~ScopedAsyncExceptionHandshakeClosure() {
     _session.release(Universe::vm_global());
   }
 
   virtual void do_thread(Thread* thread) {
+    // We are stopped, safe to free memory.
+    _async_exceptions->sub_then_fetch(1);
     JavaThread* jt = JavaThread::cast(thread);
     bool ignored;
     if (is_accessing_session(jt, _session.resolve(), ignored)) {
@@ -153,12 +158,14 @@ public:
 class CloseScopedMemoryHandshakeClosure : public HandshakeClosure {
   jobject _session;
   jobject _error;
+  Atomic<int>* _async_exceptions;
 
 public:
-  CloseScopedMemoryHandshakeClosure(jobject session, jobject error)
-    : HandshakeClosure("CloseScopedMemory")
+  CloseScopedMemoryHandshakeClosure(jobject session, jobject error, Atomic<int>* async_exceptions)
+    : HandshakeClosure("CloseScopedMemoryHandshakeClosure")
     , _session(session)
-    , _error(error) {}
+    , _error(error)
+    , _async_exceptions(async_exceptions) {}
 
   void do_thread(Thread* thread) {
     JavaThread* jt = JavaThread::cast(thread);
@@ -182,7 +189,11 @@ public:
       // the scoped access.
       OopHandle session(Universe::vm_global(), JNIHandles::resolve(_session));
       OopHandle error(Universe::vm_global(), JNIHandles::resolve(_error));
-      jt->install_async_exception(new ScopedAsyncExceptionHandshakeClosure(session, error));
+      // The target thread might be in native code, so we may not install the async exception
+      // directly. We install another handshake that will deliver the exception the next time
+      // the thread stops and is able to handle async exceptions.
+      _async_exceptions->add_then_fetch(1);
+      jt->install_async_exception(new ScopedAsyncExceptionHandshakeClosure(session, error, _async_exceptions));
     } else if (!in_scoped) {
       frame last_frame = get_last_frame(jt);
       if (last_frame.is_compiled_frame() && last_frame.can_be_deoptimized()) {
@@ -236,8 +247,17 @@ public:
  * closed (deopt), this method returns false, signalling that the session cannot be closed safely.
  */
 JVM_ENTRY(void, ScopedMemoryAccess_closeScope(JNIEnv *env, jobject receiver, jobject session, jobject error))
-  CloseScopedMemoryHandshakeClosure cl(session, error);
+  Atomic<int> async_exceptions;
+  CloseScopedMemoryHandshakeClosure cl(session, error, &async_exceptions);
   Handshake::execute(&cl);
+
+  // Wait until any async exceptions are delivered before continuing,
+  // because we will free the memory after this. This guarantees the target
+  // thread does not continue to access the memory.
+  SpinYield spin_yield;
+  while (async_exceptions.load_acquire() > 0) {
+    spin_yield.wait();
+  }
 JVM_END
 
 /// JVM_RegisterUnsafeMethods
