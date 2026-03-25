@@ -598,9 +598,8 @@ public class ZipFSTester {
                         .getFileAttributeView(jar, BasicFileAttributeView.class)
                         .readAttributes();
         // create a new filesystem, copy this file into it
-        var env = Map.of("create", "true");
         Path fsPath = getTempPath();
-        try (FileSystem fs = FileSystems.newFileSystem(fsPath, env)) {
+        try (FileSystem fs = FileSystems.newFileSystem(fsPath, Map.of("create", "true"))) {
             System.out.println("test copy with timestamps...");
             // copyin
             Path dst = fs.getPath("me");
