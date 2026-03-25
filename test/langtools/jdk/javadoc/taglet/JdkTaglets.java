@@ -21,27 +21,33 @@
  * questions.
  */
 
-package javadoc.tester;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.stream.Stream;
 
 import toolbox.JavacTask;
 import toolbox.ToolBox;
 
-/// Utilities to build the JDK taglets.
+/// Utilities to build the JDK-specific taglets.
+/// This guy uses JavacTask so can't be in javadoc.tester.
 public final class JdkTaglets {
 
     /// Build a taglet and return its path for `-tagletpath`.
-    public static Path buildTaglet(ToolBox tb, Path base, String tagletFile) throws IOException {
+    public static Path build(ToolBox tb, Path base, String... tagletFiles) throws IOException {
         Path tagletOutDir = base.resolve("taglet");
+        Files.deleteIfExists(tagletOutDir);
         Files.createDirectories(tagletOutDir);
         Path tagletRoot = tb.findFromTestRoot("../../make/jdk/src/classes/build/tools/taglet");
+
         new JavacTask(tb)
-                .files(tagletRoot.resolve(tagletFile + ".java"))
+                .files(Stream.of(tagletFiles)
+                        .map(tagletFile -> tagletRoot.resolve(tagletFile + ".java"))
+                        .toArray(Path[]::new))
                 .outdir(tagletOutDir)
                 .run(JavacTask.Expect.SUCCESS);
         return tagletOutDir;
     }
+
+    private JdkTaglets() {}
 }

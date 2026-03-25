@@ -25,7 +25,7 @@
  * @test
  * @summary General tests for SealedGraph block tag
  * @bug 8380913
- * @library /tools/lib /jdk/javadoc/lib
+ * @library /tools/lib /jdk/javadoc/lib ../
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.javadoc/jdk.javadoc.internal.tool
@@ -37,7 +37,6 @@ import java.nio.file.Path;
 
 import builder.ClassBuilder;
 import javadoc.tester.JavadocTester;
-import javadoc.tester.JdkTaglets;
 import toolbox.ToolBox;
 
 public class TestSealedTaglet extends JavadocTester {
@@ -55,7 +54,7 @@ public class TestSealedTaglet extends JavadocTester {
 
     @Test
     public void testInvisibleInMiddle(Path base) throws Exception {
-        var builtTaglet = JdkTaglets.buildTaglet(tb, base, "SealedGraph");
+        var builtTaglet = JdkTaglets.build(tb, base, "SealedGraph");
 
         Path srcDir = base.resolve("src");
         Path outDir = base.resolve("out");
