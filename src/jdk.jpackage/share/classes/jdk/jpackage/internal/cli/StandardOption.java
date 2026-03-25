@@ -58,9 +58,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.cli.OptionValueExceptionFactory.StandardArgumentsMapper;
 import jdk.jpackage.internal.model.AppImageBundleType;
 import jdk.jpackage.internal.model.BundleType;
 import jdk.jpackage.internal.model.BundlingOperationDescriptor;
+import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.LauncherShortcut;
 import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
@@ -342,7 +344,7 @@ public final class StandardOption {
 
     public static final OptionValue<Boolean> MAC_SIGN = booleanOption("mac-sign").scope(MAC_SIGNING).addAliases("s").create();
 
-    public static final OptionValue<Boolean> MAC_APP_STORE = booleanOption("mac-app-store").create();
+    public static final OptionValue<Boolean> MAC_APP_STORE = booleanOption("mac-app-store").scope(MAC_SIGNING).create();
 
     public static final OptionValue<String> MAC_APP_CATEGORY = stringOption("mac-app-category").create();
 
@@ -352,6 +354,11 @@ public final class StandardOption {
 
     public static final OptionValue<String> MAC_BUNDLE_IDENTIFIER = stringOption("mac-package-identifier")
             .valuePattern("package identifier")
+            .validator(StandardValidator.IS_VALID_MAC_BUNDLE_IDENTIFIER)
+            .validatorExceptionFactory(OptionValueExceptionFactory.build((message, cause) -> {
+                return new ConfigException(message, I18N.format("error.parameter-not-mac-bundle-identifier.advice"), cause);
+            }).formatArgumentsTransformer(StandardArgumentsMapper.VALUE_AND_NAME).create())
+            .validatorExceptionFormatString("error.parameter-not-mac-bundle-identifier")
             .create();
 
     public static final OptionValue<String> MAC_BUNDLE_SIGNING_PREFIX = stringOption("mac-package-signing-prefix").scope(MAC_SIGNING).create();
@@ -399,6 +406,8 @@ public final class StandardOption {
     public static final OptionValue<Boolean> WIN_PER_USER_INSTALLATION = booleanOption("win-per-user-install").scope(nativeBundling()).create();
 
     public static final OptionValue<Boolean> WIN_INSTALLDIR_CHOOSER = booleanOption("win-dir-chooser").scope(nativeBundling()).create();
+
+    public static final OptionValue<Boolean> WIN_WITH_UI = booleanOption("win-with-ui").scope(nativeBundling()).create();
 
     public static final OptionValue<UUID> WIN_UPGRADE_UUID = uuidOption("win-upgrade-uuid").scope(nativeBundling()).create();
 

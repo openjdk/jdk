@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -435,6 +435,10 @@ The `jpackage` tool will take as input a Java application and a Java run-time im
 <a id="option-win-upgrade-uuid">`--win-upgrade-uuid` *id*</a>
 
 :   UUID associated with upgrades for this package
+
+<a id="option-win-with-ui">`--win-with-ui`</a>
+
+:   Enforces the installer to have UI
 
 #### Linux platform options (available only when running on Linux):
 

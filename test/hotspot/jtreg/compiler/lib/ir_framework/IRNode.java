@@ -24,7 +24,7 @@
 package compiler.lib.ir_framework;
 
 import compiler.lib.ir_framework.driver.irmatching.mapping.*;
-import compiler.lib.ir_framework.driver.irmatching.parser.VMInfo;
+import compiler.lib.ir_framework.driver.network.testvm.java.VMInfo;
 import compiler.lib.ir_framework.shared.CheckedTestFrameworkException;
 import compiler.lib.ir_framework.shared.TestFormat;
 import compiler.lib.ir_framework.shared.TestFormatException;
@@ -3132,6 +3132,12 @@ public class IRNode {
     static {
         String regex = START + "ModD" + MID + END;
         macroNodes(MOD_D, regex);
+    }
+
+    public static final String POW_D = PREFIX + "POW_D" + POSTFIX;
+    static {
+        String regex = START + "PowD" + MID + END;
+        macroNodes(POW_D, regex);
     }
 
     public static final String BLACKHOLE = PREFIX + "BLACKHOLE" + POSTFIX;

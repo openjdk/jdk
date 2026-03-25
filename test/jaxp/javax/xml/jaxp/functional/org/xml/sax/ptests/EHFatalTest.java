@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,27 +22,26 @@
  */
 package org.xml.sax.ptests;
 
-import static jaxp.library.JAXPTestUtilities.USER_DIR;
-import static jaxp.library.JAXPTestUtilities.compareWithGold;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
-import static org.xml.sax.ptests.SAXTestConst.GOLDEN_DIR;
-import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
-
-import java.io.BufferedWriter;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLFilterImpl;
+
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import java.io.BufferedWriter;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.assertLinesMatch;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.xml.sax.ptests.SAXTestConst.GOLDEN_DIR;
+import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
 
 /**
  * ErrorHandler unit test. Set a ErrorHandle to XMLReader. Capture fatal error
@@ -51,34 +50,31 @@ import org.xml.sax.helpers.XMLFilterImpl;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm org.xml.sax.ptests.EHFatalTest
+ * @run junit/othervm org.xml.sax.ptests.EHFatalTest
  */
 public class EHFatalTest {
     /**
      * Error Handler to capture all error events to output file. Verifies the
      * output file is same as golden file.
-     *
-     * @throws Exception If any errors occur.
      */
     @Test
     public void testEHFatal() throws Exception {
-        String outputFile = USER_DIR + "EHFatal.out";
+        String outputFile = "EHFatal.out";
         String goldFile = GOLDEN_DIR + "EHFatalGF.out";
         String xmlFile = XML_DIR + "invalid.xml";
 
-        try(MyErrorHandler eHandler = new MyErrorHandler(outputFile);
-                FileInputStream instream = new FileInputStream(xmlFile)) {
-            SAXParser saxParser = SAXParserFactory.newInstance().newSAXParser();
-            XMLReader xmlReader = saxParser.getXMLReader();
+        SAXParser saxParser = SAXParserFactory.newInstance().newSAXParser();
+        XMLReader xmlReader = saxParser.getXMLReader();
+        try (MyErrorHandler eHandler = new MyErrorHandler(outputFile);
+             FileInputStream instream = new FileInputStream(xmlFile)) {
             xmlReader.setErrorHandler(eHandler);
             InputSource is = new InputSource(instream);
-            xmlReader.parse(is);
-            fail("Parse should throw SAXException");
-        } catch (SAXException expected) {
-            // This is expected.
+            assertThrows(SAXException.class, () -> xmlReader.parse(is));
         }
         // Need close the output file before we compare it with golden file.
-        assertTrue(compareWithGold(goldFile, outputFile));
+        assertLinesMatch(
+                Files.readAllLines(Path.of(goldFile)),
+                Files.readAllLines(Path.of(outputFile)));
     }
 }
 
@@ -109,7 +105,6 @@ class MyErrorHandler extends XMLFilterImpl implements AutoCloseable {
     /**
      * Write fatalError tag along with exception to the file when meet
      * unrecoverable error event.
-     * @throws IOException error happen when writing file.
      */
     @Override
     public void fatalError(SAXParseException e) throws SAXException {

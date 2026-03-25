@@ -125,7 +125,7 @@ public class BasicMenuBarUI extends MenuBarUI  {
 
         for (int i = 0; i < menuBar.getMenuCount(); i++) {
             JMenu menu = menuBar.getMenu(i);
-            if (menu!=null)
+            if (menu != null)
                 menu.getModel().addChangeListener(changeListener);
         }
         menuBar.addContainerListener(containerListener);
@@ -167,7 +167,7 @@ public class BasicMenuBarUI extends MenuBarUI  {
      * Uninstalls default properties.
      */
     protected void uninstallDefaults() {
-        if (menuBar!=null) {
+        if (menuBar != null) {
             LookAndFeel.uninstallBorder(menuBar);
         }
     }
@@ -180,7 +180,7 @@ public class BasicMenuBarUI extends MenuBarUI  {
 
         for (int i = 0; i < menuBar.getMenuCount(); i++) {
             JMenu menu = menuBar.getMenu(i);
-            if (menu !=null)
+            if (menu != null)
                 menu.getModel().removeChangeListener(changeListener);
         }
 
@@ -240,7 +240,7 @@ public class BasicMenuBarUI extends MenuBarUI  {
             int i,c;
             for(i=0,c = menuBar.getMenuCount() ; i < c ; i++) {
                 JMenu menu = menuBar.getMenu(i);
-                if(menu !=null && menu.isSelected()) {
+                if(menu != null && menu.isSelected()) {
                     menuBar.getSelectionModel().setSelectedIndex(i);
                     break;
                 }
@@ -277,7 +277,7 @@ public class BasicMenuBarUI extends MenuBarUI  {
             MenuElement[] me;
             MenuElement[] subElements;
             JMenu menu = menuBar.getMenu(0);
-            if (menu!=null) {
+            if (menu != null) {
                     me = new MenuElement[3];
                     me[0] = (MenuElement) menuBar;
                     me[1] = (MenuElement) menu;

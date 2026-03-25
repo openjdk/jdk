@@ -81,7 +81,7 @@
                           "owner": {
                             "type": "string",
                             "description": "The thread identifier of the owner when the parkBlocker is an AbstractOwnableSynchronizer."
-                          }
+                          },
                           "required": [
                             "object"
                           ]

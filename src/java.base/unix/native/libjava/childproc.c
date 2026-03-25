@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,16 @@
  * questions.
  */
 
+#include <assert.h>
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <limits.h>
 
@@ -39,12 +42,27 @@
 
 const char * const *parentPathv;
 
+#ifdef DEBUG
+bool fdIsValid(int fd) {
+    return fcntl(fd, F_GETFD) != -1;
+}
+bool fdIsPipe(int fd) {
+    struct stat buf;
+    errno = 0;
+    return fstat(fd, &buf) != -1 && S_ISFIFO(buf.st_mode);
+}
+bool fdIsCloexec(int fd) {
+    errno = 0;
+    const int flags = fcntl(fd, F_GETFD);
+    return flags != -1 && (flags & FD_CLOEXEC);
+}
+#endif // DEBUG
+
+static int
+restartableDup2(int fd_from, int fd_to, errcode_t* errcode)
 /* All functions taking an errcode_t* as output behave the same: upon error, they populate
  * errcode_t::hint and errcode_t::errno, but leave errcode_t::step as ESTEP_UNKNOWN since
  * this information will be provided by the outer caller */
-
-static bool
-restartableDup2(int fd_from, int fd_to, errcode_t* errcode)
 {
     int err;
     RESTARTABLE(dup2(fd_from, fd_to), err);
@@ -393,7 +411,10 @@ childProcess(void *arg)
 {
     const ChildStuff* p = (const ChildStuff*) arg;
 
-    int fail_pipe_fd = p->fail[1];
+    int fail_pipe_fd = (p->mode == MODE_POSIX_SPAWN) ?
+        FAIL_FILENO : /* file descriptors already set up by posix_spawn(). */
+        p->fail[1];
+
     /* error information for WhyCantJohnnyExec */
     errcode_t errcode;
 
@@ -407,55 +428,63 @@ childProcess(void *arg)
 #ifdef DEBUG
     jtregSimulateCrash(0, 6);
 #endif
-    /* Close the parent sides of the pipes.
-       Closing pipe fds here is redundant, since markDescriptorsCloseOnExec()
-       would do it anyways, but a little paranoia is a good thing. */
-    if (!closeSafely2(p->in[1], &errcode)  ||
-        !closeSafely2(p->out[0], &errcode) ||
-        !closeSafely2(p->err[0], &errcode) ||
-        !closeSafely2(p->childenv[0], &errcode) ||
-        !closeSafely2(p->childenv[1], &errcode) ||
-        !closeSafely2(p->fail[0], &errcode))
-    {
-        errcode.step = ESTEP_PIPECLOSE_FAIL;
-        goto WhyCantJohnnyExec;
-    }
 
-    /* Give the child sides of the pipes the right fileno's. */
-    /* Note: it is possible for in[0] == 0 */
-    if (!moveDescriptor(p->in[0] != -1 ?  p->in[0] : p->fds[0],
-                                STDIN_FILENO, &errcode)) {
-        errcode.step = ESTEP_DUP2_STDIN_FAIL;
-        goto WhyCantJohnnyExec;
-    }
+    /* File descriptor setup for non-Posix-spawn mode */
+    if (p->mode != MODE_POSIX_SPAWN) {
 
-    if (!moveDescriptor(p->out[1] != -1 ?  p->out[1] : p->fds[1],
-                                STDOUT_FILENO, &errcode)) {
-        errcode.step = ESTEP_DUP2_STDOUT_FAIL;
-        goto WhyCantJohnnyExec;
-    }
-
-    if (p->redirectErrorStream) {
-        if (!closeSafely2(p->err[1], &errcode) ||
-            !restartableDup2(STDOUT_FILENO, STDERR_FILENO, &errcode)) {
-            errcode.step = ESTEP_DUP2_STDERR_REDIRECT_FAIL;
+        /* Close the parent sides of the pipes.
+           Closing pipe fds here is redundant, since markDescriptorsCloseOnExec()
+           would do it anyways, but a little paranoia is a good thing. */
+        if (!closeSafely2(p->in[1], &errcode)  ||
+            !closeSafely2(p->out[0], &errcode) ||
+            !closeSafely2(p->err[0], &errcode) ||
+            !closeSafely2(p->childenv[0], &errcode) ||
+            !closeSafely2(p->childenv[1], &errcode) ||
+            !closeSafely2(p->fail[0], &errcode))
+        {
+            errcode.step = ESTEP_PIPECLOSE_FAIL;
             goto WhyCantJohnnyExec;
         }
-    } else {
-        if (!moveDescriptor(p->err[1] != -1 ? p->err[1] : p->fds[2],
-                                    STDERR_FILENO, &errcode)) {
-            errcode.step = ESTEP_DUP2_STDERR_REDIRECT_FAIL;
+
+        /* Give the child sides of the pipes the right fileno's. */
+        /* Note: it is possible for in[0] == 0 */
+        if (!moveDescriptor(p->in[0] != -1 ?  p->in[0] : p->fds[0],
+                                    STDIN_FILENO, &errcode)) {
+            errcode.step = ESTEP_DUP2_STDIN_FAIL;
             goto WhyCantJohnnyExec;
         }
-    }
 
-    if (!moveDescriptor(fail_pipe_fd, FAIL_FILENO, &errcode)) {
-        errcode.step = ESTEP_DUP2_FAILPIPE_FAIL;
-        goto WhyCantJohnnyExec;
-    }
+        if (!moveDescriptor(p->out[1] != -1 ?  p->out[1] : p->fds[1],
+                                    STDOUT_FILENO, &errcode)) {
+            errcode.step = ESTEP_DUP2_STDOUT_FAIL;
+            goto WhyCantJohnnyExec;
+        }
 
-    /* We moved the fail pipe fd */
-    fail_pipe_fd = FAIL_FILENO;
+        if (p->redirectErrorStream) {
+            if (!closeSafely2(p->err[1], &errcode) ||
+                !restartableDup2(STDOUT_FILENO, STDERR_FILENO, &errcode)) {
+                errcode.step = ESTEP_DUP2_STDERR_REDIRECT_FAIL;
+                goto WhyCantJohnnyExec;
+            }
+        } else {
+            if (!moveDescriptor(p->err[1] != -1 ? p->err[1] : p->fds[2],
+                                        STDERR_FILENO, &errcode)) {
+                errcode.step = ESTEP_DUP2_STDERR_REDIRECT_FAIL;
+                goto WhyCantJohnnyExec;
+            }
+        }
+
+        if (!moveDescriptor(fail_pipe_fd, FAIL_FILENO, &errcode)) {
+            errcode.step = ESTEP_DUP2_FAILPIPE_FAIL;
+            goto WhyCantJohnnyExec;
+        }
+
+        /* We moved the fail pipe fd */
+        fail_pipe_fd = FAIL_FILENO;
+
+    } /* end: FORK/VFORK mode */
+
+    assert(fail_pipe_fd == FAIL_FILENO);
 
     /* For AIX: The code in markDescriptorsCloseOnExec() relies on the current
      * semantic of this function. When this point here is reached only the
