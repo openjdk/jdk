@@ -302,7 +302,7 @@ HeapWord* ThreadLocalAllocBuffer::hard_end() {
 PerfVariable* ThreadLocalAllocStats::_perf_allocating_threads;
 PerfVariable* ThreadLocalAllocStats::_perf_total_refills;
 PerfVariable* ThreadLocalAllocStats::_perf_max_refills;
-PerfVariable* ThreadLocalAllocStats::_perf_total_allocations;
+PerfVariable* ThreadLocalAllocStats::_perf_total_allocated_size;
 PerfVariable* ThreadLocalAllocStats::_perf_total_gc_waste;
 PerfVariable* ThreadLocalAllocStats::_perf_max_gc_waste;
 PerfVariable* ThreadLocalAllocStats::_perf_total_refill_waste;
@@ -325,7 +325,7 @@ void ThreadLocalAllocStats::initialize() {
     _perf_allocating_threads      = create_perf_variable("allocThreads",   PerfData::U_None,  CHECK);
     _perf_total_refills           = create_perf_variable("fills",          PerfData::U_None,  CHECK);
     _perf_max_refills             = create_perf_variable("maxFills",       PerfData::U_None,  CHECK);
-    _perf_total_allocations       = create_perf_variable("alloc",          PerfData::U_Bytes, CHECK);
+    _perf_total_allocated_size    = create_perf_variable("alloc",          PerfData::U_Bytes, CHECK);
     _perf_total_gc_waste          = create_perf_variable("gcWaste",        PerfData::U_Bytes, CHECK);
     _perf_max_gc_waste            = create_perf_variable("maxGcWaste",     PerfData::U_Bytes, CHECK);
     _perf_total_refill_waste      = create_perf_variable("refillWaste",    PerfData::U_Bytes, CHECK);
@@ -339,7 +339,7 @@ ThreadLocalAllocStats::ThreadLocalAllocStats() :
     _allocating_threads(0),
     _total_refills(0),
     _max_refills(0),
-    _total_allocations(0),
+    _total_allocated_size(0),
     _total_gc_waste(0),
     _max_gc_waste(0),
     _total_refill_waste(0),
@@ -352,13 +352,13 @@ unsigned int ThreadLocalAllocStats::allocating_threads_avg() {
 }
 
 void ThreadLocalAllocStats::update_fast_allocations(unsigned int refills,
-                                       size_t allocations,
-                                       size_t gc_waste,
-                                       size_t refill_waste) {
+                                                    size_t allocated_size,
+                                                    size_t gc_waste,
+                                                    size_t refill_waste) {
   _allocating_threads      += 1;
   _total_refills           += refills;
   _max_refills              = MAX2(_max_refills, refills);
-  _total_allocations       += allocations;
+  _total_allocated_size    += allocated_size;
   _total_gc_waste          += gc_waste;
   _max_gc_waste             = MAX2(_max_gc_waste, gc_waste);
   _total_refill_waste      += refill_waste;
@@ -374,7 +374,7 @@ void ThreadLocalAllocStats::update(const ThreadLocalAllocStats& other) {
   _allocating_threads      += other._allocating_threads;
   _total_refills           += other._total_refills;
   _max_refills              = MAX2(_max_refills, other._max_refills);
-  _total_allocations       += other._total_allocations;
+  _total_allocated_size    += other._total_allocated_size;
   _total_gc_waste          += other._total_gc_waste;
   _max_gc_waste             = MAX2(_max_gc_waste, other._max_gc_waste);
   _total_refill_waste      += other._total_refill_waste;
@@ -387,7 +387,7 @@ void ThreadLocalAllocStats::reset() {
   _allocating_threads      = 0;
   _total_refills           = 0;
   _max_refills             = 0;
-  _total_allocations       = 0;
+  _total_allocated_size    = 0;
   _total_gc_waste          = 0;
   _max_gc_waste            = 0;
   _total_refill_waste      = 0;
@@ -397,14 +397,14 @@ void ThreadLocalAllocStats::reset() {
 }
 
 void ThreadLocalAllocStats::publish() {
-  if (_total_allocations == 0) {
+  if (_total_allocated_size == 0) {
     return;
   }
 
   _allocating_threads_avg.sample(_allocating_threads);
 
   const size_t waste = _total_gc_waste + _total_refill_waste;
-  const double waste_percent = percent_of(waste, _total_allocations);
+  const double waste_percent = percent_of(waste, _total_allocated_size);
   log_debug(gc, tlab)("TLAB totals: thrds: %d  refills: %d max: %d"
                       " slow allocs: %d max %d waste: %4.1f%%"
                       " gc: %zuB max: %zuB"
@@ -418,7 +418,7 @@ void ThreadLocalAllocStats::publish() {
     _perf_allocating_threads      ->set_value(_allocating_threads);
     _perf_total_refills           ->set_value(_total_refills);
     _perf_max_refills             ->set_value(_max_refills);
-    _perf_total_allocations       ->set_value(_total_allocations);
+    _perf_total_allocated_size    ->set_value(_total_allocated_size);
     _perf_total_gc_waste          ->set_value(_total_gc_waste);
     _perf_max_gc_waste            ->set_value(_max_gc_waste);
     _perf_total_refill_waste      ->set_value(_total_refill_waste);

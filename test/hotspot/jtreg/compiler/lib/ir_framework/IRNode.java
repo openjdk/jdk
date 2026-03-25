@@ -3134,6 +3134,12 @@ public class IRNode {
         macroNodes(MOD_D, regex);
     }
 
+    public static final String POW_D = PREFIX + "POW_D" + POSTFIX;
+    static {
+        String regex = START + "PowD" + MID + END;
+        macroNodes(POW_D, regex);
+    }
+
     public static final String BLACKHOLE = PREFIX + "BLACKHOLE" + POSTFIX;
     static {
         fromBeforeRemoveUselessToFinalCode(BLACKHOLE, "Blackhole");

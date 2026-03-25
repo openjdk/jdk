@@ -729,7 +729,7 @@ double G1Policy::constant_other_time_ms(double pause_time_ms) const {
 }
 
 bool G1Policy::about_to_start_mixed_phase() const {
-  return collector_state()->is_in_concurrent_cycle() || collector_state()->is_in_young_gc_before_mixed();
+  return collector_state()->is_in_concurrent_cycle() || collector_state()->is_in_prepare_mixed_gc();
 }
 
 bool G1Policy::need_to_start_conc_mark(const char* source, size_t allocation_word_size) {
@@ -935,7 +935,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
 
   record_pause(this_pause, start_time_sec, end_time_sec);
 
-  if (G1CollectorState::is_last_young_pause(this_pause)) {
+  if (G1CollectorState::is_prepare_mixed_pause(this_pause)) {
     assert(!G1CollectorState::is_concurrent_start_pause(this_pause),
            "The young GC before mixed is not allowed to be concurrent start GC");
     // This has been the young GC before we start doing mixed GCs. We already
@@ -1332,7 +1332,7 @@ void G1Policy::record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_se
     log_debug(gc, ergo)("request young-only gcs (candidate old regions not available)");
   }
   if (mixed_gc_pending) {
-    collector_state()->set_in_young_gc_before_mixed();
+    collector_state()->set_in_prepare_mixed_gc();
   }
 
   double end_sec = os::elapsedTime();
@@ -1397,7 +1397,7 @@ void G1Policy::update_time_to_mixed_tracking(Pause gc_type,
     case Pause::Cleanup:
     case Pause::Remark:
     case Pause::Normal:
-    case Pause::LastYoung:
+    case Pause::PrepareMixed:
       _concurrent_start_to_mixed.add_pause(end - start);
       break;
     case Pause::ConcurrentStartFull:
