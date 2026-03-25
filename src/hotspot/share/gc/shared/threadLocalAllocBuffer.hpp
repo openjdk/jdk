@@ -213,7 +213,7 @@ public:
                                size_t allocated_size,
                                size_t gc_waste,
                                size_t refill_waste);
-  void update_num_slow_allocations(unsigned int num_allocations);
+  void update_num_slow_allocations(unsigned int num_slow_allocations);
   void update(const ThreadLocalAllocStats& other);
 
   void reset();

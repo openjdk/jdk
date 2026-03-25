@@ -322,16 +322,16 @@ void ThreadLocalAllocStats::initialize() {
 
   if (UsePerfData) {
     EXCEPTION_MARK;
-    _perf_allocating_threads      = create_perf_variable("allocThreads",   PerfData::U_None,  CHECK);
-    _perf_total_num_refills       = create_perf_variable("fills",          PerfData::U_None,  CHECK);
-    _perf_max_num_refills         = create_perf_variable("maxFills",       PerfData::U_None,  CHECK);
-    _perf_total_allocated_size    = create_perf_variable("alloc",          PerfData::U_Bytes, CHECK);
-    _perf_total_gc_waste          = create_perf_variable("gcWaste",        PerfData::U_Bytes, CHECK);
-    _perf_max_gc_waste            = create_perf_variable("maxGcWaste",     PerfData::U_Bytes, CHECK);
-    _perf_total_refill_waste      = create_perf_variable("refillWaste",    PerfData::U_Bytes, CHECK);
-    _perf_max_refill_waste        = create_perf_variable("maxRefillWaste", PerfData::U_Bytes, CHECK);
-    _perf_total_num_slow_allocations  = create_perf_variable("slowAlloc",      PerfData::U_None,  CHECK);
-    _perf_max_num_slow_allocations    = create_perf_variable("maxSlowAlloc",   PerfData::U_None,  CHECK);
+    _perf_allocating_threads         = create_perf_variable("allocThreads",   PerfData::U_None,  CHECK);
+    _perf_total_num_refills          = create_perf_variable("fills",          PerfData::U_None,  CHECK);
+    _perf_max_num_refills            = create_perf_variable("maxFills",       PerfData::U_None,  CHECK);
+    _perf_total_allocated_size       = create_perf_variable("alloc",          PerfData::U_Bytes, CHECK);
+    _perf_total_gc_waste             = create_perf_variable("gcWaste",        PerfData::U_Bytes, CHECK);
+    _perf_max_gc_waste               = create_perf_variable("maxGcWaste",     PerfData::U_Bytes, CHECK);
+    _perf_total_refill_waste         = create_perf_variable("refillWaste",    PerfData::U_Bytes, CHECK);
+    _perf_max_refill_waste           = create_perf_variable("maxRefillWaste", PerfData::U_Bytes, CHECK);
+    _perf_total_num_slow_allocations = create_perf_variable("slowAlloc",      PerfData::U_None,  CHECK);
+    _perf_max_num_slow_allocations   = create_perf_variable("maxSlowAlloc",   PerfData::U_None,  CHECK);
   }
 }
 
@@ -365,33 +365,33 @@ void ThreadLocalAllocStats::update_fast_allocations(unsigned int num_refills,
   _max_refill_waste         = MAX2(_max_refill_waste, refill_waste);
 }
 
-void ThreadLocalAllocStats::update_num_slow_allocations(unsigned int num_allocations) {
-  _total_num_slow_allocations += num_allocations;
-  _max_num_slow_allocations    = MAX2(_max_num_slow_allocations, num_allocations);
+void ThreadLocalAllocStats::update_num_slow_allocations(unsigned int num_slow_allocations) {
+  _total_num_slow_allocations += num_slow_allocations;
+  _max_num_slow_allocations    = MAX2(_max_num_slow_allocations, num_slow_allocations);
 }
 
 void ThreadLocalAllocStats::update(const ThreadLocalAllocStats& other) {
-  _allocating_threads      += other._allocating_threads;
-  _total_num_refills       += other._total_num_refills;
-  _max_num_refills          = MAX2(_max_num_refills, other._max_num_refills);
-  _total_allocated_size    += other._total_allocated_size;
-  _total_gc_waste          += other._total_gc_waste;
-  _max_gc_waste             = MAX2(_max_gc_waste, other._max_gc_waste);
-  _total_refill_waste      += other._total_refill_waste;
-  _max_refill_waste         = MAX2(_max_refill_waste, other._max_refill_waste);
+  _allocating_threads         += other._allocating_threads;
+  _total_num_refills          += other._total_num_refills;
+  _max_num_refills             = MAX2(_max_num_refills, other._max_num_refills);
+  _total_allocated_size       += other._total_allocated_size;
+  _total_gc_waste             += other._total_gc_waste;
+  _max_gc_waste                = MAX2(_max_gc_waste, other._max_gc_waste);
+  _total_refill_waste         += other._total_refill_waste;
+  _max_refill_waste            = MAX2(_max_refill_waste, other._max_refill_waste);
   _total_num_slow_allocations += other._total_num_slow_allocations;
   _max_num_slow_allocations    = MAX2(_max_num_slow_allocations, other._max_num_slow_allocations);
 }
 
 void ThreadLocalAllocStats::reset() {
-  _allocating_threads      = 0;
-  _total_num_refills       = 0;
-  _max_num_refills         = 0;
-  _total_allocated_size    = 0;
-  _total_gc_waste          = 0;
-  _max_gc_waste            = 0;
-  _total_refill_waste      = 0;
-  _max_refill_waste        = 0;
+  _allocating_threads         = 0;
+  _total_num_refills          = 0;
+  _max_num_refills            = 0;
+  _total_allocated_size       = 0;
+  _total_gc_waste             = 0;
+  _max_gc_waste               = 0;
+  _total_refill_waste         = 0;
+  _max_refill_waste           = 0;
   _total_num_slow_allocations = 0;
   _max_num_slow_allocations   = 0;
 }
@@ -415,14 +415,14 @@ void ThreadLocalAllocStats::publish() {
                       _total_refill_waste * HeapWordSize, _max_refill_waste * HeapWordSize);
 
   if (UsePerfData) {
-    _perf_allocating_threads      ->set_value(_allocating_threads);
-    _perf_total_num_refills       ->set_value(_total_num_refills);
-    _perf_max_num_refills         ->set_value(_max_num_refills);
-    _perf_total_allocated_size    ->set_value(_total_allocated_size);
-    _perf_total_gc_waste          ->set_value(_total_gc_waste);
-    _perf_max_gc_waste            ->set_value(_max_gc_waste);
-    _perf_total_refill_waste      ->set_value(_total_refill_waste);
-    _perf_max_refill_waste        ->set_value(_max_refill_waste);
+    _perf_allocating_threads          ->set_value(_allocating_threads);
+    _perf_total_num_refills           ->set_value(_total_num_refills);
+    _perf_max_num_refills             ->set_value(_max_num_refills);
+    _perf_total_allocated_size        ->set_value(_total_allocated_size);
+    _perf_total_gc_waste              ->set_value(_total_gc_waste);
+    _perf_max_gc_waste                ->set_value(_max_gc_waste);
+    _perf_total_refill_waste          ->set_value(_total_refill_waste);
+    _perf_max_refill_waste            ->set_value(_max_refill_waste);
     _perf_total_num_slow_allocations  ->set_value(_total_num_slow_allocations);
     _perf_max_num_slow_allocations    ->set_value(_max_num_slow_allocations);
   }
