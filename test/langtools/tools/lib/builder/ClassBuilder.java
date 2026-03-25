@@ -238,25 +238,26 @@ public class ClassBuilder extends AbstractBuilder {
                 ow.println("// NO_API_COMMENT");
                 break;
         }
+        assert !modifiers.modifiers.isEmpty();
         ow.print(modifiers.toString());
         ow.print(clsname);
         if (typeParameter != null) {
-            ow.print(typeParameter + " ");
-        } else {
-            ow.print(" ");
+            ow.print(typeParameter);
         }
         if (extendsType != null && !extendsType.isEmpty()) {
-            ow.print("extends " + extendsType + " ");
+            var last = modifiers.modifiers.getLast();
+            assert !last.equals("interface") && !last.equals("@interface");
+            ow.print(" extends " + extendsType);
         }
         if (!implementsTypes.isEmpty()) {
-            ow.print("implements ");
+            ow.print(modifiers.modifiers.getLast().equals("interface") ? " extends " : " implements ");
             ow.print(String.join(", ", implementsTypes));
         }
         if (!permitsTypes.isEmpty()) {
-            ow.print("permits ");
+            ow.print(" permits ");
             ow.print(String.join(", ", permitsTypes));
         }
-        ow.print("{");
+        ow.print(" {");
         if (!nested.isEmpty()) {
             ow.println("");
             nested.forEach(m -> ow.println(m.toString()));

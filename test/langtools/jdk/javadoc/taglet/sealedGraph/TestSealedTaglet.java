@@ -29,7 +29,7 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.javadoc/jdk.javadoc.internal.tool
- * @build javadoc.tester.* toolbox.ToolBox builder.ClassBuilder
+ * @build javadoc.tester.* toolbox.ToolBox builder.ClassBuilder JdkTaglets
  * @run main ${test.main.class}
  */
 
@@ -67,16 +67,23 @@ public class TestSealedTaglet extends JavadocTester {
                 }
                 """);
         new ClassBuilder(tb, "pkg.A")
-                .setModifiers("public", "abstract", "sealed", "class")
+                .setModifiers("public", "abstract", "sealed", "interface")
                 .setComments("@sealedGraph")
                 .addPermits("pkg.B")
                 .write(srcDir);
         new ClassBuilder(tb, "pkg.B")
-                .setModifiers("abstract", "sealed", "class")
-                .addPermits("pkg.C")
+                .setModifiers("abstract", "sealed", "interface")
+                .addImplements("pkg.A")
+                .addPermits("pkg.C", "pkg.D")
                 .write(srcDir);
         new ClassBuilder(tb, "pkg.C")
+                .setModifiers("abstract", "sealed", "interface")
+                .addImplements("pkg.A", "pkg.B")
+                .addPermits("pkg.D")
+                .write(srcDir);
+        new ClassBuilder(tb, "pkg.D")
                 .setModifiers("public", "final", "class")
+                .addImplements("pkg.B", "pkg.C")
                 .write(srcDir);
 
         System.setProperty("sealedDotOutputDir", outDir.toString());
@@ -88,7 +95,7 @@ public class TestSealedTaglet extends JavadocTester {
                 "pkg");
 
         checkExit(Exit.OK);
-        // C is displayed as a direct subtype of A, bypassing B
-        checkOutput("test_pkg.A.dot", true, "\"pkg.C\" -> \"pkg.A\";");
+        // D is displayed as a direct subtype of A, bypassing B, C, one link only
+        checkUnique("test_pkg.A.dot", "\"pkg.D\" -> \"pkg.A\";");
     }
 }

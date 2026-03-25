@@ -298,7 +298,7 @@ public final class SealedGraph implements Taglet {
 
         private static List<TypeElement> permittedSubclasses(TypeElement node, Set<String> exports) {
             List<TypeElement> dfsStack = new ArrayList<TypeElement>().reversed(); // Faster operations to head
-            List<TypeElement> result = new ArrayList<>();
+            SequencedCollection<TypeElement> result = new LinkedHashSet<>(); // Deduplicate diamond interface inheritance
             // The starting node may be in the public API - still expand it
             prependSubclasses(node, dfsStack);
 
