@@ -129,19 +129,7 @@ static bool can_throw_async_exception(Bytecodes::Code bc) {
     // These bytecodes are defined with can_trap attribute but do not always create
     // exception edges in in GenerateOopMap so they cannot throw async exceptions.
     // See GenerateOopMap::do_exception_edge().
-    switch (bc) {
-    case Bytecodes::_aload_0:
-    case Bytecodes::_ireturn:
-    case Bytecodes::_lreturn:
-    case Bytecodes::_freturn:
-    case Bytecodes::_dreturn:
-    case Bytecodes::_areturn:
-    case Bytecodes::_return:
-    case Bytecodes::_monitorexit:
-      return false;
-    default:
-      return true;
-    }
+    return (bc != Bytecodes::_aload_0 && bc != Bytecodes::_monitorexit);
   }
 }
 

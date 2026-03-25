@@ -1199,21 +1199,6 @@ void GenerateOopMap::do_exception_edge(BytecodeStream* itr) {
         // they do not throw exceptions to make the monitor analysis work.
         return;
 
-      case Bytecodes::_ireturn:
-      case Bytecodes::_lreturn:
-      case Bytecodes::_freturn:
-      case Bytecodes::_dreturn:
-      case Bytecodes::_areturn:
-      case Bytecodes::_return:
-        // If the monitor stack height is not zero when we leave the method,
-        // then we are either exiting with a non-empty stack or we have
-        // found monitor trouble earlier in our analysis.  In either case,
-        // assume an exception could be taken here.
-        if (_monitor_top == 0) {
-          return;
-        }
-        break;
-
       case Bytecodes::_monitorexit:
         // If the monitor stack height is bad_monitors, then we have detected a
         // monitor matching problem earlier in the analysis.  If the
