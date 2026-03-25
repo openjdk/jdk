@@ -130,6 +130,13 @@ static frame get_last_frame(JavaThread* jt) {
   return last_frame;
 }
 
+// There are two properties that we rely on for these handshakes to work correctly:
+// 1. Async handshakes are always 'self processed' by the target thread, which means they
+//    only run when the target thread is itself stopped at a safepoint poll, and not when
+//    the thread is actively executing code, such as a memory access.
+// 2. After the handshake sets the thread's pending exception, it will be thrown immediately
+//    when continuing execution. The important part is that no more code is executed, and
+//    the thread unwinds out of the scoped access it was in.
 class ScopedAsyncExceptionHandshakeClosure : public AsyncExceptionHandshakeClosure {
   OopHandle _session;
   Atomic<int>* _async_exceptions;
@@ -137,7 +144,9 @@ class ScopedAsyncExceptionHandshakeClosure : public AsyncExceptionHandshakeClosu
 public:
   ScopedAsyncExceptionHandshakeClosure(OopHandle& session, OopHandle& error, Atomic<int>* async_exceptions)
     : AsyncExceptionHandshakeClosure(error, "ScopedAsyncExceptionHandshakeClosure"),
-      _session(session), _async_exceptions(async_exceptions) {}
+      _session(session), _async_exceptions(async_exceptions) {
+    _async_exceptions->add_then_fetch(1);
+  }
 
   ~ScopedAsyncExceptionHandshakeClosure() {
     _session.release(Universe::vm_global());
@@ -189,10 +198,10 @@ public:
       // the scoped access.
       OopHandle session(Universe::vm_global(), JNIHandles::resolve(_session));
       OopHandle error(Universe::vm_global(), JNIHandles::resolve(_error));
-      // The target thread might be in native code, so we may not install the async exception
-      // directly. We install another handshake that will deliver the exception the next time
-      // the thread stops and is able to handle async exceptions.
-      _async_exceptions->add_then_fetch(1);
+      // Since this handshake may run concurrently with the target thread,
+      // the target thread might be in native code, so we may not install the async exception
+      // directly. Instead, we install another handshake that will deliver the exception the next time
+      // the thread stops at a safepoint poll and is able to handle async exceptions.
       jt->install_async_exception(new ScopedAsyncExceptionHandshakeClosure(session, error, _async_exceptions));
     } else if (!in_scoped) {
       frame last_frame = get_last_frame(jt);
