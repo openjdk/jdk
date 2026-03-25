@@ -886,7 +886,7 @@ class MacroAssembler: public Assembler {
   void oop_decoder(Register Rdst, Register Rsrc, bool maybenull,
                    Register Rbase = Z_R1, int pow2_offset = -1);
 
-  void resolve_oop_handle(Register result);
+  void resolve_oop_handle(Register result, Register tmp1, Register tmp2);
   void load_mirror_from_const_method(Register mirror, Register const_method);
   void load_method_holder(Register holder, Register method);
 

@@ -2023,7 +2023,7 @@ address TemplateInterpreterGenerator::generate_currentThread() {
   uint64_t entry_off = __ offset();
 
   __ z_lg(Z_RET, Address(Z_thread, JavaThread::threadObj_offset()));
-  __ resolve_oop_handle(Z_RET);
+  __ resolve_oop_handle(Z_RET, Z_R0_scratch, Z_R1_scratch);
 
   // Restore caller sp for c2i case.
   __ resize_frame_absolute(Z_R10, Z_R0, true); // Cut the stack back to where the caller started.
