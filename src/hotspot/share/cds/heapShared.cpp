@@ -564,6 +564,7 @@ bool HeapShared::archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgra
     return false;
   }
 
+  AOTArtifactFinder::add_cached_class(obj->klass());
   AOTOopChecker::check(obj); // Make sure contents of this oop are safe.
   count_allocation(obj->size());
 
