@@ -1734,7 +1734,7 @@ public class RepaintManager
         private static void scheduleDisplayChanges() {
             // To avoid threading problems, we notify the RepaintManager
             // on the thread it was created on.
-            EventQueue eventQueue = SunToolkit.getSystemEventQueueImplPP();
+            EventQueue eventQueue = Toolkit.getDefaultToolkit().getSystemEventQueue();
             eventQueue.postEvent(
                 new InvocationEvent(
                     Toolkit.getDefaultToolkit(),
