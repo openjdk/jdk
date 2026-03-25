@@ -335,11 +335,11 @@
   nonstatic_field(ThreadLocalAllocBuffer,      _pf_top,                                       HeapWord*)                             \
   nonstatic_field(ThreadLocalAllocBuffer,      _desired_size,                                 size_t)                                \
   nonstatic_field(ThreadLocalAllocBuffer,      _refill_waste_limit,                           size_t)                                \
-     static_field(ThreadLocalAllocBuffer,      _target_refills,                               unsigned)                              \
-  nonstatic_field(ThreadLocalAllocBuffer,      _number_of_refills,                            unsigned)                              \
+     static_field(ThreadLocalAllocBuffer,      _target_num_refills,                           unsigned)                              \
+  nonstatic_field(ThreadLocalAllocBuffer,      _num_refills,                                  unsigned)                              \
   nonstatic_field(ThreadLocalAllocBuffer,      _refill_waste,                                 unsigned)                              \
   nonstatic_field(ThreadLocalAllocBuffer,      _gc_waste,                                     unsigned)                              \
-  nonstatic_field(ThreadLocalAllocBuffer,      _slow_allocations,                             unsigned)                              \
+  nonstatic_field(ThreadLocalAllocBuffer,      _num_slow_allocations,                         unsigned)                              \
   nonstatic_field(VirtualSpace,                _low_boundary,                                 char*)                                 \
   nonstatic_field(VirtualSpace,                _high_boundary,                                char*)                                 \
   nonstatic_field(VirtualSpace,                _low,                                          char*)                                 \
@@ -2142,4 +2142,3 @@ void vmStructs_init() {
   VMStructs::init();
 }
 #endif // ASSERT
-
