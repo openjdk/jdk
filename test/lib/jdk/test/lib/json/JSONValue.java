@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public interface JSONValue {
 
@@ -88,9 +89,6 @@ public interface JSONValue {
 
         @Override
         public String toString() {
-            if (value == null) {
-                return "null";
-            }
             var builder = new StringBuilder();
             builder.append("\"");
 
@@ -172,6 +170,56 @@ public interface JSONValue {
         public Iterator<JSONValue> iterator() {
             return values.iterator();
         }
+
+        @Override
+        public List<JSONValue> elements() {
+            return List.copyOf(values);
+        }
+    }
+
+    public final class JSONBoolean implements JSONValue {
+        private static JSONBoolean TRUE = new JSONBoolean(true);
+        private static JSONBoolean FALSE = new JSONBoolean(false);
+
+        private final boolean value;
+
+        private JSONBoolean(boolean value) {
+            this.value = value;
+        }
+
+        @Override
+        public boolean asBoolean() {
+            return value;
+        }
+
+        @Override
+        public String toString() {
+            return String.valueOf(value);
+        }
+
+        public static JSONBoolean of(boolean value) {
+            return value ? TRUE : FALSE;
+        }
+    }
+
+    public final class JSONNull implements JSONValue {
+        private static JSONNull NULL = new JSONNull();
+
+        private JSONNull() {}
+
+        @Override
+        public Optional<JSONValue> valueOrNull() {
+            return Optional.empty();
+        }
+
+        @Override
+        public String toString() {
+            return "null";
+        }
+
+        public static JSONNull of() {
+            return NULL;
+        }
     }
 
     class JSONParser {
@@ -181,8 +229,8 @@ public interface JSONValue {
         JSONParser() {
         }
 
-        private IllegalStateException failure(String message) {
-            return new IllegalStateException(String.format("[%d]: %s : %s", pos, message, input));
+        private IllegalArgumentException failure(String message) {
+            return new IllegalArgumentException(String.format("[%d]: %s : %s", pos, message, input));
         }
 
         private char current() {
@@ -220,13 +268,13 @@ public interface JSONValue {
             }
         }
 
-        private JSONString parseBoolean() {
+        private JSONBoolean parseBoolean() {
             if (current() == 't') {
                 expect('r');
                 expect('u');
                 expect('e');
                 advance();
-                return new JSONString("true");
+                return JSONBoolean.of(true);
             }
 
             if (current() == 'f') {
@@ -235,7 +283,7 @@ public interface JSONValue {
                 expect('s');
                 expect('e');
                 advance();
-                return new JSONString("false");
+                return JSONBoolean.of(false);
             }
             throw failure("a boolean can only be 'true' or 'false'");
         }
@@ -400,12 +448,12 @@ public interface JSONValue {
             return new JSONArray(list);
         }
 
-        public JSONString parseNull() {
+        public JSONNull parseNull() {
             expect('u');
             expect('l');
             expect('l');
             advance();
-            return new JSONString(null);
+            return JSONNull.of();
         }
 
         public JSONObject parseObject() {
@@ -531,22 +579,38 @@ public interface JSONValue {
     }
 
     default int size() {
-        throw new IllegalStateException("Size operation unsupported");
+        throw new UnsupportedOperationException("Size operation unsupported");
+    }
+
+    default List<JSONValue> elements() {
+        throw new UnsupportedOperationException("Unsupported conversion to array");
     }
 
     default String asString() {
-        throw new IllegalStateException("Unsupported conversion to String");
+        throw new UnsupportedOperationException("Unsupported conversion to String");
     }
 
     default JSONArray asArray() {
-        throw new IllegalStateException("Unsupported conversion to array");
+        throw new UnsupportedOperationException("Unsupported conversion to array");
     }
 
     default JSONObject asObject() {
-        throw new IllegalStateException("Unsupported conversion to object");
+        throw new UnsupportedOperationException("Unsupported conversion to object");
+    }
+
+    default boolean asBoolean() {
+        throw new UnsupportedOperationException("Unsupported conversion to boolean");
     }
 
     default JSONValue get(String field) {
         return asObject().get(field);
+    }
+
+    default Optional<JSONValue> getOrAbsent(String field) {
+        return Optional.ofNullable(get(field));
+    }
+
+    default Optional<JSONValue> valueOrNull() {
+        return Optional.of(this);
     }
 }

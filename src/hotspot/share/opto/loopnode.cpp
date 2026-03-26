@@ -2137,7 +2137,6 @@ bool CountedLoopConverter::is_counted_loop() {
   }
 
   assert(_head->Opcode() == Op_Loop || _head->Opcode() == Op_LongCountedLoop, "regular loops only");
-  _phase->C->print_method(PHASE_BEFORE_CLOOPS, 3, _head);
 
   // ===================================================
   // We can only convert this loop to a counted loop if we can guarantee that the iv phi will never overflow at runtime.
@@ -2411,6 +2410,12 @@ bool CountedLoopConverter::is_counted_loop() {
   _checked_for_counted_loop = true;
 #endif
 
+#ifndef PRODUCT
+  if (StressCountedLoop && (_phase->C->random() % 2 == 0)) {
+    return false;
+  }
+#endif
+
   return true;
 }
 
@@ -2552,6 +2557,8 @@ IdealLoopTree* CountedLoopConverter::convert() {
 #endif
 
   PhaseIterGVN* igvn = &_phase->igvn();
+
+  _phase->C->print_method(PHASE_BEFORE_CLOOPS, 3, _head);
 
   if (_should_insert_stride_overflow_limit_check) {
     insert_stride_overflow_limit_check();
@@ -4734,7 +4741,11 @@ void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
   } else if (_head->is_LongCountedLoop() || phase->try_convert_to_counted_loop(_head, loop, T_LONG)) {
     remove_safepoints(phase, true);
   } else {
-    assert(!_head->is_Loop() || !_head->as_Loop()->is_loop_nest_inner_loop(), "transformation to counted loop should not fail");
+    // When StressCountedLoop is enabled, this loop may intentionally avoid a counted loop conversion.
+    // This is expected behavior for the stress mode, which exercises alternative compilation paths.
+    if (!StressCountedLoop) {
+      assert(!_head->is_Loop() || !_head->as_Loop()->is_loop_nest_inner_loop(), "transformation to counted loop should not fail");
+    }
     if (_parent != nullptr && !_irreducible) {
       // Not a counted loop. Keep one safepoint.
       bool keep_one_sfpt = true;

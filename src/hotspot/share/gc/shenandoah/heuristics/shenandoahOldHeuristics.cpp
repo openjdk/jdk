@@ -369,7 +369,6 @@ bool ShenandoahOldHeuristics::top_off_collection_set(ShenandoahCollectionSet* co
 
     assert(consumed_from_young_cset <= max_young_cset, "sanity");
     assert(max_young_cset <= young_unaffiliated_regions * region_size_bytes, "sanity");
-
     size_t regions_for_old_expansion;
     if (consumed_from_young_cset < max_young_cset) {
       size_t excess_young_reserves = max_young_cset - consumed_from_young_cset;
@@ -392,7 +391,10 @@ bool ShenandoahOldHeuristics::top_off_collection_set(ShenandoahCollectionSet* co
       _unspent_unfragmented_old_budget += supplement_without_waste;
       _old_generation->augment_evacuation_reserve(budget_supplement);
       young_generation->set_evacuation_reserve(max_young_cset - budget_supplement);
-
+      assert(young_generation->get_evacuation_reserve() >=
+             collection_set->get_live_bytes_in_untenurable_regions() * ShenandoahEvacWaste,
+             "adjusted evac reserve (%zu) must be large enough for planned evacuation (%zu)",
+             young_generation->get_evacuation_reserve(), collection_set->get_live_bytes_in_untenurable_regions());
       return add_old_regions_to_cset(collection_set);
     } else {
       add_regions_to_old = 0;

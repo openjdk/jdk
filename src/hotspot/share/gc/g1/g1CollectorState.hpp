@@ -45,9 +45,9 @@ class G1CollectorState {
     // during that GC because we only decide whether we do this type of GC at the start
     // of the pause.
     YoungConcurrentStart,
-    // Indicates that we are about to start or in the last young gc in the Young-Only
+    // Indicates that we are about to start or in the prepare mixed gc in the Young-Only
     // phase before the Mixed phase. This GC is required to keep pause time requirements.
-    YoungLastYoung,
+    YoungPrepareMixed,
     // Doing extra old generation evacuation.
     Mixed,
     // The Full GC phase (that coincides with the Full GC pause).
@@ -72,19 +72,19 @@ public:
   void set_in_full_gc() { _phase = Phase::FullGC; }
 
   // Pause setters
-  void set_in_young_gc_before_mixed() { _phase = Phase::YoungLastYoung; }
   void set_in_concurrent_start_gc() { _phase = Phase::YoungConcurrentStart; _initiate_conc_mark_if_possible = false; }
+  void set_in_prepare_mixed_gc() { _phase = Phase::YoungPrepareMixed; }
 
   void set_initiate_conc_mark_if_possible(bool v) { _initiate_conc_mark_if_possible = v; }
 
   // Phase getters
-  bool is_in_young_only_phase() const { return _phase == Phase::YoungNormal || _phase == Phase::YoungConcurrentStart || _phase == Phase::YoungLastYoung; }
+  bool is_in_young_only_phase() const { return _phase == Phase::YoungNormal || _phase == Phase::YoungConcurrentStart || _phase == Phase::YoungPrepareMixed; }
   bool is_in_mixed_phase() const { return _phase == Phase::Mixed; }
 
   // Specific pauses
-  bool is_in_young_gc_before_mixed() const { return _phase == Phase::YoungLastYoung; }
-  bool is_in_full_gc() const { return _phase == Phase::FullGC; }
   bool is_in_concurrent_start_gc() const { return _phase == Phase::YoungConcurrentStart; }
+  bool is_in_prepare_mixed_gc() const { return _phase == Phase::YoungPrepareMixed; }
+  bool is_in_full_gc() const { return _phase == Phase::FullGC; }
 
   bool initiate_conc_mark_if_possible() const { return _initiate_conc_mark_if_possible; }
 
@@ -95,9 +95,9 @@ public:
 
   enum class Pause : uint {
     Normal,
-    LastYoung,
     ConcurrentStartFull,
     ConcurrentStartUndo,
+    PrepareMixed,
     Cleanup,
     Remark,
     Mixed,
@@ -109,9 +109,9 @@ public:
 
   static const char* to_string(Pause type) {
     static const char* pause_strings[] = { "Normal",
-                                           "Prepare Mixed",
                                            "Concurrent Start", // Do not distinguish between the different
                                            "Concurrent Start", // Concurrent Start pauses.
+                                           "Prepare Mixed",
                                            "Cleanup",
                                            "Remark",
                                            "Mixed",
@@ -129,7 +129,7 @@ public:
     assert_is_young_pause(type);
     return type == Pause::ConcurrentStartUndo ||
            type == Pause::ConcurrentStartFull ||
-           type == Pause::LastYoung ||
+           type == Pause::PrepareMixed ||
            type == Pause::Normal;
   }
 
@@ -138,9 +138,9 @@ public:
     return type == Pause::Mixed;
   }
 
-  static bool is_last_young_pause(Pause type) {
+  static bool is_prepare_mixed_pause(Pause type) {
     assert_is_young_pause(type);
-    return type == Pause::LastYoung;
+    return type == Pause::PrepareMixed;
   }
 
   static bool is_concurrent_start_pause(Pause type) {
