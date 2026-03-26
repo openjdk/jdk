@@ -628,7 +628,7 @@ DeoptimizationBlob::DeoptimizationBlob(
   int         frame_size
 )
   : SingletonBlob("DeoptimizationBlob", CodeBlobKind::Deoptimization, cb,
-                size, sizeof(DeoptimizationBlob), frame_size, oop_maps)
+                  size, sizeof(DeoptimizationBlob), frame_size, oop_maps)
 {
   _unpack_offset           = unpack_offset;
   _unpack_with_exception   = unpack_with_exception_offset;
@@ -678,7 +678,7 @@ UncommonTrapBlob::UncommonTrapBlob(
   int         frame_size
 )
   : SingletonBlob("UncommonTrapBlob", CodeBlobKind::UncommonTrap, cb,
-                size, sizeof(UncommonTrapBlob), frame_size, oop_maps)
+                  size, sizeof(UncommonTrapBlob), frame_size, oop_maps)
 {}
 
 
@@ -710,7 +710,7 @@ ExceptionBlob::ExceptionBlob(
   int         frame_size
 )
   : SingletonBlob("ExceptionBlob", CodeBlobKind::Exception, cb,
-                size, sizeof(ExceptionBlob), frame_size, oop_maps)
+                  size, sizeof(ExceptionBlob), frame_size, oop_maps)
 {}
 
 
@@ -744,7 +744,7 @@ SafepointBlob::SafepointBlob(
   int         frame_size
 )
   : SingletonBlob(cb->name(), CodeBlobKind::Safepoint, cb,
-                size, sizeof(SafepointBlob), frame_size, oop_maps)
+                  size, sizeof(SafepointBlob), frame_size, oop_maps)
 {}
 
 
