@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,12 +36,13 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.NamedParameterSpec;
 
 import static javax.crypto.spec.HPKEParameterSpec.AEAD_AES_256_GCM;
+import static javax.crypto.spec.HPKEParameterSpec.EXPORT_ONLY;
 import static javax.crypto.spec.HPKEParameterSpec.KDF_HKDF_SHA256;
 import static javax.crypto.spec.HPKEParameterSpec.KEM_DHKEM_X25519_HKDF_SHA256;
 
 /*
  * @test
- * @bug 8325448
+ * @bug 8325448 8379541
  * @library /test/lib
  * @summary HPKE compliance test
  */
@@ -160,6 +161,8 @@ public class Compliance {
         Asserts.assertThrows(IllegalStateException.class, () -> c1.doFinal(new byte[1]));
         Asserts.assertThrows(IllegalStateException.class, () -> c1.doFinal(new byte[1], 0, 1));
         Asserts.assertThrows(IllegalStateException.class, () -> c1.doFinal(new byte[1], 0, 1, new byte[1024], 0));
+        Asserts.assertThrows(IllegalStateException.class, () -> c1.exportKey("AES", new byte[1], 32));
+        Asserts.assertThrows(IllegalStateException.class, () -> c1.exportData(new byte[1], 32));
 
         c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(), spec);
         var encap = c1.getIV();
@@ -224,6 +227,40 @@ public class Compliance {
                 () -> c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(),
                         HPKEParameterSpec.of(KEM_DHKEM_X25519_HKDF_SHA256, KDF_HKDF_SHA256, 4)));
 
+        // export-only
+        c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(), HPKEParameterSpec.of(
+                KEM_DHKEM_X25519_HKDF_SHA256, KDF_HKDF_SHA256, EXPORT_ONLY));
+        Asserts.assertEquals(0, c1.getBlockSize());
+        Asserts.assertEquals(0, c1.getOutputSize(100));
+
+        var c1x = c1.exportKey("AES", new byte[1], 32).getEncoded();
+        var c1d = c1.exportData(new byte[1], 32);
+        Asserts.assertThrows(IllegalArgumentException.class, () -> c1.exportKey("AES", new byte[1], -1));
+        Asserts.assertThrows(IllegalArgumentException.class, () -> c1.exportKey("AES", null, -1));
+        Asserts.assertThrows(IllegalArgumentException.class, () -> c1.exportKey("", new byte[1], 32));
+        Asserts.assertThrows(NullPointerException.class, () -> c1.exportKey(null, new byte[1], 32));
+        Asserts.assertThrows(IllegalArgumentException.class, () -> c1.exportData(new byte[1], -1));
+        Asserts.assertThrows(IllegalArgumentException.class, () -> c1.exportData(null, 32));
+        c1.exportKey("Generic", new byte[1], 255 * 32).getEncoded();
+        c1.exportData(new byte[1], 255 * 32);
+        Asserts.assertThrows(IllegalArgumentException.class, () -> c1.exportKey("Generic", new byte[1], 255 * 32 + 1));
+        Asserts.assertThrows(IllegalArgumentException.class, () -> c1.exportData(new byte[1], 255 * 32 + 1));
+        Asserts.assertThrows(UnsupportedOperationException.class, () -> c1.update(new byte[1]));
+        Asserts.assertThrows(UnsupportedOperationException.class, () -> c1.doFinal(new byte[1]));
+        Asserts.assertThrows(UnsupportedOperationException.class, () -> c1.doFinal());
+
+        c1.init(Cipher.DECRYPT_MODE, kp.getPrivate(), HPKEParameterSpec.of(
+                KEM_DHKEM_X25519_HKDF_SHA256, KDF_HKDF_SHA256, EXPORT_ONLY).withEncapsulation(c1.getIV()));
+        Asserts.assertEquals(0, c1.getBlockSize());
+        Asserts.assertEquals(0, c1.getOutputSize(100));
+        Asserts.assertThrows(UnsupportedOperationException.class, () -> c1.update(new byte[1]));
+        Asserts.assertThrows(UnsupportedOperationException.class, () -> c1.doFinal(new byte[1]));
+        Asserts.assertThrows(UnsupportedOperationException.class, () -> c1.doFinal());
+        var c2x = c1.exportKey("AES", new byte[1], 32).getEncoded();
+        var c2d = c1.exportData(new byte[1], 32);
+        Asserts.assertEqualsByteArray(c1x, c2x);
+        Asserts.assertEqualsByteArray(c1d, c2d);
+
         // HPKE
         checkEncryptDecrypt(kp, spec, spec);
 
@@ -276,6 +313,7 @@ public class Compliance {
         c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(), ps);
         Asserts.assertEquals(16, c1.getBlockSize());
         Asserts.assertEquals(116, c1.getOutputSize(100));
+        var c1x = c1.exportKey("AES", new byte[1], 32).getEncoded();
         c1.updateAAD(aad);
         var ct = c1.doFinal(new byte[2]);
 
@@ -283,6 +321,8 @@ public class Compliance {
                 pr.withEncapsulation(c1.getIV()));
         Asserts.assertEquals(16, c2.getBlockSize());
         Asserts.assertEquals(84, c2.getOutputSize(100));
+        var c2x = c2.exportKey("AES", new byte[1], 32).getEncoded();
+        Asserts.assertEqualsByteArray(c1x, c2x);
         c2.updateAAD(aad);
         Asserts.assertEqualsByteArray(c2.doFinal(ct), new byte[2]);
     }

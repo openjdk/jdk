@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import static javax.crypto.spec.HPKEParameterSpec.KEM_DHKEM_X448_HKDF_SHA512;
 
 /*
  * @test
- * @bug 8325448
+ * @bug 8325448 8379541
  * @library /test/lib
  * @summary HPKE running with different keys
  */
@@ -68,6 +68,7 @@ public class Functions {
         var info = "info".getBytes(StandardCharsets.UTF_8);
         var psk = new SecretKeySpec("K".repeat(32).getBytes(StandardCharsets.UTF_8), "Generic");
         var psk_id = "psk1".getBytes(StandardCharsets.UTF_8);
+        var context = "context".getBytes(StandardCharsets.UTF_8);
 
         for (var param : PARAMS) {
             var c1 = Cipher.getInstance("HPKE");
@@ -94,8 +95,16 @@ public class Functions {
                             .withInfo(info)
                             .withPsk(psk, psk_id)
                             .withEncapsulation(c1.getIV()));
+
                     Asserts.assertEqualsByteArray(msg, c2.doFinal(c1.doFinal(msg)));
                     Asserts.assertEqualsByteArray(msg2, c2.doFinal(c1.doFinal(msg2)));
+
+                    var k1 = c1.exportKey("AES", context, 32);
+                    var d1 = c1.exportData(context, 32);
+                    var k2 = c2.exportKey("AES", context, 32);
+                    var d2 = c2.exportData(context, 32);
+                    Asserts.assertEqualsByteArray(k1.getEncoded(), k2.getEncoded());
+                    Asserts.assertEqualsByteArray(d1, d2);
                 }
             }
         }

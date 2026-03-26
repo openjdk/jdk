@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8325448
+ * @bug 8325448 8379541
  * @summary KAT inside RFC 9180
  * @library /test/lib
  * @modules java.base/com.sun.crypto.provider
@@ -82,6 +82,7 @@ public class KAT9180 {
         var c1 = Cipher.getInstance("HPKE");
         var c2 = Cipher.getInstance("HPKE");
         var ts = JSONValue.parse(new String(Files.readAllBytes(archivePath), StandardCharsets.UTF_8));
+        var count1 = 0;
         for (var tg : ts.asArray()) {
             var mode = Integer.parseInt(tg.get("mode").asString());
             System.err.print('I');
@@ -116,21 +117,38 @@ public class KAT9180 {
             var enc = tg.get("encryptions");
             if (enc != null) {
                 System.err.print('e');
-                var count = 0;
+                var count2 = 0;
                 for (var p : enc.asArray()) {
                     var aad = h.parseHex(p.get("aad").asString());
                     var pt = h.parseHex(p.get("pt").asString());
                     var ct = h.parseHex(p.get("ct").asString());
                     c1.updateAAD(aad);
                     var ct1 = c1.doFinal(pt);
-                    Asserts.assertEqualsByteArray(ct, ct1);
+                    Asserts.assertEqualsByteArray(ct, ct1, count1 + ":" + count2);
                     c2.updateAAD(aad);
                     var pt1 = c2.doFinal(ct);
-                    Asserts.assertEqualsByteArray(pt, pt1);
-                    count++;
+                    Asserts.assertEqualsByteArray(pt, pt1, count1 + ":" + count2);
+                    count2++;
                 }
-                System.err.print(count);
+                System.err.print(count2);
             }
+            var exports = tg.get("exports");
+            if (exports != null) {
+                System.err.print('x');
+                var count2 = 0;
+                for (var p : exports.asArray()) {
+                    var exporter_context = h.parseHex(p.get("exporter_context").asString());
+                    var L = Integer.parseInt(p.get("L").asString());
+                    var exported_value = h.parseHex(p.get("exported_value").asString());
+                    var d1 = c1.exportData(exporter_context, L);
+                    var d2 = c2.exportData(exporter_context, L);
+                    Asserts.assertEqualsByteArray(exported_value, d1, count1 + ":" + count2);
+                    Asserts.assertEqualsByteArray(exported_value, d2, count1 + ":" + count2);
+                    count2++;
+                }
+                System.err.print(count2);
+            }
+            count1++;
         }
     }
 }
