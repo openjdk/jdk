@@ -24,6 +24,7 @@
  *
  */
 
+#include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
@@ -270,6 +271,12 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
   {
     // Cannot uncommit bitmap slices during concurrent reset
     ShenandoahNoUncommitMark forbid_region_uncommit(_heap);
+
+    // When a whitebox full GC is requested, set the tenuring threshold to zero
+    // so that all young objects are promoted to old. This ensures that tests
+    // using WB.fullGC() to promote objects to old gen will not loop forever.
+    ShenandoahTenuringOverride tenuring_override(request.cause == GCCause::_wb_full_gc,
+                                                 _heap->age_census());
 
     _heap->print_before_gc();
     switch (gc_mode()) {

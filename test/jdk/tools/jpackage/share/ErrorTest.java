@@ -1015,8 +1015,8 @@ public final class ErrorTest {
                 testSpec().noAppDesc().addArgs("--app-image", Token.APP_IMAGE.token())
                         .error("error.app-image.mac-sign.required"),
                 testSpec().type(PackageType.MAC_PKG).addArgs("--mac-package-identifier", "#1")
-                        .error("message.invalid-identifier", "#1")
-                        .advice("message.invalid-identifier.advice"),
+                        .error("error.parameter-not-mac-bundle-identifier", "#1", "--mac-package-identifier")
+                        .advice("error.parameter-not-mac-bundle-identifier.advice"),
                 // Bundle for mac app store should not have runtime commands
                 testSpec().nativeType().addArgs("--mac-app-store", "--jlink-options", "--bind-services")
                         .error("ERR_MissingJLinkOptMacAppStore", "--strip-native-commands"),
