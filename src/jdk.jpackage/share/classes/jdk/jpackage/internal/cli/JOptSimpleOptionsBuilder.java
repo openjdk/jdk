@@ -496,10 +496,10 @@ final class JOptSimpleOptionsBuilder {
         }
 
         private static Object mergeArrayValues(OptionSpec.MergePolicy mergePolicy, List<?> value) {
-            switch (mergePolicy) {
+            return switch (mergePolicy) {
                 case USE_FIRST -> {
                     // Find the first non-empty array, get its first element and wrap it into one-element array.
-                    return value.stream().filter(arr -> {
+                    yield value.stream().filter(arr -> {
                         return Array.getLength(arr) > 0;
                     }).findFirst().map(arr -> {
                         return asArray(Array.get(arr, 0));
@@ -507,14 +507,14 @@ final class JOptSimpleOptionsBuilder {
                 }
                 case USE_LAST -> {
                     // Find the last non-empty array, get its last element and wrap it into one-element array.
-                    return value.reversed().stream().filter(arr -> {
+                    yield value.reversed().stream().filter(arr -> {
                         return Array.getLength(arr) > 0;
                     }).findFirst().map(arr -> {
                         return asArray(Array.get(arr, Array.getLength(arr) - 1));
                     }).orElseGet(value::getFirst);
                 }
                 case CONCATENATE -> {
-                    return value.stream().filter(arr -> {
+                    yield value.stream().filter(arr -> {
                         return Array.getLength(arr) > 0;
                     }).map(Object.class::cast).reduce((a, b) -> {
                         final var al = Array.getLength(a);
@@ -525,10 +525,7 @@ final class JOptSimpleOptionsBuilder {
                         return arr;
                     }).orElseGet(value::getFirst);
                 }
-                default -> {
-                    throw new AssertionError();
-                }
-            }
+            };
         }
 
         private static Object asArray(Object v) {
@@ -795,20 +792,17 @@ final class JOptSimpleOptionsBuilder {
         if (values.size() == 1) {
             return values;
         } else {
-            switch (mergePolicy) {
+            return switch (mergePolicy) {
                 case USE_LAST -> {
-                    return List.of(values.getLast());
+                    yield List.of(values.getLast());
                 }
                 case USE_FIRST -> {
-                    return List.of(values.getFirst());
+                    yield List.of(values.getFirst());
                 }
                 case CONCATENATE -> {
-                    return values;
+                    yield values;
                 }
-                default -> {
-                    throw new AssertionError();
-                }
-            }
+            };
         }
     }
 
