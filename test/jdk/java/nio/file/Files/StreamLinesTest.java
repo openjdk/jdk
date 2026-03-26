@@ -32,10 +32,6 @@
  * @key randomness
  */
 
-import jdk.test.lib.RandomFactory;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -52,6 +48,11 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.IntFunction;
 import java.util.stream.Stream;
+import jdk.test.lib.RandomFactory;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
