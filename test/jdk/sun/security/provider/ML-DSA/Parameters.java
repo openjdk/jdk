@@ -36,7 +36,7 @@ import java.security.KeyPairGenerator;
 import java.security.Signature;
 import java.security.SignatureException;
 
-import sun.security.util.SignatureParameterSpec;
+import sun.security.util.InternalSignatureParameterSpec;
 
 public class Parameters {
     public static void main(String[] args) throws Exception {
@@ -52,7 +52,7 @@ public class Parameters {
         var s = Signature.getInstance("ML-DSA");
 
         // deterministic
-        s.setParameter(new SignatureParameterSpec(null, null, "deterministic"));
+        s.setParameter(new InternalSignatureParameterSpec(null, null, "deterministic"));
         s.initSign(kp.getPrivate());
         s.update(msg);
         var sig1 = s.sign();
@@ -60,7 +60,7 @@ public class Parameters {
         Asserts.assertEqualsByteArray(sig1, s.sign());
 
         // non-deterministic, aka "hedged" as in FIPS 204
-        s.setParameter(new SignatureParameterSpec(null, null));
+        s.setParameter(new InternalSignatureParameterSpec(null, null));
         s.update(msg);
         var sig3 = s.sign();
         Asserts.assertNotEqualsByteArray(sig1, sig3); // not same as deterministic
@@ -68,17 +68,17 @@ public class Parameters {
         Asserts.assertNotEqualsByteArray(sig3, s.sign()); // not same every time
 
         // null context is the same of empty context
-        s.setParameter(new SignatureParameterSpec(null, new byte[0], "deterministic"));
+        s.setParameter(new InternalSignatureParameterSpec(null, new byte[0], "deterministic"));
         s.update(msg);
         Asserts.assertEqualsByteArray(sig1, s.sign());
 
         // non-null context is different
-        s.setParameter(new SignatureParameterSpec(null, new byte[1], "deterministic"));
+        s.setParameter(new InternalSignatureParameterSpec(null, new byte[1], "deterministic"));
         s.update(msg);
         Asserts.assertNotEqualsByteArray(sig1, s.sign());
 
         // externalMu requires mu length
-        s.setParameter(new SignatureParameterSpec(null, null, "internal", "externalMu"));
+        s.setParameter(new InternalSignatureParameterSpec(null, null, "internal", "externalMu"));
         s.initSign(kp.getPrivate());
         s.update(new byte[64]);
         var sigXmu = s.sign();
@@ -93,30 +93,30 @@ public class Parameters {
     }
 
     static void paramsTest() throws Exception {
-        new SignatureParameterSpec(null, null);
-        new SignatureParameterSpec("SHA-256", new byte[10], "hello", "good-bye");
+        new InternalSignatureParameterSpec(null, null);
+        new InternalSignatureParameterSpec("SHA-256", new byte[10], "hello", "good-bye");
 
         // Just maximum allowed length
-        new SignatureParameterSpec(null, new byte[255]);
+        new InternalSignatureParameterSpec(null, new byte[255]);
         // context too long
         Asserts.assertThrows(IllegalArgumentException.class,
-                () -> new SignatureParameterSpec(null, new byte[256]));
+                () -> new InternalSignatureParameterSpec(null, new byte[256]));
         // features cannot be null
         Asserts.assertThrows(NullPointerException.class,
-                () -> new SignatureParameterSpec(null, null, (String)null));
+                () -> new InternalSignatureParameterSpec(null, null, (String)null));
         Asserts.assertThrows(NullPointerException.class,
-                () -> new SignatureParameterSpec(null, null, (String[])null));
+                () -> new InternalSignatureParameterSpec(null, null, (String[])null));
 
         var s = Signature.getInstance("ML-DSA");
 
         // Unknown hash algorithm
         Asserts.assertThrows(InvalidAlgorithmParameterException.class,
-                () -> s.setParameter(new SignatureParameterSpec("NOHASH", null)));
+                () -> s.setParameter(new InternalSignatureParameterSpec("NOHASH", null)));
         // Unknown feature
         Asserts.assertThrows(InvalidAlgorithmParameterException.class,
-                () -> s.setParameter(new SignatureParameterSpec(null, null, "unknown")));
+                () -> s.setParameter(new InternalSignatureParameterSpec(null, null, "unknown")));
         // externalMu without internal
         Asserts.assertThrows(InvalidAlgorithmParameterException.class,
-                () -> s.setParameter(new SignatureParameterSpec(null, null, "externalMu")));
+                () -> s.setParameter(new InternalSignatureParameterSpec(null, null, "externalMu")));
     }
 }
