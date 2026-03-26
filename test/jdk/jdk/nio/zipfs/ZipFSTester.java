@@ -98,14 +98,16 @@ public class ZipFSTester {
 
     // create JAR file for test, actual contents don't matter
     static Path jarFile;
+    static String[] jarContents = new String[]{
+            "META-INF/MANIFEST.MF",
+            "dir1/foo",
+            "dir2/bar",
+            "dir1/dir3/fooo"
+    };
 
     @BeforeAll
     static void setup() throws Exception {
-        jarFile = Utils.createJarFile("tester.jar",
-                "META-INF/MANIFEST.MF",
-                "dir1/foo",
-                "dir2/bar",
-                "dir1/dir3/fooo");
+        jarFile = Utils.createJarFile("tester.jar", jarContents);
     }
 
     @AfterAll
@@ -589,11 +591,7 @@ public class ZipFSTester {
     // test file stamp
     @Test
     void testTime() throws Exception {
-        var jar = Utils.createJarFile(System.currentTimeMillis() + ".jar",
-                "META-INF/MANIFEST.MF",
-                "dir1/foo",
-                "dir2/bar",
-                "dir1/dir3/fooo");
+        var jar = Utils.createJarFile(System.currentTimeMillis() + ".jar", jarContents);
         BasicFileAttributes attrs = Files
                         .getFileAttributeView(jar, BasicFileAttributeView.class)
                         .readAttributes();
