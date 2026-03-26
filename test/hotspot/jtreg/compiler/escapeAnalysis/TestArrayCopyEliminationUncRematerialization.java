@@ -179,10 +179,42 @@ public class TestArrayCopyEliminationUncRematerialization {
                 """
             ));
 
+            var runTestAlias = Template.make("testName", (String testName) -> scope(
+                let("type", pty),
+                let("typeAbbrev", pty.abbrev()),
+                let("srcField", srcArray),
+                """
+                @Run(test = "test#{testName}")
+                static void run#{testName}(RunInfo info) {
+                    Arrays.fill(#{srcField}, SRC_VAL_#{typeAbbrev});
+                    #type res = test#{testName}(#{srcField}, #{srcField}, info.isWarmUp());
+                    Asserts.assertEQ((#type) SRC_VAL_#{typeAbbrev}, res, "Wrong result from " + info.getTest().getName() + " with flag " + info.isWarmUp());
+                }
+                """
+            ));
+
             var testMethodConst = Template.make("testName", "tmp", (String TestName, TestTemplates templates) -> scope(
                 let("type", pty),
                 """
                 static #type test#{testName}(#type[] src, boolean flag) {
+                    """,
+                    templates.prelude.asToken(),
+                    """
+                    #type[] dst = new #type[COPY_LEN];
+                    System.arraycopy(src, COPY_IDX, dst, 0, COPY_LEN);
+                    """,
+                    templates.store.asToken(),
+                    templates.trap.asToken(),
+                    """
+                    return dst[RETURN_IDX];
+                }
+                """
+            ));
+
+            var testMethodAlias = Template.make("testName", "tmp", (String TestName, TestTemplates templates) -> scope(
+                let("type", pty),
+                """
+                static #type test#{testName}(#type[] src, #type[] alias, boolean flag) {
                     """,
                     templates.prelude.asToken(),
                     """
@@ -281,6 +313,38 @@ public class TestArrayCopyEliminationUncRematerialization {
                 testMethodIdx.asToken(testName, templates)
             ));
 
+            var testCaseAlias = Template.make("testName", "loadCount", "tmp", (String testName, Integer loadCount, TestTemplates templates) -> scope(
+                let("typeAbbrev", pty.abbrev().equals("C") ? "US" : pty.abbrev()),
+                runTestAlias.asToken(testName),
+                """
+                @Test
+                @IR(counts = { IRNode.LOAD_#{typeAbbrev}, "=#{loadCount}" },
+                    applyIf = { "TieredCompilation", "true"})
+                """,
+                testMethodAlias.asToken(testName, templates)
+            ));
+
+            var testCaseAliasPlusOne = Template.make("testName", "loadCount", "tmp", (String testName, Integer loadCount, TestTemplates templates) -> scope(
+                let("typeAbbrev", pty.abbrev().equals("C") ? "US" : pty.abbrev()),
+                let("countPlusOne", loadCount + 1),
+                runTestAlias.asToken(testName),
+                """
+                @Test
+                @IR(counts = { IRNode.LOAD_#{typeAbbrev}, ">=#{loadCount}",
+                               IRNode.LOAD_#{typeAbbrev}, "<=#{countPlusOne}" },
+                    applyIf = { "TieredCompilation", "true"})
+                """,
+                testMethodAlias.asToken(testName, templates)
+            ));
+
+            var testCaseAliasNoVerify = Template.make("testName", "tmp", (String testName, TestTemplates templates) -> scope(
+                runTestAlias.asToken(testName),
+                """
+                @Test
+                """,
+                testMethodAlias.asToken(testName, templates)
+            ));
+
             // Generates tests with the clonebasic variant of the ArraycopyNode.
             var testCaseClone = Template.make("testName", "loadCount", "tmp", (String testName, Integer loadCount, TestTemplates templates) -> scope(
                 let("typeAbbrev", pty.abbrev().equals("C") ? "US" : pty.abbrev()),
@@ -314,6 +378,13 @@ public class TestArrayCopyEliminationUncRematerialization {
                 """
             ));
 
+            var storeAlias = Template.make(() -> scope(
+                let("typeAbbrev", pty.abbrev()),
+                """
+                    alias[WRITE_IDX] = WRITE_VAL_#{typeAbbrev};
+                """
+            ));
+
             var unstableTrap = Template.make(() -> scope(
                 let("typeAbbrev", pty.abbrev()),
                 """
@@ -330,7 +401,8 @@ public class TestArrayCopyEliminationUncRematerialization {
                 return scope(
                     testCaseConst.asToken("Const" + testName, 2 * config.copyLen - 1, new TestTemplates(storeConst, unstableTrap)),
                     testCaseIdx.asToken("Idx" + testName, new TestTemplates(storeIdx, unstableTrap)),
-                    testCaseClone.asToken("Clone" + testName, config.copyLen, new TestTemplates(storeClone, unstableTrap))
+                    testCaseClone.asToken("Clone" + testName, config.copyLen, new TestTemplates(storeClone, unstableTrap)),
+                    testCaseAlias.asToken("Alias" + testName, 3 * config.copyLen - 2, new TestTemplates(storeAlias, unstableTrap))
                 );
             });
 
@@ -362,11 +434,18 @@ public class TestArrayCopyEliminationUncRematerialization {
                              .map(idx -> scope(let("idx",  idx), "src[#idx] = WRITE_VAL_#{typeAbbrev};\n"))
                              .toList()
                 ));
+                var multiStoresAlias = Template.make(() -> scope(
+                    let("typeAbbrev", pty.abbrev()),
+                    storeIdxs.stream()
+                             .map(idx -> scope(let("idx", idx), "alias[COPY_IDX + #idx] = WRITE_VAL_#{typeAbbrev};\n"))
+                             .toList()
+                ));
                 return scope(
                     // Sometimes we get one more load depending on the position of the range checks of the different stores.
                     testCaseConstPlusOne.asToken("Const" + testName, 2 * config.copyLen - numStores, new TestTemplates(multiStoresConst, unstableTrap)),
                     testCaseIdx.asToken("Idx" + testName, new TestTemplates(multiStoresIdx, unstableTrap)),
-                    testCaseClone.asToken("Clone" + testName, config.copyLen, new TestTemplates(multiStoresClone, unstableTrap))
+                    testCaseClone.asToken("Clone" + testName, config.copyLen, new TestTemplates(multiStoresClone, unstableTrap)),
+                    testCaseAliasPlusOne.asToken("Alias" + testName, 3 * config.copyLen - 2 * numStores, new TestTemplates(multiStoresAlias, unstableTrap))
                 );
             });
 
@@ -385,7 +464,8 @@ public class TestArrayCopyEliminationUncRematerialization {
                 ));
                 return scope(
                     testCaseConst.asToken("Const" + testName, 2 * config.copyLen - 1, new TestTemplates(storeConst, trapTemplate)),
-                    testCaseIdx.asToken("Idx" + testName, new TestTemplates(storeIdx, trapTemplate))
+                    testCaseIdx.asToken("Idx" + testName, new TestTemplates(storeIdx, trapTemplate)),
+                    testCaseAlias.asToken("Alias" + testName, 2 * config.copyLen - 1, new TestTemplates(storeAlias, trapTemplate))
                 );
             });
 
@@ -449,6 +529,11 @@ public class TestArrayCopyEliminationUncRematerialization {
                     MemorySegment srcMS = MemorySegment.ofArray(src);
                     """
                 ));
+                var memorySegmentCreationAlias = Template.make(() -> scope(
+                    """
+                    MemorySegment srcMS = MemorySegment.ofArray(alias);
+                    """
+                ));
                 // Just write using a memory segment
                 var memorySegmentStoreConst = Template.make(() -> scope(
                     let("typeAbbrev", pty.abbrev()),
@@ -507,36 +592,13 @@ public class TestArrayCopyEliminationUncRematerialization {
                     // end up in the common path for all const cases.
                     testCaseConstNoVerify.asToken("MemorySegmentStoreConst" + pty.abbrev(), new TestTemplates(memorySegmentStoreConst, unstableTrap, memorySegmentCreation)),
                     testCaseIdx.asToken("MemorySegmentStoreIdx" + pty.abbrev(), new TestTemplates(memorySegmentStoreIdx, unstableTrap, memorySegmentCreation)),
+                    testCaseAliasNoVerify.asToken("MemorySegmentStoreAlias" + pty.abbrev(), new TestTemplates(memorySegmentStoreConst, unstableTrap, memorySegmentCreationAlias)),
                     testCaseConstNoVerify.asToken("MemorySegmentStoreSmallConst" + pty.abbrev(), new TestTemplates(memorySegmentStoreSmallConst, unstableTrap, memorySegmentCreation)),
                     testCaseIdx.asToken("MemorySegmentStoreSmallIdx" + pty.abbrev(), new TestTemplates(memorySegmentStoreSmallIdx, unstableTrap, memorySegmentCreation)),
+                    testCaseAliasNoVerify.asToken("MemorySegmentStoreSmallAlias" + pty.abbrev(), new TestTemplates(memorySegmentStoreSmallConst, unstableTrap, memorySegmentCreationAlias)),
                     testCaseConstNoVerify.asToken("MemorySegmentStoreOverlappingConst" + pty.abbrev(), new TestTemplates(memorySegmentStoreOverlappingConst, unstableTrap, memorySegmentCreation)),
-                    testCaseIdx.asToken("MemorySegmentStoreOverlappingIdx" + pty.abbrev(), new TestTemplates(memorySegmentStoreOverlappingIdx, unstableTrap, memorySegmentCreation))
-                );
-            });
-
-            // Test that storing to an array aliasing src produces the same result as storing to src itself.
-            var testAlias = Template.make(() -> {
-                var createAlias = Template.make(() -> scope(
-                    let ("type", pty),
-                    """
-                    #type[] alias = src;
-                    """
-                ));
-                var storeAliasConst = Template.make(() -> scope(
-                    let("typeAbbrev", pty.abbrev()),
-                    """
-                    alias[WRITE_IDX] = WRITE_VAL_#{typeAbbrev};
-                    """
-                ));
-                var storeAliasIdx = Template.make(() -> scope(
-                    let("typeAbbrev", pty.abbrev()),
-                    """
-                    alias[RETURN_IDX + idx] = WRITE_VAL_#{typeAbbrev};
-                    """
-                ));
-                return scope(
-                    testCaseConst.asToken("AliasStoreConst" + pty.abbrev(), 2 * config.copyLen - 1, new TestTemplates(storeAliasConst, unstableTrap, createAlias)),
-                    testCaseIdx.asToken("AliasStoreIdx" + pty.abbrev(), new TestTemplates(storeAliasIdx, unstableTrap, createAlias))
+                    testCaseIdx.asToken("MemorySegmentStoreOverlappingIdx" + pty.abbrev(), new TestTemplates(memorySegmentStoreOverlappingIdx, unstableTrap, memorySegmentCreation)),
+                    testCaseAliasNoVerify.asToken("MemorySegmentStoreOverlappingAlias" + pty.abbrev(), new TestTemplates(memorySegmentStoreOverlappingConst, unstableTrap, memorySegmentCreationAlias))
                 );
             });
 
@@ -612,12 +674,22 @@ public class TestArrayCopyEliminationUncRematerialization {
                         System.arraycopy(#other, #copyOtherIdx, src, idx + RETURN_IDX, #arraycopyLen);
                     """
                 ));
+                var arraycopyStoreAlias = Template.make(() -> scope(
+                    let("type", pty),
+                    let("arraycopyLen", arraycopyLen),
+                    let("other", "other" + pty.abbrev()),
+                    let("copyOtherIdx", copyOtherIdx),
+                    """
+                        System.arraycopy(#other, #copyOtherIdx, alias, WRITE_IDX, #arraycopyLen);
+                    """
+                ));
                 // Unfortunately, it is not possible to validate the placement of rematerialization nodes because
                 // the number of uncomon traps is sensitive to changes in the profile, which leads to a bimodal count
                 // of load nodes.
                 return scope(
                     testCaseConstNoVerify.asToken("Const" + testName, new TestTemplates(arraycopyStoreConst, unstableTrap)),
-                    testCaseIdx.asToken("Idx" + testName, new TestTemplates(arraycopyStoreIdx, unstableTrap))
+                    testCaseIdx.asToken("Idx" + testName, new TestTemplates(arraycopyStoreIdx, unstableTrap)),
+                    testCaseAliasNoVerify.asToken("Alias" + testName, new TestTemplates(arraycopyStoreAlias, unstableTrap))
                 );
             });
 
@@ -647,7 +719,6 @@ public class TestArrayCopyEliminationUncRematerialization {
                         testStoreTrapLoop,
                         testAtomics,
                         testMemorySegments,
-                        testAlias,
                         testSwitch,
                         testArraycopy)
                     .stream()
