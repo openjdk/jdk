@@ -642,7 +642,6 @@ inline void Assembler::crorc( ConditionRegister crdst, Condition cdst, Condition
   crorc(dst_bit, src_bit, dst_bit);
 }
 
-// Conditional move (>= Power7)
 inline void Assembler::isel(Register d, ConditionRegister cr, Condition cc, bool inv, Register a, Register b) {
   if (b == noreg) {
     b = d; // Can be omitted if old value should be kept in "else" case.
@@ -689,7 +688,7 @@ inline void Assembler::elemental_membar(int e) { assert(0 < e && e < 16, "invali
 
 // Wait instructions for polling.
 inline void Assembler::wait()    { emit_int32( WAIT_OPCODE); }
-inline void Assembler::waitrsv() { emit_int32( WAIT_OPCODE | 1<<(31-10)); } // WC=0b01 >=Power7
+inline void Assembler::waitrsv() { emit_int32( WAIT_OPCODE | 1<<(31-10)); } // WC=0b01
 
 // atomics
 // Use ra0mem to disallow R0 as base.
