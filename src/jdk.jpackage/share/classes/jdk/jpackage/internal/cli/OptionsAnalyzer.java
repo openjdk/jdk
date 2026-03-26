@@ -52,11 +52,10 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.model.BundleType;
 import jdk.jpackage.internal.model.BundlingEnvironment;
-import jdk.jpackage.internal.model.BundlingOperationDescriptor;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.JPackageException;
-import jdk.jpackage.internal.model.BundleType;
 
 /**
  * Analyzes jpackage command line structure.
@@ -79,8 +78,12 @@ final class OptionsAnalyzer {
         isRuntimeInstaller = isRuntimeInstaller(cmdline, bundlingOperation);
     }
 
-    BundlingOperationDescriptor bundlingOperation() {
-        return bundlingOperation.descriptor();
+    StandardBundlingOperation bundlingOperation() {
+        return bundlingOperation;
+    }
+
+    Options cmdline() {
+        return cmdline;
     }
 
     List<ExceptionWithOrigin> findErrors() {
