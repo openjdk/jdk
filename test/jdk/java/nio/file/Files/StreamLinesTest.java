@@ -186,20 +186,14 @@ public class StreamLinesTest {
         // Test without a separator at the end
         List<String> expected = readAllLines(p, cs);
         try (Stream<String> s = Files.lines(p, cs)) {
-            checkLines(s, expected);
+            assertEquals(expected, s.toList());
         }
 
         // Test with a separator at the end
         writeLineSeparator(p, separatorGenerator, lines, cs);
         expected = readAllLines(p, cs);
         try (Stream<String> s = Files.lines(p, cs)) {
-            checkLines(s, expected);
+            assertEquals(expected, s.toList());
         }
-    }
-
-    private static void checkLines(Stream<String> s, List<String> expected) {
-        List<String> lines = s.toList();
-        assertEquals(expected.size(), lines.size(), "Mismatched number of lines");
-        assertEquals(expected, lines, "Mismatched content");
     }
 }
