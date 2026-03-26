@@ -566,7 +566,8 @@ void ConstantPool::remove_resolved_klass_if_non_deterministic(int cp_index) {
   LogStreamHandle(Trace, aot, resolve) log;
   if (log.is_enabled()) {
     ResourceMark rm;
-    log.print("%s klass  CP entry [%3d]: %s %s",
+    log.print("[%s] %s klass  CP entry [%3d]: %s %s",
+              (CDSConfig::is_dumping_preimage_static_archive() ? "Training" : "Assembly"),
               (can_archive ? "archived" : "reverted"),
               cp_index, pool_holder()->name()->as_C_string(), get_type(pool_holder()));
     if (can_archive) {
