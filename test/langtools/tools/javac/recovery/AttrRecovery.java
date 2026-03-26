@@ -629,24 +629,27 @@ public class AttrRecovery {
             .sources("""
                      package lib;
                      public class Lib {
-                         public static class Unknown3 {}
+                         public static class Unknown4 {}
                      }
                      """)
                 .outdir(libOut)
                 .run()
                 .writeAll();
 
-        Files.delete(libOut.resolve("lib").resolve("Lib$Unknown3.class"));
+        Files.delete(libOut.resolve("lib").resolve("Lib$Unknown4.class"));
 
         String code = """
                       import unknown.Unknown1;
-                      import java.lang.String.Unknown2;
-                      import lib.Lib.Unknown3;
+                      import java.lang.Unknown2;
+                      import java.lang.String.Unknown3;
+                      import lib.Lib.Unknown4;
                       public class C {
                           Unknown1 u1;
                           Unknown2 u2;
                           Unknown3 u3;
-                          unknown.Unknown4 u4;
+                          Unknown4 u4;
+                          unknown.Unknown5 u5;
+                          java.lang.Unknown6 u6;
                       }
                       """;
         Path out = base.resolve("out");
@@ -694,19 +697,23 @@ public class AttrRecovery {
 
         List<String> expectedTypes = List.of(
             "unknown.Unknown1",
-            "java.lang.String.Unknown2",
-            "lib.Lib.Unknown3",
-            "unknown.Unknown4"
+            "java.lang.Unknown2",
+            "java.lang.String.Unknown3",
+            "lib.Lib.Unknown4",
+            "unknown.Unknown5",
+            "java.lang.Unknown6"
         );
 
         assertEquals(expectedTypes, foundTypes);
 
         List<String> expected = List.of(
             "C.java:1:15: compiler.err.doesnt.exist: unknown",
-            "C.java:2:24: compiler.err.cant.resolve.location: kindname.class, Unknown2, , , (compiler.misc.location: kindname.class, java.lang.String, null)",
-            "C.java:3:15: compiler.err.cant.access: lib.Lib.Unknown3, (compiler.misc.class.file.not.found: lib.Lib$Unknown3)",
-            "C.java:8:12: compiler.err.doesnt.exist: unknown",
-            "4 errors"
+            "C.java:2:17: compiler.err.cant.resolve.location: kindname.class, Unknown2, , , (compiler.misc.location: kindname.package, java.lang, null)",
+            "C.java:3:24: compiler.err.cant.resolve.location: kindname.class, Unknown3, , , (compiler.misc.location: kindname.class, java.lang.String, null)",
+            "C.java:4:15: compiler.err.cant.access: lib.Lib.Unknown4, (compiler.misc.class.file.not.found: lib.Lib$Unknown4)",
+            "C.java:10:12: compiler.err.doesnt.exist: unknown",
+            "C.java:11:14: compiler.err.cant.resolve.location: kindname.class, Unknown6, , , (compiler.misc.location: kindname.package, java.lang, null)",
+            "6 errors"
         );
 
         assertEquals(expected, actual);
