@@ -27,7 +27,6 @@
 #include "code/codeCache.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1GCParPhaseTimesTracker.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
