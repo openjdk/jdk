@@ -59,6 +59,10 @@ public abstract class IntVector extends AbstractVector<Integer> {
 
     static final ValueLayout.OfInt ELEMENT_LAYOUT = ValueLayout.JAVA_INT.withByteAlignment(1);
 
+    static final int LANE_TYPE_ORDINAL = LT_INT;
+
+    static final int LANEBITS_TYPE_ORDINAL = LT_INT;
+
     @ForceInline
     static int opCode(Operator op) {
         return VectorOperators.opCode(op, VO_OPCODE_VALID, FORBID_OPCODE_KIND);
@@ -80,8 +84,8 @@ public abstract class IntVector extends AbstractVector<Integer> {
     // The various shape-specific subclasses
     // also specialize them by wrapping
     // them in a call like this:
-    //    return (Byte128Vector)
-    //       super.bOp((Byte128Vector) o);
+    //    return (ByteVector128)
+    //       super.bOp((ByteVector128) o);
     // The purpose of that is to forcibly inline
     // the generic definition from this file
     // into a sharply-typed and size-specific
@@ -573,7 +577,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
     @ForceInline
     public static IntVector zero(VectorSpecies<Integer> species) {
         IntSpecies vsp = (IntSpecies) species;
-        return VectorSupport.fromBitsCoerced(vsp.vectorType(), int.class, species.length(),
+        return VectorSupport.fromBitsCoerced(vsp.vectorType(), LANE_TYPE_ORDINAL, species.length(),
                                 0, MODE_BROADCAST, vsp,
                                 ((bits_, s_) -> s_.rvOp(i -> bits_)));
     }
@@ -695,7 +699,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         }
         int opc = opCode(op);
         return VectorSupport.unaryOp(
-            opc, getClass(), null, int.class, length(),
+            opc, getClass(), null, laneTypeOrdinal(), length(),
             this, null,
             UN_IMPL.find(op, opc, IntVector::unaryOperations));
     }
@@ -723,7 +727,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         }
         int opc = opCode(op);
         return VectorSupport.unaryOp(
-            opc, getClass(), maskClass, int.class, length(),
+            opc, getClass(), maskClass, laneTypeOrdinal(), length(),
             this, m,
             UN_IMPL.find(op, opc, IntVector::unaryOperations));
     }
@@ -796,7 +800,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
 
         int opc = opCode(op);
         return VectorSupport.binaryOp(
-            opc, getClass(), null, int.class, length(),
+            opc, getClass(), null, laneTypeOrdinal(), length(),
             this, that, null,
             BIN_IMPL.find(op, opc, IntVector::binaryOperations));
     }
@@ -847,7 +851,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
 
         int opc = opCode(op);
         return VectorSupport.binaryOp(
-            opc, getClass(), maskClass, int.class, length(),
+            opc, getClass(), maskClass, laneTypeOrdinal(), length(),
             this, that, m,
             BIN_IMPL.find(op, opc, IntVector::binaryOperations));
     }
@@ -1038,7 +1042,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         e &= SHIFT_MASK;
         int opc = opCode(op);
         return VectorSupport.broadcastInt(
-            opc, getClass(), null, int.class, length(),
+            opc, getClass(), null, laneTypeOrdinal(), length(),
             this, e, null,
             BIN_INT_IMPL.find(op, opc, IntVector::broadcastIntOperations));
     }
@@ -1059,7 +1063,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         e &= SHIFT_MASK;
         int opc = opCode(op);
         return VectorSupport.broadcastInt(
-            opc, getClass(), maskClass, int.class, length(),
+            opc, getClass(), maskClass, laneTypeOrdinal(), length(),
             this, e, m,
             BIN_INT_IMPL.find(op, opc, IntVector::broadcastIntOperations));
     }
@@ -1135,7 +1139,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         }
         int opc = opCode(op);
         return VectorSupport.ternaryOp(
-            opc, getClass(), null, int.class, length(),
+            opc, getClass(), null, laneTypeOrdinal(), length(),
             this, that, tother, null,
             TERN_IMPL.find(op, opc, IntVector::ternaryOperations));
     }
@@ -1175,7 +1179,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         }
         int opc = opCode(op);
         return VectorSupport.ternaryOp(
-            opc, getClass(), maskClass, int.class, length(),
+            opc, getClass(), maskClass, laneTypeOrdinal(), length(),
             this, that, tother, m,
             TERN_IMPL.find(op, opc, IntVector::ternaryOperations));
     }
@@ -2055,7 +2059,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         that.check(this);
         int opc = opCode(op);
         return VectorSupport.compare(
-            opc, getClass(), maskType, int.class, length(),
+            opc, getClass(), maskType, laneTypeOrdinal(), length(),
             this, that, null,
             (cond, v0, v1, m1) -> {
                 AbstractMask<Integer> m
@@ -2077,7 +2081,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         m.check(maskType, this);
         int opc = opCode(op);
         return VectorSupport.compare(
-            opc, getClass(), maskType, int.class, length(),
+            opc, getClass(), maskType, laneTypeOrdinal(), length(),
             this, that, m,
             (cond, v0, v1, m1) -> {
                 AbstractMask<Integer> cmpM
@@ -2208,7 +2212,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
     blendTemplate(Class<M> maskType, IntVector v, M m) {
         v.check(this);
         return VectorSupport.blend(
-            getClass(), maskType, int.class, length(),
+            getClass(), maskType, laneTypeOrdinal(), length(),
             this, v, m,
             (v0, v1, m_) -> v0.bOp(v1, m_, (i, a, b) -> b));
     }
@@ -2225,7 +2229,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         // make sure VLENGTH*scale doesn't overflow:
         vsp.checkScale(scale);
         return VectorSupport.indexVector(
-            getClass(), int.class, length(),
+            getClass(), laneTypeOrdinal(), length(),
             this, scale, vsp,
             (v, scale_, s)
             -> {
@@ -2417,7 +2421,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
     IntVector rearrangeTemplate(Class<S> shuffletype, S shuffle) {
         Objects.requireNonNull(shuffle);
         return VectorSupport.rearrangeOp(
-            getClass(), shuffletype, null, int.class, length(),
+            getClass(), shuffletype, null, laneTypeOrdinal(), length(),
             this, shuffle, null,
             (v1, s_, m_) -> v1.uOp((i, a) -> {
                 int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
@@ -2444,7 +2448,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         Objects.requireNonNull(shuffle);
         m.check(masktype, this);
         return VectorSupport.rearrangeOp(
-                   getClass(), shuffletype, masktype, int.class, length(),
+                   getClass(), shuffletype, masktype, laneTypeOrdinal(), length(),
                    this, shuffle, m,
                    (v1, s_, m_) -> v1.uOp((i, a) -> {
                         int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
@@ -2470,7 +2474,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         VectorMask<Integer> valid = shuffle.laneIsValid();
         IntVector r0 =
             VectorSupport.rearrangeOp(
-                getClass(), shuffletype, null, int.class, length(),
+                getClass(), shuffletype, null, laneTypeOrdinal(), length(),
                 this, shuffle, null,
                 (v0, s_, m_) -> v0.uOp((i, a) -> {
                     int ei = Integer.remainderUnsigned(s_.laneSource(i), v0.length());
@@ -2478,7 +2482,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
                 }));
         IntVector r1 =
             VectorSupport.rearrangeOp(
-                getClass(), shuffletype, null, int.class, length(),
+                getClass(), shuffletype, null, laneTypeOrdinal(), length(),
                 v, shuffle, null,
                 (v1, s_, m_) -> v1.uOp((i, a) -> {
                     int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
@@ -2528,7 +2532,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
     IntVector compressTemplate(Class<M> masktype, M m) {
       m.check(masktype, this);
       return (IntVector) VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_COMPRESS, getClass(), masktype,
-                                                        int.class, length(), this, m,
+                                                        laneTypeOrdinal(), length(), this, m,
                                                         (v1, m1) -> compressHelper(v1, m1));
     }
 
@@ -2547,7 +2551,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
     IntVector expandTemplate(Class<M> masktype, M m) {
       m.check(masktype, this);
       return (IntVector) VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_EXPAND, getClass(), masktype,
-                                                        int.class, length(), this, m,
+                                                        laneTypeOrdinal(), length(), this, m,
                                                         (v1, m1) -> expandHelper(v1, m1));
     }
 
@@ -2562,7 +2566,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
     /*package-private*/
     @ForceInline
     final IntVector selectFromTemplate(IntVector v) {
-        return (IntVector)VectorSupport.selectFromOp(getClass(), null, int.class,
+        return (IntVector)VectorSupport.selectFromOp(getClass(), null, laneTypeOrdinal(),
                                                         length(), this, v, null,
                                                         (v1, v2, _m) ->
                                                          v2.rearrange(v1.toShuffle()));
@@ -2582,7 +2586,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
     IntVector selectFromTemplate(IntVector v,
                                             Class<M> masktype, M m) {
         m.check(masktype, this);
-        return (IntVector)VectorSupport.selectFromOp(getClass(), masktype, int.class,
+        return (IntVector)VectorSupport.selectFromOp(getClass(), masktype, laneTypeOrdinal(),
                                                         length(), this, v, m,
                                                         (v1, v2, _m) ->
                                                          v2.rearrange(v1.toShuffle(), _m));
@@ -2600,7 +2604,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
     /*package-private*/
     @ForceInline
     final IntVector selectFromTemplate(IntVector v1, IntVector v2) {
-        return VectorSupport.selectFromTwoVectorOp(getClass(), int.class, length(), this, v1, v2,
+        return VectorSupport.selectFromTwoVectorOp(getClass(), laneTypeOrdinal(), length(), this, v1, v2,
                                                    (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3));
     }
 
@@ -2820,7 +2824,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         }
         int opc = opCode(op);
         return fromBits(VectorSupport.reductionCoerced(
-            opc, getClass(), maskClass, int.class, length(),
+            opc, getClass(), maskClass, laneTypeOrdinal(), length(),
             this, m,
             REDUCE_IMPL.find(op, opc, IntVector::reductionOperations)));
     }
@@ -2838,7 +2842,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         }
         int opc = opCode(op);
         return fromBits(VectorSupport.reductionCoerced(
-            opc, getClass(), null, int.class, length(),
+            opc, getClass(), null, laneTypeOrdinal(), length(),
             this, null,
             REDUCE_IMPL.find(op, opc, IntVector::reductionOperations)));
     }
@@ -3100,7 +3104,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         vix = VectorIntrinsics.checkIndex(vix, a.length);
 
         return VectorSupport.loadWithMap(
-            vectorType, null, int.class, vsp.laneCount(),
+            vectorType, null, LANE_TYPE_ORDINAL, vsp.laneCount(),
             isp.vectorType(), isp.length(),
             a, ARRAY_BASE, vix, null, null, null, null,
             a, offset, indexMap, mapOffset, vsp,
@@ -3283,7 +3287,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         offset = checkFromIndexSize(offset, length(), a.length);
         IntSpecies vsp = vspecies();
         VectorSupport.store(
-            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+            vsp.vectorType(), LANE_TYPE_ORDINAL, vsp.laneCount(),
             a, arrayAddress(a, offset), false,
             this,
             a, offset,
@@ -3372,7 +3376,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         vix = VectorIntrinsics.checkIndex(vix, a.length);
 
         VectorSupport.storeWithMap(
-            vsp.vectorType(), null, vsp.elementType(), vsp.laneCount(),
+            vsp.vectorType(), null, LANE_TYPE_ORDINAL, vsp.laneCount(),
             isp.vectorType(), isp.length(),
             a, arrayAddress(a, 0), vix,
             this, null,
@@ -3499,7 +3503,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
     IntVector fromArray0Template(int[] a, int offset) {
         IntSpecies vsp = vspecies();
         return VectorSupport.load(
-            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+            vsp.vectorType(), LANE_TYPE_ORDINAL, vsp.laneCount(),
             a, arrayAddress(a, offset), false,
             a, offset, vsp,
             (arr, off, s) -> s.ldOp(arr, (int) off,
@@ -3516,7 +3520,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         m.check(species());
         IntSpecies vsp = vspecies();
         return VectorSupport.loadMasked(
-            vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
+            vsp.vectorType(), maskClass, LANE_TYPE_ORDINAL, vsp.laneCount(),
             a, arrayAddress(a, offset), false, m, offsetInRange,
             a, offset, vsp,
             (arr, off, s, vm) -> s.ldOp(arr, (int) off, vm,
@@ -3549,7 +3553,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         vix = VectorIntrinsics.checkIndex(vix, a.length);
 
         return VectorSupport.loadWithMap(
-            vectorType, maskClass, int.class, vsp.laneCount(),
+            vectorType, maskClass, LANE_TYPE_ORDINAL, vsp.laneCount(),
             isp.vectorType(), isp.length(),
             a, ARRAY_BASE, vix, null, null, null, m,
             a, offset, indexMap, mapOffset, vsp,
@@ -3566,7 +3570,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
     IntVector fromMemorySegment0Template(MemorySegment ms, long offset) {
         IntSpecies vsp = vspecies();
         return ScopedMemoryAccess.loadFromMemorySegment(
-                vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+                vsp.vectorType(), LANE_TYPE_ORDINAL, vsp.laneCount(),
                 (AbstractMemorySegmentImpl) ms, offset, vsp,
                 (msp, off, s) -> {
                     return s.ldLongOp((MemorySegment) msp, off, IntVector::memorySegmentGet);
@@ -3582,7 +3586,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         IntSpecies vsp = vspecies();
         m.check(vsp);
         return ScopedMemoryAccess.loadFromMemorySegmentMasked(
-                vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
+                vsp.vectorType(), maskClass, LANE_TYPE_ORDINAL, vsp.laneCount(),
                 (AbstractMemorySegmentImpl) ms, offset, m, vsp, offsetInRange,
                 (msp, off, s, vm) -> {
                     return s.ldLongOp((MemorySegment) msp, off, vm, IntVector::memorySegmentGet);
@@ -3600,7 +3604,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
     void intoArray0Template(int[] a, int offset) {
         IntSpecies vsp = vspecies();
         VectorSupport.store(
-            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+            vsp.vectorType(), LANE_TYPE_ORDINAL, vsp.laneCount(),
             a, arrayAddress(a, offset), false,
             this, a, offset,
             (arr, off, v)
@@ -3617,7 +3621,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         m.check(species());
         IntSpecies vsp = vspecies();
         VectorSupport.storeMasked(
-            vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
+            vsp.vectorType(), maskClass, LANE_TYPE_ORDINAL, vsp.laneCount(),
             a, arrayAddress(a, offset), false,
             this, m, a, offset,
             (arr, off, v, vm)
@@ -3646,7 +3650,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         vix = VectorIntrinsics.checkIndex(vix, a.length);
 
         VectorSupport.storeWithMap(
-            vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
+            vsp.vectorType(), maskClass, LANE_TYPE_ORDINAL, vsp.laneCount(),
             isp.vectorType(), isp.length(),
             a, arrayAddress(a, 0), vix,
             this, m,
@@ -3665,7 +3669,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
     void intoMemorySegment0(MemorySegment ms, long offset) {
         IntSpecies vsp = vspecies();
         ScopedMemoryAccess.storeIntoMemorySegment(
-                vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+                vsp.vectorType(), LANE_TYPE_ORDINAL, vsp.laneCount(),
                 this,
                 (AbstractMemorySegmentImpl) ms, offset,
                 (msp, off, v) -> {
@@ -3682,7 +3686,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         IntSpecies vsp = vspecies();
         m.check(vsp);
         ScopedMemoryAccess.storeIntoMemorySegmentMasked(
-                vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
+                vsp.vectorType(), maskClass, LANE_TYPE_ORDINAL, vsp.laneCount(),
                 this, m,
                 (AbstractMemorySegmentImpl) ms, offset,
                 (msp, off, v, vm) -> {
@@ -3898,7 +3902,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         final IntVector broadcastBits(long bits) {
             return (IntVector)
                 VectorSupport.fromBitsCoerced(
-                    vectorType, int.class, laneCount,
+                    vectorType, laneTypeOrdinal(), laneCount,
                     bits, MODE_BROADCAST, this,
                     (bits_, s_) -> s_.rvOp(i -> bits_));
         }
@@ -4080,13 +4084,13 @@ public abstract class IntVector extends AbstractVector<Integer> {
         @Override
         @ForceInline
         public final IntVector zero() {
-            if ((Class<?>) vectorType() == IntMaxVector.class)
-                return IntMaxVector.ZERO;
+            if ((Class<?>) vectorType() == IntVectorMax.class)
+                return IntVectorMax.ZERO;
             switch (vectorBitSize()) {
-                case 64: return Int64Vector.ZERO;
-                case 128: return Int128Vector.ZERO;
-                case 256: return Int256Vector.ZERO;
-                case 512: return Int512Vector.ZERO;
+                case 64: return IntVector64.ZERO;
+                case 128: return IntVector128.ZERO;
+                case 256: return IntVector256.ZERO;
+                case 512: return IntVector512.ZERO;
             }
             throw new AssertionError();
         }
@@ -4094,13 +4098,13 @@ public abstract class IntVector extends AbstractVector<Integer> {
         @Override
         @ForceInline
         public final IntVector iota() {
-            if ((Class<?>) vectorType() == IntMaxVector.class)
-                return IntMaxVector.IOTA;
+            if ((Class<?>) vectorType() == IntVectorMax.class)
+                return IntVectorMax.IOTA;
             switch (vectorBitSize()) {
-                case 64: return Int64Vector.IOTA;
-                case 128: return Int128Vector.IOTA;
-                case 256: return Int256Vector.IOTA;
-                case 512: return Int512Vector.IOTA;
+                case 64: return IntVector64.IOTA;
+                case 128: return IntVector128.IOTA;
+                case 256: return IntVector256.IOTA;
+                case 512: return IntVector512.IOTA;
             }
             throw new AssertionError();
         }
@@ -4109,13 +4113,13 @@ public abstract class IntVector extends AbstractVector<Integer> {
         @Override
         @ForceInline
         public final VectorMask<Integer> maskAll(boolean bit) {
-            if ((Class<?>) vectorType() == IntMaxVector.class)
-                return IntMaxVector.IntMaxMask.maskAll(bit);
+            if ((Class<?>) vectorType() == IntVectorMax.class)
+                return IntVectorMax.IntMaskMax.maskAll(bit);
             switch (vectorBitSize()) {
-                case 64: return Int64Vector.Int64Mask.maskAll(bit);
-                case 128: return Int128Vector.Int128Mask.maskAll(bit);
-                case 256: return Int256Vector.Int256Mask.maskAll(bit);
-                case 512: return Int512Vector.Int512Mask.maskAll(bit);
+                case 64: return IntVector64.IntMask64.maskAll(bit);
+                case 128: return IntVector128.IntMask128.maskAll(bit);
+                case 256: return IntVector256.IntMask256.maskAll(bit);
+                case 512: return IntVector512.IntMask512.maskAll(bit);
             }
             throw new AssertionError();
         }
@@ -4143,42 +4147,42 @@ public abstract class IntVector extends AbstractVector<Integer> {
     /** Species representing {@link IntVector}s of {@link VectorShape#S_64_BIT VectorShape.S_64_BIT}. */
     public static final VectorSpecies<Integer> SPECIES_64
         = new IntSpecies(VectorShape.S_64_BIT,
-                            Int64Vector.class,
-                            Int64Vector.Int64Mask.class,
-                            Int64Vector.Int64Shuffle.class,
-                            Int64Vector::new);
+                            IntVector64.class,
+                            IntVector64.IntMask64.class,
+                            IntVector64.IntShuffle64.class,
+                            IntVector64::new);
 
     /** Species representing {@link IntVector}s of {@link VectorShape#S_128_BIT VectorShape.S_128_BIT}. */
     public static final VectorSpecies<Integer> SPECIES_128
         = new IntSpecies(VectorShape.S_128_BIT,
-                            Int128Vector.class,
-                            Int128Vector.Int128Mask.class,
-                            Int128Vector.Int128Shuffle.class,
-                            Int128Vector::new);
+                            IntVector128.class,
+                            IntVector128.IntMask128.class,
+                            IntVector128.IntShuffle128.class,
+                            IntVector128::new);
 
     /** Species representing {@link IntVector}s of {@link VectorShape#S_256_BIT VectorShape.S_256_BIT}. */
     public static final VectorSpecies<Integer> SPECIES_256
         = new IntSpecies(VectorShape.S_256_BIT,
-                            Int256Vector.class,
-                            Int256Vector.Int256Mask.class,
-                            Int256Vector.Int256Shuffle.class,
-                            Int256Vector::new);
+                            IntVector256.class,
+                            IntVector256.IntMask256.class,
+                            IntVector256.IntShuffle256.class,
+                            IntVector256::new);
 
     /** Species representing {@link IntVector}s of {@link VectorShape#S_512_BIT VectorShape.S_512_BIT}. */
     public static final VectorSpecies<Integer> SPECIES_512
         = new IntSpecies(VectorShape.S_512_BIT,
-                            Int512Vector.class,
-                            Int512Vector.Int512Mask.class,
-                            Int512Vector.Int512Shuffle.class,
-                            Int512Vector::new);
+                            IntVector512.class,
+                            IntVector512.IntMask512.class,
+                            IntVector512.IntShuffle512.class,
+                            IntVector512::new);
 
     /** Species representing {@link IntVector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
     public static final VectorSpecies<Integer> SPECIES_MAX
         = new IntSpecies(VectorShape.S_Max_BIT,
-                            IntMaxVector.class,
-                            IntMaxVector.IntMaxMask.class,
-                            IntMaxVector.IntMaxShuffle.class,
-                            IntMaxVector::new);
+                            IntVectorMax.class,
+                            IntVectorMax.IntMaskMax.class,
+                            IntVectorMax.IntShuffleMax.class,
+                            IntVectorMax::new);
 
     /**
      * Preferred species for {@link IntVector}s.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,6 @@ import jdk.internal.net.http.quic.streams.QuicBidiStream;
 import jdk.internal.net.quic.QuicVersion;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -52,7 +49,11 @@ import java.util.concurrent.TimeUnit;
 
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpOption.H3_DISCOVERY;
-import static org.testng.Assert.*;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 /*
  * @test
@@ -62,7 +63,7 @@ import static org.testng.Assert.*;
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  * @build java.net.http/jdk.internal.net.http.Http3ConnectionAccess
- * @run testng/othervm
+ * @run junit/othervm
  *              -Djdk.internal.httpclient.debug=true
  *              -Djdk.httpclient.HttpClient.log=requests,responses,errors
  *              -Djdk.httpclient.quic.maxStreamInitialData=16384
@@ -71,11 +72,11 @@ import static org.testng.Assert.*;
 public class H3MemoryHandlingTest implements HttpServerAdapters {
 
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
-    private QuicStandaloneServer server;
-    private String requestURIBase;
+    private static QuicStandaloneServer server;
+    private static String requestURIBase;
 
-    @BeforeClass
-    public void beforeClass() throws Exception {
+    @BeforeAll
+    public static void beforeClass() throws Exception {
         server = QuicStandaloneServer.newBuilder()
                 .availableVersions(new QuicVersion[]{QuicVersion.QUIC_V1})
                 .sslContext(sslContext)
@@ -87,8 +88,8 @@ public class H3MemoryHandlingTest implements HttpServerAdapters {
                 .port(server.getAddress().getPort()).build().toString();
     }
 
-    @AfterClass
-    public void afterClass() throws Exception {
+    @AfterAll
+    public static void afterClass() throws Exception {
         if (server != null) {
             System.out.println("Stopping server " + server.getAddress());
             server.close();
@@ -108,7 +109,7 @@ public class H3MemoryHandlingTest implements HttpServerAdapters {
                         "00ffffffffffffffff"); // data, 2^62 - 1 bytes
         byte[] kilo = new byte[1024];
         final CompletableFuture<Boolean> serverAllWritesDone = new CompletableFuture<>();
-        server.addHandler((c,s)-> {
+        server.setHandler((c, s)-> {
             // verify that the connection stays open
             completeUponTermination(c, errorCF);
             try (OutputStream outputStream = s.outputStream()) {
@@ -125,19 +126,16 @@ public class H3MemoryHandlingTest implements HttpServerAdapters {
                 serverAllWritesDone.complete(false);
             }
         });
-        HttpClient client = getHttpClient();
-        try {
+        try (HttpClient client = getHttpClient()) {
             HttpRequest request = getRequest();
             final HttpResponse<InputStream> response1 = client.send(
                     request, BodyHandlers.ofInputStream());
-            assertEquals(response1.statusCode(), 200);
+            assertEquals(200, response1.statusCode());
             assertFalse(errorCF.isDone(), "Expected the connection to be open");
             assertFalse(serverAllWritesDone.isDone());
             response1.body().close();
             final boolean done = serverAllWritesDone.get(10, TimeUnit.SECONDS);
             assertFalse(done, "Too much data was buffered by the client");
-        } finally {
-            client.close();
         }
     }
 
@@ -156,7 +154,7 @@ public class H3MemoryHandlingTest implements HttpServerAdapters {
         byte[] kilo = new byte[1024];
         CountDownLatch writerBlocked = new CountDownLatch(1);
 
-        server.addHandler((c,s)-> {
+        server.setHandler((c, s)-> {
             // verify that the connection stays open
             completeUponTermination(c, errorCF);
             QuicBidiStream qs = s.underlyingBidiStream();
@@ -176,12 +174,12 @@ public class H3MemoryHandlingTest implements HttpServerAdapters {
                 handlerCF.completeExceptionally(e);
             }
         });
-        HttpClient client = getHttpClient();
-        try {
+
+        try (HttpClient client = getHttpClient()) {
             HttpRequest request = getRequest();
             final HttpResponse<InputStream> response1 = client.send(
-                            request, BodyHandlers.ofInputStream());
-            assertEquals(response1.statusCode(), 200);
+                    request, BodyHandlers.ofInputStream());
+            assertEquals(200, response1.statusCode());
             assertFalse(errorCF.isDone(), "Expected the connection to be open");
             assertFalse(handlerCF.isDone());
             assertTrue(writerBlocked.await(10, TimeUnit.SECONDS),
@@ -191,10 +189,8 @@ public class H3MemoryHandlingTest implements HttpServerAdapters {
             try (InputStream body = response1.body()) {
                 receivedResponse = body.readAllBytes();
             }
-            assertEquals(receivedResponse.length, 32768,
+            assertEquals(32768, receivedResponse.length,
                     "Unexpected response length");
-        } finally {
-            client.close();
         }
         assertTrue(handlerCF.get(10, TimeUnit.SECONDS),
                 "Unexpected result");

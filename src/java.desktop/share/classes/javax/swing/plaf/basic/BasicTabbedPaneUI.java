@@ -528,7 +528,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         }
 
         tabPane.removeContainerListener(getHandler());
-        if (htmlViews!=null) {
+        if (htmlViews != null) {
             htmlViews.removeAllElements();
             htmlViews = null;
         }
@@ -4090,7 +4090,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
                     setHtmlView(v, inserted, index);
                 }
             } else {                             // Not HTML
-                if (htmlViews!=null) {           // Add placeholder
+                if (htmlViews != null) {           // Add placeholder
                     setHtmlView(null, inserted, index);
                 }                                // else nada!
             }

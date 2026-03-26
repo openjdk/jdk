@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -133,7 +133,6 @@ void NativeMovConstReg::verify() {
 
 
 intptr_t NativeMovConstReg::data() const {
-  // das(uint64_t(instruction_address()),2);
   address addr = MacroAssembler::target_addr_for_insn(instruction_address());
   if (maybe_cpool_ref(instruction_address())) {
     return *(intptr_t*)addr;
@@ -144,6 +143,7 @@ intptr_t NativeMovConstReg::data() const {
 
 void NativeMovConstReg::set_data(intptr_t x) {
   if (maybe_cpool_ref(instruction_address())) {
+    MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
     address addr = MacroAssembler::target_addr_for_insn(instruction_address());
     *(intptr_t*)addr = x;
   } else {
@@ -192,7 +192,6 @@ int NativeMovRegMem::offset() const  {
 
 void NativeMovRegMem::set_offset(int x) {
   address pc = instruction_address();
-  unsigned insn = *(unsigned*)pc;
   if (maybe_cpool_ref(pc)) {
     address addr = MacroAssembler::target_addr_for_insn(pc);
     *(int64_t*)addr = x;
@@ -204,7 +203,7 @@ void NativeMovRegMem::set_offset(int x) {
 
 void NativeMovRegMem::verify() {
 #ifdef ASSERT
-  address dest = MacroAssembler::target_addr_for_insn_or_null(instruction_address());
+  MacroAssembler::target_addr_for_insn(instruction_address());
 #endif
 }
 
@@ -213,7 +212,7 @@ void NativeMovRegMem::verify() {
 void NativeJump::verify() { ; }
 
 address NativeJump::jump_destination() const          {
-  address dest = MacroAssembler::target_addr_for_insn_or_null(instruction_address());
+  address dest = MacroAssembler::target_addr_for_insn(instruction_address());
 
   // We use jump to self as the unresolved address which the inline
   // cache code (and relocs) know about
@@ -349,8 +348,6 @@ bool NativeInstruction::is_stop() {
 }
 
 //-------------------------------------------------------------------
-
-void NativeGeneralJump::verify() {  }
 
 // MT-safe patching of a long jump instruction.
 void NativeGeneralJump::replace_mt_safe(address instr_addr, address code_buffer) {

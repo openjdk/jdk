@@ -321,7 +321,7 @@ class VerificationTable {
                 return frame;
             }
             int offset_delta = _stream.get_u2();
-            if (frame_type < SAME_LOCALS_1_STACK_ITEM_EXTENDED) {
+            if (frame_type <= RESERVED_END) {
                 _verifier.classError("reserved frame type");
             }
             if (frame_type == SAME_LOCALS_1_STACK_ITEM_EXTENDED) {

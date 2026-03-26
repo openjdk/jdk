@@ -78,7 +78,7 @@ class BytecodePrinter {
   void      print_field_or_method(int cp_index, outputStream* st);
   void      print_dynamic(int cp_index, outputStream* st);
   void      print_attributes(int bci, outputStream* st);
-  void      bytecode_epilog(int bci, outputStream* st);
+  void      print_method_data_at(int bci, outputStream* st);
 
  public:
   BytecodePrinter(int flags = 0) : _is_wide(false), _code(Bytecodes::_illegal), _flags(flags) {}
@@ -171,7 +171,9 @@ class BytecodePrinter {
     }
     _next_pc = is_wide() ? bcp+2 : bcp+1;
     print_attributes(bci, st);
-    bytecode_epilog(bci, st);
+    if (ClassPrinter::has_mode(_flags, ClassPrinter::PRINT_METHOD_DATA)) {
+      print_method_data_at(bci, st);
+    }
   }
 };
 
@@ -185,7 +187,9 @@ static Method* _method_currently_being_printed = nullptr;
 void BytecodeTracer::trace_interpreter(const methodHandle& method, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st) {
   if (TraceBytecodes && BytecodeCounter::counter_value() >= TraceBytecodesAt) {
     BytecodePrinter printer(AtomicAccess::load_acquire(&_method_currently_being_printed));
-    printer.trace(method, bcp, tos, tos2, st);
+    stringStream buf;
+    printer.trace(method, bcp, tos, tos2, &buf);
+    st->print("%s", buf.freeze());
     // Save method currently being printed to detect when method printing changes.
     AtomicAccess::release_store(&_method_currently_being_printed, method());
   }
@@ -596,7 +600,7 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
 }
 
 
-void BytecodePrinter::bytecode_epilog(int bci, outputStream* st) {
+void BytecodePrinter::print_method_data_at(int bci, outputStream* st) {
   MethodData* mdo = method()->method_data();
   if (mdo != nullptr) {
 

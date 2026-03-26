@@ -88,7 +88,7 @@ private:
   ShenandoahHeap* _heap;
 
   shenandoah_padding(0);
-  volatile size_t _index;
+  Atomic<size_t> _index;
   shenandoah_padding(1);
 
   // No implicit copying: iterators should be passed by reference to capture the state
@@ -117,9 +117,23 @@ public:
   virtual bool is_thread_safe() { return false; }
 };
 
-typedef ShenandoahLock    ShenandoahHeapLock;
-typedef ShenandoahLocker  ShenandoahHeapLocker;
-typedef Stack<oop, mtGC>  ShenandoahScanObjectStack;
+typedef ShenandoahLock                       ShenandoahHeapLock;
+// ShenandoahHeapLocker implements locker to assure mutually exclusive access to the global heap data structures.
+// Asserts in the implementation detect potential deadlock usage with regards the rebuild lock that is present
+// in ShenandoahFreeSet.  Whenever both locks are acquired, this lock should be acquired before the
+// ShenandoahFreeSet rebuild lock.
+class ShenandoahHeapLocker : public StackObj {
+private:
+  ShenandoahHeapLock* _lock;
+public:
+  ShenandoahHeapLocker(ShenandoahHeapLock* lock, bool allow_block_for_safepoint = false);
+
+  ~ShenandoahHeapLocker() {
+    _lock->unlock();
+  }
+};
+
+typedef Stack<oop, mtGC>                     ShenandoahScanObjectStack;
 
 // Shenandoah GC is low-pause concurrent GC that uses a load reference barrier
 // for concurent evacuation and a snapshot-at-the-beginning write barrier for
@@ -181,6 +195,7 @@ public:
   ShenandoahHeap(ShenandoahCollectorPolicy* policy);
   jint initialize() override;
   void post_initialize() override;
+  virtual void initialize_generations();
   void initialize_mode();
   virtual void initialize_heuristics();
   virtual void post_initialize_heuristics();
@@ -208,9 +223,9 @@ private:
   size_t _initial_size;
   size_t _minimum_size;
 
-  volatile size_t _soft_max_size;
+  Atomic<size_t> _soft_max_size;
   shenandoah_padding(0);
-  volatile size_t _committed;
+  Atomic<size_t> _committed;
   shenandoah_padding(1);
 
 public:
@@ -340,7 +355,7 @@ private:
   ShenandoahSharedFlag   _full_gc_move_in_progress;
   ShenandoahSharedFlag   _concurrent_strong_root_in_progress;
 
-  size_t _gc_no_progress_count;
+  Atomic<size_t> _gc_no_progress_count;
 
   // This updates the singular, global gc state. This call must happen on a safepoint.
   void set_gc_state_at_safepoint(uint mask, bool value);
@@ -378,6 +393,8 @@ public:
   bool has_changed() {
     return _heap_changed.try_unset();
   }
+
+  virtual void start_idle_span();
 
   void set_concurrent_young_mark_in_progress(bool in_progress);
   void set_concurrent_old_mark_in_progress(bool in_progress);
