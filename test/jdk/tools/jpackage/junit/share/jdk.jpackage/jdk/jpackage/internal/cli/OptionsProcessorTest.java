@@ -150,10 +150,18 @@ public class OptionsProcessorTest {
     public void testNonOptionArgumntsError(@TempDir Path workDir) {
 
         build()
-        .withDefaultBundlingOperation(true)
-        .createAppImageBundlingOperation()
+        .createAppImageByDefault()
         .expectValidationErrors(
                 new JPackageException(I18N.format("error.non-option-arguments", 1)),
+                new JPackageException(I18N.format("ERR_NoEntryPoint"))
+        ).create("foo").validate();
+
+        build()
+        .createAppImageByDefault()
+        .expectBundlingEnvironmentConfigurationErrors(new Exception("Ops"))
+        .expectValidationErrors(
+                new JPackageException(I18N.format("error.non-option-arguments", 1)),
+                new Exception("Ops"),
                 new JPackageException(I18N.format("ERR_NoEntryPoint"))
         ).create("foo").validate();
 
@@ -163,6 +171,13 @@ public class OptionsProcessorTest {
                 new JPackageException(I18N.format("error.non-option-arguments", 3)),
                 new JPackageException(I18N.format("ERR_NoEntryPoint"))
         ).create("some", "-t", "app-image", "foo", "bar", "--dest", "dir").validate();
+
+        build()
+        .createAppImageBundlingOperation()
+        .expectValidationErrors(
+                new JPackageException(I18N.format("error.non-option-arguments", 3)),
+                new JPackageException(I18N.format("ERR_InvalidInstallerType", "unknown"), new IllegalArgumentException())
+        ).create("some", "-t", "unknown", "foo", "bar", "--dest", "dir").validate();
     }
 
     /**
@@ -662,7 +677,7 @@ public class OptionsProcessorTest {
 
             CliBundlingEnvironment bundlingEnv = bundlingEnvironmentBuilder.createBundleCallback(recorder).create();
 
-            var optionsBuilder = Utils.buildParser(os, bundlingEnv).create().apply(stringArgs).orElseThrow();
+            var optionsBuilder = Utils.buildParser(os).create().apply(stringArgs).orElseThrow();
 
             var op = new OptionsProcessor(optionsBuilder, OperatingSystem.current(), bundlingEnv);
 
