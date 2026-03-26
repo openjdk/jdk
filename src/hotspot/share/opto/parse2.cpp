@@ -116,7 +116,7 @@ void Parse::array_load(BasicType bt) {
         if (profile.morphism() > 0) {
           bool not_flat_checked = false;
           float prob = 1;
-          Node* region = new RegionNode(profile.morphism()+3);
+          Node* region = new RegionNode(profile.morphism() * 2 + 3);
           Node* res_phi = new PhiNode(region, TypeOopPtr::BOTTOM);
           Node* io_phi = new PhiNode(region, Type::ABIO);
           Node* mem = reset_memory();
@@ -127,12 +127,12 @@ void Parse::array_load(BasicType bt) {
           for (int i = 0; i < profile.morphism() || !not_flat_checked; ) {
             int count = i < profile.morphism() ? profile.receiver_count(i) : not_flat_count;
             if (not_flat_count >= count && !not_flat_checked) {
+              not_flat_checked = true;
               if (not_flat_count == 0 && !too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
+                PreserveJVMState pjvms(this);
                 inc_sp(2);
                 uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
-                dec_sp(2);
               } else {
-                not_flat_checked = true;
                 Node* test = flat_array_test(array, /* flat = */ false);
                 float p = ((float)not_flat_count) / ((float)flat_and_not_flat_count);
                 float this_prob = clamp(p / prob, PROB_MIN, PROB_MAX);
@@ -168,6 +168,18 @@ void Parse::array_load(BasicType bt) {
               ciKlass* klass = profile.receiver(i);
               Node* next_ctrl = type_check_receiver(array, klass, this_prob, &casted_array);
               InlineTypeNode* vt = InlineTypeNode::make_from_flat_array(this, klass->as_flat_array_klass()->element_klass()->as_inline_klass(), casted_array, array_index);
+              Node* null_ctl = top();
+
+              null_check_common(vt->get_null_marker(), T_INT, false, &null_ctl);
+
+              res_phi->init_req(j, zerocon(T_OBJECT));
+              region->init_req(j, null_ctl);
+              io_phi->init_req(j, i_o());
+              mem_phi->init_req(j, reset_memory());
+              set_all_memory(mem);
+
+              j++;
+
               Node* ld = _gvn.transform(vt->buffer(this));
               res_phi->init_req(j, ld);
               region->init_req(j, control());
@@ -182,7 +194,11 @@ void Parse::array_load(BasicType bt) {
             }
             j++;
           }
-          if (!stop()) {
+          if (not_flat_count != 0 && !too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
+            PreserveJVMState pjvms(this);
+            inc_sp(2);
+            uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
+          } else if (too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
             Node* unknown_inline_type = load_from_unknown_flat_array(array, array_index, element_ptr);
 
             region->init_req(j, control());
@@ -198,7 +214,7 @@ void Parse::array_load(BasicType bt) {
           push_node(bt, ld);
           return;
         } else {
-          ShouldNotReachHere();
+          // ShouldNotReachHere();
         }
       }
     }
@@ -593,10 +609,10 @@ Node* Parse::create_speculative_inline_type_array_checks(Node* array, const Type
   // Even though the type does not tell us whether we have an inline type array or not, we can still check the profile data
   // whether we have a non-null-free or non-flat array. Speculating on a non-null-free array doesn't help aaload but could
   // be profitable for a subsequent aastore.
-  if (!array_type->is_null_free() && !array_type->is_not_null_free()) {
+  if (!array_type->is_null_free() && !array_type->is_not_null_free() && 0) {
     array = speculate_non_null_free_array(array, array_type);
   }
-  if (!array_type->is_flat() && !array_type->is_not_flat()) {
+  if (!array_type->is_flat() && !array_type->is_not_flat() && 0) {
     array = speculate_non_flat_array(array, array_type);
   }
   return array;

@@ -27,15 +27,25 @@
  * @enablePreview
  * @modules java.base/jdk.internal.value
  * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64")
- * @run main ${test.main.class}
+ * @library /test/lib /
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI ${test.main.class}
  */
 
 package compiler.valhalla.inlinetypes;
+
 import compiler.lib.ir_framework.*;
 import jdk.internal.value.ValueClass;
+import jdk.test.whitebox.WhiteBox;
+import compiler.whitebox.CompilerWhiteBoxTest;
+import java.lang.reflect.Method;
+
 public class TestArrayLoadProfiling {
+    private final static WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
+
     public static void main(String[] args) {
-        TestFramework.runWithFlags("--enable-preview", "--add-exports", "java.base/jdk.internal.value=ALL-UNNAMED");
+        TestFramework.runWithFlags("--enable-preview", "--add-exports", "java.base/jdk.internal.value=ALL-UNNAMED", "-Xbootclasspath/a:.", "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI");
     }
 
     static MyValue1[] array1 = { new MyValue1(42) };
@@ -45,7 +55,7 @@ public class TestArrayLoadProfiling {
     static A[] array5 = { new A() };
     
     @Test
-    @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.CALL, "4" })
+    @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.CALL, "4", IRNode.IF, "4" })
     public static void test1(I[] array) {
         test1Inline(array[0]);
     }
@@ -64,6 +74,80 @@ public class TestArrayLoadProfiling {
         i.m();
     }
 
+    // @Test
+    // @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.CALL, "5", IRNode.IF, "5" })
+    // @IR(failOn = { IRNode.CLASS_CHECK_TRAP })
+    // public static void test2(I[] array) {
+    //     test2Inline(array[0]);
+    // }
+
+    // @Run(test = "test2")
+    // public static void test2Runner(RunInfo info)  throws Exception {
+    //     if (info.isWarmUp()) {
+    //         test2(array1);
+    //         test2Inline(array2[0]);
+    //         test2Inline(array3[0]);
+    //         test2Inline(array4[0]);
+    //         test2Inline(array5[0]);
+    //     } else {
+    //         Method m = TestArrayLoadProfiling.class.getDeclaredMethod("test2", I[].class);
+    //         if (!WHITE_BOX.isMethodCompiled(m) || WHITE_BOX.getMethodCompilationLevel(m) != CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
+    //             throw new RuntimeException("should be compiled");
+    //         }
+    //         int i = 0;
+    //         do {
+    //             test2(array2);
+    //             i++;
+    //             if (i > 10) {
+    //                 throw new RuntimeException("should not be compiled anymore");
+    //             }
+    //         } while (WHITE_BOX.isMethodCompiled(m));
+    //         WHITE_BOX.enqueueMethodForCompilation(m, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
+    //         if (!WHITE_BOX.isMethodCompiled(m) || WHITE_BOX.getMethodCompilationLevel(m) != CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
+    //             throw new RuntimeException("should be compiled");
+    //         }
+    //     }
+    // }
+
+    // @ForceInline
+    // static void test2Inline(I i) {
+    //     i.m();
+    // }
+
+    @Test
+    @IR(counts = { IRNode.NULL_CHECK_TRAP, "1", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.CALL, "3", IRNode.IF, "4" })
+    public static void test3(I[] array) {
+        test3Inline(array[0]);
+    }
+
+    @Run(test = "test3")
+    public static void test3Runner() {
+        test3(array3);
+        test3(array4);
+    }
+
+    @ForceInline
+    static void test3Inline(I i) {
+        i.m();
+    }
+
+    @Test
+    @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.CALL, "4", IRNode.IF, "6" })
+    public static void test5(I[] array) {
+        test5Inline(array[0]);
+    }
+
+    @Run(test = "test5")
+    public static void test5Runner() {
+        test5(array1);
+        test5(array2);
+    }
+
+    @ForceInline
+    static void test5Inline(I i) {
+        i.m();
+    }
+    
     // @Test
     // public static Object test2(Object[] array) {
     //     return array[0];

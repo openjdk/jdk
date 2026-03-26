@@ -3197,6 +3197,7 @@ void Compile::Optimize() {
   // Loop transforms on the ideal graph.  Range Check Elimination,
   // peeling, unrolling, etc.
 
+  bool split_if_progress = false;;
   // Set loop opts counter
   if((_loop_opts_cnt > 0) && (has_loops() || has_split_ifs())) {
     {
@@ -3206,6 +3207,7 @@ void Compile::Optimize() {
       if (major_progress()) print_method(PHASE_PHASEIDEALLOOP1, 2);
       if (failing())  return;
     }
+    split_if_progress = major_progress() && !has_loops();
     // Loop opts pass if partial peeling occurred in previous pass
     if(PartialPeelLoop && major_progress() && (_loop_opts_cnt > 0)) {
       TracePhase tp(_t_idealLoop);
@@ -3249,6 +3251,10 @@ void Compile::Optimize() {
   print_method(PHASE_ITER_GVN2, 2);
 
   if (failing())  return;
+
+  if (split_if_progress && !major_progress()) {
+    set_major_progress();
+  }
 
   // Loop transforms on the ideal graph.  Range Check Elimination,
   // peeling, unrolling, etc.
