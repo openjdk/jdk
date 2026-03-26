@@ -372,9 +372,8 @@ void G1CMMarkStack::set_empty() {
 G1CMRootMemRegions::G1CMRootMemRegions(uint const max_regions) :
     _root_regions(MemRegion::create_array(max_regions, mtGC)),
     _max_regions(max_regions),
-    _num_root_regions(0),
-    _claimed_root_regions(0),
-    _scan_in_progress(false),
+    _num_regions(0),
+    _num_claimed_regions(0),
     _should_abort(false) { }
 
 G1CMRootMemRegions::~G1CMRootMemRegions() {
@@ -382,26 +381,19 @@ G1CMRootMemRegions::~G1CMRootMemRegions() {
 }
 
 void G1CMRootMemRegions::reset() {
-  _num_root_regions.store_relaxed(0);
+  _num_regions.store_relaxed(0);
+  _num_claimed_regions.store_relaxed(0);
+  _should_abort.store_relaxed(false);
 }
 
 void G1CMRootMemRegions::add(HeapWord* start, HeapWord* end) {
   assert_at_safepoint();
-  size_t idx = _num_root_regions.fetch_then_add(1u);
-  assert(idx < _max_regions, "Trying to add more root MemRegions than there is space %zu", _max_regions);
+  uint idx = _num_regions.fetch_then_add(1u);
+  assert(idx < _max_regions, "Trying to add more root MemRegions than there is space %u", _max_regions);
   assert(start != nullptr && end != nullptr && start <= end, "Start (" PTR_FORMAT ") should be less or equal to "
          "end (" PTR_FORMAT ")", p2i(start), p2i(end));
   _root_regions[idx].set_start(start);
   _root_regions[idx].set_end(end);
-}
-
-void G1CMRootMemRegions::prepare_for_scan() {
-  assert(!scan_in_progress(), "pre-condition");
-
-  _scan_in_progress.store_relaxed(num_root_regions() > 0);
-
-  _claimed_root_regions.store_relaxed(0);
-  _should_abort.store_relaxed(false);
 }
 
 const MemRegion* G1CMRootMemRegions::claim_next() {
@@ -412,20 +404,24 @@ const MemRegion* G1CMRootMemRegions::claim_next() {
   }
 
   uint local_num_root_regions = num_root_regions();
-  if (_claimed_root_regions.load_relaxed() >= local_num_root_regions) {
+  if (_num_claimed_regions.load_relaxed() >= local_num_root_regions) {
     return nullptr;
   }
 
-  size_t claimed_index = _claimed_root_regions.fetch_then_add(1u);
+  uint claimed_index = _num_claimed_regions.fetch_then_add(1u);
   if (claimed_index < local_num_root_regions) {
     return &_root_regions[claimed_index];
   }
   return nullptr;
 }
 
+bool G1CMRootMemRegions::work_completed(bool count_aborted_as_completed) const {
+  return (num_remaining_root_regions() == 0) || (count_aborted_as_completed && should_abort());
+}
+
 uint G1CMRootMemRegions::num_remaining_root_regions() const {
   uint total = num_root_regions();
-  uint claimed = (uint)_claimed_root_regions.load_relaxed();
+  uint claimed = _num_claimed_regions.load_relaxed();
   if (claimed >= total) {
     return 0;
   } else {
@@ -434,7 +430,7 @@ uint G1CMRootMemRegions::num_remaining_root_regions() const {
 }
 
 uint G1CMRootMemRegions::num_root_regions() const {
-  return (uint)_num_root_regions.load_relaxed();
+  return _num_regions.load_relaxed();
 }
 
 bool G1CMRootMemRegions::contains(const MemRegion mr) const {
@@ -447,24 +443,13 @@ bool G1CMRootMemRegions::contains(const MemRegion mr) const {
   return false;
 }
 
-void G1CMRootMemRegions::notify_scan_done() {
-  MutexLocker x(G1RootRegionScan_lock, Mutex::_no_safepoint_check_flag);
-  _scan_in_progress.store_relaxed(false);
-  G1RootRegionScan_lock->notify_all();
+void G1CMRootMemRegions::finish_scan() {
+  reset();
 }
 
 void G1CMRootMemRegions::cancel_scan() {
-  notify_scan_done();
-}
-
-void G1CMRootMemRegions::scan_finished() {
-  assert(scan_in_progress(), "pre-condition");
-
-  assert(_should_abort.load_relaxed() || _claimed_root_regions.load_relaxed() >= num_root_regions(),
-         "we should have claimed all root regions, claimed %zu, length = %u (rem %u)",
-         _claimed_root_regions.load_relaxed(), num_root_regions(), num_remaining_root_regions());
-
-  notify_scan_done();
+  assert_at_safepoint_on_vm_thread();
+  reset();
 }
 
 G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
@@ -964,8 +949,6 @@ void G1ConcurrentMark::start_full_concurrent_cycle() {
   satb_mq_set.set_active_all_threads(true, /* new active value */
                                      false /* expected_active */);
 
-  _root_regions.prepare_for_scan();
-
   // update_g1_committed() will be called at the end of an evac pause
   // when marking is on. So, it's also called at the end of the
   // concurrent start pause to update the heap end, if the heap expands
@@ -1114,20 +1097,20 @@ void G1ConcurrentMark::scan_root_region(const MemRegion* region, uint worker_id)
 
 class G1CMRootRegionScanTask : public WorkerTask {
   G1ConcurrentMark* _cm;
-  bool _concurrent;
+  bool _should_yield;
 
 public:
-  G1CMRootRegionScanTask(G1ConcurrentMark* cm, bool concurrent) :
-    WorkerTask("G1 Root Region Scan"), _cm(cm), _concurrent(concurrent) { }
+  G1CMRootRegionScanTask(G1ConcurrentMark* cm, bool should_yield) :
+    WorkerTask("G1 Root Region Scan"), _cm(cm), _should_yield(should_yield) { }
 
   void work(uint worker_id) {
-    SuspendibleThreadSetJoiner sts_join(_concurrent);
+    SuspendibleThreadSetJoiner sts_join(_should_yield);
 
     G1CMRootMemRegions* root_regions = _cm->root_regions();
     const MemRegion* region = root_regions->claim_next();
     while (region != nullptr) {
       _cm->scan_root_region(region, worker_id);
-      if (_concurrent) {
+      if (_should_yield) {
         SuspendibleThreadSet::yield();
         // If we yielded, a GC may have processed all root regions,
         // so the loop will naturally exit on the next claim_next() call.
@@ -1139,46 +1122,41 @@ public:
 };
 
 void G1ConcurrentMark::scan_root_regions(WorkerThreads* workers, bool concurrent) {
-  // scan_in_progress() will have been set to true only if there was
-  // at least one root region to scan.
-  //
-  // We might have already aborted the concurrent cycle, or ran into
-  // a GC that did the actual work when we reach here though, and we avoid spinning
-  // up the worker threads if that happened.
+  // We first check whether there is any work to do as we might have already aborted
+  // the concurrent cycle, or ran into a GC that did the actual work when we reach here.
+  // We want to avoid spinning up the worker threads if that happened.
   //
   // Abort happens if a Full GC occurs right after starting the concurrent cycle or
   // a young gc doing the work.
   //
   // Concurrent gc threads enter an STS when starting the task, so they stop, then
-  // continue after that safepoint. If there is no work left, the concurrent mark
-  // thread notifies any waiters (i.e. VM shutdown) and finish the scan.
-  if (root_regions()->scan_in_progress()) {
+  // continue after that safepoint.
+  if (!root_regions()->work_completed(true /* count_aborted_as_completed */)) {
+    // Assign one worker to each root-region but subject to the max constraint.
+    // The constraint is also important to avoid accesses beyond the allocated per-worker
+    // marking helper data structures. We might get passed different WorkerThreads with
+    // different number of threads (potential worker ids) than helper data structures when
+    // completing this work during GC.
+    const uint num_workers = MIN2(root_regions()->num_remaining_root_regions(),
+                                  _max_concurrent_workers);
+    assert(num_workers > 0, "no more remaining root regions to process");
 
-    // Skip spinning up worker threads if already completed or aborting.
-    if (!root_regions()->work_completed() && !root_regions()->should_abort()) {
-      // Assign one worker to each root-region but subject to the max constraint.
-      // The constraint is also important to avoid accesses beyond the allocated per-worker
-      // marking helper data structures. We might get passed different WorkerThreads with
-      // different number of threads (potential worker ids) than helper data structures when
-      // completing this work during GC.
-      const uint num_workers = MIN2(root_regions()->num_remaining_root_regions(),
-                                    _max_concurrent_workers);
-      assert(num_workers > 0, "no more remaining root regions to process");
-
-      G1CMRootRegionScanTask task(this, concurrent);
-      log_debug(gc, ergo)("Running %s using %u workers for %u work units.",
-                          task.name(), num_workers, root_regions()->num_root_regions());
-      workers->run_task(&task, num_workers);
-    }
-
-    if (concurrent) {
-      root_regions()->scan_finished();
-    }
+    G1CMRootRegionScanTask task(this, concurrent);
+    log_debug(gc, ergo)("Running %s using %u workers for %u work units.",
+                        task.name(), num_workers, root_regions()->num_root_regions());
+    workers->run_task(&task, num_workers);
   }
+
+  // Only allow abort if concurrent.
+  assert(root_regions()->work_completed(concurrent /* count_aborted_as_completed */),
+         "we should have claimed all root regions or aborted is_concurrent %d num %u (remaining %u)",
+         concurrent, root_regions()->num_root_regions(), root_regions()->num_remaining_root_regions());
+
+  root_regions()->finish_scan();
 }
 
 void G1ConcurrentMark::scan_root_regions_concurrently() {
-  assert(Thread::current() == cm_thread(), "must be");
+  assert(Thread::current() == cm_thread(), "must be on Concurrent Mark Thread");
   scan_root_regions(_concurrent_workers, true /* concurrent */);
 }
 
@@ -1196,16 +1174,8 @@ bool G1ConcurrentMark::is_root_region(G1HeapRegion* r) {
 }
 
 void G1ConcurrentMark::root_region_scan_abort_and_wait() {
-  assert(!SafepointSynchronize::is_at_safepoint(), "should not abort in safepoint, would deadlock.");
+  assert(!SafepointSynchronize::is_at_safepoint(), "must be");
   root_regions()->abort();
-
-  // Wait until we get the notification.
-  {
-    MonitorLocker ml(G1RootRegionScan_lock, Mutex::_no_safepoint_check_flag);
-    while (root_regions()->scan_in_progress()) {
-      ml.wait();
-    }
-  }
 }
 
 void G1ConcurrentMark::concurrent_cycle_start() {
@@ -2017,7 +1987,7 @@ bool G1ConcurrentMark::concurrent_cycle_abort() {
 }
 
 void G1ConcurrentMark::abort_marking_threads() {
-  assert(_root_regions.should_abort() || !_root_regions.scan_in_progress(),
+  assert(root_regions()->work_completed(true /* count_aborted_as_completed */),
          "still doing root region scan while not aborted");
   _has_aborted.store_relaxed(true);
   _first_overflow_barrier_sync.abort();

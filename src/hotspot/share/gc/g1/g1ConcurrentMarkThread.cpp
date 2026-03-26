@@ -131,7 +131,6 @@ void G1ConcurrentMarkThread::run_service() {
 
     update_perf_counter_cpu_time();
   }
-  _cm->root_regions()->cancel_scan();
 }
 
 void G1ConcurrentMarkThread::stop_service() {

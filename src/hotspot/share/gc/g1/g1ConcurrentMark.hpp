@@ -288,16 +288,14 @@ private:
 class G1CMRootMemRegions {
   // The set of root MemRegions.
   MemRegion* _root_regions;
-  size_t const _max_regions;
+  uint const _max_regions;
 
-  Atomic<size_t> _num_root_regions;  // Actual number of root regions.
+  Atomic<uint> _num_regions;  // Actual number of root regions.
+  Atomic<uint> _num_claimed_regions; // Number of root regions currently claimed.
 
-  Atomic<size_t> _claimed_root_regions; // Number of root regions currently claimed.
-
-  Atomic<bool> _scan_in_progress;
   Atomic<bool> _should_abort;
 
-  void notify_scan_done();
+  bool should_abort() const { return _should_abort.load_relaxed(); }
 
 public:
   G1CMRootMemRegions(uint const max_regions);
@@ -308,20 +306,8 @@ public:
 
   void add(HeapWord* start, HeapWord* end);
 
-  // Reset the claiming / scanning of the root regions.
-  void prepare_for_scan();
-
   // Forces claim_next() to return null so that the iteration aborts early.
   void abort() { _should_abort.store_relaxed(true); }
-  bool should_abort() const { return _should_abort.load_relaxed(); }
-
-  // Return true if the CM thread are actively scanning root regions,
-  // false otherwise.
-  bool scan_in_progress() { return _scan_in_progress.load_relaxed(); }
-  // Returns whether all root regions have already been processed. This is different
-  // to above because concurrent root scanning may be interrupted by a safepoint
-  // that completed the work while the concurrent root scanning has been suspended.
-  bool work_completed() { return num_remaining_root_regions() == 0; }
 
   // Claim the next root MemRegion to scan atomically, or return null if
   // all have been claimed.
@@ -331,16 +317,19 @@ public:
   // The number of root regions to scan.
   uint num_root_regions() const;
 
+  // Returns whether all root regions have been processed. If count_aborted_as_completed,
+  // aborted state also counts as completed.
+  bool work_completed(bool count_aborted_as_completed) const;
+
   // Is the given memregion contained in the root regions; the MemRegion must
   // match exactly.
   bool contains(const MemRegion mr) const;
 
+  // Flag work cancellation.
   void cancel_scan();
 
-  // Flag that we're done with root region scanning and notify anyone
-  // who's waiting on it. If aborted is false, assume that all regions
-  // have been claimed.
-  void scan_finished();
+  // Flag that we're done with root region scanning.
+  void finish_scan();
 };
 
 // This class manages data structures and methods for doing liveness analysis in
