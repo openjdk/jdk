@@ -94,7 +94,7 @@ class BytecodePrinter {
     ResourceMark rm;
     bool method_changed = _current_method != method();
     _current_method = method();
-    _use_cp_cache = method->method_holder()->is_linked();
+    _use_cp_cache = method->constants()->cache() != nullptr;
     assert(method->method_holder()->is_linked(),
            "this function must be called on methods that are already executing");
 
