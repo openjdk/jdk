@@ -546,6 +546,9 @@ AOTCodeReader::AOTCodeReader(AOTCodeCache* cache, AOTCodeEntry* entry) {
   _load_buffer = cache->cache_buffer();
   _read_position = 0;
   _lookup_failed = false;
+  _name          = nullptr;
+  _reloc_data    = nullptr;
+  _oop_maps      = nullptr;
 }
 
 void AOTCodeReader::set_read_position(uint pos) {
@@ -989,37 +992,27 @@ CodeBlob* AOTCodeReader::compile_code_blob(const char* name) {
     set_lookup_failed(); // Skip this blob
     return nullptr;
   }
+  _name = stored_name;
 
   // Read archived code blob
   uint offset = entry_position + _entry->blob_offset();
   CodeBlob* archived_blob = (CodeBlob*)addr(offset);
   offset += archived_blob->size();
 
-  address reloc_data = (address)addr(offset);
+  _reloc_data = (address)addr(offset);
   offset += archived_blob->relocation_size();
   set_read_position(offset);
 
-  ImmutableOopMapSet* oop_maps = nullptr;
   if (_entry->has_oop_maps()) {
-    oop_maps = read_oop_map_set();
+    _oop_maps = read_oop_map_set();
   }
 
-  CodeBlob* code_blob = CodeBlob::create(archived_blob,
-                                         stored_name,
-                                         reloc_data,
-                                         oop_maps,
-                                         this
-                                        );
+  // CodeBlob::restore() calls AOTCodeReader::restore()
+  CodeBlob* code_blob = CodeBlob::create(archived_blob, this);
+
   if (code_blob == nullptr) { // no space left in CodeCache
     return nullptr;
   }
-
-#ifndef PRODUCT
-  code_blob->asm_remarks().init();
-  read_asm_remarks(code_blob->asm_remarks());
-  code_blob->dbg_strings().init();
-  read_dbg_strings(code_blob->dbg_strings());
-#endif // PRODUCT
 
 #ifdef ASSERT
   LogStreamHandle(Trace, aot, codecache, stubs) log;
@@ -1029,6 +1022,25 @@ CodeBlob* AOTCodeReader::compile_code_blob(const char* name) {
   }
 #endif
   return code_blob;
+}
+
+void AOTCodeReader::restore(CodeBlob* code_blob) {
+  precond(AOTCodeCache::is_on_for_use());
+  precond(_name != nullptr);
+  precond(_reloc_data != nullptr);
+
+  code_blob->set_name(_name);
+  code_blob->restore_mutable_data(_reloc_data);
+  code_blob->set_oop_maps(_oop_maps);
+
+  fix_relocations(code_blob);
+
+#ifndef PRODUCT
+  code_blob->asm_remarks().init();
+  read_asm_remarks(code_blob->asm_remarks());
+  code_blob->dbg_strings().init();
+  read_dbg_strings(code_blob->dbg_strings());
+#endif // PRODUCT
 }
 
 // ------------ process code and data --------------
