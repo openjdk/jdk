@@ -293,6 +293,77 @@ class StandardValidatorTest {
         assertThrowsExactly(NullPointerException.class, () -> testee.test(null));
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "aa",
+            "a.b10z+-",
+    })
+    void test_IS_LINUX_DEB_PACKAGE_NAME_valid(String value) {
+
+        final var testee = StandardValidator.IS_LINUX_DEB_PACKAGE_NAME;
+
+        assertTrue(testee.test(value));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "",
+            "a",
+            "1a",
+            "aA",
+            "a\\a",
+    })
+    void test_IS_LINUX_DEB_PACKAGE_NAME_invalid(String value) {
+
+        final var testee = StandardValidator.IS_LINUX_DEB_PACKAGE_NAME;
+
+        assertFalse(testee.test(value));
+    }
+
+    @Test
+    void test_IS_LINUX_DEB_PACKAGE_NAME_null() {
+
+        final var testee = StandardValidator.IS_LINUX_DEB_PACKAGE_NAME;
+
+        assertThrowsExactly(NullPointerException.class, () -> testee.test(null));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "aa",
+            "a.b10z+-",
+            "a.B10z+-_",
+            "a",
+            "1a",
+    })
+    void test_IS_LINUX_RPM_PACKAGE_NAME_valid(String value) {
+
+        final var testee = StandardValidator.IS_LINUX_RPM_PACKAGE_NAME;
+
+        assertTrue(testee.test(value));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "",
+            "$",
+            "foo=bar"
+    })
+    void test_IS_LINUX_RPM_PACKAGE_NAME_invalid(String value) {
+
+        final var testee = StandardValidator.IS_LINUX_RPM_PACKAGE_NAME;
+
+        assertFalse(testee.test(value));
+    }
+
+    @Test
+    void test_IS_LINUX_RPM_PACKAGE_NAME_null() {
+
+        final var testee = StandardValidator.IS_LINUX_RPM_PACKAGE_NAME;
+
+        assertThrowsExactly(NullPointerException.class, () -> testee.test(null));
+    }
+
     private static Stream<Arguments> test_IS_NAME_VALID_valid() {
         List<String> data = new ArrayList<>();
         data.addAll(List.of(

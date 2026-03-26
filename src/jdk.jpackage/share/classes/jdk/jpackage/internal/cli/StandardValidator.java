@@ -147,6 +147,27 @@ public final class StandardValidator {
     // https://developer.apple.com/documentation/BundleResources/Information-Property-List/CFBundleIdentifier
     public static final Predicate<String> IS_MAC_BUNDLE_IDENTIFIER = Pattern.compile("[\\p{Alnum}-\\.]+").asMatchPredicate();
 
+    //
+    // Debian rules for package naming are used here
+    // https://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-Source
+    //
+    // Package names must consist only of lower case letters (a-z),
+    // digits (0-9), plus (+) and minus (-) signs, and periods (.).
+    // They must be at least two characters long and
+    // must start with an alphanumeric character.
+    //
+    public static final Predicate<String> IS_LINUX_DEB_PACKAGE_NAME = Pattern.compile("^[a-z][a-z\\d\\+\\-\\.]+").asMatchPredicate();
+
+    //
+    // Fedora rules for package naming are used here
+    // https://fedoraproject.org/wiki/Packaging:NamingGuidelines?rd=Packaging/NamingGuidelines
+    //
+    // all Fedora packages must be named using only the following ASCII
+    // characters. These characters are displayed here:
+    //
+    // abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._+
+    //
+    public static final Predicate<String> IS_LINUX_RPM_PACKAGE_NAME = Pattern.compile("[\\p{Alnum}-._+]+").asMatchPredicate();
 
     public static final class DirectoryListingIOException extends RuntimeException {
 

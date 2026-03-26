@@ -66,8 +66,8 @@ import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.LauncherShortcut;
 import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
-import jdk.jpackage.internal.util.RootedPath;
 import jdk.jpackage.internal.model.SelfContainedException;
+import jdk.jpackage.internal.util.RootedPath;
 import jdk.jpackage.internal.util.SetBuilder;
 import jdk.jpackage.internal.log.LogEnvironment;
 
@@ -316,7 +316,29 @@ public final class StandardOption {
 
     public static final OptionValue<String> LINUX_PACKAGE_NAME = stringOption("linux-package-name")
             .valuePattern("package name")
-            .scope(nativeBundling()).create();
+            .scope(nativeBundling())
+            .mutate(createOptionSpecBuilderMutator((b, context) -> {
+                context.bundlingOperation().ifPresent(op -> {
+                    switch (op) {
+                        case CREATE_LINUX_DEB -> {
+                            b.validator(StandardValidator.IS_LINUX_DEB_PACKAGE_NAME);
+                            b.mutate(validationErrorWithAdviceMutator(
+                                    "error.parameter-not-deb-package-name",
+                                    "error.parameter-not-deb-package-name.advice"));
+                        }
+                        case CREATE_LINUX_RPM -> {
+                            b.validator(StandardValidator.IS_LINUX_RPM_PACKAGE_NAME);
+                            b.mutate(validationErrorWithAdviceMutator(
+                                    "error.parameter-not-rpm-package-name",
+                                    "error.parameter-not-rpm-package-name.advice"));
+                        }
+                        default -> {
+                            // NOP
+                        }
+                    }
+                });
+            }))
+            .create();
 
     public static final OptionValue<String> LINUX_DEB_MAINTAINER_EMAIL = stringOption("linux-deb-maintainer")
             .valuePattern("email address")
@@ -364,10 +386,8 @@ public final class StandardOption {
     public static final OptionValue<String> MAC_BUNDLE_IDENTIFIER = stringOption("mac-package-identifier")
             .valuePattern("package identifier")
             .validator(StandardValidator.IS_MAC_BUNDLE_IDENTIFIER)
-            .validatorExceptionFactory(OptionValueExceptionFactory.build((message, cause) -> {
-                return new ConfigException(message, I18N.format("error.parameter-not-mac-bundle-identifier.advice"), cause);
-            }).formatArgumentsTransformer(StandardArgumentsMapper.VALUE_AND_NAME).create())
-            .validatorExceptionFormatString("error.parameter-not-mac-bundle-identifier")
+            .mutate(validationErrorWithAdviceMutator(
+                    "error.parameter-not-mac-bundle-identifier", "error.parameter-not-mac-bundle-identifier.advice"))
             .create();
 
     public static final OptionValue<String> MAC_BUNDLE_SIGNING_PREFIX = stringOption("mac-package-signing-prefix").scope(MAC_SIGNING).create();
@@ -637,6 +657,17 @@ public final class StandardOption {
                     // Otherwise, it will have `Path` type.
                     .mutate(createOptionSpecBuilderMutator((b, context) -> {
                     }));
+        };
+    }
+
+    private static <T> Consumer<OptionSpecBuilder<T>> validationErrorWithAdviceMutator(String messageFormatKey, String adviceKey) {
+        Objects.requireNonNull(messageFormatKey);
+        Objects.requireNonNull(adviceKey);
+        return builder -> {
+            builder.validatorExceptionFactory(OptionValueExceptionFactory.build((message, cause) -> {
+                return new ConfigException(message, I18N.format(adviceKey), cause);
+            }).formatArgumentsTransformer(StandardArgumentsMapper.VALUE_AND_NAME).create());
+            builder.validatorExceptionFormatString(messageFormatKey);
         };
     }
 

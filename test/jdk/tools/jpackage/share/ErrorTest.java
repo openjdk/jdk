@@ -708,8 +708,6 @@ public final class ErrorTest {
         appImageCmd.executeAndAssertImageCreated();
         Files.createDirectory(appImageCmd.appLayout().runtimeHomeDirectory().resolve("bin"));
 
-        final var keychain = SignEnvMock.SingleCertificateKeychain.FOO.keychain();
-
         var spec = testSpec()
                 .noAppDesc()
                 .addArgs("--mac-app-store", "--mac-sign", "--app-image", appImageCmd.outputBundle().toString())
@@ -1092,11 +1090,17 @@ public final class ErrorTest {
 
         testCases.addAll(Stream.of(
                 testSpec().type(PackageType.LINUX_DEB).addArgs("--linux-package-name", "#")
-                        .error("error.deb-invalid-value-for-package-name", "#")
-                        .advice("error.deb-invalid-value-for-package-name.advice"),
+                        .error("error.parameter-not-deb-package-name", "#", "--linux-package-name")
+                        .advice("error.parameter-not-deb-package-name.advice"),
                 testSpec().type(PackageType.LINUX_RPM).addArgs("--linux-package-name", "#")
-                        .error("error.rpm-invalid-value-for-package-name", "#")
-                        .advice("error.rpm-invalid-value-for-package-name.advice")
+                        .error("error.parameter-not-rpm-package-name", "#", "--linux-package-name")
+                        .advice("error.parameter-not-rpm-package-name.advice"),
+                testSpec().type(PackageType.LINUX_DEB).removeArgs("--name").addArgs("--name", "A")
+                        .error("error.invalid-derived-deb-package-name", "a")
+                        .advice("error.invalid-derived-deb-package-name.advice"),
+                testSpec().type(PackageType.LINUX_RPM).removeArgs("--name").addArgs("--name", "A{}")
+                        .error("error.invalid-derived-rpm-package-name", "a{}")
+                        .advice("error.invalid-derived-rpm-package-name.advice")
         ).map(TestSpec.Builder::create).toList());
 
         invalidShortcut(testCases::add, "--linux-shortcut");
