@@ -1749,8 +1749,8 @@ com.sun.security.allowedAIALocations=
 # Note: This property applies only to password reading from the standard input
 # stream. It does not affect other supported password sources. For example, the
 # JAAS KeyStoreLoginModule allows a password to be read from the user-specified
-# "keyStorePasswordURL". The keytool and jarsigner commands also support options
-# like "-storepass:env" and "-storepass:file" to read passwords from an
-# environment variable or a file.
+# "keyStorePasswordURL" option. The keytool and jarsigner commands also support
+# options such as "-storepass:env" and "-storepass:file" that read passwords
+# from an environment variable or a file.
 #
 #jdk.security.password.allowSystemIn = true
