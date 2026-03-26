@@ -238,6 +238,7 @@ public class Compliance {
         Asserts.assertThrows(IllegalArgumentException.class, () -> c1.exportKey("AES", new byte[1], -1));
         Asserts.assertThrows(IllegalArgumentException.class, () -> c1.exportKey("AES", null, -1));
         Asserts.assertThrows(IllegalArgumentException.class, () -> c1.exportKey("", new byte[1], 32));
+        Asserts.assertThrows(NullPointerException.class, () -> c1.exportKey(null, new byte[1], 32));
         Asserts.assertThrows(IllegalArgumentException.class, () -> c1.exportData(new byte[1], -1));
         Asserts.assertThrows(IllegalArgumentException.class, () -> c1.exportData(null, 32));
         c1.exportKey("Generic", new byte[1], 255 * 32).getEncoded();
@@ -260,7 +261,7 @@ public class Compliance {
         Asserts.assertEqualsByteArray(c1x, c2x);
         Asserts.assertEqualsByteArray(c1d, c2d);
 
-            // HPKE
+        // HPKE
         checkEncryptDecrypt(kp, spec, spec);
 
         // extra features
