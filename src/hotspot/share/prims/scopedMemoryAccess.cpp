@@ -259,12 +259,12 @@ public:
 JVM_ENTRY(void, ScopedMemoryAccess_closeScope(JNIEnv *env, jobject receiver, jobject session, jobject error))
   Atomic<int> async_exceptions;
   CloseScopedMemoryHandshakeClosure cl(session, error, &async_exceptions);
-  // We rely on the fact that enqueueing a handshake operation
-  // like this has release semantics, and processing a safepoint
-  // or transitioning back from native state has acquire semantics.
-  // This makes sure all target threads see updates to the session's
-  // liveness bit that we do before this point, and will see the
-  // session as closed after the handshake finishes.
+  // We rely on the fact that executing a handshake
+  // synchronizes this thread with all other threads,
+  // which means that each thread will see any updates
+  // to the liveness bit of the session we made before
+  // this point, and will see the session as closed,
+  // after the handshake finishes.
   Handshake::execute(&cl);
 
   // Wait until any async exceptions are delivered before continuing,
