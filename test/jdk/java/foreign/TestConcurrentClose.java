@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @key randomness
  * @library /test/lib
  *
- * @build jdk.test.whitebox.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox jdk.test.lib.Utils
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run testng/othervm/timeout=480
@@ -40,6 +40,7 @@
  *   TestConcurrentClose
  */
 
+import jdk.test.lib.Utils;
 import jdk.test.whitebox.WhiteBox;
 import org.testng.annotations.Test;
 
@@ -72,7 +73,7 @@ public class TestConcurrentClose {
 
     static final int ITERATIONS = 5;
     static final int SEGMENT_SIZE = 10_000;
-    static final int MAX_EXECUTOR_WAIT_SECONDS = 60;
+    static final long MAX_EXECUTOR_WAIT_SECONDS = Utils.adjustTimeout(60);
     static final int NUM_ACCESSORS = 50;
 
     static final AtomicLong start = new AtomicLong();
