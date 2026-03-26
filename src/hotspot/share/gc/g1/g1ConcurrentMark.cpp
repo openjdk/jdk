@@ -1131,7 +1131,7 @@ public:
   }
 };
 
-void G1ConcurrentMark::scan_root_regions(WorkerThreads* workers, bool concurrent) {
+bool G1ConcurrentMark::scan_root_regions(WorkerThreads* workers, bool concurrent) {
   // We first check whether there is any work to do as we might have already aborted
   // the concurrent cycle, or ran into a GC that did the actual work when we reach here.
   // We want to avoid spinning up the worker threads if that happened.
@@ -1141,7 +1141,8 @@ void G1ConcurrentMark::scan_root_regions(WorkerThreads* workers, bool concurrent
   //
   // Concurrent gc threads enter an STS when starting the task, so they stop, then
   // continue after that safepoint.
-  if (!root_regions()->work_completed_or_aborted()) {
+  bool do_scan = !root_regions()->work_completed_or_aborted();
+  if (do_scan) {
     // Assign one worker to each root-region but subject to the max constraint.
     // The constraint is also important to avoid accesses beyond the allocated per-worker
     // marking helper data structures. We might get passed different WorkerThreads with
@@ -1158,6 +1159,8 @@ void G1ConcurrentMark::scan_root_regions(WorkerThreads* workers, bool concurrent
   }
 
   root_regions()->finish_scan();
+
+  return do_scan;
 }
 
 void G1ConcurrentMark::scan_root_regions_concurrently() {
@@ -1165,9 +1168,9 @@ void G1ConcurrentMark::scan_root_regions_concurrently() {
   scan_root_regions(_concurrent_workers, true /* concurrent */);
 }
 
-void G1ConcurrentMark::complete_root_regions_scan_in_safepoint() {
+bool G1ConcurrentMark::complete_root_regions_scan_in_safepoint() {
   assert_at_safepoint_on_vm_thread();
-  scan_root_regions(_g1h->workers(), false /* concurrent */);
+  return scan_root_regions(_g1h->workers(), false /* concurrent */);
 }
 
 void G1ConcurrentMark::add_root_region(G1HeapRegion* r) {

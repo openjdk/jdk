@@ -647,7 +647,8 @@ public:
   // Scan all the root regions concurrently and mark everything reachable from
   // them.
   void scan_root_regions_concurrently();
-  void complete_root_regions_scan_in_safepoint();
+  // Complete root region scan work in the safepoint, return if we did some work.
+  bool complete_root_regions_scan_in_safepoint();
 
   // Abort an active concurrent root region scan and wait for it to return.
   void root_region_scan_abort_and_wait();
@@ -656,8 +657,8 @@ private:
   G1CMRootMemRegions* root_regions() { return &_root_regions; }
 
   // Perform root region scan until all root regions have been processed, or
-  // the process has been aborted.
-  void scan_root_regions(WorkerThreads* workers, bool concurrent);
+  // the process has been aborted. Returns true if we did some work.
+  bool scan_root_regions(WorkerThreads* workers, bool concurrent);
   // Scan a single root MemRegion to mark everything reachable from it.
   void scan_root_region(const MemRegion* region, uint worker_id);
 
