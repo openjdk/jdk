@@ -47,11 +47,6 @@ final class CFBundleVersion {
                     "message.version-string-too-many-components"));
         }
 
-        if (BigInteger.ZERO.equals(components[0])) {
-            throw new IllegalArgumentException(I18N.getString(
-                    "message.version-string-first-number-not-zero"));
-        }
-
         return ver;
     }
 }

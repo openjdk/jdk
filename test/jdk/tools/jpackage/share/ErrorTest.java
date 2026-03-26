@@ -964,9 +964,6 @@ public final class ErrorTest {
         final List<TestSpec> testCases = new ArrayList<>();
 
         testCases.addAll(Stream.of(
-                testSpec().addArgs("--app-version", "0.2")
-                        .error("message.version-string-first-number-not-zero")
-                        .advice("error.invalid-cfbundle-version.advice"),
                 testSpec().addArgs("--app-version", "1.2.3.4")
                         .error("message.version-string-too-many-components")
                         .advice("error.invalid-cfbundle-version.advice"),
