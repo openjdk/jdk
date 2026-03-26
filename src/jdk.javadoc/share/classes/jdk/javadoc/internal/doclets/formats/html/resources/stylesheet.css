@@ -77,9 +77,6 @@
     /* Note colors */
     --note-border-color: #8a8a8a;
     --note-text-color: var(--block-text-color);
-    --note-highlighted-background-color: #f5f5f7;
-    --note-highlighted-border-color: #f7f7f7;
-    --note-highlighted-header-color: var(--block-text-color);
     --note-important-background-color: /* #f3f8fd; */ /* #eaf1f9; */ #eaf2fb;
     --note-important-border-color: var(--navbar-background-color);
     --note-important-header-color: #ffffff;
@@ -149,9 +146,6 @@
     --pre-text-color: var(--snippet-text-color);
     --note-border-color: #7b7b7b;
     --note-text-color: var(--block-text-color);
-    --note-highlighted-background-color: #3b4147;
-    --note-highlighted-border-color: #313336;
-    --note-highlighted-header-color: var(--block-text-color);
     --note-important-background-color: #353f4e;
     --note-important-border-color: #446c86;
     --note-important-header-color: #ffffff;
@@ -565,11 +559,6 @@ div.inline-note-tag > div.note-header {
     border-radius: 1px;
     margin: 0 3px;
 }
-div.inline-note-tag.note-tag-highlighted {
-    background-color: var(--note-highlighted-background-color);
-    color: var(--note-text-color);
-    border: none;
-}
 div.inline-note-tag.note-tag-important {
     padding-top: 11px;
     margin-top: 24px;
@@ -583,10 +572,6 @@ div.inline-note-tag.note-tag-critical {
     border-color: var(--note-critical-border-color);
     background-color: var(--note-critical-background-color);
     border: none;
-}
-div.inline-note-tag.note-tag-highlighted > div.note-header {
-    background-color: var(--note-highlighted-border-color);
-    color: var(--note-highlighted-header-color);
 }
 div.inline-note-tag.note-tag-important > div.note-header {
     background-color: var(--note-important-border-color);
@@ -612,7 +597,6 @@ dl.notes > div > dd {
     font-family:var(--block-font-family);
     line-height:var(--block-line-height);
 }
-dl.notes > div.block-note-tag.note-tag-highlighted,
 dl.notes > div.block-note-tag.note-tag-important,
 dl.notes > div.block-note-tag.note-tag-critical {
     margin: 8px 0;
@@ -624,9 +608,6 @@ dl.notes > div.block-note-tag.note-tag-critical {
         padding: 0;
         display: block;
     }
-}
-dl.notes > div.block-note-tag.note-tag-highlighted {
-    border: 1px solid var(--note-border-color);
 }
 dl.notes > div.block-note-tag.note-tag-important {
     background-color: var(--note-important-background-color);
