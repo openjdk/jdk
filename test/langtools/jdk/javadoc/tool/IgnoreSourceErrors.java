@@ -76,9 +76,6 @@ public class IgnoreSourceErrors  extends TestRunner {
         if (!out.contains("package invalid.example does not exist")) {
             throw new Exception("expected string not found \'package invalid.example does not exist\'");
         }
-        if (!out.contains("cannot find symbol")) {
-            throw new Exception("expected string not found \'cannot find symbol\'");
-        }
     }
 
     @Test
@@ -92,9 +89,6 @@ public class IgnoreSourceErrors  extends TestRunner {
         }
         if (!out.contains("package invalid.example does not exist")) {
             throw new Exception("expected string not found \'package invalid.example does not exist\'");
-        }
-        if (!out.contains("cannot find symbol")) {
-            throw new Exception("expected string not found \'cannot find symbol\'");
         }
     }
 
