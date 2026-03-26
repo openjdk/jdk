@@ -297,35 +297,34 @@ class G1CMRootMemRegions {
 
   bool should_abort() const { return _should_abort.load_relaxed(); }
 
+  uint num_regions() const { return _num_regions.load_relaxed(); }
+
 public:
   G1CMRootMemRegions(uint const max_regions);
   ~G1CMRootMemRegions();
 
-  // Reset the data structure to allow addition of new root regions.
-  void reset();
-
   void add(HeapWord* start, HeapWord* end);
 
-  // Forces claim_next() to return null so that the iteration aborts early.
-  void abort() { _should_abort.store_relaxed(true); }
+  // Reset data structure to initial state.
+  void reset();
 
   // Claim the next root MemRegion to scan atomically, or return null if
   // all have been claimed.
   const MemRegion* claim_next();
 
-  uint num_remaining_root_regions() const;
-  // The number of root regions to scan.
-  uint num_root_regions() const;
+  // Number of root regions to still process.
+  uint num_remaining_regions() const;
 
-  // Returns whether all root regions have been processed. If count_aborted_as_completed,
-  // aborted state also counts as completed.
-  bool work_completed(bool count_aborted_as_completed) const;
+  // Returns whether all root regions have been processed or the processing been aborted.
+  bool work_completed_or_aborted() const;
+
+  void assert_work_completed_or_aborted() PRODUCT_RETURN;
 
   // Is the given memregion contained in the root regions; the MemRegion must
   // match exactly.
   bool contains(const MemRegion mr) const;
 
-  // Flag work cancellation.
+  // Cancel not-yet started root region scan.
   void cancel_scan();
 
   // Flag that we're done with root region scanning.

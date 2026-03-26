@@ -381,6 +381,9 @@ G1CMRootMemRegions::~G1CMRootMemRegions() {
 }
 
 void G1CMRootMemRegions::reset() {
+  assert_at_safepoint();
+  assert(G1CollectedHeap::heap()->collector_state()->is_in_concurrent_start_gc(), "must be");
+
   _num_regions.store_relaxed(0);
   _num_claimed_regions.store_relaxed(0);
   _should_abort.store_relaxed(false);
@@ -403,7 +406,7 @@ const MemRegion* G1CMRootMemRegions::claim_next() {
     return nullptr;
   }
 
-  uint local_num_root_regions = num_root_regions();
+  uint local_num_root_regions = num_regions();
   if (_num_claimed_regions.load_relaxed() >= local_num_root_regions) {
     return nullptr;
   }
@@ -415,12 +418,20 @@ const MemRegion* G1CMRootMemRegions::claim_next() {
   return nullptr;
 }
 
-bool G1CMRootMemRegions::work_completed(bool count_aborted_as_completed) const {
-  return (num_remaining_root_regions() == 0) || (count_aborted_as_completed && should_abort());
+bool G1CMRootMemRegions::work_completed_or_aborted() const {
+  return (num_remaining_regions() == 0) || should_abort();
 }
 
-uint G1CMRootMemRegions::num_remaining_root_regions() const {
-  uint total = num_root_regions();
+#ifndef PRODUCT
+void G1CMRootMemRegions::assert_work_completed_or_aborted() {
+  assert(work_completed_or_aborted(),
+         "we should have claimed all root regions or aborted has_aborted %d num %u (remaining %u)",
+         should_abort(), num_regions(), num_remaining_regions());
+}
+#endif
+
+uint G1CMRootMemRegions::num_remaining_regions() const {
+  uint total = num_regions();
   uint claimed = _num_claimed_regions.load_relaxed();
   if (claimed >= total) {
     return 0;
@@ -429,12 +440,8 @@ uint G1CMRootMemRegions::num_remaining_root_regions() const {
   }
 }
 
-uint G1CMRootMemRegions::num_root_regions() const {
-  return _num_regions.load_relaxed();
-}
-
 bool G1CMRootMemRegions::contains(const MemRegion mr) const {
-  uint local_num_root_regions = num_root_regions();
+  uint local_num_root_regions = num_regions();
   for (uint i = 0; i < local_num_root_regions; i++) {
     if (_root_regions[i].equals(mr)) {
       return true;
@@ -444,12 +451,11 @@ bool G1CMRootMemRegions::contains(const MemRegion mr) const {
 }
 
 void G1CMRootMemRegions::finish_scan() {
-  reset();
+  assert_work_completed_or_aborted();
 }
 
 void G1CMRootMemRegions::cancel_scan() {
-  assert_at_safepoint_on_vm_thread();
-  reset();
+  _should_abort.store_relaxed(true);
 }
 
 G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
@@ -959,6 +965,9 @@ void G1ConcurrentMark::start_full_concurrent_cycle() {
 }
 
 void G1ConcurrentMark::start_undo_concurrent_cycle() {
+  assert_at_safepoint_on_vm_thread();
+  assert(_g1h->collector_state()->is_in_concurrent_start_gc(), "must be");
+
   root_regions()->cancel_scan();
 
   // Signal the thread to start work.
@@ -1131,26 +1140,21 @@ void G1ConcurrentMark::scan_root_regions(WorkerThreads* workers, bool concurrent
   //
   // Concurrent gc threads enter an STS when starting the task, so they stop, then
   // continue after that safepoint.
-  if (!root_regions()->work_completed(true /* count_aborted_as_completed */)) {
+  if (!root_regions()->work_completed_or_aborted()) {
     // Assign one worker to each root-region but subject to the max constraint.
     // The constraint is also important to avoid accesses beyond the allocated per-worker
     // marking helper data structures. We might get passed different WorkerThreads with
     // different number of threads (potential worker ids) than helper data structures when
     // completing this work during GC.
-    const uint num_workers = MIN2(root_regions()->num_remaining_root_regions(),
+    const uint num_workers = MIN2(root_regions()->num_remaining_regions(),
                                   _max_concurrent_workers);
     assert(num_workers > 0, "no more remaining root regions to process");
 
     G1CMRootRegionScanTask task(this, concurrent);
     log_debug(gc, ergo)("Running %s using %u workers for %u work units.",
-                        task.name(), num_workers, root_regions()->num_root_regions());
+                        task.name(), num_workers, root_regions()->num_remaining_regions());
     workers->run_task(&task, num_workers);
   }
-
-  // Only allow abort if concurrent.
-  assert(root_regions()->work_completed(concurrent /* count_aborted_as_completed */),
-         "we should have claimed all root regions or aborted is_concurrent %d num %u (remaining %u)",
-         concurrent, root_regions()->num_root_regions(), root_regions()->num_remaining_root_regions());
 
   root_regions()->finish_scan();
 }
@@ -1174,8 +1178,9 @@ bool G1ConcurrentMark::is_root_region(G1HeapRegion* r) {
 }
 
 void G1ConcurrentMark::root_region_scan_abort_and_wait() {
-  assert(!SafepointSynchronize::is_at_safepoint(), "must be");
-  root_regions()->abort();
+  assert_not_at_safepoint();
+
+  root_regions()->cancel_scan();
 }
 
 void G1ConcurrentMark::concurrent_cycle_start() {
@@ -1952,12 +1957,15 @@ void G1ConcurrentMark::print_stats() {
 }
 
 bool G1ConcurrentMark::concurrent_cycle_abort() {
+  assert_at_safepoint_on_vm_thread();
+  assert(_g1h->collector_state()->is_in_full_gc(), "must be");
+
   // If we start the compaction before the CM threads finish
   // scanning the root regions we might trip them over as we'll
   // be moving objects / updating references. Since the root region
   // scan synchronized with the safepoint, just tell it to abort.
   // It will notice when the threads start up again later.
-  root_regions()->abort();
+  root_regions()->cancel_scan();
 
   // We haven't started a concurrent cycle no need to do anything; we might have
   // aborted the marking because of shutting down though. In this case the marking
@@ -1987,8 +1995,7 @@ bool G1ConcurrentMark::concurrent_cycle_abort() {
 }
 
 void G1ConcurrentMark::abort_marking_threads() {
-  assert(root_regions()->work_completed(true /* count_aborted_as_completed */),
-         "still doing root region scan while not aborted");
+  root_regions()->assert_work_completed_or_aborted();
   _has_aborted.store_relaxed(true);
   _first_overflow_barrier_sync.abort();
   _second_overflow_barrier_sync.abort();
