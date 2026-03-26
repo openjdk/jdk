@@ -242,7 +242,7 @@ public class ReflectionFactory {
                     return true;
                 }
             }
-            if (cl.isNestmateOf(superCl)) {
+            if (Reflection.areNestMates(cl, superCl)) {
                 return true;
             }
             return false;

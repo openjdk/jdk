@@ -175,7 +175,7 @@ public class Reflection {
         if (Modifier.isPrivate(modifiers)) {
             // Note: targetClass may be outside the nest, but that is okay
             //       as long as memberClass is in the nest.
-            if (currentClass.isNestmateOf(memberClass)) {
+            if (areNestMates(currentClass, memberClass)) {
                 return true;
             }
         }
@@ -437,4 +437,12 @@ public class Reflection {
             " with package access" :
             " with modifiers \"" + Modifier.toString(modifiers) + "\"";
     }
+
+    /**
+     * Returns true if {@code currentClass} and {@code memberClass}
+     * are nestmates - that is, if they have the same nesthost as
+     * determined by the VM.
+     */
+    public static native boolean areNestMates(Class<?> currentClass,
+                                              Class<?> memberClass);
 }

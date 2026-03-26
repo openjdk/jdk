@@ -602,6 +602,9 @@ JVM_GetClassDeclaredConstructors(JNIEnv *env, jclass ofClass, jboolean publicOnl
 
 /* Nestmates - since JDK 11 */
 
+JNIEXPORT jboolean JNICALL
+JVM_AreNestMates(JNIEnv *env, jclass current, jclass member);
+
 JNIEXPORT jclass JNICALL
 JVM_GetNestHost(JNIEnv *env, jclass current);
 

@@ -1734,6 +1734,14 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredConstructors(JNIEnv *env, jclass ofC
 }
 JVM_END
 
+JVM_ENTRY(jboolean, JVM_AreNestMates(JNIEnv *env, jclass current, jclass member))
+{
+  InstanceKlass* c = java_lang_Class::as_InstanceKlass(JNIHandles::resolve_non_null(current));
+  InstanceKlass* m = java_lang_Class::as_InstanceKlass(JNIHandles::resolve_non_null(member));
+  return c->has_nestmate_access_to(m, THREAD);
+}
+JVM_END
+
 JVM_ENTRY(jclass, JVM_GetNestHost(JNIEnv* env, jclass current))
 {
   // current is not a primitive or array class
