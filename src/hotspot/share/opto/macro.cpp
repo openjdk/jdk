@@ -52,6 +52,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #if INCLUDE_G1GC
@@ -304,8 +305,10 @@ bool has_interfering_store(const ArrayCopyNode* ac, LoadNode* load, PhaseGVN* ph
   return false;
 }
 
-// Generate loads from source of the arraycopy for fields of
-// destination needed at a deoptimization point
+// Generate loads from source of the arraycopy for fields of destination needed at a deoptimization point.
+// Returns nullptr if the load cannot be created because the arraycopy is not suitable for elimination
+// (e.g. copy inside the array with non-constant offsets) or the inputs do not match our assumptions (e.g.
+// the arraycopy does not actually write something at the provided offset).
 Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, Node* ctl, Node* mem, BasicType ft, const Type* ftype, AllocateNode* alloc) {
   assert((ctl == ac->control() && mem == ac->memory()) != (mem != ac->memory() && ctl->is_Proj() && ctl->as_Proj()->is_uncommon_trap_proj()),
     "Either the control and memory are the same as for the arraycopy or they are pinned in an uncommon trap.");
@@ -315,10 +318,10 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
     bt = T_OBJECT;
     type = ftype->make_oopptr();
   }
-  Node* res = nullptr;
   Node* base = ac->in(ArrayCopyNode::Src);
   Node* adr = nullptr;
   const TypePtr* adr_type = nullptr;
+
   if (ac->is_clonebasic()) {
     assert(ac->in(ArrayCopyNode::Src) != ac->in(ArrayCopyNode::Dest), "clone source equals destination");
     adr = _igvn.transform(AddPNode::make_with_base(base, _igvn.MakeConX(offset)));
@@ -360,25 +363,26 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
     }
   }
   assert(adr != nullptr && adr_type != nullptr, "sanity");
+
   // Create the rematerialization load ...
   MergeMemNode* mergemem = _igvn.transform(MergeMemNode::make(mem))->as_MergeMem();
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  res = ArrayCopyNode::load(bs, &_igvn, ctl, mergemem, adr, adr_type, type, bt);
+  Node* res = ArrayCopyNode::load(bs, &_igvn, ctl, mergemem, adr, adr_type, type, bt);
+  assert(res != nullptr, "load should have been created");
+
   // ... and ensure that pinning the rematerialization load inside the uncommon path is safe.
-  if (mem != ac->memory() && ctl->is_Proj() && ctl->as_Proj()->is_uncommon_trap_proj() && res != nullptr && res->is_Load() &&
+  if (mem != ac->memory() && ctl->is_Proj() && ctl->as_Proj()->is_uncommon_trap_proj() && res->is_Load() &&
       has_interfering_store(ac, res->as_Load(), &_igvn)) {
     // Not safe: use control and memory from the arraycopy to ensure correct memory state.
     _igvn.remove_dead_node(res); // Clean up the unusable rematerialization load.
     return make_arraycopy_load(ac, offset, ac->control(), ac->memory(), ft, ftype, alloc);
   }
-  if (res != nullptr) {
-    if (ftype->isa_narrowoop()) {
-      // PhaseMacroExpand::scalar_replacement adds DecodeN nodes
-      res = _igvn.transform(new EncodePNode(res, ftype));
-    }
-    return res;
+
+  if (ftype->isa_narrowoop()) {
+    // PhaseMacroExpand::scalar_replacement adds DecodeN nodes
+    res = _igvn.transform(new EncodePNode(res, ftype));
   }
-  return nullptr;
+  return res;
 }
 
 //
