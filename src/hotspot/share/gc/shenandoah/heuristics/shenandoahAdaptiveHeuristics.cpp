@@ -402,6 +402,11 @@ static double saturate(double value, double min, double max) {
 //    in operation mode.  We want some way to decide that the average rate has changed, while keeping average
 //    allocation rate computation independent.
 bool ShenandoahAdaptiveHeuristics::should_start_gc() {
+  // TODO: Test this again:
+  // const ShenandoahAllocRate<>& shenandoah_alloc_rate = ShenandoahHeap::heap()->alloc_rate();
+  // double avg_alloc_rate2 = shenandoah_alloc_rate.upper_bound(_margin_of_error_sd);
+  // double predicted_rate = shenandoah_alloc_rate.predict_next();
+
   size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
   size_t available = _space_info->soft_mutator_available();
   size_t allocated = _space_info->bytes_allocated_since_gc_start();
@@ -678,7 +683,6 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     accept_trigger_with_type(SPIKE);
     return true;
   }
-#endif
   return ShenandoahHeuristics::should_start_gc();
 }
 
