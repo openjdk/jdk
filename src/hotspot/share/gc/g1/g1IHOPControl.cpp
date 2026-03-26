@@ -98,12 +98,12 @@ void G1IHOPControl::report_statistics(G1NewTracer* new_tracer, size_t non_young_
   send_trace_event(new_tracer, non_young_occupancy);
 }
 
-void G1IHOPControl::update_allocation_info(double allocation_time_s, size_t desired_young_gen_size) {
+void G1IHOPControl::update_allocation_info(double allocation_time_s, size_t expected_young_gen_size) {
   assert(allocation_time_s > 0, "Invalid allocation time: %.3f", allocation_time_s);
   _last_allocation_time_s = allocation_time_s;
   double alloc_rate = _old_gen_alloc_tracker->last_period_old_gen_growth() / allocation_time_s;
   _old_gen_alloc_rate.add(alloc_rate);
-  _expected_young_gen_at_first_mixed_gc = desired_young_gen_size;
+  _expected_young_gen_at_first_mixed_gc = expected_young_gen_size;
 }
 
 void G1IHOPControl::add_marking_start_to_mixed_length(double length_s) {

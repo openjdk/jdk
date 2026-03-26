@@ -100,15 +100,15 @@ class G1IHOPControl : public CHeapObj<mtGC> {
 
   void update_target_after_marking_phase();
 
-  // Update information about time during which allocations in the Java heap occurred,
-  // how large these allocations were in bytes, and an additional buffer.
-  // The allocations should contain any amount of space made unusable for further
-  // allocation, e.g. any waste caused by TLAB allocation, space at the end of
-  // humongous objects that can not be used for allocation, etc.
-  // Together with the target occupancy, this additional buffer should contain the
-  // difference between old gen size and total heap size at the start of reclamation,
-  // and space required for that reclamation.
-  void update_allocation_info(double allocation_time_s, size_t additional_buffer_size);
+  // Update allocation rate information and current expected young gen size for the
+  // first mixed gc needed for the predictor. Allocation rate is given as the
+  // separately passed in allocation increment and the time passed (mutator time)
+  // for the latest allocation increment here. Allocation size is the memory needed
+  // during the mutator before and the first mixed gc pause itself.
+  // Contents include young gen at that point, and the memory required for evacuating
+  // the collection set in that first mixed gc (including waste caused by PLAB
+  // allocation etc.).
+  void update_allocation_info(double allocation_time_s, size_t expected_young_gen_size);
 
   // Update the time spent in the mutator beginning from the end of concurrent start to
   // the first mixed gc.
