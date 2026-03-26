@@ -40,7 +40,7 @@ static void test_update(G1IHOPControl* ctrl,
   test_update_allocation_tracker(alloc_tracker, alloc_amount);
   for (int i = 0; i < 100; i++) {
     ctrl->update_allocation_info(alloc_time, young_size);
-    ctrl->add_marking_length(mark_time);
+    ctrl->add_marking_start_to_mixed_length(mark_time);
   }
 }
 
@@ -57,7 +57,7 @@ static void test_update_humongous(G1IHOPControl* ctrl,
   alloc_tracker->reset_after_gc(humongous_bytes_after_last_gc);
   for (int i = 0; i < 100; i++) {
     ctrl->update_allocation_info(alloc_time, young_size);
-    ctrl->add_marking_length(mark_time);
+    ctrl->add_marking_start_to_mixed_length(mark_time);
   }
 }
 
@@ -82,7 +82,7 @@ TEST_VM(G1IHOPControl, static_simple) {
   threshold = ctrl.old_gen_threshold_for_conc_mark_start();
   EXPECT_EQ(initial_ihop, threshold);
 
-  ctrl.add_marking_length(1000.0);
+  ctrl.add_marking_start_to_mixed_length(1000.0);
   threshold = ctrl.old_gen_threshold_for_conc_mark_start();
   EXPECT_EQ(initial_ihop, threshold);
 
@@ -133,7 +133,7 @@ TEST_VM(G1IHOPControl, adaptive_simple) {
   for (size_t i = 0; i < G1AdaptiveIHOPNumInitialSamples - 1; i++) {
     test_update_allocation_tracker(&alloc_tracker, alloc_amount1);
     ctrl.update_allocation_info(alloc_time1, young_size);
-    ctrl.add_marking_length(marking_time1);
+    ctrl.add_marking_start_to_mixed_length(marking_time1);
     // Not enough data yet.
     threshold = ctrl.old_gen_threshold_for_conc_mark_start();
 

@@ -163,11 +163,7 @@ void G1Policy::record_new_heap_size(uint new_number_of_regions) {
 
   _young_gen_sizer.heap_size_changed(new_number_of_regions);
 
-  if (!_concurrent_start_to_mixed.is_active()) {
-    // If in the time interval [Concurrent Start, First Mixed GC], then we have should not
-    // update the target.
-    _ihop_control->update_target_occupancy(new_number_of_regions * G1HeapRegion::GrainBytes);
-  }
+  _ihop_control->update_target_occupancy(new_number_of_regions * G1HeapRegion::GrainBytes);
 }
 
 uint G1Policy::calculate_desired_eden_length_by_mmu() const {
@@ -1038,10 +1034,9 @@ bool G1Policy::update_ihop_prediction(double mutator_time_s,
            "Concurrent start to mixed time must be larger than zero but is %.3f",
            marking_to_mixed_time);
     if (marking_to_mixed_time > min_valid_time) {
-      _ihop_control->add_marking_length(marking_to_mixed_time);
+      _ihop_control->add_marking_start_to_mixed_length(marking_to_mixed_time);
       report = true;
     }
-    _ihop_control->update_target_after_marking_phase();
   }
 
   // As an approximation for the young gc promotion rates during marking we use
