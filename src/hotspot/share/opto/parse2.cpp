@@ -29,6 +29,7 @@
 #include "compiler/compileLog.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "jvm_io.h"
+#include "ci/ciFlatArrayKlass.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
@@ -90,6 +91,110 @@ void Parse::array_load(BasicType bt) {
     // Cannot statically determine if array is a flat array, emit runtime check
     assert(UseArrayFlattening && is_reference_type(bt) && element_ptr->can_be_inline_type() &&
            (!element_ptr->is_inlinetypeptr() || element_ptr->inline_klass()->maybe_flat_in_array()), "array can't be flat");
+
+    if (element_ptr->is_inlinetypeptr()) {
+      ciInlineKlass* vk = element_ptr->inline_klass();
+      // Node* flat_array = cast_to_flat_array(array, vk);
+      Node* flat_array = array;
+      Node* vt = InlineTypeNode::make_from_flat_array(this, vk, flat_array, array_index);
+      Node* ld = _gvn.transform(vt);
+      push_node(bt, ld);
+      return;
+    }
+    ciMethodData* md = method()->method_data();
+    if (md != nullptr && md->is_mature()) {
+      ciProfileData* data = md->bci_to_data(bci());
+      if (data != nullptr && data->is_ArrayLoadData()) {
+        ciArrayLoadData* array_load = (ciArrayLoadData*) data->as_ArrayLoadData();
+        int not_flat_count = array_load->not_flat_count();
+        if (not_flat_count < 0) {
+          not_flat_count = max_jint;
+        }
+        ciCallProfile profile = method()->call_profile_at_bci(bci());
+        int flat_count = profile.count();
+        int flat_and_not_flat_count = saturated_add(flat_count, not_flat_count);
+        if (profile.morphism() > 0) {
+          bool not_flat_checked = false;
+          float prob = 1;
+          Node* region = new RegionNode(profile.morphism()+3);
+          Node* res_phi = new PhiNode(region, TypeOopPtr::BOTTOM);
+          Node* io_phi = new PhiNode(region, Type::ABIO);
+          Node* mem = reset_memory();
+          Node* io = i_o();
+          set_all_memory(mem);
+          Node* mem_phi = new PhiNode(region, Type::MEMORY, TypePtr::BOTTOM);
+          int j = 1;
+          for (int i = 0; i < profile.morphism() || !not_flat_checked; ) {
+            int count = i < profile.morphism() ? profile.receiver_count(i) : not_flat_count;
+            if (not_flat_count >= count && !not_flat_checked) {
+              not_flat_checked = true;
+              Node* test = flat_array_test(array, /* flat = */ false);
+              float p = ((float)not_flat_count) / ((float)flat_and_not_flat_count);
+              float this_prob = clamp(p / prob, PROB_MIN, PROB_MAX);
+              IfNode* iff = create_and_xform_if(control(), test, this_prob, COUNT_UNKNOWN);
+              set_control(_gvn.transform(new IfTrueNode(iff)));
+              assert(array_type->is_flat() || control()->in(0)->as_If()->is_flat_array_check(&_gvn), "Should be found");
+              const TypeAryPtr* adr_type = TypeAryPtr::get_array_body_type(bt);
+              DecoratorSet decorator_set = IN_HEAP | IS_ARRAY | C2_CONTROL_DEPENDENT_LOAD;
+              if (needs_range_check(array_type->size(), array_index)) {
+                // We've emitted a RangeCheck but now insert an additional check between the range check and the actual load.
+                // We cannot pin the load to two separate nodes. Instead, we pin it conservatively here such that it cannot
+                // possibly float above the range check at any point.
+                decorator_set |= C2_UNKNOWN_CONTROL_LOAD;
+              }
+              Node* ld = access_load_at(array, adr, adr_type, element_ptr, bt, decorator_set);
+              if (element_ptr->is_inlinetypeptr()) {
+                ld = InlineTypeNode::make_from_oop(this, ld, element_ptr->inline_klass());
+              }
+              res_phi->init_req(j, _gvn.transform(ld));
+              region->init_req(j, control());
+              io_phi->init_req(j, i_o());
+              set_control(_gvn.transform(new IfFalseNode(iff)));
+              mem_phi->init_req(j, reset_memory());
+              set_all_memory(mem);
+              set_i_o(io);
+              prob = 1 - p;
+            } else {
+              inc_sp(2);
+              float p = ((float)profile.receiver_count(i)) / ((float)flat_and_not_flat_count);
+              float this_prob = clamp(p / prob, PROB_MIN, PROB_MAX);
+              Node* casted_array = nullptr;
+              ciKlass* klass = profile.receiver(i);
+              Node* next_ctrl = type_check_receiver(array, klass, this_prob, &casted_array);
+              InlineTypeNode* vt = InlineTypeNode::make_from_flat_array(this, klass->as_flat_array_klass()->element_klass()->as_inline_klass(), casted_array, array_index);
+              Node* ld = _gvn.transform(vt->buffer(this));
+              res_phi->init_req(j, ld);
+              region->init_req(j, control());
+              io_phi->init_req(j, i_o());
+              set_control(next_ctrl);
+              mem_phi->init_req(j, reset_memory());
+              set_all_memory(mem);
+              set_i_o(io);
+              prob = 1 - p;
+              i++;
+              dec_sp(2);
+            }
+            j++;
+          }
+          Node* unknown_inline_type = load_from_unknown_flat_array(array, array_index, element_ptr);
+
+          region->init_req(j, control());
+          res_phi->init_req(j, unknown_inline_type);
+          mem_phi->init_req(j, reset_memory());
+          io_phi->init_req(j, i_o());
+          set_control(_gvn.transform(region));
+          set_all_memory(_gvn.transform(mem_phi));
+          set_i_o(_gvn.transform(io_phi));
+          Node* ld = _gvn.transform(res_phi);
+          ld = record_profile_for_speculation_at_array_load(ld);
+          push_node(bt, ld);
+          return;
+        } else {
+          ShouldNotReachHere();
+        }
+      }
+    }
+
     IdealKit ideal(this);
     IdealVariable res(ideal);
     ideal.declarations_done();
