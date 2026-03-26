@@ -26,10 +26,12 @@
 
 #include "pauth_aarch64.hpp"
 #include "register_aarch64.hpp"
+#include "asm/codeBuffer.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.inline.hpp"
+#include "runtime/stubCodeGenerator.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
@@ -55,6 +57,9 @@ SpinWait VM_Version::_spin_wait;
 bool VM_Version::_cache_dic_enabled;
 bool VM_Version::_cache_idc_enabled;
 
+address VM_Version::_ic_ivau_probe_addr = nullptr;
+address VM_Version::_ic_ivau_probe_cont = nullptr;
+
 const char* VM_Version::_features_names[MAX_CPU_FEATURES] = { nullptr };
 
 static SpinWait get_spin_wait_desc() {
@@ -77,6 +82,64 @@ static bool has_neoverse_n1_errata_1542419() {
           ((major_rev_num == 3 && minor_rev_num == 0) ||
            (major_rev_num == 3 && minor_rev_num == 1) ||
            (major_rev_num == 4 && minor_rev_num == 0)));
+}
+
+class VM_Version_StubGenerator : public StubCodeGenerator {
+public:
+  VM_Version_StubGenerator(CodeBuffer *c) : StubCodeGenerator(c) {}
+
+  // Returns: stub start address, and sets probe_addr/cont_addr via out params.
+  address generate_ic_ivau_probe(address* probe_addr, address* cont_addr) {
+    StubCodeMark mark(this, "VM_Version", "ic_ivau_probe");
+#   define __ _masm->
+
+    address start = __ pc();
+
+    // Record the address of the IC IVAU instruction for the signal handler.
+    *probe_addr = __ pc();
+    __ ic(Assembler::IVAU, as_Register(0b11111) /* XZR */);
+
+    // If we reach here, IC IVAU did not fault — the trap is active.
+    __ mov(r0, 1);
+    __ ret(lr);
+
+    // Signal handler redirects here on fault.
+    *cont_addr = __ pc();
+    __ mov(r0, 0);
+    __ ret(lr);
+
+#   undef __
+    return start;
+  }
+};
+
+bool VM_Version::probe_ic_ivau_trap() {
+  ResourceMark rm;
+  BufferBlob* b = BufferBlob::create("ic_ivau_probe", 128);
+  if (b == nullptr) {
+    vm_exit_during_initialization("Unable to allocate ic_ivau_probe stub");
+  }
+
+  CodeBuffer c(b);
+  VM_Version_StubGenerator g(&c);
+  typedef int (*probe_fn_t)(void);
+  probe_fn_t probe_fn = (probe_fn_t)g.generate_ic_ivau_probe(&_ic_ivau_probe_addr,
+                                                   &_ic_ivau_probe_cont);
+
+  // StubCodeMark destructor calls flush() -> ICache::invalidate_range()
+  // with the stub's own (valid) address. NeoverseN1ICacheErratumMitigation
+  // is still false at this point, so invalidate_range() uses
+  // __builtin___clear_cache() — no chicken-and-egg problem.
+  int trapped = probe_fn();
+
+  BufferBlob::free(b);
+
+  _ic_ivau_probe_addr = nullptr;
+  _ic_ivau_probe_cont = nullptr;
+
+  // 1: 'ic ivau, xzr' trapped
+  // 0: not trapped (the insruction caused SIGSEGV)
+  return trapped == 1;
 }
 
 void VM_Version::initialize() {
@@ -684,13 +747,26 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSingleICacheInvalidation, true);
   }
 
-  if (FLAG_IS_DEFAULT(NeoverseN1ICacheErratumMitigation) && has_neoverse_n1_errata_1542419()) {
-    FLAG_SET_DEFAULT(NeoverseN1ICacheErratumMitigation, true);
+  if (FLAG_IS_DEFAULT(NeoverseN1ICacheErratumMitigation) && has_neoverse_n1_errata_1542419()
+      && is_cache_idc_enabled() && !is_cache_dic_enabled()) {
+    // Probe whether IC IVAU is trapped before enabling the mitigation.
+    if (probe_ic_ivau_trap()) {
+      FLAG_SET_DEFAULT(NeoverseN1ICacheErratumMitigation, true);
+    } else {
+      FLAG_SET_DEFAULT(NeoverseN1ICacheErratumMitigation, false);
+      log_info(os)("IC IVAU is not trapped; "
+                   "disabling NeoverseN1ICacheErratumMitigation");
+    }
   }
 
   if (NeoverseN1ICacheErratumMitigation) {
     if (!has_neoverse_n1_errata_1542419()) {
       vm_exit_during_initialization("NeoverseN1ICacheErratumMitigation is set for the CPU not having Neoverse N1 errata 1542419");
+    }
+    // If the user explicitly set the flag, verify the trap is active.
+    if (!FLAG_IS_DEFAULT(NeoverseN1ICacheErratumMitigation) && !probe_ic_ivau_trap()) {
+      vm_exit_during_initialization("NeoverseN1ICacheErratumMitigation is set but IC IVAU is not trapped. "
+                                    "The optimization is not safe on this system.");
     }
     if (FLAG_IS_DEFAULT(UseSingleICacheInvalidation)) {
       FLAG_SET_DEFAULT(UseSingleICacheInvalidation, true);

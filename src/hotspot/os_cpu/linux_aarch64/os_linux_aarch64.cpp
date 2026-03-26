@@ -228,6 +228,12 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       }
     }
 
+    // 'IC IVAU, XZR' trap probe during VM_Version initialization.
+    // If IC IVAU is not trapped, it faults on unmapped VA 0x0.
+    if (sig == SIGSEGV && VM_Version::is_ic_ivau_probe_addr(pc)) {
+      stub = VM_Version::ic_ivau_probe_cont();
+    }
+
     if (thread->thread_state() == _thread_in_Java) {
       // Java thread running in Java code => find exception handler if any
       // a fault inside compiled code, the interpreter, or a stub
