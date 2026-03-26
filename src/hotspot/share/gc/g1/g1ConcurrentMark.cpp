@@ -966,7 +966,8 @@ void G1ConcurrentMark::start_full_concurrent_cycle() {
 
 void G1ConcurrentMark::start_undo_concurrent_cycle() {
   assert_at_safepoint_on_vm_thread();
-  assert(_g1h->collector_state()->is_in_concurrent_start_gc(), "must be");
+  // At this time this GC is not a concurrent start gc any more, can only check for young only gc/phase.
+  assert(_g1h->collector_state()->is_in_young_only_phase(), "must be");
 
   root_regions()->cancel_scan();
 
