@@ -4740,13 +4740,6 @@ void MacroAssembler::resolve_oop_handle(Register result, Register tmp1, Register
   access_load_at(T_OBJECT, IN_NATIVE, Address(result, 0), result, tmp1, tmp2);
 }
 
-void MacroAssembler::load_mirror_from_const_method(Register mirror, Register const_method) {
-  mem2reg_opt(mirror, Address(const_method, ConstMethod::constants_offset()));
-  mem2reg_opt(mirror, Address(mirror, ConstantPool::pool_holder_offset()));
-  mem2reg_opt(mirror, Address(mirror, Klass::java_mirror_offset()));
-  resolve_oop_handle(mirror, Z_R0_scratch, Z_R1_scratch);
-}
-
 void MacroAssembler::load_method_holder(Register holder, Register method) {
   mem2reg_opt(holder, Address(method, Method::const_offset()));
   mem2reg_opt(holder, Address(holder, ConstMethod::constants_offset()));
