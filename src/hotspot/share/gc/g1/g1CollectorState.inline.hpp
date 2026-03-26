@@ -27,7 +27,7 @@
 
 #include "gc/g1/g1CollectorState.hpp"
 
-#include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 
 inline void G1CollectorState::set_in_normal_young_gc() {
