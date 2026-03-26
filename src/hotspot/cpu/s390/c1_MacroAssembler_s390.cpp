@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -107,10 +107,10 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
   }
 
   if (len->is_valid()) {
-    // Length will be in the klass gap, if one exists.
+    // Length will be in the klass gap.
     z_st(len, Address(obj, arrayOopDesc::length_offset_in_bytes()));
-  } else if (UseCompressedClassPointers && !UseCompactObjectHeaders) {
-    store_klass_gap(Rzero, obj);  // Zero klass gap for compressed oops.
+  } else if (!UseCompactObjectHeaders) {
+    store_klass_gap(Rzero, obj);  // Zero klass gap.
   }
 }
 

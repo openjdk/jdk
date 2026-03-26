@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
 
+import jdk.internal.ValueBased;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
 
@@ -41,6 +42,7 @@ import static jdk.incubator.vector.VectorOperators.*;
 // -- This file was mechanically generated: Do not edit! -- //
 
 @SuppressWarnings("cast")  // warning: redundant cast
+@ValueBased
 final class ShortVector256 extends ShortVector {
     static final ShortSpecies VSPECIES =
         (ShortSpecies) ShortVector.SPECIES_256;
@@ -598,7 +600,7 @@ final class ShortVector256 extends ShortVector {
     }
 
     // Mask
-
+    @ValueBased
     static final class ShortMask256 extends AbstractMask<Short> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
@@ -831,7 +833,7 @@ final class ShortVector256 extends ShortVector {
     }
 
     // Shuffle
-
+    @ValueBased
     static final class ShortShuffle256 extends AbstractShuffle<Short> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 

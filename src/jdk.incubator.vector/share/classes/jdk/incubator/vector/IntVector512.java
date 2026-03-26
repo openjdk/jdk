@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
 
+import jdk.internal.ValueBased;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
 
@@ -41,6 +42,7 @@ import static jdk.incubator.vector.VectorOperators.*;
 // -- This file was mechanically generated: Do not edit! -- //
 
 @SuppressWarnings("cast")  // warning: redundant cast
+@ValueBased
 final class IntVector512 extends IntVector {
     static final IntSpecies VSPECIES =
         (IntSpecies) IntVector.SPECIES_512;
@@ -598,7 +600,7 @@ final class IntVector512 extends IntVector {
     }
 
     // Mask
-
+    @ValueBased
     static final class IntMask512 extends AbstractMask<Integer> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
@@ -831,7 +833,7 @@ final class IntVector512 extends IntVector {
     }
 
     // Shuffle
-
+    @ValueBased
     static final class IntShuffle512 extends AbstractShuffle<Integer> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
 
