@@ -90,7 +90,7 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
 
         ContentBuilder body = new ContentBuilder();
         for (DocTree tag : tags) {
-            body.add(getTagOutput(holder, (NoteTree) tag));
+            body.add(getTagOutput(holder, (NoteTree) tag, true));
         }
         return body;
     }
@@ -98,11 +98,10 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
     @Override
     public Content getInlineTagOutput(Element element, DocTree tag, TagletWriter tagletWriter) {
         this.tagletWriter = tagletWriter;
-        return HtmlTree.DL(HtmlStyles.notes)
-                .add(getTagOutput(element, (NoteTree) tag));
+        return getTagOutput(element, (NoteTree) tag, false);
     }
 
-    private Content getTagOutput(Element holder, NoteTree note) {
+    private Content getTagOutput(Element holder, NoteTree note, boolean isBlock) {
         var context = tagletWriter.context;
         var htmlWriter = tagletWriter.htmlWriter;
 
@@ -111,9 +110,16 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
         var kind = attr.getOrDefault("kind", defaultKind);
         var id = attr.getOrDefault("id", null);
 
-        var result = HtmlTree.DIV(HtmlStyles.noteTag)
-                .add(HtmlTree.DT(RawHtml.of(header)))
-                .add(HtmlTree.DD(htmlWriter.commentTagsToContent(holder, note.getBody(), context.within(note))));
+        HtmlTree result;
+        if (isBlock) {
+            result = HtmlTree.DIV(HtmlStyles.blockNoteTag)
+                    .add(HtmlTree.DT(RawHtml.of(header)))
+                    .add(HtmlTree.DD(htmlWriter.commentTagsToContent(holder, note.getBody(), context.within(note))));
+        } else {
+            result = HtmlTree.DIV(HtmlStyles.inlineNoteTag)
+                    .add(HtmlTree.DIV(HtmlStyles.noteHeader, RawHtml.of(header)))
+                    .add(htmlWriter.commentTagsToContent(holder, note.getBody(), context.within(note)));
+        }
         if (id != null) {
             result.setId(HtmlId.of(id));
         }
@@ -125,21 +131,6 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
             if (!"header".equalsIgnoreCase(name) && !"kind".equalsIgnoreCase(name) && !"id".equalsIgnoreCase(name)) {
                 result.putDataAttr(name, entry.getValue());
             }
-        }
-        return result;
-    }
-
-    private Content wrapOutput(NoteTree note, List<? extends Content> bodies) {
-        var attr = getAttributes(note);
-        var header = attr.getOrDefault("header", defaultHeader);
-        var kind = attr.getOrDefault("kind", defaultKind);
-
-        var result = HtmlTree.DIV(HtmlStyles.noteTag)
-                .add(HtmlTree.DT(RawHtml.of(header)));
-        result.addAll(bodies, HtmlTree::DD);
-
-        if (kind != null) {
-            result.addStyle(HtmlStyles.noteTag.cssName() + "-" + kind.trim());
         }
         return result;
     }
