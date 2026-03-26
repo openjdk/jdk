@@ -269,7 +269,6 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
 bool has_interfering_store(const ArrayCopyNode* ac, LoadNode* load, PhaseGVN* phase) {
   assert(ac != nullptr && load != nullptr, "sanity");
   AccessAnalyzer acc(phase, load);
-
   ResourceMark rm;
   Unique_Node_List to_visit;
   to_visit.push(load->in(MemNode::Memory));
@@ -283,7 +282,7 @@ bool has_interfering_store(const ArrayCopyNode* ac, LoadNode* load, PhaseGVN* ph
     }
 
     if (mem->is_Phi()) {
-      assert(mem->bottom_type() == Type::MEMORY, "left memory graph");
+      assert(mem->bottom_type() == Type::MEMORY, "do not leave memory graph");
       // Add all non-control inputs of phis to be visited.
       for (uint phi_in = 1; phi_in < mem->len(); phi_in++) {
         Node* input = mem->in(phi_in);
@@ -300,9 +299,7 @@ bool has_interfering_store(const ArrayCopyNode* ac, LoadNode* load, PhaseGVN* ph
     } else {
       return true;
     }
-
   }
-
   // Did not find modification of source element in memory graph.
   return false;
 }
@@ -311,7 +308,7 @@ bool has_interfering_store(const ArrayCopyNode* ac, LoadNode* load, PhaseGVN* ph
 // destination needed at a deoptimization point
 Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, Node* ctl, Node* mem, BasicType ft, const Type* ftype, AllocateNode* alloc) {
   assert((ctl == ac->control() && mem == ac->memory()) != (mem != ac->memory() && ctl->is_Proj() && ctl->as_Proj()->is_uncommon_trap_proj()),
-    "Either the control or memory are the same as for the arraycopy or they are pinned in an uncommon trap.");
+    "Either the control and memory are the same as for the arraycopy or they are pinned in an uncommon trap.");
   BasicType bt = ft;
   const Type *type = ftype;
   if (ft == T_NARROWOOP) {

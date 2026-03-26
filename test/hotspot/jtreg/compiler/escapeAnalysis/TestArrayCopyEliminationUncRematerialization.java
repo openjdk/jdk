@@ -67,15 +67,15 @@ public class TestArrayCopyEliminationUncRematerialization {
     //      }
     //      return dst[RETURN_IDX]; // Corresponds to src[WRITE_IDX]
     //  }
-    // for all primitive types except byte and for different methods of polluting the source
+    // for all primitive types except boolean and for different methods of polluting the source
     // array and producing an unstable if trap.
-    // There methods generate an IR test that validates that as many rematerialization loads
+    // The templates below generate an IR test that validates that as many rematerialization loads
     // as possible are placed in the uncommon path and that the returned result is in fact from
     // the source array.
     // Between different runs of the test, it will generate different sized arrays and indices
-    // to read from and store to (see TestConfig above). Further, this generates a variant of the
+    // to read from and store to (see TestConfig below). Further, this generates a variant of the
     // test method, where the offset into src is provided in an argument. C2 cannot put any rematerialization
-    // loads in the uncomon path then, but it is useful for checking the correct result.
+    // loads in the uncommon path then, but it is useful for checking the correct result.
     public static void main(String[] args) {
         final CompileFramework comp = new CompileFramework();
 
@@ -347,24 +347,24 @@ public class TestArrayCopyEliminationUncRematerialization {
                 var multiStoresConst = Template.make(() -> scope(
                     let("typeAbbrev", pty.abbrev()),
                     storeIdxs.stream()
-                             .map(idx -> String.format("src[COPY_IDX + %d] = WRITE_VAL_#{typeAbbrev};\n", idx))
+                             .map(idx -> scope(let("idx", idx), "src[COPY_IDX + #idx] = WRITE_VAL_#{typeAbbrev};\n"))
                              .toList()
                 ));
                 var multiStoresIdx = Template.make(() -> scope(
                     let("typeAbbrev", pty.abbrev()),
                     storeIdxs.stream()
-                             .map(idx -> String.format("src[idx + %d] = WRITE_VAL_#{typeAbbrev};\n", idx))
+                             .map(idx -> scope(let("idx", idx), "src[idx + #idx] = WRITE_VAL_#{typeAbbrev};\n"))
                              .toList()
                 ));
                 var multiStoresClone = Template.make(() -> scope(
                     let("typeAbbrev", pty.abbrev()),
                     storeIdxs.stream()
-                             .map(idx -> String.format("src[%d] = WRITE_VAL_#{typeAbbrev};\n", idx))
+                             .map(idx -> scope(let("idx",  idx), "src[#idx] = WRITE_VAL_#{typeAbbrev};\n"))
                              .toList()
                 ));
                 return scope(
                     // Sometimes we get one more load depending on the position of the range checks of the different stores.
-                    testCaseConstPlusOne.asToken("Const" + testName, 2 * config.copyLen - numStores, new TestTemplates(multiStoresConst, unstableTrap)),
+                    testCaseConst.asToken("Const" + testName, 2 * config.copyLen - numStores, new TestTemplates(multiStoresConst, unstableTrap)),
                     testCaseIdx.asToken("Idx" + testName, new TestTemplates(multiStoresIdx, unstableTrap)),
                     testCaseClone.asToken("Clone" + testName, config.copyLen, new TestTemplates(multiStoresClone, unstableTrap))
                 );
