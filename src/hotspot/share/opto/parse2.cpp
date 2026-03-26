@@ -127,33 +127,39 @@ void Parse::array_load(BasicType bt) {
           for (int i = 0; i < profile.morphism() || !not_flat_checked; ) {
             int count = i < profile.morphism() ? profile.receiver_count(i) : not_flat_count;
             if (not_flat_count >= count && !not_flat_checked) {
-              not_flat_checked = true;
-              Node* test = flat_array_test(array, /* flat = */ false);
-              float p = ((float)not_flat_count) / ((float)flat_and_not_flat_count);
-              float this_prob = clamp(p / prob, PROB_MIN, PROB_MAX);
-              IfNode* iff = create_and_xform_if(control(), test, this_prob, COUNT_UNKNOWN);
-              set_control(_gvn.transform(new IfTrueNode(iff)));
-              assert(array_type->is_flat() || control()->in(0)->as_If()->is_flat_array_check(&_gvn), "Should be found");
-              const TypeAryPtr* adr_type = TypeAryPtr::get_array_body_type(bt);
-              DecoratorSet decorator_set = IN_HEAP | IS_ARRAY | C2_CONTROL_DEPENDENT_LOAD;
-              if (needs_range_check(array_type->size(), array_index)) {
-                // We've emitted a RangeCheck but now insert an additional check between the range check and the actual load.
-                // We cannot pin the load to two separate nodes. Instead, we pin it conservatively here such that it cannot
-                // possibly float above the range check at any point.
-                decorator_set |= C2_UNKNOWN_CONTROL_LOAD;
+              if (not_flat_count == 0 && !too_many_traps_or_recompiles(Deoptimization::Reason_class_check)) {
+                inc_sp(2);
+                uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
+                dec_sp(2);
+              } else {
+                not_flat_checked = true;
+                Node* test = flat_array_test(array, /* flat = */ false);
+                float p = ((float)not_flat_count) / ((float)flat_and_not_flat_count);
+                float this_prob = clamp(p / prob, PROB_MIN, PROB_MAX);
+                IfNode* iff = create_and_xform_if(control(), test, this_prob, COUNT_UNKNOWN);
+                set_control(_gvn.transform(new IfTrueNode(iff)));
+                assert(array_type->is_flat() || control()->in(0)->as_If()->is_flat_array_check(&_gvn), "Should be found");
+                const TypeAryPtr* adr_type = TypeAryPtr::get_array_body_type(bt);
+                DecoratorSet decorator_set = IN_HEAP | IS_ARRAY | C2_CONTROL_DEPENDENT_LOAD;
+                if (needs_range_check(array_type->size(), array_index)) {
+                  // We've emitted a RangeCheck but now insert an additional check between the range check and the actual load.
+                  // We cannot pin the load to two separate nodes. Instead, we pin it conservatively here such that it cannot
+                  // possibly float above the range check at any point.
+                  decorator_set |= C2_UNKNOWN_CONTROL_LOAD;
+                }
+                Node* ld = access_load_at(array, adr, adr_type, element_ptr, bt, decorator_set);
+                if (element_ptr->is_inlinetypeptr()) {
+                  ld = InlineTypeNode::make_from_oop(this, ld, element_ptr->inline_klass());
+                }
+                res_phi->init_req(j, _gvn.transform(ld));
+                region->init_req(j, control());
+                io_phi->init_req(j, i_o());
+                set_control(_gvn.transform(new IfFalseNode(iff)));
+                mem_phi->init_req(j, reset_memory());
+                set_all_memory(mem);
+                set_i_o(io);
+                prob = 1 - p;
               }
-              Node* ld = access_load_at(array, adr, adr_type, element_ptr, bt, decorator_set);
-              if (element_ptr->is_inlinetypeptr()) {
-                ld = InlineTypeNode::make_from_oop(this, ld, element_ptr->inline_klass());
-              }
-              res_phi->init_req(j, _gvn.transform(ld));
-              region->init_req(j, control());
-              io_phi->init_req(j, i_o());
-              set_control(_gvn.transform(new IfFalseNode(iff)));
-              mem_phi->init_req(j, reset_memory());
-              set_all_memory(mem);
-              set_i_o(io);
-              prob = 1 - p;
             } else {
               inc_sp(2);
               float p = ((float)profile.receiver_count(i)) / ((float)flat_and_not_flat_count);
@@ -176,12 +182,14 @@ void Parse::array_load(BasicType bt) {
             }
             j++;
           }
-          Node* unknown_inline_type = load_from_unknown_flat_array(array, array_index, element_ptr);
+          if (!stop()) {
+            Node* unknown_inline_type = load_from_unknown_flat_array(array, array_index, element_ptr);
 
-          region->init_req(j, control());
-          res_phi->init_req(j, unknown_inline_type);
-          mem_phi->init_req(j, reset_memory());
-          io_phi->init_req(j, i_o());
+            region->init_req(j, control());
+            res_phi->init_req(j, unknown_inline_type);
+            mem_phi->init_req(j, reset_memory());
+            io_phi->init_req(j, i_o());
+          }
           set_control(_gvn.transform(region));
           set_all_memory(_gvn.transform(mem_phi));
           set_i_o(_gvn.transform(io_phi));
