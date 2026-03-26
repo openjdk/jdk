@@ -349,7 +349,7 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
   }
 
   // Note that generate_oop_map in the following loop is only used for the
-  // polling_page_vectors_safepoint_handler_blob.
+  // polling_page_vectors_safepoint_handler_blob and the deopt_blob.
   // The order in which the vector contents are stored depends on Endianess and
   // the utilized instructions (PowerArchitecturePPC64).
   assert(is_aligned(offset, StackAlignmentInBytes), "should be");
