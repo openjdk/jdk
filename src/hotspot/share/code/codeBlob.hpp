@@ -193,7 +193,6 @@ public:
   bool is_buffer_blob(bool strict=true) const                 { return (strict ? _kind == CodeBlobKind::Buffer : (_kind == CodeBlobKind::Buffer || _kind == CodeBlobKind::Adapter || _kind == CodeBlobKind::Vtable || _kind == CodeBlobKind::MHAdapter)); }
   bool is_runtime_stub() const                { return _kind == CodeBlobKind::RuntimeStub; }
   // singleton blobs are never directly implemented
-  bool is_singleton_blob() const              { return _kind == CodeBlobKind::Deoptimization || _kind == CodeBlobKind::Safepoint || _kind == CodeBlobKind::Exception || _kind == CodeBlobKind::UncommonTrap; }
   bool is_deoptimization_stub() const         { return _kind == CodeBlobKind::Deoptimization; }
 #ifdef COMPILER2
   bool is_uncommon_trap_stub() const          { return _kind == CodeBlobKind::UncommonTrap; }
@@ -203,6 +202,7 @@ public:
   bool is_exception_stub() const              { return false; }
 #endif
   bool is_safepoint_stub() const              { return _kind == CodeBlobKind::Safepoint; }
+  bool is_singleton_blob() const              { return  is_deoptimization_stub() || is_uncommon_trap_stub() || is_exception_stub() || is_safepoint_stub(); }
   bool is_adapter_blob() const                { return _kind == CodeBlobKind::Adapter; }
   bool is_vtable_blob() const                 { return _kind == CodeBlobKind::Vtable; }
   bool is_method_handles_adapter_blob() const { return _kind == CodeBlobKind::MHAdapter; }
