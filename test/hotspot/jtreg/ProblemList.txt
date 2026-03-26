@@ -78,10 +78,11 @@ compiler/floatingpoint/TestSubnormalDouble.java 8317810 generic-i586
 compiler/codecache/CodeCacheFullCountTest.java 8332954 generic-all
 
 compiler/interpreter/Test6833129.java 8335266 generic-i586
+compiler/intrinsics/TestReturnOopSetForJFRWriteCheckpoint.java 8286300 linux-s390x
 
 compiler/c2/aarch64/TestStaticCallStub.java 8359963 linux-aarch64,macosx-aarch64
 
-compiler/longcountedloops/TestLoopNestTooManyTraps.java 8376591 generic-all
+compiler/unsafe/AlignmentGapAccess.java 8373487 generic-all
 
 #############################################################################
 
@@ -96,9 +97,6 @@ gc/TestAllocHumongousFragment.java#g1 8298781 generic-all
 gc/TestAllocHumongousFragment.java#static 8298781 generic-all
 gc/shenandoah/oom/TestAllocOutOfMemory.java#large 8344312 linux-ppc64le
 gc/shenandoah/TestEvilSyncBug.java#generational 8345501 generic-all
-gc/shenandoah/TestRetainObjects.java#no-tlab 8361099 generic-all
-gc/shenandoah/TestSieveObjects.java#no-tlab 8361099 generic-all
-gc/shenandoah/TestSieveObjects.java#no-tlab-genshen 8361099 generic-all
 
 #############################################################################
 
@@ -116,11 +114,11 @@ runtime/StackGuardPages/TestStackGuardPagesNative.java 8303612 linux-all
 runtime/ErrorHandling/MachCodeFramesInErrorFile.java 8313315 linux-ppc64le
 runtime/NMT/VirtualAllocCommitMerge.java 8309698 linux-s390x
 
+applications/ctw/modules/jdk_jfr.java 8286300 linux-s390x
 applications/jcstress/copy.java 8229852 linux-all
 
-containers/docker/TestJcmd.java 8278102 linux-all
 containers/docker/TestJFREvents.java 8327723 linux-x64
-containers/docker/TestJcmdWithSideCar.java 8341518 linux-x64
+containers/docker/TestJcmdWithSideCar.java 8341518 linux-all
 
 #############################################################################
 
@@ -199,4 +197,3 @@ vmTestbase/nsk/monitoring/ThreadMXBean/findMonitorDeadlockedThreads/find006/Test
 # in either implementation or test code.
 
 #############################################################################
-

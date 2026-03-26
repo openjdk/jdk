@@ -27,22 +27,30 @@
 #include "runtime/vm_version.hpp"
 
 int VM_Version::get_current_sve_vector_length() {
-  assert(_features & CPU_SVE, "should not call this");
+  assert(VM_Version::supports_sve(), "should not call this");
   ShouldNotReachHere();
   return 0;
 }
 
 int VM_Version::set_and_get_current_sve_vector_length(int length) {
-  assert(_features & CPU_SVE, "should not call this");
+  assert(VM_Version::supports_sve(), "should not call this");
   ShouldNotReachHere();
   return 0;
 }
 
 void VM_Version::get_os_cpu_info() {
 
-  if (IsProcessorFeaturePresent(PF_ARM_V8_CRC32_INSTRUCTIONS_AVAILABLE))   _features |= CPU_CRC32;
-  if (IsProcessorFeaturePresent(PF_ARM_V8_CRYPTO_INSTRUCTIONS_AVAILABLE))  _features |= CPU_AES | CPU_SHA1 | CPU_SHA2;
-  if (IsProcessorFeaturePresent(PF_ARM_VFP_32_REGISTERS_AVAILABLE))        _features |= CPU_ASIMD;
+  if (IsProcessorFeaturePresent(PF_ARM_V8_CRC32_INSTRUCTIONS_AVAILABLE)) {
+    set_feature(CPU_CRC32);
+  }
+  if (IsProcessorFeaturePresent(PF_ARM_V8_CRYPTO_INSTRUCTIONS_AVAILABLE)) {
+    set_feature(CPU_AES);
+    set_feature(CPU_SHA1);
+    set_feature(CPU_SHA2);
+  }
+  if (IsProcessorFeaturePresent(PF_ARM_VFP_32_REGISTERS_AVAILABLE)) {
+    set_feature(CPU_ASIMD);
+  }
   // No check for CPU_PMULL, CPU_SVE, CPU_SVE2
 
   __int64 dczid_el0 = _ReadStatusReg(0x5807 /* ARM64_DCZID_EL0 */);

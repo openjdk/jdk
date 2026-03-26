@@ -351,8 +351,7 @@ class MacroAssembler: public Assembler {
   void load_klass(Register dst, Register src, Register tmp);
   void store_klass(Register dst, Register src, Register tmp);
 
-  // Compares the Klass pointer of an object to a given Klass (which might be narrow,
-  // depending on UseCompressedClassPointers).
+  // Compares the narrow Klass pointer of an object to a given narrow Klass.
   void cmp_klass(Register klass, Register obj, Register tmp);
 
   // Compares the Klass pointer of two objects obj1 and obj2. Result is in the condition flags.
@@ -1869,6 +1868,9 @@ public:
   void mov_metadata(Register dst, Metadata* obj);
   void mov_metadata(Address  dst, Metadata* obj, Register rscratch);
 
+  void mov64(Register dst, int64_t imm64);
+  void mov64(Register dst, int64_t imm64, relocInfo::relocType rtype, int format);
+
   void movptr(Register     dst, Register       src);
   void movptr(Register     dst, Address        src);
   void movptr(Register     dst, AddressLiteral src);
@@ -2070,6 +2072,7 @@ public:
 
   void save_legacy_gprs();
   void restore_legacy_gprs();
+  void load_aotrc_address(Register reg, address a);
   void setcc(Assembler::Condition comparison, Register dst);
 };
 

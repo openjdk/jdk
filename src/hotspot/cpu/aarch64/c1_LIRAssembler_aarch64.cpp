@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,6 +33,7 @@
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciArrayKlass.hpp"
 #include "ci/ciInstance.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -56,22 +57,6 @@ const Register SYNC_header = r0;   // synchronization header
 const Register SHIFT_count = r0;   // where count for shift operations must be
 
 #define __ _masm->
-
-
-static void select_different_registers(Register preserve,
-                                       Register extra,
-                                       Register &tmp1,
-                                       Register &tmp2) {
-  if (tmp1 == preserve) {
-    assert_different_registers(tmp1, tmp2, extra);
-    tmp1 = extra;
-  } else if (tmp2 == preserve) {
-    assert_different_registers(tmp1, tmp2, extra);
-    tmp2 = extra;
-  }
-  assert_different_registers(preserve, tmp1, tmp2);
-}
-
 
 
 static void select_different_registers(Register preserve,
@@ -532,6 +517,15 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
 
     case T_LONG: {
       assert(patch_code == lir_patch_none, "no patching handled here");
+#if INCLUDE_CDS
+      if (AOTCodeCache::is_on_for_dump()) {
+        address b = c->as_pointer();
+        if (AOTRuntimeConstants::contains(b)) {
+          __ load_aotrc_address(dest->as_register_lo(), b);
+          break;
+        }
+      }
+#endif
       __ mov(dest->as_register_lo(), (intptr_t)c->as_jlong());
       break;
     }
@@ -1259,12 +1253,9 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   } else if (obj == klass_RInfo) {
     klass_RInfo = dst;
   }
-  if (k->is_loaded() && !UseCompressedClassPointers) {
-    select_different_registers(obj, dst, k_RInfo, klass_RInfo);
-  } else {
-    Rtmp1 = op->tmp3()->as_register();
-    select_different_registers(obj, dst, k_RInfo, klass_RInfo, Rtmp1);
-  }
+
+  Rtmp1 = op->tmp3()->as_register();
+  select_different_registers(obj, dst, k_RInfo, klass_RInfo, Rtmp1);
 
   assert_different_registers(obj, k_RInfo, klass_RInfo);
 

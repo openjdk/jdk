@@ -24,7 +24,7 @@
 package compiler.lib.ir_framework;
 
 import compiler.lib.ir_framework.driver.irmatching.mapping.*;
-import compiler.lib.ir_framework.driver.irmatching.parser.VMInfo;
+import compiler.lib.ir_framework.driver.network.testvm.java.VMInfo;
 import compiler.lib.ir_framework.shared.CheckedTestFrameworkException;
 import compiler.lib.ir_framework.shared.TestFormat;
 import compiler.lib.ir_framework.shared.TestFormatException;
@@ -117,13 +117,14 @@ public class IRNode {
     public static final String VECTOR_SIZE_32  = VECTOR_SIZE + "32";
     public static final String VECTOR_SIZE_64  = VECTOR_SIZE + "64";
 
-    private static final String TYPE_BYTE   = "B";
-    private static final String TYPE_CHAR   = "C";
-    private static final String TYPE_SHORT  = "S";
-    private static final String TYPE_INT    = "I";
-    private static final String TYPE_LONG   = "J";
-    private static final String TYPE_FLOAT  = "F";
-    private static final String TYPE_DOUBLE = "D";
+    private static final String TYPE_BYTE    = "B";
+    private static final String TYPE_CHAR    = "C";
+    private static final String TYPE_SHORT   = "S";
+    private static final String TYPE_INT     = "I";
+    private static final String TYPE_LONG    = "J";
+    private static final String TYPE_FLOAT   = "F";
+    private static final String TYPE_DOUBLE  = "D";
+    private static final String TYPE_BOOLEAN = "Z";
 
     /**
      * IR placeholder string to regex-for-compile-phase map.
@@ -1110,6 +1111,11 @@ public class IRNode {
         vectorNode(LOAD_VECTOR_D, "LoadVector", TYPE_DOUBLE);
     }
 
+    public static final String LOAD_VECTOR_Z = VECTOR_PREFIX + "LOAD_VECTOR_Z" + POSTFIX;
+    static {
+        vectorNode(LOAD_VECTOR_Z, "LoadVector", TYPE_BOOLEAN);
+    }
+
     public static final String LOAD_VECTOR_GATHER = PREFIX + "LOAD_VECTOR_GATHER" + POSTFIX;
     static {
         beforeMatchingNameRegex(LOAD_VECTOR_GATHER, "LoadVectorGather");
@@ -1486,6 +1492,12 @@ public class IRNode {
     public static final String VECTOR_MASK_FIRST_TRUE = PREFIX + "VECTOR_MASK_FIRST_TRUE" + POSTFIX;
     static {
         beforeMatchingNameRegex(VECTOR_MASK_FIRST_TRUE, "VectorMaskFirstTrue");
+    }
+
+    // Can only be used if libjsvml or libsleef is available
+    public static final String CALL_LEAF_VECTOR = PREFIX + "CALL_LEAF_VECTOR" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CALL_LEAF_VECTOR, "CallLeafVector");
     }
 
     // Can only be used if avx512_vnni is available.
@@ -3122,6 +3134,12 @@ public class IRNode {
         macroNodes(MOD_D, regex);
     }
 
+    public static final String POW_D = PREFIX + "POW_D" + POSTFIX;
+    static {
+        String regex = START + "PowD" + MID + END;
+        macroNodes(POW_D, regex);
+    }
+
     public static final String BLACKHOLE = PREFIX + "BLACKHOLE" + POSTFIX;
     static {
         fromBeforeRemoveUselessToFinalCode(BLACKHOLE, "Blackhole");
@@ -3506,11 +3524,11 @@ public class IRNode {
      */
     public static int getTypeSizeInBytes(String typeString) {
         return switch (typeString) {
-            case TYPE_BYTE              -> 1;
-            case TYPE_CHAR, TYPE_SHORT  -> 2;
-            case TYPE_INT, TYPE_FLOAT   -> 4;
-            case TYPE_LONG, TYPE_DOUBLE -> 8;
-            default                     -> 0;
+            case TYPE_BYTE, TYPE_BOOLEAN -> 1;
+            case TYPE_CHAR, TYPE_SHORT   -> 2;
+            case TYPE_INT, TYPE_FLOAT    -> 4;
+            case TYPE_LONG, TYPE_DOUBLE  -> 8;
+            default                      -> 0;
         };
     }
 
