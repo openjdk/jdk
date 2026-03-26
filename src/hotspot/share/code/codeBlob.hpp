@@ -97,7 +97,9 @@ enum class CodeBlobKind : u1 {
 class UpcallStub;      // for as_upcall_stub()
 class RuntimeStub;     // for as_runtime_stub()
 class JavaFrameAnchor; // for UpcallStub::jfa_for_frame
+class BufferBlob;
 class AdapterBlob;
+class SingletonBlob;
 class ExceptionBlob;
 class DeoptimizationBlob;
 class SafepointBlob;
@@ -187,8 +189,11 @@ public:
 
   // Typing
   bool is_nmethod() const                     { return _kind == CodeBlobKind::Nmethod; }
-  bool is_buffer_blob() const                 { return _kind == CodeBlobKind::Buffer; }
+  // we may want to check for an actual buffer blob or subtype instance
+  bool is_buffer_blob(bool strict=true) const                 { return (strict ? _kind == CodeBlobKind::Buffer : (_kind == CodeBlobKind::Buffer || _kind == CodeBlobKind::Adapter || _kind == CodeBlobKind::Vtable || _kind == CodeBlobKind::MHAdapter)); }
   bool is_runtime_stub() const                { return _kind == CodeBlobKind::RuntimeStub; }
+  // singleton blobs are never directly implemented
+  bool is_singleton_blob() const              { return _kind == CodeBlobKind::Deoptimization || _kind == CodeBlobKind::Safepoint || _kind == CodeBlobKind::Exception || _kind == CodeBlobKind::UncommonTrap; }
   bool is_deoptimization_stub() const         { return _kind == CodeBlobKind::Deoptimization; }
 #ifdef COMPILER2
   bool is_uncommon_trap_stub() const          { return _kind == CodeBlobKind::UncommonTrap; }
@@ -207,8 +212,12 @@ public:
   nmethod* as_nmethod_or_null() const         { return is_nmethod() ? (nmethod*) this : nullptr; }
   nmethod* as_nmethod() const                 { assert(is_nmethod(), "must be nmethod"); return (nmethod*) this; }
   CodeBlob* as_codeblob() const               { return (CodeBlob*) this; }
+  // we may want to force an actual buffer blob or subtype instance
+  BufferBlob* as_buffer_blob(bool strict = true) const { assert(is_buffer_blob(), "must be %sbuffer blob", (strict ? "strict " : "")); return (BufferBlob*) this; }
   AdapterBlob* as_adapter_blob() const        { assert(is_adapter_blob(), "must be adapter blob"); return (AdapterBlob*) this; }
   ExceptionBlob* as_exception_blob() const    { assert(is_exception_stub(), "must be exception stub"); return (ExceptionBlob*) this; }
+  // this will always return a subtype instance
+  SingletonBlob* as_singleton_blob() const { assert(is_singleton_blob(), "must be singleton blob"); return (SingletonBlob*) this; }
   DeoptimizationBlob* as_deoptimization_blob() const { assert(is_deoptimization_stub(), "must be deopt stub"); return (DeoptimizationBlob*) this; }
   SafepointBlob* as_safepoint_blob() const    { assert(is_safepoint_stub(), "must be safepoint stub"); return (SafepointBlob*) this; }
   UpcallStub* as_upcall_stub() const          { assert(is_upcall_stub(), "must be upcall stub"); return (UpcallStub*) this; }
@@ -388,10 +397,10 @@ class BufferBlob: public RuntimeBlob {
 
   class Vptr : public RuntimeBlob::Vptr {
     void print_on(const CodeBlob* instance, outputStream* st) const override {
-      ((const BufferBlob*)instance)->print_on_impl(st);
+      instance->as_buffer_blob(false)->print_on_impl(st);
     }
     void print_value_on(const CodeBlob* instance, outputStream* st) const override {
-      ((const BufferBlob*)instance)->print_value_on_impl(st);
+      instance->as_buffer_blob(false)->print_value_on_impl(st);
     }
   };
 
@@ -539,10 +548,10 @@ class SingletonBlob: public RuntimeBlob {
 
   class Vptr : public RuntimeBlob::Vptr {
     void print_on(const CodeBlob* instance, outputStream* st) const override {
-      ((const SingletonBlob*)instance)->print_on_impl(st);
+      instance->as_singleton_blob()->print_on_impl(st);
     }
     void print_value_on(const CodeBlob* instance, outputStream* st) const override {
-      ((const SingletonBlob*)instance)->print_value_on_impl(st);
+      instance->as_singleton_blob()->print_value_on_impl(st);
     }
   };
 
@@ -630,11 +639,11 @@ class DeoptimizationBlob: public SingletonBlob {
 
   class Vptr : public SingletonBlob::Vptr {
     void post_restore(CodeBlob* instance) const override {
-      ((DeoptimizationBlob*)instance)->post_restore_impl();
+      instance->as_deoptimization_blob()->post_restore_impl();
     }
 
-   void print_value_on(const CodeBlob* instance, outputStream* st) const override {
-      ((const DeoptimizationBlob*)instance)->print_value_on_impl(st);
+    void print_value_on(const CodeBlob* instance, outputStream* st) const override {
+      instance->as_deoptimization_blob()->print_value_on_impl(st);
     }
   };
 
@@ -669,7 +678,7 @@ class UncommonTrapBlob: public SingletonBlob {
   }
   class Vptr : public SingletonBlob::Vptr {
     void post_restore(CodeBlob* instance) const override {
-      ((UncommonTrapBlob*)instance)->post_restore_impl();
+      instance->as_uncommon_trap_blob()->post_restore_impl();
     }
   };
 
@@ -704,7 +713,7 @@ class ExceptionBlob: public SingletonBlob {
 
   class Vptr : public SingletonBlob::Vptr {
     void post_restore(CodeBlob* instance) const override {
-      ((ExceptionBlob*)instance)->post_restore_impl();
+      instance->as_exception_blob()->post_restore_impl();
     }
   };
 
@@ -740,7 +749,7 @@ class SafepointBlob: public SingletonBlob {
   }
   class Vptr : public SingletonBlob::Vptr {
     void post_restore(CodeBlob* instance) const override {
-      ((SafepointBlob*)instance)->post_restore_impl();
+      instance->as_safepoint_blob()->post_restore_impl();
     }
   };
 
