@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ public class BasicFloat16ArithTests {
     private static float NaNf = Float.NaN;
 
     private static final float MAX_VAL_FP16 = 0x1.ffcp15f;
+    private static final float MIN_NRM_FP16 = 0x1.0p-14f;
     private static final float MIN_VAL_FP16 = 0x1.0p-24f;
 
     public static void main(String... args) {
@@ -147,7 +148,7 @@ public class BasicFloat16ArithTests {
         checkInt(SIZE,          16, "Float16.SIZE");
 
         checkFloat16(MIN_VALUE,  MIN_VAL_FP16, "Float16.MIN_VALUE");
-        checkFloat16(MIN_NORMAL, 0x1.0p-14f,   "Float16.MIN_NORMAL");
+        checkFloat16(MIN_NORMAL, MIN_NRM_FP16, "Float16.MIN_NORMAL");
         checkFloat16(MAX_VALUE,  65504.0f,     "Float16.MAX_VALUE");
 
         checkFloat16(POSITIVE_INFINITY,   InfinityF,  "+infinity");
@@ -392,10 +393,10 @@ public class BasicFloat16ArithTests {
             // Subnormal and almost subnormal values
             {-0.0f,         MIN_EXPONENT - 1},
             {+0.0f,         MIN_EXPONENT - 1},
-            { MIN_VAL_FP16, MIN_EXPONENT - 1}, // Float16.MIN_VALUE
-            {-MIN_VAL_FP16, MIN_EXPONENT - 1}, // Float16.MIN_VALUE
-            { 0x1.0p-14f,   MIN_EXPONENT},     // Float16.MIN_NORMAL
-            {-0x1.0p-14f,   MIN_EXPONENT},     // Float16.MIN_NORMAL
+            { MIN_VAL_FP16, MIN_EXPONENT - 1},
+            {-MIN_VAL_FP16, MIN_EXPONENT - 1},
+            { MIN_NRM_FP16, MIN_EXPONENT},
+            {-MIN_NRM_FP16, MIN_EXPONENT},
 
             // Normal values
             { 1.0f,       0},
@@ -429,8 +430,8 @@ public class BasicFloat16ArithTests {
             {+0.0f,         MIN_VAL_FP16},
             { MIN_VAL_FP16, MIN_VAL_FP16},
             {-MIN_VAL_FP16, MIN_VAL_FP16},
-            { 0x1.0p-14f,   MIN_VAL_FP16},
-            {-0x1.0p-14f,   MIN_VAL_FP16},
+            { MIN_NRM_FP16, MIN_VAL_FP16},
+            {-MIN_NRM_FP16, MIN_VAL_FP16},
 
             // ulp is (PRECISION - 1) = 10 bits away
             {0x1.0p0f,       0x1.0p-10f}, // 1.0f
@@ -793,7 +794,7 @@ public class BasicFloat16ArithTests {
                 // threshold; subtracting a non-zero finite value will
                 // result in MAX_VALUE, adding zero or a positive
                 // value will overflow.
-                {0x1.2p10f, 0x1.c7p5f, -0x1.0p-14f,
+                {0x1.2p10f, 0x1.c7p5f, -MIN_NRM_FP16,
                  MAX_VAL_FP16},
 
                 {0x1.2p10f, 0x1.c7p5f, -0.0f,
@@ -802,7 +803,7 @@ public class BasicFloat16ArithTests {
                 {0x1.2p10f, 0x1.c7p5f, +0.0f,
                  InfinityF},
 
-                {0x1.2p10f, 0x1.c7p5f, +0x1.0p-14f,
+                {0x1.2p10f, 0x1.c7p5f, +MIN_NRM_FP16,
                  InfinityF},
 
                 {0x1.2p10f, 0x1.c7p5f, InfinityF,
