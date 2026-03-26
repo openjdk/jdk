@@ -717,7 +717,7 @@ bool ArrayCopyNode::may_modify_helper(const TypeOopPtr* t_oop, Node* n, PhaseVal
 }
 
 bool ArrayCopyNode::may_modify(const TypeOopPtr* t_oop, MemBarNode* mb, PhaseValues* phase, ArrayCopyNode*& ac) {
-  if (mb->trailing_expanded_array_copy()) {
+  if (mb->trailing_array_copy()) {
     return true;
   }
 

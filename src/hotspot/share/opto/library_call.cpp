@@ -5187,9 +5187,10 @@ void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, b
     // escape analysis can go from the MemBarStoreStoreNode to the
     // AllocateNode and eliminate the MemBarStoreStoreNode if possible
     // based on the escape status of the AllocateNode.
-    insert_mem_bar(Op_MemBarStoreStore, alloc->proj_out_or_null(AllocateNode::RawAddress));
+    insert_mem_bar(Op_MemBarStoreStore, alloc->proj_out_or_null(AllocateNode::RawAddress))
+      ->as_MemBar()->set_trailing_array_copy();
   } else {
-    insert_mem_bar(Op_MemBarCPUOrder);
+    insert_mem_bar(Op_MemBarCPUOrder)->as_MemBar()->set_trailing_array_copy();
   }
 }
 
