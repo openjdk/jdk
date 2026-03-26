@@ -22,9 +22,7 @@
  *
  */
 
-#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorState.inline.hpp"
-#include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "runtime/safepoint.hpp"
 
 G1CollectorState::Pause G1CollectorState::gc_pause_type(bool concurrent_operation_is_full_mark) const {
