@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,23 +36,26 @@ import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import jdk.jpackage.test.JUnitUtils.ExceptionPattern;
+import java.util.Objects;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.cli.Validator.ValidatingConsumerException;
+import jdk.jpackage.internal.util.FileUtils;
+import jdk.jpackage.test.JUnitUtils.ExceptionPattern;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-public class StandardValidatorTest {
+class StandardValidatorTest {
 
     @Test
-    public void test_IS_DIRECTORY(@TempDir Path tempDir) throws IOException {
+    void test_IS_DIRECTORY(@TempDir Path tempDir) throws IOException {
 
         final var testee = StandardValidator.IS_DIRECTORY;
 
@@ -69,7 +72,7 @@ public class StandardValidatorTest {
     }
 
     @Test
-    public void test_IS_FILE_OR_SYMLINK(@TempDir Path tempDir) throws IOException {
+    void test_IS_FILE_OR_SYMLINK(@TempDir Path tempDir) throws IOException {
 
         final var testee = StandardValidator.IS_FILE_OR_SYMLINK;
 
@@ -87,7 +90,7 @@ public class StandardValidatorTest {
 
     @Test
     @DisabledOnOs(OS.WINDOWS)
-    public void test_IS_FILE_OR_SYMLINK_symlink_file(@TempDir Path tempDir) throws IOException {
+    void test_IS_FILE_OR_SYMLINK_symlink_file(@TempDir Path tempDir) throws IOException {
 
         final var file = tempDir.resolve("foo");
         Files.writeString(file, "foo");
@@ -99,7 +102,7 @@ public class StandardValidatorTest {
 
     @Test
     @DisabledOnOs(OS.WINDOWS)
-    public void test_IS_FILE_OR_SYMLINK_symlink_dir(@TempDir Path tempDir) throws IOException {
+    void test_IS_FILE_OR_SYMLINK_symlink_dir(@TempDir Path tempDir) throws IOException {
 
         final var symlink = Files.createSymbolicLink(tempDir.resolve("foo-symlink"), tempDir);
 
@@ -108,7 +111,7 @@ public class StandardValidatorTest {
 
     @Test
     @DisabledOnOs(OS.WINDOWS)
-    public void test_IS_FILE_OR_SYMLINK_symlink_invalid(@TempDir Path tempDir) throws IOException {
+    void test_IS_FILE_OR_SYMLINK_symlink_invalid(@TempDir Path tempDir) throws IOException {
 
         final var symlink = Files.createSymbolicLink(tempDir.resolve("foo-symlink"), tempDir.resolve("foo"));
 
@@ -116,7 +119,7 @@ public class StandardValidatorTest {
     }
 
     @Test
-    public void test_IS_DIRECTORY_OR_NON_EXISTENT(@TempDir Path tempDir) throws IOException {
+    void test_IS_DIRECTORY_OR_NON_EXISTENT(@TempDir Path tempDir) throws IOException {
 
         final var testee = StandardValidator.IS_DIRECTORY_OR_NON_EXISTENT;
 
@@ -133,7 +136,7 @@ public class StandardValidatorTest {
     }
 
     @Test
-    public void test_IS_DIRECTORY_EMPTY_OR_NON_EXISTENT(@TempDir Path tempDir) throws IOException {
+    void test_IS_DIRECTORY_EMPTY_OR_NON_EXISTENT(@TempDir Path tempDir) throws IOException {
 
         final var testee = StandardValidator.IS_DIRECTORY_EMPTY_OR_NON_EXISTENT;
 
@@ -153,7 +156,7 @@ public class StandardValidatorTest {
     }
 
     @Test
-    public void test_IS_URL() {
+    void test_IS_URL() {
 
         final var testee = StandardValidator.IS_URL;
 
@@ -168,7 +171,7 @@ public class StandardValidatorTest {
 
     @ParameterizedTest
     @MethodSource
-    public void test_IS_NAME_VALID_valid(String name) {
+    void test_IS_NAME_VALID_valid(String name) {
 
         final var testee = StandardValidator.IS_NAME_VALID;
 
@@ -177,7 +180,7 @@ public class StandardValidatorTest {
 
     @ParameterizedTest
     @MethodSource
-    public void test_IS_NAME_VALID_invalid(String name) {
+    void test_IS_NAME_VALID_invalid(String name) {
 
         final var testee = StandardValidator.IS_NAME_VALID;
 
@@ -185,7 +188,7 @@ public class StandardValidatorTest {
     }
 
     @Test
-    public void test_IS_NAME_VALID_null() {
+    void test_IS_NAME_VALID_null() {
 
         final var testee = StandardValidator.IS_NAME_VALID;
 
@@ -194,7 +197,7 @@ public class StandardValidatorTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"Foo", "1", "public"})
-    public void test_IS_CLASSNAME_valid(String classname) {
+    void test_IS_CLASSNAME_valid(String classname) {
 
         final var testee = StandardValidator.IS_CLASSNAME;
 
@@ -203,7 +206,7 @@ public class StandardValidatorTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"", "a/b"})
-    public void test_IS_CLASSNAME_invalid(String classname) {
+    void test_IS_CLASSNAME_invalid(String classname) {
 
         final var testee = StandardValidator.IS_CLASSNAME;
 
@@ -213,11 +216,46 @@ public class StandardValidatorTest {
     }
 
     @Test
-    public void test_IS_CLASSNAME_null() {
+    void test_IS_CLASSNAME_null() {
 
         final var testee = StandardValidator.IS_CLASSNAME;
 
         assertThrowsExactly(NullPointerException.class, () -> testee.accept(null));
+    }
+
+    @Test
+    void test_IS_MAC_BUNDLE_valid(@TempDir Path workDir) throws IOException {
+
+        final var testee = StandardValidator.IS_MAC_BUNDLE;
+
+        for (var component : MacBundleComponent.values()) {
+            component.create(workDir);
+        }
+
+        assertTrue(testee.test(workDir));
+    }
+
+    @ParameterizedTest
+    @EnumSource(MacBundleComponent.class)
+    void test_IS_MAC_BUNDLE_invalid(MacBundleComponent missing, @TempDir Path workDir) throws IOException {
+
+        final var testee = StandardValidator.IS_MAC_BUNDLE;
+
+        for (var component : MacBundleComponent.values()) {
+            component.create(workDir);
+        }
+
+        FileUtils.deleteRecursive(workDir.resolve(missing.path()));
+
+        assertFalse(testee.test(workDir));
+    }
+
+    @Test
+    void test_IS_MAC_BUNDLE_null() {
+
+        final var testee = StandardValidator.IS_MAC_BUNDLE;
+
+        assertThrowsExactly(NullPointerException.class, () -> testee.test(null));
     }
 
     private static Stream<Arguments> test_IS_NAME_VALID_valid() {
@@ -255,5 +293,36 @@ public class StandardValidatorTest {
         }
 
         return data.stream().map(Arguments::of);
+    }
+
+    enum MacBundleComponent {
+        CONTENTS_DIR("Contents"),
+        MACOS_DIR("Contents/MacOS"),
+        INFO_PLIST("Contents/Info.plist"),
+        ;
+
+        MacBundleComponent(String path) {
+            this.path = Path.of(Objects.requireNonNull(path));
+        }
+
+        Path path() {
+            return path;
+        }
+
+        boolean isDirectory() {
+            return name().endsWith("_DIR");
+        }
+
+        void create(Path root) throws IOException {
+            var fullPath = root.resolve(path);
+            if (isDirectory()) {
+                Files.createDirectories(fullPath);
+            } else {
+                Files.createDirectories(fullPath.getParent());
+                Files.createFile(fullPath);
+            }
+        }
+
+        private final Path path;
     }
 }

@@ -140,7 +140,7 @@ public final class StandardValidator {
         return true;
     };
 
-    public static Predicate<Path> IS_VALID_MAC_BUNDLE = path -> {
+    public static Predicate<Path> IS_MAC_BUNDLE = path -> {
         return MacBundle.fromPath(path).isPresent();
     };
 
