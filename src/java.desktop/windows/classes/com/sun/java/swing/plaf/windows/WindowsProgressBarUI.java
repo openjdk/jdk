@@ -148,9 +148,7 @@ public class WindowsProgressBarUI extends BasicProgressBarUI
                 barRectWidth = (int) Math.ceil(progressBar.getWidth() * scaleX);
                 barRectHeight = (int) Math.ceil(progressBar.getHeight() * scaleY);
             } else {
-                int dpi = java.awt.Toolkit.getDefaultToolkit().getScreenResolution();
-                scaleX = (double) dpi / 96.0;
-                scaleY = (double) dpi / 96.0;
+                scaleX = scaleY = 1.0;
                 barRectWidth = (int) Math.ceil(progressBar.getWidth() * scaleX);
                 barRectHeight = (int) Math.ceil(progressBar.getHeight() * scaleY);
             }
