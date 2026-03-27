@@ -54,6 +54,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -1614,12 +1615,15 @@ class Http2Connection implements Closeable {
     // There can be no concurrent access to this  buffer as all access to this buffer
     // and its content happen within a single critical code block section protected
     // by the sendLock. / (see sendFrame())
-    // private final ByteBufferPool headerEncodingPool = new ByteBufferPool();
+    private ByteBuffer cachedHeaderBuffer;
 
     private ByteBuffer getHeaderBuffer(int size) {
-        ByteBuffer buf = ByteBuffer.allocate(size);
-        buf.limit(size);
-        return buf;
+        if (cachedHeaderBuffer == null || cachedHeaderBuffer.capacity() < size) {
+            cachedHeaderBuffer = ByteBuffer.allocate(size);
+        }
+        cachedHeaderBuffer.clear();
+        cachedHeaderBuffer.limit(size);
+        return cachedHeaderBuffer;
     }
 
     /*
@@ -1634,8 +1638,16 @@ class Http2Connection implements Closeable {
      *     encoding in HTTP/2...
      */
     private List<ByteBuffer> encodeHeadersImpl(int bufferSize, HttpHeaders... headers) {
-        ByteBuffer buffer = getHeaderBuffer(bufferSize);
         List<ByteBuffer> buffers = new ArrayList<>();
+        Consumer<ByteBuffer> captureAndAddToBuffers = (this_buffer) -> {
+            this_buffer.flip();
+            ByteBuffer copy = ByteBuffer.allocate(this_buffer.remaining());
+            copy.put(this_buffer);
+            copy.flip();
+            buffers.add(copy);
+        };
+
+        ByteBuffer buffer = getHeaderBuffer(bufferSize);
         for (HttpHeaders header : headers) {
             for (Map.Entry<String, List<String>> e : header.map().entrySet()) {
                 String lKey = e.getKey().toLowerCase(Locale.US);
@@ -1644,16 +1656,15 @@ class Http2Connection implements Closeable {
                     hpackOut.header(lKey, value);
                     while (!hpackOut.encode(buffer)) {
                         if (!buffer.hasRemaining()) {
-                            buffer.flip();
-                            buffers.add(buffer);
-                            buffer = getHeaderBuffer(bufferSize);
+                            captureAndAddToBuffers.accept(buffer);
+                            buffer.clear();
+                            buffer.limit(bufferSize);
                         }
                     }
                 }
             }
         }
-        buffer.flip();
-        buffers.add(buffer);
+        captureAndAddToBuffers.accept(buffer);
         return buffers;
     }
 
