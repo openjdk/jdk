@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -469,8 +469,14 @@ public class ThreadDumper {
                 writer.print("\"" + name + "\": ");
             }
             switch (obj) {
-                // Long may be larger than safe range of JSON integer value
-                case Long   _  -> writer.print("\"" + obj + "\"");
+                case Long value -> {
+                    // write as string for interop when outside +/- 2^53−1
+                    if (value < -0x1FFFFFFFFFFFFFL || value > 0x1FFFFFFFFFFFFFL) {
+                        writer.print("\"" + value + "\"");
+                    } else {
+                        writer.print(value);
+                    }
+                }
                 case Number _  -> writer.print(obj);
                 case Boolean _ -> writer.print(obj);
                 case null      -> writer.print("null");

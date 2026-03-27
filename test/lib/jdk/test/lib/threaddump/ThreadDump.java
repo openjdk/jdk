@@ -132,17 +132,14 @@ public final class ThreadDump {
     }
 
     /**
-     * Assert that a JSONValue is a JSONString and parse the string as an int.
+     * Convert the given JSON value (number or string) to a long.
      */
-    private static int parseStringAsInt(JSONValue valueObj) {
-        return Integer.parseInt(valueObj.asString());
-    }
-
-    /**
-     * Assert that a JSONValue is a JSONString and parse the string as a long.
-     */
-    private static long parseStringAsLong(JSONValue valueObj) {
-        return Long.parseLong(valueObj.asString());
+    private static long toLong(JSONValue value) {
+        return switch (value) {
+            case JSONValue.JSONNumber _ -> value.asLong();
+            case JSONValue.JSONString _ -> Long.parseLong(value.asString());
+            default -> throw new RuntimeException("Not number or string");
+        };
     }
 
     /**
@@ -178,9 +175,9 @@ public final class ThreadDump {
          * Return the thread identifier of the owner or empty OptionalLong if not owned.
          */
         public OptionalLong owner() {
-            return containerObj.get("owner")  // string or null
+            return containerObj.get("owner")  // number or string or null
                     .valueOrNull()
-                    .map(v -> OptionalLong.of(parseStringAsLong(v)))
+                    .map(v -> OptionalLong.of(toLong(v)))
                     .orElse(OptionalLong.empty());
         }
 
@@ -245,7 +242,7 @@ public final class ThreadDump {
         private final JSONValue threadObj;
 
         ThreadInfo(JSONValue threadObj) {
-            this.tid = parseStringAsLong(threadObj.get("tid"));
+            this.tid = toLong(threadObj.get("tid"));
             this.threadObj = threadObj;
         }
 
@@ -293,7 +290,7 @@ public final class ThreadDump {
          */
         public OptionalLong parkBlockerOwner() {
             return threadObj.getOrAbsent("parkBlocker")
-                    .map(v -> OptionalLong.of(parseStringAsLong(v.get("owner"))))
+                    .map(v -> OptionalLong.of(toLong(v.get("owner"))))
                     .orElse(OptionalLong.empty());
         }
 
@@ -334,7 +331,7 @@ public final class ThreadDump {
                     .map(JSONValue::elements)
                     .orElse(List.of())
                     .forEach(e -> {
-                        int depth = parseStringAsInt(e.get("depth"));
+                        int depth = e.get("depth").asInt();
                         List<String> locks = e.get("locks")
                                 .elements()
                                 .stream()
@@ -354,7 +351,7 @@ public final class ThreadDump {
          */
         public OptionalLong carrier() {
             return threadObj.getOrAbsent("carrier")
-                    .map(s -> OptionalLong.of(parseStringAsLong(s)))
+                    .map(v -> OptionalLong.of(toLong(v)))
                     .orElse(OptionalLong.empty());
         }
 
@@ -389,7 +386,7 @@ public final class ThreadDump {
      * Returns the value of threadDump/processId.
      */
     public long processId() {
-        return parseStringAsLong(threadDumpObj.get("processId"));
+        return toLong(threadDumpObj.get("processId"));
     }
 
     /**
