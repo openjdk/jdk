@@ -98,8 +98,9 @@ public class ML_DSA_Test {
                 continue; // Not supported
             }
             for (var c : t.get("tests").elements()) {
-                var cstr = c.getOrAbsent("context").orElse(null);
-                var ctxt = cstr == null ? new byte[0] : toByteArray(cstr.asString());
+                var ctxt =  c.getOrAbsent("context")
+                        .map(v -> toByteArray(v.asString()))
+                        .orElse(new byte[0]);
                 var hashAlg = c.get("hashAlg").asString();
                 if (!hashAlg.equals("none") || ctxt.length != 0) {
                     continue; // Not supported
@@ -144,8 +145,9 @@ public class ML_DSA_Test {
             }
 
             for (var c : t.get("tests").elements()) {
-                var cstr = c.getOrAbsent("context").orElse(null);
-                var ctxt = cstr == null ? new byte[0] : toByteArray(cstr.asString());
+                var ctxt =  c.getOrAbsent("context")
+                        .map(v -> toByteArray(v.asString()))
+                        .orElse(new byte[0]);
                 var hashAlg = c.get("hashAlg").asString();
                 if (!hashAlg.equals("none") || ctxt.length != 0) {
                     continue; // Not supported
