@@ -430,10 +430,10 @@ public class Utilities {
     public static String expectedNegoAppProtocol(String[] serverAppProtocols,
             String[] clientAppProtocols) {
         if (serverAppProtocols != null && clientAppProtocols != null) {
-            for(String clientAppProtocol : clientAppProtocols) {
-                for(String serverAppProtocol : serverAppProtocols) {
-                    if (clientAppProtocol.equals(serverAppProtocol)) {
-                        return clientAppProtocol;
+            for(String serverAppProtocol : serverAppProtocols) {
+                for(String clientAppProtocol : clientAppProtocols) {
+                    if (serverAppProtocol.equals(clientAppProtocol)) {
+                        return serverAppProtocol;
                     }
                 }
             }
