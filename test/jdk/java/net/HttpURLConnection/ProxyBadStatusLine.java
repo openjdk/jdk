@@ -103,8 +103,8 @@ class ProxyBadStatusLine {
     }
 
     private static final class BadProxyServer implements Runnable, AutoCloseable {
-        private static final int CR = 13;
-        private static final int LF = 10;
+        private static final int CR = '\r';
+        private static final int LF = '\n';
 
         private final ServerSocket serverSocket;
         private final String connectRespStatusLine;
@@ -180,16 +180,16 @@ class ProxyBadStatusLine {
 
         // writes out a status line in response to a CONNECT request
         private void handleIncomingConnection(final Socket acceptedSocket) throws IOException {
-            final byte[] requestLine = readRequestLine(acceptedSocket.getInputStream());
-            final int crlfIndex = findCRLF(requestLine);
+            final byte[] req = readRequest(acceptedSocket.getInputStream());
+            final int crlfIndex = findCRLF(req);
             if (crlfIndex < 0) {
                 System.err.println("unexpected request content from " + acceptedSocket);
                 // nothing to process, ignore this connection
                 return;
             }
-            final String line = new String(requestLine, 0, crlfIndex, ISO_8859_1);
-            System.err.println("received request line: \"" + line + "\"");
-            final String[] parts = line.split(" ");
+            final String requestLine = new String(req, 0, crlfIndex, ISO_8859_1);
+            System.err.println("received request line: \"" + requestLine + "\"");
+            final String[] parts = requestLine.split(" ");
             if (parts[0].equals("CONNECT")) {
                 // reply back with the status line
                 try (final OutputStream os = acceptedSocket.getOutputStream()) {
@@ -199,19 +199,30 @@ class ProxyBadStatusLine {
                     os.write(statusLine);
                 }
             } else {
-                System.err.println("unexpected request from " + acceptedSocket + ": \"" + line + "\"");
+                System.err.println("unexpected request from " + acceptedSocket + ": \"" + requestLine + "\"");
                 return;
             }
         }
 
-        private static byte[] readRequestLine(InputStream is) throws IOException {
+        private static byte[] readRequest(InputStream is) throws IOException {
+            // we don't expect the HTTP request body in this test to be larger than this size
             final byte[] buff = new byte[4096];
             int crlfcount = 0;
             int numRead = 0;
             int c;
             while ((c = is.read()) != -1 && numRead < buff.length) {
                 buff[numRead++] = (byte) c;
-                // we are looking for CRLFCRLF sequence
+                //
+                // HTTP-message = start-line CRLF
+                //               *( field-line CRLF )
+                //               CRLF
+                //               [ message-body ]
+                //
+                // start-line = request-line / status-line
+                //
+                // we are not interested in the message body, so this loop is
+                // looking for the CRLFCRLF sequence to stop parsing the request
+                // content
                 if (c == CR || c == LF) {
                     switch (crlfcount) {
                         case 0, 2 -> {
@@ -232,9 +243,9 @@ class ProxyBadStatusLine {
                     break;
                 }
             }
-            final byte[] requestLine = new byte[numRead];
-            System.arraycopy(buff, 0, requestLine, 0, numRead);
-            return requestLine;
+            final byte[] request = new byte[numRead];
+            System.arraycopy(buff, 0, request, 0, numRead);
+            return request;
         }
     }
 }
