@@ -2192,6 +2192,7 @@ void C2_MacroAssembler::reduce8S(int opcode, Register dst, Register src1, XMMReg
     }
     phaddw(vtmp1, src2);
   } else {
+    assert_different_registers(src2, vtmp1);
     pshufd(vtmp1, src2, 0xE);
     reduce_operation_128(T_SHORT, opcode, vtmp1, src2);
   }
@@ -2204,6 +2205,7 @@ void C2_MacroAssembler::reduce16S(int opcode, Register dst, Register src1, XMMRe
     vphaddw(vtmp2, src2, src2, vector_len);
     vpermq(vtmp2, vtmp2, 0xD8, vector_len);
   } else {
+    assert_different_registers(src2, vtmp2);
     vextracti128_high(vtmp2, src2);
     reduce_operation_128(T_SHORT, opcode, vtmp2, src2);
   }
