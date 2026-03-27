@@ -3309,7 +3309,7 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
   return map_memory_to_file(base, size, fd);
 }
 
-// Multiple threads can race in this code (if VirtualAlloc2 is not supported) but it's not possible to unmap small sections of
+// Multiple threads can race in this code but it's not possible to unmap small sections of
 // virtual space to get requested alignment, like posix-like os's.
 // Windows prevents multiple thread from remapping over each other so this loop is thread-safe.
 static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc, MemTag mem_tag) {
@@ -3317,59 +3317,6 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
       "Alignment must be a multiple of allocation granularity (page size)");
   assert(is_aligned(size, os::vm_allocation_granularity()),
       "Size must be a multiple of allocation granularity (page size)");
-
-  // VirtualAlloc2 and MapViewOfFile3 support alignment natively.
-  // This avoids the race prone retry loop below.
-  if (is_VirtualAlloc2_supported() && is_power_of_2(alignment) &&
-      alignment >= os::vm_allocation_granularity()) {
-
-    MEM_ADDRESS_REQUIREMENTS requirements = {0};
-    requirements.Alignment = alignment;
-
-    MEM_EXTENDED_PARAMETER param = {0};
-    param.Type = MemExtendedParameterAddressRequirements;
-    param.Pointer = &requirements;
-
-    char* aligned_base = nullptr;
-
-    if (file_desc != -1 && os::win32::MapViewOfFile3 != nullptr) {
-      // File-backed aligned mapping.
-      HANDLE fh = (HANDLE)_get_osfhandle(file_desc);
-      HANDLE fileMapping = CreateFileMapping(fh, nullptr, PAGE_READWRITE,(DWORD)(size >> 32), (DWORD)(size & 0xFFFFFFFF), nullptr);
-      if (fileMapping != nullptr) {
-        aligned_base = (char*)os::win32::MapViewOfFile3(
-          fileMapping,
-          GetCurrentProcess(),
-          nullptr,  // let the system choose an aligned address
-          0,        // offset
-          size,
-          0,        // no special allocation type flags
-          PAGE_READWRITE,
-          &param, 1);
-        CloseHandle(fileMapping);
-      }
-    } else if (file_desc == -1) {
-      // Anonymous aligned reservation.
-      aligned_base = (char*)os::win32::VirtualAlloc2(
-        GetCurrentProcess(),
-        nullptr,  // let the system choose an aligned address
-        size,
-        MEM_RESERVE,
-        PAGE_READWRITE,
-        &param, 1);
-    }
-
-    if (aligned_base != nullptr) {
-      assert(is_aligned(aligned_base, alignment), "Result must be aligned");
-      if (file_desc == -1) {
-        MemTracker::record_virtual_memory_reserve(aligned_base, size, CALLER_PC, mem_tag);
-      } else {
-        MemTracker::record_virtual_memory_reserve_and_commit(aligned_base, size, CALLER_PC, mem_tag);
-      }
-      return aligned_base;
-    }
-    log_trace(os)("Aligned allocation via VirtualAlloc2/MapViewOfFile3 failed, falling back to retry loop.");
-  }
 
   size_t extra_size = size + alignment;
   assert(extra_size >= size, "overflow, size is too large to allow alignment");
@@ -3402,6 +3349,62 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
       "Did not manage to re-map after %d attempts (size %zu, alignment %zu, file descriptor %d)", max_attempts, size, alignment, file_desc);
 
   return aligned_base;
+}
+
+// VirtualAlloc2 and MapViewOfFile3 support alignment natively.
+static char* map_or_reserve_memory_aligned_placeholder(size_t size, size_t alignment, int file_desc, MemTag mem_tag) {
+  assert(is_aligned(alignment, os::vm_allocation_granularity()),
+         "Alignment must be a multiple of allocation granularity (page size)");
+  assert(is_aligned(size, os::vm_allocation_granularity()),
+         "Size must be a multiple of allocation granularity (page size)");
+
+  MEM_ADDRESS_REQUIREMENTS requirements = {0};
+  requirements.Alignment = alignment;
+
+  MEM_EXTENDED_PARAMETER param = {0};
+  param.Type = MemExtendedParameterAddressRequirements;
+  param.Pointer = &requirements;
+
+  char* aligned_base = nullptr;
+
+  if (file_desc != -1 && os::win32::MapViewOfFile3 != nullptr) {
+    // File-backed aligned mapping.
+    HANDLE fh = (HANDLE)_get_osfhandle(file_desc);
+    HANDLE fileMapping = CreateFileMapping(fh, nullptr, PAGE_READWRITE,(DWORD)(size >> 32), (DWORD)(size & 0xFFFFFFFF), nullptr);
+    if (fileMapping != nullptr) {
+      aligned_base = (char*)os::win32::MapViewOfFile3(
+              fileMapping,
+              GetCurrentProcess(),
+              nullptr,  // let the system choose an aligned address
+              0,        // offset
+              size,
+              0,        // no special allocation type flags
+              PAGE_READWRITE,
+              &param, 1);
+      CloseHandle(fileMapping);
+    }
+  } else if (file_desc == -1) {
+    // Anonymous aligned reservation.
+    aligned_base = (char*)os::win32::VirtualAlloc2(
+            GetCurrentProcess(),
+            nullptr,  // let the system choose an aligned address
+            size,
+            MEM_RESERVE,
+            PAGE_READWRITE,
+            &param, 1);
+  }
+
+  if (aligned_base != nullptr) {
+    assert(is_aligned(aligned_base, alignment), "Result must be aligned");
+    if (file_desc == -1) {
+      MemTracker::record_virtual_memory_reserve(aligned_base, size, CALLER_PC, mem_tag);
+    } else {
+      MemTracker::record_virtual_memory_reserve_and_commit(aligned_base, size, CALLER_PC, mem_tag);
+    }
+    return aligned_base;
+  }
+  log_trace(os)("Aligned allocation via VirtualAlloc2/MapViewOfFile3 failed, falling back to retry loop.");
+  return map_or_reserve_memory_aligned(size, alignment, file_desc, mem_tag);
 }
 
 size_t os::commit_memory_limit() {
@@ -3451,10 +3454,16 @@ size_t os::reserve_memory_limit() {
 
 char* os::reserve_memory_aligned(size_t size, size_t alignment, MemTag mem_tag, bool exec) {
   // exec can be ignored
+  if (is_VirtualAlloc2_supported()) {
+    return map_or_reserve_memory_aligned_placeholder(size, alignment,  -1/* file_desc */, mem_tag);
+  }
   return map_or_reserve_memory_aligned(size, alignment, -1/* file_desc */, mem_tag);
 }
 
 char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int fd, MemTag mem_tag) {
+  if (is_VirtualAlloc2_supported()) {
+    return map_or_reserve_memory_aligned_placeholder(size, alignment, fd, mem_tag);
+  }
   return map_or_reserve_memory_aligned(size, alignment, fd, mem_tag);
 }
 
