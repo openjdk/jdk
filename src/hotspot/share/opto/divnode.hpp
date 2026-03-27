@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,10 +206,12 @@ private:
   Node* dividend() const override { return in(TypeFunc::Parms + 0); }
   Node* divisor() const override { return in(TypeFunc::Parms + 2); }
   const Type* get_result_if_constant(const Type* dividend, const Type* divisor) const override;
+  TupleNode* make_tuple_of_input_state_and_result(PhaseIterGVN* phase, Node* result, Node* control = nullptr);
 
 public:
   ModDNode(Compile* C, Node* a, Node* b);
   int Opcode() const override;
+  Node* Ideal(PhaseGVN* phase, bool can_reshape) override;
   uint ideal_reg() const override { return Op_RegD; }
   uint size_of() const override { return sizeof(*this); }
 };
