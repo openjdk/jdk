@@ -691,9 +691,8 @@ void VM_Version::initialize() {
     if (_ic_ivau_trapped) {
       FLAG_SET_DEFAULT(NeoverseN1ICacheErratumMitigation, true);
     } else {
+      warning("IC IVAU is not trapped; disabling NeoverseN1ICacheErratumMitigation");
       FLAG_SET_DEFAULT(NeoverseN1ICacheErratumMitigation, false);
-      log_info(os)("IC IVAU is not trapped; "
-                   "disabling NeoverseN1ICacheErratumMitigation");
     }
   }
 
