@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -17,9 +17,39 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Attributed string builder
+ * A mutable builder for creating styled text strings with ANSI attributes.
  *
- * @author <a href="mailto:gnodet@gmail.com">Guillaume Nodet</a>
+ * <p>
+ * The AttributedStringBuilder class provides a mutable implementation of AttributedCharSequence
+ * for constructing styled text strings. It allows for dynamic building of attributed strings
+ * by appending characters, strings, or other attributed strings with various styles.
+ * </p>
+ *
+ * <p>
+ * This class is similar to StringBuilder but with added support for ANSI style attributes.
+ * It provides methods for appending text with different styles, manipulating the content,
+ * and converting the result to an immutable AttributedString when building is complete.
+ * </p>
+ *
+ * <p>
+ * Key features include:
+ * </p>
+ * <ul>
+ *   <li>Append operations with different styles</li>
+ *   <li>Tab expansion with configurable tab stops</li>
+ *   <li>Style manipulation (foreground/background colors, bold, underline, etc.)</li>
+ *   <li>Regular expression based styling</li>
+ *   <li>Alternative character set support</li>
+ * </ul>
+ *
+ * <p>
+ * This class is commonly used for building complex styled output for terminal applications,
+ * such as syntax highlighting, interactive prompts, and formatted displays.
+ * </p>
+ *
+ * @see AttributedCharSequence
+ * @see AttributedString
+ * @see AttributedStyle
  */
 public class AttributedStringBuilder extends AttributedCharSequence implements Appendable {
 
@@ -33,6 +63,18 @@ public class AttributedStringBuilder extends AttributedCharSequence implements A
     private int lastLineLength = 0;
     private AttributedStyle current = AttributedStyle.DEFAULT;
 
+    /**
+     * Creates an AttributedString by appending multiple character sequences.
+     *
+     * <p>
+     * This static utility method creates a new AttributedString by appending
+     * all the specified character sequences. It is a convenient way to concatenate
+     * multiple strings or AttributedStrings into a single AttributedString.
+     * </p>
+     *
+     * @param strings the character sequences to append
+     * @return a new AttributedString containing all the appended sequences
+     */
     public static AttributedString append(CharSequence... strings) {
         AttributedStringBuilder sb = new AttributedStringBuilder();
         for (CharSequence s : strings) {
@@ -41,52 +83,165 @@ public class AttributedStringBuilder extends AttributedCharSequence implements A
         return sb.toAttributedString();
     }
 
+    /**
+     * Creates a new AttributedStringBuilder with the default initial capacity.
+     *
+     * <p>
+     * This constructor creates a new AttributedStringBuilder with an initial
+     * capacity of 64 characters. The builder will automatically grow as needed
+     * when more characters are appended.
+     * </p>
+     */
     public AttributedStringBuilder() {
         this(64);
     }
 
+    /**
+     * Creates a new AttributedStringBuilder with the specified initial capacity.
+     *
+     * <p>
+     * This constructor creates a new AttributedStringBuilder with the specified
+     * initial capacity. The builder will automatically grow as needed when more
+     * characters are appended.
+     * </p>
+     *
+     * @param capacity the initial capacity of the builder
+     */
     public AttributedStringBuilder(int capacity) {
         buffer = new char[capacity];
         style = new long[capacity];
         length = 0;
     }
 
+    /**
+     * Returns the length of this attributed string builder.
+     *
+     * <p>
+     * This method returns the number of characters in this attributed string builder.
+     * </p>
+     *
+     * @return the number of characters in this attributed string builder
+     */
     @Override
     public int length() {
         return length;
     }
 
+    /**
+     * Returns the character at the specified index in this attributed string builder.
+     *
+     * <p>
+     * This method returns the character at the specified index in this
+     * attributed string builder.
+     * </p>
+     *
+     * @param index the index of the character to return
+     * @return the character at the specified index
+     * @throws IndexOutOfBoundsException if the index is out of range
+     */
     @Override
     public char charAt(int index) {
         return buffer[index];
     }
 
+    /**
+     * Returns the style at the specified index in this attributed string builder.
+     *
+     * <p>
+     * This method returns the AttributedStyle object associated with the
+     * character at the specified index in this attributed string builder.
+     * </p>
+     *
+     * @param index the index of the character whose style to return
+     * @return the style at the specified index
+     * @throws IndexOutOfBoundsException if the index is out of range
+     */
     @Override
     public AttributedStyle styleAt(int index) {
         return new AttributedStyle(style[index], style[index]);
     }
 
+    /**
+     * Returns the style code at the specified index in this attributed string builder.
+     *
+     * <p>
+     * This method returns the raw style code (as a long value) associated with the
+     * character at the specified index in this attributed string builder.
+     * </p>
+     *
+     * @param index the index of the character whose style code to return
+     * @return the style code at the specified index
+     * @throws IndexOutOfBoundsException if the index is out of range
+     */
     @Override
     long styleCodeAt(int index) {
         return style[index];
     }
 
+    /**
+     * Returns the character buffer for this attributed string builder.
+     *
+     * <p>
+     * This method is used internally by the AttributedCharSequence implementation
+     * to access the underlying character buffer.
+     * </p>
+     *
+     * @return the character buffer
+     */
     @Override
     protected char[] buffer() {
         return buffer;
     }
 
+    /**
+     * Returns the offset in the buffer where this attributed string builder starts.
+     *
+     * <p>
+     * This method is used internally by the AttributedCharSequence implementation
+     * to determine the starting position in the buffer. For AttributedStringBuilder,
+     * this is always 0 since the builder uses the entire buffer.
+     * </p>
+     *
+     * @return the offset in the buffer (always 0 for AttributedStringBuilder)
+     */
     @Override
     protected int offset() {
         return 0;
     }
 
+    /**
+     * Returns a new AttributedString that is a subsequence of this attributed string builder.
+     *
+     * <p>
+     * This method returns a new AttributedString that contains the characters and
+     * styles from this attributed string builder starting at the specified start index
+     * (inclusive) and ending at the specified end index (exclusive).
+     * </p>
+     *
+     * @param start the start index, inclusive
+     * @param end the end index, exclusive
+     * @return the specified subsequence with its attributes
+     * @throws IndexOutOfBoundsException if start or end are negative,
+     *         if end is greater than length(), or if start is greater than end
+     */
     @Override
     public AttributedString subSequence(int start, int end) {
         return new AttributedString(
                 Arrays.copyOfRange(buffer, start, end), Arrays.copyOfRange(style, start, end), 0, end - start);
     }
 
+    /**
+     * Appends the specified character sequence to this builder.
+     *
+     * <p>
+     * This method appends the specified character sequence to this builder,
+     * applying the current style to all characters. If the character sequence
+     * is null, the string "null" is appended, as required by the Appendable interface.
+     * </p>
+     *
+     * @param csq the character sequence to append, or null
+     * @return this builder
+     */
     @Override
     public AttributedStringBuilder append(CharSequence csq) {
         if (csq == null) {
@@ -95,6 +250,22 @@ public class AttributedStringBuilder extends AttributedCharSequence implements A
         return append(new AttributedString(csq, current));
     }
 
+    /**
+     * Appends a subsequence of the specified character sequence to this builder.
+     *
+     * <p>
+     * This method appends a subsequence of the specified character sequence to this builder,
+     * applying the current style to all characters. If the character sequence
+     * is null, the string "null" is appended, as required by the Appendable interface.
+     * </p>
+     *
+     * @param csq the character sequence to append, or null
+     * @param start the index of the first character to append
+     * @param end the index after the last character to append
+     * @return this builder
+     * @throws IndexOutOfBoundsException if start or end are negative, or if
+     *         end is greater than csq.length(), or if start is greater than end
+     */
     @Override
     public AttributedStringBuilder append(CharSequence csq, int start, int end) {
         if (csq == null) {
@@ -103,11 +274,34 @@ public class AttributedStringBuilder extends AttributedCharSequence implements A
         return append(csq.subSequence(start, end));
     }
 
+    /**
+     * Appends the specified character to this builder.
+     *
+     * <p>
+     * This method appends the specified character to this builder,
+     * applying the current style to the character.
+     * </p>
+     *
+     * @param c the character to append
+     * @return this builder
+     */
     @Override
     public AttributedStringBuilder append(char c) {
         return append(Character.toString(c));
     }
 
+    /**
+     * Appends the specified character to this builder multiple times.
+     *
+     * <p>
+     * This method appends the specified character to this builder the specified
+     * number of times, applying the current style to all characters.
+     * </p>
+     *
+     * @param c the character to append
+     * @param repeat the number of times to append the character
+     * @return this builder
+     */
     public AttributedStringBuilder append(char c, int repeat) {
         AttributedString s = new AttributedString(Character.toString(c), current);
         while (repeat-- > 0) {
@@ -116,28 +310,117 @@ public class AttributedStringBuilder extends AttributedCharSequence implements A
         return this;
     }
 
+    /**
+     * Appends the specified character sequence to this builder with the specified style.
+     *
+     * <p>
+     * This method appends the specified character sequence to this builder,
+     * applying the specified style to all characters. This allows appending text
+     * with a style different from the current style without changing the current style.
+     * </p>
+     *
+     * @param csq the character sequence to append
+     * @param style the style to apply to the appended characters
+     * @return this builder
+     */
     public AttributedStringBuilder append(CharSequence csq, AttributedStyle style) {
         return append(new AttributedString(csq, style));
     }
 
+    /**
+     * Sets the current style for this builder.
+     *
+     * <p>
+     * This method sets the current style for this builder, which will be applied
+     * to all characters appended after this call (until the style is changed again).
+     * </p>
+     *
+     * @param style the new current style
+     * @return this builder
+     */
     public AttributedStringBuilder style(AttributedStyle style) {
         current = style;
         return this;
     }
 
+    /**
+     * Updates the current style for this builder using a function.
+     *
+     * <p>
+     * This method updates the current style for this builder by applying the
+     * specified function to the current style. This allows for fluent style
+     * modifications without creating intermediate style objects.
+     * </p>
+     *
+     * <p>Example usage:</p>
+     * <pre>
+     * builder.style(s -> s.bold().foreground(AttributedStyle.RED));
+     * </pre>
+     *
+     * @param style the function to apply to the current style
+     * @return this builder
+     */
     public AttributedStringBuilder style(Function<AttributedStyle, AttributedStyle> style) {
         current = style.apply(current);
         return this;
     }
 
+    /**
+     * Appends the specified character sequence with a temporarily modified style.
+     *
+     * <p>
+     * This method temporarily modifies the current style using the specified function,
+     * appends the specified character sequence with that style, and then restores
+     * the original style. This allows for appending styled text without permanently
+     * changing the current style.
+     * </p>
+     *
+     * @param style the function to apply to the current style
+     * @param cs the character sequence to append
+     * @return this builder
+     */
     public AttributedStringBuilder styled(Function<AttributedStyle, AttributedStyle> style, CharSequence cs) {
         return styled(style, sb -> sb.append(cs));
     }
 
+    /**
+     * Appends the specified character sequence with the specified style.
+     *
+     * <p>
+     * This method temporarily sets the current style to the specified style,
+     * appends the specified character sequence with that style, and then restores
+     * the original style. This allows for appending styled text without permanently
+     * changing the current style.
+     * </p>
+     *
+     * @param style the style to use
+     * @param cs the character sequence to append
+     * @return this builder
+     */
     public AttributedStringBuilder styled(AttributedStyle style, CharSequence cs) {
         return styled(s -> style, sb -> sb.append(cs));
     }
 
+    /**
+     * Performs operations with a temporarily modified style.
+     *
+     * <p>
+     * This method temporarily modifies the current style using the specified function,
+     * performs the operations specified by the consumer with that style, and then
+     * restores the original style. This allows for performing complex styling
+     * operations without permanently changing the current style.
+     * </p>
+     *
+     * <p>Example usage:</p>
+     * <pre>
+     * builder.styled(s -> s.bold().foreground(AttributedStyle.RED),
+     *               sb -> sb.append("Error: ").append(errorMessage));
+     * </pre>
+     *
+     * @param style the function to apply to the current style
+     * @param consumer the consumer that performs operations on this builder
+     * @return this builder
+     */
     public AttributedStringBuilder styled(
             Function<AttributedStyle, AttributedStyle> style, Consumer<AttributedStringBuilder> consumer) {
         AttributedStyle prev = current;
@@ -147,22 +430,93 @@ public class AttributedStringBuilder extends AttributedCharSequence implements A
         return this;
     }
 
+    /**
+     * Returns the current style for this builder.
+     *
+     * <p>
+     * This method returns the current style for this builder, which is applied
+     * to all characters appended after the style was set (until the style is changed).
+     * </p>
+     *
+     * @return the current style
+     */
     public AttributedStyle style() {
         return current;
     }
 
+    /**
+     * Appends the specified AttributedString to this builder.
+     *
+     * <p>
+     * This method appends the specified AttributedString to this builder,
+     * preserving its character attributes. The current style is applied to
+     * any attributes that are not explicitly set in the AttributedString.
+     * </p>
+     *
+     * @param str the AttributedString to append
+     * @return this builder
+     */
     public AttributedStringBuilder append(AttributedString str) {
         return append((AttributedCharSequence) str, 0, str.length());
     }
 
+    /**
+     * Appends a subsequence of the specified AttributedString to this builder.
+     *
+     * <p>
+     * This method appends a subsequence of the specified AttributedString to this builder,
+     * preserving its character attributes. The current style is applied to
+     * any attributes that are not explicitly set in the AttributedString.
+     * </p>
+     *
+     * @param str the AttributedString to append
+     * @param start the index of the first character to append
+     * @param end the index after the last character to append
+     * @return this builder
+     * @throws IndexOutOfBoundsException if start or end are negative, or if
+     *         end is greater than str.length(), or if start is greater than end
+     */
     public AttributedStringBuilder append(AttributedString str, int start, int end) {
         return append((AttributedCharSequence) str, start, end);
     }
 
+    /**
+     * Appends the specified AttributedCharSequence to this builder.
+     *
+     * <p>
+     * This method appends the specified AttributedCharSequence to this builder,
+     * preserving its character attributes. The current style is applied to
+     * any attributes that are not explicitly set in the AttributedCharSequence.
+     * </p>
+     *
+     * @param str the AttributedCharSequence to append
+     * @return this builder
+     */
     public AttributedStringBuilder append(AttributedCharSequence str) {
         return append(str, 0, str.length());
     }
 
+    /**
+     * Appends a subsequence of the specified AttributedCharSequence to this builder.
+     *
+     * <p>
+     * This method appends a subsequence of the specified AttributedCharSequence to this builder,
+     * preserving its character attributes. The current style is applied to
+     * any attributes that are not explicitly set in the AttributedCharSequence.
+     * </p>
+     *
+     * <p>
+     * If the sequence contains tab characters and tab stops are defined, the tabs
+     * will be expanded according to the current tab stop settings.
+     * </p>
+     *
+     * @param str the AttributedCharSequence to append
+     * @param start the index of the first character to append
+     * @param end the index after the last character to append
+     * @return this builder
+     * @throws IndexOutOfBoundsException if start or end are negative, or if
+     *         end is greater than str.length(), or if start is greater than end
+     */
     public AttributedStringBuilder append(AttributedCharSequence str, int start, int end) {
         ensureCapacity(length + end - start);
         for (int i = start; i < end; i++) {
@@ -196,10 +550,45 @@ public class AttributedStringBuilder extends AttributedCharSequence implements A
         }
     }
 
+    /**
+     * Appends the specified ANSI-encoded string to this builder.
+     *
+     * <p>
+     * This method parses the ANSI escape sequences in the input string and
+     * appends the text with the corresponding styles to this builder.
+     * This is useful for converting ANSI-colored output from external commands
+     * into styled text.
+     * </p>
+     *
+     * <p>
+     * This method is equivalent to {@link #ansiAppend(String)} but returns void.
+     * </p>
+     *
+     * @param ansi the ANSI-encoded string to parse and append
+     * @see #ansiAppend(String)
+     */
     public void appendAnsi(String ansi) {
         ansiAppend(ansi);
     }
 
+    /**
+     * Appends the specified ANSI-encoded string to this builder.
+     *
+     * <p>
+     * This method parses the ANSI escape sequences in the input string and
+     * appends the text with the corresponding styles to this builder.
+     * This is useful for converting ANSI-colored output from external commands
+     * into styled text.
+     * </p>
+     *
+     * <p>
+     * The method recognizes standard ANSI SGR (Select Graphic Rendition) sequences
+     * for text attributes (bold, underline, etc.) and colors (foreground and background).
+     * </p>
+     *
+     * @param ansi the ANSI-encoded string to parse and append
+     * @return this builder
+     */
     public AttributedStringBuilder ansiAppend(String ansi) {
         int ansiStart = 0;
         int ansiState = 0;
@@ -442,6 +831,24 @@ public class AttributedStringBuilder extends AttributedCharSequence implements A
         lastLineLength += nb;
     }
 
+    /**
+     * Sets the length of this attributed string builder.
+     *
+     * <p>
+     * This method sets the length of this attributed string builder. If the
+     * specified length is less than the current length, the builder is truncated;
+     * if it is greater than the current length, the builder is extended with
+     * undefined characters and styles.
+     * </p>
+     *
+     * <p>
+     * Note that extending the builder with this method may result in undefined
+     * behavior if the extended region is accessed without first setting its
+     * characters and styles.
+     * </p>
+     *
+     * @param l the new length
+     */
     public void setLength(int l) {
         length = l;
     }
@@ -461,6 +868,20 @@ public class AttributedStringBuilder extends AttributedCharSequence implements A
         return tabs(Arrays.asList(tabsize));
     }
 
+    /**
+     * Sets the tab stops for this attributed string builder.
+     *
+     * <p>
+     * This method sets the tab stops for this attributed string builder,
+     * which are used for tab expansion when appending tab characters.
+     * Tab stops cannot be changed after text has been added to prevent
+     * inconsistent indentation.
+     * </p>
+     *
+     * @param tabs the list of tab stop positions
+     * @return this attributed string builder
+     * @throws IllegalStateException if text has already been appended
+     */
     public AttributedStringBuilder tabs(List<Integer> tabs) {
         if (length > 0) {
             throw new IllegalStateException("Cannot change tab size after appending text");
@@ -469,6 +890,21 @@ public class AttributedStringBuilder extends AttributedCharSequence implements A
         return this;
     }
 
+    /**
+     * Sets the alternate character set sequences for this builder.
+     *
+     * <p>
+     * This method sets the alternate character set sequences for this builder,
+     * which are used for handling special characters like box drawing characters.
+     * The alternate character set cannot be changed after text has been added
+     * to prevent inconsistent character rendering.
+     * </p>
+     *
+     * @param altIn the sequence to enable the alternate character set, or null to disable
+     * @param altOut the sequence to disable the alternate character set, or null to disable
+     * @return this builder
+     * @throws IllegalStateException if text has already been appended
+     */
     public AttributedStringBuilder altCharset(String altIn, String altOut) {
         if (length > 0) {
             throw new IllegalStateException("Cannot change alternative charset after appending text");
@@ -478,6 +914,25 @@ public class AttributedStringBuilder extends AttributedCharSequence implements A
         return this;
     }
 
+    /**
+     * Applies the specified style to all matches of the pattern in this builder.
+     *
+     * <p>
+     * This method finds all matches of the specified regular expression pattern in this
+     * builder and applies the specified style to the matching regions. The style is
+     * applied to all characters in each match.
+     * </p>
+     *
+     * <p>Example usage:</p>
+     * <pre>
+     * builder.append("Error: File not found")
+     *        .styleMatches(Pattern.compile("Error:"), AttributedStyle.DEFAULT.foreground(AttributedStyle.RED));
+     * </pre>
+     *
+     * @param pattern the regular expression pattern to match
+     * @param s the style to apply to matching regions
+     * @return this builder
+     */
     public AttributedStringBuilder styleMatches(Pattern pattern, AttributedStyle s) {
         Matcher matcher = pattern.matcher(this);
         while (matcher.find()) {
@@ -488,6 +943,30 @@ public class AttributedStringBuilder extends AttributedCharSequence implements A
         return this;
     }
 
+    /**
+     * Applies different styles to different capture groups in pattern matches.
+     *
+     * <p>
+     * This method finds all matches of the specified regular expression pattern in this
+     * builder and applies different styles to different capture groups in each match.
+     * The first style in the list is applied to the first capture group, the second style
+     * to the second capture group, and so on.
+     * </p>
+     *
+     * <p>Example usage:</p>
+     * <pre>
+     * builder.append("Error: File not found")
+     *        .styleMatches(Pattern.compile("(Error): (File not found)"),
+     *                     Arrays.asList(
+     *                         AttributedStyle.DEFAULT.foreground(AttributedStyle.RED),
+     *                         AttributedStyle.DEFAULT.foreground(AttributedStyle.YELLOW)));
+     * </pre>
+     *
+     * @param pattern the regular expression pattern to match
+     * @param styles the list of styles to apply to capture groups
+     * @return this builder
+     * @throws IndexOutOfBoundsException if the pattern has fewer capture groups than styles
+     */
     public AttributedStringBuilder styleMatches(Pattern pattern, List<AttributedStyle> styles) {
         Matcher matcher = pattern.matcher(this);
         while (matcher.find()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -14,7 +14,33 @@ import jdk.internal.org.jline.reader.Expander;
 import jdk.internal.org.jline.reader.History;
 import jdk.internal.org.jline.reader.History.Entry;
 
+/**
+ * Default implementation of the {@link Expander} interface.
+ * <p>
+ * This expander provides functionality for expanding special syntax in command lines,
+ * including:
+ * <ul>
+ *   <li>History expansions (e.g., !!, !$, !n, etc.)</li>
+ *   <li>Variable expansions (e.g., $HOME, ${PATH})</li>
+ * </ul>
+ * <p>
+ * The history expansion syntax is similar to that used in Bash and other shells,
+ * allowing users to reference and reuse previous commands or parts of commands.
+ * <p>
+ * The expander is used by the LineReader to process the command line after the user
+ * has accepted it but before it is executed or added to the history.
+ *
+ * @see Expander
+ * @see org.jline.reader.LineReader
+ */
 public class DefaultExpander implements Expander {
+
+    /**
+     * Creates a new DefaultExpander.
+     */
+    public DefaultExpander() {
+        // Default constructor
+    }
 
     /**
      * Expand event designator such as !!, !#, !3, etc...
@@ -106,7 +132,7 @@ public class DefaultExpander implements Expander {
                                 case '-':
                                     neg = true;
                                     i++;
-                                    // fall through
+                                // fall through
                                 case '0':
                                 case '1':
                                 case '2':

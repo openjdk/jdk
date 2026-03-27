@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2023, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -13,7 +13,34 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 /**
- * A simple buffering output stream with no synchronization.
+ * A simple, non-synchronized buffered output stream for improved performance.
+ *
+ * <p>
+ * The FastBufferedOutputStream class provides a buffered output stream implementation
+ * that improves performance by reducing the number of calls to the underlying output
+ * stream. Unlike the standard BufferedOutputStream, this implementation does not
+ * include synchronization, making it faster but not thread-safe.
+ * </p>
+ *
+ * <p>
+ * This class is particularly useful in single-threaded contexts where the overhead
+ * of synchronization is unnecessary. It uses a fixed-size buffer (8192 bytes) to
+ * collect written data before flushing it to the underlying output stream.
+ * </p>
+ *
+ * <p>
+ * Key features include:
+ * </p>
+ * <ul>
+ *   <li>No synchronization overhead for improved performance</li>
+ *   <li>Fixed-size buffer to reduce system calls</li>
+ *   <li>Compatible with the standard OutputStream API</li>
+ * </ul>
+ *
+ * <p>
+ * Note that this class is not thread-safe and should not be used in multi-threaded
+ * contexts without external synchronization.
+ * </p>
  */
 public class FastBufferedOutputStream extends FilterOutputStream {
 

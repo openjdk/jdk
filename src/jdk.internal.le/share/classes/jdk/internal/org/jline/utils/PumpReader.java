@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2017, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -18,6 +18,37 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 
+/**
+ * A reader implementation with an associated writer for buffered character transfer.
+ *
+ * <p>
+ * The PumpReader class provides a Reader implementation with an associated Writer
+ * that allows characters to be written to the writer and then read from the reader.
+ * This creates a character pipe or pump that can be used to transfer character data
+ * between different components.
+ * </p>
+ *
+ * <p>
+ * This class is particularly useful for:
+ * </p>
+ * <ul>
+ *   <li>Creating character streams for testing without actual I/O</li>
+ *   <li>Buffering characters between producer and consumer threads</li>
+ *   <li>Implementing character-based pipes with flow control</li>
+ *   <li>Simulating input for terminal emulation</li>
+ * </ul>
+ *
+ * <p>
+ * The PumpReader maintains internal buffers for reading and writing, with both buffers
+ * backed by the same array. It provides methods for reading characters with optional
+ * timeouts and for checking the availability of characters without blocking.
+ * </p>
+ *
+ * <p>
+ * This class is used in JLine for various purposes, including implementing non-blocking
+ * readers and for testing terminal input handling without actual terminal devices.
+ * </p>
+ */
 public class PumpReader extends Reader {
 
     private static final int EOF = -1;

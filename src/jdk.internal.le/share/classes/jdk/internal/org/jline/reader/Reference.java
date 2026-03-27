@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -9,7 +9,24 @@
 package jdk.internal.org.jline.reader;
 
 /**
- * A reference to a {@link Widget}.
+ * A reference to a {@link Widget} by name.
+ * <p>
+ * The Reference class is a type of {@link Binding} that refers to a widget by its name
+ * rather than directly holding the widget implementation. When a key sequence bound to
+ * a Reference is pressed, the LineReader will look up the referenced widget by name
+ * and execute it.
+ * <p>
+ * This indirection allows for more flexible key bindings, as it enables binding keys
+ * to widgets that might be defined or redefined after the key binding is established.
+ * It also allows multiple key sequences to reference the same widget without duplicating
+ * the widget implementation.
+ * <p>
+ * References are particularly useful in configuration files where widgets are referred
+ * to by name rather than by direct object references.
+ *
+ * @see Widget
+ * @see Binding
+ * @see LineReader#callWidget(String)
  */
 public class Reference implements Binding {
 
@@ -19,6 +36,11 @@ public class Reference implements Binding {
         this.name = name;
     }
 
+    /**
+     * Returns the name of the referenced widget.
+     *
+     * @return the widget name
+     */
     public String name() {
         return name;
     }

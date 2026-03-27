@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -26,7 +26,6 @@ import java.io.Reader;
  *          the thread that handles blocking I/O.
  * </ul>
  * @since 2.7
- * @author Scott C. Gray &lt;scottgray1@gmail.com&gt;
  */
 public class NonBlockingReaderImpl extends NonBlockingReader {
     public static final int READ_EXPIRED = -2;
@@ -79,6 +78,7 @@ public class NonBlockingReaderImpl extends NonBlockingReader {
          * The underlying input stream is closed first. This means that if the
          * I/O thread was blocked waiting on input, it will be woken for us.
          */
+        super.close(); // Mark as closed in base class
         in.close();
         shutdown();
     }
@@ -127,6 +127,9 @@ public class NonBlockingReaderImpl extends NonBlockingReader {
      *   read timed out.
      */
     protected synchronized int read(long timeout, boolean isPeek) throws IOException {
+        // Check if this reader has been closed
+        checkClosed();
+
         /*
          * If the thread hit an IOException, we report it.
          */

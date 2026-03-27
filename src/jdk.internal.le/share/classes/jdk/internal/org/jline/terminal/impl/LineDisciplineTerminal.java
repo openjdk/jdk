@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -45,6 +45,41 @@ import jdk.internal.org.jline.utils.NonBlockingReader;
  * has to happen as soon as the user hit the keyboard, and not
  * only when the application running in the terminal processes
  * the input.
+ *
+ * <p>
+ * The LineDisciplineTerminal class provides a terminal implementation that emulates
+ * the line discipline functionality typically provided by the operating system's
+ * terminal driver. Line discipline refers to the processing of input and output
+ * characters according to various modes and settings, such as canonical mode,
+ * echo, and special character handling.
+ * </p>
+ *
+ * <p>
+ * This terminal implementation is particularly useful in environments where:
+ * </p>
+ * <ul>
+ *   <li>The underlying system does not provide native terminal capabilities</li>
+ *   <li>The application needs precise control over terminal behavior</li>
+ *   <li>The terminal is being used in a non-standard environment (e.g., embedded systems)</li>
+ * </ul>
+ *
+ * <p>
+ * Key features of this implementation include:
+ * </p>
+ * <ul>
+ *   <li>Emulation of canonical and non-canonical input modes</li>
+ *   <li>Support for character echoing</li>
+ *   <li>Special character handling (e.g., interrupt, erase, kill)</li>
+ *   <li>Input and output processing according to terminal attributes</li>
+ * </ul>
+ *
+ * <p>
+ * This terminal implementation works with any input and output streams, making it
+ * highly flexible and adaptable to various environments.
+ * </p>
+ *
+ * @see org.jline.terminal.Attributes
+ * @see org.jline.terminal.impl.AbstractTerminal
  */
 public class LineDisciplineTerminal extends AbstractTerminal {
 
@@ -86,13 +121,26 @@ public class LineDisciplineTerminal extends AbstractTerminal {
     public LineDisciplineTerminal(
             String name, String type, OutputStream masterOutput, Charset encoding, SignalHandler signalHandler)
             throws IOException {
-        super(name, type, encoding, signalHandler);
+        this(name, type, masterOutput, encoding, encoding, encoding, signalHandler);
+    }
+
+    @SuppressWarnings("this-escape")
+    public LineDisciplineTerminal(
+            String name,
+            String type,
+            OutputStream masterOutput,
+            Charset encoding,
+            Charset inputEncoding,
+            Charset outputEncoding,
+            SignalHandler signalHandler)
+            throws IOException {
+        super(name, type, encoding, inputEncoding, outputEncoding, signalHandler);
         NonBlockingPumpInputStream input = NonBlocking.nonBlockingPumpInputStream(PIPE_SIZE);
         this.slaveInputPipe = input.getOutputStream();
         this.slaveInput = input;
-        this.slaveReader = NonBlocking.nonBlocking(getName(), slaveInput, encoding());
+        this.slaveReader = NonBlocking.nonBlocking(getName(), slaveInput, inputEncoding());
         this.slaveOutput = new FilteringOutputStream();
-        this.slaveWriter = new PrintWriter(new OutputStreamWriter(slaveOutput, encoding()));
+        this.slaveWriter = new PrintWriter(new OutputStreamWriter(slaveOutput, outputEncoding()));
         this.masterOutput = masterOutput;
         this.attributes = getDefaultTerminalAttributes();
         this.size = new Size(160, 50);
@@ -155,38 +203,46 @@ public class LineDisciplineTerminal extends AbstractTerminal {
     }
 
     public NonBlockingReader reader() {
+        checkClosed();
         return slaveReader;
     }
 
     public PrintWriter writer() {
+        checkClosed();
         return slaveWriter;
     }
 
     @Override
     public InputStream input() {
+        checkClosed();
         return slaveInput;
     }
 
     @Override
     public OutputStream output() {
+        checkClosed();
         return slaveOutput;
     }
 
     public Attributes getAttributes() {
+        checkClosed();
         return new Attributes(attributes);
     }
 
     public void setAttributes(Attributes attr) {
+        checkClosed();
         attributes.copy(attr);
     }
 
     public Size getSize() {
+        checkClosed();
         Size sz = new Size();
         sz.copy(size);
         return sz;
     }
 
     public void setSize(Size sz) {
+        checkClosed();
         size.copy(sz);
     }
 
@@ -318,10 +374,7 @@ public class LineDisciplineTerminal extends AbstractTerminal {
             try {
                 slaveInputPipe.close();
             } finally {
-                try {
-                } finally {
-                    slaveWriter.close();
-                }
+                slaveWriter.close();
             }
         }
     }

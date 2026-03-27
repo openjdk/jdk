@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -13,12 +13,23 @@ import java.util.List;
 /**
  * <code>ParsedLine</code> objects are returned by the {@link Parser}
  * during completion or when accepting the line.
- *
+ * <p>
+ * This interface represents a command line that has been tokenized into words
+ * according to the syntax rules of the parser. It provides access to the individual
+ * words, the current word being completed, cursor positions, and the original
+ * unparsed line.
+ * <p>
+ * ParsedLine objects are used extensively during tab completion to determine
+ * what the user is trying to complete and to provide the appropriate context
+ * to {@link Completer} implementations.
+ * <p>
  * The instances should implement the {@link CompletingParsedLine}
- * interface so that escape chars and quotes can be correctly handled.
+ * interface so that escape chars and quotes can be correctly handled during
+ * completion.
  *
  * @see Parser
  * @see CompletingParsedLine
+ * @see Completer
  */
 public interface ParsedLine {
 

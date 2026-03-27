@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2023, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -9,6 +9,15 @@
 package jdk.internal.org.jline.terminal.impl.ffm;
 
 import java.io.IOException;
+import java.lang.foreign.AddressLayout;
+import java.lang.foreign.Arena;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.GroupLayout;
+import java.lang.foreign.Linker;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SymbolLookup;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.VarHandle;
 import java.nio.charset.StandardCharsets;
@@ -68,7 +77,7 @@ final class Kernel32 {
     public static final short MENU_EVENT = 0x0008;
     public static final short FOCUS_EVENT = 0x0010;
 
-    public static int WaitForSingleObject(java.lang.foreign.MemorySegment hHandle, int dwMilliseconds) {
+    public static int WaitForSingleObject(MemorySegment hHandle, int dwMilliseconds) {
         MethodHandle mh$ = requireNonNull(WaitForSingleObject$MH, "WaitForSingleObject");
         try {
             return (int) mh$.invokeExact(hHandle, dwMilliseconds);
@@ -77,10 +86,10 @@ final class Kernel32 {
         }
     }
 
-    public static java.lang.foreign.MemorySegment GetStdHandle(int nStdHandle) {
+    public static MemorySegment GetStdHandle(int nStdHandle) {
         MethodHandle mh$ = requireNonNull(GetStdHandle$MH, "GetStdHandle");
         try {
-            return (java.lang.foreign.MemorySegment) mh$.invokeExact(nStdHandle);
+            return (MemorySegment) mh$.invokeExact(nStdHandle);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
@@ -88,12 +97,12 @@ final class Kernel32 {
 
     public static int FormatMessageW(
             int dwFlags,
-            java.lang.foreign.MemorySegment lpSource,
+            MemorySegment lpSource,
             int dwMessageId,
             int dwLanguageId,
-            java.lang.foreign.MemorySegment lpBuffer,
+            MemorySegment lpBuffer,
             int nSize,
-            java.lang.foreign.MemorySegment Arguments) {
+            MemorySegment Arguments) {
         MethodHandle mh$ = requireNonNull(FormatMessageW$MH, "FormatMessageW");
         try {
             return (int) mh$.invokeExact(dwFlags, lpSource, dwMessageId, dwLanguageId, lpBuffer, nSize, Arguments);
@@ -102,7 +111,7 @@ final class Kernel32 {
         }
     }
 
-    public static int SetConsoleTextAttribute(java.lang.foreign.MemorySegment hConsoleOutput, short wAttributes) {
+    public static int SetConsoleTextAttribute(MemorySegment hConsoleOutput, short wAttributes) {
         MethodHandle mh$ = requireNonNull(SetConsoleTextAttribute$MH, "SetConsoleTextAttribute");
         try {
             return (int) mh$.invokeExact(hConsoleOutput, wAttributes);
@@ -111,7 +120,7 @@ final class Kernel32 {
         }
     }
 
-    public static int SetConsoleMode(java.lang.foreign.MemorySegment hConsoleHandle, int dwMode) {
+    public static int SetConsoleMode(MemorySegment hConsoleHandle, int dwMode) {
         MethodHandle mh$ = requireNonNull(SetConsoleMode$MH, "SetConsoleMode");
         try {
             return (int) mh$.invokeExact(hConsoleHandle, dwMode);
@@ -120,8 +129,7 @@ final class Kernel32 {
         }
     }
 
-    public static int GetConsoleMode(
-            java.lang.foreign.MemorySegment hConsoleHandle, java.lang.foreign.MemorySegment lpMode) {
+    public static int GetConsoleMode(MemorySegment hConsoleHandle, MemorySegment lpMode) {
         MethodHandle mh$ = requireNonNull(GetConsoleMode$MH, "GetConsoleMode");
         try {
             return (int) mh$.invokeExact(hConsoleHandle, lpMode);
@@ -130,7 +138,16 @@ final class Kernel32 {
         }
     }
 
-    public static int SetConsoleTitleW(java.lang.foreign.MemorySegment lpConsoleTitle) {
+    public static int GetConsoleOutputCP() {
+        MethodHandle mh$ = requireNonNull(GetConsoleOutputCP$MH, "GetConsoleOutputCP");
+        try {
+            return (int) mh$.invokeExact();
+        } catch (Throwable ex$) {
+            throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    public static int SetConsoleTitleW(MemorySegment lpConsoleTitle) {
         MethodHandle mh$ = requireNonNull(SetConsoleTitleW$MH, "SetConsoleTitleW");
         try {
             return (int) mh$.invokeExact(lpConsoleTitle);
@@ -139,7 +156,7 @@ final class Kernel32 {
         }
     }
 
-    public static int SetConsoleCursorPosition(java.lang.foreign.MemorySegment hConsoleOutput, COORD dwCursorPosition) {
+    public static int SetConsoleCursorPosition(MemorySegment hConsoleOutput, COORD dwCursorPosition) {
         MethodHandle mh$ = requireNonNull(SetConsoleCursorPosition$MH, "SetConsoleCursorPosition");
         try {
             return (int) mh$.invokeExact(hConsoleOutput, dwCursorPosition.seg);
@@ -149,11 +166,11 @@ final class Kernel32 {
     }
 
     public static int FillConsoleOutputCharacterW(
-            java.lang.foreign.MemorySegment hConsoleOutput,
+            MemorySegment hConsoleOutput,
             char cCharacter,
             int nLength,
             COORD dwWriteCoord,
-            java.lang.foreign.MemorySegment lpNumberOfCharsWritten) {
+            MemorySegment lpNumberOfCharsWritten) {
         MethodHandle mh$ = requireNonNull(FillConsoleOutputCharacterW$MH, "FillConsoleOutputCharacterW");
         try {
             return (int) mh$.invokeExact(hConsoleOutput, cCharacter, nLength, dwWriteCoord.seg, lpNumberOfCharsWritten);
@@ -163,11 +180,11 @@ final class Kernel32 {
     }
 
     public static int FillConsoleOutputAttribute(
-            java.lang.foreign.MemorySegment hConsoleOutput,
+            MemorySegment hConsoleOutput,
             short wAttribute,
             int nLength,
             COORD dwWriteCoord,
-            java.lang.foreign.MemorySegment lpNumberOfAttrsWritten) {
+            MemorySegment lpNumberOfAttrsWritten) {
         MethodHandle mh$ = requireNonNull(FillConsoleOutputAttribute$MH, "FillConsoleOutputAttribute");
         try {
             return (int) mh$.invokeExact(hConsoleOutput, wAttribute, nLength, dwWriteCoord.seg, lpNumberOfAttrsWritten);
@@ -177,11 +194,11 @@ final class Kernel32 {
     }
 
     public static int WriteConsoleW(
-            java.lang.foreign.MemorySegment hConsoleOutput,
-            java.lang.foreign.MemorySegment lpBuffer,
+            MemorySegment hConsoleOutput,
+            MemorySegment lpBuffer,
             int nNumberOfCharsToWrite,
-            java.lang.foreign.MemorySegment lpNumberOfCharsWritten,
-            java.lang.foreign.MemorySegment lpReserved) {
+            MemorySegment lpNumberOfCharsWritten,
+            MemorySegment lpReserved) {
         MethodHandle mh$ = requireNonNull(WriteConsoleW$MH, "WriteConsoleW");
         try {
             return (int) mh$.invokeExact(
@@ -192,10 +209,7 @@ final class Kernel32 {
     }
 
     public static int ReadConsoleInputW(
-            java.lang.foreign.MemorySegment hConsoleInput,
-            java.lang.foreign.MemorySegment lpBuffer,
-            int nLength,
-            java.lang.foreign.MemorySegment lpNumberOfEventsRead) {
+            MemorySegment hConsoleInput, MemorySegment lpBuffer, int nLength, MemorySegment lpNumberOfEventsRead) {
         MethodHandle mh$ = requireNonNull(ReadConsoleInputW$MH, "ReadConsoleInputW");
         try {
             return (int) mh$.invokeExact(hConsoleInput, lpBuffer, nLength, lpNumberOfEventsRead);
@@ -205,10 +219,7 @@ final class Kernel32 {
     }
 
     public static int PeekConsoleInputW(
-            java.lang.foreign.MemorySegment hConsoleInput,
-            java.lang.foreign.MemorySegment lpBuffer,
-            int nLength,
-            java.lang.foreign.MemorySegment lpNumberOfEventsRead) {
+            MemorySegment hConsoleInput, MemorySegment lpBuffer, int nLength, MemorySegment lpNumberOfEventsRead) {
         MethodHandle mh$ = requireNonNull(PeekConsoleInputW$MH, "PeekConsoleInputW");
         try {
             return (int) mh$.invokeExact(hConsoleInput, lpBuffer, nLength, lpNumberOfEventsRead);
@@ -218,7 +229,7 @@ final class Kernel32 {
     }
 
     public static int GetConsoleScreenBufferInfo(
-            java.lang.foreign.MemorySegment hConsoleOutput, CONSOLE_SCREEN_BUFFER_INFO lpConsoleScreenBufferInfo) {
+            MemorySegment hConsoleOutput, CONSOLE_SCREEN_BUFFER_INFO lpConsoleScreenBufferInfo) {
         MethodHandle mh$ = requireNonNull(GetConsoleScreenBufferInfo$MH, "GetConsoleScreenBufferInfo");
         try {
             return (int) mh$.invokeExact(hConsoleOutput, lpConsoleScreenBufferInfo.seg);
@@ -228,7 +239,7 @@ final class Kernel32 {
     }
 
     public static int ScrollConsoleScreenBuffer(
-            java.lang.foreign.MemorySegment hConsoleOutput,
+            MemorySegment hConsoleOutput,
             SMALL_RECT lpScrollRectangle,
             SMALL_RECT lpClipRectangle,
             COORD dwDestinationOrigin,
@@ -251,7 +262,7 @@ final class Kernel32 {
         }
     }
 
-    public static int GetFileType(java.lang.foreign.MemorySegment hFile) {
+    public static int GetFileType(MemorySegment hFile) {
         MethodHandle mh$ = requireNonNull(GetFileType$MH, "GetFileType");
         try {
             return (int) mh$.invokeExact(hFile);
@@ -260,32 +271,31 @@ final class Kernel32 {
         }
     }
 
-    public static java.lang.foreign.MemorySegment _get_osfhandle(int fd) {
+    public static MemorySegment _get_osfhandle(int fd) {
         MethodHandle mh$ = requireNonNull(_get_osfhandle$MH, "_get_osfhandle");
         try {
-            return (java.lang.foreign.MemorySegment) mh$.invokeExact(fd);
+            return (MemorySegment) mh$.invokeExact(fd);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
     }
 
-    public static INPUT_RECORD[] readConsoleInputHelper(java.lang.foreign.MemorySegment handle, int count, boolean peek)
+    public static INPUT_RECORD[] readConsoleInputHelper(MemorySegment handle, int count, boolean peek)
             throws IOException {
-        return readConsoleInputHelper(java.lang.foreign.Arena.ofAuto(), handle, count, peek);
+        return readConsoleInputHelper(Arena.ofAuto(), handle, count, peek);
     }
 
-    public static INPUT_RECORD[] readConsoleInputHelper(
-            java.lang.foreign.Arena arena, java.lang.foreign.MemorySegment handle, int count, boolean peek)
+    public static INPUT_RECORD[] readConsoleInputHelper(Arena arena, MemorySegment handle, int count, boolean peek)
             throws IOException {
-        java.lang.foreign.MemorySegment inputRecordPtr = arena.allocate(INPUT_RECORD.LAYOUT, count);
-        java.lang.foreign.MemorySegment length = arena.allocate(java.lang.foreign.ValueLayout.JAVA_INT, 1);
+        MemorySegment inputRecordPtr = arena.allocate(INPUT_RECORD.LAYOUT, count);
+        MemorySegment length = arena.allocate(ValueLayout.JAVA_INT, 1);
         int res = peek
                 ? PeekConsoleInputW(handle, inputRecordPtr, count, length)
                 : ReadConsoleInputW(handle, inputRecordPtr, count, length);
         if (res == 0) {
             throw new IOException("ReadConsoleInputW failed: " + getLastErrorMessage());
         }
-        int len = length.get(java.lang.foreign.ValueLayout.JAVA_INT, 0);
+        int len = length.get(ValueLayout.JAVA_INT, 0);
         return inputRecordPtr
                 .elements(INPUT_RECORD.LAYOUT)
                 .map(INPUT_RECORD::new)
@@ -300,56 +310,49 @@ final class Kernel32 {
 
     public static String getErrorMessage(int errorCode) {
         int bufferSize = 160;
-        try (java.lang.foreign.Arena arena = java.lang.foreign.Arena.ofConfined()) {
-            java.lang.foreign.MemorySegment data = arena.allocate(bufferSize);
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment data = arena.allocate(bufferSize);
             FormatMessageW(
-                    FORMAT_MESSAGE_FROM_SYSTEM,
-                    java.lang.foreign.MemorySegment.NULL,
-                    errorCode,
-                    0,
-                    data,
-                    bufferSize,
-                    java.lang.foreign.MemorySegment.NULL);
-            return new String(data.toArray(java.lang.foreign.ValueLayout.JAVA_BYTE), StandardCharsets.UTF_16LE).trim();
+                    FORMAT_MESSAGE_FROM_SYSTEM, MemorySegment.NULL, errorCode, 0, data, bufferSize, MemorySegment.NULL);
+            return new String(data.toArray(ValueLayout.JAVA_BYTE), StandardCharsets.UTF_16LE).trim();
         }
     }
 
-    private static final java.lang.foreign.SymbolLookup SYMBOL_LOOKUP;
+    private static final SymbolLookup SYMBOL_LOOKUP;
 
     static {
         System.loadLibrary("msvcrt");
         System.loadLibrary("Kernel32");
-        SYMBOL_LOOKUP = java.lang.foreign.SymbolLookup.loaderLookup();
+        SYMBOL_LOOKUP = SymbolLookup.loaderLookup();
     }
 
-    static MethodHandle downcallHandle(String name, java.lang.foreign.FunctionDescriptor fdesc) {
+    static MethodHandle downcallHandle(String name, FunctionDescriptor fdesc) {
         return SYMBOL_LOOKUP
                 .find(name)
-                .map(addr -> java.lang.foreign.Linker.nativeLinker().downcallHandle(addr, fdesc))
+                .map(addr -> Linker.nativeLinker().downcallHandle(addr, fdesc))
                 .orElse(null);
     }
 
-    static final java.lang.foreign.ValueLayout.OfBoolean C_BOOL$LAYOUT = java.lang.foreign.ValueLayout.JAVA_BOOLEAN;
-    static final java.lang.foreign.ValueLayout.OfByte C_CHAR$LAYOUT = java.lang.foreign.ValueLayout.JAVA_BYTE;
-    static final java.lang.foreign.ValueLayout.OfChar C_WCHAR$LAYOUT = java.lang.foreign.ValueLayout.JAVA_CHAR;
-    static final java.lang.foreign.ValueLayout.OfShort C_SHORT$LAYOUT = java.lang.foreign.ValueLayout.JAVA_SHORT;
-    static final java.lang.foreign.ValueLayout.OfShort C_WORD$LAYOUT = java.lang.foreign.ValueLayout.JAVA_SHORT;
-    static final java.lang.foreign.ValueLayout.OfInt C_DWORD$LAYOUT = java.lang.foreign.ValueLayout.JAVA_INT;
-    static final java.lang.foreign.ValueLayout.OfInt C_INT$LAYOUT = java.lang.foreign.ValueLayout.JAVA_INT;
-    static final java.lang.foreign.ValueLayout.OfLong C_LONG$LAYOUT = java.lang.foreign.ValueLayout.JAVA_LONG;
-    static final java.lang.foreign.ValueLayout.OfLong C_LONG_LONG$LAYOUT = java.lang.foreign.ValueLayout.JAVA_LONG;
-    static final java.lang.foreign.ValueLayout.OfFloat C_FLOAT$LAYOUT = java.lang.foreign.ValueLayout.JAVA_FLOAT;
-    static final java.lang.foreign.ValueLayout.OfDouble C_DOUBLE$LAYOUT = java.lang.foreign.ValueLayout.JAVA_DOUBLE;
-    static final java.lang.foreign.AddressLayout C_POINTER$LAYOUT = java.lang.foreign.ValueLayout.ADDRESS;
+    static final ValueLayout.OfBoolean C_BOOL$LAYOUT = ValueLayout.JAVA_BOOLEAN;
+    static final ValueLayout.OfByte C_CHAR$LAYOUT = ValueLayout.JAVA_BYTE;
+    static final ValueLayout.OfChar C_WCHAR$LAYOUT = ValueLayout.JAVA_CHAR;
+    static final ValueLayout.OfShort C_SHORT$LAYOUT = ValueLayout.JAVA_SHORT;
+    static final ValueLayout.OfShort C_WORD$LAYOUT = ValueLayout.JAVA_SHORT;
+    static final ValueLayout.OfInt C_DWORD$LAYOUT = ValueLayout.JAVA_INT;
+    static final ValueLayout.OfInt C_INT$LAYOUT = ValueLayout.JAVA_INT;
+    static final ValueLayout.OfLong C_LONG$LAYOUT = ValueLayout.JAVA_LONG;
+    static final ValueLayout.OfLong C_LONG_LONG$LAYOUT = ValueLayout.JAVA_LONG;
+    static final ValueLayout.OfFloat C_FLOAT$LAYOUT = ValueLayout.JAVA_FLOAT;
+    static final ValueLayout.OfDouble C_DOUBLE$LAYOUT = ValueLayout.JAVA_DOUBLE;
+    static final AddressLayout C_POINTER$LAYOUT = ValueLayout.ADDRESS;
 
-    static final MethodHandle WaitForSingleObject$MH = downcallHandle(
-            "WaitForSingleObject",
-            java.lang.foreign.FunctionDescriptor.of(C_INT$LAYOUT, C_POINTER$LAYOUT, C_INT$LAYOUT));
+    static final MethodHandle WaitForSingleObject$MH =
+            downcallHandle("WaitForSingleObject", FunctionDescriptor.of(C_INT$LAYOUT, C_POINTER$LAYOUT, C_INT$LAYOUT));
     static final MethodHandle GetStdHandle$MH =
-            downcallHandle("GetStdHandle", java.lang.foreign.FunctionDescriptor.of(C_POINTER$LAYOUT, C_INT$LAYOUT));
+            downcallHandle("GetStdHandle", FunctionDescriptor.of(C_POINTER$LAYOUT, C_INT$LAYOUT));
     static final MethodHandle FormatMessageW$MH = downcallHandle(
             "FormatMessageW",
-            java.lang.foreign.FunctionDescriptor.of(
+            FunctionDescriptor.of(
                     C_INT$LAYOUT,
                     C_INT$LAYOUT,
                     C_POINTER$LAYOUT,
@@ -359,30 +362,29 @@ final class Kernel32 {
                     C_INT$LAYOUT,
                     C_POINTER$LAYOUT));
     static final MethodHandle SetConsoleTextAttribute$MH = downcallHandle(
-            "SetConsoleTextAttribute",
-            java.lang.foreign.FunctionDescriptor.of(C_INT$LAYOUT, C_POINTER$LAYOUT, C_SHORT$LAYOUT));
-    static final MethodHandle SetConsoleMode$MH = downcallHandle(
-            "SetConsoleMode", java.lang.foreign.FunctionDescriptor.of(C_INT$LAYOUT, C_POINTER$LAYOUT, C_INT$LAYOUT));
-    static final MethodHandle GetConsoleMode$MH = downcallHandle(
-            "GetConsoleMode",
-            java.lang.foreign.FunctionDescriptor.of(C_INT$LAYOUT, C_POINTER$LAYOUT, C_POINTER$LAYOUT));
+            "SetConsoleTextAttribute", FunctionDescriptor.of(C_INT$LAYOUT, C_POINTER$LAYOUT, C_SHORT$LAYOUT));
+    static final MethodHandle SetConsoleMode$MH =
+            downcallHandle("SetConsoleMode", FunctionDescriptor.of(C_INT$LAYOUT, C_POINTER$LAYOUT, C_INT$LAYOUT));
+    static final MethodHandle GetConsoleMode$MH =
+            downcallHandle("GetConsoleMode", FunctionDescriptor.of(C_INT$LAYOUT, C_POINTER$LAYOUT, C_POINTER$LAYOUT));
+    static final MethodHandle GetConsoleOutputCP$MH =
+            downcallHandle("GetConsoleOutputCP", FunctionDescriptor.of(C_INT$LAYOUT));
 
     static final MethodHandle SetConsoleTitleW$MH =
-            downcallHandle("SetConsoleTitleW", java.lang.foreign.FunctionDescriptor.of(C_INT$LAYOUT, C_POINTER$LAYOUT));
+            downcallHandle("SetConsoleTitleW", FunctionDescriptor.of(C_INT$LAYOUT, C_POINTER$LAYOUT));
     static final MethodHandle SetConsoleCursorPosition$MH = downcallHandle(
-            "SetConsoleCursorPosition",
-            java.lang.foreign.FunctionDescriptor.of(C_INT$LAYOUT, C_POINTER$LAYOUT, COORD.LAYOUT));
+            "SetConsoleCursorPosition", FunctionDescriptor.of(C_INT$LAYOUT, C_POINTER$LAYOUT, COORD.LAYOUT));
     static final MethodHandle FillConsoleOutputCharacterW$MH = downcallHandle(
             "FillConsoleOutputCharacterW",
-            java.lang.foreign.FunctionDescriptor.of(
+            FunctionDescriptor.of(
                     C_INT$LAYOUT, C_POINTER$LAYOUT, C_WCHAR$LAYOUT, C_INT$LAYOUT, COORD.LAYOUT, C_POINTER$LAYOUT));
     static final MethodHandle FillConsoleOutputAttribute$MH = downcallHandle(
             "FillConsoleOutputAttribute",
-            java.lang.foreign.FunctionDescriptor.of(
+            FunctionDescriptor.of(
                     C_INT$LAYOUT, C_POINTER$LAYOUT, C_SHORT$LAYOUT, C_INT$LAYOUT, COORD.LAYOUT, C_POINTER$LAYOUT));
     static final MethodHandle WriteConsoleW$MH = downcallHandle(
             "WriteConsoleW",
-            java.lang.foreign.FunctionDescriptor.of(
+            FunctionDescriptor.of(
                     C_INT$LAYOUT,
                     C_POINTER$LAYOUT,
                     C_POINTER$LAYOUT,
@@ -392,38 +394,34 @@ final class Kernel32 {
 
     static final MethodHandle ReadConsoleInputW$MH = downcallHandle(
             "ReadConsoleInputW",
-            java.lang.foreign.FunctionDescriptor.of(
-                    C_INT$LAYOUT, C_POINTER$LAYOUT, C_POINTER$LAYOUT, C_INT$LAYOUT, C_POINTER$LAYOUT));
+            FunctionDescriptor.of(C_INT$LAYOUT, C_POINTER$LAYOUT, C_POINTER$LAYOUT, C_INT$LAYOUT, C_POINTER$LAYOUT));
     static final MethodHandle PeekConsoleInputW$MH = downcallHandle(
             "PeekConsoleInputW",
-            java.lang.foreign.FunctionDescriptor.of(
-                    C_INT$LAYOUT, C_POINTER$LAYOUT, C_POINTER$LAYOUT, C_INT$LAYOUT, C_POINTER$LAYOUT));
+            FunctionDescriptor.of(C_INT$LAYOUT, C_POINTER$LAYOUT, C_POINTER$LAYOUT, C_INT$LAYOUT, C_POINTER$LAYOUT));
 
     static final MethodHandle GetConsoleScreenBufferInfo$MH = downcallHandle(
-            "GetConsoleScreenBufferInfo",
-            java.lang.foreign.FunctionDescriptor.of(C_INT$LAYOUT, C_POINTER$LAYOUT, C_POINTER$LAYOUT));
+            "GetConsoleScreenBufferInfo", FunctionDescriptor.of(C_INT$LAYOUT, C_POINTER$LAYOUT, C_POINTER$LAYOUT));
 
     static final MethodHandle ScrollConsoleScreenBufferW$MH = downcallHandle(
             "ScrollConsoleScreenBufferW",
-            java.lang.foreign.FunctionDescriptor.of(
+            FunctionDescriptor.of(
                     C_INT$LAYOUT,
                     C_POINTER$LAYOUT,
                     C_POINTER$LAYOUT,
                     C_POINTER$LAYOUT,
                     COORD.LAYOUT,
                     C_POINTER$LAYOUT));
-    static final MethodHandle GetLastError$MH =
-            downcallHandle("GetLastError", java.lang.foreign.FunctionDescriptor.of(C_INT$LAYOUT));
+    static final MethodHandle GetLastError$MH = downcallHandle("GetLastError", FunctionDescriptor.of(C_INT$LAYOUT));
     static final MethodHandle GetFileType$MH =
-            downcallHandle("GetFileType", java.lang.foreign.FunctionDescriptor.of(C_INT$LAYOUT, C_POINTER$LAYOUT));
+            downcallHandle("GetFileType", FunctionDescriptor.of(C_INT$LAYOUT, C_POINTER$LAYOUT));
     static final MethodHandle _get_osfhandle$MH =
-            downcallHandle("_get_osfhandle", java.lang.foreign.FunctionDescriptor.of(C_POINTER$LAYOUT, C_INT$LAYOUT));
+            downcallHandle("_get_osfhandle", FunctionDescriptor.of(C_POINTER$LAYOUT, C_INT$LAYOUT));
 
     public static final class INPUT_RECORD {
-        static final java.lang.foreign.MemoryLayout LAYOUT = java.lang.foreign.MemoryLayout.structLayout(
-                java.lang.foreign.ValueLayout.JAVA_SHORT.withName("EventType"),
-                java.lang.foreign.ValueLayout.JAVA_SHORT, // padding
-                java.lang.foreign.MemoryLayout.unionLayout(
+        static final MemoryLayout LAYOUT = MemoryLayout.structLayout(
+                ValueLayout.JAVA_SHORT.withName("EventType"),
+                ValueLayout.JAVA_SHORT, // padding
+                MemoryLayout.unionLayout(
                                 KEY_EVENT_RECORD.LAYOUT.withName("KeyEvent"),
                                 MOUSE_EVENT_RECORD.LAYOUT.withName("MouseEvent"),
                                 WINDOW_BUFFER_SIZE_RECORD.LAYOUT.withName("WindowBufferSizeEvent"),
@@ -433,17 +431,17 @@ final class Kernel32 {
         static final VarHandle EventType$VH = varHandle(LAYOUT, "EventType");
         static final long Event$OFFSET = byteOffset(LAYOUT, "Event");
 
-        private final java.lang.foreign.MemorySegment seg;
+        private final MemorySegment seg;
 
         public INPUT_RECORD() {
-            this(java.lang.foreign.Arena.ofAuto());
+            this(Arena.ofAuto());
         }
 
-        public INPUT_RECORD(java.lang.foreign.Arena arena) {
+        public INPUT_RECORD(Arena arena) {
             this(arena.allocate(LAYOUT));
         }
 
-        public INPUT_RECORD(java.lang.foreign.MemorySegment seg) {
+        public INPUT_RECORD(MemorySegment seg) {
             this.seg = seg;
         }
 
@@ -466,21 +464,20 @@ final class Kernel32 {
 
     public static final class MENU_EVENT_RECORD {
 
-        static final java.lang.foreign.GroupLayout LAYOUT =
-                java.lang.foreign.MemoryLayout.structLayout(C_DWORD$LAYOUT.withName("dwCommandId"));
+        static final GroupLayout LAYOUT = MemoryLayout.structLayout(C_DWORD$LAYOUT.withName("dwCommandId"));
         static final VarHandle COMMAND_ID = varHandle(LAYOUT, "dwCommandId");
 
-        private final java.lang.foreign.MemorySegment seg;
+        private final MemorySegment seg;
 
         public MENU_EVENT_RECORD() {
-            this(java.lang.foreign.Arena.ofAuto());
+            this(Arena.ofAuto());
         }
 
-        public MENU_EVENT_RECORD(java.lang.foreign.Arena arena) {
+        public MENU_EVENT_RECORD(Arena arena) {
             this(arena.allocate(LAYOUT));
         }
 
-        public MENU_EVENT_RECORD(java.lang.foreign.MemorySegment seg) {
+        public MENU_EVENT_RECORD(MemorySegment seg) {
             this.seg = seg;
         }
 
@@ -495,25 +492,24 @@ final class Kernel32 {
 
     public static final class FOCUS_EVENT_RECORD {
 
-        static final java.lang.foreign.GroupLayout LAYOUT =
-                java.lang.foreign.MemoryLayout.structLayout(C_INT$LAYOUT.withName("bSetFocus"));
+        static final GroupLayout LAYOUT = MemoryLayout.structLayout(C_INT$LAYOUT.withName("bSetFocus"));
         static final VarHandle SET_FOCUS = varHandle(LAYOUT, "bSetFocus");
 
-        private final java.lang.foreign.MemorySegment seg;
+        private final MemorySegment seg;
 
         public FOCUS_EVENT_RECORD() {
-            this(java.lang.foreign.Arena.ofAuto());
+            this(Arena.ofAuto());
         }
 
-        public FOCUS_EVENT_RECORD(java.lang.foreign.Arena arena) {
+        public FOCUS_EVENT_RECORD(Arena arena) {
             this(arena.allocate(LAYOUT));
         }
 
-        public FOCUS_EVENT_RECORD(java.lang.foreign.MemorySegment seg) {
+        public FOCUS_EVENT_RECORD(MemorySegment seg) {
             this.seg = Objects.requireNonNull(seg);
         }
 
-        public FOCUS_EVENT_RECORD(java.lang.foreign.MemorySegment seg, long offset) {
+        public FOCUS_EVENT_RECORD(MemorySegment seg, long offset) {
             this.seg = Objects.requireNonNull(seg).asSlice(offset, LAYOUT.byteSize());
         }
 
@@ -528,21 +524,20 @@ final class Kernel32 {
 
     public static final class WINDOW_BUFFER_SIZE_RECORD {
 
-        static final java.lang.foreign.GroupLayout LAYOUT =
-                java.lang.foreign.MemoryLayout.structLayout(COORD.LAYOUT.withName("size"));
+        static final GroupLayout LAYOUT = MemoryLayout.structLayout(COORD.LAYOUT.withName("size"));
         static final long SIZE_OFFSET = byteOffset(LAYOUT, "size");
 
-        private final java.lang.foreign.MemorySegment seg;
+        private final MemorySegment seg;
 
         public WINDOW_BUFFER_SIZE_RECORD() {
-            this(java.lang.foreign.Arena.ofAuto());
+            this(Arena.ofAuto());
         }
 
-        public WINDOW_BUFFER_SIZE_RECORD(java.lang.foreign.Arena arena) {
+        public WINDOW_BUFFER_SIZE_RECORD(Arena arena) {
             this(arena.allocate(LAYOUT));
         }
 
-        public WINDOW_BUFFER_SIZE_RECORD(java.lang.foreign.MemorySegment seg) {
+        public WINDOW_BUFFER_SIZE_RECORD(MemorySegment seg) {
             this.seg = seg;
         }
 
@@ -557,7 +552,7 @@ final class Kernel32 {
 
     public static final class MOUSE_EVENT_RECORD {
 
-        static final java.lang.foreign.MemoryLayout LAYOUT = java.lang.foreign.MemoryLayout.structLayout(
+        static final MemoryLayout LAYOUT = MemoryLayout.structLayout(
                 COORD.LAYOUT.withName("dwMousePosition"),
                 C_DWORD$LAYOUT.withName("dwButtonState"),
                 C_DWORD$LAYOUT.withName("dwControlKeyState"),
@@ -567,21 +562,21 @@ final class Kernel32 {
         static final VarHandle CONTROL_KEY_STATE = varHandle(LAYOUT, "dwControlKeyState");
         static final VarHandle EVENT_FLAGS = varHandle(LAYOUT, "dwEventFlags");
 
-        private final java.lang.foreign.MemorySegment seg;
+        private final MemorySegment seg;
 
         public MOUSE_EVENT_RECORD() {
-            this(java.lang.foreign.Arena.ofAuto());
+            this(Arena.ofAuto());
         }
 
-        public MOUSE_EVENT_RECORD(java.lang.foreign.Arena arena) {
+        public MOUSE_EVENT_RECORD(Arena arena) {
             this(arena.allocate(LAYOUT));
         }
 
-        public MOUSE_EVENT_RECORD(java.lang.foreign.MemorySegment seg) {
+        public MOUSE_EVENT_RECORD(MemorySegment seg) {
             this.seg = Objects.requireNonNull(seg);
         }
 
-        public MOUSE_EVENT_RECORD(java.lang.foreign.MemorySegment seg, long offset) {
+        public MOUSE_EVENT_RECORD(MemorySegment seg, long offset) {
             this.seg = Objects.requireNonNull(seg).asSlice(offset, LAYOUT.byteSize());
         }
 
@@ -609,16 +604,16 @@ final class Kernel32 {
 
     public static final class KEY_EVENT_RECORD {
 
-        static final java.lang.foreign.MemoryLayout LAYOUT = java.lang.foreign.MemoryLayout.structLayout(
-                java.lang.foreign.ValueLayout.JAVA_INT.withName("bKeyDown"),
-                java.lang.foreign.ValueLayout.JAVA_SHORT.withName("wRepeatCount"),
-                java.lang.foreign.ValueLayout.JAVA_SHORT.withName("wVirtualKeyCode"),
-                java.lang.foreign.ValueLayout.JAVA_SHORT.withName("wVirtualScanCode"),
-                java.lang.foreign.MemoryLayout.unionLayout(
-                                java.lang.foreign.ValueLayout.JAVA_CHAR.withName("UnicodeChar"),
-                                java.lang.foreign.ValueLayout.JAVA_BYTE.withName("AsciiChar"))
+        static final MemoryLayout LAYOUT = MemoryLayout.structLayout(
+                ValueLayout.JAVA_INT.withName("bKeyDown"),
+                ValueLayout.JAVA_SHORT.withName("wRepeatCount"),
+                ValueLayout.JAVA_SHORT.withName("wVirtualKeyCode"),
+                ValueLayout.JAVA_SHORT.withName("wVirtualScanCode"),
+                MemoryLayout.unionLayout(
+                                ValueLayout.JAVA_CHAR.withName("UnicodeChar"),
+                                ValueLayout.JAVA_BYTE.withName("AsciiChar"))
                         .withName("uChar"),
-                java.lang.foreign.ValueLayout.JAVA_INT.withName("dwControlKeyState"));
+                ValueLayout.JAVA_INT.withName("dwControlKeyState"));
         static final VarHandle bKeyDown$VH = varHandle(LAYOUT, "bKeyDown");
         static final VarHandle wRepeatCount$VH = varHandle(LAYOUT, "wRepeatCount");
         static final VarHandle wVirtualKeyCode$VH = varHandle(LAYOUT, "wVirtualKeyCode");
@@ -627,21 +622,21 @@ final class Kernel32 {
         static final VarHandle AsciiChar$VH = varHandle(LAYOUT, "uChar", "AsciiChar");
         static final VarHandle dwControlKeyState$VH = varHandle(LAYOUT, "dwControlKeyState");
 
-        final java.lang.foreign.MemorySegment seg;
+        final MemorySegment seg;
 
         public KEY_EVENT_RECORD() {
-            this(java.lang.foreign.Arena.ofAuto());
+            this(Arena.ofAuto());
         }
 
-        public KEY_EVENT_RECORD(java.lang.foreign.Arena arena) {
+        public KEY_EVENT_RECORD(Arena arena) {
             this(arena.allocate(LAYOUT));
         }
 
-        public KEY_EVENT_RECORD(java.lang.foreign.MemorySegment seg) {
+        public KEY_EVENT_RECORD(MemorySegment seg) {
             this.seg = seg;
         }
 
-        public KEY_EVENT_RECORD(java.lang.foreign.MemorySegment seg, long offset) {
+        public KEY_EVENT_RECORD(MemorySegment seg, long offset) {
             this.seg = Objects.requireNonNull(seg).asSlice(offset, LAYOUT.byteSize());
         }
 
@@ -679,31 +674,30 @@ final class Kernel32 {
 
     public static final class CHAR_INFO {
 
-        static final java.lang.foreign.GroupLayout LAYOUT = java.lang.foreign.MemoryLayout.structLayout(
-                java.lang.foreign.MemoryLayout.unionLayout(
-                                C_WCHAR$LAYOUT.withName("UnicodeChar"), C_CHAR$LAYOUT.withName("AsciiChar"))
+        static final GroupLayout LAYOUT = MemoryLayout.structLayout(
+                MemoryLayout.unionLayout(C_WCHAR$LAYOUT.withName("UnicodeChar"), C_CHAR$LAYOUT.withName("AsciiChar"))
                         .withName("Char"),
                 C_WORD$LAYOUT.withName("Attributes"));
         static final VarHandle UnicodeChar$VH = varHandle(LAYOUT, "Char", "UnicodeChar");
         static final VarHandle Attributes$VH = varHandle(LAYOUT, "Attributes");
 
-        final java.lang.foreign.MemorySegment seg;
+        final MemorySegment seg;
 
         public CHAR_INFO() {
-            this(java.lang.foreign.Arena.ofAuto());
+            this(Arena.ofAuto());
         }
 
-        public CHAR_INFO(java.lang.foreign.Arena arena) {
+        public CHAR_INFO(Arena arena) {
             this(arena.allocate(LAYOUT));
         }
 
-        public CHAR_INFO(java.lang.foreign.Arena arena, char c, short a) {
+        public CHAR_INFO(Arena arena, char c, short a) {
             this(arena);
             UnicodeChar$VH.set(seg, c);
             Attributes$VH.set(seg, a);
         }
 
-        public CHAR_INFO(java.lang.foreign.MemorySegment seg) {
+        public CHAR_INFO(MemorySegment seg) {
             this.seg = seg;
         }
 
@@ -713,7 +707,7 @@ final class Kernel32 {
     }
 
     public static final class CONSOLE_SCREEN_BUFFER_INFO {
-        static final java.lang.foreign.GroupLayout LAYOUT = java.lang.foreign.MemoryLayout.structLayout(
+        static final GroupLayout LAYOUT = MemoryLayout.structLayout(
                 COORD.LAYOUT.withName("dwSize"),
                 COORD.LAYOUT.withName("dwCursorPosition"),
                 C_WORD$LAYOUT.withName("wAttributes"),
@@ -724,17 +718,17 @@ final class Kernel32 {
         static final VarHandle wAttributes$VH = varHandle(LAYOUT, "wAttributes");
         static final long srWindow$OFFSET = byteOffset(LAYOUT, "srWindow");
 
-        private final java.lang.foreign.MemorySegment seg;
+        private final MemorySegment seg;
 
         public CONSOLE_SCREEN_BUFFER_INFO() {
-            this(java.lang.foreign.Arena.ofAuto());
+            this(Arena.ofAuto());
         }
 
-        public CONSOLE_SCREEN_BUFFER_INFO(java.lang.foreign.Arena arena) {
+        public CONSOLE_SCREEN_BUFFER_INFO(Arena arena) {
             this(arena.allocate(LAYOUT));
         }
 
-        public CONSOLE_SCREEN_BUFFER_INFO(java.lang.foreign.MemorySegment seg) {
+        public CONSOLE_SCREEN_BUFFER_INFO(MemorySegment seg) {
             this.seg = seg;
         }
 
@@ -769,32 +763,32 @@ final class Kernel32 {
 
     public static final class COORD {
 
-        static final java.lang.foreign.GroupLayout LAYOUT =
-                java.lang.foreign.MemoryLayout.structLayout(C_SHORT$LAYOUT.withName("x"), C_SHORT$LAYOUT.withName("y"));
+        static final GroupLayout LAYOUT =
+                MemoryLayout.structLayout(C_SHORT$LAYOUT.withName("x"), C_SHORT$LAYOUT.withName("y"));
         static final VarHandle x$VH = varHandle(LAYOUT, "x");
         static final VarHandle y$VH = varHandle(LAYOUT, "y");
 
-        private final java.lang.foreign.MemorySegment seg;
+        private final MemorySegment seg;
 
         public COORD() {
-            this(java.lang.foreign.Arena.ofAuto());
+            this(Arena.ofAuto());
         }
 
-        public COORD(java.lang.foreign.Arena arena) {
+        public COORD(Arena arena) {
             this(arena.allocate(LAYOUT));
         }
 
-        public COORD(java.lang.foreign.Arena arena, short x, short y) {
+        public COORD(Arena arena, short x, short y) {
             this(arena.allocate(LAYOUT));
             x(x);
             y(y);
         }
 
-        public COORD(java.lang.foreign.MemorySegment seg) {
+        public COORD(MemorySegment seg) {
             this.seg = seg;
         }
 
-        public COORD(java.lang.foreign.MemorySegment seg, long offset) {
+        public COORD(MemorySegment seg, long offset) {
             this.seg = Objects.requireNonNull(seg).asSlice(offset, LAYOUT.byteSize());
         }
 
@@ -814,14 +808,14 @@ final class Kernel32 {
             COORD.y$VH.set(seg, y);
         }
 
-        public COORD copy(java.lang.foreign.Arena arena) {
+        public COORD copy(Arena arena) {
             return new COORD(arena.allocate(LAYOUT).copyFrom(seg));
         }
     }
 
     public static final class SMALL_RECT {
 
-        static final java.lang.foreign.GroupLayout LAYOUT = java.lang.foreign.MemoryLayout.structLayout(
+        static final GroupLayout LAYOUT = MemoryLayout.structLayout(
                 C_SHORT$LAYOUT.withName("Left"),
                 C_SHORT$LAYOUT.withName("Top"),
                 C_SHORT$LAYOUT.withName("Right"),
@@ -831,17 +825,17 @@ final class Kernel32 {
         static final VarHandle Right$VH = varHandle(LAYOUT, "Right");
         static final VarHandle Bottom$VH = varHandle(LAYOUT, "Bottom");
 
-        private final java.lang.foreign.MemorySegment seg;
+        private final MemorySegment seg;
 
         public SMALL_RECT() {
-            this(java.lang.foreign.Arena.ofAuto());
+            this(Arena.ofAuto());
         }
 
-        public SMALL_RECT(java.lang.foreign.Arena arena) {
+        public SMALL_RECT(Arena arena) {
             this(arena.allocate(LAYOUT));
         }
 
-        public SMALL_RECT(java.lang.foreign.Arena arena, SMALL_RECT rect) {
+        public SMALL_RECT(Arena arena, SMALL_RECT rect) {
             this(arena);
             left(rect.left());
             right(rect.right());
@@ -849,11 +843,11 @@ final class Kernel32 {
             bottom(rect.bottom());
         }
 
-        public SMALL_RECT(java.lang.foreign.MemorySegment seg, long offset) {
+        public SMALL_RECT(MemorySegment seg, long offset) {
             this(seg.asSlice(offset, LAYOUT.byteSize()));
         }
 
-        public SMALL_RECT(java.lang.foreign.MemorySegment seg) {
+        public SMALL_RECT(MemorySegment seg) {
             this.seg = seg;
         }
 
@@ -897,7 +891,7 @@ final class Kernel32 {
             Bottom$VH.set(seg, b);
         }
 
-        public SMALL_RECT copy(java.lang.foreign.Arena arena) {
+        public SMALL_RECT copy(Arena arena) {
             return new SMALL_RECT(arena.allocate(LAYOUT).copyFrom(seg));
         }
     }
@@ -909,19 +903,16 @@ final class Kernel32 {
         return obj;
     }
 
-    static VarHandle varHandle(java.lang.foreign.MemoryLayout layout, String name) {
-        return FfmTerminalProvider.lookupVarHandle(
-                layout, java.lang.foreign.MemoryLayout.PathElement.groupElement(name));
+    static VarHandle varHandle(MemoryLayout layout, String name) {
+        return FfmTerminalProvider.lookupVarHandle(layout, MemoryLayout.PathElement.groupElement(name));
     }
 
-    static VarHandle varHandle(java.lang.foreign.MemoryLayout layout, String e1, String name) {
+    static VarHandle varHandle(MemoryLayout layout, String e1, String name) {
         return FfmTerminalProvider.lookupVarHandle(
-                layout,
-                java.lang.foreign.MemoryLayout.PathElement.groupElement(e1),
-                java.lang.foreign.MemoryLayout.PathElement.groupElement(name));
+                layout, MemoryLayout.PathElement.groupElement(e1), MemoryLayout.PathElement.groupElement(name));
     }
 
-    static long byteOffset(java.lang.foreign.MemoryLayout layout, String name) {
-        return layout.byteOffset(java.lang.foreign.MemoryLayout.PathElement.groupElement(name));
+    static long byteOffset(MemoryLayout layout, String name) {
+        return layout.byteOffset(MemoryLayout.PathElement.groupElement(name));
     }
 }

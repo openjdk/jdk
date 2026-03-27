@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2018, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -15,19 +15,43 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 /**
- * A ANSI writer extracts ANSI escape codes written to
- * a {@link Writer} and calls corresponding <code>process*</code> methods.
+ * A writer that processes ANSI escape sequences.
  *
+ * <p>
+ * The AnsiWriter class extends FilterWriter to intercept and process ANSI escape
+ * sequences written to the underlying writer. It extracts ANSI escape codes and
+ * calls corresponding <code>process*</code> methods for each recognized sequence.
+ * </p>
+ *
+ * <p>
+ * This class just filters out the escape codes so that they are not sent out to
+ * the underlying {@link Writer}: <code>process*</code> methods are empty. Subclasses
+ * should actually perform the ANSI escape behaviors by implementing active code
+ * in <code>process*</code> methods.
+ * </p>
+ *
+ * <p>
+ * This class is useful for implementing terminal emulation, where ANSI escape
+ * sequences need to be interpreted to control cursor movement, text attributes,
+ * colors, and other terminal features.
+ * </p>
+ *
+ * <p>
+ * The class handles various ANSI escape sequences, including:
+ * </p>
+ * <ul>
+ *   <li>Cursor movement (up, down, left, right)</li>
+ *   <li>Cursor positioning (absolute and relative)</li>
+ *   <li>Text attributes (bold, underline, blink, etc.)</li>
+ *   <li>Colors (foreground and background)</li>
+ *   <li>Screen clearing and line manipulation</li>
+ * </ul>
+ *
+ * <p>
  * For more information about ANSI escape codes, see:
- * http://en.wikipedia.org/wiki/ANSI_escape_code
+ * <a href="http://en.wikipedia.org/wiki/ANSI_escape_code">Wikipedia: ANSI escape code</a>
+ * </p>
  *
- * This class just filters out the escape codes so that they are not
- * sent out to the underlying {@link Writer}: <code>process*</code> methods
- * are empty. Subclasses should actually perform the ANSI escape behaviors
- * by implementing active code in <code>process*</code> methods.
- *
- * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
- * @author Joris Kuipers
  * @since 1.0
  */
 public class AnsiWriter extends FilterWriter {
@@ -505,9 +529,6 @@ public class AnsiWriter extends FilterWriter {
     protected static final int ATTRIBUTE_INTENSITY_NORMAL = 22; //  Intensity; Normal  not bold and not faint
     protected static final int ATTRIBUTE_UNDERLINE_OFF = 24; //  Underline; None
     protected static final int ATTRIBUTE_BLINK_OFF = 25; //  Blink; off
-
-    @Deprecated
-    protected static final int ATTRIBUTE_NEGATIVE_Off = 27; //  Image; Positive
 
     protected static final int ATTRIBUTE_NEGATIVE_OFF = 27; //  Image; Positive
     protected static final int ATTRIBUTE_CONCEAL_OFF = 28; //  Reveal  conceal off

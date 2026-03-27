@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2020, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -19,9 +19,59 @@ import jdk.internal.org.jline.terminal.Terminal;
 import jdk.internal.org.jline.utils.InfoCmp.Capability;
 
 /**
- * Handle display and visual cursor.
+ * Manages terminal display and efficient screen updates with cursor positioning.
  *
- * @author <a href="mailto:gnodet@gmail.com">Guillaume Nodet</a>
+ * <p>
+ * The Display class provides functionality for managing the display of content on
+ * the terminal screen. It handles the complexities of cursor positioning, line wrapping,
+ * and efficient screen updates to minimize the amount of data sent to the terminal.
+ * </p>
+ *
+ * <p>
+ * This class supports two main modes of operation:
+ * </p>
+ * <ul>
+ *   <li><b>Full-screen mode</b> - Takes over the entire terminal screen</li>
+ *   <li><b>Partial-screen mode</b> - Updates only a portion of the screen, preserving content above</li>
+ * </ul>
+ *
+ * <p>
+ * Key features include:
+ * </p>
+ * <ul>
+ *   <li>Efficient screen updates using cursor positioning</li>
+ *   <li>Support for multi-line content with proper wrapping</li>
+ *   <li>Handling of ANSI-styled text (colors, attributes)</li>
+ *   <li>Size-aware rendering that adapts to terminal dimensions</li>
+ *   <li>Cursor positioning relative to the display area</li>
+ * </ul>
+ *
+ * <p>
+ * This class is used by various JLine components, such as LineReader, to provide
+ * efficient terminal display management for features like command-line editing,
+ * completion menus, and status messages.
+ * </p>
+ *
+ * <h2>Thread Safety</h2>
+ * <p>
+ * <b>This class is NOT thread-safe</b> and must be accessed from a single thread or with
+ * external synchronization. The Display class maintains mutable state including cursor
+ * position, screen content, and terminal dimensions that can be corrupted by concurrent access.
+ * </p>
+ * <p>
+ * Components that use Display in multi-threaded environments (such as signal handlers for
+ * window resize events) must provide their own synchronization. For example, the LineReader
+ * uses a ReentrantLock to coordinate access between the main thread and signal handlers.
+ * </p>
+ * <p>
+ * <b>Warning:</b> Concurrent access to Display methods may result in:
+ * </p>
+ * <ul>
+ *   <li>ConcurrentModificationException</li>
+ *   <li>Corrupted terminal output</li>
+ *   <li>Inconsistent cursor positioning</li>
+ *   <li>Race conditions in screen updates</li>
+ * </ul>
  */
 public class Display {
 
@@ -45,8 +95,10 @@ public class Display {
 
     protected final Map<Capability, Integer> cost = new HashMap<>();
     protected final boolean canScroll;
-    protected final boolean wrapAtEol;
-    protected final boolean delayedWrapAtEol;
+    protected final boolean terminalWrapAtEol;
+    protected final boolean terminalDelayedWrapAtEol;
+    protected boolean wrapAtEol;
+    protected boolean delayedWrapAtEol;
     protected final boolean cursorDownIsNewLine;
 
     @SuppressWarnings("this-escape")
@@ -56,8 +108,11 @@ public class Display {
 
         this.canScroll = can(Capability.insert_line, Capability.parm_insert_line)
                 && can(Capability.delete_line, Capability.parm_delete_line);
-        this.wrapAtEol = terminal.getBooleanCapability(Capability.auto_right_margin);
-        this.delayedWrapAtEol = this.wrapAtEol && terminal.getBooleanCapability(Capability.eat_newline_glitch);
+        this.terminalWrapAtEol = terminal.getBooleanCapability(Capability.auto_right_margin);
+        this.terminalDelayedWrapAtEol =
+                this.terminalWrapAtEol && terminal.getBooleanCapability(Capability.eat_newline_glitch);
+        this.wrapAtEol = this.terminalWrapAtEol;
+        this.delayedWrapAtEol = this.terminalDelayedWrapAtEol;
         this.cursorDownIsNewLine = "\n".equals(Curses.tputs(terminal.getStringCapability(Capability.cursor_down)));
     }
 
@@ -86,7 +141,18 @@ public class Display {
             this.columns = columns;
             this.columns1 = columns + 1;
             oldLines = AttributedString.join(AttributedString.EMPTY, oldLines)
-                    .columnSplitLength(columns, true, delayLineWrap());
+                    .columnSplitLength(columns, true, delayLineWrap(), terminal);
+        }
+        // When the terminal buffer is wider than the visible window (e.g. Windows with
+        // a wide screen buffer), auto-wrap occurs at the buffer width, not the visible
+        // width. Disable wrap-at-eol reliance since content won't reach the buffer edge.
+        int bufferColumns = terminal.getBufferSize().getColumns();
+        if (bufferColumns > columns) {
+            this.wrapAtEol = false;
+            this.delayedWrapAtEol = false;
+        } else {
+            this.wrapAtEol = this.terminalWrapAtEol;
+            this.delayedWrapAtEol = this.terminalDelayedWrapAtEol;
         }
     }
 
@@ -198,8 +264,8 @@ public class Display {
         int numLines = Math.min(rows, Math.max(oldLines.size(), newLines.size()));
         boolean wrapNeeded = false;
         while (lineIndex < numLines) {
-            AttributedString oldLine = lineIndex < oldLines.size() ? oldLines.get(lineIndex) : AttributedString.NEWLINE;
-            AttributedString newLine = lineIndex < newLines.size() ? newLines.get(lineIndex) : AttributedString.NEWLINE;
+            AttributedString oldLine = lineIndex < oldLines.size() ? oldLines.get(lineIndex) : AttributedString.EMPTY;
+            AttributedString newLine = lineIndex < newLines.size() ? newLines.get(lineIndex) : AttributedString.EMPTY;
             currentPos = lineIndex * columns1;
             int curCol = currentPos;
             int oldLength = oldLine.length();
@@ -220,12 +286,12 @@ public class Display {
                 if (newLength == 0 || newLine.isHidden(0)) {
                     // go to next line column zero
                     rawPrint(' ');
-                    terminal.puts(Capability.key_backspace);
+                    terminal.puts(Capability.cursor_left);
                 } else {
                     AttributedString firstChar = newLine.substring(0, 1);
                     // go to next line column one
                     rawPrint(firstChar);
-                    cursorPos += firstChar.columnLength(); // normally 1
+                    cursorPos += firstChar.columnLength(terminal); // normally 1
                     newLine = newLine.substring(1, newLength);
                     newLength--;
                     if (oldLength > 0) {
@@ -235,12 +301,35 @@ public class Display {
                     currentPos = cursorPos;
                 }
             }
+            // When grapheme cluster mode is active, the terminal may retroactively
+            // combine or uncombine characters as ZWJ and other combining code points
+            // are added incrementally. This invalidates cursor position tracking
+            // based on char-level diffs. Force a full line repaint in this case.
+            if (terminal.getGraphemeClusterMode() && !oldLine.equals(newLine)) {
+                cursorPos = moveVisualCursorTo(currentPos);
+                if (!terminal.puts(Capability.clr_eol)) {
+                    int oldLen = oldLine.columnLength(terminal);
+                    if (oldLen > 0) {
+                        rawPrint(' ', oldLen);
+                        cursorPos += oldLen;
+                        cursorPos = moveVisualCursorTo(currentPos);
+                    }
+                }
+                rawPrint(newLine);
+                cursorPos += newLine.columnLength(terminal);
+                currentPos = cursorPos;
+                lineIndex++;
+                boolean newWrap2 = !newNL && lineIndex < newLines.size();
+                if (targetCursorPos + 1 == lineIndex * columns1 && (newWrap2 || !delayLineWrap)) targetCursorPos++;
+                wrapNeeded = newWrap2;
+                continue;
+            }
             List<DiffHelper.Diff> diffs = DiffHelper.diff(oldLine, newLine);
             boolean ident = true;
             boolean cleared = false;
             for (int i = 0; i < diffs.size(); i++) {
                 DiffHelper.Diff diff = diffs.get(i);
-                int width = diff.text.columnLength();
+                int width = diff.text.columnLength(terminal);
                 switch (diff.operation) {
                     case EQUAL:
                         if (!ident) {
@@ -263,7 +352,7 @@ public class Display {
                             }
                         } else if (i <= diffs.size() - 2
                                 && diffs.get(i + 1).operation == DiffHelper.Operation.DELETE
-                                && width == diffs.get(i + 1).text.columnLength()) {
+                                && width == diffs.get(i + 1).text.columnLength(terminal)) {
                             moveVisualCursorTo(currentPos);
                             rawPrint(diff.text);
                             cursorPos += width;
@@ -285,15 +374,15 @@ public class Display {
                             continue;
                         }
                         if (i <= diffs.size() - 2 && diffs.get(i + 1).operation == DiffHelper.Operation.EQUAL) {
-                            if (currentPos + diffs.get(i + 1).text.columnLength() < columns) {
+                            if (currentPos + diffs.get(i + 1).text.columnLength(terminal) < columns) {
                                 moveVisualCursorTo(currentPos);
                                 if (deleteChars(width)) {
                                     break;
                                 }
                             }
                         }
-                        int oldLen = oldLine.columnLength();
-                        int newLen = newLine.columnLength();
+                        int oldLen = oldLine.columnLength(terminal);
+                        int newLen = newLine.columnLength(terminal);
                         int nb = Math.max(oldLen, newLen) - (currentPos - curCol);
                         moveVisualCursorTo(currentPos);
                         if (!terminal.puts(Capability.clr_eol)) {
@@ -321,7 +410,7 @@ public class Display {
                 if (this.wrapAtEol) {
                     if (!fullScreen || (fullScreen && lineIndex < numLines)) {
                         rawPrint(' ');
-                        terminal.puts(Capability.key_backspace);
+                        terminal.puts(Capability.cursor_left);
                         cursorPos++;
                     }
                 } else {
@@ -422,7 +511,7 @@ public class Display {
                 int row = targetPos / columns1;
                 AttributedString lastChar = row >= newLines.size()
                         ? AttributedString.EMPTY
-                        : newLines.get(row).columnSubSequence(columns - 1, columns);
+                        : newLines.get(row).columnSubSequence(columns - 1, columns, terminal);
                 if (lastChar.length() == 0) rawPrint((int) ' ');
                 else rawPrint(lastChar);
                 cursorPos++;
@@ -494,6 +583,6 @@ public class Display {
     }
 
     public int wcwidth(String str) {
-        return str != null ? AttributedString.fromAnsi(str).columnLength() : 0;
+        return str != null ? AttributedString.fromAnsi(str).columnLength(terminal) : 0;
     }
 }

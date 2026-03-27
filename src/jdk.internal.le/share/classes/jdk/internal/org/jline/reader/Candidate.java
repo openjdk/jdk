@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2019, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -11,9 +11,30 @@ package jdk.internal.org.jline.reader;
 import java.util.Objects;
 
 /**
- * A completion candidate.
+ * Represents a completion candidate for tab completion.
+ * <p>
+ * A Candidate encapsulates all the information needed to display and apply a
+ * completion suggestion. This includes the actual text to be inserted, how it
+ * should be displayed to the user, grouping information, descriptions, and
+ * other metadata that controls how the candidate behaves when selected.
+ * <p>
+ * Candidates are created by {@link Completer} implementations and passed to the
+ * LineReader, which then filters, sorts, and displays them to the user when
+ * tab completion is requested.
+ * <p>
+ * Each candidate has several properties:
+ * <ul>
+ *   <li>value - The actual text to be inserted when the candidate is selected</li>
+ *   <li>display - How the candidate should be displayed to the user (may include ANSI styling)</li>
+ *   <li>group - Optional grouping category for organizing related candidates</li>
+ *   <li>description - Optional help text explaining the candidate</li>
+ *   <li>suffix - Optional text to append when the candidate is selected</li>
+ *   <li>complete - Whether the candidate is a complete word or may be further expanded</li>
+ * </ul>
  *
- * @author <a href="mailto:gnodet@gmail.com">Guillaume Nodet</a>
+ * @see Completer
+ * @see LineReader.Option#AUTO_GROUP
+ * @see LineReader.Option#GROUP
  */
 public class Candidate implements Comparable<Candidate> {
 

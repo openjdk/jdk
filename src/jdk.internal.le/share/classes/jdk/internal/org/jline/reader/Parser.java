@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2021, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -11,6 +11,23 @@ package jdk.internal.org.jline.reader;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * The Parser interface is responsible for parsing command lines into tokens.
+ * <p>
+ * Parsers analyze input strings and break them into words/tokens according to
+ * specific syntax rules. They handle features such as quoting, escaping special
+ * characters, and comments. The parser is used by the LineReader during tab
+ * completion and when accepting a line of input.
+ * <p>
+ * Implementations should ideally return {@link CompletingParsedLine} objects
+ * to properly support completion with escaped or quoted words.
+ * <p>
+ * The default implementation is {@link org.jline.reader.impl.DefaultParser}.
+ *
+ * @see ParsedLine
+ * @see CompletingParsedLine
+ * @see org.jline.reader.impl.DefaultParser
+ */
 public interface Parser {
     String REGEX_VARIABLE = "[a-zA-Z_]+[a-zA-Z0-9_-]*";
     String REGEX_COMMAND = "[:]?[a-zA-Z]+[a-zA-Z0-9_-]*";

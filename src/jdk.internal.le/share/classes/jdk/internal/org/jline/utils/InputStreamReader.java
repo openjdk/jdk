@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -22,20 +22,47 @@ import java.nio.charset.CodingErrorAction;
 import java.nio.charset.MalformedInputException;
 import java.nio.charset.UnmappableCharacterException;
 
-/*
- * NOTE for JLine: the default InputStreamReader that comes from the JRE
- * usually read more bytes than needed from the input stream, which
- * is not usable in a character per character model used in the terminal.
- * We thus use the harmony code which only reads the minimal number of bytes.
- */
-
 /**
- * A class for turning a byte stream into a character stream. Data read from the
+ * A specialized InputStreamReader that reads the minimal number of bytes needed.
+ *
+ * <p>
+ * This class is a custom implementation of InputStreamReader that reads only the
+ * minimal number of bytes needed from the input stream to decode characters. Unlike
+ * the standard JRE InputStreamReader, which often reads more bytes than necessary,
+ * this implementation is optimized for character-by-character reading, which is
+ * essential for terminal input handling.
+ * </p>
+ *
+ * <p>
+ * The standard InputStreamReader's behavior of reading ahead is problematic for
+ * terminal applications because:
+ * </p>
+ * <ul>
+ *   <li>It can consume bytes that belong to the next user input</li>
+ *   <li>It makes it difficult to implement non-blocking character reading</li>
+ *   <li>It interferes with the character-by-character model used in terminals</li>
+ * </ul>
+ *
+ * <p>
+ * This implementation is based on the Apache Harmony code and has been adapted for
+ * JLine's needs. It provides the same functionality as the standard InputStreamReader
+ * but with more precise control over how many bytes are read from the underlying
+ * input stream.
+ * </p>
+ *
+ * <p>
+ * This class turns a byte stream into a character stream. Data read from the
  * source input stream is converted into characters by either a default or a
  * provided character converter. The default encoding is taken from the
- * "file.encoding" system property. {@code InputStreamReader} contains a buffer
- * of bytes read from the source stream and converts these into characters as
- * needed. The buffer size is 8K.
+ * "file.encoding" system property. It contains a buffer of bytes read from
+ * the source stream and converts these into characters as needed. The buffer
+ * size is 8K.
+ * </p>
+ *
+ * <p>
+ * This class is used internally by JLine components that need to read characters
+ * from input streams, such as terminal input handling and non-blocking readers.
+ * </p>
  *
  * @see OutputStreamWriter
  */

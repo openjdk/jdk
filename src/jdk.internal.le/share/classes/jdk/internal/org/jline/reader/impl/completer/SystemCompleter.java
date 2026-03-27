@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2020, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -20,8 +20,6 @@ import jdk.internal.org.jline.utils.AttributedString;
 
 /**
  * Completer which contains multiple completers and aggregates them together.
- *
- * @author <a href="mailto:matti.rintanikkola@gmail.com">Matti Rinta-Nikkola</a>
  */
 public class SystemCompleter implements Completer {
     private Map<String, List<Completer>> completers = new HashMap<>();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2021, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -20,6 +20,30 @@ import jdk.internal.org.jline.reader.CompletionMatcher;
 import jdk.internal.org.jline.reader.LineReader;
 import jdk.internal.org.jline.utils.AttributedString;
 
+/**
+ * Default implementation of the {@link CompletionMatcher} interface.
+ * <p>
+ * This matcher provides sophisticated algorithms for matching completion candidates
+ * against user input, with support for:
+ * <ul>
+ *   <li>Prefix matching - candidates that start with the input text</li>
+ *   <li>Substring matching - candidates that contain the input text</li>
+ *   <li>Camel case matching - matching based on camel case patterns</li>
+ *   <li>Fuzzy matching - candidates that approximately match with allowed typos</li>
+ * </ul>
+ * <p>
+ * The matcher uses a chain of matching strategies, trying each one in sequence until
+ * matches are found. This allows for a graceful fallback from exact matches to more
+ * approximate matches.
+ * <p>
+ * The behavior of the matcher can be controlled through LineReader options such as
+ * {@link LineReader.Option#COMPLETE_MATCHER_TYPO} and
+ * {@link LineReader.Option#COMPLETE_MATCHER_CAMELCASE}.
+ *
+ * @see CompletionMatcher
+ * @see LineReader.Option#COMPLETE_MATCHER_TYPO
+ * @see LineReader.Option#COMPLETE_MATCHER_CAMELCASE
+ */
 public class CompletionMatcherImpl implements CompletionMatcher {
     protected Predicate<String> exact;
     protected List<Function<Map<String, List<Candidate>>, Map<String, List<Candidate>>>> matchers;
@@ -104,8 +128,8 @@ public class CompletionMatcherImpl implements CompletionMatcher {
         // TODO: glob completion
         String wd = line.word();
         String wdi = caseInsensitive ? wd.toLowerCase() : wd;
-        String wp = wdi.substring(0, line.wordCursor());
         if (prefix) {
+            String wp = wdi.substring(0, Math.min(line.wordCursor(), wdi.length()));
             matchers = new ArrayList<>(Arrays.asList(
                     simpleMatcher(s -> (caseInsensitive ? s.toLowerCase() : s).startsWith(wp)),
                     simpleMatcher(s -> (caseInsensitive ? s.toLowerCase() : s).contains(wp))));
@@ -118,7 +142,8 @@ public class CompletionMatcherImpl implements CompletionMatcher {
             exact = s -> caseInsensitive ? s.equalsIgnoreCase(wd) : s.equals(wd);
         } else {
             if (LineReader.Option.COMPLETE_IN_WORD.isSet(options)) {
-                String ws = wdi.substring(line.wordCursor());
+                String wp = wdi.substring(0, Math.min(line.wordCursor(), wdi.length()));
+                String ws = wdi.substring(Math.min(line.wordCursor(), wdi.length()));
                 Pattern p1 = Pattern.compile(Pattern.quote(wp) + ".*" + Pattern.quote(ws) + ".*");
                 Pattern p2 = Pattern.compile(".*" + Pattern.quote(wp) + ".*" + Pattern.quote(ws) + ".*");
                 matchers = new ArrayList<>(Arrays.asList(

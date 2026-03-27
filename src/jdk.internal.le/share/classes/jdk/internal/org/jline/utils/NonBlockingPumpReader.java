@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2017, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -32,8 +32,6 @@ public class NonBlockingPumpReader extends NonBlockingReader {
     private final Condition notFull;
 
     private final Writer writer;
-
-    private boolean closed;
 
     public NonBlockingPumpReader() {
         this(DEFAULT_BUFFER_SIZE);
@@ -68,6 +66,7 @@ public class NonBlockingPumpReader extends NonBlockingReader {
 
     @Override
     protected int read(long timeout, boolean isPeek) throws IOException {
+        checkClosed();
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
@@ -191,7 +190,7 @@ public class NonBlockingPumpReader extends NonBlockingReader {
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
-            this.closed = true;
+            super.close(); // Use base class closed field
             this.notEmpty.signalAll();
             this.notFull.signalAll();
         } finally {

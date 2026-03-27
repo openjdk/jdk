@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, the original author(s).
+ * Copyright (c) the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -57,10 +57,10 @@ class CLibrary {
             ws_col = FfmTerminalProvider.lookupVarHandle(LAYOUT, MemoryLayout.PathElement.groupElement("ws_col"));
         }
 
-        private final java.lang.foreign.MemorySegment seg;
+        private final MemorySegment seg;
 
         winsize() {
-            seg = java.lang.foreign.Arena.ofAuto().allocate(LAYOUT);
+            seg = Arena.ofAuto().allocate(LAYOUT);
         }
 
         winsize(short ws_col, short ws_row) {
@@ -69,7 +69,7 @@ class CLibrary {
             ws_row(ws_row);
         }
 
-        java.lang.foreign.MemorySegment segment() {
+        MemorySegment segment() {
             return seg;
         }
 
@@ -154,10 +154,10 @@ class CLibrary {
             return v;
         }
 
-        private final java.lang.foreign.MemorySegment seg;
+        private final MemorySegment seg;
 
         termios() {
-            seg = java.lang.foreign.Arena.ofAuto().allocate(LAYOUT);
+            seg = Arena.ofAuto().allocate(LAYOUT);
         }
 
         termios(Attributes t) {
@@ -260,10 +260,10 @@ class CLibrary {
             if (VSTATUS != (-1)) {
                 c_cc[VSTATUS] = (byte) t.getControlChar(Attributes.ControlChar.VSTATUS);
             }
-            c_cc().copyFrom(java.lang.foreign.MemorySegment.ofArray(c_cc));
+            c_cc().copyFrom(MemorySegment.ofArray(c_cc));
         }
 
-        java.lang.foreign.MemorySegment segment() {
+        MemorySegment segment() {
             return seg;
         }
 
@@ -299,7 +299,7 @@ class CLibrary {
             c_lflag.set(seg, f);
         }
 
-        java.lang.foreign.MemorySegment c_cc() {
+        MemorySegment c_cc() {
             return seg.asSlice(c_cc_offset, 20);
         }
 
@@ -435,12 +435,12 @@ class CLibrary {
         }
     }
 
-    static MethodHandle ioctl;
-    static MethodHandle isatty;
-    static MethodHandle openpty;
-    static MethodHandle tcsetattr;
-    static MethodHandle tcgetattr;
-    static MethodHandle ttyname_r;
+    static final MethodHandle ioctl;
+    static final MethodHandle isatty;
+    static final MethodHandle openpty;
+    static final MethodHandle tcsetattr;
+    static final MethodHandle tcgetattr;
+    static final MethodHandle ttyname_r;
     static LinkageError openptyError;
 
     static {
@@ -550,8 +550,7 @@ class CLibrary {
 
     static String ttyName(int fd) {
         try {
-            java.lang.foreign.MemorySegment buf =
-                    java.lang.foreign.Arena.ofAuto().allocate(64);
+            MemorySegment buf = Arena.ofAuto().allocate(64);
             int res = (int) ttyname_r.invoke(fd, buf, buf.byteSize());
             byte[] data = buf.toArray(ValueLayout.JAVA_BYTE);
             int len = 0;
@@ -569,20 +568,17 @@ class CLibrary {
             throw openptyError;
         }
         try {
-            java.lang.foreign.MemorySegment buf =
-                    java.lang.foreign.Arena.ofAuto().allocate(64);
-            java.lang.foreign.MemorySegment master =
-                    java.lang.foreign.Arena.ofAuto().allocate(ValueLayout.JAVA_INT);
-            java.lang.foreign.MemorySegment slave =
-                    java.lang.foreign.Arena.ofAuto().allocate(ValueLayout.JAVA_INT);
+            MemorySegment buf = Arena.ofAuto().allocate(64);
+            MemorySegment master = Arena.ofAuto().allocate(ValueLayout.JAVA_INT);
+            MemorySegment slave = Arena.ofAuto().allocate(ValueLayout.JAVA_INT);
             int res = (int) openpty.invoke(
                     master,
                     slave,
                     buf,
-                    attr != null ? new termios(attr).segment() : java.lang.foreign.MemorySegment.NULL,
+                    attr != null ? new termios(attr).segment() : MemorySegment.NULL,
                     size != null
                             ? new winsize((short) size.getRows(), (short) size.getColumns()).segment()
-                            : java.lang.foreign.MemorySegment.NULL);
+                            : MemorySegment.NULL);
             byte[] str = buf.toArray(ValueLayout.JAVA_BYTE);
             int len = 0;
             while (str[len] != 0) {
