@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,8 @@
 #include "utilities/macros.hpp"
 
 class ArchiveBuilder;
-class ArchiveMappedHeapInfo;
-class ArchiveStreamedHeapInfo;
+class AOTMappedHeapInfo;
+class AOTStreamedHeapInfo;
 class FileMapInfo;
 class Method;
 class outputStream;
@@ -60,6 +60,7 @@ class AOTMetaspace : AllStatic {
   static char* _requested_base_address;
   static bool _use_optimized_module_handling;
   static Array<Method*>* _archived_method_handle_intrinsics;
+  static int volatile _preimage_static_archive_dumped;
   static FileMapInfo* _output_mapinfo;
 
  public:
@@ -114,6 +115,8 @@ public:
 
   // inside the metaspace of the dynamic static CDS archive
   static bool in_aot_cache_dynamic_region(void* p) NOT_CDS_RETURN_(false);
+
+  static bool preimage_static_archive_dumped() NOT_CDS_RETURN_(false);
 
   static void unrecoverable_loading_error(const char* message = "unrecoverable error");
   static void report_loading_error(const char* format, ...) ATTRIBUTE_PRINTF(1, 0);
@@ -189,8 +192,8 @@ private:
   static void open_output_mapinfo();
   static bool write_static_archive(ArchiveBuilder* builder,
                                    FileMapInfo* map_info,
-                                   ArchiveMappedHeapInfo* mapped_heap_info,
-                                   ArchiveStreamedHeapInfo* streamed_heap_info);
+                                   AOTMappedHeapInfo* mapped_heap_info,
+                                   AOTStreamedHeapInfo* streamed_heap_info);
   static FileMapInfo* open_static_archive();
   static FileMapInfo* open_dynamic_archive();
   // use_requested_addr: If true (default), attempt to map at the address the

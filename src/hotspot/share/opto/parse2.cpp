@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@
 #include "opto/opaquenode.hpp"
 #include "opto/parse.hpp"
 #include "opto/runtime.hpp"
+#include "opto/subtypenode.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/sharedRuntime.hpp"
 
@@ -965,12 +966,28 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
     _max_switch_depth = 0;
     _est_switch_depth = log2i_graceful((hi - lo + 1) - 1) + 1;
   }
+  SwitchRange* orig_lo = lo;
+  SwitchRange* orig_hi = hi;
 #endif
 
-  assert(lo <= hi, "must be a non-empty set of ranges");
-  if (lo == hi) {
-    jump_if_always_fork(lo->dest(), trim_ranges && lo->cnt() == 0);
-  } else {
+  // The lower-range processing is done iteratively to avoid O(N) stack depth
+  // when the profiling-based pivot repeatedly selects mid==lo (JDK-8366138).
+  // The upper-range processing remains recursive but is only reached for
+  // balanced splits, bounding its depth to O(log N).
+  // Termination: every iteration either exits or strictly decreases hi-lo:
+  //   lo == mid && mid < hi, increments lo
+  //   lo < mid <= hi, sets hi = mid - 1.
+  for (int depth = switch_depth;; depth++) {
+#ifndef PRODUCT
+    _max_switch_depth = MAX2(depth, _max_switch_depth);
+#endif
+
+    assert(lo <= hi, "must be a non-empty set of ranges");
+    if (lo == hi) {
+      jump_if_always_fork(lo->dest(), trim_ranges && lo->cnt() == 0);
+      break;
+    }
+
     assert(lo->hi() == (lo+1)->lo()-1, "contiguous ranges");
     assert(hi->lo() == (hi-1)->hi()+1, "contiguous ranges");
 
@@ -980,7 +997,12 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
     float total_cnt = sum_of_cnts(lo, hi);
 
     int nr = hi - lo + 1;
-    if (UseSwitchProfiling) {
+    // With total_cnt==0 the profiling pivot degenerates to mid==lo
+    // (0 >= 0/2), producing a linear chain of If nodes instead of a
+    // balanced tree. A balanced tree is strictly better here: all paths
+    // are cold, so a balanced split gives fewer comparisons at runtime
+    // and avoids pathological memory usage in the optimizer.
+    if (UseSwitchProfiling && total_cnt > 0) {
       // Don't keep the binary search tree balanced: pick up mid point
       // that split frequencies in half.
       float cnt = 0;
@@ -1001,7 +1023,7 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
       assert(nr != 2 || mid == hi,   "should pick higher of 2");
       assert(nr != 3 || mid == hi-1, "should pick middle of 3");
     }
-
+    assert(mid != nullptr, "mid must be set");
 
     Node *test_val = _gvn.intcon(mid == lo ? mid->hi() : mid->lo());
 
@@ -1024,7 +1046,7 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
         Node   *iffalse = _gvn.transform( new IfFalseNode(iff_lt) );
         { PreserveJVMState pjvms(this);
           set_control(iffalse);
-          jump_switch_ranges(key_val, mid+1, hi, switch_depth+1);
+          jump_switch_ranges(key_val, mid+1, hi, depth+1);
         }
         set_control(iftrue);
       }
@@ -1042,21 +1064,22 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
         Node *iffalse = _gvn.transform( new IfFalseNode(iff_ge) );
         { PreserveJVMState pjvms(this);
           set_control(iftrue);
-          jump_switch_ranges(key_val, mid == lo ? mid+1 : mid, hi, switch_depth+1);
+          jump_switch_ranges(key_val, mid == lo ? mid+1 : mid, hi, depth+1);
         }
         set_control(iffalse);
       }
     }
 
-    // in any case, process the lower range
+    // Process the lower range: iterate instead of recursing.
     if (mid == lo) {
       if (mid->is_singleton()) {
-        jump_switch_ranges(key_val, lo+1, hi, switch_depth+1);
+        lo++;
       } else {
         jump_if_always_fork(lo->dest(), trim_ranges && lo->cnt() == 0);
+        break;
       }
     } else {
-      jump_switch_ranges(key_val, lo, mid-1, switch_depth+1);
+      hi = mid - 1;
     }
   }
 
@@ -1071,23 +1094,22 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
   }
 
 #ifndef PRODUCT
-  _max_switch_depth = MAX2(switch_depth, _max_switch_depth);
   if (TraceOptoParse && Verbose && WizardMode && switch_depth == 0) {
     SwitchRange* r;
     int nsing = 0;
-    for( r = lo; r <= hi; r++ ) {
+    for (r = orig_lo; r <= orig_hi; r++) {
       if( r->is_singleton() )  nsing++;
     }
     tty->print(">>> ");
     _method->print_short_name();
     tty->print_cr(" switch decision tree");
     tty->print_cr("    %d ranges (%d singletons), max_depth=%d, est_depth=%d",
-                  (int) (hi-lo+1), nsing, _max_switch_depth, _est_switch_depth);
+                  (int) (orig_hi-orig_lo+1), nsing, _max_switch_depth, _est_switch_depth);
     if (_max_switch_depth > _est_switch_depth) {
       tty->print_cr("******** BAD SWITCH DEPTH ********");
     }
     tty->print("   ");
-    for( r = lo; r <= hi; r++ ) {
+    for (r = orig_lo; r <= orig_hi; r++) {
       r->print();
     }
     tty->cr();
@@ -1719,38 +1741,108 @@ static Node* extract_obj_from_klass_load(PhaseGVN* gvn, Node* n) {
   return obj;
 }
 
+// Matches exact and inexact type check IR shapes during parsing.
+// On successful match, returns type checked object node and its type after successful check
+// as out parameters.
+static bool match_type_check(PhaseGVN& gvn,
+                             BoolTest::mask btest,
+                             Node* con, const Type* tcon,
+                             Node* val, const Type* tval,
+                             Node** obj, const TypeOopPtr** cast_type) { // out-parameters
+  // Look for opportunities to sharpen the type of a node whose klass is compared with a constant klass.
+  // The constant klass being tested against can come from many bytecode instructions (implicitly or explicitly),
+  // and also from profile data used by speculative casts.
+  if (btest == BoolTest::eq && tcon->isa_klassptr()) {
+    // Found:
+    //   Bool(CmpP(LoadKlass(obj._klass), ConP(Foo.klass)), [eq])
+    // or the narrowOop equivalent.
+    (*obj) = extract_obj_from_klass_load(&gvn, val);
+    (*cast_type) = tcon->isa_klassptr()->as_instance_type();
+    return true; // found
+  }
+
+  // Match an instanceof check.
+  // During parsing its IR shape is not canonicalized yet.
+  //
+  //             obj superklass
+  //              |    |
+  //           SubTypeCheck
+  //                |
+  //               Bool [eq] / [ne]
+  //                |
+  //                If
+  //               / \
+  //              T   F
+  //               \ /
+  //              Region
+  //                 \  ConI ConI
+  //                  \  |  /
+  //          val ->    Phi  ConI  <- con
+  //                     \  /
+  //                     CmpI
+  //                      |
+  //                    Bool [btest]
+  //                      |
+  //
+  if (tval->isa_int() && val->is_Phi() && val->in(0)->as_Region()->is_diamond()) {
+    RegionNode* diamond = val->in(0)->as_Region();
+    IfNode* if1 = diamond->in(1)->in(0)->as_If();
+    BoolNode* b1 = if1->in(1)->isa_Bool();
+    if (b1 != nullptr && b1->in(1)->isa_SubTypeCheck()) {
+      assert(b1->_test._test == BoolTest::eq ||
+             b1->_test._test == BoolTest::ne, "%d", b1->_test._test);
+
+      ProjNode* success_proj = if1->proj_out(b1->_test._test == BoolTest::eq ? 1 : 0);
+      int idx = diamond->find_edge(success_proj);
+      assert(idx == 1 || idx == 2, "");
+      Node* vcon = val->in(idx);
+
+      assert(val->find_edge(con) > 0, "");
+      if ((btest == BoolTest::eq && vcon == con) || (btest == BoolTest::ne && vcon != con)) {
+        SubTypeCheckNode* sub = b1->in(1)->as_SubTypeCheck();
+        Node* obj_or_subklass = sub->in(SubTypeCheckNode::ObjOrSubKlass);
+        Node* superklass = sub->in(SubTypeCheckNode::SuperKlass);
+
+        if (gvn.type(obj_or_subklass)->isa_oopptr()) {
+          const TypeKlassPtr* klass_ptr_type = gvn.type(superklass)->is_klassptr();
+          const TypeKlassPtr* improved_klass_ptr_type = klass_ptr_type->try_improve();
+
+          (*obj) = obj_or_subklass;
+          (*cast_type) = improved_klass_ptr_type->cast_to_exactness(false)->as_instance_type();
+          return true; // found
+        }
+      }
+    }
+  }
+  return false; // not found
+}
+
 void Parse::sharpen_type_after_if(BoolTest::mask btest,
                                   Node* con, const Type* tcon,
                                   Node* val, const Type* tval) {
-  // Look for opportunities to sharpen the type of a node
-  // whose klass is compared with a constant klass.
-  if (btest == BoolTest::eq && tcon->isa_klassptr()) {
-    Node* obj = extract_obj_from_klass_load(&_gvn, val);
-    const TypeOopPtr* con_type = tcon->isa_klassptr()->as_instance_type();
-    if (obj != nullptr && (con_type->isa_instptr() || con_type->isa_aryptr())) {
-       // Found:
-       //   Bool(CmpP(LoadKlass(obj._klass), ConP(Foo.klass)), [eq])
-       // or the narrowOop equivalent.
-       const Type* obj_type = _gvn.type(obj);
-       const TypeOopPtr* tboth = obj_type->join_speculative(con_type)->isa_oopptr();
-       if (tboth != nullptr && tboth->klass_is_exact() && tboth != obj_type &&
-           tboth->higher_equal(obj_type)) {
-          // obj has to be of the exact type Foo if the CmpP succeeds.
-          int obj_in_map = map()->find_edge(obj);
-          JVMState* jvms = this->jvms();
-          if (obj_in_map >= 0 &&
-              (jvms->is_loc(obj_in_map) || jvms->is_stk(obj_in_map))) {
-            TypeNode* ccast = new CheckCastPPNode(control(), obj, tboth);
-            const Type* tcc = ccast->as_Type()->type();
-            assert(tcc != obj_type && tcc->higher_equal(obj_type), "must improve");
-            // Delay transform() call to allow recovery of pre-cast value
-            // at the control merge.
-            _gvn.set_type_bottom(ccast);
-            record_for_igvn(ccast);
-            // Here's the payoff.
-            replace_in_map(obj, ccast);
-          }
-       }
+  Node* obj = nullptr;
+  const TypeOopPtr* cast_type = nullptr;
+  // Insert a cast node with a narrowed type after a successful type check.
+  if (match_type_check(_gvn, btest, con, tcon, val, tval,
+                       &obj, &cast_type)) {
+    assert(obj != nullptr && cast_type != nullptr, "missing type check info");
+    const Type* obj_type = _gvn.type(obj);
+    const TypeOopPtr* tboth = obj_type->join_speculative(cast_type)->isa_oopptr();
+    if (tboth != nullptr && tboth != obj_type && tboth->higher_equal(obj_type)) {
+      int obj_in_map = map()->find_edge(obj);
+      JVMState* jvms = this->jvms();
+      if (obj_in_map >= 0 &&
+          (jvms->is_loc(obj_in_map) || jvms->is_stk(obj_in_map))) {
+        TypeNode* ccast = new CheckCastPPNode(control(), obj, tboth);
+        const Type* tcc = ccast->as_Type()->type();
+        assert(tcc != obj_type && tcc->higher_equal(obj_type), "must improve");
+        // Delay transform() call to allow recovery of pre-cast value
+        // at the control merge.
+        _gvn.set_type_bottom(ccast);
+        record_for_igvn(ccast);
+        // Here's the payoff.
+        replace_in_map(obj, ccast);
+      }
     }
   }
 

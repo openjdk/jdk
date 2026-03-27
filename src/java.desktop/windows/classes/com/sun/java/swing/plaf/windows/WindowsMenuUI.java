@@ -51,8 +51,8 @@ import com.sun.java.swing.plaf.windows.TMSchema.State;
  * Windows rendition of the component.
  */
 public final class WindowsMenuUI extends BasicMenuUI {
-    private Integer menuBarHeight;
-    private boolean hotTrackingOn;
+    protected Integer menuBarHeight;
+    protected boolean hotTrackingOn;
 
     final WindowsMenuItemUIAccessor accessor =
         new WindowsMenuItemUIAccessor() {
@@ -301,7 +301,7 @@ public final class WindowsMenuUI extends BasicMenuUI {
 
             JMenu menu = (JMenu)evt.getSource();
             ButtonModel model = menu.getModel();
-            if (menu.isRolloverEnabled()) {
+            if (menu.isRolloverEnabled() && menu.isTopLevelMenu()) {
                 model.setRollover(false);
                 menuItem.repaint();
             }

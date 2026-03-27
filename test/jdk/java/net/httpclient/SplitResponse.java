@@ -94,11 +94,10 @@ public class SplitResponse {
     };
 
     final ServerSocketFactory factory;
-    final SSLContext context;
+    private static final SSLContext context = SimpleSSLContext.findSSLContext();
     final boolean useSSL;
-    SplitResponse(boolean useSSL) throws IOException {
+    SplitResponse(boolean useSSL) {
         this.useSSL = useSSL;
-        context = new SimpleSSLContext().get();
         SSLContext.setDefault(context);
         factory = useSSL ? SSLServerSocketFactory.getDefault()
                          : ServerSocketFactory.getDefault();

@@ -61,7 +61,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see SimpleElementVisitor14
  * @since 23
  */
-@SupportedSourceVersion(RELEASE_26)
+@SupportedSourceVersion(RELEASE_27)
 @PreviewFeature(feature=PreviewFeature.Feature.LANGUAGE_MODEL, reflective=true)
 public class SimpleElementVisitorPreview<R, P> extends SimpleElementVisitor14<R, P> {
     /**

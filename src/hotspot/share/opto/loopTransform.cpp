@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ void IdealLoopTree::record_for_igvn() {
     Node* outer_safepoint = l->outer_safepoint();
     assert(outer_safepoint != nullptr, "missing piece of strip mined loop");
     _phase->_igvn._worklist.push(outer_safepoint);
-    Node* cle_out = _head->as_CountedLoop()->loopexit()->proj_out(false);
+    IfFalseNode* cle_out = _head->as_CountedLoop()->loopexit()->false_proj();
     assert(cle_out != nullptr, "missing piece of strip mined loop");
     _phase->_igvn._worklist.push(cle_out);
   }
@@ -524,6 +524,9 @@ bool IdealLoopTree::policy_peeling(PhaseIdealLoop *phase) {
 // return the estimated loop size if peeling is applicable, otherwise return
 // zero. No node budget is allocated.
 uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
+  if (LoopPeeling != 1) {
+    return 0;
+  }
 
   // If nodes are depleted, some transform has miscalculated its needs.
   assert(!phase->exceeding_node_budget(), "sanity");
@@ -775,6 +778,7 @@ void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree* loop, Node_List& old_ne
 //             exit
 //
 void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
+  assert(LoopPeeling != 0, "do_peeling called with loop peeling always disabled");
 
   C->set_major_progress();
   // Peeling a 'main' loop in a pre/main/post situation obfuscates the
@@ -1234,7 +1238,7 @@ bool IdealLoopTree::policy_range_check(PhaseIdealLoop* phase, bool provisional, 
         continue;
       }
       if (!bol->is_Bool()) {
-        assert(bol->is_OpaqueNotNull() ||
+        assert(bol->is_OpaqueConstantBool() ||
                bol->is_OpaqueTemplateAssertionPredicate() ||
                bol->is_OpaqueInitializedAssertionPredicate() ||
                bol->is_OpaqueMultiversioning(),
@@ -1366,7 +1370,7 @@ Node *PhaseIdealLoop::clone_up_backedge_goo(Node *back_ctrl, Node *preheader_ctr
 // the backedge of the main or post loop is removed, a Div node won't be able to float above the zero trip guard of the
 // loop and can't execute even if the loop is not reached.
 void PhaseIdealLoop::cast_incr_before_loop(Node* incr, Node* ctrl, CountedLoopNode* loop) {
-  Node* castii = new CastIINode(ctrl, incr, TypeInt::INT, ConstraintCastNode::UnconditionalDependency);
+  Node* castii = new CastIINode(ctrl, incr, TypeInt::INT, ConstraintCastNode::DependencyType::NonFloatingNonNarrowing);
   register_new_node(castii, ctrl);
   Node* phi = loop->phi();
   assert(phi->in(LoopNode::EntryControl) == incr, "replacing wrong input?");
@@ -1411,7 +1415,6 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
 
   C->print_method(PHASE_BEFORE_PRE_MAIN_POST, 4, main_head);
 
-  Node *pre_header= main_head->in(LoopNode::EntryControl);
   Node *init      = main_head->init_trip();
   Node *incr      = main_end ->incr();
   Node *limit     = main_end ->limit();
@@ -1465,9 +1468,8 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   pre_end->_prob = PROB_FAIR;
 
   // Find the pre-loop normal exit.
-  Node* pre_exit = pre_end->proj_out(false);
-  assert(pre_exit->Opcode() == Op_IfFalse, "");
-  IfFalseNode *new_pre_exit = new IfFalseNode(pre_end);
+  IfFalseNode* pre_exit = pre_end->false_proj();
+  IfFalseNode* new_pre_exit = new IfFalseNode(pre_end);
   _igvn.register_new_node_with_optimizer(new_pre_exit);
   set_idom(new_pre_exit, pre_end, dd_main_head);
   set_loop(new_pre_exit, outer_loop->_parent);
@@ -1708,8 +1710,7 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
 
   //------------------------------
   // Step A: Create a new post-Loop.
-  Node* main_exit = outer_main_end->proj_out(false);
-  assert(main_exit->Opcode() == Op_IfFalse, "");
+  IfFalseNode* main_exit = outer_main_end->false_proj();
   int dd_main_exit = dom_depth(main_exit);
 
   // Step A1: Clone the loop body of main. The clone becomes the post-loop.
@@ -1722,7 +1723,7 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
   post_head->set_post_loop(main_head);
 
   // clone_loop() above changes the exit projection
-  main_exit = outer_main_end->proj_out(false);
+  main_exit = outer_main_end->false_proj();
 
   // Reduce the post-loop trip count.
   CountedLoopEndNode* post_end = old_new[main_end->_idx]->as_CountedLoopEnd();
@@ -1787,7 +1788,7 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
   // right after the execution of the inner CountedLoop.
   // We have to make sure that such stores in the post loop have the right memory inputs from the main loop
   // The moved store node is always attached right after the inner loop exit, and just before the safepoint
-  const Node* if_false = main_end->proj_out(false);
+  const IfFalseNode* if_false = main_end->false_proj();
   for (DUIterator j = if_false->outs(); if_false->has_out(j); j++) {
     Node* store = if_false->out(j);
     if (store->is_Store()) {
@@ -2204,6 +2205,15 @@ void PhaseIdealLoop::do_maximally_unroll(IdealLoopTree *loop, Node_List &old_new
 
   // If loop is tripping an odd number of times, peel odd iteration
   if ((cl->trip_count() & 1) == 1) {
+    if (LoopPeeling == 0) {
+#ifndef PRODUCT
+      if (TraceLoopOpts) {
+        tty->print("MaxUnroll cancelled since LoopPeeling is always disabled");
+        loop->dump_head();
+      }
+#endif
+      return;
+    }
     do_peeling(loop, old_new);
   }
 
@@ -3246,6 +3256,15 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
 #endif
 
   if (needs_guard) {
+    if (LoopPeeling == 0) {
+#ifndef PRODUCT
+      if (TraceLoopOpts) {
+        tty->print("Empty loop not removed since LoopPeeling is always disabled");
+        this->dump_head();
+      }
+#endif
+      return false;
+    }
     // Peel the loop to ensure there's a zero trip guard
     Node_List old_new;
     phase->do_peeling(this, old_new);
@@ -3263,7 +3282,7 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
   Node* cast_ii = ConstraintCastNode::make_cast_for_basic_type(
       cl->in(LoopNode::EntryControl), exact_limit,
       phase->_igvn.type(exact_limit),
-      ConstraintCastNode::UnconditionalDependency, T_INT);
+      ConstraintCastNode::DependencyType::NonFloatingNonNarrowing, T_INT);
   phase->register_new_node(cast_ii, cl->in(LoopNode::EntryControl));
 
   Node* final_iv = new SubINode(cast_ii, cl->stride());
@@ -3945,7 +3964,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
     return false;
   }
 
-  Node* exit = head->loopexit()->proj_out_or_null(0);
+  IfFalseNode* exit = head->loopexit()->false_proj_or_null();
   if (exit == nullptr) {
     return false;
   }
@@ -3972,7 +3991,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
     index = new LShiftXNode(index, shift->in(2));
     _igvn.register_new_node_with_optimizer(index);
   }
-  Node* from = new AddPNode(base, base, index);
+  Node* from = AddPNode::make_with_base(base, index);
   _igvn.register_new_node_with_optimizer(from);
   // For normal array fills, C2 uses two AddP nodes for array element
   // addressing. But for array fills with Unsafe call, there's only one
@@ -3980,7 +3999,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   assert(offset != nullptr || C->has_unsafe_access(),
          "Only array fills with unsafe have no extra offset");
   if (offset != nullptr) {
-    from = new AddPNode(base, from, offset);
+    from = AddPNode::make_with_base(base, from, offset);
     _igvn.register_new_node_with_optimizer(from);
   }
   // Compute the number of elements to copy
@@ -3989,7 +4008,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
 
   // If the store is on the backedge, it is not executed in the last
   // iteration, and we must subtract 1 from the len.
-  Node* backedge = head->loopexit()->proj_out(1);
+  IfTrueNode* backedge = head->loopexit()->true_proj();
   if (store->in(0) == backedge) {
     len = new SubINode(len, _igvn.intcon(1));
     _igvn.register_new_node_with_optimizer(len);

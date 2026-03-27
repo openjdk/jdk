@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2020, 2025, Arm Limited. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -191,6 +191,8 @@ source %{
       case Op_XorReductionV:
       case Op_MinReductionV:
       case Op_MaxReductionV:
+      case Op_UMinReductionV:
+      case Op_UMaxReductionV:
         // Reductions with less than 8 bytes vector length are
         // not supported.
         if (length_in_bytes < 8) {
@@ -336,8 +338,14 @@ source %{
   }
 
   bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
-    // Only SVE has partial vector operations
-    if (UseSVE == 0) {
+    // 1. Only SVE requires partial vector operations.
+    // 2. The vector size in bytes must be smaller than MaxVectorSize.
+    // 3. Predicated vectors have a mask input, which guarantees that
+    //    out-of-bounds lanes remain inactive.
+    int length_in_bytes = vt->length_in_bytes();
+    if (UseSVE == 0 ||
+        length_in_bytes == MaxVectorSize ||
+        node->is_predicated_vector()) {
       return false;
     }
 
@@ -360,21 +368,24 @@ source %{
         return !node->in(1)->is_Con();
       case Op_LoadVector:
       case Op_StoreVector:
-        // We use NEON load/store instructions if the vector length is <= 128 bits.
-        return vt->length_in_bytes() > 16;
       case Op_AddReductionVI:
       case Op_AddReductionVL:
-        // We may prefer using NEON instructions rather than SVE partial operations.
-        return !VM_Version::use_neon_for_vector(vt->length_in_bytes());
+        // For these ops, we prefer using NEON instructions rather than SVE
+        // predicated instructions for better performance.
+        return !VM_Version::use_neon_for_vector(length_in_bytes);
       case Op_MinReductionV:
       case Op_MaxReductionV:
-        // For BYTE/SHORT/INT/FLOAT/DOUBLE types, we may prefer using NEON
-        // instructions rather than SVE partial operations.
+      case Op_UMinReductionV:
+      case Op_UMaxReductionV:
+        // For BYTE/SHORT/INT/FLOAT/DOUBLE types, we prefer using NEON
+        // instructions rather than SVE predicated instructions for
+        // better performance.
         return vt->element_basic_type() == T_LONG ||
-               !VM_Version::use_neon_for_vector(vt->length_in_bytes());
+               !VM_Version::use_neon_for_vector(length_in_bytes);
       default:
-        // For other ops whose vector size is smaller than the max vector size, a
-        // full-sized unpredicated operation does not impact the final vector result.
+        // For other ops whose vector size is smaller than the max vector
+        // size, a full-sized unpredicated operation does not impact the
+        // vector result.
         return false;
     }
   }
@@ -2497,6 +2508,32 @@ REDUCE_MAXMIN_INT_PREDICATE(min, I, iRegIorL2I, MinReductionV)
 REDUCE_MAXMIN_INT_PREDICATE(min, L, iRegL,      MinReductionV)
 REDUCE_MAXMIN_FP_PREDICATE(min, F, fsrc, MinReductionV, sve_fminv, fmins)
 REDUCE_MAXMIN_FP_PREDICATE(min, D, dsrc, MinReductionV, sve_fminv, fmind)
+
+// -------------------- Vector reduction unsigned min/max ----------------------
+
+// reduction uminI
+REDUCE_MAXMIN_I_NEON(umin, UMinReductionV)
+REDUCE_MAXMIN_I_SVE(umin, UMinReductionV)
+
+// reduction uminL
+REDUCE_MAXMIN_L_NEON(umin, UMinReductionV)
+REDUCE_MAXMIN_L_SVE(umin, UMinReductionV)
+
+// reduction umin - predicated
+REDUCE_MAXMIN_INT_PREDICATE(umin, I, iRegIorL2I, UMinReductionV)
+REDUCE_MAXMIN_INT_PREDICATE(umin, L, iRegL,      UMinReductionV)
+
+// reduction umaxI
+REDUCE_MAXMIN_I_NEON(umax, UMaxReductionV)
+REDUCE_MAXMIN_I_SVE(umax, UMaxReductionV)
+
+// reduction umaxL
+REDUCE_MAXMIN_L_NEON(umax, UMaxReductionV)
+REDUCE_MAXMIN_L_SVE(umax, UMaxReductionV)
+
+// reduction umax - predicated
+REDUCE_MAXMIN_INT_PREDICATE(umax, I, iRegIorL2I, UMaxReductionV)
+REDUCE_MAXMIN_INT_PREDICATE(umax, L, iRegL,      UMaxReductionV)
 
 // ------------------------------ Vector reinterpret ---------------------------
 

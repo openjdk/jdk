@@ -814,7 +814,7 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
         public void propertyChange(PropertyChangeEvent evt) {
             ComboBoxEditor newEditor = comboBox.getEditor();
             if (editor != newEditor){
-                if (editorComponent!=null){
+                if (editorComponent != null) {
                     editorComponent.removeFocusListener(this);
                 }
                 editor = newEditor;

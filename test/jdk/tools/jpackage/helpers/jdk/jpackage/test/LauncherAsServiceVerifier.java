@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,7 +149,11 @@ public final class LauncherAsServiceVerifier {
             applyToAdditionalLauncher(target);
         }
         target.test().ifPresent(pkg -> {
-            pkg.addInstallVerifier(this::verifyLauncherExecuted);
+            pkg.addInstallVerifier(cmd -> {
+                if (!MacHelper.isForAppStore(cmd)) {
+                    verifyLauncherExecuted(cmd);
+                }
+            });
         });
     }
 
@@ -239,7 +243,9 @@ public final class LauncherAsServiceVerifier {
     }
 
     static boolean launcherAsService(JPackageCommand cmd, String launcherName) {
-        if (cmd.isMainLauncher(launcherName)) {
+        if (MacHelper.isForAppStore(cmd)) {
+            return false;
+        } else if (cmd.isMainLauncher(launcherName)) {
             return PropertyFinder.findLauncherProperty(cmd, null,
                     PropertyFinder.cmdlineBooleanOption("--launcher-as-service"),
                     PropertyFinder.nop(),

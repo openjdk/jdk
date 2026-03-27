@@ -36,40 +36,42 @@
 #include <sys/auxv.h>
 #include <sys/prctl.h>
 
+static constexpr uint64_t feature_bit(int n) { return nth_bit<uint64_t>(n); }
+
 #ifndef HWCAP_ISA_I
-#define HWCAP_ISA_I  nth_bit('I' - 'A')
+#define HWCAP_ISA_I  feature_bit('I' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_M
-#define HWCAP_ISA_M  nth_bit('M' - 'A')
+#define HWCAP_ISA_M  feature_bit('M' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_A
-#define HWCAP_ISA_A  nth_bit('A' - 'A')
+#define HWCAP_ISA_A  feature_bit('A' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_F
-#define HWCAP_ISA_F  nth_bit('F' - 'A')
+#define HWCAP_ISA_F  feature_bit('F' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_D
-#define HWCAP_ISA_D  nth_bit('D' - 'A')
+#define HWCAP_ISA_D  feature_bit('D' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_C
-#define HWCAP_ISA_C  nth_bit('C' - 'A')
+#define HWCAP_ISA_C  feature_bit('C' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_Q
-#define HWCAP_ISA_Q  nth_bit('Q' - 'A')
+#define HWCAP_ISA_Q  feature_bit('Q' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_H
-#define HWCAP_ISA_H  nth_bit('H' - 'A')
+#define HWCAP_ISA_H  feature_bit('H' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_V
-#define HWCAP_ISA_V  nth_bit('V' - 'A')
+#define HWCAP_ISA_V  feature_bit('V' - 'A')
 #endif
 
 #define read_csr(csr)                                           \
@@ -104,11 +106,15 @@ uint32_t VM_Version::cpu_vector_length() {
 }
 
 void VM_Version::RVExtFeatureValue::log_enabled() {
-  log_debug(os, cpu)("Enabled RV64 feature \"%s\"", pretty());
+  log_info(os, cpu)("Enabled RV64 feature \"%s\"", pretty());
+}
+
+void VM_Version::RVExtFeatureValue::log_disabled(const char* reason) {
+  log_info(os, cpu)("Disabled RV64 feature \"%s\" (%s)", pretty(), reason);
 }
 
 void VM_Version::RVNonExtFeatureValue::log_enabled() {
-  log_debug(os, cpu)("Enabled RV64 feature \"%s\" (%ld)", pretty(), value());
+  log_info(os, cpu)("Enabled RV64 feature \"%s\" (%ld)", pretty(), value());
 }
 
 void VM_Version::setup_cpu_available_features() {
@@ -193,7 +199,7 @@ void VM_Version::setup_cpu_available_features() {
     // via PR_RISCV_SCOPE_PER_THREAD, i.e. on VM attach/deattach.
     int ret = prctl(PR_RISCV_SET_ICACHE_FLUSH_CTX, PR_RISCV_CTX_SW_FENCEI_ON, PR_RISCV_SCOPE_PER_PROCESS);
     if (ret == 0) {
-      log_debug(os, cpu)("UseCtxFencei (PR_RISCV_CTX_SW_FENCEI_ON) enabled.");
+      log_info(os, cpu)("UseCtxFencei (PR_RISCV_CTX_SW_FENCEI_ON) enabled.");
     } else {
       FLAG_SET_ERGO(UseCtxFencei, false);
       log_info(os, cpu)("UseCtxFencei (PR_RISCV_CTX_SW_FENCEI_ON) disabled, unsupported by kernel.");

@@ -79,11 +79,10 @@ class [[deprecated]] bad_array_new_length;
 // version to decide whether to redeclare deprecated.
 
 #if defined(__clang__)
-#if __clang_major__ >= 19
-// clang18 and earlier may accept the declaration but go wrong with uses.
-// Different warnings and link-time failures are both possible.
-#define CAN_DEPRECATE_HARDWARE_INTERFERENCE_SIZES 1
-#endif // restrict clang version
+// Some versions of clang with some stdlibs reject the declaration. Others may
+// accept the declaration but go wrong with uses.  Different warnings and
+// link-time failures are both possible.
+// Known to have problems at least through clang19.
 
 #elif defined(__GNUC__)
 #if (__GNUC__ > 13) || (__GNUC__ == 13 && __GNUC_MINOR__ >= 2)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 
 template <DecoratorSet decorators, typename T>
 inline void CardTableBarrierSet::write_ref_field_post(T* field) {
-  volatile CardValue* byte = _card_table->byte_for(field);
+  volatile CardValue* byte = card_table()->byte_for(field);
   *byte = CardTable::dirty_card_val();
 }
 
@@ -99,7 +99,7 @@ oop_atomic_xchg_in_heap(T* addr, oop new_value) {
 
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
-inline bool CardTableBarrierSet::AccessBarrier<decorators, BarrierSetT>::
+inline OopCopyResult CardTableBarrierSet::AccessBarrier<decorators, BarrierSetT>::
 oop_arraycopy_in_heap(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
                       arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
                       size_t length) {
@@ -131,12 +131,13 @@ oop_arraycopy_in_heap(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
         // objArrayOop) which we assume is 32 bit.
         assert(pd == (size_t)(int)pd, "length field overflow");
         bs->write_ref_array((HeapWord*)dst_raw, pd);
-        return false;
+        return OopCopyResult::failed_check_class_cast;
       }
     }
     bs->write_ref_array((HeapWord*)dst_raw, length);
   }
-  return true;
+
+  return OopCopyResult::ok;
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>

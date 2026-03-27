@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,11 @@ import com.sun.net.httpserver.*;
 import com.sun.net.httpserver.spi.*;
 
 public class DefaultHttpServerProvider extends HttpServerProvider {
-    public HttpServer createHttpServer (InetSocketAddress addr, int backlog) throws IOException {
-        return new HttpServerImpl (addr, backlog);
+    public HttpServer createHttpServer(InetSocketAddress addr, int backlog) throws IOException {
+        return new HttpServerImpl(addr, backlog);
     }
 
-    public HttpsServer createHttpsServer (InetSocketAddress addr, int backlog) throws IOException {
-        return new HttpsServerImpl (addr, backlog);
+    public HttpsServer createHttpsServer(InetSocketAddress addr, int backlog) throws IOException {
+        return new HttpsServerImpl(addr, backlog);
     }
 }

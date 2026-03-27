@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,12 +166,12 @@ class StubGenerator: public StubCodeGenerator {
   // - If target supports AVX3 features (BW+VL+F) then implementation uses 32 byte vectors (YMMs)
   //   for both special cases (various small block sizes) and aligned copy loop. This is the
   //   default configuration.
-  // - If copy length is above AVX3Threshold, then implementation use 64 byte vectors (ZMMs)
+  // - If copy length is above CopyAVX3Threshold, then implementation use 64 byte vectors (ZMMs)
   //   for main copy loop (and subsequent tail) since bulk of the cycles will be consumed in it.
   // - If user forces MaxVectorSize=32 then above 4096 bytes its seen that REP MOVs shows a
   //   better performance for disjoint copies. For conjoint/backward copy vector based
   //   copy performs better.
-  // - If user sets AVX3Threshold=0, then special cases for small blocks sizes operate over
+  // - If user sets CopyAVX3Threshold=0, then special cases for small blocks sizes operate over
   //   64 byte vector registers (ZMMs).
 
   address generate_disjoint_copy_avx3_masked(StubId stub_id, address* entry);
@@ -329,6 +329,19 @@ class StubGenerator: public StubCodeGenerator {
   address generate_electronicCodeBook_decryptAESCrypt();
 
   void aesecb_decrypt(Register source_addr, Register dest_addr, Register key, Register len);
+
+  // Shared implementation for ECB/AES Encrypt and Decrypt, which does 4 blocks
+  // in a loop at a time to hide instruction latency. Set is_encrypt=true for
+  // encryption, false for decryption.
+  address generate_electronicCodeBook_AESCrypt_Parallel(bool is_encrypt);
+
+  // A version of ECB/AES Encrypt which does 4 blocks in a loop at a time
+  // to hide instruction latency
+  address generate_electronicCodeBook_encryptAESCrypt_Parallel();
+
+  // A version of ECB/AES Decrypt which does 4 blocks in a loop at a time
+  // to hide instruction latency
+  address generate_electronicCodeBook_decryptAESCrypt_Parallel();
 
   // Vector AES Galois Counter Mode implementation
   address generate_galoisCounterMode_AESCrypt();

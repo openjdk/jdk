@@ -85,7 +85,7 @@ void Relocation::pd_set_call_destination(address x) {
   } else {
     MacroAssembler::pd_patch_instruction(addr(), x);
   }
-  assert(pd_call_destination(addr()) == x, "fail in reloc");
+  guarantee(pd_call_destination(addr()) == x, "fail in reloc");
 }
 
 void trampoline_stub_Relocation::pd_fix_owner_after_move() {

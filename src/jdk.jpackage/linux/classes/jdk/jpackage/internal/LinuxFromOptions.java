@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.jpackage.internal;
 import static jdk.jpackage.internal.FromOptions.buildApplicationBuilder;
 import static jdk.jpackage.internal.FromOptions.createPackageBuilder;
 import static jdk.jpackage.internal.LinuxPackagingPipeline.APPLICATION_LAYOUT;
+import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_LINUX_RPM;
 import static jdk.jpackage.internal.cli.StandardOption.LINUX_APP_CATEGORY;
 import static jdk.jpackage.internal.cli.StandardOption.LINUX_DEB_MAINTAINER_EMAIL;
 import static jdk.jpackage.internal.cli.StandardOption.LINUX_MENU_GROUP;
@@ -39,6 +40,7 @@ import static jdk.jpackage.internal.model.StandardPackageType.LINUX_DEB;
 import static jdk.jpackage.internal.model.StandardPackageType.LINUX_RPM;
 
 import jdk.jpackage.internal.cli.Options;
+import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.LinuxApplication;
 import jdk.jpackage.internal.model.LinuxDebPackage;
@@ -67,12 +69,16 @@ final class LinuxFromOptions {
 
         appBuilder.launchers().map(LinuxPackagingPipeline::normalizeShortcuts).ifPresent(appBuilder::launchers);
 
+        if (OptionUtils.bundlingOperation(options) == CREATE_LINUX_RPM) {
+            appBuilder.derivedVersionNormalizer(LinuxFromOptions::normalizeRpmVersion);
+        }
+
         return LinuxApplication.create(appBuilder.create());
     }
 
-    static LinuxRpmPackage createLinuxRpmPackage(Options options) {
+    static LinuxRpmPackage createLinuxRpmPackage(Options options, LinuxRpmSystemEnvironment sysEnv) {
 
-        final var superPkgBuilder = createLinuxPackageBuilder(options, LINUX_RPM);
+        final var superPkgBuilder = createLinuxPackageBuilder(options, sysEnv, LINUX_RPM);
 
         final var pkgBuilder = new LinuxRpmPackageBuilder(superPkgBuilder);
 
@@ -81,9 +87,9 @@ final class LinuxFromOptions {
         return pkgBuilder.create();
     }
 
-    static LinuxDebPackage createLinuxDebPackage(Options options) {
+    static LinuxDebPackage createLinuxDebPackage(Options options, LinuxDebSystemEnvironment sysEnv) {
 
-        final var superPkgBuilder = createLinuxPackageBuilder(options, LINUX_DEB);
+        final var superPkgBuilder = createLinuxPackageBuilder(options, sysEnv, LINUX_DEB);
 
         final var pkgBuilder = new LinuxDebPackageBuilder(superPkgBuilder);
 
@@ -99,13 +105,15 @@ final class LinuxFromOptions {
         return pkg;
     }
 
-    private static LinuxPackageBuilder createLinuxPackageBuilder(Options options, StandardPackageType type) {
+    private static LinuxPackageBuilder createLinuxPackageBuilder(Options options, LinuxSystemEnvironment sysEnv, StandardPackageType type) {
 
         final var app = createLinuxApplication(options);
 
         final var superPkgBuilder = createPackageBuilder(options, app, type);
 
         final var pkgBuilder = new LinuxPackageBuilder(superPkgBuilder);
+
+        pkgBuilder.arch(sysEnv.packageArch());
 
         LINUX_PACKAGE_DEPENDENCIES.ifPresentIn(options, pkgBuilder::additionalDependencies);
         LINUX_APP_CATEGORY.ifPresentIn(options, pkgBuilder::category);
@@ -116,4 +124,15 @@ final class LinuxFromOptions {
         return pkgBuilder;
     }
 
+    private static String normalizeRpmVersion(String version) {
+        // RPM does not support "-" symbol in version. In some case
+        // we might have "-" from "release" file version.
+        // Normalize version if it has "-" symbols. All other supported version
+        // formats by "release" file should be supported by RPM.
+        if (version.contains("-")) {
+            return DottedVersion.lazy(version).toComponentsString();
+        }
+
+        return version;
+    }
 }

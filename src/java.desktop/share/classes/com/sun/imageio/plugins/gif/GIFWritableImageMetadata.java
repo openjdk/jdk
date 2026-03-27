@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,10 +49,12 @@ class GIFWritableImageMetadata extends GIFImageMetadata {
               null, null);
     }
 
+    @Override
     public boolean isReadOnly() {
         return false;
     }
 
+    @Override
     public void reset() {
         // Fields from Image Descriptor
         imageLeftPosition = 0;
@@ -96,6 +98,7 @@ class GIFWritableImageMetadata extends GIFImageMetadata {
         return data.getBytes(ISO_8859_1);
     }
 
+    @Override
     protected void mergeNativeTree(Node root) throws IIOInvalidTreeException {
         Node node = root;
         if (!node.getNodeName().equals(nativeMetadataFormatName)) {
@@ -292,6 +295,7 @@ class GIFWritableImageMetadata extends GIFImageMetadata {
         }
     }
 
+    @Override
     protected void mergeStandardTree(Node root)
       throws IIOInvalidTreeException {
         Node node = root;
@@ -389,6 +393,7 @@ class GIFWritableImageMetadata extends GIFImageMetadata {
         }
     }
 
+    @Override
     public void setFromTree(String formatName, Node root)
         throws IIOInvalidTreeException
     {

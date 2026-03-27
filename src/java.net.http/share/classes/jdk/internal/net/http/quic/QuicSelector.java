@@ -45,9 +45,9 @@ import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.TimeLine;
 import jdk.internal.net.http.common.TimeSource;
 import jdk.internal.net.http.common.Utils;
+import jdk.internal.net.http.common.Utils.UseVTForSelector;
 import jdk.internal.net.http.quic.QuicEndpoint.QuicVirtualThreadedEndpoint;
 import jdk.internal.net.http.quic.QuicEndpoint.QuicSelectableEndpoint;
-import jdk.internal.net.http.quic.QuicEndpoint.UseVTForSelector;
 
 import static jdk.internal.net.http.quic.QuicEndpoint.USE_VT_FOR_SELECTOR;
 

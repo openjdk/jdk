@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
  *          java.net.http/jdk.internal.net.http.http3.streams
  *          java.net.http/jdk.internal.net.http.http3.frames
  *          java.net.http/jdk.internal.net.http.http3
- * @run testng/othervm -Djdk.internal.httpclient.qpack.log.level=EXTRA EntriesEvictionTest
+ * @run junit/othervm -Djdk.internal.httpclient.qpack.log.level=EXTRA EntriesEvictionTest
  */
 
 import java.util.ArrayList;
@@ -47,13 +47,16 @@ import jdk.internal.net.http.qpack.Encoder.SectionReference;
 import jdk.internal.net.http.qpack.HeaderField;
 import jdk.internal.net.http.qpack.QPACK;
 import jdk.internal.net.http.qpack.QPACK.Logger;
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class EntriesEvictionTest {
 
-    @Test(dataProvider = "evictionScenarios")
+    @ParameterizedTest
+    @MethodSource("evictionScenarios")
     public void evictionInsertionTest(TestHeader headerToAdd,
                                       SectionReference sectionReference,
                                       long insertedId,
@@ -71,12 +74,12 @@ public class EntriesEvictionTest {
         // Insert last entry
         long id = dynamicTable.insert(headerToAdd.name, headerToAdd.value, sectionReference);
 
-        Assert.assertEquals(id, insertedId);
+        Assertions.assertEquals(insertedId, id);
 
         if (largestEvictedId != -1) {
             // Check that evicted entry with the largest absolute index
             // is not accessible
-            Assert.assertThrows(() -> dynamicTable.get(largestEvictedId));
+            Assertions.assertThrows(Throwable.class, () -> dynamicTable.get(largestEvictedId));
             // Check that an entry after that can be acquired with its
             // absolute index
             dynamicTable.get(largestEvictedId + 1);
@@ -84,12 +87,11 @@ public class EntriesEvictionTest {
 
         if (insertedId != -1) {
             HeaderField insertedField = dynamicTable.get(insertedId);
-            Assert.assertEquals(insertedField,
-                    new HeaderField(headerToAdd.name(), headerToAdd.value()));
+            Assertions.assertEquals(new HeaderField(headerToAdd.name(), headerToAdd.value()),
+                                    insertedField);
         }
     }
 
-    @DataProvider
     public static Object[][] evictionScenarios() {
 
         // Header that requires only one entry to be evicted

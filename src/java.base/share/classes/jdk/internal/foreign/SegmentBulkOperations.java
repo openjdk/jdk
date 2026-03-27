@@ -194,7 +194,7 @@ public final class SegmentBulkOperations {
     @ForceInline
     public static int contentHash(AbstractMemorySegmentImpl segment, long fromOffset, long toOffset) {
         final long length = toOffset - fromOffset;
-        segment.checkBounds(fromOffset, length);
+        segment.checkSliceBounds(fromOffset, length);
         if (length == 0) {
             // The state has to be checked explicitly for zero-length segments
             segment.scope.checkValidState();

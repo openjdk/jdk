@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8246774
  * @summary Tests for stream references
- * @run testng StreamRefTest
+ * @run junit StreamRefTest
  */
 
 import java.io.ByteArrayInputStream;
@@ -36,11 +36,12 @@ import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import org.testng.annotations.Test;
 import static java.lang.System.out;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.expectThrows;
+
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests for stream references.
@@ -123,14 +124,14 @@ public class StreamRefTest {
         updateIntValue(3, -3, bytes, 40);
         var byteStream = new ObjectInputStream(new ByteArrayInputStream(bytes));
 
-        InvalidObjectException ioe = expectThrows(IOE, () -> deserializeOne(byteStream));
+        InvalidObjectException ioe = Assertions.assertThrows(IOE, () -> deserializeOne(byteStream));
         out.println("caught expected IOE: " + ioe);
         Throwable t = ioe.getCause();
         assertTrue(t instanceof IllegalArgumentException, "Expected IAE, got:" + t);
         out.println("expected cause IAE: " + t);
 
         B b1 = (B)deserializeOne(byteStream);
-        assertEquals(b1.a, null);
+        assertEquals(null, b1.a);
     }
 
     @Test
@@ -144,14 +145,14 @@ public class StreamRefTest {
         updateIntValue(3, -3, bytes, 96);
         var byteStream = new ObjectInputStream(new ByteArrayInputStream(bytes));
 
-        InvalidObjectException ioe = expectThrows(IOE, () -> deserializeOne(byteStream));
+        InvalidObjectException ioe = Assertions.assertThrows(IOE, () -> deserializeOne(byteStream));
         out.println("caught expected IOE: " + ioe);
         Throwable t = ioe.getCause();
         assertTrue(t instanceof IllegalArgumentException, "Expected IAE, got:" + t);
         out.println("expected cause IAE: " + t);
 
         A a1 = (A)deserializeOne(byteStream);
-        assertEquals(a1, null);
+        assertEquals(null, a1);
     }
 
     // ---
@@ -211,7 +212,7 @@ public class StreamRefTest {
         throws IOException {
         ByteArrayInputStream bais = new ByteArrayInputStream(bytes, offset, 4);
         DataInputStream dis = new DataInputStream(bais);
-        assertEquals(dis.readInt(), expectedValue);
+        assertEquals(expectedValue, dis.readInt());
     }
 
     static void updateIntValue(int expectedValue, int newValue, byte[] bytes, int offset)

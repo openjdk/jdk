@@ -61,3 +61,4 @@
 | --win-shortcut-prompt | win-exe, win-msi | x | x |  | USE_LAST |
 | --win-update-url | win-exe, win-msi | x | x |  | USE_LAST |
 | --win-upgrade-uuid | win-exe, win-msi | x | x |  | USE_LAST |
+| --win-with-ui | win-exe, win-msi | x | x |  | USE_LAST |

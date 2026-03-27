@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "opto/memnode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/phaseX.hpp"
+#include "opto/rangeinference.hpp"
 #include "opto/subnode.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -620,80 +621,14 @@ const Type* MulHiValue(const Type *t1, const Type *t2, const Type *bot) {
   return TypeLong::LONG;
 }
 
-template<typename IntegerType>
-static const IntegerType* and_value(const IntegerType* r0, const IntegerType* r1) {
-  typedef typename IntegerType::NativeType NativeType;
-  static_assert(std::is_signed<NativeType>::value, "Native type of IntegerType must be signed!");
-
-  int widen = MAX2(r0->_widen, r1->_widen);
-
-  // If both types are constants, we can calculate a constant result.
-  if (r0->is_con() && r1->is_con()) {
-    return IntegerType::make(r0->get_con() & r1->get_con());
-  }
-
-  // If both ranges are positive, the result will range from 0 up to the hi value of the smaller range. The minimum
-  // of the two constrains the upper bound because any higher value in the other range will see all zeroes, so it will be masked out.
-  if (r0->_lo >= 0 && r1->_lo >= 0) {
-    return IntegerType::make(0, MIN2(r0->_hi, r1->_hi), widen);
-  }
-
-  // If only one range is positive, the result will range from 0 up to that range's maximum value.
-  // For the operation 'x & C' where C is a positive constant, the result will be in the range [0..C]. With that observation,
-  // we can say that for any integer c such that 0 <= c <= C will also be in the range [0..C]. Therefore, 'x & [c..C]'
-  // where c >= 0 will be in the range [0..C].
-  if (r0->_lo >= 0) {
-    return IntegerType::make(0, r0->_hi, widen);
-  }
-
-  if (r1->_lo >= 0) {
-    return IntegerType::make(0, r1->_hi, widen);
-  }
-
-  // At this point, all positive ranges will have already been handled, so the only remaining cases will be negative ranges
-  // and constants.
-
-  assert(r0->_lo < 0 && r1->_lo < 0, "positive ranges should already be handled!");
-
-  // As two's complement means that both numbers will start with leading 1s, the lower bound of both ranges will contain
-  // the common leading 1s of both minimum values. In order to count them with count_leading_zeros, the bits are inverted.
-  NativeType sel_val = ~MIN2(r0->_lo, r1->_lo);
-
-  NativeType min;
-  if (sel_val == 0) {
-    // Since count_leading_zeros is undefined at 0, we short-circuit the condition where both ranges have a minimum of -1.
-    min = -1;
-  } else {
-    // To get the number of bits to shift, we count the leading 0-bits and then subtract one, as the sign bit is already set.
-    int shift_bits = count_leading_zeros(sel_val) - 1;
-    min = std::numeric_limits<NativeType>::min() >> shift_bits;
-  }
-
-  NativeType max;
-  if (r0->_hi < 0 && r1->_hi < 0) {
-    // If both ranges are negative, then the same optimization as both positive ranges will apply, and the smaller hi
-    // value will mask off any bits set by higher values.
-    max = MIN2(r0->_hi, r1->_hi);
-  } else {
-    // In the case of ranges that cross zero, negative values can cause the higher order bits to be set, so the maximum
-    // positive value can be as high as the larger hi value.
-    max = MAX2(r0->_hi, r1->_hi);
-  }
-
-  return IntegerType::make(min, max, widen);
-}
-
 //=============================================================================
 //------------------------------mul_ring---------------------------------------
 // Supplied function returns the product of the inputs IN THE CURRENT RING.
 // For the logical operations the ring's MUL is really a logical AND function.
 // This also type-checks the inputs for sanity.  Guaranteed never to
 // be passed a TOP or BOTTOM type, these are filtered out by pre-check.
-const Type *AndINode::mul_ring( const Type *t0, const Type *t1 ) const {
-  const TypeInt* r0 = t0->is_int();
-  const TypeInt* r1 = t1->is_int();
-
-  return and_value<TypeInt>(r0, r1);
+const Type* AndINode::mul_ring(const Type* t1, const Type* t2) const {
+  return RangeInference::infer_and(t1->is_int(), t2->is_int());
 }
 
 static bool AndIL_is_zero_element_under_mask(const PhaseGVN* phase, const Node* expr, const Node* mask, BasicType bt);
@@ -716,31 +651,19 @@ Node* AndINode::Identity(PhaseGVN* phase) {
     return in(1);
   }
 
-  Node* in1 = in(1);
-  uint op = in1->Opcode();
-  const TypeInt* t2 = phase->type(in(2))->isa_int();
-  if (t2 && t2->is_con()) {
-    int con = t2->get_con();
-    // Masking off high bits which are always zero is useless.
-    const TypeInt* t1 = phase->type(in(1))->isa_int();
-    if (t1 != nullptr && t1->_lo >= 0) {
-      jint t1_support = right_n_bits(1 + log2i_graceful(t1->_hi));
-      if ((t1_support & con) == t1_support)
-        return in1;
-    }
-    // Masking off the high bits of a unsigned-shift-right is not
-    // needed either.
-    if (op == Op_URShiftI) {
-      const TypeInt* t12 = phase->type(in1->in(2))->isa_int();
-      if (t12 && t12->is_con()) {  // Shift is by a constant
-        int shift = t12->get_con();
-        shift &= BitsPerJavaInteger - 1;  // semantics of Java shifts
-        int mask = max_juint >> shift;
-        if ((mask & con) == mask)  // If AND is useless, skip it
-          return in1;
-      }
-    }
+  const TypeInt* t1 = phase->type(in(1))->is_int();
+  const TypeInt* t2 = phase->type(in(2))->is_int();
+
+  if ((~t1->_bits._ones & ~t2->_bits._zeros) == 0) {
+    // All bits that might be 0 in in1 are known to be 0 in in2
+    return in(2);
   }
+
+  if ((~t2->_bits._ones & ~t1->_bits._zeros) == 0) {
+    // All bits that might be 0 in in2 are known to be 0 in in1
+    return in(1);
+  }
+
   return MulNode::Identity(phase);
 }
 
@@ -822,11 +745,8 @@ Node *AndINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 // For the logical operations the ring's MUL is really a logical AND function.
 // This also type-checks the inputs for sanity.  Guaranteed never to
 // be passed a TOP or BOTTOM type, these are filtered out by pre-check.
-const Type *AndLNode::mul_ring( const Type *t0, const Type *t1 ) const {
-  const TypeLong* r0 = t0->is_long();
-  const TypeLong* r1 = t1->is_long();
-
-  return and_value<TypeLong>(r0, r1);
+const Type* AndLNode::mul_ring(const Type* t1, const Type* t2) const {
+  return RangeInference::infer_and(t1->is_long(), t2->is_long());
 }
 
 const Type* AndLNode::Value(PhaseGVN* phase) const {
@@ -847,32 +767,19 @@ Node* AndLNode::Identity(PhaseGVN* phase) {
     return in(1);
   }
 
-  Node *usr = in(1);
-  const TypeLong *t2 = phase->type( in(2) )->isa_long();
-  if( t2 && t2->is_con() ) {
-    jlong con = t2->get_con();
-    // Masking off high bits which are always zero is useless.
-    const TypeLong* t1 = phase->type( in(1) )->isa_long();
-    if (t1 != nullptr && t1->_lo >= 0) {
-      int bit_count = log2i_graceful(t1->_hi) + 1;
-      jlong t1_support = jlong(max_julong >> (BitsPerJavaLong - bit_count));
-      if ((t1_support & con) == t1_support)
-        return usr;
-    }
-    uint lop = usr->Opcode();
-    // Masking off the high bits of a unsigned-shift-right is not
-    // needed either.
-    if( lop == Op_URShiftL ) {
-      const TypeInt *t12 = phase->type( usr->in(2) )->isa_int();
-      if( t12 && t12->is_con() ) {  // Shift is by a constant
-        int shift = t12->get_con();
-        shift &= BitsPerJavaLong - 1;  // semantics of Java shifts
-        jlong mask = max_julong >> shift;
-        if( (mask&con) == mask )  // If AND is useless, skip it
-          return usr;
-      }
-    }
+  const TypeLong* t1 = phase->type(in(1))->is_long();
+  const TypeLong* t2 = phase->type(in(2))->is_long();
+
+  if ((~t1->_bits._ones & ~t2->_bits._zeros) == 0) {
+    // All bits that might be 0 in in1 are known to be 0 in in2
+    return in(2);
   }
+
+  if ((~t2->_bits._ones & ~t1->_bits._zeros) == 0) {
+    // All bits that might be 0 in in2 are known to be 0 in in1
+    return in(1);
+  }
+
   return MulNode::Identity(phase);
 }
 
@@ -970,27 +877,28 @@ static bool mask_shift_amount(PhaseGVN* phase, const Node* shift_node, uint nBit
 }
 
 // Use this in ::Ideal only with shiftNode == this!
-// Returns the masked shift amount if constant or 0 if not constant.
-static uint mask_and_replace_shift_amount(PhaseGVN* phase, Node* shift_node, uint nBits) {
+// Sets masked_shift to the masked shift amount if constant or 0 if not constant.
+// Returns shift_node if the shift amount input node was modified, nullptr otherwise.
+static Node* mask_and_replace_shift_amount(PhaseGVN* phase, Node* shift_node, uint nBits, uint& masked_shift) {
   int real_shift;
-  uint masked_shift;
   if (mask_shift_amount(phase, shift_node, nBits, real_shift, masked_shift)) {
     if (masked_shift == 0) {
       // Let Identity() handle 0 shift count.
-      return 0;
+      return nullptr;
     }
 
     if (real_shift != (int)masked_shift) {
-      PhaseIterGVN* igvn = phase->is_IterGVN();
-      if (igvn != nullptr) {
-        igvn->_worklist.push(shift_node);
-      }
       shift_node->set_req(2, phase->intcon(masked_shift)); // Replace shift count with masked value.
+
+      // We need to notify the caller that the graph was reshaped, as Ideal needs
+      // to return the root of the reshaped graph if any change was made.
+      return shift_node;
     }
-    return masked_shift;
+  } else {
+    // Not a shift by a constant.
+    masked_shift = 0;
   }
-  // Not a shift by a constant.
-  return 0;
+  return nullptr;
 }
 
 // Called with
@@ -1042,7 +950,8 @@ Node* LShiftINode::Identity(PhaseGVN* phase) {
 }
 
 Node* LShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
-  uint con = mask_and_replace_shift_amount(phase, this, bits_per_java_integer(bt));
+  uint con;
+  Node* progress = mask_and_replace_shift_amount(phase, this, bits_per_java_integer(bt), con);
   if (con == 0) {
     return nullptr;
   }
@@ -1181,7 +1090,7 @@ Node* LShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
     return doubleShift;
   }
 
-  return nullptr;
+  return progress;
 }
 
 //------------------------------Ideal------------------------------------------
@@ -1209,21 +1118,24 @@ const Type* LShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
     return t1;
   }
 
-  // Either input is BOTTOM ==> the result is BOTTOM
-  if ((t1 == TypeInteger::bottom(bt)) || (t2 == TypeInt::INT) ||
-      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM)) {
+  // If nothing is known about the shift amount then the result is BOTTOM
+  if (t2 == TypeInt::INT) {
     return TypeInteger::bottom(bt);
   }
 
   const TypeInteger* r1 = t1->is_integer(bt); // Handy access
-  const TypeInt* r2 = t2->is_int(); // Handy access
+  // Since the shift semantics in Java take into account only the bottom five
+  // bits for ints and the bottom six bits for longs, we can further constrain
+  // the range of values of the shift amount by ANDing with the right mask based
+  // on whether the type is int or long.
+  const TypeInt* mask = TypeInt::make(bits_per_java_integer(bt) - 1);
+  const TypeInt* r2 = RangeInference::infer_and(t2->is_int(), mask);
 
   if (!r2->is_con()) {
     return TypeInteger::bottom(bt);
   }
 
   uint shift = r2->get_con();
-  shift &= bits_per_java_integer(bt) - 1;  // semantics of Java shifts
   // Shift by a multiple of 32/64 does nothing:
   if (shift == 0) {
     return t1;
@@ -1232,22 +1144,20 @@ const Type* LShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
   // If the shift is a constant, shift the bounds of the type,
   // unless this could lead to an overflow.
   if (!r1->is_con()) {
-    jlong lo = r1->lo_as_long(), hi = r1->hi_as_long();
 #ifdef ASSERT
     if (bt == T_INT) {
+      jlong lo = r1->lo_as_long(), hi = r1->hi_as_long();
       jint lo_int = r1->is_int()->_lo, hi_int = r1->is_int()->_hi;
       assert((java_shift_right(java_shift_left(lo, shift, bt),  shift, bt) == lo) == (((lo_int << shift) >> shift) == lo_int), "inconsistent");
       assert((java_shift_right(java_shift_left(hi, shift, bt),  shift, bt) == hi) == (((hi_int << shift) >> shift) == hi_int), "inconsistent");
     }
 #endif
-    if (java_shift_right(java_shift_left(lo, shift, bt),  shift, bt) == lo &&
-        java_shift_right(java_shift_left(hi, shift, bt), shift, bt) == hi) {
-      // No overflow.  The range shifts up cleanly.
-      return TypeInteger::make(java_shift_left(lo, shift, bt),
-                               java_shift_left(hi,  shift, bt),
-                               MAX2(r1->_widen, r2->_widen), bt);
+
+    if (bt == T_INT) {
+        return RangeInference::infer_lshift(r1->is_int(), shift);
     }
-    return TypeInteger::bottom(bt);
+
+    return RangeInference::infer_lshift(r1->is_long(), shift);
   }
 
   return TypeInteger::make(java_shift_left(r1->get_con_as_long(bt), shift, bt), bt);
@@ -1306,20 +1216,26 @@ Node* RShiftNode::IdentityIL(PhaseGVN* phase, BasicType bt) {
       return in(1);
     }
     // Check for useless sign-masking
+    int lshift_count = 0;
     if (in(1)->Opcode() == Op_LShift(bt) &&
         in(1)->req() == 3 &&
-        in(1)->in(2) == in(2)) {
+        // Compare shift counts by value, not by node pointer, to also match a not-yet-normalized
+        // negative constant (e.g. -1 vs 31)
+        const_shift_count(phase, in(1), &lshift_count)) {
       count &= bits_per_java_integer(bt) - 1; // semantics of Java shifts
-      // Compute masks for which this shifting doesn't change
-      jlong lo = (CONST64(-1) << (bits_per_java_integer(bt) - ((uint)count)-1)); // FFFF8000
-      jlong hi = ~lo;                                                            // 00007FFF
-      const TypeInteger* t11 = phase->type(in(1)->in(1))->isa_integer(bt);
-      if (t11 == nullptr) {
-        return this;
-      }
-      // Does actual value fit inside of mask?
-      if (lo <= t11->lo_as_long() && t11->hi_as_long() <= hi) {
-        return in(1)->in(1);      // Then shifting is a nop
+      lshift_count &= bits_per_java_integer(bt) - 1;
+      if (count == lshift_count) {
+        // Compute masks for which this shifting doesn't change
+        jlong lo = (CONST64(-1) << (bits_per_java_integer(bt) - ((uint)count)-1)); // FFFF8000
+        jlong hi = ~lo;                                                            // 00007FFF
+        const TypeInteger* t11 = phase->type(in(1)->in(1))->isa_integer(bt);
+        if (t11 == nullptr) {
+          return this;
+        }
+        // Does actual value fit inside of mask?
+        if (lo <= t11->lo_as_long() && t11->hi_as_long() <= hi) {
+          return in(1)->in(1);      // Then shifting is a nop
+        }
       }
     }
   }
@@ -1336,7 +1252,9 @@ Node* RShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
   if (t1 == nullptr) {
     return NodeSentinel;        // Left input is an integer
   }
-  int shift = mask_and_replace_shift_amount(phase, this, bits_per_java_integer(bt));
+
+  uint shift;
+  Node* progress = mask_and_replace_shift_amount(phase, this, bits_per_java_integer(bt), shift);
   if (shift == 0) {
     return NodeSentinel;
   }
@@ -1346,7 +1264,7 @@ Node* RShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
   // Such expressions arise normally from shift chains like (byte)(x >> 24).
   const Node* and_node = in(1);
   if (and_node->Opcode() != Op_And(bt)) {
-    return nullptr;
+    return progress;
   }
   const TypeInteger* mask_t = phase->type(and_node->in(2))->isa_integer(bt);
   if (mask_t != nullptr && mask_t->is_con()) {
@@ -1355,7 +1273,8 @@ Node* RShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
     Node* shr_nomask = phase->transform(RShiftNode::make(and_node->in(1), in(2), bt));
     return MulNode::make_and(shr_nomask, phase->integercon(maskbits >> shift, bt), bt);
   }
-  return nullptr;
+
+  return progress;
 }
 
 Node* RShiftINode::Ideal(PhaseGVN* phase, bool can_reshape) {
@@ -1366,18 +1285,19 @@ Node* RShiftINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (progress != nullptr) {
     return progress;
   }
-  int shift = mask_and_replace_shift_amount(phase, this, BitsPerJavaInteger);
+  uint shift;
+  progress = mask_and_replace_shift_amount(phase, this, BitsPerJavaInteger, shift);
   assert(shift != 0, "handled by IdealIL");
 
   // Check for "(short[i] <<16)>>16" which simply sign-extends
   const Node *shl = in(1);
   if (shl->Opcode() != Op_LShiftI) {
-    return nullptr;
+    return progress;
   }
 
   const TypeInt* left_shift_t = phase->type(shl->in(2))->isa_int();
   if (left_shift_t == nullptr) {
-    return nullptr;
+    return progress;
   }
   if (shift == 16 && left_shift_t->is_con(16)) {
     Node *ld = shl->in(1);
@@ -1409,7 +1329,7 @@ Node* RShiftINode::Ideal(PhaseGVN* phase, bool can_reshape) {
     }
   }
 
-  return nullptr;
+  return progress;
 }
 
 const Type* RShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
@@ -1565,7 +1485,8 @@ Node* URShiftINode::Identity(PhaseGVN* phase) {
 
 //------------------------------Ideal------------------------------------------
 Node* URShiftINode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  int con = mask_and_replace_shift_amount(phase, this, BitsPerJavaInteger);
+  uint con;
+  Node* progress = mask_and_replace_shift_amount(phase, this, BitsPerJavaInteger, con);
   if (con == 0) {
     return nullptr;
   }
@@ -1592,14 +1513,22 @@ Node* URShiftINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // If Q is "X << z" the rounding is useless.  Look for patterns like
   // ((X<<Z) + Y) >>> Z  and replace with (X + Y>>>Z) & Z-mask.
   Node *add = in(1);
-  const TypeInt *t2 = phase->type(in(2))->isa_int();
   if (in1_op == Op_AddI) {
     Node *lshl = add->in(1);
-    if( lshl->Opcode() == Op_LShiftI &&
-        phase->type(lshl->in(2)) == t2 ) {
-      Node *y_z = phase->transform( new URShiftINode(add->in(2),in(2)) );
-      Node *sum = phase->transform( new AddINode( lshl->in(1), y_z ) );
-      return new AndINode( sum, phase->intcon(mask) );
+    Node *y    = add->in(2);
+    if (lshl->Opcode() != Op_LShiftI) {
+      lshl = add->in(2);
+      y    = add->in(1);
+    }
+    // Compare shift counts by value, not by node pointer, to also match a not-yet-normalized
+    // negative constant (e.g. -1 vs 31)
+    int lshl_con = 0;
+    if (lshl->Opcode() == Op_LShiftI &&
+        const_shift_count(phase, lshl, &lshl_con) &&
+        (lshl_con & (BitsPerJavaInteger - 1)) == con) {
+      Node *y_z = phase->transform(new URShiftINode(y, in(2)));
+      Node *sum = phase->transform(new AddINode(lshl->in(1), y_z));
+      return new AndINode(sum, phase->intcon(mask));
     }
   }
 
@@ -1623,11 +1552,16 @@ Node* URShiftINode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
   // Check for "(X << z ) >>> z" which simply zero-extends
   Node *shl = in(1);
-  if( in1_op == Op_LShiftI &&
-      phase->type(shl->in(2)) == t2 )
-    return new AndINode( shl->in(1), phase->intcon(mask) );
+  // Compare shift counts by value, not by node pointer, to also match a not-yet-normalized
+  // negative constant (e.g. -1 vs 31)
+  int shl_con = 0;
+  if (in1_op == Op_LShiftI &&
+      const_shift_count(phase, shl, &shl_con) &&
+      (shl_con & (BitsPerJavaInteger - 1)) == con)
+    return new AndINode(shl->in(1), phase->intcon(mask));
 
   // Check for (x >> n) >>> 31. Replace with (x >>> 31)
+  const TypeInt* t2 = phase->type(in(2))->isa_int();
   Node *shr = in(1);
   if ( in1_op == Op_RShiftI ) {
     Node *in11 = shr->in(1);
@@ -1639,7 +1573,7 @@ Node* URShiftINode::Ideal(PhaseGVN* phase, bool can_reshape) {
     }
   }
 
-  return nullptr;
+  return progress;
 }
 
 //------------------------------Value------------------------------------------
@@ -1729,7 +1663,8 @@ Node* URShiftLNode::Identity(PhaseGVN* phase) {
 
 //------------------------------Ideal------------------------------------------
 Node* URShiftLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  int con = mask_and_replace_shift_amount(phase, this, BitsPerJavaLong);
+  uint con;
+  Node* progress = mask_and_replace_shift_amount(phase, this, BitsPerJavaLong, con);
   if (con == 0) {
     return nullptr;
   }
@@ -1745,11 +1680,20 @@ Node* URShiftLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   const TypeInt *t2 = phase->type(in(2))->isa_int();
   if (add->Opcode() == Op_AddL) {
     Node *lshl = add->in(1);
-    if( lshl->Opcode() == Op_LShiftL &&
-        phase->type(lshl->in(2)) == t2 ) {
-      Node *y_z = phase->transform( new URShiftLNode(add->in(2),in(2)) );
-      Node *sum = phase->transform( new AddLNode( lshl->in(1), y_z ) );
-      return new AndLNode( sum, phase->longcon(mask) );
+    Node *y    = add->in(2);
+    if (lshl->Opcode() != Op_LShiftL) {
+      lshl = add->in(2);
+      y    = add->in(1);
+    }
+    // Compare shift counts by value, not by node pointer, to also match a not-yet-normalized
+    // negative constant (e.g. -1 vs 63)
+    int lshl_con = 0;
+    if (lshl->Opcode() == Op_LShiftL &&
+        const_shift_count(phase, lshl, &lshl_con) &&
+        (lshl_con & (BitsPerJavaLong - 1)) == con) {
+      Node* y_z = phase->transform(new URShiftLNode(y, in(2)));
+      Node* sum = phase->transform(new AddLNode(lshl->in(1), y_z));
+      return new AndLNode(sum, phase->longcon(mask));
     }
   }
 
@@ -1769,9 +1713,14 @@ Node* URShiftLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
   // Check for "(X << z ) >>> z" which simply zero-extends
   Node *shl = in(1);
-  if( shl->Opcode() == Op_LShiftL &&
-      phase->type(shl->in(2)) == t2 )
-    return new AndLNode( shl->in(1), phase->longcon(mask) );
+  // Compare shift counts by value, not by node pointer, to also match a not-yet-normalized
+  // negative constant (e.g. -1 vs 63)
+  int shl_con = 0;
+  if (shl->Opcode() == Op_LShiftL &&
+      const_shift_count(phase, shl, &shl_con) &&
+      (shl_con & (BitsPerJavaLong - 1)) == con) {
+    return new AndLNode(shl->in(1), phase->longcon(mask));
+  }
 
   // Check for (x >> n) >>> 63. Replace with (x >>> 63)
   Node *shr = in(1);
@@ -1784,7 +1733,8 @@ Node* URShiftLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return new URShiftLNode(in11, phase->intcon(63));
     }
   }
-  return nullptr;
+
+  return progress;
 }
 
 //------------------------------Value------------------------------------------

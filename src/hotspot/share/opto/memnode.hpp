@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,6 +26,7 @@
 #ifndef SHARE_OPTO_MEMNODE_HPP
 #define SHARE_OPTO_MEMNODE_HPP
 
+#include "memory/allocation.hpp"
 #include "opto/multnode.hpp"
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
@@ -45,6 +46,8 @@ private:
   bool _mismatched_access; // Mismatched access from unsafe: byte read in integer array for instance
   bool _unsafe_access;     // Access of unsafe origin.
   uint8_t _barrier_data;   // Bit field with barrier information
+
+  friend class AccessAnalyzer;
 
 protected:
 #ifdef ASSERT
@@ -170,6 +173,53 @@ public:
   static void dump_adr_type(const TypePtr* adr_type, outputStream* st);
   virtual void dump_spec(outputStream *st) const;
 #endif
+
+  MemNode* clone_with_adr_type(const TypePtr* adr_type) const {
+    MemNode* new_node = clone()->as_Mem();
+#ifdef ASSERT
+    new_node->_adr_type = adr_type;
+#endif
+    return new_node;
+  }
+};
+
+// Analyze a MemNode to try to prove that it is independent from other memory accesses
+class AccessAnalyzer : StackObj {
+private:
+  PhaseValues* const _phase;
+  MemNode* const _n;
+  Node* _base;
+  intptr_t _offset;
+  const int _memory_size;
+  bool _maybe_raw;
+  AllocateNode* _alloc;
+  const TypePtr* _adr_type;
+  int _alias_idx;
+
+public:
+  AccessAnalyzer(PhaseValues* phase, MemNode* n);
+
+  // The result of deciding whether a memory node 'other' writes into the memory which '_n'
+  // observes.
+  class AccessIndependence {
+  public:
+    // Whether 'other' writes into the memory which '_n' observes. This value is conservative, that
+    // is, it is only true when it is provable that the memory accessed by the nodes is
+    // non-overlapping.
+    bool independent;
+
+    // If 'independent' is true, this is the memory input of 'other' that corresponds to the memory
+    // location that '_n' observes. For example, if 'other' is a StoreNode, then 'mem' is its
+    // memory input, if 'other' is a MergeMemNode, then 'mem' is the memory input corresponding to
+    // the alias class of '_n'.
+    // If 'independent' is false,
+    // - 'mem' is non-nullptr if it seems that 'other' writes to the exact memory location '_n'
+    // observes.
+    // - 'mem' is nullptr otherwise.
+    Node* mem;
+  };
+
+  AccessIndependence detect_access_independence(Node* other) const;
 };
 
 //------------------------------LoadNode---------------------------------------
@@ -299,8 +349,6 @@ public:
   bool has_unknown_control_dependency() const  { return _control_dependency == UnknownControl; }
   bool has_pinned_control_dependency() const   { return _control_dependency == Pinned; }
 
-  LoadNode* pin_array_access_node() const;
-
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
@@ -314,6 +362,7 @@ protected:
 
   Node* can_see_arraycopy_value(Node* st, PhaseGVN* phase) const;
 
+private:
   // depends_only_on_test is almost always true, and needs to be almost always
   // true to enable key hoisting & commoning optimizations.  However, for the
   // special case of RawPtr loads from TLS top & end, and other loads performed by
@@ -323,11 +372,12 @@ protected:
   // which produce results (new raw memory state) inside of loops preventing all
   // manner of other optimizations).  Basically, it's ugly but so is the alternative.
   // See comment in macro.cpp, around line 125 expand_allocate_common().
-  virtual bool depends_only_on_test() const {
+  virtual bool depends_only_on_test_impl() const {
     return adr_type() != TypeRawPtr::BOTTOM && _control_dependency == DependsOnlyOnTest;
   }
 
   LoadNode* clone_pinned() const;
+  virtual LoadNode* pin_node_under_control_impl() const;
 };
 
 //------------------------------LoadBNode--------------------------------------
@@ -534,7 +584,6 @@ public:
   virtual int Opcode() const;
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
-  virtual bool depends_only_on_test() const { return true; }
 
   // Polymorphic factory method:
   static Node* make(PhaseGVN& gvn, Node* mem, Node* adr, const TypePtr* at,
@@ -563,7 +612,6 @@ public:
 
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
-  virtual bool depends_only_on_test() const { return true; }
 };
 
 
@@ -580,7 +628,6 @@ private:
   virtual uint size_of() const { return sizeof(*this); }
 protected:
   virtual bool cmp( const Node &n ) const;
-  virtual bool depends_only_on_test() const { return false; }
 
   Node *Ideal_masked_input       (PhaseGVN *phase, uint mask);
   Node* Ideal_sign_extended_input(PhaseGVN* phase, int num_rejected_bits);
@@ -660,6 +707,9 @@ public:
   Node* convert_to_reinterpret_store(PhaseGVN& gvn, Node* val, const Type* vt);
 
   MemBarNode* trailing_membar() const;
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 //------------------------------StoreBNode-------------------------------------
@@ -797,11 +847,6 @@ public:
   virtual int Opcode() const;
   virtual bool      is_CFG() const  { return false; }
   virtual const Type *bottom_type() const {return Type::MEMORY;}
-  virtual const TypePtr *adr_type() const {
-    Node* ctrl = in(0);
-    if (ctrl == nullptr)  return nullptr; // node is dead
-    return ctrl->in(MemNode::Memory)->adr_type();
-  }
   virtual uint ideal_reg() const { return 0;} // memory projections don't have a register
   virtual const Type* Value(PhaseGVN* phase) const;
 #ifndef PRODUCT
@@ -814,17 +859,18 @@ public:
 class LoadStoreNode : public Node {
 private:
   const Type* const _type;      // What kind of value is loaded?
-  const TypePtr* _adr_type;     // What kind of memory is being addressed?
   uint8_t _barrier_data;        // Bit field with barrier information
   virtual uint size_of() const; // Size is bigger
+#ifdef ASSERT
+  const TypePtr* _adr_type;     // What kind of memory is being addressed?
+#endif // ASSERT
 public:
   LoadStoreNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at, const Type* rt, uint required );
-  virtual bool depends_only_on_test() const { return false; }
   virtual uint match_edge(uint idx) const { return idx == MemNode::Address || idx == MemNode::ValueIn; }
 
   virtual const Type *bottom_type() const { return _type; }
   virtual uint ideal_reg() const;
-  virtual const class TypePtr *adr_type() const { return _adr_type; }  // returns bottom_type of address
+  virtual const TypePtr* adr_type() const;
   virtual const Type* Value(PhaseGVN* phase) const;
 
   bool result_not_used() const;
@@ -832,6 +878,9 @@ public:
 
   uint8_t barrier_data() { return _barrier_data; }
   void set_barrier_data(uint8_t barrier_data) { _barrier_data = barrier_data; }
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 class LoadStoreConditionalNode : public LoadStoreNode {
@@ -1075,6 +1124,7 @@ public:
 class ClearArrayNode: public Node {
 private:
   bool _is_large;
+  static Node* make_address(Node* dest, Node* offset, bool raw_base, PhaseGVN* phase);
 public:
   ClearArrayNode( Node *ctrl, Node *arymem, Node *word_cnt, Node *base, bool is_large)
     : Node(ctrl,arymem,word_cnt,base), _is_large(is_large) {
@@ -1102,18 +1152,24 @@ public:
   static Node* clear_memory(Node* control, Node* mem, Node* dest,
                             intptr_t start_offset,
                             intptr_t end_offset,
+                            bool raw_base,
                             PhaseGVN* phase);
   static Node* clear_memory(Node* control, Node* mem, Node* dest,
                             intptr_t start_offset,
                             Node* end_offset,
+                            bool raw_base,
                             PhaseGVN* phase);
   static Node* clear_memory(Node* control, Node* mem, Node* dest,
                             Node* start_offset,
                             Node* end_offset,
+                            bool raw_base,
                             PhaseGVN* phase);
   // Return allocation input memory edge if it is different instance
   // or itself if it is the one we are looking for.
   static bool step_through(Node** np, uint instance_id, PhaseValues* phase);
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 //------------------------------MemBar-----------------------------------------
@@ -1265,11 +1321,26 @@ public:
   virtual int Opcode() const;
 };
 
+class MemBarStoreLoadNode : public MemBarNode {
+public:
+  MemBarStoreLoadNode(Compile* C, int alias_idx, Node* precedent)
+    : MemBarNode(C, alias_idx, precedent) {}
+  virtual int Opcode() const;
+};
+
 // Ordering between a volatile store and a following volatile load.
 // Requires multi-CPU visibility?
 class MemBarVolatileNode: public MemBarNode {
 public:
   MemBarVolatileNode(Compile* C, int alias_idx, Node* precedent)
+    : MemBarNode(C, alias_idx, precedent) {}
+  virtual int Opcode() const;
+};
+
+// A full barrier blocks all loads and stores from moving across it
+class MemBarFullNode : public MemBarNode {
+public:
+  MemBarFullNode(Compile* C, int alias_idx, Node* precedent)
     : MemBarNode(C, alias_idx, precedent) {}
   virtual int Opcode() const;
 };
@@ -1676,6 +1747,9 @@ public:
   virtual uint match_edge(uint idx) const { return (idx == 2); }
   virtual const TypePtr *adr_type() const { return TypePtr::BOTTOM; }
   virtual const Type *bottom_type() const { return Type::MEMORY; }
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 // cachewb pre sync node for ensuring that writebacks are serialised
@@ -1688,6 +1762,9 @@ public:
   virtual uint match_edge(uint idx) const { return false; }
   virtual const TypePtr *adr_type() const { return TypePtr::BOTTOM; }
   virtual const Type *bottom_type() const { return Type::MEMORY; }
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 // cachewb pre sync node for ensuring that writebacks are serialised
@@ -1700,6 +1777,9 @@ public:
   virtual uint match_edge(uint idx) const { return false; }
   virtual const TypePtr *adr_type() const { return TypePtr::BOTTOM; }
   virtual const Type *bottom_type() const { return Type::MEMORY; }
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 //------------------------------Prefetch---------------------------------------
@@ -1712,6 +1792,9 @@ public:
   virtual uint ideal_reg() const { return NotAMachineReg; }
   virtual uint match_edge(uint idx) const { return idx==2; }
   virtual const Type *bottom_type() const { return ( AllocatePrefetchStyle == 3 ) ? Type::MEMORY : Type::ABIO; }
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 #endif // SHARE_OPTO_MEMNODE_HPP

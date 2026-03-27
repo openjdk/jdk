@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@
 #include "cds/aotStreamedHeapWriter.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
+#include "classfile/moduleEntry.hpp"
+#include "classfile/packageEntry.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "logging/log.hpp"
@@ -86,7 +88,7 @@ void AOTMapLogger::ergo_initialize() {
 }
 
 void AOTMapLogger::dumptime_log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
-                                ArchiveMappedHeapInfo* mapped_heap_info, ArchiveStreamedHeapInfo* streamed_heap_info,
+                                AOTMappedHeapInfo* mapped_heap_info, AOTStreamedHeapInfo* streamed_heap_info,
                                 char* bitmap, size_t bitmap_size_in_bytes) {
   _is_runtime_logging = false;
   _buffer_to_requested_delta =  ArchiveBuilder::current()->buffer_to_requested_delta();
@@ -96,8 +98,8 @@ void AOTMapLogger::dumptime_log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
   DumpRegion* rw_region = &builder->_rw_region;
   DumpRegion* ro_region = &builder->_ro_region;
 
-  dumptime_log_metaspace_region("rw region", rw_region, &builder->_rw_src_objs);
-  dumptime_log_metaspace_region("ro region", ro_region, &builder->_ro_src_objs);
+  dumptime_log_metaspace_region("rw region", rw_region, &builder->_rw_src_objs, &builder->_ro_src_objs);
+  dumptime_log_metaspace_region("ro region", ro_region, &builder->_rw_src_objs, &builder->_ro_src_objs);
 
   address bitmap_end = address(bitmap + bitmap_size_in_bytes);
   log_region_range("bitmap", address(bitmap), bitmap_end, nullptr);
@@ -120,17 +122,6 @@ void AOTMapLogger::dumptime_log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
 class AOTMapLogger::RuntimeGatherArchivedMetaspaceObjs : public UniqueMetaspaceClosure {
   GrowableArrayCHeap<ArchivedObjInfo, mtClass> _objs;
 
-  static int compare_objs_by_addr(ArchivedObjInfo* a, ArchivedObjInfo* b) {
-    intx diff = a->_src_addr - b->_src_addr;
-    if (diff < 0) {
-      return -1;
-    } else if (diff == 0) {
-      return 0;
-    } else {
-      return 1;
-    }
-  }
-
 public:
   GrowableArrayCHeap<ArchivedObjInfo, mtClass>* objs() { return &_objs; }
 
@@ -141,7 +132,7 @@ public:
       info._buffered_addr = ref->obj();
       info._requested_addr = ref->obj();
       info._bytes = ref->size() * BytesPerWord;
-      info._type = ref->msotype();
+      info._type = ref->type();
       _objs.append(info);
     }
 
@@ -150,7 +141,7 @@ public:
 
   void finish() {
     UniqueMetaspaceClosure::finish();
-    _objs.sort(compare_objs_by_addr);
+    _objs.sort(compare_by_address);
   }
 }; // AOTMapLogger::RuntimeGatherArchivedMetaspaceObjs
 
@@ -201,24 +192,47 @@ void AOTMapLogger::runtime_log(FileMapInfo* mapinfo, GrowableArrayCHeap<Archived
 }
 
 void AOTMapLogger::dumptime_log_metaspace_region(const char* name, DumpRegion* region,
-                                                 const ArchiveBuilder::SourceObjList* src_objs) {
+                                                 const ArchiveBuilder::SourceObjList* rw_objs,
+                                                 const ArchiveBuilder::SourceObjList* ro_objs) {
   address region_base = address(region->base());
   address region_top  = address(region->top());
   log_region_range(name, region_base, region_top, region_base + _buffer_to_requested_delta);
   if (log_is_enabled(Debug, aot, map)) {
     GrowableArrayCHeap<ArchivedObjInfo, mtClass> objs;
-    for (int i = 0; i < src_objs->objs()->length(); i++) {
-      ArchiveBuilder::SourceObjInfo* src_info = src_objs->at(i);
+    // With -XX:+UseCompactObjectHeaders, it's possible for small objects (including some from
+    // ro_objs) to be allocated in the gaps in the RW region.
+    collect_metaspace_objs(&objs, region_base, region_top, rw_objs);
+    collect_metaspace_objs(&objs, region_base, region_top, ro_objs);
+    objs.sort(compare_by_address);
+    log_metaspace_objects_impl(address(region->base()), address(region->end()), &objs, 0, objs.length());
+  }
+}
+
+void AOTMapLogger::collect_metaspace_objs(GrowableArrayCHeap<ArchivedObjInfo, mtClass>* objs,
+                                          address region_base, address region_top ,
+                                          const ArchiveBuilder::SourceObjList* src_objs) {
+  for (int i = 0; i < src_objs->objs()->length(); i++) {
+    ArchiveBuilder::SourceObjInfo* src_info = src_objs->at(i);
+    address buf_addr = src_info->buffered_addr();
+    if (region_base <= buf_addr && buf_addr < region_top) {
       ArchivedObjInfo info;
       info._src_addr = src_info->source_addr();
-      info._buffered_addr = src_info->buffered_addr();
+      info._buffered_addr = buf_addr;
       info._requested_addr = info._buffered_addr + _buffer_to_requested_delta;
       info._bytes = src_info->size_in_bytes();
-      info._type = src_info->msotype();
-      objs.append(info);
+      info._type = src_info->type();
+      objs->append(info);
     }
+  }
+}
 
-    log_metaspace_objects_impl(address(region->base()), address(region->end()), &objs, 0, objs.length());
+int AOTMapLogger::compare_by_address(ArchivedObjInfo* a, ArchivedObjInfo* b) {
+  if (a->_buffered_addr < b->_buffered_addr) {
+    return -1;
+  } else if (a->_buffered_addr > b->_buffered_addr) {
+    return 1;
+  } else {
+    return 0;
   }
 }
 
@@ -332,43 +346,52 @@ void AOTMapLogger::log_metaspace_objects_impl(address region_base, address regio
     address buffered_addr = info._buffered_addr;
     address requested_addr = info._requested_addr;
     int bytes = info._bytes;
-    MetaspaceObj::Type type = info._type;
-    const char* type_name = MetaspaceObj::type_name(type);
+    MetaspaceClosureType type = info._type;
+    const char* type_name = MetaspaceClosure::type_name(type);
 
     log_as_hex(last_obj_base, buffered_addr, last_obj_base + _buffer_to_requested_delta);
 
     switch (type) {
-    case MetaspaceObj::ClassType:
+    case MetaspaceClosureType::ClassType:
       log_klass((Klass*)src, requested_addr, type_name, bytes, current);
       break;
-    case MetaspaceObj::ConstantPoolType:
+    case MetaspaceClosureType::ConstantPoolType:
       log_constant_pool((ConstantPool*)src, requested_addr, type_name, bytes, current);
       break;
-    case MetaspaceObj::ConstantPoolCacheType:
+    case MetaspaceClosureType::ConstantPoolCacheType:
       log_constant_pool_cache((ConstantPoolCache*)src, requested_addr, type_name, bytes, current);
       break;
-    case MetaspaceObj::ConstMethodType:
+    case MetaspaceClosureType::ConstMethodType:
       log_const_method((ConstMethod*)src, requested_addr, type_name, bytes, current);
       break;
-    case MetaspaceObj::MethodType:
+    case MetaspaceClosureType::MethodType:
       log_method((Method*)src, requested_addr, type_name, bytes, current);
       break;
-    case MetaspaceObj::MethodCountersType:
+    case MetaspaceClosureType::MethodCountersType:
       log_method_counters((MethodCounters*)src, requested_addr, type_name, bytes, current);
       break;
-    case MetaspaceObj::MethodDataType:
+    case MetaspaceClosureType::MethodDataType:
       log_method_data((MethodData*)src, requested_addr, type_name, bytes, current);
       break;
-    case MetaspaceObj::SymbolType:
+    case MetaspaceClosureType::ModuleEntryType:
+      log_module_entry((ModuleEntry*)src, requested_addr, type_name, bytes, current);
+      break;
+    case MetaspaceClosureType::PackageEntryType:
+      log_package_entry((PackageEntry*)src, requested_addr, type_name, bytes, current);
+      break;
+    case MetaspaceClosureType::GrowableArrayType:
+      log_growable_array((GrowableArrayBase*)src, requested_addr, type_name, bytes, current);
+      break;
+    case MetaspaceClosureType::SymbolType:
       log_symbol((Symbol*)src, requested_addr, type_name, bytes, current);
       break;
-    case MetaspaceObj::KlassTrainingDataType:
+    case MetaspaceClosureType::KlassTrainingDataType:
       log_klass_training_data((KlassTrainingData*)src, requested_addr, type_name, bytes, current);
       break;
-    case MetaspaceObj::MethodTrainingDataType:
+    case MetaspaceClosureType::MethodTrainingDataType:
       log_method_training_data((MethodTrainingData*)src, requested_addr, type_name, bytes, current);
       break;
-    case MetaspaceObj::CompileTrainingDataType:
+    case MetaspaceClosureType::CompileTrainingDataType:
       log_compile_training_data((CompileTrainingData*)src, requested_addr, type_name, bytes, current);
       break;
     default:
@@ -419,6 +442,27 @@ void AOTMapLogger::log_method_data(MethodData* md, address requested_addr, const
                                    int bytes, Thread* current) {
   ResourceMark rm(current);
   log_debug(aot, map)(_LOG_PREFIX " %s", p2i(requested_addr), type_name, bytes,  md->method()->external_name());
+}
+
+void AOTMapLogger::log_module_entry(ModuleEntry* mod, address requested_addr, const char* type_name,
+                                   int bytes, Thread* current) {
+  ResourceMark rm(current);
+  log_debug(aot, map)(_LOG_PREFIX " %s", p2i(requested_addr), type_name, bytes,
+                      mod->name_as_C_string());
+}
+
+void AOTMapLogger::log_package_entry(PackageEntry* pkg, address requested_addr, const char* type_name,
+                                   int bytes, Thread* current) {
+  ResourceMark rm(current);
+  log_debug(aot, map)(_LOG_PREFIX " %s - %s", p2i(requested_addr), type_name, bytes,
+                      pkg->module()->name_as_C_string(), pkg->name_as_C_string());
+}
+
+void AOTMapLogger::log_growable_array(GrowableArrayBase* arr, address requested_addr, const char* type_name,
+                                      int bytes, Thread* current) {
+  ResourceMark rm(current);
+  log_debug(aot, map)(_LOG_PREFIX " %d (%d)", p2i(requested_addr), type_name, bytes,
+                      arr->length(), arr->capacity());
 }
 
 void AOTMapLogger::log_klass(Klass* k, address requested_addr, const char* type_name,
@@ -791,7 +835,7 @@ public:
   }
 }; // AOTMapLogger::ArchivedFieldPrinter
 
-void AOTMapLogger::dumptime_log_mapped_heap_region(ArchiveMappedHeapInfo* heap_info) {
+void AOTMapLogger::dumptime_log_mapped_heap_region(AOTMappedHeapInfo* heap_info) {
   MemRegion r = heap_info->buffer_region();
   address buffer_start = address(r.start()); // start of the current oop inside the buffer
   address buffer_end = address(r.end());
@@ -803,7 +847,7 @@ void AOTMapLogger::dumptime_log_mapped_heap_region(ArchiveMappedHeapInfo* heap_i
   log_archived_objects(AOTMappedHeapWriter::oop_iterator(heap_info));
 }
 
-void AOTMapLogger::dumptime_log_streamed_heap_region(ArchiveStreamedHeapInfo* heap_info) {
+void AOTMapLogger::dumptime_log_streamed_heap_region(AOTStreamedHeapInfo* heap_info) {
   MemRegion r = heap_info->buffer_region();
   address buffer_start = address(r.start()); // start of the current oop inside the buffer
   address buffer_end = address(r.end());

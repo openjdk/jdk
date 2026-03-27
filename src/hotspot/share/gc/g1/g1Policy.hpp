@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 #include "gc/g1/g1RemSetTrackingPolicy.hpp"
 #include "gc/g1/g1YoungGenSizer.hpp"
 #include "gc/shared/gcCause.hpp"
-#include "runtime/atomicAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/pair.hpp"
 #include "utilities/ticks.hpp"
 
@@ -56,7 +56,7 @@ class GCPolicyCounters;
 class STWGCTimer;
 
 class G1Policy: public CHeapObj<mtGC> {
- private:
+  using Pause = G1CollectorState::Pause;
 
   static G1IHOPControl* create_ihop_control(const G1OldGenAllocationTracker* old_gen_alloc_tracker,
                                             const G1Predictions* predictor);
@@ -81,12 +81,9 @@ class G1Policy: public CHeapObj<mtGC> {
 
   // Desired young gen length without taking actually available free regions into
   // account.
-  volatile uint _young_list_desired_length;
+  Atomic<uint> _young_list_desired_length;
   // Actual target length given available free memory.
-  volatile uint _young_list_target_length;
-  // The max number of regions we can extend the eden by while the GC
-  // locker is active. This should be >= _young_list_target_length;
-  volatile uint _young_list_max_length;
+  Atomic<uint> _young_list_target_length;
 
   // The survivor rate groups below must be initialized after the predictor because they
   // indirectly use it through the "this" object passed to their constructor.
@@ -118,7 +115,7 @@ class G1Policy: public CHeapObj<mtGC> {
   G1ConcurrentStartToMixedTimeTracker _concurrent_start_to_mixed;
 
   bool should_update_surv_rate_group_predictors() {
-    return collector_state()->in_young_only_phase() && !collector_state()->mark_or_rebuild_in_progress();
+    return collector_state()->is_in_young_only_phase() && !collector_state()->is_in_mark_or_rebuild();
   }
 
   double pending_cards_processing_time() const;
@@ -271,14 +268,13 @@ private:
   // Sets up marking if proper conditions are met.
   void maybe_start_marking(size_t allocation_word_size);
   // Manage time-to-mixed tracking.
-  void update_time_to_mixed_tracking(G1GCPauseType gc_type, double start, double end);
+  void update_time_to_mixed_tracking(Pause gc_type, double start, double end);
   // Record the given STW pause with the given start and end times (in s).
-  void record_pause(G1GCPauseType gc_type,
+  void record_pause(Pause gc_type,
                     double start,
-                    double end,
-                    bool allocation_failure = false);
+                    double end);
 
-  void update_gc_pause_time_ratios(G1GCPauseType gc_type, double start_sec, double end_sec);
+  void update_gc_pause_time_ratios(Pause gc_type, double start_sec, double end_sec);
 
   // Indicate that we aborted marking before doing any mixed GCs.
   void abort_time_to_mixed_tracking();
@@ -363,8 +359,8 @@ public:
   // This must be called at the very beginning of an evacuation pause.
   void decide_on_concurrent_start_pause();
 
-  uint young_list_desired_length() const { return AtomicAccess::load(&_young_list_desired_length); }
-  uint young_list_target_length() const { return AtomicAccess::load(&_young_list_target_length); }
+  uint young_list_desired_length() const { return _young_list_desired_length.load_relaxed(); }
+  uint young_list_target_length() const { return _young_list_target_length.load_relaxed(); }
 
   bool should_allocate_mutator_region() const;
   bool should_expand_on_mutator_allocation() const;
