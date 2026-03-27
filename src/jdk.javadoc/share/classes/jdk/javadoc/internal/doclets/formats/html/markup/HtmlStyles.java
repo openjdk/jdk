@@ -639,12 +639,12 @@ public enum HtmlStyles implements HtmlStyle {
     /**
      * The class of an element containing a block note tag.
      */
-    blockNoteTag,
+    blockNote,
 
     /**
      * The class of an element containing an inline note tag.
      */
-    inlineNoteTag,
+    inlineNote,
 
     //</editor-fold>
 

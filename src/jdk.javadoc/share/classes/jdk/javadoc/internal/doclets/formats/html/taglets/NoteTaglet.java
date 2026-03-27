@@ -37,9 +37,11 @@ import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.HtmlId;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.RawHtml;
+import jdk.javadoc.internal.html.Text;
 
 import javax.lang.model.element.Element;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -88,38 +90,61 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
             return null;
         }
 
-        ContentBuilder body = new ContentBuilder();
+        var map = new LinkedHashMap<String, Content>();
+        var context = tagletWriter.context;
+        var htmlWriter = tagletWriter.htmlWriter;
+
         for (DocTree tag : tags) {
-            body.add(getTagOutput(holder, (NoteTree) tag, true));
+            if (tag instanceof NoteTree note) {
+                var attr = getAttributes(note);
+                var header = attr.getOrDefault("header", defaultHeader);
+                var kind = attr.getOrDefault("kind", defaultKind);
+                var body = HtmlTree.DD(htmlWriter.commentTagsToContent(holder, note.getBody(), context.within(note)));
+
+                var id = attr.getOrDefault("id", null);
+                if (id != null) {
+                    body.setId(HtmlId.of(id));
+                }
+
+                map.compute(header, (hdr, cnt) -> {
+                    if (cnt == null) {
+                        return HtmlTree.DIV(HtmlStyles.blockNote)
+                                .addStyle(HtmlStyles.noteTag.cssName() + "-" + kind)
+                                .add(HtmlTree.DT(RawHtml.of(hdr)))
+                                .add(body);
+                    } else {
+                        cnt.add(body);
+                        return cnt;
+                    }
+                });
+            }
         }
-        return body;
+
+        Content content = new ContentBuilder();
+        for (var cnt : map.values()) {
+            content.add(cnt);
+        }
+        return content;
     }
 
     @Override
     public Content getInlineTagOutput(Element element, DocTree tag, TagletWriter tagletWriter) {
         this.tagletWriter = tagletWriter;
-        return getTagOutput(element, (NoteTree) tag, false);
-    }
-
-    private Content getTagOutput(Element holder, NoteTree note, boolean isBlock) {
         var context = tagletWriter.context;
         var htmlWriter = tagletWriter.htmlWriter;
+        var note = (NoteTree) tag;
 
         var attr = getAttributes(note);
         var header = attr.getOrDefault("header", defaultHeader);
+
+        HtmlTree result = HtmlTree.DIV(HtmlStyles.inlineNote)
+                    .add(HtmlTree.SPAN(HtmlStyles.noteHeader, RawHtml.of(header)))
+                    .add(Text.NL)
+                    .add(htmlWriter.commentTagsToContent(element, note.getBody(), context.within(note)));
+
         var kind = attr.getOrDefault("kind", defaultKind);
         var id = attr.getOrDefault("id", null);
 
-        HtmlTree result;
-        if (isBlock) {
-            result = HtmlTree.DIV(HtmlStyles.blockNoteTag)
-                    .add(HtmlTree.DT(RawHtml.of(header)))
-                    .add(HtmlTree.DD(htmlWriter.commentTagsToContent(holder, note.getBody(), context.within(note))));
-        } else {
-            result = HtmlTree.DIV(HtmlStyles.inlineNoteTag)
-                    .add(HtmlTree.DIV(HtmlStyles.noteHeader, RawHtml.of(header)))
-                    .add(htmlWriter.commentTagsToContent(holder, note.getBody(), context.within(note)));
-        }
         if (id != null) {
             result.setId(HtmlId.of(id));
         }

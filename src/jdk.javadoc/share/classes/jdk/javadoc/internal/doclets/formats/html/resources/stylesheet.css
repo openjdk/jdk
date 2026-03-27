@@ -75,16 +75,19 @@
     --pre-background-color: var(--snippet-background-color);
     --pre-text-color: var(--snippet-text-color);
     /* Note colors */
-    --note-border-color: #8a8a8a;
+    --note-border-color: #8e8e8e;
     --note-text-color: var(--block-text-color);
-    --note-important-background-color: /* #f3f8fd; */ /* #eaf1f9; */ #eaf2fb;
+    --note-important-background-color: #eaf2fb;
     --note-important-border-color: var(--navbar-background-color);
     --note-important-header-color: #ffffff;
-    --note-critical-background-color: /* #fff4f4; */ #fff0f0;
+    --note-important-pre-color: #dce9f7;
+    --note-critical-background-color: #fff0f0;
     --note-critical-border-color: #d01414;
     --note-critical-header-color: #ffffff;
-    --jdk-note-background: #fcfcfc;
-    --jdk-note-border: #c6c6c6;
+    --note-critical-pre-color: #fee3e3;
+    --jdk-note-background: #f9f9f9;
+    --jdk-note-border: #bbb;
+    --jdk-note-pre: #efeff1;
     /* Border colors for structural elements and user defined tables */
     --border-color: #e6e6e6;
     --table-border-color: #000000;
@@ -144,16 +147,19 @@
     --snippet-highlight-color: #f7c590;
     --pre-background-color: var(--snippet-background-color);
     --pre-text-color: var(--snippet-text-color);
-    --note-border-color: #7b7b7b;
+    --note-border-color: #747474;
     --note-text-color: var(--block-text-color);
     --note-important-background-color: #353f4e;
     --note-important-border-color: #446c86;
     --note-important-header-color: #ffffff;
+    --note-important-pre-color: #2c353b;
     --note-critical-background-color: #4f2c2c;
     --note-critical-border-color: #b82222;
     --note-critical-header-color: #ffffff;
-    --jdk-note-background: #272829;
+    --note-critical-pre-color: #391a1a;
+    --jdk-note-background: #282a2c;
     --jdk-note-border: #535353;
+    --jdk-note-pre: #303940;
     --border-color: #444444;
     --table-border-color: #717171;
     --tab-border-radius: 2px 2px 0 0;
@@ -540,50 +546,33 @@ section.class-description > div.horizontal-scroll > :last-child > :is(li, dd):la
 /*
  * Styles for notes.
  */
-div.inline-note-tag {
-    position: relative;
+div.inline-note {
     padding: 10px 12px;
-    margin: 22px 0 14px 0;
+    margin: 12px 0;
     border: 1px solid var(--note-border-color);
     border-radius: 4px;
 }
-div.inline-note-tag > div.note-header {
-    background-color: var(--body-background-color);
-    padding: 1px 4px;
-    position: absolute;
-    top: -16px;
-    left: 5px;
+div.inline-note > span.note-header {
     font-weight: bold;
     font-family: var(--body-font-family);
-    font-size: 0.856em;
-    border-radius: 1px;
-    margin: 0 3px;
+    font-size: 0.93em;
 }
-div.inline-note-tag.note-tag-important {
-    padding-top: 11px;
-    margin-top: 24px;
+div.inline-note.note-tag-important {
     border-color: var(--note-important-border-color);
     background-color: var(--note-important-background-color);
-    border: none;
+    pre, pre.snippet, div.snippet-container {
+        background-color: var(--note-important-pre-color);
+    }
 }
-div.inline-note-tag.note-tag-critical {
-    padding-top: 11px;
-    margin-top: 24px;
+div.inline-note.note-tag-critical {
     border-color: var(--note-critical-border-color);
     background-color: var(--note-critical-background-color);
-    border: none;
-}
-div.inline-note-tag.note-tag-important > div.note-header {
-    background-color: var(--note-important-border-color);
-    color: var(--note-important-header-color);
-}
-div.inline-note-tag.note-tag-critical > div.note-header {
-    background-color: var(--note-critical-border-color);
-    color: var(--note-critical-header-color);
+    pre, pre.snippet, div.snippet-container {
+        background-color: var(--note-critical-pre-color);
+    }
 }
 dl.notes > dt,
 dl.notes > div > dt {
-    display: inline;
     font-family: var(--body-font-family);
     font-size:0.856em;
     font-weight:bold;
@@ -597,39 +586,46 @@ dl.notes > div > dd {
     font-family:var(--block-font-family);
     line-height:var(--block-line-height);
 }
-dl.notes > div.block-note-tag.note-tag-important,
-dl.notes > div.block-note-tag.note-tag-critical {
-    margin: 8px 0;
+dl.notes > div.block-note.note-tag-callout,
+dl.notes > div.block-note.note-tag-important,
+dl.notes > div.block-note.note-tag-critical,
+dl.notes > div.block-note.note-tag-apiNote,
+dl.notes > div.block-note.note-tag-implNote,
+dl.notes > div.block-note.note-tag-implSpec {
+    margin: 12px 0;
     padding: 0 12px;
     border-radius: 4px;
     overflow-x: auto;
     dt, dd {
         margin: 8px 0;
-        padding: 0;
+        padding: 0 1px;
         display: block;
     }
 }
-dl.notes > div.block-note-tag.note-tag-important {
+dl.notes > div.block-note.note-tag-callout {
+    border: 1px solid var(--note-border-color);
+}
+dl.notes > div.block-note.note-tag-important {
     background-color: var(--note-important-background-color);
+    border: 1px solid var(--note-important-border-color);
+    pre, pre.snippet, div.snippet-container {
+        background-color: var(--note-important-pre-color);
+    }
 }
-dl.notes > div.block-note-tag.note-tag-critical {
+dl.notes > div.block-note.note-tag-critical {
     background-color: var(--note-critical-background-color);
+    border: 1px solid var(--note-critical-border-color);
+    pre, pre.snippet, div.snippet-container {
+        background-color: var(--note-critical-pre-color);
+    }
 }
-.note-tag-important pre,
-.note-tag-critical pre {
-    background-color: unset;
-}
-dl.notes > div.block-note-tag.note-tag-apiNote,
-dl.notes > div.block-note-tag.note-tag-implNote {
-    margin: 8px 0;
-    padding: 0 12px;
+dl.notes > div.block-note.note-tag-apiNote,
+dl.notes > div.block-note.note-tag-implNote,
+dl.notes > div.block-note.note-tag-implSpec {
     background-color: var(--jdk-note-background);
     border: 1px solid var(--jdk-note-border);
-    border-radius: 4px;
-    dt, dd {
-        margin: 8px 0;
-        padding: 0;
-        display: block;
+    pre, pre.snippet, div.snippet-container {
+        background-color: var(--jdk-note-pre);
     }
 }
 dl.notes > dd > ul,
