@@ -37,6 +37,8 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import jdk.jpackage.internal.model.PackageType;
+import jdk.jpackage.internal.model.StandardPackageType;
 import jdk.jpackage.internal.cli.Validator.ValidatingConsumerException;
 import jdk.jpackage.internal.util.FileUtils;
 import jdk.jpackage.internal.util.MacBundle;
@@ -168,6 +170,47 @@ public final class StandardValidator {
     // abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._+
     //
     public static final Predicate<String> IS_LINUX_RPM_PACKAGE_NAME = Pattern.compile("[\\p{Alnum}-._+]+").asMatchPredicate();
+
+    public static Predicate<Path> installDirValidator(PackageType type) {
+        Objects.requireNonNull(type);
+        return installDir -> {
+            if (installDir.getNameCount() == 0) {
+                return false;
+            }
+
+            if (installDir.toString().isEmpty()) {
+                return false;
+            }
+
+            if (installDir.getName(0).equals(Path.of(".."))) {
+                // If the path starts with "../" name, Path.normalize() will leave it intact.
+                // So take care of this case explicitly.
+                return false;
+            }
+
+            if (type instanceof StandardPackageType stdType) {
+                switch (stdType) {
+                    case WIN_EXE, WIN_MSI -> {
+                        if (installDir.isAbsolute()) {
+                            return false;
+                        }
+                    }
+                    default -> {
+                        if (!installDir.isAbsolute()) {
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            if (!installDir.normalize().toString().equals(installDir.toString())) {
+                // Don't allow '..' or '.' in path components
+                return false;
+            }
+
+            return true;
+        };
+    }
 
     public static final class DirectoryListingIOException extends RuntimeException {
 

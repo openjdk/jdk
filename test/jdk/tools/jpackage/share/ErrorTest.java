@@ -569,7 +569,10 @@ public final class ErrorTest {
                     .error("error.no-module-in-path", "com.foo.bar"),
             // non-existing argument file
             testSpec().noAppDesc().notype().addArgs("@foo")
-                    .error("ERR_CannotParseOptions", "foo")
+                    .error("ERR_CannotParseOptions", "foo"),
+            // invalid install-dir
+            testSpec().nativeType().addArgs("--install-dir", "..")
+                    .error("error.parameter-not-install-dir", "..", "--install-dir")
         ).map(TestSpec.Builder::create).toList());
 
         // --main-jar and --module-name

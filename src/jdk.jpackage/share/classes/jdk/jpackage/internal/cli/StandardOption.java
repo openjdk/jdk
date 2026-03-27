@@ -59,18 +59,19 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.cli.OptionValueExceptionFactory.StandardArgumentsMapper;
+import jdk.jpackage.internal.log.LogEnvironment;
 import jdk.jpackage.internal.model.AppImageBundleType;
 import jdk.jpackage.internal.model.BundleType;
 import jdk.jpackage.internal.model.BundlingOperationDescriptor;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.LauncherShortcut;
+import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
 import jdk.jpackage.internal.model.SelfContainedException;
+import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.RootedPath;
 import jdk.jpackage.internal.util.SetBuilder;
-import jdk.jpackage.internal.util.PathUtils;
-import jdk.jpackage.internal.log.LogEnvironment;
 
 /**
  * jpackage command line options
@@ -241,6 +242,23 @@ public final class StandardOption {
                 if (context.os() == OperatingSystem.WINDOWS) {
                     b.description("help.option.install-dir" + resourceKeySuffix(context.os()));
                 }
+
+                b.validatorExceptionFormatString("error.parameter-not-install-dir");
+                b.validatorExceptionFactory(ERROR_WITH_VALUE_AND_OPTION_NAME);
+                b.validator(StandardValidator.installDirValidator(context.bundlingOperation().filter(bundlingOperation -> {
+                    // Don't run bundling operation-specific validation because
+                    // the operation is not in sync with the platform.
+                    return bundlingOperation.os() == context.os();
+                }).map(StandardBundlingOperation::packageType).orElseGet(() -> {
+                    // Package type is unknown. Install dir validation will not be complete but still feasible.
+                    // Do as much as we can.
+                    return new PackageType() {
+                        @Override
+                        public String label() {
+                            throw new UnsupportedOperationException();
+                        }};
+                })));
+
             }))
             .create();
 

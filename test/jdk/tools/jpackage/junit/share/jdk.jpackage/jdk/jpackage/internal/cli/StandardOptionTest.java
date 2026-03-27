@@ -224,6 +224,36 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
     }
 
     @ParameterizedTest
+    @MethodSource
+    void test_INSTALL_DIR_valid(StandardBundlingOperation bunldingOperation, String value, Path output) {
+
+        var spec = Optional.ofNullable(bunldingOperation).map(StandardOptionContext::new).orElseGet(() -> {
+            return new StandardOptionContext(OperatingSystem.current());
+        }).mapOptionSpec(StandardOption.INSTALL_DIR.getSpec());
+
+        var result = spec.convert(spec.name(), StringToken.of(value)).orElseThrow();
+
+        assertEquals(Optional.ofNullable(output).orElseGet(() -> {
+            return Path.of(value);
+        }), result);
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    void test_INSTALL_DIR_invalid(StandardBundlingOperation bunldingOperation, String value) {
+
+        var spec = Optional.ofNullable(bunldingOperation).map(StandardOptionContext::new).orElseGet(() -> {
+            return new StandardOptionContext(OperatingSystem.current());
+        }).mapOptionSpec(StandardOption.INSTALL_DIR.getSpec());
+
+        var result = spec.convert(spec.name(), StringToken.of(value));
+
+        var ex = assertThrows(JPackageException.class, result::orElseThrow);
+
+        assertEquals(I18N.format("error.parameter-not-install-dir", value, "--install-dir"), ex.getMessage());
+    }
+
+    @ParameterizedTest
     @ValueSource(strings = {
         ".",
         "a-b.c",
@@ -805,6 +835,67 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
                 Arguments.of("'\\' a ", List.of("' a")),
                 Arguments.of("\"" + "\\\"".repeat(10000) + "A", List.of("\"".repeat(10000) + "A"))
         );
+    }
+
+    private static Collection<Arguments> test_INSTALL_DIR_valid() {
+        var testCases = new ArrayList<Arguments>();
+
+        if (OperatingSystem.isWindows()) {
+            for (var bundlingOperation : StandardBundlingOperation.WINDOWS_CREATE_NATIVE) {
+                testCases.add(Arguments.of(bundlingOperation, "Foo", null));
+                testCases.add(Arguments.of(bundlingOperation, "Foo/\\/", "Foo"));
+            }
+        }
+
+        if (OperatingSystem.isMacOS()) {
+            for (var bundlingOperation : StandardBundlingOperation.MACOS_CREATE_NATIVE) {
+                testCases.add(Arguments.of(bundlingOperation, "/Application", null));
+                testCases.add(Arguments.of(bundlingOperation, "/Application//", "/Application"));
+            }
+        }
+
+        if (OperatingSystem.isLinux()) {
+            for (var bundlingOperation : StandardBundlingOperation.LINUX_CREATE_NATIVE) {
+                testCases.add(Arguments.of(bundlingOperation, "/opt", null));
+                testCases.add(Arguments.of(bundlingOperation, "/opt//", "/opt"));
+                testCases.add(Arguments.of(bundlingOperation, "/foo/bar///", "/foo/bar"));
+            }
+        }
+
+        final var root = Path.of("").toAbsolutePath().getRoot();
+
+        testCases.add(Arguments.of(null, "Foo", null));
+        testCases.add(Arguments.of(null, "Foo//", Path.of("Foo")));
+        if (OperatingSystem.isWindows()) {
+            testCases.add(Arguments.of(null, "Foo/\\/", Path.of("Foo")));
+        }
+        testCases.add(Arguments.of(null, root.resolve("Application").toString(), null));
+        testCases.add(Arguments.of(null, root.resolve("Application//").toString(), root.resolve("Application")));
+        testCases.add(Arguments.of(null, root.resolve("opt").toString(), null));
+        testCases.add(Arguments.of(null, root.resolve("opt//").toString(), root.resolve("opt")));
+        testCases.add(Arguments.of(null, root.resolve("foo/bar///").toString(), root.resolve("foo/bar")));
+
+        return testCases;
+    }
+
+    private static Collection<Arguments> test_INSTALL_DIR_invalid() {
+        final var testCases = new ArrayList<Arguments>();
+
+        // Just a few invalid values. To ensure option spec converter throws expected error.
+        // More thorough test coverage is in StandardValidatorTest.test_installDirValidator_invalid()
+        final var invalidPaths = List.of("", ".", "..");
+
+        for (var bundlingOperation : StandardBundlingOperation.CREATE_NATIVE) {
+            for (var path : invalidPaths) {
+                testCases.add(Arguments.of(bundlingOperation, path));
+            }
+        }
+
+        for (var path : invalidPaths) {
+            testCases.add(Arguments.of(null, path));
+        }
+
+        return testCases;
     }
 
 
