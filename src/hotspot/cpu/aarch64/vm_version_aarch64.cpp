@@ -27,6 +27,8 @@
 #include "pauth_aarch64.hpp"
 #include "register_aarch64.hpp"
 #include "asm/codeBuffer.hpp"
+#include "asm/macroAssembler.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
