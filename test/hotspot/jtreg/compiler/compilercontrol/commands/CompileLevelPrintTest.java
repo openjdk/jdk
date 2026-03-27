@@ -150,7 +150,7 @@ public class CompileLevelPrintTest {
                 ".*\\n-{35} Assembly -{35}\\n(?:\\[[0-9.]+s]\\[warning]\\[os] Loading hsdis library failed\\n)?\\nCompiled method \\((?:c1|c2)\\) (\\d+) (C1|C2): *"
                       + "(\\d+) ([ %][ s][ !][ b][ n]) ([-0-4 ]) +([^ ]+) \\(\\d+ bytes\\)", Pattern.DOTALL);
         private static final Pattern reMethodData = Pattern.compile(
-                ".*\\n-{72}\\nstatic ([^\\n]+)\\ninterpreter_invocation_count: *\\d+", Pattern.DOTALL);
+                ".*-{72}\\nstatic ([^\\n]+)\\n *interpreter_invocation_count: *\\d+\\n *invocation_counter: *\\d+", Pattern.DOTALL);
 
         public static void run(String compileCmd,
                                String cmdCompLevel,
