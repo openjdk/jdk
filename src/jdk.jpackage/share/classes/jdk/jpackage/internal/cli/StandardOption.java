@@ -238,6 +238,7 @@ public final class StandardOption {
 
     public static final OptionValue<Path> INSTALL_DIR = pathOption("install-dir")
             .valuePattern("directory path")
+            .scope(CREATE_NATIVE).inScope(NOT_BUILDING_APP_IMAGE)
             .mutate(createOptionSpecBuilderMutator((b, context) -> {
                 if (context.os() == OperatingSystem.WINDOWS) {
                     b.description("help.option.install-dir" + resourceKeySuffix(context.os()));

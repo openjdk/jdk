@@ -14,7 +14,7 @@
 | --help, -h, -? | all | x | x |  | USE_LAST |
 | --icon | bundle | x | x | x | USE_LAST |
 | --input, -i | bundle |  |  |  | USE_LAST |
-| --install-dir | bundle | x | x |  | USE_LAST |
+| --install-dir | native-bundle | x | x |  | USE_LAST |
 | --java-options | bundle |  |  | x | CONCATENATE |
 | --jlink-options | bundle |  |  |  | CONCATENATE |
 | --launcher-as-service | native-bundle | x | x | x | USE_LAST |
