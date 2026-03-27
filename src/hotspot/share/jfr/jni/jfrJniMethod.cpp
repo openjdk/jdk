@@ -412,8 +412,10 @@ JVM_END
 
 JVM_ENTRY_NO_ENV(jlong, jfr_host_memory_usage(JNIEnv* env, jclass jvm))
   physical_memory_size_type memory_usage = 0;
-  // Return value ignored - defaulting to 0 on failure.
-  (void)os::Machine::used_memory(memory_usage);
+  if (!os::Machine::used_memory(memory_usage)) {
+    // Return -1 to signal failure to get memory usage.
+    return static_cast<jlong>(-1);
+  }
   return static_cast<jlong>(memory_usage);
 JVM_END
 
