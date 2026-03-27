@@ -359,6 +359,7 @@ void Mutex::assert_no_overlap(Rank orig, Rank adjusted, int adjust) {
 
 #ifndef PRODUCT
 void Mutex::print_on(outputStream* st) const {
+  ResourceMark rm;
   st->print("Mutex: [" PTR_FORMAT "] %s - owner: " PTR_FORMAT,
             p2i(this), _name, p2i(owner()));
   if (_allow_vm_block) {
