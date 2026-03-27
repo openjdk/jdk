@@ -64,6 +64,7 @@ public class TestVectorReallocation {
     private static final int F_LENGTH = F_SPECIES.length();
     private static final int D_LENGTH = D_SPECIES.length();
 
+    // The input arrays for the @Test methods match the length of the preferred species for each type
     private static byte[]   b_a;
     private static short[]  s_a;
     private static int[]    i_a;
@@ -71,6 +72,7 @@ public class TestVectorReallocation {
     private static float[]  f_a;
     private static double[] d_a;
 
+    // The output arrays for the @Test methods
     private static byte[]   b_r;
     private static short[]  s_r;
     private static int[]    i_r;
@@ -81,6 +83,25 @@ public class TestVectorReallocation {
     public static void main(String[] args) {
         TestFramework.runWithFlags("--add-modules=jdk.incubator.vector");
     }
+
+    // The test methods annotated with @Test are warmed up by the framework. The calls are indirect
+    // through the runner methods annotated with @Run. Note that each @Test method has its own instance of
+    // the test class TestVectorReallocation as receiver of the calls.
+    //
+    // The @Test methods just copy the elements of the input array (0, 1, 2, 3, ...) to the output array
+    // by means of a vector add operation. The added value is computed but actually always zero. The
+    // computation is done in a loop with a virtual call that is inlined based on class hierarchy analysis
+    // when the method gets compiled.
+    //
+    // The final call after warmup of the now compiled @Test method is performed concurrently in a second
+    // thread. Before the variable `loopIterations` is set very high such that the loop runs practically
+    // infinitely. While the loop is running, a class with an overridden version of the method `value`
+    // (called in the loop) is loaded. This invalidates the result of the class hierarchy analysis that
+    // there is just one implementation of the method and causes deoptimization where the vector `v0` used
+    // in the @Test method is reallocated from a register to the java heap. Finally it is verified that
+    // input and ouput arrays are equal.
+    //
+    // NB: each @Test needs its own Zero class for the desired result of the class hierarchy analysis.
 
     volatile boolean enteredLoop;
     volatile long loopIterations;
@@ -94,11 +115,11 @@ public class TestVectorReallocation {
             loopIterations = 1L << 60; // basically infinite
             Thread t = Thread.ofPlatform().start(test);
             waitUntilLoopEntered();
-            loadOverridingClass.run();
+            loadOverridingClass.run(); // invalidates inlining causing deoptimization/reallocation of v0
             loopIterations = 0;
             waitUntilLoopLeft();
             joinThread(t);
-            verify.run();
+            verify.run();              // verify that input and ouput arrays are equal
         }
     }
 
