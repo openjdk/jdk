@@ -126,7 +126,7 @@ bool VM_Version::probe_ic_ivau_trap() {
   VM_Version_StubGenerator g(&c);
   typedef int (*probe_fn_t)(void);
   probe_fn_t probe_fn = (probe_fn_t)g.generate_ic_ivau_probe(&_ic_ivau_probe_addr,
-                                                   &_ic_ivau_probe_cont);
+                                                             &_ic_ivau_probe_cont);
 
   // StubCodeMark destructor calls flush() -> ICache::invalidate_range()
   // with the stub's own (valid) address. NeoverseN1ICacheErratumMitigation
