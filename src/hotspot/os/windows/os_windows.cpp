@@ -254,7 +254,7 @@ static void* lookup_kernelbase_library() {
   char ebuf[1024];
   void* const handle = os::dll_load(name, ebuf, sizeof(ebuf));
   if (handle == nullptr) {
-    log_trace(os)("Failed to load library: %s", name);
+    log_trace(os)("Failed to load library: %s: %s", name, ebuf);
   }
   return handle;
 }
@@ -274,9 +274,9 @@ static void install_kernelbase_symbol(Fn*& fn, const char* name) {
 
 static void initialize_kernelbase_apis() {
   install_kernelbase_symbol(os::win32::VirtualAlloc2, "VirtualAlloc2");
-  log_info(os)("VirtualAlloc2 is%s available.", os::win32::VirtualAlloc2 == nullptr ? " not" : "");
+  log_debug(os)("VirtualAlloc2 is%s available.", os::win32::VirtualAlloc2 == nullptr ? " not" : "");
   install_kernelbase_symbol(os::win32::MapViewOfFile3, "MapViewOfFile3");
-  log_info(os)("MapViewOfFile3 is%s available.", os::win32::MapViewOfFile3 == nullptr ? " not" : "");
+  log_debug(os)("MapViewOfFile3 is%s available.", os::win32::MapViewOfFile3 == nullptr ? " not" : "");
 }
 
 static bool is_VirtualAlloc2_supported() {
@@ -2934,18 +2934,6 @@ LONG WINAPI topLevelUnhandledExceptionFilter(struct _EXCEPTION_POINTERS* excepti
 
 #ifndef MEM_LARGE_PAGES
   #define MEM_LARGE_PAGES 0x20000000
-#endif
-
-#ifndef MEM_PRESERVE_PLACEHOLDER
-  #define MEM_PRESERVE_PLACEHOLDER 0x00000002
-#endif
-
-#ifndef MEM_REPLACE_PLACEHOLDER
-  #define MEM_REPLACE_PLACEHOLDER  0x00004000
-#endif
-
-#ifndef MEM_RESERVE_PLACEHOLDER
-  #define MEM_RESERVE_PLACEHOLDER  0x00040000
 #endif
 
 // Container for NUMA node list info
