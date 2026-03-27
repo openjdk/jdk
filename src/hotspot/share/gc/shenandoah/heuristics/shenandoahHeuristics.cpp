@@ -79,10 +79,6 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   assert(collection_set->is_empty(), "Must be empty");
-  assert(!heap->mode()->is_generational(), "Wrong heuristic for heap mode");
-
-  // Check all pinned regions have updated status before choosing the collection set.
-  heap->assert_pinned_region_status();
 
   // Step 1. Build up the region candidates we care about, rejecting losers and accepting winners right away.
 
@@ -103,6 +99,10 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
   for (size_t i = 0; i < num_regions; i++) {
     ShenandoahHeapRegion* region = heap->get_region(i);
 
+    if (!_space_info->contains(region)) {
+      continue;
+    }
+
     size_t garbage = region->garbage();
     total_garbage += garbage;
 
@@ -117,6 +117,8 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
         region->make_trash_immediate();
       } else {
         // This is our candidate for later consideration.
+        assert(region->get_top_before_promote() == nullptr,
+               "Cannot add region %zu scheduled for in-place-promotion to the collection set", i);
         candidates[cand_idx].set_region_and_garbage(region, garbage);
         cand_idx++;
       }
