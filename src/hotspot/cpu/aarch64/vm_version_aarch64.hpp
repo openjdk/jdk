@@ -62,8 +62,8 @@ protected:
   static bool _cache_idc_enabled;
 
   // IC IVAU trap probe for Neoverse N1 erratum 1542419.
-  static address _ic_ivau_probe_addr;  // address of IC IVAU that may fault
-  static address _ic_ivau_probe_cont;  // continuation if it faults
+  // Set by get_os_cpu_info() on Linux via ic_ivau_probe_linux_aarch64.S.
+  static bool _ic_ivau_trapped;
 
   static SpinWait _spin_wait;
 
@@ -75,10 +75,6 @@ protected:
   // the function sets the largest supported value.
   static int set_and_get_current_sve_vector_length(int len);
   static int get_current_sve_vector_length();
-
-  // Returns true if the IC IVAU is trapped,
-  // false otherwise.
-  static bool probe_ic_ivau_trap();
 
 public:
   // Initialization
@@ -265,9 +261,7 @@ public:
 
   static bool is_cache_dic_enabled() { return _cache_dic_enabled; }
   static bool is_cache_idc_enabled() { return _cache_idc_enabled; }
-
-  static bool    is_ic_ivau_probe_addr(address pc) { return _ic_ivau_probe_addr == pc; }
-  static address ic_ivau_probe_cont()              { return _ic_ivau_probe_cont; }
+  static bool is_ic_ivau_trapped()   { return _ic_ivau_trapped; }
 
   static void get_cpu_features_name(void* features_buffer, stringStream& ss);
 

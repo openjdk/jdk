@@ -29,6 +29,7 @@
 #include "memory/allocation.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "vm_version_aarch64.hpp"
 
 // Interface for updating the instruction cache.  Whenever the VM
 // modifies code, part of the processor instruction cache potentially
@@ -48,6 +49,7 @@ class ICache : public AbstractICache {
       assert(!VM_Version::is_cache_dic_enabled(),
              "Expect CTR_EL0.DIC to be disabled for Neoverse N1 with erratum "
              "1542419");
+      assert(VM_Version::is_ic_ivau_trapped(), "Expect 'ic ivau, xzr' to be trapped");
       asm volatile("dsb ish       \n"
                    "ic  ivau, xzr \n"
                    "dsb ish       \n"
@@ -94,6 +96,7 @@ class AArch64ICacheInvalidationContext : StackObj {
       assert(!VM_Version::is_cache_dic_enabled(),
              "Expect CTR_EL0.DIC to be disabled for Neoverse N1 with erratum "
              "1542419");
+      assert(VM_Version::is_ic_ivau_trapped(), "Expect 'ic ivau, xzr' to be trapped");
 
       // Errata 1542419: Neoverse N1 cores with the 'COHERENT_ICACHE' feature
       // may fetch stale instructions when software depends on
