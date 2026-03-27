@@ -41,9 +41,12 @@ import jdk.javadoc.internal.html.Text;
 
 import javax.lang.model.element.Element;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -55,6 +58,8 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
     final private String defaultKind;
 
     final static String NOTE_HEADER = "Note:";
+
+    private final Map<String, Set<String>> idMap = new HashMap<>();
 
     NoteTaglet(HtmlConfiguration config) {
         super(config, DocTree.Kind.NOTE.tagName, DocTree.Kind.NOTE, NOTE_HEADER, true, EnumSet.allOf(Taglet.Location.class), true);
@@ -93,7 +98,7 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
         var map = new LinkedHashMap<String, Content>();
         var context = tagletWriter.context;
         var htmlWriter = tagletWriter.htmlWriter;
-
+        HtmlId id = config.htmlIds.forNote(holder, defaultKind, false, getExistingIds());
         for (DocTree tag : tags) {
             if (tag instanceof NoteTree note) {
                 var attr = getAttributes(note);
@@ -101,14 +106,15 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
                 var kind = attr.getOrDefault("kind", defaultKind);
                 var body = HtmlTree.DD(htmlWriter.commentTagsToContent(holder, note.getBody(), context.within(note)));
 
-                var id = attr.getOrDefault("id", null);
-                if (id != null) {
-                    body.setId(HtmlId.of(id));
+                var noteId = attr.getOrDefault("id", null);
+                if (noteId != null) {
+                    body.setId(HtmlId.of(noteId));
                 }
 
                 map.compute(header, (hdr, cnt) -> {
                     if (cnt == null) {
                         return HtmlTree.DIV(HtmlStyles.blockNote)
+                                .setId(id)
                                 .addStyle(HtmlStyles.noteTag.cssName() + "-" + kind)
                                 .add(HtmlTree.DT(RawHtml.of(hdr)))
                                 .add(body);
@@ -132,31 +138,31 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
         this.tagletWriter = tagletWriter;
         var context = tagletWriter.context;
         var htmlWriter = tagletWriter.htmlWriter;
+        var id = config.htmlIds.forNote(element, defaultKind, true, getExistingIds());
         var note = (NoteTree) tag;
 
         var attr = getAttributes(note);
         var header = attr.getOrDefault("header", defaultHeader);
+        var noteId = attr.getOrDefault("id", id.name());
 
         HtmlTree result = HtmlTree.DIV(HtmlStyles.inlineNote)
-                    .add(HtmlTree.SPAN(HtmlStyles.noteHeader, RawHtml.of(header)))
-                    .add(Text.NL)
-                    .add(htmlWriter.commentTagsToContent(element, note.getBody(), context.within(note)));
+                .setId(HtmlId.of(noteId))
+                .add(HtmlTree.SPAN(HtmlStyles.noteHeader, RawHtml.of(header)))
+                .add(Text.NL)
+                .add(htmlWriter.commentTagsToContent(element, note.getBody(), context.within(note)));
 
         var kind = attr.getOrDefault("kind", defaultKind);
-        var id = attr.getOrDefault("id", null);
-
-        if (id != null) {
-            result.setId(HtmlId.of(id));
-        }
         if (kind != null) {
             result.addStyle(HtmlStyles.noteTag.cssName() + "-" + kind.trim());
         }
+
         for (var entry : attr.entrySet()) {
             var name = entry.getKey();
             if (!"header".equalsIgnoreCase(name) && !"kind".equalsIgnoreCase(name) && !"id".equalsIgnoreCase(name)) {
                 result.putDataAttr(name, entry.getValue());
             }
         }
+
         return result;
     }
 
@@ -165,6 +171,12 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
                 .filter(dt -> dt.getKind() == DocTree.Kind.ATTRIBUTE)
                 .map(t -> (AttributeTree) t)
                 .collect(Collectors.toMap(at -> at.getName().toString(), NoteTaglet::stringValueOf));
+    }
+
+    private Set<String> getExistingIds() {
+        var typeElem = tagletWriter.htmlWriter.getCurrentTypeElement();
+        var typeName = typeElem == null ? "_" : typeElem.getQualifiedName().toString();
+        return idMap.computeIfAbsent(typeName, (s) -> new HashSet<>());
     }
 
     private static String stringValueOf(AttributeTree at) {

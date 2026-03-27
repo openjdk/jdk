@@ -623,6 +623,23 @@ public class HtmlIds {
     }
 
     /**
+     * Returns an id for a note.
+     *
+     * @param e the element in whose documentation the note appears
+     * @param kind the kind of note, or null
+     * @param inline true if the id is for an inline note
+     * @param noteIds the set of note ids already generated
+     * @return a unique id for the note
+     */
+    public HtmlId forNote(Element e, String kind, boolean inline, Set<String> noteIds) {
+        var id = (kind == null ? "note" : kind) + "-" + getElementId(e);
+        if (inline || !noteIds.add(id)) {
+            return makeUniqueId(id, noteIds);
+        }
+        return HtmlId.of(id);
+    }
+
+    /**
      * Returns an id for a snippet.
      *
      * @param e the element in whose documentation the snippet appears
@@ -630,24 +647,30 @@ public class HtmlIds {
      * @return a unique id for the snippet
      */
     public HtmlId forSnippet(Element e, Set<String> snippetIds) {
-        String id = "snippet-";
+        return makeUniqueId("snippet-" + getElementId(e), snippetIds);
+    }
+
+    private String getElementId(Element e) {
         ElementKind kind = e.getKind();
         if (kind == ElementKind.PACKAGE) {
-            id += forPackage((PackageElement) e).name();
+            return forPackage((PackageElement) e).name();
         } else if (kind.isDeclaredType()) {
-            id += forClass((TypeElement) e).name();
+            return forClass((TypeElement) e).name();
         } else if (kind.isExecutable()) {
-            id += forMember((ExecutableElement) e).getFirst().name();
+            return forMember((ExecutableElement) e).getFirst().name();
         } else if (kind.isField()) {
-            id += forMember((VariableElement) e).name();
+            return forMember((VariableElement) e).name();
         } else if (kind == ElementKind.MODULE) {
-            id += ((ModuleElement) e).getQualifiedName();
+            return ((ModuleElement) e).getQualifiedName().toString();
         } else {
             // while utterly unexpected, we shouldn't fail
-            id += "unknown-element";
+            return "unknown-element";
         }
+    }
+
+    private HtmlId makeUniqueId(String id, Set<String> existingIds) {
         int counter = 1;
-        while (!snippetIds.add(id + counter)) {
+        while (!existingIds.add(id + counter)) {
             counter++;
         }
         return HtmlId.of(id + counter);
