@@ -486,10 +486,8 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& par
     ik = new (loader_data, size, THREAD) InstanceKlass(parser);
   }
 
-  if (ik != nullptr && UseCompressedClassPointers) {
-    assert(CompressedKlassPointers::is_encodable(ik),
-           "Klass " PTR_FORMAT "needs a narrow Klass ID, but is not encodable", p2i(ik));
-  }
+  assert(ik == nullptr || CompressedKlassPointers::is_encodable(ik),
+         "Klass " PTR_FORMAT "needs a narrow Klass ID, but is not encodable", p2i(ik));
 
   // Check for pending exception before adding to the loader data and incrementing
   // class count.  Can get OOM here.
