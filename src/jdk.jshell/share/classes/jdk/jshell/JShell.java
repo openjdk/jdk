@@ -31,6 +31,7 @@ import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.PrintStream;
 import java.net.InetAddress;
+import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -100,6 +101,7 @@ public class JShell implements AutoCloseable {
     final List<String> extraRemoteVMOptions;
     final List<String> extraCompilerOptions;
     final Function<StandardJavaFileManager, StandardJavaFileManager> fileManagerMapping;
+    final Function<Path, Iterable<? extends Path>> binarySourceMapping;
 
     private int nextKeyIndex = 1;
 
@@ -125,6 +127,7 @@ public class JShell implements AutoCloseable {
         this.extraRemoteVMOptions = b.extraRemoteVMOptions;
         this.extraCompilerOptions = b.extraCompilerOptions;
         this.fileManagerMapping = b.fileManagerMapping;
+        this.binarySourceMapping = b.binarySourceMapping;
         try {
             if (b.executionControlProvider != null) {
                 executionControl = b.executionControlProvider.generate(new ExecutionEnvImpl(),
@@ -183,6 +186,7 @@ public class JShell implements AutoCloseable {
         Map<String,String> executionControlParameters;
         String executionControlSpec;
         Function<StandardJavaFileManager, StandardJavaFileManager> fileManagerMapping;
+        Function<Path, Iterable<? extends Path>> binarySourceMapping;
 
         Builder() { }
 
@@ -411,6 +415,29 @@ public class JShell implements AutoCloseable {
          */
         public Builder fileManager(Function<StandardJavaFileManager, StandardJavaFileManager> mapping) {
             this.fileManagerMapping = mapping;
+            return this;
+        }
+
+        /**
+         * Add a mapping from roots containing classfiles to their corresponding
+         * sources.
+         *
+         * <p>The given {@code binarySourceMapping} will be called for various paths
+         * used by JShell. Some of them may be distinct from roots specified in classpath
+         * and module path.
+         *
+         * <p>The results of calling {@code binarySourceMapping} may be cached, and the
+         * same file may not be queried again.
+         *
+         * <p>If the result value is {@link AutoCloseable}, then it will
+         * be closed when not needed anymore.
+         *
+         * @param binarySourceMapping the binary to source mapper
+         * @return the {@code Builder} instance (for use in chained
+         * initialization)
+         */
+        public Builder binarySourceMapping(Function<Path, Iterable<? extends Path>> binarySourceMapping) {
+            this.binarySourceMapping = binarySourceMapping;
             return this;
         }
 

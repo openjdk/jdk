@@ -114,6 +114,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.BiConsumer;
@@ -1413,6 +1414,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             int cpVersion = ++classpathVersion;
 
             INDEXER.submit(() -> refreshIndexes(cpVersion));
+            mappedSourcesForBinaries.clear();
         }
     }
 
@@ -1968,6 +1970,8 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
     private static List<Path> availableSourcesOverride; //for tests
     private List<Path> availableSources;
+    private final Map<Path, Iterable<Path>> mappedSourcesForBinaries =
+            new ConcurrentHashMap<>();
 
     private List<Path> findSources() {
         if (availableSources != null) {
@@ -2020,6 +2024,23 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 }
             }
         }
+
+        for (Path binaryPath : getAllPaths()) {
+            mappedSourcesForBinaries.computeIfAbsent(binaryPath, p -> {
+                Iterable<? extends Path> mappedSources = proc.binarySourceMapping.apply(p);
+                List<Path> sources = new ArrayList<>();
+
+                if (mappedSources != null) {
+                    if (mappedSources instanceof AutoCloseable closeable) {
+                        closeables.add(closeable);
+                    }
+                    mappedSources.forEach(sources::add);
+                }
+
+                return sources;
+            }).forEach(result::add);
+        }
+
         return availableSources = result;
     }
 
@@ -2269,22 +2290,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     //update indexes, either initially or after a classpath change:
     private void refreshIndexes(int version) {
         try {
-            Collection<Path> paths = proc.taskFactory.parse("", task -> {
-                MemoryFileManager fm = proc.taskFactory.fileManager();
-                Collection<Path> _paths = new ArrayList<>();
-                try {
-                    appendPaths(fm, StandardLocation.PLATFORM_CLASS_PATH, _paths);
-                    appendPaths(fm, StandardLocation.CLASS_PATH, _paths);
-                    appendPaths(fm, StandardLocation.SOURCE_PATH, _paths);
-                    appendModulePaths(fm, StandardLocation.SYSTEM_MODULES, _paths);
-                    appendModulePaths(fm, StandardLocation.UPGRADE_MODULE_PATH, _paths);
-                    appendModulePaths(fm, StandardLocation.MODULE_PATH, _paths);
-                    return _paths;
-                } catch (Exception ex) {
-                    proc.debug(ex, "SourceCodeAnalysisImpl.refreshIndexes(" + version + ")");
-                    return List.of();
-                }
-            });
+            Collection<Path> paths = getAllPaths();
 
             Map<Path, ClassIndex> newIndexes = new HashMap<>();
 
@@ -2321,6 +2327,46 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 indexVersion = version;
             }
         }
+    }
+
+    private Collection<Path> allPaths;
+    private Collection<Path> getAllPaths() {
+        int cpVersion;
+
+        synchronized (currentIndexes) {
+            if (allPaths != null) {
+                return allPaths;
+            }
+
+            cpVersion = classpathVersion;
+        }
+
+        Collection<Path> paths = proc.taskFactory.parse("", task -> {
+            MemoryFileManager fm = proc.taskFactory.fileManager();
+            Collection<Path> _paths = new ArrayList<>();
+            try {
+                appendPaths(fm, StandardLocation.PLATFORM_CLASS_PATH, _paths);
+                appendPaths(fm, StandardLocation.CLASS_PATH, _paths);
+                appendPaths(fm, StandardLocation.SOURCE_PATH, _paths);
+                appendModulePaths(fm, StandardLocation.SYSTEM_MODULES, _paths);
+                appendModulePaths(fm, StandardLocation.UPGRADE_MODULE_PATH, _paths);
+                appendModulePaths(fm, StandardLocation.MODULE_PATH, _paths);
+                return _paths;
+            } catch (Exception ex) {
+                proc.debug(ex, "SourceCodeAnalysisImpl.refreshIndexes(" + cpVersion + ")");
+                return List.of();
+            }
+        });
+
+        synchronized (currentIndexes) {
+            if (cpVersion != classpathVersion) {
+                paths = allPaths;
+            } else {
+                allPaths = paths;
+            }
+        }
+
+        return allPaths;
     }
 
     private void appendPaths(MemoryFileManager fm, Location loc, Collection<Path> paths) {

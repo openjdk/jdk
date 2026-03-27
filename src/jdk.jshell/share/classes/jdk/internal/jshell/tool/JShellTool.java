@@ -1130,7 +1130,14 @@ public class JShellTool implements MessageHandler {
                         ? currentNameSpace.tid(sn)
                         : errorNamespace.tid(sn))
                 .remoteVMOptions(options.remoteVmOptions())
-                .compilerOptions(options.compilerOptions());
+                .compilerOptions(options.compilerOptions())
+                .binarySourceMapping(binary -> {
+                    Path sourceCandidate = Path.of(binary.toString().replace(".jar", "-sources.jar"));
+                    if (Files.exists(sourceCandidate)) {
+                        return List.of(sourceCandidate);
+                    }
+                    return null;
+                });
         if (executionControlSpec != null) {
             builder.executionEngine(executionControlSpec);
         }
