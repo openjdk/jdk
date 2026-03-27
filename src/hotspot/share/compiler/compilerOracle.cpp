@@ -716,6 +716,20 @@ static void usage() {
   tty->print_cr("from inlining, whereas the 'compileonly' command only excludes methods from");
   tty->print_cr("top-level compilations (i.e. they can still be inlined into other compilation units).");
   tty->cr();
+  tty->print_cr("Compilation levels can be specified in the 'compileonly', 'exclude', 'print',");
+  tty->print_cr("and 'break' commands using a bitmask as an optional value:");
+  tty->print_cr("  -XX:CompileCommand=exclude,java/*.*,11 -XX:CompileCommand=print,java/*.*,4");
+  tty->cr();
+  tty->print_cr("The bitmask is calculated by summing the desired compilation level values:");
+  tty->print_cr("  C1 without profiling = 1");
+  tty->print_cr("  C1 with limited profiling = 2");
+  tty->print_cr("  C1 with full profiling = 4");
+  tty->print_cr("  C2 = 8");
+  tty->cr();
+  tty->print_cr("Note: Excluding specific compilation levels may disrupt normal state transitions");
+  tty->print_cr("between compile levels, as the VM will not automatically work around the excluded");
+  tty->print_cr("levels.");
+  tty->cr();
 };
 
 static int skip_whitespace(char* &line) {
