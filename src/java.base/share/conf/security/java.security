@@ -1731,7 +1731,7 @@ com.sun.security.allowedAIALocations=
 #
 # When Java needs to read a password, whether it's via a tool such as keytool or
 # kinit, or by an API such as PasswordCallback with echo off, it normally reads
-# directly from the console. If the console is not available, Java may fall back
+# directly from the console. If the console is not available, Java falls back
 # to reading from the standard input stream ("System.in"), which typically
 # represents a redirected file or an inter-process pipe. This fallback is not
 # formally specified, and is not widely adopted by tools from other vendors.
