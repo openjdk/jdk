@@ -56,7 +56,9 @@ final class LinuxFromOptions {
 
     static LinuxApplication createLinuxApplication(Options options) {
 
-        final var launcherFromOptions = new LauncherFromOptions().faWithDefaultDescription();
+        final var launcherFromOptions = new LauncherFromOptions()
+                .defaultIconResourceName("JavaApp.png")
+                .faWithDefaultDescription();
 
         final var appBuilder = buildApplicationBuilder().create(options, launcherOptions -> {
 

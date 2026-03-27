@@ -49,6 +49,7 @@ import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
@@ -57,11 +58,13 @@ import jdk.jpackage.internal.cli.JOptSimpleOptionsBuilder.OptionsBuilder;
 import jdk.jpackage.internal.cli.StandardOption.LauncherProperty;
 import jdk.jpackage.internal.model.AppImageBundleType;
 import jdk.jpackage.internal.model.BundleType;
-import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.LauncherShortcut;
 import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
+import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.RootedPath;
+import jdk.jpackage.internal.util.SetBuilder;
 import jdk.jpackage.internal.util.StringBundle;
 import jdk.jpackage.test.Comm;
 import jdk.jpackage.test.JUnitAdapter;
@@ -72,7 +75,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -104,48 +106,9 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"", "icon"})
-    public void test_ICON(String name, @TempDir Path workDir) throws IOException {
-
-        if (!name.isEmpty()) {
-            var file = workDir.resolve(name);
-
-            Files.write(file, new byte[0]);
-
-            name = file.toString();
-        }
-
-        var spec = StandardOption.ICON.getSpec();
-
-        var result = spec.convert(spec.name(), StringToken.of(name));
-
-        assertEquals(Path.of(name), result.orElseThrow());
-    }
-
-    @Test
-    public void test_ICON_validator_fail(@TempDir Path workDir) {
-
-        var spec = StandardOption.ICON.getSpec();
-
-        var result = spec.convert(spec.name(), StringToken.of(workDir.toString()));
-
-        var ex = assertThrows(JPackageException.class, result::orElseThrow);
-
-        assertEquals(I18N.format("error.parameter-not-file", workDir, "--icon"), ex.getMessage());
-    }
-
-    @Test
-    public void test_ICON_validator_fail_in_property_file(@TempDir Path workDir) {
-
-        var propertyFile = Path.of("foo.properties");
-
-        var spec = new StandardOptionContext().forFile(propertyFile).mapOptionSpec(StandardOption.ICON.getSpec());
-
-        var result = spec.convert(spec.name(), StringToken.of(workDir.toString()));
-
-        var ex = assertThrows(JPackageException.class, result::orElseThrow);
-
-        assertEquals(I18N.format("error.properties-parameter-not-file", workDir, "icon", propertyFile), ex.getMessage());
+    @MethodSource
+    public void test_ICON(IconTestSpec test, @TempDir Path workDir) throws IOException {
+        test.run(workDir);
     }
 
     @ParameterizedTest
@@ -521,6 +484,280 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
         var expectedOptionTable = Files.readAllLines(GOLDEN_JPACKAGE_OPTIONS_MD);
 
         assertEquals(expectedOptionTable, optionTable);
+    }
+
+
+    record IconTestSpec(OperatingSystem os, String iconName, Optional<Path> propertyFile, IconFileType type, boolean valid, boolean mapOptionSpec) {
+
+        static Builder build() {
+            return new Builder();
+        }
+
+        static final class Builder {
+
+            Builder os(OperatingSystem v) {
+                os = v;
+                return this;
+            }
+
+            Builder iconName(String v) {
+                iconName = Objects.requireNonNull(v);
+                return this;
+            }
+
+            Builder propertyFile(String v) {
+                propertyFile = v;
+                return this;
+            }
+
+            Builder propertyFile() {
+                return propertyFile("foo.properties");
+            }
+
+            Builder type(IconFileType v) {
+                type = Objects.requireNonNull(v);
+                return this;
+            }
+
+            Builder valid(boolean v) {
+                valid = v;
+                return this;
+            }
+
+            Builder mapOptionSpec(boolean v) {
+                mapOptionSpec = v;
+                return this;
+            }
+
+            IconTestSpec create() {
+                return new IconTestSpec(
+                        os,
+                        iconName,
+                        Optional.ofNullable(propertyFile).map(Path::of),
+                        type,
+                        valid && (type == IconFileType.FILE),
+                        mapOptionSpec);
+            }
+
+            private OperatingSystem os;
+            private String iconName;
+            private String propertyFile;
+            private IconFileType type = IconFileType.FILE;
+            private boolean valid;
+            private boolean mapOptionSpec = true;
+        }
+
+        IconTestSpec {
+
+            Objects.requireNonNull(os);
+            Objects.requireNonNull(iconName);
+            Objects.requireNonNull(propertyFile);
+            Objects.requireNonNull(type);
+            if (type != IconFileType.FILE && valid) {
+                throw new IllegalArgumentException();
+            }
+
+            if (iconName.isEmpty() && !valid) {
+                throw new IllegalArgumentException();
+            }
+
+            if (!mapOptionSpec) {
+                if (propertyFile.isPresent()) {
+                    throw new IllegalArgumentException();
+                }
+
+                if (os != OperatingSystem.current()) {
+                    throw new IllegalArgumentException();
+                }
+            }
+        }
+
+        @Override
+        public String toString() {
+
+            var buf = new StringBuilder();
+
+            buf.append(os.toString()).append(';');
+
+            propertyFile.ifPresent(v -> {
+                buf.append("props=").append(v.toString()).append(';');
+            });
+
+            buf.append("name=").append(iconName).append(';');
+            buf.append(type);
+
+            if (!valid) {
+                buf.append(';').append("fail");
+            }
+
+            if (!mapOptionSpec) {
+                buf.append(';').append("verbatim");
+            }
+
+            return buf.toString();
+        }
+
+        enum IconFileType {
+            FILE,
+            DIRECTORY,
+            NONEXISTENT,
+        }
+
+        void run(Path workDir) throws IOException {
+
+            var spec = mappedOptionSpec();
+
+            var iconPath = resolveIcon(workDir);
+
+            var result = spec.convert(spec.name(), StringToken.of(iconPath.toString()));
+
+            if (valid) {
+                assertEquals(iconPath, result.orElseThrow());
+                return;
+            }
+
+            String errorKey;
+            if (type != IconFileType.FILE) {
+                if (propertyFile.isEmpty()) {
+                    errorKey = "error.parameter-not-file";
+                } else {
+                    errorKey = "error.properties-parameter-not-file";
+                }
+            } else {
+                if (propertyFile.isEmpty()) {
+                    errorKey = switch (os) {
+                        case WINDOWS -> "error.parameter-not-ico-icon";
+                        case MACOS -> "error.parameter-not-icns-icon";
+                        case LINUX -> "error.parameter-not-png-icon";
+                        default -> throw new AssertionError();
+                    };
+                } else {
+                    errorKey = switch (os) {
+                        case WINDOWS -> "error.properties-parameter-not-ico-icon";
+                        case MACOS -> "error.properties-parameter-not-icns-icon";
+                        case LINUX -> "error.properties-parameter-not-png-icon";
+                        default -> throw new AssertionError();
+                    };
+                }
+            }
+
+            var ex = assertThrows(JPackageException.class, result::orElseThrow);
+
+            var expectedMessage = propertyFile.map(v -> {
+                return I18N.format(errorKey, iconPath, "icon", v);
+            }).orElseGet(() -> {
+                return I18N.format(errorKey, iconPath, "--icon");
+            });
+
+            assertEquals(expectedMessage, ex.getMessage());
+        }
+
+        private Path resolveIcon(Path workDir) throws IOException {
+
+            if (iconName.isEmpty()) {
+                return Path.of(iconName);
+            }
+
+            var iconPath = workDir.resolve(iconName);
+            switch (type) {
+                case DIRECTORY -> {
+                    Files.createDirectories(iconPath);
+                }
+                case FILE -> {
+                    Files.write(iconPath, new byte[0]);
+                }
+                case NONEXISTENT -> {
+                    // NOP
+                }
+            }
+
+            return iconPath;
+        }
+
+        private OptionSpec<Path> mappedOptionSpec() {
+
+            if (mapOptionSpec) {
+                var context = new StandardOptionContext(os);
+                return propertyFile.map(context::forFile).orElse(context).mapOptionSpec(StandardOption.ICON.getSpec());
+            } else {
+                return StandardOption.ICON.getSpec();
+            }
+        }
+    }
+
+    private static Stream<IconTestSpec> test_ICON() {
+
+        var testCases = new ArrayList<IconTestSpec>();
+
+        final var oses = new OperatingSystem[] { OperatingSystem.WINDOWS, OperatingSystem.LINUX, OperatingSystem.MACOS };
+
+        final Function<OperatingSystem, String> goodIconName = os -> {
+            return switch (os) {
+                case WINDOWS -> "icon.ico";
+                case MACOS -> "icon.icns";
+                case LINUX -> "icon.png";
+                default -> throw new AssertionError();
+            };
+        };
+
+        for (var mapOptionSpec : List.of(true, false)) {
+            for (var os : oses) {
+
+                if (!mapOptionSpec && os != OperatingSystem.current()) {
+                    continue;
+                }
+
+                for (var propertyFile : new String[] { null, "foo.properties" }) {
+
+                    if (!mapOptionSpec && propertyFile != null) {
+                        continue;
+                    }
+
+                    // Valid icon test cases
+                    var builder = IconTestSpec.build()
+                            .os(os)
+                            .mapOptionSpec(mapOptionSpec)
+                            .propertyFile(propertyFile)
+                            .valid(true)
+                            .iconName(goodIconName.apply(os));
+
+                    testCases.add(builder.create());
+
+                    testCases.add(builder.iconName("").create());
+
+                    if (os == OperatingSystem.WINDOWS) {
+                        for (var iconName : List.of("icon.ICO", "icon.Ico")) {
+                            testCases.add(builder.iconName(iconName).create());
+                        }
+                    }
+
+                    // Invalid icon test cases
+                    builder.valid(false);
+
+                    for (var type : IconTestSpec.IconFileType.values()) {
+                        builder.type(type);
+                        if (type == IconTestSpec.IconFileType.FILE) {
+
+                            for (var alianOS : SetBuilder.build(Stream.of(oses).filter(Objects::nonNull).toList()).remove(os).create()) {
+                                // Icon names valid on other platforms should be invalid on the current platform.
+                                testCases.add(builder.iconName(goodIconName.apply(alianOS)).create());
+                            }
+
+                            if (os != OperatingSystem.WINDOWS) {
+                                // Suffixes should be lower case on all but Windows. If they are not, validation should fail.
+                                var iconName = Path.of(goodIconName.apply(os));
+                                var badName = PathUtils.replaceSuffix(iconName, PathUtils.getSuffix(iconName).toUpperCase());
+                                testCases.add(builder.iconName(badName.toString()).create());
+                            }
+                        } else {
+                            testCases.add(builder.iconName(goodIconName.apply(os)).create());
+                        }
+                    }
+                }
+            }
+        }
+
+        return testCases.stream();
     }
 
     private void test_TYPE_valid(OptionSpec<BundleType> spec, OperatingSystem appImageOS) {

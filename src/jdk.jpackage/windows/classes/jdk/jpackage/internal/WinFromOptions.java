@@ -56,7 +56,9 @@ final class WinFromOptions {
 
     static WinApplication createWinApplication(Options options) {
 
-        final var launcherFromOptions = new LauncherFromOptions().faWithDefaultDescription();
+        final var launcherFromOptions = new LauncherFromOptions()
+                .defaultIconResourceName("JavaApp.ico")
+                .faWithDefaultDescription();
 
         final var appBuilder = buildApplicationBuilder().create(options, launcherOptions -> {
 

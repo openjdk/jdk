@@ -69,6 +69,7 @@ import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
 import jdk.jpackage.internal.model.SelfContainedException;
 import jdk.jpackage.internal.util.RootedPath;
 import jdk.jpackage.internal.util.SetBuilder;
+import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.log.LogEnvironment;
 
 /**
@@ -181,17 +182,11 @@ public final class StandardOption {
             .createArray(toList());
 
     public static final OptionValue<Path> ICON = fileOption("icon")
-            .validator(new Predicate<>() {
-                @Override
-                public boolean test(Path path) {
-                    if (!path.toString().isEmpty()) {
-                        return StandardValidator.IS_FILE_OR_SYMLINK.test(path);
-                    } else {
-                        return true;
-                    }
-                }
-            })
             .inScope(LauncherProperty.VALUE)
+            .mutate(b -> {
+                setupIconValidation(b, new StandardOptionContext(OperatingSystem.current()));
+            })
+            .mutate(createOptionSpecBuilderMutator(StandardOption::setupIconValidation))
             .create();
 
     public static final OptionValue<String> COPYRIGHT = stringOption("copyright").valuePattern("copyright string").create();
@@ -805,6 +800,76 @@ public final class StandardOption {
                 }).defaultArrayValue(new AdditionalLauncher[0]).createArray();
     }
 
+    private static void setupIconValidation(OptionSpecBuilder<Path> b, StandardOptionContext context) {
+
+        b.validator(new Predicate<>() {
+            @Override
+            public boolean test(Path path) {
+                if (!path.toString().isEmpty()) {
+                    return StandardValidator.IS_FILE_OR_SYMLINK.test(path);
+                } else {
+                    return true;
+                }
+            }
+        });
+
+        String errorKey;
+        if (context.asFileSource().isPresent()) {
+            errorKey = switch (context.os()) {
+                case WINDOWS -> "error.properties-parameter-not-ico-icon";
+                case MACOS -> "error.properties-parameter-not-icns-icon";
+                case LINUX -> "error.properties-parameter-not-png-icon";
+                default -> {
+                    throw new AssertionError();
+                }
+            };
+        } else {
+            errorKey = switch (context.os()) {
+                case WINDOWS -> "error.parameter-not-ico-icon";
+                case MACOS -> "error.parameter-not-icns-icon";
+                case LINUX -> "error.parameter-not-png-icon";
+                default -> {
+                    throw new AssertionError();
+                }
+            };
+        }
+
+        var fileValidator = b.createValidator().orElseThrow();
+        var extensionValidator = b.copy()
+                .validatorExceptionFormatString(errorKey)
+                .validator(iconExtensionValidator(context.os()))
+                .createValidator().orElseThrow();
+        b.validator(Validator.andLazy(fileValidator, extensionValidator));
+
+    }
+
+    private static Predicate<Path> iconExtensionValidator(OperatingSystem os) {
+
+        var extension = switch (os) {
+            case WINDOWS -> ".ico";
+            case MACOS -> ".icns";
+            case LINUX -> ".png";
+            default -> {
+                throw new AssertionError();
+            }
+        };
+
+        return new Predicate<>() {
+            @Override
+            public boolean test(Path path) {
+                if (!path.toString().isEmpty()) {
+                    if (os == OperatingSystem.WINDOWS) {
+                        return extension.equalsIgnoreCase(PathUtils.getSuffix(path));
+                    } else {
+                        return extension.equals(PathUtils.getSuffix(path));
+                    }
+                } else {
+                    return true;
+                }
+            }
+        };
+    }
+
     private static BundleType parseBundleType(String str, OperatingSystem appImageOS) {
         Objects.requireNonNull(str);
         Objects.requireNonNull(appImageOS);
@@ -823,20 +888,14 @@ public final class StandardOption {
     }
 
     private static String resourceKeySuffix(OperatingSystem os) {
-        switch (os) {
-            case LINUX -> {
-                return ".linux";
-            }
-            case MACOS -> {
-                return ".mac";
-            }
-            case WINDOWS -> {
-                return ".win";
-            }
+        return switch (os) {
+            case WINDOWS -> ".win";
+            case MACOS -> ".mac";
+            case LINUX -> ".linux";
             default -> {
                 throw new IllegalArgumentException();
             }
-        }
+        };
     }
 
 

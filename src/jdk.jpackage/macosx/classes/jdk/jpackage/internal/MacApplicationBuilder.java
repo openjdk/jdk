@@ -137,7 +137,7 @@ final class MacApplicationBuilder {
         });
 
         final var mixin = new MacApplicationMixin.Stub(
-                validatedIcon(),
+                Optional.ofNullable(icon),
                 validatedBundleName(app),
                 validatedBundleIdentifier(app),
                 validatedCategory(),
@@ -338,10 +338,6 @@ final class MacApplicationBuilder {
 
     private String validatedCategory() {
         return "public.app-category." + Optional.ofNullable(category).orElseGet(DEFAULTS::category);
-    }
-
-    private Optional<Path> validatedIcon() {
-        return Optional.ofNullable(icon).map(LauncherBuilder::validateIcon);
     }
 
     private Optional<SummaryAccumulator> summary() {
