@@ -23,6 +23,7 @@
 
 package compiler.vectorization;
 
+import jdk.test.lib.Asserts;
 import compiler.lib.ir_framework.*;
 import compiler.lib.generators.*;
 
@@ -450,20 +451,44 @@ public class TestSubwordTruncation {
     @Test
     @IR(counts = { IRNode.UMOD_I, ">0" })
     @Arguments(setup = "setupByteArray")
-    public void testUMod(final byte[] in) {
+    public Object[] testUMod(final byte[] in) {
         int n = G.next().intValue();
         for (int i = 1; i < SIZE; i++) {
             in[i] = (byte) Integer.remainderUnsigned(n, i);
+        }
+
+        return new Object[] { (Object) Integer.valueOf(n), (Object) in };
+    }
+
+    @Check(test = "testUMod")
+    public void checkTestUMod(Object[] vals) {
+        int n = (Integer) vals[0];
+        byte[] res = (byte[]) vals[1];
+        for (int i = 1; i < SIZE; i++) {
+            byte val = (byte) Integer.remainderUnsigned(n, i);
+            Asserts.assertEQ(res[i], val);
         }
     }
 
     @Test
     @IR(counts = { IRNode.UDIV_I, ">0" })
     @Arguments(setup = "setupByteArray")
-    public void testUDiv(final byte[] in) {
+    public Object[] testUDiv(final byte[] in) {
         int n = G.next().intValue();
         for (int i = 1; i < SIZE; i++) {
             in[i] = (byte) Integer.divideUnsigned(n, i);
+        }
+
+        return new Object[] { (Object) Integer.valueOf(n), (Object) in };
+    }
+
+    @Check(test = "testUDiv")
+    public void checkTestUDiv(Object[] vals) {
+        int n = (Integer) vals[0];
+        byte[] res = (byte[]) vals[1];
+        for (int i = 1; i < SIZE; i++) {
+            byte val = (byte) Integer.divideUnsigned(n, i);
+            Asserts.assertEQ(res[i], val);
         }
     }
 
