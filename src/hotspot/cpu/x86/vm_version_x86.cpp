@@ -1508,9 +1508,6 @@ void VM_Version::get_processor_features() {
         MaxLoopPad = 11;
       }
 #endif // COMPILER2
-      if (FLAG_IS_DEFAULT(UseXMMForArrayCopy)) {
-        UseXMMForArrayCopy = true; // use SSE2 movq on new ZX cpus
-      }
       if (supports_sse4_2()) { // new ZX cpus
         if (FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
           UseUnalignedLoadStores = true; // use movdqu on newest ZX cpus
@@ -1527,10 +1524,6 @@ void VM_Version::get_processor_features() {
     if (supports_sse2() && FLAG_IS_DEFAULT(UseAddressNop)) {
       // Use it on new AMD cpus starting from Opteron.
       UseAddressNop = true;
-    }
-    if (supports_sse2() && FLAG_IS_DEFAULT(UseNewLongLShift)) {
-      // Use it on new AMD cpus starting from Opteron.
-      UseNewLongLShift = true;
     }
     if (FLAG_IS_DEFAULT(UseXmmLoadAndClearUpper)) {
       if (supports_sse4a()) {
@@ -1571,10 +1564,6 @@ void VM_Version::get_processor_features() {
       if (FLAG_IS_DEFAULT(AllocatePrefetchInstr)) {
         FLAG_SET_DEFAULT(AllocatePrefetchInstr, 3);
       }
-      // On family 15h processors use XMM and UnalignedLoadStores for Array Copy
-      if (supports_sse2() && FLAG_IS_DEFAULT(UseXMMForArrayCopy)) {
-        FLAG_SET_DEFAULT(UseXMMForArrayCopy, true);
-      }
       if (supports_sse2() && FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
         FLAG_SET_DEFAULT(UseUnalignedLoadStores, true);
       }
@@ -1591,9 +1580,6 @@ void VM_Version::get_processor_features() {
     if (cpu_family() >= 0x17) {
       // On family >=17h processors use XMM and UnalignedLoadStores
       // for Array Copy
-      if (supports_sse2() && FLAG_IS_DEFAULT(UseXMMForArrayCopy)) {
-        FLAG_SET_DEFAULT(UseXMMForArrayCopy, true);
-      }
       if (supports_sse2() && FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
         FLAG_SET_DEFAULT(UseUnalignedLoadStores, true);
       }
@@ -1640,9 +1626,6 @@ void VM_Version::get_processor_features() {
       }
 #endif // COMPILER2
 
-      if (FLAG_IS_DEFAULT(UseXMMForArrayCopy)) {
-        UseXMMForArrayCopy = true; // use SSE2 movq on new Intel cpus
-      }
       if ((supports_sse4_2() && supports_ht()) || supports_avx()) { // Newest Intel cpus
         if (FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
           UseUnalignedLoadStores = true; // use movdqu on newest Intel cpus
@@ -1967,6 +1950,18 @@ void VM_Version::get_processor_features() {
   if (FLAG_IS_DEFAULT(UseCopySignIntrinsic)) {
       FLAG_SET_DEFAULT(UseCopySignIntrinsic, true);
   }
+  // CopyAVX3Threshold is the threshold at which 64-byte instructions are used
+  // for implementing the array copy and clear operations.
+  // The Intel platforms that supports the serialize instruction
+  // have improved implementation of 64-byte load/stores and so the default
+  // threshold is set to 0 for these platforms.
+  if (FLAG_IS_DEFAULT(CopyAVX3Threshold)) {
+    if (is_intel() && is_intel_server_family() && supports_serialize()) {
+      FLAG_SET_DEFAULT(CopyAVX3Threshold, 0);
+    } else {
+      FLAG_SET_DEFAULT(CopyAVX3Threshold, AVX3Threshold);
+    }
+  }
 }
 
 void VM_Version::print_platform_virtualization_info(outputStream* st) {
@@ -2120,17 +2115,6 @@ bool VM_Version::is_intel_cascade_lake() {
 
 bool VM_Version::is_intel_darkmont() {
   return is_intel() && is_intel_server_family() && (_model == 0xCC || _model == 0xDD);
-}
-
-// avx3_threshold() sets the threshold at which 64-byte instructions are used
-// for implementing the array copy and clear operations.
-// The Intel platforms that supports the serialize instruction
-// has improved implementation of 64-byte load/stores and so the default
-// threshold is set to 0 for these platforms.
-int VM_Version::avx3_threshold() {
-  return (is_intel_server_family() &&
-          supports_serialize() &&
-          FLAG_IS_DEFAULT(AVX3Threshold)) ? 0 : AVX3Threshold;
 }
 
 void VM_Version::clear_apx_test_state() {

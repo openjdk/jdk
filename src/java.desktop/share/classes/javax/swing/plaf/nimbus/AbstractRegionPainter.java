@@ -660,7 +660,7 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
                 ImageScalingHelper.paint(g, 0, 0, w, h, img, insets, dstInsets,
                         ImageScalingHelper.PaintType.PAINT9_STRETCH, ImageScalingHelper.PAINT_ALL);
                 g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
-                    oldScalingHints!=null?oldScalingHints:RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+                    oldScalingHints != null ? oldScalingHints:RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
             } else {
                 // render directly
                 paint0(g, c, w, h, extendedCacheKeys);

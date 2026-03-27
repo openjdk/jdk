@@ -89,11 +89,9 @@ DEBUG_ONLY(bool SystemDictionaryShared::_class_loading_may_happen = true;)
 
 #ifdef ASSERT
 static void check_klass_after_loading(const Klass* k) {
-#ifdef _LP64
-  if (k != nullptr && UseCompressedClassPointers) {
+  if (k != nullptr) {
     CompressedKlassPointers::check_encodable(k);
   }
-#endif
 }
 #endif
 
@@ -371,11 +369,6 @@ bool SystemDictionaryShared::is_jfr_event_class(InstanceKlass *k) {
     k = k->super();
   }
   return false;
-}
-
-bool SystemDictionaryShared::is_early_klass(InstanceKlass* ik) {
-  DumpTimeClassInfo* info = _dumptime_table->get(ik);
-  return (info != nullptr) ? info->is_early_klass() : false;
 }
 
 bool SystemDictionaryShared::check_self_exclusion(InstanceKlass* k) {

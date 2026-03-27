@@ -284,11 +284,11 @@ bool AOTCodeCache::open_cache(bool is_dumping, bool is_using) {
   return true;
 }
 
-void AOTCodeCache::close() {
+void AOTCodeCache::dump() {
   if (is_on()) {
-    delete _cache; // Free memory
-    _cache = nullptr;
-    opened_cache = nullptr;
+    assert(is_on_for_dump(), "should be called only when dumping AOT code");
+    MutexLocker ml(Compile_lock);
+    _cache->finish_write();
   }
 }
 
@@ -304,7 +304,6 @@ AOTCodeCache::AOTCodeCache(bool is_dumping, bool is_using) :
   _store_size(0),
   _for_use(is_using),
   _for_dump(is_dumping),
-  _closing(false),
   _failed(false),
   _lookup_failed(false),
   _table(nullptr),
@@ -381,30 +380,6 @@ void AOTCodeCache::init_early_c1_table() {
   }
 }
 
-AOTCodeCache::~AOTCodeCache() {
-  if (_closing) {
-    return; // Already closed
-  }
-  // Stop any further access to cache.
-  _closing = true;
-
-  MutexLocker ml(Compile_lock);
-  if (for_dump()) { // Finalize cache
-    finish_write();
-  }
-  _load_buffer = nullptr;
-  if (_C_store_buffer != nullptr) {
-    FREE_C_HEAP_ARRAY(char, _C_store_buffer);
-    _C_store_buffer = nullptr;
-    _store_buffer = nullptr;
-  }
-  if (_table != nullptr) {
-    MutexLocker ml(AOTCodeCStrings_lock, Mutex::_no_safepoint_check_flag);
-    delete _table;
-    _table = nullptr;
-  }
-}
-
 void AOTCodeCache::Config::record(uint cpu_features_offset) {
   _flags = 0;
 #ifdef ASSERT
@@ -412,9 +387,6 @@ void AOTCodeCache::Config::record(uint cpu_features_offset) {
 #endif
   if (UseCompressedOops) {
     _flags |= compressedOops;
-  }
-  if (UseCompressedClassPointers) {
-    _flags |= compressedClassPointers;
   }
   if (UseTLAB) {
     _flags |= useTLAB;
@@ -499,10 +471,6 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
     return false;
   }
 
-  if (((_flags & compressedClassPointers) != 0) != UseCompressedClassPointers) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseCompressedClassPointers = %s", UseCompressedClassPointers ? "false" : "true");
-    return false;
-  }
   if (_compressedKlassShift != (uint)CompressedKlassPointers::shift()) {
     log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with CompressedKlassPointers::shift() = %d vs current %d", _compressedKlassShift, CompressedKlassPointers::shift());
     return false;
@@ -571,6 +539,9 @@ AOTCodeReader::AOTCodeReader(AOTCodeCache* cache, AOTCodeEntry* entry) {
   _load_buffer = cache->cache_buffer();
   _read_position = 0;
   _lookup_failed = false;
+  _name          = nullptr;
+  _reloc_data    = nullptr;
+  _oop_maps      = nullptr;
 }
 
 void AOTCodeReader::set_read_position(uint pos) {
@@ -935,16 +906,6 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
     has_oop_maps = true;
   }
 
-#ifndef PRODUCT
-  // Write asm remarks
-  if (!cache->write_asm_remarks(blob)) {
-    return false;
-  }
-  if (!cache->write_dbg_strings(blob)) {
-    return false;
-  }
-#endif /* PRODUCT */
-
   if (!cache->write_relocations(blob)) {
     if (!cache->failed()) {
       // We may miss an address in AOT table - skip this code blob.
@@ -952,6 +913,16 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
     }
     return false;
   }
+
+#ifndef PRODUCT
+  // Write asm remarks after relocation info
+  if (!cache->write_asm_remarks(blob)) {
+    return false;
+  }
+  if (!cache->write_dbg_strings(blob)) {
+    return false;
+  }
+#endif /* PRODUCT */
 
   uint entry_size = cache->_write_position - entry_position;
   AOTCodeEntry* entry = new(cache) AOTCodeEntry(entry_kind, encode_id(entry_kind, id),
@@ -1014,38 +985,27 @@ CodeBlob* AOTCodeReader::compile_code_blob(const char* name) {
     set_lookup_failed(); // Skip this blob
     return nullptr;
   }
+  _name = stored_name;
 
   // Read archived code blob
   uint offset = entry_position + _entry->blob_offset();
   CodeBlob* archived_blob = (CodeBlob*)addr(offset);
   offset += archived_blob->size();
 
-  address reloc_data = (address)addr(offset);
+  _reloc_data = (address)addr(offset);
   offset += archived_blob->relocation_size();
   set_read_position(offset);
 
-  ImmutableOopMapSet* oop_maps = nullptr;
   if (_entry->has_oop_maps()) {
-    oop_maps = read_oop_map_set();
+    _oop_maps = read_oop_map_set();
   }
 
-  CodeBlob* code_blob = CodeBlob::create(archived_blob,
-                                         stored_name,
-                                         reloc_data,
-                                         oop_maps
-                                        );
+  // CodeBlob::restore() calls AOTCodeReader::restore()
+  CodeBlob* code_blob = CodeBlob::create(archived_blob, this);
+
   if (code_blob == nullptr) { // no space left in CodeCache
     return nullptr;
   }
-
-#ifndef PRODUCT
-  code_blob->asm_remarks().init();
-  read_asm_remarks(code_blob->asm_remarks());
-  code_blob->dbg_strings().init();
-  read_dbg_strings(code_blob->dbg_strings());
-#endif // PRODUCT
-
-  fix_relocations(code_blob);
 
 #ifdef ASSERT
   LogStreamHandle(Trace, aot, codecache, stubs) log;
@@ -1055,6 +1015,25 @@ CodeBlob* AOTCodeReader::compile_code_blob(const char* name) {
   }
 #endif
   return code_blob;
+}
+
+void AOTCodeReader::restore(CodeBlob* code_blob) {
+  precond(AOTCodeCache::is_on_for_use());
+  precond(_name != nullptr);
+  precond(_reloc_data != nullptr);
+
+  code_blob->set_name(_name);
+  code_blob->restore_mutable_data(_reloc_data);
+  code_blob->set_oop_maps(_oop_maps);
+
+  fix_relocations(code_blob);
+
+#ifndef PRODUCT
+  code_blob->asm_remarks().init();
+  read_asm_remarks(code_blob->asm_remarks());
+  code_blob->dbg_strings().init();
+  read_dbg_strings(code_blob->dbg_strings());
+#endif // PRODUCT
 }
 
 // ------------ process code and data --------------
@@ -1544,18 +1523,6 @@ void AOTCodeAddressTable::init_early_c1() {
 }
 
 #undef SET_ADDRESS
-
-AOTCodeAddressTable::~AOTCodeAddressTable() {
-  if (_extrs_addr != nullptr) {
-    FREE_C_HEAP_ARRAY(address, _extrs_addr);
-  }
-  if (_stubs_addr != nullptr) {
-    FREE_C_HEAP_ARRAY(address, _stubs_addr);
-  }
-  if (_shared_blobs_addr != nullptr) {
-    FREE_C_HEAP_ARRAY(address, _shared_blobs_addr);
-  }
-}
 
 #ifdef PRODUCT
 #define MAX_STR_COUNT 200
