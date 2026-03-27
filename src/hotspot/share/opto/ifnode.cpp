@@ -146,7 +146,7 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   // self-referencing data cycle.
   for (uint i = 1; i < r->req(); i++) {
     Node* phi_in = phi->in(i);
-    if (phi_in != nullptr && phi->as_Phi()->is_unsafe_data_reference(phi_in)) {
+    if (phi_in != nullptr && phi->is_unsafe_data_reference(phi_in)) {
       return nullptr;
     }
   }
