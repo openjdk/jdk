@@ -363,7 +363,7 @@ public final class StandardOption {
 
     public static final OptionValue<String> MAC_BUNDLE_IDENTIFIER = stringOption("mac-package-identifier")
             .valuePattern("package identifier")
-            .validator(StandardValidator.IS_VALID_MAC_BUNDLE_IDENTIFIER)
+            .validator(StandardValidator.IS_MAC_BUNDLE_IDENTIFIER)
             .validatorExceptionFactory(OptionValueExceptionFactory.build((message, cause) -> {
                 return new ConfigException(message, I18N.format("error.parameter-not-mac-bundle-identifier.advice"), cause);
             }).formatArgumentsTransformer(StandardArgumentsMapper.VALUE_AND_NAME).create())

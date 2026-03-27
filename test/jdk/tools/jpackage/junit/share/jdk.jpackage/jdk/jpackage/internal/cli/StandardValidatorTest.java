@@ -258,6 +258,41 @@ class StandardValidatorTest {
         assertThrowsExactly(NullPointerException.class, () -> testee.test(null));
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "a",
+            "a.b",
+            "a.B10-",
+    })
+    void test_IS_MAC_BUNDLE_IDENTIFIER_valid(String value) {
+
+        final var testee = StandardValidator.IS_MAC_BUNDLE_IDENTIFIER;
+
+        assertTrue(testee.test(value));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "",
+            "#",
+            "a\\",
+            "a_b",
+    })
+    void test_IS_MAC_BUNDLE_IDENTIFIER_invalid(String value) {
+
+        final var testee = StandardValidator.IS_MAC_BUNDLE_IDENTIFIER;
+
+        assertFalse(testee.test(value));
+    }
+
+    @Test
+    void test_IS_MAC_BUNDLE_IDENTIFIER_null() {
+
+        final var testee = StandardValidator.IS_MAC_BUNDLE_IDENTIFIER;
+
+        assertThrowsExactly(NullPointerException.class, () -> testee.test(null));
+    }
+
     private static Stream<Arguments> test_IS_NAME_VALID_valid() {
         List<String> data = new ArrayList<>();
         data.addAll(List.of(

@@ -145,7 +145,7 @@ public final class StandardValidator {
     };
 
     // https://developer.apple.com/documentation/BundleResources/Information-Property-List/CFBundleIdentifier
-    public static final Predicate<String> IS_VALID_MAC_BUNDLE_IDENTIFIER = Pattern.compile("[\\p{Alnum}-\\.]+").asMatchPredicate();
+    public static final Predicate<String> IS_MAC_BUNDLE_IDENTIFIER = Pattern.compile("[\\p{Alnum}-\\.]+").asMatchPredicate();
 
 
     public static final class DirectoryListingIOException extends RuntimeException {
