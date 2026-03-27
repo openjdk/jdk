@@ -35,6 +35,7 @@ import java.util.List;
 
 import jdk.test.lib.net.URIBuilder;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import static java.net.Proxy.Type.HTTP;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
@@ -50,16 +51,23 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 class ProxyBadStatusLine {
 
-    static List<String> badStatusLines() {
-        return List.of("HTTP/1.",
-                "HTTP/1.1",
-                "HTTP/1.0",
-                "HTTP/1.1     ",
-                "HTTP/1.1\r\n",
-                "HTTP/1.1\n",
-                "HTTP/1.1 301 ",
-                "HTTP/1.1 404 ",
-                "HTTP/1.1 503 ");
+    static List<Arguments> badStatusLines() {
+        return List.of(
+                Arguments.of("", "Unexpected end of file from server"),
+                Arguments.of(" ", "Unexpected end of file from server"),
+                Arguments.of("\t", "Unexpected end of file from server"),
+                Arguments.of("\r\n", "Unexpected end of file from server"),
+
+                Arguments.of("HTTP/1.", "Unable to tunnel through proxy"),
+                Arguments.of("HTTP/1.1", "Unable to tunnel through proxy"),
+                Arguments.of("HTTP/1.0", "Unable to tunnel through proxy"),
+                Arguments.of("HTTP/1.1     ", "Unable to tunnel through proxy"),
+                Arguments.of("HTTP/1.1\r\n", "Unable to tunnel through proxy"),
+                Arguments.of("HTTP/1.1\n", "Unable to tunnel through proxy"),
+                Arguments.of("HTTP/1.1 301 ", "Unable to tunnel through proxy"),
+                Arguments.of("HTTP/1.1 404 ", "Unable to tunnel through proxy"),
+                Arguments.of("HTTP/1.1 503 ", "Unable to tunnel through proxy")
+        );
     }
 
     /*
@@ -70,7 +78,8 @@ class ProxyBadStatusLine {
      */
     @ParameterizedTest
     @MethodSource(value = "badStatusLines")
-    void testProxyConnectResponse(final String badStatusLine) throws Exception {
+    void testProxyConnectResponse(final String badStatusLine, final String expectedExceptionMsg)
+            throws Exception {
         final InetSocketAddress irrelevantTargetServerAddr =
                 new InetSocketAddress(InetAddress.getLoopbackAddress(), 12345);
         final URL url = URIBuilder.newBuilder()
@@ -89,7 +98,7 @@ class ProxyBadStatusLine {
 
             final IOException ioe = assertThrows(IOException.class, () -> urlc.getInputStream());
             final String exMsg = ioe.getMessage();
-            if (exMsg == null || !exMsg.contains("Unable to tunnel through proxy")) {
+            if (exMsg == null || !exMsg.contains(expectedExceptionMsg)) {
                 // unexpected message in the exception, propagate the exception
                 throw ioe;
             }
