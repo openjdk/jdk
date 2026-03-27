@@ -58,10 +58,10 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   const G1OldGenAllocationTracker* _old_gen_alloc_tracker;
 
   const G1Predictions* _predictor;
-  // Predictor for the interval from marking start to the first mixed GC, including
-  // only mutator time; GC Pause times are excluded.
+  // Wall-clock time in seconds from marking start to the first mixed GC,
+  // excluding GC Pause time.
   TruncatedSeq _marking_start_to_mixed_time_s;
-  // Predictor for the old generation allocation rate in bytes per second.
+  // Old generation allocation rate in bytes per second.
   TruncatedSeq _old_gen_alloc_rate;
 
   // The most recent unrestrained size of the young gen. This is used as an additional
