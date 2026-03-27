@@ -727,8 +727,7 @@ static void usage() {
   tty->print_cr("  C2 = 8");
   tty->cr();
   tty->print_cr("Note: Excluding specific compilation levels may disrupt normal state transitions");
-  tty->print_cr("between compile levels, as the VM will not automatically work around the excluded");
-  tty->print_cr("levels.");
+  tty->print_cr("between the levels, as the VM will not automatically work around the excluded ones.");
   tty->cr();
 };
 
