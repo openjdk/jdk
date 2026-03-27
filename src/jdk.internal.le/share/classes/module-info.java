@@ -29,8 +29,6 @@
  * @since 9
  */
 module jdk.internal.le {
-    requires static java.desktop;
-
     exports jdk.internal.org.jline.keymap to
         jdk.jshell;
     exports jdk.internal.org.jline.reader to
