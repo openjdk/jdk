@@ -24,6 +24,7 @@
  *
  */
 
+#include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
@@ -55,7 +56,7 @@ ShenandoahGenerationalControlThread::ShenandoahGenerationalControlThread() :
   _heap(ShenandoahGenerationalHeap::heap()),
   _age_period(0) {
   shenandoah_assert_generational();
-  set_name("Shenandoah Control Thread");
+  set_name("ShenControl");
   create_and_start();
 }
 
@@ -186,7 +187,7 @@ ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread:
   global_heuristics->record_requested_gc();
 
   if (ShenandoahCollectorPolicy::should_run_full_gc(request.cause)) {
-    return stw_full;;
+    return stw_full;
   } else {
     // Unload and clean up everything. Note that this is an _explicit_ request and so does not use
     // the same `should_unload_classes` call as the regulator's concurrent gc request.
@@ -254,7 +255,8 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
 
   GCIdMark gc_id_mark;
 
-  if (gc_mode() != servicing_old) {
+  if ((gc_mode() != servicing_old) && (gc_mode() != stw_degenerated)) {
+    // If mode is stw_degenerated, count bytes allocated from the start of the conc GC that experienced alloc failure.
     _heap->reset_bytes_allocated_since_gc_start();
   }
 
@@ -270,6 +272,12 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
   {
     // Cannot uncommit bitmap slices during concurrent reset
     ShenandoahNoUncommitMark forbid_region_uncommit(_heap);
+
+    // When a whitebox full GC is requested, set the tenuring threshold to zero
+    // so that all young objects are promoted to old. This ensures that tests
+    // using WB.fullGC() to promote objects to old gen will not loop forever.
+    ShenandoahTenuringOverride tenuring_override(request.cause == GCCause::_wb_full_gc,
+                                                 _heap->age_census());
 
     _heap->print_before_gc();
     switch (gc_mode()) {
@@ -622,10 +630,11 @@ void ShenandoahGenerationalControlThread::service_stw_full_cycle(GCCause::Cause 
 
 void ShenandoahGenerationalControlThread::service_stw_degenerated_cycle(const ShenandoahGCRequest& request) {
   assert(_degen_point != ShenandoahGC::_degenerated_unset, "Degenerated point should be set");
+  request.generation->heuristics()->record_degenerated_cycle_start(ShenandoahGC::ShenandoahDegenPoint::_degenerated_outside_cycle
+                                                                  == _degen_point);
   _heap->increment_total_collections(false);
 
   ShenandoahGCSession session(request.cause, request.generation);
-
   ShenandoahDegenGC gc(_degen_point, request.generation);
   gc.collect(request.cause);
   _degen_point = ShenandoahGC::_degenerated_unset;

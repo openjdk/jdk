@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,20 +26,28 @@
  * @bug 6337925
  * @summary Ensure that callers cannot modify the internal JarEntry cert and
  *          codesigner arrays.
- * @author Sean Mullan
+ * @run junit GetMethodsReturnClones
  */
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
 import java.io.InputStream;
 import java.security.CodeSigner;
 import java.security.cert.Certificate;
 import java.util.*;
 import java.util.jar.*;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 public class GetMethodsReturnClones {
 
     private static final String BASE = System.getProperty("test.src", ".") +
         System.getProperty("file.separator");
+    private static List<JarEntry> jarEntries;
 
-    public static void main(String[] args) throws Exception {
+    @BeforeAll()
+    static void setupEntries() throws IOException {
         List<JarEntry> entries = new ArrayList<>();
         try (JarFile jf = new JarFile(BASE + "test.jar", true)) {
             byte[] buffer = new byte[8192];
@@ -55,23 +63,29 @@ public class GetMethodsReturnClones {
                 }
             }
         }
+        jarEntries = entries;
+    }
 
-        for (JarEntry je : entries) {
+    @Test
+    void certsTest() {
+        for (JarEntry je : jarEntries) {
             Certificate[] certs = je.getCertificates();
-            CodeSigner[] signers = je.getCodeSigners();
             if (certs != null) {
                 certs[0] = null;
                 certs = je.getCertificates();
-                if (certs[0] == null) {
-                    throw new Exception("Modified internal certs array");
-                }
+                assertNotNull(certs[0], "Modified internal certs array");
             }
+        }
+    }
+
+    @Test
+    void signersTest() {
+        for (JarEntry je : jarEntries) {
+            CodeSigner[] signers = je.getCodeSigners();
             if (signers != null) {
                 signers[0] = null;
                 signers = je.getCodeSigners();
-                if (signers[0] == null) {
-                    throw new Exception("Modified internal codesigners array");
-                }
+                assertNotNull(signers[0], "Modified internal codesigners array");
             }
         }
     }
