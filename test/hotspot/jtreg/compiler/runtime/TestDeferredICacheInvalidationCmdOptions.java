@@ -31,7 +31,7 @@ import jtreg.SkippedException;
 
 /*
  * @test
- * @bug 8370947
+ * @bug 8370947 8381003
  * @summary Test command-line options for UseSingleICacheInvalidation and NeoverseN1ICacheErratumMitigation
  * @library /test/lib
  * @requires os.arch == "aarch64"
@@ -47,39 +47,73 @@ public class TestDeferredICacheInvalidationCmdOptions {
     private static final int CPU_ARM = 0x41;
     private static final int NEOVERSE_N1_MODEL = 0xd0c;
 
+    // Known ARM Neoverse models where we can predict UseSingleICacheInvalidation
+    // behavior.
+    private static final int[] KNOWN_NEOVERSE_MODELS = {
+        NEOVERSE_N1_MODEL,
+        0xd40, // Neoverse V1
+        0xd49, // Neoverse N2
+        0xd4f, // Neoverse V2
+        0xd83, // Neoverse V3AE
+        0xd84, // Neoverse V3
+        0xd8e, // Neoverse N3
+    };
+
     private static boolean isAffected;
+    private static boolean isKnownModel;
 
     public static void main(String[] args) throws Exception {
+        // This test does not depend on CPU identification — run it first.
+        testDisableBothFlags();
+
         // Parse CPU features and print CPU info
         parseCPUFeatures();
 
-        System.out.println("Testing UseSingleICacheInvalidation and NeoverseN1ICacheErratumMitigation command-line options...");
+        if (!isKnownModel) {
+            throw new SkippedException("Unknown CPU model - skipping remaining tests.");
+        }
 
-        // Test case 1: Check defaults on Neoverse N1 pre-r4p1 (if applicable)
-        testCase1_DefaultsOnNeoverseN1();
+        if (isAffected) {
+            // Detect whether IC IVAU is trapped on this system.
+            ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:+NeoverseN1ICacheErratumMitigation",
+                "-version");
+            OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
-        // Test case 2: Check NeoverseN1ICacheErratumMitigation is false on unaffected CPUs
-        testCase2_DefaultsOnUnaffectedCPUs();
+            if (output.getExitValue() != 0) {
+                // Verify the failure is the expected probe error, not something else.
+                output.shouldContain("IC IVAU is not trapped");
+                throw new SkippedException("IC IVAU is not trapped - skipping remaining tests.");
+            } else {
+                System.out.println("IC IVAU trap active.");
+            }
+        }
 
-        // Test case 3: Check if NeoverseN1ICacheErratumMitigation is set to false on affected CPUs,
-        //             UseSingleICacheInvalidation is also set to false
-        testCase3_ExplicitlyDisableErrataAffectsDeferred();
+        if (isAffected) {
+            // Check defaults on Neoverse N1 pre-r4p1
+            testCase_DefaultsOnNeoverseN1();
 
-        // Test case 4: Check JVM error if UseSingleICacheInvalidation=true
-        //             but NeoverseN1ICacheErratumMitigation=false on affected CPUs
-        testCase4_ConflictingFlagsOnAffectedCPUs();
+            // Check if NeoverseN1ICacheErratumMitigation is set to false on affected CPUs,
+            // UseSingleICacheInvalidation is also set to false
+            testCase_ExplicitlyDisableErrataAffectsDeferred();
 
-        // Test case 5: Check explicit NeoverseN1ICacheErratumMitigation=true enables UseSingleICacheInvalidation
-        testCase5_ExplicitlyEnableErrataEnablesDeferred();
+            // Check JVM error if UseSingleICacheInvalidation=true
+            // but NeoverseN1ICacheErratumMitigation=false on affected CPUs
+            testCase_ConflictingFlagsOnAffectedCPUs();
 
-        // Test case 6: Check both flags can be explicitly set to false
-        testCase6_ExplicitlyDisableBothFlags();
+            // Check explicit NeoverseN1ICacheErratumMitigation=true enables UseSingleICacheInvalidation
+            testCase_ExplicitlyEnableErrataEnablesDeferred();
 
-        // Test case 7: Check UseSingleICacheInvalidation=false with NeoverseN1ICacheErratumMitigation=true
-        testCase7_ConflictingErrataWithoutDeferred();
+            // Check UseSingleICacheInvalidation=false with NeoverseN1ICacheErratumMitigation=true
+            testCase_ConflictingErrataWithoutDeferred();
+        } else {
+            // Check NeoverseN1ICacheErratumMitigation is false on unaffected CPUs
+            testCase_DefaultsOnUnaffectedCPUs();
 
-        // Test case 8: Check setting NeoverseN1ICacheErratumMitigation=true on unaffected CPU causes an error
-        testCase8_EnablingErrataOnUnaffectedCPU();
+            // Check setting NeoverseN1ICacheErratumMitigation=true on unaffected CPU causes an error
+            testCase_EnablingErrataOnUnaffectedCPU();
+        }
 
         System.out.println("All test cases passed!");
     }
@@ -92,7 +126,7 @@ public class TestDeferredICacheInvalidationCmdOptions {
      * - cpuRevision: minor revision
      * - cpuModel2: secondary model (if present, in parentheses)
      *
-     * Sets the static field isAffected and prints CPU info.
+     * Sets the static fields isAffected and isKnownModel, and prints CPU info.
      *
      * Format: 0x%02x:0x%x:0x%03x:%d[(0x%03x)]
      * Example: "0x41:0x3:0xd0c:0" or "0x41:0x3:0xd0c:0(0xd0c)"
@@ -149,6 +183,15 @@ public class TestDeferredICacheInvalidationCmdOptions {
                          (cpuVariant == 4 && cpuRevision == 0);
         }
 
+        // Check if this is a known Neoverse model.
+        isKnownModel = false;
+        for (int model : KNOWN_NEOVERSE_MODELS) {
+            if (cpuModel == model || cpuModel2 == model) {
+                isKnownModel = true;
+                break;
+            }
+        }
+
         printCPUInfo(cpuFamily, cpuVariant, cpuModel, cpuModel2, cpuRevision);
     }
 
@@ -165,182 +208,16 @@ public class TestDeferredICacheInvalidationCmdOptions {
         System.out.println("CPU Revision: " + cpuRevision);
         System.out.println("Is Neoverse N1: " + isNeoverseN1);
         System.out.println("Is affected by errata 1542419: " + isAffected);
+        System.out.println("Is known model: " + isKnownModel);
         System.out.println("======================\n");
     }
 
     /**
-     * Test case 1: Check the UseSingleICacheInvalidation and NeoverseN1ICacheErratumMitigation
-     * are set to true for Neoverse N1 pre-r4p1.
+     * Test that UseSingleICacheInvalidation and NeoverseN1ICacheErratumMitigation flags
+     * can be explicitly set to false on any system.
      */
-    private static void testCase1_DefaultsOnNeoverseN1() throws Exception {
-        if (!isAffected) {
-            System.out.println("\nTest case 1: Skipping since CPU is not affected by Neoverse N1 errata 1542419");
-            return;
-        }
-
-        System.out.println("\nTest case 1: Check defaults on Neoverse N1 affected revisions");
-
-        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:+PrintFlagsFinal",
-            "-version");
-
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldHaveExitValue(0);
-
-        String output_str = output.getOutput();
-        boolean hasSingleEnabled = output_str.matches("(?s).*bool\\s+UseSingleICacheInvalidation\\s*=\\s*true.*");
-        boolean hasErrataEnabled = output_str.matches("(?s).*bool\\s+NeoverseN1ICacheErratumMitigation\\s*=\\s*true.*");
-
-        System.out.println("UseSingleICacheInvalidation enabled: " + hasSingleEnabled);
-        System.out.println("NeoverseN1ICacheErratumMitigation enabled: " + hasErrataEnabled);
-
-        // If running on affected Neoverse N1, both should be true
-        if (!hasSingleEnabled || !hasErrataEnabled) {
-            throw new RuntimeException("On affected Neoverse N1, both flags should be enabled by default");
-        }
-        System.out.println("Correctly enabled on affected Neoverse N1");
-    }
-
-    /**
-     * Test case 2: Check NeoverseN1ICacheErratumMitigation is false on unaffected CPUs.
-     */
-    private static void testCase2_DefaultsOnUnaffectedCPUs() throws Exception {
-        if (isAffected) {
-            System.out.println("\nTest case 2: Skipping since CPU is affected by Neoverse N1 errata 1542419");
-            return;
-        }
-
-        System.out.println("\nTest case 2: Check NeoverseN1ICacheErratumMitigation is false on unaffected CPUs");
-
-        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:+PrintFlagsFinal",
-            "-version");
-
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldHaveExitValue(0);
-
-        String output_str = output.getOutput();
-        boolean hasErrataEnabled = output_str.matches("(?s).*bool\\s+NeoverseN1ICacheErratumMitigation\\s*=\\s*true.*");
-
-        System.out.println("NeoverseN1ICacheErratumMitigation enabled: " + hasErrataEnabled);
-
-        // On non-Neoverse N1 or unaffected Neoverse N1 CPUs, NeoverseN1ICacheErratumMitigation should be false
-        if (hasErrataEnabled) {
-            throw new RuntimeException("On unaffected CPUs, NeoverseN1ICacheErratumMitigation should be disabled");
-        }
-        System.out.println("Correctly disabled on unaffected CPU");
-    }
-
-    /**
-     * Test case 3: Check if NeoverseN1ICacheErratumMitigation is set to false via cmd on affected CPUs,
-     * UseSingleICacheInvalidation is set to false.
-     */
-    private static void testCase3_ExplicitlyDisableErrataAffectsDeferred() throws Exception {
-        if (!isAffected) {
-            System.out.println("\nTest case 3: Skipping since CPU is not affected by Neoverse N1 errata 1542419");
-            return;
-        }
-
-        System.out.println("\nTest case 3: Explicitly disable NeoverseN1ICacheErratumMitigation, check UseSingleICacheInvalidation");
-
-        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:-NeoverseN1ICacheErratumMitigation",
-            "-XX:+PrintFlagsFinal",
-            "-version");
-
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldHaveExitValue(0);
-
-        String output_str = output.getOutput();
-        boolean hasSingleDisabled = output_str.matches("(?s).*bool\\s+UseSingleICacheInvalidation\\s*=\\s*false.*");
-        boolean hasErrataDisabled = output_str.matches("(?s).*bool\\s+NeoverseN1ICacheErratumMitigation\\s*=\\s*false.*");
-
-        System.out.println("NeoverseN1ICacheErratumMitigation disabled: " + hasErrataDisabled);
-        System.out.println("UseSingleICacheInvalidation disabled: " + hasSingleDisabled);
-
-        if (!hasErrataDisabled) {
-            throw new RuntimeException("Failed to disable NeoverseN1ICacheErratumMitigation via command line");
-        }
-
-        // On affected CPUs, disabling errata should also disable UseSingleICacheInvalidation
-        if (!hasSingleDisabled) {
-            throw new RuntimeException("On affected CPU, disabling NeoverseN1ICacheErratumMitigation should also disable UseSingleICacheInvalidation");
-        }
-        System.out.println("Correctly synchronized on affected CPU");
-    }
-
-    /**
-     * Test case 4: Check JVM reports an error if UseSingleICacheInvalidation is set to true
-     * but NeoverseN1ICacheErratumMitigation is set to false on affected CPUs.
-     */
-    private static void testCase4_ConflictingFlagsOnAffectedCPUs() throws Exception {
-        if (!isAffected) {
-            System.out.println("\nTest case 4: Skipping since CPU is not affected by Neoverse N1 errata 1542419");
-            return;
-        }
-
-        System.out.println("\nTest case 4: Try to set UseSingleICacheInvalidation=true with NeoverseN1ICacheErratumMitigation=false");
-
-        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:+UseSingleICacheInvalidation",
-            "-XX:-NeoverseN1ICacheErratumMitigation",
-            "-version");
-
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-
-        if (output.getExitValue() == 0) {
-            throw new RuntimeException("On affected CPU, conflicting flags should cause error");
-        }
-        output.shouldContain("Error");
-        System.out.println("JVM correctly rejected conflicting flags on affected CPU");
-    }
-
-    /**
-     * Test case 5: Check explicit NeoverseN1ICacheErratumMitigation=true enables UseSingleICacheInvalidation.
-     */
-    private static void testCase5_ExplicitlyEnableErrataEnablesDeferred() throws Exception {
-        if (!isAffected) {
-            System.out.println("\nTest case 5: Skipping since CPU is not affected by Neoverse N1 errata 1542419");
-            return;
-        }
-
-        System.out.println("\nTest case 5: Explicitly enable NeoverseN1ICacheErratumMitigation, check UseSingleICacheInvalidation");
-
-        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:+NeoverseN1ICacheErratumMitigation",
-            "-XX:+PrintFlagsFinal",
-            "-version");
-
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldHaveExitValue(0);
-
-        String output_str = output.getOutput();
-        boolean hasSingleEnabled = output_str.matches("(?s).*bool\\s+UseSingleICacheInvalidation\\s*=\\s*true.*");
-        boolean hasErrataEnabled = output_str.matches("(?s).*bool\\s+NeoverseN1ICacheErratumMitigation\\s*=\\s*true.*");
-
-        System.out.println("NeoverseN1ICacheErratumMitigation enabled: " + hasErrataEnabled);
-        System.out.println("UseSingleICacheInvalidation enabled: " + hasSingleEnabled);
-
-        if (!hasErrataEnabled) {
-            throw new RuntimeException("Failed to enable NeoverseN1ICacheErratumMitigation via command line");
-        }
-
-        if (!hasSingleEnabled) {
-            throw new RuntimeException("On affected CPU, enabling NeoverseN1ICacheErratumMitigation should also enable UseSingleICacheInvalidation");
-        }
-        System.out.println("Correctly synchronized on affected CPU");
-    }
-
-    /**
-     * Test case 6: Check both flags can be explicitly set to false.
-     */
-    private static void testCase6_ExplicitlyDisableBothFlags() throws Exception {
-        System.out.println("\nTest case 6: Explicitly disable both flags");
+    private static void testDisableBothFlags() throws Exception {
+        System.out.println("\nTest: Explicitly disable both flags");
 
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
@@ -371,15 +248,153 @@ public class TestDeferredICacheInvalidationCmdOptions {
     }
 
     /**
-     * Test case 7: Check UseSingleICacheInvalidation=false with NeoverseN1ICacheErratumMitigation=true.
-     * On affected CPUs, this should error (conflicting requirement).
+     * Check defaults on Neoverse N1 affected revisions.
+     * UseSingleICacheInvalidation and NeoverseN1ICacheErratumMitigation flags should be true.
      */
-    private static void testCase7_ConflictingErrataWithoutDeferred() throws Exception {
-        if (!isAffected) {
-            System.out.println("\nTest case 7: Skipping since CPU is not affected by Neoverse N1 errata 1542419");
-            return;
+    private static void testCase_DefaultsOnNeoverseN1() throws Exception {
+        System.out.println("\nTest: Check defaults on Neoverse N1 affected revisions");
+
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+PrintFlagsFinal",
+            "-version");
+
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(0);
+
+        String output_str = output.getOutput();
+        boolean hasSingleEnabled = output_str.matches("(?s).*bool\\s+UseSingleICacheInvalidation\\s*=\\s*true.*");
+        boolean hasErrataEnabled = output_str.matches("(?s).*bool\\s+NeoverseN1ICacheErratumMitigation\\s*=\\s*true.*");
+
+        System.out.println("UseSingleICacheInvalidation enabled: " + hasSingleEnabled);
+        System.out.println("NeoverseN1ICacheErratumMitigation enabled: " + hasErrataEnabled);
+
+        if (!hasSingleEnabled || !hasErrataEnabled) {
+            throw new RuntimeException("On affected Neoverse N1 with trap active, " +
+                 "UseSingleICacheInvalidation and NeoverseN1ICacheErratumMitigation flags should be enabled by default");
         }
-        System.out.println("\nTest case 7: Try to set NeoverseN1ICacheErratumMitigation=true with UseSingleICacheInvalidation=false");
+        System.out.println("Correctly enabled on affected Neoverse N1");
+    }
+
+    /**
+     * Check NeoverseN1ICacheErratumMitigation is false on unaffected CPUs.
+     */
+    private static void testCase_DefaultsOnUnaffectedCPUs() throws Exception {
+        System.out.println("\nTest: Check NeoverseN1ICacheErratumMitigation is false on unaffected CPUs");
+
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+PrintFlagsFinal",
+            "-version");
+
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(0);
+
+        String output_str = output.getOutput();
+        boolean hasErrataEnabled = output_str.matches("(?s).*bool\\s+NeoverseN1ICacheErratumMitigation\\s*=\\s*true.*");
+
+        System.out.println("NeoverseN1ICacheErratumMitigation enabled: " + hasErrataEnabled);
+
+        if (hasErrataEnabled) {
+            throw new RuntimeException("On unaffected CPUs, NeoverseN1ICacheErratumMitigation should be disabled");
+        }
+        System.out.println("Correctly disabled on unaffected CPU");
+    }
+
+    /**
+     * Check if NeoverseN1ICacheErratumMitigation is set to false via cmd on affected CPUs,
+     * UseSingleICacheInvalidation is set to false.
+     */
+    private static void testCase_ExplicitlyDisableErrataAffectsDeferred() throws Exception {
+        System.out.println("\nTest: Explicitly disable NeoverseN1ICacheErratumMitigation, check UseSingleICacheInvalidation");
+
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:-NeoverseN1ICacheErratumMitigation",
+            "-XX:+PrintFlagsFinal",
+            "-version");
+
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(0);
+
+        String output_str = output.getOutput();
+        boolean hasSingleDisabled = output_str.matches("(?s).*bool\\s+UseSingleICacheInvalidation\\s*=\\s*false.*");
+        boolean hasErrataDisabled = output_str.matches("(?s).*bool\\s+NeoverseN1ICacheErratumMitigation\\s*=\\s*false.*");
+
+        System.out.println("NeoverseN1ICacheErratumMitigation disabled: " + hasErrataDisabled);
+        System.out.println("UseSingleICacheInvalidation disabled: " + hasSingleDisabled);
+
+        if (!hasErrataDisabled) {
+            throw new RuntimeException("Failed to disable NeoverseN1ICacheErratumMitigation via command line");
+        }
+
+        if (!hasSingleDisabled) {
+            throw new RuntimeException("On affected CPU, disabling NeoverseN1ICacheErratumMitigation should also disable UseSingleICacheInvalidation");
+        }
+        System.out.println("Correctly synchronized on affected CPU");
+    }
+
+    /**
+     * Check JVM reports an error if UseSingleICacheInvalidation is set to true
+     * but NeoverseN1ICacheErratumMitigation is set to false on affected CPUs.
+     */
+    private static void testCase_ConflictingFlagsOnAffectedCPUs() throws Exception {
+        System.out.println("\nTest: Try to set UseSingleICacheInvalidation=true with NeoverseN1ICacheErratumMitigation=false");
+
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UseSingleICacheInvalidation",
+            "-XX:-NeoverseN1ICacheErratumMitigation",
+            "-version");
+
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+
+        if (output.getExitValue() == 0) {
+            throw new RuntimeException("On affected CPU, setting UseSingleICacheInvalidation=true " +
+                "with NeoverseN1ICacheErratumMitigation=false should cause error");
+        }
+        output.shouldContain("Error");
+        System.out.println("JVM correctly rejected conflicting flags on affected CPU");
+    }
+
+    /**
+     * Check explicit NeoverseN1ICacheErratumMitigation=true enables UseSingleICacheInvalidation.
+     */
+    private static void testCase_ExplicitlyEnableErrataEnablesDeferred() throws Exception {
+        System.out.println("\nTest: Explicitly enable NeoverseN1ICacheErratumMitigation, check UseSingleICacheInvalidation");
+
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+NeoverseN1ICacheErratumMitigation",
+            "-XX:+PrintFlagsFinal",
+            "-version");
+
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(0);
+
+        String output_str = output.getOutput();
+        boolean hasSingleEnabled = output_str.matches("(?s).*bool\\s+UseSingleICacheInvalidation\\s*=\\s*true.*");
+        boolean hasErrataEnabled = output_str.matches("(?s).*bool\\s+NeoverseN1ICacheErratumMitigation\\s*=\\s*true.*");
+
+        System.out.println("NeoverseN1ICacheErratumMitigation enabled: " + hasErrataEnabled);
+        System.out.println("UseSingleICacheInvalidation enabled: " + hasSingleEnabled);
+
+        if (!hasErrataEnabled) {
+            throw new RuntimeException("Failed to enable NeoverseN1ICacheErratumMitigation via command line");
+        }
+
+        if (!hasSingleEnabled) {
+            throw new RuntimeException("On affected CPU, enabling NeoverseN1ICacheErratumMitigation should also enable UseSingleICacheInvalidation");
+        }
+        System.out.println("Correctly synchronized on affected CPU");
+    }
+
+    /**
+     * Check JVM reports an error if UseSingleICacheInvalidation is set to false
+     * and NeoverseN1ICacheErratumMitigation is set to true on affected CPUs.
+     */
+    private static void testCase_ConflictingErrataWithoutDeferred() throws Exception {
+        System.out.println("\nTest: Try to set NeoverseN1ICacheErratumMitigation=true with UseSingleICacheInvalidation=false");
 
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
@@ -390,7 +405,6 @@ public class TestDeferredICacheInvalidationCmdOptions {
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
-        // This should fail on affected CPUs (conflicting requirement)
         if (output.getExitValue() == 0) {
             throw new RuntimeException("On affected CPU, setting NeoverseN1ICacheErratumMitigation=true with UseSingleICacheInvalidation=false should cause an error");
         }
@@ -399,15 +413,10 @@ public class TestDeferredICacheInvalidationCmdOptions {
     }
 
     /**
-     * Test case 8: Check setting NeoverseN1ICacheErratumMitigation=true on unaffected CPU causes an error.
+     * Check setting NeoverseN1ICacheErratumMitigation=true on unaffected CPU causes an error.
      */
-    private static void testCase8_EnablingErrataOnUnaffectedCPU() throws Exception {
-        if (isAffected) {
-            System.out.println("\nTest case 8: Skipping since CPU is affected by Neoverse N1 errata 1542419");
-            return;
-        }
-
-        System.out.println("\nTest case 8: Try to set NeoverseN1ICacheErratumMitigation=true on unaffected CPU");
+    private static void testCase_EnablingErrataOnUnaffectedCPU() throws Exception {
+        System.out.println("\nTest: Try to set NeoverseN1ICacheErratumMitigation=true on unaffected CPU");
 
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
@@ -416,7 +425,6 @@ public class TestDeferredICacheInvalidationCmdOptions {
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
-        // This should fail on unaffected CPUs (errata not present)
         if (output.getExitValue() == 0) {
             throw new RuntimeException("On unaffected CPU, setting NeoverseN1ICacheErratumMitigation=true should cause error");
         }

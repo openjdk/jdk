@@ -111,6 +111,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import jdk.test.whitebox.WhiteBox;
+import jtreg.SkippedException;
 
 public class TestDeferredICacheInvalidation {
 
@@ -296,8 +297,7 @@ public class TestDeferredICacheInvalidation {
 
     public static void main(String[] args) throws Exception {
         if (!Boolean.TRUE.equals(WB.getBooleanVMFlag("UseSingleICacheInvalidation"))) {
-            System.out.println("Skip. Test requires UseSingleICacheInvalidation enabled.");
-            return;
+            throw new SkippedException("Skip. Test requires UseSingleICacheInvalidation enabled.");
         }
         compLevel = (args[1].equals("C1")) ? 1 : 4;
         compileMethods();
