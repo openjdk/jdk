@@ -457,7 +457,7 @@ public class TestSubwordTruncation {
             in[i] = (byte) Integer.remainderUnsigned(n, i);
         }
 
-        return new Object[] { (Object) Integer.valueOf(n), (Object) in };
+        return new Object[] { Integer.valueOf(n), in };
     }
 
     @Check(test = "testUMod")
@@ -479,7 +479,7 @@ public class TestSubwordTruncation {
             in[i] = (byte) Integer.divideUnsigned(n, i);
         }
 
-        return new Object[] { (Object) Integer.valueOf(n), (Object) in };
+        return new Object[] { Integer.valueOf(n), in };
     }
 
     @Check(test = "testUDiv")
