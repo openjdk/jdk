@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8325448 8379541
+ * @bug 8325448 8325513
  * @summary KAT inside RFC 9180
  * @library /test/lib
  * @modules java.base/com.sun.crypto.provider

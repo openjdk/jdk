@@ -42,7 +42,7 @@ import static javax.crypto.spec.HPKEParameterSpec.KEM_DHKEM_X25519_HKDF_SHA256;
 
 /*
  * @test
- * @bug 8325448 8379541
+ * @bug 8325448 8325513
  * @library /test/lib
  * @summary HPKE compliance test
  */
