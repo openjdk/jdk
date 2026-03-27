@@ -255,7 +255,8 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
 
   GCIdMark gc_id_mark;
 
-  if (gc_mode() != servicing_old) {
+  if ((gc_mode() != servicing_old) && (gc_mode() != stw_degenerated)) {
+    // If mode is stw_degenerated, count bytes allocated from the start of the conc GC that experienced alloc failure.
     _heap->reset_bytes_allocated_since_gc_start();
   }
 

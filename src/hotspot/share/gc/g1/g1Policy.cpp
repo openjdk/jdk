@@ -28,6 +28,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectionSetCandidates.inline.hpp"
+#include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
@@ -1131,6 +1132,17 @@ double G1Policy::predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy) co
     *bytes_to_copy = expected_bytes;
   }
   return _analytics->predict_object_copy_time_ms(expected_bytes, collector_state()->is_in_young_only_phase());
+}
+
+bool G1Policy::should_update_surv_rate_group_predictors() {
+  return collector_state()->is_in_young_only_phase() && !collector_state()->is_in_mark_or_rebuild();
+}
+
+void G1Policy::cset_regions_freed() {
+  bool update = should_update_surv_rate_group_predictors();
+
+  _eden_surv_rate_group->all_surviving_words_recorded(predictor(), update);
+  _survivor_surv_rate_group->all_surviving_words_recorded(predictor(), update);
 }
 
 double G1Policy::predict_region_copy_time_ms(G1HeapRegion* hr, bool for_young_only_phase) const {

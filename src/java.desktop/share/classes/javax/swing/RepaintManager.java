@@ -32,7 +32,6 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import sun.awt.AWTAccessor;
-import sun.awt.AppContext;
 import sun.awt.DisplayChangedListener;
 import sun.awt.SunToolkit;
 import sun.java2d.SunGraphicsEnvironment;
@@ -1733,21 +1732,14 @@ public class RepaintManager
         }
 
         private static void scheduleDisplayChanges() {
-            // To avoid threading problems, we notify each RepaintManager
+            // To avoid threading problems, we notify the RepaintManager
             // on the thread it was created on.
-            for (AppContext context : AppContext.getAppContexts()) {
-                synchronized(context) {
-                    if (!context.isDisposed()) {
-                        EventQueue eventQueue = (EventQueue)context.get(
-                            AppContext.EVENT_QUEUE_KEY);
-                        if (eventQueue != null) {
-                            eventQueue.postEvent(new InvocationEvent(
-                                Toolkit.getDefaultToolkit(),
-                                new DisplayChangedRunnable()));
-                        }
-                    }
-                }
-            }
+            EventQueue eventQueue = Toolkit.getDefaultToolkit().getSystemEventQueue();
+            eventQueue.postEvent(
+                new InvocationEvent(
+                    Toolkit.getDefaultToolkit(),
+                    new DisplayChangedRunnable())
+            );
         }
     }
 
