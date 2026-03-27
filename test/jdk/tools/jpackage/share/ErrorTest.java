@@ -964,9 +964,6 @@ public final class ErrorTest {
         final List<TestSpec> testCases = new ArrayList<>();
 
         testCases.addAll(Stream.of(
-                testSpec().addArgs("--app-version", "1.2.3.4")
-                        .error("message.version-string-too-many-components")
-                        .advice("error.invalid-cfbundle-version.advice"),
                 testSpec().invalidTypeArg("--mac-installer-sign-identity", "foo"),
                 testSpec().type(PackageType.MAC_DMG).invalidTypeArg("--mac-installer-sign-identity", "foo"),
                 testSpec().invalidTypeArg("--mac-dmg-content", "foo"),

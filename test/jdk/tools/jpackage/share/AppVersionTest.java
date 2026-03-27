@@ -176,6 +176,16 @@ public final class AppVersionTest {
             AppTestSpec.create(builder, testCases::add);
         }
 
+        if (TKit.isOSX()) {
+            // Ensure "0.1" is a valid version on macOS.
+            AppTestSpec.create("Hello", TestSpec.build()
+                    .versionFromCmdline("0.1"), testCases::add);
+
+            // Ensure "1.2.3.4.5" is a valid version on macOS.
+            AppTestSpec.create("Hello", TestSpec.build()
+                    .versionFromCmdline("1.2.3.4.5"), testCases::add);
+        }
+
         return testCases.stream().map(v -> {
             return new Object[] {v};
         }).toList();
