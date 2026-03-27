@@ -31,6 +31,7 @@ import jdk.incubator.vector.ByteVector;
 import jdk.incubator.vector.VectorOperators;
 
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 
 /**
  * @test
@@ -41,16 +42,17 @@ import jdk.test.lib.Asserts;
  *          when most lanes are 1 and a single lane differs.
  * @library /test/lib /
  * @modules jdk.incubator.vector
- * @run driver compiler.vectorapi.TestMultiplyReductionByte
+ * @run driver ${test.main.class}
  */
 public class TestMultiplyReductionByte {
 
     static byte[] input = new byte[64];
 
-    static int pos;
+    static int pos = Utils.getRandomInstance().nextInt(input.length);
 
     static {
         Arrays.fill(input, (byte) 1);
+        input[pos] = -3;
     }
 
     @Test
