@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4540,36 +4541,23 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) const {
 //
 //    int a = init2;
 //    for (int iv = init; iv < limit; iv += stride_con) {
-//      a += stride_con2;
+//      a += inc;   // or a -= inc; where inc is loop-invariant
 //    }
 //
 // and transforms it to:
 //
-//    int iv2 = init2
-//    int iv = init
-//    loop:
-//      if (iv >= limit) goto exit
-//      iv += stride_con
-//      iv2 = init2 + (iv - init) * (stride_con2 / stride_con)
-//      goto loop
-//    exit:
-//    ...
+//    a = init2 +/- ((iv - init) / stride_con) * inc
 //
-// Such transformation introduces more optimization opportunities. In this
-// particular example, the loop can be eliminated entirely given that
-// `stride_con2 / stride_con` is exact  (i.e., no remainder). Checks are in
-// place to only perform this optimization if such a division is exact. This
-// example will be transformed into its semantic equivalence:
-//
-//     int iv2 = (iv * stride_con2 / stride_con) + (init2 - (init * stride_con2 / stride_con))
-//
-// which corresponds to the structure of transformed subgraph.
+// The division (iv - init) / stride_con is always exact because at iteration
+// k the primary IV has value init + k * stride_con, so iv - init is always a
+// multiple of stride_con. For |stride_con| == 1 the division is elided; for
+// larger constants IGVN strength-reduces it into multiply-and-shift sequences.
+// Such transformation introduces more optimization opportunities, the loop
+// can often be eliminated.
 //
 // However, if there is a mismatch between types of the loop and the parallel
 // induction variable (e.g., a long-typed IV in an int-typed loop), type
-// conversions are required:
-//
-//     long iv2 = ((long) iv * stride_con2 / stride_con) + (init2 - ((long) init * stride_con2 / stride_con))
+// conversions are required.
 //
 void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
   assert(loop->_head->is_CountedLoop(), "");
@@ -4595,51 +4583,43 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
 
     PhiNode* phi2 = out->as_Phi();
     Node* incr2 = phi2->in(LoopNode::LoopBackControl);
-    // Look for induction variables of the form:  X += constant
-    if (phi2->region() != loop->_head ||
-        incr2->req() != 3 ||
-        incr2->in(1)->uncast() != phi2 ||
-        incr2 == incr ||
-        (incr2->Opcode() != Op_AddI && incr2->Opcode() != Op_AddL) ||
-        !incr2->in(2)->is_Con()) {
+    if (phi2->region() != loop->_head || incr2->req() != 3 || incr2 == incr) {
       continue;
     }
 
-    if (incr2->in(1)->is_ConstraintCast() &&
-        !(incr2->in(1)->in(0)->is_IfProj() && incr2->in(1)->in(0)->in(0)->is_RangeCheck())) {
-      // Skip AddI->CastII->Phi case if CastII is not controlled by local RangeCheck
+    int opc = incr2->Opcode();
+    bool is_add = (opc == Op_AddI || opc == Op_AddL);
+    if (!is_add && opc != Op_SubI && opc != Op_SubL) {
       continue;
     }
-    // Check for parallel induction variable (parallel to trip counter)
-    // via an affine function.  In particular, count-down loops with
-    // count-up array indices are common. We only RCE references off
-    // the trip-counter, so we need to convert all these to trip-counter
-    // expressions.
+
+    // Determine which input is the phi (self-reference) and which is the
+    // increment value. For commutative Add, phi2 can be in either position.
+    // For non-commutative Sub, phi2 must be in(1).
+    int phi_idx, inc_idx;
+    if (incr2->in(1)->uncast() == phi2) {
+      phi_idx = 1; inc_idx = 2;
+    } else if (is_add && incr2->in(2)->uncast() == phi2) {
+      phi_idx = 2; inc_idx = 1;
+    } else {
+      continue;
+    }
+
+    if (incr2->in(phi_idx)->is_ConstraintCast() &&
+        !(incr2->in(phi_idx)->in(0)->is_IfProj() && incr2->in(phi_idx)->in(0)->in(0)->is_RangeCheck())) {
+      // Skip AddI/SubI->CastII->Phi case if CastII is not controlled by local RangeCheck
+      continue;
+    }
+
+    Node* inc_val = incr2->in(inc_idx);
+    if (!loop->is_invariant(inc_val)) {
+      continue;
+    }
+
+    // Determine the basic type of the increment (and the iv being incremented).
+    BasicType bt = (opc == Op_AddI || opc == Op_SubI) ? T_INT : T_LONG;
+
     Node* init2 = phi2->in(LoopNode::EntryControl);
-
-    // Determine the basic type of the stride constant (and the iv being incremented).
-    BasicType stride_con2_bt = incr2->Opcode() == Op_AddI ? T_INT : T_LONG;
-    jlong stride_con2 = incr2->in(2)->get_integer_as_long(stride_con2_bt);
-
-    // The ratio of the two strides cannot be represented as an int
-    // if stride_con2 is min_jint (or min_jlong, respectively) and
-    // stride_con is -1.
-    if (stride_con2 == min_signed_integer(stride_con2_bt) && stride_con == -1) {
-      continue;
-    }
-
-    // The general case here gets a little tricky.  We want to find the
-    // GCD of all possible parallel IV's and make a new IV using this
-    // GCD for the loop.  Then all possible IVs are simple multiples of
-    // the GCD.  In practice, this will cover very few extra loops.
-    // Instead we require 'stride_con2' to be a multiple of 'stride_con',
-    // where +/-1 is the common case, but other integer multiples are
-    // also easy to handle.
-    jlong ratio_con = stride_con2 / stride_con;
-
-    if ((ratio_con * stride_con) != stride_con2) { // Check for exact (no remainder)
-        continue;
-    }
 
 #ifndef PRODUCT
     if (TraceLoopOpts) {
@@ -4648,35 +4628,45 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     }
 #endif
 
-    // Convert to using the trip counter.  The parallel induction
-    // variable differs from the trip counter by a loop-invariant
-    // amount, the difference between their respective initial values.
-    // It is scaled by the 'ratio_con'.
-    Node* ratio = integercon(ratio_con, stride_con2_bt);
+    // Transform: phi2 = init2 +/- ((iv - init) / stride_con) * inc_val
+    // Use Add for phi2 += inc_val, Sub for phi2 -= inc_val.
+    Node* init_converted = insert_convert_node_if_needed(bt, init);
+    Node* phi_converted = insert_convert_node_if_needed(bt, phi);
 
-    Node* init_converted = insert_convert_node_if_needed(stride_con2_bt, init);
-    Node* phi_converted = insert_convert_node_if_needed(stride_con2_bt, phi);
+    // Compute iteration count = (iv - init) / stride_con.
+    // The division is always exact (iv - init = k * stride_con at iteration k).
+    // For |stride_con| == 1 the division is elided. The DivNode is only
+    // created when |stride_con| > 1, so the divisor is never -1 and the
+    // JVM special case MIN_INT / -1 == MIN_INT cannot occur.
+    Node* iterations;
+    if (stride_con == 1) {
+      iterations = SubNode::make(phi_converted, init_converted, bt);
+    } else if (stride_con == -1) {
+      // (phi - init) / -1 == init - phi
+      iterations = SubNode::make(init_converted, phi_converted, bt);
+    } else {
+      Node* diff_iv = SubNode::make(phi_converted, init_converted, bt);
+      _igvn.register_new_node_with_optimizer(diff_iv);
+      set_ctrl(diff_iv, cl);
+      Node* stride_node = integercon(stride_con, bt);
+      iterations = DivModIntegerNode::make(nullptr, diff_iv, stride_node, bt);
+    }
+    _igvn.register_new_node_with_optimizer(iterations);
+    set_ctrl(iterations, cl);
 
-    Node* ratio_init = MulNode::make(init_converted, ratio, stride_con2_bt);
-    _igvn.register_new_node_with_optimizer(ratio_init, init_converted);
-    set_early_ctrl(ratio_init, false);
+    Node* scaled = MulNode::make(iterations, inc_val, bt);
+    _igvn.register_new_node_with_optimizer(scaled);
+    set_ctrl(scaled, cl);
 
-    Node* diff = SubNode::make(init2, ratio_init, stride_con2_bt);
-    _igvn.register_new_node_with_optimizer(diff, init2);
-    set_early_ctrl(diff, false);
+    Node* result = is_add ? (Node*)AddNode::make(init2, scaled, bt)
+                          : (Node*)SubNode::make(init2, scaled, bt);
+    _igvn.register_new_node_with_optimizer(result);
+    set_ctrl(result, cl);
 
-    Node* ratio_idx = MulNode::make(phi_converted, ratio, stride_con2_bt);
-    _igvn.register_new_node_with_optimizer(ratio_idx, phi_converted);
-    set_ctrl(ratio_idx, cl);
-
-    Node* add = AddNode::make(ratio_idx, diff, stride_con2_bt);
-    _igvn.register_new_node_with_optimizer(add);
-    set_ctrl(add, cl);
-
-    _igvn.replace_node( phi2, add );
+    _igvn.replace_node(phi2, result);
     // Sometimes an induction variable is unused
-    if (add->outcnt() == 0) {
-      _igvn.remove_dead_node(add);
+    if (result->outcnt() == 0) {
+      _igvn.remove_dead_node(result);
     }
     --i; // deleted this phi; rescan starting with next position
   }

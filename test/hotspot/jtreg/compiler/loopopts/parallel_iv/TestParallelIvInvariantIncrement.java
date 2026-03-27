@@ -1,0 +1,420 @@
+/*
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+package compiler.loopopts.parallel_iv;
+
+import compiler.lib.ir_framework.*;
+import jdk.test.lib.Asserts;
+
+import static compiler.lib.generators.Generators.G;
+
+/**
+ * @test
+ * @bug 8346177
+ * @key randomness
+ * @summary test parallel IV replacement with loop-invariant increments
+ * @library /test/lib /
+ * @requires vm.compiler2.enabled
+ * @run driver ${test.main.class}
+ */
+public class TestParallelIvInvariantIncrement {
+
+    public static void main(String[] args) {
+        TestFramework.run();
+    }
+
+    @Test
+    @IR(failOn = { IRNode.MUL_I },        phase = CompilePhase.BEFORE_CLOOPS)
+    @IR(failOn = { IRNode.COUNTED_LOOP })
+    @IR(counts = { IRNode.MUL_I, ">=1" })
+    private static int intAdd(int stop, int inc) {
+        int a = 0;
+        for (int i = 0; i < stop; i++) {
+            a += inc;
+        }
+        return a;
+    }
+
+    @Run(test = "intAdd")
+    private static void runIntAdd() {
+        int s = G.ints().restricted(0, Integer.MAX_VALUE).next();
+        int inc = G.ints().next();
+        Asserts.assertEQ(s * inc, intAdd(s, inc));
+    }
+
+    @Test
+    @IR(failOn = { IRNode.MUL_I },        phase = CompilePhase.BEFORE_CLOOPS)
+    @IR(failOn = { IRNode.COUNTED_LOOP })
+    @IR(counts = { IRNode.MUL_I, ">=1" })
+    private static int intSub(int stop, int inc) {
+        int a = 0;
+        for (int i = 0; i < stop; i++) {
+            a -= inc;
+        }
+        return a;
+    }
+
+    @Run(test = "intSub")
+    private static void runIntSub() {
+        int s = G.ints().restricted(0, Integer.MAX_VALUE).next();
+        int inc = G.ints().next();
+        Asserts.assertEQ(-s * inc, intSub(s, inc));
+    }
+
+    @Test
+    @IR(failOn = { IRNode.MUL_L },        phase = CompilePhase.BEFORE_CLOOPS)
+    @IR(failOn = { IRNode.COUNTED_LOOP })
+    @IR(counts = { IRNode.MUL_L, ">=1" })
+    private static long longAdd(int stop, long inc) {
+        long a = 0;
+        for (int i = 0; i < stop; i++) {
+            a += inc;
+        }
+        return a;
+    }
+
+    @Run(test = "longAdd")
+    private static void runLongAdd() {
+        int s = G.ints().restricted(0, Integer.MAX_VALUE).next();
+        long inc = G.longs().next();
+        Asserts.assertEQ((long) s * inc, longAdd(s, inc));
+    }
+
+    @Test
+    @IR(failOn = { IRNode.MUL_L },        phase = CompilePhase.BEFORE_CLOOPS)
+    @IR(failOn = { IRNode.COUNTED_LOOP })
+    @IR(counts = { IRNode.MUL_L, ">=1" })
+    private static long longSub(int stop, long inc) {
+        long a = 0;
+        for (int i = 0; i < stop; i++) {
+            a -= inc;
+        }
+        return a;
+    }
+
+    @Run(test = "longSub")
+    private static void runLongSub() {
+        int s = G.ints().restricted(0, Integer.MAX_VALUE).next();
+        long inc = G.longs().next();
+        Asserts.assertEQ(-(long) s * inc, longSub(s, inc));
+    }
+
+    @Test
+    @IR(failOn = { IRNode.COUNTED_LOOP })
+    @IR(counts = { IRNode.MUL_I, ">=1" })
+    private static int stride2(int stop, int inc) {
+        int a = 0;
+        for (int i = 0; i < stop; i += 2) {
+            a += inc;
+        }
+        return a;
+    }
+
+    @Run(test = "stride2")
+    private static void runStride2() {
+        int s = G.ints().restricted(0, Integer.MAX_VALUE - 2).next();
+        int inc = G.ints().next();
+        Asserts.assertEQ(Math.ceilDiv(s, 2) * inc, stride2(s, inc));
+    }
+
+    @Test
+    @IR(failOn = { IRNode.COUNTED_LOOP })
+    @IR(counts = { IRNode.MUL_I, ">=1" })
+    private static int countDown(int stop, int inc) {
+        int a = 0;
+        for (int i = stop; i > 0; i--) {
+            a += inc;
+        }
+        return a;
+    }
+
+    @Run(test = "countDown")
+    private static void runCountDown() {
+        int s = G.ints().restricted(0, Integer.MAX_VALUE).next();
+        int inc = G.ints().next();
+        Asserts.assertEQ(s * inc, countDown(s, inc));
+    }
+
+    @Test
+    @IR(failOn = { IRNode.COUNTED_LOOP })
+    @IR(counts = { IRNode.MUL_I, ">=1" })
+    @IR(counts = { IRNode.MUL_L, ">=1" })
+    private static long multipleIVs(int stop, int incA, long incB) {
+        int a = 0;
+        long b = 0;
+        for (int i = 0; i < stop; i++) {
+            a += incA;
+            b += incB;
+        }
+        return a + b;
+    }
+
+    @Run(test = "multipleIVs")
+    private static void runMultipleIVs() {
+        int s = G.ints().restricted(0, Integer.MAX_VALUE).next();
+        int incA = G.ints().next();
+        long incB = G.longs().next();
+        long expected = (long)(s * incA) + ((long) s * incB);
+        Asserts.assertEQ(expected, multipleIVs(s, incA, incB));
+    }
+
+    @Test
+    @IR(failOn = { IRNode.COUNTED_LOOP })
+    @IR(counts = { IRNode.MUL_I, ">=1" })
+    private static int nonZeroInit(int stop, int inc) {
+        int a = 42;
+        for (int i = 0; i < stop; i++) {
+            a += inc;
+        }
+        return a;
+    }
+
+    @Run(test = "nonZeroInit")
+    private static void runNonZeroInit() {
+        int s = G.ints().restricted(0, Integer.MAX_VALUE).next();
+        int inc = G.ints().next();
+        Asserts.assertEQ(42 + s * inc, nonZeroInit(s, inc));
+    }
+
+    @Test
+    @IR(counts = { IRNode.COUNTED_LOOP, ">=1" })
+    @IR(counts = { IRNode.MUL_I, ">=1" })
+    private static int sideEffectLoopAdd(int[] arr, int inc) {
+        int a = 0;
+        for (int i = 0; i < arr.length; i++) {
+            arr[i] = i;
+            a += inc;
+        }
+        return a;
+    }
+
+    @Run(test = "sideEffectLoopAdd")
+    private static void runSideEffectLoopAdd() {
+        int[] arr = new int[100];
+        int inc = G.ints().next();
+        Asserts.assertEQ(100 * inc, sideEffectLoopAdd(arr, inc));
+    }
+
+    @Test
+    @IR(counts = { IRNode.COUNTED_LOOP, ">=1" })
+    @IR(counts = { IRNode.MUL_I, ">=1" })
+    private static int sideEffectLoopSub(int[] arr, int inc) {
+        int a = 0;
+        for (int i = 0; i < arr.length; i++) {
+            arr[i] = i;
+            a -= inc;
+        }
+        return a;
+    }
+
+    @Run(test = "sideEffectLoopSub")
+    private static void runSideEffectLoopSub() {
+        int[] arr = new int[100];
+        int inc = G.ints().next();
+        Asserts.assertEQ(-100 * inc, sideEffectLoopSub(arr, inc));
+    }
+
+    @Test
+    @IR(counts = { IRNode.COUNTED_LOOP, ">=1" })
+    @IR(counts = { IRNode.MUL_I, ">=2" })
+    @IR(counts = { IRNode.MUL_L, ">=1" })
+    private static long sideEffectLoopMultiIV(int[] arr, int incA, int incB, long incC) {
+        int a = 0;
+        int b = 0;
+        long c = 0;
+        for (int i = 0; i < arr.length; i++) {
+            arr[i] = i;
+            a += incA;
+            b += incB;
+            c += incC;
+        }
+        return a + b + c;
+    }
+
+    @Run(test = "sideEffectLoopMultiIV")
+    private static void runSideEffectLoopMultiIV() {
+        int[] arr = new int[100];
+        int incA = G.ints().next();
+        int incB = G.ints().next();
+        long incC = G.longs().next();
+        int a = 100 * incA;
+        int b = 100 * incB;
+        long c = 100L * incC;
+        long expected = a + b + c;
+        Asserts.assertEQ(expected, sideEffectLoopMultiIV(arr, incA, incB, incC));
+    }
+
+    @Test
+    @IR(failOn = { IRNode.COUNTED_LOOP })
+    @IR(counts = { IRNode.MUL_I, ">=1" })
+    private static int stride3NonMultiple(int stop, int inc) {
+        int a = 0;
+        for (int i = 0; i < stop; i += 3) {
+            a += inc;
+        }
+        return a;
+    }
+
+    @Run(test = "stride3NonMultiple")
+    private static void runStride3NonMultiple() {
+        int s = G.ints().restricted(0, Integer.MAX_VALUE - 3).next();
+        int inc = G.ints().next();
+        Asserts.assertEQ(Math.ceilDiv(s, 3) * inc, stride3NonMultiple(s, inc));
+    }
+
+    @Test
+    @IR(failOn = { IRNode.COUNTED_LOOP })
+    @IR(counts = { IRNode.MUL_I, ">=1" })
+    private static int stride7NonMultiple(int stop, int inc) {
+        int a = 0;
+        for (int i = 0; i < stop; i += 7) {
+            a += inc;
+        }
+        return a;
+    }
+
+    @Run(test = "stride7NonMultiple")
+    private static void runStride7NonMultiple() {
+        int s = G.ints().restricted(0, Integer.MAX_VALUE - 7).next();
+        int inc = G.ints().next();
+        Asserts.assertEQ(Math.ceilDiv(s, 7) * inc, stride7NonMultiple(s, inc));
+    }
+
+    @Test
+    @IR(failOn = { IRNode.COUNTED_LOOP })
+    @IR(counts = { IRNode.MUL_I, ">=1" })
+    private static int nonZeroIVStart(int start, int stop, int inc) {
+        int a = 0;
+        for (int i = start; i < stop; i++) {
+            a += inc;
+        }
+        return a;
+    }
+
+    @Run(test = "nonZeroIVStart")
+    private static void runNonZeroIVStart() {
+        int start = G.ints().restricted(0, Integer.MAX_VALUE / 2).next();
+        int stop = G.ints().restricted(start, Integer.MAX_VALUE).next();
+        int inc = G.ints().next();
+        Asserts.assertEQ((stop - start) * inc, nonZeroIVStart(start, stop, inc));
+    }
+
+    @Test
+    @IR(failOn = { IRNode.COUNTED_LOOP })
+    @IR(counts = { IRNode.MUL_I, ">=1" })
+    private static int nonZeroIVStartStride3(int start, int stop, int inc) {
+        int a = 0;
+        for (int i = start; i < stop; i += 3) {
+            a += inc;
+        }
+        return a;
+    }
+
+    @Run(test = "nonZeroIVStartStride3")
+    private static void runNonZeroIVStartStride3() {
+        int start = G.ints().restricted(0, Integer.MAX_VALUE / 2).next();
+        int stop = G.ints().restricted(start, Integer.MAX_VALUE - 3).next();
+        int inc = G.ints().next();
+        int iters = Math.ceilDiv(stop - start, 3);
+        Asserts.assertEQ(iters * inc, nonZeroIVStartStride3(start, stop, inc));
+    }
+
+    @Test
+    // MAX_VALUE * inc is strength-reduced to shifts
+    @IR(failOn = { IRNode.COUNTED_LOOP, IRNode.MUL_I })
+    private static int countDownMaxRange(int inc) {
+        int a = 0;
+        for (int i = Integer.MAX_VALUE; i > 0; i--) {
+            a += inc;
+        }
+        return a;
+    }
+
+    @Run(test = "countDownMaxRange")
+    private static void runCountDownMaxRange() {
+        int inc = G.ints().next();
+        Asserts.assertEQ(Integer.MAX_VALUE * inc, countDownMaxRange(inc));
+    }
+
+    @Test
+    @IR(failOn = { IRNode.COUNTED_LOOP })
+    @IR(counts = { IRNode.MUL_I, ">=1" })
+    private static int boundaryIncrements(int stop, int inc) {
+        int a = 0;
+        for (int i = 0; i < stop; i++) {
+            a += inc;
+        }
+        return a;
+    }
+
+    @Run(test = "boundaryIncrements")
+    private static void runBoundaryIncrements() {
+        int s = G.ints().restricted(0, Integer.MAX_VALUE).next();
+        int inc = G.ints().next();
+        Asserts.assertEQ(s * Integer.MAX_VALUE, boundaryIncrements(s, Integer.MAX_VALUE));
+        Asserts.assertEQ(s * Integer.MIN_VALUE, boundaryIncrements(s, Integer.MIN_VALUE));
+        Asserts.assertEQ(0, boundaryIncrements(s, 0));
+        Asserts.assertEQ(0, boundaryIncrements(0, inc));
+        Asserts.assertEQ(inc, boundaryIncrements(1, inc));
+        Asserts.assertEQ(0, boundaryIncrements(0, Integer.MAX_VALUE));
+        Asserts.assertEQ(Integer.MAX_VALUE, boundaryIncrements(1, Integer.MAX_VALUE));
+        Asserts.assertEQ(Integer.MIN_VALUE, boundaryIncrements(1, Integer.MIN_VALUE));
+    }
+
+    @Test
+    @IR(failOn = { IRNode.MUL_L }, phase = CompilePhase.BEFORE_CLOOPS) // only MulI for pow exists before
+    @IR(failOn = { IRNode.COUNTED_LOOP })
+    @IR(counts = { IRNode.MUL_L, ">=1" })
+    private static long conditionalAccum(int load, int i) {
+        long x = 0;
+        long pow = (i % 8) * (i % 16);
+        for (int j = 0; j < load; j++) {
+            if (i % 2 == 0) {
+                x += pow;
+            } else {
+                x -= pow;
+            }
+        }
+        return x;
+    }
+
+    @Run(test = "conditionalAccum")
+    private static void runConditionalAccum() {
+        int load = G.ints().restricted(0, Integer.MAX_VALUE).next();
+        int i = G.ints().next();
+        long pow = (i % 8) * (i % 16);
+        long expected = (i % 2 == 0) ? (long) load * pow : -(long) load * pow;
+        Asserts.assertEQ(expected, conditionalAccum(load, i));
+    }
+
+    @Test
+    @Arguments(values = { Argument.NUMBER_42, Argument.NUMBER_42 })
+    @IR(counts = { IRNode.COUNTED_LOOP, ">=1" })
+    private static int loopVariantNotOptimized(int stop, int inc) {
+        int a = 0;
+        for (int i = 0; i < stop; i++) {
+            a += i * inc;
+        }
+        return a;
+    }
+}
