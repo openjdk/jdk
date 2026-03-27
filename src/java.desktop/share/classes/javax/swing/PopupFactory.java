@@ -925,7 +925,7 @@ public class PopupFactory {
               add to that, otherwise
               add to the window. */
             while (!(parent instanceof Window) &&
-                   (parent!=null)) {
+                   (parent != null)) {
                 parent = parent.getParent();
             }
 
