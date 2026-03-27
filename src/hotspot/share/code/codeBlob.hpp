@@ -34,6 +34,7 @@
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
+class AOTCodeReader;
 class ImmutableOopMap;
 class ImmutableOopMapSet;
 class JNIHandleBlock;
@@ -107,9 +108,6 @@ class CodeBlob {
   friend class VMStructs;
   friend class JVMCIVMStructs;
 
-private:
-  void restore_mutable_data(address reloc_data);
-
 protected:
   // order fields from large to small to minimize padding between fields
   ImmutableOopMapSet* _oop_maps;   // OopMap for this CodeBlob
@@ -169,8 +167,8 @@ protected:
 
   void operator delete(void* p) { }
 
-  void prepare_for_archiving_impl();
-  void post_restore_impl();
+  void prepare_for_archiving_impl() NOT_CDS_RETURN;
+  void post_restore_impl() NOT_CDS_RETURN;
 
 public:
 
@@ -304,6 +302,9 @@ public:
   void use_strings(DbgStrings &strings) { _dbg_strings.share(strings); }
 #endif
 
+#if INCLUDE_CDS
+  void restore_mutable_data(address reloc_data);
+
   void copy_to(address buffer) {
     memcpy(buffer, this, this->size());
   }
@@ -314,11 +315,9 @@ public:
 
   // methods to restore a blob from AOT code cache into the CodeCache
   void post_restore();
-  CodeBlob* restore(address code_cache_buffer, const char* name, address archived_reloc_data, ImmutableOopMapSet* archived_oop_maps);
-  static CodeBlob* create(CodeBlob* archived_blob,
-                          const char* name,
-                          address archived_reloc_data,
-                          ImmutableOopMapSet* archived_oop_maps);
+  CodeBlob* restore(address code_cache_buffer, AOTCodeReader* reader);
+  static CodeBlob* create(CodeBlob* archived_blob, AOTCodeReader* reader);
+#endif
 };
 
 //----------------------------------------------------------------------------------------------------

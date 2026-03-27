@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,33 +21,22 @@
  * questions.
  */
 
-package gc.arguments;
-
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.Platform;
-
 /*
  * @test
- * @bug 8015107
- * @summary Tests that VM prints a warning when -XX:CompressedClassSpaceSize
- *          is used together with -XX:-UseCompressedClassPointers
- * @library /test/lib
- * @library /
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @requires vm.opt.CompressedClassSpaceSize == null & vm.opt.UseCompressedClassPointers == null
- * @run driver gc.arguments.TestCompressedClassFlags
+ * @summary Verify that method can end with a switch instruction.
+ * @compile MethodEndsWithLookupSwitch.jasm MethodEndsWithTableSwitch.jasm
+ * @run main/othervm MethodEndsWithSwitch
  */
-public class TestCompressedClassFlags {
+
+public class MethodEndsWithSwitch {
+
+    static void test(String testName) throws Exception {
+        System.out.println("Testing: " + testName);
+        Class c = Class.forName(testName);
+    }
+
     public static void main(String[] args) throws Exception {
-        if (Platform.is64bit()) {
-            OutputAnalyzer output = GCArguments.executeTestJava(
-                "-XX:CompressedClassSpaceSize=1g",
-                "-XX:-UseCompressedClassPointers",
-                "-version");
-            output.shouldContain("warning");
-            output.shouldNotContain("error");
-            output.shouldHaveExitValue(0);
-        }
+        test("MethodEndsWithLookupSwitch");
+        test("MethodEndsWithTableSwitch");
     }
 }

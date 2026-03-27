@@ -22,6 +22,7 @@
  *
  */
 
+#include "code/aotCodeCache.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
 #include "code/relocInfo.hpp"
@@ -39,6 +40,7 @@
 #include "prims/forte.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/icache.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaFrameAnchor.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -188,22 +190,6 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t heade
   assert(_mutable_data == blob_end(), "sanity");
 }
 
-void CodeBlob::restore_mutable_data(address reloc_data) {
-  // Relocation data is now stored as part of the mutable data area; allocate it before copy relocations
-  if (_mutable_data_size > 0) {
-    _mutable_data = (address)os::malloc(_mutable_data_size, mtCode);
-    if (_mutable_data == nullptr) {
-      vm_exit_out_of_memory(_mutable_data_size, OOM_MALLOC_ERROR, "codebuffer: no space for mutable data");
-    }
-  } else {
-    _mutable_data = blob_end(); // default value
-  }
-  if (_relocation_size > 0) {
-    assert(_mutable_data_size > 0, "relocation is part of mutable data section");
-    memcpy((address)relocation_begin(), reloc_data, relocation_size());
-  }
-}
-
 void CodeBlob::purge() {
   assert(_mutable_data != nullptr, "should never be null");
   if (_mutable_data != blob_end()) {
@@ -240,6 +226,23 @@ void CodeBlob::print_code_on(outputStream* st) {
   Disassembler::decode(this, st);
 }
 
+#if INCLUDE_CDS
+void CodeBlob::restore_mutable_data(address reloc_data) {
+  // Relocation data is now stored as part of the mutable data area; allocate it before copy relocations
+  if (_mutable_data_size > 0) {
+    _mutable_data = (address)os::malloc(_mutable_data_size, mtCode);
+    if (_mutable_data == nullptr) {
+      vm_exit_out_of_memory(_mutable_data_size, OOM_MALLOC_ERROR, "codebuffer: no space for mutable data");
+    }
+  } else {
+    _mutable_data = blob_end(); // default value
+  }
+  if (_relocation_size > 0) {
+    assert(_mutable_data_size > 0, "relocation is part of mutable data section");
+    memcpy((address)relocation_begin(), reloc_data, relocation_size());
+  }
+}
+
 void CodeBlob::prepare_for_archiving_impl() {
   set_name(nullptr);
   _oop_maps = nullptr;
@@ -269,24 +272,15 @@ void CodeBlob::post_restore() {
   vptr(_kind)->post_restore(this);
 }
 
-CodeBlob* CodeBlob::restore(address code_cache_buffer,
-                            const char* name,
-                            address archived_reloc_data,
-                            ImmutableOopMapSet* archived_oop_maps)
+CodeBlob* CodeBlob::restore(address code_cache_buffer, AOTCodeReader* reader)
 {
   copy_to(code_cache_buffer);
   CodeBlob* code_blob = (CodeBlob*)code_cache_buffer;
-  code_blob->set_name(name);
-  code_blob->restore_mutable_data(archived_reloc_data);
-  code_blob->set_oop_maps(archived_oop_maps);
+  reader->restore(code_blob);
   return code_blob;
 }
 
-CodeBlob* CodeBlob::create(CodeBlob* archived_blob,
-                           const char* name,
-                           address archived_reloc_data,
-                           ImmutableOopMapSet* archived_oop_maps
-                          )
+CodeBlob* CodeBlob::create(CodeBlob* archived_blob, AOTCodeReader* reader)
 {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
 
@@ -298,10 +292,7 @@ CodeBlob* CodeBlob::create(CodeBlob* archived_blob,
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     address code_cache_buffer = (address)CodeCache::allocate(size, CodeBlobType::NonNMethod);
     if (code_cache_buffer != nullptr) {
-      blob = archived_blob->restore(code_cache_buffer,
-                                    name,
-                                    archived_reloc_data,
-                                    archived_oop_maps);
+      blob = archived_blob->restore(code_cache_buffer, reader);
       assert(blob != nullptr, "sanity check");
 
       // Flush the code block
@@ -314,6 +305,8 @@ CodeBlob* CodeBlob::create(CodeBlob* archived_blob,
   }
   return blob;
 }
+
+#endif // INCLUDE_CDS
 
 //-----------------------------------------------------------------------------------------
 // Creates a RuntimeBlob from a CodeBuffer and copy code and relocation info.
@@ -332,6 +325,9 @@ RuntimeBlob::RuntimeBlob(
              align_up(cb->total_relocation_size(), oopSize))
 {
   cb->copy_code_and_locs_to(this);
+
+  // Flush generated code
+  ICache::invalidate_range(code_begin(), code_size());
 }
 
 void RuntimeBlob::free(RuntimeBlob* blob) {
