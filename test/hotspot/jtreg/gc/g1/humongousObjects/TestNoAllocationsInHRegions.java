@@ -45,17 +45,17 @@ import java.util.stream.Collectors;
  *
  * @run main/othervm -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -XX:G1HeapRegionSize=1M -Xms200m -Xmx200m -XX:MaxTenuringThreshold=0
- *                   -Xlog:gc+start=debug,gc=trace:file=TestNoAllocationsInHRegions10.log
+ *                   -Xlog:gc=trace:file=TestNoAllocationsInHRegions10.log
  *                   gc.g1.humongousObjects.TestNoAllocationsInHRegions 30 10
  *
  * @run main/othervm -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -XX:G1HeapRegionSize=1M -Xms200m -Xmx200m -XX:MaxTenuringThreshold=0
- *                   -Xlog:gc+start=debug,gc=trace:file=TestNoAllocationsInHRegions50.log
+ *                   -Xlog:gc=trace:file=TestNoAllocationsInHRegions50.log
  *                   gc.g1.humongousObjects.TestNoAllocationsInHRegions 30 50
  *
  * @run main/othervm -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -XX:G1HeapRegionSize=1M -Xms200m -Xmx200m -XX:MaxTenuringThreshold=0
- *                   -Xlog:gc+start=debug,gc=trace:file=TestNoAllocationsInHRegions70.log
+ *                   -Xlog:gc=trace:file=TestNoAllocationsInHRegions70.log
  *                   gc.g1.humongousObjects.TestNoAllocationsInHRegions 30 70
  */
 public class TestNoAllocationsInHRegions {

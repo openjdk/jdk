@@ -31,7 +31,7 @@ package gc.stress;
  * @requires vm.gc.G1
  * @run main/othervm/timeout=200 -Xmx128m -XX:G1HeapWastePercent=0 -XX:G1MixedGCCountTarget=1
  *              -XX:+UseG1GC -XX:G1HeapRegionSize=1m -XX:+G1UseAdaptiveIHOP
- *              -Xlog:gc,gc+start,gc+ihop=debug,gc+ihop+ergo=debug,gc+ergo=debug:TestStressIHOPMultiThread1.log
+ *              -Xlog:gc+ihop=debug,gc+ihop+ergo=debug,gc+ergo=debug:TestStressIHOPMultiThread1.log
  *              -Dtimeout=2 -DheapUsageMinBound=30 -DheapUsageMaxBound=80
  *              -Dthreads=2 gc.stress.TestStressIHOPMultiThread
  */
@@ -41,7 +41,7 @@ package gc.stress;
  * @requires vm.gc.G1
  * @run main/othervm/timeout=200 -Xmx256m -XX:G1HeapWastePercent=0 -XX:G1MixedGCCountTarget=1
  *              -XX:+UseG1GC -XX:G1HeapRegionSize=2m -XX:+G1UseAdaptiveIHOP
- *              -Xlog:gc,gc+start,gc+ihop=debug,gc+ihop+ergo=debug,gc+ergo=debug:TestStressIHOPMultiThread2.log
+ *              -Xlog:gc+ihop=debug,gc+ihop+ergo=debug,gc+ergo=debug:TestStressIHOPMultiThread2.log
  *              -Dtimeout=2 -DheapUsageMinBound=60 -DheapUsageMaxBound=90
  *              -Dthreads=3 gc.stress.TestStressIHOPMultiThread
  */
@@ -51,7 +51,7 @@ package gc.stress;
  * @requires vm.gc.G1
  * @run main/othervm/timeout=200 -Xmx256m -XX:G1HeapWastePercent=0 -XX:G1MixedGCCountTarget=1
  *              -XX:+UseG1GC -XX:G1HeapRegionSize=4m -XX:-G1UseAdaptiveIHOP
- *              -Xlog:gc,gc+start,gc+ihop=debug,gc+ihop+ergo=debug,gc+ergo=debug:TestStressIHOPMultiThread3.log
+ *              -Xlog:gc+ihop=debug,gc+ihop+ergo=debug,gc+ergo=debug:TestStressIHOPMultiThread3.log
  *              -Dtimeout=2 -DheapUsageMinBound=40 -DheapUsageMaxBound=90
  *              -Dthreads=5 gc.stress.TestStressIHOPMultiThread
  */
@@ -61,7 +61,7 @@ package gc.stress;
  * @requires vm.gc.G1
  * @run main/othervm/timeout=200 -Xmx128m -XX:G1HeapWastePercent=0 -XX:G1MixedGCCountTarget=1
  *              -XX:+UseG1GC -XX:G1HeapRegionSize=8m -XX:+G1UseAdaptiveIHOP
- *              -Xlog:gc,gc+start,gc+ihop=debug,gc+ihop+ergo=debug,gc+ergo=debug:TestStressIHOPMultiThread4.log
+ *              -Xlog:gc+ihop=debug,gc+ihop+ergo=debug,gc+ergo=debug:TestStressIHOPMultiThread4.log
  *              -Dtimeout=2 -DheapUsageMinBound=20 -DheapUsageMaxBound=90
  *              -Dthreads=10 gc.stress.TestStressIHOPMultiThread
  */
@@ -71,7 +71,7 @@ package gc.stress;
  * @requires vm.gc.G1
  * @run main/othervm/timeout=200 -Xmx512m -XX:G1HeapWastePercent=0 -XX:G1MixedGCCountTarget=1
  *              -XX:+UseG1GC -XX:G1HeapRegionSize=16m -XX:+G1UseAdaptiveIHOP
- *              -Xlog:gc,gc+start,gc+ihop=debug,gc+ihop+ergo=debug,gc+ergo=debug:TestStressIHOPMultiThread5.log
+ *              -Xlog:gc+ihop=debug,gc+ihop+ergo=debug,gc+ergo=debug:TestStressIHOPMultiThread5.log
  *              -Dtimeout=2 -DheapUsageMinBound=20 -DheapUsageMaxBound=90
  *              -Dthreads=17 gc.stress.TestStressIHOPMultiThread
  */
