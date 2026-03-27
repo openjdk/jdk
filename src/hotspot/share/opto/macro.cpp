@@ -328,6 +328,7 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
     adr_type = _igvn.type(base)->is_ptr()->add_offset(offset);
   } else {
     if (!ac->modifies(offset, offset, &_igvn, true)) {
+      // If the arraycopy does not copy to this offset, we cannot generate a rematerialization load for it.
       return nullptr;
     }
     assert(ac->in(ArrayCopyNode::Dest) == alloc->result_cast(), "arraycopy destination should be allocation's result");
