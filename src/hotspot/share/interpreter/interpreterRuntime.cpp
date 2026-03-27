@@ -243,9 +243,9 @@ JRT_ENTRY(void, InterpreterRuntime::multianewarray(JavaThread* current, jint* fi
   // We may want to pass in more arguments - could make this slightly faster
   LastFrameAccessor last_frame(current);
   ConstantPool* constants = last_frame.method()->constants();
-  int          i = last_frame.get_index_u2(Bytecodes::_multianewarray);
-  Klass* klass   = constants->klass_at(i, CHECK);
-  int   nof_dims = last_frame.number_of_dimensions();
+  int i = last_frame.get_index_u2(Bytecodes::_multianewarray);
+  Klass* klass = constants->klass_at(i, CHECK);
+  int nof_dims = last_frame.number_of_dimensions();
   assert(klass->is_klass(), "not a class");
   assert(nof_dims >= 1, "multianewarray rank must be nonzero");
 
@@ -756,11 +756,9 @@ JRT_LEAF(void, InterpreterRuntime::monitorexit(BasicObjectLock* elem))
   elem->set_obj(nullptr);
 JRT_END
 
-
 JRT_ENTRY(void, InterpreterRuntime::throw_illegal_monitor_state_exception(JavaThread* current))
   THROW(vmSymbols::java_lang_IllegalMonitorStateException());
 JRT_END
-
 
 JRT_ENTRY(void, InterpreterRuntime::new_illegal_monitor_state_exception(JavaThread* current))
   // Returns an illegal exception to install into the current thread. The

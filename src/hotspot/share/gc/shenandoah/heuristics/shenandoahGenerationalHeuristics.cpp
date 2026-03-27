@@ -80,19 +80,11 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
   assert(collection_set->is_empty(), "Collection set must be empty here");
 
   _add_regions_to_old = 0;
-  ShenandoahInPlacePromotionPlanner in_place_promotions(heap);
 
-  // Find the amount that will be promoted, regions that will be promoted in
-  // place, and preselected older regions that will be promoted by evacuation.
-  compute_evacuation_budgets(in_place_promotions, heap);
+  // Choose the collection set
+  filter_regions(collection_set);
 
-  // Choose the collection set, including the regions preselected above for promotion into the old generation.
-  filter_regions(in_place_promotions, collection_set);
-
-  // Even if collection_set->is_empty(), we want to adjust budgets, making reserves available to mutator.
-  adjust_evacuation_budgets(heap, collection_set);
-
-  if (_generation->is_global()) {
+  if (!collection_set->is_empty() && _generation->is_global()) {
     // We have just chosen a collection set for a global cycle. The mark bitmap covering old regions is complete, so
     // the remembered set scan can use that to avoid walking into garbage. When the next old mark begins, we will
     // use the mark bitmap to make the old regions parsable by coalescing and filling any unmarked objects. Thus,
@@ -229,8 +221,7 @@ void ShenandoahGenerationalHeuristics::compute_evacuation_budgets(ShenandoahInPl
   // case of a GLOBAL gc.  During choose_collection_set() of GLOBAL, old will be expanded on demand.
 }
 
-void ShenandoahGenerationalHeuristics::filter_regions(ShenandoahInPlacePromotionPlanner& in_place_promotions,
-                                                      ShenandoahCollectionSet* collection_set) {
+void ShenandoahGenerationalHeuristics::filter_regions(ShenandoahCollectionSet* collection_set) {
   auto heap = ShenandoahGenerationalHeap::heap();
   const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
 
@@ -270,21 +261,12 @@ void ShenandoahGenerationalHeuristics::filter_regions(ShenandoahInPlacePromotion
         immediate_garbage += garbage;
         region->make_trash_immediate();
       } else {
-        if (collection_set->is_in(i)) {
-          assert(heap->is_tenurable(region), "Preselected region %zu must be tenurable", i);
-        } else if (region->is_young() && heap->is_tenurable(region)) {
-          // Note that for GLOBAL GC, region may be OLD, and OLD regions do not qualify for pre-selection
-
-          // This region is old enough to be promoted, but it was not preselected, either because its garbage is below
-          // old garbage threshold so it will be promoted in place, or because there is insufficient room
-          // in old gen to hold the evacuated copies of this region's live data.  In either case, we choose not to
-          // place this region into the collection set.
-        } else {
-          // This is our candidate for later consideration.
-          assert(region->get_top_before_promote() == nullptr, "Cannot add region %zu scheduled for in-place-promotion to the collection set", i);
-          candidates[cand_idx].set_region_and_garbage(region, garbage);
-          cand_idx++;
-        }
+        // This is our candidate for later consideration. Note that this region
+        // could still be promoted in place and may not necessarily end up in the
+        // collection set.
+        assert(region->get_top_before_promote() == nullptr, "Cannot add region %zu scheduled for in-place-promotion to the collection set", i);
+        candidates[cand_idx].set_region_and_garbage(region, garbage);
+        cand_idx++;
       }
     } else if (region->is_humongous_start()) {
       // Reclaim humongous regions here, and count them as the immediate garbage
@@ -310,18 +292,25 @@ void ShenandoahGenerationalHeuristics::filter_regions(ShenandoahInPlacePromotion
          PROPERFMTARGS(immediate_garbage), PROPERFMTARGS(total_garbage));
 
   const size_t immediate_percent = (total_garbage == 0) ? 0 : (immediate_garbage * 100 / total_garbage);
-  const bool has_preselected_regions = !collection_set->is_empty();
-  if (has_preselected_regions || (immediate_percent <= ShenandoahImmediateThreshold)) {
+  ShenandoahInPlacePromotionPlanner in_place_promotions(heap);
+  if (immediate_percent <= ShenandoahImmediateThreshold) {
+
+    // Find the amount that will be promoted, regions that will be promoted in
+    // place, and preselected older regions that will be promoted by evacuation.
+    compute_evacuation_budgets(in_place_promotions, heap);
+
     // Call the subclasses to add young-gen regions into the collection set.
     choose_collection_set_from_regiondata(collection_set, candidates, cand_idx, immediate_garbage + free);
-  }
 
-  if (collection_set->has_old_regions()) {
-    heap->shenandoah_policy()->record_mixed_cycle();
+    // Even if collection_set->is_empty(), we want to adjust budgets, making reserves available to mutator.
+    adjust_evacuation_budgets(heap, collection_set);
+
+    if (collection_set->has_old_regions()) {
+      heap->shenandoah_policy()->record_mixed_cycle();
+    }
   }
 
   collection_set->summarize(total_garbage, immediate_garbage, immediate_regions);
-
   ShenandoahTracer::report_evacuation_info(collection_set,
                                            free_regions,
                                            in_place_promotions.humongous_region_stats().count,
@@ -375,7 +364,7 @@ size_t ShenandoahGenerationalHeuristics::select_aged_regions(ShenandoahInPlacePr
     }
 
     if (!r->is_regular()) {
-      if (r->is_humongous() && heap->is_tenurable(r)) {
+      if (r->is_humongous_start() && heap->is_tenurable(r)) {
         in_place_promotions.prepare(r);
       }
       // Nothing else to be done for humongous regions
@@ -509,7 +498,11 @@ void ShenandoahGenerationalHeuristics::adjust_evacuation_budgets(ShenandoahHeap*
   size_t young_evacuated = collection_set->get_live_bytes_in_untenurable_regions();
   size_t young_evacuated_reserve_used = (size_t) (ShenandoahEvacWaste * double(young_evacuated));
 
+  // In top_off_collection_set(), we shrunk planned future reserve by _add_regions_to_old * region_size_bytes, but we
+  // didn't shrink available. The current reserve is not affected by the planned future reserve. Current available is
+  // larger than planned available by the planned adjustment amount.
   size_t total_young_available = young_generation->available_with_reserve() - _add_regions_to_old * region_size_bytes;
+
   assert(young_evacuated_reserve_used <= total_young_available, "Cannot evacuate (%zu) more than is available in young (%zu)",
          young_evacuated_reserve_used, total_young_available);
   young_generation->set_evacuation_reserve(young_evacuated_reserve_used);

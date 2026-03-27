@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,6 +20,9 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -68,6 +71,13 @@ import java.util.zip.ZipOutputStream;
 
 import static java.nio.file.StandardOpenOption.*;
 import static java.nio.file.StandardCopyOption.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /*
  * Tests various zipfs operations.
@@ -78,57 +88,46 @@ import static java.nio.file.StandardCopyOption.*;
  *      8131067 8034802 8210899 8273961 8271079 8299864
  * @summary Test Zip filesystem provider
  * @modules jdk.zipfs
- * @run main ZipFSTester
- * @run main/othervm ZipFSTester
+ * @run junit ZipFSTester
+ * @run junit/othervm ZipFSTester
  */
-
 public class ZipFSTester {
-    public static void main(String[] args) throws Exception {
-        // create JAR file for test, actual contents don't matter
-        Path jarFile = Utils.createJarFile("tester.jar",
+
+    private static final Random RDM = new Random();
+
+    // create JAR file for test, actual contents don't matter
+    static Path jarFile;
+
+    @BeforeAll
+    static void setup() throws Exception {
+        jarFile = Utils.createJarFile("tester.jar",
                 "META-INF/MANIFEST.MF",
                 "dir1/foo",
                 "dir2/bar",
                 "dir1/dir3/fooo");
-
-        try (FileSystem fs = newZipFileSystem(jarFile, Collections.emptyMap())) {
-            test0(fs);
-            test1(fs);
-            test2(fs);
-            testFileStoreNullArgs(fs); // more tests
-        }
-        testStreamChannel();
-        testTime(jarFile);
-        test8069211();
-        test8131067();
     }
 
-    private static final Random RDM = new Random();
-
-    static void test0(FileSystem fs)
-        throws Exception
-    {
+    @Test
+    void test0() throws Exception {
         List<String> list = new LinkedList<>();
-        try (ZipFile zf = new ZipFile(fs.toString())) {
+        try (var fs = newZipFileSystem(jarFile, Map.of());
+             ZipFile zf = new ZipFile(fs.toString())) {
             Enumeration<? extends ZipEntry> zes = zf.entries();
             while (zes.hasMoreElements()) {
                 list.add(zes.nextElement().getName());
             }
             for (String pname : list) {
                 Path path = fs.getPath(pname);
-                if (!Files.exists(path))
-                    throw new RuntimeException("path existence check failed!");
+                assertTrue(Files.exists(path), "path existence check failed!");
                 while ((path = path.getParent()) != null) {
-                    if (!Files.exists(path))
-                        throw new RuntimeException("parent existence check failed!");
+                    assertTrue(Files.exists(path), "parent existence check failed!");
                 }
             }
         }
     }
 
-    static void test1(FileSystem fs0)
-        throws Exception
-    {
+    @Test
+    void test1() throws Exception {
         // prepare a src for testing
         Path src = getTempPath();
         String tmpName = src.toString();
@@ -142,11 +141,12 @@ public class ZipFSTester {
         Path tmpfsPath = getTempPath();
         Map<String, Object> env = new HashMap<String, Object>();
         env.put("create", "true");
-        try (FileSystem copy = newZipFileSystem(tmpfsPath, env)) {
-            z2zcopy(fs0, copy, "/", 0);
+        try (var fs = newZipFileSystem(jarFile, Map.of());
+             FileSystem copy = newZipFileSystem(tmpfsPath, env)) {
+            z2zcopy(fs, copy, "/", 0);
 
             // copy the test jar itself in
-            Files.copy(Paths.get(fs0.toString()), copy.getPath("/foo.jar"));
+            Files.copy(Paths.get(fs.toString()), copy.getPath("/foo.jar"));
             Path zpath = copy.getPath("/foo.jar");
             try (FileSystem zzfs = FileSystems.newFileSystem(zpath)) {
                 Files.copy(src, zzfs.getPath("/srcInjarjar"));
@@ -158,23 +158,15 @@ public class ZipFSTester {
             FileSystemProvider provider = fs.provider();
             // newFileSystem(path...) should not throw exception
             try (FileSystem fsPath = provider.newFileSystem(tmpfsPath, new HashMap<String, Object>())){}
-            try (FileSystem fsUri = provider.newFileSystem(
-                     new URI("jar", tmpfsPath.toUri().toString(), null),
-                     new HashMap<String, Object>()))
-            {
-                throw new RuntimeException("newFileSystem(URI...) does not throw exception");
-            } catch (FileSystemAlreadyExistsException fsaee) {}
-
-            try {
-                provider.newFileSystem(new File(System.getProperty("test.src", ".")).toPath(),
-                                       new HashMap<String, Object>());
-                throw new RuntimeException("newFileSystem() opens a directory as zipfs");
-            } catch (UnsupportedOperationException uoe) {}
-
-            try {
-                provider.newFileSystem(src, new HashMap<String, Object>());
-                throw new RuntimeException("newFileSystem() opens a non-zip file as zipfs");
-            } catch (UnsupportedOperationException uoe) {}
+            assertThrows(FileSystemAlreadyExistsException.class,
+                    () -> provider.newFileSystem(new URI("jar", tmpfsPath.toUri().toString(), null),
+                    new HashMap<>()), "newFileSystem(URI...) does not throw exception");
+            assertThrows(UnsupportedOperationException.class,
+                    () -> provider.newFileSystem(new File(System.getProperty("test.src", ".")).toPath(),
+                    new HashMap<>()), "newFileSystem() opens a directory as zipfs");
+            assertThrows(UnsupportedOperationException.class,
+                    () -> provider.newFileSystem(src, new HashMap<String, Object>()),
+                    "newFileSystem() opens a non-zip file as zipfs");
 
             // walk
             walk(fs.getPath("/"));
@@ -193,15 +185,13 @@ public class ZipFSTester {
 
             // delete
             Files.delete(dst);
-            if (Files.exists(dst))
-                throw new RuntimeException("Failed!");
+            assertFalse(Files.exists(dst));
 
             // moveout
             Path dst3 = Paths.get(tmpName + "_Tmp");
             Files.move(dst2, dst3);
             checkEqual(src, dst3);
-            if (Files.exists(dst2))
-                throw new RuntimeException("Failed!");
+            assertFalse(Files.exists(dst2));
 
             // copyback + move
             Files.copy(dst3, dst);
@@ -211,11 +201,9 @@ public class ZipFSTester {
 
             // delete
             Files.delete(dst4);
-            if (Files.exists(dst4))
-                throw new RuntimeException("Failed!");
+            assertFalse(Files.exists(dst4));
             Files.delete(dst3);
-            if (Files.exists(dst3))
-                throw new RuntimeException("Failed!");
+            assertFalse(Files.exists(dst3));
 
             // move (existing entry)
             Path dst5 = fs.getPath("META-INF/MANIFEST.MF");
@@ -227,12 +215,7 @@ public class ZipFSTester {
 
             // newInputStream on dir
             Path parent = dst2.getParent();
-            try {
-                Files.newInputStream(parent);
-                throw new RuntimeException("Failed");
-            } catch (FileSystemException e) {
-                // expected fse
-            }
+            assertThrows(FileSystemException.class, () -> Files.newInputStream(parent));
 
             // rmdirs
             try {
@@ -278,8 +261,8 @@ public class ZipFSTester {
         }
     }
 
-    static void test2(FileSystem fs) throws Exception {
-
+    @Test
+    void test2() throws Exception {
         Path fs1Path = getTempPath();
         Path fs2Path = getTempPath();
         Path fs3Path = getTempPath();
@@ -293,129 +276,137 @@ public class ZipFSTester {
         final FileSystem fs3 = newZipFileSystem(fs3Path, env);
 
         System.out.println("copy src: fs -> fs0...");
-        z2zcopy(fs, fs0, "/", 0);   // copy fs -> fs1
-        fs0.close();                // dump to file
+        try (var fs = newZipFileSystem(jarFile, Map.of())) {
+            z2zcopy(fs, fs0, "/", 0);   // copy fs -> fs1
+            fs0.close();                // dump to file
 
-        System.out.println("open fs0 as fs1");
-        env = new HashMap<String, Object>();
-        final FileSystem fs1 = newZipFileSystem(fs1Path, env);
+            System.out.println("open fs0 as fs1");
+            env = new HashMap<String, Object>();
+            final FileSystem fs1 = newZipFileSystem(fs1Path, env);
 
-        System.out.println("listing...");
-        final ArrayList<String> files = new ArrayList<>();
-        final ArrayList<String> dirs = new ArrayList<>();
-        list(fs1.getPath("/"), files, dirs);
+            System.out.println("listing...");
+            final ArrayList<String> files = new ArrayList<>();
+            final ArrayList<String> dirs = new ArrayList<>();
+            list(fs1.getPath("/"), files, dirs);
 
-        Thread t0 = new Thread(new Runnable() {
-            public void run() {
-                List<String> list = new ArrayList<>(dirs);
-                Collections.shuffle(list);
-                for (String path : list) {
-                    try {
-                        z2zcopy(fs1, fs2, path, 0);
-                    } catch (Exception x) {
-                        x.printStackTrace();
-                    }
-                }
-            }
-
-        });
-
-        Thread t1 = new Thread(new Runnable() {
-            public void run() {
-                List<String> list = new ArrayList<>(dirs);
-                Collections.shuffle(list);
-                for (String path : list) {
-                    try {
-                        z2zcopy(fs1, fs2, path, 1);
-                    } catch (Exception x) {
-                        x.printStackTrace();
-                    }
-                }
-            }
-
-        });
-
-        Thread t2 = new Thread(new Runnable() {
-            public void run() {
-                List<String> list = new ArrayList<>(dirs);
-                Collections.shuffle(list);
-                for (String path : list) {
-                    try {
-                        z2zcopy(fs1, fs2, path, 2);
-                    } catch (Exception x) {
-                        x.printStackTrace();
-                    }
-                }
-            }
-
-        });
-
-        Thread t3 = new Thread(new Runnable() {
-            public void run() {
-                List<String> list = new ArrayList<>(files);
-                Collections.shuffle(list);
-                while (!list.isEmpty()) {
-                    Iterator<String> itr = list.iterator();
-                    while (itr.hasNext()) {
-                        String path = itr.next();
+            Thread t0 = new Thread(new Runnable() {
+                public void run() {
+                    List<String> list = new ArrayList<>(dirs);
+                    Collections.shuffle(list);
+                    for (String path : list) {
                         try {
-                            if (Files.exists(fs2.getPath(path))) {
-                                z2zmove(fs2, fs3, path);
-                                itr.remove();
-                            }
-                        } catch (FileAlreadyExistsException x) {
-                            itr.remove();
+                            z2zcopy(fs1, fs2, path, 0);
                         } catch (Exception x) {
                             x.printStackTrace();
                         }
                     }
                 }
+
+            });
+
+            Thread t1 = new Thread(new Runnable() {
+                public void run() {
+                    List<String> list = new ArrayList<>(dirs);
+                    Collections.shuffle(list);
+                    for (String path : list) {
+                        try {
+                            z2zcopy(fs1, fs2, path, 1);
+                        } catch (Exception x) {
+                            x.printStackTrace();
+                        }
+                    }
+                }
+
+            });
+
+            Thread t2 = new Thread(new Runnable() {
+                public void run() {
+                    List<String> list = new ArrayList<>(dirs);
+                    Collections.shuffle(list);
+                    for (String path : list) {
+                        try {
+                            z2zcopy(fs1, fs2, path, 2);
+                        } catch (Exception x) {
+                            x.printStackTrace();
+                        }
+                    }
+                }
+
+            });
+
+            Thread t3 = new Thread(new Runnable() {
+                public void run() {
+                    List<String> list = new ArrayList<>(files);
+                    Collections.shuffle(list);
+                    while (!list.isEmpty()) {
+                        Iterator<String> itr = list.iterator();
+                        while (itr.hasNext()) {
+                            String path = itr.next();
+                            try {
+                                if (Files.exists(fs2.getPath(path))) {
+                                    z2zmove(fs2, fs3, path);
+                                    itr.remove();
+                                }
+                            } catch (FileAlreadyExistsException x) {
+                                itr.remove();
+                            } catch (Exception x) {
+                                x.printStackTrace();
+                            }
+                        }
+                    }
+                }
+
+            });
+
+            System.out.println("copying/removing...");
+            t0.start();
+            t1.start();
+            t2.start();
+            t3.start();
+            t0.join();
+            t1.join();
+            t2.join();
+            t3.join();
+
+            System.out.println("closing: fs1, fs2");
+            fs1.close();
+            fs2.close();
+
+            int failed = 0;
+            System.out.println("checkEqual: fs vs fs3");
+            for (String path : files) {
+                try {
+                    checkEqual(fs.getPath(path), fs3.getPath(path));
+                } catch (IOException x) {
+                    //x.printStackTrace();
+                    failed++;
+                }
             }
+            System.out.println("closing: fs3");
+            fs3.close();
 
-        });
+            System.out.println("opening: fs3 as fs4");
+            FileSystem fs4 = newZipFileSystem(fs3Path, env);
 
-        System.out.println("copying/removing...");
-        t0.start(); t1.start(); t2.start(); t3.start();
-        t0.join(); t1.join(); t2.join(); t3.join();
 
-        System.out.println("closing: fs1, fs2");
-        fs1.close();
-        fs2.close();
+            ArrayList<String> files2 = new ArrayList<>();
+            ArrayList<String> dirs2 = new ArrayList<>();
+            list(fs4.getPath("/"), files2, dirs2);
 
-        int failed = 0;
-        System.out.println("checkEqual: fs vs fs3");
-        for (String path : files) {
-            try {
-                checkEqual(fs.getPath(path), fs3.getPath(path));
-            } catch (IOException x) {
-                //x.printStackTrace();
-                failed++;
+            System.out.println("checkEqual: fs vs fs4");
+            for (String path : files2) {
+                checkEqual(fs.getPath(path), fs4.getPath(path));
             }
+            System.out.println("walking: fs4");
+            walk(fs4.getPath("/"));
+            System.out.println("closing: fs4");
+            fs4.close();
+            System.out.printf("failed=%d%n", failed);
+
+            Files.delete(fs1Path);
+            Files.delete(fs2Path);
+            Files.delete(fs3Path);
         }
-        System.out.println("closing: fs3");
-        fs3.close();
-
-        System.out.println("opening: fs3 as fs4");
-        FileSystem fs4 = newZipFileSystem(fs3Path, env);
-
-
-        ArrayList<String> files2 = new ArrayList<>();
-        ArrayList<String> dirs2 = new ArrayList<>();
-        list(fs4.getPath("/"), files2, dirs2);
-
-        System.out.println("checkEqual: fs vs fs4");
-        for (String path : files2) {
-            checkEqual(fs.getPath(path), fs4.getPath(path));
-        }
-        System.out.println("walking: fs4");
-        walk(fs4.getPath("/"));
-        System.out.println("closing: fs4");
-        fs4.close();
-        System.out.printf("failed=%d%n", failed);
-
-        Files.delete(fs1Path);
-        Files.delete(fs2Path);
-        Files.delete(fs3Path);
     }
 
     static final int METHOD_STORED     = 0;
@@ -448,29 +439,21 @@ public class ZipFSTester {
         CRC32 crc32 = new CRC32();
         crc32.update(expected);
 
-        if (((Long)Files.getAttribute(path, "zip:crc")).intValue() !=
-            (int)crc32.getValue()) {
-            System.out.printf(" getAttribute.crc <%s> failed %x vs %x ...%n",
+        assertEquals((int)crc32.getValue(), ((Long)Files.getAttribute(path, "zip:crc")).intValue(),
+                " getAttribute.crc <%s> failed %x vs %x ...%n".formatted(
                               path.toString(),
                               ((Long)Files.getAttribute(path, "zip:crc")).intValue(),
-                              (int)crc32.getValue());
-            throw new RuntimeException("CHECK FAILED!");
-        }
+                              (int)crc32.getValue()));
 
-        if (((Long)Files.getAttribute(path, "zip:size")).intValue() != expected.length) {
-            System.out.printf(" getAttribute.size <%s> failed %x vs %x ...%n",
+        assertEquals(expected.length, ((Long)Files.getAttribute(path, "zip:size")).intValue(),
+                " getAttribute.size <%s> failed %x vs %x ...%n".formatted(
                               path.toString(),
                               ((Long)Files.getAttribute(path, "zip:size")).intValue(),
-                              expected.length);
-            throw new RuntimeException("CHECK FAILED!");
-        }
+                              expected.length));
 
         //streams
         try (InputStream is = Files.newInputStream(path)) {
-            if (!Arrays.equals(is.readAllBytes(), expected)) {
-                System.out.printf(" newInputStream <%s> failed...%n", path.toString());
-                throw new RuntimeException("CHECK FAILED!");
-            }
+            assertArrayEquals(expected, is.readAllBytes(), " newInputStream <%s> failed...%n".formatted(path.toString()));
         }
 
         // channels -- via sun.nio.ch.ChannelInputStream
@@ -478,17 +461,12 @@ public class ZipFSTester {
             InputStream is = Channels.newInputStream(sbc)) {
 
             // check all bytes match
-            if (!Arrays.equals(is.readAllBytes(), expected)) {
-                System.out.printf(" newByteChannel <%s> failed...%n", path.toString());
-                throw new RuntimeException("CHECK FAILED!");
-            }
+            assertArrayEquals(expected, is.readAllBytes(),
+                    " newByteChannel <%s> failed...%n".formatted(path.toString()));
 
             // Check if read position is at the end
-            if (sbc.position() != expected.length) {
-                System.out.printf("pos [%s]: size=%d, position=%d%n",
-                                  path.toString(), expected.length, sbc.position());
-                throw new RuntimeException("CHECK FAILED!");
-            }
+            assertEquals(expected.length, sbc.position(), "pos [%s]: size=%d, position=%d%n".formatted(
+                                  path.toString(), expected.length, sbc.position()));
 
             // Check position(x) + read() at the random/specific pos/len
             byte[] buf = new byte[1024];
@@ -503,21 +481,20 @@ public class ZipFSTester {
                 // System.out.printf("  --> %d, %d%n", pos, len);
                 bb.position(0).limit(len);    // bb.flip().limit(len);
                 int expectedReadResult = sbc.size() == 0 ? -1 : len;
-                if (sbc.position(pos).position() != pos ||
+                assertFalse(sbc.position(pos).position() != pos ||
                     sbc.read(bb) != expectedReadResult ||
-                    !Arrays.equals(buf, 0, bb.position(), expected, pos, pos + len)) {
-                    System.out.printf("read()/position() failed%n");
-                    throw new RuntimeException("CHECK FAILED!");
-                }
+                    !Arrays.equals(buf, 0, bb.position(), expected, pos, pos + len),
+                        "read()/position() failed%n");
             }
         } catch (IOException x) {
             x.printStackTrace();
-            throw new RuntimeException("CHECK FAILED!");
+            fail("CHECK FAILED!");
         }
     }
 
     // test entry stream/channel reading
-    static void testStreamChannel() throws Exception {
+    @Test
+    void testStreamChannel() throws Exception {
         Path zpath = getTempPath();
         try {
             var crc = new CRC32();
@@ -542,7 +519,7 @@ public class ZipFSTester {
                    zos.closeEntry();
                 }
             }
-            try (var zfs = newZipFileSystem(zpath, Collections.emptyMap())) {
+            try (var zfs = newZipFileSystem(zpath, Map.of())) {
                 for (Object[] e : entries) {
                     Path path = zfs.getPath((String)e[0]);
                     byte[] bytes = (byte[])e[2];
@@ -561,7 +538,7 @@ public class ZipFSTester {
                     }
                 }
             }
-            try (var zfs = newZipFileSystem(zpath, Collections.emptyMap())) {
+            try (var zfs = newZipFileSystem(zpath, Map.of())) {
                 for (Object[] e : entries) {
                     checkRead(zfs.getPath((String)e[0]), (byte[])e[2]);
                 }
@@ -574,7 +551,7 @@ public class ZipFSTester {
                     Files.write(zfs.getPath((String)e[0]), (byte[])e[2]);
                 }
             }
-            try (var zfs = newZipFileSystem(zpath, Collections.emptyMap())) {
+            try (var zfs = newZipFileSystem(zpath, Map.of())) {
                 for (Object[] e : entries) {
                     checkRead(zfs.getPath((String)e[0]), (byte[])e[2]);
                 }
@@ -591,7 +568,7 @@ public class ZipFSTester {
                     }
                 }
             }
-            try (var zfs = newZipFileSystem(zpath, Collections.emptyMap())) {
+            try (var zfs = newZipFileSystem(zpath, Map.of())) {
                 for (Object[] e : entries) {
                     checkRead(zfs.getPath((String)e[0]), (byte[])e[2]);
                 }
@@ -604,9 +581,10 @@ public class ZipFSTester {
     }
 
     // test file stamp
-    static void testTime(Path src) throws Exception {
+    @Test
+    void testTime() throws Exception {
         BasicFileAttributes attrs = Files
-                        .getFileAttributeView(src, BasicFileAttributeView.class)
+                        .getFileAttributeView(jarFile, BasicFileAttributeView.class)
                         .readAttributes();
         // create a new filesystem, copy this file into it
         Map<String, Object> env = new HashMap<String, Object>();
@@ -616,8 +594,8 @@ public class ZipFSTester {
             System.out.println("test copy with timestamps...");
             // copyin
             Path dst = getPathWithParents(fs, "me");
-            Files.copy(src, dst, COPY_ATTRIBUTES);
-            checkEqual(src, dst);
+            Files.copy(jarFile, dst, COPY_ATTRIBUTES);
+            checkEqual(jarFile, dst);
             System.out.println("mtime: " + attrs.lastModifiedTime());
             System.out.println("ctime: " + attrs.creationTime());
             System.out.println("atime: " + attrs.lastAccessTime());
@@ -630,20 +608,19 @@ public class ZipFSTester {
             System.out.println("atime: " + dstAttrs.lastAccessTime());
 
             // 1-second granularity
-            if (attrs.lastModifiedTime().to(TimeUnit.SECONDS) !=
+            assertFalse(attrs.lastModifiedTime().to(TimeUnit.SECONDS) !=
                 dstAttrs.lastModifiedTime().to(TimeUnit.SECONDS) ||
                 attrs.lastAccessTime().to(TimeUnit.SECONDS) !=
                 dstAttrs.lastAccessTime().to(TimeUnit.SECONDS) ||
                 attrs.creationTime().to(TimeUnit.SECONDS) !=
-                dstAttrs.creationTime().to(TimeUnit.SECONDS)) {
-                throw new RuntimeException("Timestamp Copy Failed!");
-            }
+                dstAttrs.creationTime().to(TimeUnit.SECONDS), "Timestamp Copy Failed!");
         } finally {
             Files.delete(fsPath);
         }
     }
 
-    static void test8069211() throws Exception {
+    @Test
+    void test8069211() throws Exception {
         // create a new filesystem, copy this file into it
         Map<String, Object> env = new HashMap<String, Object>();
         env.put("create", "true");
@@ -655,18 +632,17 @@ public class ZipFSTester {
             out.close();
         }
         try (FileSystem fs = newZipFileSystem(fsPath, new HashMap<String, Object>())) {
-            if (!Arrays.equals(Files.readAllBytes(fs.getPath("/foo")),
-                               "hello".getBytes())) {
-                throw new RuntimeException("entry close() failed");
-            }
+            assertArrayEquals("hello".getBytes(), Files.readAllBytes(fs.getPath("/foo")),
+                    "entry close() failed");
         } catch (Exception x) {
-            throw new RuntimeException("entry close() failed", x);
+            fail("entry close() failed", x);
         } finally {
             Files.delete(fsPath);
         }
     }
 
-    static void test8131067() throws Exception {
+    @Test
+    void test8131067() throws Exception {
         Map<String, Object> env = new HashMap<String, Object>();
         env.put("create", "true");
 
@@ -677,10 +653,8 @@ public class ZipFSTester {
         try (FileSystem fs = newZipFileSystem(fsPath, env);) {
             Files.write(fs.getPath("/foo"), "hello".getBytes());
             URI fooUri = fs.getPath("/foo").toUri();
-            if (!Arrays.equals(Files.readAllBytes(Paths.get(fooUri)),
-                               "hello".getBytes())) {
-                throw new RuntimeException("entry close() failed");
-            }
+            assertArrayEquals("hello".getBytes(), Files.readAllBytes(Paths.get(fooUri)),
+                    "entry close() failed");
         } finally {
             Files.delete(fsPath);
         }
@@ -868,19 +842,13 @@ public class ZipFSTester {
                 int nDst = 0;
                 while (nDst < nSrc) {
                     int n = isDst.read(bufDst, nDst, nSrc - nDst);
-                    if (n == -1) {
-                        System.out.printf("checking <%s> vs <%s>...%n",
-                                          src.toString(), dst.toString());
-                        throw new RuntimeException("CHECK FAILED!");
-                    }
+                    assertNotEquals(-1, n, "checking <%s> vs <%s>...%n".formatted(
+                                          src.toString(), dst.toString()));
                     nDst += n;
                 }
                 while (--nSrc >= 0) {
-                    if (bufSrc[nSrc] != bufDst[nSrc]) {
-                        System.out.printf("checking <%s> vs <%s>...%n",
-                                          src.toString(), dst.toString());
-                        throw new RuntimeException("CHECK FAILED!");
-                    }
+                    assertEquals(bufSrc[nSrc], bufDst[nSrc], "checking <%s> vs <%s>...%n".formatted(
+                                          src.toString(), dst.toString()));
                     nSrc--;
                 }
             }
@@ -890,29 +858,20 @@ public class ZipFSTester {
         try (SeekableByteChannel chSrc = Files.newByteChannel(src);
              SeekableByteChannel chDst = Files.newByteChannel(dst))
         {
-            if (chSrc.size() != chDst.size()) {
-                System.out.printf("src[%s].size=%d, dst[%s].size=%d%n",
+            assertEquals(chSrc.size(), chDst.size(), "src[%s].size=%d, dst[%s].size=%d%n".formatted(
                                   chSrc.toString(), chSrc.size(),
-                                  chDst.toString(), chDst.size());
-                throw new RuntimeException("CHECK FAILED!");
-            }
+                                  chDst.toString(), chDst.size()));
             ByteBuffer bbSrc = ByteBuffer.allocate(8192);
             ByteBuffer bbDst = ByteBuffer.allocate(8192);
 
             int nSrc = 0;
             while ((nSrc = chSrc.read(bbSrc)) != -1) {
                 int nDst = chDst.read(bbDst);
-                if (nSrc != nDst) {
-                    System.out.printf("checking <%s> vs <%s>...%n",
-                                      src.toString(), dst.toString());
-                    throw new RuntimeException("CHECK FAILED!");
-                }
+                assertEquals(nSrc, nDst,
+                        "checking <%s> vs <%s>...%n".formatted(src.toString(), dst.toString()));
                 while (--nSrc >= 0) {
-                    if (bbSrc.get(nSrc) != bbDst.get(nSrc)) {
-                        System.out.printf("checking <%s> vs <%s>...%n",
-                                          src.toString(), dst.toString());
-                        throw new RuntimeException("CHECK FAILED!");
-                    }
+                    assertEquals(bbSrc.get(nSrc), bbDst.get(nSrc),
+                            "checking <%s> vs <%s>...%n".formatted(src.toString(), dst.toString()));
                     nSrc--;
                 }
                 bbSrc.flip();
@@ -920,18 +879,12 @@ public class ZipFSTester {
             }
 
             // Check if source read position is at the end
-            if (chSrc.position() != chSrc.size()) {
-                System.out.printf("src[%s]: size=%d, position=%d%n",
-                                  chSrc.toString(), chSrc.size(), chSrc.position());
-                throw new RuntimeException("CHECK FAILED!");
-            }
+            assertEquals(chSrc.position(), chSrc.size(), "src[%s]: size=%d, position=%d%n".formatted(
+                                  chSrc.toString(), chSrc.size(), chSrc.position()));
 
             // Check if destination read position is at the end
-            if (chDst.position() != chDst.size()) {
-                System.out.printf("dst[%s]: size=%d, position=%d%n",
-                                  chDst.toString(), chDst.size(), chDst.position());
-                throw new RuntimeException("CHECK FAILED!");
-            }
+            assertEquals(chDst.position(), chDst.size(), "dst[%s]: size=%d, position=%d%n".formatted(
+                                  chDst.toString(), chDst.size(), chDst.position()));
 
             // Check position(x) + read() at the specific pos/len
             for (int i = 0; i < 10; i++) {
@@ -996,18 +949,12 @@ public class ZipFSTester {
             }
 
             // Check if source read position is at the end
-            if (srcCh.position() != srcCh.size()) {
-                System.out.printf("src[%s]: size=%d, position=%d%n",
-                                  srcCh.toString(), srcCh.size(), srcCh.position());
-                throw new RuntimeException("CHECK FAILED!");
-            }
+            assertEquals(srcCh.position(), srcCh.size(), "src[%s]: size=%d, position=%d%n".formatted(
+                                  srcCh.toString(), srcCh.size(), srcCh.position()));
 
             // Check if destination write position is at the end
-            if (dstCh.position() != dstCh.size()) {
-                System.out.printf("dst[%s]: size=%d, position=%d%n",
-                                  dstCh.toString(), dstCh.size(), dstCh.position());
-                throw new RuntimeException("CHECK FAILED!");
-            }
+            assertEquals(dstCh.position(), dstCh.size(), "dst[%s]: size=%d, position=%d%n".formatted(
+                                  dstCh.toString(), dstCh.size(), dstCh.position()));
         }
     }
 
@@ -1037,17 +984,13 @@ public class ZipFSTester {
 
         try (SeekableByteChannel sbc = Files.newByteChannel(path)) {
             System.out.printf("   sbc[0]: pos=%d, size=%d%n", sbc.position(), sbc.size());
-            if (sbc.position() != 0) {
-                throw new RuntimeException("CHECK FAILED!");
-            }
+            assertEquals(0, sbc.position());
 
             bb = ByteBuffer.allocate((int)sbc.size());
             n = sbc.read(bb);
             System.out.printf("   sbc[1]: read=%d, pos=%d, size=%d%n",
                               n, sbc.position(), sbc.size());
-            if (sbc.position() != sbc.size()) {
-                throw new RuntimeException("CHECK FAILED!");
-            }
+            assertEquals(sbc.position(), sbc.size());
             bb2 = ByteBuffer.allocate((int)sbc.size());
         }
 
@@ -1057,16 +1000,13 @@ public class ZipFSTester {
             sbc.position(N);
             System.out.printf("   sbc[2]: pos=%d, size=%d%n",
                               sbc.position(), sbc.size());
-            if (sbc.position() != N) {
-                throw new RuntimeException("CHECK FAILED!");
-            }
+            assertEquals(N, sbc.position());
             bb2.limit(100);
             n = sbc.read(bb2);
             System.out.printf("   sbc[3]: read=%d, pos=%d, size=%d%n",
                               n, sbc.position(), sbc.size());
-            if (n < 0 || sbc.position() != (N + n)) {
-                throw new RuntimeException("CHECK FAILED!");
-            }
+            assertFalse(n < 0);
+            assertFalse(sbc.position() != (N + n));
             System.out.printf("   sbc[4]: bb[%d]=%d, bb1[0]=%d%n",
                               N, bb.get(N) & 0xff, bb2.get(0) & 0xff);
         }
@@ -1086,38 +1026,22 @@ public class ZipFSTester {
     /**
      * Tests if certain methods throw a NullPointerException if invoked with null
      * as specified in java.nio.file.package-info.java
-     * @param fs file system containing at least one ZipFileStore
      *
      * @see 8299864
      */
-    static void testFileStoreNullArgs(FileSystem fs)  {
-        FileStore store = fs.getFileStores().iterator().next();
+    @Test
+    void testFileStoreNullArgs() throws Exception {
+        try (var fs = newZipFileSystem(jarFile, Map.of())) {
+            // file system containing at least one ZipFileStore
+            FileStore store = fs.getFileStores().iterator().next();
 
-        // Make sure we are testing the right thing
-        if (!"jdk.nio.zipfs.ZipFileStore".equals(store.getClass().getName()))
-            throw new AssertionError(store.getClass().getName());
+            // Make sure we are testing the right thing
+            assertEquals("jdk.nio.zipfs.ZipFileStore", store.getClass().getName());
 
-        assertThrowsNPE(() -> store.supportsFileAttributeView((String) null));
-        assertThrowsNPE(() -> store.supportsFileAttributeView((Class<? extends FileAttributeView>) null));
-        assertThrowsNPE(() -> store.getAttribute(null));
-        assertThrowsNPE(() -> store.getFileStoreAttributeView(null));
-    }
-
-    @FunctionalInterface
-    private interface ThrowingRunnable {
-        void run() throws Exception;
-    }
-
-    static void assertThrowsNPE(ThrowingRunnable r) {
-        try {
-            r.run();
-            // Didn't throw an exception
-            throw new AssertionError();
-        } catch (NullPointerException expected) {
-            // happy path
-        } catch (Exception e) {
-            throw new AssertionError(e);
+            assertThrows(NullPointerException.class, () -> store.supportsFileAttributeView((String) null));
+            assertThrows(NullPointerException.class, () -> store.supportsFileAttributeView((Class<? extends FileAttributeView>) null));
+            assertThrows(NullPointerException.class, () -> store.getAttribute(null));
+            assertThrows(NullPointerException.class, () -> store.getFileStoreAttributeView(null));
         }
     }
-
 }

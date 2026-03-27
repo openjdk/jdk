@@ -2457,10 +2457,6 @@ uint Matcher::float_pressure_limit()
   return (FLOATPRESSURE == -1) ? 28 : FLOATPRESSURE;
 }
 
-bool Matcher::use_asm_for_ldiv_by_con(jlong divisor) {
-  return false;
-}
-
 // Register for DIVI projection of divmodI.
 const RegMask& Matcher::divI_proj_mask() {
   ShouldNotReachHere();
@@ -6327,36 +6323,8 @@ instruct loadConD_Ex(regD dst, immD src) %{
 // Prefetch instructions.
 // Must be safe to execute with invalid address (cannot fault).
 
-// Special prefetch versions which use the dcbz instruction.
-instruct prefetch_alloc_zero(indirectMemory mem, iRegLsrc src) %{
-  match(PrefetchAllocation (AddP mem src));
-  predicate(AllocatePrefetchStyle == 3);
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "PREFETCH $mem, 2, $src \t// Prefetch write-many with zero" %}
-  size(4);
-  ins_encode %{
-    __ dcbz($src$$Register, $mem$$base$$Register);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
-instruct prefetch_alloc_zero_no_offset(indirectMemory mem) %{
-  match(PrefetchAllocation mem);
-  predicate(AllocatePrefetchStyle == 3);
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "PREFETCH $mem, 2 \t// Prefetch write-many with zero" %}
-  size(4);
-  ins_encode %{
-    __ dcbz($mem$$base$$Register);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
 instruct prefetch_alloc(indirectMemory mem, iRegLsrc src) %{
   match(PrefetchAllocation (AddP mem src));
-  predicate(AllocatePrefetchStyle != 3);
   ins_cost(MEMORY_REF_COST);
 
   format %{ "PREFETCH $mem, 2, $src \t// Prefetch write-many" %}
@@ -6369,7 +6337,6 @@ instruct prefetch_alloc(indirectMemory mem, iRegLsrc src) %{
 
 instruct prefetch_alloc_no_offset(indirectMemory mem) %{
   match(PrefetchAllocation mem);
-  predicate(AllocatePrefetchStyle != 3);
   ins_cost(MEMORY_REF_COST);
 
   format %{ "PREFETCH $mem, 2 \t// Prefetch write-many" %}
@@ -14390,20 +14357,6 @@ instruct tlsLoadP(threadRegP dst) %{
 %}
 
 //---Some PPC specific nodes---------------------------------------------------
-
-// Stop a group.
-instruct endGroup() %{
-  ins_cost(0);
-
-  ins_is_nop(true);
-
-  format %{ "End Bundle (ori r1, r1, 0)" %}
-  size(4);
-  ins_encode %{
-    __ endgroup();
-  %}
-  ins_pipe(pipe_class_default);
-%}
 
 // Nop instructions
 

@@ -46,8 +46,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.regex.Pattern;
-import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.util.MacBundle;
 import jdk.jpackage.internal.util.RuntimeReleaseFile;
@@ -59,8 +57,6 @@ import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.ConfigurationTarget;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageCommand.StandardAssert;
-import jdk.jpackage.test.JPackageOutputValidator;
-import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.JavaAppDesc;
 import jdk.jpackage.test.MacHelper;
 import jdk.jpackage.test.PackageTest;
@@ -271,7 +267,7 @@ public final class AppVersionTest {
         }).toList();
     }
 
-    enum Message {
+    enum Message implements CannedFormattedString.Spec {
         VERSION_FROM_MODULE("message.module-version", "version", "module"),
         VERSION_FROM_RELEASE_FILE("message.release-version", "version"),
         VERSION_NORMALIZED("message.version-normalized", "version", "version"),
@@ -279,26 +275,21 @@ public final class AppVersionTest {
 
         Message(String key, Object ... args) {
             this.key = Objects.requireNonNull(key);
-            this.args = args;
+            this.args = List.of(args);
         }
 
-        CannedFormattedString cannedFormattedString(Object ... args) {
-            return JPackageStringBundle.MAIN.cannedFormattedString(key, args);
-        }
-
-        TKit.TextStreamVerifier negateFind() {
-            var pattern = JPackageStringBundle.MAIN.cannedFormattedStringAsPattern(key, _ -> {
-                return Pattern.compile(".*");
-            }, args);
-            return TKit.assertTextStream(pattern).negate();
-        }
-
-        String key() {
+        @Override
+        public String format() {
             return key;
         }
 
+        @Override
+        public List<Object> modelArgs() {
+            return args;
+        }
+
         private final String key;
-        private final Object[] args;
+        private final List<Object> args;
     }
 
     sealed interface VersionSource {
@@ -392,16 +383,9 @@ public final class AppVersionTest {
         }
 
         void applyTo(JPackageCommand cmd) {
-            Objects.requireNonNull(cmd);
-            new JPackageOutputValidator().expectMatchingStrings(messages).matchTimestamps().stripTimestamps().applyTo(cmd);
-            cmd.version(version);
-
-            var expectMessageKeys = messages.stream().map(CannedFormattedString::key).toList();
-            Stream.of(Message.values()).filter(message -> {
-                return !expectMessageKeys.contains(message.key());
-            }).map(Message::negateFind).forEach(validator -> {
-                new JPackageOutputValidator().add(validator).applyTo(cmd);
-            });
+            cmd.version(version).validateOutput(Message.class, validator -> {
+                validator.matchTimestamps().stripTimestamps();
+            }, messages);
         }
 
         @Override
@@ -439,7 +423,7 @@ public final class AppVersionTest {
             }
 
             Builder message(Message message, Object ... args) {
-                return messages(message.cannedFormattedString(args));
+                return messages(message.asCannedFormattedString(args));
             }
 
             private String version;
@@ -760,7 +744,7 @@ public final class AppVersionTest {
             private final List<VersionSource> versions = new ArrayList<>();
             private final Map<PackageType, Expected> expected = new HashMap<>();
 
-            private final static Set<PackageType> ALL_TYPES = Set.of(PackageType.values());
+            private static final Set<PackageType> ALL_TYPES = Set.of(PackageType.values());
         }
     }
 
@@ -1019,7 +1003,7 @@ public final class AppVersionTest {
             return predefinedRuntimeDir;
         }
 
-        final static String MAC_PREDEFINED_RUNTIME_BUNDLE_VERSION = "1.22.333";
+        static final String MAC_PREDEFINED_RUNTIME_BUNDLE_VERSION = "1.22.333";
     }
 
     private static Consumer<TestSpec> skipImagePackageType(Consumer<TestSpec> consumer) {

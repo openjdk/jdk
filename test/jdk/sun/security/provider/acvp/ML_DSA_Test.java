@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,13 +88,13 @@ public class ML_DSA_Test {
         for (var t : kat.get("testGroups").asArray()) {
             var pname = t.get("parameterSet").asString();
             System.out.println(">> " + pname + " sign");
-            var det = Boolean.parseBoolean(t.get("deterministic").asString());
+            var det = t.get("deterministic").asBoolean();
             if (t.get("signatureInterface").asString().equals("internal")) {
                 ML_DSA_Impls.version = ML_DSA_Impls.Version.DRAFT;
             } else {
                 ML_DSA_Impls.version = ML_DSA_Impls.Version.FINAL;
             }
-            if (t.get("externalMu").asString().equals("true")) {
+            if (t.get("externalMu").asBoolean()) {
                 continue; // Not supported
             }
             for (var c : t.get("tests").asArray()) {
@@ -139,7 +139,7 @@ public class ML_DSA_Test {
                 ML_DSA_Impls.version = ML_DSA_Impls.Version.FINAL;
             }
 
-            if (t.get("externalMu").asString().equals("true")) {
+            if (t.get("externalMu").asBoolean()) {
                 continue; // Not supported
             }
 
@@ -157,7 +157,7 @@ public class ML_DSA_Test {
                     public byte[] getEncoded() { return toByteArray(c.get("pk").asString()); }
                 };
                 // Only ML-DSA sigVer has negative tests
-                var expected = Boolean.parseBoolean(c.get("testPassed").asString());
+                var expected = c.get("testPassed").asBoolean();
                 var actual = true;
                 try {
                     s.initVerify(pk);

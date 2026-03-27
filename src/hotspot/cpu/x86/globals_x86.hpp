@@ -117,9 +117,6 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
   product(bool, UseIncDec, true, DIAGNOSTIC,                                \
           "Use INC, DEC instructions on x86")                               \
                                                                             \
-  product(bool, UseNewLongLShift, false,                                    \
-          "Use optimized bitwise shift left")                               \
-                                                                            \
   product(bool, UseAddressNop, false,                                       \
           "Use '0F 1F [addr]' NOP instructions on x86 cpus")                \
                                                                             \
