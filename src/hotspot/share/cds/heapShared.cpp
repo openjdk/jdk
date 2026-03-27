@@ -396,20 +396,20 @@ void HeapShared::initialize_streaming() {
 }
 
 void HeapShared::enable_gc() {
-  DEBUG_ONLY({
-      // At this point, a GC may start and will be able to see some or all
-      // of the cached oops. The class of each oop seen by the GC must have
-      // already been loaded. One function with such a requirement is
-      // ClaimMetadataVisitingOopIterateClosure::do_klass().
-      if (is_archived_heap_in_use()) {
-        Array<Klass*>* klasses = _runtime_classes_with_cached_oops;
+#ifdef ASSERT
+  // At this point, a GC may start and will be able to see some or all
+  // of the cached oops. The class of each oop seen by the GC must have
+  // already been loaded. One function with such a requirement is
+  // ClaimMetadataVisitingOopIterateClosure::do_klass().
+  if (is_archived_heap_in_use()) {
+    Array<Klass*>* klasses = _runtime_classes_with_cached_oops;
 
-        for (int i = 0; i < klasses->length(); i++) {
-          assert(klasses->at(i)->class_loader_data() != nullptr,
-                 "class of cached oop must have been loaded");
-        }
-      }
-    });
+    for (int i = 0; i < klasses->length(); i++) {
+      assert(klasses->at(i)->class_loader_data() != nullptr,
+             "class of cached oop must have been loaded");
+    }
+  }
+#endif
 
   if (AOTStreamedHeapLoader::is_in_use()) {
     AOTStreamedHeapLoader::enable_gc();
@@ -989,9 +989,7 @@ void HeapShared::write_heap(AOTMappedHeapInfo* mapped_heap_info, AOTStreamedHeap
   ArchiveBuilder::OtherROAllocMark mark;
   write_subgraph_info_table();
 
-  DEBUG_ONLY({
-      _runtime_classes_with_cached_oops = _dumptime_classes_with_cached_oops->write_ordered_array();
-    });
+  DEBUG_ONLY(_runtime_classes_with_cached_oops = _dumptime_classes_with_cached_oops->write_ordered_array());
 
   delete _pending_roots;
   _pending_roots = nullptr;
