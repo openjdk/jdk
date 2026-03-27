@@ -212,7 +212,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
   ifeq ($(call isTargetOs, macosx), true)
     LIBSPLASHSCREEN_CFLAGS += -DWITH_MACOSX
   else ifeq ($(call isTargetOs, windows), true)
-    LIBSPLASHSCREEN_CFLAGS += -DWITH_WIN32
+    LIBSPLASHSCREEN_CFLAGS += -DWITH_WIN32 /wd4146
   else
     LIBSPLASHSCREEN_CFLAGS += -DWITH_X11 $(X_CFLAGS)
   endif
