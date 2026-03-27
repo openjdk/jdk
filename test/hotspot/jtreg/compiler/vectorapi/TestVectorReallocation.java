@@ -85,6 +85,23 @@ public class TestVectorReallocation {
     volatile boolean enteredLoop;
     volatile long loopIterations;
 
+    void sharedRunner(RunInfo runInfo, Runnable test, Runnable loadOverridingClass, Runnable verify) {
+        enteredLoop = false;
+        if (runInfo.isWarmUp()) {
+            loopIterations = 100;
+            test.run();
+        } else {
+            loopIterations = 1L << 60; // basically infinite
+            Thread t = Thread.ofPlatform().start(test);
+            waitUntilLoopEntered();
+            loadOverridingClass.run();
+            loopIterations = 0;
+            waitUntilLoopLeft();
+            joinThread(t);
+            verify.run();
+        }
+    }
+
     /////////////////////////////////////////////////////////////////////////////////////
     // byte
 
@@ -98,15 +115,7 @@ public class TestVectorReallocation {
 
     @Run(test = "byteIdentityWithReallocation")
     void byteIdentityWithReallocation_runner(RunInfo runInfo) {
-        enteredLoop = false;
-        Runnable r = () -> byteIdentityWithReallocation();
-        if (runInfo.isWarmUp()) {
-            loopIterations = 100;
-            r.run();
-        } else {
-            loopIterations = 1L << 60; // basically infinite
-            Thread t = Thread.ofPlatform().start(r);
-            waitUntilLoopEntered();
+        sharedRunner(runInfo, () -> byteIdentityWithReallocation(), () -> {
             // Loading the class with the overridden method will cause deoptimization and reallocation of v0
             byteZero = new ByteZero() {
                     @Override
@@ -114,11 +123,8 @@ public class TestVectorReallocation {
                         return super.value(); // override but doing the same
                     }
                 };
-            loopIterations = 0;
-            waitUntilLoopLeft();
-            joinThread(t);
-            assertTrue(Arrays.equals(b_a, b_r), "Input/Output arrays differ");
-        }
+            },
+            () -> assertTrue(Arrays.equals(b_a, b_r), "Input/Output arrays differ"));
     }
 
     @Test
@@ -147,15 +153,7 @@ public class TestVectorReallocation {
 
     @Run(test = "shortIdentityWithReallocation")
     void shortIdentityWithReallocation_runner(RunInfo runInfo) {
-        enteredLoop = false;
-        Runnable r = () -> shortIdentityWithReallocation();
-        if (runInfo.isWarmUp()) {
-            loopIterations = 100;
-            r.run();
-        } else {
-            loopIterations = 1L << 60; // basically infinite
-            Thread t = Thread.ofPlatform().start(r);
-            waitUntilLoopEntered();
+        sharedRunner(runInfo, () -> shortIdentityWithReallocation(), () -> {
             // Loading the class with the overridden method will cause deoptimization and reallocation of v0
             shortZero = new ShortZero() {
                     @Override
@@ -163,11 +161,8 @@ public class TestVectorReallocation {
                         return super.value(); // override but doing the same
                     }
                 };
-            loopIterations = 0;
-            waitUntilLoopLeft();
-            joinThread(t);
-            assertTrue(Arrays.equals(s_a, s_r), "Input/Output arrays differ");
-        }
+            },
+            () -> assertTrue(Arrays.equals(s_a, s_r), "Input/Output arrays differ"));
     }
 
     @Test
@@ -196,15 +191,7 @@ public class TestVectorReallocation {
 
     @Run(test = "intIdentityWithReallocation")
     void intIdentityWithReallocation_runner(RunInfo runInfo) {
-        enteredLoop = false;
-        Runnable r = () -> intIdentityWithReallocation();
-        if (runInfo.isWarmUp()) {
-            loopIterations = 100;
-            r.run();
-        } else {
-            loopIterations = 1L << 60; // basically infinite
-            Thread t = Thread.ofPlatform().start(r);
-            waitUntilLoopEntered();
+        sharedRunner(runInfo, () -> intIdentityWithReallocation(), () -> {
             // Loading the class with the overridden method will cause deoptimization and reallocation of v0
             intZero = new IntZero() {
                     @Override
@@ -212,11 +199,8 @@ public class TestVectorReallocation {
                         return super.value(); // override but doing the same
                     }
                 };
-            loopIterations = 0;
-            waitUntilLoopLeft();
-            joinThread(t);
-            assertTrue(Arrays.equals(i_a, i_r), "Input/Output arrays differ");
-        }
+            },
+            () -> assertTrue(Arrays.equals(i_a, i_r), "Input/Output arrays differ"));
     }
 
     @Test
@@ -245,15 +229,7 @@ public class TestVectorReallocation {
 
     @Run(test = "longIdentityWithReallocation")
     void longIdentityWithReallocation_runner(RunInfo runInfo) {
-        enteredLoop = false;
-        Runnable r = () -> longIdentityWithReallocation();
-        if (runInfo.isWarmUp()) {
-            loopIterations = 100;
-            r.run();
-        } else {
-            loopIterations = 1L << 60; // basically infinite
-            Thread t = Thread.ofPlatform().start(r);
-            waitUntilLoopEntered();
+        sharedRunner(runInfo, () -> longIdentityWithReallocation(), () -> {
             // Loading the class with the overridden method will cause deoptimization and reallocation of v0
             longZero = new LongZero() {
                     @Override
@@ -261,11 +237,8 @@ public class TestVectorReallocation {
                         return super.value(); // override but doing the same
                     }
                 };
-            loopIterations = 0;
-            waitUntilLoopLeft();
-            joinThread(t);
-            assertTrue(Arrays.equals(l_a, l_r), "Input/Output arrays differ");
-        }
+            },
+            () -> assertTrue(Arrays.equals(l_a, l_r), "Input/Output arrays differ"));
     }
 
     @Test
@@ -294,15 +267,7 @@ public class TestVectorReallocation {
 
     @Run(test = "floatIdentityWithReallocation")
     void floatIdentityWithReallocation_runner(RunInfo runInfo) {
-        enteredLoop = false;
-        Runnable r = () -> floatIdentityWithReallocation();
-        if (runInfo.isWarmUp()) {
-            loopIterations = 100;
-            r.run();
-        } else {
-            loopIterations = 1L << 60; // basically infinite
-            Thread t = Thread.ofPlatform().start(r);
-            waitUntilLoopEntered();
+        sharedRunner(runInfo, () -> floatIdentityWithReallocation(), () -> {
             // Loading the class with the overridden method will cause deoptimization and reallocation of v0
             floatZero = new FloatZero() {
                     @Override
@@ -310,11 +275,8 @@ public class TestVectorReallocation {
                         return super.value(); // override but doing the same
                     }
                 };
-            loopIterations = 0;
-            waitUntilLoopLeft();
-            joinThread(t);
-            assertTrue(Arrays.equals(f_a, f_r), "Input/Output arrays differ");
-        }
+            },
+            () -> assertTrue(Arrays.equals(f_a, f_r), "Input/Output arrays differ"));
     }
 
     @Test
@@ -343,15 +305,7 @@ public class TestVectorReallocation {
 
     @Run(test = "doubleIdentityWithReallocation")
     void doubleIdentityWithReallocation_runner(RunInfo runInfo) {
-        enteredLoop = false;
-        Runnable r = () -> doubleIdentityWithReallocation();
-        if (runInfo.isWarmUp()) {
-            loopIterations = 100;
-            r.run();
-        } else {
-            loopIterations = 1L << 60; // basically infinite
-            Thread t = Thread.ofPlatform().start(r);
-            waitUntilLoopEntered();
+        sharedRunner(runInfo, () -> doubleIdentityWithReallocation(), () -> {
             // Loading the class with the overridden method will cause deoptimization and reallocation of v0
             doubleZero = new DoubleZero() {
                     @Override
@@ -359,11 +313,8 @@ public class TestVectorReallocation {
                         return super.value(); // override but doing the same
                     }
                 };
-            loopIterations = 0;
-            waitUntilLoopLeft();
-            joinThread(t);
-            assertTrue(Arrays.equals(d_a, d_r), "Input/Output arrays differ");
-        }
+            },
+            () -> assertTrue(Arrays.equals(d_a, d_r), "Input/Output arrays differ"));
     }
 
     @Test
