@@ -23,13 +23,12 @@
 
 package compiler.vectorization;
 
-import jdk.test.lib.Asserts;
 import compiler.lib.ir_framework.*;
 import compiler.lib.generators.*;
 
 /*
  * @test
- * @bug 8350177 8362171 8369881 8342095
+ * @bug 8350177 8362171 8369881 8342095 8380988
  * @summary Ensure that truncation of subword vectors produces correct results
  * @library /test/lib /
  * @run driver compiler.vectorization.TestSubwordTruncation
@@ -445,6 +444,26 @@ public class TestSubwordTruncation {
             for (int j = 1; j < 204; j++) {
                 shortField %= intField | 1;
             }
+        }
+    }
+
+    @Test
+    @IR(counts = { IRNode.UMOD_I, ">0" })
+    @Arguments(setup = "setupByteArray")
+    public void testUMod(final byte[] in) {
+        int n = G.next().intValue();
+        for (int i = 1; i < SIZE; i++) {
+            in[i] = (byte) Integer.remainderUnsigned(n, i);
+        }
+    }
+
+    @Test
+    @IR(counts = { IRNode.UDIV_I, ">0" })
+    @Arguments(setup = "setupByteArray")
+    public void testUDiv(final byte[] in) {
+        int n = G.next().intValue();
+        for (int i = 1; i < SIZE; i++) {
+            in[i] = (byte) Integer.divideUnsigned(n, i);
         }
     }
 
