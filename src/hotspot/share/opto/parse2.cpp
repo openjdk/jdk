@@ -1757,6 +1757,10 @@ static bool match_type_check(PhaseGVN& gvn,
     //   Bool(CmpP(LoadKlass(obj._klass), ConP(Foo.klass)), [eq])
     // or the narrowOop equivalent.
     (*obj) = extract_obj_from_klass_load(&gvn, val);
+    // Some klass comparisons are not directly in the form
+    // Bool(CmpP(LoadKlass(obj._klass), ConP(Foo.klass)), [eq]),
+    // e.g. Bool(CmpP(CastPP(LoadKlass(...)), ConP(klass)), [eq])
+    if (*obj == nullptr) { return false; }
     (*cast_type) = tcon->isa_klassptr()->as_instance_type();
     return true; // found
   }
