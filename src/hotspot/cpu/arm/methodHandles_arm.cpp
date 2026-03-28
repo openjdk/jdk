@@ -96,7 +96,7 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
   BLOCK_COMMENT("} verify_klass");
 }
 
-void MethodHandles::verify_ref_kind(MacroAssembler* _masm, int ref_kind, Register member_reg, Register temp) {
+void MethodHandles::verify_ref_kind(MacroAssembler* _masm, int ref_kind, const char* msg, Register member_reg, Register temp) {
   Label L;
   BLOCK_COMMENT("verify_ref_kind {");
   __ ldr_u32(temp, Address(member_reg, NONZERO(java_lang_invoke_MemberName::flags_offset())));
@@ -104,14 +104,12 @@ void MethodHandles::verify_ref_kind(MacroAssembler* _masm, int ref_kind, Registe
   __ andr(temp, temp, (unsigned)java_lang_invoke_MemberName::MN_REFERENCE_KIND_MASK);
   __ cmp(temp, ref_kind);
   __ b(L, eq);
-  { char* buf = NEW_C_HEAP_ARRAY(char, 100, mtInternal);
-  jio_snprintf(buf, 100, "verify_ref_kind expected %x", ref_kind);
   if (ref_kind == JVM_REF_invokeVirtual ||
-      ref_kind == JVM_REF_invokeSpecial)
+      ref_kind == JVM_REF_invokeSpecial) {
     // could do this for all ref_kinds, but would explode assembly code size
-    trace_method_handle(_masm, buf);
-  __ stop(buf);
+    trace_method_handle(_masm, msg);
   }
+  __ stop(msg);
   BLOCK_COMMENT("} verify_ref_kind");
   __ bind(L);
 }

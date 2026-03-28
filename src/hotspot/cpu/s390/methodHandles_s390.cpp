@@ -108,7 +108,7 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
   BLOCK_COMMENT("} verify_klass");
 }
 
-void MethodHandles::verify_ref_kind(MacroAssembler* _masm, int ref_kind,
+void MethodHandles::verify_ref_kind(MacroAssembler* _masm, int ref_kind, const char* msg,
                                     Register member_reg, Register temp  ) {
   NearLabel L;
   BLOCK_COMMENT("verify_ref_kind {");
@@ -120,16 +120,11 @@ void MethodHandles::verify_ref_kind(MacroAssembler* _masm, int ref_kind,
   __ z_nilf(temp, java_lang_invoke_MemberName::MN_REFERENCE_KIND_MASK);
   __ compare32_and_branch(temp, constant(ref_kind), Assembler::bcondEqual, L);
 
-  {
-    char *buf = NEW_C_HEAP_ARRAY(char, 100, mtInternal);
-
-    jio_snprintf(buf, 100, "verify_ref_kind expected %x", ref_kind);
-    if (ref_kind == JVM_REF_invokeVirtual || ref_kind == JVM_REF_invokeSpecial) {
-      // Could do this for all ref_kinds, but would explode assembly code size.
-      trace_method_handle(_masm, buf);
-    }
-    __ stop(buf);
+  if (ref_kind == JVM_REF_invokeVirtual || ref_kind == JVM_REF_invokeSpecial) {
+    // Could do this for all ref_kinds, but would explode assembly code size.
+    trace_method_handle(_masm, msg);
   }
+  __ stop(msg);
 
   BLOCK_COMMENT("} verify_ref_kind");
 
@@ -461,7 +456,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
   switch (iid) {
     case vmIntrinsics::_linkToSpecial:
       if (VerifyMethodHandles) {
-        verify_ref_kind(_masm, JVM_REF_invokeSpecial, member_reg, temp3);
+        verify_ref_kind(_masm, JVM_REF_invokeSpecial, "verify_ref_kind expected invokeSpecial", member_reg, temp3);
       }
       __ load_heap_oop(Z_method, member_vmtarget,
                        noreg, noreg, IS_NOT_NULL);
@@ -471,7 +466,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
 
     case vmIntrinsics::_linkToStatic:
       if (VerifyMethodHandles) {
-        verify_ref_kind(_masm, JVM_REF_invokeStatic, member_reg, temp3);
+        verify_ref_kind(_masm, JVM_REF_invokeStatic, "verify_ref_kind expected invokeStatic", member_reg, temp3);
       }
       __ load_heap_oop(Z_method, member_vmtarget,
                        noreg, noreg, IS_NOT_NULL);
@@ -482,7 +477,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     case vmIntrinsics::_linkToVirtual: {
       // Same as TemplateTable::invokevirtual, minus the CP setup and profiling.
       if (VerifyMethodHandles) {
-        verify_ref_kind(_masm, JVM_REF_invokeVirtual, member_reg, temp3);
+        verify_ref_kind(_masm, JVM_REF_invokeVirtual, "verify_ref_kind expected invokeVirtual", member_reg, temp3);
       }
 
       // Pick out the vtable index from the MemberName, and then we can discard it.
@@ -510,7 +505,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       // Same as TemplateTable::invokeinterface, minus the CP setup
       // and profiling, with different argument motion.
       if (VerifyMethodHandles) {
-        verify_ref_kind(_masm, JVM_REF_invokeInterface, member_reg, temp3);
+        verify_ref_kind(_masm, JVM_REF_invokeInterface, "verify_ref_kind expected invokeInterface", member_reg, temp3);
       }
 
       Register temp3_intf = temp3;
