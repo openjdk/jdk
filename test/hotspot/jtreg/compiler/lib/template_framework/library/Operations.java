@@ -273,6 +273,10 @@ public final class Operations {
         ops.add(Expression.make(BOOLEANS, "Boolean.logicalOr(",  BOOLEANS, ", ", BOOLEANS, ")"));
         ops.add(Expression.make(BOOLEANS, "Boolean.logicalXor(", BOOLEANS, ", ", BOOLEANS, ")"));
 
+        // ------------ Math -------------
+        ops.add(Expression.make(LONGS, "Math.multiplyHigh(", LONGS, ", ", LONGS, ")"));
+        ops.add(Expression.make(LONGS, "Math.unsignedMultiplyHigh(", LONGS, ", ", LONGS, ")"));
+
         // TODO: Math and other classes.
         // Note: Math.copySign is non-deterministic because of NaN having encoding with sign bit set and unset.
 
