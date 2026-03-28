@@ -26,30 +26,19 @@
  * @bug 8379327
  * @summary Verify correctness for combined low/high 64-bit multiplication patterns.
  * @library /test/lib /
- * @run driver compiler.c2.TestMultiplyHighLowFusion
+ * @run driver ${test.main.class}
  */
 
 package compiler.c2;
 
+import compiler.lib.generators.Generator;
+import compiler.lib.generators.Generators;
 import compiler.lib.ir_framework.*;
 import java.math.BigInteger;
 
 public class TestMultiplyHighLowFusion {
   private static final BigInteger MASK_64 = BigInteger.ONE.shiftLeft(64).subtract(BigInteger.ONE);
-  private static final long[] CORNER_CASES = {
-      0L,
-      1L,
-      -1L,
-      Long.MIN_VALUE,
-      Long.MAX_VALUE,
-      0x00000000FFFFFFFFL,
-      0xFFFFFFFF00000000L,
-      0x123456789ABCDEFL,
-      0xFEDCBA9876543210L
-  };
-
-  private static final java.util.Random RANDOM = new java.util.Random(0x8379327L);
-  private int warmupCount = 0;
+  private static final Generator<Long> LONG_GEN = Generators.G.longs();
 
   public static void main(String[] args) {
     TestFramework.run();
@@ -89,14 +78,7 @@ public class TestMultiplyHighLowFusion {
 
   @Run(test = {"doMath", "doMathSwapped", "doUnsignedMath", "doUnsignedMathSwapped"})
   public void runTests() {
-    if (warmupCount < CORNER_CASES.length * CORNER_CASES.length) {
-      int aIdx = warmupCount / CORNER_CASES.length;
-      int bIdx = warmupCount % CORNER_CASES.length;
-      verifyPair(CORNER_CASES[aIdx], CORNER_CASES[bIdx]);
-      warmupCount++;
-    } else {
-      verifyPair(RANDOM.nextLong(), RANDOM.nextLong());
-    }
+    verifyPair(LONG_GEN.next(), LONG_GEN.next());
   }
 
   private void verifyPair(long a, long b) {
