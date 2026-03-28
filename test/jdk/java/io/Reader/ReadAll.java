@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,15 @@
  * @key randomness
  */
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -190,5 +194,31 @@ public class ReadAll {
             string = r.readAllAsString();
         }
         assertEquals(stringExpected.substring(n), string);
+
+        // InputStreamReader implementation: Called directly after construction (Fast Path)
+        try (InputStreamReader isr = new InputStreamReader(new ByteArrayInputStream(stringExpected.getBytes()))) {
+            string = isr.readAllAsString();
+        }
+        assertEquals(stringExpected, string);
+
+        // InputStreamReader implementation: Called after previous read() call (Slow Path)
+        try (InputStreamReader isr = new InputStreamReader(
+                new ByteArrayInputStream("A€B".getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8)) {
+            string = (char) isr.read() + isr.readAllAsString();
+        }
+        assertEquals("A€B", string);
+
+        // InputStreamReader implementation: Called on empty stream
+        try (InputStreamReader isr = new InputStreamReader(InputStream.nullInputStream())) {
+            string = isr.readAllAsString();
+        }
+        assertEquals("", string);
+
+        // InputStreamReader implementation: Stream ends mid-character (here: last byte of three-byte UTF-8 character missing)
+        try (InputStreamReader isr = new InputStreamReader(
+                new ByteArrayInputStream(new byte[] { (byte) 0xE2, (byte) 0x82 }), StandardCharsets.UTF_8)) {
+            string = isr.readAllAsString();
+        }
+        assertEquals("\uFFFD", string);
     }
 }
