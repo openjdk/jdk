@@ -1552,6 +1552,14 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <p>
      * The {@linkplain MemorySegment#maxByteAlignment() maximum byte alignment} for
      * the {@code NULL} segment is of 2<sup>62</sup>.
+     *
+     * @apiNote Clients should avoid using {@code ==} to compare a segment with
+     *          {@code MemorySegment.NULL}. A segment with address {@code 0L} may be
+     *          created independently and may therefore have a different identity
+     *          from {@code MemorySegment.NULL}. Furthermore, if {@code MemorySegment}
+     *          becomes a value class in the future, a segment's lifecycle might also
+     *          factor into the comparison. Instead, {@link #equals(Object)} should be
+     *          used to compare a segment with {@code MemorySegment.NULL}.
      */
     MemorySegment NULL = MemorySegment.ofAddress(0L);
 
@@ -1565,6 +1573,10 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * On 32-bit platforms, the given address value will be normalized such that the
      * highest-order ("leftmost") 32 bits of the {@link MemorySegment#address() address}
      * of the returned memory segment are set to zero.
+     *
+     * @apiNote If {@code address == 0L}, the returned segment should not be compared
+     *          with {@code MemorySegment.NULL} using {@code ==}, since it may have
+     *          a different identity while still modeling the same address.
      *
      * @param address the address of the returned native segment
      * @return a zero-length native segment with the given address
