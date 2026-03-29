@@ -121,10 +121,11 @@ void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest&
       assert(request.generation != nullptr, "Must know which generation to use for degenerated cycle");
     }
   } else {
-    if (request.cause == GCCause::_shenandoah_concurrent_gc) {
-      // This is a regulator request. It is also possible that the regulator "canceled" an old mark,
-      // so we can clear that here. This clear operation will only clear the cancellation if it is
-      // a regulator request.
+    if (request.cause == GCCause::_shenandoah_concurrent_gc || ShenandoahCollectorPolicy::is_explicit_gc(request.cause)) {
+      // This is a regulator request or an explicit gc request. Note that an explicit gc request is allowed to
+      // "upgrade" a regulator request. It is possible that the regulator "canceled" an old mark, so we must
+      // clear that cancellation here or the explicit gc cycle will erroneously detect it as a cancellation.
+      // This clear operation will only clear the cancellation if it was set by regulator request.
       _heap->clear_cancellation(GCCause::_shenandoah_concurrent_gc);
     }
     request.generation = _requested_generation;

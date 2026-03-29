@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,35 +21,20 @@
  * questions.
  */
 
-#import "CheckboxAccessibility.h"
-#import "JNIUtilities.h"
-#import "ThreadUtilities.h"
-
 /*
- * Implementation of the accessibility peer for the checkbox role
+ * @test
+ * @bug 8380686
+ * @summary Ensure logging works while processing jsr while linking.
+ * @library /test/lib
+ * @compile JsrLogging.jasm
+ * @run main/othervm -Xlog:generateoopmap=debug JsrLoggingTest
  */
-@implementation CheckboxAccessibility
-- (NSAccessibilityRole _Nonnull)accessibilityRole
-{
-    return NSAccessibilityCheckBoxRole;
-}
 
-- (NSAccessibilitySubrole _Nullable)accessibilitySubrole
-{
-    JNIEnv *env = [ThreadUtilities getJNIEnv];
-    if (env != NULL) {
-        NSString *javaRole = [self javaRole];
-        if ([javaRole isEqualToString:@"togglebutton"]) {
-            return NSAccessibilityToggleSubrole;
+public class JsrLoggingTest {
+    public static void main(String[] args) {
+        for (int i = 0; i < 10; ++i) {
+            JsrLogging.test();
         }
+        System.out.println("PASSED");
     }
-    return [super accessibilitySubrole];
 }
-
-- (id _Nonnull) accessibilityValue
-{
-    AWT_ASSERT_APPKIT_THREAD;
-    return [super accessibilityValue];
-}
-
-@end
