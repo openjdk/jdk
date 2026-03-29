@@ -635,7 +635,7 @@ public final class CollationElementIterator
      */
     static final boolean isIgnorable(int order)
     {
-        return ((primaryOrder(order) == 0) ? true : false);
+        return (primaryOrder(order) == 0);
     }
 
     /**

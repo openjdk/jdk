@@ -128,7 +128,7 @@ public class DictionaryBasedBreakIterator extends RuleBasedBreakIterator {
     private void prepareCategoryFlags(byte[] data) {
         categoryFlags = new boolean[data.length];
         for (int i = 0; i < data.length; i++) {
-            categoryFlags[i] = (data[i] == (byte)1) ? true : false;
+            categoryFlags[i] = data[i] == (byte)1;
         }
     }
 

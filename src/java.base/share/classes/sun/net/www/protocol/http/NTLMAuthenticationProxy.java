@@ -42,7 +42,7 @@ class NTLMAuthenticationProxy {
     private static final String isTrustedSiteStr = "isTrustedSite";
 
     static final NTLMAuthenticationProxy proxy = tryLoadNTLMAuthentication();
-    static final boolean supported = proxy != null ? true : false;
+    static final boolean supported = proxy != null;
     static final boolean supportsTransparentAuth = supported ? supportsTransparentAuth() : false;
 
     private final Constructor<? extends AuthenticationInfo> threeArgCtr;

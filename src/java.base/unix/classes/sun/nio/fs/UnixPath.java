@@ -702,7 +702,7 @@ class UnixPath implements Path {
 
         // other path has no name elements
         if (thatOffsetCount == 0 && this.isAbsolute()) {
-            return that.isEmpty() ? false : true;
+            return !that.isEmpty();
         }
 
         // given path has more elements that this path

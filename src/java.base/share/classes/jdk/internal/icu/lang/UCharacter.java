@@ -471,7 +471,7 @@ public final class UCharacter
      * Sample usage:
      * int ea = UCharacter.getIntPropertyValue(c, UProperty.EAST_ASIAN_WIDTH);
      * int ideo = UCharacter.getIntPropertyValue(c, UProperty.IDEOGRAPHIC);
-     * boolean b = (ideo == 1) ? true : false;
+     * boolean b = ideo == 1;
      * </pre>
      * @param ch code point to test.
      * @param type UProperty selector constant, identifies which binary

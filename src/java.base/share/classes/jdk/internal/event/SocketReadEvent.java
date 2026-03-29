@@ -138,7 +138,7 @@ public class SocketReadEvent extends Event {
      * @param timeout  maximum time to wait
      */
     public static void emit(long start, long duration, long nbytes, SocketAddress remote, long timeout) {
-        boolean eof = nbytes < 0 ? true : false;
+        boolean eof = nbytes < 0;
         nbytes = nbytes < 0 ? 0 : nbytes;
         if (remote instanceof InetSocketAddress isa) {
             commit(start, duration, isa.getHostString(), isa.getAddress().getHostAddress(), isa.getPort(), timeout, nbytes, eof);
