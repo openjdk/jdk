@@ -1132,9 +1132,15 @@ public class JShellTool implements MessageHandler {
                 .remoteVMOptions(options.remoteVmOptions())
                 .compilerOptions(options.compilerOptions())
                 .binarySourceMapping(binary -> {
-                    Path sourceCandidate = Path.of(binary.toString().replace(".jar", "-sources.jar"));
-                    if (Files.exists(sourceCandidate)) {
-                        return List.of(sourceCandidate);
+                    String binaryPath = binary.toString();
+                    if (binaryPath.toLowerCase(Locale.ROOT).endsWith(".jar")) {
+                        String sourceCandidatePath =
+                                binaryPath.substring(0, binaryPath.length() - ".jar".length()) + "-sources.jar";
+                        Path sourceCandidate = Path.of(sourceCandidatePath);
+
+                        if (Files.exists(sourceCandidate)) {
+                            return List.of(sourceCandidate);
+                        }
                     }
                     return null;
                 });

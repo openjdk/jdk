@@ -38,11 +38,9 @@
  */
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -308,7 +306,7 @@ public class ToolTabSnippetTest extends UITesting {
                 "    public JShellTestAux(String str, int i) { }\n" +
                 "}\n";
 
-        Path srcZip = Paths.get("src.zip");
+        Path srcZip = Paths.get("test-sources.jar");
 
         try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(srcZip))) {
             out.putNextEntry(new JarEntry("jshelltest/JShellTest.java"));
@@ -321,15 +319,10 @@ public class ToolTabSnippetTest extends UITesting {
 
         compiler.compile(clazz1, clazz2);
 
-        try {
-            Field availableSources = Class.forName("jdk.jshell.SourceCodeAnalysisImpl").getDeclaredField("availableSourcesOverride");
-            availableSources.setAccessible(true);
-            availableSources.set(null, Arrays.asList(srcZip));
-        } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException | ClassNotFoundException ex) {
-            throw new IllegalStateException(ex);
-        }
+        Path binaryJar = Paths.get("test.jar");
+        compiler.jar(compiler.getClassDir(), binaryJar, "jshelltest/JShellTest.class", "jshelltest/JShellTestAux.class");
 
-        return compiler.getClassDir();
+        return binaryJar;
     }
     //where:
         private final Compiler compiler = new Compiler();
