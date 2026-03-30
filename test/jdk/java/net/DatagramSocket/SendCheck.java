@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,12 +33,13 @@ import java.nio.channels.DatagramChannel;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
-import org.testng.annotations.DataProvider;
-
-import static org.testng.Assert.expectThrows;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
@@ -47,19 +48,19 @@ import static org.testng.Assert.expectThrows;
  *          DatagramSocketAdaptor and DatagramChannel all
  *          throw expected Exception when passed a DatagramPacket
  *          with invalid details
- * @run testng SendCheck
+ * @run junit SendCheck
  */
 
 public class SendCheck {
-    private InetAddress loopbackAddr, wildcardAddr;
+    private static InetAddress loopbackAddr, wildcardAddr;
     static final Class<IOException> IOE = IOException.class;
     static final Class<SocketException> SE = SocketException.class;
 
     static final byte[] buf = {0, 1, 2};
     static DatagramSocket socket;
 
-    @BeforeTest
-    public void setUp() {
+    @BeforeAll
+    public static void setUp() {
         try {
             socket = new DatagramSocket();
         } catch (Exception e) {
@@ -67,8 +68,8 @@ public class SendCheck {
         }
     }
 
-    @AfterTest
-    public void closeDown() {
+    @AfterAll
+    public static void closeDown() {
         socket.close();
     }
 
@@ -92,7 +93,7 @@ public class SendCheck {
             if (address == null) {
                 description = "<null>:" + port;
             } else if (port < 0) {
-                description = packet.getAddress().toString() + ":" + port;
+                description = packet.getAddress() + ":" + port;
             } else {
                 description = packet.getSocketAddress().toString();
             }
@@ -100,8 +101,7 @@ public class SendCheck {
         }
     }
 
-    @DataProvider(name = "packets")
-    Object[][] providerIO() throws IOException {
+    static List<Arguments> providerIO() throws IOException {
         loopbackAddr = InetAddress.getLoopbackAddress();
         wildcardAddr = new InetSocketAddress(0).getAddress();
 
@@ -124,38 +124,37 @@ public class SendCheck {
 
         List<Packet> Packets = List.of(Packet.of(pkt1), Packet.of(pkt2));
 
-        List<Sender> senders = List.of(
-                Sender.of(new DatagramSocket(null)),
-                Sender.of(new MulticastSocket(null)),
-                Sender.of(DatagramChannel.open()),
-                Sender.of(DatagramChannel.open().socket())
-        );
-
-        List<Object[]> testcases = new ArrayList<>();
+        List<Arguments> testcases = new ArrayList<>();
         for (var packet : Packets) {
+            List<Sender> senders = List.of(
+                    Sender.of(new DatagramSocket(null)),
+                    Sender.of(new MulticastSocket(null)),
+                    Sender.of(DatagramChannel.open()),
+                    Sender.of(DatagramChannel.open().socket())
+            );
             addTestCaseFor(testcases, senders, packet);
         }
 
-        return testcases.toArray(new Object[0][0]);
+        return testcases;
     }
 
-    static void addTestCaseFor(List<Object[]> testcases,
+    static void addTestCaseFor(List<Arguments> testcases,
                                List<Sender> senders, Packet p) {
         for (var s : senders) {
-            Object[] testcase = new Object[]{s, p, s.expectedException()};
-            testcases.add(testcase);
+            testcases.add(Arguments.of(s, p, s.expectedException()));
         }
     }
 
-    @Test(dataProvider = "packets")
-    public static void sendCheck(Sender<IOException> sender,
-                                        Packet packet,
-                                        Class<? extends Throwable> exception) {
+    @ParameterizedTest
+    @MethodSource("providerIO")
+    public void sendCheck(Sender<IOException> sender,
+                          Packet packet,
+                          Class<? extends Throwable> exception)
+    {
         DatagramPacket pkt = packet.packet;
         if (exception != null) {
-            Throwable t = expectThrows(exception, () -> sender.send(pkt));
-            System.out.printf("%s got expected exception %s%n",
-                    packet.toString(), t);
+            Throwable t = assertThrows(exception, () -> sender.send(pkt));
+            System.out.printf("%s got expected exception %s%n", packet, t);
         } else {
             try {
                 sender.send(pkt);

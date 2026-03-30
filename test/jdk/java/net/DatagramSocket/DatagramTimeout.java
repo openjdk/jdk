@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,23 +26,24 @@
  * @bug 4163126 8222829
  * @summary Test to see if timeout hangs. Also checks that
  * negative timeout value fails as expected.
- * @run testng DatagramTimeout
+ * @run junit DatagramTimeout
  */
 
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.MulticastSocket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.nio.channels.DatagramChannel;
+import java.util.List;
 
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertThrows;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class DatagramTimeout {
     private static final Class<IllegalArgumentException> IAE =
@@ -51,49 +52,38 @@ public class DatagramTimeout {
             SocketTimeoutException.class;
     private static final Class<SocketException> SE = SocketException.class;
 
-    private DatagramSocket datagramSocket, multicastSocket,
-            datagramSocketAdaptor;
-
-    @BeforeTest
-    public void setUp() throws Exception {
-        datagramSocket = new DatagramSocket();
-        multicastSocket = new MulticastSocket();
-        datagramSocketAdaptor = DatagramChannel.open().socket();
+    public static List<DatagramSocket> sockets() throws IOException {
+        // Closeable arguments passed to a ParameterizedTest are automatically
+        // closed by JUnit
+        return List.of(
+                new DatagramSocket(),
+                new MulticastSocket(),
+                DatagramChannel.open().socket());
     }
 
-    @DataProvider(name = "data")
-    public Object[][] variants() {
-        return new Object[][]{
-                { datagramSocket        },
-                { datagramSocketAdaptor },
-                { multicastSocket       },
-        };
-    }
-
-    @Test(dataProvider = "data")
+    @ParameterizedTest
+    @MethodSource("sockets")
     public void testSetNegTimeout(DatagramSocket ds)  {
+        assertFalse(ds.isClosed());
         assertThrows(IAE, () -> ds.setSoTimeout(-1));
     }
 
-    @Test(dataProvider = "data")
+    @ParameterizedTest
+    @MethodSource("sockets")
     public void testSetTimeout(DatagramSocket ds) throws Exception {
+        assertFalse(ds.isClosed());
         byte[] buffer = new byte[50];
         DatagramPacket pkt = new DatagramPacket(buffer, buffer.length);
         ds.setSoTimeout(2);
         assertThrows(STE, () -> ds.receive(pkt));
     }
 
-    @Test(dataProvider = "data")
+    @ParameterizedTest
+    @MethodSource("sockets")
     public void testGetTimeout(DatagramSocket ds) throws Exception {
+        assertFalse(ds.isClosed());
         ds.setSoTimeout(10);
         assertEquals(10, ds.getSoTimeout());
-    }
-
-    @AfterTest
-    public void tearDown() {
-        datagramSocket.close();
-        multicastSocket.close();
-        datagramSocketAdaptor.close();
     }
 
     @Test
