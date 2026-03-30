@@ -210,7 +210,10 @@ public class KullaTesting {
         analysis = null;
         allSnippets = null;
         idToSnippet = null;
+        tearDownDone();
     }
+
+    protected void tearDownDone() {}
 
     public ClassLoader createAndRunFromModule(String moduleName, Path modPath) {
         ModuleFinder finder = ModuleFinder.of(modPath);

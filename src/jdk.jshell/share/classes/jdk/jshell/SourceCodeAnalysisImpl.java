@@ -1981,9 +1981,6 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             if (availableSources != null) {
                 return availableSources;
             }
-            if (availableSourcesOverride != null) {
-                return availableSources = availableSourcesOverride;
-            }
         }
         List<Path> result = new ArrayList<>();
         Path home = Paths.get(System.getProperty("java.home"));
@@ -2030,20 +2027,26 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             }
         }
 
-        for (Path binaryPath : getAllPaths()) {
-            mappedSourcesForBinaries.computeIfAbsent(binaryPath, p -> {
-                Iterable<? extends Path> mappedSources = proc.binarySourceMapping.apply(p);
-                List<Path> sources = new ArrayList<>();
+        if (proc.binarySourceMapping != null) {
+            for (Path binaryPath : getAllPaths()) {
+                mappedSourcesForBinaries.computeIfAbsent(binaryPath, p -> {
+                    Iterable<? extends Path> mappedSources = proc.binarySourceMapping.apply(p);
+                    List<Path> sources = new ArrayList<>();
 
-                if (mappedSources != null) {
-                    if (mappedSources instanceof AutoCloseable closeable) {
-                        closeables.add(closeable);
+                    if (mappedSources != null) {
+                        if (mappedSources instanceof AutoCloseable closeable) {
+                            closeables.add(closeable);
+                        }
+                        mappedSources.forEach(sources::add);
                     }
-                    mappedSources.forEach(sources::add);
-                }
 
-                return sources;
-            }).forEach(result::add);
+                    return sources;
+                }).forEach(result::add);
+            }
+        }
+
+        if (availableSourcesOverride != null) {
+            result.addAll(availableSourcesOverride);
         }
 
         synchronized (currentIndexes) {
