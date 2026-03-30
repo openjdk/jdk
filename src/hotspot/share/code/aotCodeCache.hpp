@@ -227,12 +227,12 @@ protected:
     void set_use_flag(enum IntrinsicsUseFlags flag) { _use_intrinsics_flags |= flag; }
 #if defined(X86) && !defined(ZERO)
     uint _avx3threshold;
+    uint _useAVX;
     enum X86Flags {
       x86_none                   = 0,
       x86_enableX86ECoreOpts     = 1,
       x86_useUnalignedLoadStores = 2,
-      x86_useAVX                 = 4,
-      x86_useAPX                 = 8
+      x86_useAPX                 = 4
     };
     uint _x86_flags;
     enum X86IntrinsicsUseFlags {
