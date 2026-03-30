@@ -89,7 +89,7 @@ public final class Reifier {
         List<Signature.RefTypeSig> superinterfaces = param.interfaceBounds();
         int count = (superclass.isEmpty() ? 0 : 1) + superinterfaces.size();
         Signature[] array;
-        if (superclass.isPresent()){
+        if (superclass.isPresent()) {
             array = new Signature[count];
             array[0] = superclass.get();
             for (int i = 1; i < array.length; i++) {
