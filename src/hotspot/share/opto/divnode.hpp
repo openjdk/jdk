@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,9 +41,6 @@ private:
 
 protected:
   DivModIntegerNode(Node* c, Node* dividend, Node* divisor) : Node(c, dividend, divisor), _pinned(false) {}
-
-public:
-  static DivModIntegerNode* make(Node* c, Node* in1, Node* in2, BasicType bt);
 
 private:
   virtual uint size_of() const override { return sizeof(DivModIntegerNode); }

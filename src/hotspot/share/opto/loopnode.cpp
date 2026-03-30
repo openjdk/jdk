@@ -4550,8 +4550,9 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) const {
 //
 // The division (iv - init) / stride_con is always exact because at iteration
 // k the primary IV has value init + k * stride_con, so iv - init is always a
-// multiple of stride_con. For |stride_con| == 1 the division is elided; for
-// larger constants IGVN strength-reduces it into multiply-and-shift sequences.
+// multiple of stride_con. For |stride_con| == 1 the division is elided. For
+// larger strides the division is computed in long to avoid signed overflow
+// of iv - init, and IGVN strength-reduces the constant divisor.
 // Such transformation introduces more optimization opportunities, the loop
 // can often be eliminated.
 //
@@ -4635,9 +4636,11 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
 
     // Compute iteration count = (iv - init) / stride_con.
     // The division is always exact (iv - init = k * stride_con at iteration k).
-    // For |stride_con| == 1 the division is elided. The DivNode is only
-    // created when |stride_con| > 1, so the divisor is never -1 and the
-    // JVM special case MIN_INT / -1 == MIN_INT cannot occur.
+    // For |stride_con| == 1 the division is elided. For larger strides the
+    // division is computed in long because iv - init may overflow the signed
+    // int range (its magnitude always fits in 32 bits). The result is
+    // truncated back to int for T_INT via ConvL2I, which is always lossless
+    // since the iteration count is at most (2^32 - 1) / 2 = MAX_INT.
     Node* iterations;
     if (stride_con == 1) {
       iterations = SubNode::make(phi_converted, init_converted, bt);
@@ -4645,11 +4648,18 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
       // (phi - init) / -1 == init - phi
       iterations = SubNode::make(init_converted, phi_converted, bt);
     } else {
-      Node* diff_iv = SubNode::make(phi_converted, init_converted, bt);
-      _igvn.register_new_node_with_optimizer(diff_iv);
-      set_ctrl(diff_iv, cl);
-      Node* stride_node = integercon(stride_con, bt);
-      iterations = DivModIntegerNode::make(nullptr, diff_iv, stride_node, bt);
+      // Widen to long to avoid signed overflow in the division.
+      Node* phi_long = (bt == T_LONG) ? phi_converted : insert_convert_node_if_needed(T_LONG, phi);
+      Node* init_long = (bt == T_LONG) ? init_converted : insert_convert_node_if_needed(T_LONG, init);
+      Node* diff = SubNode::make(phi_long, init_long, T_LONG);
+      _igvn.register_new_node_with_optimizer(diff);
+      set_ctrl(diff, cl);
+      Node* stride_node = integercon(stride_con, T_LONG);
+      iterations = new DivLNode(nullptr, diff, stride_node);
+      _igvn.register_new_node_with_optimizer(iterations);
+      if (bt == T_INT) {
+        iterations = new ConvL2INode(iterations);
+      }
     }
     _igvn.register_new_node_with_optimizer(iterations);
     set_ctrl(iterations, cl);

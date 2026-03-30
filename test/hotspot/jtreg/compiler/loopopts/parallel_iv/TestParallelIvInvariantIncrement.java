@@ -407,6 +407,81 @@ public class TestParallelIvInvariantIncrement {
         Asserts.assertEQ(expected, conditionalAccum(load, i));
     }
 
+    // Large IV range where iv - init overflows signed int (regression test
+    // for signed overflow bug caught by Test6905845). Use a large stride to
+    // keep the trip count small while still triggering the overflow.
+    @Test
+    @IR(failOn = { IRNode.COUNTED_LOOP })
+    @IR(counts = { IRNode.MUL_I, ">=1" })
+    private static int largeRangeOverflow(int inc) {
+        int a = 0;
+        for (int i = -1_500_000_000; i < 1_500_000_000; i += 10007) {
+            a += inc;
+        }
+        return a;
+    }
+
+    @Run(test = "largeRangeOverflow")
+    private static void runLargeRangeOverflow() {
+        int inc = G.ints().next();
+        // trip count = ceil(3_000_000_000 / 10007) = 299791
+        Asserts.assertEQ(299791 * inc, largeRangeOverflow(inc));
+    }
+
+    @Test
+    @IR(failOn = { IRNode.COUNTED_LOOP })
+    @IR(counts = { IRNode.MUL_I, ">=1" })
+    private static int subStride3(int stop, int inc) {
+        int a = 0;
+        for (int i = 0; i < stop; i += 3) {
+            a -= inc;
+        }
+        return a;
+    }
+
+    @Run(test = "subStride3")
+    private static void runSubStride3() {
+        int s = G.ints().restricted(0, Integer.MAX_VALUE - 3).next();
+        int inc = G.ints().next();
+        Asserts.assertEQ(-Math.ceilDiv(s, 3) * inc, subStride3(s, inc));
+    }
+
+    @Test
+    @IR(failOn = { IRNode.COUNTED_LOOP })
+    @IR(counts = { IRNode.MUL_I, ">=1" })
+    private static int countDownStride2(int start, int inc) {
+        int a = 0;
+        for (int i = start; i > 0; i -= 2) {
+            a += inc;
+        }
+        return a;
+    }
+
+    @Run(test = "countDownStride2")
+    private static void runCountDownStride2() {
+        int s = G.ints().restricted(1, Integer.MAX_VALUE).next();
+        int inc = G.ints().next();
+        Asserts.assertEQ(Math.ceilDiv(s, 2) * inc, countDownStride2(s, inc));
+    }
+
+    @Test
+    @IR(failOn = { IRNode.COUNTED_LOOP })
+    @IR(counts = { IRNode.MUL_L, ">=1" })
+    private static long longStride3(int stop, long inc) {
+        long a = 0;
+        for (int i = 0; i < stop; i += 3) {
+            a += inc;
+        }
+        return a;
+    }
+
+    @Run(test = "longStride3")
+    private static void runLongStride3() {
+        int s = G.ints().restricted(0, Integer.MAX_VALUE - 3).next();
+        long inc = G.longs().next();
+        Asserts.assertEQ((long) Math.ceilDiv(s, 3) * inc, longStride3(s, inc));
+    }
+
     @Test
     @Arguments(values = { Argument.NUMBER_42, Argument.NUMBER_42 })
     @IR(counts = { IRNode.COUNTED_LOOP, ">=1" })

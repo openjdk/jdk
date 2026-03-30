@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -599,18 +598,6 @@ static const IntegerType* compute_signed_div_type(const IntegerType* i1, const I
   NativeType new_lo = MIN4(corner1, corner2, corner3, corner4);
   NativeType new_hi = MAX4(corner1, corner2, corner3, corner4);
   return IntegerType::make(new_lo, new_hi, widen);
-}
-
-DivModIntegerNode* DivModIntegerNode::make(Node* c, Node* in1, Node* in2, BasicType bt) {
-  switch (bt) {
-    case T_INT:
-      return new DivINode(c, in1, in2);
-    case T_LONG:
-      return new DivLNode(c, in1, in2);
-    default:
-      fatal("Not implemented for %s", type2name(bt));
-  }
-  return nullptr;
 }
 
 //=============================================================================
