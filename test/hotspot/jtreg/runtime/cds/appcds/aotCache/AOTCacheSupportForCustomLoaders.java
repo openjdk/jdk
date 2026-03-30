@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,10 +76,12 @@ public class AOTCacheSupportForCustomLoaders {
 }
 
 class AppWithCustomLoaders {
+    static MyLoader loader; // keep alive so its classes can be cached.
+
     public static void main(String args[]) throws Exception {
         File custJar = new File("cust.jar");
         URL[] urls = new URL[] {custJar.toURI().toURL()};
-        MyLoader loader = new MyLoader(urls, AppWithCustomLoaders.class.getClassLoader());
+        loader = new MyLoader(urls, AppWithCustomLoaders.class.getClassLoader());
 
         test1(loader);
         test2(loader);
@@ -107,6 +109,7 @@ class AppWithCustomLoaders {
     }
 
     // Test 3: custom loader defines a class from the exact location as a class defined in the boot layer.
+    static Class test3_c1_keepalive;
     static void test3(String modulePath) throws Exception {
         Class<?> c0 = Class.forName("com.test.Foo");
         System.out.println(c0);
@@ -129,6 +132,9 @@ class AppWithCustomLoaders {
         System.out.println(System.identityHashCode(c1.getModule()));
         System.out.println(c1.getModule().getName());
         System.out.println(c1.getClassLoader());
+
+        // Keep c1 alive so it can be cached.
+        test3_c1_keepalive = c1;
 
         if (!c1.getModule().getName().equals("com.test")) {
             throw new RuntimeException("Unexpected module: " + c1.getModule());
