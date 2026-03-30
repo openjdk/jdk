@@ -42,6 +42,7 @@ public class PartNumberTest {
         runExhaustive();
     }
 
+    @FunctionalInterface
     interface TestMethod {
         Object run();
     }

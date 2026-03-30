@@ -501,8 +501,11 @@ abstract class AbstractVector<E> extends Vector<E> {
         // ML = |f(X)| / |X|
         // -> |f(X)| = |X| * ML
         int resSizeLog2 = domSizeLog2 + laneChangeLog2;
-        // resSizeLog2 = 0 => 1-lane vector shrinking to 1-byte lane-size
-        // resSizeLog2 < 0 => small vector shrinking by more than a lane-size
+        // resSizeLog2 = 0 => logical result only has a single byte
+        //                    e.g. cast L64 (1-element long) to B8 (1-element byte)
+        // resSizeLog2 < 0 => logical result has less than a byte -> impossible!
+        //                    currently, all vectors start with at least 8 bytes,
+        //                    and we can contract by at most a factor of 8.
         assert(resSizeLog2 >= 0);
         if (!partInRange(resSizeLog2, phySizeLog2, part)) {
             // fall through...
