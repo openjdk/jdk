@@ -49,7 +49,8 @@ import static jdk.incubator.vector.VectorOperators.*;
  * {@code double} values.
  */
 @SuppressWarnings("cast")  // warning: redundant cast
-public abstract class DoubleVector extends AbstractVector<Double> {
+public abstract sealed class DoubleVector extends AbstractVector<Double>
+         permits DoubleVector64, DoubleVector128, DoubleVector256, DoubleVector512, DoubleVectorMax {
 
     DoubleVector(double[] vec) {
         super(vec);

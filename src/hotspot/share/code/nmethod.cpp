@@ -69,6 +69,7 @@
 #ifdef COMPILER2
 #include "runtime/hotCodeCollector.hpp"
 #endif // COMPILER2
+#include "runtime/icache.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
@@ -1256,6 +1257,9 @@ void nmethod::post_init() {
 
   finalize_relocations();
 
+  // Flush generated code
+  ICache::invalidate_range(code_begin(), code_size());
+
   Universe::heap()->register_nmethod(this);
 
 #ifdef COMPILER2
@@ -1592,8 +1596,6 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
 
     // Attempt to start using the copy
     if (nm_copy->make_in_use()) {
-      ICache::invalidate_range(nm_copy->code_begin(), nm_copy->code_size());
-
       methodHandle mh(Thread::current(), nm_copy->method());
       nm_copy->method()->set_code(mh, nm_copy);
 
