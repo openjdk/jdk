@@ -179,13 +179,9 @@ public:
   address destination() const;
 
   void set_destination(address dest) {
-    int offset = integer_cast<int>(dest - instruction_address());
-    int insn = 0b100101 << 26;
+    int64_t offset = dest - instruction_address();
     assert((offset & 3) == 0, "should be");
-    offset >>= 2;
-    offset &= (1 << 26) - 1; // mask off insn part
-    insn |= offset;
-    set_int_at(displacement_offset, insn);
+    Instruction_aarch64::spatch(instruction_address(), 25, 0, offset >> 2);
   }
 
   void verify_alignment() { ; }
