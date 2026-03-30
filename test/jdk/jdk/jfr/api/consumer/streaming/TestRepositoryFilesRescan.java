@@ -27,6 +27,7 @@ import java.nio.file.Path;
 
 import jdk.jfr.Recording;
 import jdk.jfr.internal.consumer.RepositoryFiles;
+import jdk.test.lib.Asserts;
 
 /**
  * @test
@@ -57,22 +58,15 @@ public class TestRepositoryFilesRescan {
      */
     private static void testNoOscillation(Path dir) {
         RepositoryFiles rf = new RepositoryFiles(dir, false);
-        if (rf.firstPath(0, false) == null) {
-            throw new AssertionError("Call 1: expected non-null (initial discovery of .jfr files)");
-        }
+        Asserts.assertNotNull(rf.firstPath(0, false), "Call 1: expected non-null (initial discovery of .jfr files)");
 
         Path p2 = rf.firstPath(0, false);
-        if (p2 != null) {
-            throw new AssertionError("Call 2: expected null (no new chunks), got " + p2);
-        }
+        Asserts.assertNull(p2, "Call 2: expected null (no new chunks), got " + p2);
 
         // Call 3: still no new files.  This confirms call 2 did not wipe pathLookup, making all files look "new" again.
         Path p3 = rf.firstPath(0, false);
-        if (p3 != null) {
-            throw new AssertionError(
-                "Call 3: expected null (no new chunks), got " + p3
-                + " — pathLookup is oscillating between populated and empty");
-        }
+        Asserts.assertNull(p3, "Call 3: expected null (no new chunks), got " + p3
+            + " — pathLookup is oscillating between populated and empty");
     }
 
     private static void createChunkFile(Path dir, String name) throws Exception {
