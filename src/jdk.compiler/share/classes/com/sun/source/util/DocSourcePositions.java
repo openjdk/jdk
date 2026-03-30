@@ -75,7 +75,7 @@ public interface DocSourcePositions extends SourcePositions {
      * yield of this tree, that is for any sub-tree of this tree, the following must hold:
      *
      * <p>
-     * {@code getStartPosition(comment, tree) <= getStartPosition(file, comment, subtree)} or <br>
+     * {@code getStartPosition(comment, tree) <= getStartPosition(comment, subtree)} or <br>
      * {@code getStartPosition(comment, tree) == NOPOS} or <br>
      * {@code getStartPosition(comment, subtree) == NOPOS}
      * </p>
@@ -138,7 +138,7 @@ public interface DocSourcePositions extends SourcePositions {
      * In addition, the following must hold:
      *
      * <p>
-     * {@code getStartPosition(comment, tree) <= getEndPosition(file, comment, tree)} or <br>
+     * {@code getStartPosition(comment, tree) <= getEndPosition(comment, tree)} or <br>
      * {@code getStartPosition(comment, tree) == NOPOS} or <br>
      * {@code getEndPosition(comment, tree) == NOPOS}
      * </p>
