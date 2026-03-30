@@ -48,6 +48,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.util.MacBundle;
 import jdk.jpackage.internal.util.RuntimeReleaseFile;
 import jdk.jpackage.internal.util.Slot;
@@ -507,10 +508,13 @@ public final class AppVersionTest {
                             : cmd.pathToUnpackedPackageFile(cmd.appInstallationDirectory());
                     var plist = MacHelper.readPListFromAppImage(bundleRoot);
                     var expectedVersion = expected.get(cmd.packageType()).version();
-                    for (var prop : List.of("CFBundleVersion", "CFBundleShortVersionString")) {
-                        TKit.assertEquals(expectedVersion, plist.queryValue(prop),
-                                String.format("Check the value of '%s' property in [%s] bundle", prop, bundleRoot));
-                    }
+                    TKit.assertEquals(expectedVersion, plist.queryValue("CFBundleVersion"),
+                            String.format("Check the value of '%s' property in [%s] bundle",
+                            "CFBundleVersion", bundleRoot));
+                    TKit.assertEquals(DottedVersion.lazy(expectedVersion).trim(3).toComponentsString(),
+                            plist.queryValue("CFBundleShortVersionString"),
+                            String.format("Check the value of '%s' property in [%s] bundle",
+                            "CFBundleShortVersionString", bundleRoot));
                 });
             }
         }
