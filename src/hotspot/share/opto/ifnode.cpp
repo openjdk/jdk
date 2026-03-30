@@ -1119,85 +1119,85 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
         //     -> a      < b                           (A-B)
         //
         //   Case n <= a:
-        //     (BEFORE) is always true, show (AFTER) is always true.
+        //     (BEFORE) is always false, show (AFTER) is always false.
         //     Since a < b (A-B), S(a+1) = a+1 (no overflow):
         //     -> a+1 <= b
         //     -> n < a+1
-        //     U(n - (lo + 1))          >=  U(hi - (lo + 1))
-        //     -- Lemma2 (n < lo+1) --      -- Lemma1 (lo+1 <= hi) --
-        //       n - (lo + 1) + 2^32    >=    hi - (lo + 1)
-        //       n            + 2^32    >=    hi
-        //     Always true by Lemma3.
+        //     U(n - (a + 1))           <  U(b - (a + 1))
+        //     -- Lemma2 (n < a+1) --      -- Lemma1 (a+1 <= b) --
+        //       n - (a + 1) + 2^32     <    b - (a + 1)
+        //       n           + 2^32     <    b
+        //     Always false by Lemma3.
         //
-        //   Case lo < n < hi:
-        //     (BEFORE) is always false, show (AFTER) is always false.
-        //     Since lo < hi (A-B), S(lo+1) = lo+1 (no overflow):
-        //     -> lo+1 <= hi
-        //     -> n    >= lo+1
-        //     U(n - (lo + 1))          >=  U(hi - (lo + 1))
-        //     -- Lemma1 (n >= lo+1) --     -- Lemma1 (lo+1 <= hi) --
-        //       n - (lo + 1)           >=    hi - (lo + 1)
-        //       n                      >=    hi
-        //     Contradicts n <s hi, so always false.
-        //
-        //   Case n >= hi:
+        //   Case a < n < b:
         //     (BEFORE) is always true, show (AFTER) is always true.
-        //     Since lo < hi (A-B), S(lo+1) = lo+1 (no overflow):
-        //     -> lo+1 <= hi
-        //     U(n - (lo + 1))          >=  U(hi - (lo + 1))
-        //     -- Lemma1 (n >= lo+1) --     -- Lemma1 (lo+1 <= hi) --
-        //       n - (lo + 1)           >=    hi - (lo + 1)
-        //       n                      >=    hi
-        //     Equivalent to case assumption, so always true.
+        //     Since a < b (A-B), S(a+1) = a+1 (no overfaw):
+        //     -> a+1 <= b
+        //     -> n >= a+1
+        //     U(n - (a + 1))           <  U(b - (a + 1))
+        //     -- Lemma1 (n >= a+1) --    -- Lemma1 (a+1 <= b) --
+        //       n - (a + 1)            <    b - (a + 1)
+        //       n                      <    b
+        //     Corresponds to case assumption, so always true.
+        //
+        //   Case n >= b:
+        //     (BEFORE) is always false, show (AFTER) is always false.
+        //     Since a < b (A-B), S(a+1) = a+1 (no overfaw):
+        //     -> a+1 <= b
+        //     U(n - (a + 1))           <  U(b - (a + 1))
+        //     -- Lemma1 (n >= a+1) --  <  -- Lemma1 (a+1 <= b) --
+        //       n - (a + 1)            <    b - (a + 1)
+        //       n                      <    b
+        //     Contradicts case assumption, so always false.
         // QED.
         lo = igvn->transform(new AddINode(lo, igvn->intcon(1)));
         assert(cond == BoolTest::lt, "");
       } else {
         assert(lo_test == BoolTest::lt || lo_test == BoolTest::ge, "lo_test = %d", lo_test);
         // (CASE *2a)
-        // lo=lt,hi=lt    n < lo   || !(n < hi)
-        // lo=ge,hi=lt  !(n >= lo) || !(n < hi)
+        // lo=lt,hi=lt    n < a   || !(n < b)
+        // lo=ge,hi=lt  !(n >= a) || !(n < b)
         //
         // Simplified version:
-        //   n < lo || n >= hi                      (BEFORE)
+        //   n < a || n >= b                      (BEFORE)
         //
         // Transformed to:
-        //   n - lo >=u hi - lo                     (AFTER)
+        //   n - a >=u b - a                     (AFTER)
         //
         // Proof:
         //   From IfNode::filtered_int_type, we get:
-        //     lo_type = [min_int .. max(min_int, lo->_hi - 1)]
-        //     -> lo_type->_hi >= lo->_hi - 1
-        //     hi_type = [hi->_lo .. max_int]
-        //     -> hi_type->_lo = hi->_lo
+        //     lo_type = [min_int .. max(min_int, a->_hi - 1)]
+        //     -> lo_type->_hi >= a->_hi - 1
+        //     hi_type = [b->_lo .. max_int]
+        //     -> hi_type->_lo = b->_lo
         //   Given check from above:
         //     lo_type->_hi < hi_type->_lo
-        //     -> lo->_hi - 1 <  hi->_lo
-        //     -> lo->_hi     <= hi->_lo
-        //     -> lo <= hi                             (A-B)
+        //     -> a->_hi - 1 <  b->_lo
+        //     -> a->_hi     <= b->_lo
+        //     -> a <= b                             (A-B)
         //
-        //   Case n < lo:
+        //   Case n < a:
         //     (BEFORE) is always true, show (AFTER) is always true.
-        //     U(n - lo)               >=  U(hi - lo)
-        //     -- Lemma2 (n < lo) --       -- Lemma1 (lo <= hi) --
-        //       n - lo + 2^32         >=    hi - lo
-        //       n      + 2^32         >=    hi
+        //     U(n - a)               >=  U(b - a)
+        //     -- Lemma2 (n < a) --       -- Lemma1 (a <= b) --
+        //       n - a + 2^32         >=    b - a
+        //       n      + 2^32         >=    b
         //     Always true by Lemma3.
         //
-        //   Case lo <=s n <s hi:
+        //   Case a <=s n <s b:
         //     (BEFORE) is always false, show (AFTER) is always false.
-        //     U(n - lo)               >=  U(hi - lo)
-        //     -- Lemma1 (n >=lo) --       -- Lemma1 (lo <= hi) --
-        //       n - lo                >=    hi - lo
-        //       n                     >=    hi
-        //     Contradicts our case assumption n <s hi, so always false.
+        //     U(n - a)               >=  U(b - a)
+        //     -- Lemma1 (n >=a) --       -- Lemma1 (a <= b) --
+        //       n - a                >=    b - a
+        //       n                     >=    b
+        //     Contradicts our case assumption n <s b, so always false.
         //
-        //   Case n >=s hi:
+        //   Case n >=s b:
         //     (BEFORE) is always true, show (AFTER) is always true.
-        //     U(n - lo)               >=  U(hi - lo)
-        //     -- Lemma1 (n >= lo) --      -- Lemma1 (lo <= hi) --
-        //       n - lo                >=    hi - lo
-        //       n                     >=    hi
+        //     U(n - a)               >=  U(b - a)
+        //     -- Lemma1 (n >= a) --      -- Lemma1 (a <= b) --
+        //       n - a                >=    b - a
+        //       n                     >=    b
         //     Equivalent to case assumption, so always true.
         // QED.
         assert(cond == BoolTest::lt, "");
@@ -1205,18 +1205,18 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
     } else if (hi_test == BoolTest::le) {
       if (lo_test == BoolTest::ge || lo_test == BoolTest::lt) {
         // (CASE *3a)
-        // lo=lt,hi=le:    n <  lo  || !(n <= hi)
-        // lo=ge,hi=le:  !(n >= lo) || !(n <= hi)
+        // lo=lt,hi=le:    n <  a  || !(n <= b)
+        // lo=ge,hi=le:  !(n >= a) || !(n <= b)
         //
         // Simplified version:
-        //   n < lo || n > hi                    (BEFORE)
+        //   n < a || n > b                    (BEFORE)
         //
         // Transformed to:
-        //   n - lo >=u hi - lo + 1              (AFTER)
+        //   n - a >=u b - a + 1              (AFTER)
         //
         // This is a problematic case.
         // Example:
-        //   lo = min_int, hi = max_int, n = 1
+        //   a = min_int, b = max_int, n = 1
         //   (BEFORE): 1 < min_int || 1 > max_int
         //             -> false
         //   (After)   U(1 - min_int) >= U(max_int - min_int + 1)
@@ -1224,66 +1224,66 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
         //               2^31 - 1     >=   0  (unexpected overflow!)
         //             -> true
         //
-        // But lo = min_int, hi = max_int is also the only problematic
-        // case. If we exclude this case, we know that hi - lo + 1
+        // But a = min_int, b = max_int is also the only problematic
+        // case. If we exclude this case, we know that b - a + 1
         // cannot overflow:
-        //   lo > min_int || hi < max_int
-        //   0 <  hi - lo     < 2^32 - 1
-        //   1 <  hi - lo + 1 < 2^32
+        //   a > min_int || b < max_int
+        //   0 <  b - a     < 2^32 - 1
+        //   1 <  b - a + 1 < 2^32
         // And so it follows:
-        //   U(hi - lo + 1) = hi - lo + 1        (RHS-NO-OVERFLOW)
+        //   U(b - a + 1) = b - a + 1        (RHS-NO-OVERFLOW)
         //
         // Proof:
         //   From IfNode::filtered_int_type, we get:
-        //     lo_type = [min_int .. max(min_int, lo->_hi-1)]
-        //     -> lo_type->_hi >= lo->_hi - 1
-        //     hi_type = [min(hi->_lo+1, max_int) .. max_int]
-        //     -> hi_type->_lo <= hi->_lo + 1
+        //     lo_type = [min_int .. max(min_int, a->_hi-1)]
+        //     -> lo_type->_hi >= a->_hi - 1
+        //     hi_type = [min(b->_lo+1, max_int) .. max_int]
+        //     -> hi_type->_lo <= b->_lo + 1
         //   Given check from above:
         //     lo_type->_hi < hi_type->_lo
-        //     -> lo->_hi - 1 < hi->_lo + 1
-        //     -> lo - 1 <  hi + 1
-        //     -> lo     <= hi + 1                        (A-B)
+        //     -> a->_hi - 1 < b->_lo + 1
+        //     -> a - 1 <  b + 1
+        //     -> a     <= b + 1                        (A-B)
         //   Note: this is a substantially weaker condition than elsewhere!
-        //         And it is the reason why we chose rhs = hi - lo + 1,
+        //         And it is the reason why we chose rhs = b - a + 1,
         //         so that this can not underflow the unsigned computation.
-        //         We did this in JDK-8135069, before it was hi - lo, which
-        //         could have underflowed for lo = hi + 1. But now, we just
+        //         We did this in JDK-8135069, before it was b - a, which
+        //         could have underflowed for a = b + 1. But now, we just
         //         traded the underflow problem with an overflow problem,
         //         as we saw above with the problematic case.
         //
-        //   Case n <s lo:
+        //   Case n <s a:
         //     (BEFORE) is always true, show (AFTER) is always true.
-        //     U(n - lo)               >=  U(hi - lo + 1)
-        //     -- Lemma2 (n < lo) --       -- (RHS-NO-OVERFLOW) --
-        //       n - lo + 2^32         >=    hi - lo + 1
-        //       n      + 2^32         >=    hi      + 1
-        //       n      + 2^32         >     hi
+        //     U(n - a)               >=  U(b - a + 1)
+        //     -- Lemma2 (n < a) --       -- (RHS-NO-OVERFLOW) --
+        //       n - a + 2^32         >=    b - a + 1
+        //       n      + 2^32         >=    b      + 1
+        //       n      + 2^32         >     b
         //     Always true by Lemma3.
         //
-        //   Case lo <=s n <=s hi:
+        //   Case a <=s n <=s b:
         //     (BEFORE) is always false, show (AFTER) is always false.
-        //     U(n - lo)               >=  U(hi - lo + 1)
-        //     -- Lemma1 (n >= lo) --      -- (RHS-NO-OVERFLOW) --
-        //       n - lo                >=    hi - lo + 1
-        //       n                     >=    hi      + 1
-        //       n                     >     hi
-        //     Contradicts our case assumption n <=s hi, so always false.
+        //     U(n - a)               >=  U(b - a + 1)
+        //     -- Lemma1 (n >= a) --      -- (RHS-NO-OVERFLOW) --
+        //       n - a                >=    b - a + 1
+        //       n                     >=    b      + 1
+        //       n                     >     b
+        //     Contradicts our case assumption n <=s b, so always false.
         //
-        //   Case n >s hi:
+        //   Case n >s b:
         //     (BEFORE) is always true, show (AFTER) is always true.
-        //     U(n - lo)               >=  U(hi - lo + 1)
-        //     -- Lemma1 (n > lo) --       -- (RHS-NO-OVERFLOW) --
-        //       n - lo                >=    hi - lo + 1
-        //       n                     >=    hi      + 1
-        //       n                     >     hi
+        //     U(n - a)               >=  U(b - a + 1)
+        //     -- Lemma1 (n > a) --       -- (RHS-NO-OVERFLOW) --
+        //       n - a                >=    b - a + 1
+        //       n                     >=    b      + 1
+        //       n                     >     b
         //     Equivalent to case assumption, so always true.
         // QED.
         //
         // Discussion:
         //   The fundamental issue is that the test "lo_type->_hi < hi_type->_lo"
-        //   only implies "lo <= hi + 1", and so "hi - lo" can underflow, and
-        //   "hi - lo + 1" can overflow the unsigned range. We discovered the
+        //   only implies "a <= b + 1", and so "b - a" can underflow, and
+        //   "b - a + 1" can overflow the unsigned range. We discovered the
         //   underflow in JDK-8135069, and then "fixed" it and now we have a
         //   reproducer with overflow.
         //
@@ -1292,16 +1292,16 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
         //
         //   Alternatively: strenghthen the check "lo_type->_hi < hi_type->_lo"
         //   to "lo_type->_hi + 1 < hi_type->_lo" (careful with overflow here!).
-        //     lo_type->_hi + 1 <  hi_type->_lo
-        //     lo->_hi - 1  + 1 <  hi->_lo + 1
-        //     lo->_hi          <= hi->_lo
-        //     lo               <= hi
-        //   Now we can use Lemma1: U(hi - lo) = hi - lo
+        //     a_type->_b + 1 <  hi_type->_lo
+        //     a->_hi - 1  + 1 <  b->_lo + 1
+        //     a->_hi          <= b->_lo
+        //     a               <= b
+        //   Now we can use Lemma1: U(b - a) = b - a
         //   And that would allow us to revert the change from JDK-8135069,
         //   and go back to the solution of transforming:
-        //     n < lo || n > hi
+        //     n < a || n > b
         //   Into:
-        //     n - lo >u hi - lo
+        //     n - a >u b - a
         //   However, that would restrict the optimization for some cases.
         //   For example, this is currently transformed, and we would disable it:
         //     n < 0 || n > -1
@@ -1319,32 +1319,32 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
         //   (CASE *3a) and (CASE *3b) are the only ones where we can not prove
         //   correctness of the current implementation. And the cases that fail
         //   are very limited:
-        //     lo = min_int
-        //     hi = max_int
+        //     a = min_int
+        //     b = max_int
         //   For the equivalent patterns:
-        //     n < lo || n > hi            (CASE *3a)
-        //     n > hi || n < lo            (CASE *3b)
+        //     n < a || n > b            (CASE *3a)
+        //     n > b || n < a            (CASE *3b)
         //
         //   Range Checks have a different pattern:
         //     i < 0 || i >= length
-        //   While length could in theory be max_int, lo is zero or
+        //   While length could in theory be max_int, a is zero or
         //   close to zero, and not min_int.
         //
         //   Further, these cases are only optimized if the range for
-        //     n < lo
-        //     n > hi
+        //     n < a
+        //     n > b
         //   have no overlap provably. This prevents most general cases
-        //   where lo and hi are completely unknown. It requires specific
-        //   restrictions on lo and hi. For example:
-        //     lo = 0
-        //     hi >= 0
+        //   where a and b are completely unknown. It requires specific
+        //   restrictions on a and b. For example:
+        //     a = 0
+        //     b >= 0
         //   which would give us ranges:
-        //     n < lo  ->  n in [min_int .. -1]
-        //     n > hi  ->  n in [1 .. max_int]
+        //     n < a  ->  n in [min_int .. -1]
+        //     n > b  ->  n in [1 .. max_int]
         //
         //   It would be quite strange if someone relied on a check
-        //     n < lo || n > hi
-        //   where lo = min_int and hi = max_int were legitimate range.
+        //     n < a || n > b
+        //   where a = min_int and b = max_int were legitimate range.
         //   Also: before optimization this check should say that
         //   we are INSIDE the range, but after the optimization we
         //   wrongly say we lay OUTSIDE the range. So if this was
@@ -1358,71 +1358,71 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
         cond = BoolTest::lt;
       } else if (lo_test == BoolTest::gt || lo_test == BoolTest::le) {
         // (CASE *4a)
-        // lo=le,hi=le:    n <= lo  || !(n <= hi)
-        // lo=gt,hi=le:   !(n > lo) || !(n <= hi)
+        // lo=le,hi=le:    n <= a  || !(n <= b)
+        // lo=gt,hi=le:   !(n > a) || !(n <= b)
         //
         // Simplified version:
-        //   n <= lo || n > hi                     (BEFORE)
+        //   n <= a || n > b                     (BEFORE)
         //
         // Transformed to:
-        //   n -  lo - 1  >=u hi - lo              (AFTER)
+        //   n -  a - 1  >=u b - a              (AFTER)
         // Equivalent to:
-        //   n - (lo + 1) >=u hi - lo
+        //   n - (a + 1) >=u b - a
         //
         // Proof:
         //   From IfNode::filtered_int_type, we get:
-        //     lo_type = [min_int .. lo->_hi]
-        //     -> lo_type->_hi >= lo->_hi
-        //     hi_type = [min(hi->_lo+1, max_int) .. max_int]
-        //     -> hi_type->_lo <= hi->_lo + 1
+        //     lo_type = [min_int .. a->_hi]
+        //     -> lo_type->_hi >= a->_hi
+        //     hi_type = [min(b->_lo+1, max_int) .. max_int]
+        //     -> hi_type->_lo <= b->_lo + 1
         //   Given check from above:
         //     lo_type->_hi <  hi_type->_lo
-        //     -> lo->_hi   <  hi->_lo + 1
-        //     -> lo        <  hi      + 1
-        //     -> lo        <= hi                 (A-B)
+        //     -> a->_hi   <  b->_lo + 1
+        //     -> a        <  b      + 1
+        //     -> a        <= b                 (A-B)
         //
-        //   Case A: lo = hi
-        //     Let y = lo = hi
-        //     -> n <= lo || n > hi     vs     n -  lo - 1  >=u hi - lo
+        //   Case A: a = b
+        //     Let y = a = b
+        //     -> n <= a || n > b     vs     n -  a - 1  >=u b - a
         //     -> n <= y  || n > y      vs     n -  y  - 1  >=u y  - y = 0
         //        true                         true
         //     Hence, (BEFORE) and (AFTER) are both always true.
         //
-        //   Case B: lo < hi
-        //     Case n <= lo:
+        //   Case B: a < b
+        //     Case n <= a:
         //       (BEFORE) is always true, show (AFTER) is always true.
-        //       Since lo < hi (Case B), S(lo+1) = lo+1 (no overflow):
-        //       -> n < lo+1
-        //       U(n - (lo + 1))          >=  U(hi - lo)
-        //       -- Lemma2 (n < lo+1) --      -- Lemma1 (lo <= hi) --
-        //         n - (lo + 1) + 2^32    >=    hi - lo
-        //         n -       1  + 2^32    >=    hi
-        //         n            + 2^32    >     hi
+        //       Since a < b (Case B), S(a+1) = a+1 (no overflow):
+        //       -> n < a+1
+        //       U(n - (a + 1))          >=  U(b - a)
+        //       -- Lemma2 (n < a+1) --      -- Lemma1 (a <= b) --
+        //         n - (a + 1) + 2^32    >=    b - a
+        //         n -       1  + 2^32    >=    b
+        //         n            + 2^32    >     b
         //       Always true by Lemma3.
         //       Note: To apply Lemma2 above, we must use (Case B), we
         //             could not have done it with (A-B) alone.
         //
-        //     Case lo < n <= hi:
+        //     Case a < n <= b:
         //       (BEFORE) is always false, show (AFTER) is always false.
-        //       Since lo < hi (Case B), S(lo+1) = lo+1 (no overflow):
-        //       -> n    >= lo+1
-        //       U(n - (lo + 1))          >=  U(hi - lo)
-        //       -- Lemma1 (n >= lo+1) --     -- Lemma1 (lo <= hi) --
-        //         n - (lo + 1)           >=    hi - lo
-        //         n -       1            >=    hi
-        //         n                      >     hi
-        //       Contradicts n <= hi, so always false.
+        //       Since a < b (Case B), S(a+1) = a+1 (no overflow):
+        //       -> n    >= a+1
+        //       U(n - (a + 1))          >=  U(b - a)
+        //       -- Lemma1 (n >= a+1) --     -- Lemma1 (a <= b) --
+        //         n - (a + 1)           >=    b - a
+        //         n -       1            >=    b
+        //         n                      >     b
+        //       Contradicts n <= b, so always false.
         //
-        //     Case n > hi:
+        //     Case n > b:
         //       (BEFORE) is always true, show (AFTER) is always true.
-        //       Since lo < hi (Case B), S(lo+1) = lo+1 (no overflow):
-        //       -> lo+1 <= hi
-        //       -> n > lo+1
-        //       U(n - (lo + 1))          >=  U(hi - lo)
-        //       -- Lemma1 (n >  lo+1) --     -- Lemma1 (lo <= hi) --
-        //         n - (lo + 1)           >=    hi - lo
-        //         n -       1            >=    hi
-        //         n                      >     hi
+        //       Since a < b (Case B), S(a+1) = a+1 (no overflow):
+        //       -> a+1 <= b
+        //       -> n > a+1
+        //       U(n - (a + 1))          >=  U(b - a)
+        //       -- Lemma1 (n >  a+1) --     -- Lemma1 (a <= b) --
+        //         n - (a + 1)           >=    b - a
+        //         n -       1            >=    b
+        //         n                      >     b
         //     Equivalent to case assumption, so always true.
         // QED.
         adjusted_lim = igvn->transform(new SubINode(hi, lo));
@@ -1457,27 +1457,27 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
     if (lo_test == BoolTest::lt) {
       if (hi_test == BoolTest::lt || hi_test == BoolTest::ge) {
         // (CASE *2b)
-        // lo=lt,hi=lt:    n < lo || !(n <  hi)
-        // lo=lt,hi=ge:    n < lo ||   n >= hi
+        // lo=lt,hi=lt:    n < a || !(n <  b)
+        // lo=lt,hi=ge:    n < a ||   n >= b
         //
         // Simplified version:
-        //   n < lo || n >= hi                      (BEFORE)
+        //   n < a || n >= b                      (BEFORE)
         //
         // Transformed to:
-        //   n - lo >=u hi - lo                     (AFTER)
+        //   n - a >=u b - a                     (AFTER)
         //
         // This is exaclty the same as (CASE *2a).
         cond = BoolTest::ge;
       } else if (hi_test == BoolTest::le || hi_test == BoolTest::gt) {
         // CASE (*3b)
-        // lo=lt,hi=le:   n < lo || !(n <= hi)
-        // lo=lt,hi=gt:   n < lo ||   n >  hi
+        // lo=lt,hi=le:   n < a || !(n <= b)
+        // lo=lt,hi=gt:   n < a ||   n >  b
         //
         // Simplified version:
-        //   n < lo || n > hi                    (BEFORE)
+        //   n < a || n > b                    (BEFORE)
         //
         // Transformed to:
-        //   n - lo >=u hi - lo + 1              (AFTER)
+        //   n - a >=u b - a + 1              (AFTER)
         //
         // This is exaclty the same as (CASE *3a).
         adjusted_lim = igvn->transform(new SubINode(hi, lo));
@@ -1490,32 +1490,32 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
     } else if (lo_test == BoolTest::le) {
       if (hi_test == BoolTest::lt || hi_test == BoolTest::ge) {
         // (CASE *1b)
-        // lo=le,hi=lt:    n <= lo  || !(n <  hi)
-        // lo=le,hi=ge:    n <= lo  ||   n >= hi
+        // lo=le,hi=lt:    n <= a  || !(n <  b)
+        // lo=le,hi=ge:    n <= a  ||   n >= b
         //
         // Simplified version:
-        //   n <= lo || n >= hi                    (BEFORE)
+        //   n <= a || n >= b                    (BEFORE)
         //
         // Transformed to:
-        //   n -  lo - 1  >=u hi -  lo - 1         (AFTER)
+        //   n -  a - 1  >=u b -  a - 1         (AFTER)
         // Equivalent to:
-        //   n - (lo + 1) >=u hi - (lo + 1)
+        //   n - (a + 1) >=u b - (a + 1)
         //
         // This is exaclty the same as (CASE *1a).
         lo = igvn->transform(new AddINode(lo, igvn->intcon(1)));
         cond = BoolTest::ge;
       } else if (hi_test == BoolTest::le || hi_test == BoolTest::gt) {
         // (CASE *4b)
-        // lo=le,hi=le:    n <= lo || !(n <= hi)
-        // lo=le,hi=gt:    n <= lo ||   n >  hi
+        // lo=le,hi=le:    n <= a || !(n <= b)
+        // lo=le,hi=gt:    n <= a ||   n >  b
         //
         // Simplified version:
-        //   n <= lo || n > hi                     (BEFORE)
+        //   n <= a || n > b                     (BEFORE)
         //
         // Transformed to:
-        //   n -  lo - 1  >=u hi - lo              (AFTER)
+        //   n -  a - 1  >=u b - a              (AFTER)
         // Equivalent to:
-        //   n - (lo + 1) >=u hi - lo
+        //   n - (a + 1) >=u b - a
         //
         // This is exactly the same as (CASE 4a*)
         adjusted_lim = igvn->transform(new SubINode(hi, lo));
