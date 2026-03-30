@@ -247,7 +247,6 @@ void PatchingStub::align_patch_site(MacroAssembler* masm) {
 
 void PatchingStub::emit_code(LIR_Assembler* ce) {
   assert(NativeCall::instruction_size <= _bytes_to_copy && _bytes_to_copy <= 0xFF, "not enough room for call");
-
   Label call_patch;
 
   // static field accesses have special semantics while the class
@@ -342,7 +341,22 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
   assert(patch_info_pc - end_of_patch == bytes_to_skip, "incorrect patch info");
 
   address entry = __ pc();
+  bool seen_the_thing = false;
+  if (*_pc_start == 0x48 && *(_pc_start + 1) == 0xba && UseNewCode) {
+    tty->print_cr("B %p: %02x %02x%02x%02x%02x%02x%02x%02x%02x%02x", _pc_start, *(_pc_start), *(_pc_start+1), *(_pc_start+2), *(_pc_start+3), *(_pc_start+4), *(_pc_start+5), *(_pc_start+6), *(_pc_start+7), *(_pc_start+8), *(_pc_start+9));
+    seen_the_thing = true;
+  }
+  if (*_pc_start == 0x48 && *(_pc_start + 1) == 0xba) {
+    assert(*(long long int*)(_pc_start+2) == 0, "");
+    for (int i = 0; i < 8; ++i) {
+      *(_pc_start + i + 2) = NativeInstruction::nop_instruction_code;
+    }
+  }
   NativeGeneralJump::insert_unconditional((address)_pc_start, entry);
+  if (seen_the_thing) {
+    tty->print_cr("C %p: %02x %02x%02x%02x%02x%02x%02x%02x%02x%02x", _pc_start, *(_pc_start), *(_pc_start+1), *(_pc_start+2), *(_pc_start+3), *(_pc_start+4), *(_pc_start+5), *(_pc_start+6), *(_pc_start+7), *(_pc_start+8), *(_pc_start+9));
+    tty->print_cr("");
+  }
   address target = nullptr;
   relocInfo::relocType reloc_type = relocInfo::none;
   switch (_id) {
