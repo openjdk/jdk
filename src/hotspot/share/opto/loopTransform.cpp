@@ -2726,21 +2726,16 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
     Node *iff = loop->_body[i];
     if (iff->Opcode() == Op_If ||
         iff->Opcode() == Op_RangeCheck) { // Test?
-      if (iff->outcnt() != 2) {
-        continue; // Ignore partially dead tests.
-      }
+      assert(iff->outcnt() == 2, "IfNode should have two projections");
 
       IfNode* if_node = iff->as_If();
       ProjNode* if_true_proj = if_node->proj_out(1);
       ProjNode* if_false_proj = if_node->proj_out(0);
-      if (if_true_proj == nullptr || if_false_proj == nullptr) {
-        continue;
-      }
 
       // Select the projection to keep in the constrained main loop.
       // For loop exits, we must keep the in-loop projection as before.
       // For internal branches (both projections stay in the loop), keep the
-      // hotter projection so the main loop executes the majority path.
+      // hotter projection only when profiling indicates a clear majority path.
       ProjNode* main_proj = nullptr;
       Node* exit = loop->is_loop_exit(iff);
       if (exit != nullptr) {
@@ -2751,10 +2746,22 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
         if (!true_in_loop || !false_in_loop) {
           continue;
         }
-        // Use branch probability to maximize work in the optimized main loop.
-        // _prob is the probability of taking IfTrue. If unknown, keep IfTrue.
+        // _prob is the probability of taking IfTrue.
+        // Only apply RCE on internal branches when profile is available and
+        // sufficiently biased so the constrained main loop remains effective.
         float true_prob = if_node->_prob;
-        main_proj = (true_prob == PROB_UNKNOWN || true_prob >= PROB_FAIR) ? if_true_proj : if_false_proj;
+        if (true_prob == PROB_UNKNOWN) {
+          continue;
+        }
+
+        const float min_hot_prob = 0.1f;
+        if (true_prob <= min_hot_prob) {
+          main_proj = if_false_proj;
+        } else if (true_prob >= (1.0f - min_hot_prob)) {
+          main_proj = if_true_proj;
+        } else {
+          continue;
+        }
       }
 
       int keep_con = main_proj->is_IfTrue() ? 1 : 0;
@@ -2764,7 +2771,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
       Node *i1 = iff->in(1);
       if (!i1->is_Bool()) continue;
       BoolNode *bol = i1->as_Bool();
-      if (exit == nullptr && loop->is_invariant(bol)) {
+      if (loop->is_invariant(bol)) {
         // Keep loop-invariant conditions for loop unswitching.
         continue;
       }
