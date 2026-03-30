@@ -289,6 +289,8 @@ Mutex::Mutex(Rank rank, const char * name, bool allow_vm_block) : _owner(nullptr
   assert(name != nullptr, "Mutex requires a name");
   _name = os::strdup(name, mtInternal);
 #ifdef ASSERT
+  ResourceMark rm;
+
   _allow_vm_block  = allow_vm_block;
   _rank            = rank;
   _skip_rank_check = false;
