@@ -23972,8 +23972,12 @@ instruct vmask_gen_imm(kReg dst, immL len, rRegL temp) %{
   format %{ "vector_mask_gen $len \t! vector mask generator" %}
   effect(TEMP temp);
   ins_encode %{
-    __ mov64($temp$$Register, (0xFFFFFFFFFFFFFFFFUL >> (64 -$len$$constant)));
-    __ kmovql($dst$$KRegister, $temp$$Register);
+    if ($len$$constant > 0) {
+      __ mov64($temp$$Register, right_n_bits($len$$constant));
+      __ kmovql($dst$$KRegister, $temp$$Register);
+    } else {
+      __ kxorql($dst$$KRegister, $dst$$KRegister, $dst$$KRegister);
+    }
   %}
   ins_pipe( pipe_slow );
 %}
