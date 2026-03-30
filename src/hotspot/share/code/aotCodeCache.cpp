@@ -747,10 +747,6 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
   }
 #endif // INCLUDE_JVMCI
 
-  // Ensure intrinsics use flags are the same -- we may be able to
-  // relax some of these later
-
-
   // The following checks do not affect AOT adapters caching
 
   if (test_flag(compressedOops) != UseCompressedOops) {
