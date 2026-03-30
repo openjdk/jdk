@@ -42,9 +42,13 @@ import jdk.test.lib.process.ProcessTools;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.Writer;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
@@ -55,7 +59,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.LockSupport;
 import java.util.function.BooleanSupplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -112,9 +115,9 @@ public class CompileLevelPrintTest {
                 Runner.run("compileonly", "8", "8", "4", Set.of(" "), Set.of(), true, false);
                 Runner.run("compileonly", "12", "12", "4", Set.of(" "), Set.of(), true, false);
 
-                Runner.run("exclude", "14", "1", "1", Set.of(), Set.of(), false, false);
-                Runner.run("exclude", "13", "2", "2", Set.of(), Set.of(), false, false);
-                Runner.run("exclude", "11", "4", "3", Set.of(), Set.of(), false, false);
+                Runner.run("exclude", "14", "1", "1", Set.of(), Set.of("4"), true, false);
+                Runner.run("exclude", "13", "2", "2", Set.of(), Set.of("4"), true, false);
+                Runner.run("exclude", "11", "4", "3", Set.of(), Set.of("4"), true, false);
                 Runner.run("exclude", "7", "8", "4", Set.of(" "), Set.of(), true, false);
             } else {
                 // -XX:+TieredCompilation
@@ -145,12 +148,13 @@ public class CompileLevelPrintTest {
         private static final Pattern reCompilation = Pattern.compile(
                 "(\\d+) (C1|C2|no compiler): *(\\d+) ([ %][ s][ !][ b][ n]) ([-0-4 ]) +([^ ]+).*");
         private static final Pattern reExcludeCompile = Pattern.compile(
-                "made not compilable on level (\\d) +([^ ]+) .* excluded by CompileCommand");
+                ".*made not compilable on level (\\d) +([^ ]+) .* excluded by CompileCommand");
         private static final Pattern reCompiledMethod = Pattern.compile(
-                ".*\\n-{35} Assembly -{35}\\n(?:\\[[0-9.]+s]\\[warning]\\[os] Loading hsdis library failed\\n)?\\nCompiled method \\((?:c1|c2)\\) (\\d+) (C1|C2): *"
+                ".*-{35} Assembly -{35}\\n(?:\\[[0-9.]+s]\\[warning]\\[os] Loading hsdis library failed\\n)?\\nCompiled method \\((?:c1|c2)\\) (\\d+) (C1|C2): *"
                       + "(\\d+) ([ %][ s][ !][ b][ n]) ([-0-4 ]) +([^ ]+) \\(\\d+ bytes\\)", Pattern.DOTALL);
         private static final Pattern reMethodData = Pattern.compile(
                 ".*-{72}\\nstatic ([^\\n]+)\\n *interpreter_invocation_count: *\\d+\\n *invocation_counter: *\\d+", Pattern.DOTALL);
+        private static final Pattern reEndOfLog = Pattern.compile("<hotspot_log_done .*/>");
 
         public static void run(String compileCmd,
                                String cmdCompLevel,
@@ -161,13 +165,15 @@ public class CompileLevelPrintTest {
                                boolean expectMDOPrinted, boolean tieredCompilation)
                 throws IOException, InterruptedException {
 
-            System.out.println("\n########> Testing " + compileCmd + " " + cmdCompLevel);
+            IO.println("\n########> Testing " + compileCmd + " " + cmdCompLevel);
 
             ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:+PrintCompilation",
                     "-XX:+CIPrintCompilerName",
                     "-XX:+PrintTieredEvents",
+                    "-XX:+LogVMOutput",
+                    "-XX:+LogCompilation",
                     "-XX:" + (tieredCompilation ? "+" : "-") + "TieredCompilation",
                     "-XX:TieredStopAtLevel=" + tieredStopAtLevel,
                     "-XX:CompileCommand=" + compileCmd + "," + TEST_METHOD_NAME_DBL_COLON + "," + cmdCompLevel,
@@ -184,11 +190,11 @@ public class CompileLevelPrintTest {
                     TesteeState testeeState = new TesteeState();
 
                     Thread stdoutParser = startDaemonThread(() ->
-                            testeeOutputMonitor(processOutput, testeeState, "testee-" + process.pid() + ".out"));
+                            matchVmMessages(processOutput, testeeState,  "", "testee-" + process.pid() + ".out"));
                     Thread stderrParser = startDaemonThread(() ->
-                            testeeErrorOutputMonitor(processErrOut, testeeState, "testee-" + process.pid() + ".err"));
+                            matchTesteeMessages(processErrOut, testeeState, "testee-" + process.pid() + ".err"));
 
-                    System.out.println("##> Waiting for testee to get ready for the start command");
+                    IO.println("##> Waiting for testee to get ready for the start command");
                     if (!testeeState.waitingForStartTest.await(TIMEOUT_SEC, TimeUnit.SECONDS)) {
                         throw new RuntimeException("No start signal from testee");
                     }
@@ -204,13 +210,30 @@ public class CompileLevelPrintTest {
                             "print " + TEST_METHOD_NAME_DOT + " intx print = " + printCmdCompLevel),
                             "'CompileCommand: print ...' was not printed");
 
-                    System.out.println("##> Order testee to start");
+                    IO.println("##> Order testee to start");
                     processInput.write(START_CMD); processInput.newLine(); processInput.flush();
 
                     waitUntil(() -> !process.isAlive()
-                            || (expectedCompLevel.equals(testeeState.testMethodCompiledAtLevel)
+                            || (!expectedCompLevel.isEmpty() && !expectExcludedAtLevels.isEmpty()
+                                    && expectedCompLevel.equals(testeeState.testMethodCompiledAtLevel)
                                     && expectedCompLevel.equals(testeeState.testMethodPrintedAtLevel)
                                     && expectExcludedAtLevels.equals(testeeState.testMethodExcludedAtLevel)));
+
+                    if (process.isAlive()) {
+                        IO.println("##> Required messages have been found in testee output, now stop it");
+                        processInput.write(STOP_CMD + "\n");
+                        processInput.flush();
+                        processInput.close();
+                    }
+
+                    Asserts.assertEquals(0, process.waitFor());
+                    stdoutParser.join();
+                    stderrParser.join();
+
+                    // Process stdout can be garbled: pieces of different messages can be intertwined and regexps may
+                    // intermittently fail to match the messages.
+                    // Now parse Hotspot log file to re-match them. Duplicates are OK.
+                    matchMessagesInHotspotLog("hotspot_pid" + process.pid() + ".log", testeeState);
 
                     Asserts.assertEquals(expectedCompLevel, testeeState.testMethodCompiledAtLevel,
                             "Test method was not compiled at required level (" + expectedCompLevel + ")");
@@ -218,15 +241,6 @@ public class CompileLevelPrintTest {
                             "Test method assembly was not printed at required level (" + expectedCompLevel + ")");
                     Asserts.assertEquals(expectExcludedAtLevels, testeeState.testMethodExcludedAtLevel,
                             "Test method compilation was not excluded at required levels (" + expectExcludedAtLevels + ")");
-
-                    System.out.println("##> Test method compiled, now stop");
-                    processInput.write(STOP_CMD); processInput.newLine(); processInput.flush();
-                    processInput.close();
-
-                    Asserts.assertEquals(0, process.waitFor());
-                    stdoutParser.join();
-                    stderrParser.join();
-
                     Asserts.assertEquals(expectMDOPrinted, testeeState.testMethodMDOPrinted,
                             "Test method MDO was" + (expectMDOPrinted ? " NOT" : "") + " printed");
 
@@ -242,14 +256,25 @@ public class CompileLevelPrintTest {
             }
         }
 
-        private static void testeeOutputMonitor(BufferedReader testeeOutput, TesteeState testeeState, String fileName) {
-            try (BufferedWriter outWriter = new BufferedWriter(new FileWriter(fileName))) {
+        private static void matchMessagesInHotspotLog(String logFileName, TesteeState testeeState) throws IOException {
+            IO.println("##> Parsing " + logFileName + " to match possibly missed messages");
+            try (BufferedReader reader = new BufferedReader(new FileReader(logFileName))) {
+                matchVmMessages(reader, testeeState, "Log: ", null);
+            }
+        }
+
+        private static void matchVmMessages(BufferedReader testeeOutput, TesteeState testeeState, String logPrefix, String fileName) {
+            try (Writer outWriter = fileName != null
+                    ? new BufferedWriter(new FileWriter(fileName))
+                    : new PrintWriter(new DiscardingOutputStream())
+            ) {
                 String line;
                 LinkedList<String> lastNLines = new LinkedList<>();
+                boolean endOfLog = false;
 
-                while ((line = testeeOutput.readLine()) != null) {
+                while (!endOfLog && (line = testeeOutput.readLine()) != null) {
                     outWriter.write(line);
-                    outWriter.newLine();
+                    outWriter.write('\n');
 
                     line = line.trim();
 
@@ -314,15 +339,17 @@ public class CompileLevelPrintTest {
                             msg = "Test method data:"
                                     + " name=" + matcher.group(1);
                         }
-                    } else if (DEBUG_OUTPUT) {
-                        System.out.println("Did not parse stdout: " + line);
+                    } else if (reEndOfLog.matcher(line).matches()) {
+                        endOfLog = true;
+
+                        msg = "End of log";
                     }
 
                     if (!msg.isEmpty()) {
-                        msg = "##> " + msg;
-                        System.out.println(msg);
+                        msg = "##> " + logPrefix + msg;
+                        IO.println(msg);
                         outWriter.write(msg);
-                        outWriter.newLine();
+                        outWriter.write('\n');
                     }
                 }
             } catch (Exception ex) {
@@ -330,7 +357,7 @@ public class CompileLevelPrintTest {
             }
         }
 
-        private static void testeeErrorOutputMonitor(BufferedReader testeeErrorOutput, TesteeState testeeState, String fileName) {
+        private static void matchTesteeMessages(BufferedReader testeeErrorOutput, TesteeState testeeState, String fileName) {
             try (BufferedWriter outWriter = new BufferedWriter(new FileWriter(fileName))) {
                 String line;
                 while ((line = testeeErrorOutput.readLine()) != null) {
@@ -340,14 +367,14 @@ public class CompileLevelPrintTest {
                     line = line.trim();
 
                     if (TESTEE_WAITING_FOR_START_CMD.equals(line)) {
-                        System.out.println("##> Testee is waiting for start command");
+                        IO.println("##> Testee is waiting for start command");
                         testeeState.waitingForStartTest.countDown();
                     } else if (line.startsWith("==>")) {
-                        System.out.println(line);
+                        IO.println(line);
                     } else if (line.startsWith("Exception in thread ") || line.startsWith("at ")) {
-                        System.out.println("==>" + line);
+                        IO.println("==>" + line);
                     } else if (DEBUG_OUTPUT) {
-                        System.out.println("Did not parse stderr: " + line);
+                        IO.println("Did not parse stderr: " + line);
                     }
                 }
             } catch (Exception ex) {
@@ -430,7 +457,7 @@ public class CompileLevelPrintTest {
             for (int i = 0; i < 10000; i++) {
                 compiledMethod(i);
                 if ((i & 0xf) == 0 && stopCmd.getCount() == 0) {
-                    System.err.println("==> compiledMethod() has been compiled at iteration " + i);
+                    System.err.println("==> Bailing out of compiledMethod() at iteration " + i);
                     return true;
                 }
             }
@@ -453,13 +480,21 @@ public class CompileLevelPrintTest {
         return t;
     }
 
-    static boolean waitUntil(BooleanSupplier condition) {
+    static boolean waitUntil(BooleanSupplier condition) throws InterruptedException {
         for (int maxWait = TIMEOUT_SEC * 5; maxWait > 0; --maxWait) {
             if (condition.getAsBoolean()) {
                 return true;
             }
-            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(200));
+            Thread.sleep(200);
         }
         return false;
+    }
+
+    static class DiscardingOutputStream extends OutputStream {
+        private DiscardingOutputStream() {
+        }
+
+        public void write(int b) throws IOException {
+        }
     }
 }
