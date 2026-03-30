@@ -97,9 +97,8 @@ private:
   void restore() {
     MacroAssembler* masm = _masm;
     bool restore_R2 = _result != Z_R2;
-    int offset = 0;
+    int offset = 8;
 
-    __ pop_frame();                       offset += 8;
     __ restore_return_pc();               offset += 8;
     __ z_lmg(Z_R0, Z_R1, offset, Z_SP);   offset += 2 * 8;
     if(restore_R2) {
@@ -114,6 +113,7 @@ private:
     __ z_ld(Z_F5, offset, Z_SP);          offset += 8;
     __ z_ld(Z_F6, offset, Z_SP);          offset += 8;
     __ z_ld(Z_F7, offset, Z_SP);
+    __ pop_frame();
   }
 
 public:
@@ -147,8 +147,8 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
 
   BLOCK_COMMENT("ZBarrierSetAssembler::load_at {");
 
-  ////Allocte scratch register
-  //Register scratch = temp1;
+  //Allocte scratch register
+  Register scratch = Z_tmp_1;
   //if(temp1 == noreg) {
     //scratch = Z_R1_scratch;
   //}
@@ -163,10 +163,10 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   //
 
   // Load adress
-  // __ z_la(scratch, src);
+   __ z_lay(scratch, src);
 
   // Load oop at address
-  __ z_lg(dst, src);
+  __ z_lg(dst, Address(scratch, 0));
 
   const bool on_non_strong =
       (decorators & ON_WEAK_OOP_REF) != 0 ||
@@ -196,7 +196,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
       __ z_lgr(Z_ARG1, dst);
     }
     // RuntimeTODO: Why are we storing the contents af temp registers in ARG2, all other architectures have done a similiar thing
-    __ z_lay(Z_ARG2, src);
+    __ z_lay(Z_ARG2, scratch);
 
     __ call_VM_leaf(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(decorators));
   }
