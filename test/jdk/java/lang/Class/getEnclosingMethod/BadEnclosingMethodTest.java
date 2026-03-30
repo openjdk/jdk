@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8350704
+ * @bug 8350704 8381377
  * @summary Test behaviors with various bad EnclosingMethod attribute
  * @library /test/lib
  * @run junit BadEnclosingMethodTest
@@ -111,7 +111,7 @@ class BadEnclosingMethodTest {
      * valid, but refers to a class or interface that cannot be found.
      */
     @Test
-    void testAbsentMethods() throws Exception {
+    void testAbsentTypeInMethods() throws Exception {
         var absentMethodType = loadTestClass("methodName", "(Ldoes/not/Exist;)V");
         var ex = assertThrows(TypeNotPresentException.class,
                 absentMethodType::getEnclosingMethod);
@@ -122,8 +122,29 @@ class BadEnclosingMethodTest {
                 absentConstructorType::getEnclosingConstructor);
         assertEquals("does.not.Exist", ex.typeName());
     }
+
+    /**
+     * Test reflective behaviors when the EnclosingMethod attribute uses valid
+     * class and method names and types, but the method does not exist.
+     */
+    @Test
+    void testAbsentMethods() throws Exception {
+        var absentMethodType = loadTestClass("work", "(I)V");
+        var ex = assertThrows(NoSuchMethodError.class,
+                absentMethodType::getEnclosingMethod);
+        var message = ex.getMessage();
+        assertTrue(message.contains("Encloser.work(I)V"));
+
+        var absentConstructorType = loadTestClass(INIT_NAME, "(I)V");
+        ex = assertThrows(NoSuchMethodError.class,
+                absentConstructorType::getEnclosingConstructor);
+        message = ex.getMessage();
+        assertTrue(message.contains("Encloser.<init>(I)V"));
+    }
+
 }
 
+// These guys are compiled to serve as templates for bytecode transformation
 class Encloser {
     private static void work() {
         class Enclosed {
