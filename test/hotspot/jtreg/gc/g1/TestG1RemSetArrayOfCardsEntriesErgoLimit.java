@@ -28,6 +28,7 @@
  *          G1RemSetArrayOfCardsEntries value from G1RemSetArrayOfCardsEntriesBase
  * @requires vm.gc.G1
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
+ *                   -XX:+UseG1GC
  *                   -XX:G1RemSetArrayOfCardsEntriesBase=62117
  *                   -XX:G1HeapRegionSize=4m
  *                   ${test.main.class}
