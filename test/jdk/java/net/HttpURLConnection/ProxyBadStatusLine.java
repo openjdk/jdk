@@ -252,6 +252,9 @@ class ProxyBadStatusLine {
                     break;
                 }
             }
+            if (crlfcount != 4) {
+                throw new IOException("Could not locate a CRLFCRLF sequence in the request");
+            }
             final byte[] request = new byte[numRead];
             System.arraycopy(buff, 0, request, 0, numRead);
             return request;
