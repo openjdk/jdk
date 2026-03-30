@@ -1925,8 +1925,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
                 statusLine = responses.getValue(0);
                 respCode = parseConnectResponseCode(statusLine);
-                if (respCode == 0) {
-                    // a respCode of 0, due to a invalid status line,
+                if (respCode == -1) {
+                    // a respCode of -1, due to a invalid status line,
                     // will (rightly) result in an IOException being thrown
                     // later in this code. here we merely log the invalid status line.
                     if (logger.isLoggable(PlatformLogger.Level.FINE)) {
@@ -2034,10 +2034,10 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     }
 
     // parses the status line, that was returned for a CONNECT request, and returns
-    // the response code from that line. returns 0 if the response code could not be
+    // the response code from that line. returns -1 if the response code could not be
     // parsed.
     private static int parseConnectResponseCode(final String statusLine) {
-        final int invalidStatusLine = 0;
+        final int invalidStatusLine = -1;
         if (statusLine == null || statusLine.isBlank()) {
             return invalidStatusLine;
         }
