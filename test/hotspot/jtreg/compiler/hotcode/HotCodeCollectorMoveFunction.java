@@ -47,6 +47,7 @@ public class HotCodeCollectorMoveFunction {
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
     private static final Method method;
     private static final int C2_LEVEL = 4;
+    private static final int FUNC_RUN_MILLIS = 30_000;
 
     static {
         try {
@@ -85,7 +86,7 @@ public class HotCodeCollectorMoveFunction {
 
     public static void func() {
         long start = System.currentTimeMillis();
-        while (System.currentTimeMillis() - start < 10_000) {}
+        while (System.currentTimeMillis() - start < FUNC_RUN_MILLIS) {}
     }
 
 }

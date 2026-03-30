@@ -34,6 +34,7 @@
 
 // Generate a random sampling period between min and max
 static inline uint rand_sampling_period_ms() {
+  assert(HotCodeMaxSamplingMs >= HotCodeMinSamplingMs, "max cannot be smaller than min");
   julong range = (julong)HotCodeMaxSamplingMs - (julong)HotCodeMinSamplingMs + 1;
   return (uint)(os::random() % range) + HotCodeMinSamplingMs;
 }

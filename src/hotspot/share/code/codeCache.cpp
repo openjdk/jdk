@@ -254,10 +254,10 @@ void CodeCache::initialize_heaps() {
       assert(hot.size == 0, "must be calculated during heaps initialization");
       // An application usually has ~20% hot code which is mostly non-profiled code.
       // We set the hot code heap size to 20% of the non-profiled code heap.
-      hot.size = MAX2((2 * non_profiled.size) / 10, min_size);
+      hot.size = MAX2(non_profiled.size / 5, min_size);
 
       if (non_profiled.set) {
-        err_msg msg("Must manually set ");
+        err_msg msg("Must manually set HotCodeHeapSize when NonProfiledCodeHeapSize is set");
         vm_exit_during_initialization("Invalid code heap sizes", msg);
       }
 

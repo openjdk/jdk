@@ -143,7 +143,7 @@ int HotCodeCollector::do_relocation(void* candidate, uint call_level) {
 
   // Verify that blob is nmethod
   nmethod* nm = blob->as_nmethod_or_null();
-  if (nm == nullptr) {
+  if (nm == nullptr || nm->method() == nullptr) {
     return 0;
   }
 
