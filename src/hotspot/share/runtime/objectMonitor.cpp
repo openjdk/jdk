@@ -1146,7 +1146,9 @@ bool ObjectMonitor::vthread_monitor_enter(JavaThread* current, ObjectWaiter* wai
 
   if (try_lock_or_add_to_entry_list(current, node)) {
     // We got the lock.
-    if (waiter == nullptr) delete node;  // for Object.wait() don't delete yet
+    if (waiter == nullptr) {
+      delete node;  // for Object.wait() don't delete yet
+    }
     dec_unmounted_vthreads();
     return true;
   }
@@ -1162,7 +1164,9 @@ bool ObjectMonitor::vthread_monitor_enter(JavaThread* current, ObjectWaiter* wai
       // _succ here, since we own the lock.
       clear_successor();
     }
-    if (waiter == nullptr) delete node;  // for Object.wait() don't delete yet
+    if (waiter == nullptr) {
+      delete node;  // for Object.wait() don't delete yet
+    }
     dec_unmounted_vthreads();
     return true;
   }
@@ -1186,7 +1190,9 @@ bool ObjectMonitor::resume_operation(JavaThread* current, ObjectWaiter* node, Co
 
   if (node->is_wait() && !node->at_reenter()) {
     bool acquired_monitor = vthread_wait_reenter(current, node, cont);
-    if (acquired_monitor) return true;
+    if (acquired_monitor) {
+      return true;
+    }
   }
 
   // Retry acquiring monitor...
@@ -1224,6 +1230,8 @@ void ObjectMonitor::vthread_epilog(JavaThread* current, ObjectWaiter* node) {
   dec_unmounted_vthreads();
 
   if (has_successor(current)) {
+    // Note that we don't need to do OrderAccess::fence() after clearing
+    // _succ here, since we own the lock.
     clear_successor();
   }
 
@@ -2332,7 +2340,9 @@ inline static int adjust_down(int spin_duration) {
     // Consider an AIMD scheme like: x -= (x >> 3) + 100
     // This is globally sample and tends to damp the response.
     x -= Knob_Penalty;
-    if (x < 0) { x = 0; }
+    if (x < 0) {
+      x = 0;
+    }
     return x;
   } else {
     return spin_duration;
