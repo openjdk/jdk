@@ -880,7 +880,6 @@ bool IfNode::has_only_uncommon_traps(IfProjNode* proj, IfProjNode*& success, IfP
       }
 
       if (!dom_unc->safe_for_fold_compare()) {
-        ShouldNotReachHere();
         return false;
       }
 
