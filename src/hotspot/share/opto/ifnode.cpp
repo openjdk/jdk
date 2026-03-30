@@ -1481,10 +1481,11 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
         //   n - b >=u a - b                    (AFTER)
         //
         // This is exaclty the same as (CASE *2a).
+        // TODO: why flipped?
         cond = BoolTest::ge;
       } else if (hi_test == BoolTest::le || hi_test == BoolTest::gt) {
+        // TODO: not sure about this case!
         // (CASE *3b)
-        // TODO: fix up, not sure about it
         // lo=lt,hi=le:   n < a || !(n <= b)
         // lo=lt,hi=gt:   n < a ||   n >  b
         //
@@ -1504,17 +1505,16 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
       }
     } else if (lo_test == BoolTest::le) {
       if (hi_test == BoolTest::lt || hi_test == BoolTest::ge) {
-        // (CASE *1b) TODO: this!
+        // TODO: not sure about this case!
+        // (CASE *1b)
         // lo=le,hi=lt:    n <= a  && !(n <  b)
         // lo=le,hi=ge:    n <= a  &&   n >= b
         //
         // Simplified version:
-        //   n <= a && n >= b                   (BEFORE)
+        //   n > a && n < b                     (BEFORE)
         //
         // Transformed to:
-        //   n -  a - 1  >=u b -  a - 1         (AFTER)
-        // Equivalent to:
-        //   n - (a + 1) >=u b - (a + 1)
+        //   n - b - 1  <u a - b - 1            (AFTER)
         //
         // This is exaclty the same as (CASE *1a).
         lo = igvn->transform(new AddINode(lo, igvn->intcon(1)));
@@ -1533,7 +1533,8 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
         // This is exactly the same as (CASE 4a*)
         adjusted_lim = igvn->transform(new SubINode(hi, lo));
         lo = igvn->transform(new AddINode(lo, igvn->intcon(1)));
-        cond = BoolTest::ge; // TODO: why flipped?
+        // TODO: why flipped?
+        cond = BoolTest::ge;
       } else {
         assert(false, "unhandled hi_test: %d", hi_test);
         return false;
