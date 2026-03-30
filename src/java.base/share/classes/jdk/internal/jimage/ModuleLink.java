@@ -34,7 +34,7 @@ import java.util.Objects;
 import java.util.function.Function;
 
 /**
- * Represents the module entries stored in the buffer of {@code "/packages/xxx"}
+ * Represents links to modules stored in the buffer of {@code "/packages/xxx"}
  * image locations (package subdirectories).
  *
  * <p>Package subdirectories store their data differently to all other jimage
@@ -51,7 +51,7 @@ import java.util.function.Function;
  * but also compiled and delivered as part of the jrtfs.jar to support access
  * to the jimage file provided by the shipped JDK by tools running on JDK 8.
  */
-public final class ModuleReference implements Comparable<ModuleReference> {
+public final class ModuleLink implements Comparable<ModuleLink> {
     // These flags are additive (hence "has-content" rather than "is-empty").
 
     /** If set, this package exists in preview mode. */
@@ -62,37 +62,37 @@ public final class ModuleReference implements Comparable<ModuleReference> {
     private static final int FLAGS_PKG_HAS_RESOURCES = 0x4;
 
     /**
-     * References are ordered with preview versions first which permits early
+     * Links are ordered with preview versions first, which permits early
      * exit when processing preview entries (it's reversed because the default
      * order for a boolean is {@code false < true}).
      */
-    private static final Comparator<ModuleReference> PREVIEW_FIRST =
-            Comparator.comparing(ModuleReference::hasPreviewVersion).reversed()
-                    .thenComparing(ModuleReference::name);
+    private static final Comparator<ModuleLink> PREVIEW_FIRST =
+            Comparator.comparing(ModuleLink::hasPreviewVersion).reversed()
+                    .thenComparing(ModuleLink::name);
 
     /**
-     * Returns a reference for non-empty packages (those with resources) in a
+     * Returns a link for non-empty packages (those with resources) in a
      * given module.
      *
-     * <p>The same reference can be used for multiple packages in the same module.
+     * <p>The same link can be used for multiple packages in the same module.
      *
      * @param moduleName the name of the module in which this package exits.
      * @param isPreview whether the associated package is defined for preview mode.
      */
-    public static ModuleReference forPackage(String moduleName, boolean isPreview) {
-        return new ModuleReference(moduleName, FLAGS_PKG_HAS_RESOURCES | previewFlag(isPreview));
+    public static ModuleLink forPackage(String moduleName, boolean isPreview) {
+        return new ModuleLink(moduleName, FLAGS_PKG_HAS_RESOURCES | previewFlag(isPreview));
     }
 
     /**
-     * Returns a reference for empty packages in a given module.
+     * Returns a link for empty packages in a given module.
      *
-     * <p>The same reference can be used for multiple packages in the same module.
+     * <p>The same link can be used for multiple packages in the same module.
      *
      * @param moduleName the name of the module in which this package exits.
      * @param isPreview whether the associated package is defined for preview mode.
      */
-    public static ModuleReference forEmptyPackage(String moduleName, boolean isPreview) {
-        return new ModuleReference(moduleName, previewFlag(isPreview));
+    public static ModuleLink forEmptyPackage(String moduleName, boolean isPreview) {
+        return new ModuleLink(moduleName, previewFlag(isPreview));
     }
 
     /**
@@ -103,31 +103,31 @@ public final class ModuleReference implements Comparable<ModuleReference> {
         return isPreview ? FLAGS_PKG_HAS_PREVIEW_VERSION : FLAGS_PKG_HAS_NORMAL_VERSION;
     }
 
-    /** Merges two references for the same module (combining their flags). */
-    public ModuleReference merge(ModuleReference other) {
+    /** Merges two links for the same module (combining their flags). */
+    public ModuleLink merge(ModuleLink other) {
         if (!name.equals(other.name)) {
             throw new IllegalArgumentException("Cannot merge " + other + " with " + this);
         }
         // Because flags are additive, we can just OR them here.
-        return new ModuleReference(name, flags | other.flags);
+        return new ModuleLink(name, flags | other.flags);
     }
 
     private final String name;
     private final int flags;
 
-    private ModuleReference(String moduleName, int flags) {
+    private ModuleLink(String moduleName, int flags) {
         this.name = Objects.requireNonNull(moduleName);
         this.flags = flags;
     }
 
-    /** Returns the module name of this reference. */
+    /** Returns the module name of this link. */
     public String name() {
         return name;
     }
 
     /**
-     * Returns whether the package associated with this reference contains
-     * resources in this reference's module.
+     * Returns whether the package associated with this link contains resources
+     * in its module.
      *
      * <p>An invariant of the module system is that while a package may exist
      * under many modules, it only has resources in one.
@@ -137,34 +137,34 @@ public final class ModuleReference implements Comparable<ModuleReference> {
     }
 
     /**
-     * Returns whether the package associated with this reference has a preview
-     * version (empty or otherwise) in this reference's module.
+     * Returns whether the package associated with this module link has a
+     * preview version (empty or otherwise) in this link's module.
      */
     public boolean hasPreviewVersion() {
         return (flags & FLAGS_PKG_HAS_PREVIEW_VERSION) != 0;
     }
 
-    /** Returns whether this reference exists only in preview mode. */
+    /** Returns whether this module link exists only in preview mode. */
     public boolean isPreviewOnly() {
         return (flags & FLAGS_PKG_HAS_NORMAL_VERSION) == 0;
     }
 
     @Override
-    public int compareTo(ModuleReference rhs) {
+    public int compareTo(ModuleLink rhs) {
         return PREVIEW_FIRST.compare(this, rhs);
     }
 
     @Override
     public String toString() {
-        return "ModuleReference{ module=" + name + ", flags=" + flags + " }";
+        return "ModuleLink{ module=" + name + ", flags=" + flags + " }";
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof ModuleReference)) {
+        if (!(obj instanceof ModuleLink)) {
             return false;
         }
-        ModuleReference other = (ModuleReference) obj;
+        ModuleLink other = (ModuleLink) obj;
         return name.equals(other.name) && flags == other.flags;
     }
 
@@ -247,44 +247,44 @@ public final class ModuleReference implements Comparable<ModuleReference> {
     }
 
     /**
-     * Writes a list of module references to a given buffer. The given references
-     * list is checked carefully to ensure the written buffer will be valid.
+     * Writes a list of module links to a given buffer. The given entry list is
+     * checked carefully to ensure the written buffer will be valid.
      *
      * <p>Entries are written in order, taking two integer slots per entry as
      * {@code [<flags>, <encoded-name>]}.
      *
-     * @param refs the references to write, correctly ordered.
+     * @param links the module links to write, correctly ordered.
      * @param buffer destination buffer.
      * @param nameEncoder encoder for module names.
-     * @throws IllegalArgumentException in the references are invalid in any way.
+     * @throws IllegalArgumentException in the link entries are invalid in any way.
      */
     public static void write(
-            List<ModuleReference> refs, IntBuffer buffer, Function<String, Integer> nameEncoder) {
-        if (refs.isEmpty()) {
+            List<ModuleLink> links, IntBuffer buffer, Function<String, Integer> nameEncoder) {
+        if (links.isEmpty()) {
             throw new IllegalArgumentException("References list must be non-empty");
         }
-        int expectedCapacity = 2 * refs.size();
+        int expectedCapacity = 2 * links.size();
         if (buffer.capacity() != expectedCapacity) {
             throw new IllegalArgumentException(
                     "Invalid buffer capacity: expected " + expectedCapacity + ", got " + buffer.capacity());
         }
         // This catches exact duplicates in the list.
-        refs.stream().reduce((lhs, rhs) -> {
+        links.stream().reduce((lhs, rhs) -> {
             if (lhs.compareTo(rhs) >= 0) {
-                throw new IllegalArgumentException("References must be strictly ordered: " + refs);
+                throw new IllegalArgumentException("References must be strictly ordered: " + links);
             }
             return rhs;
         });
         // Distinct references can have the same name (but we don't allow this).
-        if (refs.stream().map(ModuleReference::name).distinct().count() != refs.size()) {
-            throw new IllegalArgumentException("Reference names must be unique: " + refs);
+        if (links.stream().map(ModuleLink::name).distinct().count() != links.size()) {
+            throw new IllegalArgumentException("Module links names must be unique: " + links);
         }
-        if (refs.stream().filter(ModuleReference::hasResources).count() > 1) {
-            throw new IllegalArgumentException("At most one reference can have resources: " + refs);
+        if (links.stream().filter(ModuleLink::hasResources).count() > 1) {
+            throw new IllegalArgumentException("At most one module link can have resources: " + links);
         }
-        for (ModuleReference modRef : refs) {
-            buffer.put(modRef.flags);
-            buffer.put(nameEncoder.apply(modRef.name));
+        for (ModuleLink link : links) {
+            buffer.put(link.flags);
+            buffer.put(nameEncoder.apply(link.name));
         }
     }
 }
