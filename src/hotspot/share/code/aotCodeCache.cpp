@@ -472,7 +472,8 @@ void AOTCodeCache::Config::record(uint cpu_features_offset) {
 
   _aarch64_use_intrinsics_flags     = 0;
   RECORD_FLAG(aarch64_use_, aarch64_useBlockZeroing, UseBlockZeroing);
-  RECORD_FLAG(aarch64_use_, aarch64_useSimpleArrayEquals, UseSIMDForBigIntegerShiftIntrinsics);
+  RECORD_FLAG(aarch64_use_, aarch64_useSIMDForBigIntegerShift, UseSIMDForBigIntegerShiftIntrinsics);
+  RECORD_FLAG(aarch64_use_, aarch64_useSimpleArrayEquals, UseSimpleArrayEquals);
   RECORD_FLAG(aarch64_use_, aarch64_useSecondarySupersCache, UseSecondarySupersCache);
 #endif // defined(AARCH64) && !defined(ZERO)
 #if INCLUDE_JVMCI
