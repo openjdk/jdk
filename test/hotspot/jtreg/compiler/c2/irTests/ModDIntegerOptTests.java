@@ -51,7 +51,7 @@ public class ModDIntegerOptTests {
     }
 
     @Run(test = {"staticConvI2D", "staticSumOfInts", "staticSubD", "staticFloatSum", "staticSubF",
-                 "staticFloatWithConst", "staticFloatLargeConst",
+                 "staticFloatWithConst", "staticFloatLargeConst", "staticHugeConst",
                  "staticConvL2D", "staticNegD", "staticNegF", "staticAbsD", "staticAbsF",
                  "staticDivisorOne", "staticNegativeDivisor", "staticLargeDivisor",
                  "staticDepth4", "staticDepth5",
@@ -63,7 +63,7 @@ public class ModDIntegerOptTests {
         int c = G.ints().next();
 
         // Static path: all int-based tests in one loop
-        int[] intValues = { a, b, c, 0, Integer.MAX_VALUE, Integer.MAX_VALUE - 1, Integer.MIN_VALUE, Integer.MIN_VALUE + 1 };
+        int[] intValues = { a, b, c, 0, 1, -1, 42, -42, Integer.MAX_VALUE, Integer.MAX_VALUE - 1, Integer.MIN_VALUE, Integer.MIN_VALUE + 1 };
         for (int v : intValues) {
             assertDremEQ(staticConvI2D(v), (double)v % 42.0d, "staticConvI2D(" + v + ")");
             assertDremEQ(staticDivisorOne(v), (double)v % 1.0d, "staticDivisorOne(" + v + ")");
@@ -80,6 +80,10 @@ public class ModDIntegerOptTests {
                 "staticFloatWithConst(" + v + ")");
             assertDremEQ(staticFloatLargeConst(v), ((float)v + 3e10f) % 42.0d,
                 "staticFloatLargeConst(" + v + ")");
+            assertDremEQ(staticHugeConst(v), ((double)v + 1e18) % 42.0d,
+                "staticHugeConst(" + v + ")");
+            // Also exercise int values through speculative path
+            assertDremEQ(speculativeDouble((double)v), (double)v % 42.0d, "speculative(int " + v + ")");
         }
         assertDremEQ(staticSumOfInts(a, b, c),
             ((double)a + (double)b + (double)c) % 7.0d,
@@ -101,20 +105,23 @@ public class ModDIntegerOptTests {
 
         // Speculative path: edge-case doubles including 2^31, 2^53 and 2^63 boundaries
         final double TWO_31 = (double)(1L << 31);
-        final double TWO_53 = (double)(1L << 53);
-        final double TWO_63 = (double)(1L << 62) * 2.0; // 2^63, not representable as jlong
+        final double TWO_53 = (double)(1L << 53);   // double mantissa precision boundary
+        final double TWO_59 = (double)(1L << 59);   // constant magnitude bound (63 - D)
+        final double TWO_63 = (double)(1L << 62) * 2.0; // ConvD2L saturation boundary
 
         double[] values = {
             Double.MIN_VALUE, Double.MIN_NORMAL, -42.0d, -1.0d, -0.0d, +0.0d,
-            0.5d, 1.0d, 2.0d, 100.0d, 1e18d, Double.MAX_VALUE,
+            0.5d, 1.0d, 2.0d, 42.0d, 100.0d, 1e18d, Double.MAX_VALUE,
             Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, Double.NaN,
             TWO_31 - 1, TWO_31, TWO_31 + 1,
             -(TWO_31 - 1), -TWO_31, -(TWO_31 + 1),
-            TWO_53 - 1, TWO_53, TWO_53 + 1,
-            -(TWO_53 - 1), -TWO_53, -(TWO_53 + 1),
-            // 2^63 saturation boundary (1 ULP apart):
-            // nextDown: ConvD2L exact, fast path. TWO_63: saturates, guard 2 catches.
-            // nextUp: saturates, but roundtrip fails so guard 1 catches.
+            // 2^53: double mantissa precision, integers above may lose precision
+            Math.nextDown(TWO_53), TWO_53, Math.nextUp(TWO_53),
+            -Math.nextUp(TWO_53), -TWO_53, -Math.nextDown(TWO_53),
+            // 2^59: constant magnitude bound in is_integral_fp
+            Math.nextDown(TWO_59), TWO_59, Math.nextUp(TWO_59),
+            -Math.nextUp(TWO_59), -TWO_59, -Math.nextDown(TWO_59),
+            // 2^63: ConvD2L saturation boundary
             Math.nextDown(TWO_63), TWO_63, Math.nextUp(TWO_63),
             -Math.nextUp(TWO_63), -TWO_63, -Math.nextDown(TWO_63),
             G.doubles().next(), G.anyBitsDouble().next(),
@@ -170,11 +177,19 @@ public class ModDIntegerOptTests {
         return ((float)a + 1.0f) % 42.0d;
     }
 
-    // Large float constant > 2^31 rejected by is_integral_fp, falls to speculative
+    // Large float constant (> 2^31 but < 2^53), now accepted
     @Test
-    @IR(counts = {".*CallLeaf.*drem.*", "1"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(failOn = {IRNode.MOD_D})
+    @IR(failOn = {".*CallLeaf.*drem.*"}, phase = CompilePhase.BEFORE_MATCHING)
     public double staticFloatLargeConst(int a) {
         return ((float)a + 3e10f) % 42.0d;
+    }
+
+    // Constant >= 2^59, rejected, falls to speculative
+    @Test
+    @IR(counts = {".*CallLeaf.*drem.*", "1"}, phase = CompilePhase.BEFORE_MATCHING)
+    public double staticHugeConst(int a) {
+        return ((double)a + 1e18) % 42.0d;
     }
 
     @Test

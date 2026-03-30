@@ -61,19 +61,32 @@ ModFNode::ModFNode(Compile* C, Node* a, Node* b) : ModFloatingNode(C, OptoRuntim
   init_req(TypeFunc::Parms + 1, b);
 }
 
-// Check if a node provably produces an integral floating-point value:
-//   ConF(c) where |c| < 2^31 and c == (float)(jint)c   -> true
-//   ConD(c) where |c| < 2^53 and c == (double)(jlong)c -> true
-//   ConvI2D/ConvI2F(x)                                 -> true
-//   ConvL2D(x) at root and type(x) won't round to 2^63 -> true
-//   ConvF2D(integral_fp)                               -> true
-//   NegD/NegF(integral_fp)                             -> true
-//   AbsD/AbsF(integral_fp)                             -> true
-//   CastDD/CastFF(integral_fp)                         -> true
-//   AddD/SubD(integral_fp, integral_fp)                -> true
-//   AddF/SubF(integral_fp, integral_fp)                -> true
+// Max recursion depth for is_integral_fp. Increasing accepts deeper expression trees
+// but grows worst-case compile cost (2^D recursive calls) and shrinks the constant
+// magnitude bound (2^(63-D)).
+//
+// Expressions beyond the limit fall to the speculative path (correct, just less optimized).
+static const int INTEGRAL_FP_DEPTH_LIMIT = 4;
+
+// Check if a node provably produces an integral floating-point value that fits
+// in jlong (-2^63 <= value < 2^63), so ConvD2L does not saturate.
+//
+// Integrality is inductive: IEEE 754 add/sub/neg/abs of integral values always yields an
+// integral result. The depth limit D caps the tree at 2^D leaves.
+// Constant magnitudes are capped at 2^(63-D) so that 2^D * max_leaf < 2^63.
+// ConvI2D/ConvI2F leaves (max 2^31) have more headroom.
+// ConvL2D is depth-0 only (arithmetic above it could sum past 2^63).
+//
+// Recognized patterns:
+//   ConF(c) where |c| < 2^(63-D) and c == (float)(jlong)c  -> true
+//   ConD(c) where |c| < 2^(63-D) and c == (double)(jlong)c -> true
+//   ConvI2F/ConvI2D(x)                                     -> true
+//   ConvF2D(integral_fp)                                   -> true
+//   ConvL2D(x) at depth 0, type(x) won't round to 2^63     -> true
+//   NegD/AbsD/CastDD/NegF/AbsF/CastFF(integral_fp)         -> true
+//   AddD/SubD/AddF/SubF(integral_fp, integral_fp)          -> true
 static bool is_integral_fp(PhaseGVN* phase, Node* n, int depth) {
-  if (depth > 4) return false;
+  if (depth > INTEGRAL_FP_DEPTH_LIMIT) return false;
   switch (n->Opcode()) {
   case Op_ConvI2D:
   case Op_ConvI2F:
@@ -100,20 +113,19 @@ static bool is_integral_fp(PhaseGVN* phase, Node* n, int depth) {
     return is_integral_fp(phase, n->in(1), depth + 1);
   case Op_AddD: case Op_SubD:
   case Op_AddF: case Op_SubF:
-    return is_integral_fp(phase, n->in(1), depth + 1) &&
-           is_integral_fp(phase, n->in(2), depth + 1);
+    return is_integral_fp(phase, n->in(1), depth + 1) && is_integral_fp(phase, n->in(2), depth + 1);
   default: {
     const TypeD* td = phase->type(n)->isa_double_constant();
     if (td != nullptr) {
       double d = td->getd();
-      // Integral double constant fits in a jlong
-      return g_isfinite(d) && fabs(d) < (1LL << 53) && d == (double)(jlong)d;
+      // Integral double constant within sum-safe range
+      return g_isfinite(d) && fabs(d) < (1LL << (63 - INTEGRAL_FP_DEPTH_LIMIT)) && d == (double)(jlong)d;
     }
     const TypeF* tf = phase->type(n)->isa_float_constant();
     if (tf != nullptr) {
       jfloat f = tf->getf();
-      // Integral float constant within jint range
-      return g_isfinite(f) && fabsf(f) < (1LL << 31) && f == (float)(jint)f;
+      // Integral float constant within sum-safe range
+      return g_isfinite(f) && fabsf(f) < (1LL << (63 - INTEGRAL_FP_DEPTH_LIMIT)) && f == (float)(jlong)f;
     }
     // Not a recognized integral pattern
     return false;
@@ -168,14 +180,16 @@ Node* ModDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* x = dividend();
   Node* y = divisor();
 
-  // Divisor must be a constant integral double that fits in jlong
+  // Divisor must be a constant integral double with |d| < 2^DBL_MANT_DIG (= 2^53).
+  // This ensures |ModL result| < 2^53, and all integers below 2^53 are exactly
+  // representable as double, so ConvL2D of the result is exact.
   const TypeD* divisor_type = phase->type(y)->isa_double_constant();
   if (divisor_type == nullptr) {
     return CallLeafPureNode::Ideal(phase, can_reshape);
   }
 
   double divisor_d = divisor_type->getd();
-  if (!g_isfinite(divisor_d) || divisor_d == 0.0 || fabs(divisor_d) >= (1LL << 53)) {
+  if (!g_isfinite(divisor_d) || divisor_d == 0.0 || fabs(divisor_d) >= (1LL << DBL_MANT_DIG)) {
     return CallLeafPureNode::Ideal(phase, can_reshape);
   }
   jlong divisor_l = (jlong)divisor_d;
@@ -208,9 +222,8 @@ Node* ModDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   ctrl = igvn->register_new_node_with_optimizer(new IfFalseNode(iff));
 
   // Guard 2: reject x = 2^63 where ConvD2L saturates.
-  // (double)(max_jlong) rounds to 2^63 which exceeds jlong range, so
-  // ConvD2L(2^63) clamps to max_jlong, silently losing 1. The roundtrip
-  // hides this because ConvL2D(max_jlong) rounds back to 2^63 == x.
+  // (double)(max_jlong) rounds to 2^63 which exceeds jlong range, so ConvD2L(2^63) clamps to max_jlong, silently losing precision.
+  // The roundtrip hides this because ConvL2D(max_jlong) rounds back to 2^63 == x.
   Node* cmp_sat = igvn->register_new_node_with_optimizer(new CmpLNode(x_as_long, igvn->longcon(max_jlong)));
   Node* test_sat = igvn->register_new_node_with_optimizer(new BoolNode(cmp_sat, BoolTest::eq));
   IfNode* iff_sat = new IfNode(ctrl, test_sat, PROB_UNLIKELY_MAG(5), COUNT_UNKNOWN);
