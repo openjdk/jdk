@@ -115,7 +115,7 @@ class KrbServiceLocator {
                 }
             }
         } catch (NamingException e) {
-            // ignore
+
         }
         return records;
     }
@@ -130,7 +130,7 @@ class KrbServiceLocator {
      * @return An ordered list of hostports for the Kerberos service or null if
      *          the service has not been located.
      */
-    static String[] getKerberosService(String realmName, String protocol) {
+    static String[] getKerberosService(String realmName, String protocol) throws NamingException{
 
         String dnsUrl = "dns:///_kerberos." + protocol + "." + realmName;
         String[] hostports = null;
@@ -187,8 +187,7 @@ class KrbServiceLocator {
                 hostports = extractHostports(srvRecords);
             }
         } catch (NamingException e) {
-            // e.printStackTrace();
-            // ignore
+            throw e;
         }
         return hostports;
     }

@@ -47,6 +47,8 @@ import sun.security.krb5.internal.crypto.EType;
 import sun.security.krb5.internal.Krb5;
 import sun.security.util.SecurityProperties;
 
+import javax.naming.NamingException;
+
 import static sun.security.krb5.internal.Krb5.DEBUG;
 
 /**
@@ -1303,7 +1305,7 @@ public class Config {
             if (defaultKDC != null) {
                 return defaultKDC;
             }
-            KrbException ke = new KrbException("Cannot locate KDC for " + realm);
+            KrbException ke = new KrbException("Cannot locate KDC");
             if (cause != null) {
                 ke.initCause(cause);
             }
@@ -1386,22 +1388,39 @@ public class Config {
         // use DNS to locate KDC
         String kdcs = "";
         String[] srvs = null;
+        NamingException udpNE = null;
+        NamingException tcpNE = null;
         // locate DNS SRV record using UDP
         if (DEBUG != null) {
             DEBUG.println("getKDCFromDNS using UDP");
         }
-        srvs = KrbServiceLocator.getKerberosService(realm, "_udp");
+        try {
+            srvs = KrbServiceLocator.getKerberosService(realm, "_udp");
+        } catch (NamingException e) {
+            udpNE = e;
+        }
         if (srvs == null) {
             // locate DNS SRV record using TCP
             if (DEBUG != null) {
                 DEBUG.println("getKDCFromDNS using TCP");
             }
-            srvs = KrbServiceLocator.getKerberosService(realm, "_tcp");
+            try {
+                srvs = KrbServiceLocator.getKerberosService(realm, "_tcp");
+            } catch (NamingException e) {
+                tcpNE = e;
+            }
         }
         if (srvs == null) {
-            // no DNS SRV records
-            throw new KrbException(Krb5.KRB_ERR_GENERIC,
+            KrbException ke = new KrbException(Krb5.KRB_ERR_GENERIC,
                 "Unable to locate KDC for realm " + realm);
+
+            Exception last = (tcpNE != null) ? tcpNE : udpNE;
+            String exceptionCause = sanitizeFaiulre(last);
+            if (exceptionCause != null) {
+                ke.initCause(new KrbException(Krb5.KRB_ERR_GENERIC,
+                        "DNS SRV lookup failed: " + exceptionCause));
+            }
+            throw ke;
         }
         if (srvs.length == 0) {
             return null;
@@ -1414,6 +1433,18 @@ public class Config {
             return null;
         }
         return kdcs;
+    }
+
+    private static String sanitizeFaiulre(Exception e) {
+        if (e == null) return null;
+
+        String exceptionName = e.getClass().getName();
+        return switch (exceptionName) {
+            case "javax.naming.NameNotFoundException"      -> "NXDOMAIN";
+            case "javax.naming.ServiceUnavailableException"-> "SERVFAIL";
+            case "javax.naming.CommunicationException"     -> "COMMUNICATION_ERROR";
+            default -> e.getClass().getSimpleName();
+        };
     }
 
     private boolean fileExists(String name) {
