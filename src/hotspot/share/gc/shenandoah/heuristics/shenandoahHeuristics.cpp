@@ -29,6 +29,7 @@
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
+#include "gc/shenandoah/shenandoahTrace.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 #include "runtime/globals_extension.hpp"
@@ -151,6 +152,7 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
     choose_collection_set_from_regiondata(collection_set, candidates, cand_idx, immediate_garbage + free);
   }
   collection_set->summarize(total_garbage, immediate_garbage, immediate_regions);
+  ShenandoahTracer::report_evacuation_info(collection_set, free_regions, immediate_regions, immediate_garbage);
 }
 
 void ShenandoahHeuristics::start_idle_span() {

@@ -108,6 +108,14 @@ void ShenandoahGenerationalHeuristics::choose_collection_set_from_regiondata(She
     // after a global cycle for old regions that were not included in this collection set.
     heap->old_generation()->prepare_for_mixed_collections_after_global_gc();
   }
+
+  ShenandoahTracer::report_promotion_info(collection_set,
+                                          in_place_promotions.humongous_region_stats().count,
+                                          in_place_promotions.humongous_region_stats().garbage,
+                                          in_place_promotions.humongous_region_stats().free,
+                                          in_place_promotions.regular_region_stats().count,
+                                          in_place_promotions.regular_region_stats().garbage,
+                                          in_place_promotions.regular_region_stats().free);
 }
 
 void ShenandoahGenerationalHeuristics::compute_evacuation_budgets(ShenandoahInPlacePromotionPlanner& in_place_promotions,
