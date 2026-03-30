@@ -101,7 +101,7 @@ public class WildcardTypeImpl extends LazyReflectiveObjectGenerator
     public Type[] getUpperBounds() {
         Object[] value = upperBounds;
         if (value instanceof Signature[] sigs) {
-            value = reifyBounds(sigs);
+            value = reifyBounds(sigs, true);
             upperBounds = value;
         }
         return (Type[])value.clone();
@@ -132,7 +132,7 @@ public class WildcardTypeImpl extends LazyReflectiveObjectGenerator
     public Type[] getLowerBounds() {
         Object[] value = lowerBounds;
         if (value instanceof Signature[] sigs) {
-            value = reifyBounds(sigs);
+            value = reifyBounds(sigs, false);
             lowerBounds = value;
         }
         return (Type[])value.clone();

@@ -120,7 +120,7 @@ public class TypeVariableImpl<D extends GenericDeclaration>
     public Type[] getBounds() {
         Object[] value = bounds;
         if (value instanceof Signature[] sigs) {
-            value = reifyBounds(sigs);
+            value = reifyBounds(sigs, true);
             bounds = value;
         }
         return (Type[])value.clone();

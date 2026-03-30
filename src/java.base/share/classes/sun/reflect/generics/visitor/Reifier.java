@@ -75,11 +75,11 @@ public final class Reifier {
     public Type reify(Signature.TypeArg arg) {
         return switch (arg) {
             case Signature.TypeArg.Unbounded _ ->
-                    factory.makeWildcard(new Signature[] { Signature.of(ConstantDescs.CD_Object) }, new Signature[0]);
+                    factory.makeWildcard(new Signature[0], new Signature[0]);
             case Signature.TypeArg.Bounded b -> switch (b.wildcardIndicator()) {
                 case NONE -> reify(b.boundType());
                 case EXTENDS -> factory.makeWildcard(new Signature[] {b.boundType()}, new Signature[0]);
-                case SUPER -> factory.makeWildcard(new Signature[] { Signature.of(ConstantDescs.CD_Object) }, new Signature[] {b.boundType()});
+                case SUPER -> factory.makeWildcard(new Signature[0], new Signature[] {b.boundType()});
             };
         };
     }
