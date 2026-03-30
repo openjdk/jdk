@@ -1790,11 +1790,10 @@ public class Thread implements Runnable {
      * @spec jni/index.html Java Native Interface Specification
      * @see        #getName
      */
-    public final void setName(String name) {
+    public final synchronized void setName(String name) {
         if (name == null) {
             throw new NullPointerException("name cannot be null");
         }
-        String oldName = this.name;
         this.name = name;
         if (!isVirtual() && Thread.currentThread() == this) {
             setNativeName(name);
