@@ -450,10 +450,6 @@ bool G1CMRootMemRegions::contains(const MemRegion mr) const {
   return false;
 }
 
-void G1CMRootMemRegions::finish_scan() {
-  assert_work_completed_or_aborted();
-}
-
 void G1CMRootMemRegions::cancel_scan() {
   _should_abort.store_relaxed(true);
 }
@@ -1158,7 +1154,7 @@ bool G1ConcurrentMark::scan_root_regions(WorkerThreads* workers, bool concurrent
     workers->run_task(&task, num_workers);
   }
 
-  root_regions()->finish_scan();
+  root_regions()->assert_work_completed_or_aborted();
 
   return do_scan;
 }

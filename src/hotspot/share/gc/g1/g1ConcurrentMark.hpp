@@ -326,9 +326,6 @@ public:
 
   // Cancel not-yet started root region scan.
   void cancel_scan();
-
-  // Flag that we're done with root region scanning.
-  void finish_scan();
 };
 
 // This class manages data structures and methods for doing liveness analysis in
