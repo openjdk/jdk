@@ -270,8 +270,9 @@ public final class ImageReader implements AutoCloseable {
         // Preview mode support.
         private final boolean isPreviewEnabled;
         // A relativized mapping from non-preview name to directories containing
-        // preview-only nodes. This is used to add preview-only content to
+        // preview-only nodes. This is used to merge preview-only content into
         // directories as they are completed.
+        // E.g. "/modules/xxx/foo/bar" -> Directory("/modules/xxx/META-INF/preview/foo/bar")
         private final Map<String, Directory> previewDirectoriesToMerge;
 
         private SharedImageReader(Path imagePath, ByteOrder byteOrder, boolean isPreviewEnabled) throws IOException {

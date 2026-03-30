@@ -76,6 +76,7 @@ public class ImageLocation {
      * has preview resources in one of the modules in which it exists.
      */
     private static final int FLAGS_HAS_PREVIEW_VERSION = 0x1;
+
     /**
      * Set on all locations in the {@code /modules/xxx/META-INF/preview/...}
      * namespace.
@@ -83,6 +84,7 @@ public class ImageLocation {
      * <p>This flag is mutually exclusive with {@link #FLAGS_HAS_PREVIEW_VERSION}.
      */
     private static final int FLAGS_IS_PREVIEW_VERSION = 0x2;
+
     /**
      * Indicates that a location only exists due to preview resources.
      *

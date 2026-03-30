@@ -77,7 +77,7 @@ public enum PreviewMode {
                 } catch (NoSuchMethodException | IllegalAccessException |
                          InvocationTargetException e) {
                     // But if the class exists, the method must exist and be callable.
-                    throw new AssertionError(e);
+                    throw new InternalError(e);
                 }
             default:
                 throw new IllegalStateException("Invalid mode: " + this);

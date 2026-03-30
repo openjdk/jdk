@@ -29,9 +29,9 @@ import java.util.stream.Stream;
 /**
  * Accesses the underlying resource entries in a jimage file.
  *
- * <p>This API is designed only for use by the jlink classes, which read the raw
- * jimage files. Use the {@link ImageReader} API to read jimage contents at
- * runtime to correctly account for preview mode.
+ * <p>This is a special-case API designed only for use by the jlink classes,
+ * which read the raw jimage files. It is not the correct API for accessing
+ * jimage resources at runtime.
  *
  * <p>This API ignores the {@code previewMode} of the {@link ImageReader} from
  * which it is obtained, and returns an unmapped view of entries (e.g. allowing
@@ -39,6 +39,9 @@ import java.util.stream.Stream;
  *
  * <p>It disallows access to resource directories (i.e. {@code "/modules/..."})
  * or packages entries (i.e. {@code "/packages/..."}).
+ *
+ * <p>Use the {@link ImageReader} API to correctly account for preview mode at
+ * runtime.
  *
  * @implNote This class needs to maintain JDK 8 source compatibility.
  *
