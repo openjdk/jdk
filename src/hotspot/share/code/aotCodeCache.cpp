@@ -467,7 +467,7 @@ void AOTCodeCache::Config::record(uint cpu_features_offset) {
   RECORD_FLAG(aarch64_, aarch64_avoidUnalignedAccesses, AvoidUnalignedAccesses);
   RECORD_FLAG(aarch64_, aarch64_useSIMDForMemoryOps, UseSIMDForMemoryOps);
   RECORD_FLAG(aarch64_, aarch64_useSIMDForArrayEquals, UseSIMDForArrayEquals);
-  RECORD_FLAG(aarch64_, aarch64_useSIMDForSHA3, useSIMDForSHA3);
+  RECORD_FLAG(aarch64_, aarch64_useSIMDForSHA3, UseSIMDForSHA3);
   RECORD_FLAG(aarch64_, aarch64_useLSE, UseLSE);
 
   _aarch64_use_intrinsics_flags     = 0;
