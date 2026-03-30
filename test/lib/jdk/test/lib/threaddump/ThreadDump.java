@@ -424,7 +424,7 @@ public final class ThreadDump {
         JSONValue threadDumpObj = JSONValue.parse(json).get("threadDump");
         int formatVersion = threadDumpObj.get("formatVersion").asInt();
         if (formatVersion != 2) {
-           fail("Format " + formatVersion + " not supported");
+            fail("Format " + formatVersion + " not supported");
         }
 
         // threadContainers array, preserve insertion order (parents are added before children)
@@ -446,7 +446,7 @@ public final class ThreadDump {
             JSONValue parentObj = containerObj.get("parent");
             if (parentObj instanceof JSONValue.JSONNull) {
                 if (root != null) {
-                   fail("More than one root container");
+                    fail("More than one root container");
                 }
                 root = new ThreadContainer(name, null, containerObj);
                 map.put(name, root);
@@ -454,7 +454,7 @@ public final class ThreadDump {
                 String parentName = parentObj.asString();
                 ThreadContainer parent = map.get(parentName);
                 if (parent == null) {
-                   fail("Thread container " + name + " found before " + parentName);
+                    fail("Thread container " + name + " found before " + parentName);
                 }
                 var container = new ThreadContainer(name, parent, containerObj);
                 parent.addChild(container);
@@ -462,7 +462,7 @@ public final class ThreadDump {
             }
         }
         if (root == null) {
-           fail("No root container");
+            fail("No root container");
         }
 
         return new ThreadDump(root, map, threadDumpObj);
