@@ -1070,16 +1070,9 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
     if (hi_test == BoolTest::lt) {
       if (lo_test == BoolTest::gt || lo_test == BoolTest::le) {
         // (CASE *1a)
-
-        // lo=le,hi=lt:     x <= lo  || !(x < hi) -> testX_lohi_lelt: i <= -100_000 || i >= 100_000
-        //                                                       ->   i + 99_999 <u  199_999
-        //                                                       -> !(i + 99_999 >=u 199_999)
+        // lo=le,hi=lt:     x <= lo  || !(x < hi)
+        // lo=gt,hi=lt:   !(x >  lo) || !(x < hi)
         //
-        // lo=gt,hi=lt:   !(x >  lo) || !(x < hi) -> testY with StressIGVN
-        //                                                            !(i > 0) || !(i < 4)
-        //                                                         ->   i + -1 <u  3
-        //                                                         -> !(i + -1 >=u 3)
-
         // Simplified version:
         //   x <= lo || x >= hi                        (BEFORE)
         //
@@ -1132,6 +1125,7 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
         //     Equivalent to case assumption, so always true.
         // QED.
         lo = igvn->transform(new AddINode(lo, igvn->intcon(1)));
+        assert(cond == BoolTest::lt, "");
       } else {
         assert(lo_test == BoolTest::lt || lo_test == BoolTest::ge, "lo_test = %d", lo_test);
         // (CASE *2a)
@@ -1180,6 +1174,7 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
         //       x                     >=    hi
         //     Equivalent to case assumption, so always true.
         // QED.
+        assert(cond == BoolTest::lt, "");
       }
     } else if (hi_test == BoolTest::le) {
       if (lo_test == BoolTest::ge || lo_test == BoolTest::lt) {
@@ -1337,13 +1332,9 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
         cond = BoolTest::lt;
       } else if (lo_test == BoolTest::gt || lo_test == BoolTest::le) {
         // (CASE *4a)
-
-        // lo=le,hi=le:    x <= lo  || !(x <= hi) -> testX_lohi_lele: i <= -100_000 || i > 100_000
-        //                                                       -> !(i + 99_999 <u  200_000)
-        //                                                       ->   i + 99_999 >=u 200_000
-        assert(lo_test == BoolTest::le, "catch gt case");
-        // lo=gt,hi=le:   !(x > lo) || !(x <= hi) -> ????
-
+        // lo=le,hi=le:    x <= lo  || !(x <= hi)
+        // lo=gt,hi=le:   !(x > lo) || !(x <= hi)
+        //
         // Simplified version:
         //   x <= lo || x > hi                     (BEFORE)
         //
@@ -1428,27 +1419,9 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
     // <------- success ------> <----------- fail -------------> <----- otherproj ------>
     // [min_int .. hi_type->hi] [hi_type->hi+1 .. lo_type->lo-1] [lo_type->lo .. max_int]
 
-    // this_bool = <
-    //   dom_bool = < (proj = True) or dom_bool = >= (proj = False)
-    //     x in [b, a[ on the fail (= False) projection, a > b-1 (because of lo_type->_lo > hi_type->_hi above):
-    //     lo = b, hi = a, adjusted_lim = a-b, cond = >=u
-    //   dom_bool = <= (proj = True) or dom_bool = > (proj = False)
-    //     x in [b, a] on the fail (= False) projection, a+1 > b-1:
-    //     lo = b, hi = a, adjusted_lim = a-b+1, cond = >=u
-    //     lo = b, hi = a, adjusted_lim = a-b, cond = >u doesn't work because a = b - 1 is possible, then b-a = -1
-    // this_bool = <=
-    //   dom_bool = < (proj = True) or dom_bool = >= (proj = False)
-    //     x in ]b, a[ on the fail (= False) projection, a > b:
-    //     lo = b+1, hi = a, adjusted_lim = a-b-1, cond = >=u
-    //   dom_bool = <= (proj = True) or dom_bool = > (proj = False)
-    //     x in ]b, a] on the fail (= False) projection, a+1 > b:
-    //     lo = b+1, hi = a, adjusted_lim = a-b, cond = >=u
-    //     lo = b+1, hi = a, adjusted_lim = a-b-1, cond = >u doesn't work because a = b is possible, then b-a-1 = -1
-
     swap(lo, hi);
     swap(lo_type, hi_type);
     swap(lo_test, hi_test);
-    // Swapping makes the debug info a bit hard to work with...
 
     assert((dom_bool->_test.is_less() && proj->_con) ||
            (dom_bool->_test.is_greater() && !proj->_con), "incorrect test");
