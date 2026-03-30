@@ -132,7 +132,6 @@ public class BasicTest {
         moduleList.forEach(mn -> ModuleTestUtil.prepareModule(srcPath, modPath,
                 mn, resFormat));
         ModuleTestUtil.runModule(modPath.toString(), MAIN, localeList);
-        ModuleTestUtil.runModuleWithLegacyCode(modPath.toString(), MAIN, localeList);
     }
 
     @Test

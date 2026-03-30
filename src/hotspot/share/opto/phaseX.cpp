@@ -2588,6 +2588,19 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       return u->Opcode() == Op_URShiftI || u->Opcode() == Op_URShiftL;
     });
   }
+  // If changed LShiftI/LShiftL inputs, check AddI/AddL users for their
+  // URShiftI/URShiftL users for "((x << z) + y) >>> z" optimization opportunity
+  // (see URShiftINode::Ideal). Handles the case where the LShift input changes.
+  if (use_op == Op_LShiftI || use_op == Op_LShiftL) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* add = use->fast_out(i2);
+      if (add->Opcode() == Op_AddI || add->Opcode() == Op_AddL) {
+        add_users_to_worklist_if(worklist, add, [](Node* u) {
+          return u->Opcode() == Op_URShiftI || u->Opcode() == Op_URShiftL;
+        });
+      }
+    }
+  }
   // If changed AndI/AndL inputs, check RShift/URShift users for "(x & mask) >> shift" optimization opportunity
   if (use_op == Op_AndI || use_op == Op_AndL) {
     add_users_to_worklist_if(worklist, use, [](Node* u) {

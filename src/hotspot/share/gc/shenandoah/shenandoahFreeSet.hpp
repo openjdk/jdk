@@ -857,12 +857,14 @@ public:
     ShenandoahRebuildLocker locker(rebuild_lock());
     return _partitions.available_in_locked_for_rebuild(ShenandoahFreeSetPartitionId::Mutator);
   }
-  inline size_t available_holding_lock() const
-                                  { return _partitions.available_in(ShenandoahFreeSetPartitionId::Mutator); }
 
   // Use this version of available() if the heap lock is held.
   inline size_t available_locked() const {
     return _partitions.available_in(ShenandoahFreeSetPartitionId::Mutator);
+  }
+
+  inline size_t collector_available_locked() const {
+    return _partitions.available_in(ShenandoahFreeSetPartitionId::Collector);
   }
 
   inline size_t total_humongous_waste() const      { return _total_humongous_waste; }
