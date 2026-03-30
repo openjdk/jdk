@@ -212,7 +212,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
   ifeq ($(call isTargetOs, macosx), true)
     LIBSPLASHSCREEN_CFLAGS += -DWITH_MACOSX
   else ifeq ($(call isTargetOs, windows), true)
-    LIBSPLASHSCREEN_CFLAGS += -DWITH_WIN32 /wd4146
+    LIBSPLASHSCREEN_CFLAGS += -DWITH_WIN32
   else
     LIBSPLASHSCREEN_CFLAGS += -DWITH_X11 $(X_CFLAGS)
   endif
@@ -257,6 +257,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       DISABLED_WARNINGS_microsoft_dgif_lib.c := 4018 4267, \
       DISABLED_WARNINGS_microsoft_splashscreen_impl.c := 4018 4267 4244, \
       DISABLED_WARNINGS_microsoft_splashscreen_png.c := 4267, \
+      DISABLED_WARNINGS_microsoft_pngread.c := 4146, \
       DISABLED_WARNINGS_microsoft_splashscreen_sys.c := 4267 4244, \
       LDFLAGS := $(ICONV_LDFLAGS), \
       LDFLAGS_windows := -delayload:user32.dll, \
