@@ -23,15 +23,12 @@
 
 /**
  * @test
- * @bug 8332827
- * @summary [REDO] C2: crash in compiled code because of dependency on removed range check CastIIs
+ * @bug 8380166
+ * @summary C2: crash in compiled code due to zero division because of widened CastII
  *
  * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation
- *                   -XX:CompileCommand=dontinline,TestNullDivModWidenedCastII::notInlined
- *                   compiler.integerArithmetic.TestNullDivModWidenedCastII
- * @run main compiler.integerArithmetic.TestNullDivModWidenedCastII
- * @run main/othervm -XX:CompileCommand=dontinline,TestNullDivModWidenedCastII::notInlined
- *                   compiler.integerArithmetic.TestNullDivModWidenedCastII
+ *                   ${test.main.class}
+ * @run main ${test.main.class}
  *
  */
 
@@ -115,7 +112,6 @@ public class TestNullDivModWidenedCastII {
         int i = inlined1(k);
         j = Integer.min(j, 9);
         int[] array = new int[10];
-        notInlined(array);
         if (flag == 0) {
             throw new RuntimeException("never taken");
         }
@@ -170,7 +166,6 @@ public class TestNullDivModWidenedCastII {
         int i = inlined2(k);
         j = Integer.min(j, 9);
         int[] array = new int[10];
-        notInlined(array);
         if (flag == 0) {
             throw new RuntimeException("never taken");
         }
@@ -227,7 +222,6 @@ public class TestNullDivModWidenedCastII {
         int i = inlined3(k);
         j = Integer.min(j, 9);
         int[] array = new int[10];
-        notInlined(array);
         if (flag == 0) {
             throw new RuntimeException("never taken");
         }
@@ -284,7 +278,6 @@ public class TestNullDivModWidenedCastII {
         int i = inlined4(k);
         j = Integer.min(j, 9);
         int[] array = new int[10];
-        notInlined(array);
         if (flag == 0) {
             throw new RuntimeException("never taken");
         }
@@ -341,7 +334,6 @@ public class TestNullDivModWidenedCastII {
         int i = inlined5(k);
         j = Integer.min(j, 9);
         int[] array = new int[10];
-        notInlined(array);
         if (flag == 0) {
             throw new RuntimeException("never taken");
         }
@@ -398,7 +390,6 @@ public class TestNullDivModWidenedCastII {
         int i = inlined6(k);
         j = Integer.min(j, 9);
         int[] array = new int[10];
-        notInlined(array);
         if (flag == 0) {
             throw new RuntimeException("never taken");
         }
@@ -455,7 +446,6 @@ public class TestNullDivModWidenedCastII {
         int i = inlined7(k);
         j = Integer.min(j, 9);
         int[] array = new int[10];
-        notInlined(array);
         if (flag == 0) {
             throw new RuntimeException("never taken");
         }
@@ -512,7 +502,6 @@ public class TestNullDivModWidenedCastII {
         int i = inlined8(k);
         j = Integer.min(j, 9);
         int[] array = new int[10];
-        notInlined(array);
         if (flag == 0) {
             throw new RuntimeException("never taken");
         }
@@ -569,7 +558,6 @@ public class TestNullDivModWidenedCastII {
         int i = inlined9(k);
         j = Integer.min(j, 9);
         int[] array = new int[10];
-        notInlined(array);
         if (flag == 0) {
             throw new RuntimeException("never taken");
         }
@@ -618,10 +606,6 @@ public class TestNullDivModWidenedCastII {
         return arrayField9[0] + array2[k] * (j - 10);
     }
 
-    private static void notInlined(Object array) {
-
-    }
-
     private static void test10(int k, int j, int flag, boolean flag3) {
         int l = 0;
         for (; l < 10; l++);
@@ -630,7 +614,6 @@ public class TestNullDivModWidenedCastII {
         int i = inlined10(k);
         j = Integer.min(j, 9);
         int[] array = new int[10];
-        notInlined(array);
         if (flag == 0) {
             throw new RuntimeException("never taken");
         }
@@ -683,7 +666,6 @@ public class TestNullDivModWidenedCastII {
         int i = inlined11(k);
         j = Integer.min(j, 9);
         int[] array = new int[10];
-        notInlined(array);
         if (flag == 0) {
             throw new RuntimeException("never taken");
         }
@@ -738,7 +720,6 @@ public class TestNullDivModWidenedCastII {
         int i = inlined12(k);
         j = Integer.min(j, 9);
         int[] array = new int[10];
-        notInlined(array);
         if (flag == 0) {
             throw new RuntimeException("never taken");
         }
@@ -793,7 +774,6 @@ public class TestNullDivModWidenedCastII {
         int i = inlined13(k);
         j = Integer.min(j, 9);
         int[] array = new int[10];
-        notInlined(array);
         if (flag == 0) {
             throw new RuntimeException("never taken");
         }
@@ -848,7 +828,6 @@ public class TestNullDivModWidenedCastII {
         int i = inlined14(k);
         j = Integer.min(j, 9);
         int[] array = new int[10];
-        notInlined(array);
         if (flag == 0) {
             throw new RuntimeException("never taken");
         }
@@ -903,7 +882,6 @@ public class TestNullDivModWidenedCastII {
         int i = inlined15(k);
         j = Integer.min(j, 9);
         int[] array = new int[10];
-        notInlined(array);
         if (flag == 0) {
             throw new RuntimeException("never taken");
         }
@@ -957,7 +935,6 @@ public class TestNullDivModWidenedCastII {
         int i = inlined16(k);
         j = Integer.min(j, 9);
         int[] array = new int[10];
-        notInlined(array);
         if (flag == 0) {
             throw new RuntimeException("never taken");
         }
@@ -1012,7 +989,6 @@ public class TestNullDivModWidenedCastII {
         int i = inlined17(k);
         j = Integer.min(j, 9);
         int[] array = new int[10];
-        notInlined(array);
         if (flag == 0) {
             throw new RuntimeException("never taken");
         }
