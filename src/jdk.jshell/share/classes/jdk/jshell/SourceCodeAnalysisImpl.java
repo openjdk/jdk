@@ -1414,7 +1414,9 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             int cpVersion = ++classpathVersion;
 
             INDEXER.submit(() -> refreshIndexes(cpVersion));
-            mappedSourcesForBinaries.clear();
+
+            allPaths = null;
+            availableSources = null;
         }
     }
 
@@ -1974,11 +1976,14 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             new ConcurrentHashMap<>();
 
     private List<Path> findSources() {
-        if (availableSources != null) {
-            return availableSources;
-        }
-        if (availableSourcesOverride != null) {
-            return availableSources = availableSourcesOverride;
+        int originalClasspathVersion = classpathVersion;
+        synchronized (currentIndexes) {
+            if (availableSources != null) {
+                return availableSources;
+            }
+            if (availableSourcesOverride != null) {
+                return availableSources = availableSourcesOverride;
+            }
         }
         List<Path> result = new ArrayList<>();
         Path home = Paths.get(System.getProperty("java.home"));
@@ -2041,7 +2046,19 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             }).forEach(result::add);
         }
 
-        return availableSources = result;
+        synchronized (currentIndexes) {
+            if (originalClasspathVersion != classpathVersion) {
+                result = null;
+            } else {
+                availableSources = result;
+            }
+        }
+
+        if (result == null) {
+            result = findSources();
+        }
+
+        return result;
     }
 
     private Element getOriginalEnclosingElement(Element el) {
@@ -2331,14 +2348,14 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
     private Collection<Path> allPaths;
     private Collection<Path> getAllPaths() {
-        int cpVersion;
+        int originalClasspathVersion;
 
         synchronized (currentIndexes) {
             if (allPaths != null) {
                 return allPaths;
             }
 
-            cpVersion = classpathVersion;
+            originalClasspathVersion = classpathVersion;
         }
 
         Collection<Path> paths = proc.taskFactory.parse("", task -> {
@@ -2353,20 +2370,24 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 appendModulePaths(fm, StandardLocation.MODULE_PATH, _paths);
                 return _paths;
             } catch (Exception ex) {
-                proc.debug(ex, "SourceCodeAnalysisImpl.refreshIndexes(" + cpVersion + ")");
+                proc.debug(ex, "SourceCodeAnalysisImpl.getAllPaths(" + originalClasspathVersion + ")");
                 return List.of();
             }
         });
 
         synchronized (currentIndexes) {
-            if (cpVersion != classpathVersion) {
-                paths = allPaths;
+            if (originalClasspathVersion != classpathVersion) {
+                paths = null;
             } else {
                 allPaths = paths;
             }
         }
 
-        return allPaths;
+        if (paths == null) {
+            paths = getAllPaths();
+        }
+
+        return paths;
     }
 
     private void appendPaths(MemoryFileManager fm, Location loc, Collection<Path> paths) {
