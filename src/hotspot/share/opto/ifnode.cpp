@@ -983,7 +983,7 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
   //   if n u> 10: success   <- takes on both paths
   //   // fail
   //
-  //
+  // -------------------------------------------------------------------
   // In the proofs below, we need some basic Lemmas to deal with integer
   // signed and unsigned arithmetic.
   //
@@ -1031,6 +1031,7 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
   //               = max_int + 1
   //              <= b       + 1
   //              <  b
+  // -------------------------------------------------------------------
 
   // Figure out which of the two tests sets the upper bound and which
   // sets the lower bound if any.
