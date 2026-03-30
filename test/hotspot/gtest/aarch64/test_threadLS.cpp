@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Microsoft Corporation. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,33 +19,17 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef OS_CPU_WINDOWS_AARCH64_JAVATHREAD_WINDOWS_AARCH64_HPP
-#define OS_CPU_WINDOWS_AARCH64_JAVATHREAD_WINDOWS_AARCH64_HPP
+#if defined(AARCH64) && !defined(ZERO)
 
- private:
+#include "runtime/javaThread.hpp"
+#include "unittest.hpp"
 
-  void pd_initialize() {
-    _anchor.clear();
-  }
+TEST_VM(ThreadLS, get_thread_helper) {
+  Thread* expected = Thread::current();
+  Thread* actual = JavaThread::aarch64_get_thread_helper();
+  ASSERT_EQ(actual, expected);
+}
 
-  frame pd_last_frame();
-
- public:
-  static ByteSize last_Java_fp_offset()          {
-    return byte_offset_of(JavaThread, _anchor) + JavaFrameAnchor::last_Java_fp_offset();
-  }
-
-  bool pd_get_top_frame_for_signal_handler(frame* fr_addr, void* ucontext,
-    bool isInJava);
-
-  bool pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, bool isInJava);
-private:
-  bool pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava);
-public:
-
-  static Thread *aarch64_get_thread_helper();
-
-#endif // OS_CPU_WINDOWS_AARCH64_JAVATHREAD_WINDOWS_AARCH64_HPP
+#endif  // AARCH64 && !ZERO
