@@ -694,6 +694,64 @@ public class VectorMinMaxTransforms {
         }
     }
 
+    // Predicated Int: max(min(a,b,m), max(b,a,m), m) => max(a,b,m)
+    @Test
+    @IR(counts = { IRNode.MIN_VI, IRNode.VECTOR_SIZE_ANY, " 0 ",
+                   IRNode.MAX_VI, IRNode.VECTOR_SIZE_ANY, " 1 " },
+        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true"})
+    public void testIntMaskedMaxIdealFlippedInputs(int index) {
+        IntVector v1 = IntVector.fromArray(I_SPECIES, ia, index);
+        IntVector v2 = IntVector.fromArray(I_SPECIES, ib, index);
+        VectorMask<Integer> m = VectorMask.fromArray(I_SPECIES, m1arr, index);
+        v1.lanewise(VectorOperators.MIN, v2, m)
+          .lanewise(VectorOperators.MAX, v2.lanewise(VectorOperators.MAX, v1, m), m)
+          .intoArray(ir, index);
+    }
+
+    @Run(test = "testIntMaskedMaxIdealFlippedInputs")
+    public void runIntMaskedMaxIdealFlippedInputs() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
+            testIntMaskedMaxIdealFlippedInputs(i);
+        }
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i++) {
+            int a = ia[i], b = ib[i];
+            boolean mask = m1arr[i];
+            int minAB = mask ? Math.min(a, b) : a;
+            int maxBA = mask ? Math.max(b, a) : b;
+            int expected = mask ? Math.max(minAB, maxBA) : minAB;
+            Verify.checkEQ(ir[i], expected);
+        }
+    }
+
+    // Predicated Int: min(min(a,b,m), max(b,a,m), m) => min(a,b,m)
+    @Test
+    @IR(counts = { IRNode.MIN_VI, IRNode.VECTOR_SIZE_ANY, " 1 ",
+                   IRNode.MAX_VI, IRNode.VECTOR_SIZE_ANY, " 0 " },
+        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true"})
+    public void testIntMaskedMinIdealFlippedInputs(int index) {
+        IntVector v1 = IntVector.fromArray(I_SPECIES, ia, index);
+        IntVector v2 = IntVector.fromArray(I_SPECIES, ib, index);
+        VectorMask<Integer> m = VectorMask.fromArray(I_SPECIES, m1arr, index);
+        v1.lanewise(VectorOperators.MIN, v2, m)
+          .lanewise(VectorOperators.MIN, v2.lanewise(VectorOperators.MAX, v1, m), m)
+          .intoArray(ir, index);
+    }
+
+    @Run(test = "testIntMaskedMinIdealFlippedInputs")
+    public void runIntMaskedMinIdealFlippedInputs() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
+            testIntMaskedMinIdealFlippedInputs(i);
+        }
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i++) {
+            int a = ia[i], b = ib[i];
+            boolean mask = m1arr[i];
+            int minAB = mask ? Math.min(a, b) : a;
+            int maxBA = mask ? Math.max(b, a) : b;
+            int expected = mask ? Math.min(minAB, maxBA) : minAB;
+            Verify.checkEQ(ir[i], expected);
+        }
+    }
+
     // Predicated Int: min(min(a,b,m1), max(a,b,m2), m1) => NO transform
     @Test
     @IR(counts = { IRNode.MIN_VI, IRNode.VECTOR_SIZE_ANY, " 2 ",
@@ -865,6 +923,64 @@ public class VectorMinMaxTransforms {
             byte minAB = (byte)(mask ? Math.min(a, b) : a);
             byte maxAB = (byte)(mask ? Math.max(a, b) : a);
             byte expected = (byte)(mask ? Math.max(minAB, maxAB) : minAB);
+            Verify.checkEQ(br[i], expected);
+        }
+    }
+
+    // Predicated Byte: max(min(a,b,m), max(b,a,m), m) => max(a,b,m)
+    @Test
+    @IR(counts = { IRNode.MIN_VB, IRNode.VECTOR_SIZE_ANY, " 0 ",
+                   IRNode.MAX_VB, IRNode.VECTOR_SIZE_ANY, " 1 " },
+        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true"})
+    public void testByteMaskedMaxIdealFlippedInputs(int index) {
+        ByteVector v1 = ByteVector.fromArray(B_SPECIES, ba, index);
+        ByteVector v2 = ByteVector.fromArray(B_SPECIES, bb, index);
+        VectorMask<Byte> m = VectorMask.fromArray(B_SPECIES, m1arr, index);
+        v1.lanewise(VectorOperators.MIN, v2, m)
+          .lanewise(VectorOperators.MAX, v2.lanewise(VectorOperators.MAX, v1, m), m)
+          .intoArray(br, index);
+    }
+
+    @Run(test = "testByteMaskedMaxIdealFlippedInputs")
+    public void runByteMaskedMaxIdealFlippedInputs() {
+        for (int i = 0; i < B_SPECIES.loopBound(LENGTH); i += B_SPECIES.length()) {
+            testByteMaskedMaxIdealFlippedInputs(i);
+        }
+        for (int i = 0; i < B_SPECIES.loopBound(LENGTH); i++) {
+            byte a = ba[i], b = bb[i];
+            boolean mask = m1arr[i];
+            byte minAB = (byte)(mask ? Math.min(a, b) : a);
+            byte maxBA = (byte)(mask ? Math.max(b, a) : b);
+            byte expected = (byte)(mask ? Math.max(minAB, maxBA) : minAB);
+            Verify.checkEQ(br[i], expected);
+        }
+    }
+
+    // Predicated Byte: min(min(a,b,m), max(b,a,m), m) => min(a,b,m)
+    @Test
+    @IR(counts = { IRNode.MIN_VB, IRNode.VECTOR_SIZE_ANY, " 1 ",
+                   IRNode.MAX_VB, IRNode.VECTOR_SIZE_ANY, " 0 " },
+        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true"})
+    public void testByteMaskedMinIdealFlippedInputs(int index) {
+        ByteVector v1 = ByteVector.fromArray(B_SPECIES, ba, index);
+        ByteVector v2 = ByteVector.fromArray(B_SPECIES, bb, index);
+        VectorMask<Byte> m = VectorMask.fromArray(B_SPECIES, m1arr, index);
+        v1.lanewise(VectorOperators.MIN, v2, m)
+          .lanewise(VectorOperators.MIN, v2.lanewise(VectorOperators.MAX, v1, m), m)
+          .intoArray(br, index);
+    }
+
+    @Run(test = "testByteMaskedMinIdealFlippedInputs")
+    public void runByteMaskedMinIdealFlippedInputs() {
+        for (int i = 0; i < B_SPECIES.loopBound(LENGTH); i += B_SPECIES.length()) {
+            testByteMaskedMinIdealFlippedInputs(i);
+        }
+        for (int i = 0; i < B_SPECIES.loopBound(LENGTH); i++) {
+            byte a = ba[i], b = bb[i];
+            boolean mask = m1arr[i];
+            byte minAB = (byte)(mask ? Math.min(a, b) : a);
+            byte maxBA = (byte)(mask ? Math.max(b, a) : b);
+            byte expected = (byte)(mask ? Math.min(minAB, maxBA) : minAB);
             Verify.checkEQ(br[i], expected);
         }
     }
@@ -1044,6 +1160,64 @@ public class VectorMinMaxTransforms {
         }
     }
 
+    // Predicated Short: max(min(a,b,m), max(b,a,m), m) => max(a,b,m)
+    @Test
+    @IR(counts = { IRNode.MIN_VS, IRNode.VECTOR_SIZE_ANY, " 0 ",
+                   IRNode.MAX_VS, IRNode.VECTOR_SIZE_ANY, " 1 " },
+        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true"})
+    public void testShortMaskedMaxIdealFlippedInputs(int index) {
+        ShortVector v1 = ShortVector.fromArray(S_SPECIES, sa, index);
+        ShortVector v2 = ShortVector.fromArray(S_SPECIES, sb, index);
+        VectorMask<Short> m = VectorMask.fromArray(S_SPECIES, m1arr, index);
+        v1.lanewise(VectorOperators.MIN, v2, m)
+          .lanewise(VectorOperators.MAX, v2.lanewise(VectorOperators.MAX, v1, m), m)
+          .intoArray(sr, index);
+    }
+
+    @Run(test = "testShortMaskedMaxIdealFlippedInputs")
+    public void runShortMaskedMaxIdealFlippedInputs() {
+        for (int i = 0; i < S_SPECIES.loopBound(LENGTH); i += S_SPECIES.length()) {
+            testShortMaskedMaxIdealFlippedInputs(i);
+        }
+        for (int i = 0; i < S_SPECIES.loopBound(LENGTH); i++) {
+            short a = sa[i], b = sb[i];
+            boolean mask = m1arr[i];
+            short minAB = (short)(mask ? Math.min(a, b) : a);
+            short maxBA = (short)(mask ? Math.max(b, a) : b);
+            short expected = (short)(mask ? Math.max(minAB, maxBA) : minAB);
+            Verify.checkEQ(sr[i], expected);
+        }
+    }
+
+    // Predicated Short: min(min(a,b,m), max(b,a,m), m) => min(a,b,m)
+    @Test
+    @IR(counts = { IRNode.MIN_VS, IRNode.VECTOR_SIZE_ANY, " 1 ",
+                   IRNode.MAX_VS, IRNode.VECTOR_SIZE_ANY, " 0 " },
+        applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true"})
+    public void testShortMaskedMinIdealFlippedInputs(int index) {
+        ShortVector v1 = ShortVector.fromArray(S_SPECIES, sa, index);
+        ShortVector v2 = ShortVector.fromArray(S_SPECIES, sb, index);
+        VectorMask<Short> m = VectorMask.fromArray(S_SPECIES, m1arr, index);
+        v1.lanewise(VectorOperators.MIN, v2, m)
+          .lanewise(VectorOperators.MIN, v2.lanewise(VectorOperators.MAX, v1, m), m)
+          .intoArray(sr, index);
+    }
+
+    @Run(test = "testShortMaskedMinIdealFlippedInputs")
+    public void runShortMaskedMinIdealFlippedInputs() {
+        for (int i = 0; i < S_SPECIES.loopBound(LENGTH); i += S_SPECIES.length()) {
+            testShortMaskedMinIdealFlippedInputs(i);
+        }
+        for (int i = 0; i < S_SPECIES.loopBound(LENGTH); i++) {
+            short a = sa[i], b = sb[i];
+            boolean mask = m1arr[i];
+            short minAB = (short)(mask ? Math.min(a, b) : a);
+            short maxBA = (short)(mask ? Math.max(b, a) : b);
+            short expected = (short)(mask ? Math.min(minAB, maxBA) : minAB);
+            Verify.checkEQ(sr[i], expected);
+        }
+    }
+
     // Predicated Short: min(min(a,b,m1), max(a,b,m2), m1) => NO transform
     @Test
     @IR(counts = { IRNode.MIN_VS, IRNode.VECTOR_SIZE_ANY, " 2 ",
@@ -1215,6 +1389,64 @@ public class VectorMinMaxTransforms {
             long minAB = mask ? Math.min(a, b) : a;
             long maxAB = mask ? Math.max(a, b) : a;
             long expected = mask ? Math.max(minAB, maxAB) : minAB;
+            Verify.checkEQ(lr[i], expected);
+        }
+    }
+
+    // Predicated Long: max(min(a,b,m), max(b,a,m), m) => max(a,b,m)
+    @Test
+    @IR(counts = { IRNode.MIN_VL, IRNode.VECTOR_SIZE_ANY, " 0 ",
+                   IRNode.MAX_VL, IRNode.VECTOR_SIZE_ANY, " 1 " },
+        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true"})
+    public void testLongMaskedMaxIdealFlippedInputs(int index) {
+        LongVector v1 = LongVector.fromArray(L_SPECIES, la, index);
+        LongVector v2 = LongVector.fromArray(L_SPECIES, lb, index);
+        VectorMask<Long> m = VectorMask.fromArray(L_SPECIES, m1arr, index);
+        v1.lanewise(VectorOperators.MIN, v2, m)
+          .lanewise(VectorOperators.MAX, v2.lanewise(VectorOperators.MAX, v1, m), m)
+          .intoArray(lr, index);
+    }
+
+    @Run(test = "testLongMaskedMaxIdealFlippedInputs")
+    public void runLongMaskedMaxIdealFlippedInputs() {
+        for (int i = 0; i < L_SPECIES.loopBound(LENGTH); i += L_SPECIES.length()) {
+            testLongMaskedMaxIdealFlippedInputs(i);
+        }
+        for (int i = 0; i < L_SPECIES.loopBound(LENGTH); i++) {
+            long a = la[i], b = lb[i];
+            boolean mask = m1arr[i];
+            long minAB = mask ? Math.min(a, b) : a;
+            long maxBA = mask ? Math.max(b, a) : b;
+            long expected = mask ? Math.max(minAB, maxBA) : minAB;
+            Verify.checkEQ(lr[i], expected);
+        }
+    }
+
+    // Predicated Long: min(min(a,b,m), max(b,a,m), m) => min(a,b,m)
+    @Test
+    @IR(counts = { IRNode.MIN_VL, IRNode.VECTOR_SIZE_ANY, " 1 ",
+                   IRNode.MAX_VL, IRNode.VECTOR_SIZE_ANY, " 0 " },
+        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true"})
+    public void testLongMaskedMinIdealFlippedInputs(int index) {
+        LongVector v1 = LongVector.fromArray(L_SPECIES, la, index);
+        LongVector v2 = LongVector.fromArray(L_SPECIES, lb, index);
+        VectorMask<Long> m = VectorMask.fromArray(L_SPECIES, m1arr, index);
+        v1.lanewise(VectorOperators.MIN, v2, m)
+          .lanewise(VectorOperators.MIN, v2.lanewise(VectorOperators.MAX, v1, m), m)
+          .intoArray(lr, index);
+    }
+
+    @Run(test = "testLongMaskedMinIdealFlippedInputs")
+    public void runLongMaskedMinIdealFlippedInputs() {
+        for (int i = 0; i < L_SPECIES.loopBound(LENGTH); i += L_SPECIES.length()) {
+            testLongMaskedMinIdealFlippedInputs(i);
+        }
+        for (int i = 0; i < L_SPECIES.loopBound(LENGTH); i++) {
+            long a = la[i], b = lb[i];
+            boolean mask = m1arr[i];
+            long minAB = mask ? Math.min(a, b) : a;
+            long maxBA = mask ? Math.max(b, a) : b;
+            long expected = mask ? Math.min(minAB, maxBA) : minAB;
             Verify.checkEQ(lr[i], expected);
         }
     }
@@ -1394,6 +1626,64 @@ public class VectorMinMaxTransforms {
         }
     }
 
+    // Predicated Float: max(min(a,b,m), max(b,a,m), m) => max(a,b,m)
+    @Test
+    @IR(counts = { IRNode.MIN_VF, IRNode.VECTOR_SIZE_ANY, " 0 ",
+                   IRNode.MAX_VF, IRNode.VECTOR_SIZE_ANY, " 1 " },
+        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true"})
+    public void testFloatMaskedMaxIdealFlippedInputs(int index) {
+        FloatVector v1 = FloatVector.fromArray(F_SPECIES, fa, index);
+        FloatVector v2 = FloatVector.fromArray(F_SPECIES, fb, index);
+        VectorMask<Float> m = VectorMask.fromArray(F_SPECIES, m1arr, index);
+        v1.lanewise(VectorOperators.MIN, v2, m)
+          .lanewise(VectorOperators.MAX, v2.lanewise(VectorOperators.MAX, v1, m), m)
+          .intoArray(fr, index);
+    }
+
+    @Run(test = "testFloatMaskedMaxIdealFlippedInputs")
+    public void runFloatMaskedMaxIdealFlippedInputs() {
+        for (int i = 0; i < F_SPECIES.loopBound(LENGTH); i += F_SPECIES.length()) {
+            testFloatMaskedMaxIdealFlippedInputs(i);
+        }
+        for (int i = 0; i < F_SPECIES.loopBound(LENGTH); i++) {
+            float a = fa[i], b = fb[i];
+            boolean mask = m1arr[i];
+            float minAB = mask ? Math.min(a, b) : a;
+            float maxBA = mask ? Math.max(b, a) : b;
+            float expected = mask ? Math.max(minAB, maxBA) : minAB;
+            Verify.checkEQ(fr[i], expected);
+        }
+    }
+
+    // Predicated Float: min(min(a,b,m), max(b,a,m), m) => min(a,b,m)
+    @Test
+    @IR(counts = { IRNode.MIN_VF, IRNode.VECTOR_SIZE_ANY, " 1 ",
+                   IRNode.MAX_VF, IRNode.VECTOR_SIZE_ANY, " 0 " },
+        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true"})
+    public void testFloatMaskedMinIdealFlippedInputs(int index) {
+        FloatVector v1 = FloatVector.fromArray(F_SPECIES, fa, index);
+        FloatVector v2 = FloatVector.fromArray(F_SPECIES, fb, index);
+        VectorMask<Float> m = VectorMask.fromArray(F_SPECIES, m1arr, index);
+        v1.lanewise(VectorOperators.MIN, v2, m)
+          .lanewise(VectorOperators.MIN, v2.lanewise(VectorOperators.MAX, v1, m), m)
+          .intoArray(fr, index);
+    }
+
+    @Run(test = "testFloatMaskedMinIdealFlippedInputs")
+    public void runFloatMaskedMinIdealFlippedInputs() {
+        for (int i = 0; i < F_SPECIES.loopBound(LENGTH); i += F_SPECIES.length()) {
+            testFloatMaskedMinIdealFlippedInputs(i);
+        }
+        for (int i = 0; i < F_SPECIES.loopBound(LENGTH); i++) {
+            float a = fa[i], b = fb[i];
+            boolean mask = m1arr[i];
+            float minAB = mask ? Math.min(a, b) : a;
+            float maxBA = mask ? Math.max(b, a) : b;
+            float expected = mask ? Math.min(minAB, maxBA) : minAB;
+            Verify.checkEQ(fr[i], expected);
+        }
+    }
+
     // Predicated Float: min(min(a,b,m1), max(a,b,m2), m1) => NO transform
     @Test
     @IR(counts = { IRNode.MIN_VF, IRNode.VECTOR_SIZE_ANY, " 2 ",
@@ -1565,6 +1855,64 @@ public class VectorMinMaxTransforms {
             double minAB = mask ? Math.min(a, b) : a;
             double maxAB = mask ? Math.max(a, b) : a;
             double expected = mask ? Math.max(minAB, maxAB) : minAB;
+            Verify.checkEQ(dr[i], expected);
+        }
+    }
+
+    // Predicated Double: max(min(a,b,m), max(b,a,m), m) => max(a,b,m)
+    @Test
+    @IR(counts = { IRNode.MIN_VD, IRNode.VECTOR_SIZE_ANY, " 0 ",
+                   IRNode.MAX_VD, IRNode.VECTOR_SIZE_ANY, " 1 " },
+        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true"})
+    public void testDoubleMaskedMaxIdealFlippedInputs(int index) {
+        DoubleVector v1 = DoubleVector.fromArray(D_SPECIES, da, index);
+        DoubleVector v2 = DoubleVector.fromArray(D_SPECIES, db, index);
+        VectorMask<Double> m = VectorMask.fromArray(D_SPECIES, m1arr, index);
+        v1.lanewise(VectorOperators.MIN, v2, m)
+          .lanewise(VectorOperators.MAX, v2.lanewise(VectorOperators.MAX, v1, m), m)
+          .intoArray(dr, index);
+    }
+
+    @Run(test = "testDoubleMaskedMaxIdealFlippedInputs")
+    public void runDoubleMaskedMaxIdealFlippedInputs() {
+        for (int i = 0; i < D_SPECIES.loopBound(LENGTH); i += D_SPECIES.length()) {
+            testDoubleMaskedMaxIdealFlippedInputs(i);
+        }
+        for (int i = 0; i < D_SPECIES.loopBound(LENGTH); i++) {
+            double a = da[i], b = db[i];
+            boolean mask = m1arr[i];
+            double minAB = mask ? Math.min(a, b) : a;
+            double maxBA = mask ? Math.max(b, a) : b;
+            double expected = mask ? Math.max(minAB, maxBA) : minAB;
+            Verify.checkEQ(dr[i], expected);
+        }
+    }
+
+    // Predicated Double: min(min(a,b,m), max(b,a,m), m) => min(a,b,m)
+    @Test
+    @IR(counts = { IRNode.MIN_VD, IRNode.VECTOR_SIZE_ANY, " 1 ",
+                   IRNode.MAX_VD, IRNode.VECTOR_SIZE_ANY, " 0 " },
+        applyIfCPUFeatureOr = {"avx10_2", "true", "sve", "true"})
+    public void testDoubleMaskedMinIdealFlippedInputs(int index) {
+        DoubleVector v1 = DoubleVector.fromArray(D_SPECIES, da, index);
+        DoubleVector v2 = DoubleVector.fromArray(D_SPECIES, db, index);
+        VectorMask<Double> m = VectorMask.fromArray(D_SPECIES, m1arr, index);
+        v1.lanewise(VectorOperators.MIN, v2, m)
+          .lanewise(VectorOperators.MIN, v2.lanewise(VectorOperators.MAX, v1, m), m)
+          .intoArray(dr, index);
+    }
+
+    @Run(test = "testDoubleMaskedMinIdealFlippedInputs")
+    public void runDoubleMaskedMinIdealFlippedInputs() {
+        for (int i = 0; i < D_SPECIES.loopBound(LENGTH); i += D_SPECIES.length()) {
+            testDoubleMaskedMinIdealFlippedInputs(i);
+        }
+        for (int i = 0; i < D_SPECIES.loopBound(LENGTH); i++) {
+            double a = da[i], b = db[i];
+            boolean mask = m1arr[i];
+            double minAB = mask ? Math.min(a, b) : a;
+            double maxBA = mask ? Math.max(b, a) : b;
+            double expected = mask ? Math.min(minAB, maxBA) : minAB;
             Verify.checkEQ(dr[i], expected);
         }
     }

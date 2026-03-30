@@ -508,6 +508,33 @@ public class VectorUnsignedMinMaxOperationsTest {
         }
     }
 
+    // Predicated: umin(umin(a,b,m), umax(b,a,m), m) => umin(a,b,m)
+    @Test
+    @IR(counts = {IRNode.UMIN_VI, " 1 ", IRNode.UMAX_VI, " 0 "}, applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true"})
+    public void umin_masked_flipped_inputs(int index) {
+        IntVector vec1 = IntVector.fromArray(ispec, int_in1, index);
+        IntVector vec2 = IntVector.fromArray(ispec, int_in2, index);
+        VectorMask<Integer> m = VectorMask.fromArray(ispec, m1arr, index);
+        vec1.lanewise(VectorOperators.UMIN, vec2, m)
+            .lanewise(VectorOperators.UMIN,
+                      vec2.lanewise(VectorOperators.UMAX, vec1, m), m)
+            .intoArray(int_out, index);
+    }
+
+    @Run(test = "umin_masked_flipped_inputs")
+    public void umin_masked_flipped_inputs_runner() {
+        for (int i = 0; i < ispec.loopBound(COUNT); i += ispec.length()) {
+            umin_masked_flipped_inputs(i);
+        }
+        for (int i = 0; i < ispec.loopBound(COUNT); i++) {
+            int a = int_in1[i], b = int_in2[i];
+            int minAB = m1arr[i] ? VectorMath.minUnsigned(a, b) : a;
+            int maxBA = m1arr[i] ? VectorMath.maxUnsigned(b, a) : b;
+            int expected = m1arr[i] ? VectorMath.minUnsigned(minAB, maxBA) : minAB;
+            Verify.checkEQ(int_out[i], expected);
+        }
+    }
+
     // Predicated: umin(umin(a,b,m1), umax(a,b,m2), m1) => NO transform
     @Test
     @IR(counts = {IRNode.UMIN_VI, " 2 ", IRNode.UMAX_VI, " 1 "}, applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true"})
@@ -644,6 +671,33 @@ public class VectorUnsignedMinMaxOperationsTest {
             int minAB = m1arr[i] ? VectorMath.minUnsigned(a, b) : a;
             int maxAB = m1arr[i] ? VectorMath.maxUnsigned(a, b) : a;
             int expected = m1arr[i] ? VectorMath.maxUnsigned(minAB, maxAB) : minAB;
+            Verify.checkEQ(int_out[i], expected);
+        }
+    }
+
+    // Predicated: umax(umin(a,b,m), umax(b,a,m), m) => umax(a,b,m)
+    @Test
+    @IR(counts = {IRNode.UMIN_VI, " 0 ", IRNode.UMAX_VI, " 1 "}, applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true"})
+    public void umax_masked_flipped_inputs(int index) {
+        IntVector vec1 = IntVector.fromArray(ispec, int_in1, index);
+        IntVector vec2 = IntVector.fromArray(ispec, int_in2, index);
+        VectorMask<Integer> m = VectorMask.fromArray(ispec, m1arr, index);
+        vec1.lanewise(VectorOperators.UMIN, vec2, m)
+            .lanewise(VectorOperators.UMAX,
+                      vec2.lanewise(VectorOperators.UMAX, vec1, m), m)
+            .intoArray(int_out, index);
+    }
+
+    @Run(test = "umax_masked_flipped_inputs")
+    public void umax_masked_flipped_inputs_runner() {
+        for (int i = 0; i < ispec.loopBound(COUNT); i += ispec.length()) {
+            umax_masked_flipped_inputs(i);
+        }
+        for (int i = 0; i < ispec.loopBound(COUNT); i++) {
+            int a = int_in1[i], b = int_in2[i];
+            int minAB = m1arr[i] ? VectorMath.minUnsigned(a, b) : a;
+            int maxBA = m1arr[i] ? VectorMath.maxUnsigned(b, a) : b;
+            int expected = m1arr[i] ? VectorMath.maxUnsigned(minAB, maxBA) : minAB;
             Verify.checkEQ(int_out[i], expected);
         }
     }
@@ -788,6 +842,33 @@ public class VectorUnsignedMinMaxOperationsTest {
         }
     }
 
+    // Predicated Byte: umin(umin(a,b,m), umax(b,a,m), m) => umin(a,b,m)
+    @Test
+    @IR(counts = {IRNode.UMIN_VB, " 1 ", IRNode.UMAX_VB, " 0 "}, applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true"})
+    public void umin_byte_masked_flipped_inputs(int index) {
+        ByteVector vec1 = ByteVector.fromArray(bspec, byte_in1, index);
+        ByteVector vec2 = ByteVector.fromArray(bspec, byte_in2, index);
+        VectorMask<Byte> m = VectorMask.fromArray(bspec, m1arr, index);
+        vec1.lanewise(VectorOperators.UMIN, vec2, m)
+            .lanewise(VectorOperators.UMIN,
+                      vec2.lanewise(VectorOperators.UMAX, vec1, m), m)
+            .intoArray(byte_out, index);
+    }
+
+    @Run(test = "umin_byte_masked_flipped_inputs")
+    public void umin_byte_masked_flipped_inputs_runner() {
+        for (int i = 0; i < bspec.loopBound(COUNT); i += bspec.length()) {
+            umin_byte_masked_flipped_inputs(i);
+        }
+        for (int i = 0; i < bspec.loopBound(COUNT); i++) {
+            byte a = byte_in1[i], b = byte_in2[i];
+            byte minAB = (byte)(m1arr[i] ? VectorMath.minUnsigned(a, b) : a);
+            byte maxBA = (byte)(m1arr[i] ? VectorMath.maxUnsigned(b, a) : b);
+            byte expected = (byte)(m1arr[i] ? VectorMath.minUnsigned(minAB, maxBA) : minAB);
+            Verify.checkEQ(byte_out[i], expected);
+        }
+    }
+
     // Predicated Byte: umin(umin(a,b,m1), umax(a,b,m2), m1) => NO transform
     @Test
     @IR(counts = {IRNode.UMIN_VB, " 2 ", IRNode.UMAX_VB, " 1 "}, applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true"})
@@ -924,6 +1005,33 @@ public class VectorUnsignedMinMaxOperationsTest {
             byte minAB = (byte)(m1arr[i] ? VectorMath.minUnsigned(a, b) : a);
             byte maxAB = (byte)(m1arr[i] ? VectorMath.maxUnsigned(a, b) : a);
             byte expected = (byte)(m1arr[i] ? VectorMath.maxUnsigned(minAB, maxAB) : minAB);
+            Verify.checkEQ(byte_out[i], expected);
+        }
+    }
+
+    // Predicated Byte: umax(umin(a,b,m), umax(b,a,m), m) => umax(a,b,m)
+    @Test
+    @IR(counts = {IRNode.UMIN_VB, " 0 ", IRNode.UMAX_VB, " 1 "}, applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true"})
+    public void umax_byte_masked_flipped_inputs(int index) {
+        ByteVector vec1 = ByteVector.fromArray(bspec, byte_in1, index);
+        ByteVector vec2 = ByteVector.fromArray(bspec, byte_in2, index);
+        VectorMask<Byte> m = VectorMask.fromArray(bspec, m1arr, index);
+        vec1.lanewise(VectorOperators.UMIN, vec2, m)
+            .lanewise(VectorOperators.UMAX,
+                      vec2.lanewise(VectorOperators.UMAX, vec1, m), m)
+            .intoArray(byte_out, index);
+    }
+
+    @Run(test = "umax_byte_masked_flipped_inputs")
+    public void umax_byte_masked_flipped_inputs_runner() {
+        for (int i = 0; i < bspec.loopBound(COUNT); i += bspec.length()) {
+            umax_byte_masked_flipped_inputs(i);
+        }
+        for (int i = 0; i < bspec.loopBound(COUNT); i++) {
+            byte a = byte_in1[i], b = byte_in2[i];
+            byte minAB = (byte)(m1arr[i] ? VectorMath.minUnsigned(a, b) : a);
+            byte maxBA = (byte)(m1arr[i] ? VectorMath.maxUnsigned(b, a) : b);
+            byte expected = (byte)(m1arr[i] ? VectorMath.maxUnsigned(minAB, maxBA) : minAB);
             Verify.checkEQ(byte_out[i], expected);
         }
     }
@@ -1068,6 +1176,33 @@ public class VectorUnsignedMinMaxOperationsTest {
         }
     }
 
+    // Predicated Short: umin(umin(a,b,m), umax(b,a,m), m) => umin(a,b,m)
+    @Test
+    @IR(counts = {IRNode.UMIN_VS, " 1 ", IRNode.UMAX_VS, " 0 "}, applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true"})
+    public void umin_short_masked_flipped_inputs(int index) {
+        ShortVector vec1 = ShortVector.fromArray(sspec, short_in1, index);
+        ShortVector vec2 = ShortVector.fromArray(sspec, short_in2, index);
+        VectorMask<Short> m = VectorMask.fromArray(sspec, m1arr, index);
+        vec1.lanewise(VectorOperators.UMIN, vec2, m)
+            .lanewise(VectorOperators.UMIN,
+                      vec2.lanewise(VectorOperators.UMAX, vec1, m), m)
+            .intoArray(short_out, index);
+    }
+
+    @Run(test = "umin_short_masked_flipped_inputs")
+    public void umin_short_masked_flipped_inputs_runner() {
+        for (int i = 0; i < sspec.loopBound(COUNT); i += sspec.length()) {
+            umin_short_masked_flipped_inputs(i);
+        }
+        for (int i = 0; i < sspec.loopBound(COUNT); i++) {
+            short a = short_in1[i], b = short_in2[i];
+            short minAB = (short)(m1arr[i] ? VectorMath.minUnsigned(a, b) : a);
+            short maxBA = (short)(m1arr[i] ? VectorMath.maxUnsigned(b, a) : b);
+            short expected = (short)(m1arr[i] ? VectorMath.minUnsigned(minAB, maxBA) : minAB);
+            Verify.checkEQ(short_out[i], expected);
+        }
+    }
+
     // Predicated Short: umin(umin(a,b,m1), umax(a,b,m2), m1) => NO transform
     @Test
     @IR(counts = {IRNode.UMIN_VS, " 2 ", IRNode.UMAX_VS, " 1 "}, applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true"})
@@ -1204,6 +1339,33 @@ public class VectorUnsignedMinMaxOperationsTest {
             short minAB = (short)(m1arr[i] ? VectorMath.minUnsigned(a, b) : a);
             short maxAB = (short)(m1arr[i] ? VectorMath.maxUnsigned(a, b) : a);
             short expected = (short)(m1arr[i] ? VectorMath.maxUnsigned(minAB, maxAB) : minAB);
+            Verify.checkEQ(short_out[i], expected);
+        }
+    }
+
+    // Predicated Short: umax(umin(a,b,m), umax(b,a,m), m) => umax(a,b,m)
+    @Test
+    @IR(counts = {IRNode.UMIN_VS, " 0 ", IRNode.UMAX_VS, " 1 "}, applyIfCPUFeatureOr = {"avx512bw", "true", "sve", "true"})
+    public void umax_short_masked_flipped_inputs(int index) {
+        ShortVector vec1 = ShortVector.fromArray(sspec, short_in1, index);
+        ShortVector vec2 = ShortVector.fromArray(sspec, short_in2, index);
+        VectorMask<Short> m = VectorMask.fromArray(sspec, m1arr, index);
+        vec1.lanewise(VectorOperators.UMIN, vec2, m)
+            .lanewise(VectorOperators.UMAX,
+                      vec2.lanewise(VectorOperators.UMAX, vec1, m), m)
+            .intoArray(short_out, index);
+    }
+
+    @Run(test = "umax_short_masked_flipped_inputs")
+    public void umax_short_masked_flipped_inputs_runner() {
+        for (int i = 0; i < sspec.loopBound(COUNT); i += sspec.length()) {
+            umax_short_masked_flipped_inputs(i);
+        }
+        for (int i = 0; i < sspec.loopBound(COUNT); i++) {
+            short a = short_in1[i], b = short_in2[i];
+            short minAB = (short)(m1arr[i] ? VectorMath.minUnsigned(a, b) : a);
+            short maxBA = (short)(m1arr[i] ? VectorMath.maxUnsigned(b, a) : b);
+            short expected = (short)(m1arr[i] ? VectorMath.maxUnsigned(minAB, maxBA) : minAB);
             Verify.checkEQ(short_out[i], expected);
         }
     }
@@ -1348,6 +1510,33 @@ public class VectorUnsignedMinMaxOperationsTest {
         }
     }
 
+    // Predicated Long: umin(umin(a,b,m), umax(b,a,m), m) => umin(a,b,m)
+    @Test
+    @IR(counts = {IRNode.UMIN_VL, " 1 ", IRNode.UMAX_VL, " 0 "}, applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true"})
+    public void umin_long_masked_flipped_inputs(int index) {
+        LongVector vec1 = LongVector.fromArray(lspec, long_in1, index);
+        LongVector vec2 = LongVector.fromArray(lspec, long_in2, index);
+        VectorMask<Long> m = VectorMask.fromArray(lspec, m1arr, index);
+        vec1.lanewise(VectorOperators.UMIN, vec2, m)
+            .lanewise(VectorOperators.UMIN,
+                      vec2.lanewise(VectorOperators.UMAX, vec1, m), m)
+            .intoArray(long_out, index);
+    }
+
+    @Run(test = "umin_long_masked_flipped_inputs")
+    public void umin_long_masked_flipped_inputs_runner() {
+        for (int i = 0; i < lspec.loopBound(COUNT); i += lspec.length()) {
+            umin_long_masked_flipped_inputs(i);
+        }
+        for (int i = 0; i < lspec.loopBound(COUNT); i++) {
+            long a = long_in1[i], b = long_in2[i];
+            long minAB = m1arr[i] ? VectorMath.minUnsigned(a, b) : a;
+            long maxBA = m1arr[i] ? VectorMath.maxUnsigned(b, a) : b;
+            long expected = m1arr[i] ? VectorMath.minUnsigned(minAB, maxBA) : minAB;
+            Verify.checkEQ(long_out[i], expected);
+        }
+    }
+
     // Predicated Long: umin(umin(a,b,m1), umax(a,b,m2), m1) => NO transform
     @Test
     @IR(counts = {IRNode.UMIN_VL, " 2 ", IRNode.UMAX_VL, " 1 "}, applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true"})
@@ -1484,6 +1673,33 @@ public class VectorUnsignedMinMaxOperationsTest {
             long minAB = m1arr[i] ? VectorMath.minUnsigned(a, b) : a;
             long maxAB = m1arr[i] ? VectorMath.maxUnsigned(a, b) : a;
             long expected = m1arr[i] ? VectorMath.maxUnsigned(minAB, maxAB) : minAB;
+            Verify.checkEQ(long_out[i], expected);
+        }
+    }
+
+    // Predicated Long: umax(umin(a,b,m), umax(b,a,m), m) => umax(a,b,m)
+    @Test
+    @IR(counts = {IRNode.UMIN_VL, " 0 ", IRNode.UMAX_VL, " 1 "}, applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true"})
+    public void umax_long_masked_flipped_inputs(int index) {
+        LongVector vec1 = LongVector.fromArray(lspec, long_in1, index);
+        LongVector vec2 = LongVector.fromArray(lspec, long_in2, index);
+        VectorMask<Long> m = VectorMask.fromArray(lspec, m1arr, index);
+        vec1.lanewise(VectorOperators.UMIN, vec2, m)
+            .lanewise(VectorOperators.UMAX,
+                      vec2.lanewise(VectorOperators.UMAX, vec1, m), m)
+            .intoArray(long_out, index);
+    }
+
+    @Run(test = "umax_long_masked_flipped_inputs")
+    public void umax_long_masked_flipped_inputs_runner() {
+        for (int i = 0; i < lspec.loopBound(COUNT); i += lspec.length()) {
+            umax_long_masked_flipped_inputs(i);
+        }
+        for (int i = 0; i < lspec.loopBound(COUNT); i++) {
+            long a = long_in1[i], b = long_in2[i];
+            long minAB = m1arr[i] ? VectorMath.minUnsigned(a, b) : a;
+            long maxBA = m1arr[i] ? VectorMath.maxUnsigned(b, a) : b;
+            long expected = m1arr[i] ? VectorMath.maxUnsigned(minAB, maxBA) : minAB;
             Verify.checkEQ(long_out[i], expected);
         }
     }
