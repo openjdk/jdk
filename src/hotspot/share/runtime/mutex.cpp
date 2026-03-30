@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -289,8 +289,6 @@ Mutex::Mutex(Rank rank, const char * name, bool allow_vm_block) : _owner(nullptr
   assert(name != nullptr, "Mutex requires a name");
   _name = os::strdup(name, mtInternal);
 #ifdef ASSERT
-  ResourceMark rm;
-
   _allow_vm_block  = allow_vm_block;
   _rank            = rank;
   _skip_rank_check = false;
