@@ -2733,19 +2733,18 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
       ProjNode* if_false_proj = if_node->proj_out(0);
 
       // Select the projection to keep in the constrained main loop.
-      // For loop exits, we must keep the in-loop projection as before.
-      // For internal branches (both projections stay in the loop), keep the
-      // hotter projection only when profiling indicates a clear majority path.
+      // The other projection is folded away by RCE.
+      // For loop exits, keep the in-loop projection and fold away the exit.
+      // For internal branches, only apply RCE when profiling is strongly
+      // biased. If several such branches are folded, pre/post-loop work is
+      // governed by the maximum cold path rather than a sum of probabilities.
       ProjNode* main_proj = nullptr;
       Node* exit = loop->is_loop_exit(iff);
       if (exit != nullptr) {
         main_proj = (exit->Opcode() == Op_IfTrue) ? if_false_proj : if_true_proj;
       } else {
-        bool true_in_loop = loop->is_member(get_loop(if_true_proj));
-        bool false_in_loop = loop->is_member(get_loop(if_false_proj));
-        if (!true_in_loop || !false_in_loop) {
-          continue;
-        }
+        assert(loop->is_member(get_loop(if_true_proj)), "IfTrue should stay in loop for internal branch");
+        assert(loop->is_member(get_loop(if_false_proj)), "IfFalse should stay in loop for internal branch");
         // _prob is the probability of taking IfTrue.
         // Only apply RCE on internal branches when profile is available and
         // sufficiently biased so the constrained main loop remains effective.
