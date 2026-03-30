@@ -234,7 +234,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
     // Try using the type profile.
     if (call_does_dispatch && site_count > 0 && UseTypeProfile) {
       // The major receiver's count >= TypeProfileMajorReceiverPercent of site_count.
-      bool have_major_receiver = profile.has_receiver(0) && (100.*profile.receiver_prob(0) >= (float)TypeProfileMajorReceiverPercent);
+      bool have_major_receiver = profile.has_major_receiver();
       ciMethod* receiver_method = nullptr;
 
       int morphism = profile.morphism();

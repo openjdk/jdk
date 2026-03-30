@@ -53,9 +53,16 @@ public class TestArrayLoadProfiling {
     static MyValue1[] array3 = (MyValue1[])ValueClass.newNullRestrictedNonAtomicArray(MyValue1.class, 1, new MyValue1(42));
     static MyValue2[] array4 = (MyValue2[])ValueClass.newNullRestrictedNonAtomicArray(MyValue2.class, 1, new MyValue2(42));
     static A[] array5 = { new A() };
+    static MyValue1[] array6 = (MyValue1[])ValueClass.newReferenceArray(MyValue1.class, 1);
+    static MyValue2[] array7 = (MyValue2[])ValueClass.newReferenceArray(MyValue2.class, 1);
+    { // doesn't run!?
+        array6[0] = new MyValue1(42);
+        array7[0] = new MyValue2(42);
+    }
     
     @Test
-    @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.CALL, "4", IRNode.IF, "4" })
+    @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.TRAP, "4", IRNode.CALL, "4", IRNode.IF, "4" })
+    @IR(failOn = IRNode.ALLOC)
     public static void test1(I[] array) {
         test1Inline(array[0]);
     }
@@ -115,7 +122,8 @@ public class TestArrayLoadProfiling {
     // }
 
     @Test
-    @IR(counts = { IRNode.NULL_CHECK_TRAP, "1", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.CALL, "3", IRNode.IF, "4" })
+    @IR(counts = { IRNode.NULL_CHECK_TRAP, "1", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.TRAP, "3", IRNode.CALL, "3", IRNode.IF, "4" })
+    @IR(failOn = IRNode.ALLOC)
     public static void test3(I[] array) {
         test3Inline(array[0]);
     }
@@ -132,7 +140,8 @@ public class TestArrayLoadProfiling {
     }
 
     @Test
-    @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.CALL, "4", IRNode.IF, "6" })
+    @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.TRAP, "4", IRNode.CALL, "4", IRNode.IF, "6" })
+    @IR(failOn = IRNode.ALLOC)
     public static void test5(I[] array) {
         test5Inline(array[0]);
     }
@@ -147,42 +156,109 @@ public class TestArrayLoadProfiling {
     static void test5Inline(I i) {
         i.m();
     }
-    
-    // @Test
-    // public static Object test2(Object[] array) {
-    //     return array[0];
-    // }
 
-    // @Run(test = "test2")
-    // public static void test2Runner() {
-    //     test2(array5);
-    // }
+    @Test
+    @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "2", IRNode.TRAP, "5", IRNode.CALL, "5", IRNode.IF, "6" })
+    @IR(failOn = IRNode.ALLOC)
+    public static void test7(I[] array) {
+        test7Inline(array[0]);
+    }
 
-    // @Test
-    // public static Object test3(Object[] array) {
-    //     return array[0];
-    // }
+    @Run(test = "test7")
+    public static void test7Runner() {
+        test7Inline(array1[0]);
+        test7Inline(array2[0]);
+        test7Inline(array3[0]);
+        test7Inline(array4[0]);
+        test7(array5);
+    }
 
-    // @Run(test = "test3")
-    // public static void test3Runner() {
-    //     test3(array1);
-    //     test3(array2);
-    //     test3(array5);
-    // }
-    
-    // @Test
-    // public static Object test4(Object[] array) {
-    //     return array[0];
-    // }
+    @ForceInline
+    static void test7Inline(I i) {
+        i.m();
+    }
 
-    // @Run(test = "test4")
-    // public static void test4Runner() {
-    //     test4(array1);
-    //     test4(array2);
-    //     test4(array3);
-    //     test4(array4);
+    // if (array == null) {
+    //   trap1;
     // }
-    
+    // if (0 not in range of array) {
+    //   trap2;
+    // }
+    // if (array flat) {
+    //   if (array.klass == MyValue1[]) {
+    //      if (array[0] == null) {
+    //        trap3;
+    //      }
+    //      // inlined call
+    //   } else if (array.klass == MyValue2[]) {
+    //      if (array[0] == null) {
+    //        trap3;
+    //      }
+    //      // inlined call
+    //   } else {
+    //     trap4;
+    //   }
+    // } else {
+    //   if (array.klass == MyValue1[]) {
+    //      if (array[0] == null) {
+    //        trap3;
+    //      }
+    //      // inlined call
+    //   } else if (array.klass == MyValue2[]) {
+    //      if (array[0] == null) {
+    //        trap3;
+    //      }
+    //      // inlined call
+    //   } else {
+    //     trap5;
+    //   }
+    // }
+    @Test
+    @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.BIMORPHIC_OR_OPTIMIZED_TYPE_CHECK_TRAP, "1", IRNode.TRAP, "5", IRNode.CALL, "5", IRNode.IF, "11" })
+    @IR(failOn = IRNode.ALLOC)
+    public static void test9(I[] array) {
+        test9Inline(array[0]);
+    }
+
+    @Run(test = "test9")
+    public static void test9Runner() {
+        if (array6[0] == null) {
+            array6[0] = new MyValue1(42);
+            array7[0] = new MyValue2(42);
+        }
+        test9(array1);
+        test9(array2);
+        test9(array6);
+        test9(array7);
+    }
+
+    @ForceInline
+    static void test9Inline(I i) {
+        i.m();
+    }
+
+    @Test
+    @IR(counts = { IRNode.NULL_CHECK_TRAP, "2", IRNode.RANGE_CHECK_TRAP, "1", IRNode.CLASS_CHECK_TRAP, "1", IRNode.BIMORPHIC_OR_OPTIMIZED_TYPE_CHECK_TRAP, "1", IRNode.TRAP, "5", IRNode.CALL, "5", IRNode.IF, "11" })
+    @IR(failOn = IRNode.ALLOC)
+    public static void test11(I[] array) {
+        test11Inline(array[0]);
+    }
+
+    @Run(test = "test11")
+    public static void test11Runner() {
+        for (int i = 0; i < 50; i++) {
+            test11(array1);
+        }
+        test11(array2);
+        test11(array3);
+        test11(array4);
+    }
+
+    @ForceInline
+    static void test11Inline(I i) {
+        i.m();
+    }
+
     interface I {
         void m();
     }
