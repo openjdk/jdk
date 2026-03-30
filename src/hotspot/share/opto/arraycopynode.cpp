@@ -333,10 +333,14 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
     Node* dest_scale = phase->transform(new LShiftXNode(dest_offset, phase->intcon(shift)));
 
     adr_src = phase->transform(AddPNode::make_with_base(base_src, src_scale));
+    phase->set_type(adr_src, adr_src->Value(phase));
     adr_dest = phase->transform(AddPNode::make_with_base(base_dest, dest_scale));
+    phase->set_type(adr_dest, adr_dest->Value(phase));
 
     adr_src = phase->transform(AddPNode::make_with_base(base_src, adr_src, phase->MakeConX(header)));
+    phase->set_type(adr_src, adr_src->Value(phase));
     adr_dest = phase->transform(AddPNode::make_with_base(base_dest, adr_dest, phase->MakeConX(header)));
+    phase->set_type(adr_dest, adr_dest->Value(phase));
 
     copy_type = dest_elem;
   } else {
@@ -614,20 +618,25 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   phase->set_type(src, phase->type(src)->join_speculative(atp_src));
   phase->set_type(dest, phase->type(dest)->join_speculative(atp_dest));
 
+  if (can_reshape) {
+    assert(!phase->is_IterGVN()->delay_transform(), "cannot delay transforms");
+    phase->is_IterGVN()->set_delay_transform(true);
+  }
+
   if (!prepare_array_copy(phase, can_reshape,
                           adr_src, base_src, adr_dest, base_dest,
                           copy_type, value_type, disjoint_bases)) {
     assert(adr_src == nullptr, "no node can be left behind");
     assert(adr_dest == nullptr, "no node can be left behind");
+    if (can_reshape) {
+      assert(phase->is_IterGVN()->delay_transform(), "cannot delay transforms");
+      phase->is_IterGVN()->set_delay_transform(false);
+    }
+
     return nullptr;
   }
 
   Node* in_mem = in(TypeFunc::Memory);
-
-  if (can_reshape) {
-    assert(!phase->is_IterGVN()->delay_transform(), "cannot delay transforms");
-    phase->is_IterGVN()->set_delay_transform(true);
-  }
 
   Node* backward_ctl = phase->C->top();
   Node* forward_ctl = phase->C->top();
