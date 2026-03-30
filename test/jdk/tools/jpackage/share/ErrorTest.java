@@ -26,7 +26,6 @@ import static java.util.stream.Collectors.toMap;
 import static jdk.internal.util.OperatingSystem.LINUX;
 import static jdk.internal.util.OperatingSystem.MACOS;
 import static jdk.internal.util.OperatingSystem.WINDOWS;
-import static jdk.jpackage.internal.util.PListWriter.writeDict;
 import static jdk.jpackage.internal.util.PListWriter.writePList;
 import static jdk.jpackage.internal.util.XmlUtils.createXml;
 import static jdk.jpackage.internal.util.XmlUtils.toXmlConsumer;
@@ -35,6 +34,7 @@ import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 import static jdk.jpackage.test.JPackageCommand.makeAdvice;
 import static jdk.jpackage.test.JPackageCommand.makeError;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -56,6 +56,7 @@ import jdk.jpackage.internal.util.TokenReplace;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.ApplicationLayout;
 import jdk.jpackage.test.CannedArgument;
 import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.JPackageCommand;
@@ -700,10 +701,47 @@ public final class ErrorTest {
     }
 
     @Test(ifOS = MACOS)
+    public static void testMacSignAppStoreInvalidRuntime() throws IOException {
+
+        // Create app image with the runtime directory content that will fail the subsequent signing jpackage command.
+        var appImageCmd = JPackageCommand.helloAppImage().setFakeRuntime();
+        appImageCmd.executeAndAssertImageCreated();
+        Files.createDirectory(appImageCmd.appLayout().runtimeHomeDirectory().resolve("bin"));
+
+        final var keychain = SignEnvMock.SingleCertificateKeychain.FOO.keychain();
+
+        var spec = testSpec()
+                .noAppDesc()
+                .addArgs("--mac-app-store", "--mac-sign", "--app-image", appImageCmd.outputBundle().toString())
+                .error("error.invalid-app-image-runtime-image-bin-dir",
+                        ApplicationLayout.macAppImage().runtimeHomeDirectory(), appImageCmd.outputBundle())
+                .create();
+
+        TKit.withNewState(() -> {
+            var script = Script.build()
+                    // Disable the mutation making mocks "run once".
+                    .commandMockBuilderMutator(null)
+                    // Replace "/usr/bin/security" with the mock bound to the keychain mock.
+                    .map(MacSignMockUtils.securityMock(SignEnvMock.VALUE))
+                    // Don't mock other external commands.
+                    .use(VerbatimCommandMock.INSTANCE)
+                    .createLoop();
+
+            // Create jpackage tool provider using the /usr/bin/security mock.
+            var jpackage = JPackageMockUtils.createJPackageToolProvider(OperatingSystem.MACOS, script);
+
+            // Override the default jpackage tool provider with the one using the /usr/bin/security mock.
+            JPackageCommand.useToolProviderByDefault(jpackage);
+
+            spec.test();
+        });
+    }
+
+    @Test(ifOS = MACOS)
     @ParameterSupplier
     @ParameterSupplier("testMacPkgSignWithoutIdentity")
     public static void testMacSignWithoutIdentity(TestSpec spec) {
-        // The test called JPackage Command.useToolProviderBy Default(),
+        // The test calls JPackageCommand.useToolProviderByDefault(),
         // which alters global variables in the test library,
         // so run the test case with a new global state to isolate the alteration of the globals.
         TKit.withNewState(() -> {
@@ -977,8 +1015,8 @@ public final class ErrorTest {
                 testSpec().noAppDesc().addArgs("--app-image", Token.APP_IMAGE.token())
                         .error("error.app-image.mac-sign.required"),
                 testSpec().type(PackageType.MAC_PKG).addArgs("--mac-package-identifier", "#1")
-                        .error("message.invalid-identifier", "#1")
-                        .advice("message.invalid-identifier.advice"),
+                        .error("error.parameter-not-mac-bundle-identifier", "#1", "--mac-package-identifier")
+                        .advice("error.parameter-not-mac-bundle-identifier.advice"),
                 // Bundle for mac app store should not have runtime commands
                 testSpec().nativeType().addArgs("--mac-app-store", "--jlink-options", "--bind-services")
                         .error("ERR_MissingJLinkOptMacAppStore", "--strip-native-commands"),
@@ -998,8 +1036,7 @@ public final class ErrorTest {
         // Test a few app-image options that should not be used when signing external app image
         testCases.addAll(Stream.of(
                 new ArgumentGroup("--app-version", "2.0"),
-                new ArgumentGroup("--name", "foo"),
-                new ArgumentGroup("--mac-app-store")
+                new ArgumentGroup("--name", "foo")
         ).flatMap(argGroup -> {
             var withoutSign = testSpec()
                     .noAppDesc()
