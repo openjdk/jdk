@@ -939,14 +939,6 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
   BoolTest::mask hi_test = this_bool->_test._test;
   BoolTest::mask cond = hi_test;
 
-  assert(lo_test == BoolTest::lt ||
-         lo_test == BoolTest::le ||
-         lo_test == BoolTest::gt ||
-         lo_test == BoolTest::ge ||
-         lo_test == BoolTest::ne, "lo test options: %d", lo_test);
-  assert(hi_test == BoolTest::lt ||
-         hi_test == BoolTest::le, "hi test options: %d", hi_test);
-
   // convert:
   //
   //          dom_bool = n {<,<=,>,>=} a
@@ -966,10 +958,16 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
   //
   // Note: otherproj and success both lead to the same Region, or
   //       some uncommon trap.
-  //       TODO: check if unc could lead to different places! Maybe op in between?
   //
   // (Second test guaranteed canonicalized, first one may not have
   // been canonicalized yet)
+  assert(lo_test == BoolTest::lt ||
+         lo_test == BoolTest::le ||
+         lo_test == BoolTest::gt ||
+         lo_test == BoolTest::ge ||
+         lo_test == BoolTest::ne, "lo test options: %d", lo_test);
+  assert(hi_test == BoolTest::lt ||
+         hi_test == BoolTest::le, "hi test options: %d", hi_test);
   //
   // into:
   //
@@ -985,9 +983,7 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
   //   if n u> 10: success   <- takes on both paths
   //   // fail
   //
-  // TODO: does this not mean we might hit the null-check first, and not
-  // the first condition first?
-
+  //
   // In the proofs below, we need some basic Lemmas to deal with integer
   // signed and unsigned arithmetic.
   //
