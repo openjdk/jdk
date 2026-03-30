@@ -23,7 +23,9 @@
 
 
 import javax.swing.JTextPane;
+import javax.swing.event.DocumentListener;
 import javax.swing.text.html.HTMLDocument;
+import javax.swing.text.html.HTMLEditorKit;
 
 /*
  * @test
@@ -36,12 +38,37 @@ public class GetAccessibleTextAddsDocumentListeners {
     public static void main(String[] args) throws Exception{
         JTextPane textPane = new JTextPane();
         textPane.setContentType("text/html");
+        HTMLDocument doc1 = (HTMLDocument) textPane.getDocument();
+        int listenerCountA = log("A", doc1.getDocumentListeners());
         for (int a = 0; a < 10_000; a++) {
             textPane.getAccessibleContext().getAccessibleText();
         }
-        HTMLDocument doc = (HTMLDocument) textPane.getDocument();
-        int listenerCount = doc.getDocumentListeners().length;
-        if (listenerCount > 1000)
-            throw new Exception("number of listeners = " + listenerCount);
+        int listenerCountB = log("B", doc1.getDocumentListeners());
+        if (listenerCountB > listenerCountA + 1_000 ||
+            listenerCountB == listenerCountA) {
+            throw new Exception();
+        }
+        HTMLEditorKit kit = (HTMLEditorKit) textPane.getEditorKit();
+        HTMLDocument doc2 = (HTMLDocument) kit.createDefaultDocument();
+        textPane.setDocument(doc2);
+        int listenerCountC = log("C", doc2.getDocumentListeners());
+        for (int a = 0; a < 10_000; a++) {
+            textPane.getAccessibleContext().getAccessibleText();
+        }
+        int listenerCountD = log("D", doc2.getDocumentListeners());
+        if (listenerCountD > listenerCountC + 1_000 ||
+                listenerCountD == listenerCountC) {
+            throw new Exception();
+        }
+    }
+
+    private static int log(String name, DocumentListener[] listeners) {
+        System.out.println(listeners.length + " listeners  at \"" +
+                name  + "\"");
+        for (DocumentListener l : listeners) {
+            System.out.println("\t" + l.getClass().getName() + " 0x" +
+                    Long.toHexString(System.identityHashCode(l)));
+        }
+        return listeners.length;
     }
 }

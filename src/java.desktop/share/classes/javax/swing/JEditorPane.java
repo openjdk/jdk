@@ -1724,6 +1724,7 @@ public class JEditorPane extends JTextComponent {
         public AccessibleText getAccessibleText() {
             if (axText == null) {
                 axText = new JEditorPaneAccessibleHypertextSupport();
+                JEditorPane.this.addPropertyChangeListener("document", evt -> axText = null );
             }
             return axText;
         }
