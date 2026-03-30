@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1068,7 +1068,7 @@ public class BasicScrollBarUI
      * @return The current size/location of the thumb.
      * @see #setThumbBounds
      */
-    public Rectangle getThumbBounds() {
+    protected Rectangle getThumbBounds() {
         return thumbRect;
     }
 
@@ -1085,7 +1085,7 @@ public class BasicScrollBarUI
      * @return the current bounds of the scrollbar track
      * @see #layoutContainer
      */
-    public Rectangle getTrackBounds() {
+    protected Rectangle getTrackBounds() {
         return trackRect;
     }
 
