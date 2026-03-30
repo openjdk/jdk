@@ -37,13 +37,13 @@ import java.util.function.Function;
  * Represents the module entries stored in the buffer of {@code "/packages/xxx"}
  * image locations (package subdirectories).
  *
- * <p>Package subdirectories store their data in a different form to all other
- * jimage entries. Instead of storing a sequence of offsets to their child
- * entries, they store a flattened representation of the child's data in an
- * interleaved buffer. These entries also use flags which are similar to, but
- * distinct from, the {@link ImageLocation} flags.
+ * <p>Package subdirectories store their data differently to all other jimage
+ * entries. Instead of storing a sequence of offsets to their child entries,
+ * they store a flattened representation of the child's data in an interleaved
+ * buffer. These entries also use flags which are similar to, but distinct from,
+ * the {@link ImageLocation} flags.
  *
- * <p>This class encapsulate that complexity to help avoid confusion.
+ * <p>This class encapsulates that complexity to help avoid confusion.
  *
  * @implNote This class needs to maintain JDK 8 source compatibility.
  *
@@ -178,7 +178,7 @@ public final class ModuleReference implements Comparable<ModuleReference> {
      * of module name offsets in the jimage.
      *
      * <p>Package subdirectories store their entries using pairs of integers in
-     * an interleaved 32-bit buffer:
+     * an interleaved buffer:
      * <pre>
      *     ...
      *     [ entry-N flags ]
