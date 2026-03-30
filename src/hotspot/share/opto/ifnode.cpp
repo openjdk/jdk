@@ -1067,48 +1067,6 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
     // <----- otherproj ------> <----------- fail -------------> <------ success ------->
     // [min_int .. lo_type->hi] [lo_type->hi+1 .. hi_type->lo-1] [hi_type->lo .. max_int]
 
-    // this_bool = <
-    //   dom_bool = >= (proj = True) or dom_bool = < (proj = False)
-    //     x in [a, b[ on the fail (= True) projection, b > a-1 (because of hi_type->_lo > lo_type->_hi test above):
-    //     lo = a, hi = b, adjusted_lim = b-a, cond = <u
-    //   dom_bool = > (proj = True) or dom_bool = <= (proj = False)
-    //     x in ]a, b[ on the fail (= True) projection, b > a:
-    //     lo = a+1, hi = b, adjusted_lim = b-a-1, cond = <u
-    // this_bool = <=
-    //   dom_bool = >= (proj = True) or dom_bool = < (proj = False)
-    //     x in [a, b] on the fail (= True) projection, b+1 > a-1:
-    //     lo = a, hi = b, adjusted_lim = b-a+1, cond = <u
-    //     lo = a, hi = b, adjusted_lim = b-a, cond = <=u doesn't work because b = a - 1 is possible, then b-a = -1
-    //     ? This is the problematic case. Argumentation FOR solution is not really present.
-    //     ? There is only an argument against an alternative solution:
-    //     ?   x - lo <=u hi - lo
-    //     ? The argument against it seems to be that we could have hi = lo - 1.
-    //     ? And then hi - lo overflows, which leads to a wrong result.
-    //     ?
-    //     ? Review email thread:
-    //     ? https://mail.openjdk.org/pipermail/hotspot-compiler-dev/2015-June/018181.html
-    //     ?   C2 folds:
-    //     ?   if (i <= a || i > b) {
-    //     ?   as:
-    //     ?   if (i - a - 1 >u b - a - 1) {
-    //     ?   a == b is allowed and the test becomes then if (i-1 >u -1) { which is never true.
-    //     ?   Same is true with if (i > b || i <= a) {
-    //     ?   The fix folds it as:
-    //     ?   if (i - a - 1 >=u b - a) {
-    //     ?   which is always true for a == b
-    //     ?
-    //     ? Review went through without many questions, sadly.
-    //     ?
-    //     ? As we can see in (CASE *3a), this "fix" removed the underflow
-    //     ? issue, but as a consequence introduced an overflow problem.
-    //     ? That's what you get when you just fix individual cases rather
-    //     ? than writing proofs about all cases :(
-    //     ?
-    //   dom_bool = > (proj = True) or dom_bool = <= (proj = False)
-    //     x in ]a, b] on the fail (= True) projection b+1 > a:
-    //     lo = a+1, hi = b, adjusted_lim = b-a, cond = <u
-    //     lo = a+1, hi = b, adjusted_lim = b-a-1, cond = <=u doesn't work because a = b is possible, then b-a-1 = -1
-
     if (hi_test == BoolTest::lt) {
       if (lo_test == BoolTest::gt || lo_test == BoolTest::le) {
         // (CASE *1a)
