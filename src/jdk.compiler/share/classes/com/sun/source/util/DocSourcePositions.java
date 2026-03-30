@@ -130,7 +130,7 @@ public interface DocSourcePositions extends SourcePositions {
      * of this tree, that is for any sub-tree of this tree, the following must hold:
      *
      * <p>
-     * {@code getEndPosition(comment, tree) >= getEndPosition(file, comment, subtree)} or <br>
+     * {@code getEndPosition(comment, tree) >= getEndPosition(comment, subtree)} or <br>
      * {@code getEndPosition(comment, tree) == NOPOS} or <br>
      * {@code getEndPosition(comment, subtree) == NOPOS}
      * </p>
