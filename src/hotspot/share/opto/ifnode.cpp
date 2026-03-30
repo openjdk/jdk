@@ -1063,6 +1063,9 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
       hi_type->_hi == max_jint && lo_type->_lo == min_jint && lo_test != BoolTest::ne) {
     assert((dom_bool->_test.is_less() && !proj->_con) ||
            (dom_bool->_test.is_greater() && proj->_con), "incorrect test");
+    // We have:
+    // <----- otherproj ------> <----------- fail -------------> <------ success ------->
+    // [min_int .. lo_type->hi] [lo_type->hi+1 .. hi_type->lo-1] [hi_type->lo .. max_int]
 
     // this_bool = <
     //   dom_bool = >= (proj = True) or dom_bool = < (proj = False)
@@ -1463,6 +1466,9 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
     assert(this_bool->_test.is_less() && fail->_con, "incorrect test");
   } else if (lo_type != nullptr && hi_type != nullptr && lo_type->_lo > hi_type->_hi &&
              lo_type->_hi == max_jint && hi_type->_lo == min_jint && lo_test != BoolTest::ne) {
+    // We have:
+    // <------- success ------> <----------- fail -------------> <----- otherproj ------>
+    // [min_int .. hi_type->hi] [hi_type->hi+1 .. lo_type->lo-1] [lo_type->lo .. max_int]
 
     // this_bool = <
     //   dom_bool = < (proj = True) or dom_bool = >= (proj = False)
