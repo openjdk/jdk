@@ -1145,7 +1145,7 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
         //     Since a < b (A-B), S(a+1) = a+1 (no overfaw):
         //     -> a+1 <= b
         //     U(n - (a + 1))           <  U(b - (a + 1))
-        //     -- Lemma1 (n >= a+1) --  <  -- Lemma1 (a+1 <= b) --
+        //     -- Lemma1 (n >= a+1) --     -- Lemma1 (a+1 <= b) --
         //       n - (a + 1)            <    b - (a + 1)
         //       n                      <    b
         //     Contradicts case assumption, so always false.
@@ -1155,14 +1155,21 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
       } else {
         assert(lo_test == BoolTest::lt || lo_test == BoolTest::ge, "lo_test = %d", lo_test);
         // (CASE *2a)
-        // lo=lt,hi=lt    n < a   || !(n < b)
-        // lo=ge,hi=lt  !(n >= a) || !(n < b)
+        // lo=lt,hi=lt  !(n <  a) && n < b
+        // lo=ge,hi=lt    n >= a  && n < b
         //
         // Simplified version:
-        //   n < a || n >= b                      (BEFORE)
+        //   n >= a && n < b                     (BEFORE)
         //
         // Transformed to:
-        //   n - a >=u b - a                     (AFTER)
+        //   n - a <u b - a                      (AFTER)
+        // Equivalent to:
+        //   n - lo <cond> adjusted_lim
+        // Where:
+        //   lo   = a
+        //   hi   = b
+        //   cond = "<u"
+        //   adjusted_lim = hi - lo
         //
         // Proof:
         //   From IfNode::filtered_int_type, we get:
@@ -1177,39 +1184,41 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
         //     -> a <= b                             (A-B)
         //
         //   Case n < a:
-        //     (BEFORE) is always true, show (AFTER) is always true.
-        //     U(n - a)               >=  U(b - a)
-        //     -- Lemma2 (n < a) --       -- Lemma1 (a <= b) --
-        //       n - a + 2^32         >=    b - a
-        //       n      + 2^32         >=    b
-        //     Always true by Lemma3.
+        //     (BEFORE) is always false, show (AFTER) is always false.
+        //     U(n - a)               < U(b - a)
+        //     -- Lemma2 (n < a) --     -- Lemma1 (a <= b) --
+        //       n - a + 2^32         <   b - a
+        //       n      + 2^32        <   b
+        //     Always false by Lemma3.
         //
         //   Case a <=s n <s b:
-        //     (BEFORE) is always false, show (AFTER) is always false.
-        //     U(n - a)               >=  U(b - a)
-        //     -- Lemma1 (n >=a) --       -- Lemma1 (a <= b) --
-        //       n - a                >=    b - a
-        //       n                     >=    b
-        //     Contradicts our case assumption n <s b, so always false.
+        //     (BEFORE) is always true, show (AFTER) is always true.
+        //     U(n - a)               < U(b - a)
+        //     -- Lemma1 (n >=a) --      -- Lemma1 (a <= b) --
+        //       n - a                <   b - a
+        //       n                    <   b
+        //     Follows from case assumption, so always true.
         //
         //   Case n >=s b:
-        //     (BEFORE) is always true, show (AFTER) is always true.
-        //     U(n - a)               >=  U(b - a)
-        //     -- Lemma1 (n >= a) --      -- Lemma1 (a <= b) --
-        //       n - a                >=    b - a
-        //       n                     >=    b
-        //     Equivalent to case assumption, so always true.
+        //     (BEFORE) is always false, show (AFTER) is always false.
+        //     U(n - a)               < U(b - a)
+        //     -- Lemma1 (n >= a) --     -- Lemma1 (a <= b) --
+        //       n - a                <   b - a
+        //       n                    <   b
+        //     Contradicts case assumption, so always false.
         // QED.
         assert(cond == BoolTest::lt, "");
       }
     } else if (hi_test == BoolTest::le) {
       if (lo_test == BoolTest::ge || lo_test == BoolTest::lt) {
         // (CASE *3a)
-        // lo=lt,hi=le:    n <  a  || !(n <= b)
-        // lo=ge,hi=le:  !(n >= a) || !(n <= b)
+        // lo=lt,hi=le:  !(n <  a) && n <= b
+        // lo=ge,hi=le:    n >= a  && n <= b
         //
         // Simplified version:
-        //   n < a || n > b                    (BEFORE)
+        //   n >= a && n <= b                 (BEFORE)
+        //
+        // TODO: fix things up here!
         //
         // Transformed to:
         //   n - a >=u b - a + 1              (AFTER)
@@ -1358,16 +1367,21 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
         cond = BoolTest::lt;
       } else if (lo_test == BoolTest::gt || lo_test == BoolTest::le) {
         // (CASE *4a)
-        // lo=le,hi=le:    n <= a  || !(n <= b)
-        // lo=gt,hi=le:   !(n > a) || !(n <= b)
+        // lo=le,hi=le:   !(n <= a) && n <= b
+        // lo=gt,hi=le:     n >  a  && n <= b
         //
         // Simplified version:
-        //   n <= a || n > b                     (BEFORE)
+        //   n > a && n <= b                    (BEFORE)
         //
         // Transformed to:
-        //   n -  a - 1  >=u b - a              (AFTER)
+        //   n - a - 1 <u b - a              (AFTER)
         // Equivalent to:
-        //   n - (a + 1) >=u b - a
+        //   n - lo <cond> adjusted_lim
+        // Where:
+        //   lo   = a + 1
+        //   hi   = b
+        //   cond = "<u"
+        //   adjusted_lim = a - b
         //
         // Proof:
         //   From IfNode::filtered_int_type, we get:
@@ -1383,47 +1397,47 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
         //
         //   Case A: a = b
         //     Let y = a = b
-        //     -> n <= a || n > b     vs     n -  a - 1  >=u b - a
-        //     -> n <= y  || n > y      vs     n -  y  - 1  >=u y  - y = 0
-        //        true                         true
-        //     Hence, (BEFORE) and (AFTER) are both always true.
+        //     -> n > a && n <= b     vs     n - a - 1 <u b - a
+        //     -> n > y && n <= y     vs     n - y - 1 <u y - y = 0
+        //        false                      false
+        //     Hence, (BEFORE) and (AFTER) are both always false.
         //
         //   Case B: a < b
         //     Case n <= a:
-        //       (BEFORE) is always true, show (AFTER) is always true.
+        //       (BEFORE) is always false, show (AFTER) is always false.
         //       Since a < b (Case B), S(a+1) = a+1 (no overflow):
         //       -> n < a+1
-        //       U(n - (a + 1))          >=  U(b - a)
-        //       -- Lemma2 (n < a+1) --      -- Lemma1 (a <= b) --
-        //         n - (a + 1) + 2^32    >=    b - a
-        //         n -       1  + 2^32    >=    b
-        //         n            + 2^32    >     b
-        //       Always true by Lemma3.
+        //       U(n - (a + 1))          <  U(b - a)
+        //       -- Lemma2 (n < a+1) --     -- Lemma1 (a <= b) --
+        //         n - (a + 1) + 2^32    <    b - a
+        //         n -      1  + 2^32    <    b
+        //         n           + 2^32    <=   b
+        //       Always false by Lemma3.
         //       Note: To apply Lemma2 above, we must use (Case B), we
         //             could not have done it with (A-B) alone.
         //
         //     Case a < n <= b:
-        //       (BEFORE) is always false, show (AFTER) is always false.
+        //       (BEFORE) is always true, show (AFTER) is always true.
         //       Since a < b (Case B), S(a+1) = a+1 (no overflow):
-        //       -> n    >= a+1
-        //       U(n - (a + 1))          >=  U(b - a)
-        //       -- Lemma1 (n >= a+1) --     -- Lemma1 (a <= b) --
-        //         n - (a + 1)           >=    b - a
-        //         n -       1            >=    b
-        //         n                      >     b
-        //       Contradicts n <= b, so always false.
+        //       -> n >= a+1
+        //       U(n - (a + 1))          <  U(b - a)
+        //       -- Lemma1 (n >= a+1) --    -- Lemma1 (a <= b) --
+        //         n - (a + 1)           <    b - a
+        //         n -      1            <    b
+        //         n                     <=   b
+        //       Follows from case assumption, so always true.
         //
         //     Case n > b:
-        //       (BEFORE) is always true, show (AFTER) is always true.
+        //       (BEFORE) is always false, show (AFTER) is always false.
         //       Since a < b (Case B), S(a+1) = a+1 (no overflow):
         //       -> a+1 <= b
         //       -> n > a+1
-        //       U(n - (a + 1))          >=  U(b - a)
-        //       -- Lemma1 (n >  a+1) --     -- Lemma1 (a <= b) --
-        //         n - (a + 1)           >=    b - a
-        //         n -       1            >=    b
-        //         n                      >     b
-        //     Equivalent to case assumption, so always true.
+        //       U(n - (a + 1))          <  U(b - a)
+        //       -- Lemma1 (n >  a+1) --    -- Lemma1 (a <= b) --
+        //         n - (a + 1)           <    b - a
+        //         n -      1            <    b
+        //         n                     <=   b
+        //     Contradicts case assumption, so always false.
         // QED.
         adjusted_lim = igvn->transform(new SubINode(hi, lo));
         lo = igvn->transform(new AddINode(lo, igvn->intcon(1)));
@@ -1457,27 +1471,28 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
     if (lo_test == BoolTest::lt) {
       if (hi_test == BoolTest::lt || hi_test == BoolTest::ge) {
         // (CASE *2b)
-        // lo=lt,hi=lt:    n < a || !(n <  b)
-        // lo=lt,hi=ge:    n < a ||   n >= b
+        // lo=lt,hi=lt:    n < a && !(n <  b)
+        // lo=lt,hi=ge:    n < a &&   n >= b
         //
         // Simplified version:
-        //   n < a || n >= b                      (BEFORE)
+        //   n < a || n >= b                    (BEFORE)
         //
         // Transformed to:
-        //   n - a >=u b - a                     (AFTER)
+        //   n - b >=u a - b                    (AFTER)
         //
         // This is exaclty the same as (CASE *2a).
         cond = BoolTest::ge;
       } else if (hi_test == BoolTest::le || hi_test == BoolTest::gt) {
-        // CASE (*3b)
+        // (CASE *3b)
+        // TODO: fix up, not sure about it
         // lo=lt,hi=le:   n < a || !(n <= b)
         // lo=lt,hi=gt:   n < a ||   n >  b
         //
         // Simplified version:
-        //   n < a || n > b                    (BEFORE)
+        //   n < a || n > b                     (BEFORE)
         //
         // Transformed to:
-        //   n - a >=u b - a + 1              (AFTER)
+        //   n - a >=u b - a + 1                (AFTER)
         //
         // This is exaclty the same as (CASE *3a).
         adjusted_lim = igvn->transform(new SubINode(hi, lo));
@@ -1489,12 +1504,12 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
       }
     } else if (lo_test == BoolTest::le) {
       if (hi_test == BoolTest::lt || hi_test == BoolTest::ge) {
-        // (CASE *1b)
-        // lo=le,hi=lt:    n <= a  || !(n <  b)
-        // lo=le,hi=ge:    n <= a  ||   n >= b
+        // (CASE *1b) TODO: this!
+        // lo=le,hi=lt:    n <= a  && !(n <  b)
+        // lo=le,hi=ge:    n <= a  &&   n >= b
         //
         // Simplified version:
-        //   n <= a || n >= b                    (BEFORE)
+        //   n <= a && n >= b                   (BEFORE)
         //
         // Transformed to:
         //   n -  a - 1  >=u b -  a - 1         (AFTER)
@@ -1506,21 +1521,19 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
         cond = BoolTest::ge;
       } else if (hi_test == BoolTest::le || hi_test == BoolTest::gt) {
         // (CASE *4b)
-        // lo=le,hi=le:    n <= a || !(n <= b)
-        // lo=le,hi=gt:    n <= a ||   n >  b
+        // lo=le,hi=le:    n <= a && !(n <= b)
+        // lo=le,hi=gt:    n <= a &&   n >  b
         //
         // Simplified version:
-        //   n <= a || n > b                     (BEFORE)
+        //   n <= a && n > b                    (BEFORE)
         //
         // Transformed to:
-        //   n -  a - 1  >=u b - a              (AFTER)
-        // Equivalent to:
-        //   n - (a + 1) >=u b - a
+        //   n - b - 1 <u a - b                 (AFTER)
         //
         // This is exactly the same as (CASE 4a*)
         adjusted_lim = igvn->transform(new SubINode(hi, lo));
         lo = igvn->transform(new AddINode(lo, igvn->intcon(1)));
-        cond = BoolTest::ge;
+        cond = BoolTest::ge; // TODO: why flipped?
       } else {
         assert(false, "unhandled hi_test: %d", hi_test);
         return false;
