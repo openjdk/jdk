@@ -47,7 +47,7 @@ public:
                  "reference is a MH");
   }
 
-  static void verify_ref_kind(MacroAssembler* _masm, int ref_kind, const char* msg, Register member_reg, Register temp) NOT_DEBUG_RETURN;
+  static void verify_ref_kind(MacroAssembler* _masm, int ref_kind, Register member_reg, Register temp) NOT_DEBUG_RETURN;
 
   // Similar to InterpreterMacroAssembler::jump_from_interpreted.
   // Takes care of special dispatch from single stepping too.
