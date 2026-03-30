@@ -626,8 +626,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             // Fix for 6829923: we should gracefully handle toolkit thread interruption
             if (Thread.currentThread().isInterrupted()) {
                 // If the thread is interrupted from another place, let's skip it
-                // for compatibility reasons. Probably some time later we'll remove
-                // break the loop here.
+                // for compatibility reasons.
             }
             awtLock();
             try {
