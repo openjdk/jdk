@@ -980,7 +980,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
     {
         toolBar.setOrientation( orientation );
 
-        if (dragWindow !=null)
+        if (dragWindow != null)
             dragWindow.setOrientation(orientation);
     }
 
@@ -1616,7 +1616,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
                 this.orientation = o;
                 Dimension size = getSize();
                 setSize(new Dimension(size.height, size.width));
-                if (offset!=null) {
+                if (offset != null) {
                     if( BasicGraphicsUtils.isLeftToRight(toolBar) ) {
                         setOffset(new Point(offset.y, offset.x));
                     } else if( o == JToolBar.HORIZONTAL ) {

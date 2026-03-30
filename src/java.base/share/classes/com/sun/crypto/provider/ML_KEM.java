@@ -498,7 +498,7 @@ public final class ML_KEM {
     /*
     Main internal algorithms from Section 6 of specification
      */
-    protected ML_KEM_KeyPair generateKemKeyPair(byte[] kem_d, byte[] kem_z) {
+    protected ML_KEM_KeyPair generateKemKeyPair(byte[] kem_d_z) {
         MessageDigest mlKemH;
         try {
             mlKemH = MessageDigest.getInstance(HASH_H_NAME);
@@ -508,7 +508,8 @@ public final class ML_KEM {
         }
 
         //Generate K-PKE keys
-        var kPkeKeyPair = generateK_PkeKeyPair(kem_d);
+        //The 1st 32-byte `d` is used in K-PKE key pair generation
+        var kPkeKeyPair = generateK_PkeKeyPair(kem_d_z);
         //encaps key = kPke encryption key
         byte[] encapsKey = kPkeKeyPair.publicKey.keyBytes;
 
@@ -527,12 +528,19 @@ public final class ML_KEM {
             // This should never happen.
             throw new RuntimeException(e);
         }
-        System.arraycopy(kem_z, 0, decapsKey,
+        // The 2nd 32-byte `z` is copied into decapsKey
+        System.arraycopy(kem_d_z, 32, decapsKey,
             kPkePrivateKey.length + encapsKey.length + 32, 32);
 
         return new ML_KEM_KeyPair(
             new ML_KEM_EncapsulationKey(encapsKey),
             new ML_KEM_DecapsulationKey(decapsKey));
+    }
+
+    public byte[] privKeyToPubKey(byte[] decapsKey) {
+        int pkLen = (mlKem_k * ML_KEM_N * 12) / 8 + 32 /* rho */;
+        int skLen = (mlKem_k * ML_KEM_N * 12) / 8;
+        return Arrays.copyOfRange(decapsKey, skLen, skLen + pkLen);
     }
 
     protected ML_KEM_EncapsulateResult encapsulate(
@@ -648,10 +656,12 @@ public final class ML_KEM {
             throw new RuntimeException(e);
         }
 
-        mlKemG.update(seed);
+        // Note: only the 1st 32-byte in the seed is used
+        mlKemG.update(seed, 0, 32);
         mlKemG.update((byte)mlKem_k);
 
         var rhoSigma = mlKemG.digest();
+        mlKemG.reset();
         var rho = Arrays.copyOfRange(rhoSigma, 0, 32);
         var sigma = Arrays.copyOfRange(rhoSigma, 32, 64);
         Arrays.fill(rhoSigma, (byte)0);

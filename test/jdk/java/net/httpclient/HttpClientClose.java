@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
  *        ReferenceTracker
- * @run testng/othervm
+ * @run junit/othervm
  *       -Djdk.internal.httpclient.debug=true
  *       -Djdk.httpclient.HttpClient.log=trace,headers,requests
  *       HttpClientClose
@@ -70,10 +70,6 @@ import javax.net.ssl.SSLContext;
 
 import jdk.test.lib.RandomFactory;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
@@ -84,10 +80,15 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class HttpClientClose implements HttpServerAdapters {
 
@@ -96,27 +97,26 @@ public class HttpClientClose implements HttpServerAdapters {
     }
     static final Random RANDOM = RandomFactory.getRandom();
 
-    ExecutorService readerService;
+    private static ExecutorService readerService;
     private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
-    HttpTestServer httpTestServer;        // HTTP/1.1    [ 4 servers ]
-    HttpTestServer httpsTestServer;       // HTTPS/1.1
-    HttpTestServer http2TestServer;       // HTTP/2 ( h2c )
-    HttpTestServer https2TestServer;      // HTTP/2 ( h2  )
-    HttpTestServer h2h3TestServer;        // HTTP/3 ( h2 + h3 )
-    HttpTestServer h3TestServer;          // HTTP/3 ( h3 )
-    String httpURI;
-    String httpsURI;
-    String http2URI;
-    String https2URI;
-    String h2h3URI;
-    String h2h3Head;
-    String h3URI;
+    private static HttpTestServer httpTestServer;        // HTTP/1.1    [ 4 servers ]
+    private static HttpTestServer httpsTestServer;       // HTTPS/1.1
+    private static HttpTestServer http2TestServer;       // HTTP/2 ( h2c )
+    private static HttpTestServer https2TestServer;      // HTTP/2 ( h2  )
+    private static HttpTestServer h2h3TestServer;        // HTTP/3 ( h2 + h3 )
+    private static HttpTestServer h3TestServer;          // HTTP/3 ( h3 )
+    private static String httpURI;
+    private static String httpsURI;
+    private static String http2URI;
+    private static String https2URI;
+    private static String h2h3URI;
+    private static String h2h3Head;
+    private static String h3URI;
 
     static final String MESSAGE = "HttpClientClose message body";
     static final int ITERATIONS = 3;
 
-    @DataProvider(name = "positive")
-    public Object[][] positive() {
+    public static Object[][] positive() {
         return new Object[][] {
                 { h2h3URI,    HTTP_3,   h2h3TestServer.h3DiscoveryConfig()},
                 { h3URI,      HTTP_3,   h3TestServer.h3DiscoveryConfig()},
@@ -128,7 +128,7 @@ public class HttpClientClose implements HttpServerAdapters {
     }
 
     static final AtomicLong requestCounter = new AtomicLong();
-    final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
+    private static final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
 
     static String readBody(InputStream body) {
         try (InputStream in = body) {
@@ -138,7 +138,7 @@ public class HttpClientClose implements HttpServerAdapters {
         }
     }
 
-    private static record CancellingSubscriber<U>(ExchangeResult<?> result)
+    private record CancellingSubscriber<U>(ExchangeResult<?> result)
             implements Subscriber<U> {
         @Override
         public void onSubscribe(Subscription subscription) {
@@ -176,15 +176,15 @@ public class HttpClientClose implements HttpServerAdapters {
                              boolean firstVersionMayNotMatch) {
 
         static <U> ExchangeResult<U> afterHead(int step, Version version, Http3DiscoveryMode config) {
-            return new ExchangeResult<U>(step, version, config, null, false);
+            return new ExchangeResult<>(step, version, config, null, false);
         }
 
         static <U> ExchangeResult<U> ofSequential(int step, Version version, Http3DiscoveryMode config) {
-            return new ExchangeResult<U>(step, version, config, null, true);
+            return new ExchangeResult<>(step, version, config, null, true);
         }
 
         ExchangeResult<T> withResponse(HttpResponse<T> response) {
-            return new ExchangeResult<T>(step(), version(), config(), response, firstVersionMayNotMatch());
+            return new ExchangeResult<>(step(), version(), config(), response, firstVersionMayNotMatch());
         }
 
         // Ensures that the input stream gets closed in case of assertion
@@ -193,11 +193,11 @@ public class HttpClientClose implements HttpServerAdapters {
             try {
                 out.printf("%s:  expect status 200 and version %s (%s) for %s%n", step, version, config,
                         response.request().uri());
-                assertEquals(response.statusCode(), 200);
+                assertEquals(200, response.statusCode());
                 if (step == 0 && version == HTTP_3 && firstVersionMayNotMatch) {
                     out.printf("%s:  version not checked%n", step);
                 } else {
-                    assertEquals(response.version(), version);
+                    assertEquals(version, response.version());
                     out.printf("%s:  got expected version %s%n", step, response.version());
                 }
             } catch (AssertionError error) {
@@ -227,10 +227,11 @@ public class HttpClientClose implements HttpServerAdapters {
                 .HEAD()
                 .build();
         var resp = client.send(request, BodyHandlers.discarding());
-        assertEquals(resp.statusCode(), 200);
+        assertEquals(200, resp.statusCode());
     }
 
-    @Test(dataProvider = "positive")
+    @ParameterizedTest
+    @MethodSource("positive")
     void testConcurrent(String uriString, Version version, Http3DiscoveryMode config) throws Exception {
         out.printf("%n---- starting concurrent (%s, %s, %s) ----%n%n", uriString, version, config);
         Throwable failed = null;
@@ -266,7 +267,7 @@ public class HttpClientClose implements HttpServerAdapters {
                 bodyCF = responseCF
                         .thenApplyAsync((resp) -> readBody(si, resp), readerService)
                         .thenApply((s) -> {
-                            assertEquals(s, MESSAGE);
+                            assertEquals(MESSAGE, s);
                             return s;
                         });
                 long sleep = RANDOM.nextLong(5);
@@ -289,7 +290,8 @@ public class HttpClientClose implements HttpServerAdapters {
                 failed == null ? "done" : failed.toString());
     }
 
-    @Test(dataProvider = "positive")
+    @ParameterizedTest
+    @MethodSource("positive")
     void testSequential(String uriString, Version version, Http3DiscoveryMode config) throws Exception {
         out.printf("%n---- starting sequential (%s, %s, %s) ----%n%n", uriString, version, config);
         Throwable failed = null;
@@ -320,7 +322,7 @@ public class HttpClientClose implements HttpServerAdapters {
                 bodyCF = responseCF.thenApplyAsync(HttpResponse::body, readerService)
                         .thenApply(HttpClientClose::readBody)
                         .thenApply((s) -> {
-                            assertEquals(s, MESSAGE);
+                            assertEquals(MESSAGE, s);
                             return s;
                         })
                         .thenApply((s) -> {
@@ -340,8 +342,8 @@ public class HttpClientClose implements HttpServerAdapters {
 
     // -- Infrastructure
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         out.println("\n**** Setup ****\n");
         readerService = Executors.newCachedThreadPool();
 
@@ -376,8 +378,8 @@ public class HttpClientClose implements HttpServerAdapters {
         h3TestServer.start();
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    public static void teardown() throws Exception {
         Thread.sleep(100);
         AssertionError fail = TRACKER.checkShutdown(5000);
         try {

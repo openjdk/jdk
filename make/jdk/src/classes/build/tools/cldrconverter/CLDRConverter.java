@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -293,8 +293,10 @@ public class CLDRConverter {
         bundleGenerator = new ResourceBundleGenerator();
 
         // Parse data independent of locales
-        parseSupplemental();
+        // parseBCP47() must precede parseSupplemental(). The latter depends
+        // on IANA alias map, which is produced by the former.
         parseBCP47();
+        parseSupplemental();
 
         // rules maps
         pluralRules = generateRules(handlerPlurals);
@@ -536,6 +538,12 @@ public class CLDRConverter {
 
         // canonical tz name map
         // alias -> primary
+        //
+        // Note that CLDR meta zones do not necessarily align with IANA's
+        // current time zone identifiers. For example, the CLDR "India"
+        // meta zone maps to "Asia/Calcutta", whereas IANA now uses
+        // "Asia/Kolkata" for the zone. Accordingly, "canonical" here is
+        // defined in terms of CLDR's zone mappings.
         handlerTimeZone.getData().forEach((k, v) -> {
             String[] ids = ((String)v).split("\\s");
             for (int i = 1; i < ids.length; i++) {

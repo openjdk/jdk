@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8306040
  * @summary HttpResponseInputStream.available() returns 1 on empty stream
@@ -47,19 +47,17 @@ import java.net.http.HttpResponse;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class HttpInputStreamAvailableTest {
 
-    private HttpServer server;
-    private int port;
-    static final String TEST_MESSAGE = "This is test message";
-    static final int ZERO = 0;
+    private static HttpServer server;
+    private static int port;
+    private static final String TEST_MESSAGE = "This is test message";
+    private static final int ZERO = 0;
 
     @BeforeAll
-    void setup() throws Exception {
+    static void setup() throws Exception {
         InetAddress loopback = InetAddress.getLoopbackAddress();
         InetSocketAddress addr = new InetSocketAddress(loopback, 0);
         server = HttpServer.create(addr, 0);
@@ -72,69 +70,71 @@ public class HttpInputStreamAvailableTest {
     }
 
     @AfterAll
-    void teardown() throws Exception {
+    static void teardown() throws Exception {
         server.stop(0);
     }
 
     @Test
     public void test() throws Exception {
-        HttpClient client = HttpClient
+        try (HttpClient client = HttpClient
                 .newBuilder()
                 .proxy(HttpClient.Builder.NO_PROXY)
-                .build();
+                .build()) {
 
-        URI uri = URIBuilder.newBuilder()
-                .scheme("http")
-                .loopback()
-                .port(port)
-                .path("/NonZeroResponse/")
-                .build();
+            URI uri = URIBuilder.newBuilder()
+                    .scheme("http")
+                    .loopback()
+                    .port(port)
+                    .path("/NonZeroResponse/")
+                    .build();
 
-        HttpRequest request = HttpRequest
-                .newBuilder(uri)
-                .GET()
-                .build();
+            HttpRequest request = HttpRequest
+                    .newBuilder(uri)
+                    .GET()
+                    .build();
 
-        // Send a httpRequest and assert the bytes available
-        HttpResponse<InputStream> response = client.send(request,
-                HttpResponse.BodyHandlers.ofInputStream());
-        try ( InputStream in = response.body()) {
-            in.readNBytes(2);
-            // this is not guaranteed, but a failure here would be surprising
-            assertEquals(TEST_MESSAGE.length() - 2, in.available());
-            //read the remaining data
-            in.readAllBytes();
-            //available should return 0
-            assertEquals(ZERO, in.available());
+            // Send a httpRequest and assert the bytes available
+            HttpResponse<InputStream> response = client.send(request,
+                    HttpResponse.BodyHandlers.ofInputStream());
+            try (InputStream in = response.body()) {
+                in.readNBytes(2);
+                // this is not guaranteed, but a failure here would be surprising
+                assertEquals(TEST_MESSAGE.length() - 2, in.available());
+                //read the remaining data
+                in.readAllBytes();
+                //available should return 0
+                assertEquals(ZERO, in.available());
+            }
         }
     }
 
     @Test
     public void test1() throws Exception {
-        HttpClient client = HttpClient
+        try (HttpClient client = HttpClient
                 .newBuilder()
                 .proxy(HttpClient.Builder.NO_PROXY)
-                .build();
+                .build()) {
 
-        URI uri = URIBuilder.newBuilder()
-                .scheme("http")
-                .loopback()
-                .port(port)
-                .path("/ZeroResponse/")
-                .build();
+            URI uri = URIBuilder.newBuilder()
+                    .scheme("http")
+                    .loopback()
+                    .port(port)
+                    .path("/ZeroResponse/")
+                    .build();
 
-        HttpRequest request = HttpRequest
-                .newBuilder(uri)
-                .GET()
-                .build();
+            HttpRequest request = HttpRequest
+                    .newBuilder(uri)
+                    .GET()
+                    .build();
 
-        // Send a httpRequest and assert the bytes available
-        HttpResponse<InputStream> response = client.send(request,
-                HttpResponse.BodyHandlers.ofInputStream());
-        try ( InputStream in = response.body()) {
-            assertEquals(ZERO, in.available());
-            in.readAllBytes();
-            assertEquals(ZERO, in.available());
+            // Send a httpRequest and assert the bytes available
+            HttpResponse<InputStream> response = client.send(request,
+                    HttpResponse.BodyHandlers.ofInputStream());
+            try (InputStream in = response.body()) {
+                assertEquals(ZERO, in.available());
+                in.readAllBytes();
+                assertEquals(ZERO, in.available());
+            }
         }
     }
 

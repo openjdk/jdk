@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,8 +110,7 @@ public class JavacParser implements Parser {
     /** The name table. */
     private Names names;
 
-    /** End position mappings container */
-    protected final AbstractEndPosTable endPosTable;
+    protected int errorEndPos = Position.NOPOS;
 
     /** A map associating "other nearby documentation comments"
      *  with the preferred documentation comment for a declaration. */
@@ -167,9 +166,8 @@ public class JavacParser implements Parser {
     protected JavacParser(ParserFactory fac,
                           Lexer S,
                           boolean keepDocComments,
-                          boolean keepLineMap,
-                          boolean keepEndPositions) {
-        this(fac, S, keepDocComments, keepLineMap, keepEndPositions, false);
+                          boolean keepLineMap) {
+        this(fac, S, keepDocComments, keepLineMap, false);
 
     }
     /** Construct a parser from a given scanner, tree factory and log.
@@ -179,7 +177,6 @@ public class JavacParser implements Parser {
                      Lexer S,
                      boolean keepDocComments,
                      boolean keepLineMap,
-                     boolean keepEndPositions,
                      boolean parseModuleInfo) {
         this.S = S;
         nextToken(); // prime the pump
@@ -194,7 +191,6 @@ public class JavacParser implements Parser {
         this.docComments = newDocCommentTable(keepDocComments, fac);
         this.keepLineMap = keepLineMap;
         this.errorTree = F.Erroneous();
-        this.endPosTable = newEndPosTable(keepEndPositions);
         this.allowYieldStatement = Feature.SWITCH_EXPRESSION.allowedInSource(source);
         this.allowRecords = Feature.RECORDS.allowedInSource(source);
         this.allowSealedTypes = Feature.SEALED_CLASSES.allowedInSource(source);
@@ -218,17 +214,10 @@ public class JavacParser implements Parser {
         this.parseModuleInfo = false;
         this.docComments = parser.docComments;
         this.errorTree = F.Erroneous();
-        this.endPosTable = newEndPosTable(false);
         this.allowYieldStatement = Feature.SWITCH_EXPRESSION.allowedInSource(source);
         this.allowRecords = Feature.RECORDS.allowedInSource(source);
         this.allowSealedTypes = Feature.SEALED_CLASSES.allowedInSource(source);
         updateUnexpectedTopLevelDefinitionStartError(false);
-    }
-
-    protected AbstractEndPosTable newEndPosTable(boolean keepEndPositions) {
-        return  keepEndPositions
-                ? new SimpleEndPosTable()
-                : new MinimalEndPosTable();
     }
 
     protected DocCommentTable newDocCommentTable(boolean keepDocComments, ParserFactory fac) {
@@ -667,7 +656,7 @@ public class JavacParser implements Parser {
         var src = log.currentSource();
         return c.getStyle() == Comment.CommentStyle.JAVADOC_LINE &&
                 c.getPos().getStartPosition() == 0 &&
-                src.getLineNumber(pos.getEndPosition(src.getEndPosTable())) == 1;
+                src.getLineNumber(pos.getEndPosition()) == 1;
     }
 
     /**
@@ -681,23 +670,26 @@ public class JavacParser implements Parser {
 /* -------- source positions ------- */
 
     protected void setErrorEndPos(int errPos) {
-        endPosTable.setErrorEndPos(errPos);
+        if (errPos > errorEndPos) {
+            errorEndPos = errPos;
+        }
     }
 
     /**
      * Store ending position for a tree, the value of which is the greater of
-     * last error position in {@link #endPosTable} and the given ending position.
+     * {@link #errorEndPos} and the given ending position.
      * @param tree tree node
      * @param endpos the ending position to associate with {@code tree}
      * @return {@code tree}
      */
     protected <T extends JCTree> T storeEnd(T tree, int endpos) {
-        return endPosTable.storeEnd(tree, endpos);
+        tree.endpos = Math.max(endpos, errorEndPos);
+        return tree;
     }
 
     /**
      * Store current token's ending position for a tree, the value of which
-     * will be the greater of last error position in {@link #endPosTable}
+     * will be the greater of {@link #errorEndPos}
      * and the ending position of the current token.
      * @param tree tree node
      */
@@ -707,7 +699,7 @@ public class JavacParser implements Parser {
 
     /**
      * Store current token's ending position for a tree, the value of which
-     * will be the greater of last error position in {@link #endPosTable}
+     * will be the greater of {@link #errorEndPos}
      * and the ending position of the previous token.
      * @param tree tree node
      */
@@ -733,7 +725,7 @@ public class JavacParser implements Parser {
      * @param tree  The tree node
      */
     public int getEndPos(JCTree tree) {
-        return endPosTable.getEndPos(tree);
+        return tree.endpos;
     }
 
 
@@ -985,13 +977,11 @@ public class JavacParser implements Parser {
             pattern = toP(F.at(token.pos).AnyPattern());
         }
         else {
-            int varTypePos = Position.NOPOS;
             if (parsedType == null) {
                 boolean var = token.kind == IDENTIFIER && token.name() == names.var;
                 e = unannotatedType(allowVar, TYPE | NOLAMBDA);
                 if (var) {
-                    varTypePos = e.pos;
-                    e = null;
+                    e = replaceTypeWithVar(e);
                 }
             } else {
                 e = parsedType;
@@ -1029,12 +1019,9 @@ public class JavacParser implements Parser {
                     name = names.empty;
                 }
                 JCVariableDecl var = toP(F.at(varPos).VarDef(mods, name, e, null,
-                  varTypePos != Position.NOPOS ? JCVariableDecl.DeclKind.VAR : JCVariableDecl.DeclKind.EXPLICIT,
-                  varTypePos));
-                if (e == null) {
-                    if (var.name == names.underscore && !allowVar) {
-                        log.error(DiagnosticFlag.SYNTAX, varPos, Errors.UseOfUnderscoreNotAllowed);
-                    }
+                  e.hasTag(VARTYPE) ? JCVariableDecl.DeclKind.VAR : JCVariableDecl.DeclKind.EXPLICIT));
+                if (var.name == names.underscore && !allowVar) {
+                    log.error(DiagnosticFlag.SYNTAX, varPos, Errors.UseOfUnderscoreNotAllowed);
                 }
                 pattern = toP(F.at(pos).BindingPattern(var));
             }
@@ -1269,7 +1256,7 @@ public class JavacParser implements Parser {
                                             JCAnnotation typeAnno = F.at(decl.pos)
                                                                      .TypeAnnotation(decl.annotationType,
                                                                                       decl.args);
-                                            endPosTable.replaceTree(decl, typeAnno);
+                                            typeAnno.endpos = decl.endpos;
                                             return typeAnno;
                                         });
                             type = insertAnnotationsToMostInner(type, typeAnnos, false);
@@ -1358,7 +1345,7 @@ public class JavacParser implements Parser {
             } else {
                 JCExpression t = F.at(litBuf.first().getStartPosition()).Literal(TypeTag.CLASS,
                         litBuf.stream().map(lit -> (String)lit.getValue()).collect(Collectors.joining()));
-                storeEnd(t, litBuf.last().getEndPosition(endPosTable));
+                storeEnd(t, litBuf.last().getEndPosition());
                 opStack.prepend(t);
                 return true;
             }
@@ -1654,7 +1641,7 @@ public class JavacParser implements Parser {
                         }
                         // typeArgs saved for next loop iteration.
                         t = toP(F.at(pos).Select(t, ident()));
-                        if (token.pos <= endPosTable.errorEndPos &&
+                        if (token.pos <= errorEndPos &&
                             token.kind == MONKEYS_AT) {
                             //error recovery, case like:
                             //int i = expr.<missing-ident>
@@ -1878,7 +1865,7 @@ public class JavacParser implements Parser {
                         tyannos = typeAnnotationsOpt();
                     }
                     t = toP(F.at(pos1).Select(t, ident(true)));
-                    if (token.pos <= endPosTable.errorEndPos &&
+                    if (token.pos <= errorEndPos &&
                         token.kind == MONKEYS_AT) {
                         //error recovery, case like:
                         //int i = expr.<missing-ident>
@@ -2186,8 +2173,7 @@ public class JavacParser implements Parser {
                         && restrictedTypeName(param.vartype, true) != null) {
                     checkSourceLevel(param.pos, Feature.VAR_SYNTAX_IMPLICIT_LAMBDAS);
                     param.declKind = JCVariableDecl.DeclKind.VAR;
-                    param.typePos = TreeInfo.getStartPos(param.vartype);
-                    param.vartype = null;
+                    param.vartype = replaceTypeWithVar(param.vartype);
                 }
             }
         }
@@ -2533,7 +2519,7 @@ public class JavacParser implements Parser {
             int pos = token.pos;
             nextToken();
             accept(CLASS);
-            if (token.pos == endPosTable.errorEndPos) {
+            if (token.pos == errorEndPos) {
                 // error recovery
                 Name name;
                 if (LAX_IDENTIFIER.test(token.kind)) {
@@ -2867,7 +2853,7 @@ public class JavacParser implements Parser {
                 // error recovery
                 if (token.pos == lastErrPos)
                     return stats.toList();
-                if (token.pos <= endPosTable.errorEndPos) {
+                if (token.pos <= errorEndPos) {
                     skip(false, true, true, true);
                     lastErrPos = token.pos;
                 }
@@ -3800,7 +3786,6 @@ public class JavacParser implements Parser {
      */
     JCVariableDecl variableDeclaratorRest(int pos, JCModifiers mods, JCExpression type, Name name,
                                   boolean reqInit, Comment dc, boolean localDecl, boolean compound) {
-        boolean declaredUsingVar = false;
         JCExpression init = null;
         type = bracketsOpt(type);
 
@@ -3826,7 +3811,6 @@ public class JavacParser implements Parser {
             syntaxError(token.pos, Errors.Expected(EQ));
         }
 
-        int varTypePos = Position.NOPOS;
         JCTree elemType = TreeInfo.innermostType(type, true);
         if (elemType.hasTag(IDENT)) {
             Name typeName = ((JCIdent) elemType).name;
@@ -3837,19 +3821,25 @@ public class JavacParser implements Parser {
                     //error - 'var' and arrays
                     reportSyntaxError(elemType.pos, Errors.RestrictedTypeNotAllowedArray(typeName));
                 } else {
-                    declaredUsingVar = true;
-                    varTypePos = elemType.pos;
+                    type = replaceTypeWithVar(type);
+
                     if (compound)
                         //error - 'var' in compound local var decl
                         reportSyntaxError(elemType.pos, Errors.RestrictedTypeNotAllowedCompound(typeName));
-                    //implicit type
-                    type = null;
                 }
             }
         }
         JCVariableDecl result = toP(F.at(pos).VarDef(mods, name, type, init,
-          declaredUsingVar ? JCVariableDecl.DeclKind.VAR : JCVariableDecl.DeclKind.EXPLICIT, varTypePos));
+          type.hasTag(VARTYPE) ? JCVariableDecl.DeclKind.VAR : JCVariableDecl.DeclKind.EXPLICIT));
         return attach(result, dc);
+    }
+
+    JCExpression replaceTypeWithVar(JCExpression type) {
+        JCVarType varType = F.at(type).VarType();
+
+        varType.endpos = type.endpos;
+
+        return varType;
     }
 
     Name restrictedTypeName(JCExpression e, boolean shouldWarn) {
@@ -3910,7 +3900,7 @@ public class JavacParser implements Parser {
         if (allowThisIdent ||
             !lambdaParameter ||
             LAX_IDENTIFIER.test(token.kind) ||
-            mods.flags != Flags.PARAMETER ||
+            (mods.flags & ~(Flags.PARAMETER | Flags.LAMBDA_PARAMETER)) != 0 ||
             mods.annotations.nonEmpty()) {
             JCExpression pn;
             if (token.kind == UNDERSCORE && (catchParameter || lambdaParameter)) {
@@ -3962,11 +3952,10 @@ public class JavacParser implements Parser {
             name = names.empty;
         }
 
-        boolean declaredUsingVar = type != null && type.hasTag(IDENT) && ((JCIdent)type).name == names.var;
+        boolean declaredUsingVar = type != null && type.hasTag(VARTYPE);
         JCVariableDecl.DeclKind declKind = declaredUsingVar ? JCVariableDecl.DeclKind.VAR :
           type != null ? JCVariableDecl.DeclKind.EXPLICIT : JCVariableDecl.DeclKind.IMPLICIT;
-        int typePos = type != null ? type.pos : pos;
-        return toP(F.at(pos).VarDef(mods, name, type, null, declKind, typePos));
+        return toP(F.at(pos).VarDef(mods, name, type, null, declKind));
     }
 
     /** Resources = Resource { ";" Resources }
@@ -4045,7 +4034,7 @@ public class JavacParser implements Parser {
         boolean firstTypeDecl = true;   // have we seen a class, enum, or interface declaration yet?
         boolean isImplicitClass = false;
         OUTER: while (token.kind != EOF) {
-            if (token.pos <= endPosTable.errorEndPos) {
+            if (token.pos <= errorEndPos) {
                 // error recovery
                 skip(firstTypeDecl, false, false, false);
                 if (token.kind == EOF)
@@ -4156,7 +4145,6 @@ public class JavacParser implements Parser {
             toplevel.docComments = docComments;
         if (keepLineMap)
             toplevel.lineMap = S.getLineMap();
-        toplevel.endPositions = this.endPosTable;
         return toplevel;
     }
 
@@ -4433,12 +4421,13 @@ public class JavacParser implements Parser {
                 JCMethodDecl methDef = (JCMethodDecl) def;
                 if (methDef.name == names.init && methDef.params.isEmpty() && (methDef.mods.flags & Flags.COMPACT_RECORD_CONSTRUCTOR) != 0) {
                     ListBuffer<JCVariableDecl> tmpParams = new ListBuffer<>();
+                    TreeCopier<Void> copier = new TreeCopier<>(F);
                     for (JCVariableDecl param : headerFields) {
                         tmpParams.add(F.at(param)
                                 // we will get flags plus annotations from the record component
                                 .VarDef(F.Modifiers(Flags.PARAMETER | Flags.GENERATED_MEMBER | Flags.MANDATED | param.mods.flags & Flags.VARARGS,
-                                        param.mods.annotations),
-                                param.name, param.vartype, null));
+                                        copier.copy(param.mods.annotations)),
+                                param.name, copier.copy(param.vartype), null));
                     }
                     methDef.params = tmpParams.toList();
                 }
@@ -4576,7 +4565,7 @@ public class JavacParser implements Parser {
                     hasStructuralErrors = true;
                 }
                 defs.append(enumeratorDeclaration(enumName));
-                if (token.pos <= endPosTable.errorEndPos) {
+                if (token.pos <= errorEndPos) {
                     // error recovery
                    skip(false, true, true, false);
                 } else {
@@ -4599,7 +4588,7 @@ public class JavacParser implements Parser {
                 wasError = false;
                 defs.appendList(classOrInterfaceOrRecordBodyDeclaration(null, enumName,
                                                                 false, false));
-                if (token.pos <= endPosTable.errorEndPos) {
+                if (token.pos <= errorEndPos) {
                     // error recovery
                    skip(false, true, true, false);
                 }
@@ -4696,7 +4685,7 @@ public class JavacParser implements Parser {
      */
     List<JCTree> classInterfaceOrRecordBody(Name className, boolean isInterface, boolean isRecord) {
         accept(LBRACE);
-        if (token.pos <= endPosTable.errorEndPos) {
+        if (token.pos <= errorEndPos) {
             // error recovery
             skip(false, true, false, false);
             if (token.kind == LBRACE)
@@ -4707,7 +4696,7 @@ public class JavacParser implements Parser {
         ListBuffer<JCTree> defs = new ListBuffer<>();
         while (token.kind != RBRACE && token.kind != EOF) {
             defs.appendList(classOrInterfaceOrRecordBodyDeclaration(null, className, isInterface, isRecord));
-            if (token.pos <= endPosTable.errorEndPos) {
+            if (token.pos <= errorEndPos) {
                // error recovery
                skip(false, true, true, false);
             }
@@ -5067,7 +5056,7 @@ public class JavacParser implements Parser {
             boolean unclosedParameterList;
             if (!isRecord || name != names.init || token.kind == LPAREN) {
                 params = formalParameters();
-                unclosedParameterList = token.pos == endPosTable.errorEndPos;
+                unclosedParameterList = token.pos == errorEndPos;
                 if (!isVoid) type = bracketsOpt(type);
                 if (token.kind == THROWS) {
                     nextToken();
@@ -5093,7 +5082,7 @@ public class JavacParser implements Parser {
                     defaultValue = null;
                     accept(SEMI, tk -> Errors.Expected2(LBRACE, SEMI));
                 }
-                if (token.pos <= endPosTable.errorEndPos) {
+                if (token.pos <= errorEndPos) {
                     // error recovery
                     // look if there is a probable missing opening brace,
                     // and if yes, parse as a block
@@ -5414,7 +5403,19 @@ public class JavacParser implements Parser {
      *  LastFormalParameter = { FINAL | '@' Annotation } Type '...' Ident | FormalParameter
      */
     protected JCVariableDecl formalParameter(boolean lambdaParameter, boolean recordComponent) {
-        JCModifiers mods = !recordComponent ? optFinal(Flags.PARAMETER) : modifiersOpt();
+        JCModifiers mods;
+
+        if (recordComponent) {
+            mods = modifiersOpt();
+            /* it could be that the user added a javadoc with the @deprecated tag, when analyzing this
+             * javadoc, javac will set the DEPRECATED flag. This is correct in most cases but not for
+             * record components and thus should be removed in that case. Any javadoc applied to
+             * record components is ignored
+             */
+            mods.flags &= ~Flags.DEPRECATED;
+        } else {
+            mods = optFinal(Flags.PARAMETER | (lambdaParameter ? Flags.LAMBDA_PARAMETER : 0));
+        }
         if (recordComponent && mods.flags != 0) {
             log.error(mods.pos, Errors.RecordCantDeclareFieldModifiers);
         }
@@ -5445,7 +5446,7 @@ public class JavacParser implements Parser {
     }
 
     protected JCVariableDecl implicitParameter() {
-        JCModifiers mods = F.at(token.pos).Modifiers(Flags.PARAMETER);
+        JCModifiers mods = F.at(token.pos).Modifiers(Flags.PARAMETER | Flags.LAMBDA_PARAMETER);
         return variableDeclaratorId(mods, null, false, true, false);
     }
 
@@ -5629,72 +5630,6 @@ public class JavacParser implements Parser {
             unexpectedTopLevelDefinitionStartError = Errors.Expected4(CLASS, INTERFACE, ENUM, "record");
         } else {
             unexpectedTopLevelDefinitionStartError = Errors.Expected3(CLASS, INTERFACE, ENUM);
-        }
-    }
-
-    /**
-     * A straightforward {@link EndPosTable} implementation.
-     */
-    protected static class SimpleEndPosTable extends AbstractEndPosTable {
-
-        private final IntHashTable endPosMap = new IntHashTable();
-
-        @Override
-        public <T extends JCTree> T storeEnd(T tree, int endpos) {
-            endPosMap.put(tree, Math.max(endpos, errorEndPos));
-            return tree;
-        }
-
-        @Override
-        public int getEndPos(JCTree tree) {
-            int value = endPosMap.get(tree);
-            // As long as Position.NOPOS==-1, this just returns value.
-            return (value == -1) ? Position.NOPOS : value;
-        }
-
-        @Override
-        public int replaceTree(JCTree oldTree, JCTree newTree) {
-            int pos = endPosMap.remove(oldTree);
-            if (pos != -1 && newTree != null) {
-                storeEnd(newTree, pos);
-            }
-            return pos;
-        }
-    }
-
-    /**
-     * A minimal implementation that only stores what's required.
-     */
-    protected static class MinimalEndPosTable extends SimpleEndPosTable {
-
-        @Override
-        public <T extends JCTree> T storeEnd(T tree, int endpos) {
-            switch (tree.getTag()) {
-            case MODULEDEF:
-            case PACKAGEDEF:
-            case CLASSDEF:
-            case METHODDEF:
-            case VARDEF:
-                break;
-            default:
-                return tree;
-            }
-            return super.storeEnd(tree, endpos);
-        }
-    }
-
-    protected abstract static class AbstractEndPosTable implements EndPosTable {
-
-        /**
-         * Store the last error position.
-         */
-        public int errorEndPos = Position.NOPOS;
-
-        @Override
-        public void setErrorEndPos(int errPos) {
-            if (errPos > errorEndPos) {
-                errorEndPos = errPos;
-            }
         }
     }
 }

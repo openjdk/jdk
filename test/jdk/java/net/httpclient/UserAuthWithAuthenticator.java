@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,33 @@
  * questions.
  */
 
-import java.io.*;
-import java.net.*;
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Authenticator;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.PasswordAuthentication;
+import java.net.Proxy;
+import java.net.ProxySelector;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.http.HttpClient;
+import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
-import java.net.http.HttpOption.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
-import javax.net.ssl.*;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.regex.*;
-import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import javax.net.ssl.SSLContext;
+
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
@@ -42,6 +58,8 @@ import jdk.httpclient.test.lib.http2.Http2TestServer;
 import com.sun.net.httpserver.BasicAuthenticator;
 import org.junit.jupiter.api.Test;
 
+import static java.net.http.HttpOption.H3_DISCOVERY;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -119,7 +137,7 @@ class UserAuthWithAuthenticator {
     private static void h3Test(final boolean useHeader, boolean rightPassword) throws Exception {
         SSLContext sslContext = SimpleSSLContext.findSSLContext();
         try (ExecutorService executor = Executors.newCachedThreadPool();
-             HttpTestServer server = HttpTestServer.create(Http3DiscoveryMode.HTTP_3_URI_ONLY, sslContext, executor);
+             HttpTestServer server = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext, executor);
              HttpClient client = HttpServerAdapters.createClientBuilderForH3()
                      .sslContext(sslContext)
                      .executor(executor)
@@ -164,11 +182,18 @@ class UserAuthWithAuthenticator {
                 .build();
 
         var authHeaderValue = authHeaderValue("user", rightPassword ? "pwd" : "wrongPwd");
-        HttpRequest req = HttpRequest.newBuilder(uri)
+        HttpRequest.Builder reqBuilder = HttpRequest.newBuilder(uri)
                 .version(version)
                 .header(useHeader ? "Authorization" : "X-Ignore", authHeaderValue)
-                .GET()
-                .build();
+                .GET();
+        if (version == Version.HTTP_3) {
+            // we should not attempt to default to TCP since our server is HTTP_3_URI_ONLY
+            // setting the option on the request also has the effect of telling
+            // the client that it can use the full HTTP/3 timeout, since the server
+            // is known to support HTTP/3
+            reqBuilder.setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
+        }
+        HttpRequest req = reqBuilder.build();
 
         HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString());
         var sa = (ServerAuth) client.authenticator().orElseThrow();
