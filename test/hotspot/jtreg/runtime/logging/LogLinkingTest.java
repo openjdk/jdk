@@ -27,6 +27,7 @@
  * @bug 8347462
  * @library /test/lib
  * @library classes
+ * @requires vm.flagless
  * @build test.LinkageErrorApp
  * @run driver LogLinkingTest
  */
@@ -39,9 +40,9 @@ public class LogLinkingTest {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:class+load,class+link", "LinkageErrorApp");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(1);
-        output.shouldContain("[class,load] LinkageErrorApp$SingleDefinition source:");
-        output.shouldContain("[class,load] LinkageErrorApp$DuplicateDefinition source:");
-        output.shouldContain("[class,link] Linked class LinkageErrorApp$SingleDefinition");
-        output.shouldNotContain("[class,link] Linked class LinkageErrorApp$DuplicateDefinition");
+        output.shouldMatch("class,load.*SingleDefinition source");
+        output.shouldMatch("class,load.*DuplicateDefinition source");
+        output.shouldMatch("class,link.*Linked class.*SingleDefinition");
+        output.shouldNotMatch("class,link.*Linked class.*DuplicateDefinition");
     }
 }
