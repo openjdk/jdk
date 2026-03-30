@@ -382,7 +382,6 @@ public class CatalogSupportBase {
         } else {
             Schema schema = factory.newSchema(new StreamSource(new StringReader(xsd)));
         }
-        success("XMLSchema.dtd and datatypes.dtd are resolved.");
     }
 
     /**
@@ -440,8 +439,7 @@ public class CatalogSupportBase {
 
         StringWriter out = new StringWriter();
         transformer.transform(xml, new StreamResult(out));
-        debugPrint("out:\n" + out.toString());
-        assertTrue(out.toString().contains(expected), "testXSLImport");
+        assertTrue(out.toString().contains(expected), "Output did not contain '" + expected + "':\n" + out);
     }
 
     /*
@@ -456,7 +454,7 @@ public class CatalogSupportBase {
         Transformer transformer = factory.newTemplates(xsl).newTransformer();
         StringWriter out = new StringWriter();
         transformer.transform(xml, new StreamResult(out));
-        assertTrue(out.toString().contains(expected), "testXSLImportWTemplates");
+        assertTrue(out.toString().contains(expected), "Output did not contain '" + expected + "':\n" + out);
     }
 
     /**
@@ -687,16 +685,6 @@ public class CatalogSupportBase {
         }
 
         return factory;
-    }
-
-    void fail(String msg) {
-        System.out.println("Test failed:");
-        System.out.println(msg);
-    }
-
-    void success(String msg) {
-        System.out.println("Test succeded:");
-        System.out.println(msg);
     }
 
     void debugPrint(String msg) {

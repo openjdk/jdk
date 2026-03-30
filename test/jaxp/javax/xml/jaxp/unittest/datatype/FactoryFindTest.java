@@ -29,7 +29,7 @@ import javax.xml.datatype.DatatypeFactory;
 import java.net.URL;
 import java.net.URLClassLoader;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -41,34 +41,30 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class FactoryFindTest {
 
-    boolean myClassLoaderUsed = false;
-
     @Test
     public void testFactoryFind() throws Exception {
         DatatypeFactory factory = DatatypeFactory.newInstance();
         assertNull(factory.getClass().getClassLoader());
 
         Thread.currentThread().setContextClassLoader(null);
-
         factory = DatatypeFactory.newInstance();
         assertNull(factory.getClass().getClassLoader());
 
-        Thread.currentThread().setContextClassLoader(new MyClassLoader());
-        factory = DatatypeFactory.newInstance();
-        if (System.getSecurityManager() == null)
-            assertTrue(myClassLoaderUsed);
-        else
-            assertFalse(myClassLoaderUsed);
+        MyClassLoader customLoader = new MyClassLoader();
+        Thread.currentThread().setContextClassLoader(customLoader);
+        assertNotNull(DatatypeFactory.newInstance());
+        assertTrue(customLoader.wasUsed);
     }
 
-    class MyClassLoader extends URLClassLoader {
+    static class MyClassLoader extends URLClassLoader {
+        boolean wasUsed = false;
 
         public MyClassLoader() {
             super(new URL[0]);
         }
 
-        public Class loadClass(String name) throws ClassNotFoundException {
-            myClassLoaderUsed = true;
+        public Class<?> loadClass(String name) throws ClassNotFoundException {
+            wasUsed = true;
             return super.loadClass(name);
         }
     }

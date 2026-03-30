@@ -34,7 +34,7 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import java.io.ByteArrayInputStream;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /*
  * @test
@@ -51,9 +51,7 @@ public class Bug6992561Test {
             public void setDocumentLocator(Locator locator) {
                 String sysId = locator.getSystemId();
                 System.out.println(locator.getSystemId());
-                if (sysId.indexOf("%7") > 0) {
-                    fail("the original system id should be left as is and not encoded.");
-                }
+                assertFalse(sysId.contains("%7"), "the original system id should be left as is and not encoded.");
             }
         };
 

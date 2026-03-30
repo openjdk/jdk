@@ -37,7 +37,6 @@ import java.math.BigInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /*
  * @test
@@ -47,10 +46,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @summary Test Duration is normalized.
  */
 public class Bug6937964Test {
-    /**
-     * Print debugging to System.err.
-     */
-    private static final boolean DEBUG = false;
     /**
      * Constant to indicate expected lexical test failure.
      */
@@ -76,7 +71,6 @@ public class Bug6937964Test {
         DatatypeFactory dtf = DatatypeFactory.newInstance();
         Duration d = dtf.newDurationYearMonth(671976000000L);
         int years = d.getYears();
-        System.out.println("Years: " + years);
         assertEquals(21, years, "Return value should be normalized");
     }
 
@@ -123,7 +117,6 @@ public class Bug6937964Test {
         BigInteger sec = new BigInteger("65");
         Duration d = dtf.newDurationDayTime(true, day, hour, min, sec);
         int days = d.getDays();
-        System.out.println("Days: " + days);
         assertEquals(2, days, "Return value should be normalized");
     }
 
@@ -132,12 +125,11 @@ public class Bug6937964Test {
         DatatypeFactory dtf = DatatypeFactory.newInstance();
         Duration d = dtf.newDurationDayTime(true, 1, 23, 59, 65);
         int days = d.getDays();
-        System.out.println("Days: " + days);
         assertEquals(2, days, "Return value should be normalized");
     }
 
     public static Object[][] lexicalvalues() {
-        Object actualAndExpected[][] = {
+        return new Object[][] {
                 { "P13M", "P1Y1M" },
                 { "-P13M", "-P1Y1M" },
                 { "P1Y", "P1Y" },
@@ -145,36 +137,16 @@ public class Bug6937964Test {
                 { "P1Y25M", "P3Y1M" },
                 { "-P1Y25M", "-P3Y1M" }
         };
-        return actualAndExpected;
     }
 
     @ParameterizedTest
     @MethodSource("lexicalvalues")
-    public void testNewDurationYearMonthLexicalRepresentation1(String actualLex, String expectedLex) {
-        /**
-         * Lexical test values to test.
-         */
-
-        DatatypeFactory datatypeFactory = null;
-        try {
-            datatypeFactory = DatatypeFactory.newInstance();
-        } catch (DatatypeConfigurationException datatypeConfigurationException) {
-            fail(datatypeConfigurationException.toString());
-        }
-
-        if (DEBUG) {
-            System.err.println("DatatypeFactory created: " + datatypeFactory.toString());
-        }
-        if (DEBUG) {
-            System.err.println("testing value: \"" + actualLex + "\", expecting: \"" + expectedLex + "\"");
-        }
+    public void testNewDurationYearMonthLexicalRepresentation1(String actualLex, String expectedLex)
+            throws DatatypeConfigurationException {
+        DatatypeFactory datatypeFactory = DatatypeFactory.newInstance();
 
         try {
             Duration duration = datatypeFactory.newDurationYearMonth(actualLex);
-
-            if (DEBUG) {
-                System.err.println("Duration created: \"" + duration.toString() + "\"");
-            }
 
             // was this expected to fail?
             assertNotEquals(TEST_VALUE_FAIL, expectedLex, "the value \"" + actualLex + "\" is invalid " +
@@ -198,10 +170,6 @@ public class Bug6937964Test {
                     "\" was expected to be \"" + expectedLex + "\" and has the value \"" + duration + "\"");
             // Duration created with correct value
         } catch (Exception exception) {
-            if (DEBUG) {
-                System.err.println("Exception in creating duration: \"" + exception + "\"");
-            }
-
             // was this expected to succed?
             assertEquals(TEST_VALUE_FAIL, expectedLex, "the value \"" + actualLex + "\" is valid yet " +
                     "it failed with \"" + exception + "\"");
@@ -214,12 +182,13 @@ public class Bug6937964Test {
         BigInteger zero = new BigInteger("0");
         BigDecimal bdZero = new BigDecimal("0");
         BigDecimal bdOne = new BigDecimal("1");
-        Object[][] values = {
+        return new Object[][] {
                 // lex, isPositive, years, month, days, hours, minutes, seconds
-                { "P1D", Boolean.TRUE, null, null, one, zero, zero, bdZero }, { "PT1H", Boolean.TRUE, null, null, zero, one, zero, bdZero },
-                { "PT1M", Boolean.TRUE, null, null, zero, zero, one, bdZero }, { "PT1.1S", Boolean.TRUE, null, null, zero, zero, zero, bdOne },
+                { "P1D", Boolean.TRUE, null, null, one, zero, zero, bdZero },
+                { "PT1H", Boolean.TRUE, null, null, zero, one, zero, bdZero },
+                { "PT1M", Boolean.TRUE, null, null, zero, zero, one, bdZero },
+                { "PT1.1S", Boolean.TRUE, null, null, zero, zero, zero, bdOne },
                 { "-PT1H1.1S", Boolean.FALSE, null, null, zero, one, zero, bdOne }, };
-        return values;
     }
 
     /**
@@ -228,21 +197,16 @@ public class Bug6937964Test {
     @ParameterizedTest
     @MethodSource("lexDayTimeData")
     public void testNewDurationDayTime005(String lex, boolean isPositive, BigInteger year, BigInteger month, BigInteger days,
-                                          BigInteger hour, BigInteger minutes, BigDecimal seconds) {
-        StringBuffer result = new StringBuffer();
-        DatatypeFactory df = null;
-
-        try {
-            df = DatatypeFactory.newInstance();
-        } catch (DatatypeConfigurationException e) {
-            fail(e.toString());
-        }
+                                          BigInteger hour, BigInteger minutes, BigDecimal seconds)
+            throws DatatypeConfigurationException {
+        StringBuilder result = new StringBuilder();
+        DatatypeFactory df = DatatypeFactory.newInstance();
 
         Duration duration = null;
         try {
             duration = df.newDurationDayTime(isPositive, days, hour, minutes, seconds.toBigInteger());
         } catch (IllegalArgumentException e) {
-            result.append("; unexpected " + e + " trying to create duration \'" + lex + "\'");
+            result.append("; unexpected " + e + " trying to create duration '" + lex + "'");
         }
         if (duration != null) {
             if ((duration.getSign() == 1) != isPositive) {
@@ -251,43 +215,39 @@ public class Bug6937964Test {
 
             Number value = duration.getField(DatatypeConstants.YEARS);
             if ((value != null && year == null) || (value == null && year != null) || (value != null && !value.equals(year))) {
-                result.append("; " + lex + ": wrong value of the field " + DatatypeConstants.YEARS + ": \'" + value + "\'" + ", expected \'"
-                        + year + "\'");
+                result.append("; " + lex + ": wrong value of the field " + DatatypeConstants.YEARS + ": '" + value + "'" + ", expected '"
+                        + year + "'");
             }
 
             value = duration.getField(DatatypeConstants.MONTHS);
             if ((value != null && month == null) || (value == null && month != null) || (value != null && !value.equals(month))) {
-                result.append("; " + lex + ": wrong value of the field " + DatatypeConstants.MONTHS + ": \'" + value + "\'" + ", expected \'"
-                        + month + "\'");
+                result.append("; " + lex + ": wrong value of the field " + DatatypeConstants.MONTHS + ": '" + value + "'" + ", expected '"
+                        + month + "'");
             }
 
             value = duration.getField(DatatypeConstants.DAYS);
             if ((value != null && days == null) || (value == null && days != null) || (value != null && !value.equals(days))) {
-                result.append("; " + lex + ": wrong value of the field " + DatatypeConstants.DAYS + ": \'" + value + "\'" + ", expected \'"
-                        + days + "\'");
+                result.append("; " + lex + ": wrong value of the field " + DatatypeConstants.DAYS + ": '" + value + "'" + ", expected '"
+                        + days + "'");
             }
 
             value = duration.getField(DatatypeConstants.HOURS);
             if ((value != null && hour == null) || (value == null && hour != null) || (value != null && !value.equals(hour))) {
-                result.append("; " + lex + ": wrong value of the field " + DatatypeConstants.HOURS + ": \'" + value + "\'" + ", expected \'"
-                        + hour + "\'");
+                result.append("; " + lex + ": wrong value of the field " + DatatypeConstants.HOURS + ": '" + value + "'" + ", expected '"
+                        + hour + "'");
             }
 
             value = duration.getField(DatatypeConstants.MINUTES);
             if ((value != null && minutes == null) || (value == null && minutes != null) || (value != null && !value.equals(minutes))) {
-                result.append("; " + lex + ": wrong value of the field " + DatatypeConstants.MINUTES + ": \'" + value + "\'" + ", expected \'"
-                        + minutes + "\'");
+                result.append("; " + lex + ": wrong value of the field " + DatatypeConstants.MINUTES + ": '" + value + "'" + ", expected '"
+                        + minutes + "'");
             }
 
             value = duration.getField(DatatypeConstants.SECONDS);
-            if ((value != null && seconds == null) || (value == null && seconds != null) || (value != null && !value.equals(seconds))) {
-                result.append("; " + lex + ": wrong value of the field " + DatatypeConstants.SECONDS + ": \'" + value + "\'" + ", expected \'"
-                        + seconds + "\'");
+            if (value == null || !value.equals(seconds)) {
+                result.append("; " + lex + ": wrong value of the field " + DatatypeConstants.SECONDS + ": '" + value + "'" + ", expected '"
+                        + seconds + "'");
             }
         }
-        if (result.length() > 0) {
-            fail(result.substring(2));
-        }
-        System.out.println("OK");
     }
 }

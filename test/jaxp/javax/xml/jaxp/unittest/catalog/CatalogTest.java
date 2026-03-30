@@ -59,7 +59,6 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -461,22 +460,17 @@ public class CatalogTest extends CatalogSupportBase {
     public void testJDK8146237() throws Exception {
         URI catalogFile = getClass().getResource("JDK8146237_catalog.xml").toURI();
 
-        try {
-            CatalogFeatures features = CatalogFeatures.builder()
-                    .with(CatalogFeatures.Feature.PREFER, "system")
-                    .build();
-            Catalog catalog = CatalogManager.catalog(features, catalogFile);
-            CatalogResolver catalogResolver = CatalogManager.catalogResolver(catalog);
-            String actualSystemId = catalogResolver.resolveEntity(
-                    "-//FOO//DTD XML Dummy V0.0//EN",
-                    "http://www.oracle.com/alt1sys.dtd")
-                    .getSystemId();
-            assertTrue(actualSystemId.contains("dummy.dtd"),
-                    "Resulting id should contain dummy.dtd, indicating a match by publicId");
-
-        } catch (Exception e) {
-            fail(e.getMessage());
-        }
+        CatalogFeatures features = CatalogFeatures.builder()
+                .with(CatalogFeatures.Feature.PREFER, "system")
+                .build();
+        Catalog catalog = CatalogManager.catalog(features, catalogFile);
+        CatalogResolver catalogResolver = CatalogManager.catalogResolver(catalog);
+        String actualSystemId = catalogResolver.resolveEntity(
+                        "-//FOO//DTD XML Dummy V0.0//EN",
+                        "http://www.oracle.com/alt1sys.dtd")
+                .getSystemId();
+        assertTrue(actualSystemId.contains("dummy.dtd"),
+                "Resulting id should contain dummy.dtd, indicating a match by publicId");
     }
 
     /*
@@ -487,14 +481,9 @@ public class CatalogTest extends CatalogSupportBase {
     public void testRewriteSystem() throws Exception {
         URI catalog = getClass().getResource("rewriteCatalog.xml").toURI();
 
-        try {
-            CatalogResolver resolver = CatalogManager.catalogResolver(CatalogFeatures.defaults(), catalog);
-            String actualSystemId = resolver.resolveEntity(null, "http://remote.com/dtd/book.dtd").getSystemId();
-            assertFalse(actualSystemId.contains("//"), "result contains duplicate slashes");
-        } catch (Exception e) {
-            fail(e.getMessage());
-        }
-
+        CatalogResolver resolver = CatalogManager.catalogResolver(CatalogFeatures.defaults(), catalog);
+        String actualSystemId = resolver.resolveEntity(null, "http://remote.com/dtd/book.dtd").getSystemId();
+        assertFalse(actualSystemId.contains("//"), "result contains duplicate slashes");
     }
 
     /*
@@ -505,14 +494,9 @@ public class CatalogTest extends CatalogSupportBase {
     public void testRewriteUri() throws Exception {
         URI catalog = getClass().getResource("rewriteCatalog.xml").toURI();
 
-        try {
-
-            CatalogResolver resolver = CatalogManager.catalogResolver(CatalogFeatures.defaults(), catalog);
-            String actualSystemId = resolver.resolve("http://remote.com/import/import.xsl", null).getSystemId();
-            assertFalse(actualSystemId.contains("//"), "result contains duplicate slashes");
-        } catch (Exception e) {
-            fail(e.getMessage());
-        }
+        CatalogResolver resolver = CatalogManager.catalogResolver(CatalogFeatures.defaults(), catalog);
+        String actualSystemId = resolver.resolve("http://remote.com/import/import.xsl", null).getSystemId();
+        assertFalse(actualSystemId.contains("//"), "result contains duplicate slashes");
     }
 
     /*
@@ -551,18 +535,14 @@ public class CatalogTest extends CatalogSupportBase {
             catalog = getClass().getResource(catalogFile).toURI();
         }
         String url = getClass().getResource(xml).getFile();
-        try {
-            CatalogResolver cr = CatalogManager.catalogResolver(CatalogFeatures.defaults(), catalog);
-            XMLReader reader = saxParser.getXMLReader();
-            reader.setEntityResolver(cr);
-            MyHandler handler = new MyHandler(saxParser);
-            reader.setContentHandler(handler);
-            reader.parse(url);
-            System.out.println(test + ": expected [" + expected + "] <> actual [" + handler.getResult() + "]");
-            assertEquals(expected, handler.getResult());
-        } catch (SAXException | IOException e) {
-            fail(e.getMessage());
-        }
+        CatalogResolver cr = CatalogManager.catalogResolver(CatalogFeatures.defaults(), catalog);
+        XMLReader reader = saxParser.getXMLReader();
+        reader.setEntityResolver(cr);
+        MyHandler handler = new MyHandler(saxParser);
+        reader.setContentHandler(handler);
+        reader.parse(url);
+        System.out.println(test + ": expected [" + expected + "] <> actual [" + handler.getResult() + "]");
+        assertEquals(expected, handler.getResult());
     }
 
     /*
@@ -605,19 +585,15 @@ public class CatalogTest extends CatalogSupportBase {
                 .build();
 
         String test = "testInvalidCatalog";
-        try {
-            CatalogResolver resolver = CatalogManager.catalogResolver(f);
-            String actualSystemId = resolver.resolveEntity(
-                    null,
-                    "http://remote/xml/dtd/sys/alice/docAlice.dtd")
-                    .getSystemId();
-            System.out.println("testIgnoreInvalidCatalog: expected [null]");
-            System.out.println("testIgnoreInvalidCatalog: expected [null]");
-            System.out.println("actual [" + actualSystemId + "]");
-            assertNull(actualSystemId);
-        } catch (Exception e) {
-            fail(e.getMessage());
-        }
+        CatalogResolver resolver = CatalogManager.catalogResolver(f);
+        String actualSystemId = resolver.resolveEntity(
+                        null,
+                        "http://remote/xml/dtd/sys/alice/docAlice.dtd")
+                .getSystemId();
+        System.out.println("testIgnoreInvalidCatalog: expected [null]");
+        System.out.println("testIgnoreInvalidCatalog: expected [null]");
+        System.out.println("actual [" + actualSystemId + "]");
+        assertNull(actualSystemId);
     }
 
 

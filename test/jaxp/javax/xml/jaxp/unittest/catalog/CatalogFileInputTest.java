@@ -181,7 +181,7 @@ public class CatalogFileInputTest extends CatalogSupportBase {
     }
 
     @Test
-    public void testNullFileInput() {
+    public void testNull() {
         assertThrows(
                 NullPointerException.class,
                 () -> CatalogFeatures.builder().with(CatalogFeatures.Feature.FILES, null));
@@ -190,10 +190,6 @@ public class CatalogFileInputTest extends CatalogSupportBase {
     @Test
     public void testNullUri() {
         assertThrows(NullPointerException.class, () -> CatalogManager.catalogResolver(FEATURES, (URI) null));
-    }
-
-    @Test
-    public void testNullUri1() {
         assertThrows(NullPointerException.class, () -> CatalogManager.catalog(FEATURES, (URI) null));
     }
 

@@ -24,11 +24,8 @@
 package sax;
 
 import org.junit.jupiter.api.Test;
+import org.xml.sax.SAXException;
 import org.xml.sax.helpers.XMLReaderFactory;
-
-import javax.xml.datatype.DatatypeConfigurationException;
-
-import static org.junit.jupiter.api.Assertions.fail;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 
@@ -42,21 +39,14 @@ import javax.xml.datatype.DatatypeConfigurationException;
 public class Bug6925410Test {
 
     @Test
-    public void test() throws DatatypeConfigurationException {
-        try {
-            int times = 100;
-            long start = System.currentTimeMillis();
-            for (int i = 0; i < times; i++) {
-                XMLReaderFactory.createXMLReader();
-            }
-            long end = System.currentTimeMillis();
-            double speed = ((end - start));
-            System.out.println(speed + "ms");
-        } catch (Throwable e) {
-            e.printStackTrace();
-            fail(e.toString());
+    public void test() throws DatatypeConfigurationException, SAXException {
+        int times = 100;
+        long start = System.currentTimeMillis();
+        for (int i = 0; i < times; i++) {
+            XMLReaderFactory.createXMLReader();
         }
-
+        long end = System.currentTimeMillis();
+        double speed = ((end - start));
+        System.out.println(speed + "ms");
     }
-
 }

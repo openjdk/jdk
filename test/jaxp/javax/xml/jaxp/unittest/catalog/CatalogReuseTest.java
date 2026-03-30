@@ -75,7 +75,7 @@ public class CatalogReuseTest extends CatalogSupportBase {
         DataProvider: provides no catalog. A new catalog will be created for each test.
         Data columns: uri, expected
      */
-    public static Object[][] dataWithoutCatalog() {
+    public Object[][] dataWithoutCatalog() {
         return new Object[][] {
                 { "http://entailments/example.org/A/B/derived.ttl", "derived/A/B/derived.ttl" },
                 { "http://example.org/A/B.owl", "sources/A/B.owl" },
