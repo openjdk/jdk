@@ -830,8 +830,7 @@ void ObjectSynchronizer::owned_monitors_iterate_filtered(MonitorClosure* closure
   });
 }
 
-// Iterate ObjectMonitors where the owner == thread; this does NOT include
-// ObjectMonitors where owner is set to a stack-lock address in thread.
+// Iterate ObjectMonitors where the owner == thread.
 void ObjectSynchronizer::owned_monitors_iterate(MonitorClosure* closure, JavaThread* thread) {
   int64_t key = ObjectMonitor::owner_id_from(thread);
   auto thread_filter = [&](ObjectMonitor* monitor) { return monitor->owner() == key; };
@@ -1964,12 +1963,10 @@ ObjectMonitor* ObjectSynchronizer::inflate_into_object_header(oop object, Object
     const markWord mark = object->mark_acquire();
 
     // The mark can be in one of the following states:
-    // *  inflated     - Just return if using stack-locking.
-    //                   If using fast-locking and the ObjectMonitor owner
-    //                   is anonymous and the locking_thread owns the
-    //                   object lock, then we make the locking_thread
-    //                   the ObjectMonitor owner and remove the lock from
-    //                   the locking_thread's lock stack.
+    // *  inflated     - If the ObjectMonitor owner is anonymous and the
+    //                   locking_thread owns the object lock, then we make the
+    //                   locking_thread the ObjectMonitor owner and remove the
+    //                   lock from the locking_thread's lock stack.
     // *  fast-locked  - Coerce it to inflated from fast-locked.
     // *  unlocked     - Aggressively inflate the object.
 
