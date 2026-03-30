@@ -922,6 +922,7 @@ bool IfNode::has_only_uncommon_traps(IfProjNode* proj, IfProjNode*& success, IfP
 }
 
 // Check that the 2 CmpI can be folded into as single CmpU and proceed with the folding
+// TODO: what about other case where we constant fold without CmpU?
 bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjNode* fail, PhaseIterGVN* igvn) {
   Node* this_cmp = in(1)->in(1);
   BoolNode* this_bool = in(1)->as_Bool();
@@ -939,6 +940,18 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
   BoolTest::mask hi_test = this_bool->_test._test;
   BoolTest::mask cond = hi_test;
 
+  // Second test guaranteed canonicalized, first one may not have
+  // been canonicalized yet
+  assert(lo_test == BoolTest::lt ||
+         lo_test == BoolTest::le ||
+         lo_test == BoolTest::gt ||
+         lo_test == BoolTest::ge ||
+         lo_test == BoolTest::ne, "lo test options: %d", lo_test);
+  assert(hi_test == BoolTest::lt ||
+         hi_test == BoolTest::le, "hi test options: %d", hi_test);
+
+  // -------------------------------------------------------------------
+  // In some cases, we can fold two CmpI into a single CmpI:
   // convert:
   //
   //          dom_bool = n {<,<=,>,>=} a
@@ -959,15 +972,6 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
   // Note: otherproj and success both lead to the same Region, or
   //       some uncommon trap.
   //
-  // (Second test guaranteed canonicalized, first one may not have
-  // been canonicalized yet)
-  assert(lo_test == BoolTest::lt ||
-         lo_test == BoolTest::le ||
-         lo_test == BoolTest::gt ||
-         lo_test == BoolTest::ge ||
-         lo_test == BoolTest::ne, "lo test options: %d", lo_test);
-  assert(hi_test == BoolTest::lt ||
-         hi_test == BoolTest::le, "hi test options: %d", hi_test);
   //
   // into:
   //
@@ -982,6 +986,25 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
   //   // proj
   //   if n u> 10: success   <- takes on both paths
   //   // fail
+  //
+  // For this to work, the 3 branches must split the int-range into 3 regions. Example:
+  //
+  // <----- otherproj ------> <----------- fail -------------> <------ success ------->
+  // [min_int .. lo_type->hi] [lo_type->hi+1 .. hi_type->lo-1] [hi_type->lo .. max_int]
+  // [min_int ..          -1] [0             ..            10] [11          .. max_int]
+  //                         ^                                ^
+  //                         |                                |
+  //                dom_bool / lo_test              this_bool / hi_test
+  //
+  // Since we know that otherproj and success go to the sampe place,
+  // we want to "shift" the ranges, such that we only need a single check:
+  //
+  // <----------- fail -------------> <------ success -------> <----- otherproj ------>
+  // [0            ..   adjusted_lim] [adjusted_lim + 1      ...              max_uint]
+  // [0            ..             10] [11                    ...              max_uint]
+  //                                 ^
+  //                                 |
+  //                                CmpU
   //
   // -------------------------------------------------------------------
   // In the proofs below, we need some basic Lemmas to deal with integer
@@ -1040,8 +1063,6 @@ bool IfNode::fold_compares_helper(IfProjNode* proj, IfProjNode* success, IfProjN
       hi_type->_hi == max_jint && lo_type->_lo == min_jint && lo_test != BoolTest::ne) {
     assert((dom_bool->_test.is_less() && !proj->_con) ||
            (dom_bool->_test.is_greater() && proj->_con), "incorrect test");
-
-    //tty->print_cr("lo < hi");
 
     // this_bool = <
     //   dom_bool = >= (proj = True) or dom_bool = < (proj = False)
