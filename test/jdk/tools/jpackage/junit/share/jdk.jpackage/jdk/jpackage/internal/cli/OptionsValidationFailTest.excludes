@@ -1,5 +1,3 @@
-ErrorTest.test(IMAGE; app-desc=Hello; args-add=[--app-version, 0.2]; errors=[message.error-header+[message.version-string-first-number-not-zero], message.advice-header+[error.invalid-cfbundle-version.advice]])
-ErrorTest.test(IMAGE; app-desc=Hello; args-add=[--app-version, 1.2.3.4]; errors=[message.error-header+[message.version-string-too-many-components], message.advice-header+[error.invalid-cfbundle-version.advice]])
 ErrorTest.test(IMAGE; app-desc=Hello; args-add=[--app-version, 1.]; errors=[message.error-header+[error.version-string-zero-length-component, 1.], message.advice-header+[error.invalid-cfbundle-version.advice]])
 ErrorTest.test(IMAGE; app-desc=Hello; args-add=[--app-version, 1.]; errors=[message.error-header+[error.version-string-zero-length-component, 1.]])
 ErrorTest.test(IMAGE; app-desc=Hello; args-add=[--app-version, 1.b.3]; errors=[message.error-header+[error.version-string-invalid-component, 1.b.3, b.3], message.advice-header+[error.invalid-cfbundle-version.advice]])
