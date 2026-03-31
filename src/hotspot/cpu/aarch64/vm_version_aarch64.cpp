@@ -97,6 +97,7 @@ void VM_Version::initialize() {
   _supports_atomic_getadd8 = true;
 
   get_os_cpu_info();
+  _cpu_features = _features;
 
   int dcache_line = VM_Version::dcache_line_size();
 
@@ -267,12 +268,16 @@ void VM_Version::initialize() {
     }
   }
 
-  if (FLAG_IS_DEFAULT(UseCRC32)) {
-    UseCRC32 = VM_Version::supports_crc32();
-  }
-
-  if (UseCRC32 && !VM_Version::supports_crc32()) {
-    warning("UseCRC32 specified, but not supported on this CPU");
+  if (supports_crc32()) {
+    if (FLAG_IS_DEFAULT(UseCRC32)) {
+      FLAG_SET_DEFAULT(UseCRC32, true);
+    } else if (!UseCRC32) {
+      clear_feature(CPU_CRC32);
+    }
+  } else if (UseCRC32) {
+    if (!FLAG_IS_DEFAULT(UseCRC32)) {
+      warning("UseCRC32 specified, but not supported on this CPU");
+    }
     FLAG_SET_DEFAULT(UseCRC32, false);
   }
 
@@ -287,7 +292,7 @@ void VM_Version::initialize() {
     }
   }
 
-  if (UseCryptoPmullForCRC32 && (!VM_Version::supports_pmull() || !VM_Version::supports_sha3() || !VM_Version::supports_crc32())) {
+  if (UseCryptoPmullForCRC32 && (!VM_Version::supports_pmull() || !VM_Version::cpu_supports_sha3() || !VM_Version::cpu_supports_crc32())) {
     warning("UseCryptoPmullForCRC32 specified, but not supported on this CPU");
     FLAG_SET_DEFAULT(UseCryptoPmullForCRC32, false);
   }
@@ -301,9 +306,12 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
   }
 
-  if (VM_Version::supports_lse()) {
-    if (FLAG_IS_DEFAULT(UseLSE))
+  if (supports_lse()) {
+    if (FLAG_IS_DEFAULT(UseLSE)) {
       FLAG_SET_DEFAULT(UseLSE, true);
+    } else if (!UseLSE) {
+      clear_feature(CPU_LSE);
+    }
   } else {
     if (UseLSE) {
       warning("UseLSE specified, but not supported on this CPU");
@@ -311,8 +319,12 @@ void VM_Version::initialize() {
     }
   }
 
-  if (VM_Version::supports_aes()) {
-    UseAES = UseAES || FLAG_IS_DEFAULT(UseAES);
+  if (supports_aes()) {
+    if (FLAG_IS_DEFAULT(UseAES)) {
+      FLAG_SET_DEFAULT(UseAES, true);
+    } else if (!UseAES) {
+      clear_feature(CPU_AES);
+    }
     UseAESIntrinsics =
         UseAESIntrinsics || (UseAES && FLAG_IS_DEFAULT(UseAESIntrinsics));
     if (UseAESIntrinsics && !UseAES) {
@@ -342,7 +354,7 @@ void VM_Version::initialize() {
     UseCRC32Intrinsics = true;
   }
 
-  if (VM_Version::supports_crc32()) {
+  if (VM_Version::cpu_supports_crc32()) {
     if (FLAG_IS_DEFAULT(UseCRC32CIntrinsics)) {
       FLAG_SET_DEFAULT(UseCRC32CIntrinsics, true);
     }
@@ -363,6 +375,11 @@ void VM_Version::initialize() {
       VM_Version::supports_sha3() || VM_Version::supports_sha512()) {
     if (FLAG_IS_DEFAULT(UseSHA)) {
       FLAG_SET_DEFAULT(UseSHA, true);
+    } else if (!UseSHA) {
+      clear_feature(CPU_SHA1);
+      clear_feature(CPU_SHA3);
+      clear_feature(CPU_SHA256);
+      clear_feature(CPU_SHA512);
     }
   } else if (UseSHA) {
     warning("SHA instructions are not available on this CPU");

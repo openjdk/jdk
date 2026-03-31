@@ -1105,6 +1105,45 @@ void VM_Version::get_processor_features() {
     _features.clear_feature(CPU_APX_F);
   }
 
+  // Use CLMUL instructions if available.
+  if (supports_clmul()) {
+    if (FLAG_IS_DEFAULT(UseCLMUL)) {
+      UseCLMUL = true;
+    } else if (!UseCLMUL) {
+      _features.clear_feature(CPU_CLMUL);
+    }
+  } else if (UseCLMUL) {
+    if (!FLAG_IS_DEFAULT(UseCLMUL))
+      warning("CLMUL instructions not available on this CPU (AVX may also be required)");
+    FLAG_SET_DEFAULT(UseCLMUL, false);
+  }
+
+  if (supports_aes()) {
+    if (FLAG_IS_DEFAULT(UseAES)) {
+      FLAG_SET_DEFAULT(UseAES, true);
+    } else if (!UseAES) {
+      _features.clear_feature(CPU_AES);
+    }
+  } else if (UseAES) {
+    if (!FLAG_IS_DEFAULT(UseAES)) {
+      warning("AES instructions are not available on this CPU");
+    }
+    FLAG_SET_DEFAULT(UseAES, false);
+  }
+
+  if (supports_fma()) {
+    if (FLAG_IS_DEFAULT(UseFMA)) {
+      UseFMA = true;
+    } else if (!UseFMA) {
+      _features.clear_feature(CPU_FMA);
+    }
+  } else if (UseFMA) {
+    if (!FLAG_IS_DEFAULT(UseFMA)) {
+      warning("FMA instructions are not available on this CPU");
+    }
+    FLAG_SET_DEFAULT(UseFMA, false);
+  }
+
   if (FLAG_IS_DEFAULT(IntelJccErratumMitigation)) {
     _has_intel_jcc_erratum = compute_has_intel_jcc_erratum();
     FLAG_SET_ERGO(IntelJccErratumMitigation, _has_intel_jcc_erratum);
@@ -1152,9 +1191,40 @@ void VM_Version::get_processor_features() {
 
   // Use AES instructions if available.
   if (supports_aes()) {
-    if (FLAG_IS_DEFAULT(UseAES)) {
-      FLAG_SET_DEFAULT(UseAES, true);
+    if (supports_sse3()) {
+      if (FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+        FLAG_SET_DEFAULT(UseAESIntrinsics, true);
+      }
+    } else if (UseAESIntrinsics) {
+      // The AES intrinsic stubs require AES instruction support (of course)
+      // but also require sse3 mode or higher for instructions it use.
+      if (!FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+        warning("X86 AES intrinsics require SSE3 instructions or higher. Intrinsics will be disabled.");
+      }
+      FLAG_SET_DEFAULT(UseAESIntrinsics, false);
     }
+    if (!UseAESIntrinsics) {
+      if (UseAESCTRIntrinsics) {
+        if (FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
+          warning("AES-CTR intrinsics require UseAESIntrinsics flag to be enabled. Intrinsics will be disabled.");
+        }
+        FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
+      }
+    } else {
+      if (supports_sse4_1()) {
+        if (FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
+          FLAG_SET_DEFAULT(UseAESCTRIntrinsics, true);
+        }
+      } else if (UseAESCTRIntrinsics) {
+        // The AES-CTR intrinsic stubs require AES instruction support (of course)
+        // but also require sse4.1 mode or higher for instructions it use.
+        if (!FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
+          warning("X86 AES-CTR intrinsics require SSE4.1 instructions or higher. Intrinsics will be disabled.");
+        }
+        FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
+      }
+    }
+  } else {
     if (!UseAES) {
       if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
         warning("AES intrinsics require UseAES flag to be enabled. Intrinsics will be disabled.");
@@ -1164,66 +1234,16 @@ void VM_Version::get_processor_features() {
         warning("AES_CTR intrinsics require UseAES flag to be enabled. AES_CTR intrinsics will be disabled.");
       }
       FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
-    } else {
-      if (UseSSE > 2) {
-        if (FLAG_IS_DEFAULT(UseAESIntrinsics)) {
-          FLAG_SET_DEFAULT(UseAESIntrinsics, true);
-        }
-      } else {
-        // The AES intrinsic stubs require AES instruction support (of course)
-        // but also require sse3 mode or higher for instructions it use.
-        if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
-          warning("X86 AES intrinsics require SSE3 instructions or higher. Intrinsics will be disabled.");
-        }
-        FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+    } else if (!cpu_supports_aes()) {
+      if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+        warning("AES intrinsics are not available on this CPU");
       }
-
-      // --AES-CTR begins--
-      if (!UseAESIntrinsics) {
-        if (UseAESCTRIntrinsics && !FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
-          warning("AES-CTR intrinsics require UseAESIntrinsics flag to be enabled. Intrinsics will be disabled.");
-        }
-        FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
-      } else {
-        if (supports_sse4_1()) {
-          if (FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
-            FLAG_SET_DEFAULT(UseAESCTRIntrinsics, true);
-          }
-        } else {
-           // The AES-CTR intrinsic stubs require AES instruction support (of course)
-           // but also require sse4.1 mode or higher for instructions it use.
-          if (UseAESCTRIntrinsics && !FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
-             warning("X86 AES-CTR intrinsics require SSE4.1 instructions or higher. Intrinsics will be disabled.");
-           }
-           FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
-        }
+      FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+      if (UseAESCTRIntrinsics && !FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
+        warning("AES-CTR intrinsics are not available on this CPU");
       }
-      // --AES-CTR ends--
+      FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
     }
-  } else if (UseAES || UseAESIntrinsics || UseAESCTRIntrinsics) {
-    if (UseAES && !FLAG_IS_DEFAULT(UseAES)) {
-      warning("AES instructions are not available on this CPU");
-    }
-    FLAG_SET_DEFAULT(UseAES, false);
-    if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
-      warning("AES intrinsics are not available on this CPU");
-    }
-    FLAG_SET_DEFAULT(UseAESIntrinsics, false);
-    if (UseAESCTRIntrinsics && !FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
-      warning("AES-CTR intrinsics are not available on this CPU");
-    }
-    FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
-  }
-
-  // Use CLMUL instructions if available.
-  if (supports_clmul()) {
-    if (FLAG_IS_DEFAULT(UseCLMUL)) {
-      UseCLMUL = true;
-    }
-  } else if (UseCLMUL) {
-    if (!FLAG_IS_DEFAULT(UseCLMUL))
-      warning("CLMUL instructions not available on this CPU (AVX may also be required)");
-    FLAG_SET_DEFAULT(UseCLMUL, false);
   }
 
   if (UseCLMUL && (UseSSE > 2)) {
@@ -1323,17 +1343,6 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseBASE64Intrinsics, false);
   }
 
-  if (supports_fma()) {
-    if (FLAG_IS_DEFAULT(UseFMA)) {
-      UseFMA = true;
-    }
-  } else if (UseFMA) {
-    if (!FLAG_IS_DEFAULT(UseFMA)) {
-      warning("FMA instructions are not available on this CPU");
-    }
-    FLAG_SET_DEFAULT(UseFMA, false);
-  }
-
   if (FLAG_IS_DEFAULT(UseMD5Intrinsics)) {
     UseMD5Intrinsics = true;
   }
@@ -1341,6 +1350,8 @@ void VM_Version::get_processor_features() {
   if (supports_sha() || (supports_avx2() && supports_bmi2())) {
     if (FLAG_IS_DEFAULT(UseSHA)) {
       UseSHA = true;
+    } else if (!UseSHA) {
+      _features.clear_feature(CPU_SHA);
     }
   } else if (UseSHA) {
     if (!FLAG_IS_DEFAULT(UseSHA)) {

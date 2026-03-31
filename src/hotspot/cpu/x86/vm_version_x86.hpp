@@ -930,6 +930,7 @@ public:
   // Feature identification not affected by VM flags
   //
   static bool cpu_supports_evex()     { return _cpu_features.supports_feature(CPU_AVX512F); }
+  static bool cpu_supports_aes()      { return _cpu_features.supports_feature(CPU_AES); }
 
   static bool supports_avx512_simd_sort() {
     if (supports_avx512dq()) {
